@@ -1,533 +1,592 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Acceso Seguro — Municipalidad de Junín</title>
-  <meta name="description" content="Sistema de gestión municipal — Acceso restringido a personal autorizado" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso Seguro — GovTech</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+    /* STYLES */
     :root {
-      --blue:   #3b82f6;
-      --violet: #8b5cf6;
-      --green:  #10b981;
-      --red:    #ef4444;
-      --amber:  #f59e0b;
-      --bg:     #060b18;
-      --card:   rgba(15, 23, 45, 0.85);
+      --bg-dark: #060b18;
+      --panel-bg: rgba(15, 23, 45, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      
+      --role-super: #f59e0b;
+      --role-intendente: #3b82f6;
+      --role-hacienda: #10b981;
+      --role-it: #8b5cf6;
+      --role-demo: #06b6d4;
     }
 
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', sans-serif;
-      background: var(--bg);
+      background-color: var(--bg-dark);
+      color: #fff;
       min-height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Layout */
+    .layout {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+    }
+
+    /* Left Panel (60%) */
+    .left-panel {
+      width: 60%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 4rem;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%);
+      overflow: hidden;
+    }
+    
+    .left-panel::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.15) 30%, transparent 70%);
+      animation: rotateBg 20s linear infinite;
+    }
+
+    @keyframes rotateBg {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .brand-section {
+      position: relative;
+      z-index: 2;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .logo-icon {
+      font-size: 3rem;
+      background: rgba(255,255,255,0.1);
+      padding: 1rem;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 4rem;
+      font-weight: 800;
+      background: linear-gradient(to right, #fff, #a5b4fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tagline {
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: #94a3b8;
+      margin-bottom: 3rem;
+      max-width: 500px;
+      line-height: 1.4;
+    }
+
+    .features {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 4rem;
+    }
+
+    .feature-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 0.75rem 1.25rem;
+      border-radius: 100px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      backdrop-filter: blur(10px);
+      animation: floatPill 3s ease-in-out infinite alternate;
+    }
+    
+    .feature-pill:nth-child(2) { animation-delay: 0.5s; }
+    .feature-pill:nth-child(3) { animation-delay: 1s; }
+
+    @keyframes floatPill {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-10px); }
+    }
+
+    .kpi-cards {
+      position: absolute;
+      right: 10%;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      z-index: 2;
+    }
+
+    .kpi-card {
+      background: rgba(15, 23, 45, 0.6);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 1.5rem;
+      border-radius: 1rem;
+      width: 250px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      animation: floatCard 4s ease-in-out infinite alternate;
+    }
+
+    .kpi-card:nth-child(1) { animation-delay: 0s; border-left: 4px solid var(--role-intendente); }
+    .kpi-card:nth-child(2) { animation-delay: 1.2s; border-left: 4px solid var(--role-hacienda); margin-left: -2rem; }
+    .kpi-card:nth-child(3) { animation-delay: 2.4s; border-left: 4px solid var(--role-super); margin-left: 2rem; }
+
+    @keyframes floatCard {
+      0% { transform: translateY(0) rotate(0); }
+      100% { transform: translateY(-15px) rotate(2deg); }
+    }
+
+    .kpi-label { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+    .kpi-value { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700; color: #fff; }
+
+    .stats-bar {
+      position: absolute;
+      bottom: 2rem;
+      left: 4rem;
+      display: flex;
+      gap: 2rem;
+      font-size: 0.85rem;
+      color: #64748b;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      z-index: 2;
+    }
+    
+    .stats-bar span {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .stats-bar span::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%; background: #3b82f6;
+    }
+
+    /* Right Panel (40%) */
+    .right-panel {
+      width: 40%;
+      background: var(--bg-dark);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 4rem;
+      border-left: 1px solid var(--border-color);
+      overflow-y: auto;
+    }
+
+    .login-container {
+      max-width: 400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .welcome-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .welcome-sub {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .form-group {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 1rem 1rem 1rem 3rem;
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.3s;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: #3b82f6;
+      background: rgba(59,130,246,0.05);
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+    }
+
+    .form-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+    }
+
+    .floating-label {
+      position: absolute;
+      left: 3rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 1rem;
+      pointer-events: none;
+      transition: 0.2s ease all;
+    }
+
+    .form-input:focus ~ .floating-label,
+    .form-input:not(:placeholder-shown) ~ .floating-label {
+      top: -0.5rem;
+      left: 1rem;
+      font-size: 0.75rem;
+      background: var(--bg-dark);
+      padding: 0 0.5rem;
+      color: #3b82f6;
+    }
+
+    .toggle-pw {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 1rem;
+      box-shadow: 0 10px 25px rgba(59,130,246,0.3);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(59,130,246,0.4);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 2rem 0;
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .divider:not(:empty)::before { margin-right: 1rem; }
+    .divider:not(:empty)::after { margin-left: 1rem; }
+
+    /* Role Cards */
+    .role-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .role-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .role-icon {
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
-      position: relative;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
     }
 
-    /* ── FONDO ANIMADO ───────────────────────────── */
-    .bg-canvas {
-      position: fixed; inset: 0; z-index: 0; overflow: hidden;
-    }
-    .orb {
-      position: absolute; border-radius: 50%;
-      filter: blur(80px); opacity: 0.18;
-      animation: drift 20s ease-in-out infinite;
-    }
-    .orb-1 { width:600px; height:600px; background:#3b82f6; top:-200px; left:-200px; animation-delay:0s; }
-    .orb-2 { width:500px; height:500px; background:#8b5cf6; bottom:-150px; right:-100px; animation-delay:-7s; }
-    .orb-3 { width:350px; height:350px; background:#10b981; top:50%; left:50%; transform:translate(-50%,-50%); animation-delay:-13s; }
-    @keyframes drift {
-      0%,100% { transform: translate(0,0) scale(1); }
-      33%      { transform: translate(40px,-30px) scale(1.05); }
-      66%      { transform: translate(-30px,40px) scale(0.95); }
+    .role-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
     }
 
-    /* Grid lines */
-    .grid-bg {
-      position: fixed; inset: 0; z-index: 0;
-      background-image:
-        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
-      background-size: 48px 48px;
+    .role-name { font-weight: 600; font-size: 0.95rem; font-family: 'Outfit', sans-serif;}
+    .role-creds { font-size: 0.75rem; color: #94a3b8; font-family: monospace; }
+    
+    .role-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    /* Floating particles */
-    .particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-    .particle {
-      position: absolute; width: 2px; height: 2px; border-radius: 50%;
-      background: rgba(139,92,246,0.5);
-      animation: rise linear infinite;
-    }
-    @keyframes rise {
-      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
-    }
-
-    /* ── CARD ────────────────────────────────────── */
-    .login-wrapper {
-      position: relative; z-index: 10;
-      width: 100%; max-width: 460px;
-      padding: 20px;
-      animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+    .role-action {
+      position: absolute;
+      bottom: 0.5rem;
+      right: 1rem;
+      font-size: 0.75rem;
       opacity: 0;
-    }
-    @keyframes fadeUp {
-      from { opacity:0; transform: translateY(40px) scale(0.97); }
-      to   { opacity:1; transform: translateY(0)    scale(1); }
+      transition: 0.3s;
+      font-weight: 600;
     }
 
-    .login-card {
-      background: var(--card);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 24px;
-      padding: 40px 40px 36px;
-      box-shadow:
-        0 0 0 1px rgba(59,130,246,0.08),
-        0 32px 80px rgba(0,0,0,0.6),
-        0 0 80px rgba(139,92,246,0.06);
+    /* Role specific colors */
+    .role-card[data-role="super"] { --rc: var(--role-super); }
+    .role-card[data-role="intendente"] { --rc: var(--role-intendente); }
+    .role-card[data-role="hacienda"] { --rc: var(--role-hacienda); }
+    .role-card[data-role="it"] { --rc: var(--role-it); }
+    .role-card[data-role="demo"] { --rc: var(--role-demo); }
+
+    .role-card .role-badge {
+      background: color-mix(in srgb, var(--rc) 15%, transparent);
+      color: var(--rc);
+      border: 1px solid color-mix(in srgb, var(--rc) 30%, transparent);
+    }
+    .role-card .role-action { color: var(--rc); }
+
+    .role-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--rc);
+      box-shadow: 0 10px 20px color-mix(in srgb, var(--rc) 10%, transparent),
+                  0 0 15px color-mix(in srgb, var(--rc) 20%, transparent) inset;
+      background: rgba(255,255,255,0.05);
+    }
+    .role-card:hover .role-action { opacity: 1; transform: translateX(-5px); }
+
+    .security-badges {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 3rem;
     }
 
-    /* Escudo institucional */
-    .escudo-wrap {
-      display: flex; justify-content: center; margin-bottom: 28px;
+    .sec-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #64748b;
     }
-    .escudo {
-      width: 80px; height: 80px;
-      background: linear-gradient(135deg, #1e3a5f, #0f2040);
-      border: 2px solid rgba(59,130,246,0.4);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 38px;
-      box-shadow:
-        0 0 0 6px rgba(59,130,246,0.06),
-        0 0 40px rgba(59,130,246,0.15);
-      position: relative;
-      animation: pulse-glow 3s ease-in-out infinite;
-    }
-    @keyframes pulse-glow {
-      0%,100% { box-shadow: 0 0 0 6px rgba(59,130,246,0.06), 0 0 40px rgba(59,130,246,0.15); }
-      50%      { box-shadow: 0 0 0 10px rgba(59,130,246,0.10), 0 0 60px rgba(59,130,246,0.25); }
-    }
-    .escudo-badge {
-      position: absolute; bottom: -4px; right: -4px;
-      width: 22px; height: 22px; border-radius: 50%;
-      background: linear-gradient(135deg, #10b981, #059669);
-      border: 2px solid var(--bg);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px;
-    }
-
-    /* Titles */
-    .login-municipality {
-      text-align: center; font-size: 11px; font-weight: 700;
-      letter-spacing: 2px; text-transform: uppercase;
-      color: rgba(59,130,246,0.8); margin-bottom: 4px;
-    }
-    .login-title {
-      text-align: center; font-size: 22px; font-weight: 800;
-      font-family: 'Outfit', sans-serif; color: white;
-      margin-bottom: 4px; line-height: 1.2;
-    }
-    .login-subtitle {
-      text-align: center; font-size: 12px;
-      color: rgba(148,163,184,0.8); margin-bottom: 32px;
-      line-height: 1.5;
-    }
-
-    /* Security badge */
-    .security-bar {
-      display: flex; align-items: center; justify-content: center;
-      gap: 6px; margin-bottom: 28px;
-      background: rgba(16,185,129,0.06);
-      border: 1px solid rgba(16,185,129,0.15);
-      border-radius: 8px; padding: 7px 14px;
-      font-size: 11px; color: #10b981; font-weight: 600;
-    }
-    .security-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: #10b981; animation: blink-sec 2s ease-in-out infinite;
-    }
-    @keyframes blink-sec { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-    /* Form */
-    .form-group { margin-bottom: 18px; }
-    .form-label {
-      display: block; font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.8px;
-      color: rgba(148,163,184,0.7); margin-bottom: 8px;
-    }
-    .input-wrap { position: relative; }
-    .input-icon {
-      position: absolute; left: 14px; top: 50%;
-      transform: translateY(-50%); font-size: 16px;
-      pointer-events: none; opacity: 0.5;
-    }
-    .form-input {
-      width: 100%; padding: 13px 14px 13px 44px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; color: white; font-size: 14px;
-      font-family: 'Inter', sans-serif;
-      transition: all 0.25s ease;
-      outline: none;
-    }
-    .form-input:focus {
-      border-color: rgba(59,130,246,0.5);
-      background: rgba(59,130,246,0.04);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-    }
-    .form-input::placeholder { color: rgba(148,163,184,0.4); }
-    .toggle-pw {
-      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-      background: none; border: none; cursor: pointer;
-      font-size: 16px; opacity: 0.4; transition: opacity 0.2s;
-    }
-    .toggle-pw:hover { opacity: 0.8; }
-
-    /* Error */
-    .error-msg {
-      display: none;
-      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
-      border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
-      font-size: 12px; color: #ef4444; text-align: center;
-      animation: shake 0.4s ease;
-    }
-    @keyframes shake {
-      0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
-    }
-    .error-msg.show { display: block; }
-
-    /* Button */
-    .btn-login {
-      width: 100%; padding: 14px;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      border: none; border-radius: 12px;
-      color: white; font-size: 14px; font-weight: 700;
-      font-family: 'Outfit', sans-serif; letter-spacing: 0.3px;
-      cursor: pointer; position: relative; overflow: hidden;
-      transition: all 0.3s ease; margin-top: 4px;
-    }
-    .btn-login::before {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
-      opacity: 0; transition: opacity 0.3s;
-    }
-    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(59,130,246,0.4); }
-    .btn-login:hover::before { opacity: 1; }
-    .btn-login:active { transform: translateY(0); }
-    .btn-login.loading { pointer-events: none; opacity: 0.7; }
-    .btn-login .spinner {
-      display: none; width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-      margin: 0 auto;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .btn-login.loading .btn-text { display: none; }
-    .btn-login.loading .spinner { display: block; }
-
-    /* Demo hint */
-    .demo-hint {
-      margin-top: 20px; padding: 14px 16px;
-      background: rgba(245,158,11,0.05);
-      border: 1px solid rgba(245,158,11,0.18);
-      border-radius: 14px; text-align: left;
-    }
-    .demo-hint-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    .demo-hint-title {
-      font-size: 10px; font-weight: 700; color: var(--amber);
-      text-transform: uppercase; letter-spacing: 1px;
-    }
-    .demo-hint-sub {
-      font-size: 10px; color: rgba(245,158,11,0.7); font-weight: 500;
-    }
-    .demo-users-list {
-      display: flex; flex-direction: column; gap: 6px;
-    }
-    .demo-user-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 7px 10px; background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;
-      cursor: pointer; transition: all 0.2s ease;
-    }
-    .demo-user-item:hover {
-      background: rgba(245,158,11,0.12);
-      border-color: rgba(245,158,11,0.3);
-      transform: translateX(2px);
-    }
-    .demo-user-info {
-      display: flex; align-items: center; gap: 8px; font-size: 11px;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .demo-user-icon { font-size: 13px; }
-    .demo-user-email { color: rgba(255,255,255,0.9); font-weight: 600; }
-    .demo-user-pass { color: rgba(245,158,11,0.8); }
-    .demo-user-action {
-      font-size: 10px; font-weight: 700; color: var(--amber); opacity: 0.6;
-    }
-    .demo-user-item:hover .demo-user-action { opacity: 1; }
-
-    /* Footer */
-    .login-footer {
-      margin-top: 28px; text-align: center;
-      font-size: 11px; color: rgba(100,116,139,0.6);
-      line-height: 1.6;
-    }
-    .footer-badges {
-      display: flex; justify-content: center; gap: 12px;
-      margin-top: 8px; flex-wrap: wrap;
-    }
-    .footer-badge {
-      display: flex; align-items: center; gap: 4px;
-      font-size: 10px; color: rgba(100,116,139,0.5);
-    }
-
-    /* Success overlay */
-    .success-overlay {
-      position: fixed; inset: 0; z-index: 100;
-      background: rgba(6,11,24,0.95);
+    
+    /* Overlay */
+    .loader-overlay {
+      position: fixed; inset: 0; z-index: 999;
+      background: var(--bg-dark);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 16px; opacity: 0; pointer-events: none;
-      transition: opacity 0.4s ease;
+      opacity: 0; pointer-events: none; transition: 0.3s;
     }
-    .success-overlay.show { opacity: 1; pointer-events: all; }
-    .success-icon { font-size: 64px; animation: bounceIn 0.6s cubic-bezier(0.16,1,0.3,1); }
-    @keyframes bounceIn { from{transform:scale(0)} to{transform:scale(1)} }
-    .success-text { font-size: 22px; font-weight: 800; font-family: 'Outfit'; color: white; }
-    .success-sub { font-size: 13px; color: rgba(148,163,184,0.7); }
-    .success-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 99px; margin-top: 8px; overflow: hidden; }
-    .success-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 99px; animation: fillBar 1.8s ease forwards; }
-    @keyframes fillBar { from{width:0%} to{width:100%} }
+    .loader-overlay.active { opacity: 1; pointer-events: all; }
+    .loader-spinner {
+      width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
   </style>
 </head>
 <body>
 
-  <div class="bg-canvas">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-  <div class="grid-bg"></div>
-  <div class="particles" id="particles"></div>
-
-  <div class="success-overlay" id="successOverlay">
-    <div class="success-icon">✅</div>
-    <div class="success-text">Acceso autorizado</div>
-    <div class="success-sub">Cargando el sistema municipal...</div>
-    <div class="success-bar"><div class="success-bar-fill"></div></div>
+  <div class="loader-overlay" id="overlay">
+    <div class="loader-spinner"></div>
+    <div style="margin-top: 1rem; font-family: 'Outfit'; font-size: 1.2rem;">Autenticando...</div>
   </div>
 
-  <div class="login-wrapper">
-    <div class="login-card">
-
-      <div class="escudo-wrap">
-        <div class="escudo">🏛️<div class="escudo-badge">🔒</div></div>
-      </div>
-
-      <div class="login-municipality">Municipalidad de Junín · Mendoza</div>
-      <h1 class="login-title">Sistema de Gestión Municipal</h1>
-      <p class="login-subtitle">Acceso restringido a personal autorizado.<br/>Sus credenciales son auditadas.</p>
-
-      <div class="security-bar">
-        <div class="security-dot"></div>
-        Conexión segura · SSL/TLS · Sesión auditada
-      </div>
-
-      <form id="loginForm" autocomplete="off">
-        <div class="form-group">
-          <label class="form-label" for="email">Correo institucional</label>
-          <div class="input-wrap">
-            <span class="input-icon">📧</span>
-            <input type="email" id="email" class="form-input"
-              placeholder="usuario@municipiojunin.gob.ar"
-              autocomplete="username" required />
-          </div>
+  <div class="layout">
+    
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div class="brand-section">
+        <div class="logo-container">
+          <div class="logo-icon">🏛️</div>
+          <div class="logo-text">GovTech</div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="password">Contraseña</label>
-          <div class="input-wrap">
-            <span class="input-icon">🔑</span>
-            <input type="password" id="password" class="form-input"
-              placeholder="••••••••••" autocomplete="current-password" required />
-            <button type="button" class="toggle-pw" id="togglePw" title="Ver contraseña">👁️</button>
-          </div>
-        </div>
-
-        <div class="error-msg" id="errorMsg">
-          ⚠️ Credenciales incorrectas. Verifique su correo y contraseña.
-        </div>
-
-        <button type="submit" class="btn-login" id="btnLogin">
-          <span class="btn-text">🔐 Ingresar al sistema</span>
-          <div class="spinner"></div>
-        </button>
-      </form>
-
-      <div class="demo-hint">
-        <div class="demo-hint-header">
-          <span class="demo-hint-title">⚡ Credenciales de Demostración</span>
-          <span class="demo-hint-sub">Clic para usar</span>
-        </div>
-        <div class="demo-users-list" id="demoUsersList">
-          <div class="demo-user-item" data-email="superadmin@govtech.ar" data-pass="SuperAdmin2026!">
-            <div class="demo-user-info">
-              <span class="demo-user-icon">⚡</span>
-              <span class="demo-user-email">superadmin@govtech.ar</span>
-              <span class="demo-user-pass">/ SuperAdmin2026!</span>
-            </div>
-            <span class="demo-user-action">Usar ↵</span>
-          </div>
-          <div class="demo-user-item" data-email="intendente@junin.gob.ar" data-pass="Junin2026!">
-            <div class="demo-user-info">
-              <span class="demo-user-icon">🏛️</span>
-              <span class="demo-user-email">intendente@junin.gob.ar</span>
-              <span class="demo-user-pass">/ Junin2026!</span>
-            </div>
-            <span class="demo-user-action">Usar ↵</span>
-          </div>
-          <div class="demo-user-item" data-email="hacienda@junin.gob.ar" data-pass="Hacienda2026!">
-            <div class="demo-user-info">
-              <span class="demo-user-icon">💰</span>
-              <span class="demo-user-email">hacienda@junin.gob.ar</span>
-              <span class="demo-user-pass">/ Hacienda2026!</span>
-            </div>
-            <span class="demo-user-action">Usar ↵</span>
-          </div>
-          <div class="demo-user-item" data-email="it@junin.gob.ar" data-pass="IT2026!">
-            <div class="demo-user-info">
-              <span class="demo-user-icon">💻</span>
-              <span class="demo-user-email">it@junin.gob.ar</span>
-              <span class="demo-user-pass">/ IT2026!</span>
-            </div>
-            <span class="demo-user-action">Usar ↵</span>
-          </div>
-          <div class="demo-user-item" id="btnFillDemo" data-email="demo@demo.com" data-pass="demo123">
-            <div class="demo-user-info">
-              <span class="demo-user-icon">🌐</span>
-              <span class="demo-user-email">demo@demo.com</span>
-              <span class="demo-user-pass">/ demo123</span>
-            </div>
-            <span class="demo-user-action">Usar ↵</span>
-          </div>
+        <div class="tagline">Sistema de Gestión Municipal de Clase Mundial</div>
+        
+        <div class="features">
+          <div class="feature-pill">🤖 IA Integrada</div>
+          <div class="feature-pill">💬 WhatsApp Bot</div>
+          <div class="feature-pill">🏢 Multi-tenant</div>
         </div>
       </div>
 
-      <div class="login-footer">
-        Sistema de gestión interno — uso exclusivo personal municipal<br/>
-        Todo acceso queda registrado y es auditado
-        <div class="footer-badges">
-          <span class="footer-badge">🔒 Cifrado AES-256</span>
-          <span class="footer-badge">📋 ISO 27001</span>
-          <span class="footer-badge">🛡️ Datos soberanos</span>
+      <div class="kpi-cards">
+        <div class="kpi-card">
+          <div class="kpi-label">Gasto Mensual</div>
+          <div class="kpi-value">$45.2M</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Empleados Activos</div>
+          <div class="kpi-value">1,204</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Ahorro IA</div>
+          <div class="kpi-value">+15%</div>
         </div>
       </div>
 
+      <div class="stats-bar">
+        <span>5 Módulos</span>
+        <span>IA integrada</span>
+        <span>100% Seguro</span>
+      </div>
     </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <div class="login-container">
+        <h2 class="welcome-text">Bienvenido al sistema</h2>
+        <p class="welcome-sub">Ingrese sus credenciales para acceder</p>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <span class="form-icon">📧</span>
+            <input type="email" id="email" class="form-input" placeholder=" " required>
+            <label for="email" class="floating-label">Correo institucional</label>
+          </div>
+
+          <div class="form-group">
+            <span class="form-icon">🔑</span>
+            <input type="password" id="password" class="form-input" placeholder=" " required>
+            <label for="password" class="floating-label">Contraseña</label>
+            <button type="button" class="toggle-pw" id="togglePw">👁️</button>
+          </div>
+
+          <button type="submit" class="btn-submit">Ingresar al sistema</button>
+        </form>
+
+        <div class="divider">Usuarios Demo (Click para ingresar)</div>
+
+        <div class="role-cards" id="demoCards">
+          <!-- Cards will be injected by JS -->
+        </div>
+
+        <div class="security-badges">
+          <div class="sec-badge">🔒 AES-256</div>
+          <div class="sec-badge">🔑 JWT</div>
+          <div class="sec-badge">🛡️ Datos soberanos</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-    <script>
-    // ── PARTÍCULAS ────────────────────────────────
-    const pc = document.getElementById('particles');
-    for (let i = 0; i < 30; i++) {
-      const p = document.createElement('div');
-      p.className = 'particle';
-      p.style.cssText = `left:${Math.random()*100}%;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;animation-duration:${8+Math.random()*15}s;animation-delay:${-Math.random()*20}s;opacity:${0.2+Math.random()*0.4};background:${Math.random()>0.5?'#8b5cf6':'#3b82f6'}`;
-      pc.appendChild(p);
-    }
-
-    // ── TOGGLE PASSWORD ───────────────────────────
-    document.getElementById('togglePw').addEventListener('click', () => {
-      const pw = document.getElementById('password');
-      const show = pw.type === 'password';
-      pw.type = show ? 'text' : 'password';
-      document.getElementById('togglePw').textContent = show ? '🙈' : '👁️';
-    });
-
-    // ── FILL DEMO ─────────────────────────────────
-    document.querySelectorAll('.demo-user-item').forEach(item => {
-      item.addEventListener('click', () => {
-        document.getElementById('email').value = item.dataset.email;
-        document.getElementById('password').value = item.dataset.pass;
-      });
-    });
-
-    // ── USUARIOS MULTI-TENANT ─────────────────────
+  <script>
     const USERS = [
-      { email:'superadmin@govtech.ar',   password:'SuperAdmin2026!', name:'Super Administrador', role:'SUPER_ADMIN',  tenant:null,                                                             redirect:'admin.html'   },
-      { email:'intendente@junin.gob.ar', password:'Junin2026!',      name:'Intendente Municipal',role:'TENANT_ADMIN', tenant:{id:'t_junin',slug:'junin-mendoza',name:'Municipalidad de Junín'},redirect:'control.html' },
-      { email:'hacienda@junin.gob.ar',   password:'Hacienda2026!',   name:'Dir. de Hacienda',    role:'TENANT_USER',  tenant:{id:'t_junin',slug:'junin-mendoza',name:'Municipalidad de Junín'},redirect:'control.html' },
-      { email:'it@junin.gob.ar',         password:'IT2026!',         name:'Jefe de Tecnología',  role:'TENANT_ADMIN', tenant:{id:'t_junin',slug:'junin-mendoza',name:'Municipalidad de Junín'},redirect:'index.html'   },
-      { email:'demo@demo.com',           password:'demo123',         name:'Usuario Demo',        role:'DEMO',         tenant:{id:'t_junin',slug:'junin-mendoza',name:'Municipalidad de Junín'},redirect:'index.html'   },
+      { email:'superadmin@govtech.ar',   password:'SuperAdmin2026!', name:'Super Administrador',  role:'SUPER_ADMIN',    roleLabel:'Super Admin',    icon:'⚡', color:'#f59e0b', modules:['all'], idRole:'super' },
+      { email:'intendente@junin.gob.ar', password:'Junin2026!',      name:'Intendente Municipal',  role:'TENANT_ADMIN',   roleLabel:'Intendente',     icon:'🏛️', color:'#3b82f6', modules:['all'], idRole:'intendente' },
+      { email:'hacienda@junin.gob.ar',   password:'Hacienda2026!',   name:'Dir. de Hacienda',      role:'TENANT_USER',    roleLabel:'Hacienda',       icon:'💰', color:'#10b981', modules:['dashboard','presupuesto','licitaciones','proveedores','exportar'], idRole:'hacienda' },
+      { email:'it@junin.gob.ar',         password:'IT2026!',         name:'Jefe de Tecnología',    role:'TENANT_USER',    roleLabel:'IT / Tecnología', icon:'💻', color:'#8b5cf6', modules:['all'], idRole:'it' },
+      { email:'demo@demo.com',           password:'demo123',          name:'Usuario Demo',          role:'DEMO',           roleLabel:'Demo',           icon:'🌐', color:'#06b6d4', modules:['all'], idRole:'demo' }
     ];
-    const ROLE_ICONS  = { SUPER_ADMIN:'⚡', TENANT_ADMIN:'🏛️', TENANT_USER:'👤', DEMO:'🌐' };
-    const ROLE_LABELS = { SUPER_ADMIN:'Super Admin — Acceso Total a la Plataforma', TENANT_ADMIN:'Administrador del Municipio', TENANT_USER:'Usuario Municipal', DEMO:'Acceso Demo' };
 
-    // ── SUBMIT ────────────────────────────────────
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn   = document.getElementById('btnLogin');
-      const errEl = document.getElementById('errorMsg');
-      const email = document.getElementById('email').value.trim().toLowerCase();
-      const pw    = document.getElementById('password').value;
-
-      btn.classList.add('loading');
-      errEl.classList.remove('show');
-
-      let user = null;
-      try {
-        const resp = await fetch('/api/auth/login', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ email, password: pw }),
-          signal: AbortSignal.timeout(4000),
-        });
-        const data = await resp.json();
-        if (data.ok && data.token) {
-          sessionStorage.setItem('govtech_token', data.token);
-          const rd = data.user.role === 'SUPER_ADMIN' ? 'admin.html' : data.user.role === 'TENANT_ADMIN' ? 'control.html' : 'index.html';
-          user = { ...data.user, redirect: rd };
-        }
-      } catch(_) {
-        await new Promise(r => setTimeout(r, 900));
-        user = USERS.find(u => u.email === email && u.password === pw) || null;
-      }
-
-      if (user) {
-        sessionStorage.setItem('mjunin_user', JSON.stringify({
-          id: user.id||'u_local', name:user.name, email:user.email,
-          role:user.role, tenantId:user.tenantId||user.tenant?.id||null,
-          tenant:user.tenant||null, loginAt:new Date().toISOString(),
-        }));
-        const overlay = document.getElementById('successOverlay');
-        overlay.classList.add('show');
-        overlay.querySelector('.success-sub').innerHTML =
-          `${ROLE_ICONS[user.role]||'✅'} <strong>${user.name}</strong><br><span style="font-size:12px;opacity:0.7">${ROLE_LABELS[user.role]||''}</span>`;
-        setTimeout(() => { window.location.href = user.redirect; }, 2200);
-      } else {
-        btn.classList.remove('loading');
-        errEl.classList.add('show');
-        ['email','password'].forEach(id => {
-          const el = document.getElementById(id);
-          el.style.borderColor = 'rgba(239,68,68,0.4)';
-          setTimeout(() => { el.style.borderColor = ''; }, 2000);
-        });
-        document.getElementById('password').value = '';
-      }
+    // Toggle Password
+    const pwInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('togglePw');
+    toggleBtn.addEventListener('click', () => {
+      const isPw = pwInput.type === 'password';
+      pwInput.type = isPw ? 'text' : 'password';
+      toggleBtn.textContent = isPw ? '🙈' : '👁️';
     });
+
+    // Render Demo Cards
+    const cardsContainer = document.getElementById('demoCards');
+    USERS.forEach(u => {
+      const card = document.createElement('div');
+      card.className = 'role-card';
+      card.setAttribute('data-role', u.idRole);
+      card.innerHTML = \`
+        <div class="role-icon">\${u.icon}</div>
+        <div class="role-info">
+          <div class="role-name">\${u.name}</div>
+          <div class="role-creds">\${u.email} &bull; \${u.password}</div>
+        </div>
+        <div class="role-badge">\${u.roleLabel}</div>
+        <div class="role-action">Ingresar &rarr;</div>
+      \`;
+      card.addEventListener('click', () => {
+        document.getElementById('email').value = u.email;
+        document.getElementById('password').value = u.password;
+        // Trigger login
+        handleLogin(u.email, u.password);
+      });
+      cardsContainer.appendChild(card);
+    });
+
+    // Form Submit
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleLogin(document.getElementById('email').value, document.getElementById('password').value);
+    });
+
+    function handleLogin(email, pw) {
+      document.getElementById('overlay').classList.add('active');
+      
+      setTimeout(() => {
+        const user = USERS.find(u => u.email === email && u.password === pw);
+        if (user) {
+          sessionStorage.setItem('mjunin_user', JSON.stringify({
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            modules: user.modules
+          }));
+          window.location.href = 'index.html';
+        } else {
+          alert('Credenciales incorrectas');
+          document.getElementById('overlay').classList.remove('active');
+        }
+      }, 1000);
+    }
   </script>
 </body>
 </html>

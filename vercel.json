@@ -5,6 +5,7 @@
     { "src": "**/*.html", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "^/$", "dest": "/login.html" },
     { "src": "/(.*)", "dest": "/$1" }
   ],
   "headers": [

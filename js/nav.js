@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // NAV.JS — Sidebar compartido + Autenticación global
 // Municipalidad de Junín — Sistema de Gestión Municipal
 // ============================================================
@@ -464,7 +464,25 @@ window.toggleTheme = toggleTheme;
       /* ── PADDING BOTTOM for user footer ─────────────── */
       .sidebar-nav { padding-bottom: 80px !important; }
 
-      @media (max-width: 768px) {
+      /* ── SIDEBAR RESPONSIVE ─────────────────────────────── */
+      /* DESKTOP (> 900px): siempre visible */
+      @media (min-width: 901px) {
+        .sidebar {
+          transform: translateX(0) !important;
+          display: flex !important;
+          visibility: visible !important;
+        }
+        .main-content {
+          margin-left: var(--sidebar-w, 240px) !important;
+        }
+        .main-content.expanded {
+          margin-left: 64px !important;
+        }
+        /* Ocultar botón hamburguesa en desktop — usar sidebarToggle */
+        #menuBtn { display: none !important; }
+      }
+      /* MOBILE (≤ 900px): sidebar oculto, hamburguesa visible */
+      @media (max-width: 900px) {
         .sidebar {
           transform: translateX(-100%);
           transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
@@ -472,6 +490,7 @@ window.toggleTheme = toggleTheme;
           z-index: 999 !important;
           height: 100vh !important;
           top: 0 !important;
+          width: 280px !important;
         }
         .sidebar.mobile-open {
           transform: translateX(0) !important;
@@ -480,6 +499,7 @@ window.toggleTheme = toggleTheme;
         .main-content {
           margin-left: 0 !important;
         }
+        #menuBtn { display: flex !important; }
       }
     `;
     document.head.appendChild(style);

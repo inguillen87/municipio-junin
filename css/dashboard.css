@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    DASHBOARD EJECUTIVO — MUNICIPIO DE JUNÍN
    Design System & Component Styles
    ============================================================ */
@@ -1428,38 +1428,6 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
   color: var(--text-primary) !important;
 }
 
-/* Animated card entrance */
-@keyframes cardFadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.card, .stat-card, .kpi-card {
-  animation: cardFadeIn 0.4s ease both;
-}
-
-/* Number counter animation */
-@keyframes countUp {
-  from { opacity: 0; transform: scale(0.8); }
-  to   { opacity: 1; transform: scale(1); }
-}
-.stat-value, .kpi-value {
-  animation: countUp 0.5s ease both;
-}
-
-/* Pulse animation for alerts */
-@keyframes alertPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
-  50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
-}
-.alert-badge {
-  animation: alertPulse 2s infinite;
-}
-
-/* Smooth page transitions */
-.content-wrapper {
-  animation: cardFadeIn 0.3s ease both;
-}
-
 /* Mobile improvements */
 @media (max-width: 768px) {
   .topbar-right .btn-primary {
@@ -1475,7 +1443,7 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
   }
 }
 /* ============================================================
-   MOBILE-FIRST RESPONSIVE SYSTEM � MuniControl v2
+   MOBILE-FIRST RESPONSIVE SYSTEM � MuniControl v2
    Breakpoints: 480px | 640px | 768px | 900px | 1200px
    ============================================================ */
 
@@ -1835,4 +1803,216 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
     padding-left: max(16px, env(safe-area-inset-left)) !important;
     padding-right: max(16px, env(safe-area-inset-right)) !important;
   }
+}
+
+/* ── DESKTOP PREMIUM EFFECTS ──────────────────────────────── */
+
+/* Staggered card entrance animation */
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card        { animation: cardFadeIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+.kpi-card    { animation: cardFadeIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+.stat-card   { animation: cardFadeIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+.module-card { animation: cardFadeIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Staggered delays for child cards */
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.10s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.20s; }
+.kpi-card:nth-child(5) { animation-delay: 0.25s; }
+.kpi-card:nth-child(6) { animation-delay: 0.30s; }
+
+/* Number counter animation */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stat-value, .kpi-value {
+  animation: countUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Pulse animation for alerts */
+@keyframes alertPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+}
+.alert-badge { animation: alertPulse 2.5s infinite; }
+
+/* Smooth page transition */
+.content-wrapper {
+  animation: cardFadeIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* ── GLASSMORPHISM CARDS ─────────────────────────────── */
+.card-glass {
+  background: rgba(17, 29, 53, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* ── GRADIENT ACCENT BORDERS ─────────────────────────── */
+.card-accent-blue   { border-top: 3px solid #3b82f6 !important; }
+.card-accent-green  { border-top: 3px solid #10b981 !important; }
+.card-accent-amber  { border-top: 3px solid #f59e0b !important; }
+.card-accent-violet { border-top: 3px solid #8b5cf6 !important; }
+.card-accent-red    { border-top: 3px solid #ef4444 !important; }
+.card-accent-teal   { border-top: 3px solid #06b6d4 !important; }
+
+/* ── KPI CARD GLOW ON HOVER ─────────────────────────── */
+@media (min-width: 900px) {
+  .kpi-card {
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1),
+                box-shadow 0.25s cubic-bezier(0.4,0,0.2,1),
+                border-color 0.25s ease !important;
+  }
+  .kpi-card:hover {
+    transform: translateY(-4px) !important;
+    border-color: rgba(96,165,250,0.2) !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(96,165,250,0.1) !important;
+  }
+  .card {
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1),
+                box-shadow 0.25s cubic-bezier(0.4,0,0.2,1) !important;
+  }
+  .card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25) !important;
+  }
+}
+
+/* ── SIDEBAR IMPROVEMENTS ──────────────────────────── */
+.sidebar-logo-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900 !important;
+}
+
+.nav-item.active {
+  background: linear-gradient(90deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%) !important;
+  border-right: 3px solid #3b82f6;
+  color: #60a5fa !important;
+}
+
+/* ── TOPBAR ENHANCEMENTS ────────────────────────────── */
+.topbar {
+  background: rgba(6,11,24,0.92) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+}
+
+/* ── TABLE IMPROVEMENTS ─────────────────────────────── */
+tbody tr {
+  transition: background 0.15s ease !important;
+}
+tbody tr:hover {
+  background: rgba(59,130,246,0.04) !important;
+}
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card) !important;
+  z-index: 2;
+}
+
+/* ── SCROLLBAR STYLING ──────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(96,165,250,0.2);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(96,165,250,0.4);
+}
+
+/* ── SELECTION COLOR ────────────────────────────────── */
+::selection {
+  background: rgba(59,130,246,0.3);
+  color: #f0f4ff;
+}
+
+/* ── FOCUS VISIBLE ──────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid rgba(96,165,250,0.6);
+  outline-offset: 2px;
+}
+button:focus-visible,
+a:focus-visible {
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.3);
+}
+
+/* ── PROGRESS BAR ANIMATIONS ─────────────────────────── */
+.progress-bar, .entidad-bar {
+  transition: width 1.2s cubic-bezier(0.16,1,0.3,1) !important;
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar::after, .entidad-bar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; bottom: 0;
+  width: 50%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmer 2.5s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+@keyframes shimmer {
+  0%   { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* ── CHART WRAPPER ────────────────────────────────────── */
+.chart-wrap canvas {
+  border-radius: 8px;
+}
+
+[data-theme="light"] .kpi-value {
+  color: #0f172a !important;
+}
+[data-theme="light"] .topbar-title,
+[data-theme="light"] .page-title h1 {
+  color: #0f172a !important;
+}
+[data-theme="light"] .text-muted,
+[data-theme="light"] .kpi-label,
+[data-theme="light"] .stat-label,
+[data-theme="light"] .chart-sub {
+  color: rgba(71,85,105,0.8) !important;
+}
+[data-theme="light"] .activity-text,
+[data-theme="light"] .activity-time {
+  color: #475569 !important;
+}
+[data-theme="light"] table {
+  color: #0f172a !important;
+}
+[data-theme="light"] thead th {
+  background: rgba(15,23,66,0.03) !important;
+  color: #475569 !important;
+}
+[data-theme="light"] tbody tr:hover {
+  background: rgba(59,130,246,0.04) !important;
+}
+[data-theme="light"] .select-filter {
+  background: rgba(255,255,255,0.8) !important;
+  color: #0f172a !important;
+  border-color: rgba(15,23,66,0.12) !important;
+}
+[data-theme="light"] .nav-item {
+  color: rgba(248,250,252,0.7) !important;
+}
+[data-theme="light"] .nav-item.active {
+  color: #60a5fa !important;
+  background: rgba(59,130,246,0.15) !important;
+}
+[data-theme="light"] .toast {
+  background: #fff !important;
+  border-color: rgba(15,23,66,0.1) !important;
+  color: #0f172a !important;
 }

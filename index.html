@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -80,7 +80,34 @@
       color: var(--text-muted, #64748b); z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
     }
     body { padding-bottom: 40px; }
-  </style>
+  /* Ambient animated background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 40%, rgba(16,185,129,0.02) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+  animation: ambientShift 20s ease-in-out infinite alternate;
+}
+@keyframes ambientShift {
+  0%   { transform: translate(0,0) rotate(0deg); }
+  100% { transform: translate(2%, 1%) rotate(1deg); }
+}
+.main-content { position: relative; z-index: 1; }
+
+/* Stat card color accents */
+.kpi-card:nth-child(1) { border-top: 3px solid #3b82f6; }
+.kpi-card:nth-child(2) { border-top: 3px solid #10b981; }
+.kpi-card:nth-child(3) { border-top: 3px solid #f59e0b; }
+.kpi-card:nth-child(4) { border-top: 3px solid #8b5cf6; }
+.kpi-card:nth-child(5) { border-top: 3px solid #06b6d4; }
+.kpi-card:nth-child(6) { border-top: 3px solid #ef4444; }
+</style>
 </head>
 <body>
   <!-- FONDO ANIMADO -->
@@ -469,6 +496,7 @@
   <script src='js/bottom-nav.js'></script>
 </body>
 </html>
+
 
 
 

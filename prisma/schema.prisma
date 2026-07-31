@@ -1,0 +1,146 @@
+// ============================================================
+// SCHEMA.PRISMA — GovTech Platform SaaS
+// Multi-tenant: Tenants, Users, Roles, Modules
+// DB: Neon PostgreSQL (serverless) via Prisma
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")  // Neon: directUrl para migraciones
+}
+
+// ── ENUMS ────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN   // Acceso total: gestiona todos los tenants
+  TENANT_ADMIN  // Admin de su municipio
+  TENANT_USER   // Usuario normal de su municipio
+  DEMO          // Acceso demo limitado (solo lectura)
+}
+
+enum Plan {
+  STARTER       // < 500 empleados — $299 USD/mes
+  PROFESSIONAL  // 500–2.000 — $799 USD/mes
+  ENTERPRISE    // > 2.000 — $1.999 USD/mes
+  DEMO          // Plan demo gratuito (30 días)
+}
+
+enum TenantStatus {
+  ACTIVE
+  TRIAL
+  SUSPENDED
+  CANCELLED
+}
+
+// ── TENANTS (Municipios) ─────────────────────────────────────
+
+model Tenant {
+  id           String       @id @default(cuid())
+  slug         String       @unique  // "junin-mendoza", "demo"
+  name         String                // "Municipalidad de Junín"
+  shortName    String                // "Junín"
+  province     String?
+  country      String       @default("Argentina")
+  population   Int?                  // Habitantes
+  employees    Int?                  // Empleados municipales
+  budgetAnnual BigInt?               // Presupuesto anual en centavos
+  currency     String       @default("ARS")
+  timezone     String       @default("America/Argentina/Mendoza")
+  logoEmoji    String       @default("🏛️")
+  logoUrl      String?               // URL de imagen del escudo
+  themePrimary String       @default("#3b82f6")
+  themeAccent  String       @default("#6366f1")
+  themeBackground String   @default("#060b18")
+  contactEmail String?
+  contactPhone String?
+  website      String?
+  plan         Plan         @default(TRIAL)
+  status       TenantStatus @default(TRIAL)
+  trialEndsAt  DateTime?             // Fin del período trial
+  billingEmail String?
+  mrr          Int          @default(0) // Monthly Recurring Revenue en USD cents
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relaciones
+  users        User[]
+  modules      TenantModule[]
+  auditLogs    AuditLog[]
+
+  @@map("tenants")
+}
+
+// ── USERS ────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         Role      @default(TENANT_USER)
+  tenantId     String?             // null solo para SUPER_ADMIN
+  tenant       Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  active       Boolean   @default(true)
+  avatar       String?             // Iniciales o URL
+  lastLogin    DateTime?
+  loginCount   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relaciones
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+// ── TENANT MODULES ───────────────────────────────────────────
+
+model TenantModule {
+  id        String  @id @default(cuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  module    String  // "dashboard", "rrhh", "licitaciones", "mapa", etc.
+  active    Boolean @default(true)
+
+  @@unique([tenantId, module])
+  @@map("tenant_modules")
+}
+
+// ── AUDIT LOG ────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String   // "LOGIN", "CREATE_USER", "UPDATE_TENANT", etc.
+  entity    String?  // "User", "Tenant", "Contract"
+  entityId  String?
+  details   Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// ── INVITATIONS ──────────────────────────────────────────────
+
+model Invitation {
+  id        String   @id @default(cuid())
+  email     String
+  role      Role     @default(TENANT_USER)
+  tenantId  String
+  token     String   @unique @default(cuid())
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@map("invitations")
+}

@@ -64,6 +64,7 @@ app.use('/api/archivos',      require('./routes/archivos'));
 app.use('/api/whatsapp',      require('./routes/whatsapp'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/data',          require('./routes/data-connector'));
+app.use('/api/admin',         require('./routes/admin'));        // Super Admin — requiere rol SUPER_ADMIN
 
 // ── HEALTH CHECK ──────────────────────────────────
 app.get('/api/health', (req, res) => {

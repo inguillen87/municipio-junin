@@ -1,80 +1,164 @@
 // ============================================================
-// routes/auth.js — Autenticación JWT
+// auth.js — Autenticación Multi-Tenant
 // POST /api/auth/login
-// GET  /api/auth/me
-// POST /api/auth/logout (client-side, JWT stateless)
+// POST /api/auth/me
+// POST /api/auth/refresh
 // ============================================================
-const express  = require('express');
-const bcrypt   = require('bcryptjs');
-const jwt      = require('jsonwebtoken');
-const { requireAuth } = require('../middleware/auth');
-const db = require('../db/connection');
 
-const router = express.Router();
+'use strict';
 
-// Usuarios en memoria (fallback si no hay DB)
-const USERS_MOCK = [
-  { id: '1', nombre: 'Demo Usuario', email: 'demo@demo.com',              password: '$2b$10$K7L/X6L7bQwS/kYtRwJuYeAHQdj5Q6Jx8fEJGp4lXqO7yGYO9HK9G', rol: 'admin' },
-  { id: '2', nombre: 'Mario Abed',   email: 'intendente@junin.gob.ar',   password: '$2b$10$K7L/X6L7bQwS/kYtRwJuYeAHQdj5Q6Jx8fEJGp4lXqO7yGYO9HK9G', rol: 'intendente' },
-  { id: '3', nombre: 'Jefe IT',      email: 'tecnologia@junin.gob.ar',   password: '$2b$10$K7L/X6L7bQwS/kYtRwJuYeAHQdj5Q6Jx8fEJGp4lXqO7yGYO9HK9G', rol: 'admin' },
+const express = require('express');
+const router  = express.Router();
+const jwt     = require('jsonwebtoken');
+const bcrypt  = require('bcryptjs');
+const { authenticate } = require('../middleware/authMiddleware');
+
+const JWT_SECRET  = process.env.JWT_SECRET  || 'govtech-jwt-secret-change-in-production';
+const JWT_EXPIRES = process.env.JWT_EXPIRES || '8h';
+
+let prisma;
+try {
+  prisma = require('../lib/prisma');
+} catch (e) {
+  prisma = null;
+}
+
+// ── USUARIOS DEMO (sin DB) ────────────────────────────────────
+const DEMO_USERS = [
+  {
+    id: 'u_sa',
+    email: 'superadmin@govtech.ar',
+    passwordHash: '$2a$12$demo_hash_superadmin',
+    password: 'SuperAdmin2026!',
+    name: 'Super Administrador',
+    role: 'SUPER_ADMIN',
+    tenantId: null,
+    tenant: null,
+  },
+  {
+    id: 'u_int',
+    email: 'intendente@junin.gob.ar',
+    password: 'Junin2026!',
+    name: 'Intendente Municipal',
+    role: 'TENANT_ADMIN',
+    tenantId: 't_junin',
+    tenant: { id: 't_junin', slug: 'junin-mendoza', name: 'Municipalidad de Junín', shortName: 'Junín', themePrimary: '#3b82f6', themeAccent: '#6366f1', logoEmoji: '🏛️' },
+  },
+  {
+    id: 'u_hac',
+    email: 'hacienda@junin.gob.ar',
+    password: 'Hacienda2026!',
+    name: 'Director de Hacienda',
+    role: 'TENANT_USER',
+    tenantId: 't_junin',
+    tenant: { id: 't_junin', slug: 'junin-mendoza', name: 'Municipalidad de Junín', shortName: 'Junín', themePrimary: '#3b82f6', themeAccent: '#6366f1', logoEmoji: '🏛️' },
+  },
+  {
+    id: 'u_it',
+    email: 'it@junin.gob.ar',
+    password: 'IT2026!',
+    name: 'Jefe de Tecnología',
+    role: 'TENANT_ADMIN',
+    tenantId: 't_junin',
+    tenant: { id: 't_junin', slug: 'junin-mendoza', name: 'Municipalidad de Junín', shortName: 'Junín', themePrimary: '#3b82f6', themeAccent: '#6366f1', logoEmoji: '🏛️' },
+  },
+  {
+    id: 'u_demo',
+    email: 'demo@demo.com',
+    password: 'demo123',
+    name: 'Usuario Demo',
+    role: 'DEMO',
+    tenantId: 't_junin',
+    tenant: { id: 't_junin', slug: 'junin-mendoza', name: 'Municipalidad de Junín', shortName: 'Junín', themePrimary: '#3b82f6', themeAccent: '#6366f1', logoEmoji: '🏛️' },
+  },
 ];
-// Contraseñas demo: demo123, junin2026
-const DEMO_PASSWORDS = {
-  'demo@demo.com':            'demo123',
-  'intendente@junin.gob.ar': 'junin2026',
-  'tecnologia@junin.gob.ar': 'tech2026',
-};
 
-const JWT_SECRET = process.env.JWT_SECRET || 'municipio_junin_dev_secret_32chars';
+function signToken(user) {
+  return jwt.sign(
+    {
+      id:       user.id,
+      email:    user.email,
+      name:     user.name,
+      role:     user.role,
+      tenantId: user.tenantId,
+      tenantSlug: user.tenant?.slug || null,
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES }
+  );
+}
 
-// POST /api/auth/login
+// ── LOGIN ─────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email y contraseña requeridos' });
-  }
+  if (!email || !password) return res.status(400).json({ error: 'Email y contraseña requeridos' });
+
   try {
     let user = null;
-    if (db.isInMemory()) {
-      // Modo demo: verificar contra contraseñas hardcodeadas
-      const demoPass = DEMO_PASSWORDS[email.toLowerCase()];
-      if (demoPass && password === demoPass) {
-        user = USERS_MOCK.find(u => u.email === email.toLowerCase());
+
+    if (prisma) {
+      // Buscar en DB real
+      const dbUser = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+        include: { tenant: { select: { id: true, slug: true, name: true, shortName: true, themePrimary: true, themeAccent: true, logoEmoji: true, status: true, modules: { where: { active: true } } } } },
+      });
+      if (!dbUser || !dbUser.active) {
+        return res.status(401).json({ error: 'Credenciales incorrectas' });
       }
+      const valid = await bcrypt.compare(password, dbUser.passwordHash);
+      if (!valid) return res.status(401).json({ error: 'Credenciales incorrectas' });
+      // Verificar tenant activo
+      if (dbUser.tenant && !['ACTIVE', 'TRIAL'].includes(dbUser.tenant.status)) {
+        return res.status(403).json({ error: 'Municipio suspendido. Contactar soporte.' });
+      }
+      // Actualizar last login
+      await prisma.user.update({ where: { id: dbUser.id }, data: { lastLogin: new Date(), loginCount: { increment: 1 } } });
+      user = dbUser;
     } else {
-      const result = await db.query('SELECT * FROM usuarios WHERE email = $1 AND activo = true', [email.toLowerCase()]);
-      if (result.rows.length > 0) {
-        const dbUser = result.rows[0];
-        const valid  = await bcrypt.compare(password, dbUser.password);
-        if (valid) user = dbUser;
-      }
+      // Modo demo: comparar en texto plano
+      user = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+      if (!user) return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciales incorrectas' });
-    }
-    const token = jwt.sign(
-      { id: user.id, email: user.email, nombre: user.nombre, rol: user.rol },
-      JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-    );
-    // Log de acceso
-    if (!db.isInMemory()) {
-      db.query('UPDATE usuarios SET ultimo_login = NOW() WHERE id = $1', [user.id]).catch(() => {});
-    }
-    res.json({
-      ok: true,
-      token,
-      user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol },
-    });
+
+    const token = signToken(user);
+    const userData = {
+      id:       user.id,
+      email:    user.email,
+      name:     user.name,
+      role:     user.role,
+      tenantId: user.tenantId,
+      tenant:   user.tenant,
+      loginAt:  new Date().toISOString(),
+    };
+
+    res.json({ ok: true, token, user: userData });
   } catch (err) {
-    console.error('Login error:', err);
+    console.error('[Auth] Login error:', err.message);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-// GET /api/auth/me
-router.get('/me', requireAuth, async (req, res) => {
-  res.json({ user: req.user });
+// ── ME (verificar token vigente) ──────────────────────────────
+router.get('/me', authenticate, async (req, res) => {
+  try {
+    if (prisma) {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        include: { tenant: { select: { id: true, slug: true, name: true, shortName: true, themePrimary: true, themeAccent: true, logoEmoji: true, modules: { where: { active: true } } } } },
+      });
+      if (!user) return res.status(401).json({ error: 'Usuario no encontrado' });
+      return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
+    }
+    res.json({ ok: true, user: req.user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── REFRESH TOKEN ─────────────────────────────────────────────
+router.post('/refresh', authenticate, (req, res) => {
+  const token = signToken(req.user);
+  res.json({ ok: true, token });
 });
 
 module.exports = router;

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -375,104 +375,92 @@
     </div>
   </div>
 
-  <script>
+    <script>
     // ── PARTÍCULAS ────────────────────────────────
     const pc = document.getElementById('particles');
     for (let i = 0; i < 30; i++) {
       const p = document.createElement('div');
       p.className = 'particle';
-      p.style.cssText = `
-        left: ${Math.random() * 100}%;
-        width: ${1 + Math.random() * 2}px;
-        height: ${1 + Math.random() * 2}px;
-        animation-duration: ${8 + Math.random() * 15}s;
-        animation-delay: ${-Math.random() * 20}s;
-        opacity: ${0.2 + Math.random() * 0.4};
-        background: ${Math.random() > 0.5 ? '#8b5cf6' : '#3b82f6'};
-      `;
+      p.style.cssText = `left:${Math.random()*100}%;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;animation-duration:${8+Math.random()*15}s;animation-delay:${-Math.random()*20}s;opacity:${0.2+Math.random()*0.4};background:${Math.random()>0.5?'#8b5cf6':'#3b82f6'}`;
       pc.appendChild(p);
     }
 
-    // ── TOGGLE CONTRASEÑA ─────────────────────────
-    const togglePw  = document.getElementById('togglePw');
-    const pwInput   = document.getElementById('password');
-    togglePw.addEventListener('click', () => {
-      const show = pwInput.type === 'password';
-      pwInput.type = show ? 'text' : 'password';
-      togglePw.textContent = show ? '🙈' : '👁️';
+    // ── TOGGLE PASSWORD ───────────────────────────
+    document.getElementById('togglePw').addEventListener('click', () => {
+      const pw = document.getElementById('password');
+      const show = pw.type === 'password';
+      pw.type = show ? 'text' : 'password';
+      document.getElementById('togglePw').textContent = show ? '🙈' : '👁️';
     });
 
-    // ── AUTOCOMPLETAR DEMO ────────────────────────
+    // ── FILL DEMO ─────────────────────────────────
     document.getElementById('btnFillDemo').addEventListener('click', () => {
-      const email = document.getElementById('email');
-      const pw    = document.getElementById('password');
-      email.value = 'demo@demo.com';
-      pw.value    = 'demo123';
-      email.style.borderColor = 'rgba(245,158,11,0.5)';
-      pw.style.borderColor    = 'rgba(245,158,11,0.5)';
-      setTimeout(() => {
-        email.style.borderColor = '';
-        pw.style.borderColor    = '';
-      }, 1500);
+      document.getElementById('email').value = 'demo@demo.com';
+      document.getElementById('password').value = 'demo123';
     });
 
-    // ── CREDENCIALES ──────────────────────────────
+    // ── USUARIOS MULTI-TENANT ─────────────────────
     const USERS = [
-      { email: 'demo@demo.com',          password: 'demo123',  name: 'Demo — Intendencia',   redirect: 'index.html' },
-      { email: 'intendente@junin.gob.ar',password: 'junin2026',name: 'Mario Abed — Intendente', redirect: 'control.html' },
-      { email: 'tecnologia@junin.gob.ar',password: 'tech2026', name: 'Jefe de Tecnología',    redirect: 'control.html' },
+      { email:'superadmin@govtech.ar',   password:'SuperAdmin2026!', name:'Super Administrador', role:'SUPER_ADMIN',  tenant:null,                                                             redirect:'admin.html'   },
+      { email:'intendente@junin.gob.ar', password:'Junin2026!',      name:'Intendente Municipal',role:'TENANT_ADMIN', tenant:{id:'t_junin',slug:'junin-mendoza',name:'Municipalidad de Junín'},redirect:'control.html' },
+      { email:'hacienda@junin.gob.ar',   password:'Hacienda2026!',   name:'Dir. de Hacienda',    role:'TENANT_USER',  tenant:{id:'t_junin',slug:'junin-mendoza',name:'Municipalidad de Junín'},redirect:'control.html' },
+      { email:'it@junin.gob.ar',         password:'IT2026!',         name:'Jefe de Tecnología',  role:'TENANT_ADMIN', tenant:{id:'t_junin',slug:'junin-mendoza',name:'Municipalidad de Junín'},redirect:'index.html'   },
+      { email:'demo@demo.com',           password:'demo123',         name:'Usuario Demo',        role:'DEMO',         tenant:{id:'t_junin',slug:'junin-mendoza',name:'Municipalidad de Junín'},redirect:'index.html'   },
     ];
+    const ROLE_ICONS  = { SUPER_ADMIN:'⚡', TENANT_ADMIN:'🏛️', TENANT_USER:'👤', DEMO:'🌐' };
+    const ROLE_LABELS = { SUPER_ADMIN:'Super Admin — Acceso Total a la Plataforma', TENANT_ADMIN:'Administrador del Municipio', TENANT_USER:'Usuario Municipal', DEMO:'Acceso Demo' };
 
     // ── SUBMIT ────────────────────────────────────
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn   = document.getElementById('btnLogin');
-      const error = document.getElementById('errorMsg');
+      const errEl = document.getElementById('errorMsg');
       const email = document.getElementById('email').value.trim().toLowerCase();
       const pw    = document.getElementById('password').value;
 
-      // Loading
       btn.classList.add('loading');
-      error.classList.remove('show');
+      errEl.classList.remove('show');
 
-      await new Promise(r => setTimeout(r, 1200));
-
-      const user = USERS.find(u => u.email === email && u.password === pw);
+      let user = null;
+      try {
+        const resp = await fetch('/api/auth/login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email, password: pw }),
+          signal: AbortSignal.timeout(4000),
+        });
+        const data = await resp.json();
+        if (data.ok && data.token) {
+          sessionStorage.setItem('govtech_token', data.token);
+          const rd = data.user.role === 'SUPER_ADMIN' ? 'admin.html' : data.user.role === 'TENANT_ADMIN' ? 'control.html' : 'index.html';
+          user = { ...data.user, redirect: rd };
+        }
+      } catch(_) {
+        await new Promise(r => setTimeout(r, 900));
+        user = USERS.find(u => u.email === email && u.password === pw) || null;
+      }
 
       if (user) {
-        // Guardar sesión
         sessionStorage.setItem('mjunin_user', JSON.stringify({
-          name: user.name, email: user.email,
-          loginAt: new Date().toISOString(),
+          id: user.id||'u_local', name:user.name, email:user.email,
+          role:user.role, tenantId:user.tenantId||user.tenant?.id||null,
+          tenant:user.tenant||null, loginAt:new Date().toISOString(),
         }));
-        // Mostrar success
         const overlay = document.getElementById('successOverlay');
         overlay.classList.add('show');
-        overlay.querySelector('.success-sub').textContent =
-          `Bienvenido/a, ${user.name}. Cargando...`;
-
+        overlay.querySelector('.success-sub').innerHTML =
+          `${ROLE_ICONS[user.role]||'✅'} <strong>${user.name}</strong><br><span style="font-size:12px;opacity:0.7">${ROLE_LABELS[user.role]||''}</span>`;
         setTimeout(() => { window.location.href = user.redirect; }, 2200);
       } else {
         btn.classList.remove('loading');
-        error.classList.add('show');
-        document.getElementById('email').style.borderColor = 'rgba(239,68,68,0.4)';
-        document.getElementById('password').style.borderColor = 'rgba(239,68,68,0.4)';
+        errEl.classList.add('show');
+        ['email','password'].forEach(id => {
+          const el = document.getElementById(id);
+          el.style.borderColor = 'rgba(239,68,68,0.4)';
+          setTimeout(() => { el.style.borderColor = ''; }, 2000);
+        });
         document.getElementById('password').value = '';
-        setTimeout(() => {
-          document.getElementById('email').style.borderColor = '';
-          document.getElementById('password').style.borderColor = '';
-        }, 2000);
       }
     });
-
-    // ── PROTECCIÓN GLOBAL (inyectado en todos los módulos vía nav.js) ──
-    // Si no hay sesión, redirige al login
-    if (window.location.pathname.endsWith('login.html') === false) {
-      const sess = sessionStorage.getItem('mjunin_user');
-      if (!sess) {
-        // Solo para el login, no redirigir
-      }
-    }
   </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // NAV.JS — Sidebar compartido + Autenticación global
 // Municipalidad de Junín — Sistema de Gestión Municipal
 // ============================================================
@@ -13,21 +13,24 @@
 })();
 
 const NAV_ITEMS = [
-  { id: 'dashboard',  href: 'index.html',     icon: '📊', label: 'Dashboard',          section: 'PRINCIPAL' },
-  { id: 'control',    href: 'control.html',   icon: '🏛️', label: 'Junín Control',      badge: '30d',      section: null },
-  { id: 'rrhh',       href: 'rrhh.html',      icon: '👥', label: 'Recursos Humanos',   section: null },
-  { id: 'vecinos',    href: 'vecinos.html',   icon: '🏘️', label: 'Atención Vecinal',   section: null },
-  { id: 'talleres',   href: 'talleres.html',  icon: '🔧', label: 'Talleres',            section: 'ENTIDADES' },
-  { id: 'servicios',  href: 'servicios.html', icon: '⛽', label: 'Est. de Servicios',   section: null },
-  { id: 'mapa',       href: 'mapa.html',      icon: '📍', label: 'Mapa Reclamos',       badge: 'NUEVO', badgeClass: 'new', section: null },
-  { id: 'licitaciones',href: 'licitaciones.html',icon: '📋',label: 'Licitaciones',      section: null },
-  { id: 'proveedores',href: 'proveedores.html',icon: '🏢', label: 'Auditoría Proveedores', section: 'SISTEMA' },
-  { id: 'docs',       href: 'manuales.html',  icon: '📋', label: 'Manuales',            section: null },
-  { id: 'presentacion',href:'presentacion.html',icon:'🎯', label: 'Presentación Ejecutiva', badge: 'DAY30', section: null },
-  { id: 'ia',         href: 'ia.html',        icon: '🤖', label: 'Asistente IA',        badge: 'OCR+VOZ',  section: null },
-  { id: 'ia-hf',      href: 'ia-hf.html',    icon: '🤗', label: 'IA HuggingFace',      badge: 'NEW',      section: null },
-  { id: 'upload',     href: 'upload.html',    icon: '📂', label: 'Cargar Archivos',     badge: 'BETA',     section: null },
-  { id: 'exportar',   href: 'exportar.html',  icon: '📑', label: 'Exportar Reportes',   badge: 'PDF',      section: null },
+  // PRINCIPAL
+  { id: 'dashboard',    href: 'index.html',        icon: '📊', label: 'Dashboard',            section: 'PRINCIPAL' },
+  { id: 'control',      href: 'control.html',      icon: '🏛️', label: 'Junín Control',        badge: '30d' },
+  { id: 'ia',           href: 'ia.html',           icon: '🤖', label: 'Asistente IA',         badge: 'IA' },
+  // GESTION
+  { id: 'rrhh',         href: 'rrhh.html',         icon: '👥', label: 'Recursos Humanos',     section: 'GESTIÓN' },
+  { id: 'licitaciones', href: 'licitaciones.html', icon: '📋', label: 'Licitaciones',         badge: '8' },
+  { id: 'proveedores',  href: 'proveedores.html',  icon: '🏢', label: 'Proveedores',          },
+  { id: 'vecinos',      href: 'vecinos.html',      icon: '🏘️', label: 'Atención Vecinal',    },
+  { id: 'mapa',         href: 'mapa.html',         icon: '📍', label: 'Mapa de Reclamos',     badge: 'NUEVO', badgeClass: 'new' },
+  // OPERACIONES
+  { id: 'talleres',     href: 'talleres.html',     icon: '🔧', label: 'Talleres',             section: 'OPERACIONES' },
+  { id: 'servicios',    href: 'servicios.html',    icon: '⛽', label: 'Est. de Servicios',    },
+  // SISTEMA
+  { id: 'upload',       href: 'upload.html',       icon: '📂', label: 'Cargar Archivos',      section: 'SISTEMA', badge: 'BETA' },
+  { id: 'exportar',     href: 'exportar.html',     icon: '📑', label: 'Exportar Reportes',    badge: 'PDF' },
+  { id: 'presentacion', href: 'presentacion.html', icon: '🎯', label: 'Presentación Ejecutiva', badge: 'DEMO' },
+  { id: 'docs',         href: 'manuales.html',     icon: '📖', label: 'Manuales',             },
 ];
 
 function buildSidebar(activeId) {
@@ -102,3 +105,4 @@ function buildSidebar(activeId) {
     }
   });
 }
+

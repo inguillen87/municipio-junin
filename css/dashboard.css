@@ -693,3 +693,204 @@ html { scroll-behavior: smooth; }
   border-radius: 6px;
 }
 
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — PWA FIRST
+   Municipalidad de Junín — GovTech v2.0
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Touch targets mínimos ── */
+button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
+  -webkit-tap-highlight-color: rgba(59,130,246,0.2);
+  touch-action: manipulation;
+}
+
+/* ── TABLET (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  .sidebar { width: 220px !important; }
+  .main-content { margin-left: 220px !important; }
+  .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .charts-row { grid-template-columns: 1fr !important; }
+}
+
+/* ── MOBILE (≤ 768px) ── */
+@media (max-width: 768px) {
+
+  /* Sidebar: oculto por defecto, desliza */
+  .sidebar {
+    transform: translateX(-100%) !important;
+    width: 280px !important;
+    z-index: 1000 !important;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1) !important;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.6) !important;
+  }
+  .sidebar.open {
+    transform: translateX(0) !important;
+  }
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-overlay.show { display: block; }
+
+  /* Main: sin margen */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Topbar compacta */
+  .topbar {
+    padding: 0 12px !important;
+    height: 56px !important;
+    flex-wrap: nowrap !important;
+  }
+  .topbar h1 { font-size: 15px !important; }
+  .breadcrumb { display: none !important; }
+  .topbar-right { gap: 6px !important; }
+  .btn-export { display: none !important; }
+  .notification-bell { display: none !important; }
+
+  /* Content wrapper */
+  .content-wrapper { padding: 12px !important; gap: 12px !important; }
+
+  /* KPI grid: 2 columnas en mobile */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  .kpi-card { padding: 14px 12px !important; border-radius: 12px !important; }
+  .kpi-value { font-size: 24px !important; }
+  .kpi-label { font-size: 11px !important; }
+  .kpi-icon { width: 32px !important; height: 32px !important; font-size: 14px !important; }
+
+  /* Charts */
+  .charts-row { grid-template-columns: 1fr !important; gap: 10px !important; }
+  .chart-card { padding: 14px !important; }
+  .chart-container { height: 200px !important; }
+
+  /* Tabs: scroll horizontal */
+  .tabs-bar {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 4px 6px !important;
+  }
+  .tabs-bar::-webkit-scrollbar { display: none !important; }
+  .tab-btn { padding: 8px 14px !important; font-size: 12px !important; flex-shrink: 0 !important; }
+
+  /* Tablas: scroll horizontal */
+  .data-table { font-size: 12px !important; }
+  .rrhh-panel { overflow-x: auto !important; padding: 12px !important; }
+
+  /* Panel header: stack vertical */
+  .panel-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+  .panel-filters { flex-wrap: wrap !important; width: 100% !important; }
+  .select-filter { flex: 1 !important; min-width: 120px !important; }
+
+  /* Alertas grid: 1 columna */
+  .alerts-grid { grid-template-columns: 1fr !important; }
+
+  /* Modal: full screen en mobile */
+  .modal-overlay { padding: 0 !important; align-items: flex-end !important; }
+  .modal {
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 90vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* IA Chat */
+  .ia-layout { flex-direction: column !important; }
+  .ia-sidebar { width: 100% !important; max-height: 200px !important; overflow-y: auto !important; }
+  .chat-container { height: calc(100vh - 320px) !important; }
+
+  /* Mapa sidebar oculto en mobile (solo mapa) */
+  .mapa-sidebar { display: none !important; }
+  .mapa-main { flex: 1 !important; }
+
+  /* Form grid: 1 columna */
+  .form-grid { grid-template-columns: 1fr !important; }
+  .form-group[style*="grid-column"] { grid-column: 1 !important; }
+
+  /* Topbar avatar: smaller */
+  .topbar-avatar { width: 32px !important; height: 32px !important; font-size: 11px !important; }
+
+  /* Buttons: más grandes para touch */
+  .btn-primary, .btn-save { padding: 11px 18px !important; font-size: 14px !important; }
+
+  /* IA chips: ancho completo */
+  .ia-chip { padding: 12px 16px !important; font-size: 14px !important; }
+  .ia-welcome-title { font-size: 18px !important; }
+}
+
+/* ── PEQUEÑO MOBILE (≤ 400px) ── */
+@media (max-width: 400px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+  .kpi-value { font-size: 20px !important; }
+  .topbar h1 { font-size: 13px !important; }
+  .chart-container { height: 180px !important; }
+}
+
+/* ── PWA INSTALL BANNER ── */
+.pwa-banner {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 9998;
+  background: linear-gradient(135deg, #0e1a30, #111d35);
+  border-top: 1px solid rgba(59,130,246,0.3);
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 14px;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.4);
+}
+.pwa-banner.show { transform: translateY(0); }
+.pwa-banner-icon { font-size: 32px; flex-shrink: 0; }
+.pwa-banner-text { flex: 1; }
+.pwa-banner-title { font-weight: 800; font-size: 14px; color: #f0f4ff; }
+.pwa-banner-sub   { font-size: 12px; color: rgba(148,163,184,0.7); margin-top: 2px; }
+.pwa-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.pwa-install-btn {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  border: none; color: white; padding: 9px 18px; border-radius: 8px;
+  font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.pwa-dismiss-btn {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(148,163,184,0.7); padding: 9px 14px; border-radius: 8px;
+  font-size: 13px; cursor: pointer;
+}
+
+/* ── BOTTOM NAV MOBILE ── */
+.mobile-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 990;
+  background: rgba(13,21,38,0.97);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  backdrop-filter: blur(20px);
+}
+.mobile-nav-inner {
+  display: flex; justify-content: space-around; align-items: center;
+}
+.mobile-nav-item {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 6px 10px; border-radius: 10px; cursor: pointer;
+  transition: all 0.15s; text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-nav-item.active { background: rgba(59,130,246,0.15); }
+.mobile-nav-icon { font-size: 20px; line-height: 1; }
+.mobile-nav-label { font-size: 10px; font-weight: 600; color: rgba(100,116,139,0.8); }
+.mobile-nav-item.active .mobile-nav-label { color: #60a5fa; }
+
+@media (max-width: 768px) {
+  .mobile-nav { display: block; }
+  .content-wrapper { padding-bottom: 80px !important; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* ── SAFE AREA (iPhone notch) ── */
+@supports (padding: env(safe-area-inset-top)) {
+  .topbar { padding-top: max(0px, env(safe-area-inset-top)) !important; }
+  .sidebar { padding-top: max(0px, env(safe-area-inset-top)) !important; }
+}

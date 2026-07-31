@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { id: 'whatsapp',     href: 'whatsapp.html',     icon: '📱', label: 'WhatsApp Bot',         section: 'COMUNICACIONES' },
   // SISTEMA
   { id: 'landing',      href: 'landing.html',      icon: '🌐', label: 'Landing Page',         section: 'SISTEMA' },
+  { id: 'importar',     href: 'importar.html',     icon: '📥', label: 'Importar Datos' },
   { id: 'upload',       href: 'upload.html',       icon: '📂', label: 'Cargar Archivos',      badge: 'BETA' },
   { id: 'exportar',     href: 'exportar.html',     icon: '📑', label: 'Exportar Reportes',    badge: 'PDF' },
   { id: 'presentacion', href: 'presentacion.html', icon: '🎯', label: 'Presentación Ejecutiva', badge: 'DEMO' },

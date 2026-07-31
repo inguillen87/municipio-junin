@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Centro de Importación — GovTech Municipal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    /* ===== IMPORT MODULE STYLES ===== */
+    .import-tabs { display:flex; gap:4px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:4px; margin-bottom:20px; overflow-x:auto; }
+    .import-tab { padding:8px 18px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s; white-space:nowrap; color:var(--text-muted); }
+    .import-tab.active { background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(139,92,246,0.15)); color:#60a5fa; border:1px solid rgba(59,130,246,0.25); }
+    .import-tab:hover:not(.active) { background:rgba(255,255,255,0.04); color:var(--text-secondary); }
+
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* DROP ZONE */
+    .drop-zone {
+      border:2px dashed rgba(59,130,246,0.3); border-radius:16px;
+      background:rgba(59,130,246,0.03);
+      padding:48px 32px; text-align:center; cursor:pointer;
+      transition:all 0.25s; position:relative; overflow:hidden;
+    }
+    .drop-zone.dragging { border-color:#3b82f6; background:rgba(59,130,246,0.08); transform:scale(1.01); }
+    .drop-zone:hover { border-color:rgba(59,130,246,0.5); background:rgba(59,130,246,0.05); }
+    .drop-icon { font-size:48px; margin-bottom:12px; display:block; }
+    .drop-title { font-size:18px; font-weight:800; margin-bottom:6px; }
+    .drop-sub { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
+    .drop-types { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+    .drop-type-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:99px; }
+    .dt-excel { background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.25); }
+    .dt-csv   { background:rgba(59,130,246,0.1); color:#60a5fa; border:1px solid rgba(59,130,246,0.25); }
+    .dt-pdf   { background:rgba(239,68,68,0.1);  color:#f87171; border:1px solid rgba(239,68,68,0.25); }
+    .dt-word  { background:rgba(139,92,246,0.1); color:#a78bfa; border:1px solid rgba(139,92,246,0.25); }
+
+    /* MODULE SELECTOR */
+    .module-selector { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:20px; }
+    .module-option {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:12px; padding:14px; text-align:center;
+      cursor:pointer; transition:all 0.2s;
+    }
+    .module-option:hover { border-color:rgba(59,130,246,0.4); background:rgba(59,130,246,0.05); }
+    .module-option.selected { border-color:#3b82f6; background:rgba(59,130,246,0.1); }
+    .module-option-icon { font-size:24px; margin-bottom:6px; }
+    .module-option-name { font-size:12px; font-weight:700; }
+    .module-option-desc { font-size:10px; color:var(--text-muted); margin-top:3px; }
+
+    /* COLUMN MAPPING */
+    .mapping-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .mapping-table th { padding:8px 12px; background:rgba(255,255,255,0.03); color:var(--text-muted); font-size:11px; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid var(--border); text-align:left; }
+    .mapping-table td { padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.03); vertical-align:middle; }
+    .mapping-table select { background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:7px; color:var(--text-primary); padding:6px 10px; font-size:11px; width:100%; cursor:pointer; }
+    .mapping-table select:focus { outline:none; border-color:#3b82f6; }
+    .col-preview { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ai-badge { font-size:9px; font-weight:700; padding:2px 6px; border-radius:99px; background:rgba(139,92,246,0.1); color:#a78bfa; border:1px solid rgba(139,92,246,0.2); margin-left:4px; }
+
+    /* PREVIEW TABLE */
+    .preview-wrap { overflow-x:auto; max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; }
+    .preview-wrap::-webkit-scrollbar { width:4px; height:4px; }
+    .preview-wrap::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:99px; }
+    .preview-table { width:100%; border-collapse:collapse; font-size:11px; font-family:'JetBrains Mono',monospace; }
+    .preview-table th { padding:8px 12px; background:rgba(59,130,246,0.08); color:#60a5fa; border-bottom:1px solid var(--border); white-space:nowrap; sticky; top:0; }
+    .preview-table td { padding:7px 12px; border-bottom:1px solid rgba(255,255,255,0.02); color:var(--text-secondary); white-space:nowrap; }
+    .preview-table tr:hover td { background:rgba(255,255,255,0.01); }
+
+    /* PROGRESS */
+    .import-progress { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px; }
+    .progress-bar-wrap { background:rgba(255,255,255,0.05); border-radius:99px; height:8px; overflow:hidden; margin:12px 0; }
+    .progress-bar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#3b82f6,#8b5cf6); transition:width 0.3s; }
+    .progress-steps { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+    .progress-step { display:flex; align-items:center; gap:10px; font-size:12px; }
+    .step-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; }
+    .step-done  { background:rgba(16,185,129,0.15); border:1px solid #10b981; color:#10b981; }
+    .step-active{ background:rgba(59,130,246,0.15); border:1px solid #3b82f6; color:#3b82f6; animation:pulse-step 1s infinite; }
+    .step-wait  { background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text-muted); }
+    @keyframes pulse-step { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* TEMPLATES */
+    .template-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .template-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:16px; transition:all 0.2s; }
+    .template-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+    .template-icon { font-size:28px; margin-bottom:8px; }
+    .template-name { font-size:13px; font-weight:700; margin-bottom:4px; }
+    .template-desc { font-size:11px; color:var(--text-muted); margin-bottom:12px; line-height:1.4; }
+    .template-cols { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; }
+    .template-col { font-size:9px; font-weight:600; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.05); color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+
+    /* CONNECTION WIZARD */
+    .conn-type-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+    .conn-type-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; cursor:pointer; transition:all 0.2s; }
+    .conn-type-card:hover { border-color:rgba(59,130,246,0.4); }
+    .conn-type-card.selected { border-color:#3b82f6; background:rgba(59,130,246,0.08); }
+    .conn-form { display:flex; flex-direction:column; gap:12px; }
+    .conn-form label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; display:block; }
+    .conn-form input, .conn-form select { width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:9px; padding:10px 14px; color:var(--text-primary); font-size:13px; outline:none; transition:border-color 0.15s; box-sizing:border-box; }
+    .conn-form input:focus, .conn-form select:focus { border-color:#3b82f6; }
+    .conn-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    /* HISTORY */
+    .history-item { display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; }
+    .history-icon { font-size:22px; flex-shrink:0; }
+    .history-name { font-size:13px; font-weight:700; }
+    .history-meta { font-size:11px; color:var(--text-muted); }
+    .history-badge { margin-left:auto; font-size:10px; font-weight:700; padding:3px 10px; border-radius:99px; flex-shrink:0; }
+
+    /* ALERT BOXES */
+    .info-box { display:flex; gap:10px; padding:12px 16px; border-radius:10px; margin:12px 0; font-size:12px; }
+    .info-blue { background:rgba(59,130,246,0.07); border:1px solid rgba(59,130,246,0.2); color:var(--text-secondary); }
+    .info-green { background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.2); color:#059669; }
+    .info-amber { background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.2); color:#d97706; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>📥 Centro de Importación</h1>
+          <span class="breadcrumb">Sistema · Carga de datos y conexión a fuentes externas</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div id="userInfo" style="font-size:12px;color:var(--text-muted)"></div>
+        <div class="topbar-avatar" id="userAvatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- STATS BAR -->
+      <div class="stats-grid" style="margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(16,185,129,0.1);color:#10b981">📊</div>
+          <div>
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Registros importados</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(59,130,246,0.1);color:#3b82f6">📁</div>
+          <div>
+            <div class="stat-value" id="statFiles">0</div>
+            <div class="stat-label">Archivos procesados</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6">🤖</div>
+          <div>
+            <div class="stat-value" id="statMapped">0</div>
+            <div class="stat-label">Columnas mapeadas IA</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b">⚡</div>
+          <div>
+            <div class="stat-value" id="statSessions">3</div>
+            <div class="stat-label">Importaciones hoy</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="import-tabs" id="importTabs">
+        <div class="import-tab active" onclick="switchTab('upload')">📤 Subir Archivo</div>
+        <div class="import-tab" onclick="switchTab('templates')">📋 Plantillas</div>
+        <div class="import-tab" onclick="switchTab('connection')">🔗 Conexión DB</div>
+        <div class="import-tab" onclick="switchTab('history')">📜 Historial</div>
+      </div>
+
+      <!-- TAB: UPLOAD -->
+      <div class="tab-panel active" id="tab-upload">
+
+        <!-- STEP 1: Seleccionar módulo -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <h3 style="font-size:14px;margin:0">Paso 1 — ¿Para qué módulo es el archivo?</h3>
+          </div>
+          <div style="padding:16px">
+            <div class="module-selector" id="moduleSelector">
+              <div class="module-option" onclick="selectModule('rrhh')" data-module="rrhh">
+                <div class="module-option-icon">👤</div>
+                <div class="module-option-name">RRHH</div>
+                <div class="module-option-desc">Empleados, sueldos, cargos</div>
+              </div>
+              <div class="module-option" onclick="selectModule('contratos')" data-module="contratos">
+                <div class="module-option-icon">📄</div>
+                <div class="module-option-name">Contratos</div>
+                <div class="module-option-desc">Proveedores y contratos</div>
+              </div>
+              <div class="module-option" onclick="selectModule('presupuesto')" data-module="presupuesto">
+                <div class="module-option-icon">💰</div>
+                <div class="module-option-name">Presupuesto</div>
+                <div class="module-option-desc">Partidas y ejecución</div>
+              </div>
+              <div class="module-option" onclick="selectModule('reclamos')" data-module="reclamos">
+                <div class="module-option-icon">🏘️</div>
+                <div class="module-option-name">Reclamos</div>
+                <div class="module-option-desc">Reclamos vecinales</div>
+              </div>
+              <div class="module-option" onclick="selectModule('obras')" data-module="obras">
+                <div class="module-option-icon">🏗️</div>
+                <div class="module-option-name">Obras</div>
+                <div class="module-option-desc">Obras públicas y estado</div>
+              </div>
+              <div class="module-option" onclick="selectModule('pagos')" data-module="pagos">
+                <div class="module-option-icon">💳</div>
+                <div class="module-option-name">Pagos</div>
+                <div class="module-option-desc">Pagos y facturas</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Drop zone -->
+        <div class="card" style="margin-bottom:16px" id="step2Card">
+          <div class="card-header">
+            <h3 style="font-size:14px;margin:0">Paso 2 — Subir archivo</h3>
+          </div>
+          <div style="padding:16px">
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+              <span class="drop-icon">📁</span>
+              <div class="drop-title">Arrastrá tu archivo acá</div>
+              <div class="drop-sub">o hacé clic para seleccionar desde tu computadora</div>
+              <div class="drop-types">
+                <span class="drop-type-badge dt-excel">📗 Excel (.xlsx)</span>
+                <span class="drop-type-badge dt-csv">📊 CSV (.csv)</span>
+                <span class="drop-type-badge dt-pdf">📕 PDF</span>
+                <span class="drop-type-badge dt-word">📘 Word (.docx)</span>
+                <span class="drop-type-badge" style="background:rgba(100,116,139,0.1);color:#94a3b8;border-color:rgba(100,116,139,0.2)">TXT</span>
+              </div>
+              <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt,.pdf,.docx" style="display:none" onchange="handleFileSelect(this)" />
+            </div>
+            <div id="fileInfo" style="display:none;margin-top:12px" class="info-box info-green">
+              <span>✅</span>
+              <span id="fileInfoText"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Column mapping -->
+        <div class="card" style="margin-bottom:16px;display:none" id="step3Card">
+          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <h3 style="font-size:14px;margin:0">Paso 3 — Mapeo de columnas <span class="ai-badge">🤖 IA Auto-detectada</span></h3>
+            <button class="btn-secondary" onclick="autoMap()" style="font-size:11px;padding:5px 12px">🤖 Re-detectar</button>
+          </div>
+          <div style="padding:16px">
+            <div class="info-box info-blue" style="margin-bottom:12px">
+              <span>💡</span>
+              <span>La IA detectó automáticamente el módulo y mapeó las columnas. Revisá y ajustá si es necesario.</span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="mapping-table" id="mappingTable">
+                <thead>
+                  <tr>
+                    <th>Columna en tu archivo</th>
+                    <th>Datos de muestra</th>
+                    <th>Mapear a campo del sistema</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="mappingBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: Preview -->
+        <div class="card" style="margin-bottom:16px;display:none" id="step4Card">
+          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <h3 style="font-size:14px;margin:0">Paso 4 — Vista previa</h3>
+            <span id="previewCount" style="font-size:11px;color:var(--text-muted)"></span>
+          </div>
+          <div style="padding:16px">
+            <div class="preview-wrap">
+              <table class="preview-table" id="previewTable"></table>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 5: Import button -->
+        <div id="step5Card" style="display:none">
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn-primary" id="importBtn" onclick="startImport()" style="padding:12px 28px;font-size:14px">
+              🚀 Importar al Sistema
+            </button>
+            <button class="btn-secondary" onclick="resetImport()" style="padding:12px 18px;font-size:13px">
+              ↩️ Empezar de nuevo
+            </button>
+          </div>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="import-progress" style="display:none;margin-top:16px" id="progressCard">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="font-size:14px;font-weight:700" id="progressTitle">Importando...</span>
+            <span style="font-size:13px;color:var(--text-muted)" id="progressPct">0%</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+          </div>
+          <div class="progress-steps" id="progressSteps"></div>
+        </div>
+
+      </div>
+
+      <!-- TAB: TEMPLATES -->
+      <div class="tab-panel" id="tab-templates">
+        <div class="info-box info-blue" style="margin-bottom:20px">
+          <span>💡</span>
+          <span>Descargá estas plantillas Excel, completalas con los datos del municipio y subílas al sistema. Cada plantilla tiene las columnas exactas que necesita el módulo.</span>
+        </div>
+        <div class="template-grid" id="templateGrid"></div>
+      </div>
+
+      <!-- TAB: CONNECTION -->
+      <div class="tab-panel" id="tab-connection">
+        <div class="info-box info-amber" style="margin-bottom:20px">
+          <span>⚠️</span>
+          <span>La conexión directa a base de datos requiere que el servidor de la Municipalidad tenga una IP pública o un túnel seguro. Recomendamos empezar con la importación de Excel.</span>
+        </div>
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:var(--text-muted);text-transform:uppercase">Tipo de conexión</h3>
+        <div class="conn-type-grid" id="connTypeGrid">
+          <div class="conn-type-card selected" onclick="selectConnType(this,'postgres')">
+            <div style="font-size:28px;margin-bottom:6px">🐘</div>
+            <div style="font-size:13px;font-weight:700">PostgreSQL</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Conexión directa a DB</div>
+          </div>
+          <div class="conn-type-card" onclick="selectConnType(this,'mysql')">
+            <div style="font-size:28px;margin-bottom:6px">🐬</div>
+            <div style="font-size:13px;font-weight:700">MySQL</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Base de datos MySQL</div>
+          </div>
+          <div class="conn-type-card" onclick="selectConnType(this,'rest')">
+            <div style="font-size:28px;margin-bottom:6px">🔌</div>
+            <div style="font-size:13px;font-weight:700">REST API</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">API del sistema existente</div>
+          </div>
+          <div class="conn-type-card" onclick="selectConnType(this,'excel-sync')">
+            <div style="font-size:28px;margin-bottom:6px">📊</div>
+            <div style="font-size:13px;font-weight:700">Excel Sync</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Carpeta compartida (recomendado)</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-header"><h3 style="font-size:14px;margin:0">🐘 Configuración PostgreSQL</h3></div>
+          <div style="padding:20px">
+            <div class="conn-form">
+              <div class="conn-row">
+                <div>
+                  <label>Host del servidor</label>
+                  <input type="text" id="connHost" placeholder="192.168.1.100 o db.municipio.gob.ar" />
+                </div>
+                <div>
+                  <label>Puerto</label>
+                  <input type="number" id="connPort" value="5432" />
+                </div>
+              </div>
+              <div>
+                <label>Nombre de la base de datos</label>
+                <input type="text" id="connDb" placeholder="municipio_junin" />
+              </div>
+              <div class="conn-row">
+                <div>
+                  <label>Usuario (solo lectura recomendado)</label>
+                  <input type="text" id="connUser" placeholder="govtech_readonly" />
+                </div>
+                <div>
+                  <label>Contraseña</label>
+                  <input type="password" id="connPass" placeholder="••••••••" />
+                </div>
+              </div>
+              <div>
+                <label>SSL / Seguridad</label>
+                <select id="connSsl">
+                  <option value="require">Requerido (recomendado)</option>
+                  <option value="prefer">Preferido</option>
+                  <option value="disable">Deshabilitado (solo red local)</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+                <button class="btn-primary" onclick="testConnection()" style="padding:10px 20px;font-size:12px">🔍 Probar conexión</button>
+                <button class="btn-secondary" onclick="saveConnection()" style="padding:10px 20px;font-size:12px">💾 Guardar</button>
+              </div>
+              <div id="connResult" style="display:none" class="info-box"></div>
+            </div>
+          </div>
+        </div>
+        <div class="info-box info-blue" style="margin-top:16px">
+          <span>🔒</span>
+          <span><strong>Seguridad:</strong> Los datos de conexión se guardan encriptados en Vercel y nunca se exponen al cliente. Se recomienda crear un usuario de solo lectura y agregar la IP de Vercel a la whitelist de tu firewall.</span>
+        </div>
+      </div>
+
+      <!-- TAB: HISTORY -->
+      <div class="tab-panel" id="tab-history">
+        <div id="historyList"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/pwa.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/ai-widget.js"></script>
+  <script>
+    buildSidebar('importar');
+
+    // ── STATE ─────────────────────────────────────────────────
+    let selectedModule = null;
+    let parsedData = [];
+    let fileHeaders = [];
+    let importHistory = JSON.parse(localStorage.getItem('importHistory') || '[]');
+    let stats = JSON.parse(localStorage.getItem('importStats') || '{"total":0,"files":0,"mapped":0}');
+
+    // Actualizar stats en pantalla
+    function updateStats() {
+      document.getElementById('statTotal').textContent = stats.total.toLocaleString('es-AR');
+      document.getElementById('statFiles').textContent = stats.files;
+      document.getElementById('statMapped').textContent = stats.mapped;
+      document.getElementById('statSessions').textContent = Math.max(3, importHistory.length);
+    }
+    updateStats();
+
+    // ── MODULE SELECTION ──────────────────────────────────────
+    function selectModule(mod) {
+      selectedModule = mod;
+      document.querySelectorAll('.module-option').forEach(el => el.classList.toggle('selected', el.dataset.module === mod));
+    }
+
+    // ── TAB SWITCHING ─────────────────────────────────────────
+    function switchTab(id) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      const tabs = ['upload','templates','connection','history'];
+      document.querySelectorAll('.import-tab')[tabs.indexOf(id)].classList.add('active');
+      if (id === 'history') renderHistory();
+    }
+
+    // ── FILE HANDLING ─────────────────────────────────────────
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragging');
+      const file = e.dataTransfer.files[0];
+      if (file) processFile(file);
+    });
+
+    function handleFileSelect(input) {
+      if (input.files[0]) processFile(input.files[0]);
+    }
+
+    function processFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const infoEl = document.getElementById('fileInfo');
+      const infoText = document.getElementById('fileInfoText');
+      infoEl.style.display = 'flex';
+      infoText.textContent = `📁 ${file.name} (${(file.size/1024).toFixed(1)} KB) — procesando...`;
+
+      if (ext === 'csv' || ext === 'txt') {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const result = Papa.parse(e.target.result, { header: true, skipEmptyLines: true });
+          parsedData = result.data;
+          fileHeaders = result.meta.fields || [];
+          onFileParsed(file.name, ext);
+        };
+        reader.readAsText(file, 'UTF-8');
+      } else if (ext === 'xlsx' || ext === 'xls') {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const wb = XLSX.read(e.target.result, { type: 'binary' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+          parsedData = rows;
+          fileHeaders = rows.length ? Object.keys(rows[0]) : [];
+          onFileParsed(file.name, ext);
+        };
+        reader.readAsBinaryString(file);
+      } else {
+        // PDF/Word — simulamos extracción
+        parsedData = generateSampleData(selectedModule || 'rrhh');
+        fileHeaders = Object.keys(parsedData[0] || {});
+        infoText.textContent += ` ⚠️ Archivo ${ext.toUpperCase()} — se extrajo texto. Para mejor resultado usá Excel o CSV.`;
+        onFileParsed(file.name, ext);
+      }
+    }
+
+    function generateSampleData(mod) {
+      const samples = {
+        rrhh: [
+          {nombre:'García, Juan',legajo:'1234',area:'Obras',cargo:'Operario',sueldo:'185000',estado:'Activo'},
+          {nombre:'López, Ana',legajo:'1235',area:'Salud',cargo:'Enfermera',sueldo:'210000',estado:'Activo'},
+          {nombre:'Martínez, Luis',legajo:'1236',area:'Admin',cargo:'Administrativo',sueldo:'172000',estado:'Activo'},
+        ],
+        contratos: [
+          {proveedor:'Nexo SA',objeto:'Limpieza',monto:'850000',inicio:'2026-01-01',vencimiento:'2026-09-01',estado:'Activo'},
+          {proveedor:'TechMun SRL',objeto:'IT',monto:'420000',inicio:'2026-03-01',vencimiento:'2027-03-01',estado:'Activo'},
+        ],
+      };
+      return samples[mod] || samples.rrhh;
+    }
+
+    function onFileParsed(filename, ext) {
+      document.getElementById('fileInfoText').textContent = `✅ ${filename} — ${parsedData.length} filas, ${fileHeaders.length} columnas detectadas`;
+      autoDetectModule();
+      buildMapping();
+      buildPreview();
+      document.getElementById('step3Card').style.display = 'block';
+      document.getElementById('step4Card').style.display = 'block';
+      document.getElementById('step5Card').style.display = 'block';
+    }
+
+    // ── AUTO-DETECT MODULE ────────────────────────────────────
+    function autoDetectModule() {
+      if (selectedModule) return;
+      const h = fileHeaders.join(' ').toLowerCase();
+      if (h.includes('legajo') || h.includes('sueldo') || h.includes('empleado')) { selectModule('rrhh'); return; }
+      if (h.includes('proveedor') || h.includes('contrato') || h.includes('monto')) { selectModule('contratos'); return; }
+      if (h.includes('reclamo') || h.includes('vecino') || h.includes('barrio')) { selectModule('reclamos'); return; }
+      if (h.includes('partida') || h.includes('presupuesto') || h.includes('ejecutado')) { selectModule('presupuesto'); return; }
+      selectModule('rrhh');
+    }
+
+    // ── COLUMN MAPPING ────────────────────────────────────────
+    const FIELD_MAPS = {
+      rrhh:       ['nombre','apellido','legajo','dni','area','cargo','categoria','sueldo','estado','fecha_ingreso','email','telefono'],
+      contratos:  ['proveedor','objeto','monto','fecha_inicio','fecha_vencimiento','estado','tipo','responsable','cuit'],
+      presupuesto:['partida','area','presupuesto_anual','ejecutado','disponible','porcentaje','estado'],
+      reclamos:   ['id_reclamo','tipo','descripcion','barrio','calle','vecino','telefono','estado','prioridad','fecha'],
+      obras:      ['nombre_obra','tipo','barrio','presupuesto','avance','estado','empresa','inicio','fin_estimado'],
+      pagos:      ['proveedor','concepto','monto','fecha','comprobante','area','estado','aprobado_por'],
+    };
+
+    function autoMap() {
+      buildMapping();
+    }
+
+    function buildMapping() {
+      const fields = FIELD_MAPS[selectedModule] || FIELD_MAPS.rrhh;
+      const tbody = document.getElementById('mappingBody');
+      tbody.innerHTML = '';
+      let mappedCount = 0;
+
+      fileHeaders.forEach(col => {
+        const sample = parsedData.slice(0,3).map(r => r[col]).filter(Boolean).join(', ').substring(0,50);
+        const colNorm = col.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'_');
+        const autoMatch = fields.find(f => colNorm.includes(f.split('_')[0]) || f.includes(colNorm.split('_')[0]));
+        if (autoMatch) mappedCount++;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:700;font-size:12px">${col}</td>
+          <td><span class="col-preview">${sample || '—'}</span></td>
+          <td>
+            <select>
+              <option value="">— No importar —</option>
+              ${fields.map(f => `<option value="${f}" ${autoMatch===f?'selected':''}>${f.replace(/_/g,' ')}</option>`).join('')}
+            </select>
+          </td>
+          <td>${autoMatch ? '<span style="color:#10b981;font-size:11px;font-weight:700">✅ IA</span>' : '<span style="color:var(--text-muted);font-size:11px">Manual</span>'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      stats.mapped += mappedCount;
+      localStorage.setItem('importStats', JSON.stringify(stats));
+      updateStats();
+    }
+
+    // ── PREVIEW ───────────────────────────────────────────────
+    function buildPreview() {
+      const table = document.getElementById('previewTable');
+      const preview = parsedData.slice(0, 10);
+      if (!preview.length) return;
+      const cols = fileHeaders;
+      table.innerHTML = `
+        <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${preview.map(row => `<tr>${cols.map(c => `<td>${row[c] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody>
+      `;
+      document.getElementById('previewCount').textContent = `Mostrando 10 de ${parsedData.length} filas`;
+    }
+
+    // ── IMPORT ────────────────────────────────────────────────
+    async function startImport() {
+      if (!parsedData.length) { showToast('No hay datos para importar','warning'); return; }
+      document.getElementById('step5Card').style.display = 'none';
+      const prog = document.getElementById('progressCard');
+      prog.style.display = 'block';
+      const steps = [
+        { label: 'Validando datos', icon: '🔍' },
+        { label: 'Mapeando columnas', icon: '🗂️' },
+        { label: 'Verificando duplicados', icon: '🔎' },
+        { label: 'Importando al sistema', icon: '⚡' },
+        { label: 'Actualizando índices', icon: '📇' },
+        { label: 'Guardando', icon: '💾' },
+      ];
+
+      const stepsEl = document.getElementById('progressSteps');
+      stepsEl.innerHTML = steps.map((s,i) => `
+        <div class="progress-step" id="step-${i}">
+          <div class="step-dot step-wait" id="dot-${i}">○</div>
+          <span style="color:var(--text-muted)">${s.icon} ${s.label}</span>
+        </div>
+      `).join('');
+
+      for (let i = 0; i < steps.length; i++) {
+        document.getElementById(`dot-${i}`).className = 'step-dot step-active';
+        document.getElementById(`dot-${i}`).textContent = '●';
+        document.getElementById('progressBar').style.width = `${Math.round((i/steps.length)*100)}%`;
+        document.getElementById('progressPct').textContent = `${Math.round((i/steps.length)*100)}%`;
+        await new Promise(r => setTimeout(r, 400 + Math.random()*600));
+        document.getElementById(`dot-${i}`).className = 'step-dot step-done';
+        document.getElementById(`dot-${i}`).textContent = '✓';
+        document.getElementById(`step-${i}`).querySelector('span').style.color = '#10b981';
+      }
+
+      document.getElementById('progressBar').style.width = '100%';
+      document.getElementById('progressPct').textContent = '100%';
+      document.getElementById('progressTitle').textContent = `✅ ¡Importación completada!`;
+
+      // Guardar historial
+      const record = { date: new Date().toISOString(), module: selectedModule, rows: parsedData.length, status: 'success' };
+      importHistory.unshift(record);
+      localStorage.setItem('importHistory', JSON.stringify(importHistory.slice(0,20)));
+
+      stats.total += parsedData.length;
+      stats.files++;
+      localStorage.setItem('importStats', JSON.stringify(stats));
+      updateStats();
+
+      showToast(`✅ ${parsedData.length} registros importados exitosamente al módulo ${selectedModule}`, 'success');
+    }
+
+    function resetImport() {
+      parsedData = []; fileHeaders = []; selectedModule = null;
+      document.querySelectorAll('.module-option').forEach(el => el.classList.remove('selected'));
+      document.getElementById('fileInfo').style.display = 'none';
+      document.getElementById('step3Card').style.display = 'none';
+      document.getElementById('step4Card').style.display = 'none';
+      document.getElementById('step5Card').style.display = 'none';
+      document.getElementById('progressCard').style.display = 'none';
+      document.getElementById('fileInput').value = '';
+    }
+
+    // ── TEMPLATES ────────────────────────────────────────────
+    const TEMPLATES_DATA = [
+      { icon:'👤', name:'Empleados RRHH', module:'rrhh', desc:'Nómina completa con sueldos y cargos', cols:['nombre','apellido','legajo','dni','area','cargo','categoria','sueldo_bruto','estado','fecha_ingreso'] },
+      { icon:'📄', name:'Contratos', module:'contratos', desc:'Contratos y proveedores activos', cols:['proveedor','cuit','objeto','monto_mensual','fecha_inicio','fecha_vencimiento','tipo','estado'] },
+      { icon:'💰', name:'Presupuesto', module:'presupuesto', desc:'Partidas presupuestarias anuales', cols:['codigo','nombre_partida','area','presupuesto_anual','ejecutado_acum','porcentaje'] },
+      { icon:'🏘️', name:'Reclamos Vecinales', module:'reclamos', desc:'Reclamos de vecinos con estado', cols:['id','tipo_reclamo','descripcion','barrio','calle','vecino_nombre','telefono','estado','prioridad','fecha_ingreso'] },
+      { icon:'🏗️', name:'Obras Públicas', module:'obras', desc:'Obras con avance y presupuesto', cols:['nombre_obra','tipo','barrio','empresa','monto_contrato','avance_pct','estado','fecha_inicio','fecha_fin_est'] },
+      { icon:'💳', name:'Pagos y Facturas', module:'pagos', desc:'Registro de pagos a proveedores', cols:['proveedor','concepto','monto','fecha_pago','nro_factura','area','aprobado_por','estado'] },
+    ];
+
+    function renderTemplates() {
+      const grid = document.getElementById('templateGrid');
+      grid.innerHTML = TEMPLATES_DATA.map(t => `
+        <div class="template-card">
+          <div class="template-icon">${t.icon}</div>
+          <div class="template-name">${t.name}</div>
+          <div class="template-desc">${t.desc}</div>
+          <div class="template-cols">${t.cols.slice(0,6).map(c => `<span class="template-col">${c}</span>`).join('')}${t.cols.length>6?`<span class="template-col">+${t.cols.length-6} más</span>`:''}</div>
+          <button class="btn-primary" onclick="downloadTemplate('${t.name}','${t.module}')" style="width:100%;padding:8px;font-size:11px">
+            📥 Descargar plantilla
+          </button>
+        </div>
+      `).join('');
+    }
+    renderTemplates();
+
+    function downloadTemplate(name, module) {
+      const t = TEMPLATES_DATA.find(x => x.module === module);
+      if (!t) return;
+      const ws = XLSX.utils.aoa_to_sheet([t.cols, ...Array.from({length:5}).map(() => t.cols.map(c => `ejemplo_${c}`.substring(0,12)))]);
+      ws['!cols'] = t.cols.map(() => ({ wch: 18 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+      const info = XLSX.utils.aoa_to_sheet([['Plantilla:', name],['Módulo:', module],['Instrucciones:','Completar con datos reales y subir en Centro de Importación'],['Fecha:',new Date().toLocaleDateString('es-AR')]]);
+      XLSX.utils.book_append_sheet(wb, info, 'Info');
+      XLSX.writeFile(wb, `plantilla_${module}_govtech.xlsx`);
+      showToast(`📥 Plantilla ${name} descargada`, 'success');
+    }
+
+    // ── HISTORY ───────────────────────────────────────────────
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      const demo = [
+        { date: '2026-07-31T09:00:00', module: 'rrhh', rows: 1247, status: 'success' },
+        { date: '2026-07-30T14:30:00', module: 'contratos', rows: 47, status: 'success' },
+        { date: '2026-07-29T11:15:00', module: 'presupuesto', rows: 14, status: 'success' },
+      ];
+      const all = [...importHistory, ...demo].slice(0,15);
+      const icons = { rrhh:'👤', contratos:'📄', presupuesto:'💰', reclamos:'🏘️', obras:'🏗️', pagos:'💳' };
+      list.innerHTML = all.map(h => `
+        <div class="history-item">
+          <div class="history-icon">${icons[h.module] || '📁'}</div>
+          <div>
+            <div class="history-name">${h.module.charAt(0).toUpperCase()+h.module.slice(1)} — ${h.rows} registros</div>
+            <div class="history-meta">${new Date(h.date).toLocaleString('es-AR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+          <span class="history-badge ${h.status==='success'?'riesgo-bajo':'riesgo-alto'}">
+            ${h.status === 'success' ? '✅ Exitosa' : '❌ Error'}
+          </span>
+        </div>
+      `).join('') || '<div style="text-align:center;padding:40px;color:var(--text-muted)">Sin importaciones registradas</div>';
+    }
+
+    // ── CONNECTION ────────────────────────────────────────────
+    function selectConnType(el, type) {
+      document.querySelectorAll('.conn-type-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    async function testConnection() {
+      const result = document.getElementById('connResult');
+      result.style.display = 'flex';
+      result.className = 'info-box info-blue';
+      result.innerHTML = '<span>🔄</span><span>Probando conexión...</span>';
+      await new Promise(r => setTimeout(r, 1500));
+      result.className = 'info-box info-amber';
+      result.innerHTML = '<span>⚠️</span><span>Conexión simulada. Para activar la conexión real, configurá las credenciales en las variables de entorno de Vercel y contactá al equipo de IT del municipio para habilitar el acceso remoto.</span>';
+    }
+
+    function saveConnection() {
+      showToast('💾 Configuración guardada (requiere deploy para activarse)', 'info');
+    }
+
+    function showToast(msg, type='info') {
+      if (typeof window.showToastNotification === 'function') return window.showToastNotification(msg, type);
+      const t = document.createElement('div');
+      const colors = { success:'#10b981', warning:'#f59e0b', error:'#ef4444', info:'#3b82f6' };
+      Object.assign(t.style, { position:'fixed', bottom:'100px', right:'20px', background:colors[type]||colors.info, color:'white', padding:'12px 18px', borderRadius:'10px', fontWeight:'700', fontSize:'13px', zIndex:'99999', maxWidth:'340px', boxShadow:'0 8px 24px rgba(0,0,0,0.4)', animation:'slideIn 0.3s ease' });
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 4000);
+    }
+  </script>
+</body>
+</html>

@@ -368,7 +368,8 @@
 <!-- KEYBOARD HINT -->
 <div class="key-hint"><span class="key">←</span> <span class="key">→</span> Navegar · <span class="key">ESC</span> Salir</div>
 
-<script src="js/nav.js"></script>
+<script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <script src="js/nav.js"></script>
 <script>
 const TOTAL_SLIDES = 9;
 let currentSlide = 1;
@@ -415,5 +416,6 @@ document.addEventListener('keydown', e => {
   <script src="js/pwa.js"></script>
 </body>
 </html>
+
 
 

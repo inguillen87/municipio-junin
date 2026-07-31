@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    DASHBOARD EJECUTIVO — MUNICIPIO DE JUNÍN
    Design System & Component Styles
    ============================================================ */
@@ -42,6 +42,151 @@
   --shadow-glow: 0 0 40px rgba(59,130,246,0.08);
 
   --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── TEMA CLARO (Light Mode) ─────────────────────────────────── */
+[data-theme="light"] {
+  /* Backgrounds */
+  --bg-dark:    #f0f4ff;
+  --bg:         #f0f4ff;
+  --surface:    #ffffff;
+  --card:       #ffffff;
+  --card-alt:   #f8faff;
+  
+  /* Borders */
+  --border:     rgba(15, 23, 66, 0.1);
+  --border-light: rgba(15, 23, 66, 0.06);
+  
+  /* Text */
+  --text:       #0f172a;
+  --text-main:  #0f172a;
+  --muted:      rgba(71, 85, 105, 0.9);
+  --muted-light: rgba(100, 116, 139, 0.7);
+  
+  /* Sidebar */
+  --sidebar-bg:    #1e293b;
+  --sidebar-text:  rgba(248,250,252,0.85);
+  --sidebar-hover: rgba(255,255,255,0.08);
+  --sidebar-active-bg: rgba(59,130,246,0.15);
+  
+  /* Shadows */
+  --shadow-card: 0 2px 12px rgba(15,23,66,0.08);
+  --shadow-hover: 0 6px 24px rgba(15,23,66,0.12);
+  
+  /* Topbar */
+  --topbar-bg: rgba(255,255,255,0.95);
+  --topbar-border: rgba(15,23,66,0.08);
+}
+
+/* Light mode - specific overrides */
+[data-theme="light"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+[data-theme="light"] .main-content {
+  background: #f0f4ff;
+}
+
+[data-theme="light"] .card,
+[data-theme="light"] .kpi-card,
+[data-theme="light"] .module-card,
+[data-theme="light"] .table-card,
+[data-theme="light"] .chart-card {
+  background: #ffffff;
+  border-color: rgba(15,23,66,0.09);
+  box-shadow: 0 2px 12px rgba(15,23,66,0.06);
+}
+
+[data-theme="light"] .card:hover,
+[data-theme="light"] .kpi-card:hover {
+  box-shadow: 0 6px 24px rgba(15,23,66,0.1);
+}
+
+[data-theme="light"] .topbar {
+  background: rgba(255,255,255,0.97);
+  border-bottom-color: rgba(15,23,66,0.08);
+  box-shadow: 0 1px 12px rgba(15,23,66,0.06);
+}
+
+[data-theme="light"] .topbar-title,
+[data-theme="light"] .kpi-value,
+[data-theme="light"] .section-title,
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .kpi-label,
+[data-theme="light"] .text-muted,
+[data-theme="light"] p {
+  color: rgba(71,85,105,0.85);
+}
+
+[data-theme="light"] table th {
+  background: rgba(241,245,255,0.8);
+  color: rgba(71,85,105,0.7);
+  border-color: rgba(15,23,66,0.07);
+}
+
+[data-theme="light"] table td {
+  border-color: rgba(15,23,66,0.05);
+  color: #334155;
+}
+
+[data-theme="light"] table tr:hover td {
+  background: rgba(59,130,246,0.04);
+}
+
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background: #f8faff;
+  border-color: rgba(15,23,66,0.12);
+  color: #0f172a;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus {
+  border-color: #3b82f6;
+  background: #ffffff;
+}
+
+[data-theme="light"] .btn-secondary,
+[data-theme="light"] .btn-outline {
+  background: rgba(15,23,66,0.05);
+  border-color: rgba(15,23,66,0.12);
+  color: #334155;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background: rgba(15,23,66,0.08);
+  color: #0f172a;
+}
+
+[data-theme="light"] .nav-section-label {
+  color: rgba(248,250,252,0.35);
+}
+
+[data-theme="light"] .alert-item,
+[data-theme="light"] .alert-card {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(15,23,66,0.08);
+}
+
+/* Light mode toast */
+[data-theme="light"] .toast {
+  background: #ffffff;
+  border-color: rgba(15,23,66,0.12);
+  color: #0f172a;
+  box-shadow: 0 8px 32px rgba(15,23,66,0.12);
+}
+[data-theme="light"] .toast-msg { color: rgba(71,85,105,0.8); }
+
+/* Light mode scrollbar */
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(15,23,66,0.15);
 }
 
 html { font-size: 14px; }
@@ -1165,7 +1310,7 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
   .chart-container { height: 170px !important; }
 }
 
-/* ===== BUTTON POLISH � NO MORE GRAY BUTTONS ===== */
+/* ===== BUTTON POLISH � NO MORE GRAY BUTTONS ===== */
 .btn-secondary {
   background: rgba(59,130,246,0.08) !important;
   border: 1px solid rgba(59,130,246,0.25) !important;
@@ -1243,7 +1388,7 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
   transform: translateY(-1px);
 }
 
-/* Select filters � colored, not gray */
+/* Select filters � colored, not gray */
 .select-filter {
   background: rgba(59,130,246,0.06) !important;
   border: 1px solid rgba(59,130,246,0.2) !important;

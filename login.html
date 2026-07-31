@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -452,6 +452,7 @@
     if (typeof i18n === 'undefined') { window.i18n = { t: function(k){ return k; }, buildPicker: function(){}, setLang: function(){} }; }
   </script>
   <script src="js/i18n.js"></script>
+<script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 </head>
 <body>
 
@@ -685,3 +686,4 @@
   </script>
 </body>
 </html>
+

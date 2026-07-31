@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // NAV.JS — Sidebar compartido + Autenticación global
 // Municipalidad de Junín — Sistema de Gestión Municipal
 // ============================================================
@@ -241,12 +241,62 @@ function buildSidebar(activeId) {
       </div>
       <button class="sidebar-logout-btn" onclick="sessionStorage.clear(); window.location.href='login.html'" title="Cerrar sesión">⏏</button>
     </div>
+    <div class="theme-toggle-wrap">
+  <div>
+    <div class="theme-toggle-label" id="themeModeLabel">Modo Oscuro</div>
+    <div class="theme-icons"><span id="themeIconDark">🌙</span><span style="color:rgba(148,163,184,0.3);margin:0 2px">·</span><span id="themeIconLight" style="opacity:0.3">☀️</span></div>
+  </div>
+  <label class="theme-toggle-switch" title="Cambiar tema">
+    <input type="checkbox" id="themeToggleCheckbox" onchange="toggleTheme(this.checked)">
+    <span class="theme-slider"></span>
+  </label>
+</div>
     <div class="sidebar-lang-picker">
       <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('es')" title="Español">🇦🇷 ES</button>
       <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('en')" title="English">🇺🇸 EN</button>
       <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('pt')" title="Português">🇧🇷 PT</button>
     </div>
-    <script src="js/i18n.js"></script>`;
+    <script src="js/i18n.js"></script>;
+
+// Theme toggle init
+function toggleTheme(isLight) {
+  const root = document.documentElement;
+  if (isLight) {
+    root.setAttribute('data-theme', 'light');
+    localStorage.setItem('govtech_theme', 'light');
+    const label = document.getElementById('themeModeLabel');
+    const iconDark = document.getElementById('themeIconDark');
+    const iconLight = document.getElementById('themeIconLight');
+    if (label) label.textContent = 'Modo Claro';
+    if (iconDark) iconDark.style.opacity = '0.3';
+    if (iconLight) iconLight.style.opacity = '1';
+  } else {
+    root.removeAttribute('data-theme');
+    localStorage.setItem('govtech_theme', 'dark');
+    const label = document.getElementById('themeModeLabel');
+    const iconDark = document.getElementById('themeIconDark');
+    const iconLight = document.getElementById('themeIconLight');
+    if (label) label.textContent = 'Modo Oscuro';
+    if (iconDark) iconDark.style.opacity = '1';
+    if (iconLight) iconLight.style.opacity = '0.3';
+  }
+}
+
+// Apply saved theme immediately
+(function applyThemeFromStorage() {
+  const saved = localStorage.getItem('govtech_theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    const cb = document.getElementById('themeToggleCheckbox');
+    if (cb) {
+      cb.checked = true;
+      toggleTheme(true);
+    }
+  }
+})();
+
+// Make toggleTheme global
+window.toggleTheme = toggleTheme;
 
   // Toggle sidebar (desktop)
   document.getElementById('sidebarToggle')?.addEventListener('click', () => {
@@ -310,6 +360,62 @@ function buildSidebar(activeId) {
     const style = document.createElement('style');
     style.id = 'mobileNavCss';
     style.innerHTML = `
+            /* Theme Toggle */
+      .theme-toggle-wrap {
+        padding: 10px 16px 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid rgba(255,255,255,0.04);
+      }
+      .theme-toggle-label {
+        font-size: 11px;
+        color: rgba(100,116,139,0.6);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .theme-toggle-switch {
+        position: relative;
+        width: 44px;
+        height: 24px;
+      }
+      .theme-toggle-switch input { opacity: 0; width: 0; height: 0; }
+      .theme-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255,255,255,0.1);
+        border-radius: 99px;
+        border: 1px solid rgba(255,255,255,0.12);
+        transition: 0.3s;
+      }
+      .theme-slider::before {
+        content: '';
+        position: absolute;
+        left: 3px; top: 3px;
+        width: 16px; height: 16px;
+        border-radius: 50%;
+        background: rgba(148,163,184,0.7);
+        transition: 0.3s;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      input:checked + .theme-slider {
+        background: rgba(251,191,36,0.2);
+        border-color: rgba(251,191,36,0.3);
+      }
+      input:checked + .theme-slider::before {
+        transform: translateX(20px);
+        background: #fbbf24;
+      }
+      .theme-icons {
+        display: flex;
+        gap: 3px;
+        font-size: 13px;
+      }
       .sidebar-user-footer {
         position: absolute;
         bottom: 0;

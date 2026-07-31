@@ -28,6 +28,8 @@ const NAV_ITEMS = [
   // OPERACIONES
   { id: 'talleres',     href: 'talleres.html',     icon: '🔧', label: 'Talleres',             section: 'OPERACIONES' },
   { id: 'servicios',    href: 'servicios.html',    icon: '⛽', label: 'Est. de Servicios' },
+  // COMUNICACIONES
+  { id: 'whatsapp',     href: 'whatsapp.html',     icon: '📱', label: 'WhatsApp Bot',         section: 'COMUNICACIONES' },
   // SISTEMA
   { id: 'landing',      href: 'landing.html',      icon: '🌐', label: 'Landing Page',         section: 'SISTEMA' },
   { id: 'upload',       href: 'upload.html',       icon: '📂', label: 'Cargar Archivos',      badge: 'BETA' },

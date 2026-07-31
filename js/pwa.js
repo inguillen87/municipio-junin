@@ -1,6 +1,6 @@
 // ============================================================
 // pwa.js — Service Worker + PWA Install + Mobile Nav
-// Se carga en TODAS las páginas del sistema
+// VERSIÓN CORREGIDA: timing fix para DOMContentLoaded
 // ============================================================
 
 'use strict';
@@ -10,38 +10,32 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
-        console.log('[PWA] Service Worker registrado:', reg.scope);
-        // Notificar actualización disponible
         reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          newWorker?.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              if (window.toast) toast('Actualización disponible', 'Recargá la página para obtener la última versión', 'info');
+          const nw = reg.installing;
+          nw?.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              showToast('Actualización disponible', 'Recargá para ver la última versión', 'info');
             }
           });
         });
       })
-      .catch(err => console.warn('[PWA] SW no registrado:', err.message));
+      .catch(() => {});
   });
 }
 
-// ── INSTALL PROMPT (banner "Instalar app") ───────────────────
+// ── INSTALL PROMPT ───────────────────────────────────────────
 let deferredPrompt = null;
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-
-  // Solo mostrar si no fue descartado antes
   if (!sessionStorage.getItem('pwa_dismissed')) {
-    setTimeout(() => showPWABanner(), 3000);
+    setTimeout(showPWABanner, 4000);
   }
 });
 
 function showPWABanner() {
-  const existing = document.getElementById('pwa-banner');
-  if (existing || !deferredPrompt) return;
-
+  if (document.getElementById('pwa-banner') || !deferredPrompt) return;
   const banner = document.createElement('div');
   banner.id = 'pwa-banner';
   banner.className = 'pwa-banner';
@@ -49,13 +43,12 @@ function showPWABanner() {
     <div class="pwa-banner-icon">🏛️</div>
     <div class="pwa-banner-text">
       <div class="pwa-banner-title">Instalar Sistema Municipal</div>
-      <div class="pwa-banner-sub">Accedé más rápido desde tu celular o escritorio</div>
+      <div class="pwa-banner-sub">Accedé más rápido desde tu celular</div>
     </div>
     <div class="pwa-banner-actions">
       <button class="pwa-install-btn" id="pwaInstall">📲 Instalar</button>
       <button class="pwa-dismiss-btn" id="pwaDismiss">✕</button>
-    </div>
-  `;
+    </div>`;
   document.body.appendChild(banner);
   setTimeout(() => banner.classList.add('show'), 50);
 
@@ -64,14 +57,11 @@ function showPWABanner() {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        if (window.toast) toast('✅ App instalada', 'Sistema Municipal disponible en tu pantalla de inicio', 'success');
-      }
+      if (outcome === 'accepted') showToast('✅ App instalada', 'Sistema Municipal en tu pantalla de inicio', 'success');
       deferredPrompt = null;
     }
     setTimeout(() => banner.remove(), 400);
   };
-
   document.getElementById('pwaDismiss').onclick = () => {
     banner.classList.remove('show');
     sessionStorage.setItem('pwa_dismissed', '1');
@@ -81,126 +71,118 @@ function showPWABanner() {
 
 window.addEventListener('appinstalled', () => {
   deferredPrompt = null;
-  if (window.toast) toast('🏛️ App instalada', 'Sistema Municipal disponible offline', 'success');
+  showToast('🏛️ App instalada', 'Disponible offline', 'success');
 });
 
-// ── OVERLAY SIDEBAR MOBILE ───────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  // Crear overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'sidebar-overlay';
-  overlay.id = 'sidebarOverlay';
-  document.body.appendChild(overlay);
+// ── HELPER TOAST (local para no depender de toast.js) ────────
+function showToast(title, msg, type) {
+  if (window.toast) { window.toast(title, msg, type); return; }
+  console.log(`[${type}] ${title}: ${msg}`);
+}
 
-  // Botón menu toggle
-  const menuBtn = document.getElementById('menuBtn');
-  const sidebar  = document.getElementById('sidebar');
+// ── INICIALIZACIÓN MOBILE — se llama explícitamente ──────────
+// Expuesta como window.initMobile() para llamarse después de buildSidebar()
+window.initMobile = function () {
 
-  if (menuBtn && sidebar) {
-    menuBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    });
-    // Cerrar al navegar
-    sidebar.querySelectorAll('a').forEach(a => {
-      a.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('show');
-      });
-    });
+  // ── OVERLAY ────────────────────────────────────────────────
+  let overlay = document.getElementById('sidebarOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    overlay.id = 'sidebarOverlay';
+    document.body.appendChild(overlay);
   }
 
-  // ── BOTTOM NAV MOBILE ─────────────────────────────────────
-  const currentPage = location.pathname.split('/').pop() || 'index.html';
-  
-  const NAV_ITEMS = [
-    { icon: '📊', label: 'Dashboard', href: 'index.html' },
-    { icon: '🤖', label: 'Asistente', href: 'ia.html' },
-    { icon: '💰', label: 'Control',   href: 'control.html' },
-    { icon: '👥', label: 'RRHH',      href: 'rrhh.html' },
-    { icon: '🏘️', label: 'Vecinos',   href: 'vecinos.html' },
-  ];
+  const sidebar = document.getElementById('sidebar');
+  const menuBtn = document.getElementById('menuBtn');
 
-  const mobileNav = document.createElement('div');
-  mobileNav.className = 'mobile-nav';
-  mobileNav.id = 'mobileNav';
+  function openSidebar() {
+    sidebar?.classList.add('open');
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar?.classList.remove('open');
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
 
-  const inner = document.createElement('div');
-  inner.className = 'mobile-nav-inner';
+  // Botón hamburguesa
+  if (menuBtn) {
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+      sidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
+    };
+  }
 
-  NAV_ITEMS.forEach(item => {
-    const link = document.createElement('a');
-    link.className = 'mobile-nav-item' + (currentPage === item.href ? ' active' : '');
-    link.href = item.href;
-    link.innerHTML = `<span class="mobile-nav-icon">${item.icon}</span><span class="mobile-nav-label">${item.label}</span>`;
-    inner.appendChild(link);
+  // Overlay cierra sidebar
+  overlay.onclick = closeSidebar;
+
+  // Links del sidebar cierran en mobile
+  sidebar?.querySelectorAll('a.nav-item').forEach(a => {
+    a.addEventListener('click', () => {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
   });
 
-  mobileNav.appendChild(inner);
-  document.body.appendChild(mobileNav);
+  // ── BOTTOM NAV MOBILE ──────────────────────────────────────
+  if (!document.getElementById('mobileNav')) {
+    const currentPage = location.pathname.split('/').pop() || 'index.html';
+    const NAV_ITEMS = [
+      { icon: '📊', label: 'Dashboard', href: 'index.html' },
+      { icon: '🤖', label: 'Asistente',  href: 'ia.html' },
+      { icon: '💰', label: 'Control',    href: 'control.html' },
+      { icon: '👥', label: 'RRHH',       href: 'rrhh.html' },
+      { icon: '🏘️', label: 'Vecinos',   href: 'vecinos.html' },
+    ];
 
-  // ── SWIPE TO OPEN SIDEBAR ─────────────────────────────────
+    const mobileNav = document.createElement('nav');
+    mobileNav.id = 'mobileNav';
+    mobileNav.className = 'mobile-nav';
+    mobileNav.setAttribute('aria-label', 'Navegación móvil');
+
+    const inner = document.createElement('div');
+    inner.className = 'mobile-nav-inner';
+
+    NAV_ITEMS.forEach(item => {
+      const a = document.createElement('a');
+      a.className = 'mobile-nav-item' + (currentPage === item.href ? ' active' : '');
+      a.href = item.href;
+      a.setAttribute('aria-label', item.label);
+      a.innerHTML = `<span class="mobile-nav-icon">${item.icon}</span><span class="mobile-nav-label">${item.label}</span>`;
+      inner.appendChild(a);
+    });
+    mobileNav.appendChild(inner);
+    document.body.appendChild(mobileNav);
+  }
+
+  // ── SWIPE GESTURES ─────────────────────────────────────────
   let touchStartX = 0;
+  let touchStartY = 0;
+
   document.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
   }, { passive: true });
 
   document.addEventListener('touchend', (e) => {
     const dx = e.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(dx) < 50) return;
-    
-    if (dx > 60 && touchStartX < 30 && sidebar) {
-      // Swipe right desde el borde → abrir sidebar
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignorar
+
+    if (dx > 60 && touchStartX < 40 && !sidebar?.classList.contains('open')) {
+      openSidebar();
     } else if (dx < -60 && sidebar?.classList.contains('open')) {
-      // Swipe left → cerrar sidebar
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
+      closeSidebar();
     }
   }, { passive: true });
 
-  // ── PULL TO REFRESH ───────────────────────────────────────
-  let pullStart = 0;
-  let pulling = false;
-  let refreshIndicator = null;
+  // Cerrar con Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar?.classList.contains('open')) closeSidebar();
+  });
+};
 
-  document.addEventListener('touchstart', (e) => {
-    if (window.scrollY === 0) pullStart = e.touches[0].clientY;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', (e) => {
-    if (!pullStart) return;
-    const dy = e.touches[0].clientY - pullStart;
-    if (dy > 60 && window.scrollY === 0) {
-      pulling = true;
-      if (!refreshIndicator) {
-        refreshIndicator = document.createElement('div');
-        refreshIndicator.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);background:rgba(59,130,246,0.9);color:white;padding:6px 16px;border-radius:99px;font-size:12px;font-weight:700;z-index:9997;transition:opacity 0.2s';
-        refreshIndicator.textContent = '↓ Soltá para actualizar';
-        document.body.appendChild(refreshIndicator);
-      }
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchend', () => {
-    if (pulling) {
-      if (refreshIndicator) { refreshIndicator.textContent = '⟳ Actualizando...'; }
-      setTimeout(() => { location.reload(); }, 300);
-    }
-    pullStart = 0;
-    pulling = false;
-  }, { passive: true });
-});
-
-// ── ONLINE/OFFLINE STATUS ─────────────────────────────────────
-window.addEventListener('offline', () => {
-  if (window.toast) toast('📡 Sin conexión', 'Mostrando datos en caché', 'warning');
-});
-window.addEventListener('online', () => {
-  if (window.toast) toast('✅ Conexión restaurada', 'Sincronizando datos...', 'success');
-});
+// ── ONLINE/OFFLINE ────────────────────────────────────────────
+window.addEventListener('offline', () => showToast('📡 Sin conexión', 'Mostrando datos en caché', 'warning'));
+window.addEventListener('online',  () => showToast('✅ Conexión restaurada', 'Sincronizando...', 'success'));

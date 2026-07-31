@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // NAV.JS — Sidebar compartido + Autenticación global
 // Municipalidad de Junín — Sistema de Gestión Municipal
 // ============================================================
@@ -86,15 +86,11 @@ function buildSidebar(activeId) {
       </div>
     </div>`;
 
-  // Toggle sidebar
+  // Toggle sidebar (desktop)
   document.getElementById('sidebarToggle')?.addEventListener('click', () => {
     sidebarEl.classList.toggle('collapsed');
     document.getElementById('mainContent')?.classList.toggle('expanded');
     setTimeout(() => window.dispatchEvent(new Event('resize')), 250);
-  });
-
-  document.getElementById('menuBtn')?.addEventListener('click', () => {
-    sidebarEl.classList.toggle('mobile-open');
   });
 
   // Logout
@@ -104,5 +100,14 @@ function buildSidebar(activeId) {
       window.location.href = 'login.html';
     }
   });
+
+  // ── INICIALIZAR MOBILE (llamar siempre al final de buildSidebar) ─────
+  // pwa.js expone window.initMobile() para evitar el bug de DOMContentLoaded timing
+  if (typeof window.initMobile === 'function') {
+    window.initMobile();
+  } else {
+    // pwa.js todavía no cargó: esperar y reintentar
+    document.addEventListener('pwaMobileReady', () => window.initMobile?.());
+  }
 }
 

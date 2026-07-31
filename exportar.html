@@ -192,6 +192,26 @@
                 <span class="export-btn-desc">Enviar a impresora</span>
               </div>
             </button>
+            <button class="export-btn" id="btnPreviewModal">
+              <span class="export-btn-icon">👁️</span>
+              <div>
+                <span class="export-btn-title">Vista Previa</span>
+                <span class="export-btn-desc">Ver reporte ampliado</span>
+              </div>
+            </button>
+          </div>
+          
+          <div id="exportProgressContainer" style="display:none; margin-top:20px; padding:15px; background:var(--bg-card); border-radius:10px; border:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <span id="exportProgressStatus" style="font-size:13px; font-weight:600;">Generando reporte...</span>
+              <span id="exportProgressPct" style="font-size:13px; color:var(--primary);">0%</span>
+            </div>
+            <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden;">
+              <div id="exportProgressBar" style="height:100%; width:0%; background:var(--primary); transition:width 0.2s;"></div>
+            </div>
+            <div id="exportDownloadLink" style="display:none; margin-top:12px; text-align:center;">
+              <a href="#" id="exportAnchor" download style="color:var(--primary); text-decoration:none; font-weight:600; font-size:14px;">⬇️ Descargar Archivo</a>
+            </div>
           </div>
 
           <!-- RECENT EXPORTS -->
@@ -221,10 +241,22 @@
 
     </div>
   </main>
+  
+  <div class="modal-overlay" id="modalVistaPrevia" style="display:none;">
+    <div class="modal" style="max-width:800px; width:90%; height:80vh; display:flex; flex-direction:column;">
+      <div class="modal-header">
+        <h3 id="modalTitle">Vista Previa</h3>
+        <button class="modal-close" onclick="document.getElementById('modalVistaPrevia').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body" style="flex:1; overflow-y:auto; background:white; color:black; padding:20px;" id="modalContent">
+        <!-- Renderizado dinámico -->
+      </div>
+    </div>
+  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="js/pwa.js"></script>
   <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <script>

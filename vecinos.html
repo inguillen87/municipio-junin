@@ -88,20 +88,21 @@
             <div class="panel-filters">
               <select class="select-filter" id="filtroTipo">
                 <option value="">Todos los tipos</option>
-                <option>Baches y Pavimento</option>
-                <option>Alumbrado Público</option>
-                <option>Recolección de Basura</option>
-                <option>Poda de Árboles</option>
-                <option>Agua y Cloacas</option>
-                <option>Ruidos Molestos</option>
-                <option>Otros</option>
+                <option>Bache</option>
+                <option>Luminaria</option>
+                <option>Arbolado</option>
+                <option>Ruidos</option>
+                <option>Basura</option>
+                <option>Agua</option>
+                <option>Gas</option>
+                <option>Otro</option>
               </select>
-              <select class="select-filter" id="filtroEstadoR">
-                <option value="">Todos los estados</option>
-                <option>Pendiente</option>
-                <option>En proceso</option>
-                <option>Resuelto</option>
-              </select>
+              <div class="status-filters" id="statusFilters" style="display:flex;gap:8px;">
+                <button class="btn-filter active" data-status="">Todos</button>
+                <button class="btn-filter" data-status="Pendiente">Pendiente</button>
+                <button class="btn-filter" data-status="En Proceso">En Proceso</button>
+                <button class="btn-filter" data-status="Resuelto">Resuelto</button>
+              </div>
               <div class="search-box" style="min-width:180px">
                 <span class="search-icon">🔍</span>
                 <input type="text" id="searchReclamo" placeholder="Buscar vecino o dirección..." />
@@ -115,8 +116,8 @@
                 <th>Vecino</th>
                 <th>Tipo</th>
                 <th>Dirección</th>
+                <th>Descripción</th>
                 <th>Fecha</th>
-                <th>Área</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -130,13 +131,19 @@
       </div>
 
       <!-- TAB: TURNOS -->
+      <!-- TAB: TURNOS / QR -->
       <div class="tab-content" id="tab-turnos">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">📅 Gestión de Turnos</h2>
-            <button class="btn-primary" id="btnNuevoTurno">+ Reservar Turno</button>
+            <h2 class="chart-title">📱 Portal Público Vecinal (QR)</h2>
           </div>
-          <div class="turnos-grid" id="turnosGrid"></div>
+          <div style="text-align:center; padding:40px;">
+            <p>Los vecinos pueden escanear este código para acceder al portal sin login:</p>
+            <div style="margin:20px 0;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://municontrol.local/vecinos-publico.html?token=ABC123XYZ" alt="QR Code">
+            </div>
+            <a href="vecinos-publico.html?token=ABC123XYZ" target="_blank" style="color:var(--primary);text-decoration:underline;">vecinos-publico.html?token=ABC123XYZ</a>
+          </div>
         </div>
       </div>
 
@@ -175,39 +182,49 @@
             <input type="text" id="rNombre" placeholder="Juan García" />
           </div>
           <div class="form-group">
-            <label>Tipo de Reclamo</label>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Tipo de reclamo</label>
             <select id="rTipo">
-              <option>Baches y Pavimento</option>
-              <option>Alumbrado Público</option>
-              <option>Recolección de Basura</option>
-              <option>Poda de Árboles</option>
-              <option>Agua y Cloacas</option>
-              <option>Ruidos Molestos</option>
-              <option>Otros</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Área Responsable</label>
-            <select id="rArea">
-              <option>Obras Públicas</option>
-              <option>Alumbrado</option>
-              <option>Medio Ambiente</option>
-              <option>Servicios Urbanos</option>
+              <option>Bache</option>
+              <option>Luminaria</option>
+              <option>Arbolado</option>
+              <option>Ruidos</option>
+              <option>Basura</option>
+              <option>Agua</option>
+              <option>Gas</option>
+              <option>Otro</option>
             </select>
           </div>
           <div class="form-group" style="grid-column:1/-1">
-            <label>Dirección exacta</label>
-            <input type="text" id="rDireccion" placeholder="Av. Rivadavia 1234, entre Mitre y San Martín" />
+            <label>Dirección</label>
+            <input type="text" id="rDireccion" placeholder="Ej. Av. San Martín 1450" />
           </div>
           <div class="form-group" style="grid-column:1/-1">
-            <label>Descripción del problema</label>
-            <textarea id="rDescripcion" rows="3" placeholder="Describe el problema con el mayor detalle posible..."></textarea>
+            <label>Descripción</label>
+            <textarea id="rDescripcion" rows="3" placeholder="Descripción del reclamo..."></textarea>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="btn-secondary" style="display:inline-block;text-align:center;cursor:pointer;">
+              📷 Adjuntar Foto
+              <input type="file" accept="image/*" style="display:none" />
+            </label>
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" onclick="document.getElementById('modalReclamo').style.display='none'">Cancelar</button>
-        <button class="btn-save" id="btnGuardarReclamo">📋 Registrar Reclamo</button>
+        <button class="btn-save" id="btnGuardarReclamo">Enviar Reclamo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalDetalle" style="display:none">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <h3>📋 Detalle del Reclamo</h3>
+        <button class="modal-close" onclick="document.getElementById('modalDetalle').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body" id="detalleBody">
       </div>
     </div>
   </div>

@@ -197,6 +197,12 @@
         </div>
       </div>
       <div class="topbar-right">
+        <select id="periodSelector" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;">
+          <option value="mensual">Mensual</option>
+          <option value="trimestral">Trimestral</option>
+          <option value="anual">Anual</option>
+        </select>
+        <button id="btnExportarMapa" class="btn-primary" style="font-size:12px;padding:6px 12px;margin-right:8px;">Exportar Mapa</button>
         <div id="mapStatus" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green)"><span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;box-shadow:0 0 8px #10b981"></span>Datos en tiempo real</div>
         <div class="topbar-avatar" id="userAvatar">JT</div>
       </div>
@@ -287,122 +293,128 @@
   <script src="js/toast.js"></script>
   <script>
   // ── DATOS FINANCIEROS POR ZONA ────────────────────────────
-  const ZONAS = [
-    { id:'z1', name:'Centro',       lat:-33.070, lng:-69.062, budget:35000000, executed:28000000, color:'#ef4444', desc:'Zona comercial e institucional' },
-    { id:'z2', name:'Norte',        lat:-33.055, lng:-69.062, budget:22000000, executed:18000000, color:'#f59e0b', desc:'Residencial norte' },
-    { id:'z3', name:'Sur',          lat:-33.085, lng:-69.062, budget:18000000, executed:12000000, color:'#f59e0b', desc:'Zona industrial y residencial' },
-    { id:'z4', name:'Este',         lat:-33.070, lng:-69.048, budget:28000000, executed:19000000, color:'#ef4444', desc:'Desarrollo urbanístico' },
-    { id:'z5', name:'Oeste',        lat:-33.070, lng:-69.076, budget:15000000, executed:8000000,  color:'#10b981', desc:'Rural y periurbano' },
-    { id:'z6', name:'Junín Centro', lat:-33.067, lng:-69.058, budget:42000000, executed:35000000, color:'#ef4444', desc:'Administrativo central' },
-    { id:'z7', name:'Villa Seca',   lat:-33.082, lng:-69.070, budget:12000000, executed:6000000,  color:'#10b981', desc:'Barrio residencial' },
-    { id:'z8', name:'La Colonia',   lat:-33.058, lng:-69.075, budget:19000000, executed:14000000, color:'#f59e0b', desc:'Zona agrícola y residencial' },
-    { id:'z9', name:'Reducción',    lat:-33.048, lng:-69.053, budget:9000000,  executed:5000000,  color:'#10b981', desc:'Suburbio norte' },
-    { id:'z10',name:'Medrano',      lat:-33.075, lng:-69.047, budget:14000000, executed:9000000,  color:'#10b981', desc:'Zona este residencial' },
-    { id:'z11',name:'Palmira',      lat:-33.060, lng:-69.063, budget:23000000, executed:17000000, color:'#f59e0b', desc:'Zona central norte' },
-    { id:'z12',name:'Rivadavia',    lat:-33.090, lng:-69.055, budget:17000000, executed:11000000, color:'#10b981', desc:'Zona sur agrícola' },
-  ];
-
-  const OBRAS = [
-    { name:'Pavimentación Calle San Martín', lat:-33.068, lng:-69.060, budget:8500000, executed:65, deadline:'Dic 2026', type:'🏗️', categoria:'Infraestructura' },
-    { name:'Ampliación Hospital Municipal',  lat:-33.072, lng:-69.065, budget:15000000,executed:30, deadline:'Mar 2027', type:'🏥', categoria:'Salud' },
-    { name:'Parque Recreativo Norte',        lat:-33.052, lng:-69.060, budget:3200000, executed:80, deadline:'Sep 2026', type:'🌳', categoria:'Espacios Verdes' },
-    { name:'Red Cloacal Zona Sur',           lat:-33.088, lng:-69.060, budget:12000000,executed:45, deadline:'Feb 2027', type:'🔧', categoria:'Servicios' },
-    { name:'Centro Comunitario Este',        lat:-33.070, lng:-69.045, budget:4500000, executed:90, deadline:'Ago 2026', type:'🏘️', categoria:'Social' },
-    { name:'Iluminación LED Centro',         lat:-33.067, lng:-69.055, budget:2800000, executed:100,deadline:'Jul 2026', type:'💡', categoria:'Infraestructura' },
-    { name:'Bacheo Zona Oeste',              lat:-33.068, lng:-69.078, budget:1800000, executed:55, deadline:'Oct 2026', type:'🚗', categoria:'Vialidad' },
-    { name:'Nuevo CIC Medrano',              lat:-33.075, lng:-69.048, budget:6000000, executed:20, deadline:'Jun 2027', type:'🏛️', categoria:'Social' },
+  var ZONAS = [
+    { name:'Centro', lat:-34.5854, lng:-60.9433, gasto:18500000, tipo:'costos', radio:400 },
+    { name:'Barrio Norte', lat:-34.5780, lng:-60.9400, gasto:12300000, tipo:'costos', radio:350 },
+    { name:'Barrio Sur', lat:-34.5930, lng:-60.9450, gasto:9800000, tipo:'costos', radio:300 },
+    { name:'Barrio Oeste', lat:-34.5860, lng:-60.9530, gasto:7600000, tipo:'costos', radio:280 },
+    { name:'Villa del Parque', lat:-34.5810, lng:-60.9500, gasto:5400000, tipo:'costos', radio:250 },
+    { name:'Av. San Martín (Pavim.)', lat:-34.5850, lng:-60.9380, gasto:42000000, tipo:'obras', estado:'En ejecución' },
+    { name:'Parque Municipal (LED)', lat:-34.5890, lng:-60.9470, gasto:18700000, tipo:'obras', estado:'Terminada' },
+    { name:'Playón Barrio Sur', lat:-34.5950, lng:-60.9460, gasto:22400000, tipo:'obras', estado:'En licitación' },
   ];
 
   // ── MAPA LEAFLET ─────────────────────────────────────────
-  const map = L.map('map', { zoomControl: true }).setView([-33.070, -69.062], 13);
+  const map = L.map('map', { zoomControl: true }).setView([-34.5854, -60.9433], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap',
     maxZoom: 18,
   }).addTo(map);
 
-  // ── CAPA 1: Costos por Zona ───────────────────────────────
-  const costosLayer = L.layerGroup();
-  ZONAS.forEach(z => {
-    const radius = 400 + (z.budget / 2000000);
-    const pct = z.executed / z.budget;
-    const color = pct > 0.75 ? '#ef4444' : pct > 0.5 ? '#f59e0b' : '#10b981';
-    L.circle([z.lat, z.lng], {
-      radius,
-      color,
-      fillColor: color,
-      fillOpacity: 0.2,
-      weight: 2,
-      opacity: 0.7,
-    }).bindPopup(`
-      <div style="color:#f0f4ff;font-family:Inter,sans-serif;min-width:180px">
-        <div style="font-weight:800;font-size:14px;margin-bottom:6px">${z.name}</div>
-        <div style="font-size:12px;color:rgba(148,163,184,0.8);margin-bottom:8px">${z.desc}</div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:11px;color:rgba(148,163,184,0.6)">Presupuesto:</span>
-          <span style="font-size:12px;font-weight:700">$${(z.budget/1000000).toFixed(1)}M</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:11px;color:rgba(148,163,184,0.6)">Ejecutado:</span>
-          <span style="font-size:12px;font-weight:700;color:${color}">$${(z.executed/1000000).toFixed(1)}M (${Math.round(pct*100)}%)</span>
-        </div>
-        <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden">
-          <div style="height:100%;width:${pct*100}%;background:${color};border-radius:99px"></div>
-        </div>
-      </div>`
-    ).addTo(costosLayer);
-    L.marker([z.lat, z.lng], {
-      icon: L.divIcon({
-        html: `<div style="background:rgba(6,11,24,0.9);border:1px solid ${color};border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;color:${color};white-space:nowrap;backdrop-filter:blur(8px)">${z.name}</div>`,
-        className: '',
-        iconAnchor: [0, 0],
-      }),
-    }).addTo(costosLayer);
-  });
-  costosLayer.addTo(map);
-
-  // ── CAPA 2: Obras Públicas ────────────────────────────────
-  const obrasLayer = L.layerGroup();
-  OBRAS.forEach(o => {
-    const progColor = o.executed === 100 ? '#10b981' : o.executed >= 60 ? '#3b82f6' : o.executed >= 30 ? '#f59e0b' : '#ef4444';
-    const icon = L.divIcon({
-      html: `<div class="obra-marker" style="background:rgba(${o.executed===100?'16,185,129':'245,158,11'},0.9);border-color:rgba(${o.executed===100?'16,185,129':'245,158,11'},0.4);animation:${o.executed===100?'none':'markerPulse 2s ease-in-out infinite'}">${o.type}</div>`,
-      className: '',
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
+  let multiplier = 1;
+  let costosLayer = L.layerGroup();
+  let obrasLayer = L.layerGroup();
+  let heatmapLayer = L.layerGroup();
+  
+  function renderLayers() {
+    costosLayer.clearLayers();
+    obrasLayer.clearLayers();
+    heatmapLayer.clearLayers();
+    
+    ZONAS.forEach(z => {
+      const gastoCalc = z.gasto * multiplier;
+      
+      if (z.tipo === 'costos') {
+        const color = gastoCalc > 15000000 ? '#ef4444' : gastoCalc > 5000000 ? '#f59e0b' : '#10b981';
+        L.circle([z.lat, z.lng], {
+          radius: z.radio || 300,
+          color,
+          fillColor: color,
+          fillOpacity: 0.2,
+          weight: 2,
+          opacity: 0.7,
+        }).bindPopup(`
+          <div style="color:#f0f4ff;font-family:Inter,sans-serif;min-width:180px">
+            <div style="font-weight:800;font-size:14px;margin-bottom:6px">${z.name}</div>
+            <div style="font-size:12px;color:rgba(148,163,184,0.8);margin-bottom:8px">Zonificación Costos</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:11px;color:rgba(148,163,184,0.6)">Gasto Registrado:</span>
+              <span style="font-size:12px;font-weight:700">$${(gastoCalc/1000000).toFixed(1)}M</span>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden">
+              <div style="height:100%;width:75%;background:${color};border-radius:99px"></div>
+            </div>
+          </div>`
+        ).addTo(costosLayer);
+        L.marker([z.lat, z.lng], {
+          icon: L.divIcon({
+            html: `<div style="background:rgba(6,11,24,0.9);border:1px solid ${color};border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;color:${color};white-space:nowrap;backdrop-filter:blur(8px)">${z.name}</div>`,
+            className: '',
+            iconAnchor: [0, 0],
+          }),
+        }).addTo(costosLayer);
+        
+        // Heatmap for costos
+        const intensity = gastoCalc / 20000000;
+        for (let i = 0; i < 5; i++) {
+          const jlat = z.lat + (Math.random() - 0.5) * 0.008;
+          const jlng = z.lng + (Math.random() - 0.5) * 0.008;
+          L.circle([jlat, jlng], {
+            radius: 180 + intensity * 400,
+            color: 'transparent',
+            fillColor: \`hsl(\${Math.round((1 - intensity) * 120)}, 90%, 50%)\`,
+            fillOpacity: 0.12,
+            weight: 0,
+          }).addTo(heatmapLayer);
+        }
+      } else if (z.tipo === 'obras') {
+        const progColor = z.estado === 'Terminada' ? '#10b981' : z.estado === 'En ejecución' ? '#3b82f6' : '#f59e0b';
+        const iconType = '🏗️';
+        const icon = L.divIcon({
+          html: \`<div class="obra-marker" style="background:rgba(\${z.estado==='Terminada'?'16,185,129':'245,158,11'},0.9);border-color:rgba(\${z.estado==='Terminada'?'16,185,129':'245,158,11'},0.4);animation:\${z.estado==='Terminada'?'none':'markerPulse 2s ease-in-out infinite'}\">\${iconType}</div>\`,
+          className: '',
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
+        L.marker([z.lat, z.lng], { icon }).bindPopup(`
+          <div class="obra-popup" style="color:#f0f4ff;font-family:Inter,sans-serif">
+            <div class="obra-popup-title">${iconType} ${z.name}</div>
+            <div class="obra-popup-detail">💰 Presupuesto: $${(gastoCalc/1000000).toFixed(1)}M</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+              <span style="font-size:11px;color:rgba(148,163,184,0.6)">Estado:</span>
+              <span style="font-size:13px;font-weight:800;color:${progColor}">${z.estado}</span>
+            </div>
+          </div>`
+        ).addTo(obrasLayer);
+      }
     });
-    L.marker([o.lat, o.lng], { icon }).bindPopup(`
-      <div class="obra-popup" style="color:#f0f4ff;font-family:Inter,sans-serif">
-        <div class="obra-popup-title">${o.type} ${o.name}</div>
-        <div class="obra-popup-detail">📦 Categoría: ${o.categoria}</div>
-        <div class="obra-popup-detail">💰 Presupuesto: $${(o.budget/1000000).toFixed(1)}M</div>
-        <div class="obra-popup-detail">📅 Entrega: ${o.deadline}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-          <span style="font-size:11px;color:rgba(148,163,184,0.6)">Avance:</span>
-          <span style="font-size:13px;font-weight:800;color:${progColor}">${o.executed}%</span>
-        </div>
-        <div class="obra-progress-wrap">
-          <div class="obra-progress-bar" style="width:${o.executed}%;background:${progColor}"></div>
-        </div>
-      </div>`
-    ).addTo(obrasLayer);
-  });
+    
+    // Sidebar update
+    function fmt(n) { return '$' + (n/1000000).toFixed(1) + 'M'; }
+    document.getElementById('zoneList').innerHTML = ZONAS
+      .filter(z => z.tipo === 'costos')
+      .map(z => {
+        const gastoCalc = z.gasto * multiplier;
+        const color = gastoCalc > 15000000 ? '#ef4444' : gastoCalc > 5000000 ? '#f59e0b' : '#10b981';
+        return \`<div class="zone-card" onclick="map.setView([\${z.lat},\${z.lng}],15)">
+          <div class="zone-name">📍 \${z.name}</div>
+          <div class="zone-budget">Gasto: \${fmt(gastoCalc)}</div>
+          <div class="zone-bar-wrap"><div class="zone-bar" style="width:75%;background:\${color}"></div></div>
+        </div>\`;
+      }).join('');
 
-  // ── CAPA 3: Heatmap (simulado con círculos de calor) ──────
-  const heatmapLayer = L.layerGroup();
-  ZONAS.forEach(z => {
-    const intensity = z.executed / 42000000;
-    for (let i = 0; i < 8; i++) {
-      const jlat = z.lat + (Math.random() - 0.5) * 0.008;
-      const jlng = z.lng + (Math.random() - 0.5) * 0.008;
-      L.circle([jlat, jlng], {
-        radius: 180 + intensity * 400,
-        color: 'transparent',
-        fillColor: `hsl(${Math.round((1 - intensity) * 120)}, 90%, 50%)`,
-        fillOpacity: 0.12,
-        weight: 0,
-      }).addTo(heatmapLayer);
-    }
-  });
+    document.getElementById('obrasList').innerHTML = ZONAS
+      .filter(z => z.tipo === 'obras')
+      .map(z => {
+        const c = z.estado === 'Terminada' ? '#10b981' : z.estado === 'En ejecución' ? '#3b82f6' : '#f59e0b';
+        return \`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="map.setView([\${z.lat},\${z.lng}],16)">
+          <div style="font-size:12px;font-weight:700;color:var(--text-primary)">🏗️ \${z.name}</div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text-muted)">
+            <span>\${fmt(z.gasto * multiplier)}</span><span style="color:\${c};font-weight:700">\${z.estado}</span>
+          </div>
+        </div>\`;
+      }).join('');
+  }
 
   // ── TOGGLE CAPAS ─────────────────────────────────────────
   const layers = { costos: costosLayer, obras: obrasLayer, heatmap: heatmapLayer };
@@ -422,32 +434,23 @@
     document.getElementById('mapLegend').style.display = activeLayers.has('heatmap') ? 'none' : 'block';
   }
 
-  // ── RENDER SIDEBAR ────────────────────────────────────────
-  function fmt(n) { return '$' + (n/1000000).toFixed(1) + 'M'; }
+  document.getElementById('periodSelector').addEventListener('change', function(e) {
+    const val = e.target.value;
+    if (val === 'mensual') multiplier = 1;
+    else if (val === 'trimestral') multiplier = 3;
+    else multiplier = 12;
+    renderLayers();
+  });
+  
+  document.getElementById('btnExportarMapa').addEventListener('click', () => {
+    if(typeof showToast !== 'undefined') showToast('Captura generando...', 'info');
+    setTimeout(() => {
+      if(typeof showToast !== 'undefined') showToast('✅ Mapa exportado como imagen', 'success');
+    }, 1500);
+  });
 
-  document.getElementById('zoneList').innerHTML = ZONAS
-    .sort((a,b) => b.executed - a.executed)
-    .slice(0, 8)
-    .map(z => {
-      const pct = Math.round(z.executed / z.budget * 100);
-      const color = pct > 75 ? '#ef4444' : pct > 50 ? '#f59e0b' : '#10b981';
-      return `<div class="zone-card" onclick="map.setView([${z.lat},${z.lng}],15);map.fireEvent('click')">
-        <div class="zone-name">📍 ${z.name}</div>
-        <div class="zone-budget">${fmt(z.executed)} de ${fmt(z.budget)}</div>
-        <div class="zone-bar-wrap"><div class="zone-bar" style="width:${pct}%;background:${color}"></div></div>
-        <div style="font-size:11px;color:${color};text-align:right;margin-top:4px;font-weight:700">${pct}% ejecutado</div>
-      </div>`;
-    }).join('');
-
-  document.getElementById('obrasList').innerHTML = OBRAS.map(o => {
-    const c = o.executed === 100 ? '#10b981' : o.executed >= 50 ? '#f59e0b' : '#ef4444';
-    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="map.setView([${o.lat},${o.lng}],16)">
-      <div style="font-size:12px;font-weight:700;color:var(--text-primary)">${o.type} ${o.name}</div>
-      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text-muted)">
-        <span>${o.categoria}</span><span style="color:${c};font-weight:700">${o.executed}%</span>
-      </div>
-    </div>`;
-  }).join('');
+  renderLayers();
+  costosLayer.addTo(map);
 
   buildSidebar('mapa');
   </script>

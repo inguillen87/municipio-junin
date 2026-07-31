@@ -214,6 +214,92 @@ document.querySelectorAll('.report-item').forEach(item => {
 });
 document.getElementById('optPeriodo')?.addEventListener('change', () => renderPreview(currentReport));
 
+function simulateProgress(filename, type, dataCallback) {
+  const container = document.getElementById('exportProgressContainer');
+  const bar = document.getElementById('exportProgressBar');
+  const status = document.getElementById('exportProgressStatus');
+  const pct = document.getElementById('exportProgressPct');
+  const dlLink = document.getElementById('exportDownloadLink');
+  const anchor = document.getElementById('exportAnchor');
+  
+  if(!container) {
+    dataCallback();
+    return;
+  }
+  
+  container.style.display = 'block';
+  dlLink.style.display = 'none';
+  bar.style.width = '0%';
+  pct.textContent = '0%';
+  status.textContent = 'Generando ' + type + '...';
+  
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 20 + 5;
+    if(progress > 100) progress = 100;
+    
+    bar.style.width = progress + '%';
+    pct.textContent = Math.floor(progress) + '%';
+    
+    if(progress >= 100) {
+      clearInterval(interval);
+      status.textContent = '¡Listo!';
+      
+      const blob = dataCallback();
+      if(blob) {
+        const url = URL.createObjectURL(blob);
+        anchor.href = url;
+        anchor.download = filename;
+        dlLink.style.display = 'block';
+        
+        // Auto download
+        setTimeout(() => anchor.click(), 500);
+      }
+    }
+  }, 200);
+}
+
+document.getElementById('btnPreviewModal')?.addEventListener('click', () => {
+  const r = REPORTS[currentReport];
+  if(!r) return;
+  document.getElementById('modalTitle').textContent = 'Vista Previa: ' + r.title;
+  
+  // Clone preview body content but style for light theme
+  const content = document.getElementById('previewBody').innerHTML;
+  const modalContent = document.getElementById('modalContent');
+  modalContent.innerHTML = content;
+  
+  // Apply inline styles to make tables visible in light background
+  modalContent.querySelectorAll('table').forEach(t => {
+    t.style.width = '100%';
+    t.style.borderCollapse = 'collapse';
+    t.style.marginTop = '20px';
+    t.style.color = '#333';
+  });
+  modalContent.querySelectorAll('th').forEach(th => {
+    th.style.borderBottom = '2px solid #ccc';
+    th.style.padding = '8px';
+    th.style.textAlign = 'left';
+    th.style.color = '#000';
+  });
+  modalContent.querySelectorAll('td').forEach(td => {
+    td.style.borderBottom = '1px solid #eee';
+    td.style.padding = '8px';
+  });
+  modalContent.querySelectorAll('.preview-kpi').forEach(k => {
+    k.style.background = '#f5f5f5';
+    k.style.color = '#333';
+    k.style.padding = '10px';
+    k.style.borderRadius = '8px';
+    k.style.display = 'inline-block';
+    k.style.margin = '5px';
+    k.style.minWidth = '120px';
+    k.style.border = '1px solid #ddd';
+  });
+  
+  document.getElementById('modalVistaPrevia').style.display = 'flex';
+});
+
 // ── PDF PROFESIONAL ──────────────────────────────────────
 document.getElementById('btnExportPDF')?.addEventListener('click', () => {
   const r      = REPORTS[currentReport];
@@ -323,8 +409,11 @@ document.getElementById('btnExportPDF')?.addEventListener('click', () => {
     doc.text(`Página ${i} de ${pageCount}`, 185, 289, { align: 'right' });
   }
 
-  doc.save(`municipio-junin-${currentReport}-${periodo.replace(' ', '-')}.pdf`);
-  addRecentExport(r.title, 'pdf', periodo);
+  const filename = `municipio-junin-${currentReport}-${periodo.replace(/\s/g, '-')}.pdf`;
+  simulateProgress(filename, 'PDF', () => {
+    addRecentExport(r.title, 'pdf', periodo);
+    return doc.output('blob');
+  });
 });
 
 // ── EXCEL PROFESIONAL ───────────────────────────────────
@@ -373,8 +462,13 @@ document.getElementById('btnExportExcel')?.addEventListener('click', () => {
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen Ejecutivo');
 
-  XLSX.writeFile(wb, `municipio-junin-${currentReport}-${periodo.replace(/\s/g,'-')}.xlsx`);
-  addRecentExport(r.title, 'excel', periodo);
+  const filename = `municipio-junin-${currentReport}-${periodo.replace(/\s/g,'-')}.xlsx`;
+  
+  simulateProgress(filename, 'Excel', () => {
+    addRecentExport(r.title, 'excel', periodo);
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    return new Blob([wbout], {type:"application/octet-stream"});
+  });
 });
 
 document.getElementById('btnPrint')?.addEventListener('click', () => window.print());

@@ -1,0 +1,43 @@
+{
+  "_instrucciones": "Copiá esta carpeta con el nombre de tu municipio y completá los campos",
+  "id": "nuevo-municipio",
+  "nombre": "Municipalidad de [Nombre]",
+  "provincia": "[Provincia]",
+  "pais": "[País]",
+  "poblacion": 0,
+  "empleados": 0,
+  "presupuesto_anual": 0,
+  "moneda": "ARS",
+  "timezone": "America/Argentina/Buenos_Aires",
+  "contacto": {
+    "intendente": "intendente@municipio.gob.ar",
+    "hacienda": "hacienda@municipio.gob.ar",
+    "tecnologia": "it@municipio.gob.ar"
+  },
+  "theme": {
+    "primary": "#3b82f6",
+    "accent": "#6366f1",
+    "background": "#060b18",
+    "logo_emoji": "🏛️",
+    "nombre_corto": "[Nombre corto]"
+  },
+  "modulos_activos": [
+    "dashboard", "ia", "rrhh", "vecinos", "control"
+  ],
+  "whatsapp": {
+    "activo": false,
+    "numero_bot": "",
+    "destinatarios_alertas": []
+  },
+  "email": {
+    "activo": false,
+    "smtp_host": ""
+  },
+  "db": {
+    "tipo": "demo",
+    "url_env": "DATABASE_URL"
+  },
+  "version": "2.0.0",
+  "creado": "[fecha]",
+  "activo": false
+}

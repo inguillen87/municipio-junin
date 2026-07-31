@@ -1,0 +1,44 @@
+{
+  "id": "junin-mendoza",
+  "nombre": "Municipalidad de Junín",
+  "provincia": "Mendoza",
+  "pais": "Argentina",
+  "poblacion": 35000,
+  "empleados": 1247,
+  "presupuesto_anual": 3720000000,
+  "moneda": "ARS",
+  "timezone": "America/Argentina/Mendoza",
+  "contacto": {
+    "intendente": "intendente@junin.gob.ar",
+    "hacienda": "hacienda@junin.gob.ar",
+    "tecnologia": "it@junin.gob.ar"
+  },
+  "theme": {
+    "primary": "#3b82f6",
+    "accent": "#6366f1",
+    "background": "#060b18",
+    "logo_emoji": "🏛️",
+    "nombre_corto": "Junín"
+  },
+  "modulos_activos": [
+    "dashboard", "control", "ia", "rrhh", "licitaciones",
+    "vecinos", "mapa", "proveedores", "talleres", "servicios",
+    "upload", "exportar", "presentacion", "manuales"
+  ],
+  "whatsapp": {
+    "activo": false,
+    "numero_bot": "",
+    "destinatarios_alertas": []
+  },
+  "email": {
+    "activo": false,
+    "smtp_host": "smtp.gmail.com"
+  },
+  "db": {
+    "tipo": "demo",
+    "url_env": "DATABASE_URL"
+  },
+  "version": "2.0.0",
+  "creado": "2026-07-31",
+  "activo": true
+}

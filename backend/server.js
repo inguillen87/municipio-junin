@@ -63,6 +63,7 @@ app.use('/api/reclamos',      require('./routes/reclamos'));
 app.use('/api/archivos',      require('./routes/archivos'));
 app.use('/api/whatsapp',      require('./routes/whatsapp'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/data',          require('./routes/data-connector'));
 
 // ── HEALTH CHECK ──────────────────────────────────
 app.get('/api/health', (req, res) => {

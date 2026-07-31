@@ -104,6 +104,9 @@
     .bubble-3 { top: 65%; left: 15%; --dur: 8s;  --delay: 3s; }
     .bubble-4 { top: 12%; right: 10%; --dur: 10s; --delay: 0.8s; }
     .bubble-5 { bottom: 18%; right: 15%; --dur: 7.5s; --delay: 2s; }
+    .bubble-6 { top: 75%; right: 12%; --dur: 8.5s; --delay: 1.2s; }
+    .bubble-7 { top: 25%; left: 25%; --dur: 9.5s; --delay: 2.5s; }
+    .bubble-8 { top: 50%; right: 25%; --dur: 7.2s; --delay: 4s; }
 
     @keyframes floatBubble {
       0%,100% { transform: translateY(0px) rotate(-1deg); }
@@ -125,6 +128,9 @@
     .bubble-3::before { background: linear-gradient(90deg, #8b5cf6, #6366f1); }
     .bubble-4::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
     .bubble-5::before { background: linear-gradient(90deg, #10b981, #06b6d4); }
+    .bubble-6::before { background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
+    .bubble-7::before { background: linear-gradient(90deg, #ef4444, #f59e0b); }
+    .bubble-8::before { background: linear-gradient(90deg, #10b981, #3b82f6); }
 
     .stats-bar {
       position:absolute; bottom:28px; left:4rem;
@@ -265,6 +271,16 @@
     @media (max-width:768px) {
       .left-panel { display:none; }
       .right-panel { width:100%; }
+      .login-split { flex-direction: column !important; }
+      .login-left  { display: none !important; }
+      .login-right { width: 100% !important; padding: 20px !important; min-height: 100vh; }
+      .login-box   { max-width: 100% !important; padding: 24px !important; }
+      .roles-grid  { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+      .role-card   { padding: 14px 10px !important; font-size: 12px !important; }
+      .role-emoji  { font-size: 28px !important; }
+    }
+    @media (max-width: 380px) {
+      .roles-grid  { grid-template-columns: 1fr !important; }
     }
   </style>
 </head>
@@ -317,6 +333,21 @@
         <div class="bubble-label">📊 Presupuesto Ejecutado</div>
         <div class="bubble-value">72%</div>
         <div class="bubble-trend info">6 meses del año</div>
+      </div>
+      <div class="bubble bubble-6">
+        <div class="bubble-label">📄 Expedientes Digitales</div>
+        <div class="bubble-value">1,502</div>
+        <div class="bubble-trend info">100% despapelizado</div>
+      </div>
+      <div class="bubble bubble-7">
+        <div class="bubble-label">🚦 Tránsito Controlado</div>
+        <div class="bubble-value">42</div>
+        <div class="bubble-trend down">▼ 5% multas</div>
+      </div>
+      <div class="bubble bubble-8">
+        <div class="bubble-label">🌐 Visitas Portal</div>
+        <div class="bubble-value">15k</div>
+        <div class="bubble-trend up">▲ 12% vs ayer</div>
       </div>
     </div>
 

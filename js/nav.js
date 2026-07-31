@@ -353,41 +353,29 @@ window.toggleTheme = toggleTheme;
   const menuBtn = document.getElementById('menuBtn');
   const mainContent = document.getElementById('mainContent');
 
-  // Create overlay
-  if (!document.getElementById('sidebarOverlay')) {
-    const overlay = document.createElement('div');
-    overlay.id = 'sidebarOverlay';
-    overlay.style.cssText = `
-      display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);
-      z-index:998;backdrop-filter:blur(2px);transition:opacity 0.25s
-    `;
-    overlay.onclick = closeMobileSidebar;
-    document.body.appendChild(overlay);
-  }
-
-  function openMobileSidebar() {
-    sidebarEl.classList.add('mobile-open');
-    document.getElementById('sidebarOverlay').style.display = 'block';
-    setTimeout(() => document.getElementById('sidebarOverlay').style.opacity = '1', 10);
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeMobileSidebar() {
+  // Mobile overlay backdrop
+  var overlay = document.createElement('div');
+  overlay.id = 'sidebarOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:998;display:none;backdrop-filter:blur(2px);transition:opacity 0.3s ease;opacity:0';
+  overlay.addEventListener('click', function() {
     sidebarEl.classList.remove('mobile-open');
-    const overlay = document.getElementById('sidebarOverlay');
     overlay.style.opacity = '0';
-    setTimeout(() => { overlay.style.display = 'none'; }, 250);
-    document.body.style.overflow = '';
-  }
-
+    setTimeout(function() { overlay.style.display = 'none'; }, 300);
+  });
+  document.body.appendChild(overlay);
+  
+  // Update menu button to also show/hide overlay
   if (menuBtn) {
-    menuBtn.onclick = () => {
+    menuBtn.addEventListener('click', function() {
+      sidebarEl.classList.toggle('mobile-open');
       if (sidebarEl.classList.contains('mobile-open')) {
-        closeMobileSidebar();
+        overlay.style.display = 'block';
+        requestAnimationFrame(function() { overlay.style.opacity = '1'; });
       } else {
-        openMobileSidebar();
+        overlay.style.opacity = '0';
+        setTimeout(function() { overlay.style.display = 'none'; }, 300);
       }
-    };
+    });
   }
 
   // Mobile sidebar CSS

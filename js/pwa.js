@@ -129,11 +129,11 @@ window.initMobile = function () {
   if (!document.getElementById('mobileNav')) {
     const currentPage = location.pathname.split('/').pop() || 'index.html';
     const NAV_ITEMS = [
-      { icon: '📊', label: 'Dashboard', href: 'index.html' },
-      { icon: '🤖', label: 'Asistente',  href: 'ia.html' },
-      { icon: '💰', label: 'Control',    href: 'control.html' },
-      { icon: '👥', label: 'RRHH',       href: 'rrhh.html' },
-      { icon: '🏘️', label: 'Vecinos',   href: 'vecinos.html' },
+      { icon: '📊', label: 'Dashboard',   href: 'index.html' },
+      { icon: '🏛️', label: 'Control',     href: 'control.html' },
+      { icon: '💰', label: 'Presupuesto', href: 'presupuesto.html' },
+      { icon: '🤖', label: 'Asistente',   href: 'ia.html' },
+      { icon: '🏘️', label: 'Vecinos',     href: 'vecinos.html' },
     ];
 
     const mobileNav = document.createElement('nav');

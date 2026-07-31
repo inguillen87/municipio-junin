@@ -1,402 +1,442 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa Financiero — Sistema Municipal Junín</title>
+  <meta name="description" content="Mapa georreferenciado de gastos, costos y obras públicas municipales" />
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Mapa de Reclamos — Municipio de Junín</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/dashboard.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
   <style>
-    .mapa-layout { display: flex; gap: 0; height: calc(100vh - 72px); overflow: hidden; }
-    .mapa-sidebar { width: 340px; flex-shrink: 0; background: rgba(13,21,38,0.95); border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; overflow-y: auto; backdrop-filter: blur(20px); }
-    .mapa-main { flex: 1; position: relative; }
-    #map { width: 100%; height: 100%; z-index: 1; }
-    
-    /* Override Leaflet dark theme */
-    .leaflet-container { background: #060b18 !important; font-family: 'Inter', sans-serif !important; }
-    .leaflet-tile { filter: brightness(0.85) saturate(0.7) hue-rotate(200deg) !important; }
-    .leaflet-popup-content-wrapper { background: #0e1a30 !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 16px !important; box-shadow: 0 16px 48px rgba(0,0,0,0.6) !important; color: white !important; }
-    .leaflet-popup-tip { background: #0e1a30 !important; }
-    .leaflet-popup-close-button { color: rgba(148,163,184,0.7) !important; }
-    .leaflet-control-zoom a { background: #0e1a30 !important; border-color: rgba(255,255,255,0.1) !important; color: rgba(148,163,184,0.9) !important; }
-    .leaflet-control-zoom a:hover { background: #1a2a45 !important; color: white !important; }
-    .leaflet-control-layers { background: #0e1a30 !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; color: rgba(148,163,184,0.9) !important; }
-    .leaflet-control-layers-toggle { background-color: #0e1a30 !important; }
-    .leaflet-bar { border: none !important; }
-    
-    /* Sidebar sections */
-    .sidebar-section { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .sidebar-section:last-child { border-bottom: none; }
-    .sidebar-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(100,116,139,0.8); margin-bottom: 12px; }
-    
-    /* Stat cards */
-    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-    .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 12px 10px; text-align: center; }
-    .stat-val { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800; color: white; line-height: 1; }
-    .stat-lbl { font-size: 10px; color: rgba(100,116,139,0.7); margin-top: 3px; }
-    .stat-card.red   { border-color: rgba(239,68,68,0.2); }
-    .stat-card.green { border-color: rgba(16,185,129,0.2); }
-    .stat-card.blue  { border-color: rgba(59,130,246,0.2); }
-    .stat-card.amber { border-color: rgba(245,158,11,0.2); }
-    .stat-val.red   { color: #ef4444; }
-    .stat-val.green { color: #10b981; }
-    .stat-val.blue  { color: #60a5fa; }
-    .stat-val.amber { color: #f59e0b; }
-    
-    /* Type legend */
-    .legend-list { display: flex; flex-direction: column; gap: 6px; }
-    .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
-    .legend-item:hover { background: rgba(255,255,255,0.04); }
-    .legend-item.active { background: rgba(59,130,246,0.08); }
-    .legend-left { display: flex; align-items: center; gap: 8px; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .legend-name { color: rgba(148,163,184,0.9); font-weight: 500; }
-    .legend-count { font-weight: 700; color: white; background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 99px; font-size: 11px; }
-    
-    /* Reclamos list */
-    .reclamo-item { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); margin-bottom: 6px; cursor: pointer; transition: all 0.15s; }
-    .reclamo-item:hover { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.2); }
-    .reclamo-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .reclamo-num { font-size: 10px; color: rgba(100,116,139,0.7); font-weight: 600; }
-    .reclamo-desc { font-size: 12px; color: rgba(148,163,184,0.9); font-weight: 500; margin-bottom: 4px; }
-    .reclamo-dir  { font-size: 11px; color: rgba(100,116,139,0.7); }
-    
-    /* Popup content */
-    .popup-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: white; margin-bottom: 6px; }
-    .popup-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .popup-row:last-child { border: none; }
-    .popup-row span { color: rgba(148,163,184,0.7); }
-    .popup-row strong { color: white; }
-    .popup-badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; margin-top: 8px; }
-    
-    /* Floating control */
-    .map-controls { position: absolute; top: 16px; right: 16px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
-    .map-ctrl-btn { background: rgba(13,21,38,0.95); border: 1px solid rgba(255,255,255,0.1); color: rgba(148,163,184,0.9); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; backdrop-filter: blur(10px); font-family: 'Inter',sans-serif; white-space: nowrap; }
-    .map-ctrl-btn:hover { background: rgba(59,130,246,0.15); color: white; border-color: rgba(59,130,246,0.3); }
-    .map-ctrl-btn.active { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: rgba(59,130,246,0.4); }
-    
-    /* Map overlay info */
-    .map-badge { position: absolute; bottom: 16px; left: 16px; z-index: 999; background: rgba(13,21,38,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: rgba(148,163,184,0.8); backdrop-filter: blur(10px); }
-    .map-badge strong { color: white; }
-    
-    @media(max-width:768px){ .mapa-sidebar{display:none} }
+    .map-layout {
+      display: flex;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+    }
+    .map-sidebar {
+      width: 320px;
+      flex-shrink: 0;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .map-sidebar-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .map-sidebar-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .map-container {
+      flex: 1;
+      position: relative;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #0d1526;
+    }
+    /* Dark map tiles */
+    .leaflet-layer,
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out,
+    .leaflet-control-attribution {
+      filter: invert(1) hue-rotate(180deg) brightness(0.8) saturate(1.3);
+    }
+    /* Layer controls */
+    .map-controls {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .layer-btn {
+      background: rgba(9,15,28,0.92);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 180px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .layer-btn.active {
+      border-color: rgba(59,130,246,0.5);
+      color: #60a5fa;
+      background: rgba(59,130,246,0.08);
+    }
+    .layer-btn .layer-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    /* Zone cards */
+    .zone-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .zone-card:hover, .zone-card.selected {
+      background: rgba(59,130,246,0.06);
+      border-color: rgba(59,130,246,0.25);
+    }
+    .zone-name { font-weight: 700; font-size: 13px; color: var(--text-primary); }
+    .zone-budget { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .zone-bar-wrap { height: 4px; background: rgba(255,255,255,0.06); border-radius: 99px; margin-top: 8px; overflow: hidden; }
+    .zone-bar { height: 100%; border-radius: 99px; transition: width 1.5s ease; }
+    /* Bottom KPIs */
+    .map-kpis {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      background: rgba(6,11,24,0.95);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .map-kpi {
+      padding: 14px 18px;
+      border-right: 1px solid var(--border);
+    }
+    .map-kpi:last-child { border-right: none; }
+    .map-kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+    .map-kpi-value { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 900; color: var(--text-primary); margin-top: 3px; }
+    .map-kpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    /* Obras popup */
+    .leaflet-popup-content-wrapper {
+      background: #111d35 !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      border-radius: 12px !important;
+      color: #f0f4ff !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+    }
+    .leaflet-popup-tip { background: #111d35 !important; }
+    .obra-popup { min-width: 200px; }
+    .obra-popup-title { font-weight: 800; font-size: 14px; margin-bottom: 6px; }
+    .obra-popup-detail { font-size: 12px; color: rgba(148,163,184,0.8); margin-bottom: 4px; }
+    .obra-progress-wrap { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; margin-top: 8px; overflow: hidden; }
+    .obra-progress-bar { height: 100%; border-radius: 99px; transition: width 1s ease; }
+    /* Legend */
+    .map-legend {
+      position: absolute;
+      bottom: 90px;
+      right: 16px;
+      z-index: 1000;
+      background: rgba(9,15,28,0.92);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      backdrop-filter: blur(12px);
+      font-size: 11px;
+    }
+    .legend-title { font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; color: var(--text-muted); }
+    .legend-box { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+    /* Obra marker pulse */
+    .obra-marker {
+      width: 36px; height: 36px;
+      background: rgba(245,158,11,0.9);
+      border: 3px solid rgba(245,158,11,0.4);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 0 20px rgba(245,158,11,0.5);
+      animation: markerPulse 2s ease-in-out infinite;
+    }
+    @keyframes markerPulse { 0%,100%{box-shadow:0 0 12px rgba(245,158,11,0.5)} 50%{box-shadow:0 0 24px rgba(245,158,11,0.8)} }
+    @media (max-width: 768px) {
+      .map-layout { flex-direction: column; height: auto; }
+      .map-sidebar { width: 100%; max-height: 220px; flex-direction: row; overflow-x: auto; flex-wrap: nowrap; }
+      .map-sidebar-section { min-width: 260px; }
+      #map { height: calc(100vh - 380px); min-height: 280px; }
+      .map-kpis { grid-template-columns: repeat(2,1fr); }
+      .map-controls { top: 8px; right: 8px; }
+      .layer-btn { min-width: 140px; padding: 8px 10px; font-size: 11px; }
+    }
   </style>
 </head>
 <body>
   <aside class="sidebar" id="sidebar"></aside>
-  <main class="main-content" id="mainContent">
+  <div class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
         <button class="menu-btn" id="menuBtn">☰</button>
         <div class="page-title">
-          <h1>Mapa de Reclamos</h1>
-          <span class="breadcrumb">Municipio de Junín · Georreferenciación de Incidencias</span>
+          <h1>🗺️ Mapa Financiero</h1>
+          <div class="breadcrumb">Control / Gastos por Zona</div>
         </div>
       </div>
       <div class="topbar-right">
-        <button class="btn-primary" id="btnNuevoReclamo">📍 + Registrar Reclamo</button>
-        <button class="btn-export" onclick="exportMapData()">📤 Exportar</button>
-        <div class="topbar-avatar">MA</div>
+        <div id="mapStatus" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green)"><span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;box-shadow:0 0 8px #10b981"></span>Datos en tiempo real</div>
+        <div class="topbar-avatar" id="userAvatar">JT</div>
       </div>
     </header>
 
-    <div class="mapa-layout">
-
-      <!-- SIDEBAR IZQUIERDO -->
-      <aside class="mapa-sidebar">
-
-        <div class="sidebar-section">
-          <div class="sidebar-title">📊 Estadísticas</div>
-          <div class="stat-row">
-            <div class="stat-card blue"><div class="stat-val blue" id="totalCount">318</div><div class="stat-lbl">Total registrados</div></div>
-            <div class="stat-card red"><div class="stat-val red" id="pendCount">89</div><div class="stat-lbl">Pendientes</div></div>
-          </div>
-          <div class="stat-row">
-            <div class="stat-card green"><div class="stat-val green" id="resolCount">229</div><div class="stat-lbl">Resueltos</div></div>
-            <div class="stat-card amber"><div class="stat-val amber">3.2d</div><div class="stat-lbl">Tiempo prom.</div></div>
-          </div>
+    <div class="map-layout">
+      <!-- SIDEBAR MAPA -->
+      <div class="map-sidebar">
+        <div class="map-sidebar-section">
+          <div class="map-sidebar-title">📍 Zonas del Municipio</div>
+          <div id="zoneList"></div>
         </div>
-
-        <div class="sidebar-section">
-          <div class="sidebar-title">🎨 Filtrar por Tipo</div>
-          <div class="legend-list" id="legendList"></div>
+        <div class="map-sidebar-section">
+          <div class="map-sidebar-title">🏗️ Obras en Curso</div>
+          <div id="obrasList"></div>
         </div>
+      </div>
 
-        <div class="sidebar-section" style="flex:1">
-          <div class="sidebar-title" style="display:flex;justify-content:space-between">
-            <span>📍 Reclamos Recientes</span>
-            <span id="reclamoCount" style="color:rgba(59,130,246,0.8);font-size:10px">Todos</span>
-          </div>
-          <div id="reclamosList"></div>
-        </div>
-
-      </aside>
-
-      <!-- MAPA PRINCIPAL -->
-      <div class="mapa-main">
+      <!-- MAPA -->
+      <div class="map-container">
         <div id="map"></div>
 
-        <!-- Floating controls -->
+        <!-- CONTROLES DE CAPAS -->
         <div class="map-controls">
-          <button class="map-ctrl-btn active" id="btnTodos" onclick="filterType('all')">Todos</button>
-          <button class="map-ctrl-btn" id="btnPend" onclick="filterStatus('pendiente')">⏳ Pendientes</button>
-          <button class="map-ctrl-btn" id="btnResuel" onclick="filterStatus('resuelto')">✅ Resueltos</button>
-          <button class="map-ctrl-btn" onclick="map.setView(JUNIN_CENTER, 14)">🎯 Centrar</button>
+          <button class="layer-btn active" id="btnCostos" onclick="toggleLayer('costos')">
+            <span class="layer-dot" style="background:#3b82f6"></span>
+            💰 Costos por Zona
+          </button>
+          <button class="layer-btn" id="btnObras" onclick="toggleLayer('obras')">
+            <span class="layer-dot" style="background:#f59e0b"></span>
+            🏗️ Obras Públicas
+          </button>
+          <button class="layer-btn" id="btnHeatmap" onclick="toggleLayer('heatmap')">
+            <span class="layer-dot" style="background:#ef4444"></span>
+            🔥 Heatmap Gasto
+          </button>
         </div>
 
-        <!-- Info badge -->
-        <div class="map-badge">
-          📍 <strong id="mapInfo">318 reclamos</strong> en el mapa · Junin, Mendoza
+        <!-- LEYENDA -->
+        <div class="map-legend" id="mapLegend">
+          <div class="legend-title">Gasto Mensual</div>
+          <div class="legend-item"><div class="legend-box" style="background:rgba(16,185,129,0.7)"></div> Bajo (&lt; $5M)</div>
+          <div class="legend-item"><div class="legend-box" style="background:rgba(245,158,11,0.7)"></div> Medio ($5M–$15M)</div>
+          <div class="legend-item"><div class="legend-box" style="background:rgba(239,68,68,0.7)"></div> Alto (&gt; $15M)</div>
         </div>
-      </div>
 
-    </div>
-  </main>
-
-  <!-- MODAL NUEVO RECLAMO -->
-  <div class="modal-overlay" id="modalReclamo" style="display:none">
-    <div class="modal" style="max-width:520px">
-      <div class="modal-header">
-        <h3>📍 Registrar Nuevo Reclamo</h3>
-        <button class="modal-close" onclick="document.getElementById('modalReclamo').style.display='none'">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid">
-          <div class="form-group"><label>Vecino</label><input type="text" id="rNombre" placeholder="Juan Pérez" /></div>
-          <div class="form-group"><label>Teléfono</label><input type="text" id="rTelefono" placeholder="261-555-1234" /></div>
-          <div class="form-group" style="grid-column:1/-1"><label>Dirección exacta</label><input type="text" id="rDireccion" placeholder="Av. Rivadavia 1234, Junín" /></div>
-          <div class="form-group"><label>Tipo de reclamo</label>
-            <select id="rTipo">
-              <option>Baches y Pavimento</option><option>Alumbrado Público</option>
-              <option>Recolección de Basura</option><option>Poda de Árboles</option>
-              <option>Agua y Cloacas</option><option>Ruidos Molestos</option><option>Otros</option>
-            </select>
+        <!-- KPIs BOTTOM -->
+        <div class="map-kpis">
+          <div class="map-kpi">
+            <div class="map-kpi-label">Presupuesto Total</div>
+            <div class="map-kpi-value">$372M</div>
+            <div class="map-kpi-sub">Anual 2026</div>
           </div>
-          <div class="form-group"><label>Prioridad</label>
-            <select id="rPrioridad"><option>Normal</option><option>Alta</option><option>Urgente</option></select>
+          <div class="map-kpi">
+            <div class="map-kpi-label">Ejecutado</div>
+            <div class="map-kpi-value" style="color:#10b981">$193M</div>
+            <div class="map-kpi-sub">52% del total</div>
           </div>
-          <div class="form-group" style="grid-column:1/-1"><label>Descripción</label>
-            <textarea id="rDesc" rows="3" placeholder="Describí el problema con detalle..."></textarea>
+          <div class="map-kpi">
+            <div class="map-kpi-label">Obras Activas</div>
+            <div class="map-kpi-value" style="color:#f59e0b">8</div>
+            <div class="map-kpi-sub">En ejecución</div>
+          </div>
+          <div class="map-kpi">
+            <div class="map-kpi-label">Zonas Monitoreadas</div>
+            <div class="map-kpi-value" style="color:#8b5cf6">12</div>
+            <div class="map-kpi-sub">Cobertura 100%</div>
           </div>
         </div>
-        <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:12px;margin-top:12px;font-size:12px;color:rgba(148,163,184,0.8)">
-          📍 La ubicación en el mapa se asignará automáticamente por geocodificación de la dirección.
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="document.getElementById('modalReclamo').style.display='none'">Cancelar</button>
-        <button class="btn-save" id="btnGuardarReclamo">📍 Registrar en el Mapa</button>
       </div>
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/pwa.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/toast.js"></script>
   <script>
-    buildSidebar('mapa');
+  // ── DATOS FINANCIEROS POR ZONA ────────────────────────────
+  const ZONAS = [
+    { id:'z1', name:'Centro',       lat:-33.070, lng:-69.062, budget:35000000, executed:28000000, color:'#ef4444', desc:'Zona comercial e institucional' },
+    { id:'z2', name:'Norte',        lat:-33.055, lng:-69.062, budget:22000000, executed:18000000, color:'#f59e0b', desc:'Residencial norte' },
+    { id:'z3', name:'Sur',          lat:-33.085, lng:-69.062, budget:18000000, executed:12000000, color:'#f59e0b', desc:'Zona industrial y residencial' },
+    { id:'z4', name:'Este',         lat:-33.070, lng:-69.048, budget:28000000, executed:19000000, color:'#ef4444', desc:'Desarrollo urbanístico' },
+    { id:'z5', name:'Oeste',        lat:-33.070, lng:-69.076, budget:15000000, executed:8000000,  color:'#10b981', desc:'Rural y periurbano' },
+    { id:'z6', name:'Junín Centro', lat:-33.067, lng:-69.058, budget:42000000, executed:35000000, color:'#ef4444', desc:'Administrativo central' },
+    { id:'z7', name:'Villa Seca',   lat:-33.082, lng:-69.070, budget:12000000, executed:6000000,  color:'#10b981', desc:'Barrio residencial' },
+    { id:'z8', name:'La Colonia',   lat:-33.058, lng:-69.075, budget:19000000, executed:14000000, color:'#f59e0b', desc:'Zona agrícola y residencial' },
+    { id:'z9', name:'Reducción',    lat:-33.048, lng:-69.053, budget:9000000,  executed:5000000,  color:'#10b981', desc:'Suburbio norte' },
+    { id:'z10',name:'Medrano',      lat:-33.075, lng:-69.047, budget:14000000, executed:9000000,  color:'#10b981', desc:'Zona este residencial' },
+    { id:'z11',name:'Palmira',      lat:-33.060, lng:-69.063, budget:23000000, executed:17000000, color:'#f59e0b', desc:'Zona central norte' },
+    { id:'z12',name:'Rivadavia',    lat:-33.090, lng:-69.055, budget:17000000, executed:11000000, color:'#10b981', desc:'Zona sur agrícola' },
+  ];
 
-    const JUNIN_CENTER = [-32.695, -70.081];
+  const OBRAS = [
+    { name:'Pavimentación Calle San Martín', lat:-33.068, lng:-69.060, budget:8500000, executed:65, deadline:'Dic 2026', type:'🏗️', categoria:'Infraestructura' },
+    { name:'Ampliación Hospital Municipal',  lat:-33.072, lng:-69.065, budget:15000000,executed:30, deadline:'Mar 2027', type:'🏥', categoria:'Salud' },
+    { name:'Parque Recreativo Norte',        lat:-33.052, lng:-69.060, budget:3200000, executed:80, deadline:'Sep 2026', type:'🌳', categoria:'Espacios Verdes' },
+    { name:'Red Cloacal Zona Sur',           lat:-33.088, lng:-69.060, budget:12000000,executed:45, deadline:'Feb 2027', type:'🔧', categoria:'Servicios' },
+    { name:'Centro Comunitario Este',        lat:-33.070, lng:-69.045, budget:4500000, executed:90, deadline:'Ago 2026', type:'🏘️', categoria:'Social' },
+    { name:'Iluminación LED Centro',         lat:-33.067, lng:-69.055, budget:2800000, executed:100,deadline:'Jul 2026', type:'💡', categoria:'Infraestructura' },
+    { name:'Bacheo Zona Oeste',              lat:-33.068, lng:-69.078, budget:1800000, executed:55, deadline:'Oct 2026', type:'🚗', categoria:'Vialidad' },
+    { name:'Nuevo CIC Medrano',              lat:-33.075, lng:-69.048, budget:6000000, executed:20, deadline:'Jun 2027', type:'🏛️', categoria:'Social' },
+  ];
 
-    // Datos de reclamos con coordenadas reales de Junin, Mendoza
-    const RECLAMOS = [
-      { id:'R001', tipo:'Baches y Pavimento', dir:'Av. Rivadavia 1240', vecino:'Carlos Martínez', estado:'pendiente', fecha:'2026-08-28', dias:3, lat:-32.694, lng:-70.082 },
-      { id:'R002', tipo:'Alumbrado Público', dir:'Calle San Martín 456', vecino:'María López', estado:'resuelto', fecha:'2026-08-25', dias:1, lat:-32.697, lng:-70.078 },
-      { id:'R003', tipo:'Recolección de Basura', dir:'Sarmiento 789', vecino:'Pedro González', estado:'pendiente', fecha:'2026-08-27', dias:4, lat:-32.693, lng:-70.085 },
-      { id:'R004', tipo:'Baches y Pavimento', dir:'Mitre 321', vecino:'Ana Fernández', estado:'proceso', fecha:'2026-08-26', dias:2, lat:-32.698, lng:-70.080 },
-      { id:'R005', tipo:'Poda de Árboles', dir:'Belgrano 654', vecino:'Luis Rodríguez', estado:'resuelto', fecha:'2026-08-20', dias:1, lat:-32.692, lng:-70.083 },
-      { id:'R006', tipo:'Agua y Cloacas', dir:'Rivadavia y Mitre', vecino:'Rosa Sánchez', estado:'pendiente', fecha:'2026-08-29', dias:2, lat:-32.696, lng:-70.079 },
-      { id:'R007', tipo:'Baches y Pavimento', dir:'Tucumán 123', vecino:'Jorge Pérez', estado:'pendiente', fecha:'2026-08-28', dias:3, lat:-32.700, lng:-70.082 },
-      { id:'R008', tipo:'Alumbrado Público', dir:'Necochea 456', vecino:'Carmen Villa', estado:'resuelto', fecha:'2026-08-22', dias:2, lat:-32.691, lng:-70.077 },
-      { id:'R009', tipo:'Recolección de Basura', dir:'Av. Acceso 890', vecino:'Miguel Torres', estado:'proceso', fecha:'2026-08-27', dias:2, lat:-32.702, lng:-70.086 },
-      { id:'R010', tipo:'Ruidos Molestos', dir:'Libertad 234', vecino:'Silvia Mora', estado:'pendiente', fecha:'2026-08-29', dias:1, lat:-32.695, lng:-70.075 },
-      { id:'R011', tipo:'Baches y Pavimento', dir:'Av. Rivadavia 2100', vecino:'Héctor Díaz', estado:'resuelto', fecha:'2026-08-18', dias:3, lat:-32.699, lng:-70.088 },
-      { id:'R012', tipo:'Poda de Árboles', dir:'San Lorenzo 345', vecino:'Patricia Castro', estado:'pendiente', fecha:'2026-08-26', dias:4, lat:-32.689, lng:-70.081 },
-      { id:'R013', tipo:'Agua y Cloacas', dir:'Godoy Cruz 567', vecino:'Diego Ruiz', estado:'resuelto', fecha:'2026-08-23', dias:2, lat:-32.703, lng:-70.079 },
-      { id:'R014', tipo:'Alumbrado Público', dir:'Salta 890', vecino:'Elena Vega', estado:'pendiente', fecha:'2026-08-28', dias:2, lat:-32.693, lng:-70.090 },
-      { id:'R015', tipo:'Recolección de Basura', dir:'Av. Pellegrini 100', vecino:'Roberto Herrera', estado:'pendiente', fecha:'2026-08-29', dias:1, lat:-32.697, lng:-70.073 },
-    ];
+  // ── MAPA LEAFLET ─────────────────────────────────────────
+  const map = L.map('map', { zoomControl: true }).setView([-33.070, -69.062], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 18,
+  }).addTo(map);
 
-    const TIPO_CONFIG = {
-      'Baches y Pavimento':     { color: '#ef4444', icon: '🛫', bg: 'rgba(239,68,68,0.12)' },
-      'Alumbrado Público':      { color: '#f59e0b', icon: '💡', bg: 'rgba(245,158,11,0.12)' },
-      'Recolección de Basura':  { color: '#10b981', icon: '🗑️', bg: 'rgba(16,185,129,0.12)' },
-      'Poda de Árboles':        { color: '#22c55e', icon: '🌳', bg: 'rgba(34,197,94,0.12)' },
-      'Agua y Cloacas':         { color: '#3b82f6', icon: '💧', bg: 'rgba(59,130,246,0.12)' },
-      'Ruidos Molestos':        { color: '#8b5cf6', icon: '🔊', bg: 'rgba(139,92,246,0.12)' },
-      'Otros':                  { color: '#64748b', icon: '📌', bg: 'rgba(100,116,139,0.12)' },
-    };
-
-    const ESTADO_CONFIG = {
-      'pendiente': { color: '#ef4444', label: 'Pendiente', border: '#ef4444' },
-      'proceso':   { color: '#f59e0b', label: 'En proceso', border: '#f59e0b' },
-      'resuelto':  { color: '#10b981', label: 'Resuelto',  border: '#10b981' },
-    };
-
-    // Init map
-    const map = L.map('map', { zoomControl: false }).setView(JUNIN_CENTER, 14);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '\u00a9 OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
-
-    let markers = [];
-    let activeFilter = 'all';
-    let statusFilter = null;
-
-    function createMarker(r) {
-      const cfg = TIPO_CONFIG[r.tipo] || TIPO_CONFIG['Otros'];
-      const eCfg = ESTADO_CONFIG[r.estado];
-      const icon = L.divIcon({
-        html: `<div style="width:34px;height:34px;border-radius:50%;background:${cfg.color};border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:transform 0.2s">${cfg.icon}</div>`,
-        iconSize: [34, 34], iconAnchor: [17, 17], className: ''
-      });
-      const m = L.marker([r.lat, r.lng], { icon });
-      m.bindPopup(`
-        <div style="min-width:220px;padding:4px">
-          <div class="popup-title">${cfg.icon} ${r.tipo}</div>
-          <div class="popup-row"><span>Reclamo</span><strong>#${r.id}</strong></div>
-          <div class="popup-row"><span>Dirección</span><strong>${r.dir}</strong></div>
-          <div class="popup-row"><span>Vecino</span><strong>${r.vecino}</strong></div>
-          <div class="popup-row"><span>Fecha</span><strong>${r.fecha}</strong></div>
-          <div class="popup-row"><span>Resolución</span><strong>${r.dias} días</strong></div>
-          <div style="margin-top:10px">
-            <span class="popup-badge" style="background:${eCfg.color}22;border:1px solid ${eCfg.color}44;color:${eCfg.color}">${eCfg.label}</span>
-          </div>
-          <div style="margin-top:10px;display:flex;gap:6px">
-            <button onclick="escalateReclamo('${r.id}')" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif">Escalar</button>
-            <button onclick="resolveReclamo('${r.id}')" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif">Marcar resuelto</button>
-          </div>
+  // ── CAPA 1: Costos por Zona ───────────────────────────────
+  const costosLayer = L.layerGroup();
+  ZONAS.forEach(z => {
+    const radius = 400 + (z.budget / 2000000);
+    const pct = z.executed / z.budget;
+    const color = pct > 0.75 ? '#ef4444' : pct > 0.5 ? '#f59e0b' : '#10b981';
+    L.circle([z.lat, z.lng], {
+      radius,
+      color,
+      fillColor: color,
+      fillOpacity: 0.2,
+      weight: 2,
+      opacity: 0.7,
+    }).bindPopup(`
+      <div style="color:#f0f4ff;font-family:Inter,sans-serif;min-width:180px">
+        <div style="font-weight:800;font-size:14px;margin-bottom:6px">${z.name}</div>
+        <div style="font-size:12px;color:rgba(148,163,184,0.8);margin-bottom:8px">${z.desc}</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;color:rgba(148,163,184,0.6)">Presupuesto:</span>
+          <span style="font-size:12px;font-weight:700">$${(z.budget/1000000).toFixed(1)}M</span>
         </div>
-      `, { maxWidth: 280 });
-      m.reclamo = r;
-      m.addTo(map);
-      markers.push(m);
-      return m;
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;color:rgba(148,163,184,0.6)">Ejecutado:</span>
+          <span style="font-size:12px;font-weight:700;color:${color}">$${(z.executed/1000000).toFixed(1)}M (${Math.round(pct*100)}%)</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${pct*100}%;background:${color};border-radius:99px"></div>
+        </div>
+      </div>`
+    ).addTo(costosLayer);
+    L.marker([z.lat, z.lng], {
+      icon: L.divIcon({
+        html: `<div style="background:rgba(6,11,24,0.9);border:1px solid ${color};border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;color:${color};white-space:nowrap;backdrop-filter:blur(8px)">${z.name}</div>`,
+        className: '',
+        iconAnchor: [0, 0],
+      }),
+    }).addTo(costosLayer);
+  });
+  costosLayer.addTo(map);
+
+  // ── CAPA 2: Obras Públicas ────────────────────────────────
+  const obrasLayer = L.layerGroup();
+  OBRAS.forEach(o => {
+    const progColor = o.executed === 100 ? '#10b981' : o.executed >= 60 ? '#3b82f6' : o.executed >= 30 ? '#f59e0b' : '#ef4444';
+    const icon = L.divIcon({
+      html: `<div class="obra-marker" style="background:rgba(${o.executed===100?'16,185,129':'245,158,11'},0.9);border-color:rgba(${o.executed===100?'16,185,129':'245,158,11'},0.4);animation:${o.executed===100?'none':'markerPulse 2s ease-in-out infinite'}">${o.type}</div>`,
+      className: '',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    });
+    L.marker([o.lat, o.lng], { icon }).bindPopup(`
+      <div class="obra-popup" style="color:#f0f4ff;font-family:Inter,sans-serif">
+        <div class="obra-popup-title">${o.type} ${o.name}</div>
+        <div class="obra-popup-detail">📦 Categoría: ${o.categoria}</div>
+        <div class="obra-popup-detail">💰 Presupuesto: $${(o.budget/1000000).toFixed(1)}M</div>
+        <div class="obra-popup-detail">📅 Entrega: ${o.deadline}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <span style="font-size:11px;color:rgba(148,163,184,0.6)">Avance:</span>
+          <span style="font-size:13px;font-weight:800;color:${progColor}">${o.executed}%</span>
+        </div>
+        <div class="obra-progress-wrap">
+          <div class="obra-progress-bar" style="width:${o.executed}%;background:${progColor}"></div>
+        </div>
+      </div>`
+    ).addTo(obrasLayer);
+  });
+
+  // ── CAPA 3: Heatmap (simulado con círculos de calor) ──────
+  const heatmapLayer = L.layerGroup();
+  ZONAS.forEach(z => {
+    const intensity = z.executed / 42000000;
+    for (let i = 0; i < 8; i++) {
+      const jlat = z.lat + (Math.random() - 0.5) * 0.008;
+      const jlng = z.lng + (Math.random() - 0.5) * 0.008;
+      L.circle([jlat, jlng], {
+        radius: 180 + intensity * 400,
+        color: 'transparent',
+        fillColor: `hsl(${Math.round((1 - intensity) * 120)}, 90%, 50%)`,
+        fillOpacity: 0.12,
+        weight: 0,
+      }).addTo(heatmapLayer);
     }
+  });
 
-    function buildLegend() {
-      const list = document.getElementById('legendList');
-      const counts = {};
-      RECLAMOS.forEach(r => counts[r.tipo] = (counts[r.tipo]||0)+1);
-      const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-      sorted.forEach(([tipo, cnt]) => {
-        const cfg = TIPO_CONFIG[tipo];
-        const el = document.createElement('div');
-        el.className = 'legend-item';
-        el.innerHTML = `<div class="legend-left"><div class="legend-dot" style="background:${cfg.color}"></div><span class="legend-name">${tipo}</span></div><span class="legend-count">${cnt}</span>`;
-        el.onclick = () => {
-          document.querySelectorAll('.legend-item').forEach(e=>e.classList.remove('active'));
-          el.classList.toggle('active');
-          filterType(tipo === activeFilter ? 'all' : tipo);
-        };
-        list.appendChild(el);
-      });
+  // ── TOGGLE CAPAS ─────────────────────────────────────────
+  const layers = { costos: costosLayer, obras: obrasLayer, heatmap: heatmapLayer };
+  const activeLayers = new Set(['costos']);
+
+  function toggleLayer(name) {
+    const btn = document.getElementById('btn' + name.charAt(0).toUpperCase() + name.slice(1));
+    if (activeLayers.has(name)) {
+      map.removeLayer(layers[name]);
+      activeLayers.delete(name);
+      btn.classList.remove('active');
+    } else {
+      layers[name].addTo(map);
+      activeLayers.add(name);
+      btn.classList.add('active');
     }
+    document.getElementById('mapLegend').style.display = activeLayers.has('heatmap') ? 'none' : 'block';
+  }
 
-    function buildReclamosList(data) {
-      const el = document.getElementById('reclamosList');
-      el.innerHTML = '';
-      document.getElementById('reclamoCount').textContent = `${data.length} reclamos`;
-      data.slice(0,12).forEach(r => {
-        const cfg = TIPO_CONFIG[r.tipo];
-        const eCfg = ESTADO_CONFIG[r.estado];
-        const div = document.createElement('div');
-        div.className = 'reclamo-item';
-        div.innerHTML = `
-          <div class="reclamo-top">
-            <span class="reclamo-num">#${r.id}</span>
-            <span style="font-size:10px;font-weight:700;color:${eCfg.color}">${eCfg.label}</span>
-          </div>
-          <div class="reclamo-desc">${cfg.icon} ${r.tipo}</div>
-          <div class="reclamo-dir">📍 ${r.dir} · ${r.fecha}</div>`;
-        div.onclick = () => {
-          const mk = markers.find(m => m.reclamo.id === r.id);
-          if (mk) { map.setView([r.lat, r.lng], 16); mk.openPopup(); }
-        };
-        el.appendChild(div);
-      });
-    }
+  // ── RENDER SIDEBAR ────────────────────────────────────────
+  function fmt(n) { return '$' + (n/1000000).toFixed(1) + 'M'; }
 
-    function filterType(tipo) {
-      activeFilter = tipo;
-      statusFilter = null;
-      document.querySelectorAll('.map-ctrl-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('btnTodos').classList.add('active');
-      let filtered = tipo === 'all' ? RECLAMOS : RECLAMOS.filter(r => r.tipo === tipo);
-      updateMarkers(filtered);
-      buildReclamosList(filtered);
-      document.getElementById('mapInfo').textContent = filtered.length + ' reclamos';
-    }
+  document.getElementById('zoneList').innerHTML = ZONAS
+    .sort((a,b) => b.executed - a.executed)
+    .slice(0, 8)
+    .map(z => {
+      const pct = Math.round(z.executed / z.budget * 100);
+      const color = pct > 75 ? '#ef4444' : pct > 50 ? '#f59e0b' : '#10b981';
+      return `<div class="zone-card" onclick="map.setView([${z.lat},${z.lng}],15);map.fireEvent('click')">
+        <div class="zone-name">📍 ${z.name}</div>
+        <div class="zone-budget">${fmt(z.executed)} de ${fmt(z.budget)}</div>
+        <div class="zone-bar-wrap"><div class="zone-bar" style="width:${pct}%;background:${color}"></div></div>
+        <div style="font-size:11px;color:${color};text-align:right;margin-top:4px;font-weight:700">${pct}% ejecutado</div>
+      </div>`;
+    }).join('');
 
-    function filterStatus(st) {
-      statusFilter = st;
-      activeFilter = 'all';
-      document.querySelectorAll('.map-ctrl-btn').forEach(b => b.classList.remove('active'));
-      const btn = document.getElementById(st === 'pendiente' ? 'btnPend' : 'btnResuel');
-      if (btn) btn.classList.add('active');
-      const filtered = RECLAMOS.filter(r => r.estado === st);
-      updateMarkers(filtered);
-      buildReclamosList(filtered);
-      document.getElementById('mapInfo').textContent = filtered.length + ' reclamos';
-    }
+  document.getElementById('obrasList').innerHTML = OBRAS.map(o => {
+    const c = o.executed === 100 ? '#10b981' : o.executed >= 50 ? '#f59e0b' : '#ef4444';
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="map.setView([${o.lat},${o.lng}],16)">
+      <div style="font-size:12px;font-weight:700;color:var(--text-primary)">${o.type} ${o.name}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text-muted)">
+        <span>${o.categoria}</span><span style="color:${c};font-weight:700">${o.executed}%</span>
+      </div>
+    </div>`;
+  }).join('');
 
-    function updateMarkers(data) {
-      markers.forEach(m => map.removeLayer(m));
-      markers = [];
-      data.forEach(r => createMarker(r));
-    }
-
-    window.escalateReclamo = (id) => {
-      if (window.toast) toast('Reclamo escalado', 'Se notific\u00f3 al área responsable', 'warning');
-    };
-    window.resolveReclamo = (id) => {
-      if (window.toast) toast('Reclamo resuelto', 'Estado actualizado correctamente', 'success');
-      map.closePopup();
-    };
-
-    function exportMapData() {
-      const data = JSON.stringify(RECLAMOS, null, 2);
-      const blob = new Blob([data], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'reclamos-mapa-junin.json';
-      a.click();
-      if (window.toast) toast('Exportado', 'Datos del mapa descargados', 'success');
-    }
-    window.exportMapData = exportMapData;
-
-    // Init
-    buildLegend();
-    RECLAMOS.forEach(r => createMarker(r));
-    buildReclamosList(RECLAMOS);
-
-    document.getElementById('btnNuevoReclamo').onclick = () => {
-      document.getElementById('modalReclamo').style.display = 'flex';
-    };
-    document.getElementById('btnGuardarReclamo').onclick = () => {
-      if (window.toast) toast('Reclamo registrado', 'Se agreg\u00f3 al mapa exitosamente', 'success');
-      document.getElementById('modalReclamo').style.display = 'none';
-    };
-
-    // Heatmap effect on load
-    setTimeout(() => {
-      if (window.toast) toast('Mapa cargado', RECLAMOS.length + ' reclamos georreferenciados', 'info');
-    }, 1000);
+  buildSidebar('mapa');
   </script>
 </body>
 </html>
-
-
-

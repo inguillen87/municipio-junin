@@ -17,20 +17,23 @@ const NAV_ITEMS = [
   { id: 'dashboard',    href: 'index.html',        icon: '📊', label: 'Dashboard',            section: 'PRINCIPAL' },
   { id: 'control',      href: 'control.html',      icon: '🏛️', label: 'Junín Control',        badge: '30d' },
   { id: 'ia',           href: 'ia.html',           icon: '🤖', label: 'Asistente IA',         badge: 'IA' },
+  // CONTROL
+  { id: 'presupuesto',  href: 'presupuesto.html',  icon: '💰', label: 'Presupuesto',          section: 'CONTROL' },
+  { id: 'mapa',         href: 'mapa.html',         icon: '🗺️', label: 'Mapa Financiero',     section: 'CONTROL' },
   // GESTION
   { id: 'rrhh',         href: 'rrhh.html',         icon: '👥', label: 'Recursos Humanos',     section: 'GESTIÓN' },
   { id: 'licitaciones', href: 'licitaciones.html', icon: '📋', label: 'Licitaciones',         badge: '8' },
-  { id: 'proveedores',  href: 'proveedores.html',  icon: '🏢', label: 'Proveedores',          },
-  { id: 'vecinos',      href: 'vecinos.html',      icon: '🏘️', label: 'Atención Vecinal',    },
-  { id: 'mapa',         href: 'mapa.html',         icon: '📍', label: 'Mapa de Reclamos',     badge: 'NUEVO', badgeClass: 'new' },
+  { id: 'proveedores',  href: 'proveedores.html',  icon: '🏢', label: 'Proveedores' },
+  { id: 'vecinos',      href: 'vecinos.html',      icon: '🏘️', label: 'Atención Vecinal' },
   // OPERACIONES
   { id: 'talleres',     href: 'talleres.html',     icon: '🔧', label: 'Talleres',             section: 'OPERACIONES' },
-  { id: 'servicios',    href: 'servicios.html',    icon: '⛽', label: 'Est. de Servicios',    },
+  { id: 'servicios',    href: 'servicios.html',    icon: '⛽', label: 'Est. de Servicios' },
   // SISTEMA
-  { id: 'upload',       href: 'upload.html',       icon: '📂', label: 'Cargar Archivos',      section: 'SISTEMA', badge: 'BETA' },
+  { id: 'landing',      href: 'landing.html',      icon: '🌐', label: 'Landing Page',         section: 'SISTEMA' },
+  { id: 'upload',       href: 'upload.html',       icon: '📂', label: 'Cargar Archivos',      badge: 'BETA' },
   { id: 'exportar',     href: 'exportar.html',     icon: '📑', label: 'Exportar Reportes',    badge: 'PDF' },
   { id: 'presentacion', href: 'presentacion.html', icon: '🎯', label: 'Presentación Ejecutiva', badge: 'DEMO' },
-  { id: 'docs',         href: 'manuales.html',     icon: '📖', label: 'Manuales',             },
+  { id: 'docs',         href: 'manuales.html',     icon: '📖', label: 'Manuales' },
 ];
 
 function buildSidebar(activeId) {

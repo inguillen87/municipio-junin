@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -239,20 +239,47 @@
 
     /* Demo hint */
     .demo-hint {
-      margin-top: 20px; padding: 12px 16px;
-      background: rgba(245,158,11,0.06);
-      border: 1px solid rgba(245,158,11,0.15);
-      border-radius: 10px; text-align: center;
+      margin-top: 20px; padding: 14px 16px;
+      background: rgba(245,158,11,0.05);
+      border: 1px solid rgba(245,158,11,0.18);
+      border-radius: 14px; text-align: left;
     }
-    .demo-hint-title { font-size: 10px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-    .demo-hint-creds { display: flex; justify-content: center; gap: 16px; }
-    .demo-cred { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: rgba(245,158,11,0.8); }
-    .btn-fill-demo {
-      margin-top: 8px; background: none; border: 1px solid rgba(245,158,11,0.3);
-      color: var(--amber); padding: 5px 14px; border-radius: 6px;
-      cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s;
+    .demo-hint-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
     }
-    .btn-fill-demo:hover { background: rgba(245,158,11,0.1); }
+    .demo-hint-title {
+      font-size: 10px; font-weight: 700; color: var(--amber);
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .demo-hint-sub {
+      font-size: 10px; color: rgba(245,158,11,0.7); font-weight: 500;
+    }
+    .demo-users-list {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .demo-user-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 10px; background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .demo-user-item:hover {
+      background: rgba(245,158,11,0.12);
+      border-color: rgba(245,158,11,0.3);
+      transform: translateX(2px);
+    }
+    .demo-user-info {
+      display: flex; align-items: center; gap: 8px; font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .demo-user-icon { font-size: 13px; }
+    .demo-user-email { color: rgba(255,255,255,0.9); font-weight: 600; }
+    .demo-user-pass { color: rgba(245,158,11,0.8); }
+    .demo-user-action {
+      font-size: 10px; font-weight: 700; color: var(--amber); opacity: 0.6;
+    }
+    .demo-user-item:hover .demo-user-action { opacity: 1; }
 
     /* Footer */
     .login-footer {
@@ -352,14 +379,52 @@
       </form>
 
       <div class="demo-hint">
-        <div class="demo-hint-title">⚡ Acceso de demostración</div>
-        <div class="demo-hint-creds">
-          <span class="demo-cred">demo@demo.com</span>
-          <span class="demo-cred">demo123</span>
+        <div class="demo-hint-header">
+          <span class="demo-hint-title">⚡ Credenciales de Demostración</span>
+          <span class="demo-hint-sub">Clic para usar</span>
         </div>
-        <button type="button" class="btn-fill-demo" id="btnFillDemo">
-          Completar automáticamente →
-        </button>
+        <div class="demo-users-list" id="demoUsersList">
+          <div class="demo-user-item" data-email="superadmin@govtech.ar" data-pass="SuperAdmin2026!">
+            <div class="demo-user-info">
+              <span class="demo-user-icon">⚡</span>
+              <span class="demo-user-email">superadmin@govtech.ar</span>
+              <span class="demo-user-pass">/ SuperAdmin2026!</span>
+            </div>
+            <span class="demo-user-action">Usar ↵</span>
+          </div>
+          <div class="demo-user-item" data-email="intendente@junin.gob.ar" data-pass="Junin2026!">
+            <div class="demo-user-info">
+              <span class="demo-user-icon">🏛️</span>
+              <span class="demo-user-email">intendente@junin.gob.ar</span>
+              <span class="demo-user-pass">/ Junin2026!</span>
+            </div>
+            <span class="demo-user-action">Usar ↵</span>
+          </div>
+          <div class="demo-user-item" data-email="hacienda@junin.gob.ar" data-pass="Hacienda2026!">
+            <div class="demo-user-info">
+              <span class="demo-user-icon">💰</span>
+              <span class="demo-user-email">hacienda@junin.gob.ar</span>
+              <span class="demo-user-pass">/ Hacienda2026!</span>
+            </div>
+            <span class="demo-user-action">Usar ↵</span>
+          </div>
+          <div class="demo-user-item" data-email="it@junin.gob.ar" data-pass="IT2026!">
+            <div class="demo-user-info">
+              <span class="demo-user-icon">💻</span>
+              <span class="demo-user-email">it@junin.gob.ar</span>
+              <span class="demo-user-pass">/ IT2026!</span>
+            </div>
+            <span class="demo-user-action">Usar ↵</span>
+          </div>
+          <div class="demo-user-item" id="btnFillDemo" data-email="demo@demo.com" data-pass="demo123">
+            <div class="demo-user-info">
+              <span class="demo-user-icon">🌐</span>
+              <span class="demo-user-email">demo@demo.com</span>
+              <span class="demo-user-pass">/ demo123</span>
+            </div>
+            <span class="demo-user-action">Usar ↵</span>
+          </div>
+        </div>
       </div>
 
       <div class="login-footer">
@@ -394,9 +459,11 @@
     });
 
     // ── FILL DEMO ─────────────────────────────────
-    document.getElementById('btnFillDemo').addEventListener('click', () => {
-      document.getElementById('email').value = 'demo@demo.com';
-      document.getElementById('password').value = 'demo123';
+    document.querySelectorAll('.demo-user-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.getElementById('email').value = item.dataset.email;
+        document.getElementById('password').value = item.dataset.pass;
+      });
     });
 
     // ── USUARIOS MULTI-TENANT ─────────────────────

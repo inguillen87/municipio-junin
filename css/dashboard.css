@@ -1474,3 +1474,365 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
     gap: 8px;
   }
 }
+/* ============================================================
+   MOBILE-FIRST RESPONSIVE SYSTEM — MuniControl v2
+   Breakpoints: 480px | 640px | 768px | 900px | 1200px
+   ============================================================ */
+
+/* -- BOTTOM NAVIGATION BAR (Mobile Only) ---------------------- */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: rgba(11, 17, 32, 0.97);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  z-index: 900;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  align-items: center;
+  justify-content: space-around;
+  gap: 0;
+}
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  color: rgba(100,116,139,0.8);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  min-width: 52px;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav-item .nav-icon {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+.bottom-nav-item:active .nav-icon {
+  transform: scale(0.85);
+}
+.bottom-nav-item.active {
+  color: #60a5fa;
+}
+.bottom-nav-item.active .nav-icon {
+  filter: drop-shadow(0 0 6px rgba(96,165,250,0.6));
+}
+.bottom-nav-badge {
+  position: absolute;
+  top: 4px; right: 8px;
+  min-width: 16px; height: 16px;
+  background: #ef4444;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 900;
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #060b18;
+}
+
+/* -- MOBILE TOPBAR IMPROVEMENTS ----------------------------- */
+@media (max-width: 900px) {
+  .topbar {
+    padding: 0 12px !important;
+    height: 56px !important;
+  }
+  .topbar-left h1,
+  .page-title h1 {
+    font-size: 15px !important;
+  }
+  .breadcrumb {
+    display: none !important;
+  }
+  .topbar-right {
+    gap: 8px !important;
+  }
+  /* Touch-friendly buttons */
+  .btn-primary, .btn-secondary {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    min-height: 40px;
+  }
+  /* Show bottom nav */
+  .bottom-nav {
+    display: flex !important;
+  }
+  /* Add padding to main content so bottom nav doesnt overlap */
+  .content-wrapper {
+    padding-bottom: 80px !important;
+  }
+  /* Bottom status bar hidden on mobile */
+  .bottom-status-bar {
+    display: none !important;
+  }
+}
+
+/* -- SMALL MOBILE (< 480px) -------------------------------- */
+@media (max-width: 480px) {
+  .content-wrapper {
+    padding: 12px !important;
+  }
+  .topbar {
+    padding: 0 10px !important;
+  }
+  /* KPI grid: 2 per row on small mobile */
+  .kpi-grid,
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  .kpi-card, .stat-card {
+    padding: 14px !important;
+  }
+  .kpi-value, .stat-value {
+    font-size: 22px !important;
+  }
+  .kpi-label, .stat-label {
+    font-size: 10px !important;
+  }
+  /* Charts full width */
+  .charts-grid,
+  .grid-2,
+  .two-col {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  /* Tables: horizontal scroll */
+  .table-wrapper, .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  table {
+    min-width: 500px !important;
+  }
+  /* Cards full padding */
+  .card {
+    padding: 14px !important;
+    border-radius: 12px !important;
+  }
+  /* Hero/banner responsive */
+  .welcome-banner {
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 18px !important;
+    text-align: center;
+  }
+  .welcome-content h2 {
+    font-size: 18px !important;
+  }
+  .welcome-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  .welcome-actions button {
+    flex: 1;
+    font-size: 12px !important;
+    padding: 10px 12px !important;
+  }
+  /* Modals full screen on small mobile */
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    margin: auto 0 0 0 !important;
+  }
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  /* Quick access grid: 3 per row */
+  .quick-access-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+  }
+  .qa-btn {
+    padding: 12px 8px !important;
+    font-size: 11px !important;
+  }
+  /* Hide topbar export buttons on very small */
+  .topbar-right .btn-primary:not(.keep-mobile),
+  .topbar-right .btn-success:not(.keep-mobile) {
+    display: none !important;
+  }
+  /* Show hamburger menu button */
+  #menuBtn {
+    display: flex !important;
+    width: 40px; height: 40px;
+    align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 18px;
+  }
+}
+
+/* -- MEDIUM MOBILE (480px - 768px) ------------------------- */
+@media (min-width: 480px) and (max-width: 768px) {
+  .kpi-grid, .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  .charts-grid, .grid-2, .two-col {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+  .modal-content {
+    width: 95% !important;
+    max-width: 480px !important;
+    border-radius: 16px !important;
+  }
+  table { min-width: 520px; }
+}
+
+/* -- TABLET (768px - 900px) -------------------------------- */
+@media (min-width: 768px) and (max-width: 900px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .charts-grid, .grid-2 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* -- DESKTOP IMPROVEMENTS (> 900px) ----------------------- */
+@media (min-width: 900px) {
+  .bottom-nav { display: none !important; }
+  /* Better KPI grid on large screens */
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  /* Hover effects only on desktop (no hover flicker on touch) */
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3) !important;
+  }
+  .kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 36px rgba(59,130,246,0.12) !important;
+  }
+  .nav-item:hover {
+    background: rgba(255,255,255,0.06) !important;
+  }
+  /* Table row hover */
+  tbody tr:hover {
+    background: rgba(59,130,246,0.04) !important;
+  }
+  /* Button hover lift */
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59,130,246,0.3);
+  }
+}
+
+/* -- TOUCH TARGETS --------------------------------------- */
+@media (hover: none) and (pointer: coarse) {
+  /* All interactive elements: minimum 44px touch target */
+  button, .btn-primary, .btn-secondary, .nav-item,
+  .tab-btn, select, input[type="checkbox"], input[type="radio"] {
+    min-height: 44px !important;
+  }
+  /* Remove hover effects on touch devices */
+  .card:hover, .kpi-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  /* Tap highlight */
+  a, button, [role="button"] {
+    -webkit-tap-highlight-color: rgba(96,165,250,0.15);
+  }
+}
+
+/* -- FILTER BAR RESPONSIVE ----------------------------- */
+@media (max-width: 640px) {
+  .filter-bar, .controls-bar {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .filter-bar select,
+  .filter-bar input,
+  .controls-bar select,
+  .controls-bar input {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .filter-bar .btn-group {
+    display: flex;
+    width: 100%;
+  }
+  .filter-bar .btn-group button {
+    flex: 1;
+  }
+}
+
+/* -- CARD GRID RESPONSIVE --------------------------- */
+@media (max-width: 640px) {
+  .grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-auto {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (min-width: 640px) and (max-width: 900px) {
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .grid-auto {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* -- TOPBAR SEARCH RESPONSIVE ----------------------- */
+@media (max-width: 640px) {
+  .search-wrapper, .topbar-search {
+    display: none !important;
+  }
+}
+
+/* -- PRINT STYLES ----------------------------------- */
+@media print {
+  .sidebar, .topbar, .bottom-nav, .bottom-status-bar,
+  .btn-primary, .btn-secondary, .welcome-actions {
+    display: none !important;
+  }
+  .main-content {
+    margin-left: 0 !important;
+  }
+  .content-wrapper {
+    padding: 20px !important;
+  }
+  .card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
+
+/* -- SAFE AREA (iPhone notch / Dynamic Island) ------- */
+@supports (padding: max(0px)) {
+  .bottom-nav {
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .content-wrapper {
+    padding-left: max(16px, env(safe-area-inset-left)) !important;
+    padding-right: max(16px, env(safe-area-inset-right)) !important;
+  }
+}

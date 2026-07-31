@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Centro de Importación — GovTech Municipal</title>
+  <title>Centro de Importaci�n � GovTech Municipal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/shared.css" />
@@ -122,10 +122,10 @@
   <main class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
+        <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
-          <h1>📥 Centro de Importación</h1>
-          <span class="breadcrumb">Sistema · Carga de datos y conexión a fuentes externas</span>
+          <h1>?? Centro de Importaci�n</h1>
+          <span class="breadcrumb">Sistema � Carga de datos y conexi�n a fuentes externas</span>
         </div>
       </div>
       <div class="topbar-right">
@@ -139,28 +139,28 @@
       <!-- STATS BAR -->
       <div class="stats-grid" style="margin-bottom:20px">
         <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(16,185,129,0.1);color:#10b981">📊</div>
+          <div class="stat-icon" style="background:rgba(16,185,129,0.1);color:#10b981">??</div>
           <div>
             <div class="stat-value" id="statTotal">0</div>
             <div class="stat-label">Registros importados</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(59,130,246,0.1);color:#3b82f6">📁</div>
+          <div class="stat-icon" style="background:rgba(59,130,246,0.1);color:#3b82f6">??</div>
           <div>
             <div class="stat-value" id="statFiles">0</div>
             <div class="stat-label">Archivos procesados</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6">🤖</div>
+          <div class="stat-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6">??</div>
           <div>
             <div class="stat-value" id="statMapped">0</div>
             <div class="stat-label">Columnas mapeadas IA</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b">⚡</div>
+          <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b">?</div>
           <div>
             <div class="stat-value" id="statSessions">3</div>
             <div class="stat-label">Importaciones hoy</div>
@@ -170,49 +170,49 @@
 
       <!-- TABS -->
       <div class="import-tabs" id="importTabs">
-        <div class="import-tab active" onclick="switchTab('upload')">📤 Subir Archivo</div>
-        <div class="import-tab" onclick="switchTab('templates')">📋 Plantillas</div>
-        <div class="import-tab" onclick="switchTab('connection')">🔗 Conexión DB</div>
-        <div class="import-tab" onclick="switchTab('history')">📜 Historial</div>
+        <div class="import-tab active" onclick="switchTab('upload')">?? Subir Archivo</div>
+        <div class="import-tab" onclick="switchTab('templates')">?? Plantillas</div>
+        <div class="import-tab" onclick="switchTab('connection')">?? Conexi�n DB</div>
+        <div class="import-tab" onclick="switchTab('history')">?? Historial</div>
       </div>
 
       <!-- TAB: UPLOAD -->
       <div class="tab-panel active" id="tab-upload">
 
-        <!-- STEP 1: Seleccionar módulo -->
+        <!-- STEP 1: Seleccionar m�dulo -->
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">
-            <h3 style="font-size:14px;margin:0">Paso 1 — ¿Para qué módulo es el archivo?</h3>
+            <h3 style="font-size:14px;margin:0">Paso 1 � �Para qu� m�dulo es el archivo?</h3>
           </div>
           <div style="padding:16px">
             <div class="module-selector" id="moduleSelector">
               <div class="module-option" onclick="selectModule('rrhh')" data-module="rrhh">
-                <div class="module-option-icon">👤</div>
+                <div class="module-option-icon">??</div>
                 <div class="module-option-name">RRHH</div>
                 <div class="module-option-desc">Empleados, sueldos, cargos</div>
               </div>
               <div class="module-option" onclick="selectModule('contratos')" data-module="contratos">
-                <div class="module-option-icon">📄</div>
+                <div class="module-option-icon">??</div>
                 <div class="module-option-name">Contratos</div>
                 <div class="module-option-desc">Proveedores y contratos</div>
               </div>
               <div class="module-option" onclick="selectModule('presupuesto')" data-module="presupuesto">
-                <div class="module-option-icon">💰</div>
+                <div class="module-option-icon">??</div>
                 <div class="module-option-name">Presupuesto</div>
-                <div class="module-option-desc">Partidas y ejecución</div>
+                <div class="module-option-desc">Partidas y ejecuci�n</div>
               </div>
               <div class="module-option" onclick="selectModule('reclamos')" data-module="reclamos">
-                <div class="module-option-icon">🏘️</div>
+                <div class="module-option-icon">???</div>
                 <div class="module-option-name">Reclamos</div>
                 <div class="module-option-desc">Reclamos vecinales</div>
               </div>
               <div class="module-option" onclick="selectModule('obras')" data-module="obras">
-                <div class="module-option-icon">🏗️</div>
+                <div class="module-option-icon">???</div>
                 <div class="module-option-name">Obras</div>
-                <div class="module-option-desc">Obras públicas y estado</div>
+                <div class="module-option-desc">Obras p�blicas y estado</div>
               </div>
               <div class="module-option" onclick="selectModule('pagos')" data-module="pagos">
-                <div class="module-option-icon">💳</div>
+                <div class="module-option-icon">??</div>
                 <div class="module-option-name">Pagos</div>
                 <div class="module-option-desc">Pagos y facturas</div>
               </div>
@@ -223,24 +223,24 @@
         <!-- STEP 2: Drop zone -->
         <div class="card" style="margin-bottom:16px" id="step2Card">
           <div class="card-header">
-            <h3 style="font-size:14px;margin:0">Paso 2 — Subir archivo</h3>
+            <h3 style="font-size:14px;margin:0">Paso 2 � Subir archivo</h3>
           </div>
           <div style="padding:16px">
             <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-              <span class="drop-icon">📁</span>
-              <div class="drop-title">Arrastrá tu archivo acá</div>
-              <div class="drop-sub">o hacé clic para seleccionar desde tu computadora</div>
+              <span class="drop-icon">??</span>
+              <div class="drop-title">Arrastr� tu archivo ac�</div>
+              <div class="drop-sub">o hac� clic para seleccionar desde tu computadora</div>
               <div class="drop-types">
-                <span class="drop-type-badge dt-excel">📗 Excel (.xlsx)</span>
-                <span class="drop-type-badge dt-csv">📊 CSV (.csv)</span>
-                <span class="drop-type-badge dt-pdf">📕 PDF</span>
-                <span class="drop-type-badge dt-word">📘 Word (.docx)</span>
+                <span class="drop-type-badge dt-excel">?? Excel (.xlsx)</span>
+                <span class="drop-type-badge dt-csv">?? CSV (.csv)</span>
+                <span class="drop-type-badge dt-pdf">?? PDF</span>
+                <span class="drop-type-badge dt-word">?? Word (.docx)</span>
                 <span class="drop-type-badge" style="background:rgba(100,116,139,0.1);color:#94a3b8;border-color:rgba(100,116,139,0.2)">TXT</span>
               </div>
               <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt,.pdf,.docx" style="display:none" onchange="handleFileSelect(this)" />
             </div>
             <div id="fileInfo" style="display:none;margin-top:12px" class="info-box info-green">
-              <span>✅</span>
+              <span>?</span>
               <span id="fileInfoText"></span>
             </div>
           </div>
@@ -249,13 +249,13 @@
         <!-- STEP 3: Column mapping -->
         <div class="card" style="margin-bottom:16px;display:none" id="step3Card">
           <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="font-size:14px;margin:0">Paso 3 — Mapeo de columnas <span class="ai-badge">🤖 IA Auto-detectada</span></h3>
-            <button class="btn-secondary" onclick="autoMap()" style="font-size:11px;padding:5px 12px">🤖 Re-detectar</button>
+            <h3 style="font-size:14px;margin:0">Paso 3 � Mapeo de columnas <span class="ai-badge">?? IA Auto-detectada</span></h3>
+            <button class="btn-secondary" onclick="autoMap()" style="font-size:11px;padding:5px 12px">?? Re-detectar</button>
           </div>
           <div style="padding:16px">
             <div class="info-box info-blue" style="margin-bottom:12px">
-              <span>💡</span>
-              <span>La IA detectó automáticamente el módulo y mapeó las columnas. Revisá y ajustá si es necesario.</span>
+              <span>??</span>
+              <span>La IA detect� autom�ticamente el m�dulo y mape� las columnas. Revis� y ajust� si es necesario.</span>
             </div>
             <div style="overflow-x:auto">
               <table class="mapping-table" id="mappingTable">
@@ -276,7 +276,7 @@
         <!-- STEP 4: Preview -->
         <div class="card" style="margin-bottom:16px;display:none" id="step4Card">
           <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="font-size:14px;margin:0">Paso 4 — Vista previa</h3>
+            <h3 style="font-size:14px;margin:0">Paso 4 � Vista previa</h3>
             <span id="previewCount" style="font-size:11px;color:var(--text-muted)"></span>
           </div>
           <div style="padding:16px">
@@ -290,10 +290,10 @@
         <div id="step5Card" style="display:none">
           <div style="display:flex;gap:12px;flex-wrap:wrap">
             <button class="btn-primary" id="importBtn" onclick="startImport()" style="padding:12px 28px;font-size:14px">
-              🚀 Importar al Sistema
+              ?? Importar al Sistema
             </button>
             <button class="btn-secondary" onclick="resetImport()" style="padding:12px 18px;font-size:13px">
-              ↩️ Empezar de nuevo
+              ?? Empezar de nuevo
             </button>
           </div>
         </div>
@@ -315,8 +315,8 @@
       <!-- TAB: TEMPLATES -->
       <div class="tab-panel" id="tab-templates">
         <div class="info-box info-blue" style="margin-bottom:20px">
-          <span>💡</span>
-          <span>Descargá estas plantillas Excel, completalas con los datos del municipio y subílas al sistema. Cada plantilla tiene las columnas exactas que necesita el módulo.</span>
+          <span>??</span>
+          <span>Descarg� estas plantillas Excel, completalas con los datos del municipio y sub�las al sistema. Cada plantilla tiene las columnas exactas que necesita el m�dulo.</span>
         </div>
         <div class="template-grid" id="templateGrid"></div>
       </div>
@@ -324,34 +324,34 @@
       <!-- TAB: CONNECTION -->
       <div class="tab-panel" id="tab-connection">
         <div class="info-box info-amber" style="margin-bottom:20px">
-          <span>⚠️</span>
-          <span>La conexión directa a base de datos requiere que el servidor de la Municipalidad tenga una IP pública o un túnel seguro. Recomendamos empezar con la importación de Excel.</span>
+          <span>??</span>
+          <span>La conexi�n directa a base de datos requiere que el servidor de la Municipalidad tenga una IP p�blica o un t�nel seguro. Recomendamos empezar con la importaci�n de Excel.</span>
         </div>
-        <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:var(--text-muted);text-transform:uppercase">Tipo de conexión</h3>
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:var(--text-muted);text-transform:uppercase">Tipo de conexi�n</h3>
         <div class="conn-type-grid" id="connTypeGrid">
           <div class="conn-type-card selected" onclick="selectConnType(this,'postgres')">
-            <div style="font-size:28px;margin-bottom:6px">🐘</div>
+            <div style="font-size:28px;margin-bottom:6px">??</div>
             <div style="font-size:13px;font-weight:700">PostgreSQL</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Conexión directa a DB</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Conexi�n directa a DB</div>
           </div>
           <div class="conn-type-card" onclick="selectConnType(this,'mysql')">
-            <div style="font-size:28px;margin-bottom:6px">🐬</div>
+            <div style="font-size:28px;margin-bottom:6px">??</div>
             <div style="font-size:13px;font-weight:700">MySQL</div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Base de datos MySQL</div>
           </div>
           <div class="conn-type-card" onclick="selectConnType(this,'rest')">
-            <div style="font-size:28px;margin-bottom:6px">🔌</div>
+            <div style="font-size:28px;margin-bottom:6px">??</div>
             <div style="font-size:13px;font-weight:700">REST API</div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px">API del sistema existente</div>
           </div>
           <div class="conn-type-card" onclick="selectConnType(this,'excel-sync')">
-            <div style="font-size:28px;margin-bottom:6px">📊</div>
+            <div style="font-size:28px;margin-bottom:6px">??</div>
             <div style="font-size:13px;font-weight:700">Excel Sync</div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Carpeta compartida (recomendado)</div>
           </div>
         </div>
         <div class="card" style="margin-top:16px">
-          <div class="card-header"><h3 style="font-size:14px;margin:0">🐘 Configuración PostgreSQL</h3></div>
+          <div class="card-header"><h3 style="font-size:14px;margin:0">?? Configuraci�n PostgreSQL</h3></div>
           <div style="padding:20px">
             <div class="conn-form">
               <div class="conn-row">
@@ -374,8 +374,8 @@
                   <input type="text" id="connUser" placeholder="govtech_readonly" />
                 </div>
                 <div>
-                  <label>Contraseña</label>
-                  <input type="password" id="connPass" placeholder="••••••••" />
+                  <label>Contrase�a</label>
+                  <input type="password" id="connPass" placeholder="��������" />
                 </div>
               </div>
               <div>
@@ -387,16 +387,16 @@
                 </select>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
-                <button class="btn-primary" onclick="testConnection()" style="padding:10px 20px;font-size:12px">🔍 Probar conexión</button>
-                <button class="btn-secondary" onclick="saveConnection()" style="padding:10px 20px;font-size:12px">💾 Guardar</button>
+                <button class="btn-primary" onclick="testConnection()" style="padding:10px 20px;font-size:12px">?? Probar conexi�n</button>
+                <button class="btn-secondary" onclick="saveConnection()" style="padding:10px 20px;font-size:12px">?? Guardar</button>
               </div>
               <div id="connResult" style="display:none" class="info-box"></div>
             </div>
           </div>
         </div>
         <div class="info-box info-blue" style="margin-top:16px">
-          <span>🔒</span>
-          <span><strong>Seguridad:</strong> Los datos de conexión se guardan encriptados en Vercel y nunca se exponen al cliente. Se recomienda crear un usuario de solo lectura y agregar la IP de Vercel a la whitelist de tu firewall.</span>
+          <span>??</span>
+          <span><strong>Seguridad:</strong> Los datos de conexi�n se guardan encriptados en Vercel y nunca se exponen al cliente. Se recomienda crear un usuario de solo lectura y agregar la IP de Vercel a la whitelist de tu firewall.</span>
         </div>
       </div>
 
@@ -416,7 +416,7 @@
   <script>
     buildSidebar('importar');
 
-    // ── STATE ─────────────────────────────────────────────────
+    // -- STATE -------------------------------------------------
     let selectedModule = null;
     let parsedData = [];
     let fileHeaders = [];
@@ -432,13 +432,13 @@
     }
     updateStats();
 
-    // ── MODULE SELECTION ──────────────────────────────────────
+    // -- MODULE SELECTION --------------------------------------
     function selectModule(mod) {
       selectedModule = mod;
       document.querySelectorAll('.module-option').forEach(el => el.classList.toggle('selected', el.dataset.module === mod));
     }
 
-    // ── TAB SWITCHING ─────────────────────────────────────────
+    // -- TAB SWITCHING -----------------------------------------
     function switchTab(id) {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
@@ -448,7 +448,7 @@
       if (id === 'history') renderHistory();
     }
 
-    // ── FILE HANDLING ─────────────────────────────────────────
+    // -- FILE HANDLING -----------------------------------------
     const dropZone = document.getElementById('dropZone');
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
@@ -468,7 +468,7 @@
       const infoEl = document.getElementById('fileInfo');
       const infoText = document.getElementById('fileInfoText');
       infoEl.style.display = 'flex';
-      infoText.textContent = `📁 ${file.name} (${(file.size/1024).toFixed(1)} KB) — procesando...`;
+      infoText.textContent = `?? ${file.name} (${(file.size/1024).toFixed(1)} KB) � procesando...`;
 
       if (ext === 'csv' || ext === 'txt') {
         const reader = new FileReader();
@@ -491,10 +491,10 @@
         };
         reader.readAsBinaryString(file);
       } else {
-        // PDF/Word — simulamos extracción
+        // PDF/Word � simulamos extracci�n
         parsedData = generateSampleData(selectedModule || 'rrhh');
         fileHeaders = Object.keys(parsedData[0] || {});
-        infoText.textContent += ` ⚠️ Archivo ${ext.toUpperCase()} — se extrajo texto. Para mejor resultado usá Excel o CSV.`;
+        infoText.textContent += ` ?? Archivo ${ext.toUpperCase()} � se extrajo texto. Para mejor resultado us� Excel o CSV.`;
         onFileParsed(file.name, ext);
       }
     }
@@ -502,9 +502,9 @@
     function generateSampleData(mod) {
       const samples = {
         rrhh: [
-          {nombre:'García, Juan',legajo:'1234',area:'Obras',cargo:'Operario',sueldo:'185000',estado:'Activo'},
-          {nombre:'López, Ana',legajo:'1235',area:'Salud',cargo:'Enfermera',sueldo:'210000',estado:'Activo'},
-          {nombre:'Martínez, Luis',legajo:'1236',area:'Admin',cargo:'Administrativo',sueldo:'172000',estado:'Activo'},
+          {nombre:'Garc�a, Juan',legajo:'1234',area:'Obras',cargo:'Operario',sueldo:'185000',estado:'Activo'},
+          {nombre:'L�pez, Ana',legajo:'1235',area:'Salud',cargo:'Enfermera',sueldo:'210000',estado:'Activo'},
+          {nombre:'Mart�nez, Luis',legajo:'1236',area:'Admin',cargo:'Administrativo',sueldo:'172000',estado:'Activo'},
         ],
         contratos: [
           {proveedor:'Nexo SA',objeto:'Limpieza',monto:'850000',inicio:'2026-01-01',vencimiento:'2026-09-01',estado:'Activo'},
@@ -515,7 +515,7 @@
     }
 
     function onFileParsed(filename, ext) {
-      document.getElementById('fileInfoText').textContent = `✅ ${filename} — ${parsedData.length} filas, ${fileHeaders.length} columnas detectadas`;
+      document.getElementById('fileInfoText').textContent = `? ${filename} � ${parsedData.length} filas, ${fileHeaders.length} columnas detectadas`;
       autoDetectModule();
       buildMapping();
       buildPreview();
@@ -524,7 +524,7 @@
       document.getElementById('step5Card').style.display = 'block';
     }
 
-    // ── AUTO-DETECT MODULE ────────────────────────────────────
+    // -- AUTO-DETECT MODULE ------------------------------------
     function autoDetectModule() {
       if (selectedModule) return;
       const h = fileHeaders.join(' ').toLowerCase();
@@ -535,7 +535,7 @@
       selectModule('rrhh');
     }
 
-    // ── COLUMN MAPPING ────────────────────────────────────────
+    // -- COLUMN MAPPING ----------------------------------------
     const FIELD_MAPS = {
       rrhh:       ['nombre','apellido','legajo','dni','area','cargo','categoria','sueldo','estado','fecha_ingreso','email','telefono'],
       contratos:  ['proveedor','objeto','monto','fecha_inicio','fecha_vencimiento','estado','tipo','responsable','cuit'],
@@ -563,14 +563,14 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="font-weight:700;font-size:12px">${col}</td>
-          <td><span class="col-preview">${sample || '—'}</span></td>
+          <td><span class="col-preview">${sample || '�'}</span></td>
           <td>
             <select>
-              <option value="">— No importar —</option>
+              <option value="">� No importar �</option>
               ${fields.map(f => `<option value="${f}" ${autoMatch===f?'selected':''}>${f.replace(/_/g,' ')}</option>`).join('')}
             </select>
           </td>
-          <td>${autoMatch ? '<span style="color:#10b981;font-size:11px;font-weight:700">✅ IA</span>' : '<span style="color:var(--text-muted);font-size:11px">Manual</span>'}</td>
+          <td>${autoMatch ? '<span style="color:#10b981;font-size:11px;font-weight:700">? IA</span>' : '<span style="color:var(--text-muted);font-size:11px">Manual</span>'}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -580,7 +580,7 @@
       updateStats();
     }
 
-    // ── PREVIEW ───────────────────────────────────────────────
+    // -- PREVIEW -----------------------------------------------
     function buildPreview() {
       const table = document.getElementById('previewTable');
       const preview = parsedData.slice(0, 10);
@@ -593,43 +593,43 @@
       document.getElementById('previewCount').textContent = `Mostrando 10 de ${parsedData.length} filas`;
     }
 
-    // ── IMPORT ────────────────────────────────────────────────
+    // -- IMPORT ------------------------------------------------
     async function startImport() {
       if (!parsedData.length) { showToast('No hay datos para importar','warning'); return; }
       document.getElementById('step5Card').style.display = 'none';
       const prog = document.getElementById('progressCard');
       prog.style.display = 'block';
       const steps = [
-        { label: 'Validando datos', icon: '🔍' },
-        { label: 'Mapeando columnas', icon: '🗂️' },
-        { label: 'Verificando duplicados', icon: '🔎' },
-        { label: 'Importando al sistema', icon: '⚡' },
-        { label: 'Actualizando índices', icon: '📇' },
-        { label: 'Guardando', icon: '💾' },
+        { label: 'Validando datos', icon: '??' },
+        { label: 'Mapeando columnas', icon: '???' },
+        { label: 'Verificando duplicados', icon: '??' },
+        { label: 'Importando al sistema', icon: '?' },
+        { label: 'Actualizando �ndices', icon: '??' },
+        { label: 'Guardando', icon: '??' },
       ];
 
       const stepsEl = document.getElementById('progressSteps');
       stepsEl.innerHTML = steps.map((s,i) => `
         <div class="progress-step" id="step-${i}">
-          <div class="step-dot step-wait" id="dot-${i}">○</div>
+          <div class="step-dot step-wait" id="dot-${i}">?</div>
           <span style="color:var(--text-muted)">${s.icon} ${s.label}</span>
         </div>
       `).join('');
 
       for (let i = 0; i < steps.length; i++) {
         document.getElementById(`dot-${i}`).className = 'step-dot step-active';
-        document.getElementById(`dot-${i}`).textContent = '●';
+        document.getElementById(`dot-${i}`).textContent = '?';
         document.getElementById('progressBar').style.width = `${Math.round((i/steps.length)*100)}%`;
         document.getElementById('progressPct').textContent = `${Math.round((i/steps.length)*100)}%`;
         await new Promise(r => setTimeout(r, 400 + Math.random()*600));
         document.getElementById(`dot-${i}`).className = 'step-dot step-done';
-        document.getElementById(`dot-${i}`).textContent = '✓';
+        document.getElementById(`dot-${i}`).textContent = '?';
         document.getElementById(`step-${i}`).querySelector('span').style.color = '#10b981';
       }
 
       document.getElementById('progressBar').style.width = '100%';
       document.getElementById('progressPct').textContent = '100%';
-      document.getElementById('progressTitle').textContent = `✅ ¡Importación completada!`;
+      document.getElementById('progressTitle').textContent = `? �Importaci�n completada!`;
 
       // Guardar historial
       const record = { date: new Date().toISOString(), module: selectedModule, rows: parsedData.length, status: 'success' };
@@ -641,7 +641,7 @@
       localStorage.setItem('importStats', JSON.stringify(stats));
       updateStats();
 
-      showToast(`✅ ${parsedData.length} registros importados exitosamente al módulo ${selectedModule}`, 'success');
+      showToast(`? ${parsedData.length} registros importados exitosamente al m�dulo ${selectedModule}`, 'success');
     }
 
     function resetImport() {
@@ -655,14 +655,14 @@
       document.getElementById('fileInput').value = '';
     }
 
-    // ── TEMPLATES ────────────────────────────────────────────
+    // -- TEMPLATES --------------------------------------------
     const TEMPLATES_DATA = [
-      { icon:'👤', name:'Empleados RRHH', module:'rrhh', desc:'Nómina completa con sueldos y cargos', cols:['nombre','apellido','legajo','dni','area','cargo','categoria','sueldo_bruto','estado','fecha_ingreso'] },
-      { icon:'📄', name:'Contratos', module:'contratos', desc:'Contratos y proveedores activos', cols:['proveedor','cuit','objeto','monto_mensual','fecha_inicio','fecha_vencimiento','tipo','estado'] },
-      { icon:'💰', name:'Presupuesto', module:'presupuesto', desc:'Partidas presupuestarias anuales', cols:['codigo','nombre_partida','area','presupuesto_anual','ejecutado_acum','porcentaje'] },
-      { icon:'🏘️', name:'Reclamos Vecinales', module:'reclamos', desc:'Reclamos de vecinos con estado', cols:['id','tipo_reclamo','descripcion','barrio','calle','vecino_nombre','telefono','estado','prioridad','fecha_ingreso'] },
-      { icon:'🏗️', name:'Obras Públicas', module:'obras', desc:'Obras con avance y presupuesto', cols:['nombre_obra','tipo','barrio','empresa','monto_contrato','avance_pct','estado','fecha_inicio','fecha_fin_est'] },
-      { icon:'💳', name:'Pagos y Facturas', module:'pagos', desc:'Registro de pagos a proveedores', cols:['proveedor','concepto','monto','fecha_pago','nro_factura','area','aprobado_por','estado'] },
+      { icon:'??', name:'Empleados RRHH', module:'rrhh', desc:'N�mina completa con sueldos y cargos', cols:['nombre','apellido','legajo','dni','area','cargo','categoria','sueldo_bruto','estado','fecha_ingreso'] },
+      { icon:'??', name:'Contratos', module:'contratos', desc:'Contratos y proveedores activos', cols:['proveedor','cuit','objeto','monto_mensual','fecha_inicio','fecha_vencimiento','tipo','estado'] },
+      { icon:'??', name:'Presupuesto', module:'presupuesto', desc:'Partidas presupuestarias anuales', cols:['codigo','nombre_partida','area','presupuesto_anual','ejecutado_acum','porcentaje'] },
+      { icon:'???', name:'Reclamos Vecinales', module:'reclamos', desc:'Reclamos de vecinos con estado', cols:['id','tipo_reclamo','descripcion','barrio','calle','vecino_nombre','telefono','estado','prioridad','fecha_ingreso'] },
+      { icon:'???', name:'Obras P�blicas', module:'obras', desc:'Obras con avance y presupuesto', cols:['nombre_obra','tipo','barrio','empresa','monto_contrato','avance_pct','estado','fecha_inicio','fecha_fin_est'] },
+      { icon:'??', name:'Pagos y Facturas', module:'pagos', desc:'Registro de pagos a proveedores', cols:['proveedor','concepto','monto','fecha_pago','nro_factura','area','aprobado_por','estado'] },
     ];
 
     function renderTemplates() {
@@ -672,9 +672,9 @@
           <div class="template-icon">${t.icon}</div>
           <div class="template-name">${t.name}</div>
           <div class="template-desc">${t.desc}</div>
-          <div class="template-cols">${t.cols.slice(0,6).map(c => `<span class="template-col">${c}</span>`).join('')}${t.cols.length>6?`<span class="template-col">+${t.cols.length-6} más</span>`:''}</div>
+          <div class="template-cols">${t.cols.slice(0,6).map(c => `<span class="template-col">${c}</span>`).join('')}${t.cols.length>6?`<span class="template-col">+${t.cols.length-6} m�s</span>`:''}</div>
           <button class="btn-primary" onclick="downloadTemplate('${t.name}','${t.module}')" style="width:100%;padding:8px;font-size:11px">
-            📥 Descargar plantilla
+            ?? Descargar plantilla
           </button>
         </div>
       `).join('');
@@ -688,13 +688,13 @@
       ws['!cols'] = t.cols.map(() => ({ wch: 18 }));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Datos');
-      const info = XLSX.utils.aoa_to_sheet([['Plantilla:', name],['Módulo:', module],['Instrucciones:','Completar con datos reales y subir en Centro de Importación'],['Fecha:',new Date().toLocaleDateString('es-AR')]]);
+      const info = XLSX.utils.aoa_to_sheet([['Plantilla:', name],['M�dulo:', module],['Instrucciones:','Completar con datos reales y subir en Centro de Importaci�n'],['Fecha:',new Date().toLocaleDateString('es-AR')]]);
       XLSX.utils.book_append_sheet(wb, info, 'Info');
       XLSX.writeFile(wb, `plantilla_${module}_govtech.xlsx`);
-      showToast(`📥 Plantilla ${name} descargada`, 'success');
+      showToast(`?? Plantilla ${name} descargada`, 'success');
     }
 
-    // ── HISTORY ───────────────────────────────────────────────
+    // -- HISTORY -----------------------------------------------
     function renderHistory() {
       const list = document.getElementById('historyList');
       const demo = [
@@ -703,22 +703,22 @@
         { date: '2026-07-29T11:15:00', module: 'presupuesto', rows: 14, status: 'success' },
       ];
       const all = [...importHistory, ...demo].slice(0,15);
-      const icons = { rrhh:'👤', contratos:'📄', presupuesto:'💰', reclamos:'🏘️', obras:'🏗️', pagos:'💳' };
+      const icons = { rrhh:'??', contratos:'??', presupuesto:'??', reclamos:'???', obras:'???', pagos:'??' };
       list.innerHTML = all.map(h => `
         <div class="history-item">
-          <div class="history-icon">${icons[h.module] || '📁'}</div>
+          <div class="history-icon">${icons[h.module] || '??'}</div>
           <div>
-            <div class="history-name">${h.module.charAt(0).toUpperCase()+h.module.slice(1)} — ${h.rows} registros</div>
+            <div class="history-name">${h.module.charAt(0).toUpperCase()+h.module.slice(1)} � ${h.rows} registros</div>
             <div class="history-meta">${new Date(h.date).toLocaleString('es-AR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
           </div>
           <span class="history-badge ${h.status==='success'?'riesgo-bajo':'riesgo-alto'}">
-            ${h.status === 'success' ? '✅ Exitosa' : '❌ Error'}
+            ${h.status === 'success' ? '? Exitosa' : '? Error'}
           </span>
         </div>
       `).join('') || '<div style="text-align:center;padding:40px;color:var(--text-muted)">Sin importaciones registradas</div>';
     }
 
-    // ── CONNECTION ────────────────────────────────────────────
+    // -- CONNECTION --------------------------------------------
     function selectConnType(el, type) {
       document.querySelectorAll('.conn-type-card').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
@@ -728,14 +728,14 @@
       const result = document.getElementById('connResult');
       result.style.display = 'flex';
       result.className = 'info-box info-blue';
-      result.innerHTML = '<span>🔄</span><span>Probando conexión...</span>';
+      result.innerHTML = '<span>??</span><span>Probando conexi�n...</span>';
       await new Promise(r => setTimeout(r, 1500));
       result.className = 'info-box info-amber';
-      result.innerHTML = '<span>⚠️</span><span>Conexión simulada. Para activar la conexión real, configurá las credenciales en las variables de entorno de Vercel y contactá al equipo de IT del municipio para habilitar el acceso remoto.</span>';
+      result.innerHTML = '<span>??</span><span>Conexi�n simulada. Para activar la conexi�n real, configur� las credenciales en las variables de entorno de Vercel y contact� al equipo de IT del municipio para habilitar el acceso remoto.</span>';
     }
 
     function saveConnection() {
-      showToast('💾 Configuración guardada (requiere deploy para activarse)', 'info');
+      showToast('?? Configuraci�n guardada (requiere deploy para activarse)', 'info');
     }
 
     function showToast(msg, type='info') {
@@ -748,6 +748,8 @@
       setTimeout(() => t.remove(), 4000);
     }
   </script>
+  <script src='js/ux-improvements.js'></script>
+  <script src='js/bottom-nav.js'></script>
 </body>
 </html>
 

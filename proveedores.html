@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -8,8 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal JunÃ­n" />
-  <title>AuditorÃ­a de Proveedores â€” Municipalidad de JunÃ­n</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
+  <title>Auditoría de Proveedores — Municipalidad de Junín</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -112,10 +112,10 @@
   <main class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">â˜°</button>
+        <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
-          <h1>AuditorÃ­a de Proveedores</h1>
-          <span class="breadcrumb">JunÃ­n Control Â· AnÃ¡lisis de riesgo y dependencia tecnolÃ³gica</span>
+          <h1>Auditoría de Proveedores</h1>
+          <span class="breadcrumb">Junín Control · Análisis de riesgo y dependencia tecnológica</span>
         </div>
       </div>
       <div class="topbar-right">
@@ -123,7 +123,7 @@
           <option value="">Todos los riesgos</option>
           <option>Alto</option><option>Medio</option><option>Bajo</option>
         </select>
-        <button class="btn-primary" id="btnExportProv">ğŸ“¥ Exportar</button>
+        <button class="btn-primary" id="btnExportProv">?? Exportar</button>
         <div class="topbar-avatar">MA</div>
       </div>
     </header>
@@ -134,7 +134,7 @@
 
       <!-- MATRIX -->
       <div class="matrix-wrap">
-        <div class="matrix-title">ğŸ¯ Matriz de Riesgo Â· Dependencia vs Costo</div>
+        <div class="matrix-title">?? Matriz de Riesgo · Dependencia vs Costo</div>
         <div class="risk-matrix" id="riskMatrix">
           <div class="matrix-header"></div>
           <div class="matrix-header" style="color:#ef4444">Alto gasto</div>
@@ -165,23 +165,23 @@
   <script src="js/nav.js"></script>
   <script>
   const PROVEEDORES = [
-    { id:1, nombre:'Sistemas Nexo SA', sistema:'GestiÃ³n RRHH y LiquidaciÃ³n', categoria:'Software', mensual:680000, riesgo:'Alto', datos:'No', sla:true, backup:false, lics:50, licsAct:31, venc:'2026-09-01', icon:'ğŸ§©', notas:'Datos de haberes no exportables. Dependencia crÃ­tica.', oportunidad:'Renegociar por usuarios activos (19 inactivos). Ahorro $2.28M/aÃ±o.' },
-    { id:2, nombre:'Sipem Sistemas', sistema:'GestiÃ³n Tributaria Municipal', categoria:'Software', mensual:520000, riesgo:'Alto', datos:'Parcial', sla:true, backup:true, lics:25, licsAct:22, venc:'2027-03-01', icon:'ğŸ’°', notas:'CrÃ­tico para recaudaciÃ³n. MigraciÃ³n compleja.', oportunidad:'Solicitar exportaciÃ³n completa de datos y evaluaciÃ³n de alternativas.' },
-    { id:3, nombre:'GovTech Solutions', sistema:'Sistema de Expedientes', categoria:'Software', mensual:420000, riesgo:'Alto', datos:'Parcial', sla:true, backup:true, lics:80, licsAct:52, venc:'2026-08-15', icon:'ğŸ“', notas:'RenovaciÃ³n automÃ¡tica en 15 dÃ­as. 28 licencias sin uso.', oportunidad:'Reemplazar por mÃ³dulo propio. Ahorro $5.04M/aÃ±o.' },
-    { id:4, nombre:'Microsoft Argentina', sistema:'Microsoft 365 Licencias', categoria:'Software', mensual:340000, riesgo:'Medio', datos:'Si', sla:true, backup:true, lics:120, licsAct:74, venc:'2026-12-31', icon:'ğŸ”µ', notas:'46 licencias inactivas detectadas.', oportunidad:'Reducir a 80 licencias. Ahorro $1.94M/aÃ±o.' },
-    { id:5, nombre:'Telecom Argentina', sistema:'Internet 200Mbps', categoria:'Conectividad', mensual:380000, riesgo:'Bajo', datos:'Si', sla:true, backup:true, lics:0, licsAct:0, venc:'2026-12-01', icon:'ğŸ“¶', notas:'Precio competitivo. Contrato vigente.', oportunidad:'Contrato OK. Monitorear velocidad y SLA.' },
-    { id:6, nombre:'ControlGas SRL', sistema:'Control de Combustible y Flota', categoria:'Software', mensual:210000, riesgo:'Alto', datos:'No', sla:false, backup:false, lics:10, licsAct:8, venc:'2026-10-01', icon:'â›½', notas:'Sin exportaciÃ³n de datos. Sistema reemplazable.', oportunidad:'Reemplazar por mÃ³dulo propio. Ahorro $2.52M/aÃ±o.' },
-    { id:7, nombre:'Municipaltech Cba', sistema:'Portal del Ciudadano v2.1', categoria:'Web', mensual:295000, riesgo:'Medio', datos:'No', sla:true, backup:false, lics:0, licsAct:0, venc:'2026-08-01', icon:'ğŸŒ', notas:'Sistema desactualizado. Ya reemplazado por MVP.', oportunidad:'Dar de baja al vencimiento. Ahorro $3.54M/aÃ±o.' },
-    { id:8, nombre:'CloudHost Argentina', sistema:'Hosting Sitio Web Oficial', categoria:'Infraestructura', mensual:185000, riesgo:'Bajo', datos:'Si', sla:false, backup:true, lics:0, licsAct:0, venc:'2026-07-31', icon:'â˜ï¸', notas:'Migrado a Vercel. Contrato ya vencido.', oportunidad:'YA EJECUTADO. Ahorro $2.22M/aÃ±o.' },
-    { id:9, nombre:'DataCenter BsAs', sistema:'Colocation Rack Servidor', categoria:'Infraestructura', mensual:165000, riesgo:'Bajo', datos:'Si', sla:true, backup:true, lics:0, licsAct:0, venc:'2026-09-30', icon:'ğŸ—', notas:'Alternativa: rack propio del municipio.', oportunidad:'Evaluar rack local con Docker Compose.' },
-    { id:10, nombre:'TeleSoporte SRL', sistema:'Mesa de Ayuda Externo', categoria:'Soporte', mensual:145000, riesgo:'Bajo', datos:'Si', sla:true, backup:false, lics:0, licsAct:0, venc:'2026-11-01', icon:'ğŸ“', notas:'Posible internalizaciÃ³n con nuevo equipo IT.', oportunidad:'Evaluar con el nuevo equipo de tecnologÃ­a.' },
-    { id:11, nombre:'Correo Argentino', sistema:'Servicio de Notificaciones', categoria:'Servicios', mensual:95000, riesgo:'Bajo', datos:'Si', sla:false, backup:false, lics:0, licsAct:0, venc:'2027-01-01', icon:'ğŸ“§', notas:'Reemplazable por email/WhatsApp automÃ¡tico.', oportunidad:'Reemplazar por Resend o SMTP propio. Ahorro $1.14M/aÃ±o.' },
-    { id:12, nombre:'Antivirus Corp ARG', sistema:'Licencias Antivirus Corporativo', categoria:'Software', mensual:78000, riesgo:'Bajo', datos:'Si', sla:false, backup:false, lics:200, licsAct:140, venc:'2026-09-01', icon:'ğŸ›¡ï¸', notas:'60 licencias sin uso activo.', oportunidad:'Reducir a 145. Ahorro $660K/aÃ±o.' },
+    { id:1, nombre:'Sistemas Nexo SA', sistema:'Gestión RRHH y Liquidación', categoria:'Software', mensual:680000, riesgo:'Alto', datos:'No', sla:true, backup:false, lics:50, licsAct:31, venc:'2026-09-01', icon:'??', notas:'Datos de haberes no exportables. Dependencia crítica.', oportunidad:'Renegociar por usuarios activos (19 inactivos). Ahorro $2.28M/año.' },
+    { id:2, nombre:'Sipem Sistemas', sistema:'Gestión Tributaria Municipal', categoria:'Software', mensual:520000, riesgo:'Alto', datos:'Parcial', sla:true, backup:true, lics:25, licsAct:22, venc:'2027-03-01', icon:'??', notas:'Crítico para recaudación. Migración compleja.', oportunidad:'Solicitar exportación completa de datos y evaluación de alternativas.' },
+    { id:3, nombre:'GovTech Solutions', sistema:'Sistema de Expedientes', categoria:'Software', mensual:420000, riesgo:'Alto', datos:'Parcial', sla:true, backup:true, lics:80, licsAct:52, venc:'2026-08-15', icon:'??', notas:'Renovación automática en 15 días. 28 licencias sin uso.', oportunidad:'Reemplazar por módulo propio. Ahorro $5.04M/año.' },
+    { id:4, nombre:'Microsoft Argentina', sistema:'Microsoft 365 Licencias', categoria:'Software', mensual:340000, riesgo:'Medio', datos:'Si', sla:true, backup:true, lics:120, licsAct:74, venc:'2026-12-31', icon:'??', notas:'46 licencias inactivas detectadas.', oportunidad:'Reducir a 80 licencias. Ahorro $1.94M/año.' },
+    { id:5, nombre:'Telecom Argentina', sistema:'Internet 200Mbps', categoria:'Conectividad', mensual:380000, riesgo:'Bajo', datos:'Si', sla:true, backup:true, lics:0, licsAct:0, venc:'2026-12-01', icon:'??', notas:'Precio competitivo. Contrato vigente.', oportunidad:'Contrato OK. Monitorear velocidad y SLA.' },
+    { id:6, nombre:'ControlGas SRL', sistema:'Control de Combustible y Flota', categoria:'Software', mensual:210000, riesgo:'Alto', datos:'No', sla:false, backup:false, lics:10, licsAct:8, venc:'2026-10-01', icon:'?', notas:'Sin exportación de datos. Sistema reemplazable.', oportunidad:'Reemplazar por módulo propio. Ahorro $2.52M/año.' },
+    { id:7, nombre:'Municipaltech Cba', sistema:'Portal del Ciudadano v2.1', categoria:'Web', mensual:295000, riesgo:'Medio', datos:'No', sla:true, backup:false, lics:0, licsAct:0, venc:'2026-08-01', icon:'??', notas:'Sistema desactualizado. Ya reemplazado por MVP.', oportunidad:'Dar de baja al vencimiento. Ahorro $3.54M/año.' },
+    { id:8, nombre:'CloudHost Argentina', sistema:'Hosting Sitio Web Oficial', categoria:'Infraestructura', mensual:185000, riesgo:'Bajo', datos:'Si', sla:false, backup:true, lics:0, licsAct:0, venc:'2026-07-31', icon:'??', notas:'Migrado a Vercel. Contrato ya vencido.', oportunidad:'YA EJECUTADO. Ahorro $2.22M/año.' },
+    { id:9, nombre:'DataCenter BsAs', sistema:'Colocation Rack Servidor', categoria:'Infraestructura', mensual:165000, riesgo:'Bajo', datos:'Si', sla:true, backup:true, lics:0, licsAct:0, venc:'2026-09-30', icon:'??', notas:'Alternativa: rack propio del municipio.', oportunidad:'Evaluar rack local con Docker Compose.' },
+    { id:10, nombre:'TeleSoporte SRL', sistema:'Mesa de Ayuda Externo', categoria:'Soporte', mensual:145000, riesgo:'Bajo', datos:'Si', sla:true, backup:false, lics:0, licsAct:0, venc:'2026-11-01', icon:'??', notas:'Posible internalización con nuevo equipo IT.', oportunidad:'Evaluar con el nuevo equipo de tecnología.' },
+    { id:11, nombre:'Correo Argentino', sistema:'Servicio de Notificaciones', categoria:'Servicios', mensual:95000, riesgo:'Bajo', datos:'Si', sla:false, backup:false, lics:0, licsAct:0, venc:'2027-01-01', icon:'??', notas:'Reemplazable por email/WhatsApp automático.', oportunidad:'Reemplazar por Resend o SMTP propio. Ahorro $1.14M/año.' },
+    { id:12, nombre:'Antivirus Corp ARG', sistema:'Licencias Antivirus Corporativo', categoria:'Software', mensual:78000, riesgo:'Bajo', datos:'Si', sla:false, backup:false, lics:200, licsAct:140, venc:'2026-09-01', icon:'???', notas:'60 licencias sin uso activo.', oportunidad:'Reducir a 145. Ahorro $660K/año.' },
   ];
 
   const fmt = n => '$' + Math.round(n).toLocaleString('es-AR');
   const diasHasta = s => s ? Math.round((new Date(s)-new Date())/86400000) : 9999;
-  const fmtDate = s => s ? new Date(s).toLocaleDateString('es-AR') : 'â€”';
+  const fmtDate = s => s ? new Date(s).toLocaleDateString('es-AR') : '—';
 
   document.addEventListener('DOMContentLoaded', () => {
     buildSidebar('proveedores');
@@ -203,7 +203,7 @@
       { val: fmt(total), lbl:'Gasto mensual total', col:'red' },
       { val: altos, lbl:'Proveedores riesgo ALTO', col:'red' },
       { val: sinDatos, lbl:'Sin datos propios', col:'amber' },
-      { val: venc60, lbl:'Vencen en 60 dÃ­as', col:'amber' },
+      { val: venc60, lbl:'Vencen en 60 días', col:'amber' },
       { val: licsSinUso, lbl:'Licencias sin uso', col:'blue' },
     ].map(i=>`<div class="summary-item"><div class="summary-val" style="color:var(--${i.col})">${i.val}</div><div class="summary-lbl">${i.lbl}</div></div>`).join('');
   }
@@ -220,7 +220,7 @@
         const chip = document.createElement('div');
         chip.className = 'matrix-prov';
         chip.textContent = p.nombre.split(' ')[0];
-        chip.title = p.nombre + ' Â· ' + fmt(p.mensual);
+        chip.title = p.nombre + ' · ' + fmt(p.mensual);
         cell.appendChild(chip);
       }
     });
@@ -231,7 +231,7 @@
     document.getElementById('provGrid').innerHTML = data.map(p => {
       const dias = diasHasta(p.venc);
       const vencClass = dias<=0?'red':dias<=30?'red':dias<=90?'amber':'green';
-      const vencLabel = dias<=0?'VENCIDO':dias<=30?`âš ï¸ ${dias}d`:dias<=90?`â° ${dias}d`:fmtDate(p.venc);
+      const vencLabel = dias<=0?'VENCIDO':dias<=30?`?? ${dias}d`:dias<=90?`? ${dias}d`:fmtDate(p.venc);
       const flags = [
         p.sla    ? {t:'SLA',c:'flag-ok'} : {t:'Sin SLA',c:'flag-danger'},
         p.backup ? {t:'Backup',c:'flag-ok'} : {t:'Sin Backup',c:'flag-danger'},
@@ -252,14 +252,14 @@
             <div class="prov-row"><span class="prov-row-label">Costo mensual</span><span class="prov-row-val red">${fmt(p.mensual)}</span></div>
             <div class="prov-row"><span class="prov-row-label">Costo anual</span><span class="prov-row-val red">${fmt(p.mensual*12)}</span></div>
             <div class="prov-row"><span class="prov-row-label">Vencimiento</span><span class="prov-row-val ${vencClass}">${vencLabel}</span></div>
-            <div class="prov-row"><span class="prov-row-label">Ãrea</span><span class="prov-row-val blue">${p.categoria}</span></div>
+            <div class="prov-row"><span class="prov-row-label">Área</span><span class="prov-row-val blue">${p.categoria}</span></div>
             <div style="font-size:11px;color:var(--text-muted);background:rgba(255,255,255,0.02);border-radius:6px;padding:8px;margin-top:2px;">${p.notas}</div>
-            <div style="font-size:11px;color:#10b981;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:6px;padding:8px;">ğŸ’¡ ${p.oportunidad}</div>
+            <div style="font-size:11px;color:#10b981;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:6px;padding:8px;">?? ${p.oportunidad}</div>
           </div>
           <div class="prov-flags">${flags.map(f=>`<span class="prov-flag ${f.c}">${f.t}</span>`).join('')}</div>
           <div class="prov-card-footer">
-            <button class="btn-detail" onclick="alert('Detalle: ${p.nombre}\\nSistema: ${p.sistema}\\nCUIT: pendiente de relevamiento')">ğŸ“‹ Detalle</button>
-            <button class="btn-ahorro" onclick="window.location.href='control.html'">ğŸ’¡ Ver ahorro</button>
+            <button class="btn-detail" onclick="alert('Detalle: ${p.nombre}\\nSistema: ${p.sistema}\\nCUIT: pendiente de relevamiento')">?? Detalle</button>
+            <button class="btn-ahorro" onclick="window.location.href='control.html'">?? Ver ahorro</button>
           </div>
         </div>`;
     }).join('');
@@ -275,6 +275,8 @@
     a.click();
   }
   </script>
+  <script src='js/ux-improvements.js'></script>
+  <script src='js/bottom-nav.js'></script>
 </body>
 </html>
 

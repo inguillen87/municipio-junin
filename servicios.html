@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -8,8 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal JunÃ­n" />
-  <title>EstaciÃ³n de Servicios â€” Municipio de JunÃ­n</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
+  <title>Estación de Servicios — Municipio de Junín</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -22,16 +22,16 @@
   <main class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">â˜°</button>
+        <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
-          <h1>EstaciÃ³n de Servicios</h1>
-          <span class="breadcrumb">Municipio de JunÃ­n Â· Control de Combustible y Flota</span>
+          <h1>Estación de Servicios</h1>
+          <span class="breadcrumb">Municipio de Junín · Control de Combustible y Flota</span>
         </div>
       </div>
       <div class="topbar-right">
-        <button class="btn-primary" id="btnNuevaCarga">â›½ Registrar Carga</button>
-        <button class="btn-export">ğŸ“¤ Exportar</button>
-        <div class="notification-bell">ğŸ””<span class="notif-dot"></span></div>
+        <button class="btn-primary" id="btnNuevaCarga">? Registrar Carga</button>
+        <button class="btn-export">?? Exportar</button>
+        <div class="notification-bell">??<span class="notif-dot"></span></div>
         <div class="topbar-avatar">MA</div>
       </div>
     </header>
@@ -41,7 +41,7 @@
       <!-- KPIs -->
       <section class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Stock Nafta (litros)</span><div class="kpi-icon amber">â›½</div></div>
+          <div class="kpi-header"><span class="kpi-label">Stock Nafta (litros)</span><div class="kpi-icon amber">?</div></div>
           <div class="kpi-value" data-target="4820">0</div>
           <div class="kpi-footer">
             <div class="progress-bar-wrap"><div class="progress-bar" id="stockBar" style="width:0%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div></div>
@@ -49,7 +49,7 @@
           </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Stock Gasoil (litros)</span><div class="kpi-icon blue">ğŸ›¢ï¸</div></div>
+          <div class="kpi-header"><span class="kpi-label">Stock Gasoil (litros)</span><div class="kpi-icon blue">???</div></div>
           <div class="kpi-value" data-target="7340">0</div>
           <div class="kpi-footer">
             <div class="progress-bar-wrap"><div class="progress-bar" id="gasoilBar" style="width:0%;background:linear-gradient(90deg,#3b82f6,#06b6d4)"></div></div>
@@ -57,52 +57,52 @@
           </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Consumo Mensual</span><div class="kpi-icon red">ğŸ“‰</div></div>
+          <div class="kpi-header"><span class="kpi-label">Consumo Mensual</span><div class="kpi-icon red">??</div></div>
           <div class="kpi-value" data-target="8640">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">litros Â· agosto 2026</span></div>
+          <div class="kpi-footer"><span class="kpi-sub">litros · agosto 2026</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Costo Combustible</span><div class="kpi-icon violet">ğŸ’°</div></div>
+          <div class="kpi-header"><span class="kpi-label">Costo Combustible</span><div class="kpi-icon violet">??</div></div>
           <div class="kpi-value money" data-target="9120000">$0</div>
-          <div class="kpi-footer"><span class="kpi-trend up">â–² +14% vs presup.</span></div>
+          <div class="kpi-footer"><span class="kpi-trend up">? +14% vs presup.</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">VehÃ­culos Activos</span><div class="kpi-icon green">ğŸš—</div></div>
+          <div class="kpi-header"><span class="kpi-label">Vehículos Activos</span><div class="kpi-icon green">??</div></div>
           <div class="kpi-value" data-target="43">0</div>
           <div class="kpi-footer"><span class="kpi-sub">en la flota municipal</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Cargas Hoy</span><div class="kpi-icon teal">ğŸ“‹</div></div>
+          <div class="kpi-header"><span class="kpi-label">Cargas Hoy</span><div class="kpi-icon teal">??</div></div>
           <div class="kpi-value" data-target="12">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">registros del dÃ­a</span></div>
+          <div class="kpi-footer"><span class="kpi-sub">registros del día</span></div>
         </div>
       </section>
 
       <!-- ALERT STOCK BAJO -->
       <div class="alert-banner" id="alertStock">
-        <span class="alert-icon">â›½</span>
-        <span>Stock de Nafta al <strong>48%</strong>. Se recomienda solicitar reposiciÃ³n antes de fin de semana.</span>
-        <button class="alert-close" onclick="this.parentElement.style.display='none'">âœ•</button>
+        <span class="alert-icon">?</span>
+        <span>Stock de Nafta al <strong>48%</strong>. Se recomienda solicitar reposición antes de fin de semana.</span>
+        <button class="alert-close" onclick="this.parentElement.style.display='none'">?</button>
       </div>
 
       <!-- TABS -->
       <div class="tabs-bar">
-        <button class="tab-btn active" data-tab="cargas">ğŸ“‹ Registro de Cargas</button>
-        <button class="tab-btn" data-tab="consumo">ğŸ“Š Consumo por VehÃ­culo</button>
-        <button class="tab-btn" data-tab="stock">ğŸ›¢ï¸ Stock y ReposiciÃ³n</button>
+        <button class="tab-btn active" data-tab="cargas">?? Registro de Cargas</button>
+        <button class="tab-btn" data-tab="consumo">?? Consumo por Vehículo</button>
+        <button class="tab-btn" data-tab="stock">??? Stock y Reposición</button>
       </div>
 
       <!-- TAB: CARGAS -->
       <div class="tab-content active" id="tab-cargas">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">â›½ Registro de Cargas â€” Agosto 2026</h2>
+            <h2 class="chart-title">? Registro de Cargas — Agosto 2026</h2>
             <div class="panel-filters">
               <select class="select-filter" id="filtroVehiculo">
-                <option value="">Todos los vehÃ­culos</option>
-                <option>Ford F-100 Â· JUN-001</option>
-                <option>VW Amarok Â· JUN-002</option>
-                <option>CamiÃ³n Volvo Â· JUN-010</option>
+                <option value="">Todos los vehículos</option>
+                <option>Ford F-100 · JUN-001</option>
+                <option>VW Amarok · JUN-002</option>
+                <option>Camión Volvo · JUN-010</option>
               </select>
               <select class="select-filter" id="filtroTipoC">
                 <option value="">Nafta y Gasoil</option>
@@ -115,7 +115,7 @@
             <thead>
               <tr>
                 <th>Fecha/Hora</th>
-                <th>VehÃ­culo</th>
+                <th>Vehículo</th>
                 <th>Patente</th>
                 <th>Tipo</th>
                 <th>Litros</th>
@@ -134,11 +134,11 @@
       <div class="tab-content" id="tab-consumo">
         <div class="charts-row" style="grid-template-columns:1fr 1fr">
           <div class="chart-card">
-            <div class="chart-header"><h2 class="chart-title">Top 10 Consumidores</h2><span class="chart-sub">Litros Â· agosto 2026</span></div>
+            <div class="chart-header"><h2 class="chart-title">Top 10 Consumidores</h2><span class="chart-sub">Litros · agosto 2026</span></div>
             <div class="chart-container"><canvas id="consumoBarChart"></canvas></div>
           </div>
           <div class="chart-card">
-            <div class="chart-header"><h2 class="chart-title">Consumo Diario</h2><span class="chart-sub">Litros totales por dÃ­a</span></div>
+            <div class="chart-header"><h2 class="chart-title">Consumo Diario</h2><span class="chart-sub">Litros totales por día</span></div>
             <div class="chart-container"><canvas id="consumoDiarioChart"></canvas></div>
           </div>
         </div>
@@ -148,11 +148,11 @@
       <div class="tab-content" id="tab-stock">
         <div class="bottom-grid" style="grid-template-columns:1fr 1fr">
           <div class="data-card">
-            <div class="chart-header"><h2 class="chart-title">ğŸ›¢ï¸ Tanques de Combustible</h2></div>
+            <div class="chart-header"><h2 class="chart-title">??? Tanques de Combustible</h2></div>
             <div class="tanques-list" id="tanquesList"></div>
           </div>
           <div class="data-card">
-            <div class="chart-header"><h2 class="chart-title">ğŸ“‹ Historial de ReposiciÃ³n</h2></div>
+            <div class="chart-header"><h2 class="chart-title">?? Historial de Reposición</h2></div>
             <div class="activity-feed" id="reposicionFeed"></div>
           </div>
         </div>
@@ -165,19 +165,19 @@
   <div class="modal-overlay" id="modalCarga" style="display:none">
     <div class="modal" style="max-width:480px">
       <div class="modal-header">
-        <h3>â›½ Registrar Carga de Combustible</h3>
-        <button class="modal-close" onclick="document.getElementById('modalCarga').style.display='none'">âœ•</button>
+        <h3>? Registrar Carga de Combustible</h3>
+        <button class="modal-close" onclick="document.getElementById('modalCarga').style.display='none'">?</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
           <div class="form-group">
-            <label>VehÃ­culo</label>
+            <label>Vehículo</label>
             <select id="cVehiculo">
-              <option>Ford F-100 Â· JUN-001</option>
-              <option>VW Amarok Â· JUN-002</option>
-              <option>Toyota Hilux Â· JUN-003</option>
-              <option>CamiÃ³n Volvo Â· JUN-010</option>
-              <option>CamiÃ³n Basura Â· JUN-015</option>
+              <option>Ford F-100 · JUN-001</option>
+              <option>VW Amarok · JUN-002</option>
+              <option>Toyota Hilux · JUN-003</option>
+              <option>Camión Volvo · JUN-010</option>
+              <option>Camión Basura · JUN-015</option>
             </select>
           </div>
           <div class="form-group">
@@ -192,7 +192,7 @@
             <input type="number" id="cLitros" placeholder="45.5" step="0.5" />
           </div>
           <div class="form-group">
-            <label>Km actual del vehÃ­culo</label>
+            <label>Km actual del vehículo</label>
             <input type="number" id="cKm" placeholder="87420" />
           </div>
           <div class="form-group">
@@ -207,7 +207,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" onclick="document.getElementById('modalCarga').style.display='none'">Cancelar</button>
-        <button class="btn-save" id="btnGuardarCarga">â›½ Registrar</button>
+        <button class="btn-save" id="btnGuardarCarga">? Registrar</button>
       </div>
     </div>
   </div>
@@ -218,6 +218,8 @@
   <script src="js/nav.js"></script>
   <script src="js/data.js"></script>
   <script src="js/servicios.js"></script>
+  <script src='js/ux-improvements.js'></script>
+  <script src='js/bottom-nav.js'></script>
 </body>
 </html>
 

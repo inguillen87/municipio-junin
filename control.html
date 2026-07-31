@@ -342,5 +342,86 @@
       if (typeof buildSidebar === 'function') buildSidebar('control');
     });
   </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // TAB SYSTEM
+  var tabs = document.querySelectorAll('[data-tab], .tab-btn, [role="tab"]');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var tabId = this.dataset.tab || this.getAttribute('data-target');
+      // Remove active from all tabs
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      this.classList.add('active');
+      // Hide all panels
+      document.querySelectorAll('[data-panel], .tab-panel, .tab-content').forEach(function(p) {
+        p.style.display = 'none';
+      });
+      // Show target panel
+      if (tabId) {
+        var panel = document.getElementById('tab-' + tabId) || document.getElementById(tabId) || document.querySelector('[data-panel="' + tabId + '"]');
+        if (panel) panel.style.display = 'block';
+      }
+      if (typeof showToast !== 'undefined') showToast('📋 Vista: ' + (this.textContent.trim()), 'info');
+    });
+  });
+
+  // SECRETARÍA FILTER
+  var secSel = document.getElementById('filterSecretaria') || document.querySelector('select[name="secretaria"]');
+  if (secSel) {
+    secSel.addEventListener('change', function() {
+      var val = this.value.toLowerCase();
+      var rows = document.querySelectorAll('tbody tr, .contract-row, .table-row');
+      rows.forEach(function(r) {
+        r.style.display = (!val || r.textContent.toLowerCase().includes(val)) ? '' : 'none';
+      });
+      if (typeof showToast !== 'undefined' && val) showToast('🔍 Filtrado: ' + this.value, 'info');
+    });
+  }
+
+  // SEARCH INPUT  
+  var searchInput = document.getElementById('searchInput') || document.querySelector('input[type="search"], input[placeholder*="uscar"]');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      var q = this.value.toLowerCase();
+      var rows = document.querySelectorAll('tbody tr, .contract-row');
+      rows.forEach(function(r) {
+        r.style.display = (!q || r.textContent.toLowerCase().includes(q)) ? '' : 'none';
+      });
+    });
+  }
+
+  // SEMÁFORO CARDS — make clickable
+  document.querySelectorAll('.semaforo-card, .secretaria-card, [class*="semaforo"], .kpi-card').forEach(function(card) {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', function() {
+      var name = this.querySelector('h3, h4, .card-title, .kpi-label, strong')?.textContent || 'Secretaría';
+      var amount = this.querySelector('.amount, .monto, .kpi-value, [class*="amount"]')?.textContent || '';
+      if (typeof showToast !== 'undefined') showToast('📊 ' + name.trim() + (amount ? ' — ' + amount.trim() : ''), 'info');
+    });
+  });
+
+  // EXPORT BUTTON
+  var exportBtn = document.getElementById('btnExport') || document.getElementById('btnExportPDF') || document.querySelector('button[onclick*="export"], .btn-export');
+  if (!exportBtn) {
+    // Find any button with export text
+    document.querySelectorAll('button').forEach(function(b) {
+      if (b.textContent.toLowerCase().includes('export') || b.textContent.includes('📤') || b.textContent.includes('PDF')) {
+        b.onclick = function() { window.location.href = 'exportar.html'; };
+      }
+    });
+  } else {
+    exportBtn.onclick = function() { window.location.href = 'exportar.html'; };
+  }
+
+  // DATE BUTTONS
+  document.querySelectorAll('.date-filter button, .period-filter button, [data-period]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.date-filter button, .period-filter button').forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      if (typeof showToast !== 'undefined') showToast('📅 Período: ' + this.textContent.trim(), 'info');
+    });
+  });
+});
+</script>
 </body>
 </html>

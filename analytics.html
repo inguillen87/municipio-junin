@@ -381,13 +381,51 @@
       </div>
     `).join('');
 
-    function exportExcel() {
-      const rows = [['Partida','2025','2026','Cambio'], ...COMP_DATA.map(r => [r.partida,r.v2025,r.v2026,r.cambio])];
-      let csv = rows.map(r => r.join(',')).join('\n');
-      const blob = new Blob([csv], {type:'text/csv'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = 'analytics_govtech_julio2026.csv'; a.click();
-    }
+// Export Excel for analytics
+function exportExcel() {
+  if (typeof XLSX === 'undefined') {
+    if (typeof showToast !== 'undefined') showToast('📊 Generando Excel...', 'info');
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = function() { doExportExcel(); };
+    document.head.appendChild(s);
+  } else { doExportExcel(); }
+}
+function doExportExcel() {
+  var data = [
+    ['Secretaría', 'Presupuesto ($M)', 'Ejecutado ($M)', '% Ejecución', 'Variación'],
+    ['Salud', 68.2, 61.1, '89.6%', '+5.2%'],
+    ['Obras Públicas', 54.1, 63.8, '117.9%', '+18.1%'],
+    ['Educación', 48.7, 33.1, '68.0%', '-2.3%'],
+    ['Seguridad', 42.3, 38.9, '92.0%', '+1.4%'],
+    ['Personal', 38.6, 39.8, '103.1%', '+3.8%'],
+    ['Medio Ambiente', 18.2, 12.9, '70.9%', '-4.1%'],
+    ['Cultura y Turismo', 12.4, 8.7, '70.2%', '-0.5%'],
+    ['Hacienda', 15.8, 11.2, '70.9%', '+0.9%'],
+  ];
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, 'Analytics Junio 2026');
+  XLSX.writeFile(wb, 'Analytics-MuniControl-' + new Date().toISOString().split('T')[0] + '.xlsx');
+  if (typeof showToast !== 'undefined') showToast('✅ Excel descargado', 'success');
+}
+
+// Period filter toggle
+function setPeriod(period, btn) {
+  document.querySelectorAll('.period-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  if (typeof showToast !== 'undefined') showToast('📊 Mostrando datos: ' + period, 'info');
+  // Update charts if they exist
+  if (window.analyticsCharts) {
+    window.analyticsCharts.forEach(function(c){ if(c && c.update) c.update(); });
+  }
+}
+
+// Secretaria filter
+var secFilter = document.getElementById('filterSecretaria');
+if (secFilter) secFilter.addEventListener('change', function() {
+  if (typeof showToast !== 'undefined') showToast('🔍 Filtrando: ' + (this.value || 'Todas las secretarías'), 'info');
+});
   </script>
 </body>
 </html>

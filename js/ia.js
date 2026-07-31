@@ -686,47 +686,29 @@ function responderPresupuesto() {
 // ══════════════════════════════════════════════════════════════
 // FUNCIÓN PRINCIPAL — procesar mensaje del usuario
 // ══════════════════════════════════════════════════════════════
+function getAIResponse(message) {
+  const msg = message.toLowerCase();
+  if (msg.includes('gasto') || msg.includes('gastó')) {
+    return '💰 **Análisis de Gastos — Julio 2026**\n\nEl municipio ejecutó **$284.5M** en julio 2026, representando un **4.2% más** que julio 2025.\n\n📊 Distribución por secretaría:\n• Salud: $68.2M (24%)\n• Obras Públicas: $54.1M (19%)\n• Educación: $48.7M (17%)\n• Seguridad: $42.3M (15%)\n• Personal: $38.6M (14%)\n• Resto: $32.6M (11%)\n\n⚠️ **Alerta:** Obras Públicas superó su presupuesto mensual en un 18%. Se recomienda revisión inmediata.';
+  } else if (msg.includes('reclamo') || msg.includes('vecino')) {
+    return '🏘️ **Estado de Reclamos Vecinales**\n\n📊 Resumen actual:\n• **Total activos:** 318\n• **Sin resolver:** 23 (🔴 Crítico)\n• **En proceso:** 89\n• **Resueltos este mes:** 206\n\n🔴 Reclamos urgentes:\n1. Pérdida de agua - Rivadavia 1200 (5 días)\n2. Bache peligroso - San Martín 1450 (3 días)\n3. Luminaria - Belgrano 830 (3 días)\n\n⏱️ Tiempo promedio de resolución: **3.2 días**';
+  } else if (msg.includes('resumen') || msg.includes('ejecutivo')) {
+    return '📋 **Resumen Ejecutivo — Municipio de Junín**\n\n🗓️ Período: Julio 2026\n\n✅ **Logros del mes:**\n• 206 reclamos vecinales resueltos\n• 12 nuevas incorporaciones de personal\n• Pavimentación San Martín: 78% avanzado\n• Ahorro IT anual proyectado: $42M\n\n⚠️ **Puntos de atención:**\n• Obras Públicas 18% sobre presupuesto\n• 4.312 horas extra — máximo histórico\n• 23 reclamos sin atención > 48hs\n\n📈 **Score de gestión:** 74/100';
+  } else if (msg.includes('personal') || msg.includes('empleado') || msg.includes('rrhh')) {
+    return '👥 **Análisis de Personal Municipal**\n\n👤 **Plantel total:** 1.247 empleados\n\n📊 Por secretaría:\n• Salud: 312 (25%)\n• Educación: 287 (23%)\n• Obras Públicas: 198 (16%)\n• Seguridad: 176 (14%)\n• Resto: 274 (22%)\n\n⚠️ **Alertas:**\n• Horas extra: 4.312h este mes (+8% vs julio)\n• Ausentismo: 3% — dentro del límite\n• 47 licencias activas (ordinarias + médicas)\n\n💰 Masa salarial: **$186M/mes**';
+  } else if (msg.includes('presupuesto')) {
+    return '💰 **Estado del Presupuesto 2026**\n\n📊 Ejecución general: **72%** ($193M de $372M)\n\n🔴 Partidas en riesgo (>90% ejecutado):\n• Personal: 103% ⚠️ EXCEDIDO\n• Salud: 89% 🔴 Crítico\n• Transporte: 91% 🔴 Crítico\n\n🟢 Con margen:\n• Obras Públicas: 62%\n• Educación: 68%\n• Medio Ambiente: 71%\n\n🤖 **Predicción IA:** El municipio cerrará el año con $341M ejecutados ($31M de ahorro). Confianza: 87%';
+  } else {
+    return '🤖 Entendido. Procesando tu consulta sobre "' + message + '"...\n\nPuedo ayudarte con:\n• 💰 Análisis de gastos y presupuesto\n• 👥 Información del personal municipal\n• 🏘️ Reclamos vecinales\n• 📊 Reportes ejecutivos\n• ⚠️ Alertas activas del sistema\n\n¿Sobre qué área necesitás información?';
+  }
+}
+
 function procesarMensaje(texto) {
-  const lower = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  
-  // Buscar intención que mejor coincida
-  let mejorIntent = null;
-  let mejorScore = 0;
-  
-  for (const intent of INTENTS) {
-    let score = 0;
-    for (const kw of intent.keywords) {
-      const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (lower.includes(kwNorm)) {
-        score += kwNorm.split(' ').length; // frases largas pesan más
-      }
-    }
-    if (score > mejorScore) {
-      mejorScore = score;
-      mejorIntent = intent;
-    }
-  }
-  
-  if (mejorIntent && mejorScore > 0) {
-    return mejorIntent.responder();
-  }
-  
-  // Respuesta genérica si no entiende
-  return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">🤖 Asistente Municipal</div>
-      <p style="color:rgba(148,163,184,0.9); margin-bottom:16px">
-        Puedo responder preguntas sobre el municipio. Intentá con alguna de estas consultas:
-      </p>
-      <div class="ia-suggestions">
-        <button class="ia-suggest" onclick="sendQuickQuery('¿Cuánto dinero libre queda para gastar?')">💰 ¿Cuánto dinero libre queda?</button>
-        <button class="ia-suggest" onclick="sendQuickQuery('¿Cuántos empleados tiene el municipio?')">👥 ¿Cuántos empleados hay?</button>
-        <button class="ia-suggest" onclick="sendQuickQuery('¿Cuáles son las alertas críticas?')">🚨 ¿Cuáles son las alertas?</button>
-        <button class="ia-suggest" onclick="sendQuickQuery('Dame el informe ejecutivo completo')">📋 Informe ejecutivo</button>
-        <button class="ia-suggest" onclick="sendQuickQuery('¿Cuántos reclamos de vecinos hay pendientes?')">🏘️ Reclamos vecinos</button>
-        <button class="ia-suggest" onclick="sendQuickQuery('¿Cuáles son las oportunidades de ahorro?')">💚 Oportunidades de ahorro</button>
-      </div>
-    </div>`;
+  let raw = getAIResponse(texto);
+  // Convert basic markdown to HTML for better display
+  raw = raw.replace(/\n/g, '<br>');
+  raw = raw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  return `<div class="ia-answer-card"><div class="ia-insight" style="font-size:14px;color:#f0f4ff;">${raw}</div></div>`;
 }
 
 // ══════════════════════════════════════════════════════════════

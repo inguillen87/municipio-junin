@@ -156,6 +156,22 @@ function appendMessage(tipo, html, id) {
   content.innerHTML = html;
   bubble.appendChild(content);
 
+  if (tipo === 'ia') {
+    const actions = document.createElement('div');
+    actions.className = 'msg-actions';
+    actions.style.marginTop = '8px';
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-copy';
+    copyBtn.innerHTML = '📋 Copiar';
+    copyBtn.style.cssText = 'background:rgba(255,255,255,0.1);border:none;color:white;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;';
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(content.innerText);
+      if (window.toast) toast('Copiado', 'Texto copiado al portapapeles', 'success');
+    };
+    actions.appendChild(copyBtn);
+    bubble.appendChild(actions);
+  }
+
   wrap.appendChild(avatar);
   wrap.appendChild(bubble);
 
@@ -172,6 +188,9 @@ function scrollToBottom() {
 
 // ── UPLOAD DE ARCHIVOS ───────────────────────────────────────
 async function handleFiles(files) {
+  if (files.length > 0 && window.toast) {
+    toast('Procesando', 'Procesando documento...', 'info');
+  }
   for (const file of files) {
     const ext = file.name.split('.').pop().toLowerCase();
     const entry = { name: file.name, type: ext, text: '', data: [], columns: [] };
@@ -278,7 +297,11 @@ function updateOcrProgress(pct) {
 
 // ── RECONOCIMIENTO DE VOZ ────────────────────────────────────
 function initVoice() {
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    window.hasVoice = false;
+    return;
+  }
+  window.hasVoice = true;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
   recognition.lang = 'es-AR';
@@ -299,6 +322,10 @@ function initVoice() {
 }
 
 function startVoice() {
+  if (!window.hasVoice) {
+    if (window.toast) toast('Error', 'Voz no disponible en este browser', 'error');
+    return;
+  }
   if (!recognition) return;
   isListening = true;
   const banner = document.getElementById('voiceBanner');

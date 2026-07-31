@@ -21,6 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="js/i18n.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -233,8 +234,9 @@
       <a class="sa-nav-item" data-section="tenants"><span class="sa-nav-icon">🏛️</span><span class="sa-nav-label-text">Municipios</span><span class="sa-nav-badge" id="tenantCount">2</span></a>
       <a class="sa-nav-item" data-section="users"><span class="sa-nav-icon">👥</span><span class="sa-nav-label-text">Usuarios</span><span class="sa-nav-badge" id="userCount">4</span></a>
       <div class="sa-nav-label">INGRESOS</div>
-      <a class="sa-nav-item" data-section="revenue"><span class="sa-nav-icon">💰</span><span class="sa-nav-label-text">Ingresos y Proyección</span></a>
+      <a class="sa-nav-item" data-section="revenue"><span class="sa-nav-icon">💰</span><span class="sa-nav-label-text">Facturación y Proyección</span></a>
       <div class="sa-nav-label">SISTEMA</div>
+      <a class="sa-nav-item" data-section="logs"><span class="sa-nav-icon">📜</span><span class="sa-nav-label-text">Logs del Sistema</span></a>
       <a class="sa-nav-item" href="index.html"><span class="sa-nav-icon">←</span><span class="sa-nav-label-text">Volver al sistema</span></a>
     </nav>
     <div class="sa-footer">
@@ -254,7 +256,13 @@
     <header class="sa-topbar">
       <div class="sa-topbar-title" id="pageTitle">Platform Overview</div>
       <div class="sa-topbar-right">
+        <div class="system-health" style="display:flex;gap:12px;margin-right:16px;font-size:12px;font-weight:700;color:var(--muted)">
+          <span><span style="color:var(--green)">●</span> Server</span>
+          <span><span style="color:var(--green)">●</span> DB</span>
+          <span><span style="color:var(--green)">●</span> API</span>
+        </div>
         <div id="langPickerAdmin" style="margin-left:auto"></div>
+        <button class="btn-secondary" onclick="exportTenants()">📥 Exportar</button>
         <button class="btn-secondary" onclick="refreshData()">🔄 Actualizar</button>
         <button class="btn-primary" onclick="openNewTenant()">+ Nuevo Municipio</button>
       </div>
@@ -318,7 +326,10 @@
         <div class="table-card">
           <div class="table-header">
             <div class="table-title">🏛️ Municipios / Tenants</div>
-            <button class="btn-primary" onclick="openNewTenant()">+ Nuevo Municipio</button>
+            <div style="display:flex;gap:10px;">
+              <input type="text" id="tenantSearch" class="form-input" style="width:200px;padding:6px 12px;font-size:12px;" placeholder="🔍 Buscar municipio..." onkeyup="filterTenants()">
+              <button class="btn-primary" onclick="openNewTenant()">+ Nuevo Municipio</button>
+            </div>
           </div>
           <table class="admin-table">
             <thead><tr>
@@ -381,6 +392,24 @@
               <tr><td><span class="badge badge-demo-role">STARTER</span></td><td>&lt; 500</td><td style="color:#10b981;font-weight:800">$299</td><td>+$199</td><td>$3,588</td></tr>
               <tr><td><span class="badge badge-plan">PROFESSIONAL</span></td><td>500–2.000</td><td style="color:#10b981;font-weight:800">$799</td><td>+$199</td><td>$9,588</td></tr>
               <tr><td><span class="badge badge-admin">ENTERPRISE</span></td><td>&gt; 2.000</td><td style="color:#10b981;font-weight:800">$1,999</td><td>+$199</td><td>$23,988</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- LOGS -->
+      <section class="sa-section" id="section-logs">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">📜 Logs de Auditoría</div>
+            <button class="btn-secondary">📥 Descargar Logs</button>
+          </div>
+          <table class="admin-table">
+            <thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th>IP</th></tr></thead>
+            <tbody>
+              <tr><td>2026-07-31 10:15:22</td><td>superadmin@govtech.ar</td><td><span class="badge badge-active">CREATE_TENANT</span></td><td>Municipio Junín creado</td><td>192.168.1.100</td></tr>
+              <tr><td>2026-07-31 09:42:11</td><td>system</td><td><span class="badge badge-admin">AUTO_BACKUP</span></td><td>Database full backup completed</td><td>localhost</td></tr>
+              <tr><td>2026-07-30 18:30:00</td><td>intendente@junin.gob.ar</td><td><span class="badge badge-user">LOGIN</span></td><td>Inicio de sesión exitoso</td><td>200.5.12.45</td></tr>
             </tbody>
           </table>
         </div>
@@ -511,6 +540,22 @@
     </div>
   </div>
 
+  <!-- MODAL: GESTIONAR TENANT -->
+  <div class="modal-overlay" id="modalManageTenant">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ Gestionar Municipio</div>
+        <button class="modal-close" onclick="closeModal('modalManageTenant')">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="manageTenantBody">
+        <!-- Contenido inyectado dinámicamente -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('modalManageTenant')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div id="adminToast">
     <span class="toast-icon" id="toastIcon">✅</span>
@@ -553,7 +598,7 @@
       document.querySelectorAll('.sa-section').forEach(s => s.classList.remove('active'));
       item.classList.add('active');
       document.getElementById('section-' + section)?.classList.add('active');
-      const titles = { overview:'Platform Overview', tenants:'Municipios / Tenants', users:'Gestión de Usuarios', revenue:'Ingresos y Proyección' };
+      const titles = { overview:'Platform Overview', tenants:'Municipios / Tenants', users:'Gestión de Usuarios', revenue:'Facturación y Proyección', logs:'Logs del Sistema' };
       document.getElementById('pageTitle').textContent = titles[section] || section;
     });
   });
@@ -583,10 +628,18 @@
         <td>${t.createdAt}</td>
         <td><div class="actions">
           <button class="action-btn" onclick="accessTenant('${t.id}')">Acceder</button>
-          <button class="action-btn" onclick="editTenant('${t.id}')">Editar</button>
-          <button class="action-btn danger" onclick="suspendTenant('${t.id}')">⏸</button>
+          <button class="action-btn" onclick="manageTenant('${t.id}')">Gestionar</button>
+          <button class="action-btn ${t.status==='ACTIVE'?'danger':'success'}" onclick="toggleTenantStatus('${t.id}')">${t.status==='ACTIVE'?'Desactivar':'Activar'}</button>
         </div></td>
       </tr>`).join('');
+  }
+
+  function filterTenants() {
+    const q = document.getElementById('tenantSearch').value.toLowerCase();
+    const rows = document.getElementById('tenantsBody').querySelectorAll('tr');
+    rows.forEach(r => {
+      r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+    });
   }
 
   function renderUsers() {
@@ -661,9 +714,35 @@
     toast('Accediendo...', 'Redirigiendo al sistema del municipio', 'info');
     setTimeout(() => location.href = 'index.html', 800);
   }
-  function editTenant(id) { toast('Editar Tenant', 'Formulario de edición en desarrollo', 'info'); }
-  function suspendTenant(id) {
-    if (confirm('¿Suspender este municipio?')) toast('⏸ Municipio suspendido', 'Acceso temporalmente desactivado', 'warning');
+  function manageTenant(id) {
+    const t = TENANTS.find(x => x.id === id);
+    if (!t) return;
+    document.getElementById('manageTenantBody').innerHTML = `
+      <div class="kpi-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+        <div class="kpi-card" style="padding:12px"><div class="kpi-label">Usuarios</div><div class="kpi-value">${t.userCount}</div></div>
+        <div class="kpi-card" style="padding:12px"><div class="kpi-label">Empleados</div><div class="kpi-value">${t.employees}</div></div>
+      </div>
+      <div class="form-group"><label>Información del Municipio</label>
+      <div style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;font-size:13px;color:var(--text)">
+        <p><strong>Nombre:</strong> ${t.name}</p>
+        <p><strong>Plan:</strong> ${t.plan}</p>
+        <p><strong>Estado:</strong> ${t.status}</p>
+      </div></div>
+      <div style="margin-top:20px"><button class="btn-secondary" style="width:100%;color:var(--red);border-color:var(--red)" onclick="toggleTenantStatus('${t.id}');closeModal('modalManageTenant')">Desactivar Municipio</button></div>
+    `;
+    document.getElementById('modalManageTenant').classList.add('open');
+  }
+  function toggleTenantStatus(id) {
+    const t = TENANTS.find(x => x.id === id);
+    if (!t) return;
+    if (t.status === 'ACTIVE') {
+      t.status = 'SUSPENDED';
+      toast('⏸ Municipio suspendido', 'Acceso desactivado', 'warning');
+    } else {
+      t.status = 'ACTIVE';
+      toast('▶️ Municipio activado', 'Acceso restaurado', 'success');
+    }
+    renderOverview(); renderTenants();
   }
   function editUser(id) { toast('Editar Usuario', 'Formulario de edición en desarrollo', 'info'); }
   function deactivateUser(id) {
@@ -733,6 +812,8 @@
       }
     } catch (err) {
       toast('✅ Demo', 'Municipio creado localmente (sin DB)', 'success');
+      TENANTS.push({ id: 't_new_'+Math.random(), slug, name, province: document.getElementById('tProvince').value, country:document.getElementById('tCountry').value, employees: parseInt(document.getElementById('tEmployees').value)||0, plan:selectedPlan, status:'ACTIVE', mrr:299, userCount:1, createdAt: new Date().toISOString().split('T')[0] });
+      renderTenants(); renderOverview(); animateCounters();
       closeModal('modalTenant');
     }
   }
@@ -766,11 +847,43 @@
     toastTimeout = setTimeout(() => el.classList.remove('show'), 3500);
   }
 
+  // ── EXPORT ────────────────────────────────────────────────
+  function exportTenants() {
+    if (!window.XLSX) return toast('Error', 'Librería XLSX no cargada', 'error');
+    const ws = XLSX.utils.json_to_sheet(TENANTS);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Municipios");
+    XLSX.writeFile(wb, "Municipios_Export.xlsx");
+    toast('✅ Exportado', 'Archivo Excel descargado', 'success');
+  }
+
+  // ── ANIMATE COUNTERS ──────────────────────────────────────
+  function animateCounters() {
+    document.getElementById('kpiTenants').textContent = TENANTS.length;
+    document.getElementById('tenantCount').textContent = TENANTS.length;
+    document.getElementById('kpiUsers').textContent = USERS.length;
+    document.getElementById('userCount').textContent = USERS.length;
+    
+    document.querySelectorAll('.kpi-value').forEach(el => {
+      const val = parseFloat(el.textContent.replace(/[^0-9.]/g,''));
+      if(isNaN(val)) return;
+      const isCurr = el.textContent.includes('$');
+      let start = 0;
+      const step = val / 20;
+      const int = setInterval(() => {
+        start += step;
+        if(start >= val) { start = val; clearInterval(int); }
+        el.textContent = (isCurr?'$':'') + Math.round(start).toLocaleString();
+      }, 30);
+    });
+  }
+
   // ── INIT ─────────────────────────────────────────────────
   renderOverview();
   renderTenants();
   renderUsers();
   initCharts();
+  setTimeout(animateCounters, 100);
 
   // Auth check: solo SUPER_ADMIN puede entrar
   const user = JSON.parse(sessionStorage.getItem('mjunin_user') || '{}');

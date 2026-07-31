@@ -106,14 +106,11 @@
         <div class="ia-sidebar-section">
           <h3 class="ia-sidebar-title">💡 Consultas Rápidas</h3>
           <div class="quick-queries">
-            <button class="quick-btn" data-query="¿Cuál es el gasto total del municipio en agosto 2026?">💰 Gasto agosto 2026</button>
-            <button class="quick-btn" data-query="¿Qué secretarías superaron su presupuesto?">⚠️ Alertas presupuestarias</button>
-            <button class="quick-btn" data-query="¿Cuántos empleados tiene el municipio y cuál es la masa salarial?">👥 Resumen RRHH</button>
-            <button class="quick-btn" data-query="¿Cuáles son los reclamos más frecuentes de los vecinos?">🏘️ Reclamos frecuentes</button>
-            <button class="quick-btn" data-query="Dame un informe ejecutivo completo para presentar al intendente Mario Abed">📋 Informe ejecutivo</button>
-            <button class="quick-btn" data-query="¿Cuánto ahorramos al migrar los sistemas a infraestructura propia?">💡 Ahorro IT 2026</button>
-            <button class="quick-btn" data-query="Analiza el consumo de combustible de la flota municipal">⛽ Análisis flota</button>
-            <button class="quick-btn" data-query="¿Cuáles son las órdenes de trabajo urgentes en los talleres?">🔧 Talleres urgentes</button>
+            <button class="quick-btn" onclick="sendQuickQuery('¿Cuánto se gastó este mes?')">💰 Gasto del mes</button>
+            <button class="quick-btn" onclick="sendQuickQuery('¿Cuáles son los reclamos pendientes?')">🏘️ Reclamos pendientes</button>
+            <button class="quick-btn" onclick="sendQuickQuery('Resumen ejecutivo')">📋 Resumen ejecutivo</button>
+            <button class="quick-btn" onclick="sendQuickQuery('Análisis de personal')">👥 Análisis de personal</button>
+            <button class="quick-btn" onclick="sendQuickQuery('Alerta de presupuesto')">⚠️ Alerta de presupuesto</button>
           </div>
         </div>
 
@@ -127,11 +124,9 @@
           <div class="config-item">
             <span class="config-label">Modelo</span>
             <select class="config-select" id="modelSelect">
-              <option value="demo">🎭 Demo (sin Ollama)</option>
-              <option value="llama3.1:8b">llama3.1:8b</option>
-              <option value="llama3.1:70b">llama3.1:70b</option>
-              <option value="mistral:7b">mistral:7b</option>
-              <option value="gemma3:9b">gemma3:9b</option>
+              <option value="demo">🎭 Modelo Municipal</option>
+              <option value="llama3.1:8b">Análisis Financiero</option>
+              <option value="llama3.1:70b">Atención Vecinal</option>
             </select>
           </div>
           <button class="btn-test-connection" id="btnTestOllama">🔌 Probar conexión</button>

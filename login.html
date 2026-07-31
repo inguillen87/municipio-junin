@@ -346,6 +346,9 @@
           <label for="passwordInput" class="floating-label">Contraseña</label>
           <button type="button" id="togglePw" class="toggle-pw">👁️</button>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;margin-top:-6px;">
+          <a href="#" onclick="alert('Contactá al administrador del sistema');return false;" style="font-size:12px;color:#3b82f6;text-decoration:none;font-weight:600;">¿Olvidé mi contraseña?</a>
+        </div>
         <button type="submit" class="btn-login" id="btnLogin">🔐 Ingresar al sistema</button>
         <div id="loginError"></div>
       </form>
@@ -485,6 +488,8 @@
           '<div class="role-badge">' + u.roleLabel + '</div>' +
           '<div class="role-action">Entrar →</div>';
         card.onclick = function() {
+          document.getElementById('emailInput').value = u.email;
+          document.getElementById('passwordInput').value = u.password;
           doLogin(u.email, u.password);
         };
         container.appendChild(card);

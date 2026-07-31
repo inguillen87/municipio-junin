@@ -1164,3 +1164,152 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
   .page-title h1 { font-size: 13px !important; }
   .chart-container { height: 170px !important; }
 }
+
+/* ===== BUTTON POLISH — NO MORE GRAY BUTTONS ===== */
+.btn-secondary {
+  background: rgba(59,130,246,0.08) !important;
+  border: 1px solid rgba(59,130,246,0.25) !important;
+  color: #60a5fa !important;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-secondary:hover {
+  background: rgba(59,130,246,0.16) !important;
+  border-color: rgba(59,130,246,0.5) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(59,130,246,0.2);
+}
+.btn-danger {
+  background: rgba(239,68,68,0.1) !important;
+  border: 1px solid rgba(239,68,68,0.3) !important;
+  color: #f87171 !important;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-danger:hover {
+  background: rgba(239,68,68,0.2) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(239,68,68,0.25);
+}
+.btn-success {
+  background: rgba(16,185,129,0.1) !important;
+  border: 1px solid rgba(16,185,129,0.3) !important;
+  color: #10b981 !important;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-success:hover {
+  background: rgba(16,185,129,0.2) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(16,185,129,0.25);
+}
+.btn-amber {
+  background: rgba(245,158,11,0.1) !important;
+  border: 1px solid rgba(245,158,11,0.3) !important;
+  color: #f59e0b !important;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-amber:hover {
+  background: rgba(245,158,11,0.2) !important;
+  transform: translateY(-1px);
+}
+
+/* Select filters — colored, not gray */
+.select-filter {
+  background: rgba(59,130,246,0.06) !important;
+  border: 1px solid rgba(59,130,246,0.2) !important;
+  color: var(--text-secondary) !important;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2360a5fa'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  padding-right: 28px !important;
+}
+.select-filter:focus, .select-filter:hover {
+  border-color: rgba(59,130,246,0.5) !important;
+  background-color: rgba(59,130,246,0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Animated card entrance */
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card, .stat-card, .kpi-card {
+  animation: cardFadeIn 0.4s ease both;
+}
+
+/* Number counter animation */
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.stat-value, .kpi-value {
+  animation: countUp 0.5s ease both;
+}
+
+/* Pulse animation for alerts */
+@keyframes alertPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+.alert-badge {
+  animation: alertPulse 2s infinite;
+}
+
+/* Smooth page transitions */
+.content-wrapper {
+  animation: cardFadeIn 0.3s ease both;
+}
+
+/* Mobile improvements */
+@media (max-width: 768px) {
+  .topbar-right .btn-primary {
+    padding: 7px 12px;
+    font-size: 11px;
+  }
+  .topbar-right select {
+    display: none;
+  }
+  .card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}

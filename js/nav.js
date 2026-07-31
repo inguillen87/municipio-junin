@@ -114,5 +114,72 @@ function buildSidebar(activeId) {
     // pwa.js todavía no cargó: esperar y reintentar
     document.addEventListener('pwaMobileReady', () => window.initMobile?.());
   }
+
+  // Mobile sidebar toggle
+  const menuBtn = document.getElementById('menuBtn');
+  const mainContent = document.getElementById('mainContent');
+
+  // Create overlay
+  if (!document.getElementById('sidebarOverlay')) {
+    const overlay = document.createElement('div');
+    overlay.id = 'sidebarOverlay';
+    overlay.style.cssText = `
+      display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);
+      z-index:998;backdrop-filter:blur(2px);transition:opacity 0.25s
+    `;
+    overlay.onclick = closeMobileSidebar;
+    document.body.appendChild(overlay);
+  }
+
+  function openMobileSidebar() {
+    sidebarEl.classList.add('mobile-open');
+    document.getElementById('sidebarOverlay').style.display = 'block';
+    setTimeout(() => document.getElementById('sidebarOverlay').style.opacity = '1', 10);
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMobileSidebar() {
+    sidebarEl.classList.remove('mobile-open');
+    const overlay = document.getElementById('sidebarOverlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 250);
+    document.body.style.overflow = '';
+  }
+
+  if (menuBtn) {
+    menuBtn.onclick = () => {
+      if (sidebarEl.classList.contains('mobile-open')) {
+        closeMobileSidebar();
+      } else {
+        openMobileSidebar();
+      }
+    };
+  }
+
+  // Mobile sidebar CSS
+  if (!document.getElementById('mobileNavCss')) {
+    const style = document.createElement('style');
+    style.id = 'mobileNavCss';
+    style.innerHTML = `
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+          transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+          position: fixed !important;
+          z-index: 999 !important;
+          height: 100vh !important;
+          top: 0 !important;
+        }
+        .sidebar.mobile-open {
+          transform: translateX(0) !important;
+          box-shadow: 20px 0 60px rgba(0,0,0,0.5) !important;
+        }
+        .main-content {
+          margin-left: 0 !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 }
 

@@ -446,6 +446,11 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
   </style>
+  <!-- i18n optional - login works without it -->
+  <script>
+    // Fallback silencioso si i18n.js no carga
+    if (typeof i18n === 'undefined') { window.i18n = { t: function(k){ return k; }, buildPicker: function(){}, setLang: function(){} }; }
+  </script>
   <script src="js/i18n.js"></script>
 </head>
 <body>
@@ -516,7 +521,20 @@
             <button type="button" class="toggle-pw" id="togglePw">👁️</button>
           </div>
 
-          <button type="submit" class="btn-submit">Ingresar al sistema</button>
+          <button type="submit" class="btn-submit" id="btnLogin">🔐 Ingresar al sistema</button>
+
+          <div id="loginError" style="
+            display:none;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #f87171;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            text-align: center;
+          "></div>
+
         </form>
 
         <div class="divider">Usuarios Demo (Click para ingresar)</div>
@@ -536,12 +554,15 @@
   </div>
 
   <script>
+  // ── LOGIN STANDALONE (no depende de librerías externas) ──────
+  document.addEventListener('DOMContentLoaded', function() {
+
     const USERS = [
-      { email:'superadmin@govtech.ar',   password:'SuperAdmin2026!', name:'Super Administrador',  role:'SUPER_ADMIN',    roleLabel:'Super Admin',    icon:'⚡', color:'#f59e0b', modules:['all'], idRole:'super' },
-      { email:'intendente@junin.gob.ar', password:'Junin2026!',      name:'Intendente Municipal',  role:'TENANT_ADMIN',   roleLabel:'Intendente',     icon:'🏛️', color:'#3b82f6', modules:['all'], idRole:'intendente' },
-      { email:'hacienda@junin.gob.ar',   password:'Hacienda2026!',   name:'Dir. de Hacienda',      role:'TENANT_USER',    roleLabel:'Hacienda',       icon:'💰', color:'#10b981', modules:['dashboard','presupuesto','licitaciones','proveedores','exportar'], idRole:'hacienda' },
-      { email:'it@junin.gob.ar',         password:'IT2026!',         name:'Jefe de Tecnología',    role:'TENANT_USER',    roleLabel:'IT / Tecnología', icon:'💻', color:'#8b5cf6', modules:['all'], idRole:'it' },
-      { email:'demo@demo.com',           password:'demo123',          name:'Usuario Demo',          role:'DEMO',           roleLabel:'Demo',           icon:'🌐', color:'#06b6d4', modules:['all'], idRole:'demo' }
+      { email:'superadmin@govtech.ar',   password:'SuperAdmin2026!', name:'Super Administrador',   role:'SUPER_ADMIN',  roleLabel:'Administrador General',  icon:'⚡', color:'#f59e0b', modules:['all'], idRole:'super' },
+      { email:'intendente@junin.gob.ar', password:'Junin2026!',      name:'Intendente Municipal',  role:'TENANT_ADMIN', roleLabel:'Intendente',             icon:'🏛️', color:'#3b82f6', modules:['all'], idRole:'intendente' },
+      { email:'hacienda@junin.gob.ar',   password:'Hacienda2026!',   name:'Dir. de Hacienda',      role:'TENANT_USER',  roleLabel:'Hacienda',               icon:'💰', color:'#10b981', modules:['dashboard','presupuesto','licitaciones','proveedores','exportar'], idRole:'hacienda' },
+      { email:'it@junin.gob.ar',         password:'IT2026!',         name:'Jefe de Tecnología',    role:'TENANT_ADMIN', roleLabel:'IT / Tecnología',        icon:'💻', color:'#8b5cf6', modules:['all'], idRole:'it' },
+      { email:'demo@demo.com',           password:'demo123',          name:'Usuario Demo',          role:'DEMO',         roleLabel:'Demo',                   icon:'🌐', color:'#06b6d4', modules:['all'], idRole:'demo' }
     ];
 
     // Toggle Password
@@ -584,23 +605,46 @@
     });
 
     function handleLogin(email, pw) {
+      // Clear previous errors
+      const errEl = document.getElementById('loginError');
+      if (errEl) errEl.style.display = 'none';
+
       document.getElementById('overlay').classList.add('active');
       
       setTimeout(() => {
-        const user = USERS.find(u => u.email === email && u.password === pw);
-        if (user) {
-          sessionStorage.setItem('mjunin_user', JSON.stringify({
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            modules: user.modules
-          }));
-          window.location.href = 'index.html';
-        } else {
-          alert('Credenciales incorrectas');
+        try {
+          // Comparar email en minúsculas para evitar errores de tipeo
+          const user = USERS.find(u =>
+            u.email.toLowerCase() === email.toLowerCase().trim() &&
+            u.password === pw
+          );
+
+          if (user) {
+            // Guardar sesión con TODOS los campos que usa nav.js
+            sessionStorage.setItem('mjunin_user', JSON.stringify({
+              email:     user.email,
+              name:      user.name,
+              role:      user.role,
+              roleLabel: user.roleLabel,
+              modules:   user.modules,
+              loginAt:   new Date().toISOString()
+            }));
+            window.location.href = 'index.html';
+          } else {
+            document.getElementById('overlay').classList.remove('active');
+            const err = document.getElementById('loginError');
+            if (err) {
+              err.textContent = '⚠️ Correo o contraseña incorrectos. Verificá tus datos.';
+              err.style.display = 'block';
+            } else {
+              alert('Correo o contraseña incorrectos.');
+            }
+          }
+        } catch(e) {
           document.getElementById('overlay').classList.remove('active');
+          console.error('Login error:', e);
         }
-      }, 1000);
+      }, 800);
     }
 
   // Initialize language picker on login page
@@ -608,56 +652,36 @@
     i18n.buildPicker('langPickerLogin');
     // Apply translations to key elements
     applyLoginTranslations();
-  });
-  
+  }); // end DOMContentLoaded
+
+  // ── i18n helpers (opcionales, no bloquean el login) ─────
   function applyLoginTranslations() {
-    const h = new Date().getHours();
-    // Update page title
-    document.title = i18n.t('login_title') + ' — GovTech';
-    // Update hero text if elements exist
-    const heroTagline = document.querySelector('.hero-tagline, .login-hero-tagline, [data-login-tagline]');
-    if (heroTagline) heroTagline.textContent = i18n.t('login_hero_tagline');
-    const heroSub = document.querySelector('.hero-sub, .login-hero-sub, [data-login-sub]');
-    if (heroSub) heroSub.textContent = i18n.t('login_hero_sub');
-    // Update form labels
-    const emailInput = document.querySelector('input[type="email"], #loginEmail');
-    if (emailInput) emailInput.placeholder = i18n.t('login_email');
-    const passInput = document.querySelector('input[type="password"], #loginPass');
-    if (passInput) passInput.placeholder = i18n.t('login_password');
-    const loginBtn = document.querySelector('.btn-login, #btnLogin');
-    if (loginBtn) {
-      const btnText = loginBtn.querySelector('.btn-text');
-      if (btnText) btnText.textContent = '🔐 ' + i18n.t('login_btn');
-    }
-    // Update demo title
-    const demoTitle = document.querySelector('.demo-hint-title, .demo-hint-header span:first-child');
-    if (demoTitle) demoTitle.textContent = i18n.t('login_demo_title');
-    // Update role labels on demo cards
-    updateRoleCards();
+    try {
+      if (typeof i18n === 'undefined') return;
+      document.title = i18n.t('login_title') + ' — GovTech';
+    } catch(e) {}
   }
-  
+
   function updateRoleCards() {
-    const roleMap = {
-      'SUPER_ADMIN': { label: i18n.t('role_super_admin'), badge: i18n.t('role_badge_super') },
-      'TENANT_ADMIN_INTENDENTE': { label: i18n.t('role_tenant_admin'), badge: i18n.t('role_badge_admin') },
-      'TENANT_USER_HACIENDA': { label: i18n.t('role_tenant_user'), badge: i18n.t('role_badge_user') },
-      'TENANT_ADMIN_IT': { label: i18n.t('role_tenant_admin'), badge: i18n.t('role_badge_admin') },
-      'DEMO': { label: i18n.t('role_demo'), badge: i18n.t('role_badge_demo') },
-    };
-    // Update click to login text
-    document.querySelectorAll('.demo-user-action, .role-card-action').forEach(el => {
-      el.textContent = i18n.t('click_to_login');
-    });
+    try {
+      if (typeof i18n === 'undefined') return;
+      document.querySelectorAll('.demo-user-action, .role-card-action').forEach(el => {
+        el.textContent = i18n.t('click_to_login');
+      });
+    } catch(e) {}
   }
-  
+
   // Re-apply when language changes
-  const origSetLang = i18n.setLang.bind(i18n);
-  i18n.setLang = function(lang) {
-    origSetLang(lang);
-    applyLoginTranslations();
-    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.lang-btn[onclick*="'${lang}'"]`)?.classList.add('active');
-  };
+  try {
+    if (typeof i18n !== 'undefined') {
+      const origSetLang = i18n.setLang.bind(i18n);
+      i18n.setLang = function(lang) {
+        origSetLang(lang);
+        applyLoginTranslations();
+      };
+    }
+  } catch(e) {}
+
   </script>
 </body>
 </html>

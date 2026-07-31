@@ -1,689 +1,453 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acceso Seguro — GovTech</title>
+  <title>Acceso Seguro — GovTech Municipal</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Aplicar tema ANTES de renderizar (sin flash) -->
+  <script>try{var _t=localStorage.getItem('govtech_theme');if(_t)document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
   <style>
-    /* STYLES */
     :root {
-      --bg-dark: #060b18;
-      --panel-bg: rgba(15, 23, 45, 0.85);
-      --border-color: rgba(255, 255, 255, 0.08);
-      
-      --role-super: #f59e0b;
+      --bg-left:  linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%);
+      --bg-right: #060b18;
+      --card-bg:  rgba(15,23,45,0.6);
+      --border:   rgba(255,255,255,0.08);
+      --text:     #f0f4ff;
+      --muted:    #94a3b8;
+      --primary:  #3b82f6;
+      --role-super:      #f59e0b;
       --role-intendente: #3b82f6;
-      --role-hacienda: #10b981;
-      --role-it: #8b5cf6;
-      --role-demo: #06b6d4;
+      --role-hacienda:   #10b981;
+      --role-it:         #8b5cf6;
+      --role-demo:       #06b6d4;
     }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-dark);
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      overflow: hidden;
+    [data-theme="light"] {
+      --bg-right: #f0f4ff;
+      --card-bg:  rgba(255,255,255,0.9);
+      --border:   rgba(15,23,66,0.1);
+      --text:     #0f172a;
+      --muted:    #475569;
     }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; font-family:'Inter',sans-serif; overflow:hidden; }
+    body { display:flex; background:#060b18; color:#f0f4ff; }
 
-    /* Layout */
-    .layout {
-      display: flex;
-      width: 100%;
-      height: 100vh;
-    }
-
-    /* Left Panel (60%) */
+    /* ── LEFT PANEL ── */
     .left-panel {
-      width: 60%;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 4rem;
+      width:58%; position:relative;
+      display:flex; flex-direction:column; justify-content:center;
+      padding:4rem; overflow:hidden;
       background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%);
-      overflow: hidden;
     }
-    
     .left-panel::before {
-      content: '';
-      position: absolute;
-      top: -50%; left: -50%;
-      width: 200%; height: 200%;
+      content:''; position:absolute; top:-50%; left:-50%;
+      width:200%; height:200%;
       background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.15) 30%, transparent 70%);
       animation: rotateBg 20s linear infinite;
     }
-
-    @keyframes rotateBg {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .brand-section {
-      position: relative;
-      z-index: 2;
-    }
-
-    .logo-container {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
+    @keyframes rotateBg { to { transform: rotate(360deg); } }
+    .brand { position:relative; z-index:1; }
+    .logo-row { display:flex; align-items:center; gap:16px; margin-bottom:12px; }
     .logo-icon {
-      font-size: 3rem;
-      background: rgba(255,255,255,0.1);
-      padding: 1rem;
-      border-radius: 20px;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.2);
+      width:60px; height:60px; border-radius:16px;
+      background:linear-gradient(135deg,#3b82f6,#6366f1);
+      display:flex; align-items:center; justify-content:center;
+      font-size:28px; box-shadow:0 8px 32px rgba(59,130,246,0.3);
     }
-
-    .logo-text {
-      font-family: 'Outfit', sans-serif;
-      font-size: 4rem;
-      font-weight: 800;
-      background: linear-gradient(to right, #fff, #a5b4fc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .logo-name { font-family:'Outfit',sans-serif; font-size:2.4rem; font-weight:900; }
+    .tagline { color:rgba(148,163,184,0.8); font-size:1rem; margin-bottom:2.5rem; }
+    .pills { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:3rem; }
+    .pill {
+      background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
+      border-radius:99px; padding:6px 16px; font-size:13px; font-weight:600;
+      backdrop-filter:blur(8px);
     }
-
-    .tagline {
-      font-size: 1.5rem;
-      font-weight: 300;
-      color: #94a3b8;
-      margin-bottom: 3rem;
-      max-width: 500px;
-      line-height: 1.4;
-    }
-
-    .features {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 4rem;
-    }
-
-    .feature-pill {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 0.75rem 1.25rem;
-      border-radius: 100px;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      backdrop-filter: blur(10px);
-      animation: floatPill 3s ease-in-out infinite alternate;
-    }
-    
-    .feature-pill:nth-child(2) { animation-delay: 0.5s; }
-    .feature-pill:nth-child(3) { animation-delay: 1s; }
-
-    @keyframes floatPill {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-10px); }
-    }
-
-    .kpi-cards {
-      position: absolute;
-      right: 10%;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      z-index: 2;
-    }
-
+    .kpi-cards { display:flex; flex-direction:column; gap:12px; }
     .kpi-card {
-      background: rgba(15, 23, 45, 0.6);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 1.5rem;
-      border-radius: 1rem;
-      width: 250px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-      animation: floatCard 4s ease-in-out infinite alternate;
+      background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+      border-radius:14px; padding:18px 22px; backdrop-filter:blur(8px);
+      border-left:3px solid;
     }
-
-    .kpi-card:nth-child(1) { animation-delay: 0s; border-left: 4px solid var(--role-intendente); }
-    .kpi-card:nth-child(2) { animation-delay: 1.2s; border-left: 4px solid var(--role-hacienda); margin-left: -2rem; }
-    .kpi-card:nth-child(3) { animation-delay: 2.4s; border-left: 4px solid var(--role-super); margin-left: 2rem; }
-
-    @keyframes floatCard {
-      0% { transform: translateY(0) rotate(0); }
-      100% { transform: translateY(-15px) rotate(2deg); }
-    }
-
-    .kpi-label { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
-    .kpi-value { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700; color: #fff; }
-
+    .kpi-card:nth-child(1) { border-left-color:#3b82f6; }
+    .kpi-card:nth-child(2) { border-left-color:#10b981; }
+    .kpi-card:nth-child(3) { border-left-color:#f59e0b; }
+    .kpi-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:rgba(148,163,184,0.7); margin-bottom:6px; }
+    .kpi-value { font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:900; }
     .stats-bar {
-      position: absolute;
-      bottom: 2rem;
-      left: 4rem;
-      display: flex;
-      gap: 2rem;
-      font-size: 0.85rem;
-      color: #64748b;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      z-index: 2;
+      position:absolute; bottom:28px; left:4rem;
+      display:flex; gap:24px; z-index:1;
+      font-size:12px; color:rgba(148,163,184,0.5); font-weight:600;
     }
-    
-    .stats-bar span {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .stats-bar span::before {
-      content: ''; width: 6px; height: 6px; border-radius: 50%; background: #3b82f6;
-    }
+    .stats-bar span::before { content:'• '; color:rgba(59,130,246,0.5); }
 
-    /* Right Panel (40%) */
+    /* ── RIGHT PANEL ── */
     .right-panel {
-      width: 40%;
-      background: var(--bg-dark);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 3rem 4rem;
-      border-left: 1px solid var(--border-color);
-      overflow-y: auto;
+      width:42%; background:var(--bg-right,#060b18);
+      display:flex; align-items:center; justify-content:center;
+      border-left:1px solid var(--border,rgba(255,255,255,0.06));
+      overflow-y:auto; max-height:100vh;
+      transition:background 0.3s;
     }
+    .login-box { width:100%; max-width:390px; padding:1.5rem 2rem; }
 
-    .right-panel {
-      width: 40%;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 1.5rem 2.5rem;
-      background: rgba(6, 11, 24, 0.98);
-      border-left: 1px solid rgba(255, 255, 255, 0.06);
-      overflow-y: auto;
-      max-height: 100vh;
+    .welcome-title {
+      font-family:'Outfit',sans-serif; font-size:1.7rem; font-weight:800;
+      color:var(--text,#f0f4ff); margin-bottom:4px;
     }
+    .welcome-sub { color:var(--muted,#94a3b8); font-size:0.88rem; margin-bottom:1.5rem; }
 
-    .login-container {
-      max-width: 400px;
-      width: 100%;
-      margin: auto;
-      padding: 0.5rem 0;
-    }
-
-    .welcome-text {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin-bottom: 0.25rem;
-    }
-
-    .welcome-sub {
-      color: #94a3b8;
-      font-size: 0.85rem;
-      margin-bottom: 1.2rem;
-    }
-
-    .form-group {
-      position: relative;
-      margin-bottom: 0.85rem;
-    }
-
+    /* Form */
+    .form-group { position:relative; margin-bottom:1rem; }
     .form-input {
-      width: 100%;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 1rem 1rem 1rem 3rem;
-      color: #fff;
-      font-size: 1rem;
-      transition: all 0.3s;
-      outline: none;
+      width:100%; padding:0.9rem 1rem 0.9rem 2.8rem;
+      background:rgba(255,255,255,0.04); border:1px solid var(--border,rgba(255,255,255,0.1));
+      border-radius:12px; color:var(--text,#f0f4ff); font-size:0.95rem;
+      outline:none; transition:all 0.2s; font-family:'Inter',sans-serif;
     }
-
-    .form-input:focus {
-      border-color: #3b82f6;
-      background: rgba(59,130,246,0.05);
-      box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
-    }
-
-    .form-icon {
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #94a3b8;
-    }
+    [data-theme="light"] .form-input { background:rgba(15,23,66,0.04); color:#0f172a; }
+    .form-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.12); }
+    .form-icon { position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:#64748b; font-size:15px; }
+    .toggle-pw { position:absolute; right:0.9rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:16px; color:#64748b; }
 
     .floating-label {
-      position: absolute;
-      left: 3rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #94a3b8;
-      font-size: 1rem;
-      pointer-events: none;
-      transition: 0.2s ease all;
+      position:absolute; left:2.8rem; top:50%; transform:translateY(-50%);
+      color:#64748b; font-size:0.9rem; pointer-events:none; transition:all 0.2s;
     }
-
     .form-input:focus ~ .floating-label,
     .form-input:not(:placeholder-shown) ~ .floating-label {
-      top: -0.5rem;
-      left: 1rem;
-      font-size: 0.75rem;
-      background: var(--bg-dark);
-      padding: 0 0.5rem;
-      color: #3b82f6;
+      top:-0.5rem; left:0.8rem; font-size:0.72rem;
+      background:var(--bg-right,#060b18); padding:0 6px; color:#3b82f6; border-radius:4px;
+    }
+    [data-theme="light"] .form-input:focus ~ .floating-label,
+    [data-theme="light"] .form-input:not(:placeholder-shown) ~ .floating-label {
+      background:#f0f4ff;
     }
 
-    .toggle-pw {
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: #94a3b8;
-      cursor: pointer;
-      font-size: 1.2rem;
+    .btn-login {
+      width:100%; padding:0.88rem; margin-top:0.5rem;
+      background:linear-gradient(135deg,#3b82f6,#6366f1);
+      color:#fff; border:none; border-radius:12px;
+      font-size:0.95rem; font-weight:700; font-family:'Outfit',sans-serif;
+      cursor:pointer; transition:all 0.2s;
+      box-shadow:0 8px 20px rgba(59,130,246,0.25);
+    }
+    .btn-login:hover { transform:translateY(-1px); box-shadow:0 12px 28px rgba(59,130,246,0.35); }
+    .btn-login:active { transform:translateY(0); }
+
+    #loginError {
+      display:none; margin-top:10px; padding:10px 14px;
+      background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25);
+      border-radius:10px; color:#f87171; font-size:0.83rem; text-align:center;
     }
 
-    .btn-submit {
-      width: 100%;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 0.8rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      font-family: 'Outfit', sans-serif;
-      cursor: pointer;
-      transition: all 0.3s;
-      margin-top: 0.5rem;
-      box-shadow: 0 8px 20px rgba(59,130,246,0.3);
-    }
-
-    .btn-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 15px 30px rgba(59,130,246,0.4);
-    }
-
+    /* ── DIVIDER ── */
     .divider {
-      display: flex;
-      align-items: center;
-      text-align: center;
-      margin: 1rem 0;
-      color: #64748b;
-      font-size: 0.8rem;
+      display:flex; align-items:center; gap:12px;
+      margin:1rem 0 0.7rem; color:#475569; font-size:0.78rem; font-weight:600;
     }
     .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      content:''; flex:1; border-bottom:1px solid rgba(255,255,255,0.07);
     }
-    .divider:not(:empty)::before { margin-right: 1rem; }
-    .divider:not(:empty)::after { margin-left: 1rem; }
+    [data-theme="light"] .divider::before,
+    [data-theme="light"] .divider::after { border-color:rgba(15,23,66,0.1); }
 
-    /* Role Cards */
-    .role-cards {
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-    }
-
+    /* ── ROLE CARDS ── */
+    .role-cards { display:flex; flex-direction:column; gap:6px; }
     .role-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 10px;
-      padding: 0.65rem 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 0.75rem;
+      display:grid; grid-template-columns:36px 1fr auto;
+      align-items:center; gap:10px;
+      padding:8px 12px; border-radius:10px;
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+      cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden;
     }
+    [data-theme="light"] .role-card { background:rgba(15,23,66,0.03); border-color:rgba(15,23,66,0.08); }
+    .role-card:hover { transform:translateY(-1px); background:rgba(255,255,255,0.06); }
+    [data-theme="light"] .role-card:hover { background:rgba(59,130,246,0.04); }
+    .role-card:hover .role-action { opacity:1; transform:translateX(0); }
 
     .role-icon {
-      font-size: 1.2rem;
-      width: 34px;
-      height: 34px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.08);
-      border-radius: 8px;
+      width:36px; height:36px; border-radius:8px;
+      background:rgba(255,255,255,0.08); display:flex; align-items:center;
+      justify-content:center; font-size:16px; flex-shrink:0;
     }
-
-    .role-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .role-name { font-weight: 600; font-size: 0.85rem; font-family: 'Outfit', sans-serif;}
-    .role-creds { font-size: 0.68rem; color: #94a3b8; font-family: monospace; }
-    
+    .role-name { font-size:0.82rem; font-weight:700; color:var(--text,#f0f4ff); }
+    .role-creds { font-size:0.7rem; color:var(--muted,#94a3b8); font-family:monospace; }
     .role-badge {
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size:0.62rem; font-weight:800; padding:3px 8px;
+      border-radius:99px; text-transform:uppercase; letter-spacing:0.5px;
+      white-space:nowrap;
     }
-
+    .role-card[data-role="super"]      .role-badge { background:rgba(245,158,11,0.15);  color:#f59e0b; }
+    .role-card[data-role="intendente"] .role-badge { background:rgba(59,130,246,0.15);  color:#3b82f6; }
+    .role-card[data-role="hacienda"]   .role-badge { background:rgba(16,185,129,0.15);  color:#10b981; }
+    .role-card[data-role="it"]         .role-badge { background:rgba(139,92,246,0.15);  color:#8b5cf6; }
+    .role-card[data-role="demo"]       .role-badge { background:rgba(6,182,212,0.15);   color:#06b6d4; }
     .role-action {
-      position: absolute;
-      bottom: 0.5rem;
-      right: 1rem;
-      font-size: 0.75rem;
-      opacity: 0;
-      transition: 0.3s;
-      font-weight: 600;
+      position:absolute; right:12px; bottom:5px;
+      font-size:0.68rem; font-weight:700; color:#3b82f6;
+      opacity:0; transform:translateX(4px); transition:0.2s;
     }
 
-    /* Role specific colors */
-    .role-card[data-role="super"] { --rc: var(--role-super); }
-    .role-card[data-role="intendente"] { --rc: var(--role-intendente); }
-    .role-card[data-role="hacienda"] { --rc: var(--role-hacienda); }
-    .role-card[data-role="it"] { --rc: var(--role-it); }
-    .role-card[data-role="demo"] { --rc: var(--role-demo); }
+    /* ── SECURITY BADGES ── */
+    .sec-badges { display:flex; justify-content:center; gap:16px; margin-top:1rem; }
+    .sec-badge { font-size:0.72rem; color:#475569; display:flex; align-items:center; gap:5px; }
 
-    .role-card .role-badge {
-      background: color-mix(in srgb, var(--rc) 15%, transparent);
-      color: var(--rc);
-      border: 1px solid color-mix(in srgb, var(--rc) 30%, transparent);
-    }
-    .role-card .role-action { color: var(--rc); }
-
-    .role-card:hover {
-      transform: translateY(-3px);
-      border-color: var(--rc);
-      box-shadow: 0 10px 20px color-mix(in srgb, var(--rc) 10%, transparent),
-                  0 0 15px color-mix(in srgb, var(--rc) 20%, transparent) inset;
-      background: rgba(255,255,255,0.05);
-    }
-    .role-card:hover .role-action { opacity: 1; transform: translateX(-5px); }
-
-    .security-badges {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .sec-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-      color: #64748b;
-    }
-    
-    /* Overlay */
+    /* ── LOADER OVERLAY ── */
     .loader-overlay {
-      position: fixed; inset: 0; z-index: 999;
-      background: var(--bg-dark);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      opacity: 0; pointer-events: none; transition: 0.3s;
+      position:fixed; inset:0; z-index:999;
+      background:rgba(6,11,24,0.92); backdrop-filter:blur(8px);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity 0.3s;
     }
-    .loader-overlay.active { opacity: 1; pointer-events: all; }
+    .loader-overlay.active { opacity:1; pointer-events:all; }
     .loader-spinner {
-      width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1);
-      border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;
+      width:48px; height:48px; border-radius:50%;
+      border:3px solid rgba(59,130,246,0.2); border-top-color:#3b82f6;
+      animation:spin 0.8s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text { margin-top:14px; font-family:'Outfit',sans-serif; font-size:1rem; color:rgba(148,163,184,0.7); }
+    @keyframes spin { to { transform:rotate(360deg); } }
 
+    /* ── RESPONSIVE ── */
+    @media (max-width:768px) {
+      .left-panel { display:none; }
+      .right-panel { width:100%; }
+    }
   </style>
-  <!-- i18n optional - login works without it -->
-  <script>
-    // Fallback silencioso si i18n.js no carga
-    if (typeof i18n === 'undefined') { window.i18n = { t: function(k){ return k; }, buildPicker: function(){}, setLang: function(){} }; }
-  </script>
-  <script src="js/i18n.js"></script>
-<script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 </head>
 <body>
 
   <div class="loader-overlay" id="overlay">
     <div class="loader-spinner"></div>
-    <div style="margin-top: 1rem; font-family: 'Outfit'; font-size: 1.2rem;">Autenticando...</div>
+    <div class="loader-text">Verificando credenciales...</div>
   </div>
 
-  <div class="layout">
-    
-    <!-- LEFT PANEL -->
-    <div class="left-panel">
-      <div class="brand-section">
-        <div class="logo-container">
-          <div class="logo-icon">🏛️</div>
-          <div class="logo-text">GovTech</div>
-        </div>
-        <div class="tagline">Sistema de Gestión Municipal de Clase Mundial</div>
-        
-        <div class="features">
-          <div class="feature-pill">🤖 IA Integrada</div>
-          <div class="feature-pill">💬 WhatsApp Bot</div>
-          <div class="feature-pill">🏢 Multi-tenant</div>
-        </div>
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="brand">
+      <div class="logo-row">
+        <div class="logo-icon">🏛️</div>
+        <div class="logo-name">GovTech</div>
       </div>
-
+      <div class="tagline">Sistema de Gestión Municipal de Clase Mundial</div>
+      <div class="pills">
+        <div class="pill">🤖 IA Integrada</div>
+        <div class="pill">💬 WhatsApp Bot</div>
+        <div class="pill">🏢 Multi-municipio</div>
+        <div class="pill">🌐 3 Idiomas</div>
+      </div>
       <div class="kpi-cards">
         <div class="kpi-card">
-          <div class="kpi-label">Gasto Mensual</div>
+          <div class="kpi-label">Gasto Mensual Gestionado</div>
           <div class="kpi-value">$45.2M</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Empleados Activos</div>
+          <div class="kpi-label">Empleados Municipales Activos</div>
           <div class="kpi-value">1,204</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Ahorro IA</div>
+          <div class="kpi-label">Ahorro con IA</div>
           <div class="kpi-value">+15%</div>
         </div>
       </div>
-
-      <div class="stats-bar">
-        <span>5 Módulos</span>
-        <span>IA integrada</span>
-        <span>100% Seguro</span>
-      </div>
     </div>
-
-    <!-- RIGHT PANEL -->
-    <div class="right-panel">
-      <div class="login-container">
-        <div id="langPickerLogin" style="margin-bottom: 20px;"></div>
-        <h2 class="welcome-text">Bienvenido al sistema</h2>
-        <p class="welcome-sub">Ingrese sus credenciales para acceder</p>
-
-        <form id="loginForm">
-          <div class="form-group">
-            <span class="form-icon">📧</span>
-            <input type="email" id="email" class="form-input" placeholder=" " required>
-            <label for="email" class="floating-label">Correo institucional</label>
-          </div>
-
-          <div class="form-group">
-            <span class="form-icon">🔑</span>
-            <input type="password" id="password" class="form-input" placeholder=" " required>
-            <label for="password" class="floating-label">Contraseña</label>
-            <button type="button" class="toggle-pw" id="togglePw">👁️</button>
-          </div>
-
-          <button type="submit" class="btn-submit" id="btnLogin">🔐 Ingresar al sistema</button>
-
-          <div id="loginError" style="
-            display:none;
-            background: rgba(239,68,68,0.1);
-            border: 1px solid rgba(239,68,68,0.3);
-            color: #f87171;
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: 0.85rem;
-            margin-top: 10px;
-            text-align: center;
-          "></div>
-
-        </form>
-
-        <div class="divider">Usuarios Demo (Click para ingresar)</div>
-
-        <div class="role-cards" id="demoCards">
-          <!-- Cards will be injected by JS -->
-        </div>
-
-        <div class="security-badges">
-          <div class="sec-badge">🔒 AES-256</div>
-          <div class="sec-badge">🔑 JWT</div>
-          <div class="sec-badge">🛡️ Datos soberanos</div>
-        </div>
-      </div>
+    <div class="stats-bar">
+      <span>15+ Módulos</span>
+      <span>IA Integrada</span>
+      <span>100% Seguro</span>
     </div>
+  </div>
 
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="login-box">
+
+      <h2 class="welcome-title">Bienvenido al sistema</h2>
+      <p class="welcome-sub">Ingresá tus credenciales para acceder</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <span class="form-icon">📧</span>
+          <input type="email" id="emailInput" class="form-input" placeholder=" " autocomplete="email">
+          <label for="emailInput" class="floating-label">Correo institucional</label>
+        </div>
+        <div class="form-group">
+          <span class="form-icon">🔑</span>
+          <input type="password" id="passwordInput" class="form-input" placeholder=" " autocomplete="current-password">
+          <label for="passwordInput" class="floating-label">Contraseña</label>
+          <button type="button" id="togglePw" class="toggle-pw">👁️</button>
+        </div>
+        <button type="submit" class="btn-login" id="btnLogin">🔐 Ingresar al sistema</button>
+        <div id="loginError"></div>
+      </form>
+
+      <div class="divider">Acceso rápido por rol</div>
+
+      <div class="role-cards" id="demoCards"></div>
+
+      <div class="sec-badges">
+        <div class="sec-badge">🔒 AES-256</div>
+        <div class="sec-badge">🔑 JWT</div>
+        <div class="sec-badge">🛡️ Datos soberanos</div>
+      </div>
+
+    </div>
   </div>
 
   <script>
-  // ── LOGIN STANDALONE (no depende de librerías externas) ──────
+  // ════════════════════════════════════════════════════════
+  //  LOGIN — Script único y limpio
+  // ════════════════════════════════════════════════════════
+
+  // Usuarios del sistema (autenticación local)
+  var USERS = [
+    {
+      email: 'superadmin@govtech.ar',
+      password: 'SuperAdmin2026!',
+      name: 'Super Administrador',
+      role: 'SUPER_ADMIN',
+      roleLabel: 'Administrador General',
+      icon: '⚡',
+      color: '#f59e0b',
+      idRole: 'super',
+      modules: ['all']
+    },
+    {
+      email: 'intendente@junin.gob.ar',
+      password: 'Junin2026!',
+      name: 'Intendente Municipal',
+      role: 'TENANT_ADMIN',
+      roleLabel: 'Intendente',
+      icon: '🏛️',
+      color: '#3b82f6',
+      idRole: 'intendente',
+      modules: ['all']
+    },
+    {
+      email: 'hacienda@junin.gob.ar',
+      password: 'Hacienda2026!',
+      name: 'Dir. de Hacienda',
+      role: 'TENANT_USER',
+      roleLabel: 'Hacienda',
+      icon: '💰',
+      color: '#10b981',
+      idRole: 'hacienda',
+      modules: ['dashboard','presupuesto','licitaciones','proveedores','exportar']
+    },
+    {
+      email: 'it@junin.gob.ar',
+      password: 'IT2026!',
+      name: 'Jefe de Tecnología',
+      role: 'TENANT_ADMIN',
+      roleLabel: 'IT / Tecnología',
+      icon: '💻',
+      color: '#8b5cf6',
+      idRole: 'it',
+      modules: ['all']
+    },
+    {
+      email: 'demo@demo.com',
+      password: 'demo123',
+      name: 'Usuario Demo',
+      role: 'DEMO',
+      roleLabel: 'Demo',
+      icon: '🌐',
+      color: '#06b6d4',
+      idRole: 'demo',
+      modules: ['all']
+    }
+  ];
+
+  // ── FUNCIÓN DE LOGIN ──────────────────────────────────
+  function doLogin(email, pw) {
+    var errEl   = document.getElementById('loginError');
+    var overlay = document.getElementById('overlay');
+
+    if (errEl) errEl.style.display = 'none';
+    if (overlay) overlay.classList.add('active');
+
+    setTimeout(function() {
+      var found = null;
+      for (var i = 0; i < USERS.length; i++) {
+        var u = USERS[i];
+        if (u.email.toLowerCase() === (email || '').toLowerCase().trim() &&
+            u.password === (pw || '').trim()) {
+          found = u;
+          break;
+        }
+      }
+
+      if (found) {
+        sessionStorage.setItem('mjunin_user', JSON.stringify({
+          email:     found.email,
+          name:      found.name,
+          role:      found.role,
+          roleLabel: found.roleLabel,
+          modules:   found.modules,
+          loginAt:   new Date().toISOString()
+        }));
+        window.location.href = 'index.html';
+      } else {
+        if (overlay) overlay.classList.remove('active');
+        if (errEl) {
+          errEl.textContent = '⚠️ Correo o contraseña incorrectos.';
+          errEl.style.display = 'block';
+        }
+      }
+    }, 600);
+  }
+
+  // ── INICIALIZACIÓN AL CARGAR ──────────────────────────
   document.addEventListener('DOMContentLoaded', function() {
 
-    const USERS = [
-      { email:'superadmin@govtech.ar',   password:'SuperAdmin2026!', name:'Super Administrador',   role:'SUPER_ADMIN',  roleLabel:'Administrador General',  icon:'⚡', color:'#f59e0b', modules:['all'], idRole:'super' },
-      { email:'intendente@junin.gob.ar', password:'Junin2026!',      name:'Intendente Municipal',  role:'TENANT_ADMIN', roleLabel:'Intendente',             icon:'🏛️', color:'#3b82f6', modules:['all'], idRole:'intendente' },
-      { email:'hacienda@junin.gob.ar',   password:'Hacienda2026!',   name:'Dir. de Hacienda',      role:'TENANT_USER',  roleLabel:'Hacienda',               icon:'💰', color:'#10b981', modules:['dashboard','presupuesto','licitaciones','proveedores','exportar'], idRole:'hacienda' },
-      { email:'it@junin.gob.ar',         password:'IT2026!',         name:'Jefe de Tecnología',    role:'TENANT_ADMIN', roleLabel:'IT / Tecnología',        icon:'💻', color:'#8b5cf6', modules:['all'], idRole:'it' },
-      { email:'demo@demo.com',           password:'demo123',          name:'Usuario Demo',          role:'DEMO',         roleLabel:'Demo',                   icon:'🌐', color:'#06b6d4', modules:['all'], idRole:'demo' }
-    ];
-
-    // Toggle Password
-    const pwInput = document.getElementById('password');
-    const toggleBtn = document.getElementById('togglePw');
-    toggleBtn.addEventListener('click', () => {
-      const isPw = pwInput.type === 'password';
-      pwInput.type = isPw ? 'text' : 'password';
-      toggleBtn.textContent = isPw ? '🙈' : '👁️';
-    });
-
-    // Render Demo Cards
-    const cardsContainer = document.getElementById('demoCards');
-    USERS.forEach(u => {
-      const card = document.createElement('div');
-      card.className = 'role-card';
-      card.setAttribute('data-role', u.idRole);
-      card.innerHTML = \`
-        <div class="role-icon">\${u.icon}</div>
-        <div class="role-info">
-          <div class="role-name">\${u.name}</div>
-          <div class="role-creds">\${u.email} &bull; \${u.password}</div>
-        </div>
-        <div class="role-badge">\${u.roleLabel}</div>
-        <div class="role-action">Ingresar &rarr;</div>
-      \`;
-      card.addEventListener('click', () => {
-        document.getElementById('email').value = u.email;
-        document.getElementById('password').value = u.password;
-        // Trigger login
-        handleLogin(u.email, u.password);
+    // Render role cards
+    var container = document.getElementById('demoCards');
+    if (container) {
+      USERS.forEach(function(u) {
+        var card = document.createElement('div');
+        card.className = 'role-card';
+        card.setAttribute('data-role', u.idRole);
+        card.innerHTML =
+          '<div class="role-icon" style="background:' + u.color + '22">' + u.icon + '</div>' +
+          '<div>' +
+            '<div class="role-name">' + u.name + '</div>' +
+            '<div class="role-creds">' + u.email + '</div>' +
+          '</div>' +
+          '<div class="role-badge">' + u.roleLabel + '</div>' +
+          '<div class="role-action">Entrar →</div>';
+        card.onclick = function() {
+          doLogin(u.email, u.password);
+        };
+        container.appendChild(card);
       });
-      cardsContainer.appendChild(card);
-    });
-
-    // Form Submit
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      handleLogin(document.getElementById('email').value, document.getElementById('password').value);
-    });
-
-    function handleLogin(email, pw) {
-      // Clear previous errors
-      const errEl = document.getElementById('loginError');
-      if (errEl) errEl.style.display = 'none';
-
-      document.getElementById('overlay').classList.add('active');
-      
-      setTimeout(() => {
-        try {
-          // Comparar email en minúsculas para evitar errores de tipeo
-          const user = USERS.find(u =>
-            u.email.toLowerCase() === email.toLowerCase().trim() &&
-            u.password === pw
-          );
-
-          if (user) {
-            // Guardar sesión con TODOS los campos que usa nav.js
-            sessionStorage.setItem('mjunin_user', JSON.stringify({
-              email:     user.email,
-              name:      user.name,
-              role:      user.role,
-              roleLabel: user.roleLabel,
-              modules:   user.modules,
-              loginAt:   new Date().toISOString()
-            }));
-            window.location.href = 'index.html';
-          } else {
-            document.getElementById('overlay').classList.remove('active');
-            const err = document.getElementById('loginError');
-            if (err) {
-              err.textContent = '⚠️ Correo o contraseña incorrectos. Verificá tus datos.';
-              err.style.display = 'block';
-            } else {
-              alert('Correo o contraseña incorrectos.');
-            }
-          }
-        } catch(e) {
-          document.getElementById('overlay').classList.remove('active');
-          console.error('Login error:', e);
-        }
-      }, 800);
     }
 
-  // Initialize language picker on login page
-  document.addEventListener('DOMContentLoaded', function() {
-    i18n.buildPicker('langPickerLogin');
-    // Apply translations to key elements
-    applyLoginTranslations();
-  }); // end DOMContentLoaded
-
-  // ── i18n helpers (opcionales, no bloquean el login) ─────
-  function applyLoginTranslations() {
-    try {
-      if (typeof i18n === 'undefined') return;
-      document.title = i18n.t('login_title') + ' — GovTech';
-    } catch(e) {}
-  }
-
-  function updateRoleCards() {
-    try {
-      if (typeof i18n === 'undefined') return;
-      document.querySelectorAll('.demo-user-action, .role-card-action').forEach(el => {
-        el.textContent = i18n.t('click_to_login');
-      });
-    } catch(e) {}
-  }
-
-  // Re-apply when language changes
-  try {
-    if (typeof i18n !== 'undefined') {
-      const origSetLang = i18n.setLang.bind(i18n);
-      i18n.setLang = function(lang) {
-        origSetLang(lang);
-        applyLoginTranslations();
+    // Form submit
+    var form = document.getElementById('loginForm');
+    if (form) {
+      form.onsubmit = function(e) {
+        e.preventDefault();
+        doLogin(
+          document.getElementById('emailInput').value,
+          document.getElementById('passwordInput').value
+        );
       };
     }
-  } catch(e) {}
 
+    // Toggle contraseña
+    var pwInput = document.getElementById('passwordInput');
+    var toggleBtn = document.getElementById('togglePw');
+    if (toggleBtn && pwInput) {
+      toggleBtn.onclick = function() {
+        var isPass = pwInput.type === 'password';
+        pwInput.type = isPass ? 'text' : 'password';
+        toggleBtn.textContent = isPass ? '🙈' : '👁️';
+      };
+    }
+
+  });
   </script>
+
 </body>
 </html>
-

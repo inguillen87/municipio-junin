@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -545,6 +545,17 @@
 
   <script src="js/pwa.js"></script>
   <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <script>
+  // Verificar sesión activa
+  (function() {
+    try {
+      var t = localStorage.getItem('govtech_theme');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      var u = sessionStorage.getItem('mjunin_user');
+      if (!u) { window.location.replace('login.html'); }
+    } catch(e) {}
+  })();
+</script>
   <script src="js/nav.js"></script>
   <script src="js/toast.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

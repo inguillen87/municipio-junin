@@ -12,33 +12,161 @@
   }
 })();
 
+// ── JERARQUÍA DE ROLES ───────────────────────────────────────
+// SUPER_ADMIN > TENANT_ADMIN > TENANT_USER > DEMO
+// access: 'all'    → visible para todos los roles
+// access: ['SUPER_ADMIN','TENANT_ADMIN'] → solo esos roles (oculto para el resto)
+// locked: ['DEMO'] → visible pero BLOQUEADO (gris + candado) para esos roles
+// hidden: ['DEMO'] → directamente NO APARECE para esos roles
+const ROLE_LEVEL = { SUPER_ADMIN: 100, TENANT_ADMIN: 60, TENANT_USER: 30, DEMO: 10 };
+
 const NAV_ITEMS = [
-  // PRINCIPAL
-  { id: 'dashboard',    href: 'index.html',        icon: '📊', label: 'Dashboard',            section: 'PRINCIPAL' },
-  { id: 'control',      href: 'control.html',      icon: '🏛️', label: 'Junín Control',        badge: '30d' },
-  { id: 'ia',           href: 'ia.html',           icon: '🤖', label: 'Asistente IA',         badge: 'IA' },
-  // CONTROL
-  { id: 'analytics',    href: 'analytics.html',    icon: '📈', label: 'Analytics',            section: 'CONTROL' },
-  { id: 'presupuesto',  href: 'presupuesto.html',  icon: '💰', label: 'Presupuesto',          section: 'CONTROL' },
-  { id: 'mapa',         href: 'mapa.html',         icon: '🗺️', label: 'Mapa Financiero',     section: 'CONTROL' },
-  // GESTION
-  { id: 'rrhh',         href: 'rrhh.html',         icon: '👥', label: 'Recursos Humanos',     section: 'GESTIÓN' },
-  { id: 'licitaciones', href: 'licitaciones.html', icon: '📋', label: 'Licitaciones',         badge: '8' },
-  { id: 'proveedores',  href: 'proveedores.html',  icon: '🏢', label: 'Proveedores' },
-  { id: 'vecinos',      href: 'vecinos.html',      icon: '🏘️', label: 'Atención Vecinal' },
-  // OPERACIONES
-  { id: 'talleres',     href: 'talleres.html',     icon: '🔧', label: 'Talleres',             section: 'OPERACIONES' },
-  { id: 'servicios',    href: 'servicios.html',    icon: '⛽', label: 'Est. de Servicios' },
-  // COMUNICACIONES
-  { id: 'whatsapp',     href: 'whatsapp.html',     icon: '📱', label: 'WhatsApp Bot',         section: 'COMUNICACIONES' },
-  // SISTEMA
-  { id: 'landing',      href: 'landing.html',      icon: '🌐', label: 'Landing Page',         section: 'SISTEMA' },
-  { id: 'importar',     href: 'importar.html',     icon: '📥', label: 'Importar Datos' },
-  { id: 'upload',       href: 'upload.html',       icon: '📂', label: 'Cargar Archivos',      badge: 'BETA' },
-  { id: 'exportar',     href: 'exportar.html',     icon: '📑', label: 'Exportar Reportes',    badge: 'PDF' },
-  { id: 'presentacion', href: 'presentacion.html', icon: '🎯', label: 'Presentación Ejecutiva', badge: 'DEMO' },
-  { id: 'manuales',     href: 'manuales.html',     icon: '📖', label: 'Manual' },
+  // ── PRINCIPAL ─────────────────────────────────────────────
+  {
+    id: 'dashboard', href: 'index.html', icon: '📊',
+    label: 'Panel Principal', section: 'PRINCIPAL',
+    access: 'all'  // Todos pueden ver el dashboard
+  },
+  {
+    id: 'control', href: 'control.html', icon: '🏛️',
+    label: 'Control de Gastos', badge: '30d',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    locked: ['DEMO']  // Demo lo ve gris
+  },
+  {
+    id: 'ia', href: 'ia.html', icon: '🤖',
+    label: 'Asistente Inteligente', badge: 'IA',
+    access: 'all'  // La IA es pública para todos
+  },
+
+  // ── CONTROL FINANCIERO ────────────────────────────────────
+  {
+    id: 'analytics', href: 'analytics.html', icon: '📈',
+    label: 'Reportes y Gráficos', section: 'CONTROL FINANCIERO',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    locked: ['DEMO']
+  },
+  {
+    id: 'presupuesto', href: 'presupuesto.html', icon: '💰',
+    label: 'Presupuesto Anual',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    hidden: ['DEMO']  // Demo NO ve el presupuesto real
+  },
+  {
+    id: 'mapa', href: 'mapa.html', icon: '🗺️',
+    label: 'Mapa Financiero',
+    access: ['SUPER_ADMIN','TENANT_ADMIN'],
+    hidden: ['TENANT_USER','DEMO']  // Solo intendente y superior
+  },
+
+  // ── GESTIÓN ───────────────────────────────────────────────
+  {
+    id: 'rrhh', href: 'rrhh.html', icon: '👥',
+    label: 'Personal Municipal', section: 'GESTIÓN',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    locked: ['DEMO']
+  },
+  {
+    id: 'licitaciones', href: 'licitaciones.html', icon: '📋',
+    label: 'Licitaciones y Compras', badge: '8',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    locked: ['DEMO']
+  },
+  {
+    id: 'proveedores', href: 'proveedores.html', icon: '🏢',
+    label: 'Proveedores',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    hidden: ['DEMO']  // Datos sensibles de contratos
+  },
+  {
+    id: 'vecinos', href: 'vecinos.html', icon: '🏘️',
+    label: 'Reclamos Vecinales',
+    access: 'all'
+  },
+
+  // ── OPERACIONES ───────────────────────────────────────────
+  {
+    id: 'talleres', href: 'talleres.html', icon: '🔧',
+    label: 'Talleres Municipales', section: 'OPERACIONES',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    locked: ['DEMO']
+  },
+  {
+    id: 'servicios', href: 'servicios.html', icon: '⛽',
+    label: 'Est. de Servicios',
+    access: 'all'
+  },
+
+  // ── COMUNICACIONES ────────────────────────────────────────
+  {
+    id: 'whatsapp', href: 'whatsapp.html', icon: '📱',
+    label: 'Alertas por WhatsApp', section: 'COMUNICACIONES',
+    access: ['SUPER_ADMIN','TENANT_ADMIN'],
+    hidden: ['TENANT_USER','DEMO']  // Solo admin configura el bot
+  },
+
+  // ── SISTEMA ───────────────────────────────────────────────
+  {
+    id: 'landing', href: 'landing.html', icon: '🌐',
+    label: 'Página de Presentación', section: 'SISTEMA',
+    access: ['SUPER_ADMIN','TENANT_ADMIN'],
+    hidden: ['TENANT_USER','DEMO']
+  },
+  {
+    id: 'importar', href: 'importar.html', icon: '📥',
+    label: 'Importar Información',
+    access: ['SUPER_ADMIN','TENANT_ADMIN'],
+    locked: ['TENANT_USER'],
+    hidden: ['DEMO']
+  },
+  {
+    id: 'upload', href: 'upload.html', icon: '📂',
+    label: 'Cargar Archivos', badge: 'BETA',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    locked: ['DEMO']
+  },
+  {
+    id: 'exportar', href: 'exportar.html', icon: '📑',
+    label: 'Generar Informes', badge: 'PDF',
+    access: 'all'
+  },
+  {
+    id: 'presentacion', href: 'presentacion.html', icon: '🎯',
+    label: 'Presentación Ejecutiva', badge: 'DEMO',
+    access: ['SUPER_ADMIN','TENANT_ADMIN'],
+    locked: ['TENANT_USER'],
+    hidden: ['DEMO']
+  },
+  {
+    id: 'manuales', href: 'manuales.html', icon: '📖',
+    label: 'Manual de Uso',
+    access: 'all'
+  },
 ];
+
+// Evalúa si el usuario puede ver/acceder a un ítem
+function getItemAccess(item, userRole) {
+  const access = item.access;
+  const locked = item.locked || [];
+  const hidden = item.hidden || [];
+
+  // Super Admin siempre ve todo
+  if (userRole === 'SUPER_ADMIN') return 'visible';
+
+  // Si está en la lista de ocultos → no mostrar
+  if (hidden.includes(userRole)) return 'hidden';
+
+  // Si el acceso es para todos → visible
+  if (access === 'all') {
+    return locked.includes(userRole) ? 'locked' : 'visible';
+  }
+
+  // Si no está en la lista de acceso permitido
+  if (!access.includes(userRole)) return 'hidden';
+
+  // Está en la lista de acceso pero puede estar bloqueado
+  return locked.includes(userRole) ? 'locked' : 'visible';
+}
 
 function buildSidebar(activeId) {
   const sidebarEl = document.getElementById('sidebar');
@@ -59,20 +187,38 @@ function buildSidebar(activeId) {
   let lastSection = null;
 
   NAV_ITEMS.forEach(item => {
+    const accessLevel = getItemAccess(item, user.role || 'DEMO');
+
+    // Si el ítem está completamente oculto para este rol, saltear
+    if (accessLevel === 'hidden') return;
+
     if (item.section && item.section !== lastSection) {
       navHTML += `<div class="nav-section-label">${item.section}</div>`;
       lastSection = item.section;
     }
+
     const isActive = item.id === activeId;
     const badge = item.badge
       ? `<span class="nav-badge ${item.badgeClass || (item.badge === 'NEW' ? 'new' : '')}">${item.badge}</span>`
       : '';
-    navHTML += `
-      <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" id="nav-${item.id}">
-        <span class="nav-icon">${item.icon}</span>
-        <span class="nav-label">${item.label}</span>
-        ${badge}
-      </a>`;
+
+    if (accessLevel === 'locked') {
+      // Ítem bloqueado: gris, sin enlace, con icono de candado
+      navHTML += `
+        <div class="nav-item nav-locked" title="Acceso restringido para tu rol">
+          <span class="nav-icon" style="opacity:0.4">${item.icon}</span>
+          <span class="nav-label" style="opacity:0.4">${item.label}</span>
+          <span class="nav-lock-icon">🔒</span>
+        </div>`;
+    } else {
+      // Ítem visible y accesible normalmente
+      navHTML += `
+        <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" id="nav-${item.id}">
+          <span class="nav-icon">${item.icon}</span>
+          <span class="nav-label">${item.label}</span>
+          ${badge}
+        </a>`;
+    }
   });
 
   sidebarEl.innerHTML = `
@@ -190,7 +336,26 @@ function buildSidebar(activeId) {
       .sidebar-lang-btn { background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: rgba(100,116,139,0.7); font-size: 11px; padding: 3px 7px; cursor: pointer; transition: all 0.15s; }
       .sidebar-lang-btn:hover { background: rgba(255,255,255,0.06); color: rgba(240,244,255,0.8); }
       .sidebar-lang-btn.active { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.25); color: #60a5fa; }
-      /* Add padding to sidebar content so footer doesn't overlap */
+      /* ── NAV ITEMS BLOQUEADOS (rol sin permiso) ────────── */
+      .nav-locked {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 14px;
+        border-radius: 8px;
+        cursor: not-allowed;
+        opacity: 0.45;
+        margin-bottom: 1px;
+        position: relative;
+        transition: opacity 0.15s;
+      }
+      .nav-locked:hover { opacity: 0.6; }
+      .nav-lock-icon {
+        margin-left: auto;
+        font-size: 11px;
+        opacity: 0.5;
+      }
+      /* ── PADDING BOTTOM for user footer ─────────────── */
       .sidebar-nav { padding-bottom: 80px !important; }
 
       @media (max-width: 768px) {

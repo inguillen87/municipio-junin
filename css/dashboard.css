@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    DASHBOARD EJECUTIVO — MUNICIPIO DE JUNÍN
    Design System & Component Styles
    ============================================================ */
@@ -595,12 +595,28 @@ body {
 }
 @media (max-width: 900px) {
   .sidebar { transform: translateX(-100%); }
-  .sidebar.mobile-open { transform: translateX(0); }
+  /* nav.js abre con .mobile-open */
+  .sidebar.mobile-open { transform: translateX(0) !important; }
   .main-content { margin-left: 0; }
   .menu-btn { display: block; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .charts-row, .bottom-grid { grid-template-columns: 1fr; }
   .search-box { display: none; }
+}
+/* Desktop: sidebar SIEMPRE visible */
+@media (min-width: 901px) {
+  .sidebar {
+    transform: translateX(0) !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .main-content {
+    margin-left: var(--sidebar-w) !important;
+  }
+  .main-content.expanded {
+    margin-left: 64px !important;
+  }
 }
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr; }

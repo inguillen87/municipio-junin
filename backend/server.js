@@ -18,6 +18,8 @@ const rateLimit   = require('express-rate-limit');
 const db          = require('./db/connection');
 
 const app  = express();
+// Parse JSON bodies for WhatsApp webhook
+app.use('/api/whatsapp', express.json());
 const PORT = process.env.PORT || 3001;
 
 // ── CORS ──────────────────────────────────────────

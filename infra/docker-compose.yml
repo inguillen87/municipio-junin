@@ -1,0 +1,160 @@
+# ============================================================
+# Docker Compose — Municipalidad de Junín
+# Deploy local en rack municipal
+# Comando: docker compose up -d
+# ============================================================
+
+version: '3.9'
+
+services:
+
+  # ── NGINX — Reverse proxy + HTTPS ──────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: junin_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - api
+      - frontend
+    restart: unless-stopped
+    networks:
+      - junin_net
+
+  # ── FRONTEND — Sitio estático (actual MVP) ────────────
+  frontend:
+    image: nginx:alpine
+    container_name: junin_frontend
+    volumes:
+      - ../:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    networks:
+      - junin_net
+
+  # ── API — Backend Node.js/Express ──────────────────
+  api:
+    image: node:20-alpine
+    container_name: junin_api
+    working_dir: /app
+    volumes:
+      - ./api:/app
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://junin_user:${DB_PASSWORD}@postgres:5432/junin_db
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3001
+    command: sh -c "npm install && npm start"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - junin_net
+
+  # ── POSTGRESQL — Base de datos principal ─────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: junin_postgres
+    environment:
+      - POSTGRES_DB=junin_db
+      - POSTGRES_USER=junin_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"  # Solo red interna en producción
+    restart: unless-stopped
+    networks:
+      - junin_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U junin_user -d junin_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── REDIS — Caché y sesiones ──────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: junin_redis
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - junin_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ── OLLAMA — LLM local (Llama 3.1) ─────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: junin_ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    networks:
+      - junin_net
+    # Para GPU NVIDIA: descomentaar deploy:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # ── MINIO — Almacenamiento de archivos (S3-compatible) ──
+  minio:
+    image: minio/minio:latest
+    container_name: junin_minio
+    environment:
+      - MINIO_ROOT_USER=${MINIO_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"  # Console
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - junin_net
+
+  # ── PGADMIN — Admin visual de PostgreSQL ─────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: junin_pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+    networks:
+      - junin_net
+    profiles: ["tools"]
+
+networks:
+  junin_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  minio_data:
+  pgadmin_data:
+  nginx_logs:

@@ -2,7 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <script>try{var _t=localStorage.getItem('govtech_theme');if(_t)document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
+  <script>
+    try{var _t=localStorage.getItem('govtech_theme');if(_t)document.documentElement.setAttribute('data-theme',_t);}catch(e){}
+    var u = sessionStorage.getItem('mjunin_user');
+    if (!u) { window.location.replace('login.html'); }
+    if (u) {
+      try {
+        var _user = JSON.parse(u);
+        if (_user.role !== 'SUPER_ADMIN') window.location.replace('index.html');
+      } catch(e) {}
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GovTech Admin — Super Admin Panel</title>
   <link rel="manifest" href="/manifest.json" />

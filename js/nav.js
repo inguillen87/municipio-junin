@@ -12,6 +12,26 @@
   }
 })();
 
+// ── RBAC PAGE-LEVEL GUARD ─────────────────────────────────────
+// Call this at the top of sensitive pages to block direct URL access
+window.requireRole = function(allowedRoles) {
+  try {
+    const raw = sessionStorage.getItem('mjunin_user');
+    if (!raw) { window.location.replace('login.html'); return false; }
+    const user = JSON.parse(raw);
+    if (!allowedRoles.includes(user.role)) {
+      // Redirect to dashboard with access denied toast
+      sessionStorage.setItem('access_denied', '1');
+      window.location.replace('index.html');
+      return false;
+    }
+    return true;
+  } catch(e) {
+    window.location.replace('login.html');
+    return false;
+  }
+};
+
 // ── JERARQUÍA DE ROLES ───────────────────────────────────────
 // SUPER_ADMIN > TENANT_ADMIN > TENANT_USER > DEMO
 // access: 'all'    → visible para todos los roles
@@ -55,8 +75,8 @@ const NAV_ITEMS = [
   {
     id: 'mapa', href: 'mapa.html', icon: '🗺️',
     label: 'Mapa Financiero',
-    access: ['SUPER_ADMIN','TENANT_ADMIN'],
-    hidden: ['TENANT_USER','DEMO']  // Solo intendente y superior
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    hidden: ['DEMO']
   },
 
   // ── GESTIÓN ───────────────────────────────────────────────
@@ -141,6 +161,13 @@ const NAV_ITEMS = [
     id: 'manuales', href: 'manuales.html', icon: '📖',
     label: 'Manual de Uso',
     access: 'all'
+  },
+  // ── ADMINISTRACIÓN ESPECIAL ───────────────────────────────
+  {
+    id: 'admin', href: 'admin.html', icon: '⚙️',
+    label: 'Panel Super Admin', section: 'ADMINISTRACIÓN',
+    access: ['SUPER_ADMIN'],
+    hidden: ['TENANT_ADMIN','TENANT_USER','DEMO']
   },
 ];
 

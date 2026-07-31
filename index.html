@@ -409,6 +409,14 @@
   <script>
     buildSidebar('dashboard');
 
+    // Show access denied message if redirected from a restricted page
+    if (sessionStorage.getItem('access_denied')) {
+      sessionStorage.removeItem('access_denied');
+      setTimeout(function() {
+        if (typeof showToast !== 'undefined') showToast('⛔ Acceso restringido para tu rol', 'error');
+      }, 800);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       // Backend status badge
       if (window.API) {

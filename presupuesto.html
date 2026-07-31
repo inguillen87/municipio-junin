@@ -211,6 +211,12 @@
       if (t) document.documentElement.setAttribute('data-theme', t);
       var u = sessionStorage.getItem('mjunin_user');
       if (!u) { window.location.replace('login.html'); }
+      else {
+        var user = JSON.parse(u);
+        if (!['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'].includes(user.role)) {
+          window.location.replace('index.html');
+        }
+      }
     } catch(e) {}
   })();
 </script>

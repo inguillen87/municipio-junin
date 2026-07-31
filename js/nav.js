@@ -19,6 +19,8 @@ const NAV_ITEMS = [
   { id: 'vecinos',    href: 'vecinos.html',   icon: '🏘️', label: 'Atención Vecinal',   section: null },
   { id: 'talleres',   href: 'talleres.html',  icon: '🔧', label: 'Talleres',            section: 'ENTIDADES' },
   { id: 'servicios',  href: 'servicios.html', icon: '⛽', label: 'Est. de Servicios',   section: null },
+  { id: 'mapa',       href: 'mapa.html',      icon: '📍', label: 'Mapa Reclamos',       badge: 'NUEVO', badgeClass: 'new', section: null },
+  { id: 'licitaciones',href: 'licitaciones.html',icon: '📋',label: 'Licitaciones',      section: null },
   { id: 'proveedores',href: 'proveedores.html',icon: '🏢', label: 'Auditoría Proveedores', section: 'SISTEMA' },
   { id: 'docs',       href: 'manuales.html',  icon: '📋', label: 'Manuales',            section: null },
   { id: 'presentacion',href:'presentacion.html',icon:'🎯', label: 'Presentación Ejecutiva', badge: 'DAY30', section: null },
@@ -48,7 +50,7 @@ function buildSidebar(activeId) {
     }
     const isActive = item.id === activeId;
     const badge = item.badge
-      ? `<span class="nav-badge ${item.badge === 'NEW' ? 'new' : ''}">${item.badge}</span>`
+      ? `<span class="nav-badge ${item.badgeClass || (item.badge === 'NEW' ? 'new' : '')}">${item.badge}</span>`
       : '';
     navHTML += `
       <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" id="nav-${item.id}">

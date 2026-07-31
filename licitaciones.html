@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Licitaciones y Compras — Municipio de Junín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/shared.css" />
+  <style>
+    .lic-status-bar { display:flex; gap:0; margin-bottom:24px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.07); }
+    .lic-status-step { flex:1; padding:14px 10px; text-align:center; background:rgba(255,255,255,0.02); cursor:pointer; transition:all 0.2s; border-right:1px solid rgba(255,255,255,0.06); }
+    .lic-status-step:last-child { border-right:none; }
+    .lic-status-step:hover { background:rgba(59,130,246,0.06); }
+    .lic-status-step.active { background:rgba(59,130,246,0.12); border-bottom:2px solid #3b82f6; }
+    .lic-step-num { font-size:18px; font-weight:900; font-family:'Outfit',sans-serif; color:#f0f4ff; }
+    .lic-step-lbl { font-size:10px; color:rgba(100,116,139,0.7); margin-top:2px; font-weight:600; }
+    
+    .lic-card { background:rgba(17,29,53,0.8); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:20px; margin-bottom:12px; cursor:pointer; transition:all 0.2s; backdrop-filter:blur(12px); }
+    .lic-card:hover { border-color:rgba(59,130,246,0.25); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+    .lic-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; gap:12px; }
+    .lic-num { font-size:11px; font-weight:700; color:rgba(59,130,246,0.8); background:rgba(59,130,246,0.1); padding:3px 10px; border-radius:99px; }
+    .lic-title { font-family:'Outfit',sans-serif; font-size:16px; font-weight:700; color:#f0f4ff; margin-bottom:4px; }
+    .lic-desc { font-size:12px; color:rgba(148,163,184,0.7); line-height:1.5; margin-bottom:12px; }
+    .lic-meta { display:flex; gap:16px; flex-wrap:wrap; }
+    .lic-meta-item { font-size:11px; color:rgba(100,116,139,0.7); display:flex; align-items:center; gap:4px; }
+    .lic-meta-item strong { color:rgba(148,163,184,0.9); }
+    .lic-footer { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); }
+    .progress-mini { height:4px; background:rgba(255,255,255,0.06); border-radius:99px; flex:1; margin:0 12px; overflow:hidden; }
+    .progress-mini-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#3b82f6,#8b5cf6); }
+    
+    /* Evaluación de ofertas */
+    .oferta-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:16px; margin-bottom:10px; }
+    .oferta-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .oferta-empresa { font-weight:700; font-size:14px; color:#f0f4ff; }
+    .oferta-precio { font-family:'Outfit',sans-serif; font-size:22px; font-weight:800; }
+    .score-bar { height:6px; background:rgba(255,255,255,0.06); border-radius:99px; margin:4px 0 2px; overflow:hidden; }
+    .score-fill { height:100%; border-radius:99px; }
+    .criterio-row { display:flex; align-items:center; gap:10px; font-size:12px; color:rgba(148,163,184,0.8); margin-bottom:8px; }
+    .criterio-lbl { width:130px; flex-shrink:0; }
+    .criterio-val { margin-left:auto; font-weight:700; font-size:13px; }
+    
+    /* Timeline */
+    .timeline { position:relative; padding-left:28px; }
+    .timeline::before { content:''; position:absolute; left:8px; top:4px; bottom:4px; width:2px; background:linear-gradient(to bottom, #3b82f6, rgba(59,130,246,0.1)); }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-24px; width:16px; height:16px; border-radius:50%; border:3px solid; display:flex; align-items:center; justify-content:center; }
+    .tl-dot.done  { background:#10b981; border-color:#10b981; }
+    .tl-dot.active { background:#3b82f6; border-color:#3b82f6; animation:tlPulse 2s ease-in-out infinite; }
+    .tl-dot.pend  { background:transparent; border-color:rgba(255,255,255,0.2); }
+    @keyframes tlPulse { 0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.4)} 50%{box-shadow:0 0 0 6px transparent} }
+    .tl-title { font-size:13px; font-weight:700; color:#f0f4ff; margin-bottom:2px; }
+    .tl-sub   { font-size:11px; color:rgba(100,116,139,0.7); }
+    .tl-date  { font-size:11px; color:rgba(59,130,246,0.7); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Licitaciones y Compras</h1>
+          <span class="breadcrumb">Municipio de Junín · Contrataciones y Proveedores</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-primary" id="btnNuevaLic">📄 + Nueva Licitación</button>
+        <button class="btn-export">📤 Exportar Registro</button>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- KPIs -->
+      <section class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Licitaciones Activas</span><div class="kpi-icon blue">📄</div></div><div class="kpi-value" data-target="8">8</div><div class="kpi-footer"><span class="kpi-trend up">▲ 3 en evaluación</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Monto Total Licitado</span><div class="kpi-icon amber">💰</div></div><div class="kpi-value money">$48.7M</div><div class="kpi-footer"><span class="kpi-sub">En procesos activos</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Adjudicadas (mes)</span><div class="kpi-icon green">✅</div></div><div class="kpi-value" data-target="5">5</div><div class="kpi-footer"><span class="kpi-trend down">$12.4M adjudicados</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Ahorro vs Presupuesto</span><div class="kpi-icon green">💚</div></div><div class="kpi-value pct" data-target="11">11%</div><div class="kpi-footer"><span class="kpi-sub">$1.4M ahorrados</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Proveedores Registrados</span><div class="kpi-icon violet">🏢</div></div><div class="kpi-value" data-target="47">47</div><div class="kpi-footer"><span class="kpi-sub">12 pre-calificados</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Vencen en 30 días</span><div class="kpi-icon red">⚠️</div></div><div class="kpi-value" data-target="3">3</div><div class="kpi-footer"><span class="kpi-trend up">▲ Requieren acción</span></div></div>
+      </section>
+
+      <!-- PROCESO STATUS BAR -->
+      <div class="rrhh-panel">
+        <div class="panel-header"><h2 class="chart-title">🔄 Flujo de Licitación</h2></div>
+        <div class="lic-status-bar">
+          <div class="lic-status-step active"><div class="lic-step-num">3</div><div class="lic-step-lbl">Necesidad</div></div>
+          <div class="lic-status-step"><div class="lic-step-num">2</div><div class="lic-step-lbl">Pliego</div></div>
+          <div class="lic-status-step"><div class="lic-step-num">4</div><div class="lic-step-lbl">Publicada</div></div>
+          <div class="lic-status-step"><div class="lic-step-num">3</div><div class="lic-step-lbl">Evaluación</div></div>
+          <div class="lic-status-step"><div class="lic-step-num">2</div><div class="lic-step-lbl">Adjudicada</div></div>
+          <div class="lic-status-step"><div class="lic-step-num">5</div><div class="lic-step-lbl">En contrato</div></div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-tab="activas">📄 Activas (8)</button>
+        <button class="tab-btn" data-tab="evaluacion">⚖️ En Evaluación (3)</button>
+        <button class="tab-btn" data-tab="adjudicadas">✅ Adjudicadas</button>
+        <button class="tab-btn" data-tab="proveedores">🏢 Proveedores</button>
+        <button class="tab-btn" data-tab="calendario">📅 Calendario</button>
+      </div>
+
+      <!-- TAB ACTIVAS -->
+      <div class="tab-content active" id="tab-activas">
+
+        <div class="lic-card" onclick="openDetail('L001')">
+          <div class="lic-card-header">
+            <div>
+              <span class="lic-num">#L001-2026</span>
+              <div class="lic-title">Sistema de Gestión de Expedientes Municipales</div>
+              <div class="lic-desc">Contratación de software para digitalización y gestión de expedientes administrativos. Reemplaza el sistema GovTech Solutions (contrato vencido).</div>
+              <div class="lic-meta">
+                <span class="lic-meta-item">💰 <strong>$4.200.000/año</strong></span>
+                <span class="lic-meta-item">📅 <strong>Apertura: 15/09/2026</strong></span>
+                <span class="lic-meta-item">🏢 <strong>3 ofertas recibidas</strong></span>
+                <span class="lic-meta-item">👤 <strong>Área IT</strong></span>
+              </div>
+            </div>
+            <span class="status-badge warning">En Evaluación</span>
+          </div>
+          <div class="lic-footer">
+            <span style="font-size:11px;color:rgba(100,116,139,0.7)">Avance del proceso</span>
+            <div class="progress-mini"><div class="progress-mini-fill" style="width:65%"></div></div>
+            <span style="font-size:11px;font-weight:700;color:#60a5fa">65%</span>
+          </div>
+        </div>
+
+        <div class="lic-card">
+          <div class="lic-card-header">
+            <div>
+              <span class="lic-num">#L002-2026</span>
+              <div class="lic-title">Mantenimiento Vial — Red Urbana</div>
+              <div class="lic-desc">Contratación de empresa para reparación de baches y mantenimiento preventivo de la red vial urbana. 48 cuadras identificadas.</div>
+              <div class="lic-meta">
+                <span class="lic-meta-item">💰 <strong>$8.500.000</strong></span>
+                <span class="lic-meta-item">📅 <strong>Apertura: 20/09/2026</strong></span>
+                <span class="lic-meta-item">🏢 <strong>Recibiendo ofertas</strong></span>
+                <span class="lic-meta-item">👤 <strong>Obras Públicas</strong></span>
+              </div>
+            </div>
+            <span class="status-badge info">Publicada</span>
+          </div>
+          <div class="lic-footer">
+            <span style="font-size:11px;color:rgba(100,116,139,0.7)">Avance del proceso</span>
+            <div class="progress-mini"><div class="progress-mini-fill" style="width:40%"></div></div>
+            <span style="font-size:11px;font-weight:700;color:#60a5fa">40%</span>
+          </div>
+        </div>
+
+        <div class="lic-card">
+          <div class="lic-card-header">
+            <div>
+              <span class="lic-num">#L003-2026</span>
+              <div class="lic-title">Servicio de Seguridad Privada — Edificios Municipales</div>
+              <div class="lic-desc">Contratación de empresa de vigilancia para 6 edificios municipales. 24/7. Incluye control de acceso y monitoreo CCTV.</div>
+              <div class="lic-meta">
+                <span class="lic-meta-item">💰 <strong>$3.600.000/año</strong></span>
+                <span class="lic-meta-item">📅 <strong>Apertura: 05/09/2026</strong></span>
+                <span class="lic-meta-item">🏢 <strong>1 oferta recibida</strong></span>
+                <span class="lic-meta-item">👤 <strong>Administración</strong></span>
+              </div>
+            </div>
+            <span class="status-badge warning">En Evaluación</span>
+          </div>
+          <div class="lic-footer">
+            <span style="font-size:11px;color:rgba(100,116,139,0.7)">Avance del proceso</span>
+            <div class="progress-mini"><div class="progress-mini-fill" style="width:70%"></div></div>
+            <span style="font-size:11px;font-weight:700;color:#60a5fa">70%</span>
+          </div>
+        </div>
+
+        <div class="lic-card">
+          <div class="lic-card-header">
+            <div>
+              <span class="lic-num">#L004-2026</span>
+              <div class="lic-title">Adquisición de Luminarias LED — Alumbrado Público</div>
+              <div class="lic-desc">Compra de 350 luminarias LED para renovación del sistema de alumbrado público. Ahorro estimado en energía: 40%.</div>
+              <div class="lic-meta">
+                <span class="lic-meta-item">💰 <strong>$5.250.000</strong></span>
+                <span class="lic-meta-item">📅 <strong>Apertura: 30/09/2026</strong></span>
+                <span class="lic-meta-item">🏢 <strong>Armando pliego</strong></span>
+                <span class="lic-meta-item">👤 <strong>Infraestructura</strong></span>
+              </div>
+            </div>
+            <span class="status-badge info">En Pliego</span>
+          </div>
+          <div class="lic-footer">
+            <span style="font-size:11px;color:rgba(100,116,139,0.7)">Avance del proceso</span>
+            <div class="progress-mini"><div class="progress-mini-fill" style="width:20%"></div></div>
+            <span style="font-size:11px;font-weight:700;color:#60a5fa">20%</span>
+          </div>
+        </div>
+
+      </div><!-- /tab-activas -->
+
+      <!-- TAB EVALUACIÓN -->
+      <div class="tab-content" id="tab-evaluacion">
+        <div class="rrhh-panel">
+          <div class="panel-header">
+            <h2 class="chart-title">⚖️ Evaluación Comparativa — #L001 Sistema de Expedientes</h2>
+            <button class="btn-primary">✅ Adjudicar Ganador</button>
+          </div>
+
+          <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:rgba(148,163,184,0.9)">
+            🤖 <strong>Análisis IA:</strong> Basado en precio, experiencia, soporte y referencias, la oferta de <strong>MuniSoft SRL</strong> obtiene el mayor puntaje ponderado (87/100). Se recomienda adjudicar sujeto a verificación de antecedentes.
+          </div>
+
+          <div class="oferta-card" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.04)">
+            <div class="oferta-header">
+              <div>
+                <div class="oferta-empresa">★ MuniSoft SRL <span style="font-size:11px;background:rgba(16,185,129,0.15);color:#10b981;padding:2px 8px;border-radius:99px;margin-left:8px;font-weight:700">RECOMENDADO</span></div>
+                <div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-71234567-8 · 8 años en el mercado</div>
+              </div>
+              <div class="oferta-precio" style="color:#10b981">$3.480.000/año</div>
+            </div>
+            <div class="criterio-row"><span class="criterio-lbl">💰 Precio</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:92%;background:#10b981"></div></div></div><span class="criterio-val" style="color:#10b981">92/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">💼 Experiencia</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:85%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">85/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">🛡️ Soporte Técnico</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:90%;background:#8b5cf6"></div></div></div><span class="criterio-val" style="color:#a78bfa">90/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">👥 Referencias</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:80%;background:#f59e0b"></div></div></div><span class="criterio-val" style="color:#f59e0b">80/100</span></div>
+            <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:flex-end">
+              <strong style="font-size:18px;font-family:'Outfit',sans-serif;color:#10b981">PUNTAJE TOTAL: 87/100</strong>
+            </div>
+          </div>
+
+          <div class="oferta-card">
+            <div class="oferta-header">
+              <div><div class="oferta-empresa">TechGov SA</div><div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-65432109-5 · 5 años</div></div>
+              <div class="oferta-precio" style="color:#60a5fa">$4.100.000/año</div>
+            </div>
+            <div class="criterio-row"><span class="criterio-lbl">💰 Precio</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:72%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">72/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">💼 Experiencia</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:78%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">78/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">🛡️ Soporte</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:85%;background:#8b5cf6"></div></div></div><span class="criterio-val" style="color:#a78bfa">85/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">👥 Referencias</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:70%;background:#f59e0b"></div></div></div><span class="criterio-val" style="color:#f59e0b">70/100</span></div>
+            <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:flex-end">
+              <strong style="font-size:18px;font-family:'Outfit',sans-serif;color:#60a5fa">PUNTAJE TOTAL: 76/100</strong>
+            </div>
+          </div>
+
+          <div class="oferta-card">
+            <div class="oferta-header">
+              <div><div class="oferta-empresa">DataMuni Argentina</div><div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-55678901-2 · 3 años</div></div>
+              <div class="oferta-precio" style="color:#f59e0b">$3.900.000/año</div>
+            </div>
+            <div class="criterio-row"><span class="criterio-lbl">💰 Precio</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:78%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">78/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">💼 Experiencia</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:55%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">55/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">🛡️ Soporte</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:60%;background:#8b5cf6"></div></div></div><span class="criterio-val" style="color:#a78bfa">60/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">👥 Referencias</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:65%;background:#f59e0b"></div></div></div><span class="criterio-val" style="color:#f59e0b">65/100</span></div>
+            <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:flex-end">
+              <strong style="font-size:18px;font-family:'Outfit',sans-serif;color:#f59e0b">PUNTAJE TOTAL: 65/100</strong>
+            </div>
+          </div>
+        </div>
+      </div><!-- /evaluacion -->
+
+      <!-- TAB ADJUDICADAS -->
+      <div class="tab-content" id="tab-adjudicadas">
+        <div class="rrhh-panel">
+          <h2 class="chart-title" style="margin-bottom:20px">✅ Licitaciones Adjudicadas 2026</h2>
+          <table class="data-table">
+            <thead><tr><th>Número</th><th>Descripción</th><th>Adjudicatario</th><th>Monto</th><th>Inicio</th><th>Vencimiento</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td>#L001-25</td><td>Servicio de limpieza edificios</td><td>LimpioSur SA</td><td>$2.400.000</td><td>Ene 2026</td><td>Dic 2026</td><td><span class="status-badge ok">Vigente</span></td></tr>
+              <tr><td>#L002-25</td><td>Seguro de flota municipal</td><td>Zurich AR</td><td>$1.800.000</td><td>Ene 2026</td><td>Dic 2026</td><td><span class="status-badge ok">Vigente</span></td></tr>
+              <tr><td>#L003-25</td><td>Combustible (gasoil/nafta)</td><td>YPF SA</td><td>$6.200.000</td><td>Mar 2026</td><td>Feb 2027</td><td><span class="status-badge ok">Vigente</span></td></tr>
+              <tr><td>#L004-25</td><td>Impresoras y suministros oficina</td><td>Office Plus SRL</td><td>$890.000</td><td>Abr 2026</td><td>Mar 2027</td><td><span class="status-badge ok">Vigente</span></td></tr>
+              <tr><td>#L005-25</td><td>Material de construcción (Obras)</td><td>Construmend SA</td><td>$3.400.000</td><td>Jun 2026</td><td>Nov 2026</td><td><span class="status-badge warning">Vence 90d</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB PROVEEDORES -->
+      <div class="tab-content" id="tab-proveedores">
+        <div class="rrhh-panel">
+          <div class="panel-header">
+            <h2 class="chart-title">🏢 Registro de Proveedores</h2>
+            <div class="panel-filters">
+              <select class="select-filter"><option>Todos los rubros</option><option>Tecnología</option><option>Construcción</option><option>Servicios</option><option>Suministros</option></select>
+              <button class="btn-primary">➕ Registrar Proveedor</button>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Empresa</th><th>CUIT</th><th>Rubro</th><th>Contratos</th><th>Monto Histórico</th><th>Rating</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Sistemas Nexo SA</strong></td><td>30-71234567-8</td><td>Tecnología</td><td>3</td><td>$8.160.000</td><td>★★★☆☆</td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>LimpioSur SA</strong></td><td>30-65432109-5</td><td>Servicios</td><td>5</td><td>$12.000.000</td><td>★★★★☆</td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>Construmend SA</strong></td><td>30-55678901-2</td><td>Construcción</td><td>8</td><td>$27.200.000</td><td>★★★★★</td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>GovTech Solutions</strong></td><td>30-78901234-5</td><td>Tecnología</td><td>2</td><td>$5.040.000</td><td>★★☆☆☆</td><td><span class="status-badge critical">Contrato vencido</span></td></tr>
+              <tr><td><strong>YPF SA</strong></td><td>30-54678901-3</td><td>Combustible</td><td>4</td><td>$24.800.000</td><td>★★★★☆</td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>Office Plus SRL</strong></td><td>30-33456789-1</td><td>Suministros</td><td>6</td><td>$5.340.000</td><td>★★★★★</td><td><span class="status-badge ok">Activo</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB CALENDARIO -->
+      <div class="tab-content" id="tab-calendario">
+        <div class="rrhh-panel">
+          <h2 class="chart-title" style="margin-bottom:24px">📅 Calendario de Vencimientos y Aperturas</h2>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-title">Apertura #L003-2026 — Servicio de Seguridad</div><div class="tl-sub">1 oferta recibida. En evaluación.</div><div class="tl-date">05/09/2026 — Completado</div></div>
+            <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title">⚠️ Vencimiento contrato GovTech Solutions (Expedientes)</div><div class="tl-sub">Sistema en riesgo. Iniciar licitación urgente #L001.</div><div class="tl-date">15/08/2026 — VENCIDO</div></div>
+            <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title">Apertura #L001-2026 — Sistema de Expedientes</div><div class="tl-sub">3 ofertas. Evaluación en curso. MuniSoft lidera.</div><div class="tl-date">15/09/2026 — Esta semana</div></div>
+            <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Apertura #L002-2026 — Mantenimiento Vial</div><div class="tl-sub">Recibiendo ofertas. 3 empresas confirmaron interés.</div><div class="tl-date">20/09/2026</div></div>
+            <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Renovación contrato Construmend SA</div><div class="tl-sub">Material de construcción. Evaluar precio de mercado antes de renovar.</div><div class="tl-date">01/11/2026</div></div>
+            <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Apertura #L004-2026 — Luminarias LED</div><div class="tl-sub">Pliego en elaboración. Requiere especificaciones técnicas.</div><div class="tl-date">30/09/2026</div></div>
+            <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Renovación anual LimpioSur SA + YPF SA</div><div class="tl-sub">Revisar precios actualizados. Iniciar negociación directa.</div><div class="tl-date">31/12/2026</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL NUEVA LICITACIÓN -->
+  <div class="modal-overlay" id="modalNuevaLic" style="display:none">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header">
+        <h3>📄 Nueva Licitación</h3>
+        <button class="modal-close" onclick="document.getElementById('modalNuevaLic').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1"><label>Título de la licitación</label><input type="text" placeholder="Ej: Servicio de mantenimiento de parques" /></div>
+          <div class="form-group"><label>Tipo</label><select><option>Licitación Pública</option><option>Licitación Privada</option><option>Concurso de Precios</option><option>Contratación Directa</option></select></div>
+          <div class="form-group"><label>Presupuesto estimado</label><input type="number" placeholder="0" /></div>
+          <div class="form-group"><label>Área solicitante</label><select><option>Obras Públicas</option><option>Tecnología</option><option>Salud</option><option>Educación</option><option>Administración</option></select></div>
+          <div class="form-group"><label>Fecha apertura de ofertas</label><input type="date" /></div>
+          <div class="form-group" style="grid-column:1/-1"><label>Descripción y requerimientos</label><textarea rows="4" placeholder="Describir el objeto de la contratación, especificaciones técnicas y requisitos mínimos..."></textarea></div>
+        </div>
+        <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px;margin-top:12px;font-size:12px;color:rgba(148,163,184,0.8)">
+          🤖 <strong>IA:</strong> El pliego básico se generará automáticamente con las bases y condiciones estándar de la Municipalidad de Junín.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="document.getElementById('modalNuevaLic').style.display='none'">Cancelar</button>
+        <button class="btn-secondary">💾 Guardar borrador</button>
+        <button class="btn-save">📄 Crear y publicar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/nav.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    buildSidebar('licitaciones');
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Modal nueva licitación
+    document.getElementById('btnNuevaLic').onclick = () => {
+      document.getElementById('modalNuevaLic').style.display = 'flex';
+    };
+
+    // KPI counter animation
+    document.querySelectorAll('.kpi-value[data-target]').forEach(el => {
+      const target = parseInt(el.dataset.target);
+      let current = 0;
+      const step = Math.max(1, Math.floor(target / 30));
+      const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = el.classList.contains('pct') ? current + '%' : current;
+        if (current >= target) clearInterval(timer);
+      }, 40);
+    });
+
+    // Status bar clicks
+    document.querySelectorAll('.lic-status-step').forEach((step, i) => {
+      step.addEventListener('click', () => {
+        document.querySelectorAll('.lic-status-step').forEach(s => s.classList.remove('active'));
+        step.classList.add('active');
+      });
+    });
+
+    // Toast on load
+    setTimeout(() => {
+      if (window.toast) toast('🚨 Alerta de vencimiento', 'Contrato GovTech Solutions está VENCIDO. Licitación #L001 en curso.', 'warning');
+    }, 1500);
+
+    window.openDetail = (id) => {
+      if (window.toast) toast('Abriendo detalle', 'Licitación #' + id, 'info');
+    };
+  </script>
+</body>
+</html>

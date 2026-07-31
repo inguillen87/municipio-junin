@@ -56,11 +56,13 @@ const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { e
 app.use('/api/auth/login', loginLimiter);
 
 // ── RUTAS API ───────────────────────────────────────
-app.use('/api/auth',      require('./routes/auth'));
-app.use('/api/contratos', require('./routes/contratos'));
-app.use('/api/empleados', require('./routes/empleados'));
-app.use('/api/reclamos',  require('./routes/reclamos'));
-app.use('/api/archivos',  require('./routes/archivos'));
+app.use('/api/auth',          require('./routes/auth'));
+app.use('/api/contratos',     require('./routes/contratos'));
+app.use('/api/empleados',     require('./routes/empleados'));
+app.use('/api/reclamos',      require('./routes/reclamos'));
+app.use('/api/archivos',      require('./routes/archivos'));
+app.use('/api/whatsapp',      require('./routes/whatsapp'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // ── HEALTH CHECK ──────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -93,15 +95,15 @@ async function start() {
   await db.connect();
   app.listen(PORT, () => {
     console.log('\n┌────────────────────────────────────────────────────────────');
-    console.log('│  🏛️  API Municipalidad de Junín');
+    console.log('│  🏛️  API Municipalidad de Junín — GovTech v2.0');
     console.log(`│  🌐  http://localhost:${PORT}`);
     console.log(`│  💾  DB: ${db.isInMemory() ? '⚠️  Modo demo (sin PostgreSQL)' : '✅ PostgreSQL conectado'}`);
-    console.log('│  📊  Endpoints:');
-    console.log('│     POST /api/auth/login');
-    console.log('│     GET  /api/contratos');
-    console.log('│     GET  /api/empleados');
-    console.log('│     GET  /api/reclamos');
-    console.log('│     POST /api/archivos/upload');
+    console.log('│  📊  Endpoints nuevos:');
+    console.log('│     POST /api/whatsapp/webhook    (Meta WhatsApp Bot)');
+    console.log('│     GET  /api/whatsapp/webhook    (Verificación Meta)');
+    console.log('│     POST /api/whatsapp/send-alert (Alertas proactivas)');
+    console.log('│     POST /api/notifications/check (Verificar y enviar)');
+    console.log('│     POST /api/notifications/weekly-report');
     console.log('└────────────────────────────────────────────────────────────\n');
   });
 }

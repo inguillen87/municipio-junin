@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa de Reclamos — Municipio de Junín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/shared.css" />
+  <style>
+    .mapa-layout { display: flex; gap: 0; height: calc(100vh - 72px); overflow: hidden; }
+    .mapa-sidebar { width: 340px; flex-shrink: 0; background: rgba(13,21,38,0.95); border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; overflow-y: auto; backdrop-filter: blur(20px); }
+    .mapa-main { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; z-index: 1; }
+    
+    /* Override Leaflet dark theme */
+    .leaflet-container { background: #060b18 !important; font-family: 'Inter', sans-serif !important; }
+    .leaflet-tile { filter: brightness(0.85) saturate(0.7) hue-rotate(200deg) !important; }
+    .leaflet-popup-content-wrapper { background: #0e1a30 !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 16px !important; box-shadow: 0 16px 48px rgba(0,0,0,0.6) !important; color: white !important; }
+    .leaflet-popup-tip { background: #0e1a30 !important; }
+    .leaflet-popup-close-button { color: rgba(148,163,184,0.7) !important; }
+    .leaflet-control-zoom a { background: #0e1a30 !important; border-color: rgba(255,255,255,0.1) !important; color: rgba(148,163,184,0.9) !important; }
+    .leaflet-control-zoom a:hover { background: #1a2a45 !important; color: white !important; }
+    .leaflet-control-layers { background: #0e1a30 !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; color: rgba(148,163,184,0.9) !important; }
+    .leaflet-control-layers-toggle { background-color: #0e1a30 !important; }
+    .leaflet-bar { border: none !important; }
+    
+    /* Sidebar sections */
+    .sidebar-section { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-section:last-child { border-bottom: none; }
+    .sidebar-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(100,116,139,0.8); margin-bottom: 12px; }
+    
+    /* Stat cards */
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 12px 10px; text-align: center; }
+    .stat-val { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800; color: white; line-height: 1; }
+    .stat-lbl { font-size: 10px; color: rgba(100,116,139,0.7); margin-top: 3px; }
+    .stat-card.red   { border-color: rgba(239,68,68,0.2); }
+    .stat-card.green { border-color: rgba(16,185,129,0.2); }
+    .stat-card.blue  { border-color: rgba(59,130,246,0.2); }
+    .stat-card.amber { border-color: rgba(245,158,11,0.2); }
+    .stat-val.red   { color: #ef4444; }
+    .stat-val.green { color: #10b981; }
+    .stat-val.blue  { color: #60a5fa; }
+    .stat-val.amber { color: #f59e0b; }
+    
+    /* Type legend */
+    .legend-list { display: flex; flex-direction: column; gap: 6px; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+    .legend-item:hover { background: rgba(255,255,255,0.04); }
+    .legend-item.active { background: rgba(59,130,246,0.08); }
+    .legend-left { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-name { color: rgba(148,163,184,0.9); font-weight: 500; }
+    .legend-count { font-weight: 700; color: white; background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 99px; font-size: 11px; }
+    
+    /* Reclamos list */
+    .reclamo-item { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); margin-bottom: 6px; cursor: pointer; transition: all 0.15s; }
+    .reclamo-item:hover { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.2); }
+    .reclamo-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .reclamo-num { font-size: 10px; color: rgba(100,116,139,0.7); font-weight: 600; }
+    .reclamo-desc { font-size: 12px; color: rgba(148,163,184,0.9); font-weight: 500; margin-bottom: 4px; }
+    .reclamo-dir  { font-size: 11px; color: rgba(100,116,139,0.7); }
+    
+    /* Popup content */
+    .popup-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: white; margin-bottom: 6px; }
+    .popup-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .popup-row:last-child { border: none; }
+    .popup-row span { color: rgba(148,163,184,0.7); }
+    .popup-row strong { color: white; }
+    .popup-badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; margin-top: 8px; }
+    
+    /* Floating control */
+    .map-controls { position: absolute; top: 16px; right: 16px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .map-ctrl-btn { background: rgba(13,21,38,0.95); border: 1px solid rgba(255,255,255,0.1); color: rgba(148,163,184,0.9); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; backdrop-filter: blur(10px); font-family: 'Inter',sans-serif; white-space: nowrap; }
+    .map-ctrl-btn:hover { background: rgba(59,130,246,0.15); color: white; border-color: rgba(59,130,246,0.3); }
+    .map-ctrl-btn.active { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: rgba(59,130,246,0.4); }
+    
+    /* Map overlay info */
+    .map-badge { position: absolute; bottom: 16px; left: 16px; z-index: 999; background: rgba(13,21,38,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: rgba(148,163,184,0.8); backdrop-filter: blur(10px); }
+    .map-badge strong { color: white; }
+    
+    @media(max-width:768px){ .mapa-sidebar{display:none} }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Mapa de Reclamos</h1>
+          <span class="breadcrumb">Municipio de Junín · Georreferenciación de Incidencias</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-primary" id="btnNuevoReclamo">📍 + Registrar Reclamo</button>
+        <button class="btn-export" onclick="exportMapData()">📤 Exportar</button>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="mapa-layout">
+
+      <!-- SIDEBAR IZQUIERDO -->
+      <aside class="mapa-sidebar">
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">📊 Estadísticas</div>
+          <div class="stat-row">
+            <div class="stat-card blue"><div class="stat-val blue" id="totalCount">318</div><div class="stat-lbl">Total registrados</div></div>
+            <div class="stat-card red"><div class="stat-val red" id="pendCount">89</div><div class="stat-lbl">Pendientes</div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-card green"><div class="stat-val green" id="resolCount">229</div><div class="stat-lbl">Resueltos</div></div>
+            <div class="stat-card amber"><div class="stat-val amber">3.2d</div><div class="stat-lbl">Tiempo prom.</div></div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">🎨 Filtrar por Tipo</div>
+          <div class="legend-list" id="legendList"></div>
+        </div>
+
+        <div class="sidebar-section" style="flex:1">
+          <div class="sidebar-title" style="display:flex;justify-content:space-between">
+            <span>📍 Reclamos Recientes</span>
+            <span id="reclamoCount" style="color:rgba(59,130,246,0.8);font-size:10px">Todos</span>
+          </div>
+          <div id="reclamosList"></div>
+        </div>
+
+      </aside>
+
+      <!-- MAPA PRINCIPAL -->
+      <div class="mapa-main">
+        <div id="map"></div>
+
+        <!-- Floating controls -->
+        <div class="map-controls">
+          <button class="map-ctrl-btn active" id="btnTodos" onclick="filterType('all')">Todos</button>
+          <button class="map-ctrl-btn" id="btnPend" onclick="filterStatus('pendiente')">⏳ Pendientes</button>
+          <button class="map-ctrl-btn" id="btnResuel" onclick="filterStatus('resuelto')">✅ Resueltos</button>
+          <button class="map-ctrl-btn" onclick="map.setView(JUNIN_CENTER, 14)">🎯 Centrar</button>
+        </div>
+
+        <!-- Info badge -->
+        <div class="map-badge">
+          📍 <strong id="mapInfo">318 reclamos</strong> en el mapa · Junin, Mendoza
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL NUEVO RECLAMO -->
+  <div class="modal-overlay" id="modalReclamo" style="display:none">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <h3>📍 Registrar Nuevo Reclamo</h3>
+        <button class="modal-close" onclick="document.getElementById('modalReclamo').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Vecino</label><input type="text" id="rNombre" placeholder="Juan Pérez" /></div>
+          <div class="form-group"><label>Teléfono</label><input type="text" id="rTelefono" placeholder="261-555-1234" /></div>
+          <div class="form-group" style="grid-column:1/-1"><label>Dirección exacta</label><input type="text" id="rDireccion" placeholder="Av. Rivadavia 1234, Junín" /></div>
+          <div class="form-group"><label>Tipo de reclamo</label>
+            <select id="rTipo">
+              <option>Baches y Pavimento</option><option>Alumbrado Público</option>
+              <option>Recolección de Basura</option><option>Poda de Árboles</option>
+              <option>Agua y Cloacas</option><option>Ruidos Molestos</option><option>Otros</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Prioridad</label>
+            <select id="rPrioridad"><option>Normal</option><option>Alta</option><option>Urgente</option></select>
+          </div>
+          <div class="form-group" style="grid-column:1/-1"><label>Descripción</label>
+            <textarea id="rDesc" rows="3" placeholder="Describí el problema con detalle..."></textarea>
+          </div>
+        </div>
+        <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:12px;margin-top:12px;font-size:12px;color:rgba(148,163,184,0.8)">
+          📍 La ubicación en el mapa se asignará automáticamente por geocodificación de la dirección.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="document.getElementById('modalReclamo').style.display='none'">Cancelar</button>
+        <button class="btn-save" id="btnGuardarReclamo">📍 Registrar en el Mapa</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/toast.js"></script>
+  <script>
+    buildSidebar('mapa');
+
+    const JUNIN_CENTER = [-32.695, -70.081];
+
+    // Datos de reclamos con coordenadas reales de Junin, Mendoza
+    const RECLAMOS = [
+      { id:'R001', tipo:'Baches y Pavimento', dir:'Av. Rivadavia 1240', vecino:'Carlos Martínez', estado:'pendiente', fecha:'2026-08-28', dias:3, lat:-32.694, lng:-70.082 },
+      { id:'R002', tipo:'Alumbrado Público', dir:'Calle San Martín 456', vecino:'María López', estado:'resuelto', fecha:'2026-08-25', dias:1, lat:-32.697, lng:-70.078 },
+      { id:'R003', tipo:'Recolección de Basura', dir:'Sarmiento 789', vecino:'Pedro González', estado:'pendiente', fecha:'2026-08-27', dias:4, lat:-32.693, lng:-70.085 },
+      { id:'R004', tipo:'Baches y Pavimento', dir:'Mitre 321', vecino:'Ana Fernández', estado:'proceso', fecha:'2026-08-26', dias:2, lat:-32.698, lng:-70.080 },
+      { id:'R005', tipo:'Poda de Árboles', dir:'Belgrano 654', vecino:'Luis Rodríguez', estado:'resuelto', fecha:'2026-08-20', dias:1, lat:-32.692, lng:-70.083 },
+      { id:'R006', tipo:'Agua y Cloacas', dir:'Rivadavia y Mitre', vecino:'Rosa Sánchez', estado:'pendiente', fecha:'2026-08-29', dias:2, lat:-32.696, lng:-70.079 },
+      { id:'R007', tipo:'Baches y Pavimento', dir:'Tucumán 123', vecino:'Jorge Pérez', estado:'pendiente', fecha:'2026-08-28', dias:3, lat:-32.700, lng:-70.082 },
+      { id:'R008', tipo:'Alumbrado Público', dir:'Necochea 456', vecino:'Carmen Villa', estado:'resuelto', fecha:'2026-08-22', dias:2, lat:-32.691, lng:-70.077 },
+      { id:'R009', tipo:'Recolección de Basura', dir:'Av. Acceso 890', vecino:'Miguel Torres', estado:'proceso', fecha:'2026-08-27', dias:2, lat:-32.702, lng:-70.086 },
+      { id:'R010', tipo:'Ruidos Molestos', dir:'Libertad 234', vecino:'Silvia Mora', estado:'pendiente', fecha:'2026-08-29', dias:1, lat:-32.695, lng:-70.075 },
+      { id:'R011', tipo:'Baches y Pavimento', dir:'Av. Rivadavia 2100', vecino:'Héctor Díaz', estado:'resuelto', fecha:'2026-08-18', dias:3, lat:-32.699, lng:-70.088 },
+      { id:'R012', tipo:'Poda de Árboles', dir:'San Lorenzo 345', vecino:'Patricia Castro', estado:'pendiente', fecha:'2026-08-26', dias:4, lat:-32.689, lng:-70.081 },
+      { id:'R013', tipo:'Agua y Cloacas', dir:'Godoy Cruz 567', vecino:'Diego Ruiz', estado:'resuelto', fecha:'2026-08-23', dias:2, lat:-32.703, lng:-70.079 },
+      { id:'R014', tipo:'Alumbrado Público', dir:'Salta 890', vecino:'Elena Vega', estado:'pendiente', fecha:'2026-08-28', dias:2, lat:-32.693, lng:-70.090 },
+      { id:'R015', tipo:'Recolección de Basura', dir:'Av. Pellegrini 100', vecino:'Roberto Herrera', estado:'pendiente', fecha:'2026-08-29', dias:1, lat:-32.697, lng:-70.073 },
+    ];
+
+    const TIPO_CONFIG = {
+      'Baches y Pavimento':     { color: '#ef4444', icon: '🛫', bg: 'rgba(239,68,68,0.12)' },
+      'Alumbrado Público':      { color: '#f59e0b', icon: '💡', bg: 'rgba(245,158,11,0.12)' },
+      'Recolección de Basura':  { color: '#10b981', icon: '🗑️', bg: 'rgba(16,185,129,0.12)' },
+      'Poda de Árboles':        { color: '#22c55e', icon: '🌳', bg: 'rgba(34,197,94,0.12)' },
+      'Agua y Cloacas':         { color: '#3b82f6', icon: '💧', bg: 'rgba(59,130,246,0.12)' },
+      'Ruidos Molestos':        { color: '#8b5cf6', icon: '🔊', bg: 'rgba(139,92,246,0.12)' },
+      'Otros':                  { color: '#64748b', icon: '📌', bg: 'rgba(100,116,139,0.12)' },
+    };
+
+    const ESTADO_CONFIG = {
+      'pendiente': { color: '#ef4444', label: 'Pendiente', border: '#ef4444' },
+      'proceso':   { color: '#f59e0b', label: 'En proceso', border: '#f59e0b' },
+      'resuelto':  { color: '#10b981', label: 'Resuelto',  border: '#10b981' },
+    };
+
+    // Init map
+    const map = L.map('map', { zoomControl: false }).setView(JUNIN_CENTER, 14);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '\u00a9 OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    let markers = [];
+    let activeFilter = 'all';
+    let statusFilter = null;
+
+    function createMarker(r) {
+      const cfg = TIPO_CONFIG[r.tipo] || TIPO_CONFIG['Otros'];
+      const eCfg = ESTADO_CONFIG[r.estado];
+      const icon = L.divIcon({
+        html: `<div style="width:34px;height:34px;border-radius:50%;background:${cfg.color};border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:transform 0.2s">${cfg.icon}</div>`,
+        iconSize: [34, 34], iconAnchor: [17, 17], className: ''
+      });
+      const m = L.marker([r.lat, r.lng], { icon });
+      m.bindPopup(`
+        <div style="min-width:220px;padding:4px">
+          <div class="popup-title">${cfg.icon} ${r.tipo}</div>
+          <div class="popup-row"><span>Reclamo</span><strong>#${r.id}</strong></div>
+          <div class="popup-row"><span>Dirección</span><strong>${r.dir}</strong></div>
+          <div class="popup-row"><span>Vecino</span><strong>${r.vecino}</strong></div>
+          <div class="popup-row"><span>Fecha</span><strong>${r.fecha}</strong></div>
+          <div class="popup-row"><span>Resolución</span><strong>${r.dias} días</strong></div>
+          <div style="margin-top:10px">
+            <span class="popup-badge" style="background:${eCfg.color}22;border:1px solid ${eCfg.color}44;color:${eCfg.color}">${eCfg.label}</span>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:6px">
+            <button onclick="escalateReclamo('${r.id}')" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif">Escalar</button>
+            <button onclick="resolveReclamo('${r.id}')" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif">Marcar resuelto</button>
+          </div>
+        </div>
+      `, { maxWidth: 280 });
+      m.reclamo = r;
+      m.addTo(map);
+      markers.push(m);
+      return m;
+    }
+
+    function buildLegend() {
+      const list = document.getElementById('legendList');
+      const counts = {};
+      RECLAMOS.forEach(r => counts[r.tipo] = (counts[r.tipo]||0)+1);
+      const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+      sorted.forEach(([tipo, cnt]) => {
+        const cfg = TIPO_CONFIG[tipo];
+        const el = document.createElement('div');
+        el.className = 'legend-item';
+        el.innerHTML = `<div class="legend-left"><div class="legend-dot" style="background:${cfg.color}"></div><span class="legend-name">${tipo}</span></div><span class="legend-count">${cnt}</span>`;
+        el.onclick = () => {
+          document.querySelectorAll('.legend-item').forEach(e=>e.classList.remove('active'));
+          el.classList.toggle('active');
+          filterType(tipo === activeFilter ? 'all' : tipo);
+        };
+        list.appendChild(el);
+      });
+    }
+
+    function buildReclamosList(data) {
+      const el = document.getElementById('reclamosList');
+      el.innerHTML = '';
+      document.getElementById('reclamoCount').textContent = `${data.length} reclamos`;
+      data.slice(0,12).forEach(r => {
+        const cfg = TIPO_CONFIG[r.tipo];
+        const eCfg = ESTADO_CONFIG[r.estado];
+        const div = document.createElement('div');
+        div.className = 'reclamo-item';
+        div.innerHTML = `
+          <div class="reclamo-top">
+            <span class="reclamo-num">#${r.id}</span>
+            <span style="font-size:10px;font-weight:700;color:${eCfg.color}">${eCfg.label}</span>
+          </div>
+          <div class="reclamo-desc">${cfg.icon} ${r.tipo}</div>
+          <div class="reclamo-dir">📍 ${r.dir} · ${r.fecha}</div>`;
+        div.onclick = () => {
+          const mk = markers.find(m => m.reclamo.id === r.id);
+          if (mk) { map.setView([r.lat, r.lng], 16); mk.openPopup(); }
+        };
+        el.appendChild(div);
+      });
+    }
+
+    function filterType(tipo) {
+      activeFilter = tipo;
+      statusFilter = null;
+      document.querySelectorAll('.map-ctrl-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btnTodos').classList.add('active');
+      let filtered = tipo === 'all' ? RECLAMOS : RECLAMOS.filter(r => r.tipo === tipo);
+      updateMarkers(filtered);
+      buildReclamosList(filtered);
+      document.getElementById('mapInfo').textContent = filtered.length + ' reclamos';
+    }
+
+    function filterStatus(st) {
+      statusFilter = st;
+      activeFilter = 'all';
+      document.querySelectorAll('.map-ctrl-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(st === 'pendiente' ? 'btnPend' : 'btnResuel');
+      if (btn) btn.classList.add('active');
+      const filtered = RECLAMOS.filter(r => r.estado === st);
+      updateMarkers(filtered);
+      buildReclamosList(filtered);
+      document.getElementById('mapInfo').textContent = filtered.length + ' reclamos';
+    }
+
+    function updateMarkers(data) {
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+      data.forEach(r => createMarker(r));
+    }
+
+    window.escalateReclamo = (id) => {
+      if (window.toast) toast('Reclamo escalado', 'Se notific\u00f3 al área responsable', 'warning');
+    };
+    window.resolveReclamo = (id) => {
+      if (window.toast) toast('Reclamo resuelto', 'Estado actualizado correctamente', 'success');
+      map.closePopup();
+    };
+
+    function exportMapData() {
+      const data = JSON.stringify(RECLAMOS, null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'reclamos-mapa-junin.json';
+      a.click();
+      if (window.toast) toast('Exportado', 'Datos del mapa descargados', 'success');
+    }
+    window.exportMapData = exportMapData;
+
+    // Init
+    buildLegend();
+    RECLAMOS.forEach(r => createMarker(r));
+    buildReclamosList(RECLAMOS);
+
+    document.getElementById('btnNuevoReclamo').onclick = () => {
+      document.getElementById('modalReclamo').style.display = 'flex';
+    };
+    document.getElementById('btnGuardarReclamo').onclick = () => {
+      if (window.toast) toast('Reclamo registrado', 'Se agreg\u00f3 al mapa exitosamente', 'success');
+      document.getElementById('modalReclamo').style.display = 'none';
+    };
+
+    // Heatmap effect on load
+    setTimeout(() => {
+      if (window.toast) toast('Mapa cargado', RECLAMOS.length + ' reclamos georreferenciados', 'info');
+    }, 1000);
+  </script>
+</body>
+</html>

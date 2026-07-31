@@ -1,11 +1,18 @@
 {
   "version": 2,
   "name": "municipio-junin",
-  "builds": [
-    { "src": "**/*.html", "use": "@vercel/static" }
-  ],
   "routes": [
     { "src": "^/$", "dest": "/login.html" },
+    {
+      "src": "/css/(.*\\.css)",
+      "headers": { "Cache-Control": "public, max-age=86400" },
+      "dest": "/css/$1"
+    },
+    {
+      "src": "/js/(.*\\.js)",
+      "headers": { "Cache-Control": "public, max-age=86400" },
+      "dest": "/js/$1"
+    },
     { "src": "/(.*)", "dest": "/$1" }
   ],
   "headers": [
@@ -13,20 +20,7 @@
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
-      ]
-    },
-    {
-      "source": "/js/(.*\\.js)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/css/(.*\\.css)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }
   ]

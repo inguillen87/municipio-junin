@@ -5,765 +5,406 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Presentación Ejecutiva — Plan de Choque 30 Días — Municipalidad de Junín</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --blue:   #3b82f6;
-      --violet: #8b5cf6;
-      --green:  #10b981;
-      --red:    #ef4444;
-      --amber:  #f59e0b;
-      --teal:   #06b6d4;
+      --blue: #3b82f6; --violet: #8b5cf6; --green: #10b981;
+      --red: #ef4444; --amber: #f59e0b; --teal: #06b6d4;
     }
+    html, body { width:100%; height:100%; overflow:hidden; background:#060b18; font-family:'Inter',sans-serif; color:white; }
 
-    html, body {
-      width: 100%; height: 100%; overflow: hidden;
-      background: #060b18;
-      font-family: 'Inter', sans-serif;
-      color: white;
-    }
+    /* ANIMATED BACKGROUND */
+    .bg-layer { position:fixed; inset:0; z-index:0; overflow:hidden; }
+    .orb { position:absolute; border-radius:50%; filter:blur(100px); opacity:0.12; animation:drift 25s ease-in-out infinite; }
+    .orb-1 { width:700px;height:700px;background:#3b82f6;top:-200px;left:-200px; }
+    .orb-2 { width:600px;height:600px;background:#8b5cf6;bottom:-200px;right:-200px;animation-delay:-10s; }
+    .orb-3 { width:400px;height:400px;background:#10b981;top:40%;left:40%;animation-delay:-18s; }
+    @keyframes drift { 0%,100%{transform:translate(0,0)scale(1)} 33%{transform:translate(30px,-40px)scale(1.05)} 66%{transform:translate(-30px,30px)scale(0.95)} }
+    .grid-bg { position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);background-size:64px 64px; }
 
-    /* ── PRESENTATION WRAPPER ── */
-    .presentation {
-      width: 100vw; height: 100vh;
-      display: flex; flex-direction: column;
-      position: relative; overflow: hidden;
-    }
+    /* TOPBAR */
+    .topbar { position:fixed;top:0;left:0;right:0;height:56px;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(6,11,24,0.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06); }
+    .topbar-brand { display:flex;align-items:center;gap:12px; }
+    .topbar-logo { font-size:22px; }
+    .topbar-name { font-size:15px;font-weight:700;font-family:'Outfit',sans-serif; }
+    .topbar-sub { font-size:11px;color:rgba(148,163,184,0.6); }
+    .topbar-right { display:flex;align-items:center;gap:16px; }
+    .slide-counter { font-size:13px;color:rgba(148,163,184,0.7);font-weight:600; }
+    .btn-nav { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(148,163,184,0.9);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.2s;font-family:'Inter',sans-serif; }
+    .btn-nav:hover { background:rgba(255,255,255,0.12);color:white; }
+    .btn-primary { background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:white;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.2s;font-family:'Inter',sans-serif; }
+    .btn-primary:hover { opacity:0.85;transform:translateY(-1px); }
+    .btn-exit { background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:rgba(239,68,68,0.8);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.2s;font-family:'Inter',sans-serif; }
+    .btn-exit:hover { background:rgba(239,68,68,0.2);color:#ef4444; }
 
-    /* ── ANIMATED BACKGROUND ── */
-    .bg-layer {
-      position: fixed; inset: 0; z-index: 0; overflow: hidden;
-    }
-    .orb {
-      position: absolute; border-radius: 50%;
-      filter: blur(100px); opacity: 0.12;
-      animation: drift 25s ease-in-out infinite;
-    }
-    .orb-1 { width:700px; height:700px; background:#3b82f6; top:-200px; left:-200px; animation-delay:0s; }
-    .orb-2 { width:600px; height:600px; background:#8b5cf6; bottom:-200px; right:-200px; animation-delay:-10s; }
-    .orb-3 { width:400px; height:400px; background:#10b981; top:40%; left:40%; animation-delay:-18s; }
-    @keyframes drift {
-      0%,100%{transform:translate(0,0) scale(1)}
-      33%{transform:translate(30px,-40px) scale(1.05)}
-      66%{transform:translate(-30px,30px) scale(0.95)}
-    }
-    .grid-bg {
-      position: fixed; inset: 0; z-index: 0;
-      background-image:
-        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
-      background-size: 64px 64px;
-    }
+    /* PROGRESS BAR */
+    .progress-bar { position:fixed;top:56px;left:0;right:0;height:3px;z-index:100;background:rgba(255,255,255,0.05); }
+    .progress-fill { height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width 0.4s ease; }
 
-    /* ── TOP BAR ── */
-    .pres-topbar {
-      position: fixed; top: 0; left: 0; right: 0;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 32px; z-index: 100;
-      background: rgba(6,11,24,0.7); backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .pres-logo { display: flex; align-items: center; gap: 12px; }
-    .pres-logo-icon { font-size: 28px; }
-    .pres-logo-text { display: flex; flex-direction: column; }
-    .pres-logo-title { font-size: 14px; font-weight: 800; font-family: 'Outfit', sans-serif; }
-    .pres-logo-sub { font-size: 11px; color: rgba(148,163,184,0.7); }
-    .pres-controls { display: flex; align-items: center; gap: 12px; }
-    .pres-slide-num {
-      font-size: 12px; font-weight: 700;
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-      padding: 5px 12px; border-radius: 99px;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .pres-btn {
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-      color: white; padding: 7px 16px; border-radius: 8px;
-      cursor: pointer; font-size: 12px; font-weight: 600;
-      transition: all 0.2s; display: flex; align-items: center; gap: 6px;
-    }
-    .pres-btn:hover { background: rgba(255,255,255,0.12); }
-    .pres-btn.primary {
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      border-color: transparent;
-    }
-    .pres-btn.primary:hover { opacity: 0.85; }
-    .pres-btn.danger { border-color: rgba(239,68,68,0.3); color: #ef4444; }
-    .pres-btn.danger:hover { background: rgba(239,68,68,0.1); }
+    /* SLIDES */
+    .slides-container { position:relative;z-index:1;width:100%;height:100%;overflow:hidden; }
+    .slide { position:absolute;inset:0;padding:80px 60px 40px;display:flex;flex-direction:column;justify-content:center;opacity:0;transform:translateX(60px);transition:all 0.5s cubic-bezier(0.16,1,0.3,1);pointer-events:none; }
+    .slide.active { opacity:1;transform:translateX(0);pointer-events:all; }
+    .slide.prev { opacity:0;transform:translateX(-60px); }
 
-    /* ── PROGRESS BAR ── */
-    .pres-progress {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-      height: 3px; background: rgba(255,255,255,0.06);
-    }
-    .pres-progress-fill {
-      height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981);
-      transition: width 0.5s ease;
-    }
+    /* SLIDE COMPONENTS */
+    .slide-eyebrow { font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:rgba(59,130,246,0.8);margin-bottom:16px; }
+    .slide-title { font-family:'Outfit',sans-serif;font-size:52px;font-weight:900;line-height:1.05;margin-bottom:20px; }
+    .slide-subtitle { font-size:20px;color:rgba(148,163,184,0.8);font-weight:400;line-height:1.5;max-width:700px; }
+    .slide-title .accent { background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .slide-title .green { background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
 
-    /* ── SLIDES CONTAINER ── */
-    .slides-wrap {
-      position: relative; z-index: 10;
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 80px 32px 20px;
-      overflow: hidden;
-    }
-    .slide {
-      position: absolute; inset: 80px 0 20px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 32px; text-align: center;
-      opacity: 0; transform: translateX(60px) scale(0.97);
-      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      pointer-events: none;
-    }
-    .slide.active {
-      opacity: 1; transform: translateX(0) scale(1);
-      pointer-events: all;
-    }
-    .slide.exit {
-      opacity: 0; transform: translateX(-60px) scale(0.97);
-    }
+    /* KPI GRID */
+    .kpi-row { display:flex;gap:16px;margin-top:32px;flex-wrap:wrap; }
+    .kpi-box { flex:1;min-width:160px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px 20px; }
+    .kpi-box.blue { background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.25); }
+    .kpi-box.green { background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.25); }
+    .kpi-box.amber { background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.25); }
+    .kpi-box.red { background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.25); }
+    .kpi-box.violet { background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.25); }
+    .kpi-val { font-family:'Outfit',sans-serif;font-size:36px;font-weight:900;color:white;line-height:1;margin-bottom:8px; }
+    .kpi-lbl { font-size:13px;color:rgba(148,163,184,0.7);font-weight:500; }
+    .kpi-sub { font-size:11px;color:rgba(100,116,139,0.6);margin-top:4px; }
 
-    /* ── SLIDE COMPONENTS ── */
-    .slide-tag {
-      font-size: 11px; font-weight: 800; letter-spacing: 2px;
-      text-transform: uppercase; color: var(--blue);
-      background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
-      padding: 5px 16px; border-radius: 99px; margin-bottom: 24px;
-    }
-    .slide-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: clamp(32px, 5vw, 64px);
-      font-weight: 900; line-height: 1.05;
-      margin-bottom: 20px;
-      background: linear-gradient(135deg, #ffffff 0%, rgba(148,163,184,0.8) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .slide-subtitle {
-      font-size: clamp(14px, 1.5vw, 18px);
-      color: rgba(148,163,184,0.8);
-      max-width: 700px; line-height: 1.6; margin-bottom: 40px;
-    }
+    /* CONTENT GRID */
+    .content-grid { display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:28px; }
+    .content-card { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px; }
+    .content-card-title { font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:16px;color:rgba(148,163,184,0.8); }
+    .list-item { display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:14px;color:rgba(148,163,184,0.9); }
+    .list-item:last-child { border-bottom:none; }
+    .list-item-icon { font-size:16px;flex-shrink:0;margin-top:1px; }
+    .list-item strong { color:white;display:block;font-size:14px;margin-bottom:2px; }
+    .list-item .amount { font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;color:white; }
 
-    /* BIG NUMBER */
-    .big-number {
-      font-family: 'Outfit', sans-serif;
-      font-size: clamp(60px, 10vw, 120px);
-      font-weight: 900; line-height: 1;
-    }
-    .big-number.green { color: #10b981; }
-    .big-number.red   { color: #ef4444; }
-    .big-number.blue  { color: #3b82f6; }
-    .big-number.amber { color: #f59e0b; }
-    .big-number.white { color: white; }
+    /* ALERT ITEMS */
+    .alert-row { background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px; }
+    .alert-row.amber { background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2); }
+    .alert-row.green { background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.2); }
+    .alert-icon { font-size:20px;flex-shrink:0; }
+    .alert-text strong { display:block;font-size:14px;color:white;margin-bottom:2px; }
+    .alert-text span { font-size:12px;color:rgba(148,163,184,0.7); }
 
-    /* KPI GRID IN SLIDES */
-    .slide-kpis {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px; width: 100%; max-width: 1100px;
-    }
-    .slide-kpi {
-      background: rgba(15,23,45,0.8);
-      border: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(12px);
-      border-radius: 16px; padding: 24px;
-      display: flex; flex-direction: column; gap: 8px;
-      transition: transform 0.3s ease;
-    }
-    .slide-kpi:hover { transform: translateY(-4px); }
-    .slide-kpi-icon { font-size: 28px; margin-bottom: 4px; }
-    .slide-kpi-val {
-      font-family: 'Outfit', sans-serif;
-      font-size: clamp(22px, 3vw, 36px);
-      font-weight: 900; line-height: 1;
-    }
-    .slide-kpi-val.green { color: #10b981; }
-    .slide-kpi-val.red   { color: #ef4444; }
-    .slide-kpi-val.blue  { color: #3b82f6; }
-    .slide-kpi-val.amber { color: #f59e0b; }
-    .slide-kpi-lbl { font-size: 12px; color: rgba(148,163,184,0.7); }
+    /* NAVIGATION DOTS */
+    .nav-dots { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100; }
+    .dot { width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;transition:all 0.2s; }
+    .dot.active { width:24px;border-radius:4px;background:#3b82f6; }
 
-    /* RANKING IN SLIDES */
-    .slide-ranking { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 800px; }
-    .slide-rank-item {
-      display: flex; align-items: center; gap: 14px;
-      background: rgba(15,23,45,0.7); border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 12px; padding: 14px 18px;
-    }
-    .rank-num { font-size: 18px; font-weight: 900; font-family: 'Outfit', sans-serif; width: 28px; text-align: center; color: rgba(148,163,184,0.5); flex-shrink: 0; }
-    .rank-num.g1 { color: #f59e0b; }
-    .rank-num.g2 { color: #94a3b8; }
-    .rank-num.g3 { color: #cd7f32; }
-    .rank-info { flex: 1; text-align: left; }
-    .rank-name { font-size: 14px; font-weight: 700; }
-    .rank-desc { font-size: 11px; color: rgba(148,163,184,0.6); margin-top: 2px; }
-    .rank-bar-bg { width: 200px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; flex-shrink: 0; }
-    .rank-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
-    .rank-val { font-size: 14px; font-weight: 800; color: #ef4444; width: 120px; text-align: right; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+    /* KEYBOARD HINT */
+    .key-hint { position:fixed;bottom:24px;right:28px;font-size:11px;color:rgba(100,116,139,0.5);z-index:100; }
+    .key { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:2px 6px;font-family:monospace; }
 
-    /* KANBAN MINI */
-    .slide-kanban { display: flex; gap: 10px; width: 100%; max-width: 1000px; }
-    .slide-kanban-col { flex: 1; }
-    .sk-header {
-      padding: 8px 12px; border-radius: 8px 8px 0 0;
-      font-size: 11px; font-weight: 800; text-transform: uppercase;
-      letter-spacing: 0.5px; border: 1px solid;
-    }
-    .sk-header.detectado { background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.3); color:#f59e0b; }
-    .sk-header.validado  { background:rgba(59,130,246,0.12);  border-color:rgba(59,130,246,0.3);  color:#3b82f6; }
-    .sk-header.aprobado  { background:rgba(249,115,22,0.12);  border-color:rgba(249,115,22,0.3);  color:#f97316; }
-    .sk-header.ejecutado { background:rgba(239,68,68,0.12);   border-color:rgba(239,68,68,0.3);   color:#ef4444; }
-    .sk-header.realizado { background:rgba(16,185,129,0.12);  border-color:rgba(16,185,129,0.3);  color:#10b981; }
-    .sk-body {
-      background: rgba(15,23,45,0.6); border: 1px solid rgba(255,255,255,0.07);
-      border-top: none; border-radius: 0 0 8px 8px; padding: 10px;
-      display: flex; flex-direction: column; gap: 6px; min-height: 100px;
-    }
-    .sk-card {
-      background: rgba(255,255,255,0.04); border-radius: 6px; padding: 8px 10px;
-      font-size: 11px; line-height: 1.4; text-align: left;
-    }
-    .sk-amount { font-size: 12px; font-weight: 800; color: #10b981; margin-top: 4px; }
+    /* DIVIDER LINE */
+    .divider { width:60px;height:4px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:2px;margin:20px 0; }
 
-    /* PLAN TABLE */
-    .slide-plan { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 900px; }
-    .plan-row {
-      display: flex; align-items: center; gap: 14px;
-      background: rgba(15,23,45,0.7); border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 10px; padding: 14px 18px;
-    }
-    .plan-days {
-      font-size: 12px; font-weight: 800; color: var(--blue);
-      font-family: 'JetBrains Mono', monospace; width: 80px; flex-shrink: 0;
-    }
-    .plan-title { font-size: 13px; font-weight: 700; flex: 1; text-align: left; }
-    .plan-status {
-      font-size: 10px; font-weight: 800; padding: 3px 10px;
-      border-radius: 99px; flex-shrink: 0;
-    }
-    .plan-status.done     { background:rgba(16,185,129,0.15); color:#10b981; }
-    .plan-status.active   { background:rgba(59,130,246,0.15);  color:#3b82f6; }
-    .plan-status.pending  { background:rgba(100,116,139,0.15); color:#64748b; }
+    /* BADGE */
+    .badge { display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);color:#60a5fa;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;margin-bottom:16px; }
+    .badge.green { background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.25);color:#34d399; }
+    .badge.amber { background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.25);color:#fbbf24; }
 
-    /* COVER SLIDE EXTRAS */
-    .cover-date {
-      font-size: 14px; color: rgba(148,163,184,0.6);
-      font-family: 'JetBrains Mono', monospace; margin-bottom: 16px;
-    }
-    .cover-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .cover-badge {
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-      padding: 8px 18px; border-radius: 99px; font-size: 12px;
-    }
-
-    /* SAVING HIGHLIGHT */
-    .savings-highlight {
-      display: flex; gap: 20px; justify-content: center;
-      align-items: stretch; flex-wrap: wrap; width: 100%; max-width: 900px;
-    }
-    .savings-box {
-      background: rgba(15,23,45,0.8); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px; padding: 28px 32px; flex: 1; min-width: 200px;
-      display: flex; flex-direction: column; gap: 8px; align-items: center;
-    }
-    .savings-box.main {
-      border-color: rgba(16,185,129,0.3);
-      background: rgba(16,185,129,0.06);
-    }
-    .savings-icon { font-size: 36px; }
-    .savings-val {
-      font-family: 'Outfit', sans-serif; font-size: 40px;
-      font-weight: 900; color: #10b981;
-    }
-    .savings-lbl { font-size: 12px; color: rgba(148,163,184,0.7); }
-
-    /* ARCH DIAGRAM */
-    .arch-diagram {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 8px; width: 100%; max-width: 700px;
-    }
-    .arch-layer {
-      display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
-    }
-    .arch-box {
-      background: rgba(15,23,45,0.8); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px; padding: 10px 18px;
-      font-size: 12px; font-weight: 600;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .arch-box.highlight { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.08); }
-    .arch-arrow { font-size: 20px; color: rgba(148,163,184,0.3); }
-
-    /* NAVIGATE HINT */
-    .nav-hint {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      font-size: 11px; color: rgba(100,116,139,0.5);
-      display: flex; align-items: center; gap: 10px; z-index: 100;
-    }
-    .nav-hint kbd {
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-      padding: 2px 8px; border-radius: 4px; font-size: 10px;
-    }
+    /* TWO-COL LAYOUT */
+    .two-col { display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center; }
   </style>
 </head>
 <body>
 
-  <!-- BG -->
-  <div class="bg-layer">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-  <div class="grid-bg"></div>
+<div class="bg-layer">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="grid-bg"></div>
 
-  <!-- TOP BAR -->
-  <div class="pres-topbar">
-    <div class="pres-logo">
-      <div class="pres-logo-icon">🏛️</div>
-      <div class="pres-logo-text">
-        <span class="pres-logo-title">Municipalidad de Junín</span>
-        <span class="pres-logo-sub">Plan de Choque — Presentación Ejecutiva</span>
-      </div>
-    </div>
-    <div class="pres-controls">
-      <span class="pres-slide-num" id="slideNum">1 / 9</span>
-      <button class="pres-btn" id="prevBtn">← Anterior</button>
-      <button class="pres-btn primary" id="nextBtn">Siguiente →</button>
-      <a href="control.html" class="pres-btn danger">× Salir</a>
+<!-- TOPBAR -->
+<nav class="topbar">
+  <div class="topbar-brand">
+    <span class="topbar-logo">🏛️</span>
+    <div>
+      <div class="topbar-name">Municipalidad de Junín</div>
+      <div class="topbar-sub">Plan de Choque — Presentación Ejecutiva</div>
     </div>
   </div>
+  <div class="topbar-right">
+    <span class="slide-counter" id="slideCounter">1 / 9</span>
+    <button class="btn-nav" id="btnPrev">← Anterior</button>
+    <button class="btn-primary" id="btnNext">Siguiente →</button>
+    <button class="btn-exit" onclick="window.location.href='index.html'">✕ Salir</button>
+  </div>
+</nav>
 
-  <!-- SLIDES -->
-  <div class="slides-wrap">
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:11.1%"></div></div>
 
-    <!-- SLIDE 1: PORTADA -->
-    <div class="slide active" id="slide-0">
-      <div class="slide-tag">Jefatura de Tecnología · Julio 2026</div>
-      <h1 class="slide-title">Plan de Choque<br/>30 Días</h1>
-      <p class="slide-subtitle">Resultados, ahorros detectados y próximos pasos<br/>para la Municipalidad de Junín, Mendoza</p>
-      <div class="cover-date" id="coverDate"></div>
-      <div class="cover-badges">
-        <span class="cover-badge">🏛️ Municipalidad de Junín</span>
-        <span class="cover-badge">👤 Mario Abed — Intendente</span>
-        <span class="cover-badge">💻 Jefatura de Tecnología</span>
-        <span class="cover-badge">📊 Datos reales · Julio 2026</span>
+<!-- SLIDES -->
+<div class="slides-container" id="slidesContainer">
+
+  <!-- SLIDE 1: PORTADA -->
+  <div class="slide active" data-slide="1">
+    <div class="badge">📅 Agosto 2026</div>
+    <div class="slide-eyebrow">Municipalidad de Junín, Mendoza</div>
+    <div class="slide-title">
+      Plan de Choque<br>
+      <span class="accent">30 Días</span>
+    </div>
+    <div class="divider"></div>
+    <div class="slide-subtitle">
+      Torre de Control de Gastos y Ahorros<br>
+      Jefatura de Tecnología — Agosto 2026
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-box blue">
+        <div class="kpi-val">$15.8M</div>
+        <div class="kpi-lbl">Ahorro detectado/año</div>
+      </div>
+      <div class="kpi-box green">
+        <div class="kpi-val">1.247</div>
+        <div class="kpi-lbl">Empleados gestionados</div>
+      </div>
+      <div class="kpi-box amber">
+        <div class="kpi-val">12</div>
+        <div class="kpi-lbl">Contratos auditados</div>
+      </div>
+      <div class="kpi-box violet">
+        <div class="kpi-val">30</div>
+        <div class="kpi-lbl">Días de ejecución</div>
       </div>
     </div>
-
-    <!-- SLIDE 2: GASTO TOTAL -->
-    <div class="slide" id="slide-1">
-      <div class="slide-tag">Diagnóstico — Gasto Tecnológico</div>
-      <h2 class="slide-title" style="font-size:clamp(24px,3.5vw,48px)">Esto paga el Municipio<br/>por tecnología <span style="color:#ef4444">hoy</span></h2>
-      <div class="slide-kpis" style="max-width:900px">
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">💸</div>
-          <div class="slide-kpi-val red" data-count="3113000" data-prefix="$" data-suffix="">$0</div>
-          <div class="slide-kpi-lbl">Gasto mensual</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">📅</div>
-          <div class="slide-kpi-val red" data-count="37356000" data-prefix="$" data-suffix="">$0</div>
-          <div class="slide-kpi-lbl">Proyección anual</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">🏢</div>
-          <div class="slide-kpi-val amber" data-count="12" data-prefix="" data-suffix=" proveedores">0</div>
-          <div class="slide-kpi-lbl">Proveedores relevados</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">📊</div>
-          <div class="slide-kpi-val blue" data-count="23" data-prefix="" data-suffix=" contratos">0</div>
-          <div class="slide-kpi-lbl">Contratos activos</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">⚠️</div>
-          <div class="slide-kpi-val red" data-count="5" data-prefix="" data-suffix=" contratos">0</div>
-          <div class="slide-kpi-lbl">Vencen en 60 días</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">📄</div>
-          <div class="slide-kpi-val red" data-count="4" data-prefix="" data-suffix=" proveedores">0</div>
-          <div class="slide-kpi-lbl">Sin datos propios</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLIDE 3: TOP PROVEEDORES -->
-    <div class="slide" id="slide-2">
-      <div class="slide-tag">Top Proveedores — Ranking por Gasto</div>
-      <h2 class="slide-title" style="font-size:clamp(22px,3vw,42px)">Los 5 proveedores<br/>de mayor costo mensual</h2>
-      <div class="slide-ranking">
-        <div class="slide-rank-item">
-          <div class="rank-num g1">🥇</div>
-          <div class="rank-info">
-            <div class="rank-name">Sistemas Nexo SA</div>
-            <div class="rank-desc">Gestión RRHH y Liquidación · Riesgo ALTO · Sin backup</div>
-          </div>
-          <div class="rank-bar-bg"><div class="rank-bar" style="width:100%"></div></div>
-          <div class="rank-val">$680.000/mes</div>
-        </div>
-        <div class="slide-rank-item">
-          <div class="rank-num g2">🥈</div>
-          <div class="rank-info">
-            <div class="rank-name">Sipem Sistemas</div>
-            <div class="rank-desc">Gestión Tributaria · Riesgo ALTO · Datos parciales</div>
-          </div>
-          <div class="rank-bar-bg"><div class="rank-bar" style="width:77%"></div></div>
-          <div class="rank-val">$520.000/mes</div>
-        </div>
-        <div class="slide-rank-item">
-          <div class="rank-num g3">🥉</div>
-          <div class="rank-info">
-            <div class="rank-name">GovTech Solutions</div>
-            <div class="rank-desc">Expedientes Digitales · Vence en 15 días · Renovación automática</div>
-          </div>
-          <div class="rank-bar-bg"><div class="rank-bar" style="width:62%"></div></div>
-          <div class="rank-val">$420.000/mes</div>
-        </div>
-        <div class="slide-rank-item">
-          <div class="rank-num">4</div>
-          <div class="rank-info">
-            <div class="rank-name">Microsoft Argentina</div>
-            <div class="rank-desc">365 Licencias · 46 sin uso activo detectadas</div>
-          </div>
-          <div class="rank-bar-bg"><div class="rank-bar" style="width:50%"></div></div>
-          <div class="rank-val">$340.000/mes</div>
-        </div>
-        <div class="slide-rank-item">
-          <div class="rank-num">5</div>
-          <div class="rank-info">
-            <div class="rank-name">Telecom Argentina</div>
-            <div class="rank-desc">Internet 200Mbps · Precio competitivo · Riesgo BAJO</div>
-          </div>
-          <div class="rank-bar-bg"><div class="rank-bar" style="width:56%"></div></div>
-          <div class="rank-val">$380.000/mes</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLIDE 4: PROBLEMA -->
-    <div class="slide" id="slide-3">
-      <div class="slide-tag">Diagnóstico — El Problema Principal</div>
-      <h2 class="slide-title" style="font-size:clamp(22px,3vw,48px)">El Municipio no controla<br/>sus propios datos</h2>
-      <div class="slide-kpis" style="max-width:800px; grid-template-columns: repeat(3,1fr)">
-        <div class="slide-kpi" style="border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.06)">
-          <div class="slide-kpi-icon">🔒</div>
-          <div class="slide-kpi-val red" data-count="4" data-prefix="" data-suffix=" proveedores">0</div>
-          <div class="slide-kpi-lbl">Sin acceso a los datos</div>
-        </div>
-        <div class="slide-kpi" style="border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.06)">
-          <div class="slide-kpi-icon">⚠️</div>
-          <div class="slide-kpi-val amber" data-count="7" data-prefix="" data-suffix=" contratos">0</div>
-          <div class="slide-kpi-lbl">Sin copia de seguridad</div>
-        </div>
-        <div class="slide-kpi" style="border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.06)">
-          <div class="slide-kpi-icon">💳</div>
-          <div class="slide-kpi-val red" data-count="195" data-prefix="" data-suffix=" licencias">0</div>
-          <div class="slide-kpi-lbl">Pagadas sin uso activo</div>
-        </div>
-        <div class="slide-kpi" style="border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.06)">
-          <div class="slide-kpi-icon">💰</div>
-          <div class="slide-kpi-val red" data-count="1" data-prefix="$" data-suffix=" pago sin contrato">$0</div>
-          <div class="slide-kpi-lbl">Detectado sin justificativo</div>
-        </div>
-        <div class="slide-kpi" style="border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.06)">
-          <div class="slide-kpi-icon">🗓️</div>
-          <div class="slide-kpi-val amber" data-count="5" data-prefix="" data-suffix=" contratos">0</div>
-          <div class="slide-kpi-lbl">Vencen sin plan de salida</div>
-        </div>
-        <div class="slide-kpi" style="border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.06)">
-          <div class="slide-kpi-icon">📎</div>
-          <div class="slide-kpi-val red" data-count="6" data-prefix="" data-suffix=" sistemas">0</div>
-          <div class="slide-kpi-lbl">Sin SLA documentado</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLIDE 5: OPORTUNIDADES DE AHORRO -->
-    <div class="slide" id="slide-4">
-      <div class="slide-tag">Resultados — Pipeline de Ahorros</div>
-      <h2 class="slide-title" style="font-size:clamp(22px,3vw,48px)">Oportunidades de ahorro<br/>identificadas</h2>
-      <div class="savings-highlight">
-        <div class="savings-box main">
-          <div class="savings-icon">💡</div>
-          <div class="savings-val" data-count="15804000" data-prefix="$">$0</div>
-          <div class="savings-lbl">Ahorro potencial anual</div>
-        </div>
-        <div class="savings-box">
-          <div class="savings-icon">✔️</div>
-          <div class="savings-val" style="color:#3b82f6" data-count="3084000" data-prefix="$">$0</div>
-          <div class="savings-lbl">Validado por Hacienda</div>
-        </div>
-        <div class="savings-box">
-          <div class="savings-icon">💵</div>
-          <div class="savings-val" style="color:#f59e0b" data-count="480000" data-prefix="$">$0</div>
-          <div class="savings-lbl">Ya ejecutado / realizado</div>
-        </div>
-      </div>
-      <div class="slide-kanban" style="margin-top:24px">
-        <div class="slide-kanban-col">
-          <div class="sk-header detectado">🟡 Detectado</div>
-          <div class="sk-body">
-            <div class="sk-card">Renegociar Nexo RRHH (19 lic. sin uso)<div class="sk-amount">$2.28M/año</div></div>
-            <div class="sk-card">Reemplazar ControlGas por módulo propio<div class="sk-amount">$2.52M/año</div></div>
-            <div class="sk-card">Reemplazar GovTech Expedientes<div class="sk-amount">$5.04M/año</div></div>
-          </div>
-        </div>
-        <div class="slide-kanban-col">
-          <div class="sk-header validado">🔵 Validado</div>
-          <div class="sk-body">
-            <div class="sk-card">Eliminar Microsoft 365 sin uso (46 lic.)<div class="sk-amount">$1.94M/año</div></div>
-            <div class="sk-card">Notificaciones por email/WhatsApp<div class="sk-amount">$1.14M/año</div></div>
-          </div>
-        </div>
-        <div class="slide-kanban-col">
-          <div class="sk-header aprobado">🟠 Aprobado</div>
-          <div class="sk-body">
-            <div class="sk-card">Reducir antivirus de 200 a 145 lic.<div class="sk-amount">$660K/año</div></div>
-          </div>
-        </div>
-        <div class="slide-kanban-col">
-          <div class="sk-header ejecutado">🔴 Ejecutado</div>
-          <div class="sk-body">
-            <div class="sk-card">Migrar hosting web a Vercel<div class="sk-amount">$2.22M/año</div></div>
-          </div>
-        </div>
-        <div class="slide-kanban-col">
-          <div class="sk-header realizado">🟢 Realizado</div>
-          <div class="sk-body">
-            <div class="sk-card">Hosting eliminado + plataforma nueva activa<div class="sk-amount">$480K ✔</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLIDE 6: MODULO CONECTADO -->
-    <div class="slide" id="slide-5">
-      <div class="slide-tag">Resultado Día 1 — Sistema Funcionando</div>
-      <h2 class="slide-title" style="font-size:clamp(22px,3vw,48px)">El sistema ya funciona<br/><span style="color:#10b981">hoy mismo</span></h2>
-      <p class="slide-subtitle">En el primer día de gestión, ya tenemos un sistema propio,<br/>online, seguro, con datos reales y sin costo mensual.</p>
-      <div class="slide-kpis" style="max-width:1000px; grid-template-columns:repeat(4,1fr)">
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">📊</div>
-          <div class="slide-kpi-val green">10</div>
-          <div class="slide-kpi-lbl">Módulos activos</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">🔐</div>
-          <div class="slide-kpi-val blue">3</div>
-          <div class="slide-kpi-lbl">Niveles de acceso</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">🤖</div>
-          <div class="slide-kpi-val amber">IA</div>
-          <div class="slide-kpi-lbl">Asistente + OCR + Voz</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">💰</div>
-          <div class="slide-kpi-val green">$0</div>
-          <div class="slide-kpi-lbl">Costo mensual hosting</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">📂</div>
-          <div class="slide-kpi-val blue">20</div>
-          <div class="slide-kpi-lbl">Archivos análisis simultáneo</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">📜</div>
-          <div class="slide-kpi-val green">7</div>
-          <div class="slide-kpi-lbl">Oportunidades detectadas</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">🌐</div>
-          <div class="slide-kpi-val green">Online</div>
-          <div class="slide-kpi-lbl">Accesible desde cualquier dispositivo</div>
-        </div>
-        <div class="slide-kpi">
-          <div class="slide-kpi-icon">🗎</div>
-          <div class="slide-kpi-val green">Rack</div>
-          <div class="slide-kpi-lbl">Listo para servidor local</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLIDE 7: ARQUITECTURA -->
-    <div class="slide" id="slide-6">
-      <div class="slide-tag">Infraestructura — Arquitectura Local</div>
-      <h2 class="slide-title" style="font-size:clamp(22px,3vw,42px)">Los servidores que ya compramos<br/><span style="color:#3b82f6">tienen un uso claro</span></h2>
-      <p class="slide-subtitle">Docker Compose listo para deployar en el rack del municipio<br/>con un solo comando. Sin proveedores externos.</p>
-      <div class="arch-diagram">
-        <div class="arch-layer">
-          <div class="arch-box highlight">🌐 Nginx + HTTPS</div>
-        </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer">
-          <div class="arch-box highlight">⚛️ React / Next.js</div>
-          <div class="arch-box highlight">🛠️ API Node.js</div>
-        </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer">
-          <div class="arch-box highlight">🐘 PostgreSQL 16</div>
-          <div class="arch-box">🔴 Redis</div>
-          <div class="arch-box">🧳 MinIO</div>
-        </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer">
-          <div class="arch-box highlight">🤖 Ollama (Llama 3.1)</div>
-          <div class="arch-box">📄 Excel/CSV/PDF</div>
-          <div class="arch-box">📡 API REST Municipal</div>
-        </div>
-        <div style="margin-top:14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:10px 20px; font-size:12px; color:#10b981;">
-          ✅ Todo open source · Sin proveedores externos · Soberanía total de datos · Deploy: <code>docker compose up -d</code>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLIDE 8: PLAN 60-90 DIAS -->
-    <div class="slide" id="slide-7">
-      <div class="slide-tag">Próximos Pasos — 60 y 90 Días</div>
-      <h2 class="slide-title" style="font-size:clamp(22px,3vw,42px)">Lo que viene</h2>
-      <div class="slide-plan">
-        <div class="plan-row">
-          <div class="plan-days">Días 1-30</div>
-          <div class="plan-title">📋 Visibilidad total del gasto tecnológico + primeros ahorros ejecutados</div>
-          <span class="plan-status done">✅ Completado</span>
-        </div>
-        <div class="plan-row">
-          <div class="plan-days">Mes 2</div>
-          <div class="plan-title">🔗 Conectar base de datos real (PostgreSQL) · Login por roles · 10-20 usuarios activos</div>
-          <span class="plan-status active">► En curso</span>
-        </div>
-        <div class="plan-row">
-          <div class="plan-days">Mes 3</div>
-          <div class="plan-title">💸 Ejecutar 3+ renegociaciones de contratos · Conectar RRHH y Tributaria</div>
-          <span class="plan-status pending">Pendiente</span>
-        </div>
-        <div class="plan-row">
-          <div class="plan-days">Mes 4-6</div>
-          <div class="plan-title">🔧 Migrar datos al rack local · Docker en producción · Ollama corriendo en servidor propio</div>
-          <span class="plan-status pending">Pendiente</span>
-        </div>
-        <div class="plan-row">
-          <div class="plan-days">Mes 12</div>
-          <div class="plan-title">🎯 100% soberanía de datos · Ahorro neto anual verificado en facturas</div>
-          <span class="plan-status pending">Objetivo</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLIDE 9: CIERRE -->
-    <div class="slide" id="slide-8">
-      <div class="slide-tag">Conclusión</div>
-      <h1 class="slide-title">En 30 días:<br/><span style="color:#10b981">Visibilidad. Control. Ahorro.</span></h1>
-      <p class="slide-subtitle">
-        Identificamos <strong style="color:white">$15.8M anuales</strong> en oportunidades de ahorro.<br/>
-        Ya ejecutamos la primera acción. El sistema está online.<br/>
-        Los datos del Municipio ahora son del Municipio.
-      </p>
-      <div class="slide-kpis" style="max-width:700px; grid-template-columns:repeat(3,1fr)">
-        <div class="slide-kpi" style="border-color:rgba(239,68,68,0.3)">
-          <div class="slide-kpi-val red">$37M</div>
-          <div class="slide-kpi-lbl">Gasto anual relevado</div>
-        </div>
-        <div class="slide-kpi" style="border-color:rgba(245,158,11,0.3)">
-          <div class="slide-kpi-val amber">$15.8M</div>
-          <div class="slide-kpi-lbl">Ahorro potencial</div>
-        </div>
-        <div class="slide-kpi" style="border-color:rgba(16,185,129,0.3)">
-          <div class="slide-kpi-val green">$0</div>
-          <div class="slide-kpi-lbl">Costo del sistema</div>
-        </div>
-      </div>
-      <div style="margin-top:28px; display:flex; gap:12px;">
-        <a href="control.html" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6); border:none; color:white; padding:14px 28px; border-radius:12px; text-decoration:none; font-size:14px; font-weight:700;">Ir a Junín Control →</a>
-        <a href="index.html" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:white; padding:14px 28px; border-radius:12px; text-decoration:none; font-size:14px; font-weight:600;">Ver Dashboard →</a>
-      </div>
-    </div>
-
   </div>
 
-  <!-- PROGRESS BAR -->
-  <div class="pres-progress">
-    <div class="pres-progress-fill" id="progressFill" style="width:11.1%"></div>
+  <!-- SLIDE 2: EL PROBLEMA -->
+  <div class="slide" data-slide="2">
+    <div class="slide-eyebrow">Diagnóstico Inicial</div>
+    <div class="slide-title">¿Qué estaba<br><span class="accent">pasando?</span></div>
+    <div class="content-grid">
+      <div class="content-card">
+        <div class="content-card-title">⚠️ Problemas Detectados</div>
+        <div class="list-item"><span class="list-item-icon">🚨</span><div><strong>Sin visibilidad de gastos</strong>No existía un panel que mostrara en tiempo real cuánto gasta el municipio ni en qué.</div></div>
+        <div class="list-item"><span class="list-item-icon">🚨</span><div><strong>Contratos sin auditar</strong>12 contratos tecnológicos activos sin evaluación de riesgo ni oportunidad de renegociación.</div></div>
+        <div class="list-item"><span class="list-item-icon">⚠️</span><div><strong>Horas extra sin control</strong>4.312 horas extra en agosto — un 9.9% de la masa salarial, el doble del estándar.</div></div>
+        <div class="list-item"><span class="list-item-icon">⚠️</span><div><strong>Reclamos sin seguimiento</strong>89 reclamos vecinales pendientes sin sistema de tracking centralizado.</div></div>
+      </div>
+      <div class="content-card">
+        <div class="content-card-title">💡 Oportunidad</div>
+        <div class="list-item"><span class="list-item-icon">✅</span><div><strong>$15.8M anuales en ahorro</strong>Detectado en la primera auditoría de contratos tecnológicos.</div></div>
+        <div class="list-item"><span class="list-item-icon">✅</span><div><strong>Sin reemplazar nada</strong>El sistema funciona sobre la infraestructura existente — sin disrupciones.</div></div>
+        <div class="list-item"><span class="list-item-icon">✅</span><div><strong>Datos municipales unificados</strong>Por primera vez, todos los datos en un solo panel visible para Intendencia.</div></div>
+        <div class="list-item"><span class="list-item-icon">✅</span><div><strong>Listo en 30 días</strong>MVP funcional, demostrable y escalable a toda la municipalidad.</div></div>
+      </div>
+    </div>
   </div>
 
-  <!-- NAV HINT -->
-  <div class="nav-hint">
-    <kbd>←</kbd> <kbd>→</kbd> Navegar slides
-    &nbsp;&nbsp;
-    <kbd>F</kbd> Pantalla completa
-    &nbsp;&nbsp;
-    <kbd>ESC</kbd> Salir
+  <!-- SLIDE 3: SOLUCIÓN -->
+  <div class="slide" data-slide="3">
+    <div class="slide-eyebrow">La Solución</div>
+    <div class="slide-title">Sistema de Gestión<br><span class="accent">Municipal Inteligente</span></div>
+    <div class="slide-subtitle">14 módulos integrados. Un solo acceso. Datos en tiempo real.</div>
+    <div class="kpi-row">
+      <div class="kpi-box blue"><div class="kpi-val">14</div><div class="kpi-lbl">Módulos operativos</div><div class="kpi-sub">Dashboard, RRHH, Vecinos, Talleres...</div></div>
+      <div class="kpi-box green"><div class="kpi-val">🤖</div><div class="kpi-val" style="font-size:20px">IA</div><div class="kpi-lbl">Asistente inteligente</div><div class="kpi-sub">Responde preguntas en lenguaje natural</div></div>
+      <div class="kpi-box amber"><div class="kpi-val">📊</div><div class="kpi-val" style="font-size:20px">PDF</div><div class="kpi-lbl">Reportes automáticos</div><div class="kpi-sub">Excel, PDF con un clic</div></div>
+      <div class="kpi-box violet"><div class="kpi-val">🔐</div><div class="kpi-val" style="font-size:20px">JWT</div><div class="kpi-lbl">Acceso seguro</div><div class="kpi-sub">Login con credenciales por rol</div></div>
+    </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script>
-    // ── STATE ──
-    const TOTAL = 9;
-    let current = 0;
+  <!-- SLIDE 4: PRESUPUESTO -->
+  <div class="slide" data-slide="4">
+    <div class="slide-eyebrow">Control Financiero</div>
+    <div class="slide-title">Presupuesto 2026<br><span class="green">Bajo Control</span></div>
+    <div class="kpi-row">
+      <div class="kpi-box blue"><div class="kpi-val">$3.720M</div><div class="kpi-lbl">Presupuesto total 2026</div></div>
+      <div class="kpi-box amber"><div class="kpi-val">72%</div><div class="kpi-lbl">Ejecutado al 31/08</div><div class="kpi-sub">8 de 12 meses</div></div>
+      <div class="kpi-box green"><div class="kpi-val">$1.085M</div><div class="kpi-lbl">Disponible restante</div></div>
+      <div class="kpi-box red"><div class="kpi-val">$6.3M</div><div class="kpi-lbl">Desvíos detectados</div><div class="kpi-sub">Obras Públicas +18%</div></div>
+    </div>
+    <div class="content-grid" style="margin-top:24px">
+      <div class="content-card">
+        <div class="content-card-title">📊 Gasto por Secretaría — Agosto</div>
+        <div class="list-item"><span>Educación</span><span class="amount">$54.9M ✅</span></div>
+        <div class="list-item"><span>Obras Públicas</span><span style="color:#ef4444;font-weight:800">$44.8M ⚠️ +18%</span></div>
+        <div class="list-item"><span>Salud</span><span class="amount">$46.8M ✅</span></div>
+        <div class="list-item"><span>Seguridad</span><span class="amount">$41.8M ✅</span></div>
+      </div>
+      <div class="content-card">
+        <div class="content-card-title">⚠️ Alertas Presupuestarias</div>
+        <div class="alert-row"><span class="alert-icon">🚨</span><div class="alert-text"><strong>Obras Públicas</strong><span>18% sobre presupuesto — $6.8M extra en agosto</span></div></div>
+        <div class="alert-row amber"><span class="alert-icon">⚠️</span><div class="alert-text"><strong>Talleres Municipales</strong><span>12% sobre presupuesto — repuestos de emergencia</span></div></div>
+        <div class="alert-row green"><span class="alert-icon">✅</span><div class="alert-text"><strong>5 Secretarías</strong><span>Dentro del presupuesto asignado</span></div></div>
+      </div>
+    </div>
+  </div>
 
-    // ── DATE ──
-    document.getElementById('coverDate').textContent =
-      new Date().toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  <!-- SLIDE 5: AHORRO -->
+  <div class="slide" data-slide="5">
+    <div class="slide-eyebrow">Oportunidades de Ahorro</div>
+    <div class="slide-title">$15.8 Millones<br><span class="green">Anuales Detectados</span></div>
+    <div class="slide-subtitle">Sin despedir empleados. Sin cortar servicios. Solo eficiencia.</div>
+    <div class="kpi-row">
+      <div class="kpi-box blue"><div class="kpi-val">$15.8M</div><div class="kpi-lbl">Ahorro total identificado/año</div></div>
+      <div class="kpi-box green"><div class="kpi-val">$5.9M</div><div class="kpi-lbl">Validado por Hacienda</div></div>
+      <div class="kpi-box amber"><div class="kpi-val">$480K</div><div class="kpi-lbl">Ahorro realizado (mes 1)</div></div>
+    </div>
+    <div class="content-card" style="margin-top:20px">
+      <div class="content-card-title">💰 Detalle de Oportunidades</div>
+      <div class="list-item"><span class="list-item-icon">🔄</span><div><strong>Renegociar contratos IT de alto riesgo</strong><span style="color:#10b981;font-weight:700;font-size:16px">$8.4M/año</span></div></div>
+      <div class="list-item"><span class="list-item-icon">⏱️</span><div><strong>Reducir horas extra a estándar (&lt;5%)</strong><span style="color:#10b981;font-weight:700;font-size:16px">$9.2M/año</span></div></div>
+      <div class="list-item"><span class="list-item-icon">💻</span><div><strong>Licencias Microsoft sin usar (40% ocioso)</strong><span style="color:#10b981;font-weight:700;font-size:16px">$1.6M/año</span></div></div>
+      <div class="list-item"><span class="list-item-icon">🚛</span><div><strong>Optimización rutas combustible</strong><span style="color:#10b981;font-weight:700;font-size:16px">$1.2M/año</span></div></div>
+    </div>
+  </div>
 
-    // ── SLIDE NAVIGATION ──
-    function goTo(n) {
-      if (n < 0 || n >= TOTAL) return;
-      const old = document.getElementById('slide-' + current);
-      old.classList.remove('active');
-      old.classList.add('exit');
-      setTimeout(() => old.classList.remove('exit'), 600);
-      current = n;
-      const next = document.getElementById('slide-' + current);
-      next.classList.add('active');
-      document.getElementById('slideNum').textContent = (current + 1) + ' / ' + TOTAL;
-      document.getElementById('progressFill').style.width = ((current + 1) / TOTAL * 100) + '%';
-      // Animate numbers on slide entry
-      setTimeout(() => animateCounters(next), 200);
-    }
+  <!-- SLIDE 6: RRHH -->
+  <div class="slide" data-slide="6">
+    <div class="slide-eyebrow">Recursos Humanos</div>
+    <div class="slide-title">1.247 Empleados<br><span class="accent">Gestionados en Tiempo Real</span></div>
+    <div class="kpi-row">
+      <div class="kpi-box blue"><div class="kpi-val">1.247</div><div class="kpi-lbl">Total empleados</div></div>
+      <div class="kpi-box green"><div class="kpi-val">$186M</div><div class="kpi-lbl">Masa salarial/mes</div></div>
+      <div class="kpi-box amber"><div class="kpi-val">4.312</div><div class="kpi-lbl">Horas extra agosto</div><div class="kpi-sub">Costo: $18.4M ⚠️</div></div>
+      <div class="kpi-box green"><div class="kpi-val">3.1%</div><div class="kpi-lbl">Ausentismo ✅</div><div class="kpi-sub">Dentro del parámetro</div></div>
+    </div>
+    <div class="content-grid" style="margin-top:24px">
+      <div class="content-card">
+        <div class="content-card-title">👥 Distribución por Área</div>
+        <div class="list-item"><span>Educación</span><strong>302 empleados</strong></div>
+        <div class="list-item"><span>Obras Públicas</span><strong>214 empleados</strong></div>
+        <div class="list-item"><span>Salud</span><strong>187 empleados</strong></div>
+        <div class="list-item"><span>Seguridad</span><strong>178 empleados</strong></div>
+        <div class="list-item"><span>Administración</span><strong>145 empleados</strong></div>
+      </div>
+      <div class="content-card">
+        <div class="content-card-title">📊 Indicadores Clave</div>
+        <div class="alert-row amber"><span class="alert-icon">⏱️</span><div class="alert-text"><strong>Horas extra = 9.9% de masa salarial</strong><span>Estándar: &lt;5%. Se recomienda auditoría urgente.</span></div></div>
+        <div class="alert-row green"><span class="alert-icon">✅</span><div class="alert-text"><strong>1.089 en planta permanente</strong><span>158 contratados — dentro de parámetros legales.</span></div></div>
+        <div class="alert-row amber"><span class="alert-icon">🏥</span><div class="alert-text"><strong>47 empleados en licencia</strong><span>Gestión activa requerida para cubrir servicios.</span></div></div>
+      </div>
+    </div>
+  </div>
 
-    document.getElementById('nextBtn').addEventListener('click', () => goTo(current + 1));
-    document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1));
+  <!-- SLIDE 7: VECINOS -->
+  <div class="slide" data-slide="7">
+    <div class="slide-eyebrow">Atención al Vecino</div>
+    <div class="slide-title">318 Reclamos<br><span class="green">72% Resueltos</span></div>
+    <div class="kpi-row">
+      <div class="kpi-box blue"><div class="kpi-val">318</div><div class="kpi-lbl">Reclamos registrados</div></div>
+      <div class="kpi-box green"><div class="kpi-val">229</div><div class="kpi-lbl">Resueltos ✅</div></div>
+      <div class="kpi-box red"><div class="kpi-val">89</div><div class="kpi-lbl">Pendientes ⚠️</div></div>
+      <div class="kpi-box violet"><div class="kpi-val">3.2d</div><div class="kpi-lbl">Tiempo promedio resolución</div></div>
+    </div>
+    <div class="content-grid" style="margin-top:24px">
+      <div class="content-card">
+        <div class="content-card-title">🏘️ Reclamos por Tipo</div>
+        <div class="list-item"><span>Baches y Pavimento</span><strong>108 (34%)</strong></div>
+        <div class="list-item"><span>Alumbrado Público</span><strong>70 (22%)</strong></div>
+        <div class="list-item"><span>Recolección de Basura</span><strong>57 (18%)</strong></div>
+        <div class="list-item"><span>Poda de Árboles</span><strong>38 (12%)</strong></div>
+        <div class="list-item"><span>Agua y Cloacas</span><strong>25 (8%)</strong></div>
+      </div>
+      <div class="content-card">
+        <div class="content-card-title">📍 Zonas Críticas</div>
+        <div class="alert-row"><span class="alert-icon">📍</span><div class="alert-text"><strong>Centro</strong><span>Mayor concentración de reclamos de pavimento y alumbrado</span></div></div>
+        <div class="alert-row amber"><span class="alert-icon">📍</span><div class="alert-text"><strong>Barrio Norte</strong><span>Problemas recurrentes de recolección de basura</span></div></div>
+        <div class="alert-row amber"><span class="alert-icon">📍</span><div class="alert-text"><strong>Av. Rivadavia</strong><span>Baches críticos en arterias principales</span></div></div>
+      </div>
+    </div>
+  </div>
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
-      if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
-      if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
-      if (e.key === 'Escape' && !document.fullscreenElement) { window.location.href = 'control.html'; }
-    });
+  <!-- SLIDE 8: TECNOLOGÍA -->
+  <div class="slide" data-slide="8">
+    <div class="slide-eyebrow">Infraestructura Tecnológica</div>
+    <div class="slide-title">Auditoría IT<br><span class="accent">12 Contratos Bajo Lupa</span></div>
+    <div class="kpi-row">
+      <div class="kpi-box blue"><div class="kpi-val">$3.5M</div><div class="kpi-lbl">Gasto IT mensual</div></div>
+      <div class="kpi-box red"><div class="kpi-val">6</div><div class="kpi-lbl">Contratos alto riesgo</div></div>
+      <div class="kpi-box amber"><div class="kpi-val">5</div><div class="kpi-lbl">Vencen en 60 días</div></div>
+      <div class="kpi-box green"><div class="kpi-val">$15.8M</div><div class="kpi-lbl">Ahorro anual posible</div></div>
+    </div>
+    <div class="content-card" style="margin-top:20px">
+      <div class="content-card-title">🚨 Contratos de Mayor Riesgo</div>
+      <div class="list-item"><span class="list-item-icon">🔴</span><div><strong>Sistemas Nexo SA — RRHH/Liquidación</strong><span style="color:rgba(148,163,184,0.7);font-size:12px">$680K/mes · Vence Sept 2026 · Datos NO migrados · Riesgo salida ALTO</span></div></div>
+      <div class="list-item"><span class="list-item-icon">🔴</span><div><strong>GovTech Solutions — Expedientes</strong><span style="color:rgba(148,163,184,0.7);font-size:12px">$420K/mes · VENCIDO · Iniciar licitación urgente</span></div></div>
+      <div class="list-item"><span class="list-item-icon">🔴</span><div><strong>Sipem Sistemas — Tributaria</strong><span style="color:rgba(148,163,184,0.7);font-size:12px">$520K/mes · Vence Mar 2027 · Sin contrato respaldo</span></div></div>
+      <div class="list-item"><span class="list-item-icon">🟡</span><div><strong>Microsoft 365 — 120 licencias</strong><span style="color:rgba(148,163,184,0.7);font-size:12px">$340K/mes · ~40% sin usar · Optimizar a 72 licencias</span></div></div>
+    </div>
+  </div>
 
-    // ── COUNTER ANIMATION ──
-    function animateCounters(slide) {
-      slide.querySelectorAll('[data-count]').forEach(el => {
-        const target = parseInt(el.dataset.count);
-        const prefix = el.dataset.prefix || '';
-        const suffix = el.dataset.suffix || '';
-        const duration = 1200;
-        const start = performance.now();
-        function step(now) {
-          const t = Math.min((now - start) / duration, 1);
-          const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-          const val = Math.round(ease * target);
-          el.textContent = prefix + val.toLocaleString('es-AR') + suffix;
-          if (t < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      });
-    }
+  <!-- SLIDE 9: PRÓXIMOS PASOS -->
+  <div class="slide" data-slide="9">
+    <div class="slide-eyebrow">Próximos Pasos</div>
+    <div class="slide-title">Del Piloto a la<br><span class="green">Escala Municipal</span></div>
+    <div class="slide-subtitle">Lo que viene en los próximos 90 días</div>
+    <div class="content-grid">
+      <div>
+        <div class="kpi-row" style="flex-direction:column">
+          <div class="alert-row green"><span class="alert-icon">✅</span><div class="alert-text"><strong>Semana 1-2: Conectar base de datos real</strong><span>PostgreSQL con datos reales de Hacienda, RRHH y Tesorería</span></div></div>
+          <div class="alert-row green"><span class="alert-icon">✅</span><div class="alert-text"><strong>Semana 3-4: Carga masiva de archivos</strong><span>Excel, PDF y Word históricos de todos los departamentos</span></div></div>
+          <div class="alert-row amber"><span class="alert-icon">🔜</span><div class="alert-text"><strong>Mes 2: Módulo de Licitaciones</strong><span>Registro, evaluación y seguimiento de proveedores</span></div></div>
+          <div class="alert-row amber"><span class="alert-icon">🔜</span><div class="alert-text"><strong>Mes 3: App Móvil para Inspectores</strong><span>Carga de datos desde campo sin internet (PWA)</span></div></div>
+        </div>
+      </div>
+      <div class="content-card" style="display:flex;flex-direction:column;justify-content:center">
+        <div style="text-align:center;padding:20px">
+          <div style="font-size:60px;margin-bottom:16px">🏆</div>
+          <div style="font-family:'Outfit',sans-serif;font-size:28px;font-weight:900;margin-bottom:12px">Meta 2026</div>
+          <div style="font-size:15px;color:rgba(148,163,184,0.8);line-height:1.6">Sistema integrado para <strong style="color:white">todas las secretarías</strong>, conectado a bases de datos locales y reportes automáticos para Intendencia.</div>
+          <div style="margin-top:20px;padding:14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:12px">
+            <div style="font-size:24px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">$15.8M</div>
+            <div style="font-size:12px;color:rgba(148,163,184,0.7)">ahorro anual proyectado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    // Animate first slide immediately
-    animateCounters(document.getElementById('slide-0'));
+</div><!-- /slides-container -->
 
-    // ── FULLSCREEN ──
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
-    }
-  </script>
+<!-- NAVIGATION DOTS -->
+<div class="nav-dots" id="navDots"></div>
+
+<!-- KEYBOARD HINT -->
+<div class="key-hint"><span class="key">←</span> <span class="key">→</span> Navegar · <span class="key">ESC</span> Salir</div>
+
+<script src="js/nav.js"></script>
+<script>
+const TOTAL_SLIDES = 9;
+let currentSlide = 1;
+
+const slides     = document.querySelectorAll('.slide');
+const counter    = document.getElementById('slideCounter');
+const fill       = document.getElementById('progressFill');
+const dots       = document.getElementById('navDots');
+const btnPrev    = document.getElementById('btnPrev');
+const btnNext    = document.getElementById('btnNext');
+
+// Build dots
+for (let i = 1; i <= TOTAL_SLIDES; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  d.addEventListener('click', () => goToSlide(i));
+  dots.appendChild(d);
+}
+
+function goToSlide(n) {
+  slides.forEach(s => {
+    const sn = parseInt(s.dataset.slide);
+    s.classList.remove('active', 'prev');
+    if (sn === n) s.classList.add('active');
+    else if (sn < n) s.classList.add('prev');
+  });
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('active', i + 1 === n);
+  });
+  counter.textContent = `${n} / ${TOTAL_SLIDES}`;
+  fill.style.width = `${(n / TOTAL_SLIDES * 100).toFixed(1)}%`;
+  currentSlide = n;
+}
+
+btnNext.addEventListener('click', () => { if (currentSlide < TOTAL_SLIDES) goToSlide(currentSlide + 1); });
+btnPrev.addEventListener('click', () => { if (currentSlide > 1) goToSlide(currentSlide - 1); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); if (currentSlide < TOTAL_SLIDES) goToSlide(currentSlide + 1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); if (currentSlide > 1) goToSlide(currentSlide - 1); }
+  if (e.key === 'Escape') window.location.href = 'index.html';
+});
+</script>
 </body>
 </html>

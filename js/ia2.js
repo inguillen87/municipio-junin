@@ -1,728 +1,483 @@
 // ============================================================
-// IA2.JS — Asistente IA v2: OCR + Voz + Documentos + Exportación
-// Open Source: Tesseract.js · PDF.js · SheetJS · jsPDF
+// ia2.js — Motor de Chat IA Municipal v3
+// Integra: ia.js (respuestas inteligentes) + OCR + Voz + Export
+// Diseñado para intendentes, contadores y administradores
 // ============================================================
 
-// ── CONTEXTO MUNICIPAL ─────────────────────────────────────
-const MUNICIPAL_CONTEXT = {
-  gastoAgosto: 284500000,
-  presupuestoAgosto: 310000000,
-  empleadosTotal: 1247,
-  masaSalarial: 186000000,
-  horasExtra: 4312,
-  costoHorasExtra: 18400000,
-  ausentismo: '3%',
-  reclamos: { total: 318, resueltos: 229, pendientes: 89, tiempoPromedio: '3.2 días' },
-  ahorroIT: 42000000,
-  secretarias: MUNICIPIO_DATA?.secretarias || [],
-  horasExtraData: MUNICIPIO_DATA?.horasExtra || [],
-  alertas: MUNICIPIO_DATA?.alertas || [],
-};
+'use strict';
 
-// ── ESTADO GLOBAL ──────────────────────────────────────────
-let uploadedDocs = []; // { name, type, text, data }
+let uploadedDocs = [];
 let isListening  = false;
 let recognition  = null;
 let messageCount = 0;
+let chatHistory  = [];
 
-// ── RESPUESTAS IA ──────────────────────────────────────────
-const IA_RESPONSES = {
-  gasto: () => `💰 **Análisis de Gastos — Agosto 2026**
+// ── ELEMENTOS DEL DOM ───────────────────────────────────────
+const chatMessages = document.getElementById('chatMessages');
+const chatInput    = document.getElementById('chatInput');
+const sendBtn      = document.getElementById('sendBtn');
+const voiceBtn     = document.getElementById('voiceBtn');
+const fileInput    = document.getElementById('fileInput');
+const dropZone     = document.getElementById('dropZone');
+const fileList     = document.getElementById('fileList');
+const charCounter  = document.getElementById('charCounter');
 
-El gasto total del municipio es de **$${fmt(MUNICIPAL_CONTEXT.gastoAgosto)}** sobre un presupuesto de **$${fmt(MUNICIPAL_CONTEXT.presupuestoAgosto)}** (${Math.round(MUNICIPAL_CONTEXT.gastoAgosto/MUNICIPAL_CONTEXT.presupuestoAgosto*100)}% ejecutado).
+// ── MENSAJE DE BIENVENIDA ────────────────────────────────────
+function showWelcome() {
+  const user = (() => { try { return JSON.parse(sessionStorage.getItem('mjunin_user') || 'null'); } catch { return null; } })();
+  const nombre = user?.name?.split(' ')[0] || 'Intendente';
 
-| Secretaría | Presupuesto | Ejecutado | Estado |
-|-----------|-------------|-----------|--------|
-| Obras Públicas | $38M | $44.8M | 🔴 +18% |
-| Educación | $61M | $54.9M | ✅ -10% |
-| Salud | $52M | $46.8M | ✅ -10% |
-| Seguridad | $44M | $41.8M | ✅ -5% |
-| Talleres | $12M | $13.4M | 🟡 +12% |
-| Est. Servicios | $8M | $9.1M | 🟡 +14% |
+  appendMessage('ia', `
+    <div class="ia-welcome">
+      <div class="ia-welcome-icon">🤖</div>
+      <div class="ia-welcome-title">Bienvenido, ${nombre}</div>
+      <div class="ia-welcome-sub">Soy el Asistente Municipal de Junín. Puedo responder preguntas sobre:</div>
+      <div class="ia-chips">
+        <button class="ia-chip" onclick="sendQuickQuery('¿Cuánto dinero libre queda para gastar?')">💰 ¿Cuánto dinero libre queda?</button>
+        <button class="ia-chip" onclick="sendQuickQuery('¿Cuántos empleados tiene el municipio?')">👥 Empleados y RRHH</button>
+        <button class="ia-chip" onclick="sendQuickQuery('¿Cuáles son las alertas críticas?')">🚨 Alertas críticas</button>
+        <button class="ia-chip" onclick="sendQuickQuery('Dame el informe ejecutivo completo')">📋 Informe ejecutivo</button>
+        <button class="ia-chip" onclick="sendQuickQuery('¿Cuántos reclamos de vecinos hay pendientes?')">🏘️ Reclamos vecinos</button>
+        <button class="ia-chip" onclick="sendQuickQuery('¿Cuáles son las oportunidades de ahorro?')">💚 Oportunidades de ahorro</button>
+        <button class="ia-chip" onclick="sendQuickQuery('¿Cuál es el estado de la flota y combustible?')">🚛 Flota y combustible</button>
+        <button class="ia-chip" onclick="sendQuickQuery('¿Cuánto gastamos en tecnología?')">💻 Gasto en tecnología</button>
+      </div>
+      <div class="ia-tip">💡 <strong>Tip:</strong> También podés subir un Excel, PDF o Word y preguntarme sobre ese documento.</div>
+    </div>
+  `);
+}
 
-📌 **Atención**: 3 áreas superan el presupuesto. Se recomienda revisión inmediata en Obras Públicas.`,
-
-  presupuesto: () => `⚠️ **Alertas Presupuestarias — Agosto 2026**
-
-Se detectaron **3 secretarías** con desvíos positivos respecto al presupuesto mensual:
-
-🔴 **Obras Públicas** → +18% ($44.8M vs $38M asignado)
-Causa probable: obras de emergencia + horas extra (980 hs este mes)
-
-🟡 **Talleres Municipales** → +12% ($13.4M vs $12M)
-Causa probable: repuestos de emergencia para flota
-
-🟡 **Estación de Servicios** → +14% ($9.1M vs $8M)
-Causa probable: aumento del precio del combustible
-
-📋 **Recomendación**: Convocar reunión de jefes de área antes del 5/09 y solicitar informe de justificación de gastos.`,
-
-  rrhh: () => `👥 **Recursos Humanos — Agosto 2026**
-
-**Total plantel**: ${MUNICIPAL_CONTEXT.empleadosTotal.toLocaleString('es-AR')} empleados
-**Masa salarial**: $${fmt(MUNICIPAL_CONTEXT.masaSalarial)}/mes
-**Horas extra**: ${MUNICIPAL_CONTEXT.horasExtra.toLocaleString('es-AR')} hs → costo $${fmt(MUNICIPAL_CONTEXT.costoHorasExtra)}
-**Ausentismo**: ${MUNICIPAL_CONTEXT.ausentismo} (dentro del parámetro)
-**Licencias activas**: 47 empleados
-
-**Top áreas con más horas extra:**
-- 🔧 Obras Públicas: 980 hs ($4.9M)
-- 🏥 Salud: 754 hs ($3.8M)
-- 🔒 Seguridad: 612 hs ($3.1M)
-- 🛠️ Talleres: 520 hs ($2.1M)`,
-
-  reclamos: () => `🏘️ **Reclamos Vecinales — 2026**
-
-**Total**: ${MUNICIPAL_CONTEXT.reclamos.total} reclamos
-**Resueltos**: ${MUNICIPAL_CONTEXT.reclamos.resueltos} (72% de resolución)
-**Pendientes**: ${MUNICIPAL_CONTEXT.reclamos.pendientes}
-**Tiempo promedio**: ${MUNICIPAL_CONTEXT.reclamos.tiempoPromedio}
-
-**Ranking por tipo:**
-1. 🛣️ Baches y Pavimento — 34%
-2. 💡 Alumbrado Público — 22%
-3. 🗑️ Recolección de Basura — 18%
-4. 🌳 Poda de Árboles — 12%
-5. 💧 Agua y Cloacas — 8%
-6. 🔊 Otros — 6%
-
-**Zonas más afectadas**: Centro, Barrio Norte, Av. Rivadavia`,
-
-  informe: () => `📋 **INFORME EJECUTIVO — MUNICIPIO DE JUNÍN**
-*Agosto 2026 · Para el Intendente Mario Abed*
-
----
-
-**RESUMEN OPERATIVO**
-El municipio opera con **${MUNICIPAL_CONTEXT.empleadosTotal.toLocaleString('es-AR')} empleados** y un gasto mensual de **$${fmt(MUNICIPAL_CONTEXT.gastoAgosto)}** (92% del presupuesto de $310M).
-
-**ALERTAS CRÍTICAS** ⚠️
-- Obras Públicas supera presupuesto en 18%
-- Talleres y Est. de Servicios con desvíos moderados
-- Stock de combustible al 48% — solicitar reposición
-
-**LOGROS DEL SISTEMA DIGITAL** ✅
-- Ahorro IT anual: **$${fmt(MUNICIPAL_CONTEXT.ahorroIT)}**
-- ${MUNICIPAL_CONTEXT.empleadosTotal} legajos digitalizados
-- Sistema de reclamos: 72% resolución
-- 43 vehículos monitoreados en tiempo real
-- Dashboard ejecutivo operativo 24/7
-
-**PRÓXIMAS ACCIONES**
-1. Reunión de jefes de área — revisión presupuestaria
-2. Conectar base de datos PostgreSQL real
-3. Implementar lector RFID para fichero de asistencia
-4. Portal web público para vecinos`,
-
-  ahorro: () => `💡 **Análisis de Ahorro IT — 2026**
-
-**Ahorro anual estimado: $${fmt(MUNICIPAL_CONTEXT.ahorroIT)}**
-
-| Concepto | Antes (terceros) | Ahora (propio) |
-|---------|-----------------|----------------|
-| Sistema RRHH | $18M/año | $0 |
-| CRM vecinal | $8M/año | $0 |
-| Dashboard gestión | $12M/año | $0 |
-| Licencias software | $4M/año | $0 |
-
-🔒 **Beneficio adicional**: Soberanía total de los datos del municipio.
-📈 **ROI del proyecto**: La inversión se recupera en el primer año.
-🚀 **Potencial de exportación**: El sistema puede licenciarse a otros municipios.`,
-
-  flota: () => `⛽ **Flota Municipal — Análisis de Combustible**
-
-**Consumo agosto 2026**: 8.640 litros
-**Costo**: $9.1M (sobre presupuesto 14%)
-**Vehículos activos**: 43
-
-**Top consumidores:**
-- 🚛 Camión Basura JUN-015: ~980L/mes
-- 🚛 Volvo FH-460 JUN-010: ~840L/mes
-- 🚙 Ford F-100 JUN-001: ~420L/mes
-
-**Stock actual:**
-- Nafta: 4.820L de 10.000L cap. (48%) ⚠️
-- Gasoil: 7.340L de 15.000L cap. (49%) ⚠️
-
-📌 Ambos tanques bajo el 50% — recomendar reposición urgente.`,
-
-  talleres: () => `🔧 **Talleres Municipales — Estado Actual**
-
-**Órdenes activas**: 24 (8 urgentes)
-**Completadas en agosto**: 87 órdenes
-**Vehículos en taller**: 7 de 43 (16%)
-**Costo mensual**: $13.4M (+12% sobre presupuesto)
-
-**Órdenes urgentes pendientes:**
-- Toyota Hilux JUN-003: sistema de frenos
-- Volvo FH JUN-010: caja de cambios
-- Mercedes Actros JUN-015: motor (camión de basura)
-
-**Stock crítico** ⚠️ (5 insumos bajo mínimo):
-- Filtros de aceite: 8 unid. (mín: 15)
-- Pastillas de freno: 6 juegos (mín: 10)
-- Correa de distribución: 3 unid. (mín: 5)`,
+// ── FUNCIÓN PÚBLICA: enviar consulta rápida ──────────────────
+window.sendQuickQuery = function(texto) {
+  if (chatInput) chatInput.value = texto;
+  sendMessage(texto);
 };
 
-function fmt(n) {
-  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
-  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n/1e3).toFixed(0) + 'K';
-  return n.toLocaleString('es-AR');
-}
+// ── ENVIAR MENSAJE ───────────────────────────────────────────
+async function sendMessage(texto) {
+  texto = (texto || chatInput?.value || '').trim();
+  if (!texto) return;
 
-function getSmartResponse(query, docContext = '') {
-  const q = query.toLowerCase();
+  appendMessage('user', escapeHtml(texto));
+  if (chatInput) { chatInput.value = ''; updateCharCounter(); }
 
-  // Si hay contexto de documento, analizarlo
-  if (docContext) {
-    return `📄 **Análisis del documento cargado**\n\n${docContext}\n\n---\n*Contenido procesado con OCR/Parser. Podés hacerme preguntas específicas sobre este documento.*`;
-  }
-
-  if (q.match(/gasto|costo|agosto|total|plata/)) return IA_RESPONSES.gasto();
-  if (q.match(/presupuesto|supera|alerta|desvío|desvio/)) return IA_RESPONSES.presupuesto();
-  if (q.match(/emplead|rrhh|salarial|masa|personal|plantel/)) return IA_RESPONSES.rrhh();
-  if (q.match(/reclamo|vecino|queja|problema|frecuente/)) return IA_RESPONSES.reclamos();
-  if (q.match(/informe|ejecutivo|intendente|mario|resumen|completo/)) return IA_RESPONSES.informe();
-  if (q.match(/ahorro|migr|it|sistema|tecnolog/)) return IA_RESPONSES.ahorro();
-  if (q.match(/combustible|nafta|gasoil|flota|vehiculo|tanque/)) return IA_RESPONSES.flota();
-  if (q.match(/taller|orden|mecanico|repuest|vehículo en taller/)) return IA_RESPONSES.talleres();
-
-  return `🤖 Procesé tu consulta: *"${query}"*\n\nPuedo ayudarte con:\n- 💰 Gastos y presupuesto\n- 👥 Recursos Humanos\n- 🏘️ Reclamos de vecinos\n- ⛽ Flota y combustible\n- 🔧 Talleres municipales\n- 📋 Informes ejecutivos\n- 📄 Análisis de documentos subidos\n\n¿Podés ser más específico o usá las **consultas rápidas** del panel izquierdo?`;
-}
-
-// ── RENDER DE MENSAJES ─────────────────────────────────────
-function addMessage(text, isUser = false, docTag = null) {
+  chatHistory.push({ role: 'user', content: texto });
   messageCount++;
-  const container = document.getElementById('chatMessages');
-  const time = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
-  const div  = document.createElement('div');
-  div.className = `msg-row ${isUser ? 'user' : 'ai'}`;
-  div.id = `msg-${messageCount}`;
 
-  // Convertir markdown simple a HTML
-  const html = markdownToHTML(text);
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  appendMessage('ia', '<div class="typing-dots"><span></span><span></span><span></span></div>', typingId);
 
-  const exportBtns = !isUser ? `
-    <div class="msg-actions">
-      <button class="msg-action-btn" onclick="exportMsgPDF(${messageCount})">📑 PDF</button>
-      <button class="msg-action-btn" onclick="exportMsgExcel(${messageCount})">📊 Excel</button>
-      <button class="msg-action-btn" onclick="copyMsg(${messageCount})">📋 Copiar</button>
-    </div>` : '';
+  await delay(600 + Math.random() * 400);
 
-  div.innerHTML = `
-    <div class="msg-avatar ${isUser ? 'user-avatar' : 'ai-avatar'}">${isUser ? '👤' : '🤖'}</div>
-    <div class="msg-bubble ${isUser ? 'user-bubble' : 'ai-bubble'}">
-      <div class="msg-header">
-        <span class="msg-sender">${isUser ? 'Vos' : 'Asistente Municipal IA'}</span>
-        <span class="msg-time">${time}</span>
+  // Generar respuesta con el motor inteligente (ia.js)
+  let respuesta;
+  if (uploadedDocs.length > 0) {
+    respuesta = responderConDocumentos(texto, uploadedDocs);
+  } else if (window.procesarMensajeIA) {
+    respuesta = window.procesarMensajeIA(texto);
+  } else {
+    respuesta = `<div class="ia-answer-card"><p style="color:rgba(148,163,184,0.8)">Cargando motor de respuestas... Por favor reintentá en un momento.</p></div>`;
+  }
+
+  // Reemplazar el typing indicator
+  const typingEl = document.getElementById(typingId);
+  if (typingEl) typingEl.innerHTML = respuesta;
+  chatHistory.push({ role: 'ia', content: respuesta });
+
+  scrollToBottom();
+  updateSidebarQueries(texto);
+}
+
+// ── RESPONDER SOBRE DOCUMENTOS SUBIDOS ──────────────────────
+function responderConDocumentos(pregunta, docs) {
+  const doc = docs[0];
+  const p = pregunta.toLowerCase();
+
+  let intro = `<div class="ia-answer-card">
+    <div class="ia-answer-title">📄 Analizando: "${doc.name}"</div>`;
+
+  if (doc.type === 'excel' || doc.type === 'csv') {
+    const filas = doc.data || [];
+    const cols  = doc.columns || [];
+    const preview = filas.slice(0, 8);
+    const rows = preview.map(r =>
+      `<tr>${cols.map(c => `<td>${r[c] ?? ''}</td>`).join('')}</tr>`
+    ).join('');
+    return intro + `
+      <div style="margin:8px 0 4px;font-size:12px;color:rgba(100,116,139,0.7)">${filas.length} filas · ${cols.length} columnas</div>
+      <div class="ia-table-wrap">
+        <table class="ia-table">
+          <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>
-      ${docTag ? `<span class="doc-tag">📄 ${docTag}</span>` : ''}
-      <div class="msg-text" id="msg-text-${messageCount}">${html}</div>
-      ${exportBtns}
+      ${filas.length > 8 ? `<div class="ia-insight">📊 Mostrando las primeras 8 de ${filas.length} filas. El archivo completo fue procesado.</div>` : ''}
+      <div class="ia-insight">✅ Archivo cargado correctamente. Podés hacerme preguntas sobre estos datos.</div>
     </div>`;
+  }
 
-  container.appendChild(div);
-  container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-  return messageCount;
+  if (doc.type === 'pdf' || doc.type === 'word' || doc.type === 'txt') {
+    const texto = doc.text || '';
+    const preview = texto.slice(0, 800);
+    return intro + `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;margin:12px 0;font-size:13px;color:rgba(148,163,184,0.8);line-height:1.7;white-space:pre-wrap;max-height:250px;overflow-y:auto;">${escapeHtml(preview)}${texto.length > 800 ? '\n\n[...documento continúa...]' : ''}</div>
+      <div class="ia-insight">📝 Documento analizado (${texto.length} caracteres). Podés hacerme preguntas sobre el contenido.</div>
+    </div>`;
+  }
+
+  // Respuesta genérica con datos del sistema si no hay doc específico
+  if (window.procesarMensajeIA) return window.procesarMensajeIA(pregunta);
+  return intro + `<p>Documento cargado. Haceme preguntas específicas sobre el contenido.</p></div>`;
 }
 
-function markdownToHTML(text) {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/^---$/gm, '<hr style="border-color:rgba(255,255,255,0.1);margin:10px 0">')
-    .replace(/^\| (.+) \|$/gm, (match) => {
-      if (match.includes('---')) return '';
-      const cells = match.split('|').filter(c => c.trim());
-      return '<tr>' + cells.map(c => `<td style="padding:5px 10px;border:1px solid rgba(255,255,255,0.08);font-size:12px">${c.trim()}</td>`).join('') + '</tr>';
-    })
-    .replace(/(<tr>.*<\/tr>\n?)+/gs, m => `<div style="overflow-x:auto;margin:8px 0"><table style="border-collapse:collapse;width:100%">${m}</table></div>`)
-    .replace(/^- (.+)$/gm, '<li style="margin-bottom:3px">$1</li>')
-    .replace(/(<li.*<\/li>\n?)+/gs, m => `<ul style="padding-left:18px;margin:6px 0">${m}</ul>`)
-    .replace(/\n\n/g, '</p><p style="margin-bottom:8px">')
-    .replace(/\n/g, '<br>')
-    .replace(/^(.+)$/, '<p style="margin-bottom:8px">$1</p>');
+// ── APPEND MESSAGE AL CHAT ───────────────────────────────────
+function appendMessage(tipo, html, id) {
+  const wrap = document.createElement('div');
+  wrap.className = `chat-msg ${tipo}`;
+  if (id) wrap.id = id;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = tipo === 'user' ? 'Vos' : '🤖';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+
+  if (tipo === 'ia') {
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+    header.innerHTML = '<span class="msg-sender">Asistente Municipal IA</span><span class="msg-time">' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) + '</span>';
+    bubble.appendChild(header);
+  }
+
+  const content = document.createElement('div');
+  content.className = 'msg-content';
+  content.innerHTML = html;
+  bubble.appendChild(content);
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(bubble);
+
+  if (chatMessages) {
+    chatMessages.appendChild(wrap);
+    scrollToBottom();
+  }
+  return wrap;
 }
 
-function showTyping() {
-  const c = document.getElementById('chatMessages');
-  const d = document.createElement('div');
-  d.className = 'msg-row ai'; d.id = 'typingIndicator';
-  d.innerHTML = `<div class="msg-avatar ai-avatar">🤖</div><div class="msg-bubble ai-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-  c.appendChild(d);
-  c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
+function scrollToBottom() {
+  if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 }
-function removeTyping() { document.getElementById('typingIndicator')?.remove(); }
 
-// ── ENVIAR MENSAJE ─────────────────────────────────────────
-async function sendMessage(forceText = null) {
-  const input = document.getElementById('chatInput');
-  const text  = forceText || input.value.trim();
-  if (!text) return;
+// ── UPLOAD DE ARCHIVOS ───────────────────────────────────────
+async function handleFiles(files) {
+  for (const file of files) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const entry = { name: file.name, type: ext, text: '', data: [], columns: [] };
 
-  addMessage(text, true);
-  input.value = '';
-  input.style.height = 'auto';
-  document.getElementById('charCounter').textContent = '0 / 2000';
-  showTyping();
+    try {
+      if (['xlsx', 'xls'].includes(ext)) {
+        const buf = await file.arrayBuffer();
+        const wb  = XLSX.read(buf, { type: 'array' });
+        const ws  = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        entry.type    = 'excel';
+        entry.data    = data;
+        entry.columns = Object.keys(data[0] || {});
+        entry.text    = `Excel con ${data.length} filas y ${entry.columns.length} columnas`;
+      } else if (ext === 'csv') {
+        const text = await file.text();
+        const lines = text.split('\n').filter(l => l.trim());
+        const sep = lines[0].includes(';') ? ';' : ',';
+        const headers = lines[0].split(sep).map(h => h.trim().replace(/"/g,''));
+        const data = lines.slice(1).map(l => {
+          const v = l.split(sep).map(x => x.trim().replace(/"/g,''));
+          return Object.fromEntries(headers.map((h,i) => [h, v[i]||'']));
+        });
+        entry.type    = 'csv';
+        entry.data    = data;
+        entry.columns = headers;
+        entry.text    = text.slice(0, 2000);
+      } else if (ext === 'pdf') {
+        entry.type = 'pdf';
+        entry.text = '📄 PDF cargado. El análisis de texto de PDF requiere el backend local.';
+        try {
+          if (window.pdfjsLib) {
+            const buf  = await file.arrayBuffer();
+            const pdf  = await pdfjsLib.getDocument({ data: buf }).promise;
+            let txt = '';
+            for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+              const pg = await pdf.getPage(i);
+              const tc = await pg.getTextContent();
+              txt += tc.items.map(t => t.str).join(' ') + '\n';
+            }
+            entry.text = txt.trim();
+          }
+        } catch {}
+      } else if (['doc','docx'].includes(ext)) {
+        entry.type = 'word';
+        entry.text = '📝 Documento Word cargado. Resumen disponible con backend local.';
+      } else if (ext === 'txt') {
+        entry.type = 'txt';
+        entry.text = await file.text();
+      } else if (['png','jpg','jpeg','webp'].includes(ext)) {
+        entry.type = 'image';
+        if (window.Tesseract) {
+          showOcrSection();
+          const result = await Tesseract.recognize(file, 'spa', {
+            logger: m => { if (m.status === 'recognizing text') updateOcrProgress(Math.round(m.progress * 100)); }
+          });
+          entry.text = result.data.text;
+          hideOcrSection();
+        } else {
+          entry.text = '🖼️ OCR no disponible en este momento.';
+        }
+      }
 
-  const model = document.getElementById('modelSelect')?.value || 'demo';
-  const delay = 700 + Math.random() * 1000;
+      uploadedDocs.unshift(entry);
+      addFileToList(entry);
 
-  setTimeout(async () => {
-    removeTyping();
-    let response;
+      appendMessage('ia', `
+        <div class="ia-answer-card">
+          <div class="ia-answer-title">✅ Archivo cargado exitosamente</div>
+          <div class="ia-detail">
+            <div class="ia-detail-row"><span>Archivo</span><strong>${escapeHtml(file.name)}</strong></div>
+            <div class="ia-detail-row"><span>Tipo</span><strong>${entry.type.toUpperCase()}</strong></div>
+            <div class="ia-detail-row"><span>Tamaño</span><strong>${(file.size / 1024).toFixed(1)} KB</strong></div>
+            ${entry.data?.length ? `<div class="ia-detail-row"><span>Registros encontrados</span><strong>${entry.data.length} filas</strong></div>` : ''}
+          </div>
+          <div class="ia-insight">💡 Ahora podés preguntarme sobre este documento. Por ejemplo: "¿Cuál es el total de gastos?" o "Mostrá los primeros registros"</div>
+        </div>
+      `);
 
-    if (model !== 'demo') {
-      response = await callOllama(text, model);
-    } else {
-      response = getSmartResponse(text);
+    } catch (err) {
+      appendMessage('ia', `<div class="ia-answer-card"><div class="ia-insight red">❌ Error al procesar "${file.name}": ${err.message}</div></div>`);
     }
-    addMessage(response, false);
-  }, delay);
-}
-
-async function callOllama(prompt, model) {
-  const endpoint = document.getElementById('ollamaEndpoint')?.value || 'http://localhost:11434';
-  const systemPrompt = `Sos un asistente municipal experto del Municipio de Junín, Argentina. 
-Tenés acceso a estos datos: ${JSON.stringify({ empleados: 1247, gastoMensual: '$284.5M', presupuesto: '$310M', horasExtra: 4312, reclamos: 318 })}.
-Respondé siempre en español argentino, de forma clara y profesional.`;
-  try {
-    const res = await fetch(`${endpoint}/api/generate`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, prompt: `${systemPrompt}\n\nPregunta: ${prompt}`, stream: false }),
-    });
-    const data = await res.json();
-    return data.response || 'Sin respuesta del modelo.';
-  } catch {
-    return `⚠️ No se pudo conectar a Ollama en ${endpoint}. Cambiá el modelo a "Demo" para usar sin conexión.`;
   }
 }
 
-// ── RECONOCIMIENTO DE VOZ ──────────────────────────────────
+function addFileToList(entry) {
+  if (!fileList) return;
+  const icons = { excel:'📊', csv:'📊', pdf:'📄', word:'📝', txt:'📃', image:'🖼️' };
+  const el = document.createElement('div');
+  el.className = 'file-item';
+  el.innerHTML = `<span class="file-icon">${icons[entry.type]||'📎'}</span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-check">✓</span>`;
+  fileList.prepend(el);
+}
+
+// ── OCR PROGRESS ─────────────────────────────────────────────
+function showOcrSection() { document.getElementById('ocrSection')?.style && (document.getElementById('ocrSection').style.display='block'); }
+function hideOcrSection() { document.getElementById('ocrSection')?.style && (document.getElementById('ocrSection').style.display='none'); updateOcrProgress(0); }
+function updateOcrProgress(pct) {
+  const bar = document.getElementById('ocrBarFill');
+  const txt = document.getElementById('ocrStatusText');
+  if (bar) bar.style.width = pct + '%';
+  if (txt) txt.textContent = pct < 100 ? `Leyendo texto: ${pct}%` : '✅ Texto extraído';
+}
+
+// ── RECONOCIMIENTO DE VOZ ────────────────────────────────────
 function initVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    document.getElementById('voiceBtn').title = 'Tu navegador no soporta reconocimiento de voz';
-    document.getElementById('voiceBtn').style.opacity = '0.4';
-    return;
-  }
-  recognition = new SpeechRecognition();
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
   recognition.lang = 'es-AR';
-  recognition.continuous = true;
   recognition.interimResults = true;
-
-  recognition.onresult = (event) => {
-    let transcript = '';
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      transcript += event.results[i][0].transcript;
+  recognition.continuous = false;
+  recognition.onresult = (e) => {
+    const t = Array.from(e.results).map(r => r[0].transcript).join('');
+    const banner = document.getElementById('voiceTranscript');
+    if (banner) banner.textContent = t;
+    if (e.results[0].isFinal) {
+      if (chatInput) chatInput.value = t;
+      stopVoice();
+      setTimeout(() => sendMessage(t), 300);
     }
-    document.getElementById('voiceTranscript').textContent = transcript || 'Escuchando...';
-    document.getElementById('chatInput').value = transcript;
-    document.getElementById('charCounter').textContent = `${transcript.length} / 2000`;
   };
-
   recognition.onerror = () => stopVoice();
-  recognition.onend = () => {
-    if (isListening) recognition.start(); // continuar escuchando
-  };
+  recognition.onend   = () => stopVoice();
 }
 
 function startVoice() {
-  if (!recognition) { alert('Tu navegador no soporta reconocimiento de voz. Usá Chrome o Edge.'); return; }
+  if (!recognition) return;
   isListening = true;
+  const banner = document.getElementById('voiceBanner');
+  if (banner) banner.style.display = 'flex';
+  if (voiceBtn) voiceBtn.classList.add('recording');
   recognition.start();
-  document.getElementById('voiceBtn').classList.add('active');
-  document.getElementById('voiceBanner').style.display = 'flex';
 }
 
 function stopVoice() {
   isListening = false;
-  recognition?.stop();
-  document.getElementById('voiceBtn').classList.remove('active');
-  document.getElementById('voiceBanner').style.display = 'none';
-  // Auto-enviar si hay texto
-  const text = document.getElementById('chatInput').value.trim();
-  if (text) sendMessage();
+  const banner = document.getElementById('voiceBanner');
+  if (banner) banner.style.display = 'none';
+  if (voiceBtn) voiceBtn.classList.remove('recording');
+  try { recognition?.stop(); } catch {}
 }
 
-document.getElementById('voiceBtn')?.addEventListener('click', () => {
-  isListening ? stopVoice() : startVoice();
-});
-document.getElementById('stopVoice')?.addEventListener('click', stopVoice);
-
-// ── DRAG & DROP + FILE UPLOAD ──────────────────────────────
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-
-dropZone?.addEventListener('click', () => fileInput.click());
-dropZone?.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragging'); });
-dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
-dropZone?.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dropZone.classList.remove('dragging');
-  handleFiles(Array.from(e.dataTransfer.files));
-});
-fileInput?.addEventListener('change', () => handleFiles(Array.from(fileInput.files)));
-document.getElementById('attachBtn')?.addEventListener('click', () => fileInput.click());
-
-async function handleFiles(files) {
-  for (const file of files) {
-    addFileToList(file);
-    await processFile(file);
-  }
-}
-
-function getFileIcon(type, name) {
-  if (type.includes('pdf')) return '📑';
-  if (type.includes('sheet') || name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) return '📊';
-  if (type.includes('image')) return '🖼️';
-  if (type.includes('text') || name.endsWith('.txt')) return '📄';
-  return '📎';
-}
-
-function formatSize(bytes) {
-  if (bytes < 1024) return bytes + 'B';
-  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + 'KB';
-  return (bytes/1024/1024).toFixed(1) + 'MB';
-}
-
-function addFileToList(file) {
-  const list = document.getElementById('fileList');
-  const id = `file-${Date.now()}`;
-  const item = document.createElement('div');
-  item.className = 'file-item';
-  item.id = id;
-  item.innerHTML = `
-    <span class="file-item-icon">${getFileIcon(file.type, file.name)}</span>
-    <div class="file-item-info">
-      <span class="file-item-name">${file.name}</span>
-      <span class="file-item-meta">${formatSize(file.size)}</span>
-    </div>
-    <span class="file-item-status loading" id="status-${id}">⟳ Procesando...</span>
-    <button class="file-item-remove" onclick="removeFile('${id}')">✕</button>`;
-  list.appendChild(item);
-  return id;
-}
-
-function removeFile(id) { document.getElementById(id)?.remove(); }
-
-async function processFile(file) {
-  const id = `file-${Date.now() - 1}`; // approximate
-  const statusEls = document.querySelectorAll('.file-item-status.loading');
-  const statusEl = statusEls[statusEls.length - 1];
-
-  try {
-    let text = '';
-    let summary = '';
-
-    if (file.type.includes('image')) {
-      // OCR con Tesseract.js
-      text = await runOCR(file, statusEl);
-      summary = `Imagen analizada con OCR. Texto extraído (${text.length} caracteres).`;
-
-    } else if (file.type.includes('pdf') || file.name.endsWith('.pdf')) {
-      text = await readPDF(file, statusEl);
-      summary = `PDF procesado. ${text.split('\n').filter(l=>l.trim()).length} líneas extraídas.`;
-
-    } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.type.includes('sheet')) {
-      const result = await readExcel(file);
-      text  = result.text;
-      summary = `Excel: ${result.sheets} hoja(s), ${result.rows} filas de datos.`;
-
-    } else if (file.type.includes('text') || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
-      text = await file.text();
-      summary = `Texto plano: ${text.split('\n').length} líneas.`;
-
-    } else {
-      text = `Archivo: ${file.name}`;
-      summary = 'Tipo de archivo no soportado directamente.';
-    }
-
-    if (statusEl) { statusEl.textContent = '✅ Listo'; statusEl.className = 'file-item-status done'; }
-
-    // Guardar en contexto
-    uploadedDocs.push({ name: file.name, type: file.type, text, summary });
-
-    // Agregar al doc list del sidebar
-    const docList = document.getElementById('docList');
-    const newDoc = document.createElement('div');
-    newDoc.className = 'doc-item active';
-    newDoc.innerHTML = `
-      <span class="doc-icon">${getFileIcon(file.type, file.name)}</span>
-      <div class="doc-info"><span class="doc-name">${file.name}</span><span class="doc-desc">${summary}</span></div>
-      <span class="doc-check">✓</span>`;
-    docList.appendChild(newDoc);
-
-    // Notificar en el chat
-    addMessage(`📄 **Documento cargado**: *${file.name}*\n\n${summary}\n\nPodés preguntarme sobre el contenido de este documento. Ej: "¿Qué información contiene?" o "Resumí el contenido."`, false, file.name);
-
-  } catch (err) {
-    if (statusEl) { statusEl.textContent = '❌ Error'; statusEl.className = 'file-item-status error'; }
-    addMessage(`⚠️ No pude procesar el archivo *${file.name}*: ${err.message}`, false);
-  }
-}
-
-// ── OCR con Tesseract.js ───────────────────────────────────
-async function runOCR(file, statusEl) {
-  document.getElementById('ocrSection').style.display = 'block';
-  const barFill   = document.getElementById('ocrBarFill');
-  const statusTxt = document.getElementById('ocrStatusText');
-  const preview   = document.getElementById('ocrPreview');
-
-  if (statusEl) statusEl.textContent = '🔍 OCR...';
-
-  const url = URL.createObjectURL(file);
-  const { data } = await Tesseract.recognize(url, 'spa+eng', {
-    logger: (m) => {
-      if (m.status === 'recognizing text') {
-        const pct = Math.round(m.progress * 100);
-        barFill.style.width = pct + '%';
-        statusTxt.textContent = `OCR: ${pct}% completado`;
-      }
-    }
-  });
-  URL.revokeObjectURL(url);
-
-  barFill.style.width = '100%';
-  statusTxt.textContent = `✅ OCR completado — ${data.text.length} caracteres extraídos`;
-  preview.textContent = data.text.slice(0, 300) + (data.text.length > 300 ? '...' : '');
-  preview.classList.add('visible');
-
-  return data.text;
-}
-
-// ── PDF.js ─────────────────────────────────────────────────
-async function readPDF(file, statusEl) {
-  if (statusEl) statusEl.textContent = '📖 Leyendo PDF...';
-
-  // Configurar worker de PDF.js
-  if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
-    for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
-      const page    = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      fullText += content.items.map(item => item.str).join(' ') + '\n';
-    }
-    return fullText || '(PDF sin texto extraíble — intentando OCR...)';
-  }
-  return '(PDF.js no disponible)';
-}
-
-// ── SheetJS Excel ──────────────────────────────────────────
-async function readExcel(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  let text = '';
-  let totalRows = 0;
-
-  workbook.SheetNames.forEach(name => {
-    const sheet = workbook.Sheets[name];
-    const json  = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    totalRows  += json.length;
-    text += `\n=== HOJA: ${name} ===\n`;
-    json.slice(0, 50).forEach(row => {
-      text += row.join(' | ') + '\n';
-    });
-  });
-
-  return { text, sheets: workbook.SheetNames.length, rows: totalRows };
-}
-
-// ── RESPUESTA INTELIGENTE CON DOCS ────────────────────────
-function getResponseWithDocs(query) {
-  if (uploadedDocs.length > 0) {
-    const lastDoc = uploadedDocs[uploadedDocs.length - 1];
-    const q = query.toLowerCase();
-    if (q.match(/document|archivo|excel|pdf|subiste|cargaste|imagen|analiz|resumí|contenido/)) {
-      const snippet = lastDoc.text.slice(0, 600);
-      return `📄 **Análisis de "${lastDoc.name}"**\n\n**Resumen**: ${lastDoc.summary}\n\n**Contenido (primeros 600 caracteres):**\n\`\`\`\n${snippet}\n\`\`\`\n\n¿Querés que busque algo específico dentro del documento?`;
-    }
-  }
-  return getSmartResponse(query);
-}
-
-// ── EXPORTAR MENSAJE A PDF ─────────────────────────────────
-function exportMsgPDF(msgId) {
-  const el  = document.getElementById(`msg-text-${msgId}`);
-  const text = el ? el.innerText : '';
+// ── EXPORT PDF ───────────────────────────────────────────────
+function exportChatPDF() {
   const { jsPDF } = window.jspdf;
+  if (!jsPDF) { alert('jsPDF no disponible'); return; }
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  // Header municipal
   doc.setFillColor(6, 11, 24);
-  doc.rect(0, 0, 210, 35, 'F');
-  doc.setTextColor(255, 255, 255);
+  doc.rect(0, 0, 210, 297, 'F');
+
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('MUNICIPIO DE JUNÍN', 14, 14);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Sistema de Gestión Municipal · Asistente IA', 14, 22);
-  doc.text(`Generado: ${new Date().toLocaleString('es-AR')}`, 14, 29);
+  doc.setFontSize(18);
+  doc.setTextColor(240, 244, 255);
+  doc.text('Municipalidad de Junin', 20, 25);
+  doc.setFontSize(12);
+  doc.setTextColor(142, 163, 195);
+  doc.text('Informe de Consultas IA - ' + new Date().toLocaleDateString('es-AR'), 20, 33);
 
-  // Línea decorativa
   doc.setDrawColor(59, 130, 246);
-  doc.setLineWidth(0.8);
-  doc.line(0, 35, 210, 35);
+  doc.setLineWidth(0.5);
+  doc.line(20, 37, 190, 37);
 
-  // Contenido
-  doc.setTextColor(20, 20, 40);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  const lines = doc.splitTextToSize(text, 180);
   let y = 48;
-  lines.forEach(line => {
-    if (y > 270) { doc.addPage(); y = 20; }
-    doc.text(line, 14, y);
+  const msgs = document.querySelectorAll('.chat-msg');
+
+  msgs.forEach(msg => {
+    if (y > 270) { doc.addPage(); doc.setFillColor(6,11,24); doc.rect(0,0,210,297,'F'); y = 20; }
+    const isUser = msg.classList.contains('user');
+    const content = msg.querySelector('.msg-content')?.innerText?.trim() || '';
+    if (!content) return;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(isUser ? 245 : 96, isUser ? 158 : 165, isUser ? 11 : 250);
+    doc.text(isUser ? 'CONSULTA:' : 'RESPUESTA IA:', 20, y);
     y += 6;
-  });
 
-  // Footer
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 160);
-  doc.text('Municipio de Junín · Sistema Digital Municipal v1.0 · Confidencial', 14, 287);
-
-  doc.save(`informe-municipal-${new Date().toISOString().slice(0,10)}.pdf`);
-}
-
-// ── EXPORTAR MENSAJE A EXCEL ───────────────────────────────
-function exportMsgExcel(msgId) {
-  const el  = document.getElementById(`msg-text-${msgId}`);
-  const text = el ? el.innerText : '';
-
-  // Parsear tablas del texto
-  const rows = text.split('\n').filter(l => l.trim()).map(l => [l]);
-  const wb  = XLSX.utils.book_new();
-  const ws  = XLSX.utils.aoa_to_sheet([
-    ['MUNICIPIO DE JUNÍN'],
-    ['Sistema de Gestión Municipal · Asistente IA'],
-    [`Generado: ${new Date().toLocaleString('es-AR')}`],
-    [''],
-    ...rows,
-  ]);
-
-  // Ancho de columnas
-  ws['!cols'] = [{ wch: 80 }];
-  XLSX.utils.book_append_sheet(wb, ws, 'Informe IA');
-  XLSX.writeFile(wb, `informe-municipal-${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-
-function copyMsg(msgId) {
-  const el = document.getElementById(`msg-text-${msgId}`);
-  if (el) {
-    navigator.clipboard.writeText(el.innerText).then(() => {
-      // Brief feedback
-      const btn = el.parentElement?.querySelector('.msg-action-btn:last-child');
-      if (btn) { btn.textContent = '✅ Copiado'; setTimeout(() => btn.textContent = '📋 Copiar', 1500); }
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(200, 210, 230);
+    const lines = doc.splitTextToSize(content, 165);
+    lines.slice(0, 20).forEach(l => {
+      if (y > 275) { doc.addPage(); doc.setFillColor(6,11,24); doc.rect(0,0,210,297,'F'); y = 20; }
+      doc.text(l, 20, y);
+      y += 5;
     });
-  }
+    y += 8;
+  });
+
+  doc.save('Informe-IA-Municipal-Junin-' + new Date().toISOString().split('T')[0] + '.pdf');
+  if (window.toast) toast('PDF exportado', 'Informe descargado correctamente', 'success');
 }
 
-// ── BOTONES GLOBALES ──────────────────────────────────────
-document.getElementById('btnExportPDF')?.addEventListener('click', () => {
-  if (messageCount === 0) { addMessage('No hay conversación para exportar.', false); return; }
-  exportMsgPDF(messageCount);
-});
+// ── EXPORT EXCEL ─────────────────────────────────────────────
+function exportChatExcel() {
+  if (!window.XLSX) { alert('SheetJS no disponible'); return; }
+  if (!window.MUNICIPAL_DATA) { alert('Datos no disponibles'); return; }
 
-document.getElementById('btnExportExcel')?.addEventListener('click', () => {
-  // Exportar datos del sistema como Excel
   const wb = XLSX.utils.book_new();
+  const d  = window.MUNICIPAL_DATA;
 
-  // Hoja 1: RRHH
-  if (MUNICIPIO_DATA?.secretarias) {
-    const rrhhData = [
-      ['Secretaría', 'Empleados', 'Presupuesto', 'Ejecutado', 'Desvío'],
-      ...MUNICIPIO_DATA.secretarias.map(s => [
-        s.nombre, s.empleados,
-        `$${(s.presupuesto/1e6).toFixed(1)}M`,
-        `$${(s.ejecutado/1e6).toFixed(1)}M`,
-        s.ejecutado > s.presupuesto ? `+${Math.round((s.ejecutado/s.presupuesto-1)*100)}%` : `${Math.round((s.ejecutado/s.presupuesto-1)*100)}%`,
-      ])
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rrhhData), 'RRHH y Gastos');
-  }
-
-  // Hoja 2: Resumen ejecutivo
-  const resumen = [
-    ['RESUMEN EJECUTIVO — MUNICIPIO DE JUNÍN'],
-    [`Fecha: ${new Date().toLocaleDateString('es-AR')}`],
-    [''],
-    ['Indicador', 'Valor'],
-    ['Total empleados', 1247],
-    ['Gasto agosto 2026', '$284.5M'],
-    ['Presupuesto agosto', '$310M'],
-    ['Ejecución %', '92%'],
-    ['Horas extra (hs)', 4312],
-    ['Costo horas extra', '$18.4M'],
-    ['Reclamos totales', 318],
-    ['Reclamos resueltos', 229],
-    ['Ahorro IT anual', '$42M'],
+  // Hoja 1: Presupuesto
+  const presData = [
+    ['Indicador','Valor'],
+    ['Presupuesto Total 2026', d.presupuesto.total_anual],
+    ['Gasto Agosto', d.presupuesto.ejecutado_agosto],
+    ['% Ejecutado', d.presupuesto.pct_ejecutado + '%'],
+    ['Saldo Disponible', d.presupuesto.saldo_disponible],
+    ['Masa Salarial Mensual', d.gastos.masa_salarial],
+    ['Horas Extra Agosto', d.empleados.horas_extra_mes],
+    ['Costo Horas Extra', d.gastos.horas_extra_costo],
   ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen Ejecutivo');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(presData), 'Presupuesto');
 
-  XLSX.writeFile(wb, `municipio-junin-datos-${new Date().toISOString().slice(0,10)}.xlsx`);
-  addMessage('📊 **Excel exportado** con datos del sistema municipal (RRHH, Gastos, Resumen Ejecutivo).', false);
-});
+  // Hoja 2: Empleados por área
+  const empData = [['Area','Empleados']].concat(Object.entries(d.empleados.por_area));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(empData), 'Empleados por Area');
 
-document.getElementById('btnSummarize')?.addEventListener('click', () => {
-  if (uploadedDocs.length === 0) {
-    addMessage('No hay documentos cargados. Subí un PDF, Excel o imagen primero.', false);
-    return;
-  }
-  const summaries = uploadedDocs.map(d => `📄 **${d.name}**: ${d.summary}`).join('\n');
-  addMessage(`📚 **Resumen de documentos cargados (${uploadedDocs.length}):**\n\n${summaries}\n\n¿Querés que analice alguno en detalle?`, false);
-});
+  // Hoja 3: Reclamos
+  const recData = [['Tipo','Cantidad']].concat(Object.entries(d.reclamos.por_tipo));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(recData), 'Reclamos Vecinos');
 
-// PROBAR CONEXIÓN OLLAMA
-document.getElementById('btnTestOllama')?.addEventListener('click', async () => {
-  const endpoint = document.getElementById('ollamaEndpoint')?.value || 'http://localhost:11434';
-  addMessage(`🔌 Probando conexión a Ollama en ${endpoint}...`, false);
-  try {
-    const res = await fetch(`${endpoint}/api/tags`, { signal: AbortSignal.timeout(3000) });
-    const data = await res.json();
-    const models = data.models?.map(m => m.name).join(', ') || 'ninguno';
-    addMessage(`✅ **Ollama conectado!**\nModelos disponibles: ${models}`, false);
-  } catch {
-    addMessage(`❌ No se pudo conectar a Ollama en ${endpoint}.\n\nAsegurate de que esté corriendo:\n\`\`\`\nollama serve\n\`\`\`\nO usá el modo **Demo** para continuar sin conexión.`, false);
-  }
-});
+  // Hoja 4: Proveedores
+  const provData = [['Proveedor','Mensual','Riesgo','Vence']].concat(
+    d.proveedores.principales.map(p => [p.nombre, p.mensual, p.riesgo, p.vence])
+  );
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(provData), 'Proveedores IT');
 
-// ── SEND + INPUT ──────────────────────────────────────────
-document.getElementById('sendBtn')?.addEventListener('click', () => sendMessage());
-document.getElementById('chatInput')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-});
-document.getElementById('chatInput')?.addEventListener('input', function() {
-  this.style.height = 'auto';
-  this.style.height = Math.min(this.scrollHeight, 140) + 'px';
-  document.getElementById('charCounter').textContent = `${this.value.length} / 2000`;
-});
+  XLSX.writeFile(wb, 'Datos-Municipales-Junin-' + new Date().toISOString().split('T')[0] + '.xlsx');
+  if (window.toast) toast('Excel exportado', '4 hojas de datos descargadas', 'success');
+}
 
-document.querySelectorAll('.quick-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.getElementById('chatInput').value = btn.dataset.query;
-    sendMessage();
-  });
-});
+// ── SIDEBAR: CONSULTAS RÁPIDAS ────────────────────────────────
+function updateSidebarQueries(pregunta) {
+  const list = document.getElementById('queryHistory');
+  if (!list) return;
+  const el = document.createElement('div');
+  el.className = 'query-item';
+  el.textContent = pregunta.slice(0, 45) + (pregunta.length > 45 ? '...' : '');
+  el.onclick = () => sendQuickQuery(pregunta);
+  list.prepend(el);
+  if (list.children.length > 8) list.removeChild(list.lastChild);
+}
 
-document.getElementById('btnClearChat')?.addEventListener('click', () => {
-  const c = document.getElementById('chatMessages');
-  c.innerHTML = '';
-  messageCount = 0;
-  addMessage('🗑️ Conversación limpiada. ¿En qué te puedo ayudar?', false);
-});
+// ── HELPERS ───────────────────────────────────────────────────
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function updateCharCounter() {
+  if (!chatInput || !charCounter) return;
+  const len = chatInput.value.length;
+  charCounter.textContent = `${len} / 2000`;
+  charCounter.style.color = len > 1800 ? '#ef4444' : 'rgba(100,116,139,0.6)';
+}
 
-// ── INIT ─────────────────────────────────────────────────
+// ── INICIALIZACIÓN ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  buildSidebar('ia');
+  buildSidebar?.('ia');
   initVoice();
-  // Configurar worker PDF.js
-  if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  }
+  showWelcome();
+
+  // Send
+  sendBtn?.addEventListener('click', () => sendMessage());
+  chatInput?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  chatInput?.addEventListener('input', updateCharCounter);
+
+  // Voice
+  voiceBtn?.addEventListener('click', () => isListening ? stopVoice() : startVoice());
+  document.getElementById('stopVoice')?.addEventListener('click', stopVoice);
+
+  // File upload
+  dropZone?.addEventListener('click', () => fileInput?.click());
+  fileInput?.addEventListener('change', e => handleFiles(e.target.files));
+  document.getElementById('attachBtn')?.addEventListener('click', () => fileInput?.click());
+
+  dropZone?.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone?.addEventListener('dragleave', () => dropZone?.classList.remove('drag-over'));
+  dropZone?.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone?.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  // Export
+  document.getElementById('btnExportPDF')?.addEventListener('click', exportChatPDF);
+  document.getElementById('btnExportExcel')?.addEventListener('click', exportChatExcel);
+
+  // Summarize
+  document.getElementById('btnSummarize')?.addEventListener('click', () => {
+    if (!uploadedDocs.length) {
+      if (window.toast) toast('Sin documentos', 'Primero cargá un archivo para analizar', 'warning');
+      return;
+    }
+    sendQuickQuery(`Hacé un resumen completo del documento "${uploadedDocs[0].name}"`);
+  });
+
+  // Clear
+  document.getElementById('btnClearChat')?.addEventListener('click', () => {
+    if (chatMessages) chatMessages.innerHTML = '';
+    chatHistory = [];
+    messageCount = 0;
+    uploadedDocs = [];
+    if (fileList) fileList.innerHTML = '';
+    showWelcome();
+    if (window.toast) toast('Chat limpiado', 'Conversación reiniciada', 'info');
+  });
 });

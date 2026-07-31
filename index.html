@@ -6,12 +6,19 @@
   <title>Dashboard Ejecutivo — Municipio de Junín</title>
   <meta name="description" content="Panel de control ejecutivo de gastos, recursos humanos y operaciones del Municipio de Junín, Buenos Aires." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/shared.css" />
 </head>
 <body>
+  <!-- FONDO ANIMADO -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-orb orb-c"></div>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
 
   <!-- SIDEBAR (generado por nav.js) -->
   <aside class="sidebar" id="sidebar"></aside>
@@ -29,18 +36,19 @@
         </div>
       </div>
       <div class="topbar-right">
+        <div id="backendStatusBadge"></div>
         <div class="search-box">
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Buscar secretaría, empleado..." id="globalSearch" />
         </div>
-        <button class="btn-export" id="btnExport" title="Exportar reporte">
+        <button class="btn-export" id="btnExport" title="Exportar reporte" onclick="window.location.href='exportar.html'">
           📤 Exportar
         </button>
         <div class="notification-bell" title="Alertas">
           🔔
           <span class="notif-dot"></span>
         </div>
-        <div class="topbar-avatar">MA</div>
+        <div class="topbar-avatar" id="topbarAvatar" title="Perfil">MA</div>
       </div>
     </header>
 
@@ -260,10 +268,25 @@
     </div>
   </main>
 
+  <script src="js/toast.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/data.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/dashboard.js"></script>
-  <script>buildSidebar('dashboard');</script>
+  <script>
+    buildSidebar('dashboard');
+    // Mostrar badge de backend y avatar del usuario
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.API) {
+        API.renderBackendStatus('backendStatusBadge');
+        const user = API.currentUser();
+        if (user) {
+          const av = document.getElementById('topbarAvatar');
+          if (av) av.textContent = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        }
+      }
+    });
+  </script>
 </body>
 </html>

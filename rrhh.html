@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recursos Humanos — Municipio de Junín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/rrhh.css" />
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-wrap">
+        <div class="logo-icon">🏛️</div>
+        <div class="logo-text">
+          <span class="logo-title">Junín</span>
+          <span class="logo-sub">Sistema Municipal</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle">‹</button>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">PRINCIPAL</div>
+      <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <a href="rrhh.html" class="nav-item active"><span class="nav-icon">👥</span><span class="nav-label">Recursos Humanos</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">💰</span><span class="nav-label">Gastos y Costos</span><span class="nav-badge">!</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">🏘️</span><span class="nav-label">Atención Vecinal</span></a>
+      <div class="nav-section-label">ENTIDADES</div>
+      <a href="#" class="nav-item"><span class="nav-icon">🌳</span><span class="nav-label">Jardines</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">🔧</span><span class="nav-label">Talleres</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">⛽</span><span class="nav-label">Est. de Servicios</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">♻️</span><span class="nav-label">Reciclaje</span></a>
+      <div class="nav-section-label">SISTEMA</div>
+      <a href="#" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Manuales</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">🤖</span><span class="nav-label">Asistente IA</span><span class="nav-badge new">NUEVO</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">JT</div>
+        <div class="user-details"><span class="user-name">Jefe de Tecnología</span><span class="user-role">Administrador</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Recursos Humanos</h1>
+          <span class="breadcrumb">Municipio de Junín · Plantel completo</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-rrhh" id="btnNuevoEmpleado">+ Nuevo Empleado</button>
+        <button class="btn-export" id="btnExportRRHH">📤 Exportar</button>
+        <div class="notification-bell">🔔<span class="notif-dot"></span></div>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- KPIs RRHH -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Total Empleados</span><div class="kpi-icon blue">👥</div></div>
+          <div class="kpi-value" data-target="1247">0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">▲ 12 altas este mes</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Masa Salarial Mensual</span><div class="kpi-icon amber">💸</div></div>
+          <div class="kpi-value money" data-target="186000000">$0</div>
+          <div class="kpi-footer"><span class="kpi-trend down">▼ 2.1% vs julio</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Horas Extra (mes)</span><div class="kpi-icon red">⏱️</div></div>
+          <div class="kpi-value" data-target="4312">0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">Costo: $18.4M</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Ausentismo</span><div class="kpi-icon violet">📉</div></div>
+          <div class="kpi-value pct" data-target="3">0%</div>
+          <div class="kpi-footer"><span class="kpi-trend down">✅ Dentro del límite</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Licencias Activas</span><div class="kpi-icon teal">🏖️</div></div>
+          <div class="kpi-value" data-target="47">0</div>
+          <div class="kpi-footer"><span class="kpi-sub">Ordinarias + médicas</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Recibos Generados</span><div class="kpi-icon green">📄</div></div>
+          <div class="kpi-value" data-target="1247">0</div>
+          <div class="kpi-footer"><span class="kpi-trend down">✅ Agosto 2026 — OK</span></div>
+        </div>
+      </section>
+
+      <!-- FILTROS Y TABLA -->
+      <div class="rrhh-panel">
+        <div class="panel-header">
+          <h2 class="chart-title">👥 Plantel Municipal</h2>
+          <div class="panel-filters">
+            <select id="filtroSecretaria" class="select-filter">
+              <option value="">Todas las Secretarías</option>
+              <option>Salud</option>
+              <option>Obras Públicas</option>
+              <option>Educación</option>
+              <option>Seguridad</option>
+              <option>Hacienda</option>
+              <option>Medio Ambiente</option>
+              <option>Cultura y Turismo</option>
+              <option>Intendencia</option>
+            </select>
+            <select id="filtroEstado" class="select-filter">
+              <option value="">Todos los estados</option>
+              <option>Activo</option>
+              <option>Licencia</option>
+              <option>Suspendido</option>
+            </select>
+            <div class="search-box" style="min-width:200px">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="searchEmpleado" placeholder="Buscar empleado..." />
+            </div>
+          </div>
+        </div>
+
+        <table class="data-table empleados-table" id="empleadosTable">
+          <thead>
+            <tr>
+              <th>Legajo</th>
+              <th>Nombre y Apellido</th>
+              <th>Secretaría</th>
+              <th>Cargo</th>
+              <th>Ingreso</th>
+              <th>HS Extra</th>
+              <th>Sueldo Bruto</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="empleadosBody"></tbody>
+        </table>
+
+        <div class="table-footer">
+          <span id="tableCount" class="table-count">Mostrando 20 de 1.247 empleados</span>
+          <div class="pagination">
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <span>...</span>
+            <button class="page-btn">63</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL NUEVO EMPLEADO -->
+  <div class="modal-overlay" id="modalOverlay" style="display:none">
+    <div class="modal" id="modalEmpleado">
+      <div class="modal-header">
+        <h3>➕ Alta de Empleado</h3>
+        <button class="modal-close" id="modalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>DNI</label>
+            <input type="text" id="empDni" placeholder="28.456.789" />
+          </div>
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" id="empNombre" placeholder="Juan Carlos" />
+          </div>
+          <div class="form-group">
+            <label>Apellido</label>
+            <input type="text" id="empApellido" placeholder="García" />
+          </div>
+          <div class="form-group">
+            <label>Secretaría</label>
+            <select id="empSecretaria">
+              <option>Salud</option><option>Obras Públicas</option><option>Educación</option>
+              <option>Seguridad</option><option>Hacienda</option><option>Medio Ambiente</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Cargo</label>
+            <input type="text" id="empCargo" placeholder="Ej: Administrativo A" />
+          </div>
+          <div class="form-group">
+            <label>Fecha de Ingreso</label>
+            <input type="date" id="empIngreso" />
+          </div>
+          <div class="form-group">
+            <label>Sueldo Bruto</label>
+            <input type="number" id="empSueldo" placeholder="350000" />
+          </div>
+          <div class="form-group">
+            <label>CBU Banco</label>
+            <input type="text" id="empCbu" placeholder="0170000000000000000000" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnCancelar">Cancelar</button>
+        <button class="btn-save" id="btnGuardar">💾 Guardar Legajo</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/rrhh.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

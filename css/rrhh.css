@@ -1,0 +1,124 @@
+/* ── RRHH EXTRA STYLES ── */
+
+.btn-rrhh {
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  border: none; color: white; padding: 8px 16px;
+  border-radius: 8px; cursor: pointer; font-size: 12px;
+  font-weight: 600; transition: var(--transition);
+}
+.btn-rrhh:hover { opacity: 0.85; transform: translateY(-1px); }
+
+.rrhh-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.panel-header {
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.panel-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.select-filter {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  color: var(--text-primary); padding: 7px 12px;
+  border-radius: 8px; font-size: 13px; cursor: pointer; outline: none;
+}
+.select-filter:focus { border-color: var(--blue); }
+
+/* EMPLEADOS TABLE */
+.empleados-table th { white-space: nowrap; }
+.empleados-table td { vertical-align: middle; }
+
+.emp-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; margin-right: 8px; vertical-align: middle;
+}
+.emp-name { font-weight: 600; display: inline; }
+.emp-legajo { font-family: monospace; color: var(--text-muted); font-size: 12px; }
+
+.hs-pill {
+  background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3);
+  color: var(--amber); padding: 2px 8px; border-radius: 99px;
+  font-size: 11px; font-weight: 600;
+}
+.hs-pill.zero { background: transparent; border-color: transparent; color: var(--text-muted); }
+
+.action-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;
+  transition: var(--transition); margin-right: 4px;
+}
+.action-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+
+/* TABLE FOOTER */
+.table-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 12px; border-top: 1px solid var(--border);
+  flex-wrap: wrap; gap: 8px;
+}
+.table-count { font-size: 12px; color: var(--text-muted); }
+.pagination { display: flex; gap: 4px; align-items: center; }
+.page-btn {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  color: var(--text-muted); width: 32px; height: 32px; border-radius: 6px;
+  cursor: pointer; font-size: 12px; transition: var(--transition);
+}
+.page-btn.active, .page-btn:hover {
+  background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue);
+}
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); width: 100%; max-width: 560px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h3 { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; }
+.modal-close {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 18px; cursor: pointer; padding: 4px;
+}
+.modal-body { padding: 24px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+.form-group input,
+.form-group select {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  color: var(--text-primary); padding: 9px 12px;
+  border-radius: 8px; font-size: 13px; outline: none; transition: var(--transition);
+}
+.form-group input:focus,
+.form-group select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+.modal-footer {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+.btn-cancel {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  padding: 9px 20px; border-radius: 8px; cursor: pointer; font-size: 13px;
+}
+.btn-save {
+  background: linear-gradient(135deg, var(--blue), var(--violet));
+  border: none; color: white; padding: 9px 24px;
+  border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+}

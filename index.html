@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Ejecutivo — Municipio de Junín</title>
+  <meta name="description" content="Panel de control ejecutivo de gastos, recursos humanos y operaciones del Municipio de Junín, Buenos Aires." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/shared.css" />
+</head>
+<body>
+
+  <!-- SIDEBAR (generado por nav.js) -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="mainContent">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Dashboard Ejecutivo</h1>
+          <span class="breadcrumb">Municipio de Junín · <span id="currentDate"></span></span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Buscar secretaría, empleado..." id="globalSearch" />
+        </div>
+        <button class="btn-export" id="btnExport" title="Exportar reporte">
+          📤 Exportar
+        </button>
+        <div class="notification-bell" title="Alertas">
+          🔔
+          <span class="notif-dot"></span>
+        </div>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <!-- ALERT BANNER -->
+    <div class="alert-banner" id="alertBanner">
+      <span class="alert-icon">⚠️</span>
+      <span>Obras Públicas supera el presupuesto mensual en un <strong>18%</strong>. Se recomienda revisión inmediata.</span>
+      <button class="alert-close" onclick="document.getElementById('alertBanner').style.display='none'">✕</button>
+    </div>
+
+    <div class="content-wrapper">
+
+      <!-- KPI CARDS -->
+      <section class="kpi-grid" aria-label="Indicadores clave">
+
+        <div class="kpi-card" id="kpi-empleados">
+          <div class="kpi-header">
+            <span class="kpi-label">Total Empleados</span>
+            <div class="kpi-icon blue">👥</div>
+          </div>
+          <div class="kpi-value" data-target="1247">0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend up">▲ 12 este mes</span>
+            <span class="kpi-sub">vs 1.235 julio</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-gasto">
+          <div class="kpi-header">
+            <span class="kpi-label">Gasto Mensual</span>
+            <div class="kpi-icon amber">💰</div>
+          </div>
+          <div class="kpi-value money" data-target="284500000">$0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend down">▼ 4.2% vs julio</span>
+            <span class="kpi-sub">Presupuesto: $310M</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-heExtra">
+          <div class="kpi-header">
+            <span class="kpi-label">Horas Extra (mes)</span>
+            <div class="kpi-icon red">⏱️</div>
+          </div>
+          <div class="kpi-value" data-target="4312">0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend down">▼ 8% vs julio</span>
+            <span class="kpi-sub">Costo: $18.4M</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-presupuesto">
+          <div class="kpi-header">
+            <span class="kpi-label">Presupuesto Ejecutado</span>
+            <div class="kpi-icon green">📈</div>
+          </div>
+          <div class="kpi-value pct" data-target="72">0%</div>
+          <div class="kpi-footer">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="presupProgressBar" style="width:0%"></div>
+            </div>
+            <span class="kpi-sub">8 meses del año</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-reclamos">
+          <div class="kpi-header">
+            <span class="kpi-label">Reclamos Vecinos</span>
+            <div class="kpi-icon violet">🏘️</div>
+          </div>
+          <div class="kpi-value" data-target="318">0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend up">▲ 23 sin resolver</span>
+            <span class="kpi-sub">Tiempo promedio: 3.2 días</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-ahorro">
+          <div class="kpi-header">
+            <span class="kpi-label">Ahorro IT (anual)</span>
+            <div class="kpi-icon teal">💡</div>
+          </div>
+          <div class="kpi-value money" data-target="42000000">$0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend up">✅ Sistemas migrados</span>
+            <span class="kpi-sub">vs contratos anteriores</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- CHARTS ROW 1 -->
+      <section class="charts-row">
+
+        <div class="chart-card wide">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">Evolución de Gastos 2026</h2>
+              <span class="chart-sub">Gasto mensual total vs presupuesto aprobado</span>
+            </div>
+            <div class="chart-controls">
+              <button class="chip active" data-chart="gastos-line" data-period="year">Anual</button>
+              <button class="chip" data-chart="gastos-line" data-period="semester">Semestre</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="gastosLineChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">Empleados por Secretaría</h2>
+              <span class="chart-sub">Distribución del plantel</span>
+            </div>
+          </div>
+          <div class="chart-container donut-container">
+            <canvas id="empleadosPieChart"></canvas>
+          </div>
+          <div class="donut-legend" id="donutLegend"></div>
+        </div>
+
+      </section>
+
+      <!-- CHARTS ROW 2 -->
+      <section class="charts-row">
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">Gasto por Secretaría</h2>
+              <span class="chart-sub">Agosto 2026 · en millones $</span>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="gastosBarChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">Horas Extra por Área</h2>
+              <span class="chart-sub">Top 8 áreas · agosto 2026</span>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="horasExtraChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">Presupuesto vs Ejecutado</h2>
+              <span class="chart-sub">Por secretaría · acumulado 2026</span>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="presupuestoChart"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- BOTTOM GRID -->
+      <section class="bottom-grid">
+
+        <!-- ALERTS TABLE -->
+        <div class="data-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">⚠️ Alertas Presupuestarias</h2>
+              <span class="chart-sub">Áreas con desvíos detectados</span>
+            </div>
+            <span class="badge-count">3</span>
+          </div>
+          <table class="data-table" id="alertasTable">
+            <thead>
+              <tr>
+                <th>Secretaría</th>
+                <th>Presupuesto</th>
+                <th>Ejecutado</th>
+                <th>Desvío</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="alertasBody"></tbody>
+          </table>
+        </div>
+
+        <!-- ENTIDADES STATUS -->
+        <div class="data-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">Estado de Entidades</h2>
+              <span class="chart-sub">Digitalización por entidad</span>
+            </div>
+          </div>
+          <div class="entidades-list" id="entidadesList"></div>
+        </div>
+
+        <!-- RECENT ACTIVITY -->
+        <div class="data-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">Actividad Reciente</h2>
+              <span class="chart-sub">Últimas acciones del sistema</span>
+            </div>
+          </div>
+          <div class="activity-feed" id="activityFeed"></div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <script src="js/nav.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script>buildSidebar('dashboard');</script>
+</body>
+</html>

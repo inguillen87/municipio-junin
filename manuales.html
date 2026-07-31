@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manuales de Procedimiento — Municipio de Junín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/manuales.css" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>📚 Manuales de Procedimiento</h1>
+          <span class="breadcrumb">Municipio de Junín · Documentación técnica y operativa</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn-export-manual" id="btnExportAllPDF">📑 Exportar todo en PDF</button>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- ALERT IMPORTANTE -->
+      <div class="manual-alert">
+        <span class="alert-icon">⚠️</span>
+        <div>
+          <strong>Documento de misión crítica:</strong> Este manual debe ser leído por el nuevo responsable de IT antes de asumir. Contiene todos los procedimientos para mantener el sistema funcionando, resolver problemas comunes y saber a quién contactar.
+        </div>
+      </div>
+
+      <!-- LAYOUT PRINCIPAL -->
+      <div class="manuales-layout">
+
+        <!-- ÍNDICE LATERAL -->
+        <nav class="manual-index" id="manualIndex">
+          <div class="manual-index-title">📋 Índice</div>
+
+          <div class="index-section-label">INICIO RÁPIDO</div>
+          <a href="#seccion-inicio" class="index-link active">🚀 Arrancar el sistema</a>
+          <a href="#seccion-arquitectura" class="index-link">🏗️ Arquitectura</a>
+          <a href="#seccion-accesos" class="index-link">🔐 Credenciales y accesos</a>
+
+          <div class="index-section-label">MÓDULOS</div>
+          <a href="#seccion-dashboard" class="index-link">📊 Dashboard</a>
+          <a href="#seccion-rrhh" class="index-link">👥 Recursos Humanos</a>
+          <a href="#seccion-vecinos" class="index-link">🏘️ Atención Vecinal</a>
+          <a href="#seccion-talleres" class="index-link">🔧 Talleres</a>
+          <a href="#seccion-servicios" class="index-link">⛽ Est. de Servicios</a>
+          <a href="#seccion-ia" class="index-link">🤖 Asistente IA</a>
+          <a href="#seccion-hf" class="index-link">🤗 IA Lab HuggingFace</a>
+          <a href="#seccion-exportar" class="index-link">📑 Exportar Reportes</a>
+
+          <div class="index-section-label">INFRAESTRUCTURA</div>
+          <a href="#seccion-servidor" class="index-link">🖥️ Servidor y Docker</a>
+          <a href="#seccion-backup" class="index-link">💾 Backups</a>
+          <a href="#seccion-problemas" class="index-link">🔴 Troubleshooting</a>
+          <a href="#seccion-contactos" class="index-link">📞 Contactos</a>
+
+          <div class="manual-version-box">
+            <span>Versión</span><strong>v4.0</strong>
+            <span>Actualizado</span><strong>Julio 2026</strong>
+            <span>Sistema</span><strong>Junín Municipal</strong>
+          </div>
+        </nav>
+
+        <!-- CONTENIDO DE MANUALES -->
+        <div class="manual-content">
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- ARRANCAR EL SISTEMA                    -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-inicio">
+            <div class="section-header green">
+              <span class="section-icon">🚀</span>
+              <div>
+                <h2>Arrancar el Sistema en 3 pasos</h2>
+                <p>Procedimiento para levantar toda la plataforma desde cero</p>
+              </div>
+              <span class="section-time">⏱️ 5 minutos</span>
+            </div>
+
+            <div class="steps-list">
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                  <h3>Iniciar el servidor web local</h3>
+                  <p>Abrí PowerShell y ejecutá el siguiente comando. El servidor corre los archivos HTML/CSS/JS en el puerto 8181:</p>
+                  <div class="code-block">
+                    <div class="code-header"><span>PowerShell</span><button class="copy-btn" data-code="python -m http.server 8181 --directory &quot;C:\Users\guill\.gemini\antigravity\scratch\municipio-junin&quot;">📋 Copiar</button></div>
+                    <pre>python -m http.server 8181 --directory "C:\Users\guill\.gemini\antigravity\scratch\municipio-junin"</pre>
+                  </div>
+                  <div class="step-note info">Si no tenés Python instalado: <code>winget install Python.Python.3</code></div>
+                </div>
+              </div>
+
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                  <h3>Abrir el sistema en el navegador</h3>
+                  <p>Abrí Chrome o Edge y navegá a:</p>
+                  <div class="url-box">
+                    <span class="url-icon">🌐</span>
+                    <a href="http://localhost:8181" target="_blank" class="url-link">http://localhost:8181</a>
+                    <span class="url-desc">→ Dashboard principal</span>
+                  </div>
+                  <div class="step-note warning">⚠️ Siempre usar Chrome o Edge. Firefox puede tener problemas con el reconocimiento de voz y algunos módulos IA.</div>
+                </div>
+              </div>
+
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                  <h3>Verificar que todo funciona</h3>
+                  <p>Chequeá que estas páginas abran sin errores:</p>
+                  <div class="checklist">
+                    <label class="check-item"><input type="checkbox" /> Dashboard: <a href="http://localhost:8181/index.html" target="_blank">localhost:8181/index.html</a></label>
+                    <label class="check-item"><input type="checkbox" /> RRHH: <a href="http://localhost:8181/rrhh.html" target="_blank">localhost:8181/rrhh.html</a></label>
+                    <label class="check-item"><input type="checkbox" /> Vecinos: <a href="http://localhost:8181/vecinos.html" target="_blank">localhost:8181/vecinos.html</a></label>
+                    <label class="check-item"><input type="checkbox" /> IA Lab: <a href="http://localhost:8181/ia-hf.html" target="_blank">localhost:8181/ia-hf.html</a></label>
+                    <label class="check-item"><input type="checkbox" /> Exportar: <a href="http://localhost:8181/exportar.html" target="_blank">localhost:8181/exportar.html</a></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- ARQUITECTURA                           -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-arquitectura">
+            <div class="section-header blue">
+              <span class="section-icon">🏗️</span>
+              <div>
+                <h2>Arquitectura del Sistema</h2>
+                <p>Cómo están organizados los componentes</p>
+              </div>
+            </div>
+
+            <div class="arch-diagram">
+              <div class="arch-layer browser">
+                <div class="arch-layer-title">🌐 NAVEGADOR (Chrome/Edge)</div>
+                <div class="arch-boxes">
+                  <div class="arch-box blue">📊 Dashboard</div>
+                  <div class="arch-box blue">👥 RRHH</div>
+                  <div class="arch-box blue">🏘️ Vecinos</div>
+                  <div class="arch-box blue">🔧 Talleres</div>
+                  <div class="arch-box blue">⛽ Servicios</div>
+                  <div class="arch-box violet">🤗 HF IA Lab</div>
+                  <div class="arch-box green">📑 Exportar</div>
+                </div>
+              </div>
+              <div class="arch-arrow">▼ HTML/CSS/JS estático</div>
+              <div class="arch-layer server">
+                <div class="arch-layer-title">🖥️ SERVIDOR LOCAL (Puerto 8181)</div>
+                <div class="arch-boxes">
+                  <div class="arch-box amber">Python HTTP Server <br/><small>o Nginx en producción</small></div>
+                  <div class="arch-box amber">Archivos estáticos <br/><small>municipio-junin/</small></div>
+                </div>
+              </div>
+              <div class="arch-arrow">▼ En producción</div>
+              <div class="arch-layer prod">
+                <div class="arch-layer-title">🚀 PRODUCCIÓN (Rack del municipio)</div>
+                <div class="arch-boxes">
+                  <div class="arch-box red">Node.js API<br/><small>Puerto 3001</small></div>
+                  <div class="arch-box red">PostgreSQL 16<br/><small>Puerto 5432</small></div>
+                  <div class="arch-box red">Ollama IA<br/><small>Puerto 11434</small></div>
+                  <div class="arch-box red">Nginx<br/><small>Puerto 80/443</small></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-card">
+                <h4>📁 Estructura de archivos</h4>
+                <div class="file-tree">
+                  <div class="tree-item folder">📁 municipio-junin/</div>
+                  <div class="tree-item file ml1">📄 index.html (Dashboard)</div>
+                  <div class="tree-item file ml1">📄 rrhh.html (RRHH)</div>
+                  <div class="tree-item file ml1">📄 vecinos.html</div>
+                  <div class="tree-item file ml1">📄 talleres.html</div>
+                  <div class="tree-item file ml1">📄 servicios.html</div>
+                  <div class="tree-item file ml1">📄 ia.html (IA+OCR+Voz)</div>
+                  <div class="tree-item file ml1">📄 ia-hf.html (HuggingFace)</div>
+                  <div class="tree-item file ml1">📄 exportar.html</div>
+                  <div class="tree-item file ml1">📄 manuales.html ← este archivo</div>
+                  <div class="tree-item folder ml1">📁 css/ (estilos)</div>
+                  <div class="tree-item folder ml1">📁 js/ (lógica)</div>
+                </div>
+              </div>
+              <div class="info-card">
+                <h4>⚡ Tecnologías usadas</h4>
+                <ul class="tech-list">
+                  <li><span class="tech-badge html">HTML5</span> Estructura de cada módulo</li>
+                  <li><span class="tech-badge css">CSS3</span> Diseño dark premium</li>
+                  <li><span class="tech-badge js">JavaScript</span> Lógica de negocio</li>
+                  <li><span class="tech-badge hf">🤗 Transformers.js</span> IA en el browser</li>
+                  <li><span class="tech-badge ocr">Tesseract.js</span> OCR de imágenes</li>
+                  <li><span class="tech-badge xlsx">SheetJS</span> Excel leer/escribir</li>
+                  <li><span class="tech-badge pdf">jsPDF</span> Generar PDFs</li>
+                  <li><span class="tech-badge chart">Chart.js</span> Gráficos</li>
+                  <li><span class="tech-badge speech">Web Speech API</span> Voz nativo</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- CREDENCIALES                           -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-accesos">
+            <div class="section-header amber">
+              <span class="section-icon">🔐</span>
+              <div>
+                <h2>Credenciales y Accesos</h2>
+                <p>Usuarios, contraseñas y claves del sistema</p>
+              </div>
+            </div>
+            <div class="alert-caution">⚠️ <strong>IMPORTANTE:</strong> Este documento debe guardarse en lugar seguro y no compartirse por email o WhatsApp. En producción, usar un gestor de contraseñas como Bitwarden (open source).</div>
+            <table class="manual-table">
+              <thead><tr><th>Sistema</th><th>Usuario</th><th>Contraseña</th><th>Puerto</th><th>Nota</th></tr></thead>
+              <tbody>
+                <tr><td>Sistema web actual</td><td>—</td><td>—</td><td>8181</td><td>Sin autenticación en MVP</td></tr>
+                <tr><td>PostgreSQL (producción)</td><td><code>municipio_admin</code></td><td><em>[definir en deploy]</em></td><td>5432</td><td>Cambiar en primer uso</td></tr>
+                <tr><td>Ollama (IA local)</td><td>—</td><td>—</td><td>11434</td><td>Sin auth por defecto</td></tr>
+                <tr><td>Gitea (repositorio)</td><td><code>admin</code></td><td><em>[definir en deploy]</em></td><td>3000</td><td>Control de versiones interno</td></tr>
+                <tr><td>Servidor SSH</td><td><code>municipio-it</code></td><td><em>[clave SSH, no pass]</em></td><td>22</td><td>Solo con clave pública</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- DASHBOARD                              -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-dashboard">
+            <div class="section-header blue">
+              <span class="section-icon">📊</span>
+              <div>
+                <h2>Manual: Dashboard Ejecutivo</h2>
+                <p>Archivo: <code>index.html</code> · Audiencia: Intendente, jefes de área</p>
+              </div>
+              <a href="http://localhost:8181/index.html" target="_blank" class="btn-open-module">▶ Abrir módulo</a>
+            </div>
+            <h3 class="sub-heading">¿Qué muestra?</h3>
+            <div class="feature-grid">
+              <div class="feature-card"><span class="feat-icon">📈</span><span>KPIs en tiempo real: empleados, gasto mensual, horas extra, reclamos</span></div>
+              <div class="feature-card"><span class="feat-icon">💰</span><span>Gráficos de evolución de gastos por mes y por secretaría</span></div>
+              <div class="feature-card"><span class="feat-icon">⚠️</span><span>Alertas automáticas cuando una secretaría supera el presupuesto</span></div>
+              <div class="feature-card"><span class="feat-icon">📋</span><span>Feed de actividad reciente del sistema</span></div>
+            </div>
+            <h3 class="sub-heading">¿Cómo actualizar los datos?</h3>
+            <p class="manual-text">Actualmente los datos son de demostración (mock). Para conectar datos reales:</p>
+            <div class="code-block">
+              <div class="code-header"><span>js/data.js — Cambiar datos mock por API</span></div>
+              <pre>// ACTUAL (datos de demo):
+const MUNICIPIO_DATA = { gastoTotal: 284500000, empleados: 1247, ... };
+
+// FUTURO (conectar a API real):
+const MUNICIPIO_DATA = await fetch('http://localhost:3001/api/dashboard').then(r => r.json());</pre>
+            </div>
+            <h3 class="sub-heading">Problemas comunes</h3>
+            <div class="faq-list">
+              <div class="faq-item">
+                <div class="faq-q">❓ Los gráficos no cargan</div>
+                <div class="faq-a">Verificar que <code>chart.js</code> cargó desde el CDN. Si hay problemas de internet, copiar <code>chart.umd.min.js</code> localmente y cambiar el src.</div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q">❓ Los números no se actualizan</div>
+                <div class="faq-a">Son datos de demo en <code>js/data.js</code>. Editar ese archivo o conectar la API para datos reales.</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- RRHH                                   -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-rrhh">
+            <div class="section-header violet">
+              <span class="section-icon">👥</span>
+              <div>
+                <h2>Manual: Recursos Humanos</h2>
+                <p>Archivo: <code>rrhh.html</code> · Audiencia: Jefe de RRHH, administración</p>
+              </div>
+              <a href="http://localhost:8181/rrhh.html" target="_blank" class="btn-open-module">▶ Abrir módulo</a>
+            </div>
+            <h3 class="sub-heading">Funcionalidades</h3>
+            <div class="proc-steps">
+              <div class="proc-step"><span class="proc-num">1</span><div><strong>Ver nómina de empleados</strong><br/>Tabla con todos los empleados, secretaría, cargo, sueldo y estado. Usar los filtros de secretaría y estado para buscar.</div></div>
+              <div class="proc-step"><span class="proc-num">2</span><div><strong>Agregar un empleado nuevo</strong><br/>Click en <kbd>+ Nuevo Empleado</kbd> → Completar el formulario → Guardar. El sistema genera legajo automático.</div></div>
+              <div class="proc-step"><span class="proc-num">3</span><div><strong>Generar recibo de sueldo</strong><br/>Click en el ícono 📋 de la fila del empleado → Se descarga el PDF del recibo con membrete municipal.</div></div>
+              <div class="proc-step"><span class="proc-num">4</span><div><strong>Ver horas extra por secretaría</strong><br/>Tab "Horas Extra" → Ver las barras por área → Exportar con botón 📊 Excel.</div></div>
+              <div class="proc-step"><span class="proc-num">5</span><div><strong>Control de asistencia (futuro)</strong><br/>Se conectará a lector RFID USB. Endpoint: <code>POST /api/asistencia</code> con el DNI del empleado.</div></div>
+            </div>
+            <h3 class="sub-heading">¿Cómo importar empleados desde Excel?</h3>
+            <div class="code-block">
+              <div class="code-header"><span>Formato del Excel de importación</span></div>
+              <pre>Columna A: Legajo (ej: L-0001)
+Columna B: DNI (ej: 28456789)
+Columna C: Apellido y Nombre
+Columna D: Secretaría
+Columna E: Cargo
+Columna F: Fecha de ingreso (dd/mm/yyyy)
+Columna G: Sueldo bruto</pre>
+            </div>
+            <div class="faq-list">
+              <div class="faq-item">
+                <div class="faq-q">❓ No aparece un empleado en la lista</div>
+                <div class="faq-a">Verificar los filtros activos. Los filtros de secretaría y estado pueden estar ocultando registros. Click en "Limpiar filtros".</div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q">❓ El PDF del recibo no se descarga</div>
+                <div class="faq-a">Verificar que jsPDF cargó desde el CDN. Revisar la consola del browser (F12) por errores.</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- VECINOS                                -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-vecinos">
+            <div class="section-header teal">
+              <span class="section-icon">🏘️</span>
+              <div>
+                <h2>Manual: Atención Vecinal</h2>
+                <p>Archivo: <code>vecinos.html</code> · Audiencia: Operadores de atención al vecino</p>
+              </div>
+              <a href="http://localhost:8181/vecinos.html" target="_blank" class="btn-open-module">▶ Abrir módulo</a>
+            </div>
+            <h3 class="sub-heading">Registrar un reclamo vecinal</h3>
+            <div class="proc-steps">
+              <div class="proc-step"><span class="proc-num">1</span><div><strong>Click en "Nuevo Reclamo"</strong><br/>Botón azul en la parte superior derecha.</div></div>
+              <div class="proc-step"><span class="proc-num">2</span><div><strong>Completar el formulario</strong><br/>DNI del vecino → Nombre → Tipo de reclamo → Área responsable → Dirección exacta → Descripción.</div></div>
+              <div class="proc-step"><span class="proc-num">3</span><div><strong>Guardar</strong><br/>El reclamo queda en estado "Pendiente" y aparece en la tabla. Se le asigna un número automático (#5001, #5002, etc.)</div></div>
+              <div class="proc-step"><span class="proc-num">4</span><div><strong>Cambiar el estado</strong><br/>Click en el ícono ✏️ de la fila → Cambia de Pendiente → En proceso → Resuelto.</div></div>
+            </div>
+            <h3 class="sub-heading">Clasificación automática con IA</h3>
+            <p class="manual-text">El módulo <a href="http://localhost:8181/ia-hf.html#tab-clasificador">IA Lab → Clasificador</a> permite que la IA categorice el reclamo automáticamente al describir el problema en lenguaje natural. No es necesario seleccionar el tipo manualmente.</p>
+            <h3 class="sub-heading">Gestión de turnos</h3>
+            <p class="manual-text">Tab "Turnos" → Ver agenda del día → Click en "Reservar Turno" para agregar un nuevo turno. Los estados son: Confirmado / Pendiente / Atendido.</p>
+            <div class="faq-list">
+              <div class="faq-item">
+                <div class="faq-q">❓ ¿Cómo filtrar reclamos de una zona específica?</div>
+                <div class="faq-a">Usar el buscador de la tabla (campo "Buscar vecino o dirección") y escribir el nombre del barrio o calle.</div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q">❓ ¿Se puede exportar la lista de reclamos?</div>
+                <div class="faq-a">Sí. Ir a <a href="http://localhost:8181/exportar.html">Exportar Reportes</a> → Seleccionar "Reclamos Vecinales" → Exportar PDF o Excel.</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- TALLERES                               -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-talleres">
+            <div class="section-header amber">
+              <span class="section-icon">🔧</span>
+              <div>
+                <h2>Manual: Talleres Municipales</h2>
+                <p>Archivo: <code>talleres.html</code> · Audiencia: Jefe de talleres, mecánicos</p>
+              </div>
+              <a href="http://localhost:8181/talleres.html" target="_blank" class="btn-open-module">▶ Abrir módulo</a>
+            </div>
+            <div class="proc-steps">
+              <div class="proc-step"><span class="proc-num">1</span><div><strong>Crear orden de trabajo</strong><br/>"+ Nueva Orden" → Seleccionar vehículo → Asignar mecánico → Establecer prioridad → Describir el trabajo → Guardar.</div></div>
+              <div class="proc-step"><span class="proc-num">2</span><div><strong>Seguimiento de flota</strong><br/>Tab "Flota de Vehículos" → Ver estado de cada vehículo (Operativo / En taller / Fuera de servicio) y kilometraje actual.</div></div>
+              <div class="proc-step"><span class="proc-num">3</span><div><strong>Control de stock</strong><br/>Tab "Stock e Insumos" → Ver qué insumos están bajo el mínimo (marcados en rojo ⚠️). Solicitar reposición a tiempo.</div></div>
+              <div class="proc-step"><span class="proc-num">4</span><div><strong>Cerrar una orden</strong><br/>En la tabla de órdenes, click ✏️ → Cambiar estado a "Completada" → Ingresar costo real de la reparación.</div></div>
+            </div>
+            <h3 class="sub-heading">Alertas críticas de stock</h3>
+            <div class="alert-warning">Cuando un insumo baja del mínimo aparece una etiqueta <strong>⚠ Crítico</strong>. Generar pedido de compra inmediatamente. Los ítems críticos actuales son: Filtro de aceite, Pastillas de freno, Correa de distribución, Batería, Filtro de aire.</div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- ESTACIÓN DE SERVICIOS                  -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-servicios">
+            <div class="section-header amber">
+              <span class="section-icon">⛽</span>
+              <div>
+                <h2>Manual: Estación de Servicios</h2>
+                <p>Archivo: <code>servicios.html</code> · Audiencia: Encargado de combustible</p>
+              </div>
+              <a href="http://localhost:8181/servicios.html" target="_blank" class="btn-open-module">▶ Abrir módulo</a>
+            </div>
+            <div class="proc-steps">
+              <div class="proc-step"><span class="proc-num">1</span><div><strong>Registrar carga de combustible</strong><br/>"+ Nueva Carga" → Seleccionar vehículo → Tipo (Nafta/Gasoil) → Litros → Precio/litro → Conductor → Kilometraje actual → Guardar.</div></div>
+              <div class="proc-step"><span class="proc-num">2</span><div><strong>Verificar niveles de tanque</strong><br/>Tab "Stock y Reposición" → Ver las barras de nivel de los tanques. Cuando bajan del 50% (amarillo) o 30% (rojo), solicitar reposición a YPF o Shell.</div></div>
+              <div class="proc-step"><span class="proc-num">3</span><div><strong>Ver consumo por vehículo</strong><br/>Tab "Consumo por Vehículo" → Gráfico de barras con los 10 vehículos que más combustible consumen.</div></div>
+            </div>
+            <h3 class="sub-heading">⚠️ Protocolo de reposición de combustible</h3>
+            <div class="protocol-box">
+              <div class="proto-step">📞 Llamar al proveedor YPF/Shell con al menos 5 días de anticipación</div>
+              <div class="proto-arrow">→</div>
+              <div class="proto-step">📋 Registrar pedido con número de orden de compra</div>
+              <div class="proto-arrow">→</div>
+              <div class="proto-step">🚛 Recibir el camión cisterna y verificar litros entregados</div>
+              <div class="proto-arrow">→</div>
+              <div class="proto-step">📊 Registrar la recepción en el sistema (Tab Stock → "Registrar recepción")</div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- ASISTENTE IA                           -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-ia">
+            <div class="section-header violet">
+              <span class="section-icon">🤖</span>
+              <div>
+                <h2>Manual: Asistente IA Municipal</h2>
+                <p>Archivo: <code>ia.html</code> · Audiencia: Todos los niveles</p>
+              </div>
+              <a href="http://localhost:8181/ia.html" target="_blank" class="btn-open-module">▶ Abrir módulo</a>
+            </div>
+            <h3 class="sub-heading">Modos de uso</h3>
+            <div class="feature-grid">
+              <div class="feature-card"><span class="feat-icon">💬</span><span><strong>Chat de texto:</strong> Escribí tu pregunta en el campo inferior y presioná Enter o el botón ➤</span></div>
+              <div class="feature-card"><span class="feat-icon">🎤</span><span><strong>Voz:</strong> Click en el micrófono 🎤, hablá, click en ⏹ para detener. El texto se envía solo.</span></div>
+              <div class="feature-card"><span class="feat-icon">📄</span><span><strong>OCR / Documentos:</strong> Arrastrá un PDF, Excel o imagen al panel "Cargar Documentos". La IA lo lee y responde preguntas sobre él.</span></div>
+              <div class="feature-card"><span class="feat-icon">📑</span><span><strong>Exportar:</strong> Cada respuesta tiene botones PDF y Excel para guardar el resultado.</span></div>
+            </div>
+            <h3 class="sub-heading">Conectar Ollama (IA real sin internet)</h3>
+            <div class="proc-steps">
+              <div class="proc-step"><span class="proc-num">1</span><div><strong>Instalar Ollama en el servidor</strong>
+                <div class="code-block"><div class="code-header"><span>Linux/WSL</span></div><pre>curl -fsSL https://ollama.ai/install.sh | sh</pre></div>
+              </div></div>
+              <div class="proc-step"><span class="proc-num">2</span><div><strong>Descargar modelo de lenguaje</strong>
+                <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre>ollama pull llama3.1:8b   # recomendado: 8GB RAM
+ollama pull mistral:7b    # alternativa liviana
+ollama pull llama3.1:70b  # más potente: 40GB+ RAM</pre></div>
+              </div></div>
+              <div class="proc-step"><span class="proc-num">3</span><div><strong>Iniciar el servidor Ollama</strong>
+                <div class="code-block"><div class="code-header"><span>Terminal</span></div><pre>ollama serve  # queda corriendo en puerto 11434</pre></div>
+              </div></div>
+              <div class="proc-step"><span class="proc-num">4</span><div><strong>Configurar en el sistema</strong><br/>Ir a <code>ia.html</code> → Panel izquierdo → Configuración → Cambiar modelo de "Demo" a "llama3.1:8b" → Click "Probar conexión".</div></div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- IA LAB HUGGINGFACE                     -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-hf">
+            <div class="section-header orange">
+              <span class="section-icon">🤗</span>
+              <div>
+                <h2>Manual: IA Lab HuggingFace</h2>
+                <p>Archivo: <code>ia-hf.html</code> · Modelos ML open source en el browser</p>
+              </div>
+              <a href="http://localhost:8181/ia-hf.html" target="_blank" class="btn-open-module">▶ Abrir módulo</a>
+            </div>
+            <div class="alert-info">💡 Los modelos se descargan la primera vez desde HuggingFace y quedan en la <strong>caché del navegador</strong>. Las siguientes veces cargan instantáneamente sin internet.</div>
+            <h3 class="sub-heading">Guía por función</h3>
+            <table class="manual-table">
+              <thead><tr><th>Función</th><th>Modelo</th><th>Tamaño</th><th>Uso típico</th></tr></thead>
+              <tbody>
+                <tr><td>🏷️ Clasificador</td><td>nli-deberta-v3-small</td><td>~87MB</td><td>Categorizar reclamos automáticamente por tipo</td></tr>
+                <tr><td>😊 Sentimientos</td><td>distilbert-sst-2</td><td>~67MB</td><td>Saber si un vecino está satisfecho o insatisfecho</td></tr>
+                <tr><td>🔍 NER</td><td>bert-base-NER</td><td>~110MB</td><td>Extraer nombres y lugares de contratos</td></tr>
+                <tr><td>❓ Q&amp;A</td><td>distilbert-squad</td><td>~67MB</td><td>Responder preguntas sobre documentos</td></tr>
+                <tr><td>🎤 Whisper</td><td>whisper-tiny</td><td>~39MB</td><td>Transcribir voz a texto en español</td></tr>
+                <tr><td>🔗 Embeddings</td><td>all-MiniLM-L6-v2</td><td>~23MB</td><td>Buscar reclamos similares por significado</td></tr>
+              </tbody>
+            </table>
+            <h3 class="sub-heading">Pipeline masivo — Paso a paso</h3>
+            <div class="proc-steps">
+              <div class="proc-step"><span class="proc-num">1</span><div>Ir al Tab "⚡ Proceso Masivo"</div></div>
+              <div class="proc-step"><span class="proc-num">2</span><div>Cargar primero el Clasificador (Tab Clasificador → "Cargar Modelo") y el de Sentimientos</div></div>
+              <div class="proc-step"><span class="proc-num">3</span><div>Click "⚡ Ejecutar Pipeline" → esperar ~30 segundos</div></div>
+              <div class="proc-step"><span class="proc-num">4</span><div>Ver tabla de resultados con categoría, sentimiento y score de urgencia 0-100</div></div>
+              <div class="proc-step"><span class="proc-num">5</span><div>Click "📑 Exportar Informe PDF" → se descarga el reporte con membrete municipal</div></div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- EXPORTAR                               -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-exportar">
+            <div class="section-header green">
+              <span class="section-icon">📑</span>
+              <div>
+                <h2>Manual: Centro de Exportación</h2>
+                <p>Archivo: <code>exportar.html</code> · Audiencia: Todos</p>
+              </div>
+              <a href="http://localhost:8181/exportar.html" target="_blank" class="btn-open-module">▶ Abrir módulo</a>
+            </div>
+            <div class="proc-steps">
+              <div class="proc-step"><span class="proc-num">1</span><div><strong>Elegir tipo de reporte</strong><br/>Panel izquierdo → Click en el tipo: Ejecutivo, RRHH, Gastos, Reclamos, Flota, Talleres, Horas Extra.</div></div>
+              <div class="proc-step"><span class="proc-num">2</span><div><strong>Seleccionar período</strong><br/>Desplegable "Período" → Agosto 2026, Julio, 1er Semestre, etc.</div></div>
+              <div class="proc-step"><span class="proc-num">3</span><div><strong>Ver preview</strong><br/>El panel derecho muestra una vista previa del documento antes de exportar.</div></div>
+              <div class="proc-step"><span class="proc-num">4</span><div><strong>Exportar</strong><br/>📑 PDF → documento A4 con membrete. 📊 Excel → planilla con datos y resumen. 🖨️ Imprimir → enviar a impresora.</div></div>
+            </div>
+            <h3 class="sub-heading">Reportes disponibles</h3>
+            <div class="feature-grid">
+              <div class="feature-card"><span class="feat-icon">📊</span><span><strong>Informe Ejecutivo</strong>: resumen completo para el intendente con KPIs y alertas</span></div>
+              <div class="feature-card"><span class="feat-icon">👥</span><span><strong>RRHH</strong>: nómina, horas extra y ausentismo por secretaría</span></div>
+              <div class="feature-card"><span class="feat-icon">💰</span><span><strong>Gastos</strong>: presupuesto vs ejecutado con desvíos marcados en color</span></div>
+              <div class="feature-card"><span class="feat-icon">🏘️</span><span><strong>Reclamos</strong>: estado de atención vecinal y tiempos de resolución</span></div>
+              <div class="feature-card"><span class="feat-icon">🚗</span><span><strong>Flota</strong>: estado y kilometraje de los 43 vehículos municipales</span></div>
+              <div class="feature-card"><span class="feat-icon">⏱️</span><span><strong>Horas Extra</strong>: distribución y costo por área para auditoría</span></div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- SERVIDOR Y DOCKER                      -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-servidor">
+            <div class="section-header red">
+              <span class="section-icon">🖥️</span>
+              <div>
+                <h2>Manual: Servidor e Infraestructura</h2>
+                <p>Deployment en producción en el rack del municipio</p>
+              </div>
+            </div>
+            <h3 class="sub-heading">Deployment con Docker Compose (producción)</h3>
+            <div class="code-block">
+              <div class="code-header"><span>docker-compose.yml</span><button class="copy-btn" data-code="docker-compose up -d">📋 Copiar comando</button></div>
+              <pre>version: '3.9'
+services:
+  web:
+    image: nginx:alpine
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./municipio-junin:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/nginx.conf
+
+  api:
+    image: node:20-alpine
+    working_dir: /app
+    command: node server.js
+    ports: ["3001:3001"]
+    environment:
+      DATABASE_URL: postgresql://municipio_admin:PASS@db:5432/municipio_db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: municipio_db
+      POSTGRES_USER: municipio_admin
+      POSTGRES_PASSWORD: CAMBIAR_EN_PRODUCCION
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+
+  ollama:
+    image: ollama/ollama
+    ports: ["11434:11434"]
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  postgres_data:
+  ollama_data:</pre>
+            </div>
+            <h3 class="sub-heading">Comandos esenciales</h3>
+            <table class="manual-table">
+              <thead><tr><th>Comando</th><th>Qué hace</th></tr></thead>
+              <tbody>
+                <tr><td><code>docker-compose up -d</code></td><td>Levantar todos los servicios en background</td></tr>
+                <tr><td><code>docker-compose down</code></td><td>Apagar todos los servicios</td></tr>
+                <tr><td><code>docker-compose logs -f api</code></td><td>Ver logs de la API en tiempo real</td></tr>
+                <tr><td><code>docker-compose restart db</code></td><td>Reiniciar solo la base de datos</td></tr>
+                <tr><td><code>docker exec -it municipio_db psql -U municipio_admin -d municipio_db</code></td><td>Entrar a PostgreSQL</td></tr>
+                <tr><td><code>ollama pull llama3.1:8b</code></td><td>Descargar modelo de IA</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- BACKUPS                                -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-backup">
+            <div class="section-header amber">
+              <span class="section-icon">💾</span>
+              <div>
+                <h2>Manual: Backups y Recuperación</h2>
+                <p>Estrategia 3-2-1 para proteger los datos del municipio</p>
+              </div>
+            </div>
+            <div class="alert-caution">🔴 <strong>CRÍTICO:</strong> Los datos de empleados, reclamos y gastos son información sensible y deben respaldarse diariamente. Una pérdida de datos sin backup puede causar un problema legal grave.</div>
+            <h3 class="sub-heading">Estrategia de backup 3-2-1</h3>
+            <div class="backup-strategy">
+              <div class="backup-item">
+                <div class="backup-num">3</div>
+                <div><strong>Copias de los datos</strong><br/>Siempre mantener 3 copias del backup</div>
+              </div>
+              <div class="backup-item">
+                <div class="backup-num">2</div>
+                <div><strong>Tipos de almacenamiento</strong><br/>Servidor principal + disco externo</div>
+              </div>
+              <div class="backup-item">
+                <div class="backup-num">1</div>
+                <div><strong>Copia externa</strong><br/>Un backup en ubicación física distinta (ej: pen drive en intendencia)</div>
+              </div>
+            </div>
+            <h3 class="sub-heading">Script de backup automático</h3>
+            <div class="code-block">
+              <div class="code-header"><span>backup.sh — ejecutar con cron cada día a las 2AM</span></div>
+              <pre>#!/bin/bash
+DATE=$(date +%Y-%m-%d)
+BACKUP_DIR="/backups/municipio-junin"
+mkdir -p $BACKUP_DIR
+
+# Backup PostgreSQL
+docker exec municipio_db pg_dump -U municipio_admin municipio_db \
+  | gzip > "$BACKUP_DIR/db-$DATE.sql.gz"
+
+# Backup archivos del sistema
+tar -czf "$BACKUP_DIR/files-$DATE.tar.gz" /var/www/municipio-junin/
+
+# Eliminar backups más viejos de 30 días
+find $BACKUP_DIR -type f -mtime +30 -delete
+
+echo "✅ Backup completado: $DATE"</pre>
+            </div>
+            <h3 class="sub-heading">Verificar que el backup funciona</h3>
+            <div class="checklist">
+              <label class="check-item"><input type="checkbox" /> Backup de base de datos se genera (revisar en <code>/backups/</code>)</label>
+              <label class="check-item"><input type="checkbox" /> El archivo .sql.gz tiene tamaño mayor a 0 bytes</label>
+              <label class="check-item"><input type="checkbox" /> Restaurar backup en servidor de prueba al menos 1 vez por mes</label>
+              <label class="check-item"><input type="checkbox" /> Copiar backup a disco externo una vez por semana</label>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- TROUBLESHOOTING                        -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-problemas">
+            <div class="section-header red">
+              <span class="section-icon">🔴</span>
+              <div>
+                <h2>Guía de Problemas y Soluciones</h2>
+                <p>Troubleshooting — Lo que puede salir mal y cómo solucionarlo</p>
+              </div>
+            </div>
+            <div class="faq-list large">
+              <div class="faq-item">
+                <div class="faq-q">🔴 El sistema no abre en el navegador</div>
+                <div class="faq-a">
+                  <ol>
+                    <li>Verificar que el servidor Python esté corriendo (PowerShell con el comando de inicio)</li>
+                    <li>Probar <code>http://localhost:8181</code> exactamente (no https, no sin puerto)</li>
+                    <li>Si el puerto 8181 está ocupado: usar 8182, 8080 u otro puerto libre</li>
+                    <li>Deshabilitar firewall temporalmente para probar</li>
+                  </ol>
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q">🔴 Los modelos de HuggingFace no cargan</div>
+                <div class="faq-a">
+                  <ol>
+                    <li>Verificar conexión a internet (los modelos se bajan de HuggingFace la primera vez)</li>
+                    <li>Revisar la consola del browser (F12 → Console) por errores CORS o de red</li>
+                    <li>Limpiar caché del browser y reintentar</li>
+                    <li>Si persiste, descargar los modelos manualmente y servirlos localmente</li>
+                  </ol>
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q">🔴 El micrófono no funciona</div>
+                <div class="faq-a">
+                  <ol>
+                    <li>Verificar que el browser tiene permiso de micrófono (ícono en la barra de direcciones)</li>
+                    <li>Solo funciona en Chrome o Edge (no Firefox ni Safari)</li>
+                    <li>Usar Whisper (Tab en ia-hf.html) como alternativa de mayor calidad</li>
+                  </ol>
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q">🔴 El PDF no se genera o descarga</div>
+                <div class="faq-a">
+                  <ol>
+                    <li>Verificar que jsPDF cargó correctamente (F12 → Network → buscar jspdf)</li>
+                    <li>Verificar que el browser permite descargas (sin bloqueador de popups activo)</li>
+                    <li>Probar en modo incógnito para descartar extensiones bloqueadoras</li>
+                  </ol>
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q">🔴 El OCR no lee el texto correctamente</div>
+                <div class="faq-a">
+                  <ol>
+                    <li>El documento debe tener buena calidad de imagen (mínimo 150 DPI)</li>
+                    <li>Tesseract funciona mejor con texto negro sobre fondo blanco</li>
+                    <li>Para documentos en color, escanear en blanco y negro mejora resultados</li>
+                    <li>El OCR tarda entre 10-60 segundos según el tamaño de la imagen</li>
+                  </ol>
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q">🔴 La base de datos no conecta (producción)</div>
+                <div class="faq-a">
+                  <ol>
+                    <li>Verificar que Docker está corriendo: <code>docker ps</code></li>
+                    <li>Verificar que el contenedor de PostgreSQL está activo: <code>docker ps | grep db</code></li>
+                    <li>Revisar logs: <code>docker-compose logs db</code></li>
+                    <li>Probar conexión: <code>psql -h localhost -U municipio_admin -d municipio_db</code></li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══════════════════════════════════════ -->
+          <!-- CONTACTOS                              -->
+          <!-- ══════════════════════════════════════ -->
+          <section class="manual-section" id="seccion-contactos">
+            <div class="section-header green">
+              <span class="section-icon">📞</span>
+              <div>
+                <h2>Contactos y Escalamiento</h2>
+                <p>A quién llamar cuando hay un problema</p>
+              </div>
+            </div>
+            <div class="contacts-grid">
+              <div class="contact-card priority-1">
+                <div class="contact-priority">Nivel 1 — Primera consulta</div>
+                <div class="contact-name">Jefe de Tecnología</div>
+                <div class="contact-role">Responsable del sistema</div>
+                <div class="contact-detail">📧 it@municipiojunin.gob.ar</div>
+                <div class="contact-detail">📱 [Completar con número real]</div>
+              </div>
+              <div class="contact-card priority-2">
+                <div class="contact-priority">Nivel 2 — Soporte técnico</div>
+                <div class="contact-name">Proveedor de infraestructura</div>
+                <div class="contact-role">Servidores, red y hardware</div>
+                <div class="contact-detail">📧 [Completar]</div>
+                <div class="contact-detail">📱 [Completar]</div>
+              </div>
+              <div class="contact-card priority-3">
+                <div class="contact-priority">Nivel 3 — Emergencia</div>
+                <div class="contact-name">Intendente Mario Abed</div>
+                <div class="contact-role">Solo para caídas totales del sistema</div>
+                <div class="contact-detail">📱 [Solo en emergencia real]</div>
+              </div>
+            </div>
+            <h3 class="sub-heading">Información de referencia del sistema</h3>
+            <table class="manual-table">
+              <tbody>
+                <tr><td>Municipio</td><td>Junín, Buenos Aires, Argentina</td></tr>
+                <tr><td>Versión del sistema</td><td>v4.0 — Julio 2026</td></tr>
+                <tr><td>Repositorio</td><td>Gitea interno (cuando se configure)</td></tr>
+                <tr><td>ZIP de respaldo</td><td><code>C:\Users\guill\Documents\municipio-junin-v4-HUGGINGFACE.zip</code></td></tr>
+                <tr><td>Carpeta del proyecto</td><td><code>C:\Users\guill\.gemini\antigravity\scratch\municipio-junin\</code></td></tr>
+                <tr><td>Tecnologías principales</td><td>HTML/CSS/JS · HuggingFace Transformers.js · Tesseract.js · jsPDF · SheetJS</td></tr>
+                <tr><td>Stack de producción</td><td>Node.js · PostgreSQL 16 · Ollama · Nginx · Docker Compose</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/manuales.js"></script>
+</body>
+</html>

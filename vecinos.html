@@ -1,0 +1,212 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atención Vecinal — Municipio de Junín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/vecinos.css" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Atención Vecinal</h1>
+          <span class="breadcrumb">Municipio de Junín · Reclamos, Turnos y Comunicación</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-primary" id="btnNuevoReclamo">+ Nuevo Reclamo</button>
+        <button class="btn-export">📤 Exportar</button>
+        <div class="notification-bell">🔔<span class="notif-dot"></span></div>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- KPIs -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Reclamos Totales</span><div class="kpi-icon blue">📋</div></div>
+          <div class="kpi-value" data-target="318">0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">▲ 23 esta semana</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Pendientes</span><div class="kpi-icon red">⏳</div></div>
+          <div class="kpi-value" data-target="89">0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">▲ Requieren atención</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Resueltos (mes)</span><div class="kpi-icon green">✅</div></div>
+          <div class="kpi-value" data-target="229">0</div>
+          <div class="kpi-footer"><span class="kpi-trend down">72% tasa resolución</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Tiempo Promedio</span><div class="kpi-icon amber">⏱️</div></div>
+          <div class="kpi-value" data-target="3">0</div>
+          <div class="kpi-footer"><span class="kpi-sub">días hasta resolución</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Turnos Hoy</span><div class="kpi-icon violet">📅</div></div>
+          <div class="kpi-value" data-target="47">0</div>
+          <div class="kpi-footer"><span class="kpi-sub">12 pendientes de confirmar</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Satisfacción</span><div class="kpi-icon teal">⭐</div></div>
+          <div class="kpi-value pct" data-target="84">0%</div>
+          <div class="kpi-footer"><span class="kpi-trend down">✅ Encuestas agosto</span></div>
+        </div>
+      </section>
+
+      <!-- TABS -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-tab="reclamos">📋 Reclamos</button>
+        <button class="tab-btn" data-tab="turnos">📅 Turnos</button>
+        <button class="tab-btn" data-tab="tipos">📊 Por Tipo</button>
+      </div>
+
+      <!-- TAB: RECLAMOS -->
+      <div class="tab-content active" id="tab-reclamos">
+        <div class="rrhh-panel">
+          <div class="panel-header">
+            <h2 class="chart-title">📋 Reclamos Vecinos</h2>
+            <div class="panel-filters">
+              <select class="select-filter" id="filtroTipo">
+                <option value="">Todos los tipos</option>
+                <option>Baches y Pavimento</option>
+                <option>Alumbrado Público</option>
+                <option>Recolección de Basura</option>
+                <option>Poda de Árboles</option>
+                <option>Agua y Cloacas</option>
+                <option>Ruidos Molestos</option>
+                <option>Otros</option>
+              </select>
+              <select class="select-filter" id="filtroEstadoR">
+                <option value="">Todos los estados</option>
+                <option>Pendiente</option>
+                <option>En proceso</option>
+                <option>Resuelto</option>
+              </select>
+              <div class="search-box" style="min-width:180px">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchReclamo" placeholder="Buscar vecino o dirección..." />
+              </div>
+            </div>
+          </div>
+          <table class="data-table" id="reclamosTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Vecino</th>
+                <th>Tipo</th>
+                <th>Dirección</th>
+                <th>Fecha</th>
+                <th>Área</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="reclamosBody"></tbody>
+          </table>
+          <div class="table-footer">
+            <span id="reclamosCount" class="table-count">Cargando...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: TURNOS -->
+      <div class="tab-content" id="tab-turnos">
+        <div class="rrhh-panel">
+          <div class="panel-header">
+            <h2 class="chart-title">📅 Gestión de Turnos</h2>
+            <button class="btn-primary" id="btnNuevoTurno">+ Reservar Turno</button>
+          </div>
+          <div class="turnos-grid" id="turnosGrid"></div>
+        </div>
+      </div>
+
+      <!-- TAB: TIPOS -->
+      <div class="tab-content" id="tab-tipos">
+        <div class="charts-row" style="grid-template-columns:1fr 1fr">
+          <div class="chart-card">
+            <div class="chart-header"><h2 class="chart-title">Reclamos por Tipo</h2></div>
+            <div class="chart-container"><canvas id="tiposChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><h2 class="chart-title">Evolución Mensual</h2></div>
+            <div class="chart-container"><canvas id="evolucionChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL NUEVO RECLAMO -->
+  <div class="modal-overlay" id="modalReclamo" style="display:none">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <h3>📋 Registrar Reclamo</h3>
+        <button class="modal-close" onclick="document.getElementById('modalReclamo').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>DNI del Vecino</label>
+            <input type="text" id="rDni" placeholder="28.456.789" />
+          </div>
+          <div class="form-group">
+            <label>Nombre Completo</label>
+            <input type="text" id="rNombre" placeholder="Juan García" />
+          </div>
+          <div class="form-group">
+            <label>Tipo de Reclamo</label>
+            <select id="rTipo">
+              <option>Baches y Pavimento</option>
+              <option>Alumbrado Público</option>
+              <option>Recolección de Basura</option>
+              <option>Poda de Árboles</option>
+              <option>Agua y Cloacas</option>
+              <option>Ruidos Molestos</option>
+              <option>Otros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Área Responsable</label>
+            <select id="rArea">
+              <option>Obras Públicas</option>
+              <option>Alumbrado</option>
+              <option>Medio Ambiente</option>
+              <option>Servicios Urbanos</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Dirección exacta</label>
+            <input type="text" id="rDireccion" placeholder="Av. Rivadavia 1234, entre Mitre y San Martín" />
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Descripción del problema</label>
+            <textarea id="rDescripcion" rows="3" placeholder="Describe el problema con el mayor detalle posible..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="document.getElementById('modalReclamo').style.display='none'">Cancelar</button>
+        <button class="btn-save" id="btnGuardarReclamo">📋 Registrar Reclamo</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/vecinos.js"></script>
+</body>
+</html>

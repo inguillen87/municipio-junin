@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exportación de Reportes — Municipio de Junín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/exportar.css" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Centro de Exportación</h1>
+          <span class="breadcrumb">Reportes Profesionales en PDF y Excel</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- SELECTOR DE REPORTE -->
+      <div class="export-layout">
+
+        <!-- PANEL IZQUIERDO: Tipos de reporte -->
+        <aside class="export-sidebar">
+          <h3 class="export-section-title">📋 Tipo de Reporte</h3>
+          <div class="report-list" id="reportList">
+
+            <div class="report-item active" data-report="ejecutivo">
+              <span class="report-icon">📊</span>
+              <div class="report-info">
+                <span class="report-name">Informe Ejecutivo</span>
+                <span class="report-desc">Para el intendente</span>
+              </div>
+            </div>
+
+            <div class="report-item" data-report="rrhh">
+              <span class="report-icon">👥</span>
+              <div class="report-info">
+                <span class="report-name">Recursos Humanos</span>
+                <span class="report-desc">Nómina y gastos salariales</span>
+              </div>
+            </div>
+
+            <div class="report-item" data-report="gastos">
+              <span class="report-icon">💰</span>
+              <div class="report-info">
+                <span class="report-name">Gastos por Secretaría</span>
+                <span class="report-desc">Presupuesto vs ejecutado</span>
+              </div>
+            </div>
+
+            <div class="report-item" data-report="reclamos">
+              <span class="report-icon">🏘️</span>
+              <div class="report-info">
+                <span class="report-name">Reclamos Vecinales</span>
+                <span class="report-desc">Estado y evolución</span>
+              </div>
+            </div>
+
+            <div class="report-item" data-report="flota">
+              <span class="report-icon">🚗</span>
+              <div class="report-info">
+                <span class="report-name">Flota y Combustible</span>
+                <span class="report-desc">Consumo y mantenimiento</span>
+              </div>
+            </div>
+
+            <div class="report-item" data-report="talleres">
+              <span class="report-icon">🔧</span>
+              <div class="report-info">
+                <span class="report-name">Talleres Municipales</span>
+                <span class="report-desc">Órdenes y stock</span>
+              </div>
+            </div>
+
+            <div class="report-item" data-report="horasextra">
+              <span class="report-icon">⏱️</span>
+              <div class="report-info">
+                <span class="report-name">Horas Extra</span>
+                <span class="report-desc">Por área y empleado</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="export-options-section">
+            <h3 class="export-section-title">⚙️ Opciones</h3>
+            <div class="option-group">
+              <label class="option-label">Período</label>
+              <select class="option-select" id="optPeriodo">
+                <option>Agosto 2026</option>
+                <option>Julio 2026</option>
+                <option>Junio 2026</option>
+                <option>1er Semestre 2026</option>
+                <option>Año completo 2026</option>
+              </select>
+            </div>
+            <div class="option-group">
+              <label class="option-label">Secretaría</label>
+              <select class="option-select" id="optSecretaria">
+                <option value="">Todas las áreas</option>
+                <option>Obras Públicas</option>
+                <option>Educación</option>
+                <option>Salud</option>
+                <option>Seguridad</option>
+                <option>Medio Ambiente</option>
+                <option>Intendencia</option>
+              </select>
+            </div>
+            <label class="option-check">
+              <input type="checkbox" id="optLogo" checked />
+              <span>Incluir logo municipal</span>
+            </label>
+            <label class="option-check">
+              <input type="checkbox" id="optFirma" checked />
+              <span>Pie de firma</span>
+            </label>
+            <label class="option-check">
+              <input type="checkbox" id="optGraficos" />
+              <span>Incluir gráficos (próximamente)</span>
+            </label>
+          </div>
+        </aside>
+
+        <!-- PANEL DERECHO: Preview + Exportar -->
+        <div class="export-main">
+
+          <!-- PREVIEW CARD -->
+          <div class="preview-card" id="previewCard">
+            <div class="preview-header">
+              <div class="preview-doc-header">
+                <div class="preview-logo">🏛️</div>
+                <div>
+                  <div class="preview-title-mun">MUNICIPIO DE JUNÍN</div>
+                  <div class="preview-subtitle">Sistema de Gestión Municipal</div>
+                </div>
+                <div class="preview-date" id="previewDate"></div>
+              </div>
+              <div class="preview-divider"></div>
+              <h2 class="preview-report-title" id="previewTitle">Informe Ejecutivo</h2>
+              <p class="preview-period" id="previewPeriod">Período: Agosto 2026</p>
+            </div>
+            <div class="preview-body" id="previewBody">
+              <!-- Generado por JS -->
+            </div>
+            <div class="preview-footer">
+              <span>Municipio de Junín · Sistema Digital Municipal v1.0</span>
+              <span>Documento generado automáticamente · Confidencial</span>
+            </div>
+          </div>
+
+          <!-- BOTONES EXPORT -->
+          <div class="export-actions">
+            <div class="export-actions-label">Exportar como:</div>
+            <button class="export-btn pdf" id="btnExportPDF">
+              <span class="export-btn-icon">📑</span>
+              <div>
+                <span class="export-btn-title">Exportar PDF</span>
+                <span class="export-btn-desc">Documento profesional A4</span>
+              </div>
+            </button>
+            <button class="export-btn excel" id="btnExportExcel">
+              <span class="export-btn-icon">📊</span>
+              <div>
+                <span class="export-btn-title">Exportar Excel</span>
+                <span class="export-btn-desc">Planilla con datos y fórmulas</span>
+              </div>
+            </button>
+            <button class="export-btn print" id="btnPrint">
+              <span class="export-btn-icon">🖨️</span>
+              <div>
+                <span class="export-btn-title">Imprimir</span>
+                <span class="export-btn-desc">Enviar a impresora</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- RECENT EXPORTS -->
+          <div class="recent-exports">
+            <h3 class="export-section-title">🕐 Exportaciones Recientes</h3>
+            <div id="recentList">
+              <div class="recent-item">
+                <span class="recent-icon pdf">PDF</span>
+                <div class="recent-info"><span class="recent-name">Informe Ejecutivo Agosto 2026</span><span class="recent-time">Hace 2 horas</span></div>
+                <button class="recent-download">⬇</button>
+              </div>
+              <div class="recent-item">
+                <span class="recent-icon excel">XLS</span>
+                <div class="recent-info"><span class="recent-name">RRHH — Nómina Completa</span><span class="recent-time">Ayer 15:30</span></div>
+                <button class="recent-download">⬇</button>
+              </div>
+              <div class="recent-item">
+                <span class="recent-icon pdf">PDF</span>
+                <div class="recent-info"><span class="recent-name">Gastos por Secretaría — Julio</span><span class="recent-time">Lunes 09:15</span></div>
+                <button class="recent-download">⬇</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/exportar.js"></script>
+</body>
+</html>

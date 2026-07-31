@@ -1,0 +1,18 @@
+/* TALLERES STYLES */
+.vehiculos-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; padding: 4px;
+}
+.vehiculo-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; transition: 0.2s;
+}
+.vehiculo-card:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
+.vehiculo-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.vehiculo-tipo { font-size: 24px; }
+.vehiculo-nombre { font-weight: 700; font-size: 14px; }
+.vehiculo-id { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.vehiculo-km { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.km-label { font-size: 11px; color: var(--text-muted); }
+.km-value { font-size: 13px; font-weight: 600; }
+.vehiculo-bar-wrap { height: 4px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+.vehiculo-bar { height: 100%; border-radius: 99px; transition: width 1.5s cubic-bezier(0.4,0,0.2,1); }

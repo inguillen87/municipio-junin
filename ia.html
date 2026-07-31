@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistente IA Municipal — Municipio de Junín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/ia.css" />
+  <link rel="stylesheet" href="css/ia2.css" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Asistente IA Municipal</h1>
+          <span class="breadcrumb">OCR · Voz · Documentos · Exportación</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="ia-status" id="iaStatus">
+          <span class="status-dot online"></span>
+          <span id="modelLabel">Llama 3.1 · Local</span>
+        </div>
+        <a href="exportar.html" class="btn-export-link">📊 Exportar Reportes</a>
+        <button class="btn-export" id="btnClearChat">🗑️ Limpiar</button>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="ia-layout">
+
+      <!-- PANEL IZQUIERDO -->
+      <aside class="ia-sidebar">
+
+        <!-- UPLOAD DE ARCHIVOS -->
+        <div class="ia-sidebar-section">
+          <h3 class="ia-sidebar-title">📎 Cargar Documentos</h3>
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-icon">📂</div>
+            <div class="drop-text">Arrastrá o hacé clic</div>
+            <div class="drop-sub">PDF · Excel · Imagen · Word</div>
+            <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp,.txt,.doc,.docx" multiple hidden />
+          </div>
+          <div class="file-list" id="fileList"></div>
+        </div>
+
+        <!-- OCR STATUS -->
+        <div class="ia-sidebar-section" id="ocrSection" style="display:none">
+          <h3 class="ia-sidebar-title">🔍 OCR — Lectura de Texto</h3>
+          <div class="ocr-progress-wrap">
+            <div class="ocr-bar-track">
+              <div class="ocr-bar-fill" id="ocrBarFill" style="width:0%"></div>
+            </div>
+            <span class="ocr-status-text" id="ocrStatusText">Preparando...</span>
+          </div>
+          <div class="ocr-result-preview" id="ocrPreview"></div>
+        </div>
+
+        <!-- BASE DE CONOCIMIENTO -->
+        <div class="ia-sidebar-section">
+          <h3 class="ia-sidebar-title">📚 Base de Conocimiento</h3>
+          <div class="doc-list" id="docList">
+            <div class="doc-item active">
+              <span class="doc-icon">📊</span>
+              <div class="doc-info"><span class="doc-name">Dashboard Municipal</span><span class="doc-desc">KPIs y gastos live</span></div>
+              <span class="doc-check">✓</span>
+            </div>
+            <div class="doc-item active">
+              <span class="doc-icon">👥</span>
+              <div class="doc-info"><span class="doc-name">Base RRHH</span><span class="doc-desc">1.247 empleados</span></div>
+              <span class="doc-check">✓</span>
+            </div>
+            <div class="doc-item active">
+              <span class="doc-icon">💰</span>
+              <div class="doc-info"><span class="doc-name">Presupuesto 2026</span><span class="doc-desc">Por secretaría</span></div>
+              <span class="doc-check">✓</span>
+            </div>
+            <div class="doc-item active">
+              <span class="doc-icon">🏘️</span>
+              <div class="doc-info"><span class="doc-name">Reclamos Vecinos</span><span class="doc-desc">318 registros</span></div>
+              <span class="doc-check">✓</span>
+            </div>
+            <div class="doc-item active">
+              <span class="doc-icon">⛽</span>
+              <div class="doc-info"><span class="doc-name">Combustible Flota</span><span class="doc-desc">43 vehículos</span></div>
+              <span class="doc-check">✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONSULTAS RÁPIDAS -->
+        <div class="ia-sidebar-section">
+          <h3 class="ia-sidebar-title">💡 Consultas Rápidas</h3>
+          <div class="quick-queries">
+            <button class="quick-btn" data-query="¿Cuál es el gasto total del municipio en agosto 2026?">💰 Gasto agosto 2026</button>
+            <button class="quick-btn" data-query="¿Qué secretarías superaron su presupuesto?">⚠️ Alertas presupuestarias</button>
+            <button class="quick-btn" data-query="¿Cuántos empleados tiene el municipio y cuál es la masa salarial?">👥 Resumen RRHH</button>
+            <button class="quick-btn" data-query="¿Cuáles son los reclamos más frecuentes de los vecinos?">🏘️ Reclamos frecuentes</button>
+            <button class="quick-btn" data-query="Dame un informe ejecutivo completo para presentar al intendente Mario Abed">📋 Informe ejecutivo</button>
+            <button class="quick-btn" data-query="¿Cuánto ahorramos al migrar los sistemas a infraestructura propia?">💡 Ahorro IT 2026</button>
+            <button class="quick-btn" data-query="Analiza el consumo de combustible de la flota municipal">⛽ Análisis flota</button>
+            <button class="quick-btn" data-query="¿Cuáles son las órdenes de trabajo urgentes en los talleres?">🔧 Talleres urgentes</button>
+          </div>
+        </div>
+
+        <!-- CONFIG -->
+        <div class="ia-sidebar-section">
+          <h3 class="ia-sidebar-title">⚙️ Configuración</h3>
+          <div class="config-item">
+            <span class="config-label">Endpoint Ollama</span>
+            <input type="text" class="config-input" value="http://localhost:11434" id="ollamaEndpoint" />
+          </div>
+          <div class="config-item">
+            <span class="config-label">Modelo</span>
+            <select class="config-select" id="modelSelect">
+              <option value="demo">🎭 Demo (sin Ollama)</option>
+              <option value="llama3.1:8b">llama3.1:8b</option>
+              <option value="llama3.1:70b">llama3.1:70b</option>
+              <option value="mistral:7b">mistral:7b</option>
+              <option value="gemma3:9b">gemma3:9b</option>
+            </select>
+          </div>
+          <button class="btn-test-connection" id="btnTestOllama">🔌 Probar conexión</button>
+        </div>
+
+      </aside>
+
+      <!-- CHAT PRINCIPAL -->
+      <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+          <div class="msg-row ai">
+            <div class="msg-avatar ai-avatar">🤖</div>
+            <div class="msg-bubble ai-bubble">
+              <div class="msg-header">
+                <span class="msg-sender">Asistente Municipal IA</span>
+                <span class="msg-time">Ahora</span>
+              </div>
+              <div class="msg-text">
+                <p>👋 <strong>¡Hola! Soy el Asistente IA del Municipio de Junín.</strong></p>
+                <p>Puedo ayudarte con:</p>
+                <ul>
+                  <li>📊 Consultas sobre gastos, presupuesto y RRHH</li>
+                  <li>📄 <strong>Leer y analizar documentos</strong> que subas (PDF, Excel, imágenes escaneadas)</li>
+                  <li>🔍 <strong>OCR automático</strong> en documentos escaneados</li>
+                  <li>🎤 <strong>Preguntas por voz</strong> — tocá el micrófono</li>
+                  <li>📥 <strong>Exportar resultados</strong> a PDF o Excel profesional</li>
+                  <li>📋 Generar informes ejecutivos para el intendente</li>
+                </ul>
+                <p>¿Qué necesitás hoy?</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VOICE TRANSCRIPT BANNER -->
+        <div class="voice-banner" id="voiceBanner" style="display:none">
+          <div class="voice-wave">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <span id="voiceTranscript">Escuchando...</span>
+          <button id="stopVoice" class="voice-stop">⏹ Detener</button>
+        </div>
+
+        <!-- INPUT AREA -->
+        <div class="chat-input-area">
+          <div class="chat-input-wrap">
+            <button class="attach-btn" id="attachBtn" title="Adjuntar archivo">📎</button>
+            <textarea id="chatInput" placeholder="Escribí tu consulta, o tocá el micrófono para hablar... También podés subir un documento para que lo analice." rows="1"></textarea>
+            <button class="voice-btn" id="voiceBtn" title="Hablar por micrófono">🎤</button>
+            <button class="send-btn" id="sendBtn">➤</button>
+          </div>
+          <div class="chat-toolbar">
+            <button class="toolbar-btn" id="btnExportPDF" title="Exportar esta conversación a PDF">📑 Exportar PDF</button>
+            <button class="toolbar-btn" id="btnExportExcel" title="Exportar datos a Excel">📊 Exportar Excel</button>
+            <button class="toolbar-btn" id="btnSummarize" title="Resumir documentos cargados">✨ Resumir docs</button>
+            <span class="char-counter" id="charCounter">0 / 2000</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- TESSERACT.JS — OCR open source -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- PDF.JS — leer PDFs -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <!-- XLSX — leer/escribir Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- jsPDF — generar PDFs -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- jsPDF-AutoTable — tablas profesionales en PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <script src="js/nav.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ia2.js"></script>
+</body>
+</html>

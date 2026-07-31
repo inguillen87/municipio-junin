@@ -253,7 +253,7 @@ function buildSidebar(activeId) {
       <div class="logo-wrap">
         <div class="logo-icon">🏛️</div>
         <div class="logo-text">
-          <span class="logo-title">Junín</span>
+          <span class="logo-title">MuniControl</span>
           <span class="logo-sub">Sistema Municipal</span>
         </div>
       </div>

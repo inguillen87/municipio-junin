@@ -27,7 +27,8 @@ enum Plan {
   STARTER       // < 500 empleados — $299 USD/mes
   PROFESSIONAL  // 500–2.000 — $799 USD/mes
   ENTERPRISE    // > 2.000 — $1.999 USD/mes
-  DEMO          // Plan demo gratuito (30 días)
+  TRIAL         // Período de prueba (30 días)
+  DEMO          // Plan demo gratuito
 }
 
 enum TenantStatus {
@@ -59,7 +60,7 @@ model Tenant {
   contactEmail String?
   contactPhone String?
   website      String?
-  plan         Plan         @default(TRIAL)
+  plan         Plan         @default(DEMO)
   status       TenantStatus @default(TRIAL)
   trialEndsAt  DateTime?             // Fin del período trial
   billingEmail String?

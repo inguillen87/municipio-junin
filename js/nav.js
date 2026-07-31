@@ -33,7 +33,7 @@ const NAV_ITEMS = [
   { id: 'upload',       href: 'upload.html',       icon: '📂', label: 'Cargar Archivos',      badge: 'BETA' },
   { id: 'exportar',     href: 'exportar.html',     icon: '📑', label: 'Exportar Reportes',    badge: 'PDF' },
   { id: 'presentacion', href: 'presentacion.html', icon: '🎯', label: 'Presentación Ejecutiva', badge: 'DEMO' },
-  { id: 'docs',         href: 'manuales.html',     icon: '📖', label: 'Manuales' },
+  { id: 'manuales',     href: 'manuales.html',     icon: '📖', label: 'Manual' },
 ];
 
 function buildSidebar(activeId) {

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics Avanzado — GovTech Municipal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .analytics-hero {
+      background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08));
+      border: 1px solid rgba(59,130,246,0.15);
+      border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+    .hero-stat { text-align: center; flex: 1; min-width: 100px; }
+    .hero-val { font-family: 'Outfit',sans-serif; font-size: 28px; font-weight: 900; color: var(--text-primary); }
+    .hero-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .hero-trend { font-size: 11px; font-weight: 700; margin-top: 4px; }
+    .trend-up   { color: #10b981; }
+    .trend-down { color: #ef4444; }
+    .hero-divider { width: 1px; height: 50px; background: var(--border); flex-shrink: 0; }
+
+    .filter-bar {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;
+    }
+    .filter-select {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text-primary); padding: 7px 12px;
+      font-size: 12px; cursor: pointer; outline: none;
+    }
+    .filter-select:focus { border-color: #3b82f6; }
+    .filter-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .chart-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; }
+    .chart-wrap { position: relative; }
+
+    .ai-insight-box {
+      background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(59,130,246,0.06));
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
+    }
+    .ai-insight-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .ai-insight-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#3b82f6,#8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .ai-insight-title { font-size: 14px; font-weight: 800; }
+    .ai-insight-sub { font-size: 11px; color: var(--text-muted); }
+    .insight-items { display: flex; flex-direction: column; gap: 10px; }
+    .insight-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: rgba(255,255,255,0.02); border-radius: 9px; border: 1px solid rgba(255,255,255,0.04); }
+    .insight-icon { font-size: 18px; flex-shrink: 0; }
+    .insight-text { font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+    .insight-text strong { color: var(--text-primary); }
+    .insight-confidence { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-top: 4px; display: inline-block; }
+    .conf-high   { background: rgba(16,185,129,0.1); color: #10b981; }
+    .conf-medium { background: rgba(245,158,11,0.1); color: #f59e0b; }
+
+    .comparison-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .comparison-table th { padding: 9px 14px; background: rgba(255,255,255,0.03); color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); text-align: left; }
+    .comparison-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.02); color: var(--text-secondary); }
+    .comparison-table tr:hover td { background: rgba(255,255,255,0.01); }
+    .change-positive { color: #10b981; font-weight: 700; }
+    .change-negative { color: #ef4444; font-weight: 700; }
+    .change-neutral  { color: var(--text-muted); }
+
+    .activity-feed { display: flex; flex-direction: column; gap: 8px; }
+    .activity-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-radius: 9px; border: 1px solid rgba(255,255,255,0.03); }
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .activity-text { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+    .activity-text strong { color: var(--text-primary); }
+    .activity-time { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    @media (max-width: 768px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .analytics-hero { flex-direction: column; text-align: center; }
+      .hero-divider { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>📈 Analytics Avanzado</h1>
+          <span class="breadcrumb">Sistema · Análisis inteligente · Datos al 31/07/2026</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-primary" onclick="window.print()" style="padding:8px 14px;font-size:12px">🖨️ Exportar PDF</button>
+        <button onclick="exportExcel()" style="padding:8px 14px;font-size:12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#10b981;border-radius:9px;cursor:pointer;font-weight:700">📊 Excel</button>
+        <div class="topbar-avatar" id="userAvatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- HERO STATS -->
+      <div class="analytics-hero">
+        <div class="hero-stat">
+          <div class="hero-val">$372M</div>
+          <div class="hero-lbl">Presupuesto Total 2026</div>
+          <div class="hero-trend trend-up">↑ +8.3% vs 2025</div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-val">52%</div>
+          <div class="hero-lbl">Ejecución al 31/Jul</div>
+          <div class="hero-trend trend-up">↑ +4pp vs año anterior</div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-val">1.247</div>
+          <div class="hero-lbl">Empleados Activos</div>
+          <div class="hero-trend trend-down">↓ -12 bajas este mes</div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-val">47</div>
+          <div class="hero-lbl">Contratos Activos</div>
+          <div class="hero-trend trend-up">↑ +3 nuevos</div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-val">$31M</div>
+          <div class="hero-lbl">Ahorro Proyectado IA</div>
+          <div class="hero-trend trend-up">↑ Cierre estimado</div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-val">94.2%</div>
+          <div class="hero-lbl">Presentismo Promedio</div>
+          <div class="hero-trend trend-up">↑ +0.8pp este mes</div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <span class="filter-label">Filtros:</span>
+        <select class="filter-select" onchange="updateCharts()">
+          <option>Enero — Julio 2026</option>
+          <option>Enero — Diciembre 2025</option>
+          <option>Últimos 3 meses</option>
+          <option>Últimos 12 meses</option>
+        </select>
+        <select class="filter-select" onchange="updateCharts()">
+          <option>Todas las áreas</option>
+          <option>Personal y Sueldos</option>
+          <option>Obras Públicas</option>
+          <option>Salud Municipal</option>
+          <option>Educación</option>
+          <option>Servicios Básicos</option>
+        </select>
+        <select class="filter-select">
+          <option>Vista mensual</option>
+          <option>Vista trimestral</option>
+          <option>Vista anual</option>
+        </select>
+        <button onclick="updateCharts()" style="padding:7px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 Actualizar</button>
+      </div>
+
+      <!-- AI INSIGHTS -->
+      <div class="ai-insight-box">
+        <div class="ai-insight-header">
+          <div class="ai-insight-avatar">🤖</div>
+          <div>
+            <div class="ai-insight-title">Análisis Inteligente — GovTech IA</div>
+            <div class="ai-insight-sub">Generado automáticamente · Datos al 31 de julio 2026</div>
+          </div>
+          <button onclick="regenerateInsights()" style="margin-left:auto;padding:6px 14px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);color:#a78bfa;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700">🔄 Regenerar</button>
+        </div>
+        <div class="insight-items" id="insightItems"></div>
+      </div>
+
+      <!-- CHARTS GRID -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">💰 Ejecución Presupuestaria Mensual</div>
+          <div class="chart-sub">Presupuestado vs. ejecutado — predicción IA en gris</div>
+          <div class="chart-wrap"><canvas id="chartEjecucion" height="220"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">📊 Gasto por Área (Julio 2026)</div>
+          <div class="chart-sub">Distribución porcentual del presupuesto ejecutado</div>
+          <div class="chart-wrap"><canvas id="chartAreas" height="220"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">🏘️ Reclamos por Categoría</div>
+          <div class="chart-sub">Tipos de reclamos vecinales — últimos 6 meses</div>
+          <div class="chart-wrap"><canvas id="chartReclamos" height="220"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">👥 Evolución de Personal</div>
+          <div class="chart-sub">Nómina activa por mes — con proyección IA</div>
+          <div class="chart-wrap"><canvas id="chartPersonal" height="220"></canvas></div>
+        </div>
+      </div>
+
+      <!-- COMPARISON TABLE + ACTIVITY -->
+      <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;margin-bottom:20px">
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:4px">📋 Comparativo por Partida — 2026 vs 2025</div>
+          <div class="chart-sub" style="margin-bottom:12px">Evolución anual por área de gasto</div>
+          <div style="overflow-x:auto">
+            <table class="comparison-table" id="compTable"></table>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:4px">⚡ Actividad Reciente</div>
+          <div class="chart-sub" style="margin-bottom:12px">Últimas acciones en el sistema</div>
+          <div class="activity-feed" id="activityFeed"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/pwa.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/ai-widget.js"></script>
+  <script>
+    buildSidebar('analytics');
+
+    // ── CHART CONFIG ─────────────────────────────────────────
+    Chart.defaults.color = 'rgba(148,163,184,0.7)';
+    Chart.defaults.font.family = 'Inter';
+    Chart.defaults.plugins.legend.labels.boxWidth = 10;
+    Chart.defaults.plugins.legend.labels.padding = 14;
+
+    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago (IA)','Sep (IA)','Oct (IA)','Nov (IA)','Dic (IA)'];
+    const EXEC_REAL = [21.2, 22.8, 24.1, 25.7, 26.4, 28.1, 17.0];
+    const EXEC_PRED = [null,null,null,null,null,null,17.0,22.5,24.1,25.8,27.2,48.0];
+    const PRESUP   = [31,31,31,31,31,31,31,31,31,31,31,31];
+
+    // Chart 1: Ejecución presupuestaria
+    const ctx1 = document.getElementById('chartEjecucion').getContext('2d');
+    const execGrad = ctx1.createLinearGradient(0,0,0,220);
+    execGrad.addColorStop(0,'rgba(59,130,246,0.3)');
+    execGrad.addColorStop(1,'rgba(59,130,246,0)');
+    new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: MONTHS,
+        datasets: [
+          { label:'Presupuestado', data:PRESUP, borderColor:'rgba(100,116,139,0.4)', borderWidth:1.5, borderDash:[4,4], pointRadius:0, fill:false },
+          { label:'Ejecutado real', data:[...EXEC_REAL,...Array(5).fill(null)], borderColor:'#3b82f6', borderWidth:2.5, backgroundColor:execGrad, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#3b82f6' },
+          { label:'Predicción IA', data:EXEC_PRED, borderColor:'rgba(139,92,246,0.6)', borderWidth:2, borderDash:[6,3], fill:false, tension:0.4, pointRadius:3, pointBackgroundColor:'#8b5cf6' },
+        ]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom'} }, scales:{ y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{callback:v=>`$${v}M`} }, x:{ grid:{color:'rgba(255,255,255,0.04)'} } } }
+    });
+
+    // Chart 2: Áreas donut
+    const ctx2 = document.getElementById('chartAreas').getContext('2d');
+    new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Personal','Obras','Servicios','Salud','Educación','Social','IT'],
+        datasets: [{ data:[39,14,11,10,9,9,8], backgroundColor:['#ef4444','#3b82f6','#10b981','#8b5cf6','#f59e0b','#06b6d4','#ec4899'], borderWidth:0, hoverOffset:8 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'right'}, tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed}%`}} }, cutout:'65%' }
+    });
+
+    // Chart 3: Reclamos bar
+    const ctx3 = document.getElementById('chartReclamos').getContext('2d');
+    const barGrads = ['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#06b6d4'];
+    new Chart(ctx3, {
+      type: 'bar',
+      data: {
+        labels: ['Baches','Alumbrado','Basura','Agua','Ruidos','Otros'],
+        datasets: [{ label:'Reclamos', data:[247,183,142,98,67,43], backgroundColor:barGrads, borderRadius:6, borderWidth:0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{grid:{color:'rgba(255,255,255,0.04)'}}, x:{grid:{display:false}} } }
+    });
+
+    // Chart 4: Personal line
+    const ctx4 = document.getElementById('chartPersonal').getContext('2d');
+    const persGrad = ctx4.createLinearGradient(0,0,0,220);
+    persGrad.addColorStop(0,'rgba(16,185,129,0.25)');
+    persGrad.addColorStop(1,'rgba(16,185,129,0)');
+    new Chart(ctx4, {
+      type: 'line',
+      data: {
+        labels: MONTHS,
+        datasets: [
+          { label:'Nómina real', data:[1259,1253,1248,1251,1250,1248,1247,null,null,null,null,null], borderColor:'#10b981', backgroundColor:persGrad, fill:true, tension:0.4, borderWidth:2.5, pointRadius:3 },
+          { label:'Proyección IA', data:[null,null,null,null,null,null,1247,1244,1242,1240,1238,1235], borderColor:'rgba(16,185,129,0.5)', borderDash:[5,3], fill:false, tension:0.4, borderWidth:2, pointRadius:3, pointBackgroundColor:'#10b981' },
+        ]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{ y:{grid:{color:'rgba(255,255,255,0.04)'},min:1220}, x:{grid:{color:'rgba(255,255,255,0.04)'}} } }
+    });
+
+    function updateCharts() {
+      // En producción, re-fetch datos y actualizar charts
+      console.log('Actualizando charts con nuevos filtros...');
+    }
+
+    // ── AI INSIGHTS ──────────────────────────────────────────
+    const INSIGHTS = [
+      { icon:'🚨', text:'La partida <strong>Personal y Sueldos</strong> se encuentra al <strong>103%</strong> del presupuesto asignado. Con el ritmo actual, superará el límite en agosto. Se recomienda revisar horas extras y contratos temporarios.', conf:'high', confLabel:'Confianza: 94%' },
+      { icon:'💡', text:'Si se renegocia el <strong>contrato de Limpieza Zona Norte</strong> (vence en 12 días), la IA estima un ahorro potencial de <strong>$4.2M anuales</strong> basado en valores de mercado comparables.', conf:'high', confLabel:'Confianza: 88%' },
+      { icon:'📈', text:'La <strong>ejecución presupuestaria</strong> mejora un 4pp respecto al mismo período del año anterior. Al ritmo actual, el municipio cerrará el año con un <strong>superávit estimado de $31M</strong>.', conf:'medium', confLabel:'Confianza: 76%' },
+      { icon:'🏘️', text:'El <strong>34% de los reclamos vecinales</strong> son sobre baches y pavimento. Se recomienda priorizar la <strong>Pavimentación Calle San Martín</strong> (65% ejecutada) para reducir reclamos en la zona centro.', conf:'high', confLabel:'Confianza: 91%' },
+      { icon:'👥', text:'La tendencia de <strong>bajas de personal</strong> (12 este mes) es consistente con jubilaciones programadas. La IA no detecta señales de riesgo de desabastecimiento de servicios críticos.', conf:'medium', confLabel:'Confianza: 82%' },
+    ];
+
+    function renderInsights() {
+      document.getElementById('insightItems').innerHTML = INSIGHTS.map(i => `
+        <div class="insight-item">
+          <div class="insight-icon">${i.icon}</div>
+          <div>
+            <div class="insight-text">${i.text}</div>
+            <span class="insight-confidence ${i.conf === 'high' ? 'conf-high' : 'conf-medium'}">${i.confLabel}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+    renderInsights();
+
+    function regenerateInsights() {
+      const el = document.getElementById('insightItems');
+      el.style.opacity = '0.4';
+      setTimeout(() => { el.style.opacity = '1'; renderInsights(); }, 1200);
+    }
+
+    // ── COMPARISON TABLE ──────────────────────────────────────
+    const COMP_DATA = [
+      { partida:'Personal y Sueldos', v2025:'$138.2M', v2026:'$152.0M', cambio:'+10.0%', tipo:'up' },
+      { partida:'Obras de Infraestructura', v2025:'$41.3M', v2026:'$53.8M', cambio:'+30.3%', tipo:'up' },
+      { partida:'Servicios Básicos', v2025:'$38.7M', v2026:'$41.2M', cambio:'+6.5%', tipo:'up' },
+      { partida:'Salud Municipal', v2025:'$34.1M', v2026:'$37.8M', cambio:'+10.8%', tipo:'up' },
+      { partida:'Educación y Cultura', v2025:'$31.5M', v2026:'$33.4M', cambio:'+6.0%', tipo:'up' },
+      { partida:'Asistencia Social', v2025:'$29.8M', v2026:'$31.6M', cambio:'+6.0%', tipo:'up' },
+      { partida:'Mantenimiento Flota', v2025:'$16.4M', v2026:'$14.9M', cambio:'-9.1%', tipo:'down' },
+      { partida:'Tecnología e IT', v2025:'$8.2M', v2026:'$7.3M', cambio:'-11.0%', tipo:'down' },
+    ];
+    document.getElementById('compTable').innerHTML = `
+      <thead><tr><th>Partida</th><th>2025</th><th>2026</th><th>Cambio</th></tr></thead>
+      <tbody>${COMP_DATA.map(r => `<tr><td>${r.partida}</td><td>${r.v2025}</td><td style="font-weight:700">${r.v2026}</td><td class="change-${r.tipo === 'up' ? 'positive' : 'negative'}">${r.cambio}</td></tr>`).join('')}</tbody>
+    `;
+
+    // ── ACTIVITY FEED ─────────────────────────────────────────
+    const ACTIVITIES = [
+      { color:'#10b981', text:'<strong>Contrato aprobado</strong> — Limpieza Zona Norte renovado por $850.000/mes', time:'Hace 2 min' },
+      { color:'#ef4444', text:'<strong>Alerta:</strong> Partida Personal superó el 100% del presupuesto asignado', time:'Hace 18 min' },
+      { color:'#3b82f6', text:'<strong>Informe exportado</strong> por hacienda@junin.gob.ar', time:'Hace 45 min' },
+      { color:'#f59e0b', text:'<strong>Reclamo urgente</strong> #1247 — Pérdida de agua en Av. San Martín 540', time:'Hace 1h' },
+      { color:'#8b5cf6', text:'<strong>IA generó pliego</strong> de licitación para Servicio de Fumigación', time:'Hace 2h' },
+      { color:'#10b981', text:'<strong>Obra actualizada</strong> — Parque Recreativo Norte al 80%', time:'Hace 3h' },
+      { color:'#3b82f6', text:'<strong>Nuevo usuario</strong> — it@junin.gob.ar inició sesión', time:'Hace 4h' },
+    ];
+    document.getElementById('activityFeed').innerHTML = ACTIVITIES.map(a => `
+      <div class="activity-item">
+        <div class="activity-dot" style="background:${a.color}"></div>
+        <div>
+          <div class="activity-text">${a.text}</div>
+          <div class="activity-time">${a.time}</div>
+        </div>
+      </div>
+    `).join('');
+
+    function exportExcel() {
+      const rows = [['Partida','2025','2026','Cambio'], ...COMP_DATA.map(r => [r.partida,r.v2025,r.v2026,r.cambio])];
+      let csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'analytics_govtech_julio2026.csv'; a.click();
+    }
+  </script>
+</body>
+</html>

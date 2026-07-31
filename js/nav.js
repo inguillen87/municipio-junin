@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { id: 'control',      href: 'control.html',      icon: '🏛️', label: 'Junín Control',        badge: '30d' },
   { id: 'ia',           href: 'ia.html',           icon: '🤖', label: 'Asistente IA',         badge: 'IA' },
   // CONTROL
+  { id: 'analytics',    href: 'analytics.html',    icon: '📈', label: 'Analytics',            section: 'CONTROL' },
   { id: 'presupuesto',  href: 'presupuesto.html',  icon: '💰', label: 'Presupuesto',          section: 'CONTROL' },
   { id: 'mapa',         href: 'mapa.html',         icon: '🗺️', label: 'Mapa Financiero',     section: 'CONTROL' },
   // GESTION

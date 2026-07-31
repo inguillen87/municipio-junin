@@ -336,10 +336,10 @@
   <script src="js/nav.js"></script>
   <script src="js/control.js"></script>
   <script src="js/ai-widget.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof buildSidebar === 'function') buildSidebar('control');
+    });
+  </script>
 </body>
 </html>
-
-
-
-
-

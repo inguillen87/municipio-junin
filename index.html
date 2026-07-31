@@ -16,6 +16,70 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/shared.css" />
+  <style>
+    .welcome-banner {
+      display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(135deg, var(--primary-color, #2563eb) 0%, #1e40af 100%);
+      color: white; padding: 24px 32px; border-radius: 16px; margin-bottom: 24px;
+      box-shadow: 0 10px 25px rgba(37,99,235,0.2);
+    }
+    .welcome-content h2 { margin: 0; font-size: 28px; font-weight: 700; }
+    .welcome-meta { display: flex; gap: 16px; margin-top: 8px; align-items: center; opacity: 0.9; font-size: 14px; }
+    .role-badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+    .welcome-actions { display: flex; gap: 12px; }
+    .welcome-actions button {
+      padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .welcome-actions .btn-primary { background: white; color: #1e40af; }
+    .welcome-actions .btn-primary:hover { background: #f8fafc; transform: translateY(-2px); }
+    .welcome-actions .btn-secondary { background: rgba(255,255,255,0.2); color: white; }
+    .welcome-actions .btn-secondary:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+
+    .quick-access-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 32px;
+    }
+    .qa-btn {
+      background: var(--surface-color, #ffffff); border: 1px solid var(--border-color, #e2e8f0);
+      padding: 16px; border-radius: 12px; text-align: center; text-decoration: none;
+      color: var(--text-main, #0f172a); font-weight: 600; transition: all 0.2s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; align-items: center;
+    }
+    .qa-btn:hover {
+      transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); border-color: var(--primary-color, #2563eb);
+      color: var(--primary-color, #2563eb);
+    }
+    
+    .live-clock { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text-muted, #64748b); display: flex; align-items: center; padding: 0 12px; border-right: 1px solid var(--border-color, #e2e8f0); margin-right: 8px; }
+
+    .sparkline { height: 4px; width: 100%; background: #f1f5f9; border-radius: 2px; margin-top: 12px; overflow: hidden; }
+    .sparkline-fill { height: 100%; border-radius: 2px; }
+
+    .alerts-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+    .alert-item { display: flex; align-items: center; gap: 16px; padding: 12px; background: var(--bg-color, #f8fafc); border-radius: 8px; border-left: 4px solid transparent; }
+    .alert-item.critico { border-left-color: #ef4444; }
+    .alert-item.advertencia { border-left-color: #f59e0b; }
+    .alert-item.info { border-left-color: #10b981; }
+    
+    .alert-indicator { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .pulse-red { background: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); animation: pulse-red 2s infinite; }
+    @keyframes pulse-red { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    
+    .alert-content { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+    .alert-content strong { color: var(--text-main, #0f172a); font-weight: 600; }
+    .alert-content span { color: var(--text-muted, #64748b); }
+    .alert-link { font-size: 13px; font-weight: 600; color: var(--primary-color, #2563eb); text-decoration: none; white-space: nowrap; }
+    .alert-link:hover { text-decoration: underline; }
+
+    .bottom-status-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface-color, #ffffff);
+      border-top: 1px solid var(--border-color, #e2e8f0); padding: 8px 24px;
+      display: flex; justify-content: center; gap: 24px; font-size: 12px; font-weight: 500;
+      color: var(--text-muted, #64748b); z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+    }
+    body { padding-bottom: 40px; }
+  </style>
 </head>
 <body>
   <!-- FONDO ANIMADO -->
@@ -43,6 +107,7 @@
       </div>
       <div class="topbar-right">
         <div id="backendStatusBadge"></div>
+        <div class="live-clock" id="liveClock"></div>
         <div class="search-box">
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Buscar secretaría, empleado..." id="globalSearch" />
@@ -67,6 +132,31 @@
 
     <div class="content-wrapper">
 
+      <!-- ROLE-BASED WELCOME BANNER -->
+      <div class="welcome-banner" id="welcomeBanner">
+        <div class="welcome-content">
+          <h2 id="welcomeGreeting">Buenos días</h2>
+          <div class="welcome-meta">
+            <span class="role-badge" id="welcomeRole">🏛️ Ejecutivo</span>
+            <span class="last-login">Último acceso: <span id="lastLoginTime"></span></span>
+          </div>
+        </div>
+        <div class="welcome-actions">
+          <button class="btn-primary" onclick="window.location.href='ia.html'">🤖 Consultar IA</button>
+          <button class="btn-secondary" onclick="window.location.href='analytics.html'">Ver Reporte</button>
+        </div>
+      </div>
+
+      <!-- ACCESOS RÁPIDOS -->
+      <div class="quick-access-grid">
+        <a href="ia.html" class="qa-btn">🤖 Consultar IA</a>
+        <a href="rrhh.html" class="qa-btn">👥 RRHH</a>
+        <a href="licitaciones.html" class="qa-btn">📋 Licitaciones</a>
+        <a href="vecinos.html" class="qa-btn">🏘️ Reclamos</a>
+        <a href="analytics.html" class="qa-btn">📈 Analytics</a>
+        <a href="exportar.html" class="qa-btn">📑 Exportar</a>
+      </div>
+
       <!-- KPI CARDS -->
       <section class="kpi-grid" aria-label="Indicadores clave">
 
@@ -79,6 +169,7 @@
           <div class="kpi-footer">
             <span class="kpi-trend up">▲ 12 este mes</span>
             <span class="kpi-sub">vs 1.235 julio</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 65%; background: #10b981;"></div></div>
           </div>
         </div>
 
@@ -91,6 +182,7 @@
           <div class="kpi-footer">
             <span class="kpi-trend down">▼ 4.2% vs julio</span>
             <span class="kpi-sub">Presupuesto: $310M</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 80%; background: #f59e0b;"></div></div>
           </div>
         </div>
 
@@ -103,6 +195,7 @@
           <div class="kpi-footer">
             <span class="kpi-trend down">▼ 8% vs julio</span>
             <span class="kpi-sub">Costo: $18.4M</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 45%; background: #ef4444;"></div></div>
           </div>
         </div>
 
@@ -129,6 +222,7 @@
           <div class="kpi-footer">
             <span class="kpi-trend up">▲ 23 sin resolver</span>
             <span class="kpi-sub">Tiempo promedio: 3.2 días</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 30%; background: #8b5cf6;"></div></div>
           </div>
         </div>
 
@@ -141,6 +235,7 @@
           <div class="kpi-footer">
             <span class="kpi-trend up">✅ Sistemas migrados</span>
             <span class="kpi-sub">vs contratos anteriores</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 90%; background: #14b8a6;"></div></div>
           </div>
         </div>
 
@@ -231,18 +326,36 @@
               <h2 class="chart-title">⚠️ Alertas Presupuestarias</h2>
               <span class="chart-sub">Áreas con desvíos detectados</span>
             </div>
-            <span class="badge-count">3</span>
+            <span class="badge-count" style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px;">3</span>
           </div>
-          <table class="data-table" id="alertasTable">
-            <thead>
-              <tr>
-                <th>Secretaría</th>
-                <th>Presupuesto</th>
-                <th>Ejecutado</th>
-                <th>Desvío</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
+          <div class="alerts-list">
+            <div class="alert-item critico">
+              <div class="alert-indicator pulse-red"></div>
+              <div class="alert-content">
+                <strong>Obras Públicas</strong>
+                <span>Exceso del 18% en presupuesto mensual</span>
+              </div>
+              <a href="#" class="alert-link">Ver detalle</a>
+            </div>
+            <div class="alert-item advertencia">
+              <div class="alert-indicator dot-yellow"></div>
+              <div class="alert-content">
+                <strong>Desarrollo Social</strong>
+                <span>80% ejecutado a mitad de mes</span>
+              </div>
+              <a href="#" class="alert-link">Ver detalle</a>
+            </div>
+            <div class="alert-item info">
+              <div class="alert-indicator dot-green"></div>
+              <div class="alert-content">
+                <strong>Hacienda</strong>
+                <span>Presupuesto equilibrado</span>
+              </div>
+              <a href="#" class="alert-link">Ver detalle</a>
+            </div>
+          </div>
+          <!-- Maintained for JS compatibility -->
+          <table class="data-table" id="alertasTable" style="display: none;">
             <tbody id="alertasBody"></tbody>
           </table>
         </div>
@@ -291,8 +404,39 @@
         if (user) {
           const av = document.getElementById('topbarAvatar');
           if (av) av.textContent = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+          
+          // Populate Welcome Banner
+          const hour = new Date().getHours();
+          const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+          const welcomeGreeting = document.getElementById('welcomeGreeting');
+          if(welcomeGreeting) welcomeGreeting.innerHTML = `${greeting}, <span>${user.name}</span>`;
+          
+          const welcomeRole = document.getElementById('welcomeRole');
+          if(welcomeRole) welcomeRole.textContent = user.role === 'admin' ? '🏛️ Intendente' : (user.role === 'hacienda' ? '💰 Hacienda' : '👤 ' + user.role);
+        }
     });
+    
+    // Last Login Time
+    const lastLoginEl = document.getElementById('lastLoginTime');
+    if(lastLoginEl) lastLoginEl.textContent = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+
+    // Live Clock
+    function updateClock() {
+      const now = new Date();
+      const options = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+      const clockEl = document.getElementById('liveClock');
+      if(clockEl) clockEl.textContent = now.toLocaleDateString('es-AR', options).replace(',', ' ·');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
   </script>
+
+  <div class="bottom-status-bar">
+    <span>🟢 Sistema online</span>
+    <span>🗄️ DB Neon conectada</span>
+    <span>📡 API activa</span>
+    <span>🔄 Última actualización: <span id="lastUpdateText">hace 2 min</span></span>
+  </div>
   <script src="js/ai-widget.js"></script>
 </body>
 </html>

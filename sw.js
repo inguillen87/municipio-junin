@@ -4,7 +4,7 @@
 // Estrategia: Cache First para assets, Network First para API
 // ============================================================
 
-const CACHE_NAME    = 'junin-municipal-v2';
+const CACHE_NAME    = 'junin-municipal-v3';  // Subido a v3 para limpiar cache roto
 const CACHE_TIMEOUT = 3000; // 3s timeout para network
 
 // Recursos a pre-cachear (shell de la app)
@@ -49,6 +49,9 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // Ignorar requests que NO sean http/https (chrome-extension, etc.)
+  if (!request.url.startsWith('http')) return;
 
   // API → Network First (no cachear datos sensibles)
   if (url.pathname.startsWith('/api/')) {

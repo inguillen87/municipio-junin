@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/i18n.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -219,8 +220,8 @@
       <a class="sa-nav-item active" data-section="overview"><span class="sa-nav-icon">📊</span><span class="sa-nav-label-text">Overview</span></a>
       <a class="sa-nav-item" data-section="tenants"><span class="sa-nav-icon">🏛️</span><span class="sa-nav-label-text">Municipios</span><span class="sa-nav-badge" id="tenantCount">2</span></a>
       <a class="sa-nav-item" data-section="users"><span class="sa-nav-icon">👥</span><span class="sa-nav-label-text">Usuarios</span><span class="sa-nav-badge" id="userCount">4</span></a>
-      <div class="sa-nav-label">REVENUE</div>
-      <a class="sa-nav-item" data-section="revenue"><span class="sa-nav-icon">💰</span><span class="sa-nav-label-text">Revenue & MRR</span></a>
+      <div class="sa-nav-label">INGRESOS</div>
+      <a class="sa-nav-item" data-section="revenue"><span class="sa-nav-icon">💰</span><span class="sa-nav-label-text">Ingresos y Proyección</span></a>
       <div class="sa-nav-label">SISTEMA</div>
       <a class="sa-nav-item" href="index.html"><span class="sa-nav-icon">←</span><span class="sa-nav-label-text">Volver al sistema</span></a>
     </nav>
@@ -241,6 +242,7 @@
     <header class="sa-topbar">
       <div class="sa-topbar-title" id="pageTitle">Platform Overview</div>
       <div class="sa-topbar-right">
+        <div id="langPickerAdmin" style="margin-left:auto"></div>
         <button class="btn-secondary" onclick="refreshData()">🔄 Actualizar</button>
         <button class="btn-primary" onclick="openNewTenant()">+ Nuevo Municipio</button>
       </div>
@@ -258,13 +260,13 @@
             <div class="mrr-bar"><div class="mrr-fill" style="width:40%"></div></div>
           </div>
           <div class="kpi-card" style="--accent:#10b981">
-            <div class="kpi-label">MRR Total</div>
-            <div class="kpi-value" id="kpiMRR">$799</div>
+            <div class="kpi-label">Ingreso Mensual del Sistema</div>
+            <div class="kpi-value" id="kpiMRR">$799 USD/mes</div>
             <div class="kpi-trend up">▲ +$799 este mes</div>
             <div class="mrr-bar"><div class="mrr-fill" style="width:25%;background:linear-gradient(90deg,#10b981,#06b6d4)"></div></div>
           </div>
           <div class="kpi-card" style="--accent:#3b82f6">
-            <div class="kpi-label">ARR Estimado</div>
+            <div class="kpi-label">Proyección de Ingresos Anuales</div>
             <div class="kpi-value" id="kpiARR">$9.6K</div>
             <div class="kpi-sub">Anualizado</div>
           </div>
@@ -277,7 +279,7 @@
 
         <div class="charts-row">
           <div class="chart-card">
-            <div class="chart-title">📈 Crecimiento MRR</div>
+            <div class="chart-title">📈 Crecimiento de Ingresos</div>
             <div class="chart-container"><canvas id="mrrChart"></canvas></div>
           </div>
           <div class="chart-card">
@@ -292,7 +294,7 @@
           </div>
           <table class="admin-table" id="overviewTable">
             <thead><tr>
-              <th>Municipio</th><th>Plan</th><th>Estado</th><th>Empleados</th><th>MRR</th><th>Usuarios</th>
+              <th>Municipio</th><th>Plan</th><th>Estado</th><th>Empleados</th><th>Ingreso Mensual</th><th>Usuarios</th>
             </tr></thead>
             <tbody id="overviewBody"></tbody>
           </table>
@@ -308,7 +310,7 @@
           </div>
           <table class="admin-table">
             <thead><tr>
-              <th>Municipio</th><th>País / Provincia</th><th>Plan</th><th>Estado</th><th>MRR</th><th>Usuarios</th><th>Creado</th><th>Acciones</th>
+              <th>Municipio</th><th>País / Provincia</th><th>Plan</th><th>Estado</th><th>Ingreso Mensual</th><th>Usuarios</th><th>Creado</th><th>Acciones</th>
             </tr></thead>
             <tbody id="tenantsBody"></tbody>
           </table>
@@ -335,28 +337,28 @@
       <section class="sa-section" id="section-revenue">
         <div class="kpi-grid">
           <div class="kpi-card" style="--accent:#10b981">
-            <div class="kpi-label">MRR</div>
+            <div class="kpi-label">Ingreso Mensual</div>
             <div class="kpi-value">$799</div>
             <div class="kpi-trend up">▲ Creciendo</div>
           </div>
           <div class="kpi-card" style="--accent:#3b82f6">
-            <div class="kpi-label">ARR</div>
+            <div class="kpi-label">Proyección Anual</div>
             <div class="kpi-value">$9,588</div>
             <div class="kpi-sub">Proyectado anual</div>
           </div>
           <div class="kpi-card" style="--accent:#7c3aed">
             <div class="kpi-label">Potencial (10 clientes)</div>
             <div class="kpi-value">$95,880</div>
-            <div class="kpi-sub">ARR estimado</div>
+            <div class="kpi-sub">Proyección estimada</div>
           </div>
           <div class="kpi-card" style="--accent:#f59e0b">
             <div class="kpi-label">Potencial (100 clientes)</div>
             <div class="kpi-value">$958,800</div>
-            <div class="kpi-sub">ARR estimado</div>
+            <div class="kpi-sub">Proyección estimada</div>
           </div>
         </div>
         <div class="chart-card" style="margin-bottom:24px">
-          <div class="chart-title">📈 Proyección de Revenue (12 meses)</div>
+          <div class="chart-title">📈 Proyección de Ingresos (12 meses)</div>
           <div class="chart-container" style="height:260px"><canvas id="revenueChart"></canvas></div>
         </div>
         <div class="table-card">
@@ -539,7 +541,7 @@
       document.querySelectorAll('.sa-section').forEach(s => s.classList.remove('active'));
       item.classList.add('active');
       document.getElementById('section-' + section)?.classList.add('active');
-      const titles = { overview:'Platform Overview', tenants:'Municipios / Tenants', users:'Gestión de Usuarios', revenue:'Revenue & MRR' };
+      const titles = { overview:'Platform Overview', tenants:'Municipios / Tenants', users:'Gestión de Usuarios', revenue:'Ingresos y Proyección' };
       document.getElementById('pageTitle').textContent = titles[section] || section;
     });
   });
@@ -601,7 +603,7 @@
       data: {
         labels: ['Ago','Sep','Oct','Nov','Dic','Ene','Feb','Mar'],
         datasets: [{
-          label: 'MRR USD',
+          label: 'Ingresos USD',
           data: [0, 799, 799, 1598, 1598, 2397, 3196, 3196],
           borderColor: '#7c3aed',
           backgroundColor: 'rgba(124,58,237,0.08)',
@@ -634,7 +636,7 @@
       data: {
         labels: months,
         datasets: [
-          { label: 'MRR Real', data: [0,799,799,0,0,0,0,0,0,0,0,0], backgroundColor: 'rgba(124,58,237,0.7)', borderRadius:6 },
+          { label: 'Ingreso Real', data: [0,799,799,0,0,0,0,0,0,0,0,0], backgroundColor: 'rgba(124,58,237,0.7)', borderRadius:6 },
           { label: 'Proyección', data: projection, backgroundColor: 'rgba(124,58,237,0.2)', borderColor:'rgba(124,58,237,0.5)', borderWidth:1, borderRadius:6 },
         ]
       },
@@ -764,6 +766,7 @@
     toast('🚫 Acceso denegado', 'Solo Super Admins pueden acceder a este panel', 'error');
     setTimeout(() => location.href = 'index.html', 2000);
   }
+  i18n.buildPicker('langPickerAdmin');
   </script>
 </body>
 </html>

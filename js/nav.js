@@ -94,7 +94,13 @@ function buildSidebar(activeId) {
         <div class="sidebar-user-role">${user.roleLabel || user.role || 'DEMO'}</div>
       </div>
       <button class="sidebar-logout-btn" onclick="sessionStorage.clear(); window.location.href='login.html'" title="Cerrar sesión">⏏</button>
-    </div>`;
+    </div>
+    <div class="sidebar-lang-picker">
+      <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('es')" title="Español">🇦🇷 ES</button>
+      <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('en')" title="English">🇺🇸 EN</button>
+      <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('pt')" title="Português">🇧🇷 PT</button>
+    </div>
+    <script src="js/i18n.js"></script>`;
 
   // Toggle sidebar (desktop)
   document.getElementById('sidebarToggle')?.addEventListener('click', () => {
@@ -180,6 +186,10 @@ function buildSidebar(activeId) {
       .sidebar-user-role { font-size: 10px; color: rgba(100,116,139,0.7); text-transform: uppercase; letter-spacing: 0.5px; }
       .sidebar-logout-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: rgba(100,116,139,0.6); padding: 4px; border-radius: 6px; transition: all 0.15s; }
       .sidebar-logout-btn:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+      .sidebar-lang-picker { padding: 8px 16px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; gap: 4px; justify-content: center; }
+      .sidebar-lang-btn { background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: rgba(100,116,139,0.7); font-size: 11px; padding: 3px 7px; cursor: pointer; transition: all 0.15s; }
+      .sidebar-lang-btn:hover { background: rgba(255,255,255,0.06); color: rgba(240,244,255,0.8); }
+      .sidebar-lang-btn.active { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.25); color: #60a5fa; }
       /* Add padding to sidebar content so footer doesn't overlap */
       .sidebar-nav { padding-bottom: 80px !important; }
 

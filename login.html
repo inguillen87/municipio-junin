@@ -433,6 +433,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
   </style>
+  <script src="js/i18n.js"></script>
 </head>
 <body>
 
@@ -484,6 +485,7 @@
     <!-- RIGHT PANEL -->
     <div class="right-panel">
       <div class="login-container">
+        <div id="langPickerLogin" style="margin-bottom: 20px;"></div>
         <h2 class="welcome-text">Bienvenido al sistema</h2>
         <p class="welcome-sub">Ingrese sus credenciales para acceder</p>
 
@@ -587,6 +589,62 @@
         }
       }, 1000);
     }
+
+  // Initialize language picker on login page
+  document.addEventListener('DOMContentLoaded', function() {
+    i18n.buildPicker('langPickerLogin');
+    // Apply translations to key elements
+    applyLoginTranslations();
+  });
+  
+  function applyLoginTranslations() {
+    const h = new Date().getHours();
+    // Update page title
+    document.title = i18n.t('login_title') + ' — GovTech';
+    // Update hero text if elements exist
+    const heroTagline = document.querySelector('.hero-tagline, .login-hero-tagline, [data-login-tagline]');
+    if (heroTagline) heroTagline.textContent = i18n.t('login_hero_tagline');
+    const heroSub = document.querySelector('.hero-sub, .login-hero-sub, [data-login-sub]');
+    if (heroSub) heroSub.textContent = i18n.t('login_hero_sub');
+    // Update form labels
+    const emailInput = document.querySelector('input[type="email"], #loginEmail');
+    if (emailInput) emailInput.placeholder = i18n.t('login_email');
+    const passInput = document.querySelector('input[type="password"], #loginPass');
+    if (passInput) passInput.placeholder = i18n.t('login_password');
+    const loginBtn = document.querySelector('.btn-login, #btnLogin');
+    if (loginBtn) {
+      const btnText = loginBtn.querySelector('.btn-text');
+      if (btnText) btnText.textContent = '🔐 ' + i18n.t('login_btn');
+    }
+    // Update demo title
+    const demoTitle = document.querySelector('.demo-hint-title, .demo-hint-header span:first-child');
+    if (demoTitle) demoTitle.textContent = i18n.t('login_demo_title');
+    // Update role labels on demo cards
+    updateRoleCards();
+  }
+  
+  function updateRoleCards() {
+    const roleMap = {
+      'SUPER_ADMIN': { label: i18n.t('role_super_admin'), badge: i18n.t('role_badge_super') },
+      'TENANT_ADMIN_INTENDENTE': { label: i18n.t('role_tenant_admin'), badge: i18n.t('role_badge_admin') },
+      'TENANT_USER_HACIENDA': { label: i18n.t('role_tenant_user'), badge: i18n.t('role_badge_user') },
+      'TENANT_ADMIN_IT': { label: i18n.t('role_tenant_admin'), badge: i18n.t('role_badge_admin') },
+      'DEMO': { label: i18n.t('role_demo'), badge: i18n.t('role_badge_demo') },
+    };
+    // Update click to login text
+    document.querySelectorAll('.demo-user-action, .role-card-action').forEach(el => {
+      el.textContent = i18n.t('click_to_login');
+    });
+  }
+  
+  // Re-apply when language changes
+  const origSetLang = i18n.setLang.bind(i18n);
+  i18n.setLang = function(lang) {
+    origSetLang(lang);
+    applyLoginTranslations();
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.lang-btn[onclick*="'${lang}'"]`)?.classList.add('active');
+  };
   </script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>404 - Página no encontrada</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/shared.css">
+  <style>
+    body {
+      background-color: #0b1120;
+      color: #f0f4ff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+    .error-container {
+      text-align: center;
+      animation: fadeIn 0.5s ease;
+    }
+    .emoji {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    p {
+      color: rgba(148,163,184,0.8);
+      margin-bottom: 30px;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <div class="emoji">🕵️‍♂️</div>
+    <h1>Página no encontrada</h1>
+    <p>Lo sentimos, no pudimos encontrar la página que buscas.</p>
+    <button class="btn-primary" onclick="window.location.href='index.html'">Volver al Dashboard</button>
+  </div>
+</body>
+</html>

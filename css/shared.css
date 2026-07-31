@@ -336,3 +336,25 @@
 .action-btn.danger:hover { background:rgba(239,68,68,0.1) !important; color:#ef4444 !important; }
 .spinner { width:24px; height:24px; border:3px solid rgba(59,130,246,0.2); border-top-color:#3b82f6; border-radius:50%; animation:spin 0.8s linear infinite; display:inline-block; }
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════════════════════════
+   PREMIUM BUTTON FIX
+   ═══════════════════════════════════════════════════════════ */
+/* Make sure ALL buttons have smooth transitions */
+.btn-primary, .btn-save, .btn-cancel, .btn-danger {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.btn-primary:active, .btn-save:active {
+  transform: scale(0.97) !important;
+}
+/* Ensure no gray buttons exist */
+button:not([class]) {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}

@@ -45,10 +45,15 @@ function buildSidebar(activeId) {
   if (!sidebarEl) return;
 
   // Obtener datos del usuario en sesión
-  let user = { name: 'Usuario', email: '', loginAt: '' };
+  let user = { name: 'Usuario', email: '', loginAt: '', role: 'DEMO', roleLabel: 'Demo' };
   try { user = JSON.parse(sessionStorage.getItem('mjunin_user') || '{}'); } catch(e) {}
-  const initials = user.name ? user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() : 'JT';
-  const loginTime = user.loginAt ? new Date(user.loginAt).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }) : '';
+  const initials = user.name ? user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() : 'US';
+  
+  let roleColor = '#06b6d4';
+  if (user.role === 'SUPER_ADMIN') roleColor = '#f59e0b';
+  else if (user.role === 'TENANT_ADMIN') roleColor = '#3b82f6';
+  else if (user.role === 'TENANT_USER') roleColor = (user.roleLabel && user.roleLabel.toLowerCase().includes('it')) ? '#8b5cf6' : '#10b981';
+  else if (user.role === 'DEMO') roleColor = '#06b6d4';
 
   let navHTML = '';
   let lastSection = null;
@@ -82,15 +87,13 @@ function buildSidebar(activeId) {
       <button class="sidebar-toggle" id="sidebarToggle">‹</button>
     </div>
     <nav class="sidebar-nav">${navHTML}</nav>
-    <div class="sidebar-footer">
-      <div class="user-info">
-        <div class="user-avatar">${initials}</div>
-        <div class="user-details">
-          <span class="user-name">${user.name || 'Jefe de Tecnología'}</span>
-          <span class="user-role">Sesión: ${loginTime || 'activa'}</span>
-        </div>
-        <button class="logout-btn" id="logoutBtn" title="Cerrar sesión">⏏</button>
+    <div class="sidebar-user-footer">
+      <div class="sidebar-user-avatar" style="background: ${roleColor}">${initials}</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">${user.name || 'Usuario'}</div>
+        <div class="sidebar-user-role">${user.roleLabel || user.role || 'DEMO'}</div>
       </div>
+      <button class="sidebar-logout-btn" onclick="sessionStorage.clear(); window.location.href='login.html'" title="Cerrar sesión">⏏</button>
     </div>`;
 
   // Toggle sidebar (desktop)
@@ -98,14 +101,6 @@ function buildSidebar(activeId) {
     sidebarEl.classList.toggle('collapsed');
     document.getElementById('mainContent')?.classList.toggle('expanded');
     setTimeout(() => window.dispatchEvent(new Event('resize')), 250);
-  });
-
-  // Logout
-  document.getElementById('logoutBtn')?.addEventListener('click', () => {
-    if (confirm('¿Cerrar sesión?')) {
-      sessionStorage.removeItem('mjunin_user');
-      window.location.href = 'login.html';
-    }
   });
 
   // ── INICIALIZAR MOBILE (llamar siempre al final de buildSidebar) ─────
@@ -163,6 +158,31 @@ function buildSidebar(activeId) {
     const style = document.createElement('style');
     style.id = 'mobileNavCss';
     style.innerHTML = `
+      .sidebar-user-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 12px 16px;
+        background: rgba(0,0,0,0.3);
+        border-top: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .sidebar-user-avatar {
+        width: 36px; height: 36px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 800; color: white; flex-shrink: 0;
+      }
+      .sidebar-user-info { flex: 1; overflow: hidden; }
+      .sidebar-user-name { font-size: 12px; font-weight: 700; color: rgba(240,244,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sidebar-user-role { font-size: 10px; color: rgba(100,116,139,0.7); text-transform: uppercase; letter-spacing: 0.5px; }
+      .sidebar-logout-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: rgba(100,116,139,0.6); padding: 4px; border-radius: 6px; transition: all 0.15s; }
+      .sidebar-logout-btn:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+      /* Add padding to sidebar content so footer doesn't overlap */
+      .sidebar-nav { padding-bottom: 80px !important; }
+
       @media (max-width: 768px) {
         .sidebar {
           transform: translateX(-100%);
@@ -182,6 +202,16 @@ function buildSidebar(activeId) {
       }
     `;
     document.head.appendChild(style);
+  }
+
+  // Show welcome toast only once per session
+  if (!sessionStorage.getItem('welcomed')) {
+    sessionStorage.setItem('welcomed', '1');
+    setTimeout(() => {
+      if (typeof showToast !== 'undefined') {
+        showToast(`Bienvenido, ${user.name || 'Usuario'} 👋`, 'success');
+      }
+    }, 800);
   }
 }
 

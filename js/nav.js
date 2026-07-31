@@ -1,28 +1,40 @@
 // ============================================================
-// NAV.JS — Sidebar compartido para todas las páginas
-// Inyecta el sidebar dinámicamente y marca el item activo
+// NAV.JS — Sidebar compartido + Autenticación global
+// Municipalidad de Junín — Sistema de Gestión Municipal
 // ============================================================
 
-const NAV_ITEMS = [
-  { id: 'dashboard',  href: 'index.html',     icon: '📊', label: 'Dashboard',         section: 'PRINCIPAL' },
-  { id: 'rrhh',       href: 'rrhh.html',      icon: '👥', label: 'Recursos Humanos',  section: null },
-  { id: 'gastos',     href: 'gastos.html',    icon: '💰', label: 'Gastos y Costos',   badge: '!', section: null },
-  { id: 'vecinos',    href: 'vecinos.html',   icon: '🏘️', label: 'Atención Vecinal',  section: null },
-  { id: 'jardines',   href: '#',             icon: '🌳', label: 'Jardines',           section: 'ENTIDADES' },
-  { id: 'talleres',   href: 'talleres.html', icon: '🔧', label: 'Talleres',           section: null },
-  { id: 'servicios',  href: 'servicios.html',icon: '⛽', label: 'Est. de Servicios',  section: null },
-  { id: 'reciclaje',  href: '#',             icon: '♻️', label: 'Reciclaje',          section: null },
-  { id: 'docs',       href: 'manuales.html', icon: '📋', label: 'Manuales',           section: 'SISTEMA' },
-  { id: 'ia',         href: 'ia.html',       icon: '🤖', label: 'Asistente IA',       badge: 'OCR+VOZ', section: null },
-  { id: 'ia-hf',      href: 'ia-hf.html',   icon: '🤗', label: 'IA Lab HuggingFace', badge: 'NEW', section: null },
-  { id: 'exportar',   href: 'exportar.html', icon: '📑', label: 'Exportar Reportes',  badge: 'PDF',  section: null },
-  { id: 'upload',     href: 'upload.html',   icon: '📂', label: 'Cargar Archivos',    badge: 'BETA', section: null },
-];
+// ── PROTECCIÓN DE SESIÓN ─────────────────────────────────────
+// Todas las páginas que llamen a buildSidebar quedan protegidas
+(function checkAuth() {
+  const sess = sessionStorage.getItem('mjunin_user');
+  if (!sess) {
+    window.location.href = 'login.html';
+  }
+})();
 
+const NAV_ITEMS = [
+  { id: 'dashboard',  href: 'index.html',     icon: '📊', label: 'Dashboard',          section: 'PRINCIPAL' },
+  { id: 'control',    href: 'control.html',   icon: '🏛️', label: 'Junín Control',      badge: '30d',      section: null },
+  { id: 'rrhh',       href: 'rrhh.html',      icon: '👥', label: 'Recursos Humanos',   section: null },
+  { id: 'vecinos',    href: 'vecinos.html',   icon: '🏘️', label: 'Atención Vecinal',   section: null },
+  { id: 'talleres',   href: 'talleres.html',  icon: '🔧', label: 'Talleres',            section: 'ENTIDADES' },
+  { id: 'servicios',  href: 'servicios.html', icon: '⛽', label: 'Est. de Servicios',   section: null },
+  { id: 'docs',       href: 'manuales.html',  icon: '📋', label: 'Manuales',            section: 'SISTEMA' },
+  { id: 'ia',         href: 'ia.html',        icon: '🤖', label: 'Asistente IA',        badge: 'OCR+VOZ',  section: null },
+  { id: 'ia-hf',      href: 'ia-hf.html',    icon: '🤗', label: 'IA HuggingFace',      badge: 'NEW',      section: null },
+  { id: 'upload',     href: 'upload.html',    icon: '📂', label: 'Cargar Archivos',     badge: 'BETA',     section: null },
+  { id: 'exportar',   href: 'exportar.html',  icon: '📑', label: 'Exportar Reportes',   badge: 'PDF',      section: null },
+];
 
 function buildSidebar(activeId) {
   const sidebarEl = document.getElementById('sidebar');
   if (!sidebarEl) return;
+
+  // Obtener datos del usuario en sesión
+  let user = { name: 'Usuario', email: '', loginAt: '' };
+  try { user = JSON.parse(sessionStorage.getItem('mjunin_user') || '{}'); } catch(e) {}
+  const initials = user.name ? user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() : 'JT';
+  const loginTime = user.loginAt ? new Date(user.loginAt).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }) : '';
 
   let navHTML = '';
   let lastSection = null;
@@ -34,7 +46,7 @@ function buildSidebar(activeId) {
     }
     const isActive = item.id === activeId;
     const badge = item.badge
-      ? `<span class="nav-badge ${item.badge === 'NUEVO' ? 'new' : ''}">${item.badge}</span>`
+      ? `<span class="nav-badge ${item.badge === 'NEW' ? 'new' : ''}">${item.badge}</span>`
       : '';
     navHTML += `
       <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" id="nav-${item.id}">
@@ -58,11 +70,12 @@ function buildSidebar(activeId) {
     <nav class="sidebar-nav">${navHTML}</nav>
     <div class="sidebar-footer">
       <div class="user-info">
-        <div class="user-avatar">JT</div>
+        <div class="user-avatar">${initials}</div>
         <div class="user-details">
-          <span class="user-name">Jefe de Tecnología</span>
-          <span class="user-role">Administrador</span>
+          <span class="user-name">${user.name || 'Jefe de Tecnología'}</span>
+          <span class="user-role">Sesión: ${loginTime || 'activa'}</span>
         </div>
+        <button class="logout-btn" id="logoutBtn" title="Cerrar sesión">⏏</button>
       </div>
     </div>`;
 
@@ -75,5 +88,13 @@ function buildSidebar(activeId) {
 
   document.getElementById('menuBtn')?.addEventListener('click', () => {
     sidebarEl.classList.toggle('mobile-open');
+  });
+
+  // Logout
+  document.getElementById('logoutBtn')?.addEventListener('click', () => {
+    if (confirm('¿Cerrar sesión?')) {
+      sessionStorage.removeItem('mjunin_user');
+      window.location.href = 'login.html';
+    }
   });
 }

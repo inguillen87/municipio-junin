@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acceso Seguro — Municipalidad de Junín</title>
+  <meta name="description" content="Sistema de gestión municipal — Acceso restringido a personal autorizado" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #3b82f6;
+      --violet: #8b5cf6;
+      --green:  #10b981;
+      --red:    #ef4444;
+      --amber:  #f59e0b;
+      --bg:     #060b18;
+      --card:   rgba(15, 23, 45, 0.85);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── FONDO ANIMADO ───────────────────────────── */
+    .bg-canvas {
+      position: fixed; inset: 0; z-index: 0; overflow: hidden;
+    }
+    .orb {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); opacity: 0.18;
+      animation: drift 20s ease-in-out infinite;
+    }
+    .orb-1 { width:600px; height:600px; background:#3b82f6; top:-200px; left:-200px; animation-delay:0s; }
+    .orb-2 { width:500px; height:500px; background:#8b5cf6; bottom:-150px; right:-100px; animation-delay:-7s; }
+    .orb-3 { width:350px; height:350px; background:#10b981; top:50%; left:50%; transform:translate(-50%,-50%); animation-delay:-13s; }
+    @keyframes drift {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%      { transform: translate(40px,-30px) scale(1.05); }
+      66%      { transform: translate(-30px,40px) scale(0.95); }
+    }
+
+    /* Grid lines */
+    .grid-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* Floating particles */
+    .particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .particle {
+      position: absolute; width: 2px; height: 2px; border-radius: 50%;
+      background: rgba(139,92,246,0.5);
+      animation: rise linear infinite;
+    }
+    @keyframes rise {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    /* ── CARD ────────────────────────────────────── */
+    .login-wrapper {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 460px;
+      padding: 20px;
+      animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+      opacity: 0;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(40px) scale(0.97); }
+      to   { opacity:1; transform: translateY(0)    scale(1); }
+    }
+
+    .login-card {
+      background: var(--card);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 24px;
+      padding: 40px 40px 36px;
+      box-shadow:
+        0 0 0 1px rgba(59,130,246,0.08),
+        0 32px 80px rgba(0,0,0,0.6),
+        0 0 80px rgba(139,92,246,0.06);
+    }
+
+    /* Escudo institucional */
+    .escudo-wrap {
+      display: flex; justify-content: center; margin-bottom: 28px;
+    }
+    .escudo {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #1e3a5f, #0f2040);
+      border: 2px solid rgba(59,130,246,0.4);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px;
+      box-shadow:
+        0 0 0 6px rgba(59,130,246,0.06),
+        0 0 40px rgba(59,130,246,0.15);
+      position: relative;
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%,100% { box-shadow: 0 0 0 6px rgba(59,130,246,0.06), 0 0 40px rgba(59,130,246,0.15); }
+      50%      { box-shadow: 0 0 0 10px rgba(59,130,246,0.10), 0 0 60px rgba(59,130,246,0.25); }
+    }
+    .escudo-badge {
+      position: absolute; bottom: -4px; right: -4px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: 2px solid var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+    }
+
+    /* Titles */
+    .login-municipality {
+      text-align: center; font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: rgba(59,130,246,0.8); margin-bottom: 4px;
+    }
+    .login-title {
+      text-align: center; font-size: 22px; font-weight: 800;
+      font-family: 'Outfit', sans-serif; color: white;
+      margin-bottom: 4px; line-height: 1.2;
+    }
+    .login-subtitle {
+      text-align: center; font-size: 12px;
+      color: rgba(148,163,184,0.8); margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    /* Security badge */
+    .security-bar {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; margin-bottom: 28px;
+      background: rgba(16,185,129,0.06);
+      border: 1px solid rgba(16,185,129,0.15);
+      border-radius: 8px; padding: 7px 14px;
+      font-size: 11px; color: #10b981; font-weight: 600;
+    }
+    .security-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #10b981; animation: blink-sec 2s ease-in-out infinite;
+    }
+    @keyframes blink-sec { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Form */
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      color: rgba(148,163,184,0.7); margin-bottom: 8px;
+    }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%); font-size: 16px;
+      pointer-events: none; opacity: 0.5;
+    }
+    .form-input {
+      width: 100%; padding: 13px 14px 13px 44px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; color: white; font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.25s ease;
+      outline: none;
+    }
+    .form-input:focus {
+      border-color: rgba(59,130,246,0.5);
+      background: rgba(59,130,246,0.04);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    .form-input::placeholder { color: rgba(148,163,184,0.4); }
+    .toggle-pw {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; opacity: 0.4; transition: opacity 0.2s;
+    }
+    .toggle-pw:hover { opacity: 0.8; }
+
+    /* Error */
+    .error-msg {
+      display: none;
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+      font-size: 12px; color: #ef4444; text-align: center;
+      animation: shake 0.4s ease;
+    }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+    }
+    .error-msg.show { display: block; }
+
+    /* Button */
+    .btn-login {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border: none; border-radius: 12px;
+      color: white; font-size: 14px; font-weight: 700;
+      font-family: 'Outfit', sans-serif; letter-spacing: 0.3px;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: all 0.3s ease; margin-top: 4px;
+    }
+    .btn-login::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(59,130,246,0.4); }
+    .btn-login:hover::before { opacity: 1; }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login.loading { pointer-events: none; opacity: 0.7; }
+    .btn-login .spinner {
+      display: none; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-login.loading .btn-text { display: none; }
+    .btn-login.loading .spinner { display: block; }
+
+    /* Demo hint */
+    .demo-hint {
+      margin-top: 20px; padding: 12px 16px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.15);
+      border-radius: 10px; text-align: center;
+    }
+    .demo-hint-title { font-size: 10px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .demo-hint-creds { display: flex; justify-content: center; gap: 16px; }
+    .demo-cred { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: rgba(245,158,11,0.8); }
+    .btn-fill-demo {
+      margin-top: 8px; background: none; border: 1px solid rgba(245,158,11,0.3);
+      color: var(--amber); padding: 5px 14px; border-radius: 6px;
+      cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s;
+    }
+    .btn-fill-demo:hover { background: rgba(245,158,11,0.1); }
+
+    /* Footer */
+    .login-footer {
+      margin-top: 28px; text-align: center;
+      font-size: 11px; color: rgba(100,116,139,0.6);
+      line-height: 1.6;
+    }
+    .footer-badges {
+      display: flex; justify-content: center; gap: 12px;
+      margin-top: 8px; flex-wrap: wrap;
+    }
+    .footer-badge {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 10px; color: rgba(100,116,139,0.5);
+    }
+
+    /* Success overlay */
+    .success-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(6,11,24,0.95);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; opacity: 0; pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .success-overlay.show { opacity: 1; pointer-events: all; }
+    .success-icon { font-size: 64px; animation: bounceIn 0.6s cubic-bezier(0.16,1,0.3,1); }
+    @keyframes bounceIn { from{transform:scale(0)} to{transform:scale(1)} }
+    .success-text { font-size: 22px; font-weight: 800; font-family: 'Outfit'; color: white; }
+    .success-sub { font-size: 13px; color: rgba(148,163,184,0.7); }
+    .success-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 99px; margin-top: 8px; overflow: hidden; }
+    .success-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 99px; animation: fillBar 1.8s ease forwards; }
+    @keyframes fillBar { from{width:0%} to{width:100%} }
+  </style>
+</head>
+<body>
+
+  <div class="bg-canvas">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="grid-bg"></div>
+  <div class="particles" id="particles"></div>
+
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-icon">✅</div>
+    <div class="success-text">Acceso autorizado</div>
+    <div class="success-sub">Cargando el sistema municipal...</div>
+    <div class="success-bar"><div class="success-bar-fill"></div></div>
+  </div>
+
+  <div class="login-wrapper">
+    <div class="login-card">
+
+      <div class="escudo-wrap">
+        <div class="escudo">🏛️<div class="escudo-badge">🔒</div></div>
+      </div>
+
+      <div class="login-municipality">Municipalidad de Junín · Mendoza</div>
+      <h1 class="login-title">Sistema de Gestión Municipal</h1>
+      <p class="login-subtitle">Acceso restringido a personal autorizado.<br/>Sus credenciales son auditadas.</p>
+
+      <div class="security-bar">
+        <div class="security-dot"></div>
+        Conexión segura · SSL/TLS · Sesión auditada
+      </div>
+
+      <form id="loginForm" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label" for="email">Correo institucional</label>
+          <div class="input-wrap">
+            <span class="input-icon">📧</span>
+            <input type="email" id="email" class="form-input"
+              placeholder="usuario@municipiojunin.gob.ar"
+              autocomplete="username" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Contraseña</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="password" id="password" class="form-input"
+              placeholder="••••••••••" autocomplete="current-password" required />
+            <button type="button" class="toggle-pw" id="togglePw" title="Ver contraseña">👁️</button>
+          </div>
+        </div>
+
+        <div class="error-msg" id="errorMsg">
+          ⚠️ Credenciales incorrectas. Verifique su correo y contraseña.
+        </div>
+
+        <button type="submit" class="btn-login" id="btnLogin">
+          <span class="btn-text">🔐 Ingresar al sistema</span>
+          <div class="spinner"></div>
+        </button>
+      </form>
+
+      <div class="demo-hint">
+        <div class="demo-hint-title">⚡ Acceso de demostración</div>
+        <div class="demo-hint-creds">
+          <span class="demo-cred">demo@demo.com</span>
+          <span class="demo-cred">demo123</span>
+        </div>
+        <button type="button" class="btn-fill-demo" id="btnFillDemo">
+          Completar automáticamente →
+        </button>
+      </div>
+
+      <div class="login-footer">
+        Sistema de gestión interno — uso exclusivo personal municipal<br/>
+        Todo acceso queda registrado y es auditado
+        <div class="footer-badges">
+          <span class="footer-badge">🔒 Cifrado AES-256</span>
+          <span class="footer-badge">📋 ISO 27001</span>
+          <span class="footer-badge">🛡️ Datos soberanos</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ── PARTÍCULAS ────────────────────────────────
+    const pc = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.cssText = `
+        left: ${Math.random() * 100}%;
+        width: ${1 + Math.random() * 2}px;
+        height: ${1 + Math.random() * 2}px;
+        animation-duration: ${8 + Math.random() * 15}s;
+        animation-delay: ${-Math.random() * 20}s;
+        opacity: ${0.2 + Math.random() * 0.4};
+        background: ${Math.random() > 0.5 ? '#8b5cf6' : '#3b82f6'};
+      `;
+      pc.appendChild(p);
+    }
+
+    // ── TOGGLE CONTRASEÑA ─────────────────────────
+    const togglePw  = document.getElementById('togglePw');
+    const pwInput   = document.getElementById('password');
+    togglePw.addEventListener('click', () => {
+      const show = pwInput.type === 'password';
+      pwInput.type = show ? 'text' : 'password';
+      togglePw.textContent = show ? '🙈' : '👁️';
+    });
+
+    // ── AUTOCOMPLETAR DEMO ────────────────────────
+    document.getElementById('btnFillDemo').addEventListener('click', () => {
+      const email = document.getElementById('email');
+      const pw    = document.getElementById('password');
+      email.value = 'demo@demo.com';
+      pw.value    = 'demo123';
+      email.style.borderColor = 'rgba(245,158,11,0.5)';
+      pw.style.borderColor    = 'rgba(245,158,11,0.5)';
+      setTimeout(() => {
+        email.style.borderColor = '';
+        pw.style.borderColor    = '';
+      }, 1500);
+    });
+
+    // ── CREDENCIALES ──────────────────────────────
+    const USERS = [
+      { email: 'demo@demo.com',          password: 'demo123',  name: 'Demo — Intendencia',   redirect: 'index.html' },
+      { email: 'intendente@junin.gob.ar',password: 'junin2026',name: 'Mario Abed — Intendente', redirect: 'control.html' },
+      { email: 'tecnologia@junin.gob.ar',password: 'tech2026', name: 'Jefe de Tecnología',    redirect: 'control.html' },
+    ];
+
+    // ── SUBMIT ────────────────────────────────────
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn   = document.getElementById('btnLogin');
+      const error = document.getElementById('errorMsg');
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const pw    = document.getElementById('password').value;
+
+      // Loading
+      btn.classList.add('loading');
+      error.classList.remove('show');
+
+      await new Promise(r => setTimeout(r, 1200));
+
+      const user = USERS.find(u => u.email === email && u.password === pw);
+
+      if (user) {
+        // Guardar sesión
+        sessionStorage.setItem('mjunin_user', JSON.stringify({
+          name: user.name, email: user.email,
+          loginAt: new Date().toISOString(),
+        }));
+        // Mostrar success
+        const overlay = document.getElementById('successOverlay');
+        overlay.classList.add('show');
+        overlay.querySelector('.success-sub').textContent =
+          `Bienvenido/a, ${user.name}. Cargando...`;
+
+        setTimeout(() => { window.location.href = user.redirect; }, 2200);
+      } else {
+        btn.classList.remove('loading');
+        error.classList.add('show');
+        document.getElementById('email').style.borderColor = 'rgba(239,68,68,0.4)';
+        document.getElementById('password').style.borderColor = 'rgba(239,68,68,0.4)';
+        document.getElementById('password').value = '';
+        setTimeout(() => {
+          document.getElementById('email').style.borderColor = '';
+          document.getElementById('password').style.borderColor = '';
+        }, 2000);
+      }
+    });
+
+    // ── PROTECCIÓN GLOBAL (inyectado en todos los módulos vía nav.js) ──
+    // Si no hay sesión, redirige al login
+    if (window.location.pathname.endsWith('login.html') === false) {
+      const sess = sessionStorage.getItem('mjunin_user');
+      if (!sess) {
+        // Solo para el login, no redirigir
+      }
+    }
+  </script>
+</body>
+</html>

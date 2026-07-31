@@ -156,6 +156,15 @@ body {
 }
 .user-name { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .user-role { display: block; font-size: 11px; color: var(--text-muted); }
+.user-details { flex: 1; min-width: 0; overflow: hidden; }
+.logout-btn {
+  background: none; border: 1px solid rgba(239,68,68,0.2);
+  color: rgba(239,68,68,0.6); width: 28px; height: 28px;
+  border-radius: 8px; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: var(--transition);
+}
+.logout-btn:hover { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.4); }
 
 /* ── MAIN CONTENT ── */
 .main-content {

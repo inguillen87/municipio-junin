@@ -24,3 +24,5 @@ Desktop.ini
 
 # ZIP builds (no subir al repo, ya están en Google Drive/local)
 *.zip
+
+.vercel

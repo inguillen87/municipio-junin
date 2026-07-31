@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Junín Control — Torre de Control de Gastos y Ahorros</title>
+  <meta name="description" content="Torre de Control de Gastos y Ahorros — Municipalidad de Junín" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/control.css" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>🏛️ Junín Control</h1>
+          <span class="breadcrumb">Torre de Control de Gastos y Ahorros · Plan de Choque 30 Días</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="period-selector">
+          <span class="period-label">Período:</span>
+          <select id="periodoSelect" class="select-filter">
+            <option value="2026">2026 (año completo)</option>
+            <option value="q3-2026" selected>Q3 2026 (Jul-Sep)</option>
+          </select>
+        </div>
+        <button class="btn-import" id="btnImportTop">📥 Importar</button>
+        <button class="btn-export-ctrl" id="btnExportPDF">📑 Informe PDF</button>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+    <div class="content-wrapper">
+
+      <!-- BANNER PLAN DE CHOQUE -->
+      <div class="plan-choque-banner">
+        <div class="banner-left">
+          <div class="banner-badge">DÍA <span id="diaActual">1</span> DE 30</div>
+          <div class="banner-text">
+            <strong>Plan de Choque activo — Jefatura de Tecnología</strong>
+            <span>Objetivo: visibilidad total del gasto + primer ahorro ejecutado al día 30</span>
+          </div>
+        </div>
+        <div class="banner-progress">
+          <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:3%"></div></div>
+          <span id="progressLabel">Día 1 de 30</span>
+        </div>
+        <div class="banner-right">
+          <div class="countdown">
+            <span class="countdown-num" id="daysLeft">29</span>
+            <span class="countdown-sub">días restantes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <section class="kpi-grid control-kpi-grid">
+        <div class="kpi-card kpi-danger">
+          <div class="kpi-header"><span class="kpi-label">Gasto Tecnológico Mensual</span><div class="kpi-icon red">💰</div></div>
+          <div class="kpi-value" id="kpiGastoMensual">$2.840.000</div>
+          <div class="kpi-footer"><span class="kpi-sub">~$34.1M anual estimado</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Ahorro Detectado</span><div class="kpi-icon amber">🔍</div></div>
+          <div class="kpi-value" id="kpiDetectado">$8.200.000</div>
+          <div class="kpi-footer"><span class="kpi-trend up">3 oportunidades activas</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Ahorro Validado</span><div class="kpi-icon blue">✔️</div></div>
+          <div class="kpi-value" id="kpiValidado">$3.600.000</div>
+          <div class="kpi-footer"><span class="kpi-sub">Confirmado por Hacienda</span></div>
+        </div>
+        <div class="kpi-card kpi-success">
+          <div class="kpi-header"><span class="kpi-label">Ahorro Realizado</span><div class="kpi-icon green">✅</div></div>
+          <div class="kpi-value" id="kpiRealizado">$480.000</div>
+          <div class="kpi-footer"><span class="kpi-sub">Verificado en facturas</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Contratos Relevados</span><div class="kpi-icon violet">📋</div></div>
+          <div class="kpi-value" id="kpiContratos">23</div>
+          <div class="kpi-footer"><span class="kpi-sub">de ~30 estimados</span></div>
+        </div>
+        <div class="kpi-card kpi-warning">
+          <div class="kpi-header"><span class="kpi-label">Vencen en 60 días</span><div class="kpi-icon red">⚠️</div></div>
+          <div class="kpi-value" id="kpiVencen">5</div>
+          <div class="kpi-footer"><span class="kpi-trend up">Requieren decisión urgente</span></div>
+        </div>
+      </section>
+
+      <!-- TABS -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-tab="resumen">📊 Resumen Ejecutivo</button>
+        <button class="tab-btn" data-tab="contratos">📋 Contratos</button>
+        <button class="tab-btn" data-tab="ahorros">💡 Oportunidades de Ahorro</button>
+        <button class="tab-btn" data-tab="pagos">💸 Pagos</button>
+        <button class="tab-btn" data-tab="importar">📥 Importar</button>
+      </div>
+
+      <!-- ══ RESUMEN EJECUTIVO ══ -->
+      <div class="tab-content active" id="tab-resumen">
+        <div class="ctrl-grid-3">
+          <div class="ctrl-panel span2">
+            <div class="panel-header">
+              <h2 class="chart-title">🏆 Ranking de Proveedores — Top 10 Gasto</h2>
+            </div>
+            <div class="ranking-list" id="rankingList"></div>
+          </div>
+          <div class="ctrl-panel">
+            <div class="panel-header"><h2 class="chart-title">⏰ Alertas de Vencimiento</h2></div>
+            <div class="alertas-list" id="alertasList"></div>
+          </div>
+          <div class="ctrl-panel">
+            <div class="chart-header"><h2 class="chart-title">Gasto por Categoría</h2></div>
+            <div class="chart-container"><canvas id="chartCategoria"></canvas></div>
+          </div>
+          <div class="ctrl-panel span2">
+            <div class="chart-header"><h2 class="chart-title">Evolución del Gasto Mensual 2026</h2></div>
+            <div class="chart-container"><canvas id="chartEvolucion"></canvas></div>
+          </div>
+          <div class="ctrl-panel">
+            <div class="panel-header"><h2 class="chart-title">💡 Pipeline de Ahorros</h2></div>
+            <div class="savings-pipeline" id="savingsPipeline"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CONTRATOS ══ -->
+      <div class="tab-content" id="tab-contratos">
+        <div class="rrhh-panel">
+          <div class="panel-header">
+            <h2 class="chart-title">📋 Contratos y Proveedores Tecnológicos</h2>
+            <div class="panel-filters">
+              <select class="select-filter" id="filtroCategoria">
+                <option value="">Todas las categorías</option>
+                <option>Software y Licencias</option><option>Infraestructura</option>
+                <option>Servicios Digitales</option><option>Conectividad</option>
+                <option>Soporte y Mantenimiento</option>
+              </select>
+              <select class="select-filter" id="filtroRiesgo">
+                <option value="">Todos los riesgos</option>
+                <option>Alto</option><option>Medio</option><option>Bajo</option>
+              </select>
+              <div class="search-box"><span class="search-icon">🔍</span>
+                <input type="text" id="searchContrato" placeholder="Buscar proveedor o sistema..." />
+              </div>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table ctrl-table" id="contratosTable">
+              <thead><tr>
+                <th>Proveedor / Sistema</th><th>Categoría</th>
+                <th>Costo Mensual</th><th>Costo Anual</th>
+                <th>Vencimiento</th><th>Responsable</th>
+                <th>Datos propios</th><th>Riesgo</th><th>Alerta</th><th>Acción</th>
+              </tr></thead>
+              <tbody id="contratosBody"></tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span id="contratosCount" class="table-count"></span>
+            <button class="btn-add-row" id="btnNuevoContrato">+ Agregar contrato</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ OPORTUNIDADES DE AHORRO ══ -->
+      <div class="tab-content" id="tab-ahorros">
+        <div class="ahorros-header">
+          <div class="ahorros-totales" id="ahorrosTotales"></div>
+          <button class="btn-primary" id="btnNuevoAhorro">+ Nueva oportunidad</button>
+        </div>
+        <div class="kanban-board" id="kanbanBoard">
+          <div class="kanban-col"><div class="kanban-header detectado"><span>🟡 Detectado</span><span class="k-count" id="k-count-Detectado">0</span></div><div class="kanban-cards" id="kanban-Detectado"></div></div>
+          <div class="kanban-col"><div class="kanban-header validado"><span>🔵 Validado</span><span class="k-count" id="k-count-Validado">0</span></div><div class="kanban-cards" id="kanban-Validado"></div></div>
+          <div class="kanban-col"><div class="kanban-header aprobado"><span>🟠 Aprobado</span><span class="k-count" id="k-count-Aprobado">0</span></div><div class="kanban-cards" id="kanban-Aprobado"></div></div>
+          <div class="kanban-col"><div class="kanban-header ejecutado"><span>🔴 Ejecutado</span><span class="k-count" id="k-count-Ejecutado">0</span></div><div class="kanban-cards" id="kanban-Ejecutado"></div></div>
+          <div class="kanban-col"><div class="kanban-header realizado"><span>🟢 Realizado</span><span class="k-count" id="k-count-Realizado">0</span></div><div class="kanban-cards" id="kanban-Realizado"></div></div>
+        </div>
+      </div>
+
+      <!-- ══ PAGOS ══ -->
+      <div class="tab-content" id="tab-pagos">
+        <div class="rrhh-panel">
+          <div class="panel-header">
+            <h2 class="chart-title">💸 Registro de Pagos y Facturas</h2>
+            <div class="panel-filters">
+              <select class="select-filter" id="filtroPagoMes">
+                <option value="">Todos los meses</option>
+                <option>Enero 2026</option><option>Febrero 2026</option><option>Marzo 2026</option>
+                <option>Abril 2026</option><option>Mayo 2026</option><option>Junio 2026</option>
+                <option selected>Julio 2026</option>
+              </select>
+              <div class="search-box"><span class="search-icon">🔍</span>
+                <input type="text" id="searchPago" placeholder="Buscar por proveedor o concepto..." />
+              </div>
+            </div>
+          </div>
+          <table class="data-table ctrl-table" id="pagosTable">
+            <thead><tr>
+              <th>Fecha</th><th>Proveedor</th><th>CUIT</th>
+              <th>Concepto</th><th>Expediente</th>
+              <th>Monto</th><th>Contrato</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="pagosBody"></tbody>
+          </table>
+          <div class="table-footer"><span id="pagosTotal" class="table-count"></span></div>
+        </div>
+      </div>
+
+      <!-- ══ IMPORTAR ══ -->
+      <div class="tab-content" id="tab-importar">
+        <div class="import-layout">
+          <div class="import-panel">
+            <h2 class="import-title">📥 Importar datos municipales</h2>
+            <p class="import-desc">Subí los archivos que te entreguen desde Hacienda, Contaduría o Tecnología. El sistema los normaliza automáticamente.</p>
+            <div class="import-types">
+              <div class="import-type active" data-type="pagos"><span class="import-icon">💸</span><span>Pagos / Facturas</span><span class="import-format">Excel · CSV</span></div>
+              <div class="import-type" data-type="contratos"><span class="import-icon">📋</span><span>Contratos</span><span class="import-format">Excel · CSV</span></div>
+              <div class="import-type" data-type="proveedores"><span class="import-icon">🏢</span><span>Proveedores</span><span class="import-format">Excel · CSV</span></div>
+              <div class="import-type" data-type="horas"><span class="import-icon">⏰</span><span>Horas Extra</span><span class="import-format">Excel</span></div>
+              <div class="import-type" data-type="combustible"><span class="import-icon">⛽</span><span>Combustible</span><span class="import-format">Excel · CSV</span></div>
+            </div>
+            <div class="import-dropzone" id="importDropzone">
+              <div class="import-drop-inner">
+                <div style="font-size:48px">📂</div>
+                <p><strong>Arrastrá el archivo aquí</strong><br/>o hacé click para seleccionar</p>
+                <p class="import-supported">Excel (.xlsx · .xls) · CSV · PDF</p>
+                <button class="upload-btn" id="importSelectBtn">Seleccionar archivo</button>
+                <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" hidden />
+              </div>
+            </div>
+            <div class="import-result" id="importResult" style="display:none"></div>
+            <div class="import-template">
+              <h3>📋 Plantillas para solicitar datos</h3>
+              <p>Descargá la plantilla Excel para enviarle al área que debe suministrar los datos:</p>
+              <div class="template-buttons">
+                <button class="btn-template" id="tplPagos">⬇ Plantilla Pagos (24 meses)</button>
+                <button class="btn-template" id="tplContratos">⬇ Plantilla Contratos</button>
+                <button class="btn-template" id="tplProveedores">⬇ Plantilla Proveedores</button>
+              </div>
+            </div>
+          </div>
+          <div class="import-history">
+            <h3 class="import-history-title">🕐 Historial de importaciones</h3>
+            <div class="history-list" id="historyList"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL CONTRATO -->
+  <div class="modal-overlay" id="modalContrato" style="display:none">
+    <div class="modal" style="max-width:620px">
+      <div class="modal-header"><h3>📋 Registrar Contrato</h3>
+        <button class="modal-close" onclick="document.getElementById('modalContrato').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body"><div class="form-grid">
+        <div class="form-group"><label>Proveedor</label><input type="text" id="c_proveedor" placeholder="Ej: Municipaltech SA" /></div>
+        <div class="form-group"><label>CUIT</label><input type="text" id="c_cuit" placeholder="30-12345678-9" /></div>
+        <div class="form-group"><label>Sistema / Servicio</label><input type="text" id="c_sistema" placeholder="Ej: Sistema de RRHH Nexo" /></div>
+        <div class="form-group"><label>Categoría</label>
+          <select id="c_categoria"><option>Software y Licencias</option><option>Infraestructura</option><option>Servicios Digitales</option><option>Conectividad</option><option>Soporte y Mantenimiento</option></select>
+        </div>
+        <div class="form-group"><label>Costo mensual ($)</label><input type="number" id="c_mensual" placeholder="450000" /></div>
+        <div class="form-group"><label>Vencimiento</label><input type="date" id="c_vencimiento" /></div>
+        <div class="form-group"><label>Responsable municipal</label><input type="text" id="c_responsable" /></div>
+        <div class="form-group"><label>Riesgo de salida</label><select id="c_riesgo"><option>Alto</option><option>Medio</option><option>Bajo</option></select></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Observaciones</label><textarea id="c_notas" rows="2"></textarea></div>
+      </div></div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="document.getElementById('modalContrato').style.display='none'">Cancelar</button>
+        <button class="btn-save" id="btnGuardarContrato">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL AHORRO -->
+  <div class="modal-overlay" id="modalAhorro" style="display:none">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header"><h3>💡 Registrar Oportunidad de Ahorro</h3>
+        <button class="modal-close" onclick="document.getElementById('modalAhorro').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body"><div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1"><label>Descripción</label>
+          <textarea id="a_descripcion" rows="2" placeholder="Ej: Eliminar licencias Microsoft sin uso (23 de 40 inactivas)"></textarea>
+        </div>
+        <div class="form-group"><label>Proveedor</label><input type="text" id="a_proveedor" /></div>
+        <div class="form-group"><label>Estado</label>
+          <select id="a_estado"><option>Detectado</option><option>Validado</option><option>Aprobado</option></select>
+        </div>
+        <div class="form-group"><label>Ahorro estimado anual ($)</label><input type="number" id="a_ahorro" /></div>
+        <div class="form-group"><label>Costo implementación ($)</label><input type="number" id="a_costo" value="0" /></div>
+        <div class="form-group"><label>Responsable</label><input type="text" id="a_responsable" /></div>
+        <div class="form-group"><label>Fecha esperada</label><input type="date" id="a_fecha" /></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Evidencia</label>
+          <textarea id="a_evidencia" rows="2" placeholder="Ej: Planilla de usuarios activos, facturas adjuntas"></textarea>
+        </div>
+      </div></div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="document.getElementById('modalAhorro').style.display='none'">Cancelar</button>
+        <button class="btn-save" id="btnGuardarAhorro">💡 Registrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/control.js"></script>
+</body>
+</html>

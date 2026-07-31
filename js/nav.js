@@ -256,7 +256,15 @@ function buildSidebar(activeId) {
       <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('en')" title="English">🇺🇸 EN</button>
       <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('pt')" title="Português">🇧🇷 PT</button>
     </div>
-    <script src="js/i18n.js"></script>;
+  `;
+
+  // Cargar i18n.js dinámicamente (innerHTML no ejecuta scripts)
+  if (!document.getElementById('i18nScript')) {
+    const s = document.createElement('script');
+    s.id = 'i18nScript';
+    s.src = 'js/i18n.js';
+    document.head.appendChild(s);
+  }
 
 // Theme toggle init
 function toggleTheme(isLight) {

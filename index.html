@@ -408,39 +408,45 @@
   <script src="js/dashboard.js"></script>
   <script>
     buildSidebar('dashboard');
-    // Mostrar badge de backend y avatar del usuario
+
     document.addEventListener('DOMContentLoaded', () => {
+      // Backend status badge
       if (window.API) {
-        API.renderBackendStatus('backendStatusBadge');
-        const user = API.currentUser();
+        API.renderBackendStatus && API.renderBackendStatus('backendStatusBadge');
+      }
+
+      // Avatar + Welcome banner from sessionStorage
+      try {
+        const raw = sessionStorage.getItem('mjunin_user');
+        const user = raw ? JSON.parse(raw) : null;
         if (user) {
           const av = document.getElementById('topbarAvatar');
-          if (av) av.textContent = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-          
-          // Populate Welcome Banner
+          if (av) av.textContent = (user.name || 'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
           const hour = new Date().getHours();
           const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
-          const welcomeGreeting = document.getElementById('welcomeGreeting');
-          if(welcomeGreeting) welcomeGreeting.innerHTML = `${greeting}, <span>${user.name}</span>`;
-          
-          const welcomeRole = document.getElementById('welcomeRole');
-          if(welcomeRole) welcomeRole.textContent = user.role === 'admin' ? '🏛️ Intendente' : (user.role === 'hacienda' ? '💰 Hacienda' : '👤 ' + user.role);
-        }
-    });
-    
-    // Last Login Time
-    const lastLoginEl = document.getElementById('lastLoginTime');
-    if(lastLoginEl) lastLoginEl.textContent = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+          const wg = document.getElementById('welcomeGreeting');
+          if (wg) wg.innerHTML = `${greeting}, <span>${user.name || 'Usuario'}</span>`;
 
-    // Live Clock
-    function updateClock() {
-      const now = new Date();
-      const options = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
-      const clockEl = document.getElementById('liveClock');
-      if(clockEl) clockEl.textContent = now.toLocaleDateString('es-AR', options).replace(',', ' ·');
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
+          const wr = document.getElementById('welcomeRole');
+          const roleMap = { SUPER_ADMIN:'🌐 Super Admin', TENANT_ADMIN:'🏛️ Administrador', TENANT_USER:'👤 Usuario', DEMO:'👁️ Demo' };
+          if (wr) wr.textContent = roleMap[user.role] || user.role || 'Usuario';
+
+          const ll = document.getElementById('lastLoginTime');
+          if (ll) ll.textContent = new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+        }
+      } catch(e) {}
+
+      // Live clock
+      function updateClock() {
+        const now = new Date();
+        const opts = { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' };
+        const el = document.getElementById('liveClock');
+        if (el) el.textContent = now.toLocaleDateString('es-AR', opts).replace(',', ' ·');
+      }
+      setInterval(updateClock, 1000);
+      updateClock();
+    });
   </script>
 
   <div class="bottom-status-bar">

@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="css/shared.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <style>
@@ -27,8 +30,14 @@
     .partida-executed { font-size: 11px; margin-top: 2px; }
     .partida-bar-col { width: 80px; flex-shrink: 0; }
     .mini-bar { height: 5px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 3px; }
-    .mini-bar-fill { height: 100%; border-radius: 99px; transition: width 1.5s ease; }
+    .mini-bar-fill { height: 100%; border-radius: 99px; transition: width 1.5s ease-out; width: 0; }
     .mini-pct { font-size: 10px; color: var(--text-muted); text-align: right; }
+    .sub-partidas { display: none; padding: 10px 16px 10px 56px; background: rgba(0,0,0,0.1); border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .sub-partidas.active { display: block; }
+    .sub-partida-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); font-size: 12px; color: rgba(255,255,255,0.8); }
+    .sub-partida-item:last-child { border-bottom: none; }
+    .sub-partida-name { flex: 1; }
+    .sub-partida-val { font-family: monospace; }
     .budget-sidebar { display: flex; flex-direction: column; gap: 16px; }
     .budget-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
     .budget-card-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 800; margin-bottom: 14px; }
@@ -79,31 +88,31 @@
       <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr)">
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-icon" style="background:rgba(59,130,246,0.1)">💰</span></div>
-          <div class="kpi-value">$372M</div>
+          <div class="kpi-value kpi-counter" data-target="372">$0M</div>
           <div class="kpi-label">Presupuesto Total</div>
           <div class="kpi-trend trend-up">▲ +8% vs 2025</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-icon" style="background:rgba(16,185,129,0.1)">✅</span></div>
-          <div class="kpi-value" style="color:var(--green)">$193M</div>
+          <div class="kpi-value kpi-counter" data-target="193" style="color:var(--green)">$0M</div>
           <div class="kpi-label">Ejecutado</div>
           <div class="kpi-trend trend-up">52% del total</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-icon" style="background:rgba(245,158,11,0.1)">⏳</span></div>
-          <div class="kpi-value" style="color:var(--amber)">$179M</div>
+          <div class="kpi-value kpi-counter" data-target="179" style="color:var(--amber)">$0M</div>
           <div class="kpi-label">Disponible</div>
           <div class="kpi-trend">Sem. 2 - 2026</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-icon" style="background:rgba(139,92,246,0.1)">🔮</span></div>
-          <div class="kpi-value" style="color:var(--violet)">$31M</div>
+          <div class="kpi-value kpi-counter" data-target="31" style="color:var(--violet)">$0M</div>
           <div class="kpi-label">Ahorro Proyectado IA</div>
           <div class="kpi-trend trend-up">▲ 8.3% del total</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-icon" style="background:rgba(239,68,68,0.1)">⚠️</span></div>
-          <div class="kpi-value" style="color:var(--red)">3</div>
+          <div class="kpi-value kpi-counter" data-target="3" data-prefix="" style="color:var(--red)">0</div>
           <div class="kpi-label">Partidas en Riesgo</div>
           <div class="kpi-trend trend-down">▼ Revisar urgente</div>
         </div>
@@ -253,23 +262,46 @@
     document.getElementById('partidasContainer').innerHTML = filteredPartidas.map(p => {
       const pct = Math.min(Math.round(p.executed / p.total * 100), 120);
       const color = pct > 100 ? '#ef4444' : pct > 80 ? '#f59e0b' : '#10b981';
-      return `<div class="partida-row" onclick="showDetail('${p.code}')">
-        <div class="partida-icon">${p.icon}</div>
-        <div class="partida-info">
-          <div class="partida-name">${p.name}</div>
-          <div class="partida-code">Partida ${p.code} · ${p.area}</div>
+      const sub = [
+        { n: 'Sub-ítem A', v: p.executed * 0.4 },
+        { n: 'Sub-ítem B', v: p.executed * 0.35 },
+        { n: 'Sub-ítem C', v: p.executed * 0.25 }
+      ];
+      return `<div class="partida-wrapper">
+        <div class="partida-row" onclick="toggleSubPartida('${p.code}')">
+          <div class="partida-icon">${p.icon}</div>
+          <div class="partida-info">
+            <div class="partida-name">${p.name}</div>
+            <div class="partida-code">Partida ${p.code} · ${p.area}</div>
+          </div>
+          <div class="partida-bar-col">
+            <div class="mini-bar"><div class="mini-bar-fill" style="background:${color}" data-w="${Math.min(pct,100)}"></div></div>
+            <div class="mini-pct" style="color:${color}">${pct}%</div>
+          </div>
+          <div class="partida-amounts">
+            <div class="partida-total" style="color:${color}">${fmt(p.executed)}</div>
+            <div class="partida-executed" style="color:var(--text-muted)">de ${fmt(p.total)}</div>
+          </div>
+          ${p.risk ? '<div style="font-size:16px">⚠️</div>' : ''}
         </div>
-        <div class="partida-bar-col">
-          <div class="mini-bar"><div class="mini-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
-          <div class="mini-pct" style="color:${color}">${pct}%</div>
+        <div class="sub-partidas" id="sub-${p.code}">
+          ${sub.map(s => `<div class="sub-partida-item"><span class="sub-partida-name">${s.n}</span><span class="sub-partida-val">${fmt(s.v)}</span></div>`).join('')}
         </div>
-        <div class="partida-amounts">
-          <div class="partida-total" style="color:${color}">${fmt(p.executed)}</div>
-          <div class="partida-executed" style="color:var(--text-muted)">de ${fmt(p.total)}</div>
-        </div>
-        ${p.risk ? '<div style="font-size:16px">⚠️</div>' : ''}
       </div>`;
     }).join('');
+    
+    setTimeout(() => {
+      document.querySelectorAll('.mini-bar-fill').forEach(bar => {
+        bar.style.width = bar.getAttribute('data-w') + '%';
+      });
+    }, 50);
+  }
+
+  function toggleSubPartida(code) {
+    const el = document.getElementById('sub-' + code);
+    if(el) {
+      el.classList.toggle('active');
+    }
   }
 
   function filterPartidas() {
@@ -340,20 +372,99 @@
   });
 
   // PREDICTOR
+  // PREDICTOR
   function runPrediction() {
-    const executed = PARTIDAS.reduce((s,p)=>s+p.executed,0);
-    const total = PARTIDAS.reduce((s,p)=>s+p.total,0);
-    const remaining = 5; // meses restantes
-    const avgMonthly = executed / 7;
-    const projected = executed + (avgMonthly * remaining);
-    const saving = Math.max(0, total - projected);
-    document.getElementById('pred1').textContent = '$' + (projected/1000000).toFixed(0) + 'M';
-    document.getElementById('pred2').textContent = '$' + (saving/1000000).toFixed(0) + 'M';
-    window.toast && toast('🤖 Predicción actualizada', 'Modelo recalculado con datos de julio 2026', 'success');
+    const btn = document.querySelector('.predictor-header .btn');
+    btn.innerHTML = '⏳ Recalculando...';
+    btn.disabled = true;
+    setTimeout(() => {
+      const executed = PARTIDAS.reduce((s,p)=>s+p.executed,0);
+      const total = PARTIDAS.reduce((s,p)=>s+p.total,0);
+      const remaining = 5; // meses restantes
+      const avgMonthly = executed / 7;
+      const projected = executed + (avgMonthly * remaining) + (Math.random() * 5000000 - 2500000); // add slight randomness
+      const saving = Math.max(0, total - projected);
+      
+      document.getElementById('pred1').textContent = '$' + (projected/1000000).toFixed(1) + 'M';
+      document.getElementById('pred2').textContent = '$' + (saving/1000000).toFixed(1) + 'M';
+      
+      const risks = ['Bajo', 'Moderado', 'Alto'];
+      document.getElementById('pred3').textContent = risks[Math.floor(Math.random() * risks.length)];
+      
+      const criticals = ['Personal', 'Obras', 'Servicios', 'Social'];
+      document.getElementById('pred4').textContent = criticals[Math.floor(Math.random() * criticals.length)];
+      
+      const best = ['Obras', 'Servicios', 'Tecnología', 'Salud'];
+      document.getElementById('pred5').textContent = best[Math.floor(Math.random() * best.length)];
+      
+      btn.innerHTML = '🔄 Recalcular';
+      btn.disabled = false;
+      window.toast && toast('🤖 Predicción actualizada', 'Modelo IA recalculado con los últimos datos', 'success');
+    }, 1200);
   }
 
-  function exportPDF() { window.toast && toast('📄 Exportando PDF', 'Presupuesto Anual 2026 generando...', 'info'); setTimeout(()=>window.toast&&toast('✅ PDF listo','presupuesto_2026.pdf descargado','success'),1800); }
-  function exportExcel() { window.toast && toast('📊 Exportando Excel', 'Todas las partidas y datos...', 'info'); setTimeout(()=>window.toast&&toast('✅ Excel listo','presupuesto_2026.xlsx descargado','success'),1500); }
+  function exportPDF() { 
+    window.toast && toast('📄 Exportando PDF', 'Presupuesto Anual 2026 generando...', 'info'); 
+    setTimeout(() => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text("Presupuesto Anual 2026 - Municipio de Junín", 14, 22);
+      doc.setFontSize(11);
+      doc.text("Reporte generado el: " + new Date().toLocaleDateString(), 14, 30);
+      
+      const tableData = PARTIDAS.map(p => [
+        p.code, 
+        p.name, 
+        p.area, 
+        '$' + (p.total/1000000).toFixed(2) + 'M', 
+        '$' + (p.executed/1000000).toFixed(2) + 'M', 
+        Math.round(p.executed/p.total*100) + '%'
+      ]);
+      
+      doc.autoTable({
+        startY: 40,
+        head: [['Código', 'Partida', 'Área', 'Presupuesto', 'Ejecutado', '% Ejec.']],
+        body: tableData,
+      });
+      
+      doc.save('presupuesto_2026.pdf');
+      window.toast && toast('✅ PDF listo','presupuesto_2026.pdf descargado','success');
+    }, 1000);
+  }
+  
+  function exportExcel() { 
+    window.toast && toast('📊 Exportando Excel', 'Todas las partidas y datos...', 'info'); 
+    setTimeout(() => {
+      const ws = XLSX.utils.json_to_sheet(PARTIDAS.map(p => ({
+        'Código': p.code,
+        'Nombre': p.name,
+        'Área': p.area,
+        'Presupuesto Total': p.total,
+        'Ejecutado': p.executed,
+        '% Ejecución': Math.round(p.executed/p.total*100) + '%',
+        'Riesgo': p.risk ? 'Sí' : 'No'
+      })));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Presupuesto 2026");
+      XLSX.writeFile(wb, "presupuesto_2026.xlsx");
+      window.toast && toast('✅ Excel listo','presupuesto_2026.xlsx descargado','success');
+    }, 1000); 
+  }
+
+  // Animation for KPIs
+  document.querySelectorAll('.kpi-counter').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const prefix = el.dataset.prefix !== undefined ? el.dataset.prefix : '$';
+    const suffix = el.dataset.prefix !== undefined ? '' : 'M';
+    let current = 0;
+    const step = Math.max(1, Math.floor(target / 30));
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = prefix + current + suffix;
+      if (current >= target) clearInterval(timer);
+    }, 40);
+  });
 
   renderPartidas();
   buildSidebar('presupuesto');

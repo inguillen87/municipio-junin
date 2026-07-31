@@ -15,6 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/shared.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     .lic-status-bar { display:flex; gap:0; margin-bottom:24px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.07); }
     .lic-status-step { flex:1; padding:14px 10px; text-align:center; background:rgba(255,255,255,0.02); cursor:pointer; transition:all 0.2s; border-right:1px solid rgba(255,255,255,0.06); }
@@ -104,7 +105,7 @@
       </div>
       <div class="topbar-right">
         <button class="btn-primary" id="btnNuevaLic">📄 + Nueva Licitación</button>
-        <button class="btn-export">📤 Exportar Registro</button>
+        <button class="btn-export" onclick="exportarLicitaciones()">📤 Exportar Registro</button>
         <div class="topbar-avatar">MA</div>
       </div>
     </header>
@@ -113,12 +114,12 @@
 
       <!-- KPIs -->
       <section class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Licitaciones Activas</span><div class="kpi-icon blue">📄</div></div><div class="kpi-value" data-target="8">8</div><div class="kpi-footer"><span class="kpi-trend up">▲ 3 en evaluación</span></div></div>
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Monto Total Licitado</span><div class="kpi-icon amber">💰</div></div><div class="kpi-value money">$48.7M</div><div class="kpi-footer"><span class="kpi-sub">En procesos activos</span></div></div>
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Adjudicadas (mes)</span><div class="kpi-icon green">✅</div></div><div class="kpi-value" data-target="5">5</div><div class="kpi-footer"><span class="kpi-trend down">$12.4M adjudicados</span></div></div>
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Ahorro vs Presupuesto</span><div class="kpi-icon green">💚</div></div><div class="kpi-value pct" data-target="11">11%</div><div class="kpi-footer"><span class="kpi-sub">$1.4M ahorrados</span></div></div>
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Proveedores Registrados</span><div class="kpi-icon violet">🏢</div></div><div class="kpi-value" data-target="47">47</div><div class="kpi-footer"><span class="kpi-sub">12 pre-calificados</span></div></div>
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Vencen en 30 días</span><div class="kpi-icon red">⚠️</div></div><div class="kpi-value" data-target="3">3</div><div class="kpi-footer"><span class="kpi-trend up">▲ Requieren acción</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Licitaciones Activas</span><div class="kpi-icon blue">📄</div></div><div class="kpi-value kpi-counter" data-target="8">0</div><div class="kpi-footer"><span class="kpi-trend up">▲ 3 en evaluación</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Monto Total Licitado</span><div class="kpi-icon amber">💰</div></div><div class="kpi-value kpi-counter money" data-target="48700000">$0</div><div class="kpi-footer"><span class="kpi-sub">En procesos activos</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Adjudicadas (mes)</span><div class="kpi-icon green">✅</div></div><div class="kpi-value kpi-counter" data-target="5">0</div><div class="kpi-footer"><span class="kpi-trend down">$12.4M adjudicados</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Ahorro vs Presupuesto</span><div class="kpi-icon green">💚</div></div><div class="kpi-value kpi-counter pct" data-target="11">0%</div><div class="kpi-footer"><span class="kpi-sub">$1.4M ahorrados</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Proveedores Registrados</span><div class="kpi-icon violet">🏢</div></div><div class="kpi-value kpi-counter" data-target="47">0</div><div class="kpi-footer"><span class="kpi-sub">12 pre-calificados</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Vencen en 30 días</span><div class="kpi-icon red">⚠️</div></div><div class="kpi-value kpi-counter" data-target="3">0</div><div class="kpi-footer"><span class="kpi-trend up">▲ Requieren acción</span></div></div>
       </section>
 
       <!-- PROCESO STATUS BAR -->
@@ -136,7 +137,8 @@
 
       <!-- TABS -->
       <div class="tabs-bar">
-        <button class="tab-btn active" data-tab="activas">📄 Activas (8)</button>
+        <button class="tab-btn active" data-tab="todas">📋 Registro (10)</button>
+        <button class="tab-btn" data-tab="activas">📄 Activas (3)</button>
         <button class="tab-btn" data-tab="evaluacion">⚖️ En Evaluación (3)</button>
         <button class="tab-btn" data-tab="adjudicadas">✅ Adjudicadas</button>
         <button class="tab-btn" data-tab="proveedores">🏢 Proveedores</button>
@@ -145,8 +147,59 @@
         <button class="tab-btn" data-tab="auditor">🔎 AI Auditor</button>
       </div>
 
+      <!-- TAB TODAS (NEW MAIN TABLE) -->
+      <div class="tab-content active" id="tab-todas">
+        <div class="rrhh-panel">
+          <div class="panel-header" style="flex-wrap: wrap; gap: 10px;">
+            <h2 class="chart-title">Licitaciones y Contrataciones</h2>
+            <div class="panel-filters" style="display:flex; gap:10px;">
+              <select id="filtroEstadoLic" onchange="renderLicitaciones()">
+                <option value="">Todos los Estados</option>
+                <option value="Vigente">Vigente</option>
+                <option value="Adjudicada">Adjudicada</option>
+                <option value="Desierta">Desierta</option>
+                <option value="Suspendida">Suspendida</option>
+                <option value="En Evaluación">En Evaluación</option>
+              </select>
+              <select id="filtroTipoLic" onchange="renderLicitaciones()">
+                <option value="">Todos los Tipos</option>
+                <option value="Obra Pública">Obra Pública</option>
+                <option value="Servicio">Servicio</option>
+                <option value="Servicio IT">Servicio IT</option>
+                <option value="Compra Directa">Compra Directa</option>
+              </select>
+              <input type="text" id="searchLic" placeholder="Buscar..." oninput="renderLicitaciones()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary);"/>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Monto</th>
+                <th>Secretaría</th>
+                <th>Estado</th>
+                <th>Apertura</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyLicitaciones">
+            </tbody>
+          </table>
+          <div class="table-footer" style="display:flex; justify-content:space-between; align-items:center; margin-top: 15px;">
+            <span style="font-size:12px; color:var(--text-muted)">Mostrando 10 registros</span>
+            <div class="pagination">
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- TAB ACTIVAS -->
-      <div class="tab-content active" id="tab-activas">
+      <div class="tab-content" id="tab-activas">
 
         <div class="lic-card" onclick="openDetail('L001')">
           <div class="lic-card-header">
@@ -604,8 +657,136 @@
     }, 1500);
 
     window.openDetail = (id) => {
-      if (window.toast) toast('Abriendo detalle', 'Licitación #' + id, 'info');
+      const l = window.LICITACIONES.find(x => x.id === id);
+      const title = l ? l.titulo : 'Licitación ' + id;
+      const content = l ? `
+        <div style="padding:10px 0;">
+          <p><strong>ID:</strong> ${l.id}</p>
+          <p><strong>Tipo:</strong> ${l.tipo}</p>
+          <p><strong>Monto:</strong> $${l.monto.toLocaleString()}</p>
+          <p><strong>Secretaría:</strong> ${l.secretaria}</p>
+          <p><strong>Estado:</strong> ${l.estado}</p>
+          <p><strong>Empresa/Adjudicatario:</strong> ${l.empresa}</p>
+          <p><strong>Apertura:</strong> ${l.apertura}</p>
+          <p><strong>Vencimiento:</strong> ${l.vencimiento}</p>
+        </div>
+      ` : '<p>Detalles no disponibles.</p>';
+
+      const modalHtml = `
+        <div class="modal-overlay" id="modalDetalleLic" style="display:flex; z-index:9999;">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>👁 Detalle: ${title}</h3>
+              <button class="modal-close" onclick="document.getElementById('modalDetalleLic').remove()">✕</button>
+            </div>
+            <div class="modal-body">${content}</div>
+            <div class="modal-footer">
+              <button class="btn-primary" onclick="window.descargarPliego()">⬇️ Descargar Pliego</button>
+              <button class="btn-secondary" onclick="window.participar()">📝 Participar</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
     };
+
+    window.descargarPliego = () => {
+      if (window.toast) toast('⬇️ Descargando...', 'El pliego se está descargando en PDF', 'info');
+      else alert('Descargando pliego...');
+    };
+
+    window.participar = () => {
+      if (window.toast) toast('📝 Redirigiendo...', 'Accediendo al portal de proveedores', 'success');
+      else alert('Accediendo al portal de proveedores...');
+    };
+
+    // Table Logic
+    window.LICITACIONES = [
+      { id:'LIC-2026-001', titulo:'Pavimentación Av. San Martín 2300-2800', tipo:'Obra Pública', monto:85000000, secretaria:'Obras Públicas', estado:'Adjudicada', empresa:'Constructora Del Valle SA', apertura:'2026-03-15', vencimiento:'2026-09-30' },
+      { id:'LIC-2026-002', titulo:'Servicio de Recolección de Residuos Zona Norte', tipo:'Servicio', monto:42000000, secretaria:'Medio Ambiente', estado:'Vigente', empresa:'-', apertura:'2026-07-20', vencimiento:'2026-08-15' },
+      { id:'LIC-2026-003', titulo:'Adquisición de 3 Ambulancias 4x4', tipo:'Compra Directa', monto:31500000, secretaria:'Salud', estado:'En Evaluación', empresa:'-', apertura:'2026-07-25', vencimiento:'2026-08-10' },
+      { id:'LIC-2026-004', titulo:'Iluminación LED Parque Municipal y Plazas', tipo:'Obra Pública', monto:18700000, secretaria:'Obras Públicas', estado:'Adjudicada', empresa:'Tecnoilum SA', apertura:'2026-02-10', vencimiento:'2026-07-31' },
+      { id:'LIC-2026-005', titulo:'Software de Gestión Tributaria Municipal', tipo:'Servicio IT', monto:9200000, secretaria:'Hacienda', estado:'Adjudicada', empresa:'SysTributos SRL', apertura:'2026-01-20', vencimiento:'2026-12-31' },
+      { id:'LIC-2026-006', titulo:'Construcción Playón Deportivo Barrio Sur', tipo:'Obra Pública', monto:22400000, secretaria:'Deportes', estado:'Vigente', empresa:'-', apertura:'2026-07-28', vencimiento:'2026-08-28' },
+      { id:'LIC-2026-007', titulo:'Poda y Mantenimiento Arbolado Urbano 2026', tipo:'Servicio', monto:5600000, secretaria:'Obras Públicas', estado:'Adjudicada', empresa:'AgroVerde SRL', apertura:'2026-04-05', vencimiento:'2026-12-31' },
+      { id:'LIC-2026-008', titulo:'Adquisición Útiles y Materiales Escolares', tipo:'Compra Directa', monto:3800000, secretaria:'Educación', estado:'Adjudicada', empresa:'Librería Central SA', apertura:'2026-01-15', vencimiento:'2026-02-28' },
+      { id:'LIC-2026-009', titulo:'Mantenimiento Red Vial Urbana y Rural', tipo:'Obra Pública', monto:61000000, secretaria:'Obras Públicas', estado:'Desierta', empresa:'-', apertura:'2026-06-01', vencimiento:'2026-06-30' },
+      { id:'LIC-2026-010', titulo:'Servicio de Seguridad Edificios Municipales', tipo:'Servicio', monto:8400000, secretaria:'Intendencia', estado:'Vigente', empresa:'-', apertura:'2026-07-30', vencimiento:'2026-08-20' }
+    ];
+
+    let currentPage = 1;
+    let filteredLic = window.LICITACIONES;
+
+    window.renderLicitaciones = () => {
+      const est = document.getElementById('filtroEstadoLic').value;
+      const tip = document.getElementById('filtroTipoLic').value;
+      const q = document.getElementById('searchLic').value.toLowerCase();
+      
+      filteredLic = window.LICITACIONES.filter(l => {
+        const matchEst = !est || l.estado === est;
+        const matchTip = !tip || l.tipo === tip;
+        const matchQ = !q || l.titulo.toLowerCase().includes(q) || l.id.toLowerCase().includes(q);
+        return matchEst && matchTip && matchQ;
+      });
+
+      const tbody = document.getElementById('tbodyLicitaciones');
+      if (!tbody) return;
+      tbody.innerHTML = filteredLic.map(l => {
+        let badgeClass = 'info';
+        if (l.estado === 'Adjudicada') badgeClass = 'ok';
+        else if (l.estado === 'Vigente') badgeClass = 'ok';
+        else if (l.estado === 'Desierta' || l.estado === 'Suspendida') badgeClass = 'critical';
+        else if (l.estado === 'En Evaluación') badgeClass = 'warning';
+
+        return `
+          <tr>
+            <td><strong>${l.id}</strong></td>
+            <td>${l.titulo}</td>
+            <td>${l.tipo}</td>
+            <td>$${l.monto.toLocaleString()}</td>
+            <td>${l.secretaria}</td>
+            <td><span class="status-badge ${badgeClass}">${l.estado}</span></td>
+            <td>${l.apertura}</td>
+            <td>
+              <button class="action-btn" onclick="openDetail('${l.id}')" title="Ver">👁</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    };
+
+    window.exportarLicitaciones = () => {
+      if (typeof XLSX === 'undefined') return alert('Error SheetJS');
+      if (window.toast) toast('📊 Exportando...', 'Generando Excel', 'info');
+      setTimeout(() => {
+        const ws = XLSX.utils.json_to_sheet(filteredLic);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Licitaciones");
+        XLSX.writeFile(wb, "licitaciones.xlsx");
+        if (window.toast) toast('✅ Excel listo', 'Descargado', 'success');
+      }, 500);
+    };
+
+    // Render initially
+    setTimeout(() => {
+      renderLicitaciones();
+    }, 500);
+
+    // KPI Animations
+    document.querySelectorAll('.kpi-counter').forEach(el => {
+      const target = parseInt(el.dataset.target);
+      const isMoney = el.classList.contains('money');
+      const isPct = el.classList.contains('pct');
+      let current = 0;
+      const step = Math.max(1, Math.floor(target / 30));
+      const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        if (isMoney) el.textContent = '$' + (current / 1000000).toFixed(1) + 'M';
+        else if (isPct) el.textContent = current + '%';
+        else el.textContent = current;
+        if (current >= target) clearInterval(timer);
+      }, 40);
+    });
 
     // AI Pliego Generator Simulation
     function generatePliego() {

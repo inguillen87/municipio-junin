@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/shared.css" />
   <link rel="stylesheet" href="css/rrhh.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -226,6 +227,116 @@
   <script src="js/rrhh.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/pwa.js"></script>
+  <script>
+    document.getElementById('btnGuardar').onclick = function() {
+      var dni = document.getElementById('empDni').value;
+      var nombre = document.getElementById('empNombre').value;
+      var apellido = document.getElementById('empApellido').value;
+      if (!dni || !nombre || !apellido) {
+        if(typeof showToast!=='undefined') showToast('Completá los campos obligatorios', 'error');
+        else alert('Completá los campos obligatorios');
+        return;
+      }
+      var nuevo = {
+        legajo: String(Math.floor(Math.random()*9000)+1000),
+        nombre: nombre + ' ' + apellido,
+        secretaria: document.getElementById('empSecretaria').value,
+        cargo: document.getElementById('empCargo').value || 'Sin asignar',
+        ingreso: document.getElementById('empIngreso').value || new Date().toISOString().split('T')[0],
+        hsExtra: 0,
+        sueldo: parseInt(document.getElementById('empSueldo').value) || 350000,
+        estado: 'Activo',
+        colorIdx: Math.floor(Math.random()*5)
+      };
+      if (typeof todosEmpleados !== 'undefined') {
+        todosEmpleados.unshift(nuevo);
+        aplicarFiltros();
+      }
+      document.getElementById('modalOverlay').style.display = 'none';
+      if(typeof showToast!=='undefined') showToast('✅ Empleado dado de alta', 'success');
+      else alert('✅ Empleado dado de alta exitosamente');
+    };
+
+    document.getElementById('btnExportRRHH').onclick = function() {
+      if (typeof XLSX === 'undefined') return alert('Error al cargar SheetJS');
+      if (typeof window.toast !== 'undefined') window.toast('📊 Exportando...', 'Generando Excel', 'info');
+      setTimeout(() => {
+        var dataToExport = (typeof empleadosFiltrados !== 'undefined' ? empleadosFiltrados : []).map(e => ({
+          'Legajo': e.legajo,
+          'Nombre': e.nombre,
+          'Secretaría': e.secretaria,
+          'Cargo': e.cargo,
+          'Ingreso': e.ingreso,
+          'Horas Extra': e.hsExtra,
+          'Sueldo': e.sueldo,
+          'Estado': e.estado
+        }));
+        var ws = XLSX.utils.json_to_sheet(dataToExport);
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Empleados");
+        XLSX.writeFile(wb, "empleados.xlsx");
+        if (typeof window.toast !== 'undefined') window.toast('✅ Excel listo', 'Descargado', 'success');
+      }, 500);
+    };
+
+    // Override verLegajo for a custom modal
+    window.verLegajo = function(legajo) {
+      const e = (typeof todosEmpleados !== 'undefined' ? todosEmpleados : []).find(x => String(x.legajo) === String(legajo));
+      if (!e) return;
+      
+      const modalHtml = `
+        <div class="modal-overlay" id="modalDetalle" style="display:flex; z-index:9999;">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>👁 Detalle de Legajo</h3>
+              <button class="modal-close" onclick="document.getElementById('modalDetalle').remove()">✕</button>
+            </div>
+            <div class="modal-body">
+              <p><strong>Legajo:</strong> #${e.legajo}</p>
+              <p><strong>Nombre:</strong> ${e.nombre}</p>
+              <p><strong>Secretaría:</strong> ${e.secretaria}</p>
+              <p><strong>Cargo:</strong> ${e.cargo}</p>
+              <p><strong>Sueldo:</strong> $${e.sueldo.toLocaleString()}</p>
+              <p><strong>Estado:</strong> ${e.estado}</p>
+              <p><strong>Ingreso:</strong> ${e.ingreso}</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-primary" onclick="document.getElementById('modalDetalle').remove()">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    };
+
+    // KPI Counters animation
+    document.querySelectorAll('.kpi-value[data-target]').forEach(el => {
+      const target = parseInt(el.dataset.target);
+      const isMoney = el.classList.contains('money');
+      const isPct = el.classList.contains('pct');
+      let current = 0;
+      const step = Math.max(1, Math.floor(target / 30));
+      const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        if (isMoney) el.textContent = '$' + current.toLocaleString();
+        else if (isPct) el.textContent = current + '%';
+        else el.textContent = current.toLocaleString();
+        if (current >= target) clearInterval(timer);
+      }, 40);
+    });
+
+    // Pagination buttons
+    document.querySelectorAll('.page-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        if(typeof paginaActual !== 'undefined' && typeof renderTabla === 'function' && !isNaN(parseInt(this.innerText))) {
+          paginaActual = parseInt(this.innerText);
+          renderTabla();
+        }
+      });
+    });
+  </script>
 <script>
   (function() {
     try {

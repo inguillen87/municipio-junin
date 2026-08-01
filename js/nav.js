@@ -119,6 +119,12 @@ const NAV_ITEMS = [
     label: 'Reclamos Vecinales',
     access: 'all'
   },
+  {
+    id: 'forms', href: 'forms.html', icon: '📝',
+    label: 'MuniForms',
+    access: ['SUPER_ADMIN','TENANT_ADMIN'],
+    locked: ['DEMO']
+  },
 
   // ── OPERACIONES ───────────────────────────────────────────
   {

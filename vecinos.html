@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -9,8 +9,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal JunÃ­n" />
-  <title>Reclamos Vecinales â€” MuniControl</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
+  <title>Reclamos Vecinales — MuniControl</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -23,16 +23,16 @@
   <main class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">â˜°</button>
+        <button class="menu-btn" id="menuBtn">☰</button>
         <div class="page-title">
-          <h1>AtenciÃ³n Vecinal</h1>
-          <span class="breadcrumb">Municipio de JunÃ­n Â· Reclamos, Turnos y ComunicaciÃ³n</span>
+          <h1>Atención Vecinal</h1>
+          <span class="breadcrumb">Municipio de Junín · Reclamos, Turnos y Comunicación</span>
         </div>
       </div>
       <div class="topbar-right">
         <button class="btn-primary" id="btnNuevoReclamo">+ Nuevo Reclamo</button>
-        <button class="btn-export">ðŸ“¤ Exportar</button>
-        <div class="notification-bell">ðŸ””<span class="notif-dot"></span></div>
+        <button class="btn-export">📤 Exportar</button>
+        <div class="notification-bell">🔔<span class="notif-dot"></span></div>
         <div class="topbar-avatar">MA</div>
       </div>
     </header>
@@ -42,65 +42,65 @@
       <!-- KPIs -->
       <section class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Reclamos Totales</span><div class="kpi-icon blue">ðŸ“‹</div></div>
+          <div class="kpi-header"><span class="kpi-label">Reclamos Totales</span><div class="kpi-icon blue">📋</div></div>
           <div class="kpi-value" data-target="318">0</div>
-          <div class="kpi-footer"><span class="kpi-trend up">â–² 23 esta semana</span></div>
+          <div class="kpi-footer"><span class="kpi-trend up">▲ 23 esta semana</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Pendientes</span><div class="kpi-icon red">â³</div></div>
+          <div class="kpi-header"><span class="kpi-label">Pendientes</span><div class="kpi-icon red">⏳</div></div>
           <div class="kpi-value" data-target="89">0</div>
-          <div class="kpi-footer"><span class="kpi-trend up">â–² Requieren atenciÃ³n</span></div>
+          <div class="kpi-footer"><span class="kpi-trend up">▲ Requieren atención</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Resueltos (mes)</span><div class="kpi-icon green">âœ…</div></div>
+          <div class="kpi-header"><span class="kpi-label">Resueltos (mes)</span><div class="kpi-icon green">✅</div></div>
           <div class="kpi-value" data-target="229">0</div>
-          <div class="kpi-footer"><span class="kpi-trend down">72% tasa resoluciÃ³n</span></div>
+          <div class="kpi-footer"><span class="kpi-trend down">72% tasa resolución</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Tiempo Promedio</span><div class="kpi-icon amber">â±ï¸</div></div>
+          <div class="kpi-header"><span class="kpi-label">Tiempo Promedio</span><div class="kpi-icon amber">⏱️</div></div>
           <div class="kpi-value" data-target="3">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">dÃ­as hasta resoluciÃ³n</span></div>
+          <div class="kpi-footer"><span class="kpi-sub">días hasta resolución</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Turnos Hoy</span><div class="kpi-icon violet">ðŸ“…</div></div>
+          <div class="kpi-header"><span class="kpi-label">Turnos Hoy</span><div class="kpi-icon violet">📅</div></div>
           <div class="kpi-value" data-target="47">0</div>
           <div class="kpi-footer"><span class="kpi-sub">12 pendientes de confirmar</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">SatisfacciÃ³n</span><div class="kpi-icon teal">â­</div></div>
+          <div class="kpi-header"><span class="kpi-label">Satisfacción</span><div class="kpi-icon teal">⭐</div></div>
           <div class="kpi-value pct" data-target="84">0%</div>
-          <div class="kpi-footer"><span class="kpi-trend down">âœ… Encuestas agosto</span></div>
+          <div class="kpi-footer"><span class="kpi-trend down">✅ Encuestas agosto</span></div>
         </div>
       </section>
 
       <!-- SLA DASHBOARD (NYC 311 style) -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-header">
-          <h3 style="font-size:13px;margin:0">â±ï¸ SLA por Tipo de Reclamo</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta pÃºblicos</span>
+          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
+          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
         </div>
         <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
           <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">CrÃ­tico</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ’§</div>
+            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
+            <div style="font-size:20px;margin:6px 0">💧</div>
             <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
             <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ•³ï¸</div>
+            <div style="font-size:20px;margin:6px 0">🕳️</div>
             <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
             <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ’¡</div>
-            <div style="font-size:11px;font-weight:800">Luminaria / TrÃ¡nsito</div>
+            <div style="font-size:20px;margin:6px 0">💡</div>
+            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
             <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ—‘ï¸</div>
+            <div style="font-size:20px;margin:6px 0">🗑️</div>
             <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
             <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
           </div>
@@ -110,31 +110,31 @@
       <!-- SLA DASHBOARD (NYC 311 style) -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-header">
-          <h3 style="font-size:13px;margin:0">â±ï¸ SLA por Tipo de Reclamo</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta pÃºblicos</span>
+          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
+          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
         </div>
         <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
           <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">CrÃ­tico</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ’§</div>
+            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
+            <div style="font-size:20px;margin:6px 0">💧</div>
             <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
             <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ•³ï¸</div>
+            <div style="font-size:20px;margin:6px 0">🕳️</div>
             <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
             <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ’¡</div>
-            <div style="font-size:11px;font-weight:800">Luminaria / TrÃ¡nsito</div>
+            <div style="font-size:20px;margin:6px 0">💡</div>
+            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
             <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ—‘ï¸</div>
+            <div style="font-size:20px;margin:6px 0">🗑️</div>
             <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
             <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
           </div>
@@ -144,31 +144,31 @@
       <!-- SLA DASHBOARD (NYC 311 style) -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-header">
-          <h3 style="font-size:13px;margin:0">â±ï¸ SLA por Tipo de Reclamo</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta pÃºblicos</span>
+          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
+          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
         </div>
         <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
           <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">CrÃ­tico</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ’§</div>
+            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
+            <div style="font-size:20px;margin:6px 0">💧</div>
             <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
             <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ•³ï¸</div>
+            <div style="font-size:20px;margin:6px 0">🕳️</div>
             <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
             <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ’¡</div>
-            <div style="font-size:11px;font-weight:800">Luminaria / TrÃ¡nsito</div>
+            <div style="font-size:20px;margin:6px 0">💡</div>
+            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
             <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ—‘ï¸</div>
+            <div style="font-size:20px;margin:6px 0">🗑️</div>
             <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
             <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
           </div>
@@ -178,31 +178,31 @@
       <!-- SLA DASHBOARD (NYC 311 style) -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-header">
-          <h3 style="font-size:13px;margin:0">â±ï¸ SLA por Tipo de Reclamo</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta pÃºblicos</span>
+          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
+          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
         </div>
         <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
           <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">CrÃ­tico</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ’§</div>
+            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
+            <div style="font-size:20px;margin:6px 0">💧</div>
             <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
             <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ•³ï¸</div>
+            <div style="font-size:20px;margin:6px 0">🕳️</div>
             <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
             <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ’¡</div>
-            <div style="font-size:11px;font-weight:800">Luminaria / TrÃ¡nsito</div>
+            <div style="font-size:20px;margin:6px 0">💡</div>
+            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
             <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
           </div>
           <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
             <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
-            <div style="font-size:20px;margin:6px 0">ðŸ—‘ï¸</div>
+            <div style="font-size:20px;margin:6px 0">🗑️</div>
             <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
             <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
           </div>
@@ -211,16 +211,16 @@
 
       <!-- TABS -->
       <div class="tabs-bar">
-        <button class="tab-btn active" data-tab="reclamos">ðŸ“‹ Reclamos</button>
-        <button class="tab-btn" data-tab="turnos">ðŸ“… Turnos</button>
-        <button class="tab-btn" data-tab="tipos">ðŸ“Š Por Tipo</button>
+        <button class="tab-btn active" data-tab="reclamos">📋 Reclamos</button>
+        <button class="tab-btn" data-tab="turnos">📅 Turnos</button>
+        <button class="tab-btn" data-tab="tipos">📊 Por Tipo</button>
       </div>
 
       <!-- TAB: RECLAMOS -->
       <div class="tab-content active" id="tab-reclamos">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">ðŸ“‹ Reclamos Vecinos</h2>
+            <h2 class="chart-title">📋 Reclamos Vecinos</h2>
             <div class="panel-filters">
               <select class="select-filter" id="filtroTipo">
                 <option value="">Todos los tipos</option>
@@ -240,8 +240,8 @@
                 <button class="btn-filter" data-status="Resuelto">Resuelto</button>
               </div>
               <div class="search-box" style="min-width:180px">
-                <span class="search-icon">ðŸ”</span>
-                <input type="text" id="searchReclamo" placeholder="Buscar vecino o direcciÃ³n..." />
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchReclamo" placeholder="Buscar vecino o dirección..." />
               </div>
             </div>
           </div>
@@ -251,8 +251,8 @@
                 <th>#</th>
                 <th>Vecino</th>
                 <th>Tipo</th>
-                <th>DirecciÃ³n</th>
-                <th>DescripciÃ³n</th>
+                <th>Dirección</th>
+                <th>Descripción</th>
                 <th>Fecha</th>
                 <th>Estado</th>
                 <th>SLA</th>
@@ -272,10 +272,10 @@
       <div class="tab-content" id="tab-turnos">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">ðŸ“± Portal PÃºblico Vecinal (QR)</h2>
+            <h2 class="chart-title">📱 Portal Público Vecinal (QR)</h2>
           </div>
           <div style="text-align:center; padding:40px;">
-            <p>Los vecinos pueden escanear este cÃ³digo para acceder al portal sin login:</p>
+            <p>Los vecinos pueden escanear este código para acceder al portal sin login:</p>
             <div style="margin:20px 0;">
               <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://municontrol.local/vecinos-publico.html?token=ABC123XYZ" alt="QR Code">
             </div>
@@ -292,7 +292,7 @@
             <div class="chart-container"><canvas id="tiposChart"></canvas></div>
           </div>
           <div class="chart-card">
-            <div class="chart-header"><h2 class="chart-title">EvoluciÃ³n Mensual</h2></div>
+            <div class="chart-header"><h2 class="chart-title">Evolución Mensual</h2></div>
             <div class="chart-container"><canvas id="evolucionChart"></canvas></div>
           </div>
         </div>
@@ -301,15 +301,15 @@
       <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
         <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
           <div style="flex:1;min-width:200px">
-            <div style="font-size:16px;font-weight:900;margin-bottom:8px">ðŸ” Consultar reclamo sin login</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el nÃºmero de seguimiento.</div>
+            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
             <div style="display:flex;gap:8px">
               <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
-              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">ðŸ” Consultar</button>
+              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
             </div>
           </div>
           <div style="text-align:center">
-            <div style="font-size:48px;margin-bottom:4px">ðŸ“±</div>
+            <div style="font-size:48px;margin-bottom:4px">📱</div>
             <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
           </div>
         </div>
@@ -319,15 +319,15 @@
       <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
         <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
           <div style="flex:1;min-width:200px">
-            <div style="font-size:16px;font-weight:900;margin-bottom:8px">ðŸ” Consultar reclamo sin login</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el nÃºmero de seguimiento.</div>
+            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
             <div style="display:flex;gap:8px">
               <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
-              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">ðŸ” Consultar</button>
+              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
             </div>
           </div>
           <div style="text-align:center">
-            <div style="font-size:48px;margin-bottom:4px">ðŸ“±</div>
+            <div style="font-size:48px;margin-bottom:4px">📱</div>
             <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
           </div>
         </div>
@@ -337,15 +337,15 @@
       <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
         <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
           <div style="flex:1;min-width:200px">
-            <div style="font-size:16px;font-weight:900;margin-bottom:8px">ðŸ” Consultar reclamo sin login</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el nÃºmero de seguimiento.</div>
+            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
             <div style="display:flex;gap:8px">
               <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
-              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">ðŸ” Consultar</button>
+              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
             </div>
           </div>
           <div style="text-align:center">
-            <div style="font-size:48px;margin-bottom:4px">ðŸ“±</div>
+            <div style="font-size:48px;margin-bottom:4px">📱</div>
             <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
           </div>
         </div>
@@ -355,15 +355,15 @@
       <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
         <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
           <div style="flex:1;min-width:200px">
-            <div style="font-size:16px;font-weight:900;margin-bottom:8px">ðŸ” Consultar reclamo sin login</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el nÃºmero de seguimiento.</div>
+            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
             <div style="display:flex;gap:8px">
               <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
-              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">ðŸ” Consultar</button>
+              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
             </div>
           </div>
           <div style="text-align:center">
-            <div style="font-size:48px;margin-bottom:4px">ðŸ“±</div>
+            <div style="font-size:48px;margin-bottom:4px">📱</div>
             <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
           </div>
         </div>
@@ -376,8 +376,8 @@
   <div class="modal-overlay" id="modalReclamo" style="display:none">
     <div class="modal" style="max-width:520px">
       <div class="modal-header">
-        <h3>ðŸ“‹ Registrar Reclamo</h3>
-        <button class="modal-close" onclick="document.getElementById('modalReclamo').style.display='none'">âœ•</button>
+        <h3>📋 Registrar Reclamo</h3>
+        <button class="modal-close" onclick="document.getElementById('modalReclamo').style.display='none'">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
@@ -387,7 +387,7 @@
           </div>
           <div class="form-group">
             <label>Nombre Completo</label>
-            <input type="text" id="rNombre" placeholder="Juan GarcÃ­a" />
+            <input type="text" id="rNombre" placeholder="Juan García" />
           </div>
           <div class="form-group" style="grid-column:1/-1">
             <label>Tipo de reclamo</label>
@@ -403,21 +403,21 @@
             </select>
           </div>
           <div class="form-group" style="grid-column:1/-1">
-            <label>ðŸ“ UbicaciÃ³n</label>
+            <label>📍 Ubicación</label>
             <div style="display:flex;gap:8px">
-              <input type="text" id="rDireccion" placeholder="DirecciÃ³n o intersecciÃ³n" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-size:13px;outline:none">
-              <button type="button" onclick="geolocalizarReclamo()" style="padding:10px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#60a5fa;border-radius:8px;cursor:pointer;font-size:13px" title="Obtener mi ubicaciÃ³n">
-                ðŸŽ¯
+              <input type="text" id="rDireccion" placeholder="Dirección o intersección" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-size:13px;outline:none">
+              <button type="button" onclick="geolocalizarReclamo()" style="padding:10px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#60a5fa;border-radius:8px;cursor:pointer;font-size:13px" title="Obtener mi ubicación">
+                🎯
               </button>
             </div>
           </div>
           <div class="form-group" style="grid-column:1/-1">
-            <label>DescripciÃ³n</label>
-            <textarea id="rDescripcion" rows="3" placeholder="DescripciÃ³n del reclamo..."></textarea>
+            <label>Descripción</label>
+            <textarea id="rDescripcion" rows="3" placeholder="Descripción del reclamo..."></textarea>
           </div>
           <div class="form-group" style="grid-column:1/-1">
             <label class="btn-secondary" style="display:inline-block;text-align:center;cursor:pointer;">
-              ðŸ“· Adjuntar Foto
+              📷 Adjuntar Foto
               <input type="file" accept="image/*" style="display:none" />
             </label>
           </div>
@@ -433,8 +433,8 @@
   <div class="modal-overlay" id="modalDetalle" style="display:none">
     <div class="modal" style="max-width:520px">
       <div class="modal-header">
-        <h3>ðŸ“‹ Detalle del Reclamo</h3>
-        <button class="modal-close" onclick="document.getElementById('modalDetalle').style.display='none'">âœ•</button>
+        <h3>📋 Detalle del Reclamo</h3>
+        <button class="modal-close" onclick="document.getElementById('modalDetalle').style.display='none'">✕</button>
       </div>
       <div class="modal-body" id="detalleBody">
       </div>
@@ -446,7 +446,7 @@
   <script src="js/pwa.js"></script>
   <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <script>
-  // Verificar sesiÃ³n activa
+  // Verificar sesión activa
   (function() {
     try {
       var t = localStorage.getItem('govtech_theme');
@@ -464,20 +464,20 @@
   <script>
     function geolocalizarReclamo() {
       if (!navigator.geolocation) {
-        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalizaciÃ³n', 'error');
+        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
         return;
       }
-      if (typeof showToast !== 'undefined') showToast('ðŸ“ Obteniendo ubicaciÃ³n...', 'info');
+      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
       navigator.geolocation.getCurrentPosition(
         function(pos) {
           const lat = pos.coords.latitude.toFixed(6);
           const lng = pos.coords.longitude.toFixed(6);
           const input = document.getElementById('rDireccion');
-          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (JunÃ­n)`;
-          if (typeof showToast !== 'undefined') showToast('âœ… UbicaciÃ³n obtenida', 'success');
+          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
+          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
         },
         function() {
-          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicaciÃ³n', 'error');
+          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
         }
       );
     }
@@ -485,18 +485,18 @@
     function consultarReclamo() {
       const numero = document.getElementById('consultaNumero')?.value?.trim();
       if (!numero) {
-        if (typeof showToast !== 'undefined') showToast('âš ï¸ IngresÃ¡ el nÃºmero de reclamo', 'warning');
+        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
         return;
       }
       const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
       if (reclamo) {
-        if (typeof showToast !== 'undefined') showToast(`âœ… Reclamo ${numero}: ${reclamo.estado} â€” ${reclamo.tipo}`, 'success');
+        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
       } else {
         const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
         if (demos.includes(numero)) {
-          if (typeof showToast !== 'undefined') showToast(`ðŸ” Reclamo ${numero}: EN PROCESO â€” SLA cumpliendo`, 'info');
+          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
         } else {
-          if (typeof showToast !== 'undefined') showToast(`âŒ Reclamo ${numero} no encontrado. VerificÃ¡ el nÃºmero.`, 'error');
+          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
         }
       }
     }
@@ -505,20 +505,20 @@
   <script>
     function geolocalizarReclamo() {
       if (!navigator.geolocation) {
-        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalizaciÃ³n', 'error');
+        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
         return;
       }
-      if (typeof showToast !== 'undefined') showToast('ðŸ“ Obteniendo ubicaciÃ³n...', 'info');
+      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
       navigator.geolocation.getCurrentPosition(
         function(pos) {
           const lat = pos.coords.latitude.toFixed(6);
           const lng = pos.coords.longitude.toFixed(6);
           const input = document.getElementById('rDireccion');
-          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (JunÃ­n)`;
-          if (typeof showToast !== 'undefined') showToast('âœ… UbicaciÃ³n obtenida', 'success');
+          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
+          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
         },
         function() {
-          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicaciÃ³n', 'error');
+          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
         }
       );
     }
@@ -526,18 +526,18 @@
     function consultarReclamo() {
       const numero = document.getElementById('consultaNumero')?.value?.trim();
       if (!numero) {
-        if (typeof showToast !== 'undefined') showToast('âš ï¸ IngresÃ¡ el nÃºmero de reclamo', 'warning');
+        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
         return;
       }
       const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
       if (reclamo) {
-        if (typeof showToast !== 'undefined') showToast(`âœ… Reclamo ${numero}: ${reclamo.estado} â€” ${reclamo.tipo}`, 'success');
+        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
       } else {
         const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
         if (demos.includes(numero)) {
-          if (typeof showToast !== 'undefined') showToast(`ðŸ” Reclamo ${numero}: EN PROCESO â€” SLA cumpliendo`, 'info');
+          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
         } else {
-          if (typeof showToast !== 'undefined') showToast(`âŒ Reclamo ${numero} no encontrado. VerificÃ¡ el nÃºmero.`, 'error');
+          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
         }
       }
     }
@@ -546,20 +546,20 @@
   <script>
     function geolocalizarReclamo() {
       if (!navigator.geolocation) {
-        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalizaciÃ³n', 'error');
+        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
         return;
       }
-      if (typeof showToast !== 'undefined') showToast('ðŸ“ Obteniendo ubicaciÃ³n...', 'info');
+      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
       navigator.geolocation.getCurrentPosition(
         function(pos) {
           const lat = pos.coords.latitude.toFixed(6);
           const lng = pos.coords.longitude.toFixed(6);
           const input = document.getElementById('rDireccion');
-          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (JunÃ­n)`;
-          if (typeof showToast !== 'undefined') showToast('âœ… UbicaciÃ³n obtenida', 'success');
+          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
+          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
         },
         function() {
-          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicaciÃ³n', 'error');
+          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
         }
       );
     }
@@ -567,18 +567,18 @@
     function consultarReclamo() {
       const numero = document.getElementById('consultaNumero')?.value?.trim();
       if (!numero) {
-        if (typeof showToast !== 'undefined') showToast('âš ï¸ IngresÃ¡ el nÃºmero de reclamo', 'warning');
+        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
         return;
       }
       const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
       if (reclamo) {
-        if (typeof showToast !== 'undefined') showToast(`âœ… Reclamo ${numero}: ${reclamo.estado} â€” ${reclamo.tipo}`, 'success');
+        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
       } else {
         const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
         if (demos.includes(numero)) {
-          if (typeof showToast !== 'undefined') showToast(`ðŸ” Reclamo ${numero}: EN PROCESO â€” SLA cumpliendo`, 'info');
+          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
         } else {
-          if (typeof showToast !== 'undefined') showToast(`âŒ Reclamo ${numero} no encontrado. VerificÃ¡ el nÃºmero.`, 'error');
+          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
         }
       }
     }
@@ -587,20 +587,20 @@
   <script>
     function geolocalizarReclamo() {
       if (!navigator.geolocation) {
-        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalizaciÃ³n', 'error');
+        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
         return;
       }
-      if (typeof showToast !== 'undefined') showToast('ðŸ“ Obteniendo ubicaciÃ³n...', 'info');
+      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
       navigator.geolocation.getCurrentPosition(
         function(pos) {
           const lat = pos.coords.latitude.toFixed(6);
           const lng = pos.coords.longitude.toFixed(6);
           const input = document.getElementById('rDireccion');
-          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (JunÃ­n)`;
-          if (typeof showToast !== 'undefined') showToast('âœ… UbicaciÃ³n obtenida', 'success');
+          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
+          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
         },
         function() {
-          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicaciÃ³n', 'error');
+          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
         }
       );
     }
@@ -608,21 +608,22 @@
     function consultarReclamo() {
       const numero = document.getElementById('consultaNumero')?.value?.trim();
       if (!numero) {
-        if (typeof showToast !== 'undefined') showToast('âš ï¸ IngresÃ¡ el nÃºmero de reclamo', 'warning');
+        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
         return;
       }
       const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
       if (reclamo) {
-        if (typeof showToast !== 'undefined') showToast(`âœ… Reclamo ${numero}: ${reclamo.estado} â€” ${reclamo.tipo}`, 'success');
+        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
       } else {
         const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
         if (demos.includes(numero)) {
-          if (typeof showToast !== 'undefined') showToast(`ðŸ” Reclamo ${numero}: EN PROCESO â€” SLA cumpliendo`, 'info');
+          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
         } else {
-          if (typeof showToast !== 'undefined') showToast(`âŒ Reclamo ${numero} no encontrado. VerificÃ¡ el nÃºmero.`, 'error');
+          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
         }
       }
     }
   </script>
+  <script src='js/notifications.js'></script>
 </body>
 </html>

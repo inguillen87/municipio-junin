@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Dashboard Ejecutivo — MuniControl</title>
+  <title>Dashboard Ejecutivo  MuniControl</title>
   <meta name="description" content="Panel de control ejecutivo de gastos, recursos humanos y operaciones del Municipio de Junín, Buenos Aires." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -131,7 +131,7 @@ body::before {
     <!-- TOP BAR -->
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
+        <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
           <h1>Dashboard Ejecutivo</h1>
           <span class="breadcrumb">Municipio de Junín · <span id="currentDate"></span></span>
@@ -141,14 +141,14 @@ body::before {
         <div id="backendStatusBadge"></div>
         <div class="live-clock" id="liveClock"></div>
         <div class="search-box">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon">??</span>
           <input type="text" placeholder="Buscar secretaría, empleado..." id="globalSearch" />
         </div>
         <button class="btn-export" id="btnExport" title="Exportar reporte" onclick="window.location.href='exportar.html'">
-          📤 Exportar
+          ?? Exportar
         </button>
         <div class="notification-bell" title="Alertas">
-          🔔
+          ??
           <span class="notif-dot"></span>
         </div>
         <div class="topbar-avatar" id="topbarAvatar" title="Perfil">MA</div>
@@ -157,9 +157,9 @@ body::before {
 
     <!-- ALERT BANNER -->
     <div class="alert-banner" id="alertBanner">
-      <span class="alert-icon">⚠️</span>
+      <span class="alert-icon">??</span>
       <span>Obras Públicas supera el presupuesto mensual en un <strong>18%</strong>. Se recomienda revisión inmediata.</span>
-      <button class="alert-close" onclick="document.getElementById('alertBanner').style.display='none'">✕</button>
+      <button class="alert-close" onclick="document.getElementById('alertBanner').style.display='none'">?</button>
     </div>
 
     <div class="content-wrapper">
@@ -169,24 +169,24 @@ body::before {
         <div class="welcome-content">
           <h2 id="welcomeGreeting">Buenos días</h2>
           <div class="welcome-meta">
-            <span class="role-badge" id="welcomeRole">🏛️ Ejecutivo</span>
+            <span class="role-badge" id="welcomeRole">??? Ejecutivo</span>
             <span class="last-login">Último acceso: <span id="lastLoginTime"></span></span>
           </div>
         </div>
         <div class="welcome-actions">
-          <button class="btn-primary" onclick="window.location.href='ia.html'">🤖 Consultar IA</button>
+          <button class="btn-primary" onclick="window.location.href='ia.html'">?? Consultar IA</button>
           <button class="btn-secondary" onclick="window.location.href='analytics.html'">Ver Reporte</button>
         </div>
       </div>
 
       <!-- ACCESOS RÁPIDOS -->
       <div class="quick-access-grid">
-        <a href="ia.html" class="qa-btn">🤖 Consultar IA</a>
-        <a href="rrhh.html" class="qa-btn">👥 RRHH</a>
-        <a href="licitaciones.html" class="qa-btn">📋 Licitaciones</a>
-        <a href="vecinos.html" class="qa-btn">🏘️ Reclamos</a>
-        <a href="analytics.html" class="qa-btn">📈 Analytics</a>
-        <a href="exportar.html" class="qa-btn">📑 Exportar</a>
+        <a href="ia.html" class="qa-btn">?? Consultar IA</a>
+        <a href="rrhh.html" class="qa-btn">?? RRHH</a>
+        <a href="licitaciones.html" class="qa-btn">?? Licitaciones</a>
+        <a href="vecinos.html" class="qa-btn">??? Reclamos</a>
+        <a href="analytics.html" class="qa-btn">?? Analytics</a>
+        <a href="exportar.html" class="qa-btn">?? Exportar</a>
       </div>
 
       <!-- KPI CARDS -->
@@ -195,11 +195,11 @@ body::before {
         <div class="kpi-card" id="kpi-empleados">
           <div class="kpi-header">
             <span class="kpi-label">Total Empleados</span>
-            <div class="kpi-icon blue">👥</div>
+            <div class="kpi-icon blue">??</div>
           </div>
           <div class="kpi-value" data-target="1247">0</div>
           <div class="kpi-footer">
-            <span class="kpi-trend up">▲ 12 este mes</span>
+            <span class="kpi-trend up">? 12 este mes</span>
             <span class="kpi-sub">vs 1.235 julio</span>
             <div class="sparkline"><div class="sparkline-fill" style="width: 65%; background: #10b981;"></div></div>
           </div>
@@ -208,11 +208,11 @@ body::before {
         <div class="kpi-card" id="kpi-gasto">
           <div class="kpi-header">
             <span class="kpi-label">Gasto Mensual</span>
-            <div class="kpi-icon amber">💰</div>
+            <div class="kpi-icon amber">??</div>
           </div>
           <div class="kpi-value money" data-target="284500000">$0</div>
           <div class="kpi-footer">
-            <span class="kpi-trend down">▼ 4.2% vs julio</span>
+            <span class="kpi-trend down">? 4.2% vs julio</span>
             <span class="kpi-sub">Presupuesto: $310M</span>
             <div class="sparkline"><div class="sparkline-fill" style="width: 80%; background: #f59e0b;"></div></div>
           </div>
@@ -221,11 +221,11 @@ body::before {
         <div class="kpi-card" id="kpi-heExtra">
           <div class="kpi-header">
             <span class="kpi-label">Horas Extra (mes)</span>
-            <div class="kpi-icon red">⏱️</div>
+            <div class="kpi-icon red">??</div>
           </div>
           <div class="kpi-value" data-target="4312">0</div>
           <div class="kpi-footer">
-            <span class="kpi-trend down">▼ 8% vs julio</span>
+            <span class="kpi-trend down">? 8% vs julio</span>
             <span class="kpi-sub">Costo: $18.4M</span>
             <div class="sparkline"><div class="sparkline-fill" style="width: 45%; background: #ef4444;"></div></div>
           </div>
@@ -234,7 +234,7 @@ body::before {
         <div class="kpi-card" id="kpi-presupuesto">
           <div class="kpi-header">
             <span class="kpi-label">Presupuesto Ejecutado</span>
-            <div class="kpi-icon green">📈</div>
+            <div class="kpi-icon green">??</div>
           </div>
           <div class="kpi-value pct" data-target="72">0%</div>
           <div class="kpi-footer">
@@ -248,11 +248,11 @@ body::before {
         <div class="kpi-card" id="kpi-reclamos">
           <div class="kpi-header">
             <span class="kpi-label">Reclamos Vecinos</span>
-            <div class="kpi-icon violet">🏘️</div>
+            <div class="kpi-icon violet">???</div>
           </div>
           <div class="kpi-value" data-target="318">0</div>
           <div class="kpi-footer">
-            <span class="kpi-trend up">▲ 23 sin resolver</span>
+            <span class="kpi-trend up">? 23 sin resolver</span>
             <span class="kpi-sub">Tiempo promedio: 3.2 días</span>
             <div class="sparkline"><div class="sparkline-fill" style="width: 30%; background: #8b5cf6;"></div></div>
           </div>
@@ -261,11 +261,11 @@ body::before {
         <div class="kpi-card" id="kpi-ahorro">
           <div class="kpi-header">
             <span class="kpi-label">Ahorro IT (anual)</span>
-            <div class="kpi-icon teal">💡</div>
+            <div class="kpi-icon teal">??</div>
           </div>
           <div class="kpi-value money" data-target="42000000">$0</div>
           <div class="kpi-footer">
-            <span class="kpi-trend up">✅ Sistemas migrados</span>
+            <span class="kpi-trend up">? Sistemas migrados</span>
             <span class="kpi-sub">vs contratos anteriores</span>
             <div class="sparkline"><div class="sparkline-fill" style="width: 90%; background: #14b8a6;"></div></div>
           </div>
@@ -426,7 +426,7 @@ body::before {
     if (sessionStorage.getItem('access_denied')) {
       sessionStorage.removeItem('access_denied');
       setTimeout(function() {
-        if (typeof showToast !== 'undefined') showToast('⛔ Acceso restringido para tu rol', 'error');
+        if (typeof showToast !== 'undefined') showToast('? Acceso restringido para tu rol', 'error');
       }, 800);
     }
 
@@ -450,7 +450,7 @@ body::before {
           if (wg) wg.innerHTML = `${greeting}, <span>${user.name || 'Usuario'}</span>`;
 
           const wr = document.getElementById('welcomeRole');
-          const roleMap = { SUPER_ADMIN:'🌐 Super Admin', TENANT_ADMIN:'🏛️ Administrador', TENANT_USER:'👤 Usuario', DEMO:'👁️ Demo' };
+          const roleMap = { SUPER_ADMIN:'?? Super Admin', TENANT_ADMIN:'??? Administrador', TENANT_USER:'?? Usuario', DEMO:'??? Demo' };
           if (wr) wr.textContent = roleMap[user.role] || user.role || 'Usuario';
 
           const ll = document.getElementById('lastLoginTime');
@@ -471,10 +471,10 @@ body::before {
   </script>
 
   <div class="bottom-status-bar">
-    <span>🟢 Sistema online</span>
-    <span>🗄️ DB Neon conectada</span>
-    <span>📡 API activa</span>
-    <span>🔄 Última actualización: <span id="lastUpdateText">hace 2 min</span></span>
+    <span>?? Sistema online</span>
+    <span>??? DB Neon conectada</span>
+    <span>?? API activa</span>
+    <span>?? Última actualización: <span id="lastUpdateText">hace 2 min</span></span>
   </div>
   <script src="js/charts-premium.js"></script>
   <script>
@@ -487,7 +487,7 @@ body::before {
       MuniCharts.ejecucionRadar('chartEjecucionRadar');
       MuniCharts.heatmapSemanal('actividadHeatmap');
     }
-    // Checkbook widget — last payments from MuniDB
+    // Checkbook widget  last payments from MuniDB
     if (window.MuniDB) {
       const pagos = MuniDB.sort(MuniDB.getAll('pagos'), 'fecha', 'desc').slice(0, 5);
       const tbody = document.getElementById('checkbookBody');
@@ -511,5 +511,52 @@ body::before {
 
 
 
+  <script src='js/analytics-live.js'></script>
+  <script src='js/notifications.js'></script>
+
+<script>
+// Load LIVE KPI data from MuniDB
+function loadLiveKPIs() {
+  if (!window.MuniDB) return;
+  
+  // Empleados activos
+  try {
+    const empleados = MuniDB.getAll('empleados');
+    const activos = empleados.filter(e => e.estado === 'activo').length;
+    const totalSalarios = empleados.reduce((s,e) => s + (e.salario||0), 0);
+    const el = document.getElementById('kpi-empleados-val') || document.querySelector('[data-kpi="empleados"] .kpi-value');
+    if (el) el.textContent = activos.toLocaleString('es-AR');
+  } catch(e) {}
+  
+  // Reclamos pendientes
+  try {
+    const reclamos = MuniDB.getAll('reclamos');
+    const pendientes = reclamos.filter(r => r.estado !== 'resuelto').length;
+    const el2 = document.querySelector('[data-kpi="reclamos"] .kpi-value, #kpi-reclamos-val');
+    if (el2) el2.textContent = pendientes;
+  } catch(e) {}
+
+  // Pagos del mes
+  try {
+    const pagos = MuniDB.getAll('pagos');
+    const totalPagos = pagos.reduce((s,p) => s + (p.monto||0), 0);
+    const el3 = document.querySelector('[data-kpi="pagos"] .kpi-value, #kpi-gastos-val');
+    if (el3) el3.textContent = '$' + (totalPagos/1000000).toFixed(1) + 'M';
+  } catch(e) {}
+  
+  // Obras en ejecucion
+  try {
+    const obras = MuniDB.getAll('obras');
+    const enEjecucion = obras.filter(o => o.estado === 'en_ejecucion').length;
+    const el4 = document.querySelector('[data-kpi="obras"] .kpi-value, #kpi-obras-val');
+    if (el4) el4.textContent = enEjecucion;
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(loadLiveKPIs, 500);
+});
+</script>
+  <script src='js/search-global.js'></script>
 </body>
 </html>

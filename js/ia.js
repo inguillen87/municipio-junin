@@ -686,26 +686,56 @@ function responderPresupuesto() {
 // ══════════════════════════════════════════════════════════════
 // FUNCIÓN PRINCIPAL — procesar mensaje del usuario
 // ══════════════════════════════════════════════════════════════
-function getAIResponse(message) {
-  const msg = message.toLowerCase();
-  if (msg.includes('gasto') || msg.includes('gastó')) {
-    return '💰 **Análisis de Gastos — Julio 2026**\n\nEl municipio ejecutó **$284.5M** en julio 2026, representando un **4.2% más** que julio 2025.\n\n📊 Distribución por secretaría:\n• Salud: $68.2M (24%)\n• Obras Públicas: $54.1M (19%)\n• Educación: $48.7M (17%)\n• Seguridad: $42.3M (15%)\n• Personal: $38.6M (14%)\n• Resto: $32.6M (11%)\n\n⚠️ **Alerta:** Obras Públicas superó su presupuesto mensual en un 18%. Se recomienda revisión inmediata.';
-  } else if (msg.includes('reclamo') || msg.includes('vecino')) {
-    return '🏘️ **Estado de Reclamos Vecinales**\n\n📊 Resumen actual:\n• **Total activos:** 318\n• **Sin resolver:** 23 (🔴 Crítico)\n• **En proceso:** 89\n• **Resueltos este mes:** 206\n\n🔴 Reclamos urgentes:\n1. Pérdida de agua - Rivadavia 1200 (5 días)\n2. Bache peligroso - San Martín 1450 (3 días)\n3. Luminaria - Belgrano 830 (3 días)\n\n⏱️ Tiempo promedio de resolución: **3.2 días**';
-  } else if (msg.includes('resumen') || msg.includes('ejecutivo')) {
-    return '📋 **Resumen Ejecutivo — Municipio de Junín**\n\n🗓️ Período: Julio 2026\n\n✅ **Logros del mes:**\n• 206 reclamos vecinales resueltos\n• 12 nuevas incorporaciones de personal\n• Pavimentación San Martín: 78% avanzado\n• Ahorro IT anual proyectado: $42M\n\n⚠️ **Puntos de atención:**\n• Obras Públicas 18% sobre presupuesto\n• 4.312 horas extra — máximo histórico\n• 23 reclamos sin atención > 48hs\n\n📈 **Score de gestión:** 74/100';
-  } else if (msg.includes('personal') || msg.includes('empleado') || msg.includes('rrhh')) {
-    return '👥 **Análisis de Personal Municipal**\n\n👤 **Plantel total:** 1.247 empleados\n\n📊 Por secretaría:\n• Salud: 312 (25%)\n• Educación: 287 (23%)\n• Obras Públicas: 198 (16%)\n• Seguridad: 176 (14%)\n• Resto: 274 (22%)\n\n⚠️ **Alertas:**\n• Horas extra: 4.312h este mes (+8% vs julio)\n• Ausentismo: 3% — dentro del límite\n• 47 licencias activas (ordinarias + médicas)\n\n💰 Masa salarial: **$186M/mes**';
-  } else if (msg.includes('presupuesto')) {
-    return '💰 **Estado del Presupuesto 2026**\n\n📊 Ejecución general: **72%** ($193M de $372M)\n\n🔴 Partidas en riesgo (>90% ejecutado):\n• Personal: 103% ⚠️ EXCEDIDO\n• Salud: 89% 🔴 Crítico\n• Transporte: 91% 🔴 Crítico\n\n🟢 Con margen:\n• Obras Públicas: 62%\n• Educación: 68%\n• Medio Ambiente: 71%\n\n🤖 **Predicción IA:** El municipio cerrará el año con $341M ejecutados ($31M de ahorro). Confianza: 87%';
-  } else {
-    return '🤖 Entendido. Procesando tu consulta sobre "' + message + '"...\n\nPuedo ayudarte con:\n• 💰 Análisis de gastos y presupuesto\n• 👥 Información del personal municipal\n• 🏘️ Reclamos vecinales\n• 📊 Reportes ejecutivos\n• ⚠️ Alertas activas del sistema\n\n¿Sobre qué área necesitás información?';
-  }
+function showTyping() {
+  // Mock if needed by the prompt's snippet, though ia2.js uses something else
+}
+function hideTyping() {
+  // Mock if needed
+}
+function addMessage(sender, text) {
+  // Mock or ignore since ia2.js handles it, wait no, if we just return the text, ia.js/ia2.js uses it.
+  // Actually, wait, getAIResponse is synchronous in ia.js. The prompt changes it to async!
 }
 
-function procesarMensaje(texto) {
-  let raw = getAIResponse(texto);
-  // Convert basic markdown to HTML for better display
+async function getAIResponse(message) {
+  const useRealAI = localStorage.getItem('ia_real_mode') === 'true';
+
+  let responseText = '';
+  const kw = message.toLowerCase();
+
+  if (kw.includes('gastos') || kw.includes('presupuesto') || kw.includes('ejecutado')) {
+    responseText = `**💰 Resumen Presupuestario — Julio 2026**\n\nEl municipio ejecutó **$258.9M** del presupuesto anual de **$372.3M** (**69.5% ejecutado**).\n\n🔴 **Alertas activas:**\n- Obras Públicas: 117.9% ejecutado (desvío +$9.7M)\n- Personal: 103.1% ejecutado (desvío +$1.2M)\n\n🟢 **Disponible para el segundo semestre:**\n- Educación: $15.6M disponibles\n- Salud: $7.1M disponibles\n\n¿Querés ver el detalle por rubro?`;
+  } else if (kw.includes('reclamos') || kw.includes('vecinos') || kw.includes('quejas')) {
+    responseText = `**🏘️ Reclamos Vecinales — Estado actual**\n\n📊 **Resumen del mes:**\n- Total recibidos: **1.247 reclamos**\n- Resueltos: **891** (71.4%)\n- En proceso: **213** (17.1%)\n- Urgentes pendientes: **47** (3.8%)\n\n🔴 **Urgentes sin atender:** 5 reclamos con SLA vencido\n- 2 pérdidas de agua\n- 2 baches peligrosos\n- 1 árbol sobre cable eléctrico\n\n⏱️ **Tiempo promedio resolución:** 38 horas`;
+  } else if (kw.includes('empleados') || kw.includes('personal') || kw.includes('rrhh')) {
+    responseText = `**👥 Personal Municipal — Resumen**\n\n- **Total empleados:** 1.247 activos\n- **En licencia:** 23 personas\n- **Costo nómina mensual:** $152.3M\n\n📊 **Por secretaría (top 3):**\n1. Salud: 342 empleados\n2. Obras Públicas: 187 empleados\n3. Educación: 156 empleados\n\n⚠️ **Alertas RRHH:**\n- Seguridad con 2.340 horas extra este mes\n- Ausentismo en Educación: 8.2% (sobre límite 5%)`;
+  } else if (kw.includes('obras') || kw.includes('paviment') || kw.includes('construccion')) {
+    responseText = `**🏗️ Obras Municipales en Ejecución**\n\n4 obras activas por **$59.6M** total comprometido:\n\n1. 🟡 **Av. San Martín** — 68% avance (pav. hormigón)\n2. 🔵 **Red Cloacal Villa del Parque** — 35% avance\n3. 🟢 **Plaza Belgrano** — ✅ Finalizada (100%)\n4. 🔴 **Centro Deportivo** — 22% avance (en inicio)`;
+  } else if (useRealAI && window.HFClient) {
+    try {
+      let context = {};
+      if (window.MuniDB) {
+        context.empleados = MuniDB.getAll('empleados').length;
+        context.reclamos = MuniDB.query('reclamos', { estado: 'pendiente' }).length;
+      }
+      const result = await HFClient.municipalAssistant(message, context);
+      if (result.text) {
+        responseText = result.text;
+      } else {
+        responseText = result.error || 'El modelo IA no está disponible en este momento.';
+      }
+    } catch (e) {
+      responseText = 'Error conectando con el servicio de IA. Verificá tu conexión.';
+    }
+  } else {
+    responseText = `Hola! Soy **MuniBot** 🤖\n\nPuedo ayudarte con información sobre:\n- 💰 **Presupuesto y gastos** — preguntá sobre cualquier secretaría\n- 👥 **Personal** — empleados, nómina, horas extra\n- 🏘️ **Reclamos** — estado de vecinos y SLAs\n- 🏗️ **Obras** — estado de obras en ejecución\n\n💡 *Activá la IA Real (botón arriba) para respuestas más detalladas con Hugging Face*`;
+  }
+
+  return responseText;
+}
+
+async function procesarMensaje(texto) {
+  let raw = await getAIResponse(texto);
   raw = raw.replace(/\n/g, '<br>');
   raw = raw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   return `<div class="ia-answer-card"><div class="ia-insight" style="font-size:14px;color:#f0f4ff;">${raw}</div></div>`;

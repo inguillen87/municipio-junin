@@ -9,139 +9,6 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Asistente Inteligente IA — MuniControl</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/ia.css" />
-  <link rel="stylesheet" href="css/ia2.css" />
-</head>
-<body>
-  <aside class="sidebar" id="sidebar"></aside>
-
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
-        <div class="page-title">
-          <h1>Asistente IA Municipal</h1>
-          <span class="breadcrumb">OCR · Voz · Documentos · Exportación</span>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <div class="ia-status" id="iaStatus">
-          <span class="status-dot online"></span>
-          <span id="modelLabel">Llama 3.1 · Local</span>
-        </div>
-        <a href="exportar.html" class="btn-export-link">📊 Exportar Reportes</a>
-        <button class="btn-export" id="btnClearChat">🗑️ Limpiar</button>
-        <div class="topbar-avatar">MA</div>
-      </div>
-    </header>
-
-    <div class="ia-layout">
-
-      <!-- PANEL IZQUIERDO -->
-      <aside class="ia-sidebar">
-
-        <!-- UPLOAD DE ARCHIVOS -->
-        <div class="ia-sidebar-section">
-          <h3 class="ia-sidebar-title">📎 Cargar Documentos</h3>
-          <div class="drop-zone" id="dropZone">
-            <div class="drop-icon">📂</div>
-            <div class="drop-text">Arrastrá o hacé clic</div>
-            <div class="drop-sub">PDF · Excel · Imagen · Word</div>
-            <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp,.txt,.doc,.docx" multiple hidden />
-          </div>
-          <div class="file-list" id="fileList"></div>
-        </div>
-
-        <!-- OCR STATUS -->
-        <div class="ia-sidebar-section" id="ocrSection" style="display:none">
-          <h3 class="ia-sidebar-title">🔍 OCR — Lectura de Texto</h3>
-          <div class="ocr-progress-wrap">
-            <div class="ocr-bar-track">
-              <div class="ocr-bar-fill" id="ocrBarFill" style="width:0%"></div>
-            </div>
-            <span class="ocr-status-text" id="ocrStatusText">Preparando...</span>
-          </div>
-          <div class="ocr-result-preview" id="ocrPreview"></div>
-        </div>
-
-        <!-- BASE DE CONOCIMIENTO -->
-        <div class="ia-sidebar-section">
-          <h3 class="ia-sidebar-title">📚 Base de Conocimiento</h3>
-          <div class="doc-list" id="docList">
-            <div class="doc-item active">
-              <span class="doc-icon">📊</span>
-              <div class="doc-info"><span class="doc-name">Dashboard Municipal</span><span class="doc-desc">KPIs y gastos live</span></div>
-              <span class="doc-check">✓</span>
-            </div>
-            <div class="doc-item active">
-              <span class="doc-icon">👥</span>
-              <div class="doc-info"><span class="doc-name">Base RRHH</span><span class="doc-desc">1.247 empleados</span></div>
-              <span class="doc-check">✓</span>
-            </div>
-            <div class="doc-item active">
-              <span class="doc-icon">💰</span>
-              <div class="doc-info"><span class="doc-name">Presupuesto 2026</span><span class="doc-desc">Por secretaría</span></div>
-              <span class="doc-check">✓</span>
-            </div>
-            <div class="doc-item active">
-              <span class="doc-icon">🏘️</span>
-              <div class="doc-info"><span class="doc-name">Reclamos Vecinos</span><span class="doc-desc">318 registros</span></div>
-              <span class="doc-check">✓</span>
-            </div>
-            <div class="doc-item active">
-              <span class="doc-icon">⛽</span>
-              <div class="doc-info"><span class="doc-name">Combustible Flota</span><span class="doc-desc">43 vehículos</span></div>
-              <span class="doc-check">✓</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONSULTAS RÁPIDAS -->
-        <div class="ia-sidebar-section">
-          <h3 class="ia-sidebar-title">💡 Consultas Rápidas</h3>
-          <div class="quick-queries">
-            <button class="quick-btn" onclick="sendQuickQuery('¿Cuánto se gastó este mes?')">💰 Gasto del mes</button>
-            <button class="quick-btn" onclick="sendQuickQuery('¿Cuáles son los reclamos pendientes?')">🏘️ Reclamos pendientes</button>
-            <button class="quick-btn" onclick="sendQuickQuery('Resumen ejecutivo')">📋 Resumen ejecutivo</button>
-            <button class="quick-btn" onclick="sendQuickQuery('Análisis de personal')">👥 Análisis de personal</button>
-            <button class="quick-btn" onclick="sendQuickQuery('Alerta de presupuesto')">⚠️ Alerta de presupuesto</button>
-          </div>
-        </div>
-
-        <!-- CONFIG -->
-        <div class="ia-sidebar-section">
-          <h3 class="ia-sidebar-title">⚙️ Configuración</h3>
-          <div class="config-item">
-            <span class="config-label">Endpoint Ollama</span>
-            <input type="text" class="config-input" value="http://localhost:11434" id="ollamaEndpoint" />
-          </div>
-          <div class="config-item">
-            <span class="config-label">Modelo</span>
-            <select class="config-select" id="modelSelect">
-              <option value="demo">🎭 Modelo Municipal</option>
-              <option value="llama3.1:8b">Análisis Financiero</option>
-              <option value="llama3.1:70b">Atención Vecinal</option>
-            </select>
-          </div>
-          <button class="btn-test-connection" id="btnTestOllama">🔌 Probar conexión</button>
-        </div>
-
-      </aside>
-
-      <!-- CHAT PRINCIPAL -->
-      <div class="chat-container">
-        <div class="chat-messages" id="chatMessages">
-          <div class="msg-row ai">
-            <div class="msg-avatar ai-avatar">🤖</div>
-            <div class="msg-bubble ai-bubble">
-              <div class="msg-header">
-                <span class="msg-sender">Asistente Municipal IA</span>
                 <span class="msg-time">Ahora</span>
               </div>
               <div class="msg-text">
@@ -221,6 +88,72 @@
   <script src="js/ia2.js"></script>
   <script src='js/ux-improvements.js'></script>
   <script src='js/bottom-nav.js'></script>
+  <script>
+    // Tab Switching Logic
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.ia-tab-panel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.ia-tab-btn').forEach(b => b.classList.remove('active'));
+      const targetPanel = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+      if (targetPanel) {
+        targetPanel.style.display = tabId === 'chat' ? 'flex' : 'block';
+      }
+      if (btn) btn.classList.add('active');
+    }
+
+    // Toggle AI Mode Logic
+    function toggleAIMode() {
+      const current = localStorage.getItem('ia_real_mode') === 'true';
+      localStorage.setItem('ia_real_mode', !current);
+      const btn = document.getElementById('btnToggleAI');
+      if (btn) {
+        btn.textContent = !current ? '⚡ IA Real (HF)' : '🤖 IA Demo';
+        btn.style.background = !current ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.1)';
+        btn.style.color = !current ? '#c4b5fd' : '#a78bfa';
+      }
+      if (typeof toast !== 'undefined') {
+        toast('Modo IA', !current ? '⚡ IA Real activada — Hugging Face API' : '🤖 Modo Demo activado', 'info');
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('btnToggleAI');
+      if (btn && localStorage.getItem('ia_real_mode') === 'true') {
+        btn.textContent = '⚡ IA Real (HF)';
+        btn.style.background = 'rgba(139,92,246,0.2)';
+        btn.style.color = '#c4b5fd';
+      }
+    });
+
+    // Simplifica IA Logic
+    const EJEMPLO_LEGAL = 'VISTO: El expediente N° 4021-1247/2026 caratulado "Solicitud de habilitación comercial para establecimiento de venta de artículos de computación y electrónica en jurisdicción del partido de Junín" iniciado por el Sr. Juan Carlos Rodríguez, DNI 27.445.123, y CONSIDERANDO: Que el peticionante ha dado cumplimiento con todos los requisitos establecidos en la Ordenanza Municipal N° 4847/2018 y sus modificatorias...';
+
+    async function doSimplifica() {
+      const input = document.getElementById('simplificaInput');
+      const result = document.getElementById('simplificaResult');
+      const output = document.getElementById('simplificaOutput');
+      if (!input || !input.value.trim()) {
+        if (typeof toast !== 'undefined') toast('Atención', 'Ingresá el texto a simplificar', 'warning');
+        return;
+      }
+      result.style.display = 'none';
+      if (typeof toast !== 'undefined') toast('Procesando', '🤖 Simplificando con IA...', 'info');
+
+      let simplified = '';
+      if (window.HFClient && navigator.onLine) {
+        const res = await HFClient.simplifica(input.value);
+        simplified = res.text || res.error || 'No se pudo simplificar en este momento.';
+      } else {
+        simplified = '📋 **Qué dice este documento:**\n\nUna persona (Juan Carlos Rodríguez) pidió permiso para abrir un negocio de computadoras y electrónica en Junín. El municipio revisó todos los papeles que requiere la ley y todo está en orden. Por eso, se aprueba la habilitación comercial.';
+      }
+
+      if (output) output.innerHTML = simplified.replace(/\\n/g, '<br>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
+      if (result) result.style.display = 'block';
+    }
+
+    function copyToClipboard(text, msg) {
+      navigator.clipboard.writeText(text);
+      if (typeof toast !== 'undefined') toast('Copiado', msg, 'success');
+    }
+  </script>
 </body>
 </html>
 

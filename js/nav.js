@@ -67,6 +67,12 @@ const NAV_ITEMS = [
     locked: ['DEMO']
   },
   {
+    id: 'reportes', href: 'reportes.html', icon: '📊',
+    label: 'Centro de Reportes',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+    locked: ['DEMO']
+  },
+  {
     id: 'presupuesto', href: 'presupuesto.html', icon: '💰',
     label: 'Presupuesto Anual',
     access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],

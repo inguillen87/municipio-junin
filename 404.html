@@ -2,53 +2,35 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>404 - Página no encontrada</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/shared.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Página no encontrada | MuniControl</title>
+  <link rel="icon" href="favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body {
-      background-color: #0b1120;
-      color: #f0f4ff;
-      font-family: 'Inter', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      overflow: hidden;
-    }
-    .error-container {
-      text-align: center;
-      animation: fadeIn 0.5s ease;
-    }
-    .emoji {
-      font-size: 80px;
-      margin-bottom: 20px;
-      animation: float 3s ease-in-out infinite;
-    }
-    h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-    p {
-      color: rgba(148,163,184,0.8);
-      margin-bottom: 30px;
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{min-height:100vh;background:#060b18;color:#f0f4ff;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px}
+    .container{max-width:480px}
+    .code{font-family:'Outfit',sans-serif;font-size:120px;font-weight:900;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:16px;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    h1{font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;margin-bottom:12px}
+    p{color:rgba(148,163,184,0.7);font-size:15px;line-height:1.6;margin-bottom:32px}
+    .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .btn{padding:12px 24px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s}
+    .btn-primary{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;border:none}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(59,130,246,0.3)}
+    .btn-secondary{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:rgba(148,163,184,0.8)}
+    .btn-secondary:hover{background:rgba(255,255,255,0.08)}
   </style>
-  <link rel='preconnect' href='https://fonts.googleapis.com'>
-  <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
 </head>
 <body>
-  <div class="error-container">
-    <div class="emoji">🕵️‍♂️</div>
+  <div class="container">
+    <div class="code">404</div>
     <h1>Página no encontrada</h1>
-    <p>Lo sentimos, no pudimos encontrar la página que buscas.</p>
-    <button class="btn-primary" onclick="window.location.href='index.html'">Volver al Dashboard</button>
+    <p>El recurso que buscás no existe o fue movido. Verificá la URL o regresá al panel principal.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="index.html">🏠 Ir al Dashboard</a>
+      <a class="btn btn-secondary" href="javascript:history.back()">← Volver</a>
+    </div>
   </div>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/bottom-nav.js'></script>
 </body>
 </html>

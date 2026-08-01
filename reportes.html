@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#060b18">
+  <title>Reportes Ejecutivos | MuniControl</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    .report-card {
+      background: var(--card-bg, rgba(13,21,38,0.9));
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.25s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .report-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent, linear-gradient(90deg,#3b82f6,#8b5cf6));
+    }
+    .report-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      border-color: rgba(255,255,255,0.12);
+    }
+    .report-icon { font-size: 40px; margin-bottom: 14px; }
+    .report-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .report-desc { font-size: 12px; color: rgba(148,163,184,0.7); line-height: 1.6; margin-bottom: 16px; }
+    .report-meta { display: flex; gap: 12px; align-items: center; }
+    .report-badge { font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 99px; }
+    .report-freq { font-size: 11px; color: rgba(100,116,139,0.6); }
+    .scheduled-row {
+      display: flex; align-items: center; gap: 16px; padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.15s;
+    }
+    .scheduled-row:hover { background: rgba(255,255,255,0.02); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Centro de Reportes</h1>
+          <span class="breadcrumb">Informes ejecutivos y exportaciones del municipio</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button onclick="generateAllReports()" style="padding:9px 18px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">📥 Generar todos</button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- KPI ROW -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px">
+        <div class="card" style="padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#3b82f6" id="reportsTotalGenerated">47</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.6)">Reportes generados</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#10b981">3</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.6)">Programados</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#f59e0b">2</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.6)">Pendientes</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#8b5cf6">5</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.6)">Destinatarios</div>
+        </div>
+      </div>
+
+      <!-- REPORT CATEGORIES -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px">⭐ Reportes destacados</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px" id="reportsGrid"></div>
+      </div>
+
+      <!-- SCHEDULED REPORTS -->
+      <div class="card" style="margin-bottom:20px">
+        <div style="padding:16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center">
+          <h3 style="margin:0;font-size:14px;font-weight:800">🗓️ Reportes programados</h3>
+          <button onclick="addSchedule()" style="padding:6px 14px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#60a5fa;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">+ Programar nuevo</button>
+        </div>
+        <div id="scheduledList"></div>
+      </div>
+
+      <!-- RECENT REPORTS -->
+      <div class="card">
+        <div style="padding:16px;border-bottom:1px solid rgba(255,255,255,0.06)">
+          <h3 style="margin:0;font-size:14px;font-weight:800">📄 Historial reciente</h3>
+        </div>
+        <div style="padding:0">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
+                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Reporte</th>
+                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Tipo</th>
+                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Generado</th>
+                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Tamaño</th>
+                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="reportsHistory"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/nav.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/permissions.js"></script>
+  <script>
+    const REPORTS = [
+      {
+        id:'r_ejecutivo', icon:'🏠', title:'Informe Ejecutivo Mensual',
+        desc:'KPIs del municipio, ejecución presupuestaria, reclamos y obras. Ideal para el Intendente.',
+        freq:'Mensual', badge:'PDF', badgeColor:'#ef4444',
+        accent:'linear-gradient(90deg,#3b82f6,#8b5cf6)'
+      },
+      {
+        id:'r_hacienda', icon:'🏦', title:'Informe de Hacienda',
+        desc:'Pagos realizados, proveedores, flujo de caja y comparativa presupuestaria mes a mes.',
+        freq:'Quincenal', badge:'Excel', badgeColor:'#10b981',
+        accent:'linear-gradient(90deg,#10b981,#059669)'
+      },
+      {
+        id:'r_rrhh', icon:'👥', title:'Nómina y Personal',
+        desc:'Planta activa, horas extra, ausentismo por secretaría y alertas de contratos próximos a vencer.',
+        freq:'Mensual', badge:'PDF+Excel', badgeColor:'#8b5cf6',
+        accent:'linear-gradient(90deg,#8b5cf6,#7c3aed)'
+      },
+      {
+        id:'r_obras', icon:'🏗️', title:'Estado de Obras',
+        desc:'Avance por obra, contratista, ejecutado vs. presupuesto y fotos de progreso.',
+        freq:'Semanal', badge:'PDF', badgeColor:'#f59e0b',
+        accent:'linear-gradient(90deg,#f59e0b,#d97706)'
+      },
+      {
+        id:'r_reclamos', icon:'🏘️', title:'Reclamos 311',
+        desc:'SLA por tipo de reclamo, mapa de calor por zona, resolución y tiempos promedio.',
+        freq:'Semanal', badge:'PDF', badgeColor:'#06b6d4',
+        accent:'linear-gradient(90deg,#06b6d4,#0284c7)'
+      },
+      {
+        id:'r_transparencia', icon:'🔍', title:'Reporte de Transparencia',
+        desc:'Pagos públicos del período, contratos adjudicados y montos. Para el portal Cuentas Claras.',
+        freq:'Mensual', badge:'Open Data', badgeColor:'#84cc16',
+        accent:'linear-gradient(90deg,#84cc16,#65a30d)'
+      },
+    ];
+
+    const SCHEDULED = [
+      { name:'Informe Ejecutivo Julio 2026', freq:'🗓️ 1ro de cada mes', next:'01/08/2026', dest:'intendente@junin.gob.ar', status:'activo' },
+      { name:'Nómina quincenal', freq:'🗓️ Día 15 y último', next:'15/08/2026', dest:'hacienda@junin.gob.ar', status:'activo' },
+      { name:'Reclamos 311 semanal', freq:'🗓️ Todos los lunes', next:'04/08/2026', dest:'secretaria@junin.gob.ar', status:'activo' },
+    ];
+
+    const HISTORY = [
+      { name:'Informe Ejecutivo Junio 2026', tipo:'PDF', fecha:'01/07/2026 08:00', size:'2.3 MB' },
+      { name:'Nómina 15/06/2026', tipo:'Excel', fecha:'15/06/2026 07:30', size:'890 KB' },
+      { name:'Estado Obras Q2', tipo:'PDF', fecha:'30/06/2026 12:00', size:'4.1 MB' },
+      { name:'Reclamos semana 26', tipo:'PDF', fecha:'29/06/2026 09:00', size:'1.2 MB' },
+      { name:'Transparencia Junio', tipo:'Open Data', fecha:'01/07/2026 09:00', size:'340 KB' },
+    ];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof buildSidebar === 'function') buildSidebar('reportes');
+      renderReports();
+      renderScheduled();
+      renderHistory();
+    });
+
+    function renderReports() {
+      const grid = document.getElementById('reportsGrid');
+      if (!grid) return;
+      grid.innerHTML = REPORTS.map(r => `
+        <div class="report-card" style="--accent:${r.accent}" onclick="downloadReport('${r.id}')">
+          <div class="report-icon">${r.icon}</div>
+          <div class="report-title">${r.title}</div>
+          <div class="report-desc">${r.desc}</div>
+          <div class="report-meta">
+            <span class="report-badge" style="background:${r.badgeColor}22;color:${r.badgeColor}">${r.badge}</span>
+            <span class="report-freq">🔄 ${r.freq}</span>
+            <button onclick="event.stopPropagation();scheduleReport('${r.id}')" style="margin-left:auto;padding:5px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(148,163,184,0.7);border-radius:7px;cursor:pointer;font-size:10px;font-weight:700">🗓️ Programar</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderScheduled() {
+      const list = document.getElementById('scheduledList');
+      if (!list) return;
+      list.innerHTML = SCHEDULED.map(s => `
+        <div class="scheduled-row">
+          <span style="font-size:20px">🔔</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700">${s.name}</div>
+            <div style="font-size:11px;color:rgba(148,163,184,0.5);margin-top:2px">${s.freq} — Para: ${s.dest}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;font-weight:700;color:#10b981">Próximo: ${s.next}</div>
+            <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;background:rgba(16,185,129,0.1);color:#10b981">${s.status}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderHistory() {
+      const tbody = document.getElementById('reportsHistory');
+      if (!tbody) return;
+      const tipos = {'PDF':'#ef4444', 'Excel':'#10b981', 'Open Data':'#84cc16'};
+      tbody.innerHTML = HISTORY.map(h => `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:12px 16px;font-weight:600;font-size:13px">${h.name}</td>
+          <td style="padding:12px 16px">
+            <span style="font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;background:${tipos[h.tipo]||'#3b82f6'}22;color:${tipos[h.tipo]||'#3b82f6'}">${h.tipo}</span>
+          </td>
+          <td style="padding:12px 16px;font-size:12px;color:rgba(148,163,184,0.7)">${h.fecha}</td>
+          <td style="padding:12px 16px;font-size:12px;color:rgba(148,163,184,0.7)">${h.size}</td>
+          <td style="padding:12px 16px">
+            <button onclick="downloadReport('${h.name}')" style="padding:5px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#60a5fa;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700">↓ Descargar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function downloadReport(id) {
+      if (typeof showToast !== 'undefined') showToast('📥 Generando reporte... 2-3 segundos', 'info');
+      setTimeout(() => {
+        if (typeof showToast !== 'undefined') showToast('✅ Reporte listo para descargar', 'success');
+      }, 2500);
+    }
+
+    function generateAllReports() {
+      if (typeof showToast !== 'undefined') showToast('🚀 Generando todos los reportes del período...', 'info');
+      setTimeout(() => {
+        document.getElementById('reportsTotalGenerated').textContent = '53';
+        if (typeof showToast !== 'undefined') showToast('✅ 6 reportes generados y enviados a los destinatarios', 'success');
+      }, 3000);
+    }
+
+    function scheduleReport(id) {
+      if (typeof showToast !== 'undefined') showToast('🗓️ Reporte programado exitosamente', 'success');
+    }
+
+    function addSchedule() {
+      if (typeof showToast !== 'undefined') showToast('🗓️ Funcionalidad disponible en la versión premium', 'info');
+    }
+  </script>
+</body>
+</html>

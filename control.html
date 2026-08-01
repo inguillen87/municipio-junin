@@ -99,6 +99,16 @@
         </div>
       </section>
 
+
+      <!-- ALERTAS SEMAFORO -->
+      <div class="alert-summary" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:10px;margin-bottom:16px">
+        <span style="font-size:20px">🔴</span>
+        <div>
+          <div style="font-size:13px;font-weight:800">2 secretarías superaron el presupuesto</div>
+          <div style="font-size:11px;color:var(--text-muted)">Obras Públicas (+17.9%) y Personal (+3.1%) requieren revisión urgente</div>
+        </div>
+        <button onclick="if(typeof showToast!=='undefined')showToast('📧 Reporte enviado a Hacienda','success')" style="margin-left:auto;padding:8px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">📧 Notificar Hacienda</button>
+      </div>
       <!-- TABS -->
       <div class="tabs-bar">
         <button class="tab-btn active" data-tab="resumen">📊 Resumen Ejecutivo</button>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
+  <meta name='theme-color' content='#060b18'>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MuniObras — MuniControl</title>
+  <meta name="description" content="Tracker público de obras municipales" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <style>
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    @media(max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    
+    .filter-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filter-select { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; }
+    
+    .obras-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media(max-width: 1024px) { .obras-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 768px) { .obras-grid { grid-template-columns: 1fr; } }
+
+    .obra-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-top: 3px solid #3b82f6;
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .obra-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .obra-header { display: flex; justify-content: space-between; align-items: center; }
+    .obra-badge { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 99px; }
+    .obra-badge.en_ejecucion { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .obra-badge.finalizada { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .obra-tipo { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .obra-nombre { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; line-height: 1.3; margin: 0; }
+    .obra-meta { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-muted); }
+    
+    .obra-progress { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+    .progress-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 1s ease-out; }
+    .progress-pct { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+    .obra-financiero { display: flex; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-top: 4px; }
+    .obra-dates { font-size: 11px; color: var(--text-muted); text-align: center; }
+    
+    .btn-ver-detalle {
+      width: 100%;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-primary);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: auto;
+    }
+    .btn-ver-detalle:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+    .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; width: 90%; max-width: 600px; padding: 24px; box-shadow: 0 24px 48px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.2s; }
+    .modal-overlay.active .modal-content { transform: translateY(0); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: color 0.2s; }
+    .modal-close:hover { color: var(--text-primary); }
+    
+    .modal-body h4 { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--text-muted); text-transform: uppercase; margin: 16px 0 8px 0; }
+    .timeline-item { display: flex; gap: 12px; margin-bottom: 12px; }
+    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; margin-top: 4px; box-shadow: 0 0 0 4px rgba(59,130,246,0.2); }
+    .timeline-dot.done { background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.2); }
+    .timeline-content h5 { margin: 0 0 4px 0; font-size: 14px; }
+    .timeline-content p { margin: 0; font-size: 12px; color: var(--text-muted); }
+    .fotos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .foto-placeholder { background: rgba(255,255,255,0.05); aspect-ratio: 4/3; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 24px; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>🏗️ MuniObras</h1>
+          <div class="breadcrumb">Transparencia / Obras Públicas</div>
+        </div>
+      </div>
+      <div class="topbar-right" id="topbarRight">
+        <!-- Auth will inject buttons here if not logged in -->
+      </div>
+    </header>
+    <div class="content-wrapper">
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-icon" style="background:rgba(59,130,246,0.1)">🏗️</span></div>
+          <div class="kpi-value">4</div>
+          <div class="kpi-label">Obras en ejecución</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-icon" style="background:rgba(16,185,129,0.1)">💰</span></div>
+          <div class="kpi-value">$59.6M</div>
+          <div class="kpi-label">Presupuesto total</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-icon" style="background:rgba(245,158,11,0.1)">📈</span></div>
+          <div class="kpi-value">56%</div>
+          <div class="kpi-label">Avance promedio</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-icon" style="background:rgba(139,92,246,0.1)">✅</span></div>
+          <div class="kpi-value">3</div>
+          <div class="kpi-label">Finalizadas este año</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <select class="filter-select">
+          <option value="">Todas las secretarías</option>
+          <option>Obras Públicas</option>
+          <option>Medio Ambiente</option>
+          <option>Deportes</option>
+        </select>
+        <select class="filter-select">
+          <option value="">Todos los estados</option>
+          <option>En ejecución</option>
+          <option>Finalizada</option>
+          <option>Licitación</option>
+        </select>
+        <select class="filter-select">
+          <option value="">Todos los tipos</option>
+          <option>Pavimentación</option>
+          <option>Infraestructura</option>
+          <option>Espacio Público</option>
+        </select>
+      </div>
+
+      <div class="obras-grid" id="obrasGrid">
+        <!-- Cards inserted via JS -->
+      </div>
+
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="obraModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Detalle de Obra</h3>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <h4>Galería de Avance</h4>
+        <div class="fotos-grid">
+          <div class="foto-placeholder">📷</div>
+          <div class="foto-placeholder">📷</div>
+          <div class="foto-placeholder">📷</div>
+        </div>
+        
+        <h4>Línea de Tiempo (Hitos)</h4>
+        <div class="timeline-item">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-content">
+            <h5>Firma de Contrato y Acta de Inicio</h5>
+            <p>Completado el 01/05/2026</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-content">
+            <h5>Avance 50% y Certificación 1</h5>
+            <p>Completado el 15/07/2026</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h5>Finalización de Obra</h5>
+            <p>Estimado para 30/09/2026</p>
+          </div>
+        </div>
+
+        <h4>Datos Técnicos</h4>
+        <div style="font-size: 13px; color: var(--text-muted);">
+          <p><strong>Inspector Municipal:</strong> Ing. Carlos Rodríguez</p>
+          <p><strong>Monto Mensual Ejecutado (Promedio):</strong> $2.5M / mes</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/pwa.js"></script>
+  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <script src="js/nav.js"></script>
+  <script src='js/db.js'></script>
+  <script>
+    const OBRAS = [
+      { nombre: "Pavimentación Av. San Martín", avance: 68, pto: "18.5M", ejec: "12.6M", zona: "Centro", empresa: "Construcciones Del Valle SA", estado: "en_ejecucion", label: "🔨 En ejecución", tipo: "Pavimentación", color: "#3b82f6", inicio: "01/05/2026", fin: "30/09/2026" },
+      { nombre: "Red Cloacal Villa del Parque", avance: 35, pto: "12.3M", ejec: "4.3M", zona: "Villa del Parque", empresa: "Saneamiento Junín", estado: "en_ejecucion", label: "🔨 En ejecución", tipo: "Infraestructura", color: "#3b82f6", inicio: "15/06/2026", fin: "15/12/2026" },
+      { nombre: "Plaza Belgrano", avance: 100, pto: "3.8M", ejec: "3.8M", zona: "Centro", empresa: "Espacios Verdes SRL", estado: "finalizada", label: "✅ Finalizada", tipo: "Espacio Público", color: "#10b981", inicio: "10/01/2026", fin: "20/04/2026" },
+      { nombre: "Centro Deportivo Municipal", avance: 22, pto: "25M", ejec: "5.5M", zona: "Pueblo Nuevo", empresa: "Edificadora Sur", estado: "en_ejecucion", label: "🔨 En ejecución", tipo: "Edificación", color: "#3b82f6", inicio: "01/07/2026", fin: "30/05/2027" },
+      { nombre: "Iluminación LED Parque", avance: 85, pto: "2.1M", ejec: "1.8M", zona: "Parque", empresa: "Tecnoilum SA", estado: "en_ejecucion", label: "🔨 En ejecución", tipo: "Infraestructura", color: "#3b82f6", inicio: "10/06/2026", fin: "10/08/2026" },
+      { nombre: "Bacheo General Zona Norte", avance: 45, pto: "4.2M", ejec: "1.9M", zona: "Norte", empresa: "Vial Junín SRL", estado: "en_ejecucion", label: "🔨 En ejecución", tipo: "Mantenimiento", color: "#3b82f6", inicio: "15/07/2026", fin: "15/10/2026" }
+    ];
+
+    function renderObras() {
+      const container = document.getElementById('obrasGrid');
+      container.innerHTML = OBRAS.map(o => `
+        <div class="obra-card" style="border-top-color: ${o.color}">
+          <div class="obra-header">
+            <span class="obra-badge ${o.estado}">${o.label}</span>
+            <span class="obra-tipo">${o.tipo}</span>
+          </div>
+          <h3 class="obra-nombre">${o.nombre}</h3>
+          <div class="obra-meta">
+            <span>📍 ${o.zona}</span>
+            <span>👷 ${o.empresa}</span>
+          </div>
+          <div class="obra-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:0%; background: ${o.color}" data-w="${o.avance}"></div>
+            </div>
+            <span class="progress-pct">${o.avance}%</span>
+          </div>
+          <div class="obra-financiero">
+            <div>Presupuesto: <strong>$${o.pto}</strong></div>
+            <div>Ejecutado: <strong style="color:#10b981">$${o.ejec}</strong></div>
+          </div>
+          <div class="obra-dates">
+            Inicio: ${o.inicio} — Fin: ${o.fin}
+          </div>
+          <button class="btn-ver-detalle" onclick="openModal('${o.nombre}')">Ver detalle completo →</button>
+        </div>
+      `).join('');
+
+      setTimeout(() => {
+        document.querySelectorAll('.progress-fill').forEach(bar => {
+          bar.style.width = bar.getAttribute('data-w') + '%';
+        });
+      }, 50);
+    }
+
+    function openModal(title) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('obraModal').classList.add('active');
+    }
+    function closeModal() {
+      document.getElementById('obraModal').classList.remove('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderObras();
+      
+      // Inject login button if not logged in, since this is a public page
+      const u = sessionStorage.getItem('mjunin_user');
+      const tr = document.getElementById('topbarRight');
+      if (!u) {
+        tr.innerHTML = '<a href="login.html" class="btn" style="background:var(--primary);color:white;padding:8px 16px;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600">Acceso Empleados</a>';
+      } else {
+        const user = JSON.parse(u);
+        tr.innerHTML = '<div class="topbar-avatar">' + (user.name ? user.name.substring(0,2).toUpperCase() : 'US') + '</div>';
+        
+        // Let's add an edit button if user has TENANT_ADMIN+
+        if(['SUPER_ADMIN','TENANT_ADMIN'].includes(user.role)) {
+          tr.innerHTML = '<button class="btn" style="background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.3);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-right:12px">✏️ Editar Obras</button>' + tr.innerHTML;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

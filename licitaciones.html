@@ -181,6 +181,7 @@
                 <th>Secretaría</th>
                 <th>Estado</th>
                 <th>Apertura</th>
+                  <th>Vencimiento</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -748,6 +749,7 @@
             <td>${l.secretaria}</td>
             <td><span class="status-badge ${badgeClass}">${l.estado}</span></td>
             <td>${l.apertura}</td>
+              <td data-vencimiento="${l.vencimiento}">${l.vencimiento}</td>
             <td>
               <button class="action-btn" onclick="openDetail('${l.id}')" title="Ver">👁</button>
             </td>
@@ -885,6 +887,44 @@
   </script>
   <script src='js/ux-improvements.js'></script>
   <script src='js/bottom-nav.js'></script>
+
+<script>
+// Add countdown to licitaciones table
+function addCountdowns() {
+    document.querySelectorAll('[data-vencimiento]').forEach(function(el) {
+        if(el.querySelector('span')) return; // already added
+        const venc = new Date(el.dataset.vencimiento);
+        const ahora = new Date();
+        const diff = Math.ceil((venc - ahora) / (1000 * 60 * 60 * 24));
+        const badge = document.createElement('span');
+        badge.style.cssText = 'font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;margin-left:6px';
+        if (diff < 0) {
+            badge.textContent = 'VENCIDA';
+            badge.style.background = 'rgba(239,68,68,0.12)';
+            badge.style.color = '#ef4444';
+        } else if (diff <= 3) {
+            badge.textContent = 'Faltan ' + diff + 'd ⚠️';
+            badge.style.background = 'rgba(245,158,11,0.12)';
+            badge.style.color = '#f59e0b';
+        } else {
+            badge.textContent = 'Faltan ' + diff + 'd';
+            badge.style.background = 'rgba(16,185,129,0.12)';
+            badge.style.color = '#10b981';
+        }
+        el.appendChild(badge);
+    });
+}
+document.addEventListener('DOMContentLoaded', addCountdowns);
+// Since table is dynamically rendered, we must hook it after render
+const oldRender = window.renderLicitaciones;
+if(oldRender) {
+    window.renderLicitaciones = function() {
+        oldRender();
+        setTimeout(addCountdowns, 50);
+    };
+}
+</script>
+
 </body>
 </html>
 

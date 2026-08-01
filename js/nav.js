@@ -89,6 +89,11 @@ const NAV_ITEMS = [
     access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
     hidden: ['DEMO']
   },
+  {
+    id: 'obras', href: 'obras.html', icon: '🏗️',
+    label: 'Obras Municipales',
+    access: 'all'
+  },
 
   // ── GESTIÓN ───────────────────────────────────────────────
   {

@@ -65,6 +65,73 @@
           <div class="kpi-header"><span class="kpi-label">Turnos Hoy</span><div class="kpi-icon violet">📅</div></div>
           <div class="kpi-value" data-target="47">0</div>
           <div class="kpi-footer"><span class="kpi-sub">12 pendientes de confirmar</span></div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
+  <title>Reclamos Vecinales — MuniControl</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/vecinos.css" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Atención Vecinal</h1>
+          <span class="breadcrumb">Municipio de Junín · Reclamos, Turnos y Comunicación</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-primary" id="btnNuevoReclamo">+ Nuevo Reclamo</button>
+        <button class="btn-export">📤 Exportar</button>
+        <div class="notification-bell">🔔<span class="notif-dot"></span></div>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- KPIs -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Reclamos Totales</span><div class="kpi-icon blue">📋</div></div>
+          <div class="kpi-value" data-target="318">0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">▲ 23 esta semana</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Pendientes</span><div class="kpi-icon red">⏳</div></div>
+          <div class="kpi-value" data-target="89">0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">▲ Requieren atención</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Resueltos (mes)</span><div class="kpi-icon green">✅</div></div>
+          <div class="kpi-value" data-target="229">0</div>
+          <div class="kpi-footer"><span class="kpi-trend down">72% tasa resolución</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Tiempo Promedio</span><div class="kpi-icon amber">⏱️</div></div>
+          <div class="kpi-value" data-target="3">0</div>
+          <div class="kpi-footer"><span class="kpi-sub">días hasta resolución</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Turnos Hoy</span><div class="kpi-icon violet">📅</div></div>
+          <div class="kpi-value" data-target="47">0</div>
+          <div class="kpi-footer"><span class="kpi-sub">12 pendientes de confirmar</span></div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-label">Satisfacción</span><div class="kpi-icon teal">⭐</div></div>
@@ -72,6 +139,40 @@
           <div class="kpi-footer"><span class="kpi-trend down">✅ Encuestas agosto</span></div>
         </div>
       </section>
+
+      <!-- SLA DASHBOARD (NYC 311 style) -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
+          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
+        </div>
+        <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+          <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
+            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
+            <div style="font-size:20px;margin:6px 0">💧</div>
+            <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
+            <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
+          </div>
+          <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
+            <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
+            <div style="font-size:20px;margin:6px 0">🕳️</div>
+            <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
+            <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
+          </div>
+          <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
+            <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
+            <div style="font-size:20px;margin:6px 0">💡</div>
+            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
+            <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
+          </div>
+          <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
+            <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
+            <div style="font-size:20px;margin:6px 0">🗑️</div>
+            <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
+            <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
+          </div>
+        </div>
+      </div>
 
       <!-- TABS -->
       <div class="tabs-bar">
@@ -119,6 +220,7 @@
                 <th>Descripción</th>
                 <th>Fecha</th>
                 <th>Estado</th>
+                <th>SLA</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -131,7 +233,6 @@
       </div>
 
       <!-- TAB: TURNOS -->
-      <!-- TAB: TURNOS / QR -->
       <div class="tab-content" id="tab-turnos">
         <div class="rrhh-panel">
           <div class="panel-header">
@@ -161,6 +262,23 @@
         </div>
       </div>
 
+      <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
+        <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
+            <div style="display:flex;gap:8px">
+              <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
+              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
+            </div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:48px;margin-bottom:4px">📱</div>
+            <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -181,7 +299,6 @@
             <label>Nombre Completo</label>
             <input type="text" id="rNombre" placeholder="Juan García" />
           </div>
-          <div class="form-group">
           <div class="form-group" style="grid-column:1/-1">
             <label>Tipo de reclamo</label>
             <select id="rTipo">
@@ -196,8 +313,13 @@
             </select>
           </div>
           <div class="form-group" style="grid-column:1/-1">
-            <label>Dirección</label>
-            <input type="text" id="rDireccion" placeholder="Ej. Av. San Martín 1450" />
+            <label>📍 Ubicación</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="rDireccion" placeholder="Dirección o intersección" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-size:13px;outline:none">
+              <button type="button" onclick="geolocalizarReclamo()" style="padding:10px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#60a5fa;border-radius:8px;cursor:pointer;font-size:13px" title="Obtener mi ubicación">
+                🎯
+              </button>
+            </div>
           </div>
           <div class="form-group" style="grid-column:1/-1">
             <label>Descripción</label>
@@ -231,7 +353,6 @@
 
   <script src='js/db.js'></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src='js/db.js'></script>
   <script src="js/pwa.js"></script>
   <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <script>
@@ -245,20 +366,50 @@
     } catch(e) {}
   })();
 </script>
-  <script src='js/db.js'></script>
   <script src="js/nav.js"></script>
-  <script src='js/db.js'></script>
   <script src="js/data.js"></script>
-  <script src='js/db.js'></script>
   <script src="js/vecinos.js"></script>
-  <script src='js/db.js'></script>
   <script src='js/ux-improvements.js'></script>
-  <script src='js/db.js'></script>
   <script src='js/bottom-nav.js'></script>
+  <script>
+    function geolocalizarReclamo() {
+      if (!navigator.geolocation) {
+        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
+        return;
+      }
+      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          const lat = pos.coords.latitude.toFixed(6);
+          const lng = pos.coords.longitude.toFixed(6);
+          const input = document.getElementById('rDireccion');
+          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
+          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
+        },
+        function() {
+          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
+        }
+      );
+    }
+
+    function consultarReclamo() {
+      const numero = document.getElementById('consultaNumero')?.value?.trim();
+      if (!numero) {
+        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
+        return;
+      }
+      const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
+      if (reclamo) {
+        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
+      } else {
+        const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
+        if (demos.includes(numero)) {
+          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
+        } else {
+          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
+        }
+      }
+    }
+  </script>
 </body>
 </html>
-
-
-
-
-

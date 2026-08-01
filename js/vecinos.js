@@ -34,6 +34,7 @@ function renderReclamos() {
       <td style="color:var(--text-secondary);font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.desc}">${r.desc}</td>
       <td style="color:var(--text-muted);font-size:12px">${r.fecha}</td>
       <td><span class="status-badge ${badgeClass}">${r.estado}</span></td>
+      <td><span style="font-size:10px;padding:3px 6px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.2)">A tiempo</span></td>
       <td>
         <button class="action-btn" onclick="verDetalle('${r.id}')" title="Ver Detalle">👁</button>
         ${r.estado === 'Pendiente' ? `<button class="action-btn" onclick="escalarReclamo('${r.id}')" title="Escalar a En Proceso">⬆️</button>` : ''}

@@ -155,8 +155,13 @@ const NAV_ITEMS = [
 
   // ── SISTEMA ───────────────────────────────────────────────
   {
+    id: 'ciudadano', href: 'ciudadano.html', icon: '🏠',
+    label: 'Portal Ciudadano', section: 'SISTEMA',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
+  },
+  {
     id: 'landing', href: 'landing.html', icon: '🌐',
-    label: 'Página de Presentación', section: 'SISTEMA',
+    label: 'Página de Presentación',
     access: ['SUPER_ADMIN','TENANT_ADMIN'],
     hidden: ['TENANT_USER','DEMO']
   },

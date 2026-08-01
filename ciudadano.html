@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Ciudadano | Municipalidad de Junín</title>
+  <meta name="description" content="Realizá trámites, consultá tus reclamos y accedé a servicios municipales desde tu celular.">
+  <link rel="manifest" href="manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #060b18;
+      --card: rgba(13,21,38,0.9);
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f4ff;
+      --muted: rgba(148,163,184,0.7);
+      --accent: #3b82f6;
+      --green: #10b981;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+    
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.1) 50%, rgba(6,182,212,0.08) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+    }
+    .hero-inner { max-width: 900px; margin: 0 auto; padding: 40px 0 32px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25); color: #60a5fa; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; margin-bottom: 20px; }
+    .hero h1 { font-family: 'Outfit', sans-serif; font-size: clamp(28px,5vw,48px); font-weight: 900; line-height: 1.1; margin-bottom: 12px; }
+    .hero-sub { font-size: 16px; color: var(--muted); margin-bottom: 28px; max-width: 520px; }
+    .search-reclamo { display: flex; gap: 0; max-width: 480px; }
+    .search-reclamo input { flex: 1; padding: 14px 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-right: none; border-radius: 12px 0 0 12px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif; outline: none; }
+    .search-reclamo input::placeholder { color: rgba(148,163,184,0.4); }
+    .search-reclamo input:focus { border-color: rgba(59,130,246,0.5); background: rgba(59,130,246,0.05); }
+    .search-reclamo button { padding: 14px 22px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; border-radius: 0 12px 12px 0; color: white; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .search-reclamo button:hover { opacity: 0.9; }
+    
+    /* NAV */
+    .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(6,11,24,0.95); backdrop-filter: blur(20px); z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo span { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 900; }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: none; transition: all 0.2s; }
+    .nav-link:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .nav-cta { padding: 8px 16px; background: linear-gradient(135deg,#3b82f6,#8b5cf6); border: none; border-radius: 10px; color: white; font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: none; }
+    
+    /* SERVICES GRID */
+    .section { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .section-title { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+    .section-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+    .service-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; text-align: center; cursor: pointer; transition: all 0.25s; text-decoration: none; color: var(--text); display: block; }
+    .service-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.14); }
+    .service-icon { font-size: 36px; margin-bottom: 12px; }
+    .service-name { font-size: 13px; font-weight: 700; line-height: 1.3; }
+    .service-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    
+    /* RECLAMO STATUS */
+    .status-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+    .status-timeline { position: relative; padding-left: 24px; }
+    .status-step { position: relative; padding-bottom: 20px; }
+    .status-step:last-child { padding-bottom: 0; }
+    .status-step::before { content: ''; position: absolute; left: -17px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
+    .status-step::after { content: ''; position: absolute; left: -13px; top: 16px; width: 2px; height: calc(100% - 6px); background: rgba(16,185,129,0.2); }
+    .status-step:last-child::after { display: none; }
+    .step-label { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+    .step-time { font-size: 11px; color: var(--muted); }
+    
+    /* QUICK STATS */
+    .stats-bar { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; display: flex; gap: 24px; flex-wrap: wrap; justify-content: space-between; margin-bottom: 32px; }
+    .stat-item { text-align: center; }
+    .stat-val { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 900; background: linear-gradient(135deg,#3b82f6,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    
+    /* BOTTOM NAV MOBILE */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .services-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .service-card { padding: 14px 10px; }
+      .service-icon { font-size: 28px; }
+      .service-name { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <nav class="top-nav">
+    <a href="index.html" class="nav-logo">
+      <img src="img/municontrol-icon.jpg" alt="MuniControl" onerror="this.style.display='none'">
+      <span>Junín Digital</span>
+    </a>
+    <div class="nav-links">
+      <a href="#servicios" class="nav-link">Trámites</a>
+      <a href="#reclamos" class="nav-link">Mis reclamos</a>
+      <a href="cuentas-claras.html" class="nav-link">Transparencia</a>
+      <a href="obras.html" class="nav-link">Obras</a>
+    </div>
+    <a href="login.html" class="nav-cta">🔒 Acceso empleados</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">🏠 Portal del Ciudadano — Municipalidad de Junín</div>
+      <h1>Tu municipio<br>en tu celular</h1>
+      <p class="hero-sub">Realizá trámites, seguí tus reclamos y accedé a servicios sin hacer cola. Disponible 24/7.</p>
+      <div class="search-reclamo" id="reclamos">
+        <input type="text" id="ticketSearch" placeholder="Ingresá tu número de reclamo (Ej: R-2026-001)" />
+        <button onclick="buscarReclamo()">Consultar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="section" style="padding-bottom:0">
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-val" id="statReclamos">1.247</div>
+        <div class="stat-label">Reclamos este año</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="statResueltos">94%</div>
+        <div class="stat-label">Resueltos en SLA</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="statObras">18</div>
+        <div class="stat-label">Obras activas</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">24hs</div>
+        <div class="stat-label">Tiempo respuesta prom.</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">📱</div>
+        <div class="stat-label">App disponible</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECLAMO RESULT -->
+  <div class="section" style="padding-top:0;display:none" id="reclamoResult">
+    <div class="status-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+        <div>
+          <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Reclamo</div>
+          <div style="font-size:20px;font-weight:900;font-family:'Outfit',sans-serif" id="reclamoTitulo">Bache Av. San Martín 445</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Ingresado: 15/07/2026 — Área: Obras Públicas</div>
+        </div>
+        <span style="padding:6px 14px;border-radius:99px;font-size:12px;font-weight:800;background:rgba(245,158,11,0.1);color:#f59e0b" id="reclamoStatus">En proceso</span>
+      </div>
+      <div class="status-timeline">
+        <div class="status-step">
+          <div class="step-label">✅ Reclamo registrado</div>
+          <div class="step-time">15/07/2026 10:32 — Asignado a Obras Públicas</div>
+        </div>
+        <div class="status-step">
+          <div class="step-label">✅ Inspección realizada</div>
+          <div class="step-time">17/07/2026 09:00 — Inspector: Juan Pérez</div>
+        </div>
+        <div class="status-step" style="opacity:0.5">
+          <div class="step-label">⏳ Reparación en progreso</div>
+          <div class="step-time">Estimado: 22/07/2026</div>
+        </div>
+        <div class="status-step" style="opacity:0.3">
+          <div class="step-label">⭐ Resuelto</div>
+          <div class="step-time">Pendiente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <div class="section" id="servicios">
+    <div class="section-title">Trámites y servicios</div>
+    <div class="section-sub">Online, sin cola y disponibles las 24 horas</div>
+    <div class="services-grid">
+      <a class="service-card" href="vecinos.html">
+        <div class="service-icon">📞</div>
+        <div class="service-name">Hacer un reclamo</div>
+        <div class="service-desc">Baches, luminarias, basura, ruidos</div>
+      </a>
+      <a class="service-card" href="obras.html">
+        <div class="service-icon">🏗️</div>
+        <div class="service-name">Estado de obras</div>
+        <div class="service-desc">Seguí las obras de tu barrio</div>
+      </a>
+      <a class="service-card" href="cuentas-claras.html">
+        <div class="service-icon">🔍</div>
+        <div class="service-name">Transparencia</div>
+        <div class="service-desc">Gastos y pagos públicos</div>
+      </a>
+      <a class="service-card" onclick="showService('tasas')">
+        <div class="service-icon">💳</div>
+        <div class="service-name">Pagar tasas</div>
+        <div class="service-desc">ABL, comercio, vehículos</div>
+      </a>
+      <a class="service-card" onclick="showService('certificados')">
+        <div class="service-icon">📋</div>
+        <div class="service-name">Certificados</div>
+        <div class="service-desc">Libre deuda, habilitación</div>
+      </a>
+      <a class="service-card" href="talleres.html">
+        <div class="service-icon">🏭</div>
+        <div class="service-name">Talleres</div>
+        <div class="service-desc">Cursos y capacitaciones</div>
+      </a>
+      <a class="service-card" onclick="showService('turnos')">
+        <div class="service-icon">🗓️</div>
+        <div class="service-name">Sacar turno</div>
+        <div class="service-desc">Atención personalizada</div>
+      </a>
+      <a class="service-card" href="whatsapp.html">
+        <div class="service-icon">💬</div>
+        <div class="service-name">WhatsApp Bot</div>
+        <div class="service-desc">Consultas instantáneas</div>
+      </a>
+      <a class="service-card" onclick="showService('padron')">
+        <div class="service-icon">📊</div>
+        <div class="service-name">Padrón municipal</div>
+        <div class="service-desc">Consultá tu situación</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="border-top:1px solid rgba(255,255,255,0.06);padding:28px 20px;text-align:center">
+    <div style="max-width:900px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center">
+      <div style="font-size:13px;color:var(--muted)">🏠 Municipalidad de Junín &mdash; Portal Ciudadano 2026</div>
+      <div style="display:flex;gap:16px">
+        <a href="cuentas-claras.html" style="font-size:12px;color:var(--muted);text-decoration:none">Transparencia</a>
+        <a href="landing.html" style="font-size:12px;color:var(--muted);text-decoration:none">MuniControl</a>
+        <a href="login.html" style="font-size:12px;color:var(--muted);text-decoration:none">Acceso empleados</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL -->
+  <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;backdrop-filter:blur(8px);align-items:center;justify-content:center">
+    <div id="modalContent" style="background:#0d1526;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;max-width:440px;width:90%;position:relative">
+      <button onclick="closeModal()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:none;color:rgba(148,163,184,0.7);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px">×</button>
+    </div>
+  </div>
+
+  <script>
+    // Reclamo search
+    function buscarReclamo() {
+      const ticket = document.getElementById('ticketSearch').value.trim();
+      if (!ticket) { alert('Ingresá un número de reclamo'); return; }
+      const result = document.getElementById('reclamoResult');
+      result.style.display = 'block';
+      result.scrollIntoView({ behavior: 'smooth' });
+    }
+    document.getElementById('ticketSearch').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') buscarReclamo();
+    });
+    
+    function showService(type) {
+      const overlay = document.getElementById('modalOverlay');
+      const content = document.getElementById('modalContent');
+      overlay.style.display = 'flex';
+      const services = {
+        tasas: { title:'💳 Pago de Tasas', body:'El pago online está disponible para:<br><br>• ABL (Alumbrado, Barrido y Limpieza)<br>• Habilitación comercial<br>• Inspección y seguridad<br><br><button onclick="alert(\'Redirigiendo al portal de pagos...\')" style="padding:10px 20px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;margin-top:10px">Pagar ahora</button>' },
+        certificados: { title:'📋 Certificados', body:'Solicitá en línea:<br><br>• Libre deuda municipal<br>• Habilitación comercial<br>• Certificado de zonificación<br>• Certificado de buena conducta<br><br><button onclick="alert(\'Solicitud enviada. Recibirás el certificado en 48hs.\')" style="padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;margin-top:10px">Solicitar</button>' },
+        turnos: { title:'🗓️ Turnos online', body:'Reservá turno para:<br><br>• Habilitaciones comerciales<br>• Defensa del consumidor<br>• Rentas y tasas<br>• Registro civil<br><br><button onclick="alert(\'Seleccioná fecha y horario...\')" style="padding:10px 20px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;margin-top:10px">Reservar turno</button>' },
+        padron: { title:'📊 Padrón Municipal', body:'Consultá tu situación frente al municipio:<br><br>• Deuda de tasas<br>• Estado de habilitaciones<br>• Reclamos anteriores<br>• Turnos asignados<br><br><button onclick="alert(\'Ingresá tu DNI o CUIT...\')" style="padding:10px 20px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;margin-top:10px">Consultar mi situación</button>' },
+      };
+      const s = services[type] || { title: 'Servicio', body: 'Disponible próximamente' };
+      content.innerHTML = `
+        <button onclick="closeModal()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:none;color:rgba(148,163,184,0.7);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px">×</button>
+        <h2 style="font-family:'Outfit',sans-serif;margin-bottom:16px">${s.title}</h2>
+        <p style="color:rgba(148,163,184,0.8);line-height:1.7;font-size:14px">${s.body}</p>
+      `;
+    }
+    
+    function closeModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+    }
+    
+    // Load real stats from MuniDB if available (injected via sw.js or localStorage)
+    try {
+      const stored = localStorage.getItem('munidb_reclamos');
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data && data.length) {
+          document.getElementById('statReclamos').textContent = data.length.toLocaleString('es-AR');
+          const resueltos = data.filter(r => r.estado === 'resuelto').length;
+          document.getElementById('statResueltos').textContent = data.length > 0 ? Math.round(resueltos/data.length*100) + '%' : '94%';
+        }
+      }
+    } catch(e) {}
+    
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function() {});
+    }
+  </script>
+</body>
+</html>

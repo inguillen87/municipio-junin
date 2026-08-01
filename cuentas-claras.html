@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuentas Claras | Junín Abierto</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+    
+    header.public-header { background: var(--card-bg); padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .brand { font-size: 1.5rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    
+    .hero { text-align: center; margin-bottom: 3rem; }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .hero p { color: var(--text-muted); font-size: 1.2rem; }
+    
+    .stats-card { background: var(--card-bg); border-radius: 12px; padding: 2rem; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: center; margin-bottom: 2rem; }
+    .stats-card .big-num { font-size: 3rem; font-weight: 800; color: var(--primary); }
+    
+    .controls { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .form-control { padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; flex: 1; min-width: 200px; }
+    
+    table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { font-weight: 600; color: var(--text-muted); background: #f1f5f9; }
+    tr:last-child td { border-bottom: none; }
+    
+    .btn { padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 500; cursor: pointer; text-decoration: none; border: none; font-size: 1rem; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-outline { border: 1px solid var(--border); background: transparent; color: var(--text); }
+    .btn-outline:hover { background: #f1f5f9; }
+    
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+    @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="public-header">
+    <div class="brand">
+      <i class="fa-solid fa-building-columns"></i>
+      MuniControl | Cuentas Claras
+    </div>
+    <a href="login.html" class="btn btn-outline">Acceso Funcionarios</a>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Transparencia Activa</h1>
+      <p>Cada peso del contribuyente es público y auditable. Explora los pagos y gastos del municipio.</p>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="stats-card">
+        <h2 style="font-size:1.1rem; color:var(--text-muted); margin-top:0;">Total Pagos Acreditados (Mes actual)</h2>
+        <div class="big-num" id="totalMes">$0</div>
+        <p style="margin-bottom:0; color:#10b981;"><i class="fa-solid fa-arrow-down"></i> 4% vs mes anterior</p>
+      </div>
+      <div class="stats-card" style="padding:1rem;">
+        <canvas id="chartSecs"></canvas>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="search" class="form-control" placeholder="Buscar por concepto o proveedor...">
+      <select id="filterSec" class="form-control">
+        <option value="">Todas las Secretarías</option>
+      </select>
+      <select id="filterCat" class="form-control">
+        <option value="">Todas las Categorías</option>
+      </select>
+      <button id="btnDownload" class="btn btn-outline" title="Descargar datos en formato abierto">
+        <i class="fa-solid fa-download"></i> JSON API
+      </button>
+    </div>
+
+    <table id="tablePublic">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Proveedor</th>
+          <th>Concepto</th>
+          <th>Secretaría</th>
+          <th>Categoría</th>
+          <th>Monto</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Usar MuniDB en modo solo lectura
+      const pagos = DB.getAll('pagos').filter(p => p.estado === 'acreditado'); // Solo mostrar pagos confirmados
+      
+      const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+      
+      // Total Mes
+      const total = pagos.reduce((s, p) => s + p.monto, 0);
+      document.getElementById('totalMes').innerText = fmt.format(total);
+
+      // Render table
+      function renderTable(data) {
+        const tbody = document.querySelector('#tablePublic tbody');
+        tbody.innerHTML = '';
+        data.sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).forEach(p => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${p.fecha}</td>
+              <td style="font-weight:500">${p.proveedor}</td>
+              <td>${p.concepto}</td>
+              <td>${p.secretaria}</td>
+              <td><span style="background:#f1f5f9; padding:2px 8px; border-radius:12px; font-size:0.8rem;">${p.categoria || 'N/A'}</span></td>
+              <td style="font-weight:700">${fmt.format(p.monto)}</td>
+            </tr>
+          `;
+        });
+      }
+      renderTable(pagos);
+
+      // Filters setup
+      const secs = [...new Set(pagos.map(p => p.secretaria))];
+      const cats = [...new Set(pagos.map(p => p.categoria).filter(Boolean))];
+      
+      const selSec = document.getElementById('filterSec');
+      const selCat = document.getElementById('filterCat');
+      
+      secs.forEach(s => selSec.innerHTML += `<option value="${s}">${s}</option>`);
+      cats.forEach(c => selCat.innerHTML += `<option value="${c}">${c}</option>`);
+
+      // Filter logic
+      function applyFilters() {
+        const q = document.getElementById('search').value.toLowerCase();
+        const sec = selSec.value;
+        const cat = selCat.value;
+        
+        const res = pagos.filter(p => 
+          (p.proveedor.toLowerCase().includes(q) || p.concepto.toLowerCase().includes(q)) &&
+          (sec === '' || p.secretaria === sec) &&
+          (cat === '' || p.categoria === cat)
+        );
+        renderTable(res);
+      }
+      
+      document.getElementById('search').addEventListener('input', applyFilters);
+      selSec.addEventListener('change', applyFilters);
+      selCat.addEventListener('change', applyFilters);
+
+      // Chart.js - Agrupado por secretaría
+      const agrupado = DB.groupBy(pagos, 'secretaria');
+      const labels = Object.keys(agrupado);
+      const dataChart = labels.map(l => agrupado[l].reduce((s,p)=>s+p.monto,0));
+      
+      new Chart(document.getElementById('chartSecs'), {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: dataChart,
+            backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right' } }
+        }
+      });
+
+      // API Simulation Download
+      document.getElementById('btnDownload').addEventListener('click', () => {
+        const cleanData = pagos.map(p => ({
+          fecha: p.fecha, proveedor: p.proveedor, concepto: p.concepto,
+          secretaria: p.secretaria, categoria: p.categoria, monto: p.monto
+        }));
+        const blob = new Blob([JSON.stringify(cleanData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `junin_datos_abiertos_pagos.json`;
+        a.click();
+      });
+    });
+  </script>
+</body>
+</html>

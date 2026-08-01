@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -258,6 +258,157 @@ body::before {
           <div class="kpi-header">
             <span class="kpi-label">Ahorro IT (anual)</span>
             <div class="kpi-icon teal">💡</div>
+</style>
+</head>
+<body>
+  <!-- FONDO ANIMADO -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-orb orb-c"></div>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <!-- SIDEBAR (generado por nav.js) -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="mainContent">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div class="page-title">
+          <h1>Dashboard Ejecutivo</h1>
+          <span class="breadcrumb">Municipio de Junín · <span id="currentDate"></span></span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div id="backendStatusBadge"></div>
+        <div class="live-clock" id="liveClock"></div>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Buscar secretaría, empleado..." id="globalSearch" />
+        </div>
+        <button class="btn-export" id="btnExport" title="Exportar reporte" onclick="window.location.href='exportar.html'">
+          📤 Exportar
+        </button>
+        <div class="notification-bell" title="Alertas">
+          🔔
+          <span class="notif-dot"></span>
+        </div>
+        <div class="topbar-avatar" id="topbarAvatar" title="Perfil">MA</div>
+      </div>
+    </header>
+
+    <!-- ALERT BANNER -->
+    <div class="alert-banner" id="alertBanner">
+      <span class="alert-icon">⚠️</span>
+      <span>Obras Públicas supera el presupuesto mensual en un <strong>18%</strong>. Se recomienda revisión inmediata.</span>
+      <button class="alert-close" onclick="document.getElementById('alertBanner').style.display='none'">✕</button>
+    </div>
+
+    <div class="content-wrapper">
+
+      <!-- ROLE-BASED WELCOME BANNER -->
+      <div class="welcome-banner" id="welcomeBanner">
+        <div class="welcome-content">
+          <h2 id="welcomeGreeting">Buenos días</h2>
+          <div class="welcome-meta">
+            <span class="role-badge" id="welcomeRole">🏛️ Ejecutivo</span>
+            <span class="last-login">Último acceso: <span id="lastLoginTime"></span></span>
+          </div>
+        </div>
+        <div class="welcome-actions">
+          <button class="btn-primary" onclick="window.location.href='ia.html'">🤖 Consultar IA</button>
+          <button class="btn-secondary" onclick="window.location.href='analytics.html'">Ver Reporte</button>
+        </div>
+      </div>
+
+      <!-- ACCESOS RÁPIDOS -->
+      <div class="quick-access-grid">
+        <a href="ia.html" class="qa-btn">🤖 Consultar IA</a>
+        <a href="rrhh.html" class="qa-btn">👥 RRHH</a>
+        <a href="licitaciones.html" class="qa-btn">📋 Licitaciones</a>
+        <a href="vecinos.html" class="qa-btn">🏘️ Reclamos</a>
+        <a href="analytics.html" class="qa-btn">📈 Analytics</a>
+        <a href="exportar.html" class="qa-btn">📑 Exportar</a>
+      </div>
+
+      <!-- KPI CARDS -->
+      <section class="kpi-grid" aria-label="Indicadores clave">
+
+        <div class="kpi-card" id="kpi-empleados">
+          <div class="kpi-header">
+            <span class="kpi-label">Total Empleados</span>
+            <div class="kpi-icon blue">👥</div>
+          </div>
+          <div class="kpi-value" data-target="1247">0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend up">▲ 12 este mes</span>
+            <span class="kpi-sub">vs 1.235 julio</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 65%; background: #10b981;"></div></div>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-gasto">
+          <div class="kpi-header">
+            <span class="kpi-label">Gasto Mensual</span>
+            <div class="kpi-icon amber">💰</div>
+          </div>
+          <div class="kpi-value money" data-target="284500000">$0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend down">▼ 4.2% vs julio</span>
+            <span class="kpi-sub">Presupuesto: $310M</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 80%; background: #f59e0b;"></div></div>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-heExtra">
+          <div class="kpi-header">
+            <span class="kpi-label">Horas Extra (mes)</span>
+            <div class="kpi-icon red">⏱️</div>
+          </div>
+          <div class="kpi-value" data-target="4312">0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend down">▼ 8% vs julio</span>
+            <span class="kpi-sub">Costo: $18.4M</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 45%; background: #ef4444;"></div></div>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-presupuesto">
+          <div class="kpi-header">
+            <span class="kpi-label">Presupuesto Ejecutado</span>
+            <div class="kpi-icon green">📈</div>
+          </div>
+          <div class="kpi-value pct" data-target="72">0%</div>
+          <div class="kpi-footer">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="presupProgressBar" style="width:0%"></div>
+            </div>
+            <span class="kpi-sub">8 meses del año</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-reclamos">
+          <div class="kpi-header">
+            <span class="kpi-label">Reclamos Vecinos</span>
+            <div class="kpi-icon violet">🏘️</div>
+          </div>
+          <div class="kpi-value" data-target="318">0</div>
+          <div class="kpi-footer">
+            <span class="kpi-trend up">▲ 23 sin resolver</span>
+            <span class="kpi-sub">Tiempo promedio: 3.2 días</span>
+            <div class="sparkline"><div class="sparkline-fill" style="width: 30%; background: #8b5cf6;"></div></div>
+          </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-ahorro">
+          <div class="kpi-header">
+            <span class="kpi-label">Ahorro IT (anual)</span>
+            <div class="kpi-icon teal">💡</div>
           </div>
           <div class="kpi-value money" data-target="42000000">$0</div>
           <div class="kpi-footer">
@@ -269,152 +420,133 @@ body::before {
 
       </section>
 
-      <!-- CHARTS ROW 1 -->
-      <section class="charts-row">
-
-        <div class="chart-card wide">
-          <div class="chart-header">
-            <div>
-              <h2 class="chart-title">Evolución de Gastos 2026</h2>
-              <span class="chart-sub">Gasto mensual total vs presupuesto aprobado</span>
-            </div>
-            <div class="chart-controls">
-              <button class="chip active" data-chart="gastos-line" data-period="year">Anual</button>
-              <button class="chip" data-chart="gastos-line" data-period="semester">Semestre</button>
-            </div>
-          </div>
-          <div class="chart-container">
-            <canvas id="gastosLineChart"></canvas>
+      <!-- QUICK ALERTS BANNER -->
+      <section class="quick-alerts-banner" style="display:flex; gap:16px; margin-bottom:24px;">
+        <!-- 3 alert badges for critical items -->
+        <div style="flex:1; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:12px; padding:12px; display:flex; align-items:center; gap:12px;">
+          <div style="background:#ef4444; color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">!</div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:#ef4444;">Obras P.</div>
+            <div style="font-size:12px; color:var(--text-muted);">118% ejecutado</div>
           </div>
         </div>
-
-        <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <h2 class="chart-title">Empleados por Secretaría</h2>
-              <span class="chart-sub">Distribución del plantel</span>
-            </div>
+        <div style="flex:1; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:12px; padding:12px; display:flex; align-items:center; gap:12px;">
+          <div style="background:#f59e0b; color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">!</div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:#f59e0b;">Personal</div>
+            <div style="font-size:12px; color:var(--text-muted);">103% ejecutado</div>
           </div>
-          <div class="chart-container donut-container">
-            <canvas id="empleadosPieChart"></canvas>
-          </div>
-          <div class="donut-legend" id="donutLegend"></div>
         </div>
-
+        <div style="flex:1; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); border-radius:12px; padding:12px; display:flex; align-items:center; gap:12px;">
+          <div style="background:#8b5cf6; color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">!</div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:#8b5cf6;">Reclamos</div>
+            <div style="font-size:12px; color:var(--text-muted);">5 reclamos urgentes</div>
+          </div>
+        </div>
       </section>
 
-      <!-- CHARTS ROW 2 -->
-      <section class="charts-row">
-
+      <!-- CHARTS GRID 2x2 -->
+      <section class="charts-row" style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
         <div class="chart-card">
           <div class="chart-header">
             <div>
-              <h2 class="chart-title">Gasto por Secretaría</h2>
-              <span class="chart-sub">Agosto 2026 · en millones $</span>
+              <h2 class="chart-title">Gasto Mensual</h2>
+              <span class="chart-sub">Evolución 2025-2026</span>
             </div>
           </div>
-          <div class="chart-container">
-            <canvas id="gastosBarChart"></canvas>
+          <div class="chart-container" style="height:220px;">
+            <canvas id="chartGastoMensual"></canvas>
           </div>
         </div>
-
         <div class="chart-card">
           <div class="chart-header">
             <div>
-              <h2 class="chart-title">Horas Extra por Área</h2>
-              <span class="chart-sub">Top 8 áreas · agosto 2026</span>
+              <h2 class="chart-title">Distribución Presupuesto</h2>
+              <span class="chart-sub">Por Secretaría</span>
             </div>
           </div>
-          <div class="chart-container">
-            <canvas id="horasExtraChart"></canvas>
+          <div class="chart-container" style="height:220px;">
+            <canvas id="chartPresupuestoDoughnut"></canvas>
           </div>
         </div>
-
         <div class="chart-card">
           <div class="chart-header">
             <div>
-              <h2 class="chart-title">Presupuesto vs Ejecutado</h2>
-              <span class="chart-sub">Por secretaría · acumulado 2026</span>
+              <h2 class="chart-title">Horas Extra</h2>
+              <span class="chart-sub">Por Área</span>
             </div>
           </div>
-          <div class="chart-container">
-            <canvas id="presupuestoChart"></canvas>
+          <div class="chart-container" style="height:200px;">
+            <canvas id="chartHorasExtra"></canvas>
           </div>
         </div>
-
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="chart-title">Ejecución</h2>
+              <span class="chart-sub">Porcentaje de ejecución</span>
+            </div>
+          </div>
+          <div class="chart-container" style="height:200px;">
+            <canvas id="chartEjecucionRadar"></canvas>
+          </div>
+        </div>
       </section>
 
       <!-- BOTTOM GRID -->
-      <section class="bottom-grid">
-
-        <!-- ALERTS TABLE -->
+      <section class="bottom-grid" style="display:grid; grid-template-columns:2fr 1fr; gap:24px;">
+        
+        <!-- CHECKBOOK WIDGET -->
         <div class="data-card">
           <div class="chart-header">
             <div>
-              <h2 class="chart-title">⚠️ Alertas Presupuestarias</h2>
-              <span class="chart-sub">Áreas con desvíos detectados</span>
-            </div>
-            <span class="badge-count" style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px;">3</span>
-          </div>
-          <div class="alerts-list">
-            <div class="alert-item critico">
-              <div class="alert-indicator pulse-red"></div>
-              <div class="alert-content">
-                <strong>Obras Públicas</strong>
-                <span>Exceso del 18% en presupuesto mensual</span>
-              </div>
-              <a href="#" class="alert-link">Ver detalle</a>
-            </div>
-            <div class="alert-item advertencia">
-              <div class="alert-indicator dot-yellow"></div>
-              <div class="alert-content">
-                <strong>Desarrollo Social</strong>
-                <span>80% ejecutado a mitad de mes</span>
-              </div>
-              <a href="#" class="alert-link">Ver detalle</a>
-            </div>
-            <div class="alert-item info">
-              <div class="alert-indicator dot-green"></div>
-              <div class="alert-content">
-                <strong>Hacienda</strong>
-                <span>Presupuesto equilibrado</span>
-              </div>
-              <a href="#" class="alert-link">Ver detalle</a>
+              <h2 class="chart-title">Últimos Pagos</h2>
+              <span class="chart-sub">Checkbook</span>
             </div>
           </div>
-          <!-- Maintained for JS compatibility -->
-          <table class="data-table" id="alertasTable" style="display: none;">
-            <tbody id="alertasBody"></tbody>
+          <table class="data-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+            <thead>
+              <tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.1);">
+                <th style="padding:12px;">Fecha</th>
+                <th style="padding:12px;">Proveedor</th>
+                <th style="padding:12px;">Concepto</th>
+                <th style="padding:12px;">Secretaría</th>
+                <th style="padding:12px; text-align:right;">Monto</th>
+              </tr>
+            </thead>
+            <tbody id="checkbookBody">
+              <!-- populated by js -->
+            </tbody>
           </table>
         </div>
 
-        <!-- ENTIDADES STATUS -->
-        <div class="data-card">
-          <div class="chart-header">
-            <div>
-              <h2 class="chart-title">Estado de Entidades</h2>
-              <span class="chart-sub">Digitalización por entidad</span>
+        <!-- RECENT ACTIVITY + HEATMAP -->
+        <div class="data-card" style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div class="chart-header">
+              <div>
+                <h2 class="chart-title">Actividad Semanal</h2>
+                <span class="chart-sub">Heatmap de uso</span>
+              </div>
             </div>
+            <div id="actividadHeatmap" style="padding-top:10px;"></div>
           </div>
-          <div class="entidades-list" id="entidadesList"></div>
-        </div>
-
-        <!-- RECENT ACTIVITY -->
-        <div class="data-card">
-          <div class="chart-header">
-            <div>
-              <h2 class="chart-title">Actividad Reciente</h2>
-              <span class="chart-sub">Últimas acciones del sistema</span>
+          <div style="flex:1;">
+            <div class="chart-header" style="margin-top:16px;">
+              <div>
+                <h2 class="chart-title">Actividad Reciente</h2>
+                <span class="chart-sub">Últimas acciones</span>
+              </div>
             </div>
+            <div class="activity-feed" id="activityFeed"></div>
           </div>
-          <div class="activity-feed" id="activityFeed"></div>
         </div>
-
       </section>
-
     </div>
   </main>
 
+  <script src='js/db.js'></script>
   <script src="js/toast.js"></script>
   <script src="js/api.js"></script>
   <script src="js/pwa.js"></script>
@@ -491,13 +623,40 @@ body::before {
     <span>📡 API activa</span>
     <span>🔄 Última actualización: <span id="lastUpdateText">hace 2 min</span></span>
   </div>
+  <script src="js/charts-premium.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize premium charts
+    if (window.MuniCharts) {
+      window.mainChart = MuniCharts.gastoMensual('chartGastoMensual');
+      MuniCharts.presupuesto('chartPresupuestoDoughnut');
+      MuniCharts.horasExtra('chartHorasExtra');
+      MuniCharts.ejecucionRadar('chartEjecucionRadar');
+      MuniCharts.heatmapSemanal('actividadHeatmap');
+    }
+    // Checkbook widget — last payments from MuniDB
+    if (window.MuniDB) {
+      const pagos = MuniDB.sort(MuniDB.getAll('pagos'), 'fecha', 'desc').slice(0, 5);
+      const tbody = document.getElementById('checkbookBody');
+      if (tbody) {
+        tbody.innerHTML = pagos.map(p => `
+          <tr>
+            <td>${new Date(p.fecha).toLocaleDateString('es-AR')}</td>
+            <td><strong>${p.proveedor}</strong></td>
+            <td style="color:var(--text-muted);font-size:11px">${p.concepto.slice(0,35)}...</td>
+            <td><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(59,130,246,0.1);color:#60a5fa">${p.secretaria}</span></td>
+            <td style="font-weight:800;color:#10b981">$${(p.monto/1000000).toFixed(2)}M</td>
+          </tr>
+        `).join('');
+      }
+    }
+  });
+  </script>
   <script src="js/ai-widget.js"></script>
   <script src='js/ux-improvements.js'></script>
   <script src='js/bottom-nav.js'></script>
+
+
+
 </body>
 </html>
-
-
-
-
-

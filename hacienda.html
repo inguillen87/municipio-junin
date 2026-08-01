@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hacienda | MuniControl</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .kpi-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem; text-align: center; }
+    .kpi-card h3 { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .kpi-card .value { font-size: 1.8rem; font-weight: 700; color: var(--text-light); }
+    .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; }
+    .tab { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; padding: 0.5rem 1rem; cursor: pointer; transition: all 0.3s; border-radius: 8px; }
+    .tab.active { color: var(--text-light); background: var(--glass-bg-hover); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+    .filters { display: flex; gap: 1rem; flex-wrap: wrap; }
+    
+    table { width: 100%; border-collapse: collapse; background: var(--glass-bg); border-radius: 12px; overflow: hidden; }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--glass-border); }
+    th { color: var(--text-muted); font-weight: 600; background: rgba(0,0,0,0.2); }
+    tr:hover { background: var(--glass-bg-hover); }
+    
+    .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 500; }
+    .badge-acreditado { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .badge-pendiente { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    
+    .btn-action { background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+    
+    .accordion { margin-bottom: 1rem; }
+    .acc-header { background: var(--glass-bg); padding: 1rem 1.5rem; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--glass-border); }
+    .acc-content { display: none; padding: 1.5rem; background: rgba(0,0,0,0.1); border: 1px solid var(--glass-border); border-top: none; border-radius: 0 0 8px 8px; }
+    .acc-header.active { border-radius: 8px 8px 0 0; }
+    .acc-header.active + .acc-content { display: block; }
+    
+    .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
+    .progress-fill { height: 100%; background: var(--primary); border-radius: 4px; }
+    
+    .prov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .prov-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem; }
+    .prov-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .stars { color: #f59e0b; }
+  </style>
+</head>
+<body class="dark-theme">
+  <div id="nav-container"></div>
+  
+  <main class="main-content">
+    <header class="page-header">
+      <div>
+        <h1>Hacienda y Finanzas</h1>
+        <p class="text-muted">Gestión integral del presupuesto municipal y pagos</p>
+      </div>
+      <div class="actions">
+        <a href="cuentas-claras.html" target="_blank" class="btn btn-outline" style="margin-right: 1rem;">
+          <i class="fa-solid fa-eye"></i> Cuentas Claras (Público)
+        </a>
+        <button class="btn btn-primary" data-require-action="hacienda:write" id="btnNuevoPago">
+          <i class="fa-solid fa-plus"></i> Nuevo Pago
+        </button>
+      </div>
+    </header>
+
+    <div class="kpi-grid" id="kpiGrid">
+      <!-- KPIs dinámicos -->
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="pagos">Pagos</button>
+      <button class="tab" data-tab="presupuesto">Presupuesto</button>
+      <button class="tab" data-tab="proveedores">Proveedores</button>
+      <button class="tab" data-tab="flujo">Flujo de Caja</button>
+    </div>
+
+    <!-- Pestaña PAGOS -->
+    <div class="tab-content active" id="tab-pagos">
+      <div class="toolbar">
+        <div class="filters">
+          <input type="text" id="searchPagos" class="form-control" placeholder="Buscar por proveedor o concepto..." style="width: 250px;">
+          <select id="filterSec" class="form-control">
+            <option value="">Todas las Secretarías</option>
+          </select>
+          <select id="filterEstado" class="form-control">
+            <option value="">Todos los Estados</option>
+            <option value="acreditado">Acreditado</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+        <button class="btn btn-outline" id="btnExport" data-require-action="hacienda:export">
+          <i class="fa-solid fa-file-excel"></i> Exportar
+        </button>
+      </div>
+      
+      <div class="table-responsive">
+        <table id="tablePagos">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>Concepto</th>
+              <th>Secretaría</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pestaña PRESUPUESTO -->
+    <div class="tab-content" id="tab-presupuesto">
+      <div id="accordionPresupuesto"></div>
+    </div>
+
+    <!-- Pestaña PROVEEDORES -->
+    <div class="tab-content" id="tab-proveedores">
+      <div class="prov-grid" id="gridProveedores"></div>
+    </div>
+
+    <!-- Pestaña FLUJO DE CAJA -->
+    <div class="tab-content" id="tab-flujo">
+      <div style="background: var(--glass-bg); padding: 2rem; border-radius: 12px; border: 1px solid var(--glass-border);">
+        <canvas id="cashflowChart" height="100"></canvas>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/toast.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/permissions.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Verificar permisos
+      if (!Permissions.canRead('hacienda')) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // Tab logic
+      document.querySelectorAll('.tab').forEach(t => {
+        t.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+          t.classList.add('active');
+          document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+        });
+      });
+
+      // Formatear moneda
+      const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+
+      // Cargar KPIs
+      const pagos = DB.getAll('pagos');
+      const presupuestos = DB.getAll('presupuesto');
+      const proveedores = DB.getAll('proveedores');
+      
+      const totalPpto = presupuestos.reduce((sum, p) => sum + p.asignado, 0);
+      const totalEjec = presupuestos.reduce((sum, p) => sum + p.ejecutado, 0);
+      const dispPpto = totalPpto - totalEjec;
+      const pagosMes = pagos.filter(p => p.fecha.startsWith('2026-07')).reduce((sum, p) => sum + p.monto, 0);
+      const provAct = proveedores.filter(p => p.estado === 'habilitado').length;
+
+      document.getElementById('kpiGrid').innerHTML = `
+        <div class="kpi-card"><h3>Ppto. Total (2026)</h3><div class="value">${fmt.format(totalPpto)}</div></div>
+        <div class="kpi-card"><h3>Ejecutado</h3><div class="value">${fmt.format(totalEjec)}</div></div>
+        <div class="kpi-card"><h3>Disponible</h3><div class="value" style="color:#10b981">${fmt.format(dispPpto)}</div></div>
+        <div class="kpi-card"><h3>Pagos (Julio)</h3><div class="value">${fmt.format(pagosMes)}</div></div>
+        <div class="kpi-card"><h3>Prov. Activos</h3><div class="value">${provAct}</div></div>
+      `;
+
+      // Cargar Pagos
+      function renderPagos(data) {
+        const tbody = document.querySelector('#tablePagos tbody');
+        tbody.innerHTML = '';
+        data.forEach(p => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${p.fecha}</td>
+              <td style="font-weight:500">${p.proveedor}</td>
+              <td>${p.concepto}</td>
+              <td>${p.secretaria}</td>
+              <td style="font-weight:600">${fmt.format(p.monto)}</td>
+              <td><span class="badge badge-${p.estado}">${p.estado.toUpperCase()}</span></td>
+              <td><button class="btn-action" onclick="alert('Detalle pago ${p.id}')">Ver</button></td>
+            </tr>
+          `;
+        });
+      }
+      renderPagos(pagos);
+
+      // Cargar Filtros de Pagos
+      const secs = [...new Set(pagos.map(p => p.secretaria))];
+      const selSec = document.getElementById('filterSec');
+      secs.forEach(s => selSec.innerHTML += `<option value="${s}">${s}</option>`);
+
+      // Lógica de filtrado
+      function filterData() {
+        const q = document.getElementById('searchPagos').value.toLowerCase();
+        const sec = selSec.value;
+        const est = document.getElementById('filterEstado').value;
+        
+        let res = pagos.filter(p => 
+          (p.proveedor.toLowerCase().includes(q) || p.concepto.toLowerCase().includes(q)) &&
+          (sec === '' || p.secretaria === sec) &&
+          (est === '' || p.estado === est)
+        );
+        renderPagos(res);
+      }
+      document.getElementById('searchPagos').addEventListener('input', filterData);
+      selSec.addEventListener('change', filterData);
+      document.getElementById('filterEstado').addEventListener('change', filterData);
+
+      // Cargar Presupuesto (Accordion)
+      const acc = document.getElementById('accordionPresupuesto');
+      presupuestos.forEach(p => {
+        const pct = (p.ejecutado / p.asignado) * 100;
+        acc.innerHTML += `
+          <div class="accordion">
+            <div class="acc-header" onclick="this.classList.toggle('active')">
+              <div style="flex:1">
+                <strong>${p.secretaria}</strong> - ${p.rubro}
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:${pct}%; background:${pct > 90 ? '#ef4444' : 'var(--primary)'}"></div>
+                </div>
+              </div>
+              <div style="text-align:right; margin-left:2rem">
+                <div>${fmt.format(p.ejecutado)} / ${fmt.format(p.asignado)}</div>
+                <small class="text-muted">${pct.toFixed(1)}% ejecutado</small>
+              </div>
+            </div>
+            <div class="acc-content">
+              <p><strong>Descripción:</strong> ${p.descripcion}</p>
+              <p><strong>Comprometido no pagado:</strong> ${fmt.format(p.comprometido)}</p>
+              <p><strong>Estado:</strong> ${p.estado.toUpperCase()}</p>
+            </div>
+          </div>
+        `;
+      });
+
+      // Cargar Proveedores
+      const gProv = document.getElementById('gridProveedores');
+      proveedores.forEach(p => {
+        gProv.innerHTML += `
+          <div class="prov-card">
+            <div class="prov-header">
+              <h3 style="margin:0">${p.razonSocial}</h3>
+              <span class="badge" style="background:rgba(255,255,255,0.1)">${p.estado}</span>
+            </div>
+            <div style="margin-bottom:1rem; font-size:0.9rem" class="text-muted">
+              CUIT: ${p.cuit}<br>
+              Rubro: ${p.rubro}
+            </div>
+            <div class="stars">
+              ${'<i class="fa-solid fa-star"></i>'.repeat(Math.floor(p.calificacion))}
+              ${p.calificacion % 1 !== 0 ? '<i class="fa-solid fa-star-half-stroke"></i>' : ''}
+              <span style="color:var(--text-muted); margin-left:0.5rem; font-size:0.8rem">(${p.calificacion})</span>
+            </div>
+          </div>
+        `;
+      });
+
+      // Flujo de Caja (Chart.js)
+      const ctx = document.getElementById('cashflowChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Agosto', 'Septiembre', 'Octubre'],
+          datasets: [
+            { label: 'Ingresos Proyectados', data: [120, 115, 130], backgroundColor: 'rgba(16, 185, 129, 0.7)' },
+            { label: 'Egresos Comprometidos', data: [95, 105, 90], backgroundColor: 'rgba(239, 68, 68, 0.7)' }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: '#a1a1aa' } },
+            title: { display: true, text: 'Proyección 90 días (en millones $)', color: '#fff' }
+          },
+          scales: {
+            y: { ticks: { color: '#a1a1aa' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            x: { ticks: { color: '#a1a1aa' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+          }
+        }
+      });
+      
+      // Exportar JSON logic
+      document.getElementById('btnExport').addEventListener('click', () => {
+        DB.exportJSON('pagos');
+      });
+
+      Permissions.applyToDOM();
+    });
+  </script>
+</body>
+</html>

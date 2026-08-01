@@ -73,8 +73,19 @@ const NAV_ITEMS = [
     hidden: ['DEMO']  // Demo NO ve el presupuesto real
   },
   {
+    id: 'hacienda', href: 'hacienda.html', icon: '🏦',
+    label: 'Hacienda',
+    access: ['SUPER_ADMIN','TENANT_ADMIN','HACIENDA'],
+    hidden: ['DEMO','TENANT_USER']
+  },
+  {
+    id: 'cuentas-claras', href: 'cuentas-claras.html', icon: '🔍',
+    label: 'Cuentas Claras',
+    access: 'all'
+  },
+  {
     id: 'mapa', href: 'mapa.html', icon: '🗺️',
-    label: 'Mapa Financiero',
+    label: 'Mapa / Obras',
     access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
     hidden: ['DEMO']
   },

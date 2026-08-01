@@ -135,9 +135,12 @@
           <div class="card">
             <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
               <h3 style="font-size:14px;margin:0">💬 Simulador de Chat</h3>
+              <button onclick="runDemoFlow()" style="padding:10px 20px;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.3);color:#25d166;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">
+                ▶️ Demo conversación real
+              </button>
             </div>
             <div style="padding:16px">
-              <div class="wa-chat-preview" id="chatPreview">
+              <div class="wa-chat-preview bot-chat" id="chatPreview">
                 <div class="msg-bubble msg-in">Hola, soy el Asistente IA de la *Municipalidad de Junín* 🏛️
 
 Escribí tu consulta o usá los comandos habilitados.<div class="msg-meta">Ahora ✓✓</div></div>
@@ -325,6 +328,37 @@ Escribí tu consulta o usá los comandos habilitados.<div class="msg-meta">Ahora
       if (e.key === 'Enter') simulateChat();
     });
     
+    const BOT_DEMO_FLOW = [
+      { from: 'citizen', text: 'Hola, quiero reportar un bache en San Martín y Mitre' },
+      { from: 'bot', text: '👋 Hola! Soy MuniBot. Recibí tu reclamo.\n\n📍 Dirección: San Martín y Mitre, Junín\n📊 Tipo: Bache\n⏰ SLA: 72hs para resolución\n\n🔢 Número de seguimiento: JUN-2026-001252\n\nPodés consultar el estado en cualquier momento escribiendo el número.' },
+      { from: 'citizen', text: 'Gracias! ¿Cuándo lo van a arreglar?' },
+      { from: 'bot', text: 'El plazo máximo es *72 horas*. Te notificaremos por WhatsApp cuando el equipo esté en camino y cuando se resuelva.\n\n📞 Si es urgente (pérdida de agua, árbol caído), llamá al 147.' },
+      { from: 'citizen', text: 'Perfecto! ¿Y cómo pago mi tasa municipal?' },
+      { from: 'bot', text: '💳 Podés pagar tu tasa municipal por:\n\n1️⃣ *Mercado Pago* — escáneá el QR de la boleta\n2️⃣ *Banco Provincia* — cajía o homebanking\n3️⃣ *ATM municipales* — Mitre 548\n\n¿Querés que te envíe tu boleta en PDF? Respondé *BOLETA* y tu DNI.' },
+    ];
+
+    function runDemoFlow() {
+      const chat = document.getElementById('botChat') || document.querySelector('.bot-chat');
+      if (!chat) return;
+      chat.innerHTML = '';
+      let delay = 0;
+      BOT_DEMO_FLOW.forEach((msg, i) => {
+        delay += i === 0 ? 300 : 1200;
+        setTimeout(() => {
+          const div = document.createElement('div');
+          const isCitizen = msg.from === 'citizen';
+          div.style.cssText = `display:flex;justify-content:${isCitizen?'flex-end':'flex-start'};margin-bottom:12px;animation:fadeIn 0.3s ease both`;
+          div.innerHTML = `
+            <div style="max-width:75%;padding:12px 14px;border-radius:${isCitizen?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${isCitizen?'rgba(59,130,246,0.15)':'rgba(255,255,255,0.05)'};border:1px solid ${isCitizen?'rgba(59,130,246,0.3)':'rgba(255,255,255,0.08)'};font-size:13px;line-height:1.5;white-space:pre-line">
+              ${msg.text}
+              <div style="font-size:9px;color:rgba(148,163,184,0.5);text-align:right;margin-top:4px">${new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</div>
+            </div>`;
+          chat.appendChild(div);
+          chat.scrollTop = chat.scrollHeight;
+        }, delay);
+      });
+    }
+
     // Load saved settings on startup
     window.addEventListener('DOMContentLoaded', () => {
       const phoneId = localStorage.getItem('wa_phone_id');

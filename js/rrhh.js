@@ -214,6 +214,40 @@ Municipio de Junín — Sistema RRHH Digital v1.0
 }
 
 // ── INIT ─────────────────────────────────────────────────
+function loadEmpleadosFromDB() {
+    if (!window.MuniDB) return;
+    const empleados = MuniDB.sort(MuniDB.getAll('empleados'), 'apellido', 'asc');
+    const tbody = document.getElementById('empleadosBody') || document.querySelector('#tablaEmpleados tbody');
+    if (!tbody || empleados.length === 0) return;
+    
+    tbody.innerHTML = empleados.map(e => `
+        <tr>
+            <td><strong>${e.legajo}</strong></td>
+            <td>${e.apellido}, ${e.nombre}</td>
+            <td>${e.secretaria}</td>
+            <td>${e.cargo}</td>
+            <td><span class="badge-status badge-${e.estado}">${e.estado}</span></td>
+            <td>$${(e.salario/1000).toFixed(0)}k</td>
+            <td style="color:${e.horasExtra > 30 ? '#ef4444' : '#f59e0b'}">${e.horasExtra}hs</td>
+            <td>
+                <button onclick="verEmpleado('${e.id}')" style="padding:4px 10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#60a5fa;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700">Ver</button>
+                <button onclick="editarEmpleado('${e.id}')" style="padding:4px 10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#f59e0b;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;margin-left:4px">Editar</button>
+            </td>
+        </tr>
+    `).join('');
+    
+    // Update count display
+    const counter = document.querySelector('.table-count, #empleadosCount');
+    if (counter) counter.textContent = `${empleados.length} empleados`;
+}
+
+function verEmpleado(id) {
+    const e = MuniDB.getOne('empleados', id);
+    if (!e) return;
+    const detalle = `${e.apellido}, ${e.nombre}\nLegajo: ${e.legajo}\nSecretaría: ${e.secretaria}\nCargo: ${e.cargo}\nSalario: $${e.salario.toLocaleString('es-AR')}\nHoras extra: ${e.horasExtra}hs\nAusentismo: ${e.ausentismo} días\nEmail: ${e.email}`;
+    if (typeof showToast !== 'undefined') showToast(`👤 ${e.apellido}, ${e.nombre} — ${e.cargo}`, 'info');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderTabla();
 
@@ -224,4 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebar.classList.toggle('collapsed');
     document.getElementById('mainContent').classList.toggle('expanded');
   });
+
+  loadEmpleadosFromDB();
 });

@@ -409,7 +409,7 @@
           </div>
           <table class="admin-table">
             <thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th>IP</th></tr></thead>
-            <tbody>
+            <tbody id="auditBody">
               <tr><td>2026-07-31 10:15:22</td><td>superadmin@govtech.ar</td><td><span class="badge badge-active">CREATE_TENANT</span></td><td>Municipio Junín creado</td><td>192.168.1.100</td></tr>
               <tr><td>2026-07-31 09:42:11</td><td>system</td><td><span class="badge badge-admin">AUTO_BACKUP</span></td><td>Database full backup completed</td><td>localhost</td></tr>
               <tr><td>2026-07-30 18:30:00</td><td>intendente@junin.gob.ar</td><td><span class="badge badge-user">LOGIN</span></td><td>Inicio de sesión exitoso</td><td>200.5.12.45</td></tr>
@@ -832,6 +832,29 @@
     closeModal('modalUser');
   }
 
+  // ── AUDIT LOGS ────────────────────────────────────────────
+  function loadAuditLog() {
+      if (!window.MuniDB) return;
+      const logs = MuniDB.getAll('auditoria').slice(0, 50);
+      const tbody = document.getElementById('auditBody') || document.querySelector('[data-audit] tbody');
+      if (!tbody) return;
+      
+      if (logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">Sin actividad registrada aún</td></tr>';
+          return;
+      }
+      
+      tbody.innerHTML = logs.map(log => `
+          <tr>
+              <td style="font-size:11px;color:var(--text-muted)">${new Date(log.timestamp).toLocaleString('es-AR')}</td>
+              <td>${log.usuario}</td>
+              <td><span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;background:${log.accion==='DELETE'?'rgba(239,68,68,0.1)':log.accion==='INSERT'?'rgba(16,185,129,0.1)':'rgba(245,158,11,0.1)'};color:${log.accion==='DELETE'?'#ef4444':log.accion==='INSERT'?'#10b981':'#f59e0b'}">${log.accion}</span></td>
+              <td>${log.modulo}</td>
+              <td style="font-size:11px;color:var(--text-muted)">${log.recurso}</td>
+          </tr>
+      `).join('');
+  }
+
   // ── REFRESH ───────────────────────────────────────────────
   function refreshData() {
     toast('🔄 Actualizando', 'Sincronizando datos...', 'info');
@@ -885,6 +908,7 @@
   renderOverview();
   renderTenants();
   renderUsers();
+  loadAuditLog();
   initCharts();
   setTimeout(animateCounters, 100);
 

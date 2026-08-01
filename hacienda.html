@@ -304,6 +304,43 @@
 
       Permissions.applyToDOM();
     });
+
+    function loadHaciendaData() {
+      if (!window.MuniDB) return;
+      
+      // Load payments
+      const pagos = MuniDB.getAll('pagos');
+      const tbody = document.getElementById('pagosBody') || document.querySelector('#tablaPagos tbody') || document.querySelector('table tbody');
+      if (tbody && pagos.length > 0) {
+        const statusColors = {pagado:'#10b981', pendiente:'#f59e0b', rechazado:'#ef4444'};
+        tbody.innerHTML = pagos.map(p => `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+            <td style="padding:10px 8px;font-size:12px;font-weight:700">${p.id}</td>
+            <td style="padding:10px 8px;font-size:12px">${p.proveedor}</td>
+            <td style="padding:10px 8px;font-size:12px">${p.concepto}</td>
+            <td style="padding:10px 8px;font-size:12px;font-weight:700">$${(p.monto||0).toLocaleString('es-AR')}</td>
+            <td style="padding:10px 8px">
+              <span style="font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;background:${statusColors[p.estado]||'#3b82f6'}22;color:${statusColors[p.estado]||'#3b82f6'}">
+                ${p.estado||'pendiente'}
+              </span>
+            </td>
+            <td style="padding:10px 8px;font-size:11px;color:var(--text-muted)">${p.fecha||''}</td>
+          </tr>
+        `).join('');
+      }
+      
+      // Update KPI totals
+      const totalPagado = pagos.filter(p=>p.estado==='pagado').reduce((s,p)=>s+(p.monto||0),0);
+      const totalPendiente = pagos.filter(p=>p.estado==='pendiente').reduce((s,p)=>s+(p.monto||0),0);
+      const kpiPagado = document.getElementById('kpi-pagado') || document.querySelector('[data-kpi="pagado"]');
+      const kpiPendiente = document.getElementById('kpi-pendiente') || document.querySelector('[data-kpi="pendiente"]');
+      if (kpiPagado) kpiPagado.textContent = '$' + (totalPagado/1000000).toFixed(1) + 'M';
+      if (kpiPendiente) kpiPendiente.textContent = '$' + (totalPendiente/1000).toFixed(0) + 'k';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(loadHaciendaData, 600);
+    });
   </script>
   <script src='js/notifications.js'></script>
 </body>

@@ -247,3 +247,55 @@
   });
 
 })();
+
+// ============================================================
+// KEYBOARD SHORTCUTS HELP MODAL
+// ============================================================
+function initKeyboardHelp() {
+  const shortcuts = [
+    { key: 'G + D', action: 'Ir al Dashboard' },
+    { key: 'G + H', action: 'Ir a Hacienda' },
+    { key: 'G + R', action: 'Ir a RRHH' },
+    { key: 'G + I', action: 'Ir a IA Municipal' },
+    { key: 'G + M', action: 'Ir al Mapa' },
+    { key: 'G + V', action: 'Ir a Vecinos 311' },
+    { key: 'Ctrl + K', action: 'Busqueda global' },
+    { key: '?', action: 'Mostrar atajos' },
+    { key: 'Esc', action: 'Cerrar modal' },
+  ];
+  let gPressed = false;
+  let gTimer;
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '?') { showShortcutsModal(); return; }
+    if (e.ctrlKey && e.key === 'k') {
+      e.preventDefault();
+      const s = document.getElementById('globalSearch');
+      if (s) { s.focus(); s.select(); }
+      return;
+    }
+    if (e.key === 'g' || e.key === 'G') {
+      gPressed = true;
+      clearTimeout(gTimer);
+      gTimer = setTimeout(function() { gPressed = false; }, 1500);
+      return;
+    }
+    if (gPressed) {
+      const navMap = { d:'index.html',h:'hacienda.html',r:'rrhh.html',i:'ia.html',m:'mapa.html',v:'vecinos.html',o:'obras.html',c:'control.html',l:'licitaciones.html',a:'analytics.html' };
+      const dest = navMap[e.key.toLowerCase()];
+      if (dest) { gPressed = false; window.location.href = dest; }
+    }
+  });
+  function showShortcutsModal() {
+    const existing = document.getElementById('shortcutsModal');
+    if (existing) { existing.remove(); return; }
+    const modal = document.createElement('div');
+    modal.id = 'shortcutsModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
+    modal.innerHTML = `<div style="background:#0d1526;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px;max-width:420px;width:90%"><h3 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:900;margin-bottom:16px">Atajos de teclado</h3><div style="display:flex;flex-direction:column;gap:8px">${shortcuts.map(s => "<div style='display:flex;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:8px'><span style='font-size:13px'>" + s.action + "</span><code style='background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;font-size:11px'>" + s.key + "</code></div>").join('')}</div><p style="margin-top:14px;text-align:center;font-size:11px;color:rgba(100,116,139,0.5)">Esc para cerrar</p></div>`;
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+  }
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { const m = document.getElementById('shortcutsModal'); if (m) m.remove(); } });
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initKeyboardHelp); } else { setTimeout(initKeyboardHelp, 100); }

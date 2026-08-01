@@ -526,6 +526,201 @@
     const step = Math.max(1, Math.floor(target / 30));
     const timer = setInterval(() => {
       current = Math.min(current + step, target);
+          ${sub.map(s => `<div class="sub-partida-item"><span class="sub-partida-name">${s.n}</span><span class="sub-partida-val">${fmt(s.v)}</span></div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+    
+    setTimeout(() => {
+      document.querySelectorAll('.mini-bar-fill').forEach(bar => {
+        bar.style.width = bar.getAttribute('data-w') + '%';
+      });
+    }, 50);
+  }
+
+  // Color code budget rows based on execution
+  setTimeout(() => {
+    document.querySelectorAll('.presupuesto-row, tr[data-secretaria]').forEach(function(row) {
+        const ejecutado = parseFloat(row.dataset.ejecutado || 0);
+        const asignado = parseFloat(row.dataset.asignado || 1);
+        const pct = ejecutado / asignado;
+        if (pct > 1.0) {
+            row.style.borderLeft = '3px solid #ef4444';
+            row.style.background = 'rgba(239,68,68,0.04)';
+        } else if (pct > 0.9) {
+            row.style.borderLeft = '3px solid #f59e0b';
+            row.style.background = 'rgba(245,158,11,0.03)';
+        } else {
+            row.style.borderLeft = '3px solid #10b981';
+        }
+    });
+  }, 100);
+
+
+  function toggleSubPartida(code) {
+    const el = document.getElementById('sub-' + code);
+    if(el) {
+      el.classList.toggle('active');
+    }
+  }
+
+  function filterPartidas() {
+    const q = document.getElementById('searchPartida').value.toLowerCase();
+    const area = document.getElementById('filterArea').value;
+    const estado = document.getElementById('filterEstado').value;
+    filteredPartidas = PARTIDAS.filter(p => {
+      const matchQ = !q || p.name.toLowerCase().includes(q) || p.code.includes(q);
+      const matchArea = !area || p.area === area;
+      const pct = p.executed/p.total;
+      const matchEstado = !estado ||
+        (estado==='ok' && pct<=0.8 && !p.risk) ||
+        (estado==='risk' && (p.risk || pct>0.8)) ||
+        (estado==='done' && pct>=1);
+      return matchQ && matchArea && matchEstado;
+    });
+    renderPartidas();
+  }
+
+  function showDetail(code) {
+    const p = PARTIDAS.find(x => x.code === code);
+    if (!p) return;
+    window.toast && toast(`${p.icon} ${p.name}`, `Ejecutado: ${fmt(p.executed)} de ${fmt(p.total)} · ${Math.round(p.executed/p.total*100)}%`, p.risk ? 'warning' : 'info');
+  }
+
+  // ALERTAS
+  const alerts = [
+    { icon:'🔴', text:'Personal: 103% ejecutado. Riesgo de déficit.', color:'#ef4444' },
+    { icon:'🟡', text:'Asistencia Social: 84% en julio. Revisar.', color:'#f59e0b' },
+    { icon:'🟡', text:'Cargas Sociales: 104% ejecutado.', color:'#ef4444' },
+    { icon:'🟢', text:'Obras: buen ritmo. Proyección: 72% al cierre.', color:'#10b981' },
+  ];
+  document.getElementById('alertList').innerHTML = alerts.map(a => `
+    <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span>${a.icon}</span>
+      <span style="font-size:12px;color:${a.color};line-height:1.4">${a.text}</span>
+    </div>`).join('');
+
+  // CHARTS
+  const chartOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} };
+
+  // Pie
+  const areaData = {};
+  PARTIDAS.forEach(p => { areaData[p.area] = (areaData[p.area]||0) + p.total; });
+  new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(areaData),
+      datasets: [{ data: Object.values(areaData), backgroundColor:['#ef4444','#3b82f6','#10b981','#8b5cf6','#f59e0b'], borderWidth:0, hoverOffset:8 }]
+    },
+    options: { ...chartOpts, plugins:{ legend:{ display:true, position:'bottom', labels:{ color:'rgba(148,163,184,0.7)', font:{size:10}, boxWidth:10, padding:8 } } }, cutout:'70%' }
+  });
+
+  // Line
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const actual = [28,26,29,31,30,32,17,null,null,null,null,null];
+  const projected = [null,null,null,null,null,null,17,22,25,28,32,48];
+  new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        { label:'Ejecutado', data:actual, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.05)', borderWidth:2, pointRadius:3, tension:0.4, fill:true, spanGaps:false },
+        { label:'Proyectado', data:projected, borderColor:'rgba(139,92,246,0.6)', backgroundColor:'rgba(139,92,246,0.03)', borderWidth:2, borderDash:[6,3], pointRadius:2, tension:0.4, fill:true, spanGaps:false },
+      ]
+    },
+    options: { ...chartOpts, plugins:{ legend:{ display:true, labels:{ color:'rgba(148,163,184,0.7)', font:{size:10}, boxWidth:10 } } }, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(148,163,184,0.6)',font:{size:10}}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(148,163,184,0.6)',font:{size:10},callback:v=>v?'$'+v+'M':''}} } }
+  });
+
+  // PREDICTOR
+  // PREDICTOR
+  function runPrediction() {
+    const btn = document.querySelector('.predictor-header .btn');
+    btn.innerHTML = '⏳ Recalculando...';
+    btn.disabled = true;
+    setTimeout(() => {
+      const executed = PARTIDAS.reduce((s,p)=>s+p.executed,0);
+      const total = PARTIDAS.reduce((s,p)=>s+p.total,0);
+      const remaining = 5; // meses restantes
+      const avgMonthly = executed / 7;
+      const projected = executed + (avgMonthly * remaining) + (Math.random() * 5000000 - 2500000); // add slight randomness
+      const saving = Math.max(0, total - projected);
+      
+      document.getElementById('pred1').textContent = '$' + (projected/1000000).toFixed(1) + 'M';
+      document.getElementById('pred2').textContent = '$' + (saving/1000000).toFixed(1) + 'M';
+      
+      const risks = ['Bajo', 'Moderado', 'Alto'];
+      document.getElementById('pred3').textContent = risks[Math.floor(Math.random() * risks.length)];
+      
+      const criticals = ['Personal', 'Obras', 'Servicios', 'Social'];
+      document.getElementById('pred4').textContent = criticals[Math.floor(Math.random() * criticals.length)];
+      
+      const best = ['Obras', 'Servicios', 'Tecnología', 'Salud'];
+      document.getElementById('pred5').textContent = best[Math.floor(Math.random() * best.length)];
+      
+      btn.innerHTML = '🔄 Recalcular';
+      btn.disabled = false;
+      window.toast && toast('🤖 Predicción actualizada', 'Modelo IA recalculado con los últimos datos', 'success');
+    }, 1200);
+  }
+
+  function exportPDF() { 
+    window.toast && toast('📄 Exportando PDF', 'Presupuesto Anual 2026 generando...', 'info'); 
+    setTimeout(() => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text("Presupuesto Anual 2026 - Municipio de Junín", 14, 22);
+      doc.setFontSize(11);
+      doc.text("Reporte generado el: " + new Date().toLocaleDateString(), 14, 30);
+      
+      const tableData = PARTIDAS.map(p => [
+        p.code, 
+        p.name, 
+        p.area, 
+        '$' + (p.total/1000000).toFixed(2) + 'M', 
+        '$' + (p.executed/1000000).toFixed(2) + 'M', 
+        Math.round(p.executed/p.total*100) + '%'
+      ]);
+      
+      doc.autoTable({
+        startY: 40,
+        head: [['Código', 'Partida', 'Área', 'Presupuesto', 'Ejecutado', '% Ejec.']],
+        body: tableData,
+      });
+      
+      doc.save('presupuesto_2026.pdf');
+      window.toast && toast('✅ PDF listo','presupuesto_2026.pdf descargado','success');
+    }, 1000);
+  }
+  
+  function exportExcel() { 
+    window.toast && toast('📊 Exportando Excel', 'Todas las partidas y datos...', 'info'); 
+    setTimeout(() => {
+      const ws = XLSX.utils.json_to_sheet(PARTIDAS.map(p => ({
+        'Código': p.code,
+        'Nombre': p.name,
+        'Área': p.area,
+        'Presupuesto Total': p.total,
+        'Ejecutado': p.executed,
+        '% Ejecución': Math.round(p.executed/p.total*100) + '%',
+        'Riesgo': p.risk ? 'Sí' : 'No'
+      })));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Presupuesto 2026");
+      XLSX.writeFile(wb, "presupuesto_2026.xlsx");
+      window.toast && toast('✅ Excel listo','presupuesto_2026.xlsx descargado','success');
+    }, 1000); 
+  }
+
+  // Animation for KPIs
+  document.querySelectorAll('.kpi-counter').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const prefix = el.dataset.prefix !== undefined ? el.dataset.prefix : '$';
+    const suffix = el.dataset.prefix !== undefined ? '' : 'M';
+    let current = 0;
+    const step = Math.max(1, Math.floor(target / 30));
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
       el.textContent = prefix + current + suffix;
       if (current >= target) clearInterval(timer);
     }, 40);
@@ -533,11 +728,52 @@
 
   renderPartidas();
   buildSidebar('presupuesto');
+  
+  function loadPresupuestoMuniDB() {
+    if (!window.MuniDB) return;
+    try {
+      const data = MuniDB.getAll('presupuesto');
+      if (!data || data.length === 0) return;
+      const tbody = document.getElementById('presupuestoBody') || document.querySelector('#presupuestoTable tbody') || document.querySelector('table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      data.forEach(function(item) {
+        const pct = item.asignado > 0 ? Math.round((item.ejecutado / item.asignado) * 100) : 0;
+        const rowColor = pct > 100 ? 'rgba(239,68,68,0.06)' : pct > 80 ? 'rgba(245,158,11,0.06)' : 'transparent';
+        const badgeColor = pct > 100 ? '#ef4444' : pct > 80 ? '#f59e0b' : '#10b981';
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+        tr.style.background = rowColor;
+        tr.innerHTML = `
+          <td style="padding:12px 16px;font-weight:700;font-size:13px">${item.secretaria||''}</td>
+          <td style="padding:12px 16px;font-size:13px">$${((item.asignado||0)/1000000).toFixed(1)}M</td>
+          <td style="padding:12px 16px;font-size:13px">$${((item.ejecutado||0)/1000000).toFixed(1)}M</td>
+          <td style="padding:12px 16px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden">
+                <div style="height:100%;width:${Math.min(pct,100)}%;background:${badgeColor};border-radius:99px;transition:width 0.5s"></div>
+              </div>
+              <span style="font-size:11px;font-weight:800;color:${badgeColor};min-width:36px">${pct}%</span>
+            </div>
+          </td>
+          <td style="padding:12px 16px">
+            <span style="font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;background:${badgeColor}22;color:${badgeColor}">
+              ${pct > 100 ? '⚠️ Excedido' : pct > 80 ? '⚠️ Alerta' : '✅ Normal'}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      console.log('[Presupuesto] Loaded', data.length, 'items from MuniDB');
+    } catch(e) { console.error('[Presupuesto]', e); }
+  }
+  document.addEventListener('DOMContentLoaded', function() { setTimeout(loadPresupuestoMuniDB, 500); });
   </script>
   <script src='js/ux-improvements.js'></script>
   <script src='js/bottom-nav.js'></script>
   <script src='js/notifications.js'></script>
   <script src='js/live-clock.js'></script>
+  <script src='js/chat-widget.js'></script>
+  <script src='js/theme-switcher.js'></script>
 </body>
 </html>
-

@@ -173,17 +173,17 @@
           </div>
           <table class="data-table">
             <thead>
-              <tr>
-                <th>ID</th>
-                <th>Título</th>
-                <th>Tipo</th>
-                <th>Monto</th>
-                <th>Secretaría</th>
-                <th>Estado</th>
-                <th>Apertura</th>
-                  <th>Vencimiento</th>
-                <th>Acciones</th>
-              </tr>
+                              <tr>
+                  <th style="cursor:pointer" onclick="sortTable(0, 'str')">ID ↕</th>
+                  <th style="cursor:pointer" onclick="sortTable(1, 'str')">Título ↕</th>
+                  <th style="cursor:pointer" onclick="sortTable(2, 'str')">Tipo ↕</th>
+                  <th style="cursor:pointer" onclick="sortTable(3, 'num')">Monto ↕</th>
+                  <th style="cursor:pointer" onclick="sortTable(4, 'str')">Secretaría ↕</th>
+                  <th style="cursor:pointer" onclick="sortTable(5, 'str')">Estado ↕</th>
+                  <th style="cursor:pointer" onclick="sortTable(6, 'str')">Apertura ↕</th>
+                  <th style="cursor:pointer" onclick="sortTable(7, 'str')">Vencimiento ↕</th>
+                  <th>Acciones</th>
+                </tr>
             </thead>
             <tbody id="tbodyLicitaciones">
             </tbody>
@@ -629,7 +629,12 @@
     });
 
     // Modal nueva licitación
-    document.getElementById('btnNuevaLic').onclick = () => {
+        document.getElementById('btnNuevaLic').onclick = () => {
+      const user = window.MuniDB ? window.MuniDB.getAll('session')[0] : null;
+      if (user && user.role !== 'admin') {
+        window.toast && toast('Acceso denegado', 'Solo administradores pueden crear licitaciones', 'error');
+        return;
+      }
       document.getElementById('modalNuevaLic').style.display = 'flex';
     };
 
@@ -702,7 +707,31 @@
       else alert('Accediendo al portal de proveedores...');
     };
 
-    // Table Logic
+    
+let currentSort = { col: null, asc: true };
+function sortTable(colIdx, type) {
+  const tbody = document.getElementById('tbodyLicitaciones');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  currentSort.asc = currentSort.col === colIdx ? !currentSort.asc : true;
+  currentSort.col = colIdx;
+  
+  rows.sort((a, b) => {
+    let valA = a.cells[colIdx].innerText.replace(/[\$,]/g, '').trim();
+    let valB = b.cells[colIdx].innerText.replace(/[\$,]/g, '').trim();
+    if (type === 'num') {
+      valA = parseFloat(valA) || 0;
+      valB = parseFloat(valB) || 0;
+      return currentSort.asc ? valA - valB : valB - valA;
+    }
+    return currentSort.asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+  });
+  
+  tbody.innerHTML = '';
+  rows.forEach(r => tbody.appendChild(r));
+  setTimeout(addCountdowns, 50);
+}
+
+      // Table Logic
     window.LICITACIONES = [
       { id:'LIC-2026-001', titulo:'Pavimentación Av. San Martín 2300-2800', tipo:'Obra Pública', monto:85000000, secretaria:'Obras Públicas', estado:'Adjudicada', empresa:'Constructora Del Valle SA', apertura:'2026-03-15', vencimiento:'2026-09-30' },
       { id:'LIC-2026-002', titulo:'Servicio de Recolección de Residuos Zona Norte', tipo:'Servicio', monto:42000000, secretaria:'Medio Ambiente', estado:'Vigente', empresa:'-', apertura:'2026-07-20', vencimiento:'2026-08-15' },
@@ -890,43 +919,35 @@
 
 <script>
 // Add countdown to licitaciones table
+function colorBadgeDias(dias) {
+  if (dias > 30) return { bg: 'rgba(16,185,129,0.1)', color: '#10b981' };
+  if (dias > 7) return { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' };
+  if (dias > 0) return { bg: 'rgba(239,68,68,0.1)', color: '#ef4444' };
+  return { bg: 'rgba(100,116,139,0.1)', color: '#64748b' };
+}
+function diasHasta(dateStr) {
+  const d = new Date(dateStr);
+  const diff = Math.ceil((d - Date.now()) / (1000 * 60 * 60 * 24));
+  return diff;
+}
 function addCountdowns() {
     document.querySelectorAll('[data-vencimiento]').forEach(function(el) {
-        if(el.querySelector('span')) return; // already added
-        const venc = new Date(el.dataset.vencimiento);
-        const ahora = new Date();
-        const diff = Math.ceil((venc - ahora) / (1000 * 60 * 60 * 24));
+        if(el.querySelector('span.badge-dias')) return; 
+        const dias = diasHasta(el.dataset.vencimiento);
+        const style = colorBadgeDias(dias);
         const badge = document.createElement('span');
-        badge.style.cssText = 'font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;margin-left:6px';
-        if (diff < 0) {
-            badge.textContent = 'VENCIDA';
-            badge.style.background = 'rgba(239,68,68,0.12)';
-            badge.style.color = '#ef4444';
-        } else if (diff <= 3) {
-            badge.textContent = 'Faltan ' + diff + 'd ⚠️';
-            badge.style.background = 'rgba(245,158,11,0.12)';
-            badge.style.color = '#f59e0b';
-        } else {
-            badge.textContent = 'Faltan ' + diff + 'd';
-            badge.style.background = 'rgba(16,185,129,0.12)';
-            badge.style.color = '#10b981';
-        }
+        badge.className = 'badge-dias';
+        badge.style.cssText = `font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;margin-left:6px;background:${style.bg};color:${style.color}`;
+        badge.textContent = dias < 0 ? 'VENCIDA' : 'Faltan ' + dias + 'd';
         el.appendChild(badge);
     });
-}
-document.addEventListener('DOMContentLoaded', addCountdowns);
-// Since table is dynamically rendered, we must hook it after render
-const oldRender = window.renderLicitaciones;
-if(oldRender) {
-    window.renderLicitaciones = function() {
-        oldRender();
-        setTimeout(addCountdowns, 50);
-    };
 }
 </script>
 
   <script src='js/notifications.js'></script>
   <script src='js/live-clock.js'></script>
+  <script src='js/chat-widget.js'></script>
+  <script src='js/theme-switcher.js'></script>
 </body>
 </html>
 

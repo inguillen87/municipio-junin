@@ -1,14 +1,16 @@
 // ============================================================
-// sw.js — Service Worker PWA
-// Municipalidad de Junín — GovTech v2.0
-// Estrategia: Cache First para assets, Network First para API
+// sw.js — Service Worker PWA v4
+// Municipalidad de Junín — MuniControl
+// Strategy: Cache-first for assets, Network-first for data
 // ============================================================
 
-const CACHE_NAME    = 'junin-municipal-v3';  // Subido a v3 para limpiar cache roto
-const CACHE_TIMEOUT = 3000; // 3s timeout para network
+const CACHE_VERSION = 'v4';
+const CACHE_NAME    = `junin-municipal-${CACHE_VERSION}`;
+const API_CACHE     = `junin-api-${CACHE_VERSION}`;
 
-// Recursos a pre-cachear (shell de la app)
+// App shell — always cached
 const PRECACHE_URLS = [
+  '/',
   '/login.html',
   '/index.html',
   '/ia.html',
@@ -17,136 +19,120 @@ const PRECACHE_URLS = [
   '/mapa.html',
   '/control.html',
   '/rrhh.html',
+  '/presupuesto.html',
+  '/analytics.html',
+  '/exportar.html',
+  '/whatsapp.html',
+  '/hacienda.html',
+  '/cuentas-claras.html',
+  '/landing.html',
   '/css/dashboard.css',
   '/css/shared.css',
   '/js/nav.js',
-  '/js/data.js',
   '/js/toast.js',
-  '/js/ia.js',
+  '/js/db.js',
+  '/js/permissions.js',
+  '/js/charts-premium.js',
+  '/js/ux-improvements.js',
+  '/js/bottom-nav.js',
+  '/js/hf-client.js',
   '/manifest.json',
+  '/favicon.ico',
 ];
 
-// ── INSTALL: Pre-cachear el shell ────────────────────────────
+// CDN resources to cache
+const CDN_CACHE = [
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=Outfit:wght@700;800;900&display=swap',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+];
+
+// ── INSTALL ────────────────────────────────────────────────
 self.addEventListener('install', event => {
+  console.log('[SW v4] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(PRECACHE_URLS.map(url => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
-      .catch(err => console.warn('[SW] Pre-cache parcial:', err.message))
+      .catch(err => console.warn('[SW v4] Pre-cache failed for some URLs:', err))
   );
 });
 
-// ── ACTIVATE: Limpiar caches viejos ─────────────────────────
+// ── ACTIVATE ──────────────────────────────────────────────
 self.addEventListener('activate', event => {
+  console.log('[SW v4] Activating...');
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    Promise.all([
+      // Delete old caches
+      caches.keys().then(keys =>
+        Promise.all(keys
+          .filter(k => k !== CACHE_NAME && k !== API_CACHE)
+          .map(k => { console.log('[SW v4] Deleting old cache:', k); return caches.delete(k); })
+        )
+      ),
+      self.clients.claim()
+    ])
   );
 });
 
-// ── FETCH: Estrategia inteligente ────────────────────────────
+// ── FETCH ─────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignorar requests que NO sean http/https (chrome-extension, etc.)
-  if (!request.url.startsWith('http')) return;
+  // Skip non-GET and non-http(s)
+  if (request.method !== 'GET') return;
+  if (!url.protocol.startsWith('http')) return;
 
-  // API → Network First (no cachear datos sensibles)
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
+  // Skip HuggingFace API calls (always fresh)
+  if (url.hostname.includes('huggingface.co')) return;
+
+  // Skip analytics and external APIs
+  if (url.hostname.includes('google-analytics') || url.hostname.includes('vercel.live')) return;
+
+  // Cache-first for same-origin assets (CSS, JS, fonts, images)
+  if (url.origin === self.location.origin || CDN_CACHE.some(cdn => request.url.startsWith(cdn.split('/').slice(0,3).join('/')))) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached;
+        return fetch(request).then(response => {
+          if (!response || response.status !== 200) return response;
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          return response;
+        }).catch(() => {
+          // Offline fallback for HTML
+          if (request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('/login.html');
+          }
+        });
+      })
+    );
     return;
   }
 
-  // CDN externas (Leaflet, Chart.js, Fonts) → Cache First
-  if (url.origin !== location.origin) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-
-  // Assets locales → Stale-While-Revalidate
-  event.respondWith(staleWhileRevalidate(request));
-});
-
-// ── ESTRATEGIAS ──────────────────────────────────────────────
-
-async function networkFirst(request) {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), CACHE_TIMEOUT);
-    const response = await fetch(request, { signal: controller.signal });
-    clearTimeout(timeout);
-    return response;
-  } catch {
-    const cached = await caches.match(request);
-    return cached || offlineFallback();
-  }
-}
-
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch {
-    return offlineFallback();
-  }
-}
-
-async function staleWhileRevalidate(request) {
-  const cached = await caches.match(request);
-  const fetchPromise = fetch(request).then(response => {
-    if (response.ok) {
-      caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
-    }
-    return response;
-  }).catch(() => null);
-  return cached || fetchPromise || offlineFallback();
-}
-
-function offlineFallback() {
-  return new Response(
-    `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Sin conexión</title>
-    <style>body{background:#060b18;color:#f0f4ff;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center}
-    .wrap{max-width:400px;padding:40px}.icon{font-size:64px;margin-bottom:20px}h1{font-size:24px;margin-bottom:10px}p{color:rgba(148,163,184,0.8);font-size:14px;line-height:1.6}
-    button{background:linear-gradient(135deg,#3b82f6,#6366f1);border:none;color:white;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:20px}
-    </style></head><body>
-    <div class="wrap"><div class="icon">📡</div>
-    <h1>Sin conexión</h1>
-    <p>El sistema requiere conexión para cargar datos actualizados.<br>Verificá tu conexión a internet y volvé a intentar.</p>
-    <button onclick="location.reload()">🔄 Reintentar</button></div></body></html>`,
-    { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  // Network-first for everything else
+  event.respondWith(
+    fetch(request)
+      .then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(API_CACHE).then(cache => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
-}
-
-// ── PUSH NOTIFICATIONS (preparado para futuras notificaciones) ──
-self.addEventListener('push', event => {
-  const data = event.data?.json() || {};
-  const title = data.title || '🏛️ Municipio de Junín';
-  const options = {
-    body:    data.body || 'Hay nuevas notificaciones en el sistema',
-    icon:    '/favicon.ico',
-    badge:   '/favicon.ico',
-    tag:     data.tag || 'junin-alert',
-    data:    data.url || '/',
-    actions: [
-      { action: 'open',    title: 'Ver en el sistema' },
-      { action: 'dismiss', title: 'Descartar' },
-    ],
-    vibrate: [200, 100, 200],
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  if (event.action !== 'dismiss') {
-    event.waitUntil(clients.openWindow(event.notification.data || '/'));
+// ── BACKGROUND SYNC (push notifications placeholder) ──────
+self.addEventListener('message', event => {
+  if (event.data === 'skipWaiting') self.skipWaiting();
+  if (event.data === 'clearCache') {
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+    event.ports[0]?.postMessage('Cache cleared');
   }
 });
+
+console.log('[SW v4] Registered — MuniControl PWA');

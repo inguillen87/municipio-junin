@@ -1,34 +1,58 @@
 {
-  "name": "Torre de Control Municipal — Junín",
-  "short_name": "Municipal Junín",
-  "description": "Sistema de gestión y control municipal para la Municipalidad de Junín, Mendoza.",
-  "start_url": "/login.html",
+  "name": "MuniControl — Gestión Municipal",
+  "short_name": "MuniControl",
+  "description": "Sistema de gestión municipal inteligente para Municipio de Junín, Buenos Aires",
+  "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
+  "theme_color": "#060b18",
   "background_color": "#060b18",
-  "theme_color": "#3b82f6",
-  "lang": "es",
-  "categories": ["government", "productivity", "finance"],
+  "lang": "es-AR",
+  "categories": ["government", "productivity", "utilities"],
   "icons": [
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230e1a30'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' font-size='280' font-family='Arial'%3E%F0%9F%8F%9B%EF%B8%8F%3C/text%3E%3C/svg%3E",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230e1a30'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' font-size='280' font-family='Arial'%3E%F0%9F%8F%9B%EF%B8%8F%3C/text%3E%3C/svg%3E",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "favicon.ico", "sizes": "48x48", "type": "image/x-icon" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "Dashboard", "url": "/index.html", "description": "Torre de Control Ejecutivo" },
-    { "name": "Asistente IA", "url": "/ia.html", "description": "Consultas inteligentes" },
-    { "name": "Reclamos", "url": "/vecinos.html", "description": "Atención vecinal" }
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Panel principal ejecutivo",
+      "url": "/index.html",
+      "icons": [{ "src": "favicon.ico", "sizes": "48x48" }]
+    },
+    {
+      "name": "Reclamos Vecinales",
+      "short_name": "Reclamos",
+      "description": "Gestionar reclamos de vecinos",
+      "url": "/vecinos.html",
+      "icons": [{ "src": "favicon.ico", "sizes": "48x48" }]
+    },
+    {
+      "name": "IA Municipal",
+      "short_name": "IA Chat",
+      "description": "Consultas con inteligencia artificial",
+      "url": "/ia.html",
+      "icons": [{ "src": "favicon.ico", "sizes": "48x48" }]
+    },
+    {
+      "name": "Mapa de Obras",
+      "short_name": "Mapa",
+      "description": "Obras y reclamos geolocalizados",
+      "url": "/mapa.html",
+      "icons": [{ "src": "favicon.ico", "sizes": "48x48" }]
+    }
   ],
-  "screenshots": [],
-  "prefer_related_applications": false
+  "screenshots": [
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Dashboard ejecutivo MuniControl"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": []
 }

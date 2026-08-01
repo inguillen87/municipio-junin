@@ -431,6 +431,12 @@
                 Cuidado, estas acciones son irreversibles y afectarán a la instancia local de la aplicación.
               </p>
               <button class="btn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444;" onclick="resetDB()">⚠️ Restablecer Base de Datos (Factory Reset)</button>
+              
+              <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <button onclick="if(window.MuniTour){MuniTour.reset();window.location='index.html';}" style="padding:10px 20px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#60a5fa;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">
+                  🎉 Ver tour de bienvenida
+                </button>
+              </div>
             </div>
           </div>
 
@@ -541,5 +547,6 @@
       }
     }
   </script>
+  <script src='js/onboarding.js'></script>
 </body>
 </html>

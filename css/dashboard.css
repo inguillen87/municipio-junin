@@ -2060,3 +2060,23 @@ a:focus-visible {
   .sidebar { left: 0 !important; }
   .main-content { margin-left: 260px !important; }
 }
+
+/* ==================================================
+   FINAL POLISH - Missing utilities
+   ================================================== */
+.page-content { padding: 24px; }
+.card:hover { border-color: rgba(255,255,255,0.1); }
+.content-wrapper { padding: 24px; }
+.kpi-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.trend-up { color: #10b981; }
+.trend-down { color: #ef4444; }
+tbody tr:hover td { background: rgba(255,255,255,0.02); }
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 800; }
+.badge-success { background: rgba(16,185,129,0.1); color: #10b981; }
+.badge-warning { background: rgba(245,158,11,0.1); color: #f59e0b; }
+.badge-danger { background: rgba(239,68,68,0.1); color: #ef4444; }
+.badge-info { background: rgba(59,130,246,0.1); color: #60a5fa; }
+@keyframes skeleton-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.5s infinite; border-radius: 8px; }
+@media print { .sidebar, .topbar, #munibot-fab { display: none !important; } .main-content { margin-left: 0 !important; } }
+

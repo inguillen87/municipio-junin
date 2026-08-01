@@ -272,23 +272,22 @@
 </script>
   <script src="js/nav.js"></script>
   <script src='js/db.js'></script>
-    new Chart(ctx4, {
-      type: 'line',
-      data: {
-        labels: MONTHS,
-        datasets: [
-          { label:'Nómina real', data:[1259,1253,1248,1251,1250,1248,1247,null,null,null,null,null], borderColor:'#10b981', backgroundColor:persGrad, fill:true, tension:0.4, borderWidth:2.5, pointRadius:3 },
-          { label:'Proyección IA', data:[null,null,null,null,null,null,1247,1244,1242,1240,1238,1235], borderColor:'rgba(16,185,129,0.5)', borderDash:[5,3], fill:false, tension:0.4, borderWidth:2, pointRadius:3, pointBackgroundColor:'#10b981' },
-        ]
-      },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{ y:{grid:{color:'rgba(255,255,255,0.04)'},min:1220}, x:{grid:{color:'rgba(255,255,255,0.04)'}} } }
+  <script src="js/charts-premium.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof buildSidebar === 'function') buildSidebar('analytics');
+      setTimeout(function() {
+        if (window.MuniCharts) {
+          if (document.getElementById('chartReclamosTipo')) MuniCharts.reclamosTipo('chartReclamosTipo');
+          if (document.getElementById('chartEjecucion')) MuniCharts.gastoMensual('chartEjecucion');
+          if (document.getElementById('chartAreas')) MuniCharts.presupuesto('chartAreas');
+        }
+      }, 300);
     });
-
+    
     function updateCharts() {
-      // En producción, re-fetch datos y actualizar charts
       console.log('Actualizando charts con nuevos filtros...');
     }
-
     // ── AI INSIGHTS ──────────────────────────────────────────
     const INSIGHTS = [
       { icon:'🚨', text:'La partida <strong>Personal y Sueldos</strong> se encuentra al <strong>103%</strong> del presupuesto asignado. Con el ritmo actual, superará el límite en agosto. Se recomienda revisar horas extras y contratos temporarios.', conf:'high', confLabel:'Confianza: 94%' },

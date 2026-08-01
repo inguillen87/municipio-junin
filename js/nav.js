@@ -202,6 +202,11 @@ const NAV_ITEMS = [
     access: ['SUPER_ADMIN'],
     hidden: ['TENANT_ADMIN','TENANT_USER','DEMO']
   },
+  {
+    id: 'configuracion', href: 'configuracion.html', icon: '⚙️', 
+    label: 'Configuración', 
+    access: ['SUPER_ADMIN','TENANT_ADMIN'] 
+  },
 ];
 
 // Evalúa si el usuario puede ver/acceder a un ítem

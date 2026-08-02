@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // api.js — Cliente API Frontend — Municipalidad de Junín
 // Detecta automáticamente si el backend está disponible.
 // Si no: usa datos mock del sistema.

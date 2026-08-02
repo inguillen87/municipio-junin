@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // toast.js — Sistema de notificaciones globales
 // Uso: toast('Guardado', 'Operacion exitosa', 'success')
 // Tipos: 'success' | 'error' | 'warning' | 'info'

@@ -1,4 +1,4 @@
-// live-clock.js — Premium live clock for topbar
+﻿// live-clock.js — Premium live clock for topbar
 (function() {
   function updateClock() {
     const now = new Date();

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ai-widget.js — Widget IA flotante para GovTech Platform
  * Soporta texto + voz. Se inyecta en TODAS las páginas via <script src="js/ai-widget.js">
  */

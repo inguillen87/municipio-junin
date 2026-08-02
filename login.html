@@ -1,546 +1,651 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
-  <meta name='theme-color' content='#060b18'>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acceso al Sistema Ã¢Â€Â” MuniControl</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <!-- Aplicar tema ANTES de renderizar (sin flash) -->
-  <script>try{var _t=localStorage.getItem('govtech_theme');if(_t)document.documentElement.setAttribute('datítheme',_t);}catch(e){}</script>
+  <meta name="theme-color" content="#060b18">
+  <title>Acceso al Sistema | MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg-left:  linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%);
-      --bg-right: #060b18;
-      --card-bg:  rgba(15,23,45,0.6);
-      --border:   rgba(255,255,255,0.08);
-      --text:     #f0f4ff;
-      --muted:    #94ób8;
-      --primary:  #3b82f6;
-      --role-super:      #f59e0b;
-      --role-intendente: #3b82f6;
-      --role-hacienda:   #10b981;
-      --role-it:         #8b5cf6;
-      --role-demo:       #06b6d4;
-    }
-    [datítheme="light"] {
-      --bg-right: #f0f4ff;
-      --card-bg:  rgba(255,255,255,0.9);
-      --border:   rgba(15,23,66,0.1);
-      --text:     #0f172a;
-      --muted:    #475569;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { height:100%; font-family:'Inter',sans-serif; overflow:hidden; }
-    body { display:flex; background:#060b18; color:#f0f4ff; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* Ã¢Â”Â€Ã¢Â”Â€ LEFT PANEL Ã¢Â”Â€Ã¢Â”Â€ */
+    body {
+      min-height: 100vh;
+      display: flex;
+      font-family: 'Inter', sans-serif;
+      background: #060b18;
+      color: #f0f4ff;
+      overflow: hidden;
+    }
+
+    /* LEFT PANEL — animated background */
     .left-panel {
-      width:58%; position:relative;
-      display:flex; flex-direction:column; justify-content:center;
-      padding:4rem; overflow:hidden;
+      flex: 1;
       background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 56px;
+      position: relative;
+      overflow: hidden;
     }
+
     .left-panel::before {
-      content:''; position:absolute; top:-50%; left:-50%;
-      width:200%; height:200%;
-      background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.15) 30%, transparent 70%);
-      animation: rotateBg 20s linear infinite;
-    }
-    @keyframes rotateBg { to { transform: rotate(360deg); } }
-    .brand { position:relative; z-index:1; }
-    .logo-row { display:flex; align-items:center; gap:16px; margin-bottom:12px; }
-    .logo-icon {
-      width:60px; height:60px; border-radius:16px;
-      background:linear-gradient(135deg,#3b82f6,#6366f1);
-      display:flex; align-items:center; justify-content:center;
-      font-size:28px; box-shadow:0 8px 32px rgba(59,130,246,0.3);
-    }
-    .logo-name { font-family:'Outfit',sans-serif; font-size:2.4rem; font-weight:900; }
-    .tagline { color:rgba(148,163,184,0.8); font-size:1rem; margin-bottom:2.5rem; }
-    .pills { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:3rem; }
-    .pill {
-      background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
-      border-radius:99px; padding:6px 16px; font-size:13px; font-weight:600;
-      backdrop-filter:blur(8px);
-    }
-    /* Ã¢Â”Â€Ã¢Â”Â€ FLOATING BUBBLES Ã¢Â”Â€Ã¢Â”Â€ */
-    .bubbles-area {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .bubble {
-      position: absolute;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 18px;
-      padding: 18px 22px;
-      backdrop-filter: blur(12px);
-      animation: floatBubble var(--dur,8s) ease-in-out infinite;
-      animation-delay: var(--delay,0s);
-      min-width: 180px;
-    }
-    .bubble-label {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1px; color: rgba(148,163,184,0.7); margin-bottom: 8px;
-    }
-    .bubble-value {
-      font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900;
-      line-height: 1;
-    }
-    .bubble-trend {
-      font-size: 11px; font-weight: 700; margin-top: 6px;
-      display: flex; align-items: center; gap: 4px;
-    }
-    .bubble-trend.up   { color: #10b981; }
-    .bubble-trend.down { color: #ef4444; }
-    .bubble-trend.info { color: #3b82f6; }
-
-    /* posiciones de cada burbuja */
-    .bubble-1 { top: 18%; left: 8%;  --dur: 7s;  --delay: 0s; }
-    .bubble-2 { top: 40%; right: 6%; --dur: 9s;  --delay: 1.5s; }
-    .bubble-3 { top: 65%; left: 15%; --dur: 8s;  --delay: 3s; }
-    .bubble-4 { top: 12%; right: 10%; --dur: 10s; --delay: 0.8s; }
-    .bubble-5 { bottom: 18%; right: 15%; --dur: 7.5s; --delay: 2s; }
-    .bubble-6 { top: 75%; right: 12%; --dur: 8.5s; --delay: 1.2s; }
-    .bubble-7 { top: 25%; left: 25%; --dur: 9.5s; --delay: 2.5s; }
-    .bubble-8 { top: 50%; right: 25%; --dur: 7.2s; --delay: 4s; }
-
-    @keyframes floatBubble {
-      0%,100% { transform: translateY(0px) rotate(-1deg); }
-      33%      { transform: translateY(-14px) rotate(1deg); }
-      66%      { transform: translateY(-6px) rotate(-0.5deg); }
-    }
-
-    /* accent bar on bubbles */
-    .bubble::before {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      border-radius: 18px 18px 0 0;
-      background: var(--bubble-accent, linear-gradient(90deg, #3b82f6, #6366f1));
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(59,130,246,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 80% 80%, rgba(139,92,246,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(16,185,129,0.08) 0%, transparent 60%);
+      pointer-events: none;
     }
-    .bubble-1::before { background: linear-gradient(90deg, #10b981, #3b82f6); }
-    .bubble-2::before { background: linear-gradient(90deg, #f59e0b, #ef4444); }
-    .bubble-3::before { background: linear-gradient(90deg, #8b5cf6, #6366f1); }
-    .bubble-4::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
-    .bubble-5::before { background: linear-gradient(90deg, #10b981, #06b6d4); }
-    .bubble-6::before { background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
-    .bubble-7::before { background: linear-gradient(90deg, #ef4444, #f59e0b); }
-    .bubble-8::before { background: linear-gradient(90deg, #10b981, #3b82f6); }
 
-    .stats-bar {
-      position:absolute; bottom:28px; left:4rem;
-      display:flex; gap:24px; z-index:1;
-      font-size:12px; color:rgba(148,163,184,0.5); font-weight:600;
+    .left-panel::after {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
+      top: -100px; right: -100px;
+      animation: float 8s ease-in-out infinite;
     }
-    .stats-bar span::before { content:'Ã¢Â€Â¢ '; color:rgba(59,130,246,0.5); }
 
-    /* Ã¢Â”Â€Ã¢Â”Â€ RIGHT PANEL Ã¢Â”Â€Ã¢Â”Â€ */
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-30px) scale(1.05); }
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 56px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-logo img {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      object-fit: cover;
+    }
+
+    .brand-logo .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #60a5fa, #a78bfa, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: rgba(148,163,184,0.8);
+      line-height: 1.7;
+      max-width: 400px;
+      margin-bottom: 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Feature pills */
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+    }
+
+    .feature-item:hover {
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .feature-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .feature-text { font-size: 13px; font-weight: 600; }
+    .feature-sub { font-size: 11px; color: rgba(148,163,184,0.6); margin-top: 1px; }
+
+    /* KPI FLOATING CARDS */
+    .kpi-cards {
+      position: absolute;
+      right: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .kpi-card {
+      background: rgba(13,21,38,0.85);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 14px 18px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      min-width: 160px;
+      animation: slideIn 0.6s ease forwards;
+    }
+
+    .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.2s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(148,163,184,0.6);
+      margin-bottom: 4px;
+    }
+
+    .kpi-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .kpi-trend {
+      font-size: 10px;
+      margin-top: 2px;
+      font-weight: 700;
+    }
+
+    /* RIGHT PANEL */
     .right-panel {
-      width:42%; background:var(--bg-right,#060b18);
-      display:flex; align-items:center; justify-content:center;
-      border-left:1px solid var(--border,rgba(255,255,255,0.06));
-      overflow-y:auto; max-height:100vh;
-      transition:background 0.3s;
+      width: 480px;
+      flex-shrink: 0;
+      background: #060b18;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px 48px;
+      border-left: 1px solid rgba(255,255,255,0.06);
+      overflow-y: auto;
     }
-    .login-box { width:100%; max-width:390px; padding:1.5rem 2rem; }
 
-    .welcome-title {
-      font-family:'Outfit',sans-serif; font-size:1.7rem; font-weight:800;
-      color:var(--text,#f0f4ff); margin-bottom:4px;
+    .login-header {
+      margin-bottom: 32px;
     }
-    .welcome-sub { color:var(--muted,#94ób8); font-size:0.88rem; margin-bottom:1.5rem; }
 
-    /* Form */
-    .form-group { position:relative; margin-bottom:1rem; }
+    .login-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .login-header p {
+      font-size: 14px;
+      color: rgba(148,163,184,0.7);
+    }
+
+    /* FORM */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(148,163,184,0.8);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     .form-input {
-      width:100%; padding:0.9rem 1rem 0.9rem 2.8rem;
-      background:rgba(255,255,255,0.04); border:1px solid var(--border,rgba(255,255,255,0.1));
-      border-radius:12px; color:var(--text,#f0f4ff); font-size:0.95rem;
-      outline:none; transition:all 0.2s; font-family:'Inter',sans-serif;
+      width: 100%;
+      padding: 13px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: #f0f4ff;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: all 0.2s;
     }
-    [datítheme="light"] .form-input { background:rgba(15,23,66,0.04); color:#0f172a; }
-    .form-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.12); }
-    .form-icon { position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:#64748b; font-size:15px; }
-    .toggle-pw { position:absolute; right:0.9rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:16px; color:#64748b; }
 
-    .floating-label {
-      position:absolute; left:2.8rem; top:50%; transform:translateY(-50%);
-      color:#64748b; font-size:0.9rem; pointer-events:none; transition:all 0.2s;
+    .form-input:focus {
+      border-color: rgba(59,130,246,0.5);
+      background: rgba(59,130,246,0.05);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
     }
-    .form-input:focus ~ .floating-label,
-    .form-input:not(:placeholder-shown) ~ .floating-label {
-      top:-0.5rem; left:0.8rem; font-size:0.72rem;
-      background:var(--bg-right,#060b18); padding:0 6px; color:#3b82f6; border-radius:4px;
+
+    .form-input::placeholder { color: rgba(148,163,184,0.35); }
+
+    .input-wrapper {
+      position: relative;
     }
-    [datítheme="light"] .form-input:focus ~ .floating-label,
-    [datítheme="light"] .form-input:not(:placeholder-shown) ~ .floating-label {
-      background:#f0f4ff;
+
+    .toggle-pass {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: rgba(148,163,184,0.5);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
     }
+
+    .toggle-pass:hover { color: rgba(148,163,184,0.9); }
+
+    .forgot-link {
+      text-align: right;
+      margin-top: 6px;
+    }
+
+    .forgot-link a {
+      font-size: 12px;
+      color: rgba(96,165,250,0.8);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .forgot-link a:hover { color: #60a5fa; }
 
     .btn-login {
-      width:100%; padding:0.88rem; margin-top:0.5rem;
-      background:linear-gradient(135deg,#3b82f6,#6366f1);
-      color:#fff; border:none; border-radius:12px;
-      font-size:0.95rem; font-weight:700; font-family:'Outfit',sans-serif;
-      cursor:pointer; transition:all 0.2s;
-      box-shadow:0 8px 20px rgba(59,130,246,0.25);
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 15px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s;
+      margin-top: 6px;
+      letter-spacing: 0.3px;
     }
-    .btn-login:hover { transform:translateY(-1px); box-shadow:0 12px 28px rgba(59,130,246,0.35); }
-    .btn-login:active { transform:translateY(0); }
 
-    #loginError {
-      display:none; margin-top:10px; padding:10px 14px;
-      background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25);
-      border-radius:10px; color:#f87171; font-size:0.83rem; text-align:center;
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59,130,246,0.4);
     }
 
-    /* Ã¢Â”Â€Ã¢Â”Â€ DIVIDER Ã¢Â”Â€Ã¢Â”Â€ */
+    .btn-login:active { transform: translateY(0); }
+
+    .btn-login.loading {
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    /* ERROR */
+    .error-msg {
+      display: none;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #f87171;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
     .divider {
-      display:flex; align-items:center; gap:12px;
-      margin:1rem 0 0.7rem; color:#475569; font-size:0.78rem; font-weight:600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0 20px;
     }
+
     .divider::before, .divider::after {
-      content:''; flex:1; border-bottom:1px solid rgba(255,255,255,0.07);
-    }
-    [datítheme="light"] .divider::before,
-    [datítheme="light"] .divider::after { border-color:rgba(15,23,66,0.1); }
-
-    /* Ã¢Â”Â€Ã¢Â”Â€ ROLE CARDS Ã¢Â”Â€Ã¢Â”Â€ */
-    .role-cards { display:flex; flex-direction:column; gap:6px; }
-    .role-card {
-      display:grid; grid-template-columns:36px 1fr auto;
-      align-items:center; gap:10px;
-      padding:8px 12px; border-radius:10px;
-      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
-      cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden;
-    }
-    [datítheme="light"] .role-card { background:rgba(15,23,66,0.03); border-color:rgba(15,23,66,0.08); }
-    .role-card:hover { transform:translateY(-1px); background:rgba(255,255,255,0.06); }
-    [datítheme="light"] .role-card:hover { background:rgba(59,130,246,0.04); }
-    .role-card:hover .role-action { opacity:1; transform:translateX(0); }
-
-    .role-icon {
-      width:36px; height:36px; border-radius:8px;
-      background:rgba(255,255,255,0.08); display:flex; align-items:center;
-      justify-content:center; font-size:16px; flex-shrink:0;
-    }
-    .role-name { font-size:0.82rem; font-weight:700; color:var(--text,#f0f4ff); }
-    .role-creds { font-size:0.7rem; color:var(--muted,#94ób8); font-family:monospace; }
-    .role-badge {
-      font-size:0.62rem; font-weight:800; padding:3px 8px;
-      border-radius:99px; text-transform:uppercase; letter-spacing:0.5px;
-      white-space:nowrap;
-    }
-    .role-card[datírole="super"]      .role-badge { background:rgba(245,158,11,0.15);  color:#f59e0b; }
-    .role-card[datírole="intendente"] .role-badge { background:rgba(59,130,246,0.15);  color:#3b82f6; }
-    .role-card[datírole="hacienda"]   .role-badge { background:rgba(16,185,129,0.15);  color:#10b981; }
-    .role-card[datírole="it"]         .role-badge { background:rgba(139,92,246,0.15);  color:#8b5cf6; }
-    .role-card[datírole="demo"]       .role-badge { background:rgba(6,182,212,0.15);   color:#06b6d4; }
-    .role-action {
-      position:absolute; right:12px; bottom:5px;
-      font-size:0.68rem; font-weight:700; color:#3b82f6;
-      opacity:0; transform:translateX(4px); transition:0.2s;
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.07);
     }
 
-    /* Ã¢Â”Â€Ã¢Â”Â€ SECURITY BADGES Ã¢Â”Â€Ã¢Â”Â€ */
-    .sec-badges { display:flex; justify-content:center; gap:16px; margin-top:1rem; }
-    .sec-badge { font-size:0.72rem; color:#475569; display:flex; align-items:center; gap:5px; }
+    .divider span {
+      font-size: 11px;
+      color: rgba(148,163,184,0.5);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
 
-    /* Ã¢Â”Â€Ã¢Â”Â€ LOADER OVERLAY Ã¢Â”Â€Ã¢Â”Â€ */
-    .loader-overlay {
-      position:fixed; inset:0; z-index:999;
-      background:rgba(6,11,24,0.92); backdrop-filter:blur(8px);
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      opacity:0; pointer-events:none; transition:opacity 0.3s;
+    /* DEMO USERS */
+    .demo-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(148,163,184,0.5);
+      margin-bottom: 10px;
     }
-    .loader-overlay.active { opacity:1; pointer-events:all; }
-    .loader-spinner {
-      width:48px; height:48px; border-radius:50%;
-      border:3px solid rgba(59,130,246,0.2); border-top-color:#3b82f6;
-      animation:spin 0.8s linear infinite;
-    }
-    .loader-text { margin-top:14px; font-family:'Outfit',sans-serif; font-size:1rem; color:rgba(148,163,184,0.7); }
-    @keyframes spin { to { transform:rotate(360deg); } }
 
-    /* Ã¢Â”Â€Ã¢Â”Â€ RESPONSIVE Ã¢Â”Â€Ã¢Â”Â€ */
-    @media (max-width:768px) {
-      .left-panel { display:none; }
-      .right-panel { width:100%; }
-      .login-split { flex-direction: column !important; }
-      .login-left  { display: none !important; }
-      .login-right { width: 100% !important; padding: 20px !important; min-height: 100vh; }
-      .login-box   { max-width: 100% !important; padding: 24px !important; }
-      .roles-grid  { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
-      .role-card   { padding: 14px 10px !important; font-size: 12px !important; }
-      .role-emoji  { font-size: 28px !important; }
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
-    @media (max-width: 380px) {
-      .roles-grid  { grid-template-columns: 1fr !important; }
+
+    .demo-card {
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+      color: #f0f4ff;
+    }
+
+    .demo-card:hover {
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.14);
+      transform: translateY(-1px);
+    }
+
+    .demo-card-role {
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+
+    .demo-card-email {
+      font-size: 10px;
+      color: rgba(148,163,184,0.55);
+      font-weight: 500;
+    }
+
+    /* SECURITY BADGES */
+    .security-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .sec-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(148,163,184,0.6);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      body { overflow: auto; flex-direction: column; }
+      .left-panel { display: none; }
+      .right-panel { width: 100%; padding: 40px 24px; min-height: 100vh; }
+      .kpi-cards { display: none; }
     }
   </style>
-  <link rel='preconnect' href='https://fonts.googleapis.com'>
-  <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
 </head>
 <body>
 
-  <div class="loader-overlay" id="overlay">
-    <div class="loader-spinner"></div>
-    <div class="loader-text">Verificando credenciales...</div>
-  </div>
-
   <!-- LEFT PANEL -->
   <div class="left-panel">
-    <div class="brand">
-      <div class="logo-row">
-        <div class="logo-icon">Ã°ÂŸÂÂ›Ã¯Â¸Â</div>
-        <div class="logo-name">GovTech</div>
+    <div class="brand-logo">
+      <img src="img/municontrol-icon.jpg" alt="MuniControl" onerror="this.style.display='none'">
+      <span class="brand-name">MuniControl</span>
+    </div>
+
+    <h1 class="hero-title">
+      Gestion municipal<br>
+      <span>de clase mundial</span>
+    </h1>
+
+    <p class="hero-sub">
+      Sistema integral para municipios modernos. Presupuesto, RRHH, obras, reclamos y transparencia en una sola plataforma.
+    </p>
+
+    <div class="features">
+      <div class="feature-item">
+        <div class="feature-icon" style="background:rgba(59,130,246,0.15)">&#128200;</div>
+        <div>
+          <div class="feature-text">Analytics en tiempo real</div>
+          <div class="feature-sub">Metricas, KPIs y graficos ejecutivos</div>
+        </div>
       </div>
-      <div class="tagline">Sistema de GestiÃƒÂ³n Municipal de Clase Mundial</div>
-      <div class="pills">
-        <div class="pill">Ã°ÂŸÂ¤Â– IA Integrada</div>
-        <div class="pill">Ã°ÂŸÂ’Â¬ WhatsApp Bot</div>
-        <div class="pill">Ã°ÂŸÂÂ¢ Multi-municipio</div>
-        <div class="pill">Ã°ÂŸÂŒÂ 3 Idiomas</div>
+      <div class="feature-item">
+        <div class="feature-icon" style="background:rgba(16,185,129,0.15)">&#129504;</div>
+        <div>
+          <div class="feature-text">Asistente IA Municipal</div>
+          <div class="feature-sub">Consultas, resumenes y predicciones</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon" style="background:rgba(139,92,246,0.15)">&#128274;</div>
+        <div>
+          <div class="feature-text">Roles y permisos granulares</div>
+          <div class="feature-sub">Control total sobre quién ve qué</div>
+        </div>
       </div>
     </div>
 
-    <!-- Burbujas flotantes animadas -->
-    <div class="bubbles-area">
-      <div class="bubble bubble-1">
-        <div class="bubble-label">Ã°ÂŸÂ’Â° Gasto Mensual Gestionado</div>
-        <div class="bubble-value">$45.2M</div>
-        <div class="bubble-trend up">Ã¢Â–Â² 4.3% vs mes anterior</div>
+    <!-- Floating KPI cards -->
+    <div class="kpi-cards">
+      <div class="kpi-card">
+        <div class="kpi-label">Empleados activos</div>
+        <div class="kpi-value" style="color:#60a5fa">1,204</div>
+        <div class="kpi-trend" style="color:#10b981">+12 este mes</div>
       </div>
-      <div class="bubble bubble-2">
-        <div class="bubble-label">Ã°ÂŸÂ‘Â¥ Empleados Activos</div>
-        <div class="bubble-value">1,204</div>
-        <div class="bubble-trend info">12 incorporaciones este mes</div>
+      <div class="kpi-card">
+        <div class="kpi-label">Reclamos resueltos</div>
+        <div class="kpi-value" style="color:#34d399">94%</div>
+        <div class="kpi-trend" style="color:#10b981">SLA cumplido</div>
       </div>
-      <div class="bubble bubble-3">
-        <div class="bubble-label">Ã°ÂŸÂ¤Â– Ahorro con IA</div>
-        <div class="bubble-value">+15%</div>
-        <div class="bubble-trend up">$6.8M ahorrados este aÃƒÂ±o</div>
+      <div class="kpi-card">
+        <div class="kpi-label">Presupuesto ejecutado</div>
+        <div class="kpi-value" style="color:#a78bfa">67%</div>
+        <div class="kpi-trend" style="color:#f59e0b">Normal</div>
       </div>
-      <div class="bubble bubble-4">
-        <div class="bubble-label">Ã°ÂŸÂ“Â‹ Reclamos Resueltos</div>
-        <div class="bubble-value">318</div>
-        <div class="bubble-trend up">Ã¢Â–Â² 23 sin resolver</div>
-      </div>
-      <div class="bubble bubble-5">
-        <div class="bubble-label">Ã°ÂŸÂ“ÂŠ Presupuesto Ejecutado</div>
-        <div class="bubble-value">72%</div>
-        <div class="bubble-trend info">6 meses del aÃƒÂ±o</div>
-      </div>
-      <div class="bubble bubble-6">
-        <div class="bubble-label">Ã°ÂŸÂ“Â„ Expedientes Digitales</div>
-        <div class="bubble-value">1,502</div>
-        <div class="bubble-trend info">100% despapelizado</div>
-      </div>
-      <div class="bubble bubble-7">
-        <div class="bubble-label">Ã°ÂŸÂšÂ¦ TrÃƒÂ¡nsito Controlado</div>
-        <div class="bubble-value">42</div>
-        <div class="bubble-trend down">Ã¢Â–Â¼ 5% multas</div>
-      </div>
-      <div class="bubble bubble-8">
-        <div class="bubble-label">Ã°ÂŸÂŒÂ Visitas Portal</div>
-        <div class="bubble-value">15k</div>
-        <div class="bubble-trend up">Ã¢Â–Â² 12% vs ayer</div>
-      </div>
-    </div>
-
-    <div class="stats-bar">
-      <span>15+ MÃƒÂ³dulos</span>
-      <span>IA Integrada</span>
-      <span>100% Seguro</span>
     </div>
   </div>
 
   <!-- RIGHT PANEL -->
   <div class="right-panel">
-    <div class="login-box">
+    <div class="login-header">
+      <h2>Bienvenido al sistema</h2>
+      <p>Ingresa tus credenciales para acceder</p>
+    </div>
 
-      <h2 class="welcome-title">Bienvenido al sistema</h2>
-      <p class="welcome-sub">IngresÃƒÂ¡ tus credenciales para acceder</p>
+    <div class="error-msg" id="errorMsg">Credenciales incorrectas. Verificá el email y la contraseña.</div>
 
-      <form id="loginForm">
-        <div class="form-group">
-          <span class="form-icon">Ã°ÂŸÂ“Â§</span>
-          <input type="email" id="emailInput" class="form-input" placeholder=" " autocomplete="email">
-          <label for="emailInput" class="floating-label">Correo institucional</label>
-        </div>
-        <div class="form-group">
-          <span class="form-icon">Ã°ÂŸÂ”Â‘</span>
-          <input type="password" id="password" class="form-input" placeholder=" " autocomplete="current-password">
-          <label for="passwordInput" class="floating-label">ContraseÃƒÂ±a</label>
-          <button type="button" id="pwdToggleIcon" class="toggle-pw">&#128065;&#65039;</button>
-        </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;margin-top:-6px;">
-          <a href="#" onclick="alert('ContactÃƒÂ¡ al administrador del sistema');return false;" style="font-size:12px;color:#3b82f6;text-decoration:none;font-weight:600;">Ã‚Â¿OlvidÃƒÂ© mi contraseÃƒÂ±a?</a>
-        </div>
-        <button type="submit" class="btn-login" id="btnLogin">Ã°ÂŸÂ”Â Ingresar al sistema</button>
-        <div id="loginError" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:12px;border-radius:8px;font-size:13px;margin-top:16px;text-align:center;font-weight:600;"></div>
-      </form>
-
-      <div class="divider">Acceso rÃƒÂ¡pido por rol</div>
-
-      <div class="role-cards" id="demoCards"></div>
-
-      <div class="sec-badges">
-        <div class="sec-badge">Ã°ÂŸÂ”Â’ AES-256</div>
-        <div class="sec-badge">Ã°ÂŸÂ”Â‘ JWT</div>
-        <div class="sec-badge">Ã°ÂŸÂ›Â¡Ã¯Â¸Â Datos soberanos</div>
+    <form id="loginForm" onsubmit="doLogin(event)" autocomplete="on">
+      <div class="form-group">
+        <label class="form-label" for="emailInput">Correo institucional</label>
+        <input
+          class="form-input"
+          id="emailInput"
+          type="email"
+          placeholder="usuario@junin.gob.ar"
+          autocomplete="username"
+          required
+        >
       </div>
 
+      <div class="form-group">
+        <label class="form-label" for="passInput">Contrasena</label>
+        <div class="input-wrapper">
+          <input
+            class="form-input"
+            id="passInput"
+            type="password"
+            placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;"
+            autocomplete="current-password"
+            required
+            style="padding-right: 44px"
+          >
+          <button type="button" class="toggle-pass" onclick="togglePass()" id="togglePassBtn">&#128065;</button>
+        </div>
+        <div class="forgot-link"><a href="#" onclick="return false">Olvide mi contrasena</a></div>
+      </div>
+
+      <button type="submit" class="btn-login" id="btnLogin">
+        Ingresar al sistema
+      </button>
+    </form>
+
+    <div class="divider"><span>Acceso rapido por rol</span></div>
+
+    <div class="demo-title">Usuarios de demostración</div>
+    <div class="demo-grid">
+      <button class="demo-card" onclick="fillUser('superadmin@municontrol.com','SuperAdmin2026!')">
+        <div class="demo-card-role" style="color:#f59e0b">Super Admin</div>
+        <div class="demo-card-email">superadmin@municontrol.com</div>
+      </button>
+      <button class="demo-card" onclick="fillUser('intendente@junin.gob.ar','Junin2026!')">
+        <div class="demo-card-role" style="color:#3b82f6">Intendente</div>
+        <div class="demo-card-email">intendente@junin.gob.ar</div>
+      </button>
+      <button class="demo-card" onclick="fillUser('hacienda@junin.gob.ar','Hacienda2026!')">
+        <div class="demo-card-role" style="color:#10b981">Hacienda</div>
+        <div class="demo-card-email">hacienda@junin.gob.ar</div>
+      </button>
+      <button class="demo-card" onclick="fillUser('rrhh@junin.gob.ar','RRHH2026!')">
+        <div class="demo-card-role" style="color:#8b5cf6">RRHH</div>
+        <div class="demo-card-email">rrhh@junin.gob.ar</div>
+      </button>
+      <button class="demo-card" onclick="fillUser('analista@junin.gob.ar','Analytics2026!')">
+        <div class="demo-card-role" style="color:#06b6d4">Analista</div>
+        <div class="demo-card-email">analista@junin.gob.ar</div>
+      </button>
+      <button class="demo-card" onclick="fillUser('demo@demo.com','demo123')">
+        <div class="demo-card-role" style="color:#64748b">Demo</div>
+        <div class="demo-card-email">demo@demo.com</div>
+      </button>
+    </div>
+
+    <div class="security-row">
+      <span class="sec-badge">AES-256</span>
+      <span class="sec-badge">JWT</span>
+      <span class="sec-badge">Datos soberanos</span>
+      <span class="sec-badge">HTTPS</span>
     </div>
   </div>
 
   <script>
-  // Ã¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•Â
-  //  LOGIN Ã¢Â€Â” Script ÃƒÂºnico y limpio
-  // Ã¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•Â
+    const USERS = [
+      { email:'superadmin@municontrol.com', pass:'SuperAdmin2026!', name:'Super Admin', role:'SUPER_ADMIN', secretaria:'Sistema' },
+      { email:'intendente@junin.gob.ar',    pass:'Junin2026!',      name:'Marcelo Gutierrez', role:'INTENDENTE', secretaria:'Intendencia' },
+      { email:'hacienda@junin.gob.ar',      pass:'Hacienda2026!',   name:'Maria Garcia',  role:'TENANT_ADMIN', secretaria:'Hacienda' },
+      { email:'rrhh@junin.gob.ar',          pass:'RRHH2026!',       name:'Carlos Lopez',  role:'TENANT_USER',  secretaria:'RRHH' },
+      { email:'analista@junin.gob.ar',      pass:'Analytics2026!',  name:'Ana Martinez',  role:'TENANT_USER',  secretaria:'Analitica' },
+      { email:'demo@demo.com',              pass:'demo123',          name:'Usuario Demo',  role:'DEMO',         secretaria:'Demo' },
+    ];
 
-  // Usuarios del sistema (autenticaciÃƒÂ³n local)
-        var USERS = [
-  { email:'superadmin@municontrol.com', password:'SuperAdmin2026!', name:'Super Admin', role:'SUPER_ADMIN', roleLabel: 'Super Admin', icon: '⚡', color: '#f59e0b', idRole: 'super', secretaria:'Sistema' },
-  { email:'intendente@junin.gob.ar', password:'Junin2026!', name:'Marcelo Gutiérrez', role:'INTENDENTE', roleLabel: '👑 Intendente', icon: '🏛️', color: '#3b82f6', idRole: 'intendente', secretaria:'Intendencia' },
-  { email:'hacienda@junin.gob.ar', password:'Hacienda2026!', name:'María García', role:'TENANT_ADMIN', roleLabel: '🏦 Hacienda', icon: '💰', color: '#10b981', idRole: 'hacienda', secretaria:'Hacienda' },
-  { email:'rrhh@junin.gob.ar', password:'RRHH2026!', name:'Carlos López', role:'TENANT_USER', roleLabel: '👥 RRHH', icon: '👥', color: '#8b5cf6', idRole: 'rrhh', secretaria:'RRHH' },
-  { email:'analista@junin.gob.ar', password:'Analytics2026!', name:'Ana Martínez', role:'TENANT_USER', roleLabel: '📊 Analytics', icon: '📊', color: '#f43f5e', idRole: 'analytics', secretaria:'Analítica' },
-  { email:'demo@demo.com', password:'demo123', name:'Usuario Demo', role:'DEMO', roleLabel: '🔰 Demo', icon: '🌐', color: '#06b6d4', idRole: 'demo', secretaria:'Demo' }
-];
+    function fillUser(email, pass) {
+      document.getElementById('emailInput').value = email;
+      document.getElementById('passInput').value = pass;
+      document.getElementById('emailInput').dispatchEvent(new Event('input'));
+    }
 
-  // Ã¢Â”Â€Ã¢Â”Â€ FUNCIÃƒÂ“N DE LOGIN Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€
-  function doLogin(email, pw) {
-    var errEl   = document.getElementById('loginError');
-    var overlay = document.getElementById('overlay');
-
-    if (errEl) errEl.style.display = 'none';
-    if (overlay) overlay.classList.add('active');
-
-    setTimeout(function() {
-      var found = null;
-      for (var i = 0; i < USERS.length; i++) {
-        var u = USERS[i];
-        if (u.email.toLowerCase() === (email || '').toLowerCase().trim() &&
-            u.password === (pw || '').trim()) {
-          found = u;
-          break;
-        }
-      }
-
-            if (found) {
-        sessionStorage.setItem('mjunin_user', JSON.stringify({
-          name:      found.name,
-          email:     found.email,
-          role:      found.role,
-          secretaria: found.secretaria,
-          tenant:    'municipio-junin',
-          roleLabel: found.roleLabel,
-          loginAt:   new Date().toISOString()
-        }));
-        window.location.href = 'index.html';
+    function togglePass() {
+      var inp = document.getElementById('passInput');
+      var btn = document.getElementById('togglePassBtn');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.innerHTML = '&#128683;';
       } else {
-        if (overlay) overlay.classList.remove('active');
-        if (errEl) {
-          errEl.textContent = 'Ã¢ÂšÂ Ã¯Â¸Â Correo o contraseÃƒÂ±a incorrectos.';
-          errEl.style.display = 'block';
-        }
+        inp.type = 'password';
+        btn.innerHTML = '&#128065;';
       }
-    }, 600);
-  }
+    }
 
-  // Ã¢Â”Â€Ã¢Â”Â€ INICIALIZACIÃƒÂ“N AL CARGAR Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€
-  document.addEventListener('DOMContentLoaded', function() {
+    function doLogin(e) {
+      e.preventDefault();
+      var email = document.getElementById('emailInput').value.trim().toLowerCase();
+      var pass  = document.getElementById('passInput').value;
+      var errEl = document.getElementById('errorMsg');
+      var btn   = document.getElementById('btnLogin');
 
-    // Render role cards
-    var container = document.getElementById('demoCards');
-    if (container) {
-      USERS.forEach(function(u) {
-        var card = document.createElement('div');
-        card.className = 'role-card';
-        card.setAttribute('datírole', u.idRole);
-        card.innerHTML =
-          '<div class="role-icon" style="background:' + u.color + '22">' + u.icon + '</div>' +
-          '<div>' +
-            '<div class="role-name">' + u.name + '</div>' +
-            '<div class="role-creds">' + u.email + '</div>' +
-          '</div>' +
-          '<div class="role-badge">' + u.roleLabel + '</div>' +
-          '<div class="role-action">Entrar Ã¢Â†Â’</div>';
-        card.onclick = function() {
-          document.getElementById('emailInput').value = u.email;
-          document.getElementById('password').value = u.password;
-          doLogin(u.email, u.password);
+      errEl.style.display = 'none';
+      btn.textContent = 'Verificando...';
+      btn.classList.add('loading');
+
+      setTimeout(function() {
+        var user = USERS.find(function(u) {
+          return u.email.toLowerCase() === email && u.pass === pass;
+        });
+
+        if (!user) {
+          errEl.style.display = 'block';
+          btn.textContent = 'Ingresar al sistema';
+          btn.classList.remove('loading');
+          document.getElementById('passInput').value = '';
+          document.getElementById('passInput').focus();
+          return;
+        }
+
+        var session = {
+          name:      user.name,
+          email:     user.email,
+          role:      user.role,
+          secretaria:user.secretaria,
+          tenant:    'municipio-junin',
+          loginAt:   new Date().toISOString()
         };
-        container.appendChild(card);
-      });
+        sessionStorage.setItem('mjunin_user', JSON.stringify(session));
+
+        btn.textContent = 'Accediendo...';
+        setTimeout(function() {
+          window.location.href = 'index.html';
+        }, 400);
+      }, 600);
     }
-
-    // Form submit
-    var form = document.getElementById('loginForm');
-    if (form) {
-      form.onsubmit = function(e) {
-        e.preventDefault();
-        doLogin(
-          document.getElementById('emailInput').value,
-          document.getElementById('password').value
-        );
-      };
-    }
-
-    // Toggle contraseÃƒÂ±a
-    var pwInput = document.getElementById('password');
-    
-
-// Password toggle
-function togglePasswordVisibility() {
-  const pwd = document.getElementById('password');
-  const icon = document.getElementById('pwdToggleIcon');
-  if (!pwd) return;
-  if (pwd.type === 'password') {
-    pwd.type = 'text';
-    if (icon) icon.textContent = '\ud83d\ude48';
-  } else {
-    pwd.type = 'password';
-    if (icon) icon.textContent = '\ud83d\udc41\ufe0f';
-  }
-}
-
-function togglePasswordVisibility_old() {
-  const pwd = document.getElementById('password');
-  const icon = document.getElementById('pwdToggleIcon');
-  if (!pwd) return;
-  if (pwd.type === 'password') {
-    pwd.type = 'text';
-    if (icon) icon.textContent = '\ud83d\ude48'; // ðŸ™ˆ
-  } else {
-    pwd.type = 'password';
-    if (icon) icon.textContent = '\ud83d\udc41\ufe0f'; // ðŸ‘ï¸
-  }
-}
-
-    var toggleBtn = document.getElementById('pwdToggleIcon');
-    if (toggleBtn && pwInput) {
-      toggleBtn.onclick = togglePasswordVisibility;
-    /*
-        var isPass = pwInput.type === 'password';
-        pwInput.type = isPass ? 'text' : 'password';
-        toggleBtn.textContent = isPass ? 'Ã°ÂŸÂ™Âˆ' : 'Ã°ÂŸÂ‘ÂÃ¯Â¸Â';
-      };
-    }
-
-  });
   </script>
-
-  <script src='js/ux-improvements.js'></script>
 </body>
 </html>
-
-
-

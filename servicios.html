@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -8,8 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Estación de Servicios — Municipio de Junín</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junï¿½n" />
+  <title>Estaciï¿½n de Servicios ï¿½ Municipio de Junï¿½n</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -24,8 +24,8 @@
       <div class="topbar-left">
         <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
-          <h1>Estación de Servicios</h1>
-          <span class="breadcrumb">Municipio de Junín · Control de Combustible y Flota</span>
+          <h1>Estaciï¿½n de Servicios</h1>
+          <span class="breadcrumb">Municipio de Junï¿½n ï¿½ Control de Combustible y Flota</span>
         </div>
       </div>
       <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
@@ -59,7 +59,7 @@
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-label">Consumo Mensual</span><div class="kpi-icon red">??</div></div>
           <div class="kpi-value" data-target="8640">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">litros · agosto 2026</span></div>
+          <div class="kpi-footer"><span class="kpi-sub">litros ï¿½ agosto 2026</span></div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-label">Costo Combustible</span><div class="kpi-icon violet">??</div></div>
@@ -67,42 +67,42 @@
           <div class="kpi-footer"><span class="kpi-trend up">? +14% vs presup.</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Vehículos Activos</span><div class="kpi-icon green">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">Vehï¿½culos Activos</span><div class="kpi-icon green">??</div></div>
           <div class="kpi-value" data-target="43">0</div>
           <div class="kpi-footer"><span class="kpi-sub">en la flota municipal</span></div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-label">Cargas Hoy</span><div class="kpi-icon teal">??</div></div>
           <div class="kpi-value" data-target="12">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">registros del día</span></div>
+          <div class="kpi-footer"><span class="kpi-sub">registros del dï¿½a</span></div>
         </div>
       </section>
 
       <!-- ALERT STOCK BAJO -->
       <div class="alert-banner" id="alertStock">
         <span class="alert-icon">?</span>
-        <span>Stock de Nafta al <strong>48%</strong>. Se recomienda solicitar reposición antes de fin de semana.</span>
+        <span>Stock de Nafta al <strong>48%</strong>. Se recomienda solicitar reposiciï¿½n antes de fin de semana.</span>
         <button class="alert-close" onclick="this.parentElement.style.display='none'">?</button>
       </div>
 
       <!-- TABS -->
       <div class="tabs-bar">
         <button class="tab-btn active" data-tab="cargas">?? Registro de Cargas</button>
-        <button class="tab-btn" data-tab="consumo">?? Consumo por Vehículo</button>
-        <button class="tab-btn" data-tab="stock">??? Stock y Reposición</button>
+        <button class="tab-btn" data-tab="consumo">?? Consumo por Vehï¿½culo</button>
+        <button class="tab-btn" data-tab="stock">??? Stock y Reposiciï¿½n</button>
       </div>
 
       <!-- TAB: CARGAS -->
       <div class="tab-content active" id="tab-cargas">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">? Registro de Cargas — Agosto 2026</h2>
+            <h2 class="chart-title">? Registro de Cargas ï¿½ Agosto 2026</h2>
             <div class="panel-filters">
               <select class="select-filter" id="filtroVehiculo">
-                <option value="">Todos los vehículos</option>
-                <option>Ford F-100 · JUN-001</option>
-                <option>VW Amarok · JUN-002</option>
-                <option>Camión Volvo · JUN-010</option>
+                <option value="">Todos los vehï¿½culos</option>
+                <option>Ford F-100 ï¿½ JUN-001</option>
+                <option>VW Amarok ï¿½ JUN-002</option>
+                <option>Camiï¿½n Volvo ï¿½ JUN-010</option>
               </select>
               <select class="select-filter" id="filtroTipoC">
                 <option value="">Nafta y Gasoil</option>
@@ -115,7 +115,7 @@
             <thead>
               <tr>
                 <th>Fecha/Hora</th>
-                <th>Vehículo</th>
+                <th>Vehï¿½culo</th>
                 <th>Patente</th>
                 <th>Tipo</th>
                 <th>Litros</th>
@@ -134,11 +134,11 @@
       <div class="tab-content" id="tab-consumo">
         <div class="charts-row" style="grid-template-columns:1fr 1fr">
           <div class="chart-card">
-            <div class="chart-header"><h2 class="chart-title">Top 10 Consumidores</h2><span class="chart-sub">Litros · agosto 2026</span></div>
+            <div class="chart-header"><h2 class="chart-title">Top 10 Consumidores</h2><span class="chart-sub">Litros ï¿½ agosto 2026</span></div>
             <div class="chart-container"><canvas id="consumoBarChart"></canvas></div>
           </div>
           <div class="chart-card">
-            <div class="chart-header"><h2 class="chart-title">Consumo Diario</h2><span class="chart-sub">Litros totales por día</span></div>
+            <div class="chart-header"><h2 class="chart-title">Consumo Diario</h2><span class="chart-sub">Litros totales por dï¿½a</span></div>
             <div class="chart-container"><canvas id="consumoDiarioChart"></canvas></div>
           </div>
         </div>
@@ -152,7 +152,7 @@
             <div class="tanques-list" id="tanquesList"></div>
           </div>
           <div class="data-card">
-            <div class="chart-header"><h2 class="chart-title">?? Historial de Reposición</h2></div>
+            <div class="chart-header"><h2 class="chart-title">?? Historial de Reposiciï¿½n</h2></div>
             <div class="activity-feed" id="reposicionFeed"></div>
           </div>
         </div>
@@ -171,13 +171,13 @@
       <div class="modal-body">
         <div class="form-grid">
           <div class="form-group">
-            <label>Vehículo</label>
+            <label>Vehï¿½culo</label>
             <select id="cVehiculo">
-              <option>Ford F-100 · JUN-001</option>
-              <option>VW Amarok · JUN-002</option>
-              <option>Toyota Hilux · JUN-003</option>
-              <option>Camión Volvo · JUN-010</option>
-              <option>Camión Basura · JUN-015</option>
+              <option>Ford F-100 ï¿½ JUN-001</option>
+              <option>VW Amarok ï¿½ JUN-002</option>
+              <option>Toyota Hilux ï¿½ JUN-003</option>
+              <option>Camiï¿½n Volvo ï¿½ JUN-010</option>
+              <option>Camiï¿½n Basura ï¿½ JUN-015</option>
             </select>
           </div>
           <div class="form-group">
@@ -192,7 +192,7 @@
             <input type="number" id="cLitros" placeholder="45.5" step="0.5" />
           </div>
           <div class="form-group">
-            <label>Km actual del vehículo</label>
+            <label>Km actual del vehï¿½culo</label>
             <input type="number" id="cKm" placeholder="87420" />
           </div>
           <div class="form-group">
@@ -232,6 +232,7 @@
   <script src='js/theme-switcher.js'></script>
 </body>
 </html>
+
 
 
 

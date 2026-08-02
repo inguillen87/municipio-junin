@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -108,7 +108,7 @@ body::before {
 .kpi-card:nth-child(5) { border-top: 3px solid #06b6d4; }
 .kpi-card:nth-child(6) { border-top: 3px solid #ef4444; }
 </style>
-  <link rel='dns-prefetch' href='https://api-inference.huggingface.co'>
+  <link rel='dns-prefetch' href='https://api-inference.municontrol.ar'>
   <link rel='dns-prefetch' href='https://fonts.googleapis.com'>
   <link rel='preload' href='css/dashboard.css' as='style'>
   <link rel='preload' href='js/nav.js' as='script'>
@@ -403,8 +403,8 @@ body::before {
   <script src="js/toast.js"></script>
   <script src="js/db.js"></script>
   <script src="js/permissions.js"></script>
-  <script src="js/charts-premium.js"></script>
-  <script src="js/ux-improvements.js"></script>
+  
+  
   <script src="js/api.js"></script>
   <script src="js/pwa.js"></script>
   <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
@@ -453,7 +453,13 @@ body::before {
           if (wg) wg.innerHTML = `${greeting}, <span>${user.name || 'Usuario'}</span>`;
 
           const wr = document.getElementById('welcomeRole');
-          const roleMap = { SUPER_ADMIN:'?? Super Admin', TENANT_ADMIN:'??? Administrador', TENANT_USER:'?? Usuario', DEMO:'??? Demo' };
+          const roleMap = { 
+  SUPER_ADMIN: '&#x1F451; Super Admin', 
+  TENANT_ADMIN: '&#x1F3E6; Administrador', 
+  INTENDENTE: '&#x1F3DB;&#xFE0F; Intendente',
+  TENANT_USER: '&#x1F464; Usuario', 
+  DEMO: '&#x1F441;&#xFE0F; Demo' 
+};
           if (wr) wr.textContent = roleMap[user.role] || user.role || 'Usuario';
 
           const ll = document.getElementById('lastLoginTime');
@@ -474,11 +480,11 @@ body::before {
   </script>
 
   <div class="bottom-status-bar">
-    <span>?? Sistema online</span>
-    <span>??? DB Neon conectada</span>
-    <span>?? API activa</span>
-    <span>?? Última actualización: <span id="lastUpdateText">hace 2 min</span></span>
-  </div>
+  <span>&#x2705; Sistema activo</span>
+  <span>&#x1F4BE; Base de datos conectada</span>
+  <span>&#x1F916; IA Municipal activa</span>
+  <span>&#x1F504; Última actualización: <span id="lastUpdateText">hace 2 min</span></span>
+</div>
   <script src="js/charts-premium.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -567,3 +573,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <script src='js/onboarding.js'></script>
 </body>
 </html>
+
+
+
+
+
+

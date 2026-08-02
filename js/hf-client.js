@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // HF-CLIENT.JS — Hugging Face Inference API Client
 // MuniControl v2 — AI-powered municipal assistant
 // ============================================================
@@ -184,3 +184,4 @@ ${textoLegal} [/INST]`;
   console.log('[HFClient] Hugging Face API client ready.');
 
 })(window);
+

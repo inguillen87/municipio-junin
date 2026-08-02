@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -8,8 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Talleres Municipales — Municipio de Junín</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junï¿½n" />
+  <title>Talleres Municipales ï¿½ Municipio de Junï¿½n</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -25,7 +25,7 @@
         <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
           <h1>Talleres Municipales</h1>
-          <span class="breadcrumb">Municipio de Junín · Órdenes de Trabajo y Stock</span>
+          <span class="breadcrumb">Municipio de Junï¿½n ï¿½ ï¿½rdenes de Trabajo y Stock</span>
         </div>
       </div>
       <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
@@ -41,7 +41,7 @@
       <!-- KPIs -->
       <section class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Órdenes Activas</span><div class="kpi-icon blue">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">ï¿½rdenes Activas</span><div class="kpi-icon blue">??</div></div>
           <div class="kpi-value" data-target="24">0</div>
           <div class="kpi-footer"><span class="kpi-trend up">8 urgentes</span></div>
         </div>
@@ -51,12 +51,12 @@
           <div class="kpi-footer"><span class="kpi-trend down">? 3 vs julio</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Vehículos en Taller</span><div class="kpi-icon amber">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">Vehï¿½culos en Taller</span><div class="kpi-icon amber">??</div></div>
           <div class="kpi-value" data-target="7">0</div>
           <div class="kpi-footer"><span class="kpi-sub">De 43 en la flota</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Stock Crítico</span><div class="kpi-icon red">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">Stock Crï¿½tico</span><div class="kpi-icon red">??</div></div>
           <div class="kpi-value" data-target="5">0</div>
           <div class="kpi-footer"><span class="kpi-trend up">Insumos bajos</span></div>
         </div>
@@ -68,14 +68,14 @@
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-label">Tiempo Medio Rep.</span><div class="kpi-icon teal">??</div></div>
           <div class="kpi-value" data-target="4">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">días por orden</span></div>
+          <div class="kpi-footer"><span class="kpi-sub">dï¿½as por orden</span></div>
         </div>
       </section>
 
       <!-- TABS -->
       <div class="tabs-bar">
-        <button class="tab-btn active" data-tab="ordenes">?? Órdenes de Trabajo</button>
-        <button class="tab-btn" data-tab="vehiculos">?? Flota de Vehículos</button>
+        <button class="tab-btn active" data-tab="ordenes">?? ï¿½rdenes de Trabajo</button>
+        <button class="tab-btn" data-tab="vehiculos">?? Flota de Vehï¿½culos</button>
         <button class="tab-btn" data-tab="stock">?? Stock e Insumos</button>
       </div>
 
@@ -83,7 +83,7 @@
       <div class="tab-content active" id="tab-ordenes">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">?? Órdenes de Trabajo</h2>
+            <h2 class="chart-title">?? ï¿½rdenes de Trabajo</h2>
             <div class="panel-filters">
               <select class="select-filter" id="filtroOrdenEstado">
                 <option value="">Todos los estados</option>
@@ -105,9 +105,9 @@
             <thead>
               <tr>
                 <th>OT #</th>
-                <th>Descripción</th>
-                <th>Vehículo / Equipo</th>
-                <th>Mecánico</th>
+                <th>Descripciï¿½n</th>
+                <th>Vehï¿½culo / Equipo</th>
+                <th>Mecï¿½nico</th>
                 <th>Prioridad</th>
                 <th>Inicio</th>
                 <th>Estado</th>
@@ -135,11 +135,11 @@
           <table class="data-table" id="stockTable">
             <thead>
               <tr>
-                <th>Código</th>
+                <th>Cï¿½digo</th>
                 <th>Insumo</th>
-                <th>Categoría</th>
+                <th>Categorï¿½a</th>
                 <th>Stock Actual</th>
-                <th>Stock Mínimo</th>
+                <th>Stock Mï¿½nimo</th>
                 <th>Unidad</th>
                 <th>Costo Unit.</th>
                 <th>Estado</th>
@@ -163,27 +163,27 @@
       <div class="modal-body">
         <div class="form-grid">
           <div class="form-group" style="grid-column:1/-1">
-            <label>Descripción del trabajo</label>
-            <input type="text" id="otDesc" placeholder="Ej: Cambio de frenos + alineación" />
+            <label>Descripciï¿½n del trabajo</label>
+            <input type="text" id="otDesc" placeholder="Ej: Cambio de frenos + alineaciï¿½n" />
           </div>
           <div class="form-group">
-            <label>Vehículo / Equipo</label>
+            <label>Vehï¿½culo / Equipo</label>
             <select id="otVehiculo">
-              <option>Ford F-100 · JUN-001</option>
-              <option>VW Amarok · JUN-002</option>
-              <option>Toyota Hilux · JUN-003</option>
-              <option>Camión Volvo · JUN-010</option>
-              <option>Camión Basura · JUN-015</option>
-              <option>Moto Honda · JUN-022</option>
+              <option>Ford F-100 ï¿½ JUN-001</option>
+              <option>VW Amarok ï¿½ JUN-002</option>
+              <option>Toyota Hilux ï¿½ JUN-003</option>
+              <option>Camiï¿½n Volvo ï¿½ JUN-010</option>
+              <option>Camiï¿½n Basura ï¿½ JUN-015</option>
+              <option>Moto Honda ï¿½ JUN-022</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Mecánico Asignado</label>
+            <label>Mecï¿½nico Asignado</label>
             <select id="otMecanico">
-              <option>Roberto Díaz</option>
-              <option>Héctor Moreno</option>
-              <option>Luis Fernández</option>
-              <option>Carlos Suárez</option>
+              <option>Roberto Dï¿½az</option>
+              <option>Hï¿½ctor Moreno</option>
+              <option>Luis Fernï¿½ndez</option>
+              <option>Carlos Suï¿½rez</option>
             </select>
           </div>
           <div class="form-group">
@@ -230,6 +230,7 @@
   <script src='js/theme-switcher.js'></script>
 </body>
 </html>
+
 
 
 

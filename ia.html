@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -128,14 +128,14 @@
   <script src="js/nav.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/hf-client.js"></script>
+  <script src="js/ai-client.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       if (typeof buildSidebar === 'function') buildSidebar('ia');
       
       const btn = document.getElementById('btnToggleAI');
       if (btn && localStorage.getItem('ia_real_mode') === 'true') {
-        btn.textContent = '⚡ IA Real (HF)';
+        btn.textContent = '⚡ IA Avanzada';
         btn.style.background = 'rgba(139,92,246,0.2)';
         btn.style.color = '#c4b5fd';
       }
@@ -156,12 +156,12 @@
       localStorage.setItem('ia_real_mode', !current);
       const btn = document.getElementById('btnToggleAI');
       if (btn) {
-        btn.textContent = !current ? '⚡ IA Real (HF)' : '🤖 IA Demo';
+        btn.textContent = !current ? '⚡ IA Avanzada' : '🤖 IA Demo';
         btn.style.background = !current ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.1)';
         btn.style.color = !current ? '#c4b5fd' : '#a78bfa';
       }
       if (typeof showToast !== 'undefined') {
-        showToast(!current ? '⚡ IA Real activada — Hugging Face API' : '🤖 Modo Demo activado', 'info');
+        showToast(!current ? '⚡ IA Real activada — IA Municipal API' : '🤖 Modo Demo activado', 'info');
       }
     }
 
@@ -189,7 +189,7 @@
           const res = await window.HFClient.chat(text);
           reply = res.text || res.error || 'Ocurrió un error con la API.';
         } catch(e) {
-          reply = 'Error de conexión con Hugging Face.';
+          reply = 'Error de conexión con IA Municipal.';
         }
       } else {
         // Demo mode responses
@@ -200,7 +200,7 @@
         } else if (text.toLowerCase().includes('presupuesto')) {
           reply = '💰 **Presupuesto del mes:** Se ha ejecutado el 45% del presupuesto asignado para Obras Públicas. Los gastos en RRHH están al 98% de lo proyectado.';
         } else {
-          reply = 'Esta es una respuesta simulada (Modo Demo). Cambiá a "IA Real" para usar Hugging Face API.';
+          reply = 'Esta es una respuesta simulada (Modo Demo). Cambiá a "IA Real" para usar IA Municipal API.';
         }
       }
 
@@ -245,7 +245,7 @@
           const res = await window.HFClient.simplifica(input.value);
           simplified = res.text || res.error || 'No se pudo simplificar.';
         } catch(e) {
-          simplified = 'Error de conexión con Hugging Face.';
+          simplified = 'Error de conexión con IA Municipal.';
         }
       } else {
         simplified = '📋 **Qué dice este documento:**\n\nEl documento establece los requisitos y consideraciones para una habilitación comercial en la jurisdicción del municipio, confirmando que se cumplen las normas vigentes (Simulación Demo).';
@@ -260,3 +260,5 @@
   <script src='js/theme-switcher.js'></script>
 </body>
 </html>
+
+

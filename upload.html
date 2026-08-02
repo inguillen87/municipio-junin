@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -8,8 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Análisis Masivo de Archivos — Municipio de Junín</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junï¿½n" />
+  <title>Anï¿½lisis Masivo de Archivos ï¿½ Municipio de Junï¿½n</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -24,8 +24,8 @@
       <div class="topbar-left">
         <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
-          <h1>?? Análisis Masivo de Archivos</h1>
-          <span class="breadcrumb">Subí hasta 20 archivos · Excel, PDF, Word, CSV · Métricas automáticas con IA</span>
+          <h1>?? Anï¿½lisis Masivo de Archivos</h1>
+          <span class="breadcrumb">Subï¿½ hasta 20 archivos ï¿½ Excel, PDF, Word, CSV ï¿½ Mï¿½tricas automï¿½ticas con IA</span>
         </div>
       </div>
       <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
@@ -44,14 +44,14 @@
             <div class="upload-icon">??</div>
             <div class="upload-pulse"></div>
           </div>
-          <h2 class="upload-title">Arrastrá archivos aquí o hacé click para seleccionar</h2>
-          <p class="upload-subtitle">Excel, PDF, Word, CSV, imágenes · Hasta 20 archivos · Sin límite de tamaño</p>
+          <h2 class="upload-title">Arrastrï¿½ archivos aquï¿½ o hacï¿½ click para seleccionar</h2>
+          <p class="upload-subtitle">Excel, PDF, Word, CSV, imï¿½genes ï¿½ Hasta 20 archivos ï¿½ Sin lï¿½mite de tamaï¿½o</p>
           <div class="upload-badges">
             <span class="upload-badge xlsx">?? .xlsx / .xls</span>
             <span class="upload-badge pdf">?? .pdf</span>
             <span class="upload-badge docx">?? .docx</span>
             <span class="upload-badge csv">?? .csv</span>
-            <span class="upload-badge img">??? Imágenes</span>
+            <span class="upload-badge img">??? Imï¿½genes</span>
           </div>
           <button class="upload-btn" id="uploadSelectBtn">Seleccionar archivos</button>
           <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.pdf,.docx,.doc,.csv,.txt,.jpg,.jpeg,.png,.webp" hidden />
@@ -75,7 +75,7 @@
 
         <!-- KPIs globales -->
         <div class="results-header">
-          <h2 class="section-title-h2">?? Análisis consolidado</h2>
+          <h2 class="section-title-h2">?? Anï¿½lisis consolidado</h2>
           <div class="results-meta" id="resultsMeta"></div>
         </div>
 
@@ -84,8 +84,8 @@
         <!-- TABS de resultados -->
         <div class="tabs-bar" style="margin-top:16px">
           <button class="tab-btn active" data-tab="rtabla">?? Datos</button>
-          <button class="tab-btn" data-tab="rgraficos">?? Gráficos</button>
-          <button class="tab-btn" data-tab="rtexto">?? Texto extraído</button>
+          <button class="tab-btn" data-tab="rgraficos">?? Grï¿½ficos</button>
+          <button class="tab-btn" data-tab="rtexto">?? Texto extraï¿½do</button>
           <button class="tab-btn" data-tab="rresumen">?? Resumen IA</button>
         </div>
 
@@ -93,7 +93,7 @@
         <div class="tab-content active" id="tab-rtabla">
           <div class="rrhh-panel">
             <div class="panel-header">
-              <h2 class="chart-title" id="tableTitle">Datos extraídos</h2>
+              <h2 class="chart-title" id="tableTitle">Datos extraï¿½dos</h2>
               <div class="panel-filters">
                 <div class="search-box">
                   <span class="search-icon">??</span>
@@ -105,20 +105,20 @@
               </div>
             </div>
             <div class="table-scroll-wrap" id="dataTableWrap">
-              <p class="empty-state">Procesá archivos para ver los datos aquí</p>
+              <p class="empty-state">Procesï¿½ archivos para ver los datos aquï¿½</p>
             </div>
           </div>
         </div>
 
-        <!-- TAB: GRÁFICOS -->
+        <!-- TAB: GRï¿½FICOS -->
         <div class="tab-content" id="tab-rgraficos">
           <div class="charts-row">
             <div class="chart-card">
-              <div class="chart-header"><h2 class="chart-title">Distribución por tipo de archivo</h2></div>
+              <div class="chart-header"><h2 class="chart-title">Distribuciï¿½n por tipo de archivo</h2></div>
               <div class="chart-container"><canvas id="chartTipos"></canvas></div>
             </div>
             <div class="chart-card">
-              <div class="chart-header"><h2 class="chart-title" id="chartNumTitle">Análisis numérico</h2></div>
+              <div class="chart-header"><h2 class="chart-title" id="chartNumTitle">Anï¿½lisis numï¿½rico</h2></div>
               <div class="chart-container"><canvas id="chartNumeros"></canvas></div>
             </div>
           </div>
@@ -130,14 +130,14 @@
           </div>
         </div>
 
-        <!-- TAB: TEXTO EXTRAÍDO -->
+        <!-- TAB: TEXTO EXTRAï¿½DO -->
         <div class="tab-content" id="tab-rtexto">
           <div class="rrhh-panel">
             <div class="panel-header">
-              <h2 class="chart-title">Texto extraído de PDFs, Word e Imágenes</h2>
+              <h2 class="chart-title">Texto extraï¿½do de PDFs, Word e Imï¿½genes</h2>
             </div>
             <div class="text-results" id="textResults">
-              <p class="empty-state">Procesá PDFs o imágenes para ver el texto extraído</p>
+              <p class="empty-state">Procesï¿½ PDFs o imï¿½genes para ver el texto extraï¿½do</p>
             </div>
           </div>
         </div>
@@ -152,7 +152,7 @@
             <div class="ia-summary-area" id="iaSummaryArea">
               <div class="ia-summary-placeholder">
                 <div style="font-size:48px">??</div>
-                <p>Procesá archivos primero, luego hacé click en "Generar resumen" para que la IA analice el contenido y proponga métricas y conclusiones.</p>
+                <p>Procesï¿½ archivos primero, luego hacï¿½ click en "Generar resumen" para que la IA analice el contenido y proponga mï¿½tricas y conclusiones.</p>
               </div>
             </div>
           </div>
@@ -163,7 +163,7 @@
     </div>
   </main>
 
-  <!-- LIBRERÍAS -->
+  <!-- LIBRERï¿½AS -->
   <script src='js/db.js'></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src='js/db.js'></script>
@@ -178,7 +178,7 @@
   <!-- Mammoth.js para Word -->
   <script src='js/db.js'></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-  <!-- Tesseract para OCR de imágenes -->
+  <!-- Tesseract para OCR de imï¿½genes -->
   <script src='js/db.js'></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
 
@@ -198,6 +198,7 @@
   <script src='js/theme-switcher.js'></script>
 </body>
 </html>
+
 
 
 

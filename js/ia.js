@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // ia.js — Asistente IA Municipal INTELIGENTE
 // Responde preguntas sobre datos municipales en tiempo real
 // No requiere Ollama — funciona completamente offline
@@ -815,3 +815,4 @@ injectIAStyles();
 // Exportar función principal
 window.procesarMensajeIA = procesarMensaje;
 window.MUNICIPAL_DATA = MUNICIPAL_DATA;
+

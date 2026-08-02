@@ -1,612 +1,307 @@
-﻿// ============================================================
-// NAV.JS — Sidebar compartido + Autenticación global
-// Municipalidad de Junín — Sistema de Gestión Municipal
+// ============================================================
+// NAV.JS v5 — Sidebar + Auth global — MuniControl
 // ============================================================
 
-// ── PROTECCIÓN DE SESIÓN ─────────────────────────────────────
-// Todas las páginas que llamen a buildSidebar quedan protegidas
+// SESSION GUARD — redirect to login if no session
 (function checkAuth() {
-  const sess = sessionStorage.getItem('mjunin_user');
-  if (!sess) {
-    window.location.href = 'login.html';
-  }
+  var pub = ['login.html', 'landing.html', 'ciudadano.html', 'cuentas-claras.html', '404.html', 'offline.html'];
+  var page = window.location.pathname.split('/').pop() || 'index.html';
+  if (pub.indexOf(page) !== -1) return;
+  var sess = sessionStorage.getItem('mjunin_user');
+  if (!sess) window.location.replace('login.html');
 })();
 
-// ── RBAC PAGE-LEVEL GUARD ─────────────────────────────────────
-// Call this at the top of sensitive pages to block direct URL access
+// RBAC page guard
 window.requireRole = function(allowedRoles) {
   try {
-    const raw = sessionStorage.getItem('mjunin_user');
+    var raw = sessionStorage.getItem('mjunin_user');
     if (!raw) { window.location.replace('login.html'); return false; }
-    const user = JSON.parse(raw);
+    var user = JSON.parse(raw);
     if (!allowedRoles.includes(user.role)) {
-      // Redirect to dashboard with access denied toast
       sessionStorage.setItem('access_denied', '1');
       window.location.replace('index.html');
       return false;
     }
     return true;
-  } catch(e) {
-    window.location.replace('login.html');
-    return false;
-  }
+  } catch(e) { window.location.replace('login.html'); return false; }
 };
 
-// ── JERARQUÍA DE ROLES ───────────────────────────────────────
-// SUPER_ADMIN > TENANT_ADMIN > TENANT_USER > DEMO
-// access: 'all'    → visible para todos los roles
-// access: ['SUPER_ADMIN','TENANT_ADMIN'] → solo esos roles (oculto para el resto)
-// locked: ['DEMO'] → visible pero BLOQUEADO (gris + candado) para esos roles
-// hidden: ['DEMO'] → directamente NO APARECE para esos roles
-const ROLE_LEVEL = { SUPER_ADMIN: 100, TENANT_ADMIN: 60, TENANT_USER: 30, DEMO: 10 };
-
-const NAV_ITEMS = [
-  // ── PRINCIPAL ─────────────────────────────────────────────
-  {
-    id: 'dashboard', href: 'index.html', icon: '📊',
-    label: 'Panel Principal', section: 'PRINCIPAL',
-    access: 'all'  // Todos pueden ver el dashboard
-  },
-  {
-    id: 'control', href: 'control.html', icon: '🏛️',
-    label: 'Control de Gastos', badge: '30d',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    locked: ['DEMO']  // Demo lo ve gris
-  },
-  {
-    id: 'ia', href: 'ia.html', icon: '🤖',
-    label: 'Asistente Inteligente', badge: 'IA',
-    access: 'all'  // La IA es pública para todos
-  },
-
-  // ── CONTROL FINANCIERO ────────────────────────────────────
-  {
-    id: 'analytics', href: 'analytics.html', icon: '📈',
-    label: 'Reportes y Gráficos', section: 'CONTROL FINANCIERO',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    locked: ['DEMO']
-  },
-  {
-    id: 'reportes', href: 'reportes.html', icon: '📊',
-    label: 'Centro de Reportes',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    locked: ['DEMO']
-  },
-  {
-    id: 'presupuesto', href: 'presupuesto.html', icon: '💰',
-    label: 'Presupuesto Anual',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    hidden: ['DEMO']  // Demo NO ve el presupuesto real
-  },
-  {
-    id: 'hacienda', href: 'hacienda.html', icon: '🏦',
-    label: 'Hacienda',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','HACIENDA'],
-    hidden: ['DEMO','TENANT_USER']
-  },
-  {
-    id: 'cuentas-claras', href: 'cuentas-claras.html', icon: '🔍',
-    label: 'Cuentas Claras',
-    access: 'all'
-  },
-  {
-    id: 'mapa', href: 'mapa.html', icon: '🗺️',
-    label: 'Mapa / Obras',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    hidden: ['DEMO']
-  },
-  {
-    id: 'obras', href: 'obras.html', icon: '🏗️',
-    label: 'Obras Municipales',
-    access: 'all'
-  },
-
-  // ── GESTIÓN ───────────────────────────────────────────────
-  {
-    id: 'rrhh', href: 'rrhh.html', icon: '👥',
-    label: 'Personal Municipal', section: 'GESTIÓN',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    locked: ['DEMO']
-  },
-  {
-    id: 'licitaciones', href: 'licitaciones.html', icon: '📋',
-    label: 'Licitaciones y Compras', badge: '8',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    locked: ['DEMO']
-  },
-  {
-    id: 'proveedores', href: 'proveedores.html', icon: '🏢',
-    label: 'Proveedores',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    hidden: ['DEMO']  // Datos sensibles de contratos
-  },
-  {
-    id: 'vecinos', href: 'vecinos.html', icon: '🏘️',
-    label: 'Reclamos Vecinales',
-    access: 'all'
-  },
-  {
-    id: 'forms', href: 'forms.html', icon: '📝',
-    label: 'MuniForms',
-    access: ['SUPER_ADMIN','TENANT_ADMIN'],
-    locked: ['DEMO']
-  },
-
-  // ── OPERACIONES ───────────────────────────────────────────
-  {
-    id: 'talleres', href: 'talleres.html', icon: '🔧',
-    label: 'Talleres Municipales', section: 'OPERACIONES',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    locked: ['DEMO']
-  },
-  {
-    id: 'servicios', href: 'servicios.html', icon: '⛽',
-    label: 'Est. de Servicios',
-    access: 'all'
-  },
-
-  // ── COMUNICACIONES ────────────────────────────────────────
-  {
-    id: 'whatsapp', href: 'whatsapp.html', icon: '📱',
-    label: 'Alertas por WhatsApp', section: 'COMUNICACIONES',
-    access: ['SUPER_ADMIN','TENANT_ADMIN'],
-    hidden: ['TENANT_USER','DEMO']  // Solo admin configura el bot
-  },
-
-  // ── SISTEMA ───────────────────────────────────────────────
-  {
-    id: 'ciudadano', href: 'ciudadano.html', icon: '🏠',
-    label: 'Portal Ciudadano', section: 'SISTEMA',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-  },
-  {
-    id: 'landing', href: 'landing.html', icon: '🌐',
-    label: 'Página de Presentación',
-    access: ['SUPER_ADMIN','TENANT_ADMIN'],
-    hidden: ['TENANT_USER','DEMO']
-  },
-  {
-    id: 'importar', href: 'importar.html', icon: '📥',
-    label: 'Importar Información',
-    access: ['SUPER_ADMIN','TENANT_ADMIN'],
-    locked: ['TENANT_USER'],
-    hidden: ['DEMO']
-  },
-  {
-    id: 'upload', href: 'upload.html', icon: '📂',
-    label: 'Cargar Archivos', badge: 'BETA',
-    access: ['SUPER_ADMIN','TENANT_ADMIN','TENANT_USER'],
-    locked: ['DEMO']
-  },
-  {
-    id: 'exportar', href: 'exportar.html', icon: '📑',
-    label: 'Generar Informes', badge: 'PDF',
-    access: 'all'
-  },
-  {
-    id: 'presentacion', href: 'presentacion.html', icon: '🎯',
-    label: 'Presentación Ejecutiva', badge: 'DEMO',
-    access: ['SUPER_ADMIN','TENANT_ADMIN'],
-    locked: ['TENANT_USER'],
-    hidden: ['DEMO']
-  },
-  {
-    id: 'manuales', href: 'manuales.html', icon: '📖',
-    label: 'Manual de Uso',
-    access: 'all'
-  },
-  // ── ADMINISTRACIÓN ESPECIAL ───────────────────────────────
-  {
-    id: 'admin', href: 'admin.html', icon: '⚙️',
-    label: 'Panel Super Admin', section: 'ADMINISTRACIÓN',
-    access: ['SUPER_ADMIN'],
-    hidden: ['TENANT_ADMIN','TENANT_USER','DEMO']
-  },
-  {
-    id: 'configuracion', href: 'configuracion.html', icon: '⚙️', 
-    label: 'Configuración', 
-    access: ['SUPER_ADMIN','TENANT_ADMIN'] 
-  },
+// NAV ITEMS — SVG icons (no emoji, safe cross-browser)
+var NAV_ITEMS = [
+  // PRINCIPAL
+  { id:'dashboard',   href:'index.html',         icon:'chart',   label:'Panel Principal',     section:'PRINCIPAL',      access:'all' },
+  { id:'analytics',   href:'analytics.html',      icon:'bar',     label:'Reportes',            section:'PRINCIPAL',      access:'all' },
+  { id:'reportes',    href:'reportes.html',        icon:'doc',     label:'Centro de Reportes',  section:'PRINCIPAL',      access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
+  // GESTION
+  { id:'hacienda',    href:'hacienda.html',        icon:'bank',    label:'Hacienda',            section:'GESTION',        access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
+  { id:'presupuesto', href:'presupuesto.html',     icon:'wallet',  label:'Presupuesto',         section:'GESTION',        access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
+  { id:'control',     href:'control.html',         icon:'gauge',   label:'Control de Gastos',   section:'GESTION',        access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
+  { id:'rrhh',        href:'rrhh.html',            icon:'people',  label:'RRHH',                section:'GESTION',        access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
+  { id:'licitaciones',href:'licitaciones.html',    icon:'folder',  label:'Licitaciones',        section:'GESTION',        access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
+  // OPERACIONES
+  { id:'obras',       href:'obras.html',           icon:'crane',   label:'Obras',               section:'OPERACIONES',    access:'all' },
+  { id:'mapa',        href:'mapa.html',            icon:'map',     label:'Mapa Municipal',      section:'OPERACIONES',    access:'all' },
+  { id:'vecinos',     href:'vecinos.html',         icon:'bell',    label:'Reclamos 311',        section:'OPERACIONES',    access:'all' },
+  { id:'forms',       href:'forms.html',           icon:'form',    label:'Formularios',         section:'OPERACIONES',    access:['SUPER_ADMIN','TENANT_ADMIN'] },
+  // COMUNICACION
+  { id:'ia',          href:'ia.html',              icon:'ai',      label:'Asistente IA',        section:'COMUNICACION',   access:'all' },
+  { id:'whatsapp',    href:'whatsapp.html',        icon:'chat',    label:'WhatsApp Bot',        section:'COMUNICACION',   access:['SUPER_ADMIN','TENANT_ADMIN'] },
+  // TRANSPARENCIA
+  { id:'cuentas',     href:'cuentas-claras.html',  icon:'eye',     label:'Cuentas Claras',      section:'TRANSPARENCIA',  access:'all' },
+  { id:'ciudadano',   href:'ciudadano.html',       icon:'home',    label:'Portal Ciudadano',    section:'TRANSPARENCIA',  access:'all' },
+  { id:'exportar',    href:'exportar.html',        icon:'export',  label:'Exportar',            section:'TRANSPARENCIA',  access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
+  // SISTEMA
+  { id:'admin',       href:'admin.html',           icon:'shield',  label:'Administracion',      section:'SISTEMA',        access:['SUPER_ADMIN'] },
+  { id:'configuracion',href:'configuracion.html',  icon:'settings',label:'Configuracion',       section:'SISTEMA',        access:['SUPER_ADMIN','TENANT_ADMIN'] },
 ];
 
-// Evalúa si el usuario puede ver/acceder a un ítem
-function getItemAccess(item, userRole) {
-  const access = item.access;
-  const locked = item.locked || [];
-  const hidden = item.hidden || [];
+// SVG ICONS — clean vector icons for each key
+var ICONS = {
+  chart:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+  bar:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="17" y="13" width="4" height="8"/></svg>',
+  doc:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+  bank:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>',
+  wallet:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
+  gauge:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12l6.5-6.5"/></svg>',
+  people:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  folder:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+  crane:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="12" y1="6" x2="12" y2="18"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+  map:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
+  bell:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+  form:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>',
+  ai:       '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>',
+  chat:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  eye:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  home:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  export:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  shield:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  settings: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  logout:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+  moon:     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+  sun:      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+  lock:     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  logo:     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+};
 
-  // Super Admin siempre ve todo
-  if (userRole === 'SUPER_ADMIN') return 'visible';
+function getIcon(name) {
+  return ICONS[name] || ICONS.doc;
+}
 
-  // Si está en la lista de ocultos → no mostrar
-  if (hidden.includes(userRole)) return 'hidden';
-
-  // Si el acceso es para todos → visible
-  if (access === 'all') {
-    return locked.includes(userRole) ? 'locked' : 'visible';
-  }
-
-  // Si no está en la lista de acceso permitido
-  if (!access.includes(userRole)) return 'hidden';
-
-  // Está en la lista de acceso pero puede estar bloqueado
-  return locked.includes(userRole) ? 'locked' : 'visible';
+function canAccess(item, role) {
+  var acc = item.access;
+  if (acc === 'all') return true;
+  if (Array.isArray(acc)) return acc.indexOf(role) !== -1;
+  return false;
 }
 
 function buildSidebar(activeId) {
-  // Wait for DOM if not ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() { buildSidebar(activeId); });
     return;
   }
-  const sidebarEl = document.getElementById('sidebar');
+
+  var sidebarEl = document.getElementById('sidebar');
   if (!sidebarEl) return;
 
-  // Obtener datos del usuario en sesión
-  let user = { name: 'Usuario', email: '', loginAt: '', role: 'DEMO', roleLabel: 'Demo' };
-  try { user = JSON.parse(sessionStorage.getItem('mjunin_user') || '{}'); } catch(e) {}
-  const initials = user.name ? user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() : 'US';
-  
-  let roleColor = '#06b6d4';
-  if (user.role === 'SUPER_ADMIN') roleColor = '#f59e0b';
-  else if (user.role === 'TENANT_ADMIN') roleColor = '#3b82f6';
-  else if (user.role === 'TENANT_USER') roleColor = (user.roleLabel && user.roleLabel.toLowerCase().includes('it')) ? '#8b5cf6' : '#10b981';
-  else if (user.role === 'DEMO') roleColor = '#06b6d4';
+  var user = { name:'Usuario', email:'', role:'DEMO' };
+  try { user = JSON.parse(sessionStorage.getItem('mjunin_user')) || user; } catch(e) {}
 
-  let navHTML = '';
-  let lastSection = null;
+  var role = user.role || 'DEMO';
+  var initials = (user.name || 'U').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+  var roleLabels = {
+    SUPER_ADMIN:'Super Admin', INTENDENTE:'Intendente',
+    TENANT_ADMIN:'Administrador', TENANT_USER:'Usuario', DEMO:'Demo'
+  };
+  var roleColors = {
+    SUPER_ADMIN:'#f59e0b', INTENDENTE:'#3b82f6',
+    TENANT_ADMIN:'#10b981', TENANT_USER:'#8b5cf6', DEMO:'#64748b'
+  };
+  var roleColor = roleColors[role] || '#64748b';
 
-  NAV_ITEMS.forEach(item => {
-    const accessLevel = getItemAccess(item, user.role || 'DEMO');
-
-    // Si el ítem está completamente oculto para este rol, saltear
-    if (accessLevel === 'hidden') return;
-
-    if (item.section && item.section !== lastSection) {
-      navHTML += `<div class="nav-section-label">${item.section}</div>`;
-      lastSection = item.section;
-    }
-
-    const isActive = item.id === activeId;
-    const badge = item.badge
-      ? `<span class="nav-badge ${item.badgeClass || (item.badge === 'NEW' ? 'new' : '')}">${item.badge}</span>`
-      : '';
-
-    if (accessLevel === 'locked') {
-      // Ítem bloqueado: gris, sin enlace, con icono de candado
-      navHTML += `
-        <div class="nav-item nav-locked" title="Acceso restringido para tu rol">
-          <span class="nav-icon" style="opacity:0.4">${item.icon}</span>
-          <span class="nav-label" style="opacity:0.4">${item.label}</span>
-          <span class="nav-lock-icon">🔒</span>
-        </div>`;
-    } else {
-      // Ítem visible y accesible normalmente
-      navHTML += `
-        <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" id="nav-${item.id}">
-          <span class="nav-icon">${item.icon}</span>
-          <span class="nav-label">${item.label}</span>
-          ${badge}
-        </a>`;
-    }
+  // Group items by section
+  var sections = {};
+  var sectionOrder = [];
+  NAV_ITEMS.forEach(function(item) {
+    if (!canAccess(item, role)) return;
+    var sec = item.section || 'GENERAL';
+    if (!sections[sec]) { sections[sec] = []; sectionOrder.push(sec); }
+    sections[sec].push(item);
   });
 
-  sidebarEl.innerHTML = `
-    <div class="sidebar-header">
-      <div class="logo-wrap">
-        <div class="logo-icon">🏛️</div>
-        <div class="logo-text">
-          <span class="logo-title">MuniControl</span>
-          <span class="logo-sub">Sistema Municipal</span>
-        </div>
-      </div>
-      <button class="sidebar-toggle" id="sidebarToggle">‹</button>
-    </div>
-    <nav class="sidebar-nav">${navHTML}</nav>
-    <div class="sidebar-user-footer">
-      <div class="sidebar-user-avatar" style="background: ${roleColor}">${initials}</div>
-      <div class="sidebar-user-info">
-        <div class="sidebar-user-name">${user.name || 'Usuario'}</div>
-        <div class="sidebar-user-role">${user.roleLabel || user.role || 'DEMO'}</div>
-      </div>
-      <button class="sidebar-logout-btn" onclick="sessionStorage.clear(); window.location.href='login.html'" title="Cerrar sesión">⏏</button>
-    </div>
-    <div class="theme-toggle-wrap">
-  <div>
-    <div class="theme-toggle-label" id="themeModeLabel">Modo Oscuro</div>
-    <div class="theme-icons"><span id="themeIconDark">🌙</span><span style="color:rgba(148,163,184,0.3);margin:0 2px">·</span><span id="themeIconLight" style="opacity:0.3">☀️</span></div>
-  </div>
-  <label class="theme-toggle-switch" title="Cambiar tema">
-    <input type="checkbox" id="themeToggleCheckbox" onchange="toggleTheme(this.checked)">
-    <span class="theme-slider"></span>
-  </label>
-</div>
-    <div class="sidebar-lang-picker">
-      <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('es')" title="Español">🇦🇷 ES</button>
-      <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('en')" title="English">🇺🇸 EN</button>
-      <button class="sidebar-lang-btn" onclick="i18n&&i18n.setLang('pt')" title="Português">🇧🇷 PT</button>
-    </div>
-  `;
+  var html = '';
 
-  // Cargar i18n.js dinámicamente (innerHTML no ejecuta scripts)
-  if (!document.getElementById('i18nScript')) {
-    const s = document.createElement('script');
-    s.id = 'i18nScript';
-    s.src = 'js/i18n.js';
-    document.head.appendChild(s);
-  }
+  // Logo
+  html += '<div class="sidebar-logo">';
+  html += '<div class="sidebar-logo-icon">' + getIcon('logo') + '</div>';
+  html += '<div><div class="sidebar-logo-name">MuniControl</div><div class="sidebar-logo-sub">Junin · 2026</div></div>';
+  html += '<button class="sidebar-collapse-btn" id="sidebarToggle" title="Colapsar">&#8592;</button>';
+  html += '</div>';
 
-// Theme toggle init
-function toggleTheme(isLight) {
-  const root = document.documentElement;
-  if (isLight) {
-    root.setAttribute('datítheme', 'light');
-    localStorage.setItem('govtech_theme', 'light');
-    const label = document.getElementById('themeModeLabel');
-    const iconDark = document.getElementById('themeIconDark');
-    const iconLight = document.getElementById('themeIconLight');
-    if (label) label.textContent = 'Modo Claro';
-    if (iconDark) iconDark.style.opacity = '0.3';
-    if (iconLight) iconLight.style.opacity = '1';
-  } else {
-    root.removeAttribute('datítheme');
-    localStorage.setItem('govtech_theme', 'dark');
-    const label = document.getElementById('themeModeLabel');
-    const iconDark = document.getElementById('themeIconDark');
-    const iconLight = document.getElementById('themeIconLight');
-    if (label) label.textContent = 'Modo Oscuro';
-    if (iconDark) iconDark.style.opacity = '1';
-    if (iconLight) iconLight.style.opacity = '0.3';
-  }
+  // Nav sections
+  html += '<nav class="sidebar-nav">';
+  sectionOrder.forEach(function(sec) {
+    html += '<div class="nav-section-label">' + sec + '</div>';
+    sections[sec].forEach(function(item) {
+      var isActive = (item.id === activeId);
+      html += '<a href="' + item.href + '" class="nav-item' + (isActive ? ' active' : '') + '" id="navItem_' + item.id + '">';
+      html += '<span class="nav-icon">' + getIcon(item.icon) + '</span>';
+      html += '<span class="nav-label">' + item.label + '</span>';
+      if (isActive) html += '<span class="nav-active-dot"></span>';
+      html += '</a>';
+    });
+  });
+  html += '</nav>';
+
+  // User footer
+  html += '<div class="sidebar-user">';
+  html += '<div class="sidebar-user-avatar" style="background:' + roleColor + '22;color:' + roleColor + '">' + initials + '</div>';
+  html += '<div class="sidebar-user-info">';
+  html += '<div class="sidebar-user-name">' + (user.name || 'Usuario') + '</div>';
+  html += '<div class="sidebar-user-role" style="color:' + roleColor + '">' + (roleLabels[role] || role) + '</div>';
+  html += '</div>';
+  html += '<button class="sidebar-logout-btn" onclick="doLogout()" title="Cerrar sesion">' + getIcon('logout') + '</button>';
+  html += '</div>';
+
+  sidebarEl.innerHTML = html;
+
+  // MOBILE TOGGLE — bulletproof
+  initMobileToggle(sidebarEl);
+
+  // Inject sidebar CSS (once)
+  injectSidebarCSS();
 }
 
-// Apply saved theme immediately
-(function applyThemeFromStorage() {
-  const saved = localStorage.getItem('govtech_theme');
-  if (saved === 'light') {
-    document.documentElement.setAttribute('datítheme', 'light');
-    const cb = document.getElementById('themeToggleCheckbox');
-    if (cb) {
-      cb.checked = true;
-      toggleTheme(true);
-    }
-  }
-})();
-
-// Make toggleTheme global
-window.toggleTheme = toggleTheme;
-
-  // Toggle sidebar (desktop)
-  document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-    sidebarEl.classList.toggle('collapsed');
-    document.getElementById('mainContent')?.classList.toggle('expanded');
-    setTimeout(() => window.dispatchEvent(new Event('resize')), 250);
-  });
-
-  // ── INICIALIZAR MOBILE (llamar siempre al final de buildSidebar) ─────
-  // pwa.js expone window.initMobile() para evitar el bug de DOMContentLoaded timing
-  if (typeof window.initMobile === 'function') {
-    window.initMobile();
-  } else {
-    // pwa.js todavía no cargó: esperar y reintentar
-    document.addEventListener('pwaMobileReady', () => window.initMobile?.());
-  }
-
-  // Mobile sidebar toggle — bulletproof version
-  function initMobileToggle() {
-    const menuBtn = document.getElementById('menuBtn');
+function initMobileToggle(sidebarEl) {
+  // Find menuBtn — retry mechanism for pages that build it after sidebar
+  function attachToggle() {
+    var menuBtn = document.getElementById('menuBtn');
     if (!menuBtn) return;
-    
-    // Remove any existing listeners by cloning
-    const newBtn = menuBtn.cloneNode(true);
-    menuBtn.parentNode.replaceChild(newBtn, menuBtn);
-    
-    // Ensure overlay exists
-    let sidebarOverlay = document.getElementById('sidebarOverlay');
-    if (!sidebarOverlay) {
-      sidebarOverlay = document.createElement('div');
-      sidebarOverlay.id = 'sidebarOverlay';
-      sidebarOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:998;display:none;backdrop-filter:blur(2px)';
-      document.body.appendChild(sidebarOverlay);
+
+    // Clone to remove stale listeners
+    var fresh = menuBtn.cloneNode(true);
+    menuBtn.parentNode.replaceChild(fresh, menuBtn);
+
+    // Overlay
+    var overlay = document.getElementById('sidebarOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'sidebarOverlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:998;display:none;';
+      document.body.appendChild(overlay);
     }
-    
-    function openSidebar() {
+
+    function open() {
       sidebarEl.classList.add('mobile-open');
-      sidebarOverlay.style.display = 'block';
+      overlay.style.display = 'block';
       document.body.style.overflow = 'hidden';
     }
-    function closeSidebar() {
+    function close() {
       sidebarEl.classList.remove('mobile-open');
-      sidebarOverlay.style.display = 'none';
+      overlay.style.display = 'none';
       document.body.style.overflow = '';
     }
-    
-    newBtn.addEventListener('click', function(e) {
+
+    fresh.addEventListener('click', function(e) {
       e.stopPropagation();
-      if (sidebarEl.classList.contains('mobile-open')) {
-        closeSidebar();
-      } else {
-        openSidebar();
-      }
+      sidebarEl.classList.contains('mobile-open') ? close() : open();
     });
-    
-    sidebarOverlay.addEventListener('click', closeSidebar);
-    
-    // Close on nav link click (mobile)
-    sidebarEl.querySelectorAll('a, .nav-item').forEach(function(link) {
-      link.addEventListener('click', function() {
-        if (window.innerWidth <= 768) closeSidebar();
-      });
+    overlay.addEventListener('click', close);
+
+    // Close on nav link click
+    sidebarEl.querySelectorAll('a.nav-item').forEach(function(a) {
+      a.addEventListener('click', function() { if(window.innerWidth <= 900) close(); });
     });
-    
-    console.log('[Nav] Mobile toggle initialized on menuBtn');
   }
-  
-  // Init immediately AND on DOMContentLoaded (double safety)
-  initMobileToggle();
+
+  attachToggle();
+  // Also attach after DOMContentLoaded in case menuBtn isn't there yet
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMobileToggle);
-  }
-
-  // Mobile sidebar CSS
-  if (!document.getElementById('mobileNavCss')) {
-    const style = document.createElement('style');
-    style.id = 'mobileNavCss';
-    style.innerHTML = `
-            /* Theme Toggle */
-      .theme-toggle-wrap {
-        padding: 10px 16px 6px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-top: 1px solid rgba(255,255,255,0.04);
-      }
-      .theme-toggle-label {
-        font-size: 11px;
-        color: rgba(100,116,139,0.6);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      .theme-toggle-switch {
-        position: relative;
-        width: 44px;
-        height: 24px;
-      }
-      .theme-toggle-switch input { opacity: 0; width: 0; height: 0; }
-      .theme-slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(255,255,255,0.1);
-        border-radius: 99px;
-        border: 1px solid rgba(255,255,255,0.12);
-        transition: 0.3s;
-      }
-      .theme-slider::before {
-        content: '';
-        position: absolute;
-        left: 3px; top: 3px;
-        width: 16px; height: 16px;
-        border-radius: 50%;
-        background: rgba(148,163,184,0.7);
-        transition: 0.3s;
-        font-size: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      input:checked + .theme-slider {
-        background: rgba(251,191,36,0.2);
-        border-color: rgba(251,191,36,0.3);
-      }
-      input:checked + .theme-slider::before {
-        transform: translateX(20px);
-        background: #fbbf24;
-      }
-      .theme-icons {
-        display: flex;
-        gap: 3px;
-        font-size: 13px;
-      }
-      .sidebar-user-footer {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 12px 16px;
-        background: rgba(0,0,0,0.3);
-        border-top: 1px solid rgba(255,255,255,0.06);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .sidebar-user-avatar {
-        width: 36px; height: 36px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 13px; font-weight: 800; color: white; flex-shrink: 0;
-      }
-      .sidebar-user-info { flex: 1; overflow: hidden; }
-      .sidebar-user-name { font-size: 12px; font-weight: 700; color: rgba(240,244,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .sidebar-user-role { font-size: 10px; color: rgba(100,116,139,0.7); text-transform: uppercase; letter-spacing: 0.5px; }
-      .sidebar-logout-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: rgba(100,116,139,0.6); padding: 4px; border-radius: 6px; transition: all 0.15s; }
-      .sidebar-logout-btn:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
-      .sidebar-lang-picker { padding: 8px 16px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; gap: 4px; justify-content: center; }
-      .sidebar-lang-btn { background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: rgba(100,116,139,0.7); font-size: 11px; padding: 3px 7px; cursor: pointer; transition: all 0.15s; }
-      .sidebar-lang-btn:hover { background: rgba(255,255,255,0.06); color: rgba(240,244,255,0.8); }
-      .sidebar-lang-btn.active { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.25); color: #60a5fa; }
-      /* ── NAV ITEMS BLOQUEADOS (rol sin permiso) ────────── */
-      .nav-locked {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 14px;
-        border-radius: 8px;
-        cursor: not-allowed;
-        opacity: 0.45;
-        margin-bottom: 1px;
-        position: relative;
-        transition: opacity 0.15s;
-      }
-      .nav-locked:hover { opacity: 0.6; }
-      .nav-lock-icon {
-        margin-left: auto;
-        font-size: 11px;
-        opacity: 0.5;
-      }
-      /* ── PADDING BOTTOM for user footer ─────────────── */
-      .sidebar-nav { padding-bottom: 80px !important; }
-
-      /* ── SIDEBAR RESPONSIVE ─────────────────────────────── */
-      /* DESKTOP (> 900px): siempre visible */
-      @media (min-width: 901px) {
-        .sidebar {
-          transform: translateX(0) !important;
-          display: flex !important;
-          visibility: visible !important;
-        }
-        .main-content {
-          margin-left: var(--sidebar-w, 240px) !important;
-        }
-        .main-content.expanded {
-          margin-left: 64px !important;
-        }
-        /* Ocultar botón hamburguesa en desktop — usar sidebarToggle */
-        #menuBtn { display: none !important; }
-      }
-      /* MOBILE (≤ 900px): sidebar oculto, hamburguesa visible */
-      @media (max-width: 900px) {
-        .sidebar {
-          transform: translateX(-100%);
-          transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-          position: fixed !important;
-          z-index: 999 !important;
-          height: 100vh !important;
-          top: 0 !important;
-          width: 280px !important;
-        }
-        .sidebar.mobile-open {
-          transform: translateX(0) !important;
-          box-shadow: 20px 0 60px rgba(0,0,0,0.5) !important;
-        }
-        .main-content {
-          margin-left: 0 !important;
-        }
-        #menuBtn { display: flex !important; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // Show welcome toast only once per session
-  if (!sessionStorage.getItem('welcomed')) {
-    sessionStorage.setItem('welcomed', '1');
-    setTimeout(() => {
-      if (typeof showToast !== 'undefined') {
-        showToast(`Bienvenido, ${user.name || 'Usuario'} 👋`, 'success');
-      }
-    }, 800);
+    document.addEventListener('DOMContentLoaded', attachToggle);
   }
 }
 
+function doLogout() {
+  sessionStorage.removeItem('mjunin_user');
+  window.location.href = 'login.html';
+}
 
+function injectSidebarCSS() {
+  if (document.getElementById('sidebarNavCSS')) return;
+  var style = document.createElement('style');
+  style.id = 'sidebarNavCSS';
+  style.textContent = [
+    // Layout
+    'body{margin:0;font-family:Inter,system-ui,sans-serif;}',
+    '.sidebar{position:fixed;left:0;top:0;height:100vh;width:260px;background:#0a1628;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;z-index:200;overflow:hidden;transition:left 0.3s cubic-bezier(0.4,0,0.2,1);}',
+    '.main-content{margin-left:260px;min-height:100vh;}',
+    // Logo
+    '.sidebar-logo{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;}',
+    '.sidebar-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;}',
+    '.sidebar-logo-name{font-family:Outfit,sans-serif;font-size:15px;font-weight:900;color:#f0f4ff;line-height:1.2;}',
+    '.sidebar-logo-sub{font-size:10px;color:rgba(148,163,184,0.5);font-weight:600;}',
+    '.sidebar-collapse-btn{margin-left:auto;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(148,163,184,0.6);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}',
+    '.sidebar-collapse-btn:hover{background:rgba(255,255,255,0.1);color:#f0f4ff;}',
+    // Nav
+    '.sidebar-nav{flex:1;overflow-y:auto;padding:10px 8px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent;}',
+    '.sidebar-nav::-webkit-scrollbar{width:4px;}',
+    '.sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px;}',
+    '.nav-section-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:rgba(148,163,184,0.35);padding:14px 10px 6px;line-height:1;}',
+    '.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;text-decoration:none;color:rgba(148,163,184,0.75);font-size:13px;font-weight:500;transition:all 0.15s;position:relative;margin-bottom:1px;}',
+    '.nav-item:hover{background:rgba(255,255,255,0.06);color:#f0f4ff;}',
+    '.nav-item.active{background:rgba(59,130,246,0.12);color:#60a5fa;font-weight:700;}',
+    '.nav-item.active .nav-icon svg{stroke:#60a5fa;}',
+    '.nav-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0.8;}',
+    '.nav-item.active .nav-icon{opacity:1;}',
+    '.nav-icon svg{stroke:currentColor;}',
+    '.nav-active-dot{width:6px;height:6px;background:#3b82f6;border-radius:50%;margin-left:auto;flex-shrink:0;}',
+    // User footer
+    '.sidebar-user{display:flex;align-items:center;gap:10px;padding:14px 16px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;}',
+    '.sidebar-user-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;}',
+    '.sidebar-user-info{flex:1;min-width:0;}',
+    '.sidebar-user-name{font-size:12px;font-weight:700;color:#f0f4ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.sidebar-user-role{font-size:10px;font-weight:700;margin-top:1px;}',
+    '.sidebar-logout-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(148,163,184,0.6);width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;}',
+    '.sidebar-logout-btn:hover{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2);color:#f87171;}',
+    // Topbar
+    '.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:rgba(6,11,24,0.95);border-bottom:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;}',
+    '.topbar-left{display:flex;align-items:center;gap:14px;}',
+    '.topbar-right{display:flex;align-items:center;gap:10px;}',
+    '.menu-btn{display:none;width:38px;height:38px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#f0f4ff;font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;}',
+    '.menu-btn:hover{background:rgba(255,255,255,0.1);}',
+    '.page-title h1{font-family:Outfit,sans-serif;font-size:20px;font-weight:900;color:#f0f4ff;margin:0;}',
+    '.breadcrumb{font-size:11px;color:rgba(148,163,184,0.55);font-weight:500;}',
+    '.topbar-avatar{width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:white;cursor:pointer;flex-shrink:0;}',
+    '.page-content{padding:24px;}',
+    '.card{background:rgba(13,21,38,0.9);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:20px;}',
+    '.card:hover{border-color:rgba(255,255,255,0.1);}',
+    // Mobile
+    '@media(max-width:900px){',
+    '.menu-btn{display:flex!important;}',
+    '.sidebar{left:-280px!important;}',
+    '.sidebar.mobile-open{left:0!important;box-shadow:4px 0 30px rgba(0,0,0,0.6)!important;}',
+    '.main-content{margin-left:0!important;width:100%!important;}',
+    '}',
+    '@media(min-width:901px){',
+    '.menu-btn{display:none!important;}',
+    '.sidebar{left:0!important;}',
+    '.main-content{margin-left:260px!important;}',
+    '}',
+  ].join('');
+  document.head.appendChild(style);
+}
+
+// Toast utility (fallback if toast.js not loaded)
+window.showToast = window.showToast || function(msg, type) {
+  var t = document.createElement('div');
+  var colors = { success:'#10b981', error:'#ef4444', warning:'#f59e0b', info:'#3b82f6' };
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#0d1526;border:1px solid ' + (colors[type]||'#3b82f6') + '44;color:#f0f4ff;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:320px;animation:toastIn 0.25s ease';
+  t.textContent = msg;
+  if (!document.getElementById('toastKF')) {
+    var s = document.createElement('style');
+    s.id = 'toastKF';
+    s.textContent = '@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}';
+    document.head.appendChild(s);
+  }
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(function(){t.remove();},300); }, 3000);
+};

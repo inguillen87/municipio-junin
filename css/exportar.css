@@ -1,4 +1,4 @@
-/* EXPORT CENTER STYLES */
+﻿/* EXPORT CENTER STYLES */
 .export-layout {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -161,3 +161,4 @@
   .export-layout { grid-template-columns: 1fr; }
   .preview-kpi-row { grid-template-columns: repeat(2, 1fr); }
 }
+

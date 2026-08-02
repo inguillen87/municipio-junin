@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    CONTROL.CSS — Torre de Control de Gastos y Ahorros
    Junín Control — Plan de Choque 30 Días
    ============================================================ */
@@ -81,26 +81,26 @@
 
 /* ALERTAS */
 .alertas-list { display:flex; flex-direction:column; gap:0; }
-.alerta-item {
+.alertíitem {
   display:flex; align-items:flex-start; gap:10px;
   padding:10px 14px; border-bottom:1px solid var(--border);
   transition:var(--transition);
 }
-.alerta-item:hover { background:rgba(255,255,255,0.02); }
-.alerta-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-.alerta-dot.urgente { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.6); animation:blink 1.5s ease-in-out infinite; }
-.alerta-dot.pronto { background:#f59e0b; }
-.alerta-dot.ok { background:#10b981; }
+.alertíitem:hover { background:rgba(255,255,255,0.02); }
+.alertídot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.alertídot.urgente { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.6); animation:blink 1.5s ease-in-out infinite; }
+.alertídot.pronto { background:#f59e0b; }
+.alertídot.ok { background:#10b981; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.alerta-body { flex:1; }
-.alerta-proveedor { font-size:12px; font-weight:700; }
-.alerta-sistema { font-size:11px; color:var(--text-muted); margin-top:1px; }
-.alerta-dias {
+.alertíbody { flex:1; }
+.alertíproveedor { font-size:12px; font-weight:700; }
+.alertísistema { font-size:11px; color:var(--text-muted); margin-top:1px; }
+.alertídias {
   font-size:10px; font-weight:800; padding:2px 8px; border-radius:6px;
   white-space:nowrap; flex-shrink:0; margin-top:2px;
 }
-.alerta-dias.urgente { background:rgba(239,68,68,0.15); color:#ef4444; }
-.alerta-dias.pronto  { background:rgba(245,158,11,0.15); color:#f59e0b; }
+.alertídias.urgente { background:rgba(239,68,68,0.15); color:#ef4444; }
+.alertídias.pronto  { background:rgba(245,158,11,0.15); color:#f59e0b; }
 
 /* SAVINGS PIPELINE */
 .savings-pipeline { display:flex; flex-direction:column; gap:8px; padding:14px; }
@@ -225,3 +225,4 @@
   .import-types { grid-template-columns:repeat(3,1fr); }
   .plan-choque-banner { flex-wrap:wrap; }
 }
+

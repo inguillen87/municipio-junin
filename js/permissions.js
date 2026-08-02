@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // PERMISSIONS.JS — RBAC granular para MuniControl
 // Roles: SUPER_ADMIN > TENANT_ADMIN > INTENDENTE > 
 //        HACIENDA > RRHH_ADMIN > TENANT_USER > DEMO
@@ -190,3 +190,4 @@
   console.log('[Permissions] Ready. Role:', Permissions.currentRole());
 
 })(window);
+

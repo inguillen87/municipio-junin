@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // analytics-live.js — Live Analytics Engine
 // Reads from MuniDB and renders real-time KPIs
 // ============================================================
@@ -87,3 +87,4 @@ window.MuniAnalytics = (function() {
 
   return { getStats, renderInPage };
 })();
+

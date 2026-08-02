@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // VECINOS.JS — Portal del Vecino: Reclamos y Turnos
 // ============================================================
 
@@ -231,3 +231,4 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof buildSidebar !== 'undefined') buildSidebar('vecinos');
   renderReclamos();
 });
+

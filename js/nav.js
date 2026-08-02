@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // NAV.JS — Sidebar compartido + Autenticación global
 // Municipalidad de Junín — Sistema de Gestión Municipal
 // ============================================================
@@ -234,6 +234,11 @@ function getItemAccess(item, userRole) {
 }
 
 function buildSidebar(activeId) {
+  // Wait for DOM if not ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { buildSidebar(activeId); });
+    return;
+  }
   const sidebarEl = document.getElementById('sidebar');
   if (!sidebarEl) return;
 
@@ -335,7 +340,7 @@ function buildSidebar(activeId) {
 function toggleTheme(isLight) {
   const root = document.documentElement;
   if (isLight) {
-    root.setAttribute('data-theme', 'light');
+    root.setAttribute('datítheme', 'light');
     localStorage.setItem('govtech_theme', 'light');
     const label = document.getElementById('themeModeLabel');
     const iconDark = document.getElementById('themeIconDark');
@@ -344,7 +349,7 @@ function toggleTheme(isLight) {
     if (iconDark) iconDark.style.opacity = '0.3';
     if (iconLight) iconLight.style.opacity = '1';
   } else {
-    root.removeAttribute('data-theme');
+    root.removeAttribute('datítheme');
     localStorage.setItem('govtech_theme', 'dark');
     const label = document.getElementById('themeModeLabel');
     const iconDark = document.getElementById('themeIconDark');
@@ -359,7 +364,7 @@ function toggleTheme(isLight) {
 (function applyThemeFromStorage() {
   const saved = localStorage.getItem('govtech_theme');
   if (saved === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.setAttribute('datítheme', 'light');
     const cb = document.getElementById('themeToggleCheckbox');
     if (cb) {
       cb.checked = true;
@@ -603,4 +608,5 @@ window.toggleTheme = toggleTheme;
     }, 800);
   }
 }
+
 

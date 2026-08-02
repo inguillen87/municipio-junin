@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // UX-IMPROVEMENTS.JS — Global micro-interactions & polish
 // MuniControl v2 — Loaded on all pages
 // ============================================================
@@ -299,3 +299,4 @@ function initKeyboardHelp() {
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { const m = document.getElementById('shortcutsModal'); if (m) m.remove(); } });
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initKeyboardHelp); } else { setTimeout(initKeyboardHelp, 100); }
+

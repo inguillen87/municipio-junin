@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // MANUALES.JS — Lógica del manual de procedimientos
 // ============================================================
 
@@ -201,3 +201,4 @@ function initExportPDF() {
     doc.save(`municipio-junin-manual-procedimientos-v4.pdf`);
   });
 }
+

@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // DB.JS — MuniControl Local Database Engine v2.0
 // Simulates a real DB using localStorage with full CRUD
 // Tables: empleados, presupuesto, licitaciones, reclamos,
@@ -321,3 +321,4 @@
   console.log('[MuniDB] Ready. Tables:', MuniDB.stats());
 
 })(window);
+

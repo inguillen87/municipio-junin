@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // CONTROL.JS — Junín Control · Torre de Control de Gastos
 // Plan de Choque 30 Días — Municipalidad de Junín
 // ============================================================
@@ -528,3 +528,4 @@ function initExportPDF() {
     doc.save(`junin-control-dia${DIA_ACTUAL}-${new Date().toISOString().slice(0,10)}.pdf`);
   });
 }
+

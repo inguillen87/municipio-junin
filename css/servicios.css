@@ -1,4 +1,5 @@
-/* SERVICIOS / ESTACION COMBUSTIBLE STYLES */
-/* Uses shared rrhh-panel, data-table, chart-card etc. */
+﻿/* SERVICIOS / ESTACION COMBUSTIBLE STYLES */
+/* Uses shared rrhh-panel, datítable, chart-card etc. */
 /* Additional overrides if needed */
 .stock-level-bar { height: 6px; border-radius: 99px; margin-top: 4px; transition: width 1.5s ease; }
+

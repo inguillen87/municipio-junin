@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // i18n.js — Sistema de idiomas GovTech Platform
 // Idiomas: es (Español), en (English), pt (Português Brasil)
 // Uso: i18n.t('key') → texto en idioma actual
@@ -609,3 +609,4 @@ if (document.readyState === 'loading') {
 } else {
   i18n.init();
 }
+

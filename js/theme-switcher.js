@@ -1,4 +1,4 @@
-// theme-switcher.js — Dark/Light/Auto theme management
+﻿// theme-switcher.js — Dark/Light/Auto theme management
 (function() {
   const THEMES = ['dark', 'light', 'auto'];
   const ICONS = { dark: '🌙', light: '☀️', auto: '💻' };
@@ -38,3 +38,4 @@
 
   window.MuniTheme = { cycle, apply: applyTheme, get: getTheme };
 })();
+

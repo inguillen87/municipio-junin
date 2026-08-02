@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // IA-HF.JS — HuggingFace Transformers.js Integration
 // Modelos open source corriendo 100% en el browser (ONNX/WebAssembly)
 // ============================================================
@@ -738,3 +738,4 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('load', () => {
   if (typeof buildSidebar === 'function') buildSidebar('ia-hf');
 });
+

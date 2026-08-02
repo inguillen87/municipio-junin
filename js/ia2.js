@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // ia2.js — Motor de Chat IA Municipal v3
 // Integra: ia.js (respuestas inteligentes) + OCR + Voz + Export
 // Diseñado para intendentes, contadores y administradores
@@ -77,7 +77,7 @@ async function sendMessage(texto) {
   } else if (window.procesarMensajeIA) {
     respuesta = window.procesarMensajeIA(texto);
   } else {
-    respuesta = `<div class="ia-answer-card"><p style="color:rgba(148,163,184,0.8)">Cargando motor de respuestas... Por favor reintentá en un momento.</p></div>`;
+    respuesta = `<div class="iíanswer-card"><p style="color:rgba(148,163,184,0.8)">Cargando motor de respuestas... Por favor reintentá en un momento.</p></div>`;
   }
 
   // Reemplazar el typing indicator
@@ -94,8 +94,8 @@ function responderConDocumentos(pregunta, docs) {
   const doc = docs[0];
   const p = pregunta.toLowerCase();
 
-  let intro = `<div class="ia-answer-card">
-    <div class="ia-answer-title">📄 Analizando: "${doc.name}"</div>`;
+  let intro = `<div class="iíanswer-card">
+    <div class="iíanswer-title">📄 Analizando: "${doc.name}"</div>`;
 
   if (doc.type === 'excel' || doc.type === 'csv') {
     const filas = doc.data || [];
@@ -258,8 +258,8 @@ async function handleFiles(files) {
       addFileToList(entry);
 
       appendMessage('ia', `
-        <div class="ia-answer-card">
-          <div class="ia-answer-title">✅ Archivo cargado exitosamente</div>
+        <div class="iíanswer-card">
+          <div class="iíanswer-title">✅ Archivo cargado exitosamente</div>
           <div class="ia-detail">
             <div class="ia-detail-row"><span>Archivo</span><strong>${escapeHtml(file.name)}</strong></div>
             <div class="ia-detail-row"><span>Tipo</span><strong>${entry.type.toUpperCase()}</strong></div>
@@ -271,7 +271,7 @@ async function handleFiles(files) {
       `);
 
     } catch (err) {
-      appendMessage('ia', `<div class="ia-answer-card"><div class="ia-insight red">❌ Error al procesar "${file.name}": ${err.message}</div></div>`);
+      appendMessage('ia', `<div class="iíanswer-card"><div class="ia-insight red">❌ Error al procesar "${file.name}": ${err.message}</div></div>`);
     }
   }
 }
@@ -508,3 +508,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.toast) toast('Chat limpiado', 'Conversación reiniciada', 'info');
   });
 });
+

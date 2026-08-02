@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // DASHBOARD.JS — Lógica principal del dashboard
 // ============================================================
 
@@ -349,3 +349,4 @@ document.addEventListener('DOMContentLoaded', function() {
     if (el) el.textContent = 'hace ' + mins + ' min';
   }, 60000);
 });
+

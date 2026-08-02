@@ -175,8 +175,8 @@ function responderSaldoLibre() {
   const d = MUNICIPAL_DATA.presupuesto;
   const pct_rest = 100 - d.pct_ejecutado;
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">💰 Saldo Disponible — Agosto 2026</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">💰 Saldo Disponible — Agosto 2026</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box blue">
@@ -234,8 +234,8 @@ function responderGastoTotal() {
     </tr>`;
   }).join('');
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">📊 Gasto Municipal — Agosto 2026</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">📊 Gasto Municipal — Agosto 2026</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box blue">
@@ -273,8 +273,8 @@ function responderEmpleados() {
     return `<tr><td>${area}</td><td><strong>${cant}</strong></td><td>${pct}%</td></tr>`;
   }).join('');
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">👥 Recursos Humanos — Agosto 2026</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">👥 Recursos Humanos — Agosto 2026</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box blue">
@@ -319,8 +319,8 @@ function responderHorasExtra() {
   const e = MUNICIPAL_DATA.empleados;
   const g = MUNICIPAL_DATA.gastos;
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">⏱️ Horas Extra — Agosto 2026</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">⏱️ Horas Extra — Agosto 2026</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box red">
@@ -367,8 +367,8 @@ function responderReclamos() {
     return `<tr><td>${tipo}</td><td><strong>${cant}</strong></td><td>${pct}%</td></tr>`;
   }).join('');
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">🏘️ Reclamos Vecinales — 2026</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">🏘️ Reclamos Vecinales — 2026</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box blue">
@@ -419,8 +419,8 @@ function responderProveedores() {
     </tr>`;
   }).join('');
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">🏢 Proveedores Tecnológicos</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">🏢 Proveedores Tecnológicos</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box blue">
@@ -455,15 +455,15 @@ function responderAlertas() {
   const colorMap = { CRITICA: 'red', URGENTE: 'amber', ATENCION: 'blue' };
   const iconMap = { CRITICA: '🚨', URGENTE: '⚠️', ATENCION: '📌' };
   const items = alertas.map(a => `
-    <div class="ia-alert-item ${colorMap[a.tipo]}">
-      <div class="ia-alert-type">${iconMap[a.tipo]} ${a.tipo}</div>
-      <div class="ia-alert-area">${a.area}</div>
-      <div class="ia-alert-msg">${a.mensaje}</div>
+    <div class="iíalert-item ${colorMap[a.tipo]}">
+      <div class="iíalert-type">${iconMap[a.tipo]} ${a.tipo}</div>
+      <div class="iíalert-area">${a.area}</div>
+      <div class="iíalert-msg">${a.mensaje}</div>
     </div>`).join('');
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">🚨 Alertas Activas — Agosto 2026</div>
-      <div class="ia-alerts-list">${items}</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">🚨 Alertas Activas — Agosto 2026</div>
+      <div class="iíalerts-list">${items}</div>
       <div class="ia-insight">
         📋 <strong>${alertas.length} alertas activas.</strong> Se recomienda revisar las críticas hoy mismo con los responsables de área.
       </div>
@@ -474,8 +474,8 @@ function responderTecnologia() {
   const p = MUNICIPAL_DATA.proveedores;
   const g = MUNICIPAL_DATA.gastos;
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">💻 Gasto en Tecnología — Junín 2026</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">💻 Gasto en Tecnología — Junín 2026</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box blue">
@@ -508,8 +508,8 @@ function responderTecnologia() {
 function responderFlota() {
   const f = MUNICIPAL_DATA.flota;
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">🚛 Flota Municipal — Estado Actual</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">🚛 Flota Municipal — Estado Actual</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box blue">
@@ -548,8 +548,8 @@ function responderInformeEjecutivo() {
   const r = MUNICIPAL_DATA.reclamos;
   const p = MUNICIPAL_DATA.proveedores;
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">📋 Informe Ejecutivo — Municipio de Junín</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">📋 Informe Ejecutivo — Municipio de Junín</div>
       <div class="ia-subtitle">Agosto 2026 · Para uso de Intendencia y Hacienda</div>
       
       <div class="ia-section-title">📊 Situación Presupuestaria</div>
@@ -574,9 +574,9 @@ function responderInformeEjecutivo() {
       </div>
       
       <div class="ia-section-title">🚨 Alertas Críticas</div>
-      <div class="ia-alerts-mini">
+      <div class="iíalerts-mini">
         ${MUNICIPAL_DATA.alertas.filter(a => a.tipo === 'CRITICA').map(a =>
-          `<div class="ia-alert-mini red">🚨 ${a.area}: ${a.mensaje}</div>`
+          `<div class="iíalert-mini red">🚨 ${a.area}: ${a.mensaje}</div>`
         ).join('')}
       </div>
       
@@ -604,8 +604,8 @@ function responderAhorros() {
       <td class="${i.estado === 'Validado' ? 'ok' : i.estado === 'Identificado' ? '' : 'amber'}">${i.estado}</td>
     </tr>`).join('');
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">💚 Oportunidades de Ahorro — Plan de Choque</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">💚 Oportunidades de Ahorro — Plan de Choque</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box green">
@@ -656,8 +656,8 @@ function responderPresupuesto() {
     </tr>`;
   }).join('');
   return `
-    <div class="ia-answer-card">
-      <div class="ia-answer-title">📈 Ejecución Presupuestaria — Por Secretaría</div>
+    <div class="iíanswer-card">
+      <div class="iíanswer-title">📈 Ejecución Presupuestaria — Por Secretaría</div>
       
       <div class="ia-kpi-row">
         <div class="ia-kpi-box blue">
@@ -738,7 +738,7 @@ async function procesarMensaje(texto) {
   let raw = await getAIResponse(texto);
   raw = raw.replace(/\n/g, '<br>');
   raw = raw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  return `<div class="ia-answer-card"><div class="ia-insight" style="font-size:14px;color:#f0f4ff;">${raw}</div></div>`;
+  return `<div class="iíanswer-card"><div class="ia-insight" style="font-size:14px;color:#f0f4ff;">${raw}</div></div>`;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -749,8 +749,8 @@ function injectIAStyles() {
   const style = document.createElement('style');
   style.id = 'ia-dynamic-styles';
   style.textContent = `
-    .ia-answer-card { padding: 4px 0; }
-    .ia-answer-title { font-size: 16px; font-weight: 800; font-family: 'Outfit', sans-serif; margin-bottom: 4px; color: #f0f4ff; }
+    .iíanswer-card { padding: 4px 0; }
+    .iíanswer-title { font-size: 16px; font-weight: 800; font-family: 'Outfit', sans-serif; margin-bottom: 4px; color: #f0f4ff; }
     .ia-subtitle { font-size: 12px; color: rgba(148,163,184,0.7); margin-bottom: 16px; }
     .ia-section-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(59,130,246,0.8); margin: 16px 0 8px; }
     
@@ -787,20 +787,20 @@ function injectIAStyles() {
     .ia-insight.amber { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
     .ia-insight.green { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2); }
     
-    .ia-alerts-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
-    .ia-alert-item { border-radius: 10px; padding: 12px 14px; }
-    .ia-alert-item.red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
-    .ia-alert-item.amber { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
-    .ia-alert-item.blue { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); }
-    .ia-alert-type { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 2px; }
-    .ia-alert-item.red .ia-alert-type { color: #ef4444; }
-    .ia-alert-item.amber .ia-alert-type { color: #f59e0b; }
-    .ia-alert-item.blue .ia-alert-type { color: #3b82f6; }
-    .ia-alert-area { font-size: 13px; font-weight: 700; color: #f0f4ff; }
-    .ia-alert-msg { font-size: 12px; color: rgba(148,163,184,0.8); margin-top: 2px; }
-    .ia-alerts-mini { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
-    .ia-alert-mini { font-size: 12px; padding: 8px 12px; border-radius: 8px; }
-    .ia-alert-mini.red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: rgba(239,68,68,0.9); }
+    .iíalerts-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+    .iíalert-item { border-radius: 10px; padding: 12px 14px; }
+    .iíalert-item.red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+    .iíalert-item.amber { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+    .iíalert-item.blue { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); }
+    .iíalert-type { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 2px; }
+    .iíalert-item.red .iíalert-type { color: #ef4444; }
+    .iíalert-item.amber .iíalert-type { color: #f59e0b; }
+    .iíalert-item.blue .iíalert-type { color: #3b82f6; }
+    .iíalert-area { font-size: 13px; font-weight: 700; color: #f0f4ff; }
+    .iíalert-msg { font-size: 12px; color: rgba(148,163,184,0.8); margin-top: 2px; }
+    .iíalerts-mini { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+    .iíalert-mini { font-size: 12px; padding: 8px 12px; border-radius: 8px; }
+    .iíalert-mini.red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: rgba(239,68,68,0.9); }
     
     .ia-suggestions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
     .ia-suggest { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); color: rgba(148,163,184,0.9); padding: 10px 14px; border-radius: 8px; text-align: left; cursor: pointer; font-size: 13px; transition: all 0.2s; }
@@ -815,4 +815,5 @@ injectIAStyles();
 // Exportar función principal
 window.procesarMensajeIA = procesarMensaje;
 window.MUNICIPAL_DATA = MUNICIPAL_DATA;
+
 

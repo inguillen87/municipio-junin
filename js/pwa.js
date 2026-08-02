@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // pwa.js — Service Worker + PWA Install + Mobile Nav
 // VERSIÓN CORREGIDA: timing fix para DOMContentLoaded
 // ============================================================
@@ -186,3 +186,4 @@ window.initMobile = function () {
 // ── ONLINE/OFFLINE ────────────────────────────────────────────
 window.addEventListener('offline', () => showToast('📡 Sin conexión', 'Mostrando datos en caché', 'warning'));
 window.addEventListener('online',  () => showToast('✅ Conexión restaurada', 'Sincronizando...', 'success'));
+

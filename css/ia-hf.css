@@ -1,5 +1,5 @@
 ﻿/* ============================================================
-   IA-HF.CSS — HuggingFace AI Lab Styles
+   IíHF.CSS — HuggingFace AI Lab Styles
    ============================================================ */
 
 /* HEADER BADGES */
@@ -187,25 +187,25 @@
 .no-entities { color: var(--text-muted); font-size: 13px; }
 
 /* Q&A */
-.qa-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.qa-questions-section { display: flex; flex-direction: column; gap: 12px; }
-.qa-quick-btn {
+.qílayout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.qíquestions-section { display: flex; flex-direction: column; gap: 12px; }
+.qíquick-btn {
   background: rgba(255,255,255,0.04); border: 1px solid var(--border);
   color: var(--text-muted); padding: 5px 12px; border-radius: 6px;
   cursor: pointer; font-size: 11px; transition: var(--transition);
   margin: 2px;
 }
-.qa-quick-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.08); }
-.qa-answer-card {
+.qíquick-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.08); }
+.qíanswer-card {
   background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3);
   border-radius: 12px; padding: 16px; margin-top: 10px;
 }
-.qa-answer-label { font-size: 11px; font-weight: 700; color: var(--blue); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-.qa-answer-text { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
-.qa-confidence { display: flex; flex-direction: column; gap: 4px; }
-.qa-conf-bar-wrap { height: 4px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
-.qa-conf-bar { height: 100%; background: var(--blue); border-radius: 99px; }
-.qa-confidence span { font-size: 11px; color: var(--text-muted); }
+.qíanswer-label { font-size: 11px; font-weight: 700; color: var(--blue); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.qíanswer-text { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
+.qíconfidence { display: flex; flex-direction: column; gap: 4px; }
+.qíconf-bar-wrap { height: 4px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+.qíconf-bar { height: 100%; background: var(--blue); border-radius: 99px; }
+.qíconfidence span { font-size: 11px; color: var(--text-muted); }
 
 /* WHISPER */
 .whisper-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
@@ -288,8 +288,9 @@
 .error-msg { color:var(--red);font-size:13px;padding:8px; }
 
 @media (max-width:900px) {
-  .qa-layout { grid-template-columns:1fr; }
+  .qílayout { grid-template-columns:1fr; }
   .whisper-layout { grid-template-columns:1fr; }
   .pipeline-steps { flex-direction:column; }
   .pipeline-arrow { transform:rotate(90deg); }
 }
+

@@ -527,7 +527,7 @@ document.getElementById('btnGenerateResumen')?.addEventListener('click', () => {
       <div class="ia-kpi"><div class="ia-kpi-val">${totalWords.toLocaleString('es-AR')}</div><div class="ia-kpi-lbl">Palabras (PDFs/Word)</div></div>
     </div>
     ${findings.map(f => `<div class="ia-finding"><div class="ia-finding-title">💡 Hallazgo</div>${f}</div>`).join('')}
-    <div class="ia-alert">⚡ <strong>Próximo paso recomendado:</strong> Para análisis en tiempo real, importar estos datos a PostgreSQL usando el comando <code>COPY tabla FROM 'archivo.csv' CSV HEADER;</code> y conectar la API del sistema.</div>
+    <div class="iíalert">⚡ <strong>Próximo paso recomendado:</strong> Para análisis en tiempo real, importar estos datos a PostgreSQL usando el comando <code>COPY tabla FROM 'archivo.csv' CSV HEADER;</code> y conectar la API del sistema.</div>
   </div>`;
 });
 
@@ -588,3 +588,4 @@ document.getElementById('btnExportExcel')?.addEventListener('click', () => {
 
 // ── INIT ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => buildSidebar('upload'));
+

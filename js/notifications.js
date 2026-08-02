@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // notifications.js — MuniControl Notification Center
 // Real-time alerts, notification bell, persistence
 // ============================================================
@@ -211,3 +211,4 @@ window.MuniNotifications = (function() {
 
   return { getAll, getUnread, markRead, markAllRead, add, renderBell, renderPanel, togglePanel, initBell };
 })();
+

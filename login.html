@@ -8,7 +8,7 @@
   <title>Acceso al Sistema Ã¢Â€Â” MuniControl</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <!-- Aplicar tema ANTES de renderizar (sin flash) -->
-  <script>try{var _t=localStorage.getItem('govtech_theme');if(_t)document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
+  <script>try{var _t=localStorage.getItem('govtech_theme');if(_t)document.documentElement.setAttribute('datítheme',_t);}catch(e){}</script>
   <style>
     :root {
       --bg-left:  linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%);
@@ -16,7 +16,7 @@
       --card-bg:  rgba(15,23,45,0.6);
       --border:   rgba(255,255,255,0.08);
       --text:     #f0f4ff;
-      --muted:    #94a3b8;
+      --muted:    #94ób8;
       --primary:  #3b82f6;
       --role-super:      #f59e0b;
       --role-intendente: #3b82f6;
@@ -24,7 +24,7 @@
       --role-it:         #8b5cf6;
       --role-demo:       #06b6d4;
     }
-    [data-theme="light"] {
+    [datítheme="light"] {
       --bg-right: #f0f4ff;
       --card-bg:  rgba(255,255,255,0.9);
       --border:   rgba(15,23,66,0.1);
@@ -154,7 +154,7 @@
       font-family:'Outfit',sans-serif; font-size:1.7rem; font-weight:800;
       color:var(--text,#f0f4ff); margin-bottom:4px;
     }
-    .welcome-sub { color:var(--muted,#94a3b8); font-size:0.88rem; margin-bottom:1.5rem; }
+    .welcome-sub { color:var(--muted,#94ób8); font-size:0.88rem; margin-bottom:1.5rem; }
 
     /* Form */
     .form-group { position:relative; margin-bottom:1rem; }
@@ -164,7 +164,7 @@
       border-radius:12px; color:var(--text,#f0f4ff); font-size:0.95rem;
       outline:none; transition:all 0.2s; font-family:'Inter',sans-serif;
     }
-    [data-theme="light"] .form-input { background:rgba(15,23,66,0.04); color:#0f172a; }
+    [datítheme="light"] .form-input { background:rgba(15,23,66,0.04); color:#0f172a; }
     .form-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.12); }
     .form-icon { position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:#64748b; font-size:15px; }
     .toggle-pw { position:absolute; right:0.9rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:16px; color:#64748b; }
@@ -178,8 +178,8 @@
       top:-0.5rem; left:0.8rem; font-size:0.72rem;
       background:var(--bg-right,#060b18); padding:0 6px; color:#3b82f6; border-radius:4px;
     }
-    [data-theme="light"] .form-input:focus ~ .floating-label,
-    [data-theme="light"] .form-input:not(:placeholder-shown) ~ .floating-label {
+    [datítheme="light"] .form-input:focus ~ .floating-label,
+    [datítheme="light"] .form-input:not(:placeholder-shown) ~ .floating-label {
       background:#f0f4ff;
     }
 
@@ -208,8 +208,8 @@
     .divider::before, .divider::after {
       content:''; flex:1; border-bottom:1px solid rgba(255,255,255,0.07);
     }
-    [data-theme="light"] .divider::before,
-    [data-theme="light"] .divider::after { border-color:rgba(15,23,66,0.1); }
+    [datítheme="light"] .divider::before,
+    [datítheme="light"] .divider::after { border-color:rgba(15,23,66,0.1); }
 
     /* Ã¢Â”Â€Ã¢Â”Â€ ROLE CARDS Ã¢Â”Â€Ã¢Â”Â€ */
     .role-cards { display:flex; flex-direction:column; gap:6px; }
@@ -220,9 +220,9 @@
       background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
       cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden;
     }
-    [data-theme="light"] .role-card { background:rgba(15,23,66,0.03); border-color:rgba(15,23,66,0.08); }
+    [datítheme="light"] .role-card { background:rgba(15,23,66,0.03); border-color:rgba(15,23,66,0.08); }
     .role-card:hover { transform:translateY(-1px); background:rgba(255,255,255,0.06); }
-    [data-theme="light"] .role-card:hover { background:rgba(59,130,246,0.04); }
+    [datítheme="light"] .role-card:hover { background:rgba(59,130,246,0.04); }
     .role-card:hover .role-action { opacity:1; transform:translateX(0); }
 
     .role-icon {
@@ -231,17 +231,17 @@
       justify-content:center; font-size:16px; flex-shrink:0;
     }
     .role-name { font-size:0.82rem; font-weight:700; color:var(--text,#f0f4ff); }
-    .role-creds { font-size:0.7rem; color:var(--muted,#94a3b8); font-family:monospace; }
+    .role-creds { font-size:0.7rem; color:var(--muted,#94ób8); font-family:monospace; }
     .role-badge {
       font-size:0.62rem; font-weight:800; padding:3px 8px;
       border-radius:99px; text-transform:uppercase; letter-spacing:0.5px;
       white-space:nowrap;
     }
-    .role-card[data-role="super"]      .role-badge { background:rgba(245,158,11,0.15);  color:#f59e0b; }
-    .role-card[data-role="intendente"] .role-badge { background:rgba(59,130,246,0.15);  color:#3b82f6; }
-    .role-card[data-role="hacienda"]   .role-badge { background:rgba(16,185,129,0.15);  color:#10b981; }
-    .role-card[data-role="it"]         .role-badge { background:rgba(139,92,246,0.15);  color:#8b5cf6; }
-    .role-card[data-role="demo"]       .role-badge { background:rgba(6,182,212,0.15);   color:#06b6d4; }
+    .role-card[datírole="super"]      .role-badge { background:rgba(245,158,11,0.15);  color:#f59e0b; }
+    .role-card[datírole="intendente"] .role-badge { background:rgba(59,130,246,0.15);  color:#3b82f6; }
+    .role-card[datírole="hacienda"]   .role-badge { background:rgba(16,185,129,0.15);  color:#10b981; }
+    .role-card[datírole="it"]         .role-badge { background:rgba(139,92,246,0.15);  color:#8b5cf6; }
+    .role-card[datírole="demo"]       .role-badge { background:rgba(6,182,212,0.15);   color:#06b6d4; }
     .role-action {
       position:absolute; right:12px; bottom:5px;
       font-size:0.68rem; font-weight:700; color:#3b82f6;
@@ -464,7 +464,7 @@
       USERS.forEach(function(u) {
         var card = document.createElement('div');
         card.className = 'role-card';
-        card.setAttribute('data-role', u.idRole);
+        card.setAttribute('datírole', u.idRole);
         card.innerHTML =
           '<div class="role-icon" style="background:' + u.color + '22">' + u.icon + '</div>' +
           '<div>' +
@@ -541,5 +541,6 @@ function togglePasswordVisibility_old() {
   <script src='js/ux-improvements.js'></script>
 </body>
 </html>
+
 
 

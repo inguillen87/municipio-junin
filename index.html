@@ -39,13 +39,13 @@
     .quick-access-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 32px;
     }
-    .qa-btn {
+    .qíbtn {
       background: var(--surface-color, #ffffff); border: 1px solid var(--border-color, #e2e8f0);
       padding: 16px; border-radius: 12px; text-align: center; text-decoration: none;
       color: var(--text-main, #0f172a); font-weight: 600; transition: all 0.2s;
       box-shadow: 0 2px 5px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; align-items: center;
     }
-    .qa-btn:hover {
+    .qíbtn:hover {
       transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); border-color: var(--primary-color, #2563eb);
       color: var(--primary-color, #2563eb);
     }
@@ -115,12 +115,12 @@ body::before {
 </head>
 <body>
   <!-- FONDO ANIMADO -->
-  <div class="bg-orbs" aria-hidden="true">
+  <div class="bg-orbs" ariíhidden="true">
     <div class="bg-orb orb-a"></div>
     <div class="bg-orb orb-b"></div>
     <div class="bg-orb orb-c"></div>
   </div>
-  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-grid" ariíhidden="true"></div>
 
   <!-- SIDEBAR (generado por nav.js) -->
   <aside class="sidebar" id="sidebar"></aside>
@@ -181,23 +181,23 @@ body::before {
 
       <!-- ACCESOS RÁPIDOS -->
       <div class="quick-access-grid">
-        <a href="ia.html" class="qa-btn">?? Consultar IA</a>
-        <a href="rrhh.html" class="qa-btn">?? RRHH</a>
-        <a href="licitaciones.html" class="qa-btn">?? Licitaciones</a>
-        <a href="vecinos.html" class="qa-btn">??? Reclamos</a>
-        <a href="analytics.html" class="qa-btn">?? Analytics</a>
-        <a href="exportar.html" class="qa-btn">?? Exportar</a>
+        <a href="ia.html" class="qíbtn">?? Consultar IA</a>
+        <a href="rrhh.html" class="qíbtn">?? RRHH</a>
+        <a href="licitaciones.html" class="qíbtn">?? Licitaciones</a>
+        <a href="vecinos.html" class="qíbtn">??? Reclamos</a>
+        <a href="analytics.html" class="qíbtn">?? Analytics</a>
+        <a href="exportar.html" class="qíbtn">?? Exportar</a>
       </div>
 
       <!-- KPI CARDS -->
-      <section class="kpi-grid" aria-label="Indicadores clave">
+      <section class="kpi-grid" ariílabel="Indicadores clave">
 
         <div class="kpi-card" id="kpi-empleados">
           <div class="kpi-header">
             <span class="kpi-label">Total Empleados</span>
             <div class="kpi-icon blue">??</div>
           </div>
-          <div class="kpi-value" data-target="1247">0</div>
+          <div class="kpi-value" datítarget="1247">0</div>
           <div class="kpi-footer">
             <span class="kpi-trend up">? 12 este mes</span>
             <span class="kpi-sub">vs 1.235 julio</span>
@@ -210,7 +210,7 @@ body::before {
             <span class="kpi-label">Gasto Mensual</span>
             <div class="kpi-icon amber">??</div>
           </div>
-          <div class="kpi-value money" data-target="284500000">$0</div>
+          <div class="kpi-value money" datítarget="284500000">$0</div>
           <div class="kpi-footer">
             <span class="kpi-trend down">? 4.2% vs julio</span>
             <span class="kpi-sub">Presupuesto: $310M</span>
@@ -223,7 +223,7 @@ body::before {
             <span class="kpi-label">Horas Extra (mes)</span>
             <div class="kpi-icon red">??</div>
           </div>
-          <div class="kpi-value" data-target="4312">0</div>
+          <div class="kpi-value" datítarget="4312">0</div>
           <div class="kpi-footer">
             <span class="kpi-trend down">? 8% vs julio</span>
             <span class="kpi-sub">Costo: $18.4M</span>
@@ -236,7 +236,7 @@ body::before {
             <span class="kpi-label">Presupuesto Ejecutado</span>
             <div class="kpi-icon green">??</div>
           </div>
-          <div class="kpi-value pct" data-target="72">0%</div>
+          <div class="kpi-value pct" datítarget="72">0%</div>
           <div class="kpi-footer">
             <div class="progress-bar-wrap">
               <div class="progress-bar" id="presupProgressBar" style="width:0%"></div>
@@ -250,7 +250,7 @@ body::before {
             <span class="kpi-label">Reclamos Vecinos</span>
             <div class="kpi-icon violet">???</div>
           </div>
-          <div class="kpi-value" data-target="318">0</div>
+          <div class="kpi-value" datítarget="318">0</div>
           <div class="kpi-footer">
             <span class="kpi-trend up">? 23 sin resolver</span>
             <span class="kpi-sub">Tiempo promedio: 3.2 días</span>
@@ -263,7 +263,7 @@ body::before {
             <span class="kpi-label">Ahorro IT (anual)</span>
             <div class="kpi-icon teal">??</div>
           </div>
-          <div class="kpi-value money" data-target="42000000">$0</div>
+          <div class="kpi-value money" datítarget="42000000">$0</div>
           <div class="kpi-footer">
             <span class="kpi-trend up">? Sistemas migrados</span>
             <span class="kpi-sub">vs contratos anteriores</span>
@@ -351,14 +351,14 @@ body::before {
       <section class="bottom-grid" style="display:grid; grid-template-columns:2fr 1fr; gap:24px;">
         
         <!-- CHECKBOOK WIDGET -->
-        <div class="data-card">
+        <div class="datícard">
           <div class="chart-header">
             <div>
               <h2 class="chart-title">Últimos Pagos</h2>
               <span class="chart-sub">Checkbook</span>
             </div>
           </div>
-          <table class="data-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+          <table class="datítable" style="width:100%; border-collapse:collapse; font-size:13px;">
             <thead>
               <tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.1);">
                 <th style="padding:12px;">Fecha</th>
@@ -375,7 +375,7 @@ body::before {
         </div>
 
         <!-- RECENT ACTIVITY + HEATMAP -->
-        <div class="data-card" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="datícard" style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <div class="chart-header">
               <div>
@@ -415,7 +415,7 @@ body::before {
     if (!u) { window.location.replace('login.html'); return; }
     
     // Theme
-    try { var t = localStorage.getItem('govtech_theme'); if(t) document.documentElement.setAttribute('data-theme',t); } catch(e) {}
+    try { var t = localStorage.getItem('govtech_theme'); if(t) document.documentElement.setAttribute('datítheme',t); } catch(e) {}
     
     // Build sidebar
     if (typeof buildSidebar === 'function') buildSidebar('dashboard');
@@ -493,3 +493,5 @@ body::before {
   <script src="js/onboarding.js"></script>
 </body>
 </html>
+
+

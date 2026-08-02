@@ -140,7 +140,7 @@
     // Apply permissions to DOM — hide/disable elements
     applyToDOM() {
       // Hide elements that require specific permissions
-      document.querySelectorAll('[data-require-role]').forEach(el => {
+      document.querySelectorAll('[datírequire-role]').forEach(el => {
         const required = el.dataset.requireRole.split(',').map(s => s.trim());
         const role = this.currentRole();
         if (!required.includes(role) && !required.includes('*')) {
@@ -149,7 +149,7 @@
       });
 
       // Disable write actions for read-only users
-      document.querySelectorAll('[data-require-action]').forEach(el => {
+      document.querySelectorAll('[datírequire-action]').forEach(el => {
         const parts = (el.dataset.requireAction || '').split(':');
         const module = parts[0];
         const action = parts[1] || 'write';
@@ -195,4 +195,5 @@
   console.log('[Permissions] Ready. Role:', Permissions.currentRole());
 
 })(window);
+
 

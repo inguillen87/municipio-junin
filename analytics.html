@@ -219,12 +219,12 @@
         <div class="chart-card">
           <div class="chart-title">💰 Ejecución Presupuestaria Mensual</div>
           <div class="chart-sub">Presupuestado vs. ejecutado — predicción IA en gris</div>
-          <div class="chart-wrap"><canvas id="chartEjecucion" height="220"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartGastoMensual" height="220"></canvas></div>
         </div>
         <div class="chart-card">
           <div class="chart-title">📊 Gasto por Área (Julio 2026)</div>
           <div class="chart-sub">Distribución porcentual del presupuesto ejecutado</div>
-          <div class="chart-wrap"><canvas id="chartAreas" height="220"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartPresupuestoDoughnut" height="220"></canvas></div>
         </div>
         <div class="chart-card">
           <div class="chart-title">🏘️ Reclamos por Categoría</div>
@@ -234,7 +234,7 @@
         <div class="chart-card">
           <div class="chart-title">👥 Evolución de Personal</div>
           <div class="chart-sub">Nómina activa por mes — con proyección IA</div>
-          <div class="chart-wrap"><canvas id="chartPersonal" height="220"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartHorasExtra" height="220"></canvas></div>
         </div>
       </div>
 
@@ -274,16 +274,22 @@
   <script src='js/db.js'></script>
   <script src="js/charts-premium.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof buildSidebar === 'function') buildSidebar('analytics');
-      setTimeout(function() {
-        if (window.MuniCharts) {
-          if (document.getElementById('chartReclamosTipo')) MuniCharts.reclamosTipo('chartReclamosTipo');
-          if (document.getElementById('chartEjecucion')) MuniCharts.gastoMensual('chartEjecucion');
-          if (document.getElementById('chartAreas')) MuniCharts.presupuesto('chartAreas');
-        }
-      }, 300);
-    });
+        document.addEventListener('DOMContentLoaded', function() {
+  if (typeof buildSidebar === 'function') buildSidebar('analytics');
+  
+  // Wait for Chart.js to load
+  function initCharts() {
+    if (window.Chart && window.MuniCharts) {
+      try { MuniCharts.gastoMensual('chartGastoMensual'); } catch(e) { console.error('gastoMensual', e); }
+      try { MuniCharts.presupuesto('chartPresupuestoDoughnut'); } catch(e) { console.error('presupuesto', e); }
+      try { MuniCharts.reclamosTipo('chartReclamosTipo'); } catch(e) { console.error('reclamosTipo', e); }
+      try { MuniCharts.horasExtra('chartHorasExtra'); } catch(e) { console.error('horasExtra', e); }
+    } else {
+      setTimeout(initCharts, 200);
+    }
+  }
+  setTimeout(initCharts, 500);
+});
     
     function updateCharts() {
       console.log('Actualizando charts con nuevos filtros...');

@@ -406,74 +406,14 @@
   // Ã¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•ÂÃ¢Â•Â
 
   // Usuarios del sistema (autenticaciÃƒÂ³n local)
-    var USERS = [
-    {
-      email: 'superadmin@municontrol.com',
-      password: 'SuperAdmin2026!',
-      name: 'Super Administrador',
-      role: 'SUPER_ADMIN',
-      roleLabel: 'Administrador General',
-      icon: '⚡',
-      color: '#f59e0b',
-      idRole: 'super',
-      modules: ['all']
-    },
-    {
-      email: 'intendente@junin.gob.ar',
-      password: 'Junin2026!',
-      name: 'Intendente Municipal',
-      role: 'TENANT_ADMIN',
-      roleLabel: '👑 Intendente',
-      icon: '🏛️',
-      color: '#3b82f6',
-      idRole: 'intendente',
-      modules: ['all']
-    },
-    {
-      email: 'hacienda@junin.gob.ar',
-      password: 'Hacienda2026!',
-      name: 'Dir. de Hacienda',
-      role: 'TENANT_USER',
-      roleLabel: '🏦 Hacienda',
-      icon: '💰',
-      color: '#10b981',
-      idRole: 'hacienda',
-      modules: ['dashboard','presupuesto','licitaciones','proveedores','exportar']
-    },
-    {
-      email: 'rrhh@junin.gob.ar',
-      password: 'RRHH2026!',
-      name: 'Jefe de RRHH',
-      role: 'TENANT_USER',
-      roleLabel: '👥 RRHH',
-      icon: '👥',
-      color: '#8b5cf6',
-      idRole: 'rrhh',
-      modules: ['dashboard','rrhh','vecinos']
-    },
-    {
-      email: 'analista@junin.gob.ar',
-      password: 'Analytics2026!',
-      name: 'Analista de Datos',
-      role: 'TENANT_USER',
-      roleLabel: '📊 Analytics',
-      icon: '📊',
-      color: '#f43f5e',
-      idRole: 'analytics',
-      modules: ['dashboard','analytics','reportes']
-    },
-    {
-      email: 'demo@demo.com',
-      password: 'demo123',
-      name: 'Usuario Demo',
-      role: 'DEMO',
-      roleLabel: '🔰 Demo',
-      icon: '🌐',
-      color: '#06b6d4',
-      idRole: 'demo',
-      modules: ['all']
-    }
-  ];
+        var USERS = [
+  { email:'superadmin@municontrol.com', password:'SuperAdmin2026!', name:'Super Admin', role:'SUPER_ADMIN', roleLabel: 'Super Admin', icon: '⚡', color: '#f59e0b', idRole: 'super', secretaria:'Sistema' },
+  { email:'intendente@junin.gob.ar', password:'Junin2026!', name:'Marcelo Gutiérrez', role:'INTENDENTE', roleLabel: '👑 Intendente', icon: '🏛️', color: '#3b82f6', idRole: 'intendente', secretaria:'Intendencia' },
+  { email:'hacienda@junin.gob.ar', password:'Hacienda2026!', name:'María García', role:'TENANT_ADMIN', roleLabel: '🏦 Hacienda', icon: '💰', color: '#10b981', idRole: 'hacienda', secretaria:'Hacienda' },
+  { email:'rrhh@junin.gob.ar', password:'RRHH2026!', name:'Carlos López', role:'TENANT_USER', roleLabel: '👥 RRHH', icon: '👥', color: '#8b5cf6', idRole: 'rrhh', secretaria:'RRHH' },
+  { email:'analista@junin.gob.ar', password:'Analytics2026!', name:'Ana Martínez', role:'TENANT_USER', roleLabel: '📊 Analytics', icon: '📊', color: '#f43f5e', idRole: 'analytics', secretaria:'Analítica' },
+  { email:'demo@demo.com', password:'demo123', name:'Usuario Demo', role:'DEMO', roleLabel: '🔰 Demo', icon: '🌐', color: '#06b6d4', idRole: 'demo', secretaria:'Demo' }
+];
 
   // Ã¢Â”Â€Ã¢Â”Â€ FUNCIÃƒÂ“N DE LOGIN Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€Ã¢Â”Â€
   function doLogin(email, pw) {
@@ -494,13 +434,14 @@
         }
       }
 
-      if (found) {
+            if (found) {
         sessionStorage.setItem('mjunin_user', JSON.stringify({
-          email:     found.email,
           name:      found.name,
+          email:     found.email,
           role:      found.role,
+          secretaria: found.secretaria,
+          tenant:    'municipio-junin',
           roleLabel: found.roleLabel,
-          modules:   found.modules,
           loginAt:   new Date().toISOString()
         }));
         window.location.href = 'index.html';

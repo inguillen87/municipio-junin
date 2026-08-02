@@ -31,7 +31,7 @@
       'proveedores': ['read','write'],
       'pagos': ['read','write','export'],
     },
-    INTENDENTE: {
+        INTENDENTE: {
       'dashboard': ['read','export'],
       'presupuesto': ['read','export'],
       'rrhh': ['read','export'],
@@ -39,15 +39,20 @@
       'vecinos': ['read','export'],
       'mapa': ['read','export'],
       'analytics': ['read','export'],
+      'reportes': ['read','export'],
       'control': ['read','export'],
       'hacienda': ['read','export'],
-      'exportar': ['read'],
+      'exportar': ['read','export'],
       'ia': ['read','write'],
       'whatsapp': ['read'],
       'obras': ['read','export'],
       'proveedores': ['read'],
       'pagos': ['read','export'],
+      'cuentas-claras': ['read','export'],
+      'ciudadano': ['read'],
+      'index': ['read']
     },
+
     HACIENDA: {
       'dashboard': ['read'],
       'presupuesto': ['read','write','export'],

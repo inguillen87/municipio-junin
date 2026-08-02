@@ -399,183 +399,97 @@ body::before {
     </div>
   </main>
 
+    <!-- Core scripts -->
   <script src="js/nav.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/db.js"></script>
   <script src="js/permissions.js"></script>
+  <script src="js/charts-premium.js"></script>
+  <script src="js/ux-improvements.js"></script>
   
-  
-  <script src="js/api.js"></script>
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <!-- Page init -->
   <script>
-  // Verificar sesión activa
   (function() {
-    try {
-      var t = localStorage.getItem('govtech_theme');
-      if (t) document.documentElement.setAttribute('data-theme', t);
-      var u = sessionStorage.getItem('mjunin_user');
-      if (!u) { window.location.replace('login.html'); }
-    } catch(e) {}
-  })();
-  </script>
-  <script src="js/data.js"></script>
-  <script src="js/charts.js"></script>
-  <script src="js/dashboard.js"></script>
-  <script>
-    buildSidebar('dashboard');
-
-    // Show access denied message if redirected from a restricted page
-    if (sessionStorage.getItem('access_denied')) {
-      sessionStorage.removeItem('access_denied');
-      setTimeout(function() {
-        if (typeof showToast !== 'undefined') showToast('? Acceso restringido para tu rol', 'error');
-      }, 800);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // Backend status badge
-      if (window.API) {
-        API.renderBackendStatus && API.renderBackendStatus('backendStatusBadge');
+    // Session check
+    var u = sessionStorage.getItem('mjunin_user');
+    if (!u) { window.location.replace('login.html'); return; }
+    
+    // Theme
+    try { var t = localStorage.getItem('govtech_theme'); if(t) document.documentElement.setAttribute('data-theme',t); } catch(e) {}
+    
+    // Build sidebar
+    if (typeof buildSidebar === 'function') buildSidebar('dashboard');
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Access denied toast
+      if (sessionStorage.getItem('access_denied')) {
+        sessionStorage.removeItem('access_denied');
+        setTimeout(function() { if(typeof showToast!=='undefined') showToast('\u26a0\ufe0f Acceso restringido para tu rol', 'error'); }, 500);
       }
-
-      // Avatar + Welcome banner from sessionStorage
+      
+      // User avatar + greeting
       try {
-        const raw = sessionStorage.getItem('mjunin_user');
-        const user = raw ? JSON.parse(raw) : null;
+        var raw = sessionStorage.getItem('mjunin_user');
+        var user = raw ? JSON.parse(raw) : null;
         if (user) {
-          const av = document.getElementById('topbarAvatar');
-          if (av) av.textContent = (user.name || 'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-
-          const hour = new Date().getHours();
-          const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
-          const wg = document.getElementById('welcomeGreeting');
-          if (wg) wg.innerHTML = `${greeting}, <span>${user.name || 'Usuario'}</span>`;
-
-          const wr = document.getElementById('welcomeRole');
-          const roleMap = { 
-  SUPER_ADMIN: '&#x1F451; Super Admin', 
-  TENANT_ADMIN: '&#x1F3E6; Administrador', 
-  INTENDENTE: '&#x1F3DB;&#xFE0F; Intendente',
-  TENANT_USER: '&#x1F464; Usuario', 
-  DEMO: '&#x1F441;&#xFE0F; Demo' 
-};
+          var av = document.getElementById('topbarAvatar');
+          if (av) av.textContent = (user.name||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+          var hour = new Date().getHours();
+          var greeting = hour < 12 ? 'Buenos d\u00edas' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+          var wg = document.getElementById('welcomeGreeting');
+          if (wg) wg.innerHTML = greeting + ', <span>' + (user.name||'Usuario') + '</span>';
+          var wr = document.getElementById('welcomeRole');
+          var roleMap = { SUPER_ADMIN:'\ud83d\udc51 Super Admin', INTENDENTE:'\ud83c\udfdb\ufe0f Intendente', TENANT_ADMIN:'\ud83c\udfe6 Administrador', TENANT_USER:'\ud83d\udc64 Usuario', DEMO:'\ud83d\udc41\ufe0f Demo' };
           if (wr) wr.textContent = roleMap[user.role] || user.role || 'Usuario';
-
-          const ll = document.getElementById('lastLoginTime');
-          if (ll) ll.textContent = new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
         }
       } catch(e) {}
-
-      // Live clock
-      function updateClock() {
-        const now = new Date();
-        const opts = { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' };
-        const el = document.getElementById('liveClock');
-        if (el) el.textContent = now.toLocaleDateString('es-AR', opts).replace(',', ' ·');
+      
+      // Charts
+      if (window.MuniCharts) {
+        try { window.mainChart = MuniCharts.gastoMensual('chartGastoMensual'); } catch(e) {}
+        try { MuniCharts.presupuesto('chartPresupuestoDoughnut'); } catch(e) {}
+        try { MuniCharts.horasExtra('chartHorasExtra'); } catch(e) {}
+        try { MuniCharts.ejecucionRadar('chartEjecucionRadar'); } catch(e) {}
       }
-      setInterval(updateClock, 1000);
-      updateClock();
+      
+      // Checkbook from MuniDB
+      if (window.MuniDB) {
+        try {
+          var pagos = MuniDB.sort(MuniDB.getAll('pagos'),'fecha','desc').slice(0,5);
+          var tbody = document.getElementById('checkbookBody');
+          if (tbody && pagos.length) {
+            tbody.innerHTML = pagos.map(function(p) {
+              return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04)"><td style="padding:10px 12px;font-size:12px">' + new Date(p.fecha).toLocaleDateString('es-AR') + '</td><td style="padding:10px 12px;font-size:13px;font-weight:700">' + (p.proveedor||'') + '</td><td style="padding:10px 12px;font-size:11px;color:rgba(148,163,184,0.7)">' + (p.concepto||'').slice(0,35) + '</td><td style="padding:10px 12px"><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(59,130,246,0.1);color:#60a5fa">' + (p.secretaria||'') + '</span></td><td style="padding:10px 12px;font-weight:800;color:#10b981">$' + ((p.monto||0)/1000000).toFixed(2) + 'M</td></tr>';
+            }).join('');
+          }
+        } catch(e) {}
+        
+        // Live KPIs
+        try {
+          var empleados = MuniDB.getAll('empleados');
+          var activos = empleados.filter(function(e){return e.estado==='activo';}).length;
+          var el1 = document.getElementById('kpi-empleados-val');
+          if (el1) el1.textContent = activos.toLocaleString('es-AR');
+        } catch(e) {}
+        try {
+          var reclamos = MuniDB.getAll('reclamos');
+          var pendientes = reclamos.filter(function(r){return r.estado!=='resuelto';}).length;
+          var el2 = document.getElementById('kpi-reclamos-val');
+          if (el2) el2.textContent = pendientes;
+        } catch(e) {}
+      }
     });
+  })();
   </script>
-
-  <div class="bottom-status-bar">
-  <span>&#x2705; Sistema activo</span>
-  <span>&#x1F4BE; Base de datos conectada</span>
-  <span>&#x1F916; IA Municipal activa</span>
-  <span>&#x1F504; Última actualización: <span id="lastUpdateText">hace 2 min</span></span>
-</div>
-  <script src="js/charts-premium.js"></script>
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Initialize premium charts
-    if (window.MuniCharts) {
-      window.mainChart = MuniCharts.gastoMensual('chartGastoMensual');
-      MuniCharts.presupuesto('chartPresupuestoDoughnut');
-      MuniCharts.horasExtra('chartHorasExtra');
-      MuniCharts.ejecucionRadar('chartEjecucionRadar');
-      MuniCharts.heatmapSemanal('actividadHeatmap');
-    }
-    // Checkbook widget  last payments from MuniDB
-    if (window.MuniDB) {
-      const pagos = MuniDB.sort(MuniDB.getAll('pagos'), 'fecha', 'desc').slice(0, 5);
-      const tbody = document.getElementById('checkbookBody');
-      if (tbody) {
-        tbody.innerHTML = pagos.map(p => `
-          <tr>
-            <td>${new Date(p.fecha).toLocaleDateString('es-AR')}</td>
-            <td><strong>${p.proveedor}</strong></td>
-            <td style="color:var(--text-muted);font-size:11px">${p.concepto.slice(0,35)}...</td>
-            <td><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(59,130,246,0.1);color:#60a5fa">${p.secretaria}</span></td>
-            <td style="font-weight:800;color:#10b981">$${(p.monto/1000000).toFixed(2)}M</td>
-          </tr>
-        `).join('');
-      }
-    }
-  });
-  </script>
-  <script src="js/ai-widget.js"></script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/bottom-nav.js'></script>
-
-
-
-  <script src='js/analytics-live.js'></script>
-  <script src='js/notifications.js'></script>
-
-<script>
-// Load LIVE KPI data from MuniDB
-function loadLiveKPIs() {
-  if (!window.MuniDB) return;
   
-  // Empleados activos
-  try {
-    const empleados = MuniDB.getAll('empleados');
-    const activos = empleados.filter(e => e.estado === 'activo').length;
-    const totalSalarios = empleados.reduce((s,e) => s + (e.salario||0), 0);
-    const el = document.getElementById('kpi-empleados-val') || document.querySelector('[data-kpi="empleados"] .kpi-value');
-    if (el) el.textContent = activos.toLocaleString('es-AR');
-  } catch(e) {}
-  
-  // Reclamos pendientes
-  try {
-    const reclamos = MuniDB.getAll('reclamos');
-    const pendientes = reclamos.filter(r => r.estado !== 'resuelto').length;
-    const el2 = document.querySelector('[data-kpi="reclamos"] .kpi-value, #kpi-reclamos-val');
-    if (el2) el2.textContent = pendientes;
-  } catch(e) {}
-
-  // Pagos del mes
-  try {
-    const pagos = MuniDB.getAll('pagos');
-    const totalPagos = pagos.reduce((s,p) => s + (p.monto||0), 0);
-    const el3 = document.querySelector('[data-kpi="pagos"] .kpi-value, #kpi-gastos-val');
-    if (el3) el3.textContent = '$' + (totalPagos/1000000).toFixed(1) + 'M';
-  } catch(e) {}
-  
-  // Obras en ejecucion
-  try {
-    const obras = MuniDB.getAll('obras');
-    const enEjecucion = obras.filter(o => o.estado === 'en_ejecucion').length;
-    const el4 = document.querySelector('[data-kpi="obras"] .kpi-value, #kpi-obras-val');
-    if (el4) el4.textContent = enEjecucion;
-  } catch(e) {}
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(loadLiveKPIs, 500);
-});
-</script>
-  <script src='js/search-global.js'></script>
-  <script src='js/live-clock.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
-  <script src='js/onboarding.js'></script>
+  <!-- Feature scripts -->
+  <script src="js/dashboard.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/search-global.js"></script>
+  <script src="js/analytics-live.js"></script>
+  <script src="js/live-clock.js"></script>
+  <script src="js/chat-widget.js"></script>
+  <script src="js/theme-switcher.js"></script>
+  <script src="js/onboarding.js"></script>
 </body>
 </html>
-
-
-
-
-
-

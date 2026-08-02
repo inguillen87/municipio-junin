@@ -133,7 +133,7 @@ function buildSidebar(activeId) {
   // Logo
   html += '<div class="sidebar-logo">';
   html += '<div class="sidebar-logo-icon">' + getIcon('logo') + '</div>';
-  html += '<div><div class="sidebar-logo-name">MuniControl</div><div class="sidebar-logo-sub">Junin · 2026</div></div>';
+  html += '<div><div class="sidebar-logo-name">MuniControl</div><div class="sidebar-logo-sub">Junin 2026</div></div>';
   html += '<button class="sidebar-collapse-btn" id="sidebarToggle" title="Colapsar">&#8592;</button>';
   html += '</div>';
 

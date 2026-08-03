@@ -2673,3 +2673,27 @@ a, button { -webkit-tap-highlight-color: rgba(59,130,246,0.1); }
   }
 }
 
+
+/* -- FULL-SCREEN FIX: main-content siempre ocupa el espacio restante -- */
+.main-content {
+  min-height: 100vh;
+  width: calc(100% - var(--sidebar-w, 260px)) !important;
+  box-sizing: border-box;
+}
+/* When sidebar collapses, content expands */
+body.sidebar-collapsed .main-content,
+.main-content.expanded {
+  width: calc(100% - 64px) !important;
+  margin-left: 64px !important;
+}
+/* Page content always full width */
+.page-content {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+/* Remove any accidental max-width on content containers */
+.content-wrapper, .charts-row, .kpi-grid, .bottom-grid {
+  max-width: 100% !important;
+  box-sizing: border-box;
+}

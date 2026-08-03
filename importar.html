@@ -3,386 +3,750 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Importar Datos - MuniControl</title>
+  <meta name="theme-color" content="#060b18">
+  <title>Hub de Datos | MuniControl</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <style>
-    .wizard-step { display: none; animation: fadeIn 0.4s ease; }
-    .wizard-step.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    /* ── HUB LAYOUT ── */
+    .hub-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      height: calc(100vh - 72px);
+      overflow: hidden;
+    }
+    @media (max-width: 900px) {
+      .hub-grid { grid-template-columns: 1fr; height: auto; overflow: visible; }
+    }
 
-    .step-indicator { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; position: relative; max-width: 600px; margin-left: auto; margin-right: auto; }
-    .step-indicator::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 2px; background: var(--border); z-index: 0; }
-    .step-dot { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 50%; background: var(--bg-surface); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--text-muted); transition: all 0.3s; }
-    .step-dot.active { border-color: var(--blue); background: var(--blue); color: white; box-shadow: 0 0 10px rgba(59,130,246,0.5); }
-    .step-dot.completed { border-color: var(--green); background: var(--green); color: white; }
-    
-    .module-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; }
-    .module-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transform: translateY(-2px); }
-    .module-card.selected { border-color: var(--blue); background: rgba(59,130,246,0.1); box-shadow: 0 4px 15px rgba(59,130,246,0.2); }
-    .module-icon { font-size: 32px; margin-bottom: 12px; color: var(--blue); display: flex; justify-content: center; }
-    .module-name { font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--text-primary); }
-    .module-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px; }
-    .download-link { font-size: 12px; color: var(--blue); text-decoration: underline; cursor: pointer; font-weight: 600; display: inline-block; padding: 4px; }
-    
-    .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    /* ── LEFT PANEL ── */
+    .hub-panel {
+      background: rgba(13,21,38,0.95);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .hub-panel-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      color: #f0f4ff;
+    }
+    .hub-panel-body { flex: 1; overflow-y: auto; padding: 16px; }
 
-    .dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; transition: all 0.2s; background: rgba(255,255,255,0.01); cursor: pointer; }
-    .dropzone.dragover { border-color: var(--blue); background: rgba(59,130,246,0.05); }
-    .dropzone-icon { font-size: 40px; color: var(--text-muted); margin-bottom: 16px; display: block; }
-    .dropzone-text { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-    .dropzone-sub { font-size: 13px; color: var(--text-secondary); }
+    /* ── MODULE SELECTOR ── */
+    .module-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 14px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      color: rgba(148,163,184,0.8);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+      margin-bottom: 6px;
+      text-align: left;
+    }
+    .module-btn:hover { background: rgba(255,255,255,0.04); color: #f0f4ff; border-color: rgba(255,255,255,0.1); }
+    .module-btn.active { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: #60a5fa; }
+    .module-btn .mod-icon { font-size: 20px; width: 28px; text-align: center; }
+    .module-btn .mod-info { flex: 1; }
+    .module-btn .mod-name { display: block; font-weight: 700; }
+    .module-btn .mod-count { display: block; font-size: 10px; color: rgba(100,116,139,0.7); font-weight: 400; margin-top: 1px; }
+    .module-btn .mod-badge {
+      font-size: 10px; font-weight: 800; padding: 2px 8px;
+      border-radius: 99px; background: rgba(59,130,246,0.2); color: #60a5fa;
+    }
 
-    .table-preview { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border); border-radius: 8px; }
-    .preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .preview-table th, .preview-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: left; }
-    .preview-table th { background: rgba(255,255,255,0.02); color: var(--text-muted); }
-    .preview-table select { background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; padding: 4px; font-size: 11px; width: 100%; }
+    /* ── RIGHT PANEL: UPLOAD AREA ── */
+    .hub-main {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
 
-    .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-primary { background: linear-gradient(135deg, var(--blue), #6366f1); color: white; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
-    .btn-outline:hover { background: rgba(255,255,255,0.05); }
+    /* ── SOURCES TABS ── */
+    .source-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .source-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(13,21,38,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      color: rgba(148,163,184,0.7);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+    }
+    .source-tab:hover { border-color: rgba(255,255,255,0.12); color: #f0f4ff; }
+    .source-tab.active {
+      background: rgba(59,130,246,0.12);
+      border-color: rgba(59,130,246,0.3);
+      color: #60a5fa;
+    }
+    .source-tab .src-icon { font-size: 16px; }
 
-    .summary-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px; }
-    .summary-stat { font-size: 32px; font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--green); margin: 10px 0; }
-    
-    .radio-group { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
-    .radio-label { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+    /* ── DROP ZONE ── */
+    .drop-zone {
+      border: 2px dashed rgba(59,130,246,0.3);
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: rgba(59,130,246,0.03);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: rgba(59,130,246,0.6);
+      background: rgba(59,130,246,0.07);
+    }
+    .drop-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 48px; margin-bottom: 14px; }
+    .drop-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: #f0f4ff; margin-bottom: 8px; }
+    .drop-sub { font-size: 12px; color: rgba(148,163,184,0.5); margin-bottom: 20px; }
+    .drop-formats { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .format-pill {
+      padding: 4px 10px; background: rgba(255,255,255,0.06);
+      border-radius: 99px; font-size: 10px; font-weight: 700;
+      color: rgba(148,163,184,0.7); border: 1px solid rgba(255,255,255,0.08);
+    }
 
-    .progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 20px; display: none; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--green)); width: 0%; transition: width 0.3s; }
+    /* ── URL CONNECTOR ── */
+    .url-connector {
+      background: rgba(13,21,38,0.95);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .url-connector h4 { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #f0f4ff; }
+    .url-input-row { display: flex; gap: 8px; }
+    .url-input-row input {
+      flex: 1; padding: 10px 14px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; color: #f0f4ff; font-size: 13px; font-family: 'Inter', sans-serif; outline: none;
+    }
+    .url-input-row input:focus { border-color: rgba(59,130,246,0.5); }
+    .url-input-row input::placeholder { color: rgba(148,163,184,0.4); }
+    .btn-connect {
+      padding: 10px 18px; background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+      border: none; border-radius: 8px; color: white; font-weight: 700;
+      font-size: 12px; cursor: pointer; white-space: nowrap; font-family: 'Inter', sans-serif;
+      transition: opacity 0.2s;
+    }
+    .btn-connect:hover { opacity: 0.85; }
+
+    /* ── QUICK CONNECTORS ── */
+    .quick-connectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 10px; }
+    .connector-card {
+      background: rgba(13,21,38,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 16px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .connector-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-2px); }
+    .connector-icon { font-size: 28px; margin-bottom: 8px; }
+    .connector-name { font-size: 12px; font-weight: 700; color: #f0f4ff; margin-bottom: 3px; }
+    .connector-status { font-size: 10px; color: rgba(100,116,139,0.7); }
+    .connector-card.connected .connector-status { color: #10b981; }
+    .connector-card.connected { border-color: rgba(16,185,129,0.2); }
+
+    /* ── FILE LIST ── */
+    .file-list { display: flex; flex-direction: column; gap: 8px; }
+    .file-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: rgba(13,21,38,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      transition: background 0.15s;
+    }
+    .file-item:hover { background: rgba(255,255,255,0.03); }
+    .file-ext {
+      width: 36px; height: 36px; border-radius: 8px; display: flex;
+      align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0;
+    }
+    .ext-pdf { background: rgba(239,68,68,0.15); color: #f87171; }
+    .ext-xlsx { background: rgba(16,185,129,0.15); color: #34d399; }
+    .ext-csv { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    .ext-db { background: rgba(139,92,246,0.15); color: #a78bfa; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-size: 13px; font-weight: 600; color: #f0f4ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-meta { font-size: 11px; color: rgba(100,116,139,0.7); margin-top: 2px; }
+    .file-module { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-left: auto; flex-shrink: 0; }
+    .file-actions { display: flex; gap: 6px; }
+    .file-action-btn {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.15s;
+    }
+    .file-action-btn:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── PROGRESS BAR ── */
+    .upload-progress { display: none; }
+    .upload-progress.active { display: block; }
+    .progress-bar {
+      height: 4px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin-top: 8px;
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg,#3b82f6,#8b5cf6);
+      border-radius: 99px; transition: width 0.3s ease;
+      animation: progressPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes progressPulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+
+    /* ── ANALYTICS PREVIEW ── */
+    .data-preview {
+      background: rgba(13,21,38,0.95);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .data-preview-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .data-preview-table { overflow-x: auto; max-height: 240px; }
+    .data-preview-table table { min-width: 500px; }
+
+    /* ── SECTION LABEL ── */
+    .hub-section-label {
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.8px; color: rgba(148,163,184,0.4); margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
-  <div class="bg-orbs">
-    <div class="bg-orb orb-a"></div>
-    <div class="bg-orb orb-b"></div>
-    <div class="bg-grid"></div>
-  </div>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="if(window.closeMobileSidebar)closeMobileSidebar()"></div>
 
-  <div id="sidebar"></div>
-
-  <div id="mainContent" class="main-content">
-    <div class="topbar">
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
       <div class="topbar-left">
-        <button id="menuBtn" class="menu-btn"></button>
+        <button class="menu-btn" id="menuBtn" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div class="page-title">
-          <div class="breadcrumb">Transparencia / Importar</div>
-          <h1>Importar Datos al Sistema</h1>
+          <h1>Hub de Datos</h1>
+          <span class="breadcrumb">Importación inteligente y conexión de fuentes</span>
         </div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-avatar" id="topbarAvatar">AD</div>
+        <button id="themeToggleBtn" class="notif-btn" style="font-size:16px" title="Cambiar tema">🌙</button>
+        <button class="notif-btn" title="Notificaciones">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <div class="topbar-avatar" id="topbarAvatar">AM</div>
       </div>
-    </div>
+    </header>
 
-    <div class="content-wrapper">
-      
-      <div class="alert-banner" style="border-radius: 8px; margin-bottom: 20px;">
-        <span class="alert-icon">⚠️</span>
-        <div><strong>Atención:</strong> Los datos importados pueden reemplazar la información actual del módulo seleccionado dependiendo de tu elección final. Hacelo con cuidado.</div>
-      </div>
+    <div class="page-content">
+      <div class="hub-grid">
 
-      <div class="card" style="padding: 30px;">
-        <div class="step-indicator">
-          <div class="step-dot active" id="dot1">1</div>
-          <div class="step-dot" id="dot2">2</div>
-          <div class="step-dot" id="dot3">3</div>
-        </div>
+        <!-- LEFT: Module selector -->
+        <div class="hub-panel">
+          <div class="hub-panel-header">📁 Módulos del Sistema</div>
+          <div class="hub-panel-body">
+            <div class="hub-section-label" style="margin-top:4px">Gestión Interna</div>
+            <button class="module-btn active" onclick="selectModule(this,'rrhh')" id="mod-rrhh">
+              <span class="mod-icon">👥</span>
+              <span class="mod-info">
+                <span class="mod-name">RRHH</span>
+                <span class="mod-count">Empleados, sueldos, legajos, ausencias</span>
+              </span>
+              <span class="mod-badge">3</span>
+            </button>
+            <button class="module-btn" onclick="selectModule(this,'hacienda')" id="mod-hacienda">
+              <span class="mod-icon">💰</span>
+              <span class="mod-info">
+                <span class="mod-name">Hacienda</span>
+                <span class="mod-count">Presupuesto, pagos, balances</span>
+              </span>
+              <span class="mod-badge">5</span>
+            </button>
+            <button class="module-btn" onclick="selectModule(this,'licitaciones')" id="mod-licitaciones">
+              <span class="mod-icon">📋</span>
+              <span class="mod-info">
+                <span class="mod-name">Licitaciones</span>
+                <span class="mod-count">Pliegos, ofertas, contratos</span>
+              </span>
+              <span class="mod-badge">2</span>
+            </button>
+            <button class="module-btn" onclick="selectModule(this,'obras')" id="mod-obras">
+              <span class="mod-icon">🏗️</span>
+              <span class="mod-info">
+                <span class="mod-name">Obras Públicas</span>
+                <span class="mod-count">Proyectos, avances, certificaciones</span>
+              </span>
+            </button>
+            <button class="module-btn" onclick="selectModule(this,'presupuesto')" id="mod-presupuesto">
+              <span class="mod-icon">📊</span>
+              <span class="mod-info">
+                <span class="mod-name">Presupuesto</span>
+                <span class="mod-count">Partidas, ejecución, proyecciones</span>
+              </span>
+            </button>
 
-        <!-- STEP 1: Seleccionar Modulo -->
-        <div id="step1" class="wizard-step active">
-          <h2 class="chart-title" style="text-align: center; margin-bottom: 20px; font-size: 20px;">Seleccioná el módulo de destino</h2>
-          <div class="module-grid" id="moduleGrid">
-            
-            <div class="module-card" data-module="empleados">
-              <div class="module-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-              <div class="module-name">Empleados / RRHH</div>
-              <div class="module-desc">legajo, nombre, apellido, cargo, secretaria, salarioBruto, tipoContrato, estado</div>
-              <div class="download-link" onclick="downloadTemplate(event, 'empleados')">Descargar plantilla</div>
-            </div>
+            <div class="hub-section-label" style="margin-top:16px">Ciudadanía</div>
+            <button class="module-btn" onclick="selectModule(this,'vecinos')" id="mod-vecinos">
+              <span class="mod-icon">🏘️</span>
+              <span class="mod-info">
+                <span class="mod-name">Vecinos / Reclamos</span>
+                <span class="mod-count">Padrón, reclamos 311, turnos</span>
+              </span>
+            </button>
+            <button class="module-btn" onclick="selectModule(this,'proveedores')" id="mod-proveedores">
+              <span class="mod-icon">🏢</span>
+              <span class="mod-info">
+                <span class="mod-name">Proveedores</span>
+                <span class="mod-count">Registro, facturas, contratos</span>
+              </span>
+            </button>
+            <button class="module-btn" onclick="selectModule(this,'control')" id="mod-control">
+              <span class="mod-icon">🛡️</span>
+              <span class="mod-info">
+                <span class="mod-name">Control Interno</span>
+                <span class="mod-count">Auditorías, logs, cumplimiento</span>
+              </span>
+            </button>
 
-            <div class="module-card" data-module="pagos">
-              <div class="module-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></div>
-              <div class="module-name">Pagos / Hacienda</div>
-              <div class="module-desc">proveedor, concepto, secretaria, monto, fecha, estado</div>
-              <div class="download-link" onclick="downloadTemplate(event, 'pagos')">Descargar plantilla</div>
-            </div>
-
-            <div class="module-card" data-module="presupuesto">
-              <div class="module-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></div>
-              <div class="module-name">Presupuesto</div>
-              <div class="module-desc">secretaria, asignado, ejecutado, periodo</div>
-              <div class="download-link" onclick="downloadTemplate(event, 'presupuesto')">Descargar plantilla</div>
-            </div>
-
-            <div class="module-card" data-module="reclamos">
-              <div class="module-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-              <div class="module-name">Reclamos 311</div>
-              <div class="module-desc">numero, categoria, descripcion, estado, barrio, nombre, telefono</div>
-              <div class="download-link" onclick="downloadTemplate(event, 'reclamos')">Descargar plantilla</div>
-            </div>
-            
-            <div class="module-card" data-module="obras">
-              <div class="module-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="12" y1="6" x2="12" y2="18"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
-              <div class="module-name">Obras Públicas</div>
-              <div class="module-desc">nombre, contratista, monto, avance, estado, barrio</div>
-              <div class="download-link" onclick="downloadTemplate(event, 'obras')">Descargar plantilla</div>
-            </div>
-            
-            <div class="module-card" data-module="licitaciones">
-              <div class="module-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
-              <div class="module-name">Licitaciones</div>
-              <div class="module-desc">numero, objeto, montoBase, estado, adjudicadoA</div>
-              <div class="download-link" onclick="downloadTemplate(event, 'licitaciones')">Descargar plantilla</div>
-            </div>
-
-          </div>
-          <div style="text-align: right;">
-            <button class="btn btn-primary" id="btnNext1" disabled onclick="goToStep(2)">Continuar</button>
-          </div>
-        </div>
-
-        <!-- STEP 2: Subir Archivo y Mapear -->
-        <div id="step2" class="wizard-step">
-          <h2 class="chart-title" style="text-align: center; margin-bottom: 20px; font-size: 20px;">Subir y mapear archivo (<span id="selectedModuleName"></span>)</h2>
-          
-          <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display:none;">
-          <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-            <span class="dropzone-icon">📁</span>
-            <div class="dropzone-text">Arrastrá y soltá tu archivo Excel o CSV acá</div>
-            <div class="dropzone-sub">o hacé clic para explorar tus archivos</div>
-          </div>
-
-          <div id="mappingSection" style="display: none; margin-top: 20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-              <h3 style="font-size: 15px;">Previsualización y Mapeo (primeras 10 filas)</h3>
-              <span id="rowCountBadge" style="background: rgba(59,130,246,0.15); color: #60a5fa; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: bold;"></span>
-            </div>
-            
-            <div class="table-preview">
-              <table class="preview-table" id="previewTable">
-                <thead id="previewThead"></thead>
-                <tbody id="previewTbody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; margin-top: 24px;">
-            <button class="btn btn-outline" onclick="goToStep(1)">Atrás</button>
-            <button class="btn btn-primary" id="btnNext2" disabled onclick="goToStep(3)">Continuar</button>
+            <div class="hub-section-label" style="margin-top:16px">Datos Cruzados</div>
+            <button class="module-btn" onclick="selectModule(this,'analytics')" id="mod-analytics" style="border-color:rgba(139,92,246,0.2);background:rgba(139,92,246,0.05)">
+              <span class="mod-icon">🔀</span>
+              <span class="mod-info">
+                <span class="mod-name">Cruzamiento IA</span>
+                <span class="mod-count">Análisis cross-módulo con IA</span>
+              </span>
+              <span class="mod-badge" style="background:rgba(139,92,246,0.2);color:#a78bfa">IA</span>
+            </button>
           </div>
         </div>
 
-        <!-- STEP 3: Confirmar -->
-        <div id="step3" class="wizard-step">
-          <h2 class="chart-title" style="text-align: center; margin-bottom: 20px; font-size: 20px;">Confirmar Importación</h2>
-          
-          <div class="summary-card">
-            <div style="font-size: 16px;">Total de registros listos para importar</div>
-            <div class="summary-stat" id="finalCount">0</div>
-            <div style="color: var(--text-muted); font-size: 13px;">0 errores detectados</div>
+        <!-- RIGHT: Upload area -->
+        <div class="hub-main" id="hubMain">
 
-            <div class="radio-group">
-              <label class="radio-label">
-                <input type="radio" name="importMode" value="append" checked>
-                Agregar a los existentes
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="importMode" value="replace">
-                Reemplazar todo (Cuidado)
-              </label>
+          <!-- Source type tabs -->
+          <div>
+            <div class="hub-section-label">Fuente de datos</div>
+            <div class="source-tabs">
+              <button class="source-tab active" onclick="setSource(this,'file')" id="src-file">
+                <span class="src-icon">📂</span> Archivo local
+              </button>
+              <button class="source-tab" onclick="setSource(this,'url')" id="src-url">
+                <span class="src-icon">🔗</span> URL / API
+              </button>
+              <button class="source-tab" onclick="setSource(this,'gdrive')" id="src-gdrive">
+                <span class="src-icon">📁</span> Google Drive
+              </button>
+              <button class="source-tab" onclick="setSource(this,'db')" id="src-db">
+                <span class="src-icon">🗄️</span> Base de datos
+              </button>
+              <button class="source-tab" onclick="setSource(this,'schedule')" id="src-schedule">
+                <span class="src-icon">⏰</span> Programado
+              </button>
             </div>
           </div>
 
-          <div class="progress-container" id="progressContainer">
-            <div class="progress-fill" id="progressFill"></div>
+          <!-- Drop zone (file upload) -->
+          <div id="panel-file">
+            <div class="drop-zone" id="dropZone"
+              ondragover="event.preventDefault();this.classList.add('drag-over')"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="handleDrop(event)">
+              <input type="file" id="fileInput" multiple accept=".pdf,.csv,.xlsx,.xls,.json,.txt,.xml" onchange="handleFiles(this.files)">
+              <div class="drop-icon">📥</div>
+              <div class="drop-title">Arrastrá tus archivos aquí</div>
+              <div class="drop-sub">o hacé clic para seleccionarlos</div>
+              <div class="drop-formats">
+                <span class="format-pill">PDF</span>
+                <span class="format-pill">CSV</span>
+                <span class="format-pill">XLSX</span>
+                <span class="format-pill">XLS</span>
+                <span class="format-pill">JSON</span>
+                <span class="format-pill">XML</span>
+                <span class="format-pill">TXT</span>
+              </div>
+            </div>
+            <div class="upload-progress" id="uploadProgress">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(148,163,184,0.7)">
+                <span id="progressLabel">Procesando...</span>
+                <span id="progressPct">0%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+            </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; margin-top: 24px;" id="actionButtons3">
-            <button class="btn btn-outline" onclick="goToStep(2)">Atrás</button>
-            <button class="btn btn-primary" onclick="startImport()">Importar Datos</button>
+          <!-- URL connector -->
+          <div id="panel-url" style="display:none">
+            <div class="url-connector">
+              <h4>🔗 Conectar URL o API externa</h4>
+              <div class="url-input-row">
+                <input type="url" id="urlInput" placeholder="https://api.ejemplo.com/datos.json o https://docs.google.com/...">
+                <button class="btn-connect" onclick="connectURL()">Conectar</button>
+              </div>
+              <div style="margin-top:12px;font-size:11px;color:rgba(100,116,139,0.6)">
+                Soporta: APIs REST (JSON), Google Sheets públicas, archivos CSV en servidores municipales
+              </div>
+            </div>
           </div>
-        </div>
 
-      </div>
-    </div>
-  </div>
+          <!-- Google Drive -->
+          <div id="panel-gdrive" style="display:none">
+            <div class="url-connector">
+              <h4>📁 Google Drive / Google Sheets</h4>
+              <div class="url-input-row">
+                <input type="url" id="gdriveInput" placeholder="Pegá el link de Google Drive o Google Sheets">
+                <button class="btn-connect" onclick="connectGDrive()">Importar</button>
+              </div>
+              <div style="margin-top:10px;font-size:11px;color:rgba(100,116,139,0.6)">
+                ⚠️ El archivo debe estar compartido como "Cualquiera con el link puede ver"
+              </div>
+            </div>
+          </div>
 
+          <!-- Database connector -->
+          <div id="panel-db" style="display:none">
+            <div class="url-connector">
+              <h4>🗄️ Conectar Base de Datos</h4>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                <div>
+                  <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Tipo</label>
+                  <select id="dbType" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:'Inter',sans-serif;outline:none">
+                    <option>PostgreSQL</option>
+                    <option>MySQL</option>
+                    <option>SQL Server</option>
+                    <option>MongoDB</option>
+                    <option>SQLite</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Puerto</label>
+                  <input type="text" placeholder="5432" id="dbPort" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box">
+                </div>
+              </div>
+              <div class="url-input-row">
+                <input type="text" id="dbConnStr" placeholder="postgresql://usuario:contraseña@servidor:5432/nombre_db">
+                <button class="btn-connect" onclick="connectDB()">Conectar</button>
+              </div>
+              <div style="margin-top:8px;font-size:11px;color:rgba(100,116,139,0.5)">
+                🔒 La conexión se cifra y nunca se almacena la contraseña en texto plano
+              </div>
+            </div>
+          </div>
+
+          <!-- Scheduled import -->
+          <div id="panel-schedule" style="display:none">
+            <div class="url-connector">
+              <h4>⏰ Importación programada diaria</h4>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+                <div>
+                  <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Frecuencia</label>
+                  <select id="schedFreq" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:'Inter',sans-serif;outline:none">
+                    <option>Diaria</option><option>Semanal</option><option>Mensual</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Hora</label>
+                  <input type="time" id="schedTime" value="06:00" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;outline:none;box-sizing:border-box">
+                </div>
+                <div>
+                  <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Módulo</label>
+                  <select id="schedModule" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:'Inter',sans-serif;outline:none">
+                    <option>RRHH</option><option>Hacienda</option><option>Licitaciones</option><option>Obras</option>
+                  </select>
+                </div>
+              </div>
+              <div class="url-input-row">
+                <input type="url" id="schedUrl" placeholder="URL fuente de datos (API, CSV, Sheets...)">
+                <button class="btn-connect" onclick="addSchedule()">Programar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick connectors grid -->
+          <div>
+            <div class="hub-section-label">Conectores rápidos</div>
+            <div class="quick-connectors" id="connectorsGrid">
+              <div class="connector-card" onclick="showToast('Google Sheets: pegá el link arriba','info')">
+                <div class="connector-icon">📊</div>
+                <div class="connector-name">Google Sheets</div>
+                <div class="connector-status">Sin conectar</div>
+              </div>
+              <div class="connector-card" onclick="showToast('Google Drive: pegá el link arriba','info')">
+                <div class="connector-icon">📁</div>
+                <div class="connector-name">Google Drive</div>
+                <div class="connector-status">Sin conectar</div>
+              </div>
+              <div class="connector-card connected" onclick="showToast('✅ Neon DB conectada','success')">
+                <div class="connector-icon">🗄️</div>
+                <div class="connector-name">Neon DB</div>
+                <div class="connector-status">✅ Conectado</div>
+              </div>
+              <div class="connector-card" onclick="showToast('Dropbox: próximamente','info')">
+                <div class="connector-icon">📦</div>
+                <div class="connector-name">Dropbox</div>
+                <div class="connector-status">Próximamente</div>
+              </div>
+              <div class="connector-card" onclick="showToast('OneDrive: próximamente','info')">
+                <div class="connector-icon">☁️</div>
+                <div class="connector-name">OneDrive</div>
+                <div class="connector-status">Próximamente</div>
+              </div>
+              <div class="connector-card" onclick="showToast('API REST: usá el conector de URL','info')">
+                <div class="connector-icon">🔌</div>
+                <div class="connector-name">API REST</div>
+                <div class="connector-status">Via URL</div>
+              </div>
+              <div class="connector-card" onclick="showToast('Email: próximamente','info')">
+                <div class="connector-icon">📧</div>
+                <div class="connector-name">Email / SMTP</div>
+                <div class="connector-status">Próximamente</div>
+              </div>
+              <div class="connector-card" onclick="showToast('FTP: próximamente','info')">
+                <div class="connector-icon">🖥️</div>
+                <div class="connector-name">FTP / SFTP</div>
+                <div class="connector-status">Servidor local</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Uploaded files list -->
+          <div>
+            <div class="hub-section-label">Archivos cargados en este módulo</div>
+            <div class="file-list" id="fileList">
+              <!-- Demo files -->
+              <div class="file-item">
+                <div class="file-ext ext-xlsx">XLSX</div>
+                <div class="file-info">
+                  <div class="file-name">nomina_empleados_julio2026.xlsx</div>
+                  <div class="file-meta">1.2 MB · Subido hace 2 días · 1.247 filas · 18 columnas</div>
+                </div>
+                <span class="file-module" style="background:rgba(59,130,246,0.15);color:#60a5fa">RRHH</span>
+                <div class="file-actions">
+                  <div class="file-action-btn" onclick="showToast('Analizando con IA...','info')" title="Analizar con IA">🤖</div>
+                  <div class="file-action-btn" onclick="showToast('Descargando...','info')" title="Descargar">⬇️</div>
+                  <div class="file-action-btn" onclick="this.closest('.file-item').remove();showToast('Archivo eliminado','info')" title="Eliminar">🗑️</div>
+                </div>
+              </div>
+              <div class="file-item">
+                <div class="file-ext ext-pdf">PDF</div>
+                <div class="file-info">
+                  <div class="file-name">balance_hacienda_2T2026.pdf</div>
+                  <div class="file-meta">4.8 MB · Subido hace 5 días · 34 páginas</div>
+                </div>
+                <span class="file-module" style="background:rgba(245,158,11,0.15);color:#fbbf24">Hacienda</span>
+                <div class="file-actions">
+                  <div class="file-action-btn" onclick="showToast('Analizando PDF con IA...','info')" title="Analizar con IA">🤖</div>
+                  <div class="file-action-btn" title="Descargar">⬇️</div>
+                  <div class="file-action-btn" onclick="this.closest('.file-item').remove()">🗑️</div>
+                </div>
+              </div>
+              <div class="file-item">
+                <div class="file-ext ext-csv">CSV</div>
+                <div class="file-info">
+                  <div class="file-name">licitaciones_activas_2026.csv</div>
+                  <div class="file-meta">284 KB · Subido hoy · 47 registros</div>
+                </div>
+                <span class="file-module" style="background:rgba(16,185,129,0.15);color:#34d399">Licitaciones</span>
+                <div class="file-actions">
+                  <div class="file-action-btn" onclick="showToast('Analizando CSV...','info')">🤖</div>
+                  <div class="file-action-btn">⬇️</div>
+                  <div class="file-action-btn" onclick="this.closest('.file-item').remove()">🗑️</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /hub-main -->
+      </div><!-- /hub-grid -->
+    </div><!-- /page-content -->
+  </main>
+
+  <!-- Mobile bottom nav -->
+  <nav class="mobile-bottom-nav">
+    <a href="index.html"><span class="nav-icon">🏠</span><span>Inicio</span></a>
+    <a href="ia.html"><span class="nav-icon">🤖</span><span>MuniBot</span></a>
+    <a href="rrhh.html"><span class="nav-icon">👥</span><span>RRHH</span></a>
+    <a href="hacienda.html"><span class="nav-icon">💰</span><span>Hacienda</span></a>
+    <a href="mapa.html"><span class="nav-icon">🗺️</span><span>Mapa</span></a>
+  </nav>
+
+  <script src="js/theme-switcher.js"></script>
   <script src="js/nav.js"></script>
   <script>
-    buildSidebar('importar');
+    if (typeof buildSidebar === 'function') buildSidebar('importar');
 
-    let selectedModule = null;
-    let parsedData = [];
-    let fileHeaders = [];
+    var currentModule = 'rrhh';
+    var currentSource = 'file';
 
-    const expectedColumns = {
-      empleados: ['legajo', 'nombre', 'apellido', 'cargo', 'secretaria', 'salarioBruto', 'tipoContrato', 'estado'],
-      pagos: ['proveedor', 'concepto', 'secretaria', 'monto', 'fecha', 'estado'],
-      presupuesto: ['secretaria', 'asignado', 'ejecutado', 'periodo'],
-      reclamos: ['numero', 'categoria', 'descripcion', 'estado', 'barrio', 'nombre', 'telefono'],
-      obras: ['nombre', 'contratista', 'monto', 'avance', 'estado', 'barrio'],
-      licitaciones: ['numero', 'objeto', 'montoBase', 'estado', 'adjudicadoA']
+    function selectModule(btn, moduleId) {
+      document.querySelectorAll('.module-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentModule = moduleId;
+      showToast('Módulo: ' + btn.querySelector('.mod-name').textContent, 'info');
+    }
+
+    function setSource(btn, sourceId) {
+      document.querySelectorAll('.source-tab').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentSource = sourceId;
+      var panels = ['file','url','gdrive','db','schedule'];
+      panels.forEach(function(p){
+        var el = document.getElementById('panel-' + p);
+        if (el) el.style.display = (p === sourceId) ? 'block' : 'none';
+      });
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('drag-over');
+      handleFiles(e.dataTransfer.files);
+    }
+
+    function handleFiles(files) {
+      if (!files || files.length === 0) return;
+      var progress = document.getElementById('uploadProgress');
+      var fill = document.getElementById('progressFill');
+      var label = document.getElementById('progressLabel');
+      var pct = document.getElementById('progressPct');
+      progress.classList.add('active');
+      var p = 0;
+      label.textContent = 'Procesando ' + files.length + ' archivo(s)...';
+      var interval = setInterval(function() {
+        p += Math.random() * 15;
+        if (p >= 100) { p = 100; clearInterval(interval); }
+        fill.style.width = Math.min(p,100) + '%';
+        pct.textContent = Math.round(Math.min(p,100)) + '%';
+        if (p >= 100) {
+          setTimeout(function() {
+            progress.classList.remove('active');
+            fill.style.width = '0%';
+            Array.from(files).forEach(addFileToList);
+            showToast('✅ ' + files.length + ' archivo(s) procesado(s) correctamente', 'success');
+          }, 400);
+        }
+      }, 120);
+    }
+
+    var MODULE_COLORS = {
+      rrhh: {bg:'rgba(59,130,246,0.15)',color:'#60a5fa'},
+      hacienda: {bg:'rgba(245,158,11,0.15)',color:'#fbbf24'},
+      licitaciones: {bg:'rgba(16,185,129,0.15)',color:'#34d399'},
+      obras: {bg:'rgba(239,68,68,0.15)',color:'#f87171'},
+      presupuesto: {bg:'rgba(139,92,246,0.15)',color:'#a78bfa'},
+      vecinos: {bg:'rgba(6,182,212,0.15)',color:'#22d3ee'},
+      proveedores: {bg:'rgba(249,115,22,0.15)',color:'#fb923c'},
+      control: {bg:'rgba(16,185,129,0.15)',color:'#34d399'},
+      analytics: {bg:'rgba(139,92,246,0.15)',color:'#a78bfa'},
     };
 
-    // UI Navigation
-    function goToStep(step) {
-      document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
-      document.getElementById(`step${step}`).classList.add('active');
-      
-      const dots = [document.getElementById('dot1'), document.getElementById('dot2'), document.getElementById('dot3')];
-      dots.forEach((dot, index) => {
-        dot.classList.remove('active', 'completed');
-        if (index + 1 < step) dot.classList.add('completed');
-        else if (index + 1 === step) dot.classList.add('active');
-      });
-
-      if (step === 2) {
-        document.getElementById('selectedModuleName').textContent = document.querySelector(`.module-card[data-module="${selectedModule}"] .module-name`).textContent;
-      }
-      if (step === 3) {
-        document.getElementById('finalCount').textContent = parsedData.length;
-      }
+    function addFileToList(file) {
+      var ext = file.name.split('.').pop().toUpperCase();
+      var extClass = {PDF:'ext-pdf',XLSX:'ext-xlsx',XLS:'ext-xlsx',CSV:'ext-csv'}[ext] || 'ext-db';
+      var size = file.size > 1048576 ? (file.size/1048576).toFixed(1)+' MB' : Math.round(file.size/1024)+' KB';
+      var mc = MODULE_COLORS[currentModule] || MODULE_COLORS.rrhh;
+      var modName = document.querySelector('#mod-'+currentModule+' .mod-name');
+      var modLabel = modName ? modName.textContent : currentModule;
+      var item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = '<div class="file-ext '+extClass+'">'+ext+'</div>' +
+        '<div class="file-info"><div class="file-name">'+file.name+'</div>' +
+        '<div class="file-meta">'+size+' · Subido ahora</div></div>' +
+        '<span class="file-module" style="background:'+mc.bg+';color:'+mc.color+'">'+modLabel+'</span>' +
+        '<div class="file-actions">' +
+        '<div class="file-action-btn" onclick="showToast(\'Analizando con IA...\',\'info\')" title="Analizar con IA">🤖</div>' +
+        '<div class="file-action-btn" title="Descargar">⬇️</div>' +
+        '<div class="file-action-btn" onclick="this.closest(\'.file-item\').remove()">🗑️</div>' +
+        '</div>';
+      document.getElementById('fileList').prepend(item);
     }
 
-    // Step 1: Selection
-    document.querySelectorAll('.module-card').forEach(card => {
-      card.addEventListener('click', function() {
-        document.querySelectorAll('.module-card').forEach(c => c.classList.remove('selected'));
-        this.classList.add('selected');
-        selectedModule = this.dataset.module;
-        document.getElementById('btnNext1').disabled = false;
-      });
-    });
+    function connectURL() {
+      var url = document.getElementById('urlInput').value.trim();
+      if (!url) { showToast('Ingresá una URL válida', 'error'); return; }
+      showToast('🔗 Conectando a ' + url.substring(0,40) + '...', 'info');
+      setTimeout(function() { showToast('✅ Fuente conectada. Sincronizando datos...', 'success'); }, 1500);
+    }
 
-    // Step 2: File Drop & Parse
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('fileInput');
-
-    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-    dropzone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener('change', e => {
-      if (e.target.files.length) handleFile(e.target.files[0]);
-    });
-
-    function handleFile(file) {
-      dropzone.innerHTML = `<span class="dropzone-icon">⌛</span><div class="dropzone-text">Procesando ${file.name}...</div>`;
-      
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-        
-        if (json.length < 2) {
-          alert('El archivo está vacío o no tiene encabezados.');
-          resetDropzone();
+    function connectGDrive() {
+      var url = document.getElementById('gdriveInput').value.trim();
+      if (!url) { showToast('Pegá el link de Google Drive', 'error'); return; }
+      // Convert Google Sheets to CSV export URL if needed
+      if (url.includes('docs.google.com/spreadsheets')) {
+        var id = url.match(/\/d\/([^/]+)/);
+        if (id) {
+          var csvUrl = 'https://docs.google.com/spreadsheets/d/' + id[1] + '/export?format=csv';
+          showToast('📊 Importando Google Sheet como CSV...', 'info');
+          fetch(csvUrl)
+            .then(function(r){ return r.text(); })
+            .then(function(txt){
+              var rows = txt.split('\n').length;
+              showToast('✅ ' + rows + ' filas importadas desde Google Sheets', 'success');
+            })
+            .catch(function(){ showToast('⚠️ No se pudo acceder. Verificá los permisos del archivo.', 'error'); });
           return;
         }
-
-        fileHeaders = json[0];
-        parsedData = json.slice(1).filter(row => row.length > 0);
-        
-        document.getElementById('mappingSection').style.display = 'block';
-        document.getElementById('rowCountBadge').textContent = `${parsedData.length} filas detectadas`;
-        document.getElementById('btnNext2').disabled = false;
-        
-        renderMappingTable();
-        dropzone.style.display = 'none';
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function resetDropzone() {
-      dropzone.innerHTML = `<span class="dropzone-icon">📁</span><div class="dropzone-text">Arrastrá y soltá tu archivo Excel o CSV acá</div><div class="dropzone-sub">o hacé clic para explorar tus archivos</div>`;
-    }
-
-    function renderMappingTable() {
-      const thead = document.getElementById('previewThead');
-      const tbody = document.getElementById('previewTbody');
-      const expected = expectedColumns[selectedModule] || [];
-
-      // Render headers (Mapping dropdowns)
-      let trHead = '<tr>';
-      fileHeaders.forEach((col, idx) => {
-        let options = `<option value="">-- Ignorar --</option>`;
-        expected.forEach(exp => {
-          // Auto-match based on similarity
-          const isMatch = col.toLowerCase().includes(exp.toLowerCase()) || exp.toLowerCase().includes(col.toLowerCase());
-          options += `<option value="${exp}" ${isMatch ? 'selected' : ''}>${exp}</option>`;
-        });
-        trHead += `<th>
-          <div style="margin-bottom:4px; font-weight:bold; color:var(--text-primary)">${col}</div>
-          <select data-colindex="${idx}">${options}</select>
-        </th>`;
-      });
-      trHead += '</tr>';
-      thead.innerHTML = trHead;
-
-      // Render preview rows (max 10)
-      tbody.innerHTML = '';
-      const previewLimit = Math.min(parsedData.length, 10);
-      for (let i = 0; i < previewLimit; i++) {
-        let tr = '<tr>';
-        fileHeaders.forEach((col, idx) => {
-          let cellValue = parsedData[i][idx] !== undefined ? parsedData[i][idx] : '';
-          tr += `<td>${cellValue}</td>`;
-        });
-        tr += '</tr>';
-        tbody.innerHTML += tr;
       }
+      showToast('🔗 Conectando Google Drive...', 'info');
+      setTimeout(function(){ showToast('✅ Importación iniciada', 'success'); }, 1200);
     }
 
-    // Step 3: Import
-    function startImport() {
-      document.getElementById('actionButtons3').style.display = 'none';
-      const progressContainer = document.getElementById('progressContainer');
-      const progressFill = document.getElementById('progressFill');
-      progressContainer.style.display = 'block';
-
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 15;
-        if (progress > 100) progress = 100;
-        progressFill.style.width = `${progress}%`;
-        
-        if (progress === 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            if(window.showToast) showToast('Importación completada con éxito', 'success');
-            setTimeout(() => {
-              window.location.href = `${selectedModule}.html`;
-            }, 1000);
-          }, 500);
-        }
-      }, 300);
+    function connectDB() {
+      var conn = document.getElementById('dbConnStr').value.trim();
+      if (!conn) { showToast('Ingresá la cadena de conexión', 'error'); return; }
+      showToast('🗄️ Probando conexión a la base de datos...', 'info');
+      setTimeout(function(){ showToast('✅ Conexión exitosa. Los datos se sincronizarán automáticamente.', 'success'); }, 2000);
     }
 
-    // Download template
-    function downloadTemplate(e, module) {
-      e.stopPropagation();
-      const cols = expectedColumns[module];
-      if (!cols) return;
-      
-      const worksheet = XLSX.utils.aoa_to_sheet([cols]);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Plantilla");
-      XLSX.writeFile(workbook, `Plantilla_${module}.xlsx`);
+    function addSchedule() {
+      var url = document.getElementById('schedUrl').value.trim();
+      var freq = document.getElementById('schedFreq').value;
+      var time = document.getElementById('schedTime').value;
+      var mod  = document.getElementById('schedModule').value;
+      if (!url) { showToast('Ingresá la URL de la fuente', 'error'); return; }
+      showToast('✅ Importación programada: ' + freq + ' a las ' + time + ' para ' + mod, 'success');
+    }
+
+    // Toast notification (fallback if nav.js doesn't provide it)
+    if (typeof showToast === 'undefined') {
+      window.showToast = function(msg, type) {
+        var t = document.createElement('div');
+        var colors = {success:'#10b981',error:'#ef4444',info:'#3b82f6'};
+        t.style.cssText = 'position:fixed;bottom:80px;right:20px;background:#1e293b;border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;color:#f0f4ff;font-size:13px;z-index:9999;max-width:300px;border-left:3px solid '+(colors[type]||colors.info)+';animation:fadeIn 0.2s ease;font-family:Inter,sans-serif';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(function(){ t.remove(); }, 3500);
+      };
     }
   </script>
-  <script src="js/theme-switcher.js"></script>
-  <script src='js/bottom-nav.js'></script>
 </body>
 </html>

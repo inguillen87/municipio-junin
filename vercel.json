@@ -1,9 +1,13 @@
 {
   "version": 2,
   "name": "municipio-junin",
+  "cleanUrls": true,
+  "trailingSlash": false,
   "functions": { "api/**/*.js": { "maxDuration": 30 } },
   "routes": [
     { "src": "^/$", "dest": "/login.html" },
+    { "src": "^/dashboard$", "dest": "/index.html" },
+    { "src": "^/inicio$", "dest": "/index.html" },
     {
       "src": "/css/(.*\\.css)",
       "headers": { "Cache-Control": "public, max-age=86400" },
@@ -21,7 +25,8 @@
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
       ]
     }
   ]

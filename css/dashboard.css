@@ -2058,7 +2058,7 @@ a:focus-visible {
 @media (min-width: 769px) {
   .menu-btn { display: none !important; }
   .sidebar { left: 0 !important; }
-  .main-content { margin-left: 260px !important; }
+  .main-content { margin-left: var(--sidebar-w, 260px); }
 }
 
 /* ==================================================
@@ -2123,7 +2123,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
     width: 260px !important;
   }
   .main-content {
-    margin-left: 260px !important;
+    margin-left: var(--sidebar-w, 260px);
   }
 }
 

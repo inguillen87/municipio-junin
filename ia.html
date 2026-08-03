@@ -186,17 +186,22 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg, system: AI_SYSTEM_CTX })
       })
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) return r.json().then(function(d){ throw new Error(d.error || 'Error ' + r.status); });
+        return r.json();
+      })
       .then(function(d) {
         if (d && d.response) return d.response;
-        if (d && d.error) {
-          // Fallback to demo answers on proxy error
-          return getDemoReply(userMsg);
-        }
-        return getDemoReply(userMsg);
+        throw new Error('Respuesta vacía del servidor');
       })
-      .catch(function() { return getDemoReply(userMsg); });
+      .catch(function(err) {
+        console.error('AI proxy error:', err);
+        return '⚠️ No pude conectarme al servicio de IA en este momento. ' +
+               'Error: ' + (err.message || 'desconocido') + '. ' +
+               'Intentá de nuevo en unos segundos.';
+      });
     }
+
 
     function getDemoReply(text) {
       const cleanText = removeAccents(text);

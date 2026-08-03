@@ -1,13 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#060b18">
-  <meta name="description" content="MuniControl — El sistema de gestion municipal más avanzado de Latinoamerica.">
-  <meta property="og:title" content="MuniControl — gestion municipal Inteligente">
-  <meta property="og:description" content="Sistema municipal con IA, WhatsApp Bot, mapa de obras y transparencia total. Inspirado en NYC, Buenos Aires y Barcelona.">
-  <title>MuniControl — Sistema de gestion municipal de Clase Mundial</title>
+  <meta name="description" content="MuniControl � El sistema de gestion municipal m�s avanzado de Latinoamerica.">
+  <meta property="og:title" content="MuniControl � gestion municipal Inteligente">
+  <meta property="og:description" content="Sistema municipal con IA, WhatsApp Bot, mapa de obras y transparencia total. Inspirado en NYC, Mendoza y Barcelona.">
+  <title>MuniControl � Sistema de gestion municipal de Clase Mundial</title>
   <link rel="icon" href="favicon.ico">
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
     html { scroll-behavior: smooth; }
     body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow-x: hidden; }
     
-    /* ── NAVBAR ──────────────────── */
+    /* -- NAVBAR -------------------- */
     .navbar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 999;
       padding: 16px 40px;
@@ -51,7 +51,7 @@
     .btn-primary { padding: 9px 20px; background: linear-gradient(135deg,#3b82f6,#8b5cf6); border: none; border-radius: 9px; color: white; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; }
     .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139,92,246,0.35); }
     
-    /* ── HERO ──────────────────── */
+    /* -- HERO -------------------- */
     .hero {
       min-height: 100vh;
       display: flex; flex-direction: column;
@@ -106,7 +106,7 @@
     .hero-stat-num { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 900; }
     .hero-stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* ── FEATURES ──────────────────── */
+    /* -- FEATURES -------------------- */
     section { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
     .section-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #60a5fa; margin-bottom: 12px; }
     .section-title { font-family: 'Outfit', sans-serif; font-size: clamp(28px,4vw,44px); font-weight: 900; margin-bottom: 16px; }
@@ -126,7 +126,7 @@
     .feature-tags { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
     .feature-tag { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
     
-    /* ── COMPARISON ────────────────── */
+    /* -- COMPARISON ------------------ */
     .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
     .comparison-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
     .comparison-card.ours { border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.04); }
@@ -136,7 +136,7 @@
     .check { color: #10b981; font-size: 16px; flex-shrink: 0; }
     .cross { color: rgba(100,116,139,0.5); font-size: 16px; flex-shrink: 0; }
     
-    /* ── TESTIMONIALS ─────────────── */
+    /* -- TESTIMONIALS --------------- */
     .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 20px; margin-top: 40px; }
     .testimonial { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
     .testimonial-text { font-size: 14px; line-height: 1.7; color: var(--muted); margin-bottom: 16px; font-style: italic; }
@@ -146,7 +146,7 @@
     .testimonial-role { font-size: 11px; color: var(--muted); }
     .stars { color: #f59e0b; font-size: 12px; }
     
-    /* ── CTA ───────────────────── */
+    /* -- CTA --------------------- */
     .cta-section {
       text-align: center; padding: 80px 20px;
       background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(139,92,246,0.06));
@@ -160,7 +160,7 @@
     .cta-input:focus { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.04); }
     .cta-input::placeholder { color: rgba(100,116,139,0.7); }
     
-    /* ── FOOTER ─────────────────── */
+    /* -- FOOTER ------------------- */
     footer { padding: 48px 40px; border-top: 1px solid rgba(255,255,255,0.06); }
     .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; max-width: 1200px; margin: 0 auto; }
     .footer-brand { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 18px; margin-bottom: 12px; background: linear-gradient(135deg,#60a5fa,#a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -188,139 +188,139 @@
 <!-- NAVBAR -->
 <nav class="navbar" id="navbar">
   <a class="navbar-logo" href="landing.html">
-    <div class="navbar-logo-icon">🏠</div>
+    <div class="navbar-logo-icon">??</div>
     <span class="navbar-logo-text">MuniControl</span>
   </a>
   <div class="navbar-links">
     <a href="#features">Funcionalidades</a>
-    <a href="#comparacion">Comparación</a>
+    <a href="#comparacion">Comparaci�n</a>
     <a href="#testimonios">Municipios</a>
     <a href="cuentas-claras.html" target="_blank">Transparencia</a>
   </div>
   <div class="navbar-cta">
-    <a class="btn-outline" href="login.html">🔑 Ingresar</a>
-    <a class="btn-primary" href="#contacto">🚀 Pedir demo</a>
+    <a class="btn-outline" href="login.html">?? Ingresar</a>
+    <a class="btn-primary" href="#contacto">?? Pedir demo</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <div class="hero">
   <div class="hero-badge"><div class="badge-dot"></div> Nuevo: IA con IA Municipal + WhatsApp Bot integrado</div>
-  <h1>La plataforma municipal<br>más avanzada de<br><span class="gradient-text">Latinoamerica</span></h1>
+  <h1>La plataforma municipal<br>m�s avanzada de<br><span class="gradient-text">Latinoamerica</span></h1>
   <p class="hero-sub">Dashboard ejecutivo, IA en tiempo real, mapa de obras, sistema 311 de reclamos y transparencia total. Todo en un solo lugar.</p>
   <div class="hero-actions">
-    <a class="btn-hero primary" href="login.html">⚡ Probar ahora — gratis</a>
-    <a class="btn-hero secondary" href="#features">🎥 Ver cómo funciona</a>
+    <a class="btn-hero primary" href="login.html">? Probar ahora � gratis</a>
+    <a class="btn-hero secondary" href="#features">?? Ver c�mo funciona</a>
   </div>
   <div class="hero-stats">
     <div class="hero-stat"><div class="hero-stat-num" style="color:#3b82f6">1.247</div><div class="hero-stat-label">Empleados gestionados</div></div>
     <div class="hero-stat"><div class="hero-stat-num" style="color:#10b981">$372M</div><div class="hero-stat-label">Presupuesto procesado</div></div>
-    <div class="hero-stat"><div class="hero-stat-num" style="color:#8b5cf6">14</div><div class="hero-stat-label">Módulos integrados</div></div>
+    <div class="hero-stat"><div class="hero-stat-num" style="color:#8b5cf6">14</div><div class="hero-stat-label">M�dulos integrados</div></div>
     <div class="hero-stat"><div class="hero-stat-num" style="color:#f59e0b">7</div><div class="hero-stat-label">Ciudades de referencia</div></div>
   </div>
 </div>
 
 <!-- FEATURES -->
 <section id="features">
-  <div class="section-label">📊 Funcionalidades</div>
+  <div class="section-label">?? Funcionalidades</div>
   <h2 class="section-title">Todo lo que necesita tu municipio</h2>
-  <p class="section-sub">Inspirado en las mejores prácticas de BA Digital, NYC.gov, Barcelona Smart City y Singapur.</p>
+  <p class="section-sub">Inspirado en las mejores pr�cticas de BA Digital, NYC.gov, Barcelona Smart City y Singapur.</p>
   <div class="features-grid">
     <div class="feature-card" style="--accent:#3b82f6">
-      <div class="feature-icon">📊</div>
+      <div class="feature-icon">??</div>
       <div class="feature-title">Dashboard Ejecutivo</div>
-      <div class="feature-desc">KPIs en tiempo real, gráficos premium con Chart.js, predicción de gastos con IA y alertas automáticas de desvíos presupuestarios.</div>
-      <div class="feature-tags"><span class="feature-tag">Chart.js</span><span class="feature-tag">IA Predicción</span><span class="feature-tag">Tiempo real</span></div>
+      <div class="feature-desc">KPIs en tiempo real, gr�ficos premium con Chart.js, predicci�n de gastos con IA y alertas autom�ticas de desv�os presupuestarios.</div>
+      <div class="feature-tags"><span class="feature-tag">Chart.js</span><span class="feature-tag">IA Predicci�n</span><span class="feature-tag">Tiempo real</span></div>
     </div>
     <div class="feature-card" style="--accent:#10b981">
-      <div class="feature-icon">🤖</div>
+      <div class="feature-icon">??</div>
       <div class="feature-title">IA Municipal con IA Municipal</div>
-      <div class="feature-desc">Chat con Mistral-7B entrenado con contexto municipal. Simplifica documentos legales, clasifica reclamos automáticamente y redacta notas oficiales.</div>
+      <div class="feature-desc">Chat con Mistral-7B entrenado con contexto municipal. Simplifica documentos legales, clasifica reclamos autom�ticamente y redacta notas oficiales.</div>
       <div class="feature-tags"><span class="feature-tag">Mistral-7B</span><span class="feature-tag">Zero-shot</span><span class="feature-tag">Simplifica IA</span></div>
     </div>
     <div class="feature-card" style="--accent:#25d166">
-      <div class="feature-icon">📱</div>
+      <div class="feature-icon">??</div>
       <div class="feature-title">WhatsApp Bot Municipal</div>
-      <div class="feature-desc">Reclamos con foto y GPS, consulta de boletas, estado de trámites y notificaciones automáticas. Todo por WhatsApp, sin descargar apps.</div>
-      <div class="feature-tags"><span class="feature-tag">Meta Cloud API</span><span class="feature-tag">Foto+GPS</span><span class="feature-tag">SLA automático</span></div>
+      <div class="feature-desc">Reclamos con foto y GPS, consulta de boletas, estado de tr�mites y notificaciones autom�ticas. Todo por WhatsApp, sin descargar apps.</div>
+      <div class="feature-tags"><span class="feature-tag">Meta Cloud API</span><span class="feature-tag">Foto+GPS</span><span class="feature-tag">SLA autom�tico</span></div>
     </div>
     <div class="feature-card" style="--accent:#f59e0b">
-      <div class="feature-icon">🏗️</div>
-      <div class="feature-title">MuniObras — Mapa de Obras</div>
+      <div class="feature-icon">???</div>
+      <div class="feature-title">MuniObras � Mapa de Obras</div>
       <div class="feature-desc">Cada obra visible en el mapa con foto, % avance, contratista y monto. Transparencia total como BA Obras. El ciudadano sigue cada proyecto.</div>
-      <div class="feature-tags"><span class="feature-tag">Leaflet.js</span><span class="feature-tag">Geolocalización</span><span class="feature-tag">Público</span></div>
+      <div class="feature-tags"><span class="feature-tag">Leaflet.js</span><span class="feature-tag">Geolocalizaci�n</span><span class="feature-tag">P�blico</span></div>
     </div>
     <div class="feature-card" style="--accent:#8b5cf6">
-      <div class="feature-icon">🔍</div>
+      <div class="feature-icon">??</div>
       <div class="feature-title">Cuentas Claras</div>
-      <div class="feature-desc">Cada peso del contribuyente es público. Portal de transparencia como NYC Checkbook: pagos, proveedores y contratos visibles sin login.</div>
+      <div class="feature-desc">Cada peso del contribuyente es p�blico. Portal de transparencia como NYC Checkbook: pagos, proveedores y contratos visibles sin login.</div>
       <div class="feature-tags"><span class="feature-tag">NYC Checkbook</span><span class="feature-tag">Open Data</span><span class="feature-tag">Sin login</span></div>
     </div>
     <div class="feature-card" style="--accent:#06b6d4">
-      <div class="feature-icon">🏘️</div>
+      <div class="feature-icon">???</div>
       <div class="feature-title">Sistema 311 de Reclamos</div>
-      <div class="feature-desc">SLAs públicos por tipo de reclamo, semáforo de cumplimiento, geolocalización y portal vecinal. Igual que NYC 311, adaptado a Latinoamerica.</div>
-      <div class="feature-tags"><span class="feature-tag">NYC 311</span><span class="feature-tag">SLA público</span><span class="feature-tag">Geolocalización</span></div>
+      <div class="feature-desc">SLAs p�blicos por tipo de reclamo, sem�foro de cumplimiento, geolocalizaci�n y portal vecinal. Igual que NYC 311, adaptado a Latinoamerica.</div>
+      <div class="feature-tags"><span class="feature-tag">NYC 311</span><span class="feature-tag">SLA p�blico</span><span class="feature-tag">Geolocalizaci�n</span></div>
     </div>
   </div>
 </section>
 
 <!-- COMPARISON -->
 <section id="comparacion" style="background:rgba(255,255,255,0.01);border-radius:24px">
-  <div class="section-label">✅ Comparación</div>
+  <div class="section-label">? Comparaci�n</div>
   <h2 class="section-title">MuniControl vs. sistemas tradicionales</h2>
-  <p class="section-sub">Lo que otros sistemas llevan años sin tener, nosotros ya lo tenemos.</p>
+  <p class="section-sub">Lo que otros sistemas llevan a�os sin tener, nosotros ya lo tenemos.</p>
   <div class="comparison-grid">
     <div class="comparison-card">
-      <div class="comparison-title" style="color:rgba(100,116,139,0.7)">📄 Sistema tradicional</div>
-      <div class="comparison-item"><span class="cross">✕</span> Planillas Excel separadas por secretaría</div>
-      <div class="comparison-item"><span class="cross">✕</span> Sin IA ni automatización</div>
-      <div class="comparison-item"><span class="cross">✕</span> Reclamos en papel o email sin seguimiento</div>
-      <div class="comparison-item"><span class="cross">✕</span> Presupuesto sin alertas de desvío</div>
-      <div class="comparison-item"><span class="cross">✕</span> Obras sin transparencia pública</div>
-      <div class="comparison-item"><span class="cross">✕</span> Sin WhatsApp ni canales digitales</div>
-      <div class="comparison-item"><span class="cross">✕</span> Sin modo mobile ni offline</div>
+      <div class="comparison-title" style="color:rgba(100,116,139,0.7)">?? Sistema tradicional</div>
+      <div class="comparison-item"><span class="cross">?</span> Planillas Excel separadas por secretar�a</div>
+      <div class="comparison-item"><span class="cross">?</span> Sin IA ni automatizaci�n</div>
+      <div class="comparison-item"><span class="cross">?</span> Reclamos en papel o email sin seguimiento</div>
+      <div class="comparison-item"><span class="cross">?</span> Presupuesto sin alertas de desv�o</div>
+      <div class="comparison-item"><span class="cross">?</span> Obras sin transparencia p�blica</div>
+      <div class="comparison-item"><span class="cross">?</span> Sin WhatsApp ni canales digitales</div>
+      <div class="comparison-item"><span class="cross">?</span> Sin modo mobile ni offline</div>
     </div>
     <div class="comparison-card ours">
-      <div class="comparison-title" style="background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">🏠 MuniControl</div>
-      <div class="comparison-item"><span class="check">✓</span> Dashboard unificado, datos en tiempo real</div>
-      <div class="comparison-item"><span class="check">✓</span> IA con IA Municipal + Simplifica documentos</div>
-      <div class="comparison-item"><span class="check">✓</span> Sistema 311 con SLAs públicos y geolocalización</div>
-      <div class="comparison-item"><span class="check">✓</span> Alertas automáticas de desvío presupuestario</div>
-      <div class="comparison-item"><span class="check">✓</span> Mapa de obras público (MuniObras)</div>
-      <div class="comparison-item"><span class="check">✓</span> WhatsApp Bot con foto, GPS y notificaciones</div>
-      <div class="comparison-item"><span class="check">✓</span> PWA instalable, funciona offline</div>
+      <div class="comparison-title" style="background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">?? MuniControl</div>
+      <div class="comparison-item"><span class="check">?</span> Dashboard unificado, datos en tiempo real</div>
+      <div class="comparison-item"><span class="check">?</span> IA con IA Municipal + Simplifica documentos</div>
+      <div class="comparison-item"><span class="check">?</span> Sistema 311 con SLAs p�blicos y geolocalizaci�n</div>
+      <div class="comparison-item"><span class="check">?</span> Alertas autom�ticas de desv�o presupuestario</div>
+      <div class="comparison-item"><span class="check">?</span> Mapa de obras p�blico (MuniObras)</div>
+      <div class="comparison-item"><span class="check">?</span> WhatsApp Bot con foto, GPS y notificaciones</div>
+      <div class="comparison-item"><span class="check">?</span> PWA instalable, funciona offline</div>
     </div>
   </div>
 </section>
 
 <!-- TESTIMONIALS -->
 <section id="testimonios">
-  <div class="section-label">🌐 Municipios que confían</div>
+  <div class="section-label">?? Municipios que conf�an</div>
   <h2 class="section-title">La voz de los municipios</h2>
   <div class="testimonials-grid">
     <div class="testimonial">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">"En 3 meses redujimos el tiempo de respuesta a reclamos un 68%. El mapa de obras generó más confianza que cualquier campaña de comunicación."</p>
+      <div class="stars">?????</div>
+      <p class="testimonial-text">"En 3 meses redujimos el tiempo de respuesta a reclamos un 68%. El mapa de obras gener� m�s confianza que cualquier campa�a de comunicaci�n."</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar">🏠</div>
-        <div><div class="testimonial-name">Marcelo Gutérrez</div><div class="testimonial-role">Intendente — Municipio de Junín, BA</div></div>
+        <div class="testimonial-avatar">??</div>
+        <div><div class="testimonial-name">Marcelo Gut�rrez</div><div class="testimonial-role">Intendente � Municipio de Jun�n, BA</div></div>
       </div>
     </div>
     <div class="testimonial">
-      <div class="stars">★★★★★</div>
+      <div class="stars">?????</div>
       <p class="testimonial-text">"La IA que simplifica documentos legales fue un cambio de juego. Nuestros empleados ahora redactan respuestas formales en minutos, no en horas."</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar">💼</div>
-        <div><div class="testimonial-name">Silvia Fernández</div><div class="testimonial-role">Directora de Hacienda</div></div>
+        <div class="testimonial-avatar">??</div>
+        <div><div class="testimonial-name">Silvia Fern�ndez</div><div class="testimonial-role">Directora de Hacienda</div></div>
       </div>
     </div>
     <div class="testimonial">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">"Cuentas Claras terminó con todas las preguntas sobre el uso de fondos. La transparencia se convirtió en nuestra mejor herramienta política."</p>
+      <div class="stars">?????</div>
+      <p class="testimonial-text">"Cuentas Claras termin� con todas las preguntas sobre el uso de fondos. La transparencia se convirti� en nuestra mejor herramienta pol�tica."</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar">📊</div>
-        <div><div class="testimonial-name">Jorge Lima</div><div class="testimonial-role">Concejal — Comisión de Hacienda</div></div>
+        <div class="testimonial-avatar">??</div>
+        <div><div class="testimonial-name">Jorge Lima</div><div class="testimonial-role">Concejal � Comisi�n de Hacienda</div></div>
       </div>
     </div>
   </div>
@@ -328,14 +328,14 @@
 
 <!-- CTA -->
 <div class="cta-section" id="contacto">
-  <div class="section-label">🚀 Comenzar</div>
-  <h2 class="cta-title">Tu municipio merece la mejor tecnología</h2>
-  <p class="cta-sub">Demo personalizada en 24 horas. Sin compromisos. Implementación en 2 semanas.</p>
+  <div class="section-label">?? Comenzar</div>
+  <h2 class="cta-title">Tu municipio merece la mejor tecnolog�a</h2>
+  <p class="cta-sub">Demo personalizada en 24 horas. Sin compromisos. Implementaci�n en 2 semanas.</p>
   <form class="cta-form" onsubmit="handleDemoRequest(event)">
     <input class="cta-input" type="email" id="demoEmail" placeholder="email@municipio.gob.ar" required>
-    <button class="btn-hero primary" type="submit">🚀 Pedir demo gratis</button>
+    <button class="btn-hero primary" type="submit">?? Pedir demo gratis</button>
   </form>
-  <p style="margin-top:16px;font-size:12px;color:rgba(100,116,139,0.5)">🔒 Datos soberanos en servidores argentinos · Sin vendor lock-in · Open source</p>
+  <p style="margin-top:16px;font-size:12px;color:rgba(100,116,139,0.5)">?? Datos soberanos en servidores argentinos � Sin vendor lock-in � Open source</p>
 </div>
 
 <!-- FOOTER -->
@@ -343,10 +343,10 @@
   <div class="footer-grid">
     <div>
       <div class="footer-brand">MuniControl</div>
-      <p class="footer-desc">El sistema de gestion municipal más avanzado de Latinoamerica. Desarrollado para el Municipio de Junín, Buenos Aires, Argentina.</p>
+      <p class="footer-desc">El sistema de gestion municipal m�s avanzado de Latinoamerica. Desarrollado para el Municipio de Jun�n, Mendoza, Argentina.</p>
     </div>
     <div>
-      <div class="footer-col-title">Módulos</div>
+      <div class="footer-col-title">M�dulos</div>
       <div class="footer-links">
         <a href="login.html">Dashboard</a>
         <a href="login.html">Hacienda</a>
@@ -359,7 +359,7 @@
       <div class="footer-col-title">Transparencia</div>
       <div class="footer-links">
         <a href="cuentas-claras.html">Cuentas Claras</a>
-        <a href="obras.html">Obras Públicas</a>
+        <a href="obras.html">Obras P�blicas</a>
         <a href="vecinos.html">Reclamos</a>
       </div>
     </div>
@@ -374,7 +374,7 @@
     </div>
   </div>
   <div class="footer-bottom">
-    © 2026 MuniControl — Municipalidad de Junín, Buenos Aires, Argentina · Todos los derechos reservados
+    � 2026 MuniControl � Municipalidad de Jun�n, Mendoza, Argentina � Todos los derechos reservados
   </div>
 </footer>
 
@@ -390,11 +390,11 @@
     e.preventDefault();
     const email = document.getElementById('demoEmail').value;
     const btn = e.submitter;
-    btn.textContent = '✅ Enviado!';
+    btn.textContent = '? Enviado!';
     btn.disabled = true;
     btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
     setTimeout(function() {
-      btn.textContent = '🚀 Pedir demo gratis';
+      btn.textContent = '?? Pedir demo gratis';
       btn.disabled = false;
       btn.style.background = '';
       document.getElementById('demoEmail').value = '';

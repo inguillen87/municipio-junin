@@ -1,7 +1,7 @@
 {
   "name": "MuniControl — Gestión Municipal",
   "short_name": "MuniControl",
-  "description": "Sistema de gestión municipal inteligente para Municipio de Junín, Buenos Aires",
+  "description": "Sistema de gestión municipal inteligente para Municipio de Junín, Mendoza",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",

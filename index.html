@@ -460,7 +460,7 @@
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
             <div>
               <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.45);margin-bottom:4px">Clima en tiempo real</div>
-              <div style="font-size:11px;color:rgba(148,163,184,0.4)">Junin, Buenos Aires</div>
+              <div style="font-size:11px;color:rgba(148,163,184,0.4)">Junin, Mendoza</div>
             </div>
             <div id="weatherCardIcon" style="width:40px;height:40px"></div>
           </div>
@@ -808,7 +808,7 @@ function exportDashboardPDF() {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(142, 163, 195);
-  doc.text('Provincia de Buenos Aires — República Argentina', 40, 22);
+  doc.text('Provincia de Mendoza — República Argentina', 40, 22);
   doc.setFontSize(8);
   doc.text('Sistema de Gestión Municipal Integrado — MuniControl®', 40, 27);
 
@@ -918,7 +918,7 @@ function exportDashboardPDF() {
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(74, 96, 128);
-  doc.text('MuniControl® Sistema de Gestión Municipal — Confidencial — Municipalidad de Junín, Buenos Aires, Argentina', W/2, 289, { align: 'center' });
+  doc.text('MuniControl® Sistema de Gestión Municipal — Confidencial — Municipalidad de Junín, Mendoza, Argentina', W/2, 289, { align: 'center' });
   doc.text('Página 1 de 1  |  Generado: ' + now.toISOString(), W/2, 294, { align: 'center' });
 
   // Guardar

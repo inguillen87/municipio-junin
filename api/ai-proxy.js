@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     const hfModel = model || 'mistralai/Mistral-7B-Instruct-v0.3';
 
     // Build Mistral instruct format
-    const systemContext = 'Eres MuniCopilot, el asistente inteligente del Municipio de Junin, Buenos Aires, Argentina. ' +
+    const systemContext = 'Eres MuniCopilot, el asistente inteligente del Municipio de Junin, Mendoza, Argentina. ' +
       'Respondes preguntas sobre gestion municipal: presupuesto, empleados, reclamos, obras y servicios. ' +
       'Eres conciso, claro y respondes en espanol rioplatense. ' +
       'Datos del sistema: 1247 empleados, presupuesto $420M/mes, 318 reclamos activos, 8 obras en ejecucion, SLA 94%.';

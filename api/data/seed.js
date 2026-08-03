@@ -14,8 +14,8 @@ export default async function handler(req, res) {
     // 1. Tenant
     const tenant = await prisma.tenant.upsert({
       where: { slug: 'junin' },
-      update: { name: 'Municipalidad de Junin', shortName: 'Junin', province: 'Buenos Aires' },
-      create: { slug: 'junin', name: 'Municipalidad de Junin', shortName: 'Junin', province: 'Buenos Aires', plan: 'DEMO', status: 'TRIAL' }
+      update: { name: 'Municipalidad de Junin', shortName: 'Junin', province: 'Mendoza' },
+      create: { slug: 'junin', name: 'Municipalidad de Junin', shortName: 'Junin', province: 'Mendoza', plan: 'DEMO', status: 'TRIAL' }
     });
     const tenantId = tenant.id;
 

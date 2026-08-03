@@ -1,6 +1,6 @@
-﻿// ============================================================
-// HF-CLIENT.JS — Hugging Face Inference API Client
-// MuniControl v2 — AI-powered municipal assistant
+// ============================================================
+// HF-CLIENT.JS � Hugging Face Inference API Client
+// MuniControl v2 � AI-powered municipal assistant
 // ============================================================
 
 (function(global) {
@@ -36,7 +36,7 @@
           await new Promise(r => setTimeout(r, 3000));
           return infer(model, payload, retries - 1);
         }
-        return { error: 'El modelo IA está cargando. Intenta en 30 segundos.' };
+        return { error: 'El modelo IA est� cargando. Intenta en 30 segundos.' };
       }
 
       if (!resp.ok) {
@@ -46,7 +46,7 @@
 
       return await resp.json();
     } catch (e) {
-      return { error: 'Sin conexión a Hugging Face API. Usando modo demo.' };
+      return { error: 'Sin conexi�n a Hugging Face API. Usando modo demo.' };
     }
   }
 
@@ -57,7 +57,7 @@
       localStorage.setItem('hf_api_key', key);
     },
 
-    // ── 1. TEXT GENERATION (Mistral / Zephyr) ────────────────
+    // -- 1. TEXT GENERATION (Mistral / Zephyr) ----------------
     async generateText(prompt, options = {}) {
       const model = options.model || 'mistralai/Mistral-7B-Instruct-v0.3';
       const payload = {
@@ -76,7 +76,7 @@
       return { error: 'Respuesta inesperada del modelo' };
     },
 
-    // ── 2. ZERO-SHOT CLASSIFICATION ──────────────────────────
+    // -- 2. ZERO-SHOT CLASSIFICATION --------------------------
     async classify(text, labels) {
       const model = 'facebook/bart-large-mnli';
       const payload = {
@@ -93,7 +93,7 @@
       };
     },
 
-    // ── 3. SUMMARIZATION ──────────────────────────────────────
+    // -- 3. SUMMARIZATION --------------------------------------
     async summarize(text, maxLength = 130) {
       const model = 'facebook/bart-large-cnn';
       const payload = {
@@ -106,7 +106,7 @@
       return { error: 'No se pudo resumir' };
     },
 
-    // ── 4. MUNICIPAL ASSISTANT (structured prompt) ───────────
+    // -- 4. MUNICIPAL ASSISTANT (structured prompt) -----------
     async municipalAssistant(userMessage, context = {}) {
       // Build rich municipal context
       const empleados = context.empleados || 1247;
@@ -114,14 +114,14 @@
       const reclamos = context.reclamos || 47;
       const mes = new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
 
-      const systemPrompt = `Eres MuniBot, el asistente de inteligencia artificial del Municipio de Junín, Buenos Aires, Argentina. 
+      const systemPrompt = `Eres MuniBot, el asistente de inteligencia artificial del Municipio de Jun�n, Mendoza, Argentina. 
 Tienes acceso a los datos municipales en tiempo real:
 - Empleados municipales: ${empleados}
 - Presupuesto anual: ${presupuesto}
 - Reclamos pendientes: ${reclamos}
-- Período: ${mes}
-- Secretarías: Salud, Obras Públicas, Educación, Seguridad, Hacienda, Medio Ambiente, Cultura, RRHH
-Responde siempre en español argentino, de manera clara, concisa y útil para funcionarios municipales.
+- Per�odo: ${mes}
+- Secretar�as: Salud, Obras P�blicas, Educaci�n, Seguridad, Hacienda, Medio Ambiente, Cultura, RRHH
+Responde siempre en espa�ol argentino, de manera clara, concisa y �til para funcionarios municipales.
 Si no sabes algo, lo dices claramente. Nunca inventes datos.`;
 
       const prompt = `<s>[INST] ${systemPrompt}\n\nPregunta del usuario: ${userMessage} [/INST]`;
@@ -129,32 +129,32 @@ Si no sabes algo, lo dices claramente. Nunca inventes datos.`;
       return this.generateText(prompt, { maxTokens: 400 });
     },
 
-    // ── 5. SIMPLIFICA IA ──────────────────────────────────────
+    // -- 5. SIMPLIFICA IA --------------------------------------
     async simplifica(textoLegal) {
-      const prompt = `<s>[INST] Eres un experto en simplificar textos legales y administrativos argentinos para que cualquier ciudadano los entienda sin conocimientos técnicos. 
-Simplifica este texto en lenguaje claro y amigable, sin tecnicismos, en no más de 3 párrafos cortos:
+      const prompt = `<s>[INST] Eres un experto en simplificar textos legales y administrativos argentinos para que cualquier ciudadano los entienda sin conocimientos t�cnicos. 
+Simplifica este texto en lenguaje claro y amigable, sin tecnicismos, en no m�s de 3 p�rrafos cortos:
 
 ${textoLegal} [/INST]`;
       return this.generateText(prompt, { maxTokens: 350, temperature: 0.6 });
     },
 
-    // ── 6. CLASSIFY RECLAMO ──────────────────────────────────
+    // -- 6. CLASSIFY RECLAMO ----------------------------------
     async clasificarReclamo(descripcion) {
-      const labels = ['bache en calle', 'luminaria fundida', 'recolección de residuos', 
-                      'árbol caído o peligroso', 'pérdida de agua', 'problema cloacal',
-                      'ruidos molestos', 'problema de tránsito', 'animales sueltos', 'otro problema'];
+      const labels = ['bache en calle', 'luminaria fundida', 'recolecci�n de residuos', 
+                      '�rbol ca�do o peligroso', 'p�rdida de agua', 'problema cloacal',
+                      'ruidos molestos', 'problema de tr�nsito', 'animales sueltos', 'otro problema'];
       const result = await this.classify(descripcion, labels);
       if (result.error) return result;
       // Map to our categories
       const mapping = {
         'bache en calle': 'Bache',
         'luminaria fundida': 'Luminaria',
-        'recolección de residuos': 'Residuos',
-        'árbol caído o peligroso': 'Arbolado',
-        'pérdida de agua': 'Agua',
+        'recolecci�n de residuos': 'Residuos',
+        '�rbol ca�do o peligroso': 'Arbolado',
+        'p�rdida de agua': 'Agua',
         'problema cloacal': 'Cloacas',
         'ruidos molestos': 'Ruidos',
-        'problema de tránsito': 'Tránsito',
+        'problema de tr�nsito': 'Tr�nsito',
         'animales sueltos': 'Animales',
         'otro problema': 'Otro'
       };
@@ -165,7 +165,7 @@ ${textoLegal} [/INST]`;
       };
     },
 
-    // ── 7. RESUMEN DE RECLAMOS ────────────────────────────────
+    // -- 7. RESUMEN DE RECLAMOS --------------------------------
     async resumirReclamos(reclamos) {
       const texto = reclamos.map(r => 
         `${r.tipo} en ${r.calle}: ${r.descripcion} (Estado: ${r.estado})`
@@ -173,9 +173,9 @@ ${textoLegal} [/INST]`;
       return this.summarize(texto, 150);
     },
 
-    // ── 8. REDACTOR DE NOTAS (para empleados) ────────────────
+    // -- 8. REDACTOR DE NOTAS (para empleados) ----------------
     async redactarNota(instruccion) {
-      const prompt = `<s>[INST] Eres asistente de redacción para la administración pública argentina. Redacta de manera formal y profesional: ${instruccion} [/INST]`;
+      const prompt = `<s>[INST] Eres asistente de redacci�n para la administraci�n p�blica argentina. Redacta de manera formal y profesional: ${instruccion} [/INST]`;
       return this.generateText(prompt, { maxTokens: 400, temperature: 0.5 });
     }
   };

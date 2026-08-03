@@ -128,7 +128,7 @@ var MuniAPI = (function() {
 
   // 3. GEOCODE — Nominatim, no key
   function geocodeAddress(address, city) {
-    city = city || 'Junin Buenos Aires Argentina';
+    city = city || 'Junin Mendoza Argentina';
     var q = encodeURIComponent(address + ', ' + city);
     return fetch('https://nominatim.openstreetmap.org/search?q=' + q + '&format=json&limit=1', {
       headers: { 'User-Agent': 'MuniControl/2.0 (municipio-junin)' }

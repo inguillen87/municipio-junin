@@ -539,7 +539,7 @@ Para agregar un nuevo municipio:
 {
   "id": "ejemplo-ciudad",
   "name": "Municipalidad de Ejemplo",
-  "province": "Buenos Aires",
+  "province": "Mendoza",
   "country": "Argentina",
   "population": 85000,
   "employees": 650,

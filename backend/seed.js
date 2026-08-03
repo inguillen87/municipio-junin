@@ -107,7 +107,7 @@ async function main() {
       slug: 'demo',
       name: 'Municipio Demo',
       shortName: 'Demo',
-      province: 'Buenos Aires',
+      province: 'Mendoza',
       country: 'Argentina',
       employees: 250,
       plan: 'DEMO',

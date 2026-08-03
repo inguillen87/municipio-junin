@@ -39,7 +39,7 @@ const DEMO_TENANTS = [
     slug: 'demo',
     name: 'Municipio Demo',
     shortName: 'Demo',
-    province: 'Buenos Aires',
+    province: 'Mendoza',
     country: 'Argentina',
     employees: 250,
     plan: 'DEMO',

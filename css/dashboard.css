@@ -2659,3 +2659,17 @@ a, button { -webkit-tap-highlight-color: rgba(59,130,246,0.1); }
   .sb-item, .sb-nav-item { min-height: 48px; }
   .notif-btn, #themeToggleBtn { min-height: 40px; min-width: 40px; }
 }
+/* -- OVERFLOW FIX FOR TOPBAR ON MOBILE -- */
+@media (max-width: 768px) {
+  .topbar {
+    height: auto !important;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding-bottom: 8px;
+  }
+  .topbar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+

@@ -8,8 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Jun�n" />
-  <title>An�lisis Masivo de Archivos � Municipio de Jun�n</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
+  <title>Análisis Masivo de Archivos � Municipio de Jun�n</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -24,8 +24,8 @@
       <div class="topbar-left">
         <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
-          <h1>• An�lisis Masivo de Archivos</h1>
-          <span class="breadcrumb">Sub� hasta 20 archivos � Excel, PDF, Word, CSV � M�tricas autom�ticas con IA</span>
+          <h1>• Análisis Masivo de Archivos</h1>
+          <span class="breadcrumb">Sub� hasta 20 archivos � Excel, PDF, Word, CSV � Mítricas automíticas con IA</span>
         </div>
       </div>
       <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
@@ -44,14 +44,14 @@
             <div class="upload-icon">•</div>
             <div class="upload-pulse"></div>
           </div>
-          <h2 class="upload-title">Arrastr� archivos aqu� o hac� click para seleccionar</h2>
-          <p class="upload-subtitle">Excel, PDF, Word, CSV, im�genes � Hasta 20 archivos � Sin l�mite de tama�o</p>
+          <h2 class="upload-title">Arrastr� archivos aquí o hac� click para seleccionar</h2>
+          <p class="upload-subtitle">Excel, PDF, Word, CSV, imígenes � Hasta 20 archivos � Sin l�mite de tamaño</p>
           <div class="upload-badges">
             <span class="upload-badge xlsx">• .xlsx / .xls</span>
             <span class="upload-badge pdf">• .pdf</span>
             <span class="upload-badge docx">• .docx</span>
             <span class="upload-badge csv">• .csv</span>
-            <span class="upload-badge img">•? Im�genes</span>
+            <span class="upload-badge img">•? Imígenes</span>
           </div>
           <button class="upload-btn" id="uploadSelectBtn">Seleccionar archivos</button>
           <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.pdf,.docx,.doc,.csv,.txt,.jpg,.jpeg,.png,.webp" hidden />
@@ -75,7 +75,7 @@
 
         <!-- KPIs globales -->
         <div class="results-header">
-          <h2 class="section-title-h2">• An�lisis consolidado</h2>
+          <h2 class="section-title-h2">• Análisis consolidado</h2>
           <div class="results-meta" id="resultsMeta"></div>
         </div>
 
@@ -105,7 +105,7 @@
               </div>
             </div>
             <div class="table-scroll-wrap" id="dataTableWrap">
-              <p class="empty-state">Proces� archivos para ver los datos aqu�</p>
+              <p class="empty-state">Procesí archivos para ver los datos aquí</p>
             </div>
           </div>
         </div>
@@ -118,7 +118,7 @@
               <div class="chart-container"><canvas id="chartTipos"></canvas></div>
             </div>
             <div class="chart-card">
-              <div class="chart-header"><h2 class="chart-title" id="chartNumTitle">An�lisis num�rico</h2></div>
+              <div class="chart-header"><h2 class="chart-title" id="chartNumTitle">Análisis numírico</h2></div>
               <div class="chart-container"><canvas id="chartNumeros"></canvas></div>
             </div>
           </div>
@@ -134,10 +134,10 @@
         <div class="tab-content" id="tab-rtexto">
           <div class="rrhh-panel">
             <div class="panel-header">
-              <h2 class="chart-title">Texto extra�do de PDFs, Word e Im�genes</h2>
+              <h2 class="chart-title">Texto extra�do de PDFs, Word e Imígenes</h2>
             </div>
             <div class="text-results" id="textResults">
-              <p class="empty-state">Proces� PDFs o im�genes para ver el texto extra�do</p>
+              <p class="empty-state">Procesí PDFs o imígenes para ver el texto extra�do</p>
             </div>
           </div>
         </div>
@@ -152,7 +152,7 @@
             <div class="ia-summary-area" id="iaSummaryArea">
               <div class="ia-summary-placeholder">
                 <div style="font-size:48px">•</div>
-                <p>Proces� archivos primero, luego hac� click en "Generar resumen" para que la IA analice el contenido y proponga m�tricas y conclusiones.</p>
+                <p>Procesí archivos primero, luego hac� click en "Generar resumen" para que la IA analice el contenido y proponga mítricas y conclusiones.</p>
               </div>
             </div>
           </div>
@@ -178,7 +178,7 @@
   <!-- Mammoth.js para Word -->
   <script src='js/db.js'></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-  <!-- Tesseract para OCR de im�genes -->
+  <!-- Tesseract para OCR de imígenes -->
   <script src='js/db.js'></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
 
@@ -196,6 +196,7 @@
   <script src='js/notifications.js'></script>
   <script src='js/chat-widget.js'></script>
   <script src='js/theme-switcher.js'></script>
+  <script>if(typeof buildSidebar === 'function') buildSidebar('upload');</script>
 </body>
 </html>
 

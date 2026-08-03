@@ -1,5 +1,5 @@
-﻿// ============================================================
-// BOTTOM-NAV.JS — Mobile bottom navigation bar
+// ============================================================
+// BOTTOM-NAV.JS - Mobile bottom navigation bar
 // MuniControl v2
 // ============================================================
 (function() {
@@ -11,7 +11,7 @@
     { icon: '🏠', label: 'Inicio',    href: 'index.html' },
     { icon: '💰', label: 'Presup.',   href: 'presupuesto.html' },
     { icon: '🤖', label: 'IA',        href: 'ia.html' },
-    { icon: '🏘️', label: 'Vecinos',  href: 'vecinos.html' },
+    { icon: '👥', label: 'Vecinos',   href: 'vecinos.html' },
     { icon: '☰',  label: 'Más',       href: '#more' },
   ];
 
@@ -53,4 +53,3 @@
     lastScroll = current;
   }, { passive: true });
 })();
-

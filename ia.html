@@ -93,8 +93,8 @@
 
         <div class="suggestions" id="suggestions">
           <button class="suggestion-btn" onclick="sendPrompt('Resumen ejecutivo del dia')">Resumen ejecutivo del d&iacute;a</button>
-          <button class="suggestion-btn" onclick="sendPrompt('Cuanto gastamos este mes?')">&iquest;Cu&aacute;nto gastamos este mes?</button>
-          <button class="suggestion-btn" onclick="sendPrompt('Cuales son los reclamos mas urgentes?')">Reclamos urgentes pendientes</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Cuanto gastamos este mesí')">&iquest;Cu&aacute;nto gastamos este mesí</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Cuales son los reclamos mas urgentesí')">Reclamos urgentes pendientes</button>
           <button class="suggestion-btn" onclick="sendPrompt('Predice el gasto de septiembre')">Predice el presupuesto</button>
         </div>
 
@@ -137,8 +137,8 @@
     });
 
     var DEMO_QA = [
-      { q: 'Cuanto gastamos este mes?', a: 'El gasto total de agosto 2026 es de $165.3 millones. Obras Publicas lidera con $48.2M (29%). Hacienda recomienda revisar la ejecucion de Personal que va al 103%.' },
-      { q: 'Cuales son los reclamos mas urgentes?', a: 'Hay 23 reclamos sin resolver. Los mas criticos: 5 cortes de agua en Barrio Norte (72h sin resolucion), 3 baches peligrosos en Av. San Martin. Tiempo promedio de resolucion: 3.2 dias.' },
+      { q: 'Cuanto gastamos este mesí', a: 'El gasto total de agosto 2026 es de $165.3 millones. Obras Publicas lidera con $48.2M (29%). Hacienda recomienda revisar la ejecucion de Personal que va al 103%.' },
+      { q: 'Cuales son los reclamos mas urgentesí', a: 'Hay 23 reclamos sin resolver. Los mas criticos: 5 cortes de agua en Barrio Norte (72h sin resolucion), 3 baches peligrosos en Av. San Martin. Tiempo promedio de resolucion: 3.2 dias.' },
       { q: 'Resumen ejecutivo del dia', a: 'Municipio de Junin - Agosto 2026:<br>- Presupuesto ejecutado: 67% (normal para agosto)<br>- Empleados activos: 1,247 (+12 este mes)<br>- Obras en ejecucion: 8 proyectos, inversion $142M<br>- SLA reclamos: 94% dentro del plazo<br>- Alerta: Obras Publicas al 118% del presupuesto mensual' },
       { q: 'Predice el gasto de septiembre', a: 'Basado en tendencias historicas, el gasto estimado de septiembre es $172M (+4.1%). Los factores que influyen: fin del ciclo de obras de verano, incremento salarial previsto de 3.5%, y 2 nuevas licitaciones por adjudicar ($28M combinados).' },
     ];
@@ -511,5 +511,7 @@
     }
   });
   </script>
+  <script src="js/theme-switcher.js"></script>
+  <script src='js/bottom-nav.js'></script>
 </body>
 </html>

@@ -59,7 +59,7 @@
         <button class="tab-btn" data-tab="ner">• Entidades</button>
         <button class="tab-btn" data-tab="qa">? Q&amp;A Docs</button>
         <button class="tab-btn" data-tab="whisper">• Whisper STT</button>
-        <button class="tab-btn" data-tab="embeddings">• B?squeda IA</button>
+        <button class="tab-btn" data-tab="embeddings">• Búsqueda IA</button>
         <button class="tab-btn" data-tab="batch">? Proceso Masivo</button>
       </div>
 
@@ -68,7 +68,7 @@
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">•? Clasificador Autom?tico de Reclamos</h2>
+              <h2 class="hf-panel-title">•? Clasificador Automítico de Reclamos</h2>
               <p class="hf-panel-desc">Modelo: <code>Xenova/nli-deberta-v3-small</code> ? Zero-shot classification ? <a href="https://municontrol.ar/cross-encoder/nli-deberta-v3-small" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
             <button class="btn-load-model" id="loadClassifier">• Cargar Modelo</button>
@@ -81,13 +81,13 @@
 
           <div class="hf-input-section">
             <label class="hf-label">Descripción del reclamo (en lenguaje natural):</label>
-            <textarea class="hf-textarea" id="classifierInput" rows="3" placeholder="Ej: Hay un pozo enorme en la esquina de Rivadavia y Mitre que rompi? tres veh?culos esta semana. Es urgente..."></textarea>
+            <textarea class="hf-textarea" id="classifierInput" rows="3" placeholder="Ej: Hay un pozo enorme en la esquina de Rivadavia y Mitre que rompi? tres vehículos esta semana. Es urgente..."></textarea>
             <div class="hf-examples">
-              <span class="example-label">Ejemplos r?pidos:</span>
+              <span class="example-label">Ejemplos rápidos:</span>
               <button class="example-btn" data-text="El pozo de la calle es enorme y peligroso, romp? el auto">•? Bache</button>
               <button class="example-btn" data-text="No funciona el farol de la esquina hace dos semanas, es peligroso de noche">• Alumbrado</button>
-              <button class="example-btn" data-text="No pas? el cami?n de basura hace 5 d?as y hay bolsas en la vereda">•? Basura</button>
-              <button class="example-btn" data-text="El ?rbol de enfrente tiene ramas secas que van a caer sobre las casas">• Poda</button>
+              <button class="example-btn" data-text="No pasí el cami?n de basura hace 5 días y hay bolsas en la vereda">•? Basura</button>
+              <button class="example-btn" data-text="El árbol de enfrente tiene ramas secas que van a caer sobre las casas">• Poda</button>
               <button class="example-btn" data-text="No tenemos agua desde ayer en todo el barrio">• Agua</button>
               <button class="example-btn" data-text="Los vecinos de arriba hacen ruidos toda la noche y no me dejan dormir">• Ruidos</button>
             </div>
@@ -95,7 +95,7 @@
           </div>
 
           <div class="hf-result" id="resultClassifier" style="display:none">
-            <h3 class="result-title">• Resultado de Clasificaci?n</h3>
+            <h3 class="result-title">• Resultado de Clasificación</h3>
             <div class="result-main-label" id="classifierMainLabel"></div>
             <div class="confidence-bars" id="classifierBars"></div>
             <div class="result-actions">
@@ -111,7 +111,7 @@
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">• An?lisis de Sentimientos</h2>
+              <h2 class="hf-panel-title">• Análisis de Sentimientos</h2>
               <p class="hf-panel-desc">Modelo: <code>Xenova/distilbert-base-uncased-finetuned-sst-2-english</code> ? <a href="https://municontrol.ar/distilbert-base-uncased-finetuned-sst-2-english" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
             <button class="btn-load-model" id="loadSentiment">• Cargar Modelo</button>
@@ -126,7 +126,7 @@
             <textarea class="hf-textarea" id="sentimentInput" rows="3" placeholder="Ej: El municipio atendi? muy bien mi reclamo, estoy muy satisfecho con la respuesta..."></textarea>
             <div class="hf-examples">
               <span class="example-label">Ejemplos:</span>
-              <button class="example-btn" data-text="Excelente atenci?n, solucionaron el problema en 2 d?as, muy conforme" data-target="sentimentInput">• Positivo</button>
+              <button class="example-btn" data-text="Excelente atención, solucionaron el problema en 2 días, muy conforme" data-target="sentimentInput">• Positivo</button>
               <button class="example-btn" data-text="Horrible servicio, nunca vienen, llevan 3 semanas sin resolver nada" data-target="sentimentInput">• Negativo</button>
               <button class="example-btn" data-text="El servicio es regular, a veces bien a veces mal" data-target="sentimentInput">• Neutro</button>
             </div>
@@ -135,8 +135,8 @@
 
           <!-- BATCH SENTIMIENTOS -->
           <div class="hf-batch-section">
-            <h3 class="hf-sub-title">? An?lisis Masivo ? ?ltimos Reclamos</h3>
-            <p class="hf-desc-text">Analiza autom?ticamente el sentimiento de los ?ltimos reclamos del sistema</p>
+            <h3 class="hf-sub-title">? Análisis Masivo ? Últimos Reclamos</h3>
+            <p class="hf-desc-text">Analiza automíticamente el sentimiento de los Últimos reclamos del sistema</p>
             <button class="btn-run-model secondary" id="runSentimentBatch" disabled>• Analizar 20 reclamos</button>
             <div class="sentiment-batch-results" id="sentimentBatchResults"></div>
           </div>
@@ -152,7 +152,7 @@
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">• Extracci?n de Entidades (NER)</h2>
+              <h2 class="hf-panel-title">• Extracción de Entidades (NER)</h2>
               <p class="hf-panel-desc">Modelo: <code>Xenova/bert-base-NER</code> ? Personas, Organizaciones, Lugares ? <a href="https://municontrol.ar/dslim/bert-base-NER" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
             <button class="btn-load-model" id="loadNER">• Cargar Modelo</button>
@@ -164,7 +164,7 @@
 
           <div class="hf-input-section">
             <label class="hf-label">Texto de contrato, resolución o expediente:</label>
-            <textarea class="hf-textarea" id="nerInput" rows="5" placeholder="Peg? aqu? texto de un contrato, resolución o cualquier documento oficial...&#10;&#10;Ej: The Municipality of Junin contracted with Carlos Fernandez from Mendoza to provide maintenance services..."></textarea>
+            <textarea class="hf-textarea" id="nerInput" rows="5" placeholder="Peg? aquí texto de un contrato, resolución o cualquier documento oficial...&#10;&#10;Ej: The Municipality of Junin contracted with Carlos Fernandez from Mendoza to provide maintenance services..."></textarea>
             <div class="hf-examples">
               <span class="example-label">Ejemplo:</span>
               <button class="example-btn" data-text="The Municipality of Junin signed a contract with Carlos Fernandez from Mendoza for public works. Maria Rodriguez from the Public Works department will oversee the project at Rivadavia Avenue." data-target="nerInput">• Contrato ejemplo</button>
@@ -198,15 +198,15 @@
           <div class="qa-layout">
             <div class="hf-input-section">
               <label class="hf-label">• Contexto (texto del documento):</label>
-              <textarea class="hf-textarea" id="qaContext" rows="7" placeholder="Peg? aqu? el texto del contrato, resolución, o cualquier documento...">The Municipality of Junin has 1247 employees distributed across 7 secretariats. The total monthly payroll is 186 million pesos. The Public Works department has 214 employees and spent 44.8 million pesos in August 2026, which is 18% over budget. The Education department has 302 employees and spent 54.9 million pesos, which is 10% under budget. The municipality manages a fleet of 43 vehicles including trucks, vans, and motorcycles. The fuel station has 4820 liters of premium gasoline and 7340 liters of diesel. There are 318 citizen complaints registered, with 229 resolved and 89 pending.</textarea>
+              <textarea class="hf-textarea" id="qaContext" rows="7" placeholder="Peg? aquí el texto del contrato, resolución, o cualquier documento...">The Municipality of Junin has 1247 employees distributed across 7 secretariats. The total monthly payroll is 186 million pesos. The Public Works department has 214 employees and spent 44.8 million pesos in August 2026, which is 18% over budget. The Education department has 302 employees and spent 54.9 million pesos, which is 10% under budget. The municipality manages a fleet of 43 vehicles including trucks, vans, and motorcycles. The fuel station has 4820 liters of premium gasoline and 7340 liters of diesel. There are 318 citizen complaints registered, with 229 resolved and 89 pending.</textarea>
             </div>
             <div class="qa-questions-section">
               <label class="hf-label">? Tu pregunta:</label>
-              <input type="text" class="hf-input" id="qaQuestion" placeholder="?Cu?ntos empleados tiene el municipio?" />
+              <input type="text" class="hf-input" id="qaQuestion" placeholder="?Cuántos empleados tiene el municipio?" />
               <div class="hf-examples">
                 <span class="example-label">Preguntas r?pidas:</span>
                 <button class="qa-quick-btn" data-q="How many employees does the municipality have?">• Empleados</button>
-                <button class="qa-quick-btn" data-q="Which department is over budget?">• Presupuesto</button>
+                <button class="qa-quick-btn" data-q="Which department is over budgetú">• Presupuesto</button>
                 <button class="qa-quick-btn" data-q="How many liters of fuel are in the station?">? Combustible</button>
                 <button class="qa-quick-btn" data-q="How many citizen complaints are pending?">•? Reclamos</button>
               </div>
@@ -292,12 +292,12 @@
         </div>
       </div>
 
-      <!-- TAB: EMBEDDINGS / B?SQUEDA SEM?NTICA -->
+      <!-- TAB: EMBEDDINGS / B?SQUEDA SEMíNTICA -->
       <div class="tab-content" id="tab-embeddings">
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">• B?squeda Sem?ntica con Embeddings</h2>
+              <h2 class="hf-panel-title">• Búsqueda Semíntica con Embeddings</h2>
               <p class="hf-panel-desc">Modelo: <code>Xenova/all-MiniLM-L6-v2</code> ? Sentence Transformers ? <a href="https://municontrol.ar/sentence-transformers/all-MiniLM-L6-v2" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
             <button class="btn-load-model" id="loadEmbeddings">• Cargar Modelo</button>
@@ -319,8 +319,8 @@
           </div>
 
           <div class="similarity-matrix-section">
-            <h3 class="hf-sub-title">• Matriz de Similitud entre Secretar?as</h3>
-            <p class="hf-desc-text">Calcula similitud sem?ntica entre las Áreas municipales basado en sus descripciones</p>
+            <h3 class="hf-sub-title">• Matriz de Similitud entre Secretarías</h3>
+            <p class="hf-desc-text">Calcula similitud semíntica entre las Áreas municipales basado en sus descripciones</p>
             <button class="btn-run-model secondary" id="runSimilarityMatrix" disabled>• Calcular Matriz</button>
             <div class="similarity-matrix" id="similarityMatrix"></div>
           </div>
@@ -333,7 +333,7 @@
           <div class="hf-panel-header">
             <div>
               <h2 class="hf-panel-title">? Procesamiento Masivo con IA</h2>
-              <p class="hf-panel-desc">Clasific?, analiz? y enriquec? todos los reclamos autom?ticamente</p>
+              <p class="hf-panel-desc">Clasific?, analiz? y enriquec? todos los reclamos automíticamente</p>
             </div>
           </div>
 
@@ -342,7 +342,7 @@
             <div class="pipeline-steps">
               <div class="pipeline-step" id="step1">
                 <div class="step-num">1</div>
-                <div class="step-info"><span class="step-title">Clasificar reclamos</span><span class="step-desc">Zero-shot ? categor?a autom?tica</span></div>
+                <div class="step-info"><span class="step-title">Clasificar reclamos</span><span class="step-desc">Zero-shot ? categoría automítica</span></div>
                 <div class="step-status idle" id="step1status">Pendiente</div>
               </div>
               <div class="pipeline-arrow">?</div>
@@ -376,7 +376,7 @@
                   <tr>
                     <th>#</th>
                     <th>Descripción</th>
-                    <th>Categor?a IA</th>
+                    <th>Categoría IA</th>
                     <th>Confianza</th>
                     <th>Sentimiento</th>
                     <th>Score Urgencia</th>
@@ -418,6 +418,7 @@
   <script src='js/notifications.js'></script>
   <script src='js/chat-widget.js'></script>
   <script src='js/theme-switcher.js'></script>
+  <script>if(typeof buildSidebar === 'function') buildSidebar('ia-hf');</script>
 </body>
 </html>
 

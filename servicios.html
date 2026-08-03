@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Jun�n" />
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
   <title>Estaci�n de Servicios � Municipio de Jun�n</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -67,29 +67,29 @@
           <div class="kpi-footer"><span class="kpi-trend up">? +14% vs presup.</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Veh�culos Activos</span><div class="kpi-icon green">•</div></div>
+          <div class="kpi-header"><span class="kpi-label">Vehículos Activos</span><div class="kpi-icon green">•</div></div>
           <div class="kpi-value" data-target="43">0</div>
           <div class="kpi-footer"><span class="kpi-sub">en la flota municipal</span></div>
         </div>
         <div class="kpi-card">
           <div class="kpi-header"><span class="kpi-label">Cargas Hoy</span><div class="kpi-icon teal">•</div></div>
           <div class="kpi-value" data-target="12">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">registros del d�a</span></div>
+          <div class="kpi-footer"><span class="kpi-sub">registros del día</span></div>
         </div>
       </section>
 
       <!-- ALERT STOCK BAJO -->
       <div class="alert-banner" id="alertStock">
         <span class="alert-icon">?</span>
-        <span>Stock de Nafta al <strong>48%</strong>. Se recomienda solicitar reposici�n antes de fin de semana.</span>
+        <span>Stock de Nafta al <strong>48%</strong>. Se recomienda solicitar reposición antes de fin de semana.</span>
         <button class="alert-close" onclick="this.parentElement.style.display='none'">?</button>
       </div>
 
       <!-- TABS -->
       <div class="tabs-bar">
         <button class="tab-btn active" data-tab="cargas">• Registro de Cargas</button>
-        <button class="tab-btn" data-tab="consumo">• Consumo por Veh�culo</button>
-        <button class="tab-btn" data-tab="stock">•? Stock y Reposici�n</button>
+        <button class="tab-btn" data-tab="consumo">• Consumo por Vehículo</button>
+        <button class="tab-btn" data-tab="stock">•? Stock y Reposición</button>
       </div>
 
       <!-- TAB: CARGAS -->
@@ -99,7 +99,7 @@
             <h2 class="chart-title">? Registro de Cargas � Agosto 2026</h2>
             <div class="panel-filters">
               <select class="select-filter" id="filtroVehiculo">
-                <option value="">Todos los veh�culos</option>
+                <option value="">Todos los vehículos</option>
                 <option>Ford F-100 � JUN-001</option>
                 <option>VW Amarok � JUN-002</option>
                 <option>Cami�n Volvo � JUN-010</option>
@@ -115,7 +115,7 @@
             <thead>
               <tr>
                 <th>Fecha/Hora</th>
-                <th>Veh�culo</th>
+                <th>Vehículo</th>
                 <th>Patente</th>
                 <th>Tipo</th>
                 <th>Litros</th>
@@ -138,7 +138,7 @@
             <div class="chart-container"><canvas id="consumoBarChart"></canvas></div>
           </div>
           <div class="chart-card">
-            <div class="chart-header"><h2 class="chart-title">Consumo Diario</h2><span class="chart-sub">Litros totales por d�a</span></div>
+            <div class="chart-header"><h2 class="chart-title">Consumo Diario</h2><span class="chart-sub">Litros totales por día</span></div>
             <div class="chart-container"><canvas id="consumoDiarioChart"></canvas></div>
           </div>
         </div>
@@ -152,7 +152,7 @@
             <div class="tanques-list" id="tanquesList"></div>
           </div>
           <div class="data-card">
-            <div class="chart-header"><h2 class="chart-title">• Historial de Reposici�n</h2></div>
+            <div class="chart-header"><h2 class="chart-title">• Historial de Reposición</h2></div>
             <div class="activity-feed" id="reposicionFeed"></div>
           </div>
         </div>
@@ -171,7 +171,7 @@
       <div class="modal-body">
         <div class="form-grid">
           <div class="form-group">
-            <label>Veh�culo</label>
+            <label>Vehículo</label>
             <select id="cVehiculo">
               <option>Ford F-100 � JUN-001</option>
               <option>VW Amarok � JUN-002</option>
@@ -192,7 +192,7 @@
             <input type="number" id="cLitros" placeholder="45.5" step="0.5" />
           </div>
           <div class="form-group">
-            <label>Km actual del veh�culo</label>
+            <label>Km actual del vehículo</label>
             <input type="number" id="cKm" placeholder="87420" />
           </div>
           <div class="form-group">
@@ -230,6 +230,7 @@
   <script src='js/notifications.js'></script>
   <script src='js/chat-widget.js'></script>
   <script src='js/theme-switcher.js'></script>
+  <script>if(typeof buildSidebar === 'function') buildSidebar('servicios');</script>
 </body>
 </html>
 

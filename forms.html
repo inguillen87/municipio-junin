@@ -228,7 +228,7 @@
           <span style="font-size:20px;flex-shrink:0">${ft ? ft.icon : '\ud83d\udcdd'}</span>
           <div style="flex:1">
             <div style="font-size:12px;font-weight:700;margin-bottom:4px">${f.label}${f.required ? ' <span style="color:#ef4444">*</span>' : ''}</div>
-            <div style="font-size:11px;color:rgba(148,163,184,0.5)">${f.placeholder || ft?.desc || f.type}</div>
+            <div style="font-size:11px;color:rgba(148,163,184,0.5)">${f.placeholder || ftú.desc || f.type}</div>
           </div>
           <div style="display:flex;gap:4px">
             <button onclick="moveField(${idx},-1)" style="padding:4px 8px;background:rgba(255,255,255,0.05);border:none;border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:11px">↑</button>
@@ -310,6 +310,7 @@
       const win = window.open('', '_blank', 'width=600,height=700');
       win.document.write(`<html><body style="font-family:Inter,sans-serif;background:#f8fafc;padding:20px">${html}  
   
+  <script src='js/bottom-nav.js'></script>
 </body></html>`);
     }
 
@@ -357,6 +358,7 @@
   </script>
   <script src='js/chat-widget.js'></script>
   <script src='js/theme-switcher.js'></script>
+  <script src='js/bottom-nav.js'></script>
 </body>
 </html>
 

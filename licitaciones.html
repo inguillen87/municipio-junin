@@ -9,8 +9,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Jun�n" />
-  <title>Licitaciones y Compras � MuniControl</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
+  <title>Licitaciones y Compras | MuniControl</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -38,7 +38,7 @@
     .progress-mini { height:4px; background:rgba(255,255,255,0.06); border-radius:99px; flex:1; margin:0 12px; overflow:hidden; }
     .progress-mini-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#3b82f6,#8b5cf6); }
     
-    /* Evaluaci�n de ofertas */
+    /* Evaluación de ofertas */
     .oferta-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:16px; margin-bottom:10px; }
     .oferta-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
     .oferta-empresa { font-weight:700; font-size:14px; color:#f0f4ff; }
@@ -104,7 +104,7 @@
         </div>
       </div>
       <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <button class="btn-primary" id="btnNuevaLic">📋 + Nueva Licitaci�n</button>
+        <button class="btn-primary" id="btnNuevaLic">📋 + Nueva Licitación</button>
         <button class="btn-export" onclick="exportarLicitaciones()">📥 Exportar Registro</button>
         <div class="topbar-avatar">MA</div>
       </div>
@@ -130,22 +130,22 @@
 
       <!-- KPIs -->
       <section class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Licitaciones Activas</span><div class="kpi-icon blue">•</div></div><div class="kpi-value kpi-counter" data-target="8">0</div><div class="kpi-footer"><span class="kpi-trend up">? 3 en evaluaci�n</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Licitaciones Activas</span><div class="kpi-icon blue">•</div></div><div class="kpi-value kpi-counter" data-target="8">0</div><div class="kpi-footer"><span class="kpi-trend up">? 3 en evaluación</span></div></div>
         <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Monto Total Licitado</span><div class="kpi-icon amber">•</div></div><div class="kpi-value kpi-counter money" data-target="48700000">$0</div><div class="kpi-footer"><span class="kpi-sub">En procesos activos</span></div></div>
         <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Adjudicadas (mes)</span><div class="kpi-icon green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div></div><div class="kpi-value kpi-counter" data-target="5">0</div><div class="kpi-footer"><span class="kpi-trend down">$12.4M adjudicados</span></div></div>
         <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Ahorro vs Presupuesto</span><div class="kpi-icon green">•</div></div><div class="kpi-value kpi-counter pct" data-target="11">0%</div><div class="kpi-footer"><span class="kpi-sub">$1.4M ahorrados</span></div></div>
         <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Proveedores Registrados</span><div class="kpi-icon violet">•</div></div><div class="kpi-value kpi-counter" data-target="47">0</div><div class="kpi-footer"><span class="kpi-sub">12 pre-calificados</span></div></div>
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Vencen en 30 d�as</span><div class="kpi-icon red"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>?</div></div><div class="kpi-value kpi-counter" data-target="3">0</div><div class="kpi-footer"><span class="kpi-trend up">? Requieren acci�n</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Vencen en 30 días</span><div class="kpi-icon red"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>?</div></div><div class="kpi-value kpi-counter" data-target="3">0</div><div class="kpi-footer"><span class="kpi-trend up">? Requieren acci�n</span></div></div>
       </section>
 
       <!-- PROCESO STATUS BAR -->
       <div class="rrhh-panel">
-        <div class="panel-header"><h2 class="chart-title">🔄 Flujo de Licitaci�n</h2></div>
+        <div class="panel-header"><h2 class="chart-title">🔄 Flujo de Licitación</h2></div>
         <div class="lic-status-bar">
           <div class="lic-status-step active"><div class="lic-step-num">3</div><div class="lic-step-lbl">Necesidad</div></div>
           <div class="lic-status-step"><div class="lic-step-num">2</div><div class="lic-step-lbl">Pliego</div></div>
           <div class="lic-status-step"><div class="lic-step-num">4</div><div class="lic-step-lbl">Publicada</div></div>
-          <div class="lic-status-step"><div class="lic-step-num">3</div><div class="lic-step-lbl">Evaluaci�n</div></div>
+          <div class="lic-status-step"><div class="lic-step-num">3</div><div class="lic-step-lbl">Evaluación</div></div>
           <div class="lic-status-step"><div class="lic-step-num">2</div><div class="lic-step-lbl">Adjudicada</div></div>
           <div class="lic-status-step"><div class="lic-step-num">5</div><div class="lic-step-lbl">En contrato</div></div>
         </div>
@@ -155,7 +155,7 @@
       <div class="tabs-bar">
         <button class="tab-btn active" data-tab="todas">📋 Registro (10)</button>
         <button class="tab-btn" data-tab="activas">✅ Activas (3)</button>
-        <button class="tab-btn" data-tab="evaluacion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>? En Evaluaci�n (3)</button>
+        <button class="tab-btn" data-tab="evaluacion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>? En Evaluación (3)</button>
         <button class="tab-btn" data-tab="adjudicadas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Adjudicadas</button>
         <button class="tab-btn" data-tab="proveedores">🏢 Proveedores</button>
         <button class="tab-btn" data-tab="calendario">📅 Calendario</button>
@@ -175,7 +175,7 @@
                 <option value="Adjudicada">Adjudicada</option>
                 <option value="Desierta">Desierta</option>
                 <option value="Suspendida">Suspendida</option>
-                <option value="En Evaluaci�n">En Evaluaci�n</option>
+                <option value="En Evaluación">En Evaluación</option>
               </select>
               <select id="filtroTipoLic" onchange="renderLicitaciones()">
                 <option value="">Todos los Tipos</option>
@@ -191,7 +191,7 @@
             <thead>
                               <tr>
                   <th style="cursor:pointer" onclick="sortTable(0, 'str')">ID ?</th>
-                  <th style="cursor:pointer" onclick="sortTable(1, 'str')">T�tulo ?</th>
+                  <th style="cursor:pointer" onclick="sortTable(1, 'str')">Título ?</th>
                   <th style="cursor:pointer" onclick="sortTable(2, 'str')">Tipo ?</th>
                   <th style="cursor:pointer" onclick="sortTable(3, 'num')">Monto ?</th>
                   <th style="cursor:pointer" onclick="sortTable(4, 'str')">Secretar�a ?</th>
@@ -222,16 +222,16 @@
           <div class="lic-card-header">
             <div>
               <span class="lic-num">#L001-2026</span>
-              <div class="lic-title">Sistema de Gesti�n de Expedientes Municipales</div>
+              <div class="lic-title">Sistema de Gestión de Expedientes Municipales</div>
               <div class="lic-desc">Contrataci�n de software para digitalizaci�n y gesti�n de expedientes administrativos. Reemplaza el sistema GovTech Solutions (contrato vencido).</div>
               <div class="lic-meta">
-                <span class="lic-meta-item">• <strong>$4.200.000/a�o</strong></span>
+                <span class="lic-meta-item">• <strong>$4.200.000/año</strong></span>
                 <span class="lic-meta-item">• <strong>Apertura: 15/09/2026</strong></span>
                 <span class="lic-meta-item">• <strong>3 ofertas recibidas</strong></span>
-                <span class="lic-meta-item">• <strong>�rea IT</strong></span>
+                <span class="lic-meta-item">• <strong>Área IT</strong></span>
               </div>
             </div>
-            <span class="status-badge warning">En Evaluaci�n</span>
+            <span class="status-badge warning">En Evaluación</span>
           </div>
           <div class="lic-footer">
             <span style="font-size:11px;color:rgba(100,116,139,0.7)">Avance del proceso</span>
@@ -269,13 +269,13 @@
               <div class="lic-title">Servicio de Seguridad Privada � Edificios Municipales</div>
               <div class="lic-desc">Contrataci�n de empresa de vigilancia para 6 edificios municipales. 24/7. Incluye control de acceso y monitoreo CCTV.</div>
               <div class="lic-meta">
-                <span class="lic-meta-item">• <strong>$3.600.000/a�o</strong></span>
+                <span class="lic-meta-item">• <strong>$3.600.000/año</strong></span>
                 <span class="lic-meta-item">• <strong>Apertura: 05/09/2026</strong></span>
                 <span class="lic-meta-item">• <strong>1 oferta recibida</strong></span>
-                <span class="lic-meta-item">• <strong>Administraci�n</strong></span>
+                <span class="lic-meta-item">• <strong>Administración</strong></span>
               </div>
             </div>
-            <span class="status-badge warning">En Evaluaci�n</span>
+            <span class="status-badge warning">En Evaluación</span>
           </div>
           <div class="lic-footer">
             <span style="font-size:11px;color:rgba(100,116,139,0.7)">Avance del proceso</span>
@@ -288,8 +288,8 @@
           <div class="lic-card-header">
             <div>
               <span class="lic-num">#L004-2026</span>
-              <div class="lic-title">Adquisici�n de Luminarias LED � Alumbrado P�blico</div>
-              <div class="lic-desc">Compra de 350 luminarias LED para renovaci�n del sistema de alumbrado p�blico. Ahorro estimado en energ�a: 40%.</div>
+              <div class="lic-title">Adquisici�n de Luminarias LED � Alumbrado Público</div>
+              <div class="lic-desc">Compra de 350 luminarias LED para renovaci�n del sistema de alumbrado público. Ahorro estimado en energ�a: 40%.</div>
               <div class="lic-meta">
                 <span class="lic-meta-item">• <strong>$5.250.000</strong></span>
                 <span class="lic-meta-item">• <strong>Apertura: 30/09/2026</strong></span>
@@ -312,25 +312,25 @@
       <div class="tab-content" id="tab-evaluacion">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>? Evaluaci�n Comparativa � #L001 Sistema de Expedientes</h2>
+            <h2 class="chart-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>? Evaluación Comparativa � #L001 Sistema de Expedientes</h2>
             <button class="btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Adjudicar Ganador</button>
           </div>
 
           <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:rgba(148,163,184,0.9)">
-            • <strong>An�lisis IA:</strong> Basado en precio, experiencia, soporte y referencias, la oferta de <strong>MuniSoft SRL</strong> obtiene el mayor puntaje ponderado (87/100). Se recomienda adjudicar sujeto a verificaci�n de antecedentes.
+            • <strong>Análisis IA:</strong> Basado en precio, experiencia, soporte y referencias, la oferta de <strong>MuniSoft SRL</strong> obtiene el mayor puntaje ponderado (87/100). Se recomienda adjudicar sujeto a verificaci�n de antecedentes.
           </div>
 
           <div class="oferta-card" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.04)">
             <div class="oferta-header">
               <div>
                 <div class="oferta-empresa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> MuniSoft SRL <span style="font-size:11px;background:rgba(16,185,129,0.15);color:#10b981;padding:2px 8px;border-radius:99px;margin-left:8px;font-weight:700">RECOMENDADO</span></div>
-                <div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-71234567-8 � 8 a�os en el mercado</div>
+                <div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-71234567-8 � 8 años en el mercado</div>
               </div>
-              <div class="oferta-precio" style="color:#10b981">$3.480.000/a�o</div>
+              <div class="oferta-precio" style="color:#10b981">$3.480.000/año</div>
             </div>
             <div class="criterio-row"><span class="criterio-lbl">📄 Precio</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:92%;background:#10b981"></div></div></div><span class="criterio-val" style="color:#10b981">92/100</span></div>
             <div class="criterio-row"><span class="criterio-lbl">📄 Experiencia</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:85%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">85/100</span></div>
-            <div class="criterio-row"><span class="criterio-lbl">?📄 Soporte T�cnico</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:90%;background:#8b5cf6"></div></div></div><span class="criterio-val" style="color:#a78bfa">90/100</span></div>
+            <div class="criterio-row"><span class="criterio-lbl">?📄 Soporte Túcnico</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:90%;background:#8b5cf6"></div></div></div><span class="criterio-val" style="color:#a78bfa">90/100</span></div>
             <div class="criterio-row"><span class="criterio-lbl">📄 Referencias</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:80%;background:#f59e0b"></div></div></div><span class="criterio-val" style="color:#f59e0b">80/100</span></div>
             <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:flex-end">
               <strong style="font-size:18px;font-family:'Outfit',sans-serif;color:#10b981">PUNTAJE TOTAL: 87/100</strong>
@@ -339,8 +339,8 @@
 
           <div class="oferta-card">
             <div class="oferta-header">
-              <div><div class="oferta-empresa">TechGov SA</div><div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-65432109-5 � 5 a�os</div></div>
-              <div class="oferta-precio" style="color:#60a5fa">$4.100.000/a�o</div>
+              <div><div class="oferta-empresa">TechGov SA</div><div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-65432109-5 � 5 años</div></div>
+              <div class="oferta-precio" style="color:#60a5fa">$4.100.000/año</div>
             </div>
             <div class="criterio-row"><span class="criterio-lbl">📄 Precio</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:72%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">72/100</span></div>
             <div class="criterio-row"><span class="criterio-lbl">📄 Experiencia</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:78%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">78/100</span></div>
@@ -353,8 +353,8 @@
 
           <div class="oferta-card">
             <div class="oferta-header">
-              <div><div class="oferta-empresa">DataMuni Argentina</div><div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-55678901-2 � 3 a�os</div></div>
-              <div class="oferta-precio" style="color:#f59e0b">$3.900.000/a�o</div>
+              <div><div class="oferta-empresa">DataMuni Argentina</div><div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-55678901-2 � 3 años</div></div>
+              <div class="oferta-precio" style="color:#f59e0b">$3.900.000/año</div>
             </div>
             <div class="criterio-row"><span class="criterio-lbl">📄 Precio</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:78%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">78/100</span></div>
             <div class="criterio-row"><span class="criterio-lbl">📄 Experiencia</span><div style="flex:1"><div class="score-bar"><div class="score-fill" style="width:55%;background:#3b82f6"></div></div></div><span class="criterio-val" style="color:#60a5fa">55/100</span></div>
@@ -372,7 +372,7 @@
         <div class="rrhh-panel">
           <h2 class="chart-title" style="margin-bottom:20px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Licitaciones Adjudicadas 2026</h2>
           <table class="data-table">
-            <thead><tr><th>N�mero</th><th>Descripci�n</th><th>Adjudicatario</th><th>Monto</th><th>Inicio</th><th>Vencimiento</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Número</th><th>Descripción</th><th>Adjudicatario</th><th>Monto</th><th>Inicio</th><th>Vencimiento</th><th>Estado</th></tr></thead>
             <tbody>
               <tr><td>#L001-25</td><td>Servicio de limpieza edificios</td><td>LimpioSur SA</td><td>$2.400.000</td><td>Ene 2026</td><td>Dic 2026</td><td><span class="status-badge ok">Vigente</span></td></tr>
               <tr><td>#L002-25</td><td>Seguro de flota municipal</td><td>Zurich AR</td><td>$1.800.000</td><td>Ene 2026</td><td>Dic 2026</td><td><span class="status-badge ok">Vigente</span></td></tr>
@@ -395,7 +395,7 @@
             </div>
           </div>
           <table class="data-table">
-            <thead><tr><th>Empresa</th><th>CUIT</th><th>Rubro</th><th>Contratos</th><th>Monto Hist�rico</th><th>Rating</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Empresa</th><th>CUIT</th><th>Rubro</th><th>Contratos</th><th>Monto Histúrico</th><th>Rating</th><th>Estado</th></tr></thead>
             <tbody>
               <tr><td><strong>Sistemas Nexo SA</strong></td><td>30-71234567-8</td><td>Tecnolog�a</td><td>3</td><td>$8.160.000</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></td><td><span class="status-badge ok">Activo</span></td></tr>
               <tr><td><strong>LimpioSur SA</strong></td><td>30-65432109-5</td><td>Servicios</td><td>5</td><td>$12.000.000</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></td><td><span class="status-badge ok">Activo</span></td></tr>
@@ -413,12 +413,12 @@
         <div class="rrhh-panel">
           <h2 class="chart-title" style="margin-bottom:24px">📅 Calendario de Vencimientos y Aperturas</h2>
           <div class="timeline">
-            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-title">Apertura #L003-2026 � Servicio de Seguridad</div><div class="tl-sub">1 oferta recibida. En evaluaci�n.</div><div class="tl-date">05/09/2026 � Completado</div></div>
-            <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>? Vencimiento contrato GovTech Solutions (Expedientes)</div><div class="tl-sub">Sistema en riesgo. Iniciar licitaci�n urgente #L001.</div><div class="tl-date">15/08/2026 � VENCIDO</div></div>
-            <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title">Apertura #L001-2026 � Sistema de Expedientes</div><div class="tl-sub">3 ofertas. Evaluaci�n en curso. MuniSoft lidera.</div><div class="tl-date">15/09/2026 � Esta semana</div></div>
+            <div class="tl-item"><div class="tl-dot done"></div><div class="tl-title">Apertura #L003-2026 � Servicio de Seguridad</div><div class="tl-sub">1 oferta recibida. En evaluación.</div><div class="tl-date">05/09/2026 � Completado</div></div>
+            <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>? Vencimiento contrato GovTech Solutions (Expedientes)</div><div class="tl-sub">Sistema en riesgo. Iniciar licitación urgente #L001.</div><div class="tl-date">15/08/2026 � VENCIDO</div></div>
+            <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title">Apertura #L001-2026 � Sistema de Expedientes</div><div class="tl-sub">3 ofertas. Evaluación en curso. MuniSoft lidera.</div><div class="tl-date">15/09/2026 � Esta semana</div></div>
             <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Apertura #L002-2026 � Mantenimiento Vial</div><div class="tl-sub">Recibiendo ofertas. 3 empresas confirmaron inter�s.</div><div class="tl-date">20/09/2026</div></div>
             <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Renovaci�n contrato Construmend SA</div><div class="tl-sub">Material de construcci�n. Evaluar precio de mercado antes de renovar.</div><div class="tl-date">01/11/2026</div></div>
-            <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Apertura #L004-2026 � Luminarias LED</div><div class="tl-sub">Pliego en elaboraci�n. Requiere especificaciones t�cnicas.</div><div class="tl-date">30/09/2026</div></div>
+            <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Apertura #L004-2026 � Luminarias LED</div><div class="tl-sub">Pliego en elaboraci�n. Requiere especificaciones túcnicas.</div><div class="tl-date">30/09/2026</div></div>
             <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Renovaci�n anual LimpioSur SA + YPF SA</div><div class="tl-sub">Revisar precios actualizados. Iniciar negociaci�n directa.</div><div class="tl-date">31/12/2026</div></div>
           </div>
         </div>
@@ -440,7 +440,7 @@
               <h3 style="color:#f0f4ff; margin-bottom:16px; font-family:'Outfit';">Par�metros del Pliego</h3>
               <div class="form-grid">
                 <div class="form-group" style="grid-column:1/-1">
-                  <label>Tipo de Licitaci�n</label>
+                  <label>Tipo de Licitación</label>
                   <select id="pliegoTipo">
                     <option value="obras">Obras P�blicas</option>
                     <option value="servicios">Contrataci�n de Servicios</option>
@@ -449,16 +449,16 @@
                   </select>
                 </div>
                 <div class="form-group" style="grid-column:1/-1">
-                  <label>Descripci�n de la necesidad (Objeto)</label>
-                  <textarea id="pliegoDesc" rows="3" placeholder="Ej: Adquisici�n de 350 luminarias LED para alumbrado p�blico. Deben tener garant�a de 3 a�os..."></textarea>
+                  <label>Descripción de la necesidad (Objeto)</label>
+                  <textarea id="pliegoDesc" rows="3" placeholder="Ej: Adquisici�n de 350 luminarias LED para alumbrado público. Deben tener garantúa de 3 años..."></textarea>
                 </div>
                 <div class="form-group">
                   <label>Presupuesto Estimado ($)</label>
                   <input type="number" id="pliegoPresupuesto" placeholder="Ej: 5000000" />
                 </div>
                 <div class="form-group">
-                  <label>Plazo de Entrega / Ejecuci�n</label>
-                  <input type="text" id="pliegoPlazo" placeholder="Ej: 60 d�as corridos" />
+                  <label>Plazo de Entrega / Ejecución</label>
+                  <input type="text" id="pliegoPlazo" placeholder="Ej: 60 días corridos" />
                 </div>
                 <div class="form-group" style="grid-column:1/-1">
                   <label>Condiciones Espec�ficas Requeridas</label>
@@ -477,12 +477,12 @@
               
               <div id="pliegoLoading" class="ai-loading">
                 <div class="spinner"></div>
-                <span>Redactando t�rminos legales y condiciones...</span>
+                <span>Redactando túrminos legales y condiciones...</span>
               </div>
 
               <div id="pliegoResult" class="ai-generated-doc">
                 <div style="color: rgba(148,163,184,0.5); text-align: center; margin-top: 100px;">
-                  Comienza llenando el formulario y haz clic en "Generar Pliego con IA" para ver el resultado aqu�.
+                  Comienza llenando el formulario y haz clic en "Generar Pliego con IA" para ver el resultado aquí.
                 </div>
               </div>
             </div>
@@ -505,7 +505,7 @@
             <div class="ai-panel">
               <h3 style="color:#f0f4ff; margin-bottom:16px; font-family:'Outfit';">Texto del Contrato</h3>
               <div class="form-group">
-                <textarea id="auditorInput" rows="18" placeholder="Pega aqu� el contenido del contrato, convenio o pliego a analizar..." style="font-family: monospace; font-size: 12px;"></textarea>
+                <textarea id="auditorInput" rows="18" placeholder="Pega aquí el contenido del contrato, convenio o pliego a analizar..." style="font-family: monospace; font-size: 12px;"></textarea>
               </div>
               <div style="display: flex; gap: 10px; margin-top: 16px;">
                 <button class="btn-secondary" style="flex:1;">📄 Subir Archivo (PDF/Word)</button>
@@ -542,10 +542,10 @@
                 <!-- Hallazgos -->
                 <div class="auditor-result-card" style="border-left: 3px solid #f59e0b;">
                   <div class="auditor-result-header">
-                    <span class="auditor-result-title">📄 An�lisis de Precio</span>
-                    <span class="risk-badge risk-medium">Atenci�n</span>
+                    <span class="auditor-result-title">📄 Análisis de Precio</span>
+                    <span class="risk-badge risk-medium">Atención</span>
                   </div>
-                  <p class="auditor-result-text">El precio establecido ($8.500.000) se encuentra un <strong>12% por encima</strong> del promedio de mercado hist�rico para contrataciones similares en municipios PBA. Se sugiere renegociar o justificar el sobreprecio por urgencia.</p>
+                  <p class="auditor-result-text">El precio establecido ($8.500.000) se encuentra un <strong>12% por encima</strong> del promedio de mercado histúrico para contrataciones similares en municipios PBA. Se sugiere renegociar o justificar el sobreprecio por urgencia.</p>
                 </div>
 
                 <div class="auditor-result-card" style="border-left: 3px solid #ef4444;">
@@ -555,7 +555,7 @@
                   </div>
                   <p class="auditor-result-text">
                     - <strong>Falta cl�usula anticorrupci�n:</strong> No se incluy� la declaraci�n jurada de intereses estipulada en la Ord. 4521/20.<br>
-                    - <strong>Penalidades ambiguas:</strong> La cl�usula 8 sobre multas por demoras no especifica el porcentaje diario (s�lo dice "se aplicar�n multas razonables").
+                    - <strong>Penalidades ambiguas:</strong> La cl�usula 8 sobre multas por demoras no especifica el porcentaje diario (sólo dice "se aplicar�n multas razonables").
                   </p>
                 </div>
 
@@ -564,7 +564,7 @@
                     <span class="auditor-result-title">📄 Riesgo de Colusi�n / Proveedor</span>
                     <span class="risk-badge risk-low">Normal</span>
                   </div>
-                  <p class="auditor-result-text">El proveedor "Construmend SA" est� activo en el registro y no presenta cruces de directivos con otros oferentes habituales. No se detectan patrones an�malos.</p>
+                  <p class="auditor-result-text">El proveedor "Construmend SA" está activo en el registro y no presenta cruces de directivos con otros oferentes habituales. No se detectan patrones an�malos.</p>
                 </div>
 
                 <div class="auditor-result-card" style="border-left: 3px solid #3b82f6;">
@@ -572,7 +572,7 @@
                     <span class="auditor-result-title">📄 Vencimientos y Pr�rrogas</span>
                     <span class="risk-badge risk-low">Informativo</span>
                   </div>
-                  <p class="auditor-result-text">Contrato a 12 meses. La cl�usula de renovaci�n autom�tica a los 6 meses es v�lida pero requerir� notificaci�n fehaciente 30 d�as antes del vencimiento (15/11/2026).</p>
+                  <p class="auditor-result-text">Contrato a 12 meses. La cl�usula de renovaci�n automítica a los 6 meses es v�lida pero requerir� notificaci�n fehaciente 30 días antes del vencimiento (15/11/2026).</p>
                 </div>
 
                 <button class="btn-secondary" style="width: 100%; margin-top: 10px;">📄 Descargar Informe de Auditor�a (PDF)</button>
@@ -590,20 +590,20 @@
   <div class="modal-overlay" id="modalNuevaLic" style="display:none">
     <div class="modal" style="max-width:600px">
       <div class="modal-header">
-        <h3>📋 Nueva Licitaci�n</h3>
+        <h3>📋 Nueva Licitación</h3>
         <button class="modal-close" onclick="document.getElementById('modalNuevaLic').style.display='none'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
-          <div class="form-group" style="grid-column:1/-1"><label>T�tulo de la licitaci�n</label><input type="text" placeholder="Ej: Servicio de mantenimiento de parques" /></div>
-          <div class="form-group"><label>Tipo</label><select><option>Licitaci�n P�blica</option><option>Licitaci�n Privada</option><option>Concurso de Precios</option><option>Contrataci�n Directa</option></select></div>
+          <div class="form-group" style="grid-column:1/-1"><label>Título de la licitación</label><input type="text" placeholder="Ej: Servicio de mantenimiento de parques" /></div>
+          <div class="form-group"><label>Tipo</label><select><option>Licitación P�blica</option><option>Licitación Privada</option><option>Concurso de Precios</option><option>Contrataci�n Directa</option></select></div>
           <div class="form-group"><label>Presupuesto estimado</label><input type="number" placeholder="0" /></div>
-          <div class="form-group"><label>�rea solicitante</label><select><option>Obras P�blicas</option><option>Tecnolog�a</option><option>Salud</option><option>Educaci�n</option><option>Administraci�n</option></select></div>
+          <div class="form-group"><label>Área solicitante</label><select><option>Obras P�blicas</option><option>Tecnolog�a</option><option>Salud</option><option>Educaci�n</option><option>Administración</option></select></div>
           <div class="form-group"><label>Fecha apertura de ofertas</label><input type="date" /></div>
-          <div class="form-group" style="grid-column:1/-1"><label>Descripci�n y requerimientos</label><textarea rows="4" placeholder="Describir el objeto de la contrataci�n, especificaciones t�cnicas y requisitos m�nimos..."></textarea></div>
+          <div class="form-group" style="grid-column:1/-1"><label>Descripción y requerimientos</label><textarea rows="4" placeholder="Describir el objeto de la contrataci�n, especificaciones túcnicas y requisitos mínimos..."></textarea></div>
         </div>
         <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px;margin-top:12px;font-size:12px;color:rgba(148,163,184,0.8)">
-          • <strong>IA:</strong> El pliego b�sico se generar� autom�ticamente con las bases y condiciones est�ndar de la Municipalidad de Jun�n.
+          • <strong>IA:</strong> El pliego b�sico se generar� automíticamente con las bases y condiciones estándar de la Municipalidad de Jun�n.
         </div>
       </div>
       <div class="modal-footer">
@@ -644,7 +644,7 @@
       });
     });
 
-    // Modal nueva licitaci�n
+    // Modal nueva licitación
         document.getElementById('btnNuevaLic').onclick = () => {
       const user = window.MuniDB ? window.MuniDB.getAll('session')[0] : null;
       if (user && user.role !== 'admin') {
@@ -676,12 +676,12 @@
 
     // Toast on load
     setTimeout(() => {
-      if (window.toast) toast('📄 Alerta de vencimiento', 'Contrato GovTech Solutions est� VENCIDO. Licitaci�n #L001 en curso.', 'warning');
+      if (window.toast) toast('📄 Alerta de vencimiento', 'Contrato GovTech Solutions está VENCIDO. Licitación #L001 en curso.', 'warning');
     }, 1500);
 
     window.openDetail = (id) => {
       const l = window.LICITACIONES.find(x => x.id === id);
-      const title = l ? l.titulo : 'Licitaci�n ' + id;
+      const title = l ? l.titulo : 'Licitación ' + id;
       const content = l ? `
         <div style="padding:10px 0;">
           <p><strong>ID:</strong> ${l.id}</p>
@@ -714,7 +714,7 @@
     };
 
     window.descargarPliego = () => {
-      if (window.toast) toast('📄 Descargando...', 'El pliego se est� descargando en PDF', 'info');
+      if (window.toast) toast('📄 Descargando...', 'El pliego se está descargando en PDF', 'info');
       else alert('Descargando pliego...');
     };
 
@@ -749,14 +749,14 @@ function sortTable(colIdx, type) {
 
       // Table Logic
     window.LICITACIONES = [
-      { id:'LIC-2026-001', titulo:'Pavimentaci�n Av. San Mart�n 2300-2800', tipo:'Obra P�blica', monto:85000000, secretaria:'Obras P�blicas', estado:'Adjudicada', empresa:'Constructora Del Valle SA', apertura:'2026-03-15', vencimiento:'2026-09-30' },
+      { id:'LIC-2026-001', titulo:'Pavimentaci�n Av. San Martún 2300-2800', tipo:'Obra P�blica', monto:85000000, secretaria:'Obras P�blicas', estado:'Adjudicada', empresa:'Constructora Del Valle SA', apertura:'2026-03-15', vencimiento:'2026-09-30' },
       { id:'LIC-2026-002', titulo:'Servicio de Recolecci�n de Residuos Zona Norte', tipo:'Servicio', monto:42000000, secretaria:'Medio Ambiente', estado:'Vigente', empresa:'-', apertura:'2026-07-20', vencimiento:'2026-08-15' },
-      { id:'LIC-2026-003', titulo:'Adquisici�n de 3 Ambulancias 4x4', tipo:'Compra Directa', monto:31500000, secretaria:'Salud', estado:'En Evaluaci�n', empresa:'-', apertura:'2026-07-25', vencimiento:'2026-08-10' },
+      { id:'LIC-2026-003', titulo:'Adquisici�n de 3 Ambulancias 4x4', tipo:'Compra Directa', monto:31500000, secretaria:'Salud', estado:'En Evaluación', empresa:'-', apertura:'2026-07-25', vencimiento:'2026-08-10' },
       { id:'LIC-2026-004', titulo:'Iluminaci�n LED Parque Municipal y Plazas', tipo:'Obra P�blica', monto:18700000, secretaria:'Obras P�blicas', estado:'Adjudicada', empresa:'Tecnoilum SA', apertura:'2026-02-10', vencimiento:'2026-07-31' },
-      { id:'LIC-2026-005', titulo:'Software de Gesti�n Tributaria Municipal', tipo:'Servicio IT', monto:9200000, secretaria:'Hacienda', estado:'Adjudicada', empresa:'SysTributos SRL', apertura:'2026-01-20', vencimiento:'2026-12-31' },
+      { id:'LIC-2026-005', titulo:'Software de Gestión Tributaria Municipal', tipo:'Servicio IT', monto:9200000, secretaria:'Hacienda', estado:'Adjudicada', empresa:'SysTributos SRL', apertura:'2026-01-20', vencimiento:'2026-12-31' },
       { id:'LIC-2026-006', titulo:'Construcci�n Play�n Deportivo Barrio Sur', tipo:'Obra P�blica', monto:22400000, secretaria:'Deportes', estado:'Vigente', empresa:'-', apertura:'2026-07-28', vencimiento:'2026-08-28' },
       { id:'LIC-2026-007', titulo:'Poda y Mantenimiento Arbolado Urbano 2026', tipo:'Servicio', monto:5600000, secretaria:'Obras P�blicas', estado:'Adjudicada', empresa:'AgroVerde SRL', apertura:'2026-04-05', vencimiento:'2026-12-31' },
-      { id:'LIC-2026-008', titulo:'Adquisici�n �tiles y Materiales Escolares', tipo:'Compra Directa', monto:3800000, secretaria:'Educaci�n', estado:'Adjudicada', empresa:'Librer�a Central SA', apertura:'2026-01-15', vencimiento:'2026-02-28' },
+      { id:'LIC-2026-008', titulo:'Adquisici�n Útiles y Materiales Escolares', tipo:'Compra Directa', monto:3800000, secretaria:'Educaci�n', estado:'Adjudicada', empresa:'Librer�a Central SA', apertura:'2026-01-15', vencimiento:'2026-02-28' },
       { id:'LIC-2026-009', titulo:'Mantenimiento Red Vial Urbana y Rural', tipo:'Obra P�blica', monto:61000000, secretaria:'Obras P�blicas', estado:'Desierta', empresa:'-', apertura:'2026-06-01', vencimiento:'2026-06-30' },
       { id:'LIC-2026-010', titulo:'Servicio de Seguridad Edificios Municipales', tipo:'Servicio', monto:8400000, secretaria:'Intendencia', estado:'Vigente', empresa:'-', apertura:'2026-07-30', vencimiento:'2026-08-20' }
     ];
@@ -783,7 +783,7 @@ function sortTable(colIdx, type) {
         if (l.estado === 'Adjudicada') badgeClass = 'ok';
         else if (l.estado === 'Vigente') badgeClass = 'ok';
         else if (l.estado === 'Desierta' || l.estado === 'Suspendida') badgeClass = 'critical';
-        else if (l.estado === 'En Evaluaci�n') badgeClass = 'warning';
+        else if (l.estado === 'En Evaluación') badgeClass = 'warning';
 
         return `
           <tr>
@@ -860,38 +860,38 @@ function sortTable(colIdx, type) {
 <div class="ai-doc-header">
   <p>MUNICIPALIDAD DE JUN�N - PROVINCIA DE Mendoza</p>
   <h3>PLIEGO DE BASES Y CONDICIONES</h3>
-  <p>Licitaci�n P�blica / Generado Autom�ticamente</p>
+  <p>Licitación P�blica / Generado Automíticamente</p>
 </div>
 
-<div class="ai-doc-section-title">ART�CULO 1� - OBJETO DE LA LICITACI�N</div>
-<p class="ai-doc-text">Ll�mese a Licitaci�n para la <strong>${desc}</strong>, con destino a satisfacer las necesidades operativas y de infraestructura del Municipio de Jun�n, de acuerdo a las especificaciones t�cnicas detalladas en el presente Pliego.</p>
+<div class="ai-doc-section-title">ARTúCULO 1� - OBJETO DE LA LICITACI�N</div>
+<p class="ai-doc-text">Ll�mese a Licitación para la <strong>${desc}</strong>, con destino a satisfacer las necesidades operativas y de infraestructura del Municipio de Jun�n, de acuerdo a las especificaciones túcnicas detalladas en el presente Pliego.</p>
 
-<div class="ai-doc-section-title">ART�CULO 2� - PRESUPUESTO OFICIAL</div>
-<p class="ai-doc-text">El presupuesto oficial estimado para la presente contrataci�n asciende a la suma de <strong>$${ppto}</strong> (Pesos). Las ofertas que superen este monto en un 20% podr�n ser desestimadas salvo justificaci�n t�cnica debidamente fundada.</p>
+<div class="ai-doc-section-title">ARTúCULO 2� - PRESUPUESTO OFICIAL</div>
+<p class="ai-doc-text">El presupuesto oficial estimado para la presente contrataci�n asciende a la suma de <strong>$${ppto}</strong> (Pesos). Las ofertas que superen este monto en un 20% podrán ser desestimadas salvo justificaci�n túcnica debidamente fundada.</p>
 
-<div class="ai-doc-section-title">ART�CULO 3� - CONDICIONES DE PARTICIPACI�N</div>
-<p class="ai-doc-text">Podr�n participar personas f�sicas o jur�dicas que cumplan con los siguientes requisitos:</p>
+<div class="ai-doc-section-title">ARTúCULO 3� - CONDICIONES DE PARTICIPACI�N</div>
+<p class="ai-doc-text">Podrán participar personas f�sicas o jur�dicas que cumplan con los siguientes requisitos:</p>
 <ul class="ai-doc-list">
   <li>Estar inscriptos en el Registro de Proveedores del Municipio de Jun�n.</li>
   <li>No mantener deudas impositivas ni previsionales exigibles.</li>
-  <li>Acreditar capacidad t�cnica y financiera acorde a la magnitud de la contrataci�n.</li>
+  <li>Acreditar capacidad túcnica y financiera acorde a la magnitud de la contrataci�n.</li>
   <li>Constituir domicilio legal en la ciudad de Jun�n o en la Provincia de Mendoza.</li>
 </ul>
 
-<div class="ai-doc-section-title">ART�CULO 4� - CRITERIOS DE EVALUACI�N</div>
-<p class="ai-doc-text">La adjudicaci�n se realizar� a la oferta m�s conveniente, ponderando los siguientes factores:</p>
+<div class="ai-doc-section-title">ARTúCULO 4� - CRITERIOS DE EVALUACI�N</div>
+<p class="ai-doc-text">La adjudicaci�n se realizar� a la oferta más conveniente, ponderando los siguientes factores:</p>
 <ul class="ai-doc-list">
   <li>Precio de la oferta (40%)</li>
-  <li>Calidad y especificaciones t�cnicas superadoras (30%)</li>
-  <li>Plazo de entrega y condiciones de garant�a (20%)</li>
+  <li>Calidad y especificaciones túcnicas superadoras (30%)</li>
+  <li>Plazo de entrega y condiciones de garantúa (20%)</li>
   <li>Antecedentes del proveedor en contrataciones p�blicas (10%)</li>
 </ul>
 
-<div class="ai-doc-section-title">ART�CULO 5� - PLAZOS Y FECHAS</div>
-<p class="ai-doc-text">El mantenimiento de la oferta ser� por el t�rmino de sesenta (60) d�as h�biles a partir de la fecha de apertura. Los plazos de ejecuci�n comenzar�n a regir desde la firma del Acta de Inicio o suscripci�n del contrato, seg�n corresponda.</p>
+<div class="ai-doc-section-title">ARTúCULO 5� - PLAZOS Y FECHAS</div>
+<p class="ai-doc-text">El mantenimiento de la oferta será por el túrmino de sesenta (60) días h�biles a partir de la fecha de apertura. Los plazos de ejecuci�n comenzar�n a regir desde la firma del Acta de Inicio o suscripci�n del contrato, según corresponda.</p>
 
-<div class="ai-doc-section-title">ART�CULO 6� - PENALIDADES Y GARANT�AS</div>
-<p class="ai-doc-text">Se exigir� la constituci�n de una Garant�a de Mantenimiento de Oferta equivalente al 1% del valor total presupuestado, y una Garant�a de Adjudicaci�n del 5% del valor contractual. El incumplimiento de los plazos de entrega devengar� una multa diaria del 0.5% del valor del contrato no ejecutado, con reserva del derecho de rescisi�n por culpa del contratista.</p>
+<div class="ai-doc-section-title">ARTúCULO 6� - PENALIDADES Y GARANTúAS</div>
+<p class="ai-doc-text">Se exigir� la constituci�n de una Garantúa de Mantenimiento de Oferta equivalente al 1% del valor total presupuestado, y una Garantúa de Adjudicaci�n del 5% del valor contractual. El incumplimiento de los plazos de entrega devengar� una multa diaria del 0.5% del valor del contrato no ejecutado, con reserva del derecho de rescisi�n por culpa del contratista.</p>
         `;
         if(window.toast) toast('Generaci�n Completa', 'El pliego ha sido redactado exitosamente.', 'success');
       }, 2500);
@@ -911,7 +911,7 @@ function sortTable(colIdx, type) {
     function auditContract() {
       const input = document.getElementById('auditorInput').value;
       if (!input || input.length < 50) {
-        if(window.toast) toast('Error', 'Por favor ingresa un texto m�s largo para auditar.', 'warning');
+        if(window.toast) toast('Error', 'Por favor ingresa un texto más largo para auditar.', 'warning');
         return;
       }
 

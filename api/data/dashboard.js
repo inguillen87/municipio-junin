@@ -57,12 +57,13 @@ export default async function handler(req, res) {
           TO_CHAR(fecha, 'YYYY-MM') as periodo,
           SUM(monto)::float as total,
           COUNT(*)::int as cantidad
-        FROM "Pago"
+        FROM "pagos"
         WHERE "tenantId" = ${tenantId}
           AND fecha >= NOW() - INTERVAL '6 months'
         GROUP BY TO_CHAR(fecha, 'YYYY-MM')
         ORDER BY periodo ASC
       `
+
     ]);
 
     return res.status(200).json({

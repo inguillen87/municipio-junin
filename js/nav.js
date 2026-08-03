@@ -312,10 +312,60 @@ function updateTopbarAvatar(initials, roleColor) {
   }
 }
 
+// Inject theme btn into any topbar-right that nav.js didn't build
+window.MuniTheme && window.MuniTheme.apply(window.MuniTheme.get());
+(function injectThemeBtn() {
+  if (document.getElementById('themeToggleBtn')) return; // already exists
+  var topbarRight = document.querySelector('.topbar-right');
+  if (!topbarRight) return;
+  var btn = document.createElement('button');
+  btn.id = 'themeToggleBtn';
+  btn.className = 'notif-btn theme-toggle-btn';
+  btn.style.fontSize = '16px';
+  btn.title = 'Cambiar tema';
+  btn.textContent = (window.MuniTheme && window.MuniTheme.get() === 'light') ? '☀️' : '🌙';
+  btn.onclick = function() { if (window.MuniTheme) window.MuniTheme.cycle(); };
+  // Insert before notifications button
+  var notifBtn = topbarRight.querySelector('.notif-btn');
+  topbarRight.insertBefore(btn, notifBtn || topbarRight.firstChild);
+})();
+
+// Global search handler — filters visible rows/cards on keyup
+(function initGlobalSearch() {
+  var input = document.getElementById('globalSearch');
+  if (!input) return;
+  var timer;
+  input.addEventListener('keyup', function() {
+    clearTimeout(timer);
+    timer = setTimeout(function() {
+      var q = input.value.trim().toLowerCase();
+      if (!q) {
+        document.querySelectorAll('tr[data-searchable], .card[data-searchable], .kpi-card[data-searchable]').forEach(function(el) {
+          el.style.display = '';
+        });
+        return;
+      }
+      // Search in table rows
+      document.querySelectorAll('tbody tr').forEach(function(row) {
+        var text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+      });
+      // Search in cards with text
+      document.querySelectorAll('.search-target').forEach(function(card) {
+        card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }, 280);
+  });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { input.value = ''; input.dispatchEvent(new Event('keyup')); }
+  });
+})();
+
 window.doLogout = function() {
   sessionStorage.removeItem('mjunin_user');
   window.location.href = 'login.html';
 };
+
 
 function injectSidebarCSS() {
   if (document.getElementById('sidebarNavCSS')) return;

@@ -927,5 +927,15 @@ function exportDashboardPDF() {
   if (typeof showToast !== 'undefined') showToast('✅ PDF descargado: ' + filename, 'success');
 }
 </script>
+<script>
+// Ctrl+K focuses the global search
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    var s = document.getElementById('globalSearch');
+    if (s) { s.focus(); s.select(); }
+  }
+});
+</script>
 </body>
 </html>

@@ -1,6 +1,6 @@
-// ============================================================
-// HF-CLIENT.JS — Hugging Face Inference API Client
-// MuniControl v2 — AI-powered municipal assistant
+ï»¿// ============================================================
+// HF-CLIENT.JS ï¿½ Hugging Face Inference API Client
+// MuniControl v2 ï¿½ AI-powered municipal assistant
 // ============================================================
 
 (function(global) {
@@ -36,7 +36,7 @@
           await new Promise(r => setTimeout(r, 3000));
           return infer(model, payload, retries - 1);
         }
-        return { error: 'El modelo IA está cargando. Intenta en 30 segundos.' };
+        return { error: 'El modelo IA estÃ© cargando. Intenta en 30 segundos.' };
       }
 
       if (!resp.ok) {
@@ -46,7 +46,7 @@
 
       return await resp.json();
     } catch (e) {
-      return { error: 'Sin conexión a Hugging Face API. Usando modo demo.' };
+      return { error: 'Sin conexiÃ³n a Hugging Face API. Usando modo demo.' };
     }
   }
 
@@ -114,14 +114,14 @@
       const reclamos = context.reclamos || 47;
       const mes = new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
 
-      const systemPrompt = `Eres MuniBot, el asistente de inteligencia artificial del Municipio de Junín, Mendoza, Argentina. 
+      const systemPrompt = `Eres MuniBot, el asistente de inteligencia artificial del Municipio de JunÃ­n, Mendoza, Argentina. 
 Tienes acceso a los datos municipales en tiempo real:
 - Empleados municipales: ${empleados}
 - Presupuesto anual: ${presupuesto}
 - Reclamos pendientes: ${reclamos}
-- Período: ${mes}
-- Secretarías: Salud, Obras Públicas, Educación, Seguridad, Hacienda, Medio Ambiente, Cultura, RRHH
-Responde siempre en español argentino, de manera clara, concisa y útil para funcionarios municipales.
+- Perï¿½odo: ${mes}
+- SecretarÃ¡as: Salud, Obras PÃºblicas, EducaciÃ³n, Seguridad, Hacienda, Medio Ambiente, Cultura, RRHH
+Responde siempre en espaÃ±ol argentino, de manera clara, concisa y ï¿½til para funcionarios municipales.
 Si no sabes algo, lo dices claramente. Nunca inventes datos.`;
 
       const prompt = `<s>[INST] ${systemPrompt}\n\nPregunta del usuario: ${userMessage} [/INST]`;
@@ -131,8 +131,8 @@ Si no sabes algo, lo dices claramente. Nunca inventes datos.`;
 
     // -- 5. SIMPLIFICA IA --------------------------------------
     async simplifica(textoLegal) {
-      const prompt = `<s>[INST] Eres un experto en simplificar textos legales y administrativos argentinos para que cualquier ciudadano los entienda sin conocimientos técnicos. 
-Simplifica este texto en lenguaje claro y amigable, sin tecnicismos, en no más de 3 párrafos cortos:
+      const prompt = `<s>[INST] Eres un experto en simplificar textos legales y administrativos argentinos para que cualquier ciudadano los entienda sin conocimientos tÃ©cnicos. 
+Simplifica este texto en lenguaje claro y amigable, sin tecnicismos, en no mï¿½s de 3 pï¿½rrafos cortos:
 
 ${textoLegal} [/INST]`;
       return this.generateText(prompt, { maxTokens: 350, temperature: 0.6 });
@@ -140,21 +140,21 @@ ${textoLegal} [/INST]`;
 
     // -- 6. CLASSIFY RECLAMO ----------------------------------
     async clasificarReclamo(descripcion) {
-      const labels = ['bache en calle', 'luminaria fundida', 'recolección de residuos', 
-                      'árbol caído o peligroso', 'pérdida de agua', 'problema cloacal',
-                      'ruidos molestos', 'problema de tránsito', 'animales sueltos', 'otro problema'];
+      const labels = ['bache en calle', 'luminaria fundida', 'recolecciÃ³n de residuos', 
+                      'ï¿½rbol caï¿½do o peligroso', 'pï¿½rdida de agua', 'problema cloacal',
+                      'ruidos molestos', 'problema de trï¿½nsito', 'animales sueltos', 'otro problema'];
       const result = await this.classify(descripcion, labels);
       if (result.error) return result;
       // Map to our categories
       const mapping = {
         'bache en calle': 'Bache',
         'luminaria fundida': 'Luminaria',
-        'recolección de residuos': 'Residuos',
-        'árbol caído o peligroso': 'Arbolado',
-        'pérdida de agua': 'Agua',
+        'recolecciÃ³n de residuos': 'Residuos',
+        'ï¿½rbol caï¿½do o peligroso': 'Arbolado',
+        'pï¿½rdida de agua': 'Agua',
         'problema cloacal': 'Cloacas',
         'ruidos molestos': 'Ruidos',
-        'problema de tránsito': 'Tránsito',
+        'problema de trï¿½nsito': 'Trï¿½nsito',
         'animales sueltos': 'Animales',
         'otro problema': 'Otro'
       };
@@ -175,7 +175,7 @@ ${textoLegal} [/INST]`;
 
     // -- 8. REDACTOR DE NOTAS (para empleados) ----------------
     async redactarNota(instruccion) {
-      const prompt = `<s>[INST] Eres asistente de redacción para la administración pública argentina. Redacta de manera formal y profesional: ${instruccion} [/INST]`;
+      const prompt = `<s>[INST] Eres asistente de redacciÃ³n para la administraciÃ³n pÃºblica argentina. Redacta de manera formal y profesional: ${instruccion} [/INST]`;
       return this.generateText(prompt, { maxTokens: 400, temperature: 0.5 });
     }
   };

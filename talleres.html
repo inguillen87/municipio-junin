@@ -1,239 +1,239 @@
-﻿<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Talleres Municipales � Municipio de Jun�n</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/talleres.css" />
-</head>
-<body>
-  <aside class="sidebar" id="sidebar"></aside>
-
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">?</button>
-        <div class="page-title">
-          <h1>Talleres Municipales</h1>
-          <span class="breadcrumb">Municipio de Jun�n � �rdenes de Trabajo y Stock</span>
-        </div>
-      </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <button class="btn-primary" id="btnNuevaOrden">+ Nueva Orden</button>
-        <button class="btn-export">• Exportar</button>
-        <div class="notification-bell">•<span class="notif-dot"></span></div>
-        <div class="topbar-avatar">MA</div>
-      </div>
-    </header>
-
-    <div class="content-wrapper">
-
-      <!-- KPIs -->
-      <section class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">�rdenes Activas</span><div class="kpi-icon blue">•</div></div>
-          <div class="kpi-value" data-target="24">0</div>
-          <div class="kpi-footer"><span class="kpi-trend up">8 urgentes</span></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Completadas (mes)</span><div class="kpi-icon green">?</div></div>
-          <div class="kpi-value" data-target="87">0</div>
-          <div class="kpi-footer"><span class="kpi-trend down">? 3 vs julio</span></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Vehículos en Taller</span><div class="kpi-icon amber">•</div></div>
-          <div class="kpi-value" data-target="7">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">De 43 en la flota</span></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Stock Cr�tico</span><div class="kpi-icon red">•</div></div>
-          <div class="kpi-value" data-target="5">0</div>
-          <div class="kpi-footer"><span class="kpi-trend up">Insumos bajos</span></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Costo Mensual</span><div class="kpi-icon violet">•</div></div>
-          <div class="kpi-value money" data-target="13440000">$0</div>
-          <div class="kpi-footer"><span class="kpi-trend up">? +12% vs presup.</span></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Tiempo Medio Rep.</span><div class="kpi-icon teal">•</div></div>
-          <div class="kpi-value" data-target="4">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">días por orden</span></div>
-        </div>
-      </section>
-
-      <!-- TABS -->
-      <div class="tabs-bar">
-        <button class="tab-btn active" data-tab="ordenes">• �rdenes de Trabajo</button>
-        <button class="tab-btn" data-tab="vehiculos">• Flota de Vehículos</button>
-        <button class="tab-btn" data-tab="stock">• Stock e Insumos</button>
-      </div>
-
-      <!-- TAB: ORDENES -->
-      <div class="tab-content active" id="tab-ordenes">
-        <div class="rrhh-panel">
-          <div class="panel-header">
-            <h2 class="chart-title">• �rdenes de Trabajo</h2>
-            <div class="panel-filters">
-              <select class="select-filter" id="filtroOrdenEstado">
-                <option value="">Todos los estados</option>
-                <option>Abierta</option>
-                <option>En proceso</option>
-                <option>Pausada</option>
-                <option>Completada</option>
-              </select>
-              <select class="select-filter" id="filtroOrdenPrioridad">
-                <option value="">Toda prioridad</option>
-                <option>Urgente</option>
-                <option>Alta</option>
-                <option>Normal</option>
-                <option>Baja</option>
-              </select>
-            </div>
-          </div>
-          <table class="data-table" id="ordenesTable">
-            <thead>
-              <tr>
-                <th>OT #</th>
-                <th>Descripción</th>
-                <th>Vehículo / Equipo</th>
-                <th>MecÚnico</th>
-                <th>Prioridad</th>
-                <th>Inicio</th>
-                <th>Estado</th>
-                <th>Costo Est.</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="ordenesBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- TAB: VEHICULOS -->
-      <div class="tab-content" id="tab-vehiculos">
-        <div class="vehiculos-grid" id="vehiculosGrid"></div>
-      </div>
-
-      <!-- TAB: STOCK -->
-      <div class="tab-content" id="tab-stock">
-        <div class="rrhh-panel">
-          <div class="panel-header">
-            <h2 class="chart-title">• Inventario de Insumos</h2>
-            <button class="btn-primary" id="btnAjusteStock">+ Ajuste de Stock</button>
-          </div>
-          <table class="data-table" id="stockTable">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Insumo</th>
-                <th>Categoría</th>
-                <th>Stock Actual</th>
-                <th>Stock Mínimo</th>
-                <th>Unidad</th>
-                <th>Costo Unit.</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody id="stockBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-  </main>
-
-  <!-- MODAL NUEVA ORDEN -->
-  <div class="modal-overlay" id="modalOrden" style="display:none">
-    <div class="modal" style="max-width:540px">
-      <div class="modal-header">
-        <h3>• Nueva Orden de Trabajo</h3>
-        <button class="modal-close" onclick="document.getElementById('modalOrden').style.display='none'">?</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid">
-          <div class="form-group" style="grid-column:1/-1">
-            <label>Descripción del trabajo</label>
-            <input type="text" id="otDesc" placeholder="Ej: Cambio de frenos + alineaci�n" />
-          </div>
-          <div class="form-group">
-            <label>Vehículo / Equipo</label>
-            <select id="otVehiculo">
-              <option>Ford F-100 � JUN-001</option>
-              <option>VW Amarok � JUN-002</option>
-              <option>Toyota Hilux � JUN-003</option>
-              <option>Cami�n Volvo � JUN-010</option>
-              <option>Cami�n Basura � JUN-015</option>
-              <option>Moto Honda � JUN-022</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>MecÚnico Asignado</label>
-            <select id="otMecanico">
-              <option>Roberto Díaz</option>
-              <option>H�ctor Moreno</option>
-              <option>Luis Fern�ndez</option>
-              <option>Carlos Su�rez</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Prioridad</label>
-            <select id="otPrioridad">
-              <option>Urgente</option>
-              <option>Alta</option>
-              <option>Normal</option>
-              <option>Baja</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Costo Estimado ($)</label>
-            <input type="number" id="otCosto" placeholder="45000" />
-          </div>
-          <div class="form-group" style="grid-column:1/-1">
-            <label>Observaciones</label>
-            <textarea id="otObs" rows="2" placeholder="Notas adicionales..."></textarea>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="document.getElementById('modalOrden').style.display='none'">Cancelar</button>
-        <button class="btn-save" id="btnGuardarOrden">• Crear Orden</button>
-      </div>
-    </div>
-  </div>
-
-  <script src='js/db.js'></script>
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-  <script src='js/db.js'></script>
-  <script src="js/nav.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/data.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/talleres.js"></script>
-  <script src='js/db.js'></script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/db.js'></script>
-  <script src='js/bottom-nav.js'></script>
-  <script src='js/notifications.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
-  <script>if(typeof buildSidebar === 'function') buildSidebar('talleres');</script>
-</body>
-</html>
-
-
-
-
-
-
+﻿﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
+  <title>Talleres Municipales  Municipio de Junín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/talleres.css" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn">?</button>
+        <div class="page-title">
+          <h1>Talleres Municipales</h1>
+          <span class="breadcrumb">Municipio de Junín  rdenes de Trabajo y Stock</span>
+        </div>
+      </div>
+      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
+        <button class="btn-primary" id="btnNuevaOrden">+ Nueva Orden</button>
+        <button class="btn-export">• Exportar</button>
+        <div class="notification-bell">•<span class="notif-dot"></span></div>
+        <div class="topbar-avatar">MA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- KPIs -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">rdenes Activas</span><div class="kpi-icon blue">•</div></div>
+          <div class="kpi-value" data-target="24">0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">8 urgentes</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Completadas (mes)</span><div class="kpi-icon green">?</div></div>
+          <div class="kpi-value" data-target="87">0</div>
+          <div class="kpi-footer"><span class="kpi-trend down">? 3 vs julio</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Vehículos en Taller</span><div class="kpi-icon amber">•</div></div>
+          <div class="kpi-value" data-target="7">0</div>
+          <div class="kpi-footer"><span class="kpi-sub">De 43 en la flota</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Stock Crtico</span><div class="kpi-icon red">•</div></div>
+          <div class="kpi-value" data-target="5">0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">Insumos bajos</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Costo Mensual</span><div class="kpi-icon violet">•</div></div>
+          <div class="kpi-value money" data-target="13440000">$0</div>
+          <div class="kpi-footer"><span class="kpi-trend up">? +12% vs presup.</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Tiempo Medio Rep.</span><div class="kpi-icon teal">•</div></div>
+          <div class="kpi-value" data-target="4">0</div>
+          <div class="kpi-footer"><span class="kpi-sub">días por orden</span></div>
+        </div>
+      </section>
+
+      <!-- TABS -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-tab="ordenes">• rdenes de Trabajo</button>
+        <button class="tab-btn" data-tab="vehiculos">• Flota de Vehículos</button>
+        <button class="tab-btn" data-tab="stock">• Stock e Insumos</button>
+      </div>
+
+      <!-- TAB: ORDENES -->
+      <div class="tab-content active" id="tab-ordenes">
+        <div class="rrhh-panel">
+          <div class="panel-header">
+            <h2 class="chart-title">• rdenes de Trabajo</h2>
+            <div class="panel-filters">
+              <select class="select-filter" id="filtroOrdenEstado">
+                <option value="">Todos los estados</option>
+                <option>Abierta</option>
+                <option>En proceso</option>
+                <option>Pausada</option>
+                <option>Completada</option>
+              </select>
+              <select class="select-filter" id="filtroOrdenPrioridad">
+                <option value="">Toda prioridad</option>
+                <option>Urgente</option>
+                <option>Alta</option>
+                <option>Normal</option>
+                <option>Baja</option>
+              </select>
+            </div>
+          </div>
+          <table class="data-table" id="ordenesTable">
+            <thead>
+              <tr>
+                <th>OT #</th>
+                <th>Descripción</th>
+                <th>Vehículo / Equipo</th>
+                <th>MecÚnico</th>
+                <th>Prioridad</th>
+                <th>Inicio</th>
+                <th>Estado</th>
+                <th>Costo Est.</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="ordenesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: VEHICULOS -->
+      <div class="tab-content" id="tab-vehiculos">
+        <div class="vehiculos-grid" id="vehiculosGrid"></div>
+      </div>
+
+      <!-- TAB: STOCK -->
+      <div class="tab-content" id="tab-stock">
+        <div class="rrhh-panel">
+          <div class="panel-header">
+            <h2 class="chart-title">• Inventario de Insumos</h2>
+            <button class="btn-primary" id="btnAjusteStock">+ Ajuste de Stock</button>
+          </div>
+          <table class="data-table" id="stockTable">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Insumo</th>
+                <th>Categoría</th>
+                <th>Stock Actual</th>
+                <th>Stock Mínimo</th>
+                <th>Unidad</th>
+                <th>Costo Unit.</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="stockBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL NUEVA ORDEN -->
+  <div class="modal-overlay" id="modalOrden" style="display:none">
+    <div class="modal" style="max-width:540px">
+      <div class="modal-header">
+        <h3>• Nueva Orden de Trabajo</h3>
+        <button class="modal-close" onclick="document.getElementById('modalOrden').style.display='none'">?</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Descripción del trabajo</label>
+            <input type="text" id="otDesc" placeholder="Ej: Cambio de frenos + alineación" />
+          </div>
+          <div class="form-group">
+            <label>Vehículo / Equipo</label>
+            <select id="otVehiculo">
+              <option>Ford F-100  JUN-001</option>
+              <option>VW Amarok  JUN-002</option>
+              <option>Toyota Hilux  JUN-003</option>
+              <option>Camión Volvo  JUN-010</option>
+              <option>Camión Basura  JUN-015</option>
+              <option>Moto Honda  JUN-022</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>MecÚnico Asignado</label>
+            <select id="otMecanico">
+              <option>Roberto Díaz</option>
+              <option>Hctor Moreno</option>
+              <option>Luis Fernndez</option>
+              <option>Carlos Surez</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Prioridad</label>
+            <select id="otPrioridad">
+              <option>Urgente</option>
+              <option>Alta</option>
+              <option>Normal</option>
+              <option>Baja</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Costo Estimado ($)</label>
+            <input type="number" id="otCosto" placeholder="45000" />
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Observaciones</label>
+            <textarea id="otObs" rows="2" placeholder="Notas adicionales..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="document.getElementById('modalOrden').style.display='none'">Cancelar</button>
+        <button class="btn-save" id="btnGuardarOrden">• Crear Orden</button>
+      </div>
+    </div>
+  </div>
+
+  <script src='js/db.js'></script>
+  <script src="js/pwa.js"></script>
+  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <script src='js/db.js'></script>
+  <script src="js/nav.js"></script>
+  <script src='js/db.js'></script>
+  <script src="js/data.js"></script>
+  <script src='js/db.js'></script>
+  <script src="js/talleres.js"></script>
+  <script src='js/db.js'></script>
+  <script src='js/ux-improvements.js'></script>
+  <script src='js/db.js'></script>
+  <script src='js/bottom-nav.js'></script>
+  <script src='js/notifications.js'></script>
+  <script src='js/chat-widget.js'></script>
+  <script src='js/theme-switcher.js'></script>
+  <script>if(typeof buildSidebar === 'function') buildSidebar('talleres');</script>
+</body>
+</html>
+
+
+
+
+
+

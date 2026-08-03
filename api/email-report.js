@@ -11,7 +11,9 @@ export default async function handler(req, res) {
   }
 
   const { period = 'monthly', to, subject } = req.body;
-  const targetEmail = to || 'intendente@juninmendoza.gob.ar';
+  // Fase 1: guillen.marce@gmail.com (testing)
+  // Fase 2: intendente@juninmendoza.gob.ar + secretarios (producción)
+  const targetEmail = to || process.env.REPORT_EMAIL_TO || 'guillen.marce@gmail.com';
   const mailSubject = subject || `Informe Ejecutivo - MuniControl (${period})`;
 
   try {
@@ -137,7 +139,9 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'MuniControl <informes@municontrol.ar>',
+        // Fase 1: usar onboarding@resend.dev (gratis, sin verificar dominio)
+        // Fase 2: verificar dominio → informes@municontrol.ar o sistema@juninmendoza.gob.ar
+        from: process.env.RESEND_FROM || 'MuniControl <onboarding@resend.dev>',
         to: [targetEmail],
         subject: mailSubject,
         html: html

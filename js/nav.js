@@ -197,8 +197,12 @@ function adjustMainContent(collapsed) {
   if (!main) return;
   if (collapsed) {
     main.style.marginLeft = '64px';
+    main.style.width = 'calc(100% - 64px)';
+    main.classList.add('sidebar-collapsed');
   } else {
     main.style.marginLeft = '260px';
+    main.style.width = 'calc(100% - 260px)';
+    main.classList.remove('sidebar-collapsed');
   }
 }
 
@@ -323,24 +327,26 @@ function injectSidebarCSS() {
     '  background:#0a1628;',
     '  border-right:1px solid rgba(255,255,255,0.07);',
     '  display:flex;flex-direction:column;z-index:200;overflow:hidden;',
-    '  transition:width 0.28s cubic-bezier(0.4,0,0.2,1),left 0.3s cubic-bezier(0.4,0,0.2,1);',
+    '  transition:width 0.28s cubic-bezier(0.4,0,0.2,1),left 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.28s;',
     '  will-change:width;',
     '}',
 
-    // Collapsed state (desktop only)
-    '.sidebar.collapsed{width:64px;}',
-    '.sidebar.collapsed .sb-logo-text{opacity:0;width:0;overflow:hidden;pointer-events:none;}',
-    '.sidebar.collapsed .sb-section-text{opacity:0;width:0;overflow:hidden;}',
-    '.sidebar.collapsed .sb-item-label{opacity:0;width:0;overflow:hidden;pointer-events:none;}',
+    // Collapsed state (desktop only) — full width collapses to 64px icon rail
+    '.sidebar.collapsed{width:64px!important;}',
+    '.sidebar.collapsed .sb-logo-text{opacity:0;max-width:0;overflow:hidden;pointer-events:none;transition:opacity 0.2s,max-width 0.28s;}',
+    '.sidebar.collapsed .sb-section-label{padding:6px 4px;display:flex;justify-content:center;}',
+    '.sidebar.collapsed .sb-section-text{opacity:0;max-width:0;overflow:hidden;white-space:nowrap;}',
+    '.sidebar.collapsed .sb-item{padding:0;height:40px;width:40px;margin:1px auto;border-radius:10px;justify-content:center;gap:0;overflow:visible;}',
+    '.sidebar.collapsed .sb-item-label{opacity:0;max-width:0;overflow:hidden;pointer-events:none;white-space:nowrap;}',
     '.sidebar.collapsed .sb-active-dot{display:none;}',
-    '.sidebar.collapsed .sb-user-info{opacity:0;width:0;overflow:hidden;pointer-events:none;}',
+    '.sidebar.collapsed .sb-user{justify-content:center;padding:12px 0;}',
+    '.sidebar.collapsed .sb-user-info{opacity:0;max-width:0;overflow:hidden;pointer-events:none;}',
     '.sidebar.collapsed .sb-logout-btn{display:none;}',
-    '.sidebar.collapsed .sb-item{padding:10px;justify-content:center;}',
-    '.sidebar.collapsed .sb-user{justify-content:center;padding:14px 8px;}',
-    '.sidebar.collapsed .sb-section-label{padding:10px 8px;}',
-    '.sidebar.collapsed .sb-collapse-btn{margin-left:0;}',
-    '.sidebar.collapsed .sb-logo{padding:18px 12px;justify-content:center;}',
+    '.sidebar.collapsed .sb-collapse-btn{margin-left:0;width:28px;height:28px;}',
+    '.sidebar.collapsed .sb-logo{padding:14px 0;justify-content:center;}',
     '.sidebar.collapsed .sb-logo-icon{margin:0;}',
+    '.sidebar.collapsed .sb-nav{padding:6px 0;display:flex;flex-direction:column;align-items:center;}',
+    '.sidebar.collapsed .sb-item-icon{width:20px;height:20px;}',
 
     // Logo area
     '.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 14px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;min-height:64px;}',
@@ -414,7 +420,8 @@ function injectSidebarCSS() {
     '.sb-logout-btn:hover{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2);color:#f87171;}',
 
     // ── MAIN CONTENT ──────────────────────────────────────────
-    '.main-content{margin-left:260px;min-height:100vh;transition:margin-left 0.28s cubic-bezier(0.4,0,0.2,1);}',
+    '.main-content{margin-left:260px;min-height:100vh;transition:margin-left 0.28s cubic-bezier(0.4,0,0.2,1);width:calc(100% - 260px);}',
+    '.main-content.sidebar-collapsed{margin-left:64px;width:calc(100% - 64px);}',
 
     // ── TOPBAR ────────────────────────────────────────────────
     '.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:rgba(6,11,24,0.97);border-bottom:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;}',

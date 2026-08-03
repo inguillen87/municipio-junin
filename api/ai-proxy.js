@@ -1,4 +1,4 @@
-// api/ai-proxy.js — MuniCopilot AI Proxy
+// api/ai-proxy.js — MuniBot AI Proxy
 // Uses HuggingFace Inference API (Qwen2.5-72B or Llama-3.3-70B)
 // Token stored server-side as MUNI_HF_TOKEN env var
 
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'message is required' });
   }
 
-  const SYSTEM = systemCtx || `Sos MuniCopilot, el asistente inteligente del Municipio de Junín, Mendoza, Argentina.
+  const SYSTEM = systemCtx || `Sos MuniBot, el asistente inteligente del Municipio de Junín, Mendoza, Argentina.
 Ayudás a empleados municipales y funcionarios con consultas sobre gestión municipal.
 Respondés en español rioplatense, de forma clara, concisa y profesional.
 Contexto del sistema actual:

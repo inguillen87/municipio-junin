@@ -28,9 +28,13 @@
         ${msg ? `<div class="toast-msg">${msg}</div>` : ''}
       </div>`;
     container.appendChild(el);
+    function removeToast(el) {
+      el.classList.add('removing');
+      setTimeout(function() { el.remove(); }, 300);
+    }
+
     setTimeout(() => {
-      el.classList.add('fadeout');
-      setTimeout(() => el.remove(), 350);
+      removeToast(el);
     }, duration);
     return el;
   };

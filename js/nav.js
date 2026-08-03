@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // NAV.JS v5 — Sidebar + Auth global — MuniControl
 // ============================================================
 
@@ -193,12 +193,14 @@ function initMobileToggle(sidebarEl) {
     function open() {
       sidebarEl.classList.add('mobile-open');
       overlay.style.display = 'block';
+      requestAnimationFrame(function() { overlay.classList.add('visible'); });
       document.body.style.overflow = 'hidden';
     }
     function close() {
       sidebarEl.classList.remove('mobile-open');
-      overlay.style.display = 'none';
+      overlay.classList.remove('visible');
       document.body.style.overflow = '';
+      setTimeout(function() { overlay.style.display = 'none'; }, 250);
     }
 
     fresh.addEventListener('click', function(e) {

@@ -2127,3 +2127,248 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
   }
 }
 
+
+/* ============================================================
+   SPRINT Y — Premium Animations & UX Polish
+   ============================================================ */
+
+/* ── PAGE TRANSITIONS ──────────────────────────────────────── */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.content-wrapper {
+  animation: pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── CARD ENTRANCE ANIMATIONS ──────────────────────────────── */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.kpi-card {
+  animation: cardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.10s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.20s; }
+.kpi-card:nth-child(5) { animation-delay: 0.25s; }
+.kpi-card:nth-child(6) { animation-delay: 0.30s; }
+
+/* ── SIDEBAR ANIMATIONS ─────────────────────────────────────── */
+.nav-item {
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+}
+.nav-item:hover {
+  transform: translateX(3px) !important;
+}
+.nav-item.active {
+  transform: translateX(3px) !important;
+}
+
+/* ── HAMBURGER ANIMATION ────────────────────────────────────── */
+.menu-btn {
+  transition: transform 0.2s ease, background 0.2s ease !important;
+}
+.menu-btn:active {
+  transform: scale(0.88) !important;
+}
+
+/* ── SIDEBAR SLIDE ANIMATION ────────────────────────────────── */
+.sidebar {
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ── OVERLAY FADE ────────────────────────────────────────────── */
+#sidebarOverlay {
+  transition: opacity 0.25s ease !important;
+  opacity: 0;
+}
+#sidebarOverlay.visible {
+  opacity: 1 !important;
+}
+
+/* ── BUTTON RIPPLE EFFECT ───────────────────────────────────── */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  width: 100px; height: 100px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.btn-ripple:active::after {
+  transform: translate(-50%, -50%) scale(2.5);
+  opacity: 1;
+  transition: 0s;
+}
+
+/* ── TABLE ROW HOVER ────────────────────────────────────────── */
+.data-table tbody tr {
+  transition: background 0.15s ease;
+}
+.data-table tbody tr:hover td {
+  background: rgba(59,130,246,0.05) !important;
+}
+
+/* ── TOAST ANIMATIONS ───────────────────────────────────────── */
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(100%) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes toastSlideOut {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(100%) scale(0.9); }
+}
+.toast {
+  animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.toast.removing {
+  animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ── MOBILE BOTTOM NAV ──────────────────────────────────────── */
+.bottom-nav-bar {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: rgba(6,11,24,0.97);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  z-index: 500;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bnav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  min-width: 52px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: rgba(100,116,139,0.8);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+.bnav-item svg { transition: transform 0.2s ease; }
+.bnav-item:active svg { transform: scale(0.85); }
+.bnav-item.active { color: #60a5fa; }
+.bnav-item.active svg { filter: drop-shadow(0 0 6px rgba(96,165,250,0.5)); }
+
+@media (max-width: 900px) {
+  .bottom-nav-bar { display: flex !important; }
+  .content-wrapper { padding-bottom: 80px !important; }
+  .page-content { padding-bottom: 80px !important; }
+  .main-content { padding-bottom: 64px; }
+}
+
+/* ── MODAL ANIMATIONS ───────────────────────────────────────── */
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.modal-overlay {
+  animation: overlayIn 0.25s ease both;
+}
+.modal-content {
+  animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@media (max-width: 600px) {
+  .modal-content {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 88vh !important;
+    overflow-y: auto;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* ── SKELETON LOADING ───────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.09) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+/* ── FOCUS STYLES ───────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid rgba(59,130,246,0.6);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── SCROLLBAR GLOBAL ───────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.18);
+}
+
+/* ── LINK ACTIVE STATE ──────────────────────────────────────── */
+a, button { -webkit-tap-highlight-color: rgba(59,130,246,0.1); }
+
+/* ── CHART CARD HOVER ───────────────────────────────────────── */
+.chart-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+.chart-card:hover {
+  border-color: rgba(255,255,255,0.12) !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25) !important;
+}
+
+/* ── QA QUICK ACCESS BUTTONS ────────────────────────────────── */
+.qa-link {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.qa-link:active {
+  transform: scale(0.96) !important;
+}

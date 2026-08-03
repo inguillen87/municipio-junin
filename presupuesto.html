@@ -71,7 +71,7 @@
   <div class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
+        <button class="menu-btn" id="menuBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></button>
         <div class="page-title">
           <h1>💰 Presupuesto Anual 2026</h1>
           <div class="breadcrumb">Control Ejecutivo / Presupuesto</div>
@@ -94,7 +94,7 @@
           <div class="kpi-trend trend-up">▲ +8% vs 2025</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-icon" style="background:rgba(16,185,129,0.1)">✅</span></div>
+          <div class="kpi-header"><span class="kpi-icon" style="background:rgba(16,185,129,0.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span></div>
           <div class="kpi-value kpi-counter" data-target="193" style="color:var(--green)">$0M</div>
           <div class="kpi-label">Ejecutado</div>
           <div class="kpi-trend trend-up">52% del total</div>
@@ -112,7 +112,7 @@
           <div class="kpi-trend trend-up">▲ 8.3% del total</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-icon" style="background:rgba(239,68,68,0.1)">⚠️</span></div>
+          <div class="kpi-header"><span class="kpi-icon" style="background:rgba(239,68,68,0.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️</span></div>
           <div class="kpi-value kpi-counter" data-target="3" data-prefix="" style="color:var(--red)">0</div>
           <div class="kpi-label">Partidas en Riesgo</div>
           <div class="kpi-trend trend-down">▼ Revisar urgente</div>
@@ -253,9 +253,54 @@
         </div>
       </div>
 
+    
+    <div style="margin-top: 30px; background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+      <h3 style="margin-top:0">Distribucion por Secretaria</h3>
+      <canvas id="presupuestoChart" height="100"></canvas>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('presupuestoChart');
+        if(ctx) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Obras Publicas', 'Salud', 'Educacion', 'Seguridad', 'Desarrollo Social'],
+                    datasets: [{
+                        label: 'Presupuesto (Millones)',
+                        data: [450, 320, 210, 180, 150],
+                        backgroundColor: '#3b82f6'
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+    });
+    </script>
+    
+</div>
   </div>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('tr').forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            if(cells.length > 0) {
+                let pctCell = Array.from(cells).find(td => td.innerText.includes('%'));
+                if(pctCell) {
+                    let val = parseFloat(pctCell.innerText.replace('%', ''));
+                    if(!isNaN(val)) {
+                        if(val > 100) tr.style.backgroundColor = 'rgba(239,68,68,0.2)';
+                        else if(val > 80) tr.style.backgroundColor = 'rgba(245,158,11,0.2)';
+                        else tr.style.backgroundColor = 'rgba(16,185,129,0.2)';
+                    }
+                }
+            }
+        });
+    });
+    </script>
+    
   <script src="js/pwa.js"></script>
   <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <script>
@@ -328,7 +373,7 @@
             <div class="partida-total" style="color:${color}">${fmt(p.executed)}</div>
             <div class="partida-executed" style="color:var(--text-muted)">de ${fmt(p.total)}</div>
           </div>
-          ${p.risk ? '<div style="font-size:16px">⚠️</div>' : ''}
+          ${p.risk ? '<div style="font-size:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️</div>' : ''}
         </div>
         <div class="sub-partidas" id="sub-${p.code}">
           ${sub.map(s => `<div class="sub-partida-item"><span class="sub-partida-name">${s.n}</span><span class="sub-partida-val">${fmt(s.v)}</span></div>`).join('')}
@@ -494,7 +539,7 @@
       });
       
       doc.save('presupuesto_2026.pdf');
-      window.toast && toast('✅ PDF listo','presupuesto_2026.pdf descargado','success');
+      window.toast && toast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> PDF listo','presupuesto_2026.pdf descargado','success');
     }, 1000);
   }
   
@@ -513,7 +558,7 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Presupuesto 2026");
       XLSX.writeFile(wb, "presupuesto_2026.xlsx");
-      window.toast && toast('✅ Excel listo','presupuesto_2026.xlsx descargado','success');
+      window.toast && toast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Excel listo','presupuesto_2026.xlsx descargado','success');
     }, 1000); 
   }
 
@@ -689,7 +734,7 @@
       });
       
       doc.save('presupuesto_2026.pdf');
-      window.toast && toast('✅ PDF listo','presupuesto_2026.pdf descargado','success');
+      window.toast && toast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> PDF listo','presupuesto_2026.pdf descargado','success');
     }, 1000);
   }
   
@@ -708,7 +753,7 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Presupuesto 2026");
       XLSX.writeFile(wb, "presupuesto_2026.xlsx");
-      window.toast && toast('✅ Excel listo','presupuesto_2026.xlsx descargado','success');
+      window.toast && toast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Excel listo','presupuesto_2026.xlsx descargado','success');
     }, 1000); 
   }
 
@@ -758,7 +803,7 @@
           </td>
           <td style="padding:12px 16px">
             <span style="font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;background:${badgeColor}22;color:${badgeColor}">
-              ${pct > 100 ? '⚠️ Excedido' : pct > 80 ? '⚠️ Alerta' : '✅ Normal'}
+              ${pct > 100 ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️ Excedido' : pct > 80 ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️ Alerta' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Normal'}
             </span>
           </td>
         `;

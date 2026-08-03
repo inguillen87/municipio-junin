@@ -97,7 +97,7 @@
   <main class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
+        <button class="menu-btn" id="menuBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></button>
         <div class="page-title">
           <h1>Licitaciones y Compras</h1>
           <span class="breadcrumb">Municipio de Junín · Contrataciones y Proveedores</span>
@@ -112,14 +112,30 @@
 
     <div class="content-wrapper">
 
+    <div style="display:flex; gap:16px; margin-bottom: 24px;">
+        <div style="flex:1; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:16px; border-radius:12px;">
+            <div style="color:#ef4444; font-weight:bold; margin-bottom:8px">Cierra en 2 dias</div>
+            <div style="font-size:12px; color:var(--text-secondary)">Licitacion L-001/24 - Insumos Hospital</div>
+        </div>
+        <div style="flex:1; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); padding:16px; border-radius:12px;">
+            <div style="color:#10b981; font-weight:bold; margin-bottom:8px">Adjudicada hoy</div>
+            <div style="font-size:12px; color:var(--text-secondary)">Licitacion L-042/23 - Pavimentacion Sur</div>
+        </div>
+        <div style="flex:1; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); padding:16px; border-radius:12px;">
+            <div style="color:#3b82f6; font-weight:bold; margin-bottom:8px">Nueva publicacion</div>
+            <div style="font-size:12px; color:var(--text-secondary)">Licitacion L-005/24 - Equipamiento Informatico</div>
+        </div>
+    </div>
+    
+
       <!-- KPIs -->
       <section class="kpi-grid">
         <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Licitaciones Activas</span><div class="kpi-icon blue">📄</div></div><div class="kpi-value kpi-counter" data-target="8">0</div><div class="kpi-footer"><span class="kpi-trend up">▲ 3 en evaluación</span></div></div>
         <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Monto Total Licitado</span><div class="kpi-icon amber">💰</div></div><div class="kpi-value kpi-counter money" data-target="48700000">$0</div><div class="kpi-footer"><span class="kpi-sub">En procesos activos</span></div></div>
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Adjudicadas (mes)</span><div class="kpi-icon green">✅</div></div><div class="kpi-value kpi-counter" data-target="5">0</div><div class="kpi-footer"><span class="kpi-trend down">$12.4M adjudicados</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Adjudicadas (mes)</span><div class="kpi-icon green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div></div><div class="kpi-value kpi-counter" data-target="5">0</div><div class="kpi-footer"><span class="kpi-trend down">$12.4M adjudicados</span></div></div>
         <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Ahorro vs Presupuesto</span><div class="kpi-icon green">💚</div></div><div class="kpi-value kpi-counter pct" data-target="11">0%</div><div class="kpi-footer"><span class="kpi-sub">$1.4M ahorrados</span></div></div>
         <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Proveedores Registrados</span><div class="kpi-icon violet">🏢</div></div><div class="kpi-value kpi-counter" data-target="47">0</div><div class="kpi-footer"><span class="kpi-sub">12 pre-calificados</span></div></div>
-        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Vencen en 30 días</span><div class="kpi-icon red">⚠️</div></div><div class="kpi-value kpi-counter" data-target="3">0</div><div class="kpi-footer"><span class="kpi-trend up">▲ Requieren acción</span></div></div>
+        <div class="kpi-card"><div class="kpi-header"><span class="kpi-label">Vencen en 30 días</span><div class="kpi-icon red"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️</div></div><div class="kpi-value kpi-counter" data-target="3">0</div><div class="kpi-footer"><span class="kpi-trend up">▲ Requieren acción</span></div></div>
       </section>
 
       <!-- PROCESO STATUS BAR -->
@@ -139,8 +155,8 @@
       <div class="tabs-bar">
         <button class="tab-btn active" data-tab="todas">📋 Registro (10)</button>
         <button class="tab-btn" data-tab="activas">📄 Activas (3)</button>
-        <button class="tab-btn" data-tab="evaluacion">⚖️ En Evaluación (3)</button>
-        <button class="tab-btn" data-tab="adjudicadas">✅ Adjudicadas</button>
+        <button class="tab-btn" data-tab="evaluacion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️ En Evaluación (3)</button>
+        <button class="tab-btn" data-tab="adjudicadas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Adjudicadas</button>
         <button class="tab-btn" data-tab="proveedores">🏢 Proveedores</button>
         <button class="tab-btn" data-tab="calendario">📅 Calendario</button>
         <button class="tab-btn" data-tab="pliego-gen">🤖 AI Pliegos</button>
@@ -296,8 +312,8 @@
       <div class="tab-content" id="tab-evaluacion">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">⚖️ Evaluación Comparativa — #L001 Sistema de Expedientes</h2>
-            <button class="btn-primary">✅ Adjudicar Ganador</button>
+            <h2 class="chart-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️ Evaluación Comparativa — #L001 Sistema de Expedientes</h2>
+            <button class="btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Adjudicar Ganador</button>
           </div>
 
           <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:rgba(148,163,184,0.9)">
@@ -307,7 +323,7 @@
           <div class="oferta-card" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.04)">
             <div class="oferta-header">
               <div>
-                <div class="oferta-empresa">★ MuniSoft SRL <span style="font-size:11px;background:rgba(16,185,129,0.15);color:#10b981;padding:2px 8px;border-radius:99px;margin-left:8px;font-weight:700">RECOMENDADO</span></div>
+                <div class="oferta-empresa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> MuniSoft SRL <span style="font-size:11px;background:rgba(16,185,129,0.15);color:#10b981;padding:2px 8px;border-radius:99px;margin-left:8px;font-weight:700">RECOMENDADO</span></div>
                 <div style="font-size:12px;color:rgba(100,116,139,0.7)">CUIT: 30-71234567-8 · 8 años en el mercado</div>
               </div>
               <div class="oferta-precio" style="color:#10b981">$3.480.000/año</div>
@@ -354,7 +370,7 @@
       <!-- TAB ADJUDICADAS -->
       <div class="tab-content" id="tab-adjudicadas">
         <div class="rrhh-panel">
-          <h2 class="chart-title" style="margin-bottom:20px">✅ Licitaciones Adjudicadas 2026</h2>
+          <h2 class="chart-title" style="margin-bottom:20px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Licitaciones Adjudicadas 2026</h2>
           <table class="data-table">
             <thead><tr><th>Número</th><th>Descripción</th><th>Adjudicatario</th><th>Monto</th><th>Inicio</th><th>Vencimiento</th><th>Estado</th></tr></thead>
             <tbody>
@@ -375,18 +391,18 @@
             <h2 class="chart-title">🏢 Registro de Proveedores</h2>
             <div class="panel-filters">
               <select class="select-filter"><option>Todos los rubros</option><option>Tecnología</option><option>Construcción</option><option>Servicios</option><option>Suministros</option></select>
-              <button class="btn-primary">➕ Registrar Proveedor</button>
+              <button class="btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Registrar Proveedor</button>
             </div>
           </div>
           <table class="data-table">
             <thead><tr><th>Empresa</th><th>CUIT</th><th>Rubro</th><th>Contratos</th><th>Monto Histórico</th><th>Rating</th><th>Estado</th></tr></thead>
             <tbody>
-              <tr><td><strong>Sistemas Nexo SA</strong></td><td>30-71234567-8</td><td>Tecnología</td><td>3</td><td>$8.160.000</td><td>★★★☆☆</td><td><span class="status-badge ok">Activo</span></td></tr>
-              <tr><td><strong>LimpioSur SA</strong></td><td>30-65432109-5</td><td>Servicios</td><td>5</td><td>$12.000.000</td><td>★★★★☆</td><td><span class="status-badge ok">Activo</span></td></tr>
-              <tr><td><strong>Construmend SA</strong></td><td>30-55678901-2</td><td>Construcción</td><td>8</td><td>$27.200.000</td><td>★★★★★</td><td><span class="status-badge ok">Activo</span></td></tr>
-              <tr><td><strong>GovTech Solutions</strong></td><td>30-78901234-5</td><td>Tecnología</td><td>2</td><td>$5.040.000</td><td>★★☆☆☆</td><td><span class="status-badge critical">Contrato vencido</span></td></tr>
-              <tr><td><strong>YPF SA</strong></td><td>30-54678901-3</td><td>Combustible</td><td>4</td><td>$24.800.000</td><td>★★★★☆</td><td><span class="status-badge ok">Activo</span></td></tr>
-              <tr><td><strong>Office Plus SRL</strong></td><td>30-33456789-1</td><td>Suministros</td><td>6</td><td>$5.340.000</td><td>★★★★★</td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>Sistemas Nexo SA</strong></td><td>30-71234567-8</td><td>Tecnología</td><td>3</td><td>$8.160.000</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>LimpioSur SA</strong></td><td>30-65432109-5</td><td>Servicios</td><td>5</td><td>$12.000.000</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>Construmend SA</strong></td><td>30-55678901-2</td><td>Construcción</td><td>8</td><td>$27.200.000</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>GovTech Solutions</strong></td><td>30-78901234-5</td><td>Tecnología</td><td>2</td><td>$5.040.000</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></td><td><span class="status-badge critical">Contrato vencido</span></td></tr>
+              <tr><td><strong>YPF SA</strong></td><td>30-54678901-3</td><td>Combustible</td><td>4</td><td>$24.800.000</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></td><td><span class="status-badge ok">Activo</span></td></tr>
+              <tr><td><strong>Office Plus SRL</strong></td><td>30-33456789-1</td><td>Suministros</td><td>6</td><td>$5.340.000</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></td><td><span class="status-badge ok">Activo</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -398,7 +414,7 @@
           <h2 class="chart-title" style="margin-bottom:24px">📅 Calendario de Vencimientos y Aperturas</h2>
           <div class="timeline">
             <div class="tl-item"><div class="tl-dot done"></div><div class="tl-title">Apertura #L003-2026 — Servicio de Seguridad</div><div class="tl-sub">1 oferta recibida. En evaluación.</div><div class="tl-date">05/09/2026 — Completado</div></div>
-            <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title">⚠️ Vencimiento contrato GovTech Solutions (Expedientes)</div><div class="tl-sub">Sistema en riesgo. Iniciar licitación urgente #L001.</div><div class="tl-date">15/08/2026 — VENCIDO</div></div>
+            <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️ Vencimiento contrato GovTech Solutions (Expedientes)</div><div class="tl-sub">Sistema en riesgo. Iniciar licitación urgente #L001.</div><div class="tl-date">15/08/2026 — VENCIDO</div></div>
             <div class="tl-item"><div class="tl-dot active"></div><div class="tl-title">Apertura #L001-2026 — Sistema de Expedientes</div><div class="tl-sub">3 ofertas. Evaluación en curso. MuniSoft lidera.</div><div class="tl-date">15/09/2026 — Esta semana</div></div>
             <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Apertura #L002-2026 — Mantenimiento Vial</div><div class="tl-sub">Recibiendo ofertas. 3 empresas confirmaron interés.</div><div class="tl-date">20/09/2026</div></div>
             <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-title">Renovación contrato Construmend SA</div><div class="tl-sub">Material de construcción. Evaluar precio de mercado antes de renovar.</div><div class="tl-date">01/11/2026</div></div>
@@ -449,7 +465,7 @@
                   <textarea id="pliegoCondiciones" rows="2" placeholder="Ej: Certificado ISO 9001, seguro de caución 5%, anticipo 10%..."></textarea>
                 </div>
               </div>
-              <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="generatePliego()">✨ Generar Pliego con IA</button>
+              <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="generatePliego()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Generar Pliego con IA</button>
             </div>
 
             <!-- Preview -->
@@ -534,7 +550,7 @@
 
                 <div class="auditor-result-card" style="border-left: 3px solid #ef4444;">
                   <div class="auditor-result-header">
-                    <span class="auditor-result-title">⚠️ Cláusulas Irregulares o Faltantes</span>
+                    <span class="auditor-result-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>️ Cláusulas Irregulares o Faltantes</span>
                     <span class="risk-badge risk-high">Riesgo Alto</span>
                   </div>
                   <p class="auditor-result-text">
@@ -575,7 +591,7 @@
     <div class="modal" style="max-width:600px">
       <div class="modal-header">
         <h3>📄 Nueva Licitación</h3>
-        <button class="modal-close" onclick="document.getElementById('modalNuevaLic').style.display='none'">✕</button>
+        <button class="modal-close" onclick="document.getElementById('modalNuevaLic').style.display='none'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
@@ -684,7 +700,7 @@
           <div class="modal">
             <div class="modal-header">
               <h3>👁 Detalle: ${title}</h3>
-              <button class="modal-close" onclick="document.getElementById('modalDetalleLic').remove()">✕</button>
+              <button class="modal-close" onclick="document.getElementById('modalDetalleLic').remove()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></button>
             </div>
             <div class="modal-body">${content}</div>
             <div class="modal-footer">
@@ -795,7 +811,7 @@ function sortTable(colIdx, type) {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Licitaciones");
         XLSX.writeFile(wb, "licitaciones.xlsx");
-        if (window.toast) toast('✅ Excel listo', 'Descargado', 'success');
+        if (window.toast) toast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Excel listo', 'Descargado', 'success');
       }, 500);
     };
 
@@ -948,6 +964,16 @@ function addCountdowns() {
   <script src='js/live-clock.js'></script>
   <script src='js/chat-widget.js'></script>
   <script src='js/theme-switcher.js'></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.countdown').forEach(el => {
+            let days = Math.floor(Math.random()*10)+1;
+            el.innerText = days + ' dias restantes';
+        });
+    });
+    </script>
+    
 </body>
 </html>
 

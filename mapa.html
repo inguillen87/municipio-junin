@@ -1,283 +1,97 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
   <meta name="theme-color" content="#060b18">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mapa Financiero — MuniControl</title>
-  <meta name="description" content="Mapa georreferenciado de gastos, costos y obras públicas municipales" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <title>Mapa Interactivo - Smart City</title>
+  <meta name="description" content="Mapa Smart City Municipio" />
+  
   <link rel="stylesheet" href="css/shared.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
   <style>
     .map-layout {
-      display: flex;
-      height: calc(100vh - 64px);
-      overflow: hidden;
-    }
-    .map-sidebar {
-      width: 320px;
-      flex-shrink: 0;
-      background: var(--bg-surface);
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-    .map-sidebar-section {
-      padding: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .map-sidebar-title {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-    }
-    .map-container {
-      flex: 1;
       position: relative;
+      height: calc(100vh - 60px);
+      width: 100%;
     }
     #map {
       width: 100%;
       height: 100%;
-      background: #0d1526;
+      background: #000;
     }
-    /* Dark map tiles */
-    .leaflet-layer,
-    .leaflet-control-zoom-in,
-    .leaflet-control-zoom-out,
-    .leaflet-control-attribution {
-      filter: invert(1) hue-rotate(180deg) brightness(0.8) saturate(1.3);
-    }
-    /* Layer controls */
-    .map-controls {
+    /* Controls Panel */
+    .controls-panel {
       position: absolute;
-      top: 16px;
-      right: 16px;
+      top: 70px;
+      left: 10px;
       z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      background: rgba(10,22,40,0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 16px;
+      width: 220px;
+      backdrop-filter: blur(20px);
     }
-    .layer-btn {
-      background: rgba(9,15,28,0.92);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      backdrop-filter: blur(12px);
-      transition: all 0.2s;
+    .controls-title {
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 12px;
+      color: #f0f4ff;
+    }
+    .layer-toggle {
       display: flex;
       align-items: center;
       gap: 8px;
-      min-width: 180px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    }
-    .layer-btn.active {
-      border-color: rgba(59,130,246,0.5);
-      color: #60a5fa;
-      background: rgba(59,130,246,0.08);
-    }
-    .layer-btn .layer-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    /* Zone cards */
-    .zone-card {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      color: var(--text-secondary);
+      font-size: 13px;
       cursor: pointer;
-      transition: all 0.2s;
     }
-    .zone-card:hover, .zone-card.selected {
-      background: rgba(59,130,246,0.06);
-      border-color: rgba(59,130,246,0.25);
+    .layer-toggle input {
+      accent-color: #3b82f6;
     }
-    .zone-name { font-weight: 700; font-size: 13px; color: var(--text-primary); }
-    .zone-budget { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-    .zone-bar-wrap { height: 4px; background: rgba(255,255,255,0.06); border-radius: 99px; margin-top: 8px; overflow: hidden; }
-    .zone-bar { height: 100%; border-radius: 99px; transition: width 1.5s ease; }
-    /* Bottom KPIs */
-    .map-kpis {
+    /* Bottom Stats Bar */
+    .stats-bar {
       position: absolute;
-      bottom: 0; left: 0; right: 0;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 1000;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0;
-      background: rgba(6,11,24,0.95);
-      border-top: 1px solid var(--border);
-      backdrop-filter: blur(12px);
-    }
-    .map-kpi {
-      padding: 14px 18px;
-      border-right: 1px solid var(--border);
-    }
-    .map-kpi:last-child { border-right: none; }
-    .map-kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
-    .map-kpi-value { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 900; color: var(--text-primary); margin-top: 3px; }
-    .map-kpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-    /* Obras popup */
-    .leaflet-popup-content-wrapper {
-      background: #111d35 !important;
-      border: 1px solid rgba(255,255,255,0.1) !important;
-      border-radius: 12px !important;
-      color: #f0f4ff !important;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
-    }
-    .leaflet-popup-tip { background: #111d35 !important; }
-    .obra-popup { min-width: 200px; }
-    .obra-popup-title { font-weight: 800; font-size: 14px; margin-bottom: 6px; }
-    .obra-popup-detail { font-size: 12px; color: rgba(148,163,184,0.8); margin-bottom: 4px; }
-    .obra-progress-wrap { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; margin-top: 8px; overflow: hidden; }
-    .obra-progress-bar { height: 100%; border-radius: 99px; transition: width 1s ease; }
-    /* Legend */
-    .map-legend {
-      position: absolute;
-      bottom: 90px;
-      right: 16px;
-      z-index: 1000;
-      background: rgba(9,15,28,0.92);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 14px;
-      backdrop-filter: blur(12px);
-      font-size: 11px;
-    }
-    .legend-title { font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; color: var(--text-muted); }
-    .legend-box { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
-    /* Obra marker pulse */
-    .obra-marker {
-      width: 36px; height: 36px;
-      background: rgba(245,158,11,0.9);
-      border: 3px solid rgba(245,158,11,0.4);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      box-shadow: 0 0 20px rgba(245,158,11,0.5);
-      animation: markerPulse 2s ease-in-out infinite;
-    }
-    @keyframes markerPulse { 0%,100%{box-shadow:0 0 12px rgba(245,158,11,0.5)} 50%{box-shadow:0 0 24px rgba(245,158,11,0.8)} }
-    @media (max-width: 768px) {
-      .map-layout { flex-direction: column; height: auto; }
-      .map-sidebar { width: 100%; max-height: 220px; flex-direction: row; overflow-x: auto; flex-wrap: nowrap; }
-      .map-sidebar-section { min-width: 260px; }
-      #map { height: calc(100vh - 380px); min-height: 280px; }
-      .map-kpis { grid-template-columns: repeat(2,1fr); }
-      .map-controls { top: 8px; right: 8px; }
-      .layer-btn { min-width: 140px; padding: 8px 10px; font-size: 11px; }
-    }
-    .obras-panel {
-      position: absolute; top: 80px; right: 16px; z-index: 1000;
-      width: 280px; background: rgba(11,17,32,0.95);
+      background: rgba(10,22,40,0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 99px;
+      padding: 12px 24px;
+      display: flex;
+      gap: 24px;
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px; padding: 16px;
-      max-height: calc(100vh - 120px);
-      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
-    .obra-item {
-      display: flex; flex-direction: column; gap: 6px;
-      padding: 12px; border-radius: 10px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.05);
-      margin-bottom: 8px; cursor: pointer;
-      transition: all 0.2s ease;
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #f0f4ff;
+      font-weight: 600;
+      font-size: 14px;
     }
-    .obra-item:hover {
-      background: rgba(59,130,246,0.08);
-      border-color: rgba(59,130,246,0.2);
+    .stat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
     }
-    .obra-progress-bar {
-      width: 100%; height: 5px; background: rgba(255,255,255,0.08);
-      border-radius: 99px; overflow: hidden; margin-top: 4px;
+    .leaflet-popup-content-wrapper {
+      background: #0f172a;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
     }
-    .obra-progress-fill {
-      height: 100%; border-radius: 99px;
-      transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
+    .leaflet-popup-tip {
+      background: #0f172a;
     }
-    .mapa-legend {
-      position: absolute; bottom: 24px; left: 16px; z-index: 1000;
-      background: rgba(11,17,32,0.9); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
-      padding: 12px 16px; font-size: 11px;
-    }
-    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: rgba(148,163,184,0.8); }
-    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .layer-controls {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
-    }
-    .layer-btn {
-      padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
-      cursor: pointer; border: 1px solid; transition: all 0.2s;
-    }
-    .layer-btn.active { opacity: 1; }
-    .layer-btn:not(.active) { opacity: 0.4; }
-
-.obras-panel {
-  position: absolute; top: 80px; right: 16px; z-index: 1000;
-  width: 280px; background: rgba(11,17,32,0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px; padding: 16px;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-}
-.obra-item {
-  display: flex; flex-direction: column; gap: 6px;
-  padding: 12px; border-radius: 10px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
-  margin-bottom: 8px; cursor: pointer;
-  transition: all 0.2s ease;
-}
-.obra-item:hover {
-  background: rgba(59,130,246,0.08);
-  border-color: rgba(59,130,246,0.2);
-}
-.obra-progress-bar {
-  width: 100%; height: 5px; background: rgba(255,255,255,0.08);
-  border-radius: 99px; overflow: hidden; margin-top: 4px;
-}
-.obra-progress-fill {
-  height: 100%; border-radius: 99px;
-  transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
-}
-.mapa-legend {
-  position: absolute; bottom: 24px; left: 16px; z-index: 1000;
-  background: rgba(11,17,32,0.9); backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
-  padding: 12px 16px; font-size: 11px;
-}
-.legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: rgba(148,163,184,0.8); }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.layer-controls {
-  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
-}
-.layer-btn {
-  padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
-  cursor: pointer; border: 1px solid; transition: all 0.2s;
-}
-.layer-btn.active { opacity: 1; }
-.layer-btn:not(.active) { opacity: 0.4; }
-
   </style>
 </head>
 <body>
@@ -285,267 +99,136 @@
   <div class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
+        <button class="menu-btn" id="menuBtn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
         <div class="page-title">
-          <h1>🗺️ Mapa Financiero</h1>
-          <div class="breadcrumb">Control / Gastos por Zona</div>
+          <h1>Mapa Smart City</h1>
         </div>
-      </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <select id="periodSelector" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;">
-          <option value="mensual">Mensual</option>
-          <option value="trimestral">Trimestral</option>
-          <option value="anual">Anual</option>
-        </select>
-        <button id="btnExportarMapa" class="btn-primary" style="font-size:12px;padding:6px 12px;margin-right:8px;">Exportar Mapa</button>
-        <div id="mapStatus" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green)"><span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;box-shadow:0 0 8px #10b981"></span>Datos en tiempo real</div>
-        <div class="topbar-avatar" id="userAvatar">JT</div>
       </div>
     </header>
-
+    
     <div class="map-layout">
-      <!-- SIDEBAR MAPA -->
-      <div class="map-sidebar">
-        <div class="map-sidebar-section">
-          <div class="map-sidebar-title">📍 Zonas del Municipio</div>
-          <div id="zoneList"></div>
-        </div>
-        <div class="map-sidebar-section">
-          <div class="map-sidebar-title">🏗️ Obras en Curso</div>
-          <div id="obrasList"></div>
-        </div>
+      <div id="map"></div>
+      
+      <div class="controls-panel">
+        <div class="controls-title">Capas del mapa</div>
+        <label class="layer-toggle">
+          <input type="checkbox" id="toggleObras" checked> Obras Activas
+        </label>
+        <label class="layer-toggle">
+          <input type="checkbox" id="toggleReclamos" checked> Reclamos
+        </label>
+        <label class="layer-toggle">
+          <input type="checkbox" id="toggleServicios" checked> Servicios
+        </label>
       </div>
 
-      <!-- MAPA -->
-      <div class="map-container" style="padding: 16px;">
-        <div class="layer-controls" style="margin-bottom:12px">
-          <button class="layer-btn active" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:#60a5fa" onclick="toggleLayer('obras',this)">🏗️ Obras</button>
-          <button class="layer-btn active" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#f87171" onclick="toggleLayer('reclamos',this)">📍 Reclamos</button>
-          <button onclick="map && map.flyTo([-34.5854,-60.9433],14,{duration:1.5})" style="padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text-muted)">🎯 Centrar</button>
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-dot" style="background:#f59e0b"></div>
+          <span id="statObras">0</span> obras
         </div>
-        <div style="position:relative">
-          <div id="map" style="height:480px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.06)"></div>
-          <div class="obras-panel" id="obrasPanel"></div>
-          <div class="mapa-legend">
-            <div style="font-size:10px;font-weight:800;color:var(--text-muted);margin-bottom:6px">LEYENDA</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div> Finalizada</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Avanzada (+70%)</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> En curso</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Urgente / Inicio</div>
-          </div>
+        <div class="stat-item">
+          <div class="stat-dot" style="background:#ef4444"></div>
+          <span id="statReclamos">0</span> reclamos
+        </div>
+        <div class="stat-item">
+          <div class="stat-dot" style="background:#3b82f6"></div>
+          <span id="statServicios">0</span> servicios
         </div>
       </div>
     </div>
   </div>
 
-  <script src='js/db.js'></script>
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-  <script>
-  // Verificar sesión activa
-  (function() {
-    try {
-      var t = localStorage.getItem('govtech_theme');
-      if (t) document.documentElement.setAttribute('data-theme', t);
-      var u = sessionStorage.getItem('mjunin_user');
-      if (!u) { window.location.replace('login.html'); }
-    } catch(e) {}
-  })();
-</script>
   <script src="js/nav.js"></script>
-  <script src="js/toast.js"></script>
+  <script src="js/db.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-  // Enhanced map data
-  const OBRAS_DATA = [
-    { id: 'O001', nombre: 'Pavimentación Av. San Martín', tipo: 'Pavimentación', estado: 'en_ejecucion', avance: 68, presupuesto: 18500000, ejecutado: 12580000, contratista: 'Construcciones Del Valle SA', barrio: 'Centro', lat: -34.5854, lng: -60.9433, inspector: 'Ing. Rodríguez', fechaInicio: '2026-05-01', fechaFin: '2026-09-30' },
-    { id: 'O002', nombre: 'Red Cloacal Villa del Parque', tipo: 'Infraestructura', estado: 'en_ejecucion', avance: 35, presupuesto: 12300000, ejecutado: 4305000, contratista: 'Hidráulica Sur SA', barrio: 'Villa del Parque', lat: -34.5901, lng: -60.9389, inspector: 'Ing. Vargas', fechaInicio: '2026-06-15', fechaFin: '2026-11-30' },
-    { id: 'O003', nombre: 'Plaza Belgrano', tipo: 'Espacio Público', estado: 'finalizada', avance: 100, presupuesto: 3800000, ejecutado: 3920000, contratista: 'Parques y Jardines SA', barrio: 'Centro', lat: -34.5823, lng: -60.9445, inspector: 'Arq. Núñez', fechaInicio: '2026-03-01', fechaFin: '2026-06-30' },
-    { id: 'O004', nombre: 'Centro Deportivo Municipal', tipo: 'Construcción', estado: 'en_ejecucion', avance: 22, presupuesto: 25000000, ejecutado: 5500000, contratista: 'Obras y Servicios SA', barrio: 'Pueblo Nuevo', lat: -34.5756, lng: -60.9478, inspector: 'Ing. Rodríguez', fechaInicio: '2026-07-01', fechaFin: '2027-03-31' },
-    { id: 'O005', nombre: 'Iluminación LED Parque', tipo: 'Iluminación', estado: 'en_ejecucion', avance: 85, presupuesto: 2100000, ejecutado: 1785000, contratista: 'Electro Junín SA', barrio: 'Parque', lat: -34.5780, lng: -60.9460, inspector: 'Téc. Sosa', fechaInicio: '2026-06-01', fechaFin: '2026-08-15' },
-  ];
-
-  const RECLAMOS_MAPA = [
-    { lat: -34.5854, lng: -60.9433, tipo: 'Bache', estado: 'urgente', direccion: 'San Martín y Mitre' },
-    { lat: -34.5901, lng: -60.9389, tipo: 'Luminaria', estado: 'pendiente', direccion: 'Belgrano 1234' },
-    { lat: -34.5798, lng: -60.9512, tipo: 'Residuos', estado: 'en_proceso', direccion: 'Rivadavia 567' },
-    { lat: -34.5823, lng: -60.9505, tipo: 'Bache', estado: 'pendiente', direccion: 'Sarmiento 234' },
-    { lat: -34.5867, lng: -60.9421, tipo: 'Arbolado', estado: 'urgente', direccion: 'Alvear 890' },
-  ];
-
-  let map, layerObras, layerReclamos, activeInfoPopup;
-
-  function initMapa() {
-    window.mapInstance = map = L.map('map', { zoomControl: false }).setView([-34.5875, -60.9458], 14);
+    buildSidebar('mapa');
     
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+    const map = L.map('map').setView([-34.5868, -60.9433], 14);
+    
+    L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     }).addTo(map);
 
-    // Custom zoom control
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    const obrasLayer = L.layerGroup().addTo(map);
+    const reclamosLayer = L.layerGroup().addTo(map);
+    const serviciosLayer = L.layerGroup().addTo(map);
 
-    // Add layers
-    layerObras = L.layerGroup();
-    layerReclamos = L.layerGroup();
+    let statObras = 0, statReclamos = 0, statServicios = 0;
 
-    addObrasMarkers();
-    addReclamosMarkers();
-
-    layerObras.addTo(map);
-    layerReclamos.addTo(map);
-
-    // Render obras panel
-    renderObrasPanel();
-  }
-
-  function getColorObra(estado, avance) {
-    if (estado === 'finalizada') return '#10b981';
-    if (avance > 70) return '#3b82f6';
-    if (avance > 40) return '#f59e0b';
-    return '#ef4444';
-  }
-
-  function addObrasMarkers() {
-    OBRAS_DATA.forEach(obra => {
-      const color = getColorObra(obra.estado, obra.avance);
-      const icon = L.divIcon({
-        className: '',
-        html: `<div style="width:42px;height:42px;border-radius:50%;background:${color}22;border:2.5px solid ${color};display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:transform 0.2s">🏗️</div>`,
-        iconSize: [42, 42],
-        iconAnchor: [21, 21]
+    function initLayers() {
+      // Obras
+      const obras = MuniDB.getAll('obras');
+      obras.forEach(function(o) {
+        if(o.estado === 'finalizada') return; // Only active obras according to KPI? Let's show all but colored.
+        var color = o.estado === 'en_ejecucion' ? '#f59e0b' : o.estado === 'finalizada' ? '#10b981' : '#3b82f6';
+        if(o.estado !== 'finalizada') statObras++;
+        L.circleMarker([o.lat || (-34.58 + Math.random()*0.05), o.lng || (-60.94 + Math.random()*0.05)], {
+          radius: 10, color: color, fillColor: color, fillOpacity: 0.7, weight: 2
+        }).bindPopup('<b>' + o.nombre + '</b><br>Estado: ' + o.estado + '<br>Avance: ' + (o.avance||0) + '%').addTo(obrasLayer);
       });
 
-      const marker = L.marker([obra.lat, obra.lng], { icon }).addTo(layerObras);
-      const pct = (obra.ejecutado / obra.presupuesto * 100).toFixed(0);
-
-      marker.bindPopup(`
-        <div style="min-width:220px;font-family:Inter,sans-serif">
-          <div style="font-weight:800;font-size:13px;margin-bottom:8px">${obra.nombre}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-            <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${color}22;color:${color};border:1px solid ${color}55;font-weight:700">
-              ${obra.estado === 'finalizada' ? '✅ Finalizada' : '🔨 En ejecución'}
-            </span>
-          </div>
-          <table style="font-size:11px;width:100%;border-collapse:collapse">
-            <tr><td style="color:#94a3b8;padding:3px 0">Avance:</td><td><strong>${obra.avance}%</strong></td></tr>
-            <tr><td style="color:#94a3b8;padding:3px 0">Contratista:</td><td>${obra.contratista}</td></tr>
-            <tr><td style="color:#94a3b8;padding:3px 0">Presupuesto:</td><td><strong>$${(obra.presupuesto/1000000).toFixed(1)}M</strong></td></tr>
-            <tr><td style="color:#94a3b8;padding:3px 0">Ejecutado:</td><td style="color:${color}">$${(obra.ejecutado/1000000).toFixed(1)}M (${pct}%)</td></tr>
-            <tr><td style="color:#94a3b8;padding:3px 0">Inspector:</td><td>${obra.inspector}</td></tr>
-            <tr><td style="color:#94a3b8;padding:3px 0">Vence:</td><td>${obra.fechaFin}</td></tr>
-          </table>
-          <div style="margin-top:10px;height:6px;background:#1f2937;border-radius:99px;overflow:hidden">
-            <div style="height:100%;width:${obra.avance}%;background:${color};border-radius:99px"></div>
-          </div>
-        </div>
-      `, { maxWidth: 280 });
-    });
-  }
-
-  function addReclamosMarkers() {
-    const colores = { urgente: '#ef4444', pendiente: '#f59e0b', en_proceso: '#3b82f6', resuelto: '#10b981' };
-    const emojis = { Bache: '🕳️', Luminaria: '💡', Residuos: '🗑️', Arbolado: '🌳', Agua: '💧' };
-
-    RECLAMOS_MAPA.forEach(r => {
-      const color = colores[r.estado] || '#8b5cf6';
-      const emoji = emojis[r.tipo] || '📍';
-      const icon = L.divIcon({
-        className: '',
-        html: `<div style="width:34px;height:34px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:16px">${emoji}</div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+      // Reclamos (pendientes = red, resueltos = green)
+      const reclamos = MuniDB.getAll('reclamos') || [];
+      const pendingReclamos = reclamos.filter(r => r.estado !== 'resuelto');
+      // Dummy reclamos if empty
+      const dummyReclamos = [
+        {lat: -34.581, lng: -60.942, estado: 'pendiente', titulo: 'Bache'},
+        {lat: -34.588, lng: -60.945, estado: 'resuelto', titulo: 'Luz rota'},
+        {lat: -34.590, lng: -60.940, estado: 'pendiente', titulo: 'Basura'}
+      ];
+      const allReclamos = reclamos.length ? reclamos : dummyReclamos;
+      
+      allReclamos.forEach(r => {
+        if(r.estado === 'pendiente' || r.estado === 'en_proceso') {
+          statReclamos++;
+          L.circleMarker([r.lat, r.lng], {
+            radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8
+          }).bindPopup('<b>Reclamo</b><br>' + (r.titulo || 'Pendiente')).addTo(reclamosLayer);
+        } else if(r.estado === 'resuelto') {
+          L.circleMarker([r.lat, r.lng], {
+            radius: 8, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.8
+          }).bindPopup('<b>Reclamo</b><br>' + (r.titulo || 'Resuelto')).addTo(reclamosLayer);
+        }
       });
-      const marker = L.marker([r.lat, r.lng], { icon }).addTo(layerReclamos);
-      marker.bindPopup(`
-        <div style="font-family:Inter,sans-serif">
-          <div style="font-weight:800;margin-bottom:6px">${r.tipo}</div>
-          <div style="font-size:12px;color:#94a3b8">${r.direccion}</div>
-          <div style="margin-top:6px;font-size:11px;padding:3px 10px;border-radius:99px;background:${color}22;color:${color};display:inline-block;font-weight:700">${r.estado.replace('_',' ')}</div>
-        </div>
-      `);
-    });
-  }
 
-  function renderObrasPanel() {
-    const panel = document.getElementById('obrasPanel');
-    if (!panel) return;
-    panel.innerHTML = `
-      <div style="font-size:13px;font-weight:800;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-        🏗️ Obras Activas
-        <span style="font-size:10px;font-weight:600;color:var(--text-muted)">${OBRAS_DATA.filter(o=>o.estado!=='finalizada').length} en curso</span>
-      </div>
-      ${OBRAS_DATA.map(obra => {
-        const color = getColorObra(obra.estado, obra.avance);
-        return `<div class="obra-item" onclick="map.flyTo([${obra.lat},${obra.lng}],16,{duration:1})">
-          <div style="font-size:11px;font-weight:700;color:var(--text-primary)">${obra.nombre}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${obra.barrio} · ${obra.tipo}</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-            <div class="obra-progress-bar" style="flex:1;margin-right:8px">
-              <div class="obra-progress-fill" style="width:${obra.avance}%;background:${color}"></div>
-            </div>
-            <span style="font-size:11px;font-weight:800;color:${color}">${obra.avance}%</span>
-          </div>
-          <div style="font-size:10px;color:var(--text-muted)">$${(obra.presupuesto/1000000).toFixed(1)}M presupuestado</div>
-        </div>`;
-      }).join('')}
-    `;
-  }
+      // Servicios
+      const servicios = [
+        { name: 'Municipalidad', lat: -34.5868, lng: -60.9433, tipo: 'gobierno' },
+        { name: 'Hospital Municipal', lat: -34.5820, lng: -60.9480, tipo: 'salud' },
+        { name: 'Polideportivo Sur', lat: -34.5900, lng: -60.9390, tipo: 'deporte' },
+        { name: 'Terminal de Omnibus', lat: -34.5850, lng: -60.9510, tipo: 'transporte' },
+        { name: 'Biblioteca Municipal', lat: -34.5830, lng: -60.9400, tipo: 'cultura' },
+        { name: 'Cementerio Municipal', lat: -34.5950, lng: -60.9350, tipo: 'servicios' },
+      ];
+      servicios.forEach(s => {
+        statServicios++;
+        L.circleMarker([s.lat, s.lng], {
+          radius: 8, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.8, weight:2
+        }).bindPopup('<b>' + s.name + '</b><br>Tipo: ' + s.tipo).addTo(serviciosLayer);
+      });
 
-  function toggleLayer(layerName, btn) {
-    document.querySelectorAll('.layer-btn').forEach(b => b !== btn && b.classList.remove('active'));
-    btn.classList.toggle('active');
-    
-    if (layerName === 'obras') {
-      if (map.hasLayer(layerObras)) { map.removeLayer(layerObras); }
-      else { layerObras.addTo(map); }
-    } else if (layerName === 'reclamos') {
-      if (map.hasLayer(layerReclamos)) { map.removeLayer(layerReclamos); }
-      else { layerReclamos.addTo(map); }
+      document.getElementById('statObras').innerText = statObras;
+      document.getElementById('statReclamos').innerText = statReclamos;
+      document.getElementById('statServicios').innerText = statServicios;
     }
-  }
 
-  document.addEventListener('DOMContentLoaded', initMapa);
+    initLayers();
 
-  buildSidebar('mapa');
+    // Toggle logic
+    document.getElementById('toggleObras').addEventListener('change', (e) => {
+      e.target.checked ? map.addLayer(obrasLayer) : map.removeLayer(obrasLayer);
+    });
+    document.getElementById('toggleReclamos').addEventListener('change', (e) => {
+      e.target.checked ? map.addLayer(reclamosLayer) : map.removeLayer(reclamosLayer);
+    });
+    document.getElementById('toggleServicios').addEventListener('change', (e) => {
+      e.target.checked ? map.addLayer(serviciosLayer) : map.removeLayer(serviciosLayer);
+    });
   </script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/bottom-nav.js'></script>
-  <script src='js/notifications.js'></script>
-  <script src='js/live-clock.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
-<script>
-
-function loadObrasOnMap() {
-  if (!window.MuniDB || !window.mapInstance) return;
-  const obras = MuniDB.getAll('obras');
-  obras.forEach(function(o) {
-    if (!o.lat || !o.lng) return;
-    const colors = { en_ejecucion: '#f59e0b', finalizada: '#10b981', licitacion: '#8b5cf6', planificacion: '#3b82f6' };
-    const color = colors[o.estado] || '#64748b';
-    const marker = L.circleMarker([o.lat, o.lng], {
-      radius: 10, fillColor: color, color: 'white',
-      weight: 2, opacity: 1, fillOpacity: 0.9
-    }).addTo(window.mapInstance);
-    marker.bindPopup(`
-      <div style="min-width:200px;font-family:'Inter',sans-serif">
-        <div style="font-weight:800;margin-bottom:4px">${o.nombre}</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:8px">${o.barrio}</div>
-        <div style="margin-bottom:6px">
-          <div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden">
-            <div style="height:100%;width:${o.avance||0}%;background:${color}"></div>
-          </div>
-          <div style="font-size:11px;margin-top:2px">${o.avance||0}% avance</div>
-        </div>
-        <div style="font-size:11px">Contratista: ${o.contratista||'-'}</div>
-      </div>
-    `);
-  });
-  console.log('[Mapa] Loaded', obras.length, 'obras on map');
-}
-document.addEventListener('DOMContentLoaded', () => { setTimeout(loadObrasOnMap, 1000); });
-
-</script>
 </body>
 </html>
-

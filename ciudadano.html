@@ -1,304 +1,525 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Ciudadano | Municipalidad de Junín</title>
-  <meta name="description" content="Realizá trámites, consultá tus reclamos y accedé a servicios municipales desde tu celular.">
-  <link rel="manifest" href="manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --bg: #060b18;
-      --card: rgba(13,21,38,0.9);
-      --border: rgba(255,255,255,0.08);
-      --text: #f0f4ff;
-      --muted: rgba(148,163,184,0.7);
-      --accent: #3b82f6;
-      --green: #10b981;
-    }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
-    
-    /* HERO */
-    .hero {
-      background: linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.1) 50%, rgba(6,182,212,0.08) 100%);
-      border-bottom: 1px solid var(--border);
-      padding: 0 20px;
-    }
-    .hero-inner { max-width: 900px; margin: 0 auto; padding: 40px 0 32px; }
-    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25); color: #60a5fa; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; margin-bottom: 20px; }
-    .hero h1 { font-family: 'Outfit', sans-serif; font-size: clamp(28px,5vw,48px); font-weight: 900; line-height: 1.1; margin-bottom: 12px; }
-    .hero-sub { font-size: 16px; color: var(--muted); margin-bottom: 28px; max-width: 520px; }
-    .search-reclamo { display: flex; gap: 0; max-width: 480px; }
-    .search-reclamo input { flex: 1; padding: 14px 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-right: none; border-radius: 12px 0 0 12px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif; outline: none; }
-    .search-reclamo input::placeholder { color: rgba(148,163,184,0.4); }
-    .search-reclamo input:focus { border-color: rgba(59,130,246,0.5); background: rgba(59,130,246,0.05); }
-    .search-reclamo button { padding: 14px 22px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; border-radius: 0 12px 12px 0; color: white; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; }
-    .search-reclamo button:hover { opacity: 0.9; }
-    
-    /* NAV */
-    .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(6,11,24,0.95); backdrop-filter: blur(20px); z-index: 100; }
-    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
-    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
-    .nav-logo span { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 900; }
-    .nav-links { display: flex; gap: 6px; }
-    .nav-link { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: none; transition: all 0.2s; }
-    .nav-link:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-    .nav-cta { padding: 8px 16px; background: linear-gradient(135deg,#3b82f6,#8b5cf6); border: none; border-radius: 10px; color: white; font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: none; }
-    
-    /* SERVICES GRID */
-    .section { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
-    .section-title { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 900; margin-bottom: 6px; }
-    .section-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
-    .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
-    .service-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; text-align: center; cursor: pointer; transition: all 0.25s; text-decoration: none; color: var(--text); display: block; }
-    .service-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.14); }
-    .service-icon { font-size: 36px; margin-bottom: 12px; }
-    .service-name { font-size: 13px; font-weight: 700; line-height: 1.3; }
-    .service-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
-    
-    /* RECLAMO STATUS */
-    .status-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
-    .status-timeline { position: relative; padding-left: 24px; }
-    .status-step { position: relative; padding-bottom: 20px; }
-    .status-step:last-child { padding-bottom: 0; }
-    .status-step::before { content: ''; position: absolute; left: -17px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
-    .status-step::after { content: ''; position: absolute; left: -13px; top: 16px; width: 2px; height: calc(100% - 6px); background: rgba(16,185,129,0.2); }
-    .status-step:last-child::after { display: none; }
-    .step-label { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
-    .step-time { font-size: 11px; color: var(--muted); }
-    
-    /* QUICK STATS */
-    .stats-bar { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; display: flex; gap: 24px; flex-wrap: wrap; justify-content: space-between; margin-bottom: 32px; }
-    .stat-item { text-align: center; }
-    .stat-val { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 900; background: linear-gradient(135deg,#3b82f6,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-    
-    /* BOTTOM NAV MOBILE */
-    @media (max-width: 640px) {
-      .nav-links { display: none; }
-      .services-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-      .service-card { padding: 14px 10px; }
-      .service-icon { font-size: 28px; }
-      .service-name { font-size: 11px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal del Vecino - Jun&iacute;n</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .hero {
+            text-align: center;
+            padding: 4rem 1rem;
+            background: radial-gradient(circle at center, rgba(59,130,246,0.15) 0%, transparent 70%);
+            margin-bottom: 3rem;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            margin: 0 0 1rem;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .section-title {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+        .service-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .service-card:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .service-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+        .service-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+        .lookup-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 4rem;
+        }
+        .lookup-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .input-text {
+            flex: 1;
+            min-width: 250px;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.2);
+            color: white;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+        .list-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        .faq-item {
+            margin-bottom: 1rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        .faq-question {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .faq-answer {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.2);
+            color: white;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        select.form-control {
+            appearance: none;
+        }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-success { background: rgba(34,197,94,0.1); color: var(--success); }
+        .badge-warning { background: rgba(245,158,11,0.1); color: var(--warning); }
+    </style>
+    <script src="js/db.js"></script>
 </head>
 <body>
-
-  <!-- TOP NAV -->
-  <nav class="top-nav">
-    <a href="index.html" class="nav-logo">
-      <img src="img/municontrol-icon.jpg" alt="MuniControl" onerror="this.style.display='none'">
-      <span>Junín Digital</span>
-    </a>
-    <div class="nav-links">
-      <a href="#servicios" class="nav-link">Trámites</a>
-      <a href="#reclamos" class="nav-link">Mis reclamos</a>
-      <a href="cuentas-claras.html" class="nav-link">Transparencia</a>
-      <a href="obras.html" class="nav-link">Obras</a>
-    </div>
-    <a href="login.html" class="nav-cta">🔒 Acceso empleados</a>
-  </nav>
-
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-inner">
-      <div class="hero-badge">🏠 Portal del Ciudadano — Municipalidad de Junín</div>
-      <h1>Tu municipio<br>en tu celular</h1>
-      <p class="hero-sub">Realizá trámites, seguí tus reclamos y accedé a servicios sin hacer cola. Disponible 24/7.</p>
-      <div class="search-reclamo" id="reclamos">
-        <input type="text" id="ticketSearch" placeholder="Ingresá tu número de reclamo (Ej: R-2026-001)" />
-        <button onclick="buscarReclamo()">Consultar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- STATS -->
-  <div class="section" style="padding-bottom:0">
-    <div class="stats-bar">
-      <div class="stat-item">
-        <div class="stat-val" id="statReclamos">1.247</div>
-        <div class="stat-label">Reclamos este año</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-val" id="statResueltos">94%</div>
-        <div class="stat-label">Resueltos en SLA</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-val" id="statObras">18</div>
-        <div class="stat-label">Obras activas</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-val">24hs</div>
-        <div class="stat-label">Tiempo respuesta prom.</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-val">📱</div>
-        <div class="stat-label">App disponible</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RECLAMO RESULT -->
-  <div class="section" style="padding-top:0;display:none" id="reclamoResult">
-    <div class="status-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
-        <div>
-          <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Reclamo</div>
-          <div style="font-size:20px;font-weight:900;font-family:'Outfit',sans-serif" id="reclamoTitulo">Bache Av. San Martín 445</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px">Ingresado: 15/07/2026 — Área: Obras Públicas</div>
+    <div class="container">
+        <!-- HERO -->
+        <div class="hero">
+            <h1>Portal del Vecino</h1>
+            <p>Realiza tu reclamo, consulta el estado y accede a servicios municipales de forma r&aacute;pida y sencilla.</p>
+            <div class="hero-actions">
+                <button class="btn btn-primary" onclick="openModal()">Hacer un Reclamo</button>
+                <button class="btn btn-outline" onclick="document.getElementById('lookup').scrollIntoView({behavior:'smooth'})">Consultar Estado</button>
+            </div>
         </div>
-        <span style="padding:6px 14px;border-radius:99px;font-size:12px;font-weight:800;background:rgba(245,158,11,0.1);color:#f59e0b" id="reclamoStatus">En proceso</span>
-      </div>
-      <div class="status-timeline">
-        <div class="status-step">
-          <div class="step-label">✅ Reclamo registrado</div>
-          <div class="step-time">15/07/2026 10:32 — Asignado a Obras Públicas</div>
-        </div>
-        <div class="status-step">
-          <div class="step-label">✅ Inspección realizada</div>
-          <div class="step-time">17/07/2026 09:00 — Inspector: Juan Pérez</div>
-        </div>
-        <div class="status-step" style="opacity:0.5">
-          <div class="step-label">⏳ Reparación en progreso</div>
-          <div class="step-time">Estimado: 22/07/2026</div>
-        </div>
-        <div class="status-step" style="opacity:0.3">
-          <div class="step-label">⭐ Resuelto</div>
-          <div class="step-time">Pendiente</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- SERVICES -->
-  <div class="section" id="servicios">
-    <div class="section-title">Trámites y servicios</div>
-    <div class="section-sub">Online, sin cola y disponibles las 24 horas</div>
-    <div class="services-grid">
-      <a class="service-card" href="vecinos.html">
-        <div class="service-icon">📞</div>
-        <div class="service-name">Hacer un reclamo</div>
-        <div class="service-desc">Baches, luminarias, basura, ruidos</div>
-      </a>
-      <a class="service-card" href="obras.html">
-        <div class="service-icon">🏗️</div>
-        <div class="service-name">Estado de obras</div>
-        <div class="service-desc">Seguí las obras de tu barrio</div>
-      </a>
-      <a class="service-card" href="cuentas-claras.html">
-        <div class="service-icon">🔍</div>
-        <div class="service-name">Transparencia</div>
-        <div class="service-desc">Gastos y pagos públicos</div>
-      </a>
-      <a class="service-card" onclick="showService('tasas')">
-        <div class="service-icon">💳</div>
-        <div class="service-name">Pagar tasas</div>
-        <div class="service-desc">ABL, comercio, vehículos</div>
-      </a>
-      <a class="service-card" onclick="showService('certificados')">
-        <div class="service-icon">📋</div>
-        <div class="service-name">Certificados</div>
-        <div class="service-desc">Libre deuda, habilitación</div>
-      </a>
-      <a class="service-card" href="talleres.html">
-        <div class="service-icon">🏭</div>
-        <div class="service-name">Talleres</div>
-        <div class="service-desc">Cursos y capacitaciones</div>
-      </a>
-      <a class="service-card" onclick="showService('turnos')">
-        <div class="service-icon">🗓️</div>
-        <div class="service-name">Sacar turno</div>
-        <div class="service-desc">Atención personalizada</div>
-      </a>
-      <a class="service-card" href="whatsapp.html">
-        <div class="service-icon">💬</div>
-        <div class="service-name">WhatsApp Bot</div>
-        <div class="service-desc">Consultas instantáneas</div>
-      </a>
-      <a class="service-card" onclick="showService('padron')">
-        <div class="service-icon">📊</div>
-        <div class="service-name">Padrón municipal</div>
-        <div class="service-desc">Consultá tu situación</div>
-      </a>
-    </div>
-  </div>
+        <!-- SERVICIOS RAPIDOS -->
+        <h2 class="section-title">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Servicios R&aacute;pidos
+        </h2>
+        <div class="services-grid">
+            <div class="service-card" onclick="openModal()">
+                <div class="service-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                </div>
+                <div>
+                    <h3 style="margin:0">Reclamo de servicio</h3>
+                    <span style="color:var(--text-muted);font-size:0.875rem">Alumbrado, bacheo, poda</span>
+                </div>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h3 style="margin:0">Consulta de deuda</h3>
+                    <span style="color:var(--text-muted);font-size:0.875rem">Tasas e impuestos</span>
+                </div>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                </div>
+                <div>
+                    <h3 style="margin:0">Habilitaciones</h3>
+                    <span style="color:var(--text-muted);font-size:0.875rem">Comercios e industrias</span>
+                </div>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                <div>
+                    <h3 style="margin:0">Turnos online</h3>
+                    <span style="color:var(--text-muted);font-size:0.875rem">Salud y tr&aacute;mites</span>
+                </div>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <div>
+                    <h3 style="margin:0">Tr&aacute;mites digitales</h3>
+                    <span style="color:var(--text-muted);font-size:0.875rem">Oficina virtual</span>
+                </div>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                </div>
+                <div>
+                    <h3 style="margin:0">Mapa de obras</h3>
+                    <span style="color:var(--text-muted);font-size:0.875rem">Obras en ejecuci&oacute;n</span>
+                </div>
+            </div>
+        </div>
 
-  <!-- FOOTER -->
-  <footer style="border-top:1px solid rgba(255,255,255,0.06);padding:28px 20px;text-align:center">
-    <div style="max-width:900px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center">
-      <div style="font-size:13px;color:var(--muted)">🏠 Municipalidad de Junín &mdash; Portal Ciudadano 2026</div>
-      <div style="display:flex;gap:16px">
-        <a href="cuentas-claras.html" style="font-size:12px;color:var(--muted);text-decoration:none">Transparencia</a>
-        <a href="landing.html" style="font-size:12px;color:var(--muted);text-decoration:none">MuniControl</a>
-        <a href="login.html" style="font-size:12px;color:var(--muted);text-decoration:none">Acceso empleados</a>
-      </div>
-    </div>
-  </footer>
+        <!-- LOOKUP -->
+        <div id="lookup" class="lookup-section">
+            <h2 class="section-title">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                Estado de mi reclamo
+            </h2>
+            <div class="lookup-form">
+                <input type="text" id="lookup-input" class="input-text" placeholder="Ingresa el n&uacute;mero de reclamo o tu DNI...">
+                <button class="btn btn-primary" onclick="consultarReclamo()">Consultar</button>
+            </div>
+            <div id="lookup-result" style="display:none; padding:1.5rem; background:rgba(255,255,255,0.05); border-radius:12px; margin-top:1rem;">
+                <!-- JS sets this -->
+            </div>
+        </div>
 
-  <!-- MODAL -->
-  <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;backdrop-filter:blur(8px);align-items:center;justify-content:center">
-    <div id="modalContent" style="background:#0d1526;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;max-width:440px;width:90%;position:relative">
-      <button onclick="closeModal()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:none;color:rgba(148,163,184,0.7);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px">×</button>
-    </div>
-  </div>
+        <div class="grid-2">
+            <!-- ULTIMOS RECLAMOS -->
+            <div>
+                <h2 class="section-title">&Uacute;ltimos reclamos resueltos</h2>
+                <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:16px;">
+                    <div id="lista-resueltos">
+                        <!-- JS fills this -->
+                    </div>
+                </div>
+            </div>
 
-  <script>
-    // Reclamo search
-    function buscarReclamo() {
-      const ticket = document.getElementById('ticketSearch').value.trim();
-      if (!ticket) { alert('Ingresá un número de reclamo'); return; }
-      const result = document.getElementById('reclamoResult');
-      result.style.display = 'block';
-      result.scrollIntoView({ behavior: 'smooth' });
-    }
-    document.getElementById('ticketSearch').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') buscarReclamo();
-    });
-    
-    function showService(type) {
-      const overlay = document.getElementById('modalOverlay');
-      const content = document.getElementById('modalContent');
-      overlay.style.display = 'flex';
-      const services = {
-        tasas: { title:'💳 Pago de Tasas', body:'El pago online está disponible para:<br><br>• ABL (Alumbrado, Barrido y Limpieza)<br>• Habilitación comercial<br>• Inspección y seguridad<br><br><button onclick="alert(\'Redirigiendo al portal de pagos...\')" style="padding:10px 20px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;margin-top:10px">Pagar ahora</button>' },
-        certificados: { title:'📋 Certificados', body:'Solicitá en línea:<br><br>• Libre deuda municipal<br>• Habilitación comercial<br>• Certificado de zonificación<br>• Certificado de buena conducta<br><br><button onclick="alert(\'Solicitud enviada. Recibirás el certificado en 48hs.\')" style="padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;margin-top:10px">Solicitar</button>' },
-        turnos: { title:'🗓️ Turnos online', body:'Reservá turno para:<br><br>• Habilitaciones comerciales<br>• Defensa del consumidor<br>• Rentas y tasas<br>• Registro civil<br><br><button onclick="alert(\'Seleccioná fecha y horario...\')" style="padding:10px 20px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;margin-top:10px">Reservar turno</button>' },
-        padron: { title:'📊 Padrón Municipal', body:'Consultá tu situación frente al municipio:<br><br>• Deuda de tasas<br>• Estado de habilitaciones<br>• Reclamos anteriores<br>• Turnos asignados<br><br><button onclick="alert(\'Ingresá tu DNI o CUIT...\')" style="padding:10px 20px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;margin-top:10px">Consultar mi situación</button>' },
-      };
-      const s = services[type] || { title: 'Servicio', body: 'Disponible próximamente' };
-      content.innerHTML = `
-        <button onclick="closeModal()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:none;color:rgba(148,163,184,0.7);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px">×</button>
-        <h2 style="font-family:'Outfit',sans-serif;margin-bottom:16px">${s.title}</h2>
-        <p style="color:rgba(148,163,184,0.8);line-height:1.7;font-size:14px">${s.body}</p>
-      `;
-    }
-    
-    function closeModal() {
-      document.getElementById('modalOverlay').style.display = 'none';
-    }
-    
-    // Load real stats from MuniDB if available (injected via sw.js or localStorage)
-    try {
-      const stored = localStorage.getItem('munidb_reclamos');
-      if (stored) {
-        const data = JSON.parse(stored);
-        if (data && data.length) {
-          document.getElementById('statReclamos').textContent = data.length.toLocaleString('es-AR');
-          const resueltos = data.filter(r => r.estado === 'resuelto').length;
-          document.getElementById('statResueltos').textContent = data.length > 0 ? Math.round(resueltos/data.length*100) + '%' : '94%';
+            <!-- FAQ -->
+            <div>
+                <h2 class="section-title">Preguntas Frecuentes</h2>
+                <div class="faq-item">
+                    <div class="faq-question">&iquest;C&oacute;mo hacer un reclamo?</div>
+                    <div class="faq-answer">Puedes hacerlo ingresando al bot&oacute;n "Hacer un Reclamo" en esta p&aacute;gina, llamando al 147 o acerc&aacute;ndote al centro de atenci&oacute;n municipal.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">&iquest;En cu&aacute;nto tiempo responden?</div>
+                    <div class="faq-answer">Los reclamos urgentes (ej: ca&ntilde;er&iacute;as rotas) se atienden en 24h. Los dem&aacute;s tienen un plazo est&aacute;ndar de resoluci&oacute;n de 72h h&aacute;biles.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">&iquest;C&oacute;mo seguir el estado?</div>
+                    <div class="faq-answer">Ingresa tu n&uacute;mero de reclamo o DNI en el buscador de la secci&oacute;n superior para ver en tiempo real en qu&eacute; &aacute;rea se encuentra.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO RECLAMO -->
+    <div id="modal-reclamo" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Nuevo Reclamo</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="form-content">
+                <div class="form-group">
+                    <label>Nombre completo</label>
+                    <input type="text" id="r_nombre" class="form-control" placeholder="Juan P&eacute;rez">
+                </div>
+                <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div>
+                        <label>DNI</label>
+                        <input type="text" id="r_dni" class="form-control" placeholder="12345678">
+                    </div>
+                    <div>
+                        <label>Tel&eacute;fono</label>
+                        <input type="text" id="r_telefono" class="form-control" placeholder="2364...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="r_email" class="form-control" placeholder="juan@ejemplo.com">
+                </div>
+                <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div>
+                        <label>Categor&iacute;a</label>
+                        <select id="r_categoria" class="form-control">
+                            <option>Alumbrado</option>
+                            <option>Bacheo</option>
+                            <option>Limpieza</option>
+                            <option>Poda</option>
+                            <option>Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Barrio</label>
+                        <select id="r_barrio" class="form-control">
+                            <option>Centro</option>
+                            <option>Villa Belgrano</option>
+                            <option>Pueblo Nuevo</option>
+                            <option>Prado Espa&ntilde;ol</option>
+                            <option>Nuestra Se&ntilde;ora de Lujan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Descripci&oacute;n</label>
+                    <textarea id="r_descripcion" class="form-control" rows="3" placeholder="Describe el problema..."></textarea>
+                </div>
+                <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="submitReclamo()">Enviar Reclamo</button>
+            </div>
+            <div id="success-message" style="display:none; text-align:center; padding:2rem 0;">
+                <div style="color:var(--success); margin-bottom:1rem;">
+                    <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin:0 auto;"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 style="margin:0 0 0.5rem;">Reclamo Recibido</h3>
+                <p style="color:var(--text-muted);">Tu n&uacute;mero de seguimiento es: <strong id="ticket-number" style="color:white; font-size:1.25rem;"></strong></p>
+                <button class="btn btn-outline" style="margin-top:1rem;" onclick="closeModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadResueltos();
+        });
+
+        function openModal() {
+            document.getElementById('modal-reclamo').style.display = 'flex';
+            document.getElementById('form-content').style.display = 'block';
+            document.getElementById('success-message').style.display = 'none';
         }
-      }
-    } catch(e) {}
-    
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(function() {});
-    }
-  </script>
-  <script src='js/chat-widget.js'></script>
+
+        function closeModal() {
+            document.getElementById('modal-reclamo').style.display = 'none';
+        }
+
+        function submitReclamo() {
+            const ticket = 'REQ-' + Math.floor(Math.random() * 100000);
+            sessionStorage.setItem('ultimo_ticket', ticket);
+            
+            document.getElementById('form-content').style.display = 'none';
+            document.getElementById('ticket-number').textContent = ticket;
+            document.getElementById('success-message').style.display = 'block';
+        }
+
+        function consultarReclamo() {
+            const input = document.getElementById('lookup-input').value;
+            const res = document.getElementById('lookup-result');
+            
+            if(!input) return;
+
+            res.style.display = 'block';
+            res.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
+                    <div>
+                        <h4 style="margin:0 0 0.25rem; font-size:1.125rem;">Reclamo ${input}</h4>
+                        <p style="margin:0; color:var(--text-muted);">Bacheo en calle principal</p>
+                    </div>
+                    <span class="badge badge-warning">En Proceso</span>
+                </div>
+                <div style="position:relative; padding-left:1.5rem; border-left:2px solid var(--border-color);">
+                    <div style="position:absolute; left:-6px; top:0; width:10px; height:10px; border-radius:50%; background:var(--primary);"></div>
+                    <p style="margin:0 0 0.5rem; font-size:0.875rem; font-weight:600;">Asignado a Obras P&uacute;blicas</p>
+                    <p style="margin:0; font-size:0.8rem; color:var(--text-muted);">Hace 2 d&iacute;as</p>
+                </div>
+            `;
+        }
+
+        function loadResueltos() {
+            const container = document.getElementById('lista-resueltos');
+            let reclamos = [];
+            
+            if(typeof MuniDB !== 'undefined' && MuniDB.getAll) {
+                const dbReclamos = MuniDB.getAll('reclamos');
+                if(dbReclamos && dbReclamos.length > 0) {
+                    reclamos = dbReclamos.filter(r => r.estado && r.estado.toLowerCase() === 'resuelto').slice(0, 5);
+                }
+            }
+
+            if(reclamos.length === 0) {
+                reclamos = [
+                    {categoria: 'Alumbrado', barrio: 'Centro', dias: 2, fecha: '28 Jul'},
+                    {categoria: 'Poda', barrio: 'Villa Belgrano', dias: 4, fecha: '27 Jul'},
+                    {categoria: 'Bacheo', barrio: 'Pueblo Nuevo', dias: 1, fecha: '25 Jul'},
+                    {categoria: 'Limpieza', barrio: 'Prado Espa&ntilde;ol', dias: 2, fecha: '24 Jul'},
+                    {categoria: 'Alumbrado', barrio: 'Centro', dias: 1, fecha: '22 Jul'}
+                ];
+            }
+
+            let html = '';
+            reclamos.forEach(r => {
+                html += `
+                    <div class="list-item">
+                        <div>
+                            <div style="font-weight:600;">${r.categoria}</div>
+                            <div style="font-size:0.875rem; color:var(--text-muted);">${r.barrio}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="badge badge-success">Resuelto en ${r.dias} d&iacute;as</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">${r.fecha}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+    </script>
 </body>
 </html>
-

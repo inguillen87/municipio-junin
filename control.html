@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -109,6 +109,49 @@
         </div>
         <button onclick="if(typeof showToast!=='undefined')showToast('📧 Reporte enviado a Hacienda','success')" style="margin-left:auto;padding:8px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">📧 Notificar Hacienda</button>
       </div>
+      <!-- SLA DASHBOARD -->
+      <section class="sla-section" style="margin-top:24px;margin-bottom:24px;">
+        <h2 style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:900;margin:0 0 16px">SLA Municipal</h2>
+        <div class="sla-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <!-- Reclamos -->
+          <div style="background:var(--card-bg, rgba(30,41,59,0.7)); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:14px; color:var(--text-muted, #94a3b8); font-weight:600; text-transform:uppercase;">Reclamos 311</span>
+                  <svg width="20" height="20" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+              </div>
+              <div style="font-size:24px; font-weight:700; margin-bottom:4px;">94%</div>
+              <div style="font-size:12px; color:#22c55e;">dentro del SLA</div>
+          </div>
+          <!-- Pagos -->
+          <div style="background:var(--card-bg, rgba(30,41,59,0.7)); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:14px; color:var(--text-muted, #94a3b8); font-weight:600; text-transform:uppercase;">Pagos a proveedores</span>
+                  <svg width="20" height="20" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <div style="font-size:24px; font-weight:700; margin-bottom:4px;">87%</div>
+              <div style="font-size:12px; color:#22c55e;">a tiempo</div>
+          </div>
+          <!-- Licitaciones -->
+          <div style="background:var(--card-bg, rgba(30,41,59,0.7)); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:14px; color:var(--text-muted, #94a3b8); font-weight:600; text-transform:uppercase;">Licitaciones</span>
+                  <svg width="20" height="20" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <div style="font-size:24px; font-weight:700; margin-bottom:4px;">100%</div>
+              <div style="font-size:12px; color:#22c55e;">en plazo</div>
+          </div>
+          <!-- RRHH -->
+          <div style="background:var(--card-bg, rgba(30,41,59,0.7)); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:14px; color:var(--text-muted, #94a3b8); font-weight:600; text-transform:uppercase;">Ausentismo RRHH</span>
+                  <svg width="20" height="20" fill="none" stroke="#f59e0b" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              </div>
+              <div style="font-size:24px; font-weight:700; margin-bottom:4px;">3.2%</div>
+              <div style="font-size:12px; color:#f59e0b;">requiere atención</div>
+          </div>
+        </div>
+      </section>
+
       <!-- TABS -->
       <div class="tabs-bar">
         <button class="tab-btn active" data-tab="resumen">📊 Resumen Ejecutivo</button>

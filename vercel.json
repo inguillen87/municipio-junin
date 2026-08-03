@@ -4,21 +4,10 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": { "api/**/*.js": { "maxDuration": 30 } },
-  "routes": [
-    { "src": "^/$", "dest": "/login.html" },
-    { "src": "^/dashboard$", "dest": "/index.html" },
-    { "src": "^/inicio$", "dest": "/index.html" },
-    {
-      "src": "/css/(.*\\.css)",
-      "headers": { "Cache-Control": "public, max-age=86400" },
-      "dest": "/css/$1"
-    },
-    {
-      "src": "/js/(.*\\.js)",
-      "headers": { "Cache-Control": "public, max-age=86400" },
-      "dest": "/js/$1"
-    },
-    { "src": "/(.*)", "dest": "/$1" }
+  "rewrites": [
+    { "source": "/", "destination": "/login.html" },
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/inicio", "destination": "/index.html" }
   ],
   "headers": [
     {

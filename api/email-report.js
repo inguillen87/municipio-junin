@@ -116,19 +116,19 @@ export default async function handler(req, res) {
       <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;">
         <tr>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('dashboard')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('index.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#128202;</div>
               <div style="font-size:11px;color:#94a3b8;">Dashboard</div>
             </a>
           </td>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('hacienda')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('hacienda.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#128176;</div>
               <div style="font-size:11px;color:#94a3b8;">Hacienda</div>
             </a>
           </td>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('obras')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('obras.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#127959;</div>
               <div style="font-size:11px;color:#94a3b8;">Obras</div>
             </a>
@@ -136,19 +136,19 @@ export default async function handler(req, res) {
         </tr>
         <tr>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('rrhh')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('rrhh.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#128101;</div>
               <div style="font-size:11px;color:#94a3b8;">RRHH</div>
             </a>
           </td>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('analytics')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('analytics.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#128200;</div>
               <div style="font-size:11px;color:#94a3b8;">Anal&iacute;tica</div>
             </a>
           </td>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('cuentas-claras')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('cuentas-claras.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#128270;</div>
               <div style="font-size:11px;color:#94a3b8;">Transparencia</div>
             </a>
@@ -156,19 +156,19 @@ export default async function handler(req, res) {
         </tr>
         <tr>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('control')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('control.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#9888;&#65039;</div>
               <div style="font-size:11px;color:#94a3b8;">Control</div>
             </a>
           </td>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('licitaciones')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('licitaciones.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#128221;</div>
               <div style="font-size:11px;color:#94a3b8;">Licitaciones</div>
             </a>
           </td>
           <td style="width:33%;text-align:center;">
-            <a href="${magicLink('ia')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
+            <a href="${magicLink('ia.html')}" style="display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 8px;text-decoration:none;">
               <div style="font-size:20px;margin-bottom:4px;">&#129302;</div>
               <div style="font-size:11px;color:#94a3b8;">IA Municipal</div>
             </a>
@@ -179,7 +179,7 @@ export default async function handler(req, res) {
 
     <!-- MAIN CTA -->
     <div style="padding:0 24px 32px;text-align:center;">
-      <a href="${magicLink('dashboard')}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:0.02em;">Ver Dashboard Completo</a>
+      <a href="${magicLink('index.html')}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:15px;letter-spacing:0.02em;">Ver Dashboard Completo</a>
       <p style="margin:12px 0 0;color:#64748b;font-size:11px;">Este enlace es seguro y expira en 72 horas</p>
     </div>
 

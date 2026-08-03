@@ -36,7 +36,36 @@ export default async function handler(req, res) {
       loginAt: new Date().toISOString()
     };
 
-    const targetPage = redirect || '/dashboard';
+    let rawRedirect = redirect || 'index.html';
+    if (rawRedirect.startsWith('/')) rawRedirect = rawRedirect.slice(1);
+
+    const pageMap = {
+      'dashboard': 'index.html',
+      'index': 'index.html',
+      'inicio': 'index.html',
+      'hacienda': 'hacienda.html',
+      'obras': 'obras.html',
+      'rrhh': 'rrhh.html',
+      'analytics': 'analytics.html',
+      'cuentas-claras': 'cuentas-claras.html',
+      'control': 'control.html',
+      'licitaciones': 'licitaciones.html',
+      'ia': 'ia.html',
+      'mapa': 'mapa.html',
+      'vecinos': 'vecinos.html',
+      'presupuesto': 'presupuesto.html',
+      'exportar': 'exportar.html',
+      'ciudadano': 'ciudadano.html',
+      'whatsapp': 'whatsapp.html',
+      'auditoria': 'auditoria.html',
+      'importar': 'importar.html',
+      'admin': 'admin.html'
+    };
+
+    const cleanName = rawRedirect.replace(/\.html$/, '');
+    const mappedPage = pageMap[cleanName] || (rawRedirect.endsWith('.html') ? rawRedirect : rawRedirect + '.html');
+    const targetPage = mappedPage.startsWith('/') ? mappedPage : '/' + mappedPage;
+
     const sessionJson = JSON.stringify(sessionData).replace(/'/g, "\\'");
 
     const html = `<!DOCTYPE html>

@@ -99,21 +99,6 @@
         </div>
 
         <div class="input-area">
-          <!-- HF Token Setup Banner (shows when no token) -->
-          <div id="hfSetupBanner" style="display:none;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:12px;padding:14px 16px;margin:0 0 12px;flex-shrink:0">
-            <div style="display:flex;align-items:center;gap:10px">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:700;color:#c4b5fd">Activa el asistente con IA real</div>
-                <div style="font-size:11px;color:rgba(148,163,184,0.6);margin-top:2px">Conectate a modelos de lenguaje de ultima generacion. Gratis con tu cuenta.</div>
-              </div>
-              <div style="display:flex;gap:8px;flex-shrink:0">
-                <input type="password" id="hfTokenInput" placeholder="Token de acceso..." style="padding:7px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(139,92,246,0.3);border-radius:8px;color:#f0f4ff;font-size:12px;width:200px;font-family:Inter,sans-serif;outline:none">
-                <button onclick="saveHFToken()" style="padding:7px 14px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#c4b5fd;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">Conectar</button>
-                <a href="https://huggingface.co/settings/tokens" target="_blank" style="padding:7px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:rgba(148,163,184,0.6);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;text-decoration:none;display:flex;align-items:center">Obtener token</a>
-              </div>
-            </div>
-          </div>
           
           <div class="input-wrapper">
             <!-- MIC BUTTON with voice state -->
@@ -189,30 +174,36 @@
       return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     }
 
-    // Load api-live.js
-    (function(){
-      if (!window.MuniAPI) {
-        var s = document.createElement('script');
-        s.src = 'js/api-live.js';
-        s.onload = initAIBanner;
-        document.head.appendChild(s);
-      } else { initAIBanner(); }
-    })();
+    // ── AI via servidor proxy — sin token del usuario ──────────
+    var AI_SYSTEM_CTX = 'Sos MuniCopilot, el asistente inteligente del Municipio de Junín, Argentina. ' +
+      'Respondés preguntas sobre gestión municipal: presupuesto, empleados, reclamos, obras públicas y servicios. ' +
+      'Sos conciso, profesional y respondés en español rioplatense. ' +
+      'Contexto actual: 30 empleados activos, presupuesto mensual $163M, 15 reclamos activos, 8 obras en ejecución.';
 
-    function initAIBanner() {
-      var token = window.MuniAPI ? window.MuniAPI.getHFToken() : '';
-      var banner = document.getElementById('hfSetupBanner');
-      if (banner) banner.style.display = token ? 'none' : 'flex';
+    function askProxy(userMsg) {
+      return fetch('/api/ai-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg, system: AI_SYSTEM_CTX })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && d.response) return d.response;
+        if (d && d.error) {
+          // Fallback to demo answers on proxy error
+          return getDemoReply(userMsg);
+        }
+        return getDemoReply(userMsg);
+      })
+      .catch(function() { return getDemoReply(userMsg); });
     }
 
-    function saveHFToken() {
-      var input = document.getElementById('hfTokenInput');
-      if (!input || !input.value.trim()) return;
-      var token = input.value.trim();
-      if (window.MuniAPI) MuniAPI.setHFToken(token);
-      var banner = document.getElementById('hfSetupBanner');
-      if (banner) { banner.style.background = 'rgba(16,185,129,0.06)'; banner.innerHTML = '<div style="color:#34d399;font-size:13px;font-weight:700;padding:4px 0">Asistente conectado correctamente</div>'; setTimeout(function(){ banner.style.display='none'; }, 2000); }
-      if (typeof showToast !== 'undefined') showToast('Asistente de IA activado', 'success');
+    function getDemoReply(text) {
+      const cleanText = removeAccents(text);
+      for (let qa of DEMO_QA) {
+        if (cleanText.includes(removeAccents(qa.q))) return qa.a;
+      }
+      return 'Soy MuniCopilot. Podés preguntarme sobre presupuesto, reclamos, empleados, obras o pedirme un resumen ejecutivo del día.';
     }
 
     function sendMessage() {
@@ -228,30 +219,7 @@
       const typingId = 'typing_' + Date.now();
       appendTyping(typingId);
 
-      var responsePromise;
-      if (window.MuniAPI && MuniAPI.getHFToken()) {
-        var systemCtx = 'Eres MuniCopilot, el asistente inteligente del Municipio de Junin, Argentina. ' +
-          'Respondes preguntas sobre gestion municipal: presupuesto, empleados, reclamos, obras publicas y servicios. ' +
-          'Eres conciso, profesional y respondes en espanol rioplatense. ' +
-          'Contexto del sistema: 1247 empleados, presupuesto mensual $420M, 318 reclamos activos, 8 obras en ejecucion.';
-        responsePromise = MuniAPI.askAI(text, systemCtx).then(function(result) {
-          if (result.ok && result.response) return result.response;
-          if (result.loading) return 'El modelo de IA esta cargando (puede tomar hasta 20 segundos la primera vez). Intenta de nuevo en un momento.';
-          if (result.noToken) return 'Configurá el token de acceso para usar la IA.';
-          return 'Error conectando con el asistente.';
-        });
-      } else {
-        const cleanText = removeAccents(text);
-        let reply = 'Lo siento, soy una demo. Intent&aacute; con preguntas sobre presupuesto, reclamos o resumen ejecutivo.';
-        
-        for (let qa of DEMO_QA) {
-          if (cleanText.includes(removeAccents(qa.q))) {
-            reply = qa.a;
-            break;
-          }
-        }
-        responsePromise = new Promise(resolve => setTimeout(() => resolve(reply), 1200));
-      }
+      var responsePromise = askProxy(text);
 
       responsePromise.then(function(reply) {
         const tEl = document.getElementById(typingId);

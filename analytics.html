@@ -1,418 +1,97 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
-  <meta name='theme-color' content='#060b18'>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reportes y Analytics — MuniControl</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics | MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
   <style>
-    .analytics-hero {
-      background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08));
-      border: 1px solid rgba(59,130,246,0.15);
-      border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
-      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
-    }
-    .hero-stat { text-align: center; flex: 1; min-width: 100px; }
-    .hero-val { font-family: 'Outfit',sans-serif; font-size: 28px; font-weight: 900; color: var(--text-primary); }
-    .hero-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    .hero-trend { font-size: 11px; font-weight: 700; margin-top: 4px; }
-    .trend-up   { color: #10b981; }
-    .trend-down { color: #ef4444; }
-    .hero-divider { width: 1px; height: 50px; background: var(--border); flex-shrink: 0; }
-
-    .filter-bar {
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;
-    }
-    .filter-select {
-      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text-primary); padding: 7px 12px;
-      font-size: 12px; cursor: pointer; outline: none;
-    }
-    .filter-select:focus { border-color: #3b82f6; }
-    .filter-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
-
-    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
-    .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-    .chart-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; }
-    .chart-wrap { position: relative; }
-
-    .ai-insight-box {
-      background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(59,130,246,0.06));
-      border: 1px solid rgba(139,92,246,0.2);
-      border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
-    }
-    .ai-insight-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .ai-insight-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#3b82f6,#8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .ai-insight-title { font-size: 14px; font-weight: 800; }
-    .ai-insight-sub { font-size: 11px; color: var(--text-muted); }
-    .insight-items { display: flex; flex-direction: column; gap: 10px; }
-    .insight-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: rgba(255,255,255,0.02); border-radius: 9px; border: 1px solid rgba(255,255,255,0.04); }
-    .insight-icon { font-size: 18px; flex-shrink: 0; }
-    .insight-text { font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
-    .insight-text strong { color: var(--text-primary); }
-    .insight-confidence { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-top: 4px; display: inline-block; }
-    .conf-high   { background: rgba(16,185,129,0.1); color: #10b981; }
-    .conf-medium { background: rgba(245,158,11,0.1); color: #f59e0b; }
-
-    .comparison-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .comparison-table th { padding: 9px 14px; background: rgba(255,255,255,0.03); color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); text-align: left; }
-    .comparison-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.02); color: var(--text-secondary); }
-    .comparison-table tr:hover td { background: rgba(255,255,255,0.01); }
-    .change-positive { color: #10b981; font-weight: 700; }
-    .change-negative { color: #ef4444; font-weight: 700; }
-    .change-neutral  { color: var(--text-muted); }
-
-    .activity-feed { display: flex; flex-direction: column; gap: 8px; }
-    .activity-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-radius: 9px; border: 1px solid rgba(255,255,255,0.03); }
-    .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
-    .activity-text { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
-    .activity-text strong { color: var(--text-primary); }
-    .activity-time { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-
-    @media (max-width: 768px) {
-      .charts-grid { grid-template-columns: 1fr; }
-      .analytics-hero { flex-direction: column; text-align: center; }
-      .hero-divider { display: none; }
-    }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    @media (max-width: 1024px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card { background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); }
+    .chart-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-light); display: flex; align-items: center; gap: 0.5rem; }
+    .chart-container { position: relative; height: 300px; width: 100%; }
   </style>
-  <link rel='dns-prefetch' href='https://api-inference.municontrol.ar'>
-  <link rel='dns-prefetch' href='https://fonts.googleapis.com'>
 </head>
 <body>
   <aside class="sidebar" id="sidebar"></aside>
   <main class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
+        <button class="menu-btn" id="menuBtn" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div class="page-title">
-          <h1>📈 Analytics Avanzado</h1>
-          <span class="breadcrumb">Sistema · Análisis inteligente · Datos al 31/07/2026</span>
+          <h1>Analytics & BI</h1>
+          <span class="breadcrumb">Cuadro de Mando Integral</span>
         </div>
       </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <button class="btn-primary" onclick="window.print()" style="padding:8px 14px;font-size:12px">🖨️ Exportar PDF</button>
-        <button onclick="exportExcel()" style="padding:8px 14px;font-size:12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#10b981;border-radius:9px;cursor:pointer;font-weight:700">📊 Excel</button>
-        <div class="topbar-avatar" id="userAvatar">MA</div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="topbarAvatar">SA</div>
       </div>
     </header>
-
+    
     <div class="content-wrapper">
-
-      <!-- HERO STATS -->
-      <div class="analytics-hero">
-        <div class="hero-stat">
-          <div class="hero-val">$372M</div>
-          <div class="hero-lbl">Presupuesto Total 2026</div>
-          <div class="hero-trend trend-up">↑ +8.3% vs 2025</div>
-        </div>
-        <div class="hero-divider"></div>
-        <div class="hero-stat">
-          <div class="hero-val">52%</div>
-          <div class="hero-lbl">Ejecución al 31/Jul</div>
-          <div class="hero-trend trend-up">↑ +4pp vs año anterior</div>
-        </div>
-        <div class="hero-divider"></div>
-        <div class="hero-stat">
-          <div class="hero-val">1.247</div>
-          <div class="hero-lbl">Empleados Activos</div>
-          <div class="hero-trend trend-down">↓ -12 bajas este mes</div>
-        </div>
-        <div class="hero-divider"></div>
-        <div class="hero-stat">
-          <div class="hero-val">47</div>
-          <div class="hero-lbl">Contratos Activos</div>
-          <div class="hero-trend trend-up">↑ +3 nuevos</div>
-        </div>
-        <div class="hero-divider"></div>
-        <div class="hero-stat">
-          <div class="hero-val">$31M</div>
-          <div class="hero-lbl">Ahorro Proyectado IA</div>
-          <div class="hero-trend trend-up">↑ Cierre estimado</div>
-        </div>
-        <div class="hero-divider"></div>
-        <div class="hero-stat">
-          <div class="hero-val">94.2%</div>
-          <div class="hero-lbl">Presentismo Promedio</div>
-          <div class="hero-trend trend-up">↑ +0.8pp este mes</div>
-        </div>
-      </div>
-
-      <!-- Predicción IA de Gastos -->
-      <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(139,92,246,0.06),rgba(59,130,246,0.06));border-color:rgba(139,92,246,0.2)">
-        <div style="padding:20px">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px">🤖</div>
-            <div>
-              <div style="font-size:14px;font-weight:800">Predicción IA — Agosto 2026</div>
-              <div style="font-size:11px;color:var(--text-muted)">Modelo: Regresión Lineal · Confianza: 87%</div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;text-align:center">
-              <div style="font-size:22px;font-weight:900;font-family:'Outfit',sans-serif;color:#3b82f6">$34.1M</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Gasto estimado Agosto</div>
-              <div style="font-size:10px;color:#10b981;font-weight:700;margin-top:4px">↑ +5.1% vs Julio</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;text-align:center">
-              <div style="font-size:22px;font-weight:900;font-family:'Outfit',sans-serif;color:#f59e0b">Obras P.</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Secretaría con mayor riesgo</div>
-              <div style="font-size:10px;color:#ef4444;font-weight:700;margin-top:4px">118% ejecutado</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;text-align:center">
-              <div style="font-size:22px;font-weight:900;font-family:'Outfit',sans-serif;color:#10b981">Educación</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Más recursos disponibles</div>
-              <div style="font-size:10px;color:#10b981;font-weight:700;margin-top:4px">68% ejecutado</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FILTER BAR -->
-      <div class="filter-bar">
-        <span class="filter-label">Filtros:</span>
-        <select class="filter-select" onchange="updateCharts()">
-          <option>Enero — Julio 2026</option>
-          <option>Enero — Diciembre 2025</option>
-          <option>Últimos 3 meses</option>
-          <option>Últimos 12 meses</option>
-        </select>
-        <select class="filter-select" onchange="updateCharts()">
-          <option>Todas las áreas</option>
-          <option>Personal y Sueldos</option>
-          <option>Obras Públicas</option>
-          <option>Salud Municipal</option>
-          <option>Educación</option>
-          <option>Servicios Básicos</option>
-        </select>
-        <select class="filter-select">
-          <option>Vista mensual</option>
-          <option>Vista trimestral</option>
-          <option>Vista anual</option>
-        </select>
-        <button onclick="updateCharts()" style="padding:7px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">🔄 Actualizar</button>
-      </div>
-
-      <!-- AI INSIGHTS -->
-      <div class="ai-insight-box">
-        <div class="ai-insight-header">
-          <div class="ai-insight-avatar">🤖</div>
-          <div>
-            <div class="ai-insight-title">Análisis Inteligente — GovTech IA</div>
-            <div class="ai-insight-sub">Generado automáticamente · Datos al 31 de julio 2026</div>
-          </div>
-          <button onclick="regenerateInsights()" style="margin-left:auto;padding:6px 14px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);color:#a78bfa;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700">🔄 Regenerar</button>
-        </div>
-        <div class="insight-items" id="insightItems"></div>
-      </div>
-
-      <!-- CHARTS GRID -->
       <div class="charts-grid">
         <div class="chart-card">
-          <div class="chart-title">💰 Ejecución Presupuestaria Mensual</div>
-          <div class="chart-sub">Presupuestado vs. ejecutado — predicción IA en gris</div>
-          <div class="chart-wrap"><canvas id="chartGastoMensual" height="220"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">📊 Gasto por Área (Julio 2026)</div>
-          <div class="chart-sub">Distribución porcentual del presupuesto ejecutado</div>
-          <div class="chart-wrap"><canvas id="chartPresupuestoDoughnut" height="220"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">🏘️ Reclamos por Categoría</div>
-          <div class="chart-sub">Tipos de reclamos vecinales — últimos 6 meses</div>
-          <div class="chart-wrap"><canvas id="chartReclamosTipo" height="220"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">👥 Evolución de Personal</div>
-          <div class="chart-sub">Nómina activa por mes — con proyección IA</div>
-          <div class="chart-wrap"><canvas id="chartHorasExtra" height="220"></canvas></div>
-        </div>
-      </div>
-
-      <!-- COMPARISON TABLE + ACTIVITY -->
-      <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;margin-bottom:20px">
-        <div class="chart-card">
-          <div class="chart-title" style="margin-bottom:4px">📋 Comparativo por Partida — 2026 vs 2025</div>
-          <div class="chart-sub" style="margin-bottom:12px">Evolución anual por área de gasto</div>
-          <div style="overflow-x:auto">
-            <table class="comparison-table" id="compTable"></table>
+          <h2 class="chart-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+            Evolucion de Gastos por Secretaria
+          </h2>
+          <div class="chart-container">
+            <canvas id="chartGastoMensual"></canvas>
           </div>
         </div>
+        
         <div class="chart-card">
-          <div class="chart-title" style="margin-bottom:4px">⚡ Actividad Reciente</div>
-          <div class="chart-sub" style="margin-bottom:12px">Últimas acciones en el sistema</div>
-          <div class="activity-feed" id="activityFeed"></div>
+          <h2 class="chart-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/></svg>
+            Ejecucion Presupuestaria
+          </h2>
+          <div class="chart-container">
+            <canvas id="chartPresupuestoDoughnut"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h2 class="chart-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Horas Extra (Ultimos 6 meses)
+          </h2>
+          <div class="chart-container">
+            <canvas id="chartHorasExtra"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h2 class="chart-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Radar de Objetivos
+          </h2>
+          <div class="chart-container">
+            <canvas id="chartEjecucionRadar"></canvas>
+          </div>
         </div>
       </div>
-
     </div>
   </main>
-
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-  <script>
-  // Verificar sesión activa
-  (function() {
-    try {
-      var t = localStorage.getItem('govtech_theme');
-      if (t) document.documentElement.setAttribute('data-theme', t);
-      var u = sessionStorage.getItem('mjunin_user');
-      if (!u) { window.location.replace('login.html'); }
-    } catch(e) {}
-  })();
-</script>
+  
   <script src="js/nav.js"></script>
-  <script src='js/db.js'></script>
+  <script>buildSidebar('analytics');</script>
+  <script src="js/db.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="js/charts-premium.js"></script>
   <script>
-        document.addEventListener('DOMContentLoaded', function() {
-  if (typeof buildSidebar === 'function') buildSidebar('analytics');
-  
-  // Wait for Chart.js to load
-  function initCharts() {
-    if (window.Chart && window.MuniCharts) {
-      try { MuniCharts.gastoMensual('chartGastoMensual'); } catch(e) { console.error('gastoMensual', e); }
-      try { MuniCharts.presupuesto('chartPresupuestoDoughnut'); } catch(e) { console.error('presupuesto', e); }
-      try { MuniCharts.reclamosTipo('chartReclamosTipo'); } catch(e) { console.error('reclamosTipo', e); }
-      try { MuniCharts.horasExtra('chartHorasExtra'); } catch(e) { console.error('horasExtra', e); }
-    } else {
-      setTimeout(initCharts, 200);
+    function initCharts() {
+      if (!window.Chart || !window.MuniCharts) { setTimeout(initCharts, 200); return; }
+      try { MuniCharts.gastoMensual('chartGastoMensual'); } catch(e) { console.error(e); }
+      try { MuniCharts.presupuesto('chartPresupuestoDoughnut'); } catch(e) { console.error(e); }
+      try { MuniCharts.horasExtra('chartHorasExtra'); } catch(e) { console.error(e); }
+      try { MuniCharts.ejecucionRadar('chartEjecucionRadar'); } catch(e) { console.error(e); }
     }
-  }
-  setTimeout(initCharts, 500);
-});
-    
-    function updateCharts() {
-      console.log('Actualizando charts con nuevos filtros...');
-    }
-    // ── AI INSIGHTS ──────────────────────────────────────────
-    const INSIGHTS = [
-      { icon:'🚨', text:'La partida <strong>Personal y Sueldos</strong> se encuentra al <strong>103%</strong> del presupuesto asignado. Con el ritmo actual, superará el límite en agosto. Se recomienda revisar horas extras y contratos temporarios.', conf:'high', confLabel:'Confianza: 94%' },
-      { icon:'💡', text:'Si se renegocia el <strong>contrato de Limpieza Zona Norte</strong> (vence en 12 días), la IA estima un ahorro potencial de <strong>$4.2M anuales</strong> basado en valores de mercado comparables.', conf:'high', confLabel:'Confianza: 88%' },
-      { icon:'📈', text:'La <strong>ejecución presupuestaria</strong> mejora un 4pp respecto al mismo período del año anterior. Al ritmo actual, el municipio cerrará el año con un <strong>superávit estimado de $31M</strong>.', conf:'medium', confLabel:'Confianza: 76%' },
-      { icon:'🏘️', text:'El <strong>34% de los reclamos vecinales</strong> son sobre baches y pavimento. Se recomienda priorizar la <strong>Pavimentación Calle San Martín</strong> (65% ejecutada) para reducir reclamos en la zona centro.', conf:'high', confLabel:'Confianza: 91%' },
-      { icon:'👥', text:'La tendencia de <strong>bajas de personal</strong> (12 este mes) es consistente con jubilaciones programadas. La IA no detecta señales de riesgo de desabastecimiento de servicios críticos.', conf:'medium', confLabel:'Confianza: 82%' },
-    ];
-
-    function renderInsights() {
-      document.getElementById('insightItems').innerHTML = INSIGHTS.map(i => `
-        <div class="insight-item">
-          <div class="insight-icon">${i.icon}</div>
-          <div>
-            <div class="insight-text">${i.text}</div>
-            <span class="insight-confidence ${i.conf === 'high' ? 'conf-high' : 'conf-medium'}">${i.confLabel}</span>
-          </div>
-        </div>
-      `).join('');
-    }
-    renderInsights();
-
-    function regenerateInsights() {
-      const el = document.getElementById('insightItems');
-      el.style.opacity = '0.4';
-      setTimeout(() => { el.style.opacity = '1'; renderInsights(); }, 1200);
-    }
-
-    // ── COMPARISON TABLE ──────────────────────────────────────
-    const COMP_DATA = [
-      { partida:'Personal y Sueldos', v2025:'$138.2M', v2026:'$152.0M', cambio:'+10.0%', tipo:'up' },
-      { partida:'Obras de Infraestructura', v2025:'$41.3M', v2026:'$53.8M', cambio:'+30.3%', tipo:'up' },
-      { partida:'Servicios Básicos', v2025:'$38.7M', v2026:'$41.2M', cambio:'+6.5%', tipo:'up' },
-      { partida:'Salud Municipal', v2025:'$34.1M', v2026:'$37.8M', cambio:'+10.8%', tipo:'up' },
-      { partida:'Educación y Cultura', v2025:'$31.5M', v2026:'$33.4M', cambio:'+6.0%', tipo:'up' },
-      { partida:'Asistencia Social', v2025:'$29.8M', v2026:'$31.6M', cambio:'+6.0%', tipo:'up' },
-      { partida:'Mantenimiento Flota', v2025:'$16.4M', v2026:'$14.9M', cambio:'-9.1%', tipo:'down' },
-      { partida:'Tecnología e IT', v2025:'$8.2M', v2026:'$7.3M', cambio:'-11.0%', tipo:'down' },
-    ];
-    document.getElementById('compTable').innerHTML = `
-      <thead><tr><th>Partida</th><th>2025</th><th>2026</th><th>Cambio</th></tr></thead>
-      <tbody>${COMP_DATA.map(r => `<tr><td>${r.partida}</td><td>${r.v2025}</td><td style="font-weight:700">${r.v2026}</td><td class="change-${r.tipo === 'up' ? 'positive' : 'negative'}">${r.cambio}</td></tr>`).join('')}</tbody>
-    `;
-
-    // ── ACTIVITY FEED ─────────────────────────────────────────
-    const ACTIVITIES = [
-      { color:'#10b981', text:'<strong>Contrato aprobado</strong> — Limpieza Zona Norte renovado por $850.000/mes', time:'Hace 2 min' },
-      { color:'#ef4444', text:'<strong>Alerta:</strong> Partida Personal superó el 100% del presupuesto asignado', time:'Hace 18 min' },
-      { color:'#3b82f6', text:'<strong>Informe exportado</strong> por hacienda@junin.gob.ar', time:'Hace 45 min' },
-      { color:'#f59e0b', text:'<strong>Reclamo urgente</strong> #1247 — Pérdida de agua en Av. San Martín 540', time:'Hace 1h' },
-      { color:'#8b5cf6', text:'<strong>IA generó pliego</strong> de licitación para Servicio de Fumigación', time:'Hace 2h' },
-      { color:'#10b981', text:'<strong>Obra actualizada</strong> — Parque Recreativo Norte al 80%', time:'Hace 3h' },
-      { color:'#3b82f6', text:'<strong>Nuevo usuario</strong> — it@junin.gob.ar inició sesión', time:'Hace 4h' },
-    ];
-    document.getElementById('activityFeed').innerHTML = ACTIVITIES.map(a => `
-      <div class="activity-item">
-        <div class="activity-dot" style="background:${a.color}"></div>
-        <div>
-          <div class="activity-text">${a.text}</div>
-          <div class="activity-time">${a.time}</div>
-        </div>
-      </div>
-    `).join('');
-
-// Export Excel for analytics
-function exportExcel() {
-  if (typeof XLSX === 'undefined') {
-    if (typeof showToast !== 'undefined') showToast('📊 Generando Excel...', 'info');
-    var s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload = function() { doExportExcel(); };
-    document.head.appendChild(s);
-  } else { doExportExcel(); }
-}
-function doExportExcel() {
-  var data = [
-    ['Secretaría', 'Presupuesto ($M)', 'Ejecutado ($M)', '% Ejecución', 'Variación'],
-    ['Salud', 68.2, 61.1, '89.6%', '+5.2%'],
-    ['Obras Públicas', 54.1, 63.8, '117.9%', '+18.1%'],
-    ['Educación', 48.7, 33.1, '68.0%', '-2.3%'],
-    ['Seguridad', 42.3, 38.9, '92.0%', '+1.4%'],
-    ['Personal', 38.6, 39.8, '103.1%', '+3.8%'],
-    ['Medio Ambiente', 18.2, 12.9, '70.9%', '-4.1%'],
-    ['Cultura y Turismo', 12.4, 8.7, '70.2%', '-0.5%'],
-    ['Hacienda', 15.8, 11.2, '70.9%', '+0.9%'],
-  ];
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, 'Analytics Junio 2026');
-  XLSX.writeFile(wb, 'Analytics-MuniControl-' + new Date().toISOString().split('T')[0] + '.xlsx');
-  if (typeof showToast !== 'undefined') showToast('✅ Excel descargado', 'success');
-}
-
-// Period filter toggle
-function setPeriod(period, btn) {
-  document.querySelectorAll('.period-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  if (typeof showToast !== 'undefined') showToast('📊 Mostrando datos: ' + period, 'info');
-  // Update charts if they exist
-  if (window.analyticsCharts) {
-    window.analyticsCharts.forEach(function(c){ if(c && c.update) c.update(); });
-  }
-}
-
-// Secretaria filter
-var secFilter = document.getElementById('filterSecretaria');
-if (secFilter) secFilter.addEventListener('change', function() {
-  if (typeof showToast !== 'undefined') showToast('🔍 Filtrando: ' + (this.value || 'Todas las secretarías'), 'info');
-});
+    setTimeout(initCharts, 500);
   </script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/bottom-nav.js'></script>
-  <script src='js/notifications.js'></script>
-  <script src='js/analytics-live.js'></script>
-  <script src='js/live-clock.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
 </body>
 </html>
-
-
-

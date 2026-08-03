@@ -1,672 +1,137 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Reclamos Vecinales — MuniControl</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/vecinos.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atencion al Vecino | MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .kpi-card { background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); display: flex; align-items: flex-start; gap: 1rem; }
+    .kpi-icon { background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 0.75rem; border-radius: 0.5rem; }
+    .kpi-content { flex: 1; }
+    .kpi-label { color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .kpi-value { font-size: 1.75rem; font-weight: 700; margin-top: 0.25rem; font-family: 'Outfit', sans-serif; }
+    
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th, .data-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+    .data-table th { background: rgba(0,0,0,0.2); font-weight: 600; font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; }
+    .badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-resuelto { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .badge-pendiente { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .badge-en-proceso { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    
+    .table-container { background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); overflow-x: auto; }
+  </style>
 </head>
 <body>
   <aside class="sidebar" id="sidebar"></aside>
-
   <main class="main-content" id="mainContent">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
+        <button class="menu-btn" id="menuBtn" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div class="page-title">
-          <h1>Atención Vecinal</h1>
-          <span class="breadcrumb">Municipio de Junín · Reclamos, Turnos y Comunicación</span>
+          <h1>Atencion al Vecino</h1>
+          <span class="breadcrumb">Sistema 311 - Reclamos</span>
         </div>
       </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <button class="btn-primary" id="btnNuevoReclamo">+ Nuevo Reclamo</button>
-        <button class="btn-export">📤 Exportar</button>
-        <div class="notification-bell">🔔<span class="notif-dot"></span></div>
-        <div class="topbar-avatar">MA</div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="topbarAvatar">SA</div>
       </div>
     </header>
-
+    
     <div class="content-wrapper">
-
-      <!-- KPIs -->
-      <section class="kpi-grid">
+      <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Reclamos Totales</span><div class="kpi-icon blue">📋</div></div>
-          <div class="kpi-value" data-target="318">0</div>
-          <div class="kpi-footer"><span class="kpi-trend up">▲ 23 esta semana</span></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Pendientes</span><div class="kpi-icon red">⏳</div></div>
-          <div class="kpi-value" data-target="89">0</div>
-          <div class="kpi-footer"><span class="kpi-trend up">▲ Requieren atención</span></div>
+          <div class="kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+          <div class="kpi-content">
+            <div class="kpi-label">Total Reclamos</div>
+            <div class="kpi-value" id="kpiTotal">0</div>
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Resueltos (mes)</span><div class="kpi-icon green">✅</div></div>
-          <div class="kpi-value" data-target="229">0</div>
-          <div class="kpi-footer"><span class="kpi-trend down">72% tasa resolución</span></div>
+          <div class="kpi-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div class="kpi-content">
+            <div class="kpi-label">Resueltos</div>
+            <div class="kpi-value" id="kpiResueltos">0</div>
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Tiempo Promedio</span><div class="kpi-icon amber">⏱️</div></div>
-          <div class="kpi-value" data-target="3">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">días hasta resolución</span></div>
+          <div class="kpi-icon" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div class="kpi-content">
+            <div class="kpi-label">Pendientes</div>
+            <div class="kpi-value" id="kpiPendientes">0</div>
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Turnos Hoy</span><div class="kpi-icon violet">📅</div></div>
-          <div class="kpi-value" data-target="47">0</div>
-          <div class="kpi-footer"><span class="kpi-sub">12 pendientes de confirmar</span></div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Satisfacción</span><div class="kpi-icon teal">⭐</div></div>
-          <div class="kpi-value pct" data-target="84">0%</div>
-          <div class="kpi-footer"><span class="kpi-trend down">✅ Encuestas agosto</span></div>
-        </div>
-      </section>
-
-      <!-- SLA DASHBOARD (NYC 311 style) -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
-        </div>
-        <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-          <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
-            <div style="font-size:20px;margin:6px 0">💧</div>
-            <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
-            <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
-            <div style="font-size:20px;margin:6px 0">🕳️</div>
-            <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
-            <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
-            <div style="font-size:20px;margin:6px 0">💡</div>
-            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
-            <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
-            <div style="font-size:20px;margin:6px 0">🗑️</div>
-            <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
-            <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
+          <div class="kpi-icon" style="color: #8b5cf6; background: rgba(139, 92, 246, 0.1);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="kpi-content">
+            <div class="kpi-label">SLA Cumplido</div>
+            <div class="kpi-value">92%</div>
           </div>
         </div>
       </div>
 
-      <!-- SLA DASHBOARD (NYC 311 style) -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
-        </div>
-        <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-          <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
-            <div style="font-size:20px;margin:6px 0">💧</div>
-            <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
-            <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
-            <div style="font-size:20px;margin:6px 0">🕳️</div>
-            <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
-            <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
-            <div style="font-size:20px;margin:6px 0">💡</div>
-            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
-            <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
-            <div style="font-size:20px;margin:6px 0">🗑️</div>
-            <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
-            <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
-          </div>
-        </div>
+      <div class="table-container">
+        <h2 style="margin-top:0; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Ultimos Reclamos 311</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Vecino</th>
+              <th>Categoria</th>
+              <th>Barrio</th>
+              <th>Estado</th>
+              <th>Dias</th>
+            </tr>
+          </thead>
+          <tbody id="reclamosTableBody">
+          </tbody>
+        </table>
       </div>
-
-      <!-- SLA DASHBOARD (NYC 311 style) -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
-        </div>
-        <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-          <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
-            <div style="font-size:20px;margin:6px 0">💧</div>
-            <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
-            <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
-            <div style="font-size:20px;margin:6px 0">🕳️</div>
-            <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
-            <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
-            <div style="font-size:20px;margin:6px 0">💡</div>
-            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
-            <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
-            <div style="font-size:20px;margin:6px 0">🗑️</div>
-            <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
-            <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SLA DASHBOARD (NYC 311 style) -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <h3 style="font-size:13px;margin:0">⏱️ SLA por Tipo de Reclamo</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Compromisos de respuesta públicos</span>
-        </div>
-        <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-          <div style="padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px">Crítico</div>
-            <div style="font-size:20px;margin:6px 0">💧</div>
-            <div style="font-size:11px;font-weight:800">Agua / Cloacas</div>
-            <div style="font-size:18px;font-weight:900;color:#ef4444;font-family:'Outfit',sans-serif">4-8hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px">Alta</div>
-            <div style="font-size:20px;margin:6px 0">🕳️</div>
-            <div style="font-size:11px;font-weight:800">Bache / Arbolado</div>
-            <div style="font-size:18px;font-weight:900;color:#f59e0b;font-family:'Outfit',sans-serif">48-72hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px">Media</div>
-            <div style="font-size:20px;margin:6px 0">💡</div>
-            <div style="font-size:11px;font-weight:800">Luminaria / Tránsito</div>
-            <div style="font-size:18px;font-weight:900;color:#3b82f6;font-family:'Outfit',sans-serif">48hs</div>
-          </div>
-          <div style="padding:12px;border-radius:10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);text-align:center">
-            <div style="font-size:9px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:0.5px">Normal</div>
-            <div style="font-size:20px;margin:6px 0">🗑️</div>
-            <div style="font-size:11px;font-weight:800">Residuos / Ruidos</div>
-            <div style="font-size:18px;font-weight:900;color:#10b981;font-family:'Outfit',sans-serif">24-168hs</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TABS -->
-      <div class="tabs-bar">
-        <button class="tab-btn active" data-tab="reclamos">📋 Reclamos</button>
-        <button class="tab-btn" data-tab="turnos">📅 Turnos</button>
-        <button class="tab-btn" data-tab="tipos">📊 Por Tipo</button>
-      </div>
-
-      <!-- TAB: RECLAMOS -->
-      <div class="tab-content active" id="tab-reclamos">
-        <div class="rrhh-panel">
-          <div class="panel-header">
-            <h2 class="chart-title">📋 Reclamos Vecinos</h2>
-            <div class="panel-filters">
-              <select class="select-filter" id="filtroTipo">
-                <option value="">Todos los tipos</option>
-                <option>Bache</option>
-                <option>Luminaria</option>
-                <option>Arbolado</option>
-                <option>Ruidos</option>
-                <option>Basura</option>
-                <option>Agua</option>
-                <option>Gas</option>
-                <option>Otro</option>
-              </select>
-              <div class="status-filters" id="statusFilters" style="display:flex;gap:8px;">
-                <button class="btn-filter active" data-status="">Todos</button>
-                <button class="btn-filter" data-status="Pendiente">Pendiente</button>
-                <button class="btn-filter" data-status="En Proceso">En Proceso</button>
-                <button class="btn-filter" data-status="Resuelto">Resuelto</button>
-              </div>
-              <div class="search-box" style="min-width:180px">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="searchReclamo" placeholder="Buscar vecino o dirección..." />
-              </div>
-            </div>
-          </div>
-          <table class="data-table" id="reclamosTable">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Vecino</th>
-                <th>Tipo</th>
-                <th>Dirección</th>
-                <th>Descripción</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-                <th>SLA</th>
-                <th>SLA</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="reclamosBody"></tbody>
-          </table>
-          <div class="table-footer">
-            <span id="reclamosCount" class="table-count">Cargando...</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: TURNOS -->
-      <div class="tab-content" id="tab-turnos">
-        <div class="rrhh-panel">
-          <div class="panel-header">
-            <h2 class="chart-title">📱 Portal Público Vecinal (QR)</h2>
-          </div>
-          <div style="text-align:center; padding:40px;">
-            <p>Los vecinos pueden escanear este código para acceder al portal sin login:</p>
-            <div style="margin:20px 0;">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://municontrol.local/vecinos-publico.html?token=ABC123XYZ" alt="QR Code">
-            </div>
-            <a href="vecinos-publico.html?token=ABC123XYZ" target="_blank" style="color:var(--primary);text-decoration:underline;">vecinos-publico.html?token=ABC123XYZ</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: TIPOS -->
-      <div class="tab-content" id="tab-tipos">
-        <div class="charts-row" style="grid-template-columns:1fr 1fr">
-          <div class="chart-card">
-            <div class="chart-header"><h2 class="chart-title">Reclamos por Tipo</h2></div>
-            <div class="chart-container"><canvas id="tiposChart"></canvas></div>
-          </div>
-          <div class="chart-card">
-            <div class="chart-header"><h2 class="chart-title">Evolución Mensual</h2></div>
-            <div class="chart-container"><canvas id="evolucionChart"></canvas></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
-        <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
-          <div style="flex:1;min-width:200px">
-            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
-            <div style="display:flex;gap:8px">
-              <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
-              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
-            </div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:48px;margin-bottom:4px">📱</div>
-            <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
-          </div>
-        </div>
-      </div>
-
-
-      <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
-        <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
-          <div style="flex:1;min-width:200px">
-            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
-            <div style="display:flex;gap:8px">
-              <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
-              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
-            </div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:48px;margin-bottom:4px">📱</div>
-            <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
-          </div>
-        </div>
-      </div>
-
-
-      <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
-        <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
-          <div style="flex:1;min-width:200px">
-            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
-            <div style="display:flex;gap:8px">
-              <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
-              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
-            </div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:48px;margin-bottom:4px">📱</div>
-            <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
-          </div>
-        </div>
-      </div>
-
-
-      <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(59,130,246,0.04),rgba(16,185,129,0.04));border-color:rgba(59,130,246,0.15)">
-        <div style="padding:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
-          <div style="flex:1;min-width:200px">
-            <div style="font-size:16px;font-weight:900;margin-bottom:8px">🔍 Consultar reclamo sin login</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">El vecino puede consultar el estado de su reclamo con el número de seguimiento.</div>
-            <div style="display:flex;gap:8px">
-              <input id="consultaNumero" placeholder="JUN-2026-001247" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none">
-              <button onclick="consultarReclamo()" style="padding:10px 16px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:9px;cursor:pointer;font-weight:700">🔍 Consultar</button>
-            </div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:48px;margin-bottom:4px">📱</div>
-            <div style="font-size:11px;color:var(--text-muted)">Portal vecinos:<br><strong style="color:#60a5fa">junin.gob.ar/vecinos</strong></div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </main>
-
-  <!-- MODAL NUEVO RECLAMO -->
-  <div class="modal-overlay" id="modalReclamo" style="display:none">
-    <div class="modal" style="max-width:520px">
-      <div class="modal-header">
-        <h3>📋 Registrar Reclamo</h3>
-        <button class="modal-close" onclick="document.getElementById('modalReclamo').style.display='none'">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>DNI del Vecino</label>
-            <input type="text" id="rDni" placeholder="28.456.789" />
-          </div>
-          <div class="form-group">
-            <label>Nombre Completo</label>
-            <input type="text" id="rNombre" placeholder="Juan García" />
-          </div>
-          <div class="form-group" style="grid-column:1/-1">
-            <label>Tipo de reclamo</label>
-            <select id="rTipo">
-              <option>Bache</option>
-              <option>Luminaria</option>
-              <option>Arbolado</option>
-              <option>Ruidos</option>
-              <option>Basura</option>
-              <option>Agua</option>
-              <option>Gas</option>
-              <option>Otro</option>
-            </select>
-          </div>
-          <div class="form-group" style="grid-column:1/-1">
-            <label>📍 Ubicación</label>
-            <div style="display:flex;gap:8px">
-              <input type="text" id="rDireccion" placeholder="Dirección o intersección" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-size:13px;outline:none">
-              <button type="button" onclick="geolocalizarReclamo()" style="padding:10px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#60a5fa;border-radius:8px;cursor:pointer;font-size:13px" title="Obtener mi ubicación">
-                🎯
-              </button>
-            </div>
-          </div>
-          <div class="form-group" style="grid-column:1/-1">
-            <label>Descripción</label>
-            <textarea id="rDescripcion" rows="3" placeholder="Descripción del reclamo..."></textarea>
-          </div>
-          <div class="form-group" style="grid-column:1/-1">
-            <label class="btn-secondary" style="display:inline-block;text-align:center;cursor:pointer;">
-              📷 Adjuntar Foto
-              <input type="file" accept="image/*" style="display:none" />
-            </label>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="document.getElementById('modalReclamo').style.display='none'">Cancelar</button>
-        <button class="btn-save" id="btnGuardarReclamo">Enviar Reclamo</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modalDetalle" style="display:none">
-    <div class="modal" style="max-width:520px">
-      <div class="modal-header">
-        <h3>📋 Detalle del Reclamo</h3>
-        <button class="modal-close" onclick="document.getElementById('modalDetalle').style.display='none'">✕</button>
-      </div>
-      <div class="modal-body" id="detalleBody">
-      </div>
-    </div>
-  </div>
-
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-  <script>
-  // Verificar sesión activa
-  (function() {
-    try {
-      var t = localStorage.getItem('govtech_theme');
-      if (t) document.documentElement.setAttribute('data-theme', t);
-      var u = sessionStorage.getItem('mjunin_user');
-      if (!u) { window.location.replace('login.html'); }
-    } catch(e) {}
-  })();
-</script>
+  
   <script src="js/nav.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/vecinos.js"></script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/bottom-nav.js'></script>
+  <script>buildSidebar('vecinos');</script>
+  <script src="js/db.js"></script>
   <script>
-    function geolocalizarReclamo() {
-      if (!navigator.geolocation) {
-        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
-        return;
-      }
-      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
-      navigator.geolocation.getCurrentPosition(
-        function(pos) {
-          const lat = pos.coords.latitude.toFixed(6);
-          const lng = pos.coords.longitude.toFixed(6);
-          const input = document.getElementById('rDireccion');
-          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
-          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
-        },
-        function() {
-          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
-        }
-      );
-    }
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.MuniDB) {
+      const reclamos = MuniDB.getAll('reclamos') || [];
+      const tbody = document.getElementById('reclamosTableBody');
+      let resueltos = 0;
+      let pendientes = 0;
 
-    function consultarReclamo() {
-      const numero = document.getElementById('consultaNumero')?.value?.trim();
-      if (!numero) {
-        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
-        return;
-      }
-      const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
-      if (reclamo) {
-        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
-      } else {
-        const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
-        if (demos.includes(numero)) {
-          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
-        } else {
-          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
-        }
-      }
+      reclamos.forEach(req => {
+        if(req.estado === 'Resuelto') resueltos++;
+        if(req.estado === 'Pendiente') pendientes++;
+        
+        const tr = document.createElement('tr');
+        let badgeClass = 'badge-en-proceso';
+        if (req.estado === 'Resuelto') badgeClass = 'badge-resuelto';
+        if (req.estado === 'Pendiente') badgeClass = 'badge-pendiente';
+
+        tr.innerHTML = `
+          <td style="font-family: 'Outfit', sans-serif; color: var(--text-muted);">#${req.id}</td>
+          <td><strong>${req.vecino}</strong></td>
+          <td>${req.categoria}</td>
+          <td>${req.barrio}</td>
+          <td><span class="badge ${badgeClass}">${req.estado}</span></td>
+          <td style="font-family: 'Outfit', sans-serif;">${req.diasAbierto}d</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('kpiTotal').textContent = reclamos.length.toLocaleString('es-AR');
+      document.getElementById('kpiResueltos').textContent = resueltos.toLocaleString('es-AR');
+      document.getElementById('kpiPendientes').textContent = pendientes.toLocaleString('es-AR');
     }
+  });
   </script>
-
-  <script>
-    function geolocalizarReclamo() {
-      if (!navigator.geolocation) {
-        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
-        return;
-      }
-      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
-      navigator.geolocation.getCurrentPosition(
-        function(pos) {
-          const lat = pos.coords.latitude.toFixed(6);
-          const lng = pos.coords.longitude.toFixed(6);
-          const input = document.getElementById('rDireccion');
-          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
-          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
-        },
-        function() {
-          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
-        }
-      );
-    }
-
-    function consultarReclamo() {
-      const numero = document.getElementById('consultaNumero')?.value?.trim();
-      if (!numero) {
-        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
-        return;
-      }
-      const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
-      if (reclamo) {
-        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
-      } else {
-        const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
-        if (demos.includes(numero)) {
-          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
-        } else {
-          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
-        }
-      }
-    }
-  </script>
-
-  <script>
-    function geolocalizarReclamo() {
-      if (!navigator.geolocation) {
-        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
-        return;
-      }
-      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
-      navigator.geolocation.getCurrentPosition(
-        function(pos) {
-          const lat = pos.coords.latitude.toFixed(6);
-          const lng = pos.coords.longitude.toFixed(6);
-          const input = document.getElementById('rDireccion');
-          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
-          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
-        },
-        function() {
-          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
-        }
-      );
-    }
-
-    function consultarReclamo() {
-      const numero = document.getElementById('consultaNumero')?.value?.trim();
-      if (!numero) {
-        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
-        return;
-      }
-      const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
-      if (reclamo) {
-        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
-      } else {
-        const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
-        if (demos.includes(numero)) {
-          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
-        } else {
-          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
-        }
-      }
-    }
-  </script>
-
-  <script>
-    function geolocalizarReclamo() {
-      if (!navigator.geolocation) {
-        if (typeof showToast !== 'undefined') showToast('Tu navegador no soporta geolocalización', 'error');
-        return;
-      }
-      if (typeof showToast !== 'undefined') showToast('📍 Obteniendo ubicación...', 'info');
-      navigator.geolocation.getCurrentPosition(
-        function(pos) {
-          const lat = pos.coords.latitude.toFixed(6);
-          const lng = pos.coords.longitude.toFixed(6);
-          const input = document.getElementById('rDireccion');
-          if (input) input.value = `Lat: ${lat}, Lng: ${lng} (Junín)`;
-          if (typeof showToast !== 'undefined') showToast('✅ Ubicación obtenida', 'success');
-        },
-        function() {
-          if (typeof showToast !== 'undefined') showToast('No se pudo obtener la ubicación', 'error');
-        }
-      );
-    }
-
-    function consultarReclamo() {
-      const numero = document.getElementById('consultaNumero')?.value?.trim();
-      if (!numero) {
-        if (typeof showToast !== 'undefined') showToast('⚠️ Ingresá el número de reclamo', 'warning');
-        return;
-      }
-      const reclamo = window.MuniDB ? MuniDB.query('reclamos', {numero}).find(r=>r.numero===numero) : null;
-      if (reclamo) {
-        if (typeof showToast !== 'undefined') showToast(`✅ Reclamo ${numero}: ${reclamo.estado} — ${reclamo.tipo}`, 'success');
-      } else {
-        const demos = ['JUN-2026-001247', 'JUN-2026-001248', 'JUN-2026-001249'];
-        if (demos.includes(numero)) {
-          if (typeof showToast !== 'undefined') showToast(`🔍 Reclamo ${numero}: EN PROCESO — SLA cumpliendo`, 'info');
-        } else {
-          if (typeof showToast !== 'undefined') showToast(`❌ Reclamo ${numero} no encontrado. Verificá el número.`, 'error');
-        }
-      }
-    }
-  </script>
-  <script src='js/notifications.js'></script>
-  <script src='js/live-clock.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
-<script>
-
-document.addEventListener('DOMContentLoaded', () => {
-    const btnNuevo = document.getElementById('btnNuevoReclamo');
-    if(btnNuevo && !btnNuevo.onclick) {
-        btnNuevo.onclick = () => document.getElementById('modalReclamo').style.display = 'flex';
-    }
-    const btnGuardar = document.getElementById('btnGuardarReclamo');
-    if(btnGuardar && !btnGuardar.onclick) {
-        btnGuardar.onclick = () => {
-            const tipoReclamo = document.getElementById('rTipo') ? document.getElementById('rTipo').value : 'General';
-            const descripcionReclamo = document.getElementById('rDesc') ? document.getElementById('rDesc').value : '';
-            const direccionReclamo = document.getElementById('rDir') ? document.getElementById('rDir').value : '';
-            
-            // After creating reclamo object, save to MuniDB
-            if (window.MuniDB) {
-              try {
-                MuniDB.insert('reclamos', {
-                  id: 'R-' + Date.now(),
-                  tipo: tipoReclamo,
-                  descripcion: descripcionReclamo,
-                  direccion: direccionReclamo,
-                  estado: 'pendiente',
-                  prioridad: 'media',
-                  barrio: 'Centro',
-                  fecha: new Date().toISOString(),
-                  sla: 48
-                });
-                console.log('[Vecinos] Reclamo saved to MuniDB');
-              } catch(e) { console.error(e); }
-            }
-            
-            document.getElementById('modalReclamo').style.display = 'none';
-            if(window.toast) toast('Reclamo Guardado', 'El reclamo se registró correctamente.', 'success');
-        };
-    }
-});
-
-</script>
 </body>
 </html>
-

@@ -155,24 +155,21 @@ var MuniAPI = (function() {
     }, 60 * 60 * 1000); // cache 1 hour
   }
 
-  // 6. HUGGING FACE AI (optional - user sets token)
+  // 6. AI via secure proxy (/api/ai-proxy) - token stays server-side
   function askAI(prompt, systemContext) {
-    if (!HF_TOKEN) {
-      return Promise.resolve({ response: null, noToken: true });
-    }
-    var model = 'mistralai/Mistral-7B-Instruct-v0.3';
-    var fullPrompt = '<s>[INST] ' + (systemContext || 'Eres el asistente del Municipio de Junin, Argentina. Responde en espanol, de forma concisa y profesional.') + '\n\n' + prompt + ' [/INST]';
-    return fetch('https://api-inference.huggingface.co/models/' + model, {
+    // Always use the proxy - token is configured as Vercel env var
+    return fetch('/api/ai-proxy', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + HF_TOKEN, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inputs: fullPrompt, parameters: { max_new_tokens: 500, temperature: 0.7, return_full_text: false } })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt })
     })
     .then(function(r) {
-      if (r.status === 503) return { response: null, loading: true };
+      if (r.status === 503) return r.json().then(function(d) { return { response: null, loading: true, message: d.message }; });
+      if (!r.ok) return r.json().then(function(d) { return { response: null, error: d.error }; });
       return r.json();
     })
     .then(function(data) {
-      if (data.loading) return { response: null, loading: true };
+      if (data.loading) return { response: null, loading: true, message: data.message };
       if (Array.isArray(data) && data[0] && data[0].generated_text) {
         return { response: data[0].generated_text.trim(), ok: true };
       }

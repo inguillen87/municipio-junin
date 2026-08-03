@@ -1,41 +1,52 @@
-﻿// theme-switcher.js — Dark/Light/Auto theme management
-(function() {
-  const THEMES = ['dark', 'light', 'auto'];
-  const ICONS = { dark: '🌙', light: '☀️', auto: '💻' };
+// theme-switcher.js — Dark / Light / Auto theme for MuniControl
+// Default: dark. Persists in localStorage.
+(function () {
+  var THEMES = ['dark', 'light', 'auto'];
+  var ICONS  = { dark: '🌙', light: '☀️', auto: '⚡' };
+  var LABELS = { dark: 'Modo oscuro', light: 'Modo claro', auto: 'Modo automático' };
 
   function getTheme() {
     return localStorage.getItem('govtech_theme') || 'dark';
   }
 
   function applyTheme(theme) {
-    const resolved = theme === 'auto'
+    var resolved = theme === 'auto'
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : theme;
+
     document.documentElement.setAttribute('data-theme', resolved);
     localStorage.setItem('govtech_theme', theme);
-    const btn = document.getElementById('themeToggleBtn');
-    if (btn) btn.textContent = ICONS[theme] || ICONS.dark;
+
+    // Update ALL theme toggle buttons across pages
+    var btns = document.querySelectorAll('#themeToggleBtn, .theme-toggle-btn');
+    btns.forEach(function(btn) {
+      btn.textContent = ICONS[theme] || ICONS.dark;
+      btn.title = LABELS[theme] || LABELS.dark;
+    });
+
+    // Update meta theme-color for browser chrome
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = resolved === 'light' ? '#f0f4ff' : '#060b18';
   }
 
   function cycle() {
-    const current = getTheme();
-    const idx = THEMES.indexOf(current);
-    const next = THEMES[(idx + 1) % THEMES.length];
+    var current = getTheme();
+    var idx  = THEMES.indexOf(current);
+    var next = THEMES[(idx + 1) % THEMES.length];
     applyTheme(next);
     if (typeof showToast !== 'undefined') {
-      const labels = { dark: 'Modo oscuro', light: 'Modo claro', auto: 'Modo automático' };
-      showToast(ICONS[next] + ' ' + labels[next] + ' activado', 'info');
+      showToast(ICONS[next] + ' ' + LABELS[next] + ' activado', 'info');
     }
   }
 
-  // Apply on load
+  // Apply on load immediately (prevents flash)
   applyTheme(getTheme());
 
-  // System preference listener
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+  // Listen for system preference changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
     if (getTheme() === 'auto') applyTheme('auto');
   });
 
-  window.MuniTheme = { cycle, apply: applyTheme, get: getTheme };
+  // Expose global API
+  window.MuniTheme = { cycle: cycle, apply: applyTheme, get: getTheme };
 })();
-

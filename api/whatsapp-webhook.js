@@ -112,14 +112,14 @@ async function processMessage(msg, metadata) {
 
   if (text === 'cmd_ayuda' || text === '/ayuda' || text === 'ayuda' || text === 'help') {
     await sendWhatsAppText(from, phoneId,
-      '🤖 *MuniControl — Comandos Disponibles*\n\n' +
-      '🏗️ *obras* — Estado de obras públicas\n' +
-      '📄 *licitaciones* — Contratos y adjudicaciones\n' +
-      '👥 *rrhh* — Nómina y datos de personal\n' +
-      '💰 *hacienda* — Resumen financiero y gastos\n' +
-      '📢 *reclamos* — Sistema de reclamos 311\n' +
-      '📊 *reporte* — Informe ejecutivo con IA\n' +
-      '📋 *menu* — Menú interactivo principal\n\n' +
+      '🤖 *MuniControl — Comandos Disponibles*nn' +
+      '🏗️ *obras* — Estado de obras públicasn' +
+      '📄 *licitaciones* — Contratos y adjudicacionesn' +
+      '👥 *rrhh* — Nómina y datos de personaln' +
+      '💰 *hacienda* — Resumen financiero y gastosn' +
+      '📢 *reclamos* — Sistema de reclamos 311n' +
+      '📊 *reporte* — Informe ejecutivo con IAn' +
+      '📋 *menu* — Menú interactivo principalnn' +
       '💬 O haceme cualquier consulta en lenguaje natural.'
     );
     return;
@@ -147,7 +147,7 @@ const BANNERS = {
 // ══════════════════════════════════════════════════════════════
 
 async function handleObrasQuery(from, phoneId) {
-  const text = `🏗️ *MuniControl — Obras Públicas*\n📍 *Junín, Mendoza* · Agosto 2026\n\n📊 *Estado General:*\n• Obras Activas: *8 proyectos*\n• Inversión Total: *$142.5M*\n• Avance Promedio: *68%*\n\n📌 *Proyectos Destacados:*\n🟢 *Pavimentación Av. San Martín* — 82%\n🟡 *Red de Agua Barrio Norte* — 45%\n🟢 *Luminarias LED Parque Retamo* — 95%\n\n🔗 *Mapa web:* municipio-junin.vercel.app/mapa.html`;
+  const text = `🏗️ *MuniControl — Obras Públicas*n📍 *Junín, Mendoza* · Agosto 2026nn📊 *Estado General:*n• Obras Activas: *8 proyectos*n• Inversión Total: *$142.5M*n• Avance Promedio: *68%*nn📌 *Proyectos Destacados:*n🟢 *Pavimentación Av. San Martín* — 82%n🟡 *Red de Agua Barrio Norte* — 45%n🟢 *Luminarias LED Parque Retamo* — 95%nn🔗 *Mapa web:* municipio-junin.vercel.app/mapa.html`;
   
   await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.obras, text, [
     { type: 'reply', reply: { id: 'cmd_reporte', title: '📊 Ver Reporte' } },
@@ -156,7 +156,7 @@ async function handleObrasQuery(from, phoneId) {
 }
 
 async function handleLicitacionesQuery(from, phoneId) {
-  const text = `📄 *MuniControl — Licitaciones*\n🏛️ *Municipio de Junín*\n\n📊 *Resumen de Contrataciones:*\n• Licitaciones Activas: *5 procesos*\n• Monto Total Licitado: *$85.4M*\n• Cumplimiento SLA: *100%*\n\n🏢 *Últimas Adjudicaciones:*\n1. Const. Barrial S.A. — *$32.0M*\n2. Insumos Cuyo SRL — *$14.2M*\n\n🔗 *Portal web:* municipio-junin.vercel.app/licitaciones.html`;
+  const text = `📄 *MuniControl — Licitaciones*n🏛️ *Municipio de Junín*nn📊 *Resumen de Contrataciones:*n• Licitaciones Activas: *5 procesos*n• Monto Total Licitado: *$85.4M*n• Cumplimiento SLA: *100%*nn🏢 *Últimas Adjudicaciones:*n1. Const. Barrial S.A. — *$32.0M*n2. Insumos Cuyo SRL — *$14.2M*nn🔗 *Portal web:* municipio-junin.vercel.app/licitaciones.html`;
   
   await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.licitaciones, text, [
     { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
@@ -164,7 +164,7 @@ async function handleLicitacionesQuery(from, phoneId) {
 }
 
 async function handleRRHHQuery(from, phoneId) {
-  const text = `👥 *MuniControl — Recursos Humanos*\n🏛️ *Municipio de Junín*\n\n📊 *Indicadores de Nómina:*\n• Empleados Activos: *1,247*\n• Masa Salarial Mensual: *$485.0M*\n• Horas Extra (Mes): *4,312 hrs*\n• Ausentismo: *3.2%* (Normal)\n\n📌 *Distribución:*\n• Obras Públicas: 340 emp.\n• Salud & Des.: 215 emp.\n• Serv. Públicos: 410 emp.\n\n🔗 *Portal web:* municipio-junin.vercel.app/rrhh.html`;
+  const text = `👥 *MuniControl — Recursos Humanos*n🏛️ *Municipio de Junín*nn📊 *Indicadores de Nómina:*n• Empleados Activos: *1,247*n• Masa Salarial Mensual: *$485.0M*n• Horas Extra (Mes): *4,312 hrs*n• Ausentismo: *3.2%* (Normal)nn📌 *Distribución:*n• Obras Públicas: 340 emp.n• Salud & Des.: 215 emp.n• Serv. Públicos: 410 emp.nn🔗 *Portal web:* municipio-junin.vercel.app/rrhh.html`;
   
   await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.rrhh, text, [
     { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
@@ -172,7 +172,7 @@ async function handleRRHHQuery(from, phoneId) {
 }
 
 async function handleHaciendaQuery(from, phoneId) {
-  const text = `💰 *MuniControl — Hacienda & Finanzas*\n🏛️ *Municipio de Junín*\n\n📊 *Balance Financiero:*\n🟢 Ingresos del Mes: *$180.2M*\n🔴 Gastos del Mes: *$165.3M*\n⚖️ Balance Operativo: *+$14.9M*\n📈 Ejecución Presupuestaria: *67%*\n\n🔍 *Transparencia web:* municipio-junin.vercel.app/cuentas-claras.html`;
+  const text = `💰 *MuniControl — Hacienda & Finanzas*n🏛️ *Municipio de Junín*nn📊 *Balance Financiero:*n🟢 Ingresos del Mes: *$180.2M*n🔴 Gastos del Mes: *$165.3M*n⚖️ Balance Operativo: *+$14.9M*n📈 Ejecución Presupuestaria: *67%*nn🔍 *Transparencia web:* municipio-junin.vercel.app/cuentas-claras.html`;
   
   await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.hacienda, text, [
     { type: 'reply', reply: { id: 'cmd_reporte', title: '📊 Ver Reporte' } },
@@ -181,7 +181,7 @@ async function handleHaciendaQuery(from, phoneId) {
 }
 
 async function handleReclamosQuery(from, phoneId) {
-  const text = `📢 *MuniControl — Reclamos 311*\n📍 *Junín, Mendoza*\n\n📊 *Estado de Servicios Urbanos:*\n• Total Reclamos: *318*\n✅ Resueltos: *295* (92.7%)\n⏳ Pendientes: *23 en proceso*\n⏱️ Tiempo Promedio: *3.2 días*\n\n📌 *Más Frecuentes:*\n1. Alumbrado: 112 casos\n2. Baches: 85 casos\n3. Arbolado: 64 casos\n\n🔗 *Mapa web:* municipio-junin.vercel.app/vecinos.html`;
+  const text = `📢 *MuniControl — Reclamos 311*n📍 *Junín, Mendoza*nn📊 *Estado de Servicios Urbanos:*n• Total Reclamos: *318*n✅ Resueltos: *295* (92.7%)n⏳ Pendientes: *23 en proceso*n⏱️ Tiempo Promedio: *3.2 días*nn📌 *Más Frecuentes:*n1. Alumbrado: 112 casosn2. Baches: 85 casosn3. Arbolado: 64 casosnn🔗 *Mapa web:* municipio-junin.vercel.app/vecinos.html`;
   
   await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.reclamos, text, [
     { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
@@ -189,7 +189,7 @@ async function handleReclamosQuery(from, phoneId) {
 }
 
 async function handleReporteQuery(from, phoneId) {
-  const text = `📊 *INFORME EJECUTIVO MUNICONTROL*\n🏛️ *Municipio de Junín — Mendoza*\n\n🤖 *Análisis Sintético por IA:*\nEl municipio mantiene un balance financiero saludable (+ $14.9M) con un 67% de ejecución presupuestaria. Las obras prioritarias registran un avance del 68% y el cumplimiento del SLA de reclamos alcanza el 94.1%.\n\n📌 *Métricas Clave:*\n• Empleados: 1,247\n• Gasto: $165.3M\n• Obras: 8 activas\n\n🔗 *Dashboard web:* municipio-junin.vercel.app/index.html`;
+  const text = `📊 *INFORME EJECUTIVO MUNICONTROL*n🏛️ *Municipio de Junín — Mendoza*nn🤖 *Análisis Sintético por IA:*nEl municipio mantiene un balance financiero saludable (+ $14.9M) con un 67% de ejecución presupuestaria. Las obras prioritarias registran un avance del 68% y el cumplimiento del SLA de reclamos alcanza el 94.1%.nn📌 *Métricas Clave:*n• Empleados: 1,247n• Gasto: $165.3Mn• Obras: 8 activasnn🔗 *Dashboard web:* municipio-junin.vercel.app/index.html`;
   
   await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.reporte, text, [
     { type: 'reply', reply: { id: 'cmd_hacienda', title: '💰 Ver Finanzas' } },
@@ -206,14 +206,14 @@ async function handleFreeQuery(from, phoneId, userText) {
     const textLower = userText.toLowerCase();
 
     if (textLower.includes('gasto') || textLower.includes('presupuesto') || textLower.includes('cuanto')) {
-      const text = `💰 *MuniControl IA — Consulta Financiera*\n\nEl gasto total del mes actual es de *$165.3M* sobre un presupuesto estimado de *$180.0M* (67% de ejecución anual).\n\n• Obras Públicas: $48.2M (29%)\n• Personal (RRHH): $85.0M (51%)\n• Servicios & Operación: $32.1M (20%)\n\n🔗 *Cuentas Claras:* municipio-junin.vercel.app/cuentas-claras.html`;
+      const text = `💰 *MuniControl IA — Consulta Financiera*nnEl gasto total del mes actual es de *$165.3M* sobre un presupuesto estimado de *$180.0M* (67% de ejecución anual).nn• Obras Públicas: $48.2M (29%)n• Personal (RRHH): $85.0M (51%)n• Servicios & Operación: $32.1M (20%)nn🔗 *Cuentas Claras:* municipio-junin.vercel.app/cuentas-claras.html`;
       await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.hacienda, text, [
         { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
       ]);
       return;
     }
 
-    const aiMsg = `🤖 *MuniBot — Asistente IA*\n\nRecibí tu consulta: _"${userText}"_\n\nEl Municipio de Junín mantiene todas las áreas operativas funcionando con normalidad. Podés consultar el estado detallado en la plataforma:\n\n🏛️ *Dashboard*: municipio-junin.vercel.app/index.html\n💬 *Chat IA*: municipio-junin.vercel.app/ia.html`;
+    const aiMsg = `🤖 *MuniBot — Asistente IA*nnRecibí tu consulta: _"${userText}"_nnEl Municipio de Junín mantiene todas las áreas operativas funcionando con normalidad. Podés consultar el estado detallado en la plataforma:nn🏛️ *Dashboard*: municipio-junin.vercel.app/index.htmln💬 *Chat IA*: municipio-junin.vercel.app/ia.html`;
     await sendWhatsAppText(from, phoneId, aiMsg);
   } catch (e) {
     await sendWhatsAppText(from, phoneId, '🤖 Asistente MuniControl: Para ver más detalles visitá https://municipio-junin.vercel.app/index.html');
@@ -233,10 +233,10 @@ async function dispatchWhatsAppPayload(to, phoneId, payloadFactory) {
 
   const sendMessage = async (recipient) => {
     const payload = payloadFactory(recipient);
-    return await fetch(\`https://graph.facebook.com/v21.0/\${phoneId}/messages\`, {
+    return await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': \`Bearer \${token}\`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
@@ -247,7 +247,7 @@ async function dispatchWhatsAppPayload(to, phoneId, payloadFactory) {
 
   if (!res.ok) {
     let errText = await res.text();
-    console.error(\`WhatsApp Graph API Error for \${to}:\`, res.status, errText);
+    console.error(`WhatsApp Graph API Error for ${to}:`, res.status, errText);
 
     // FIX FOR ARGENTINA & MEXICO SANDBOX NUMBERING BUG (#131030)
     // Cuando el número de test es ingresado en Meta, frecuentemente borra el 9 (AR) o 1 (MX)
@@ -265,13 +265,13 @@ async function dispatchWhatsAppPayload(to, phoneId, payloadFactory) {
       }
 
       if (retryTo) {
-        console.log(\`[WORKAROUND] Retrying message with format: \${retryTo}\`);
+        console.log(`[WORKAROUND] Retrying message with format: ${retryTo}`);
         res = await sendMessage(retryTo);
         if (!res.ok) {
           errText = await res.text();
-          console.error(\`[WORKAROUND FAILED] Retry API Error for \${retryTo}:\`, res.status, errText);
+          console.error(`[WORKAROUND FAILED] Retry API Error for ${retryTo}:`, res.status, errText);
         } else {
-          console.log(\`✅ [WORKAROUND SUCCESS] WhatsApp message sent to \${retryTo}\`);
+          console.log(`✅ [WORKAROUND SUCCESS] WhatsApp message sent to ${retryTo}`);
         }
       }
     }
@@ -320,7 +320,7 @@ async function sendMenuInteractivo(to, phoneId) {
     interactive: {
       type: 'list',
       header: { type: 'text', text: '🏛️ MuniControl — Junín, Mendoza' },
-      body: { text: '¡Hola! Soy MuniBot, tu asistente inteligente.\n\nHe diseñado hermosas plantillas interactivas para que veas la información de manera profesional.\n\n¿Qué área querés consultar hoy?' },
+      body: { text: '¡Hola! Soy MuniBot, tu asistente inteligente.nnHe diseñado hermosas plantillas interactivas para que veas la información de manera profesional.nn¿Qué área querés consultar hoy?' },
       footer: { text: 'Sistema de Gestión Inteligente' },
       action: {
         button: 'Ver opciones',

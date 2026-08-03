@@ -116,13 +116,28 @@
           </div>
           
           <div class="input-wrapper">
-            <button class="icon-btn" title="Voz">
-              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6.63 6.92V21h1.74v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+            <!-- MIC BUTTON with voice state -->
+            <button class="icon-btn mic-btn" id="micBtn" onclick="toggleVoice()" title="Hablar con el asistente">
+              <svg id="micIcon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6.63 6.92V21h1.74v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+              <span id="micRipple" class="mic-ripple"></span>
             </button>
-            <input type="text" id="chatInput" placeholder="Preguntale a MuniCopilot..." onkeypress="handleKeyPress(event)">
+            <input type="text" id="chatInput" placeholder="Escribe o habla con MuniCopilot..." onkeypress="handleKeyPress(event)">
+            <!-- SPEAKER toggle -->
+            <button class="icon-btn" id="speakerBtn" onclick="toggleSpeaker()" title="Activar/desactivar voz del asistente" style="opacity:0.5">
+              <svg id="speakerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path id="speakerWave" d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
             <button class="icon-btn send" onclick="sendMessage()">
               <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
+          </div>
+          <!-- Voice status bar -->
+          <div id="voiceStatus" style="display:none;align-items:center;gap:8px;padding:8px 16px;margin-top:6px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:10px;font-size:12px;color:#60a5fa;font-weight:600">
+            <div id="voiceStatusDots" style="display:flex;gap:3px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#3b82f6;animation:voicePulse 0.8s ease infinite"></div>
+              <div style="width:6px;height:6px;border-radius:50%;background:#3b82f6;animation:voicePulse 0.8s ease 0.2s infinite"></div>
+              <div style="width:6px;height:6px;border-radius:50%;background:#3b82f6;animation:voicePulse 0.8s ease 0.4s infinite"></div>
+            </div>
+            <span id="voiceStatusText">Escuchando...</span>
           </div>
         </div>
         
@@ -287,5 +302,241 @@
     }
   </script>
   <script src="js/api-live.js"></script>
+
+  <style>
+    /* ── VOICE BUTTON ─────────────────────────────── */
+    .mic-btn { position: relative; overflow: visible !important; }
+    .mic-btn.listening { background: rgba(59,130,246,0.18) !important; border-color: rgba(59,130,246,0.5) !important; color: #60a5fa !important; }
+    .mic-btn.listening svg { fill: #60a5fa; }
+    .mic-ripple { display:none;position:absolute;inset:-6px;border-radius:50%;border:2px solid #3b82f6;animation:rippleOut 1.2s ease-out infinite; }
+    .mic-btn.listening .mic-ripple { display:block; }
+    @keyframes rippleOut { 0%{transform:scale(0.8);opacity:0.8} 100%{transform:scale(1.6);opacity:0} }
+    @keyframes voicePulse { 0%,100%{transform:scaleY(0.4);opacity:0.4} 50%{transform:scaleY(1);opacity:1} }
+    .mic-btn.speaking { background: rgba(139,92,246,0.18) !important; border-color: rgba(139,92,246,0.5) !important; }
+    .mic-btn.speaking svg { fill: #a78bfa; }
+    #speakerBtn.active { opacity: 1 !important; color: #60a5fa; }
+    #speakerBtn.active svg { stroke: #60a5fa; }
+  </style>
+
+  <script>
+  // ============================================================
+  // VOICE MODULE - Web Speech API (SpeechRecognition + SpeechSynthesis)
+  // No API key needed - native browser feature
+  // ============================================================
+
+  var _recognition = null;
+  var _isListening = false;
+  var _speakerEnabled = true; // voice response ON by default
+  var _currentUtterance = null;
+
+  // ── INIT SPEECH RECOGNITION ────────────────────────────────
+  function initSpeechRecognition() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+
+    var rec = new SpeechRecognition();
+    rec.lang = 'es-AR';          // Argentine Spanish
+    rec.continuous = false;       // single utterance
+    rec.interimResults = true;    // show partial results
+    rec.maxAlternatives = 1;
+
+    rec.onstart = function() {
+      _isListening = true;
+      setMicState('listening');
+      showVoiceStatus('Escuchando... hable ahora', true);
+      stopSpeaking(); // stop any current TTS
+    };
+
+    rec.onresult = function(e) {
+      var transcript = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
+      }
+      var isFinal = e.results[e.results.length - 1].isFinal;
+      var input = document.getElementById('chatInput');
+      if (input) input.value = transcript;
+      if (isFinal) {
+        showVoiceStatus('Procesando: "' + transcript + '"', false);
+      } else {
+        showVoiceStatus('Escuchando: "' + transcript + '"...', true);
+      }
+    };
+
+    rec.onend = function() {
+      _isListening = false;
+      var input = document.getElementById('chatInput');
+      var transcript = input ? input.value.trim() : '';
+      if (transcript) {
+        // Auto-send after voice input
+        setTimeout(function() {
+          setMicState('idle');
+          hideVoiceStatus();
+          sendMessage();
+        }, 400);
+      } else {
+        setMicState('idle');
+        hideVoiceStatus();
+      }
+    };
+
+    rec.onerror = function(e) {
+      _isListening = false;
+      setMicState('idle');
+      var msgs = {
+        'not-allowed': 'Permiso de microfono denegado. Habilita el microfono en la barra del navegador.',
+        'no-speech':   'No se detecto voz. Intenta de nuevo.',
+        'network':     'Error de red. Verifica tu conexion.',
+        'aborted':     ''
+      };
+      var msg = msgs[e.error] || 'Error de reconocimiento: ' + e.error;
+      if (msg) showVoiceStatus(msg, false);
+      setTimeout(hideVoiceStatus, 3000);
+    };
+
+    return rec;
+  }
+
+  // ── TOGGLE VOICE INPUT ─────────────────────────────────────
+  function toggleVoice() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showVoiceStatus('Tu navegador no soporta reconocimiento de voz. Usa Chrome.', false);
+      setTimeout(hideVoiceStatus, 4000);
+      return;
+    }
+
+    if (_isListening) {
+      if (_recognition) _recognition.stop();
+      return;
+    }
+
+    if (!_recognition) {
+      _recognition = initSpeechRecognition();
+    }
+
+    try {
+      _recognition.start();
+    } catch(err) {
+      // Already started - stop and restart
+      try { _recognition.stop(); } catch(e2) {}
+      _recognition = initSpeechRecognition();
+      setTimeout(function() { try { _recognition.start(); } catch(e3) {} }, 300);
+    }
+  }
+
+  // ── TEXT-TO-SPEECH (AI speaks back) ───────────────────────
+  function speakResponse(text) {
+    if (!_speakerEnabled) return;
+    if (!window.speechSynthesis) return;
+
+    stopSpeaking();
+
+    // Clean text for TTS (remove HTML tags)
+    var clean = text.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, ' ').trim();
+    if (!clean) return;
+
+    // Limit to first ~400 chars for readability
+    if (clean.length > 400) clean = clean.substring(0, 400) + '...';
+
+    _currentUtterance = new SpeechSynthesisUtterance(clean);
+    _currentUtterance.lang = 'es-AR';
+    _currentUtterance.rate = 0.95;   // slightly slower = more natural
+    _currentUtterance.pitch = 1.0;
+    _currentUtterance.volume = 1.0;
+
+    // Prefer Spanish voice if available
+    var voices = window.speechSynthesis.getVoices();
+    var esVoice = voices.find(function(v) { return v.lang.startsWith('es') && !v.lang.startsWith('es-US'); }) ||
+                  voices.find(function(v) { return v.lang.startsWith('es'); });
+    if (esVoice) _currentUtterance.voice = esVoice;
+
+    _currentUtterance.onstart = function() { setMicState('speaking'); };
+    _currentUtterance.onend = function() { setMicState('idle'); };
+    _currentUtterance.onerror = function() { setMicState('idle'); };
+
+    window.speechSynthesis.speak(_currentUtterance);
+  }
+
+  function stopSpeaking() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    _currentUtterance = null;
+  }
+
+  // ── SPEAKER TOGGLE ─────────────────────────────────────────
+  function toggleSpeaker() {
+    _speakerEnabled = !_speakerEnabled;
+    var btn = document.getElementById('speakerBtn');
+    var wave = document.getElementById('speakerWave');
+    if (btn) btn.classList.toggle('active', _speakerEnabled);
+    btn.style.opacity = _speakerEnabled ? '1' : '0.35';
+    if (!_speakerEnabled) stopSpeaking();
+    if (wave) wave.style.display = _speakerEnabled ? '' : 'none';
+    if (typeof showToast !== 'undefined') {
+      showToast(_speakerEnabled ? 'Respuesta por voz activada' : 'Respuesta por voz desactivada', 'info');
+    }
+  }
+
+  // ── UI HELPERS ─────────────────────────────────────────────
+  function setMicState(state) {
+    var btn = document.getElementById('micBtn');
+    var icon = document.getElementById('micIcon');
+    if (!btn) return;
+    btn.classList.remove('listening', 'speaking');
+    if (state === 'listening') {
+      btn.classList.add('listening');
+      btn.title = 'Detener escucha';
+      // Mic icon -> stop icon
+      icon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
+    } else if (state === 'speaking') {
+      btn.classList.add('speaking');
+      btn.title = 'Asistente hablando...';
+      // Speaking icon - waveform
+      icon.innerHTML = '<line x1="4" y1="12" x2="4" y2="12"/><line x1="8" y1="8" x2="8" y2="16"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="16" y1="8" x2="16" y2="16"/><line x1="20" y1="12" x2="20" y2="12"/>';
+    } else {
+      btn.title = 'Hablar con el asistente';
+      // Back to mic icon
+      icon.innerHTML = '<path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6.63 6.92V21h1.74v-3.08A7 7 0 0 0 19 11h-2z"/>';
+    }
+  }
+
+  function showVoiceStatus(msg, animate) {
+    var bar = document.getElementById('voiceStatus');
+    var txt = document.getElementById('voiceStatusText');
+    var dots = document.getElementById('voiceStatusDots');
+    if (bar) bar.style.display = 'flex';
+    if (txt) txt.textContent = msg;
+    if (dots) dots.style.display = animate ? 'flex' : 'none';
+  }
+
+  function hideVoiceStatus() {
+    var bar = document.getElementById('voiceStatus');
+    if (bar) bar.style.display = 'none';
+  }
+
+  // ── INTERCEPT appendMessage TO TRIGGER TTS ─────────────────
+  // Patch the existing appendMessage to speak AI responses
+  document.addEventListener('DOMContentLoaded', function() {
+    // Voices load async in some browsers
+    if (window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = function() {}; // trigger load
+      window.speechSynthesis.getVoices(); // pre-warm
+    }
+
+    // Init speaker button state
+    var btn = document.getElementById('speakerBtn');
+    if (btn) { btn.classList.add('active'); btn.style.opacity = '1'; }
+
+    // Patch appendMessage to add TTS
+    var _origAppend = window.appendMessage;
+    if (typeof _origAppend === 'function') {
+      window.appendMessage = function(role, text) {
+        _origAppend(role, text);
+        if (role === 'assistant') {
+          setTimeout(function() { speakResponse(text); }, 200);
+        }
+      };
+    }
+  });
+  </script>
 </body>
 </html>

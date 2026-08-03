@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -181,7 +181,7 @@
       'Contexto actual: 30 empleados activos, presupuesto mensual $163M, 15 reclamos activos, 8 obras en ejecución.';
 
     function askProxy(userMsg) {
-      return fetch('/api/ai-proxy', {
+      return fetch('/api/ai-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg, system: AI_SYSTEM_CTX })

@@ -30,8 +30,8 @@
       </div>
       <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
         <button class="btn-primary" id="btnNuevaOrden">+ Nueva Orden</button>
-        <button class="btn-export">?? Exportar</button>
-        <div class="notification-bell">??<span class="notif-dot"></span></div>
+        <button class="btn-export">• Exportar</button>
+        <div class="notification-bell">•<span class="notif-dot"></span></div>
         <div class="topbar-avatar">MA</div>
       </div>
     </header>
@@ -41,7 +41,7 @@
       <!-- KPIs -->
       <section class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">�rdenes Activas</span><div class="kpi-icon blue">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">�rdenes Activas</span><div class="kpi-icon blue">•</div></div>
           <div class="kpi-value" data-target="24">0</div>
           <div class="kpi-footer"><span class="kpi-trend up">8 urgentes</span></div>
         </div>
@@ -51,22 +51,22 @@
           <div class="kpi-footer"><span class="kpi-trend down">? 3 vs julio</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Veh�culos en Taller</span><div class="kpi-icon amber">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">Veh�culos en Taller</span><div class="kpi-icon amber">•</div></div>
           <div class="kpi-value" data-target="7">0</div>
           <div class="kpi-footer"><span class="kpi-sub">De 43 en la flota</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Stock Cr�tico</span><div class="kpi-icon red">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">Stock Cr�tico</span><div class="kpi-icon red">•</div></div>
           <div class="kpi-value" data-target="5">0</div>
           <div class="kpi-footer"><span class="kpi-trend up">Insumos bajos</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Costo Mensual</span><div class="kpi-icon violet">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">Costo Mensual</span><div class="kpi-icon violet">•</div></div>
           <div class="kpi-value money" data-target="13440000">$0</div>
           <div class="kpi-footer"><span class="kpi-trend up">? +12% vs presup.</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-header"><span class="kpi-label">Tiempo Medio Rep.</span><div class="kpi-icon teal">??</div></div>
+          <div class="kpi-header"><span class="kpi-label">Tiempo Medio Rep.</span><div class="kpi-icon teal">•</div></div>
           <div class="kpi-value" data-target="4">0</div>
           <div class="kpi-footer"><span class="kpi-sub">d�as por orden</span></div>
         </div>
@@ -74,16 +74,16 @@
 
       <!-- TABS -->
       <div class="tabs-bar">
-        <button class="tab-btn active" data-tab="ordenes">?? �rdenes de Trabajo</button>
-        <button class="tab-btn" data-tab="vehiculos">?? Flota de Veh�culos</button>
-        <button class="tab-btn" data-tab="stock">?? Stock e Insumos</button>
+        <button class="tab-btn active" data-tab="ordenes">• �rdenes de Trabajo</button>
+        <button class="tab-btn" data-tab="vehiculos">• Flota de Veh�culos</button>
+        <button class="tab-btn" data-tab="stock">• Stock e Insumos</button>
       </div>
 
       <!-- TAB: ORDENES -->
       <div class="tab-content active" id="tab-ordenes">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">?? �rdenes de Trabajo</h2>
+            <h2 class="chart-title">• �rdenes de Trabajo</h2>
             <div class="panel-filters">
               <select class="select-filter" id="filtroOrdenEstado">
                 <option value="">Todos los estados</option>
@@ -129,7 +129,7 @@
       <div class="tab-content" id="tab-stock">
         <div class="rrhh-panel">
           <div class="panel-header">
-            <h2 class="chart-title">?? Inventario de Insumos</h2>
+            <h2 class="chart-title">• Inventario de Insumos</h2>
             <button class="btn-primary" id="btnAjusteStock">+ Ajuste de Stock</button>
           </div>
           <table class="data-table" id="stockTable">
@@ -157,7 +157,7 @@
   <div class="modal-overlay" id="modalOrden" style="display:none">
     <div class="modal" style="max-width:540px">
       <div class="modal-header">
-        <h3>?? Nueva Orden de Trabajo</h3>
+        <h3>• Nueva Orden de Trabajo</h3>
         <button class="modal-close" onclick="document.getElementById('modalOrden').style.display='none'">?</button>
       </div>
       <div class="modal-body">
@@ -207,7 +207,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" onclick="document.getElementById('modalOrden').style.display='none'">Cancelar</button>
-        <button class="btn-save" id="btnGuardarOrden">?? Crear Orden</button>
+        <button class="btn-save" id="btnGuardarOrden">• Crear Orden</button>
       </div>
     </div>
   </div>

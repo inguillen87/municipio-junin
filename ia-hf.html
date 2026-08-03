@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -8,8 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Jun?n" />
-  <title>IA Lab ? IA Municipal ? Municipio de Jun?n</title>
+  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
+  <title>IA Lab ? IA Municipal ? Municipio de Junín</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -24,12 +24,12 @@
       <div class="topbar-left">
         <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
-          <h1>?? IA Lab ? IA Municipal</h1>
+          <h1>• IA Lab ? IA Municipal</h1>
           <span class="breadcrumb">Modelos open source corriendo en el browser ? Sin servidor ? Sin internet</span>
         </div>
       </div>
       <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <div class="hf-badge">?? Transformers.js</div>
+        <div class="hf-badge">• Transformers.js</div>
         <div class="hf-badge green">PyTorch/ONNX</div>
         <div class="hf-badge violet">Whisper</div>
         <div class="topbar-avatar">MA</div>
@@ -42,24 +42,24 @@
       <div class="models-status-bar" id="modelsStatusBar">
         <div class="models-status-title">? Modelos Disponibles</div>
         <div class="model-pills" id="modelPills">
-          <div class="model-pill" id="pill-sentiment">?? Sentimientos <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-classifier">??? Clasificador <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-ner">?? NER <span class="pill-status idle">No cargado</span></div>
+          <div class="model-pill" id="pill-sentiment">• Sentimientos <span class="pill-status idle">No cargado</span></div>
+          <div class="model-pill" id="pill-classifier">•? Clasificador <span class="pill-status idle">No cargado</span></div>
+          <div class="model-pill" id="pill-ner">• NER <span class="pill-status idle">No cargado</span></div>
           <div class="model-pill" id="pill-qa">? Q&A <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-whisper">?? Whisper <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-embeddings">?? Embeddings <span class="pill-status idle">No cargado</span></div>
+          <div class="model-pill" id="pill-whisper">• Whisper <span class="pill-status idle">No cargado</span></div>
+          <div class="model-pill" id="pill-embeddings">• Embeddings <span class="pill-status idle">No cargado</span></div>
         </div>
-        <div class="models-cache-info">?? Los modelos se cachean en el browser ? primera carga requiere descarga</div>
+        <div class="models-cache-info">• Los modelos se cachean en el browser ? primera carga requiere descarga</div>
       </div>
 
       <!-- TABS PRINCIPALES -->
       <div class="tabs-bar hf-tabs">
-        <button class="tab-btn active" data-tab="clasificador">??? Clasificador</button>
-        <button class="tab-btn" data-tab="sentimientos">?? Sentimientos</button>
-        <button class="tab-btn" data-tab="ner">?? Entidades</button>
+        <button class="tab-btn active" data-tab="clasificador">•? Clasificador</button>
+        <button class="tab-btn" data-tab="sentimientos">• Sentimientos</button>
+        <button class="tab-btn" data-tab="ner">• Entidades</button>
         <button class="tab-btn" data-tab="qa">? Q&amp;A Docs</button>
-        <button class="tab-btn" data-tab="whisper">?? Whisper STT</button>
-        <button class="tab-btn" data-tab="embeddings">?? B?squeda IA</button>
+        <button class="tab-btn" data-tab="whisper">• Whisper STT</button>
+        <button class="tab-btn" data-tab="embeddings">• B?squeda IA</button>
         <button class="tab-btn" data-tab="batch">? Proceso Masivo</button>
       </div>
 
@@ -68,10 +68,10 @@
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">??? Clasificador Autom?tico de Reclamos</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/nli-deberta-v3-small</code> ? Zero-shot classification ? <a href="https://municontrol.ar/cross-encoder/nli-deberta-v3-small" target="_blank" class="hf-link">?? IA Municipal</a></p>
+              <h2 class="hf-panel-title">•? Clasificador Autom?tico de Reclamos</h2>
+              <p class="hf-panel-desc">Modelo: <code>Xenova/nli-deberta-v3-small</code> ? Zero-shot classification ? <a href="https://municontrol.ar/cross-encoder/nli-deberta-v3-small" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
-            <button class="btn-load-model" id="loadClassifier">?? Cargar Modelo</button>
+            <button class="btn-load-model" id="loadClassifier">• Cargar Modelo</button>
           </div>
 
           <div class="model-progress" id="progressClassifier" style="display:none">
@@ -80,27 +80,27 @@
           </div>
 
           <div class="hf-input-section">
-            <label class="hf-label">Descripci?n del reclamo (en lenguaje natural):</label>
+            <label class="hf-label">Descripción del reclamo (en lenguaje natural):</label>
             <textarea class="hf-textarea" id="classifierInput" rows="3" placeholder="Ej: Hay un pozo enorme en la esquina de Rivadavia y Mitre que rompi? tres veh?culos esta semana. Es urgente..."></textarea>
             <div class="hf-examples">
               <span class="example-label">Ejemplos r?pidos:</span>
-              <button class="example-btn" data-text="El pozo de la calle es enorme y peligroso, romp? el auto">??? Bache</button>
-              <button class="example-btn" data-text="No funciona el farol de la esquina hace dos semanas, es peligroso de noche">?? Alumbrado</button>
-              <button class="example-btn" data-text="No pas? el cami?n de basura hace 5 d?as y hay bolsas en la vereda">??? Basura</button>
-              <button class="example-btn" data-text="El ?rbol de enfrente tiene ramas secas que van a caer sobre las casas">?? Poda</button>
-              <button class="example-btn" data-text="No tenemos agua desde ayer en todo el barrio">?? Agua</button>
-              <button class="example-btn" data-text="Los vecinos de arriba hacen ruidos toda la noche y no me dejan dormir">?? Ruidos</button>
+              <button class="example-btn" data-text="El pozo de la calle es enorme y peligroso, romp? el auto">•? Bache</button>
+              <button class="example-btn" data-text="No funciona el farol de la esquina hace dos semanas, es peligroso de noche">• Alumbrado</button>
+              <button class="example-btn" data-text="No pas? el cami?n de basura hace 5 d?as y hay bolsas en la vereda">•? Basura</button>
+              <button class="example-btn" data-text="El ?rbol de enfrente tiene ramas secas que van a caer sobre las casas">• Poda</button>
+              <button class="example-btn" data-text="No tenemos agua desde ayer en todo el barrio">• Agua</button>
+              <button class="example-btn" data-text="Los vecinos de arriba hacen ruidos toda la noche y no me dejan dormir">• Ruidos</button>
             </div>
-            <button class="btn-run-model" id="runClassifier" disabled>??? Clasificar Reclamo</button>
+            <button class="btn-run-model" id="runClassifier" disabled>•? Clasificar Reclamo</button>
           </div>
 
           <div class="hf-result" id="resultClassifier" style="display:none">
-            <h3 class="result-title">?? Resultado de Clasificaci?n</h3>
+            <h3 class="result-title">• Resultado de Clasificaci?n</h3>
             <div class="result-main-label" id="classifierMainLabel"></div>
             <div class="confidence-bars" id="classifierBars"></div>
             <div class="result-actions">
               <button class="result-action-btn" id="btnCreateReclamo">? Registrar como Reclamo</button>
-              <button class="result-action-btn" id="btnCopyResult">?? Copiar</button>
+              <button class="result-action-btn" id="btnCopyResult">• Copiar</button>
             </div>
           </div>
         </div>
@@ -111,10 +111,10 @@
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">?? An?lisis de Sentimientos</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/distilbert-base-uncased-finetuned-sst-2-english</code> ? <a href="https://municontrol.ar/distilbert-base-uncased-finetuned-sst-2-english" target="_blank" class="hf-link">?? IA Municipal</a></p>
+              <h2 class="hf-panel-title">• An?lisis de Sentimientos</h2>
+              <p class="hf-panel-desc">Modelo: <code>Xenova/distilbert-base-uncased-finetuned-sst-2-english</code> ? <a href="https://municontrol.ar/distilbert-base-uncased-finetuned-sst-2-english" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
-            <button class="btn-load-model" id="loadSentiment">?? Cargar Modelo</button>
+            <button class="btn-load-model" id="loadSentiment">• Cargar Modelo</button>
           </div>
           <div class="model-progress" id="progressSentiment" style="display:none">
             <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillSentiment"></div></div>
@@ -126,18 +126,18 @@
             <textarea class="hf-textarea" id="sentimentInput" rows="3" placeholder="Ej: El municipio atendi? muy bien mi reclamo, estoy muy satisfecho con la respuesta..."></textarea>
             <div class="hf-examples">
               <span class="example-label">Ejemplos:</span>
-              <button class="example-btn" data-text="Excelente atenci?n, solucionaron el problema en 2 d?as, muy conforme" data-target="sentimentInput">?? Positivo</button>
-              <button class="example-btn" data-text="Horrible servicio, nunca vienen, llevan 3 semanas sin resolver nada" data-target="sentimentInput">?? Negativo</button>
-              <button class="example-btn" data-text="El servicio es regular, a veces bien a veces mal" data-target="sentimentInput">?? Neutro</button>
+              <button class="example-btn" data-text="Excelente atenci?n, solucionaron el problema en 2 d?as, muy conforme" data-target="sentimentInput">• Positivo</button>
+              <button class="example-btn" data-text="Horrible servicio, nunca vienen, llevan 3 semanas sin resolver nada" data-target="sentimentInput">• Negativo</button>
+              <button class="example-btn" data-text="El servicio es regular, a veces bien a veces mal" data-target="sentimentInput">• Neutro</button>
             </div>
-            <button class="btn-run-model" id="runSentiment" disabled>?? Analizar Sentimiento</button>
+            <button class="btn-run-model" id="runSentiment" disabled>• Analizar Sentimiento</button>
           </div>
 
           <!-- BATCH SENTIMIENTOS -->
           <div class="hf-batch-section">
             <h3 class="hf-sub-title">? An?lisis Masivo ? ?ltimos Reclamos</h3>
             <p class="hf-desc-text">Analiza autom?ticamente el sentimiento de los ?ltimos reclamos del sistema</p>
-            <button class="btn-run-model secondary" id="runSentimentBatch" disabled>?? Analizar 20 reclamos</button>
+            <button class="btn-run-model secondary" id="runSentimentBatch" disabled>• Analizar 20 reclamos</button>
             <div class="sentiment-batch-results" id="sentimentBatchResults"></div>
           </div>
 
@@ -152,10 +152,10 @@
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">?? Extracci?n de Entidades (NER)</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/bert-base-NER</code> ? Personas, Organizaciones, Lugares ? <a href="https://municontrol.ar/dslim/bert-base-NER" target="_blank" class="hf-link">?? IA Municipal</a></p>
+              <h2 class="hf-panel-title">• Extracci?n de Entidades (NER)</h2>
+              <p class="hf-panel-desc">Modelo: <code>Xenova/bert-base-NER</code> ? Personas, Organizaciones, Lugares ? <a href="https://municontrol.ar/dslim/bert-base-NER" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
-            <button class="btn-load-model" id="loadNER">?? Cargar Modelo</button>
+            <button class="btn-load-model" id="loadNER">• Cargar Modelo</button>
           </div>
           <div class="model-progress" id="progressNER" style="display:none">
             <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillNER"></div></div>
@@ -163,17 +163,17 @@
           </div>
 
           <div class="hf-input-section">
-            <label class="hf-label">Texto de contrato, resoluci?n o expediente:</label>
-            <textarea class="hf-textarea" id="nerInput" rows="5" placeholder="Peg? aqu? texto de un contrato, resoluci?n o cualquier documento oficial...&#10;&#10;Ej: The Municipality of Junin contracted with Carlos Fernandez from Mendoza to provide maintenance services..."></textarea>
+            <label class="hf-label">Texto de contrato, resolución o expediente:</label>
+            <textarea class="hf-textarea" id="nerInput" rows="5" placeholder="Peg? aqu? texto de un contrato, resolución o cualquier documento oficial...&#10;&#10;Ej: The Municipality of Junin contracted with Carlos Fernandez from Mendoza to provide maintenance services..."></textarea>
             <div class="hf-examples">
               <span class="example-label">Ejemplo:</span>
-              <button class="example-btn" data-text="The Municipality of Junin signed a contract with Carlos Fernandez from Mendoza for public works. Maria Rodriguez from the Public Works department will oversee the project at Rivadavia Avenue." data-target="nerInput">?? Contrato ejemplo</button>
+              <button class="example-btn" data-text="The Municipality of Junin signed a contract with Carlos Fernandez from Mendoza for public works. Maria Rodriguez from the Public Works department will oversee the project at Rivadavia Avenue." data-target="nerInput">• Contrato ejemplo</button>
             </div>
-            <button class="btn-run-model" id="runNER" disabled>?? Extraer Entidades</button>
+            <button class="btn-run-model" id="runNER" disabled>• Extraer Entidades</button>
           </div>
 
           <div class="hf-result" id="resultNER" style="display:none">
-            <h3 class="result-title">?? Entidades Detectadas</h3>
+            <h3 class="result-title">• Entidades Detectadas</h3>
             <div class="ner-highlighted" id="nerHighlighted"></div>
             <div class="ner-summary" id="nerSummary"></div>
           </div>
@@ -186,9 +186,9 @@
           <div class="hf-panel-header">
             <div>
               <h2 class="hf-panel-title">? Q&amp;A sobre Documentos</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/distilbert-base-uncased-distilled-squad</code> ? <a href="https://municontrol.ar/distilbert-base-cased-distilled-squad" target="_blank" class="hf-link">?? IA Municipal</a></p>
+              <p class="hf-panel-desc">Modelo: <code>Xenova/distilbert-base-uncased-distilled-squad</code> ? <a href="https://municontrol.ar/distilbert-base-cased-distilled-squad" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
-            <button class="btn-load-model" id="loadQA">?? Cargar Modelo</button>
+            <button class="btn-load-model" id="loadQA">• Cargar Modelo</button>
           </div>
           <div class="model-progress" id="progressQA" style="display:none">
             <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillQA"></div></div>
@@ -197,24 +197,24 @@
 
           <div class="qa-layout">
             <div class="hf-input-section">
-              <label class="hf-label">?? Contexto (texto del documento):</label>
-              <textarea class="hf-textarea" id="qaContext" rows="7" placeholder="Peg? aqu? el texto del contrato, resoluci?n, o cualquier documento...">The Municipality of Junin has 1247 employees distributed across 7 secretariats. The total monthly payroll is 186 million pesos. The Public Works department has 214 employees and spent 44.8 million pesos in August 2026, which is 18% over budget. The Education department has 302 employees and spent 54.9 million pesos, which is 10% under budget. The municipality manages a fleet of 43 vehicles including trucks, vans, and motorcycles. The fuel station has 4820 liters of premium gasoline and 7340 liters of diesel. There are 318 citizen complaints registered, with 229 resolved and 89 pending.</textarea>
+              <label class="hf-label">• Contexto (texto del documento):</label>
+              <textarea class="hf-textarea" id="qaContext" rows="7" placeholder="Peg? aqu? el texto del contrato, resolución, o cualquier documento...">The Municipality of Junin has 1247 employees distributed across 7 secretariats. The total monthly payroll is 186 million pesos. The Public Works department has 214 employees and spent 44.8 million pesos in August 2026, which is 18% over budget. The Education department has 302 employees and spent 54.9 million pesos, which is 10% under budget. The municipality manages a fleet of 43 vehicles including trucks, vans, and motorcycles. The fuel station has 4820 liters of premium gasoline and 7340 liters of diesel. There are 318 citizen complaints registered, with 229 resolved and 89 pending.</textarea>
             </div>
             <div class="qa-questions-section">
               <label class="hf-label">? Tu pregunta:</label>
               <input type="text" class="hf-input" id="qaQuestion" placeholder="?Cu?ntos empleados tiene el municipio?" />
               <div class="hf-examples">
                 <span class="example-label">Preguntas r?pidas:</span>
-                <button class="qa-quick-btn" data-q="How many employees does the municipality have?">?? Empleados</button>
-                <button class="qa-quick-btn" data-q="Which department is over budget?">?? Presupuesto</button>
+                <button class="qa-quick-btn" data-q="How many employees does the municipality have?">• Empleados</button>
+                <button class="qa-quick-btn" data-q="Which department is over budget?">• Presupuesto</button>
                 <button class="qa-quick-btn" data-q="How many liters of fuel are in the station?">? Combustible</button>
-                <button class="qa-quick-btn" data-q="How many citizen complaints are pending?">??? Reclamos</button>
+                <button class="qa-quick-btn" data-q="How many citizen complaints are pending?">•? Reclamos</button>
               </div>
               <button class="btn-run-model" id="runQA" disabled>? Responder Pregunta</button>
 
               <div class="hf-result" id="resultQA" style="display:none">
                 <div class="qa-answer-card">
-                  <div class="qa-answer-label">?? Respuesta:</div>
+                  <div class="qa-answer-label">• Respuesta:</div>
                   <div class="qa-answer-text" id="qaAnswerText"></div>
                   <div class="qa-confidence" id="qaConfidence"></div>
                 </div>
@@ -229,10 +229,10 @@
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">?? Whisper ? Transcripci?n de Voz</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/whisper-tiny</code> ? OpenAI Whisper en el browser ? <a href="https://municontrol.ar/openai/whisper-tiny" target="_blank" class="hf-link">?? IA Municipal</a></p>
+              <h2 class="hf-panel-title">• Whisper ? Transcripci?n de Voz</h2>
+              <p class="hf-panel-desc">Modelo: <code>Xenova/whisper-tiny</code> ? OpenAI Whisper en el browser ? <a href="https://municontrol.ar/openai/whisper-tiny" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
-            <button class="btn-load-model" id="loadWhisper">?? Cargar Whisper</button>
+            <button class="btn-load-model" id="loadWhisper">• Cargar Whisper</button>
           </div>
           <div class="model-progress" id="progressWhisper" style="display:none">
             <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillWhisper"></div></div>
@@ -243,10 +243,10 @@
             <div class="whisper-recorder">
               <div class="whisper-mic-area" id="whisperMicArea">
                 <button class="whisper-mic-btn" id="whisperRecordBtn" disabled>
-                  <span class="mic-icon">??</span>
+                  <span class="mic-icon">•</span>
                   <span class="mic-label">Grabar Audio</span>
                 </button>
-                <div class="whisper-timer" id="whisperTimer" style="display:none">?? <span id="whisperSeconds">0</span>s</div>
+                <div class="whisper-timer" id="whisperTimer" style="display:none">• <span id="whisperSeconds">0</span>s</div>
                 <div class="whisper-wave" id="whisperWave" style="display:none">
                   <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
                 </div>
@@ -254,7 +254,7 @@
 
               <div class="whisper-upload">
                 <label class="whisper-upload-label" for="audioUpload">
-                  ?? O sub? un archivo de audio (MP3, WAV, OGG)
+                  • O sub? un archivo de audio (MP3, WAV, OGG)
                 </label>
                 <input type="file" id="audioUpload" accept="audio/*" hidden />
               </div>
@@ -262,28 +262,28 @@
               <div class="whisper-lang-select">
                 <label class="hf-label">Idioma de origen:</label>
                 <select class="hf-select" id="whisperLang">
-                  <option value="es">???? Espa?ol (Argentina)</option>
-                  <option value="en">???? English</option>
-                  <option value="pt">???? Portugu?s</option>
-                  <option value="null" selected>?? Auto-detectar</option>
+                  <option value="es">•• Español (Argentina)</option>
+                  <option value="en">•• English</option>
+                  <option value="pt">•• Portugu?s</option>
+                  <option value="null" selected>• Auto-detectar</option>
                 </select>
               </div>
 
-              <button class="btn-run-model" id="runWhisper" disabled>?? Transcribir</button>
+              <button class="btn-run-model" id="runWhisper" disabled>• Transcribir</button>
             </div>
 
             <div class="whisper-results">
               <div class="hf-result" id="resultWhisper" style="display:none">
-                <h3 class="result-title">?? Transcripci?n Whisper</h3>
+                <h3 class="result-title">• Transcripci?n Whisper</h3>
                 <div class="whisper-transcript" id="whisperTranscript"></div>
                 <div class="whisper-actions">
-                  <button class="result-action-btn" id="btnSendToIA">?? Enviar al Asistente IA</button>
-                  <button class="result-action-btn" id="btnSendToReclamo">?? Crear Reclamo</button>
-                  <button class="result-action-btn" id="btnCopyTranscript">?? Copiar</button>
+                  <button class="result-action-btn" id="btnSendToIA">• Enviar al Asistente IA</button>
+                  <button class="result-action-btn" id="btnSendToReclamo">• Crear Reclamo</button>
+                  <button class="result-action-btn" id="btnCopyTranscript">• Copiar</button>
                 </div>
               </div>
               <div class="whisper-placeholder" id="whisperPlaceholder">
-                <div class="placeholder-icon">???</div>
+                <div class="placeholder-icon">•?</div>
                 <div class="placeholder-text">Carg? el modelo y grab? tu voz o sub? un audio</div>
                 <div class="placeholder-sub">Whisper es el modelo de reconocimiento de voz de OpenAI ? funciona en el browser sin enviar datos a ning?n servidor</div>
               </div>
@@ -297,10 +297,10 @@
         <div class="hf-panel">
           <div class="hf-panel-header">
             <div>
-              <h2 class="hf-panel-title">?? B?squeda Sem?ntica con Embeddings</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/all-MiniLM-L6-v2</code> ? Sentence Transformers ? <a href="https://municontrol.ar/sentence-transformers/all-MiniLM-L6-v2" target="_blank" class="hf-link">?? IA Municipal</a></p>
+              <h2 class="hf-panel-title">• B?squeda Sem?ntica con Embeddings</h2>
+              <p class="hf-panel-desc">Modelo: <code>Xenova/all-MiniLM-L6-v2</code> ? Sentence Transformers ? <a href="https://municontrol.ar/sentence-transformers/all-MiniLM-L6-v2" target="_blank" class="hf-link">• IA Municipal</a></p>
             </div>
-            <button class="btn-load-model" id="loadEmbeddings">?? Cargar Modelo</button>
+            <button class="btn-load-model" id="loadEmbeddings">• Cargar Modelo</button>
           </div>
           <div class="model-progress" id="progressEmbeddings" style="display:none">
             <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillEmbeddings"></div></div>
@@ -308,20 +308,20 @@
           </div>
 
           <div class="hf-input-section">
-            <label class="hf-label">?? Busc? reclamos similares con lenguaje natural:</label>
+            <label class="hf-label">• Busc? reclamos similares con lenguaje natural:</label>
             <input type="text" class="hf-input large" id="embeddingsQuery" placeholder="Ej: problemas con el agua en el barrio norte..." />
-            <button class="btn-run-model" id="runEmbeddings" disabled>?? Buscar Similares</button>
+            <button class="btn-run-model" id="runEmbeddings" disabled>• Buscar Similares</button>
           </div>
 
           <div class="hf-result" id="resultEmbeddings" style="display:none">
-            <h3 class="result-title">?? Reclamos Similares Encontrados</h3>
+            <h3 class="result-title">• Reclamos Similares Encontrados</h3>
             <div class="embeddings-results" id="embeddingsResults"></div>
           </div>
 
           <div class="similarity-matrix-section">
-            <h3 class="hf-sub-title">?? Matriz de Similitud entre Secretar?as</h3>
-            <p class="hf-desc-text">Calcula similitud sem?ntica entre las ?reas municipales basado en sus descripciones</p>
-            <button class="btn-run-model secondary" id="runSimilarityMatrix" disabled>?? Calcular Matriz</button>
+            <h3 class="hf-sub-title">• Matriz de Similitud entre Secretar?as</h3>
+            <p class="hf-desc-text">Calcula similitud sem?ntica entre las Áreas municipales basado en sus descripciones</p>
+            <button class="btn-run-model secondary" id="runSimilarityMatrix" disabled>• Calcular Matriz</button>
             <div class="similarity-matrix" id="similarityMatrix"></div>
           </div>
         </div>
@@ -338,7 +338,7 @@
           </div>
 
           <div class="batch-pipeline">
-            <h3 class="hf-sub-title">?? Pipeline de Enriquecimiento</h3>
+            <h3 class="hf-sub-title">• Pipeline de Enriquecimiento</h3>
             <div class="pipeline-steps">
               <div class="pipeline-step" id="step1">
                 <div class="step-num">1</div>
@@ -368,14 +368,14 @@
           </div>
 
           <div class="batch-results" id="batchResults" style="display:none">
-            <h3 class="hf-sub-title">?? Resultados del Pipeline</h3>
+            <h3 class="hf-sub-title">• Resultados del Pipeline</h3>
             <div class="batch-stats" id="batchStats"></div>
             <div class="batch-table-wrap">
               <table class="data-table" id="batchTable">
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Descripci?n</th>
+                    <th>Descripción</th>
                     <th>Categor?a IA</th>
                     <th>Confianza</th>
                     <th>Sentimiento</th>
@@ -386,7 +386,7 @@
                 <tbody id="batchBody"></tbody>
               </table>
             </div>
-            <button class="btn-run-model secondary" id="exportBatchPDF">?? Exportar Informe PDF</button>
+            <button class="btn-run-model secondary" id="exportBatchPDF">• Exportar Informe PDF</button>
           </div>
         </div>
       </div>

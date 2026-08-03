@@ -24,13 +24,13 @@
       <div class="topbar-left">
         <button class="menu-btn" id="menuBtn">?</button>
         <div class="page-title">
-          <h1>?? An�lisis Masivo de Archivos</h1>
+          <h1>• An�lisis Masivo de Archivos</h1>
           <span class="breadcrumb">Sub� hasta 20 archivos � Excel, PDF, Word, CSV � M�tricas autom�ticas con IA</span>
         </div>
       </div>
       <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <button class="btn-export" id="btnExportReport" style="display:none">?? Informe PDF</button>
-        <button class="btn-export" id="btnExportExcel" style="display:none">?? Exportar Excel</button>
+        <button class="btn-export" id="btnExportReport" style="display:none">• Informe PDF</button>
+        <button class="btn-export" id="btnExportExcel" style="display:none">• Exportar Excel</button>
         <div class="topbar-avatar">MA</div>
       </div>
     </header>
@@ -41,17 +41,17 @@
       <div class="upload-zone" id="uploadZone">
         <div class="upload-zone-inner" id="uploadDropArea">
           <div class="upload-icon-wrap">
-            <div class="upload-icon">??</div>
+            <div class="upload-icon">•</div>
             <div class="upload-pulse"></div>
           </div>
           <h2 class="upload-title">Arrastr� archivos aqu� o hac� click para seleccionar</h2>
           <p class="upload-subtitle">Excel, PDF, Word, CSV, im�genes � Hasta 20 archivos � Sin l�mite de tama�o</p>
           <div class="upload-badges">
-            <span class="upload-badge xlsx">?? .xlsx / .xls</span>
-            <span class="upload-badge pdf">?? .pdf</span>
-            <span class="upload-badge docx">?? .docx</span>
-            <span class="upload-badge csv">?? .csv</span>
-            <span class="upload-badge img">??? Im�genes</span>
+            <span class="upload-badge xlsx">• .xlsx / .xls</span>
+            <span class="upload-badge pdf">• .pdf</span>
+            <span class="upload-badge docx">• .docx</span>
+            <span class="upload-badge csv">• .csv</span>
+            <span class="upload-badge img">•? Im�genes</span>
           </div>
           <button class="upload-btn" id="uploadSelectBtn">Seleccionar archivos</button>
           <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.pdf,.docx,.doc,.csv,.txt,.jpg,.jpeg,.png,.webp" hidden />
@@ -61,10 +61,10 @@
       <!-- ARCHIVOS CARGADOS -->
       <div class="files-section" id="filesSection" style="display:none">
         <div class="files-header">
-          <h2 class="section-title-h2">?? Archivos cargados <span id="fileCount" class="file-count-badge">0</span></h2>
+          <h2 class="section-title-h2">• Archivos cargados <span id="fileCount" class="file-count-badge">0</span></h2>
           <div class="files-actions">
             <button class="btn-analyze-all" id="btnAnalyzeAll">? Analizar todos</button>
-            <button class="btn-clear" id="btnClear">??? Limpiar todo</button>
+            <button class="btn-clear" id="btnClear">•? Limpiar todo</button>
           </div>
         </div>
         <div class="files-grid" id="filesGrid"></div>
@@ -75,7 +75,7 @@
 
         <!-- KPIs globales -->
         <div class="results-header">
-          <h2 class="section-title-h2">?? An�lisis consolidado</h2>
+          <h2 class="section-title-h2">• An�lisis consolidado</h2>
           <div class="results-meta" id="resultsMeta"></div>
         </div>
 
@@ -83,10 +83,10 @@
 
         <!-- TABS de resultados -->
         <div class="tabs-bar" style="margin-top:16px">
-          <button class="tab-btn active" data-tab="rtabla">?? Datos</button>
-          <button class="tab-btn" data-tab="rgraficos">?? Gr�ficos</button>
-          <button class="tab-btn" data-tab="rtexto">?? Texto extra�do</button>
-          <button class="tab-btn" data-tab="rresumen">?? Resumen IA</button>
+          <button class="tab-btn active" data-tab="rtabla">• Datos</button>
+          <button class="tab-btn" data-tab="rgraficos">• Gr�ficos</button>
+          <button class="tab-btn" data-tab="rtexto">• Texto extra�do</button>
+          <button class="tab-btn" data-tab="rresumen">• Resumen IA</button>
         </div>
 
         <!-- TAB: DATOS -->
@@ -96,7 +96,7 @@
               <h2 class="chart-title" id="tableTitle">Datos extra�dos</h2>
               <div class="panel-filters">
                 <div class="search-box">
-                  <span class="search-icon">??</span>
+                  <span class="search-icon">•</span>
                   <input type="text" id="searchData" placeholder="Buscar en los datos..." />
                 </div>
                 <select class="select-filter" id="filterSheet">
@@ -146,12 +146,12 @@
         <div class="tab-content" id="tab-rresumen">
           <div class="rrhh-panel">
             <div class="panel-header">
-              <h2 class="chart-title">?? Resumen inteligente de los archivos</h2>
+              <h2 class="chart-title">• Resumen inteligente de los archivos</h2>
               <button class="btn-primary" id="btnGenerateResumen">? Generar resumen</button>
             </div>
             <div class="ia-summary-area" id="iaSummaryArea">
               <div class="ia-summary-placeholder">
-                <div style="font-size:48px">??</div>
+                <div style="font-size:48px">•</div>
                 <p>Proces� archivos primero, luego hac� click en "Generar resumen" para que la IA analice el contenido y proponga m�tricas y conclusiones.</p>
               </div>
             </div>

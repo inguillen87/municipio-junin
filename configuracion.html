@@ -1,553 +1,288 @@
-﻿<!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<!DOCTYPE html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Configuración - MuniControl</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
   <style>
-    .config-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 30px;
-      margin-top: 20px;
-    }
-
-    .config-nav {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .config-nav-btn {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      background: transparent;
-      border: none;
-      border-radius: 10px;
-      color: var(--text-secondary);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.2s;
-    }
-
-    .config-nav-btn:hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text);
-    }
-
-    .config-nav-btn.active {
-      background: var(--primary-alpha);
-      color: var(--primary);
-      font-weight: 600;
-    }
-
-    .config-section {
-      display: none;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 30px;
-      animation: fadeIn 0.3s ease;
-    }
-
-    .config-section.active {
-      display: block;
-    }
-
-    .config-section-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .config-section-desc {
-      color: var(--text-secondary);
-      font-size: 14px;
-      margin-bottom: 30px;
-    }
-
-    /* Form Elements */
-    .config-group {
-      margin-bottom: 24px;
-    }
-
-    .config-label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
-
-    .config-input {
-      width: 100%;
-      padding: 12px 16px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 14px;
-      font-family: 'Inter', sans-serif;
-      transition: all 0.2s;
-    }
-
-    .config-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-alpha);
-    }
-
-    /* Avatar section */
-    .avatar-upload {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .avatar-preview {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      color: white;
-      font-weight: 700;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    }
-
-    /* Toggle Switch */
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .toggle-row:last-child {
-      border-bottom: none;
-    }
-
-    .toggle-info h4 {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 4px;
-    }
-
-    .toggle-info p {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 48px;
-      height: 24px;
-    }
+    .settings-section { margin-bottom: 30px; }
+    .settings-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; color: var(--text-primary); }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+    .form-input { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 14px; transition: border 0.2s; }
+    .form-input:focus { outline: none; border-color: var(--blue); }
+    
+    /* Toggle switch */
+    .toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; }
+    .toggle-label { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--border); transition: .3s; border-radius: 24px;
-    }
-    .slider:before {
-      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
-      background-color: white; transition: .3s; border-radius: 50%;
-    }
-    input:checked + .slider { background-color: var(--primary); }
-    input:checked + .slider:before { transform: translateX(24px); }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--blue); }
+    input:focus + .slider { box-shadow: 0 0 1px var(--blue); }
+    input:checked + .slider:before { transform: translateX(20px); }
 
-    /* Theme Preview Cards */
-    .theme-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
+    /* Module Grid */
+    .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    
+    /* Integrations */
+    .integration-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .int-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: all 0.2s; }
+    .int-card:hover { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); }
+    .int-header { display: flex; align-items: center; gap: 12px; }
+    .int-logo { width: 40px; height: 40px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
+    .int-name { font-weight: 600; font-size: 15px; }
+    .int-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; flex: 1; }
+    .int-badge { align-self: flex-start; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .int-badge.connected { background: rgba(16,185,129,0.15); color: #10b981; }
+    .int-badge.disconnected { background: rgba(148,163,184,0.15); color: #94a3b8; }
+    .int-badge.soon { background: rgba(245,158,11,0.15); color: #f59e0b; }
 
-    .theme-card {
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
+    .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, var(--blue), #6366f1); color: white; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+    .btn-outline:hover { background: rgba(255,255,255,0.05); }
 
-    .theme-card:hover {
-      border-color: var(--primary-alpha);
-      background: var(--bg);
-    }
-
-    .theme-card.active {
-      border-color: var(--primary);
-      background: var(--primary-alpha);
-    }
-
-    .theme-icon {
-      font-size: 32px;
-      margin-bottom: 12px;
-    }
-
-    .theme-name {
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--text);
-    }
-
-    /* Danger Zone */
-    .danger-zone {
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 12px;
-      padding: 20px;
-      background: rgba(239, 68, 68, 0.05);
-      margin-top: 20px;
-    }
-
-    .danger-title {
-      color: #ef4444;
-      font-weight: 600;
-      font-size: 15px;
-      margin-bottom: 12px;
-    }
-
-    @media (max-width: 768px) {
-      .config-layout {
-        grid-template-columns: 1fr;
-      }
-      .config-nav {
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 10px;
-      }
-      .config-nav-btn {
-        white-space: nowrap;
-      }
-    }
+    .color-preview { display: inline-block; width: 24px; height: 24px; border-radius: 50%; vertical-align: middle; margin-left: 8px; border: 1px solid var(--border); }
   </style>
 </head>
 <body>
+  <div class="bg-orbs">
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-grid"></div>
+  </div>
 
-  <!-- Sidebar / Nav will be injected by nav.js -->
+  <div id="sidebar"></div>
 
-  <main class="main-content">
-    <header class="top-header">
-      <div class="search-bar">
-        <span>🔍</span>
-        <input type="text" placeholder="Buscar en ajustes...">
-      </div>
-      <div class="user-profile">
-        <button id="themeToggleBtn" onclick="MuniTheme.cycle()" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;margin-right:15px;">🌙</button>
-        <span class="user-avatar" id="headerAvatar">G</span>
-        <div class="user-info">
-          <div class="user-name" id="headerUserName">Guillermo</div>
-          <div class="user-role" id="headerUserRole">Super Admin</div>
+  <div id="mainContent" class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button id="menuBtn" class="menu-btn"></button>
+        <div class="page-title">
+          <div class="breadcrumb">Sistema / Configuración</div>
+          <h1>Configuración de Plataforma</h1>
         </div>
       </div>
-    </header>
-
-    <div class="dashboard-container">
-      <div class="header-action">
-        <div>
-          <h1 class="page-title">Configuración</h1>
-          <p class="page-subtitle">Ajustes generales, preferencias y sistema.</p>
-        </div>
-        <button class="btn btn-primary" onclick="guardarCambios()">Guardar Cambios</button>
-      </div>
-
-      <div class="config-layout">
-        <!-- Sidebar Navigation -->
-        <div class="config-nav">
-          <button class="config-nav-btn active" onclick="showSection('perfil', this)">
-            <span>👤</span> Mi Perfil
-          </button>
-          <button class="config-nav-btn" onclick="showSection('apariencia', this)">
-            <span>🎨</span> Apariencia
-          </button>
-          <button class="config-nav-btn" onclick="showSection('notificaciones', this)">
-            <span>🔔</span> Notificaciones
-          </button>
-          <button class="config-nav-btn" onclick="showSection('sistema', this)">
-            <span>⚙️</span> Sistema
-          </button>
-          <button class="config-nav-btn" onclick="showSection('acerca', this)">
-            <span>ℹ️</span> Acerca de
-          </button>
-        </div>
-
-        <!-- Sections -->
-        <div class="config-content">
-          
-          <!-- Perfil -->
-          <div id="section-perfil" class="config-section active">
-            <h2 class="config-section-title">Perfil de Usuario</h2>
-            <p class="config-section-desc">Gestioná tu información personal y credenciales de acceso.</p>
-            
-            <div class="avatar-upload">
-              <div class="avatar-preview" id="profileAvatar">G</div>
-              <div>
-                <button class="btn btn-outline" style="margin-bottom: 8px;">Subir nueva foto</button>
-                <p style="font-size: 12px; color: var(--text-secondary);">JPG, GIF o PNG. Max 2MB.</p>
-              </div>
-            </div>
-
-            <div class="config-group">
-              <label class="config-label">Nombre Completo</label>
-              <input type="text" class="config-input" id="confNombre" value="Guillermo Admin">
-            </div>
-            
-            <div class="config-group">
-              <label class="config-label">Correo Electrónico</label>
-              <input type="email" class="config-input" id="confEmail" value="admin@junin.gob.ar">
-            </div>
-
-            <div class="config-group">
-              <label class="config-label">Cargo / Área</label>
-              <input type="text" class="config-input" value="Sistemas - Intendencia" disabled>
-            </div>
-          </div>
-
-          <!-- Apariencia -->
-          <div id="section-apariencia" class="config-section">
-            <h2 class="config-section-title">Apariencia y Tema</h2>
-            <p class="config-section-desc">Personalizá cómo se ve MuniControl en este dispositivo.</p>
-            
-            <label class="config-label" style="margin-bottom: 16px;">Tema visual</label>
-            <div class="theme-grid">
-              <div class="theme-card" id="themeCardLight" onclick="selectTheme('light')">
-                <div class="theme-icon">☀️</div>
-                <div class="theme-name">Claro</div>
-              </div>
-              <div class="theme-card" id="themeCardDark" onclick="selectTheme('dark')">
-                <div class="theme-icon">🌙</div>
-                <div class="theme-name">Oscuro</div>
-              </div>
-              <div class="theme-card" id="themeCardAuto" onclick="selectTheme('auto')">
-                <div class="theme-icon">💻</div>
-                <div class="theme-name">Automático</div>
-              </div>
-            </div>
-
-            <div class="config-group">
-              <label class="config-label">Idioma</label>
-              <select class="config-input">
-                <option value="es-AR">Español (Argentina)</option>
-                <option value="en-US">English (US)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Notificaciones -->
-          <div id="section-notificaciones" class="config-section">
-            <h2 class="config-section-title">Preferencias de Notificación</h2>
-            <p class="config-section-desc">Elegí qué alertas querés recibir en la plataforma y por email.</p>
-            
-            <div class="toggle-row">
-              <div class="toggle-info">
-                <h4>Nuevos Reclamos</h4>
-                <p>Avisar cuando ingrese un reclamo de prioridad Alta/Crítica.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            
-            <div class="toggle-row">
-              <div class="toggle-info">
-                <h4>Alertas de Presupuesto</h4>
-                <p>Notificar cuando una partida supere el 85% de ejecución.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="toggle-row">
-              <div class="toggle-info">
-                <h4>Actualizaciones de Sistema</h4>
-                <p>Nuevas funciones y mantenimiento programado de MuniControl.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox">
-                <span class="slider"></span>
-              </label>
-            </div>
-            
-            <div class="toggle-row">
-              <div class="toggle-info">
-                <h4>Resumen Semanal</h4>
-                <p>Recibir un reporte estadístico todos los lunes a las 8:00am.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Sistema -->
-          <div id="section-sistema" class="config-section">
-            <h2 class="config-section-title">Administración del Sistema</h2>
-            <p class="config-section-desc">Herramientas de diagnóstico, mantenimiento y base de datos.</p>
-            
-            <div class="toggle-row">
-              <div class="toggle-info">
-                <h4>Modo Desarrollador</h4>
-                <p>Habilitar logs detallados en consola y herramientas de debug.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="devModeToggle">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
-              <button class="btn btn-outline" onclick="DB.exportFull()">📦 Exportar Backup (JSON)</button>
-              <button class="btn btn-outline" onclick="limpiarCache()">🧹 Limpiar Caché Local</button>
-            </div>
-
-            <div class="danger-zone">
-              <div class="danger-title">Zona de Peligro</div>
-              <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-                Cuidado, estas acciones son irreversibles y afectarán a la instancia local de la aplicación.
-              </p>
-              <button class="btn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444;" onclick="resetDB()">⚠️ Restablecer Base de Datos (Factory Reset)</button>
-              
-              <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
-                <button onclick="if(window.MuniTour){MuniTour.reset();window.location='index.html';}" style="padding:10px 20px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#60a5fa;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">
-                  🎉 Ver tour de bienvenida
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Acerca de -->
-          <div id="section-acerca" class="config-section">
-            <h2 class="config-section-title">Acerca de MuniControl</h2>
-            <p class="config-section-desc">Información sobre la versión actual del sistema.</p>
-            
-            <div style="background: var(--bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); text-align: center; margin-bottom: 24px;">
-              <div style="font-size: 48px; margin-bottom: 10px;">🏛️</div>
-              <h3 style="font-family: 'Outfit'; font-size: 20px; margin-bottom: 4px;">MuniControl OS</h3>
-              <p style="color: var(--primary); font-weight: 600; font-size: 14px;">Versión 2.0.0 (Build 2026.08)</p>
-              <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Plataforma integral de gestión municipal.</p>
-            </div>
-
-            <h4 style="font-size: 14px; margin-bottom: 12px;">Últimos cambios (Changelog)</h4>
-            <ul style="font-size: 13px; color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
-              <li><strong>v2.0.0:</strong> Integración de IA MuniBot, modo oscuro dinámico, datos de prueba expandidos.</li>
-              <li><strong>v1.5.2:</strong> Mejoras en el módulo de obras y seguimiento presupuestario.</li>
-              <li><strong>v1.5.0:</strong> Nuevo dashboard analítico y mapas interactivos para reclamos.</li>
-            </ul>
-          </div>
-
-        </div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="topbarAvatar">AD</div>
       </div>
     </div>
-  </main>
 
-  <script src="js/db.js"></script>
-  <script src="js/theme-switcher.js"></script>
+    <div class="content-wrapper">
+      <form id="settingsForm" onsubmit="saveSettings(event)">
+        
+        <!-- SECCION 1 -->
+        <div class="card settings-section">
+          <h2 class="settings-title">Identidad del Municipio</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nombre Completo</label>
+              <input type="text" class="form-input" id="cFullName" value="Municipio de Junín">
+            </div>
+            <div class="form-group">
+              <label>Nombre Corto</label>
+              <input type="text" class="form-input" id="cShortName" value="Junín">
+            </div>
+            <div class="form-group">
+              <label>Logo URL (Dashboard)</label>
+              <input type="text" class="form-input" id="cLogo" placeholder="https://ejemplo.com/logo.png">
+            </div>
+            <div class="form-group">
+              <label>Escudo/Emblema URL (Reportes)</label>
+              <input type="text" class="form-input" id="cEscudo" placeholder="https://ejemplo.com/escudo.png">
+            </div>
+            <div class="form-group">
+              <label>Color Primario</label>
+              <div style="display:flex; align-items:center;">
+                <input type="color" class="form-input" id="cColor1" value="#3b82f6" style="width:100px; height:42px; padding:2px;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Color Acento</label>
+              <div style="display:flex; align-items:center;">
+                <input type="color" class="form-input" id="cColor2" value="#8b5cf6" style="width:100px; height:42px; padding:2px;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCION 2 -->
+        <div class="card settings-section">
+          <h2 class="settings-title">Módulos Activos</h2>
+          <div class="module-grid">
+            <div class="toggle-wrap"><div class="toggle-label">Panel Principal</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Reportes</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Hacienda</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Presupuesto</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Control Gastos</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">RRHH</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Licitaciones</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Obras</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Mapa Municipal</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Reclamos 311</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Formularios</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Asistente IA</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">WhatsApp Bot</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Cuentas Claras</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Portal Ciudadano</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-wrap"><div class="toggle-label">Exportar</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+          </div>
+        </div>
+
+        <!-- SECCION 3 -->
+        <div class="card settings-section">
+          <h2 class="settings-title">Notificaciones y Alertas</h2>
+          <div class="form-grid">
+            <div class="toggle-wrap" style="flex-direction:column; align-items:flex-start; gap:10px;">
+              <div style="display:flex; justify-content:space-between; width:100%;">
+                <div class="toggle-label">Alertas por Presupuesto Superado</div>
+                <label class="switch"><input type="checkbox" checked id="nPresupuesto"><span class="slider"></span></label>
+              </div>
+              <input type="number" class="form-input" placeholder="Umbral (%) ej: 80" style="margin-top:8px;">
+            </div>
+            <div class="toggle-wrap" style="flex-direction:column; align-items:flex-start; gap:10px;">
+              <div style="display:flex; justify-content:space-between; width:100%;">
+                <div class="toggle-label">Alertas de Contratos por Vencer</div>
+                <label class="switch"><input type="checkbox" checked id="nContratos"><span class="slider"></span></label>
+              </div>
+              <input type="number" class="form-input" placeholder="Días de anticipación ej: 30" style="margin-top:8px;">
+            </div>
+            <div class="toggle-wrap">
+              <div class="toggle-label">Alertas por SLA vencido en reclamos</div>
+              <label class="switch"><input type="checkbox" checked id="nSLA"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-wrap">
+              <div class="toggle-label">Resumen diario por Email</div>
+              <label class="switch"><input type="checkbox" id="nEmail"><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCION 4 -->
+        <div class="card settings-section">
+          <h2 class="settings-title">Integraciones Externas</h2>
+          <div class="integration-grid">
+            
+            <div class="int-card">
+              <div class="int-header">
+                <div class="int-logo" style="color:#3b82f6;">DB</div>
+                <div class="int-name">Base de Datos Municipal</div>
+              </div>
+              <div class="int-desc">Conexión directa a sistemas legacy municipales.</div>
+              <input type="password" class="form-input" placeholder="JDBC Connection String / URL">
+              <div class="int-badge connected">Conectado</div>
+            </div>
+
+            <div class="int-card">
+              <div class="int-header">
+                <div class="int-logo" style="color:#06b6d4;">AFIP</div>
+                <div class="int-name">AFIP / ARCA</div>
+              </div>
+              <div class="int-desc">Validación de CUIT, facturación y situación fiscal.</div>
+              <input type="password" class="form-input" placeholder="API Key / Token">
+              <div class="int-badge disconnected">Desconectado</div>
+            </div>
+
+            <div class="int-card">
+              <div class="int-header">
+                <div class="int-logo" style="color:#10b981;">ANSES</div>
+                <div class="int-name">ANSES</div>
+              </div>
+              <div class="int-desc">Consulta de CUIL, programas sociales y datos demográficos.</div>
+              <input type="password" class="form-input" placeholder="API Key / Token">
+              <div class="int-badge disconnected">Desconectado</div>
+            </div>
+
+            <div class="int-card">
+              <div class="int-header">
+                <div class="int-logo" style="color:#f59e0b;">BCRA</div>
+                <div class="int-name">Banco Central (BCRA)</div>
+              </div>
+              <div class="int-desc">Información financiera y riesgo crediticio de proveedores.</div>
+              <input type="password" class="form-input" placeholder="API Key / Token">
+              <div class="int-badge soon">Próximamente</div>
+            </div>
+
+            <div class="int-card">
+              <div class="int-header">
+                <div class="int-logo" style="color:#8b5cf6;">RENAPER</div>
+                <div class="int-name">RENAPER</div>
+              </div>
+              <div class="int-desc">Validación de identidad y DNI en tiempo real para ciudadanos.</div>
+              <input type="password" class="form-input" placeholder="API Key / Token">
+              <div class="int-badge soon">Próximamente</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SECCION 5 -->
+        <div class="card settings-section">
+          <h2 class="settings-title">Seguridad</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tiempo de expiración de sesión (Inactividad)</label>
+              <select class="form-input">
+                <option value="30m">30 Minutos</option>
+                <option value="1h">1 Hora</option>
+                <option value="4h">4 Horas</option>
+                <option value="8h">8 Horas</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Política de Contraseñas</label>
+              <select class="form-input">
+                <option value="estricta">Estricta (Alfanumérica + Símbolo, min 8)</option>
+                <option value="media">Media (Alfanumérica, min 8)</option>
+                <option value="baja">Baja (min 6)</option>
+              </select>
+            </div>
+            <div class="toggle-wrap">
+              <div class="toggle-label">Autenticación de Dos Factores (2FA) <span class="int-badge soon" style="margin-left:8px;">Pronto</span></div>
+              <label class="switch"><input type="checkbox" disabled><span class="slider"></span></label>
+            </div>
+            <div style="display:flex; align-items:center;">
+              <button type="button" class="btn btn-outline" onclick="downloadAudit()">Descargar Registro de Auditoría (.csv)</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; padding:20px 0; border-top:1px solid var(--border); position:sticky; bottom:0; background:var(--bg-base); z-index:10;">
+          <button type="submit" class="btn btn-primary" style="font-size: 16px; padding: 12px 30px;">Guardar Cambios</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
   <script src="js/nav.js"></script>
-  <script src="js/chat-widget.js"></script>
-
   <script>
-    // Tab switching logic
-    function showSection(id, btn) {
-      document.querySelectorAll('.config-section').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.config-nav-btn').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById('section-' + id).classList.add('active');
-      btn.classList.add('active');
-    }
+    buildSidebar('configuracion');
 
-    // Theme selection logic
-    function selectTheme(theme) {
-      document.querySelectorAll('.theme-card').forEach(el => el.classList.remove('active'));
-      
-      if(theme === 'light') document.getElementById('themeCardLight').classList.add('active');
-      if(theme === 'dark') document.getElementById('themeCardDark').classList.add('active');
-      if(theme === 'auto') document.getElementById('themeCardAuto').classList.add('active');
-      
-      MuniTheme.apply(theme);
-    }
-
-    // Init theme UI
-    document.addEventListener('DOMContentLoaded', () => {
-      const current = MuniTheme.get();
-      selectTheme(current);
-      
-      // Load user data
-      const user = JSON.parse(sessionStorage.getItem('mjunin_user') || '{"nombre":"Admin","email":"admin@junin.gob.ar"}');
-      document.getElementById('confNombre').value = user.nombre;
-      document.getElementById('confEmail').value = user.email;
-      const initial = user.nombre.charAt(0).toUpperCase();
-      document.getElementById('profileAvatar').textContent = initial;
-    });
-
-    function guardarCambios() {
-      // Mock save
-      const btn = document.querySelector('.header-action .btn-primary');
-      const original = btn.textContent;
-      btn.textContent = 'Guardando...';
-      setTimeout(() => {
-        btn.textContent = '¡Guardado!';
-        btn.style.background = '#10b981';
-        
-        // Update session
-        const user = JSON.parse(sessionStorage.getItem('mjunin_user') || '{}');
-        user.nombre = document.getElementById('confNombre').value;
-        user.email = document.getElementById('confEmail').value;
-        sessionStorage.setItem('mjunin_user', JSON.stringify(user));
-        
-        // Update UI
-        document.getElementById('headerUserName').textContent = user.nombre;
-        document.getElementById('headerAvatar').textContent = user.nombre.charAt(0).toUpperCase();
-        document.getElementById('profileAvatar').textContent = user.nombre.charAt(0).toUpperCase();
-
-        setTimeout(() => {
-          btn.textContent = original;
-          btn.style.background = '';
-        }, 2000);
-      }, 800);
-    }
-
-    function limpiarCache() {
-      if(confirm('¿Seguro que querés limpiar la caché? Se cerrará la sesión.')) {
-        sessionStorage.clear();
-        window.location.href = 'login.html';
+    function saveSettings(e) {
+      e.preventDefault();
+      // Simulation of saving settings
+      if(window.showToast) {
+        showToast('Configuración guardada correctamente.', 'success');
       }
+      
+      // Attempt to update CSS variables live
+      const color1 = document.getElementById('cColor1').value;
+      const color2 = document.getElementById('cColor2').value;
+      document.documentElement.style.setProperty('--blue', color1);
+      document.documentElement.style.setProperty('--violet', color2);
     }
 
-    function resetDB() {
-      const resp = prompt('Esta acción borrará TODOS los datos modificados y restaurará la base de datos de prueba original. Escribí "CONFIRMAR" para continuar:');
-      if (resp === 'CONFIRMAR') {
-        localStorage.clear();
-        alert('Base de datos restablecida. Recargando la aplicación...');
-        window.location.reload();
-      }
+    function downloadAudit() {
+      if(window.showToast) showToast('Descargando auditoria_seguridad.csv', 'info');
     }
   </script>
-  <script src='js/onboarding.js'></script>
 </body>
 </html>
-

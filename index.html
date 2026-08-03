@@ -240,6 +240,8 @@
 
   <!-- SIDEBAR built by nav.js -->
   <aside class="sidebar" id="sidebar"></aside>
+  <!-- Backdrop: tap to close sidebar on mobile -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
 
   <!-- MAIN -->
   <main class="main-content" id="mainContent">
@@ -937,5 +939,29 @@ document.addEventListener('keydown', function(e) {
   }
 });
 </script>
+  <!-- Mobile bottom nav (PWA tab bar) -->
+  <nav class="mobile-bottom-nav" aria-label="Navegación principal">
+    <a href="index.html" class="active">
+      <span class="nav-icon">🏠</span>
+      <span>Inicio</span>
+    </a>
+    <a href="ia.html">
+      <span class="nav-icon">🤖</span>
+      <span>MuniBot</span>
+    </a>
+    <a href="rrhh.html">
+      <span class="nav-icon">👥</span>
+      <span>RRHH</span>
+    </a>
+    <a href="hacienda.html">
+      <span class="nav-icon">💰</span>
+      <span>Hacienda</span>
+    </a>
+    <a href="mapa.html">
+      <span class="nav-icon">🗺️</span>
+      <span>Mapa</span>
+    </a>
+  </nav>
+
 </body>
 </html>

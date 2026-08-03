@@ -297,7 +297,27 @@ function initMobileToggle(sidebarEl) {
       }
     }
   });
+
+  // Backdrop helper
+  function setBackdrop(visible) {
+    var bd = document.getElementById('sidebarBackdrop');
+    if (bd) bd.classList.toggle('active', visible);
+  }
+
+  // Patch openMobile / closeMobile to control backdrop
+  var _origOpen  = window.openMobileSidebar  || function(){};
+  var _origClose = window.closeMobileSidebar || function(){};
+
+  window.openMobileSidebar = function() {
+    sidebarEl.classList.add('mobile-open');
+    setBackdrop(true);
+  };
+  window.closeMobileSidebar = function() {
+    sidebarEl.classList.remove('mobile-open');
+    setBackdrop(false);
+  };
 }
+
 
 function updateMenuBtn() {
   var btn = document.getElementById('menuBtn');

@@ -3,385 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuentas Claras - Transparencia Municipal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <title>Cuentas Claras - Transparencia Pública</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --bg-dark: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --primary: #3b82f6;
-            --success: #22c55e;
-        }
-        body {
-            margin: 0;
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-main);
-            line-height: 1.5;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .glass-panel {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        header {
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        header h1 {
-            font-size: 2.5rem;
-            margin: 0 0 0.5rem;
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-        .stat-card {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: rgba(59, 130, 246, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-        }
-        .stat-icon svg {
-            width: 24px;
-            height: 24px;
-        }
-        .stat-info h3 {
-            margin: 0;
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .stat-info p {
-            margin: 0.25rem 0 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-        .filters {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        select, input, button {
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background: rgba(15, 23, 42, 0.5);
-            color: var(--text-main);
-            font-family: inherit;
-        }
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: opacity 0.2s;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-        .data-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
-        }
-        @media (max-width: 768px) {
-            .data-grid { grid-template-columns: 1fr; }
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-        th {
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-        }
-        .badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .badge-obras { background: rgba(245, 158, 11, 0.1); color: #fcd34d; }
-        .badge-rrhh { background: rgba(16, 185, 129, 0.1); color: #6ee7b7; }
-        .badge-hacienda { background: rgba(59, 130, 246, 0.1); color: #93c5fd; }
-        footer {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid var(--border-color);
-        }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: #0d1526; color: #f0f4ff; }
+        .public-topbar { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(13, 21, 38, 0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
+        .badge { padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+        .badge-obras { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .badge-salud { background: rgba(16,185,129,0.2); color: #34d399; }
+        .badge-educacion { background: rgba(245,158,11,0.2); color: #fbbf24; }
+        .badge-seguridad { background: rgba(239,68,68,0.2); color: #f87171; }
+        .badge-hacienda { background: rgba(139,92,246,0.2); color: #a78bfa; }
+        .badge-default { background: rgba(148,163,184,0.2); color: #94a3b8; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+        th { font-size: 11px; text-transform: uppercase; color: rgba(148,163,184,0.7); font-weight: 600; }
+        td { color: #cbd5e1; }
+        .amount { text-align: right; font-family: 'Outfit', sans-serif; font-weight: 700; color: #f0f4ff; }
+        
+        .filter-bar { display: flex; gap: 16px; background: rgba(255,255,255,0.02); padding: 16px 40px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; }
+        select, input, button { padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #f0f4ff; font-family: 'Inter', sans-serif; font-size: 13px; }
+        select, input { flex: 1; max-width: 200px; }
+        button { background: #3b82f6; border-color: #3b82f6; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #2563eb; }
+        .btn-outline { background: transparent; border-color: rgba(255,255,255,0.2); color: #e2e8f0; }
+        .btn-outline:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.3); }
+
+        .container { padding: 40px; max-width: 1400px; margin: 0 auto; }
+        .card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; margin-bottom: 32px; }
+
+        .pagination { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+        .pagination button { padding: 6px 12px; font-size: 12px; }
+        
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; z-index: 100; font-size: 13px; }
     </style>
-    <script src="js/db.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Cuentas Claras</h1>
-            <p>Portal de Transparencia Municipal - Datos Abiertos</p>
-        </header>
 
-        <div class="hero-stats glass-panel">
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div class="stat-info">
-                    <h3>Pagado Este Mes</h3>
-                    <p>$165M</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                </div>
-                <div class="stat-info">
-                    <h3>Proveedores Pagados</h3>
-                    <p>47</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                </div>
-                <div class="stat-info">
-                    <h3>Presupuesto Ejecutado</h3>
-                    <p>67%</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div class="stat-info">
-                    <h3>&Uacute;ltimas 24h</h3>
-                    <p>8 transacciones</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="glass-panel">
-            <div class="filters">
-                <select id="filtro-secretaria">
-                    <option value="">Todas las Secretar&iacute;as</option>
-                    <option value="Obras">Obras P&uacute;blicas</option>
-                    <option value="RRHH">Recursos Humanos</option>
-                    <option value="Hacienda">Hacienda</option>
-                </select>
-                <select id="filtro-mes">
-                    <option value="">Mes / A&ntilde;o</option>
-                    <option value="07-2026">Julio 2026</option>
-                    <option value="06-2026">Junio 2026</option>
-                </select>
-                <input type="text" id="buscar-proveedor" placeholder="Buscar proveedor...">
-                <button type="button" onclick="renderPagos()">Buscar</button>
-            </div>
-        </div>
-
-        <div class="data-grid">
-            <div class="glass-panel">
-                <h3 style="margin-top:0">Registro de Pagos</h3>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Proveedor</th>
-                                <th>Concepto</th>
-                                <th>Secretar&iacute;a</th>
-                                <th>Monto</th>
-                                <th>Expediente</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-pagos">
-                            <!-- JS will populate -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div>
-                <div class="glass-panel">
-                    <h3 style="margin-top:0">Top 5 Proveedores</h3>
-                    <div id="top-proveedores" style="margin-top: 1rem;">
-                        <!-- JS will populate -->
-                    </div>
-                </div>
-                <div class="glass-panel">
-                    <h3 style="margin-top:0">Ingresos vs Gastos</h3>
-                    <canvas id="chart-anual" width="100" height="80"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <footer>
-            <p>Datos actualizados en tiempo real desde el sistema de gesti&oacute;n municipal.</p>
-            <p>Esta informaci&oacute;n es p&uacute;blica conforme a la Ley de Acceso a la Informaci&oacute;n P&uacute;blica.</p>
-        </footer>
+<header class="public-topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
     </div>
+    <div>
+      <div style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:900;color:#f0f4ff">MuniControl</div>
+      <div style="font-size:10px;color:rgba(148,163,184,0.5)">Municipio de Junin</div>
+    </div>
+  </div>
+  <div style="font-size:13px;font-weight:600;color:#f0f4ff">Cuentas Claras - Transparencia Publica</div>
+  <a href="login.html" style="padding:8px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;text-decoration:none;font-size:13px;font-weight:700">Acceso municipal</a>
+</header>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            renderPagos();
-            renderTopProveedores();
-            renderChart();
+<div style="background:linear-gradient(135deg,#0f2042,#1e3a8a);padding:48px 40px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07)">
+  <h1 style="font-family:'Outfit',sans-serif;font-size:36px;font-weight:900;color:#f0f4ff;margin:0 0 12px">Cuentas Claras</h1>
+  <p style="color:rgba(148,163,184,0.8);font-size:16px;max-width:700px;margin:0 auto 24px">
+    Cuentas Claras es el portal de transparencia fiscal del Municipio de Junin. Cualquier ciudadano puede consultar en tiempo real todos los pagos realizados con fondos publicos, los contratos adjudicados y la ejecucion del presupuesto municipal, conforme a la Ley N 104 de Acceso a la Informacion Publica.
+  </p>
+  <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap">
+    <div style="text-align:center">
+      <div style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#60a5fa" id="heroTotal">$284M</div>
+      <div style="font-size:12px;color:rgba(148,163,184,0.6)">Pagado este mes</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#34d399" id="heroProvs">47</div>
+      <div style="font-size:12px;color:rgba(148,163,184,0.6)">Proveedores pagados</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#fbbf24" id="heroEjec">67%</div>
+      <div style="font-size:12px;color:rgba(148,163,184,0.6)">Presupuesto ejecutado</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#a78bfa" id="heroTrans">142</div>
+      <div style="font-size:12px;color:rgba(148,163,184,0.6)">Transacciones</div>
+    </div>
+  </div>
+</div>
+
+<div class="filter-bar">
+    <select id="filterSecretaria">
+        <option value="">Todas las Secretarias</option>
+        <option value="Obras Publicas">Obras Publicas</option>
+        <option value="Salud">Salud</option>
+        <option value="Educacion">Educacion</option>
+        <option value="Seguridad">Seguridad</option>
+        <option value="Hacienda">Hacienda</option>
+        <option value="Medio Ambiente">Medio Ambiente</option>
+        <option value="Cultura">Cultura</option>
+    </select>
+    <select id="filterMes">
+        <option value="">Todos los Meses</option>
+        <option value="2026-08">Agosto 2026</option>
+        <option value="2026-07">Julio 2026</option>
+    </select>
+    <input type="text" id="filterSearch" placeholder="Buscar proveedor...">
+    <button onclick="renderTable(1)">Buscar</button>
+    <div style="flex:1"></div>
+    <button class="btn-outline" onclick="downloadCSV()">
+      <svg style="vertical-align:middle;margin-right:4px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Descargar CSV
+    </button>
+</div>
+
+<div class="container">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+        <div class="card" style="margin-bottom:0">
+            <h2 style="margin:0 0 16px;font-size:18px;font-family:'Outfit',sans-serif">Registro de Pagos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>Concepto</th>
+                        <th>Secretaria</th>
+                        <th style="text-align:right">Monto</th>
+                        <th>Expediente</th>
+                    </tr>
+                </thead>
+                <tbody id="pagosBody"></tbody>
+            </table>
+            <div class="pagination">
+                <button class="btn-outline" id="prevBtn" onclick="changePage(-1)">Anterior</button>
+                <button class="btn-outline" id="nextBtn" onclick="changePage(1)">Siguiente</button>
+            </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:24px">
+            <div class="card" style="margin-bottom:0">
+                <h2 style="margin:0 0 16px;font-size:18px;font-family:'Outfit',sans-serif">Gasto por Secretaria</h2>
+                <canvas id="secretariaChart" height="200"></canvas>
+            </div>
+            
+            <div class="card" style="margin-bottom:0">
+                <h2 style="margin:0 0 16px;font-size:18px;font-family:'Outfit',sans-serif">Top 5 Proveedores</h2>
+                <div id="topProveedores"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="text-align:center;padding:24px;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px">
+  <p style="font-size:12px;color:rgba(148,163,184,0.5)">
+    Datos actualizados al <span id="lastUpdate"></span>. 
+    Toda la informacion es publica conforme a la Ley N 104 de Acceso a la Informacion Publica de la Prov. de Buenos Aires.
+    Para consultas: transparencia@junin.gob.ar
+  </p>
+  <p style="font-size:11px;color:rgba(148,163,184,0.35)">
+    Municipalidad de Junin - Av. Rivadavia 143 - (0236) 4XX-XXXX
+  </p>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+var PAGOS = [
+  {fecha:'2026-08-01',proveedor:'Constructora Sur SA',concepto:'Certificado obra pavimentacion Av San Martin - cuota 3',secretaria:'Obras Publicas',monto:12500000,expediente:'EX-2026-0847'},
+  {fecha:'2026-08-01',proveedor:'Servicios Municipales SRL',concepto:'Servicio recoleccion residuos Zona Norte - julio',secretaria:'Obras Publicas',monto:3200000,expediente:'EX-2026-0848'},
+  {fecha:'2026-07-31',proveedor:'Farmacia Central Junin',concepto:'Provision medicamentos Hospital Municipal - julio',secretaria:'Salud',monto:1850000,expediente:'EX-2026-0843'},
+  {fecha:'2026-07-31',proveedor:'Editorial Educativa SA',concepto:'Material didactico escuelas municipales 2do semestre',secretaria:'Educacion',monto:980000,expediente:'EX-2026-0844'},
+  {fecha:'2026-07-30',proveedor:'Seguridad Privada Total',concepto:'Servicio seguridad edificios municipales - julio',secretaria:'Seguridad',monto:2100000,expediente:'EX-2026-0840'},
+  {fecha:'2026-07-30',proveedor:'ElectroMunicipal SA',concepto:'Provision e instalacion luminarias LED - lote 2',secretaria:'Obras Publicas',monto:4200000,expediente:'EX-2026-0839'},
+  {fecha:'2026-07-29',proveedor:'Consultora IT Municipal',concepto:'Desarrollo y mantenimiento sistemas informaticos',secretaria:'Hacienda',monto:1500000,expediente:'EX-2026-0835'},
+  {fecha:'2026-07-29',proveedor:'Catering Municipal SA',concepto:'Provision alimentacion comedores escolares - julio',secretaria:'Educacion',monto:3400000,expediente:'EX-2026-0833'},
+  {fecha:'2026-07-28',proveedor:'Vial Argentina SA',concepto:'Mantenimiento red vial - cuota 2',secretaria:'Obras Publicas',monto:8900000,expediente:'EX-2026-0830'},
+  {fecha:'2026-07-28',proveedor:'AguasMunicipales',concepto:'Materiales renovacion red cloacal centro',secretaria:'Obras Publicas',monto:5600000,expediente:'EX-2026-0829'},
+  {fecha:'2026-07-27',proveedor:'Clinica San Roque',concepto:'Prestaciones medicas pacientes municipales - julio',secretaria:'Salud',monto:2750000,expediente:'EX-2026-0825'},
+  {fecha:'2026-07-25',proveedor:'Transporte Urbano Junin',concepto:'Subsidio transporte publico urbano - julio',secretaria:'Obras Publicas',monto:6800000,expediente:'EX-2026-0820'},
+  {fecha:'2026-07-24',proveedor:'Verde Urbano SA',concepto:'Mantenimiento parques y plazas - julio',secretaria:'Medio Ambiente',monto:1200000,expediente:'EX-2026-0818'},
+  {fecha:'2026-07-22',proveedor:'Imprenta Municipal',concepto:'Material grafico y comunicacion institucional',secretaria:'Cultura',monto:450000,expediente:'EX-2026-0815'},
+  {fecha:'2026-07-20',proveedor:'Ferreteria Industrial Junin',concepto:'Provision materiales obra Playon Barrio Sur',secretaria:'Obras Publicas',monto:890000,expediente:'EX-2026-0812'},
+  {fecha:'2026-07-18',proveedor:'Tech Municipal SA',concepto:'Licencias software gestion municipal anual',secretaria:'Hacienda',monto:3200000,expediente:'EX-2026-0809'},
+  {fecha:'2026-07-15',proveedor:'Combustibles SA',concepto:'Provision combustible vehiculos municipales - julio',secretaria:'Obras Publicas',monto:1100000,expediente:'EX-2026-0805'},
+  {fecha:'2026-07-12',proveedor:'Limpieza Urbana SRL',concepto:'Servicio higiene urbana - 1ra quincena',secretaria:'Medio Ambiente',monto:980000,expediente:'EX-2026-0802'},
+  {fecha:'2026-07-10',proveedor:'Constructora Sur SA',concepto:'Certificado obra pavimentacion Av San Martin - cuota 2',secretaria:'Obras Publicas',monto:12500000,expediente:'EX-2026-0799'},
+  {fecha:'2026-07-05',proveedor:'Auditoria Externa Municipal',concepto:'Honorarios auditoria presupuestaria semestral',secretaria:'Hacienda',monto:320000,expediente:'EX-2026-0795'}
+];
+
+var currentPage = 1;
+var itemsPerPage = 10;
+var filteredPagos = [];
+
+function getBadgeClass(sec) {
+    var s = sec.toLowerCase();
+    if(s.includes('obras')) return 'badge-obras';
+    if(s.includes('salud')) return 'badge-salud';
+    if(s.includes('educacion')) return 'badge-educacion';
+    if(s.includes('seguridad')) return 'badge-seguridad';
+    if(s.includes('hacienda')) return 'badge-hacienda';
+    return 'badge-default';
+}
+
+function formatMoney(num) {
+    return '$' + num.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function renderTable(page = 1) {
+    currentPage = page;
+    
+    // Filter
+    var sec = document.getElementById('filterSecretaria').value.toLowerCase();
+    var mes = document.getElementById('filterMes').value;
+    var search = document.getElementById('filterSearch').value.toLowerCase();
+    
+    filteredPagos = PAGOS.filter(function(p) {
+        var matchSec = !sec || p.secretaria.toLowerCase().includes(sec);
+        var matchMes = !mes || p.fecha.startsWith(mes);
+        var matchSearch = !search || p.proveedor.toLowerCase().includes(search) || p.concepto.toLowerCase().includes(search);
+        return matchSec && matchMes && matchSearch;
+    });
+
+    // Paginate
+    var start = (currentPage - 1) * itemsPerPage;
+    var end = start + itemsPerPage;
+    var pageData = filteredPagos.slice(start, end);
+    
+    var tbody = document.getElementById('pagosBody');
+    tbody.innerHTML = '';
+    
+    if(pageData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No se encontraron resultados</td></tr>';
+    } else {
+        pageData.forEach(function(p) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.fecha.split('-').reverse().join('/')}</td>
+                <td style="font-weight:600">${p.proveedor}</td>
+                <td>${p.concepto}</td>
+                <td><span class="badge ${getBadgeClass(p.secretaria)}">${p.secretaria}</span></td>
+                <td class="amount">${formatMoney(p.monto)}</td>
+                <td><a href="#" onclick="showExpediente(event, '${p.expediente}')" style="color:#60a5fa;text-decoration:none">${p.expediente}</a></td>
+            `;
+            tbody.appendChild(tr);
         });
+    }
 
-        function getBadgeClass(sec) {
-            sec = sec.toLowerCase();
-            if(sec.includes('obras')) return 'badge-obras';
-            if(sec.includes('rrhh') || sec.includes('recursos')) return 'badge-rrhh';
-            return 'badge-hacienda';
-        }
+    document.getElementById('prevBtn').disabled = currentPage === 1;
+    document.getElementById('nextBtn').disabled = end >= filteredPagos.length;
+}
 
-        function formatMillions(val) {
-            return '$' + (val / 1000000).toFixed(2) + 'M';
-        }
+function changePage(delta) {
+    renderTable(currentPage + delta);
+}
 
-        function renderPagos() {
-            const tbody = document.getElementById('tabla-pagos');
-            tbody.innerHTML = '';
-            
-            let pagos = [];
-            if(typeof MuniDB !== 'undefined' && MuniDB.getAll) {
-                const dbPagos = MuniDB.getAll('pagos');
-                if(dbPagos && dbPagos.length > 0) {
-                    pagos = MuniDB.sort(dbPagos, 'fecha', 'desc').slice(0, 10);
-                }
+function showExpediente(e, num) {
+    e.preventDefault();
+    var toast = document.getElementById('toast');
+    toast.textContent = 'Expediente ' + num + ' disponible en sistemas internos';
+    toast.style.display = 'block';
+    setTimeout(function() { toast.style.display = 'none'; }, 3000);
+}
+
+function downloadCSV() {
+    var csv = 'Fecha,Proveedor,Concepto,Secretaria,Monto,Expediente\n';
+    filteredPagos.forEach(function(p) {
+        csv += `${p.fecha},"${p.proveedor}","${p.concepto}",${p.secretaria},${p.monto},${p.expediente}\n`;
+    });
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement("a");
+    var url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "CuentasClaras_Junin.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function initCharts() {
+    // Aggregate by secretaria
+    var secData = {};
+    var provData = {};
+    var totalMonto = 0;
+    
+    PAGOS.forEach(function(p) {
+        secData[p.secretaria] = (secData[p.secretaria] || 0) + p.monto;
+        provData[p.proveedor] = (provData[p.proveedor] || 0) + p.monto;
+        totalMonto += p.monto;
+    });
+
+    var secLabels = Object.keys(secData);
+    var secValues = Object.values(secData);
+
+    new Chart(document.getElementById('secretariaChart'), {
+        type: 'bar',
+        data: {
+            labels: secLabels,
+            datasets: [{
+                label: 'Monto ($)',
+                data: secValues,
+                backgroundColor: '#3b82f6',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
             }
-            
-            if(!pagos || pagos.length === 0) {
-                pagos = [
-                    {fecha: '2026-07-28', proveedor: 'Constructora Junin SA', concepto: 'Bacheo Av. San Martin', secretaria: 'Obras Publicas', monto: 12500000, expediente: 'EXP-2026-102'},
-                    {fecha: '2026-07-27', proveedor: 'TechCorp SRL', concepto: 'Licencias Office', secretaria: 'Hacienda', monto: 2100000, expediente: 'EXP-2026-098'},
-                    {fecha: '2026-07-25', proveedor: 'Servicios Medicos', concepto: 'Insumos Hospital', secretaria: 'Salud', monto: 8400000, expediente: 'EXP-2026-095'},
-                    {fecha: '2026-07-22', proveedor: 'Libreria Centro', concepto: 'Articulos de oficina', secretaria: 'RRHH', monto: 450000, expediente: 'EXP-2026-091'}
-                ];
-            }
-
-            pagos.forEach(p => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${p.fecha}</td>
-                    <td><strong>${p.proveedor}</strong></td>
-                    <td>${p.concepto}</td>
-                    <td><span class="badge ${getBadgeClass(p.secretaria)}">${p.secretaria}</span></td>
-                    <td style="font-weight:600">${formatMillions(p.monto)}</td>
-                    <td style="color:var(--text-muted)">${p.expediente}</td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
+    });
 
-        function renderTopProveedores() {
-            const container = document.getElementById('top-proveedores');
-            const top5 = [
-                {name: 'Constructora Junin SA', amount: 45000000},
-                {name: 'Servicios Medicos', amount: 28000000},
-                {name: 'Limpieza Integral', amount: 15000000},
-                {name: 'TechCorp SRL', amount: 9500000},
-                {name: 'Consultora RRHH', amount: 4200000}
-            ];
-            
-            let html = '';
-            const max = top5[0].amount;
-            
-            top5.forEach(p => {
-                const pct = (p.amount / max) * 100;
-                html += `
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.875rem; margin-bottom:0.25rem;">
-                            <span>${p.name}</span>
-                            <span style="font-weight:600">${formatMillions(p.amount)}</span>
-                        </div>
-                        <div style="width:100%; background:rgba(255,255,255,0.1); height:8px; border-radius:4px; overflow:hidden;">
-                            <div style="width:${pct}%; background:var(--primary); height:100%; border-radius:4px;"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
+    // Top Proveedores
+    var sortedProvs = Object.keys(provData).map(function(k) { return { nombre: k, monto: provData[k] }; });
+    sortedProvs.sort(function(a,b) { return b.monto - a.monto; });
+    
+    var tpDiv = document.getElementById('topProveedores');
+    sortedProvs.slice(0,5).forEach(function(p) {
+        var pct = ((p.monto / totalMonto) * 100).toFixed(1);
+        var div = document.createElement('div');
+        div.style.marginBottom = '12px';
+        div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+                <span>${p.nombre}</span>
+                <span class="amount">${formatMoney(p.monto)} (${pct}%)</span>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden">
+                <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#8b5cf6,#3b82f6)"></div>
+            </div>
+        `;
+        tpDiv.appendChild(div);
+    });
+}
 
-        function renderChart() {
-            const ctx = document.getElementById('chart-anual').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'],
-                    datasets: [
-                        {
-                            label: 'Ingresos',
-                            data: [120, 130, 125, 140, 150, 160, 180],
-                            backgroundColor: 'rgba(34, 197, 94, 0.5)',
-                            borderColor: '#22c55e',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Gastos',
-                            data: [110, 120, 135, 130, 145, 150, 165],
-                            backgroundColor: 'rgba(239, 68, 68, 0.5)',
-                            borderColor: '#ef4444',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#94a3b8' }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: { color: '#94a3b8', callback: val => '$' + val + 'M' },
-                            grid: { color: 'rgba(255,255,255,0.05)' }
-                        },
-                        x: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { display: false }
-                        }
-                    }
-                }
-            });
-        }
-    </script>
+document.addEventListener('DOMContentLoaded', function() {
+    renderTable(1);
+    initCharts();
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('es-AR');
+});
+</script>
 </body>
 </html>

@@ -3,523 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal del Vecino - Jun&iacute;n</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <title>Portal del Vecino - Municipio de Junín</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-dark: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --primary: #3b82f6;
-            --success: #22c55e;
-            --warning: #f59e0b;
-        }
-        body {
-            margin: 0;
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-main);
-            line-height: 1.5;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .hero {
-            text-align: center;
-            padding: 4rem 1rem;
-            background: radial-gradient(circle at center, rgba(59,130,246,0.15) 0%, transparent 70%);
-            margin-bottom: 3rem;
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-        }
-        .hero h1 {
-            font-size: 3.5rem;
-            margin: 0 0 1rem;
-            background: linear-gradient(135deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 600px;
-            margin: 0 auto 2rem;
-        }
-        .btn {
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            font-size: 1.125rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
-        }
-        .btn-outline {
-            background: transparent;
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-        }
-        .btn-outline:hover {
-            background: rgba(255,255,255,0.05);
-        }
-        .hero-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .section-title {
-            font-size: 1.75rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 4rem;
-        }
-        .service-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .service-card:hover {
-            border-color: var(--primary);
-            background: rgba(59, 130, 246, 0.05);
-        }
-        .service-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-        }
-        .service-icon svg {
-            width: 24px;
-            height: 24px;
-        }
-        .lookup-section {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 4rem;
-        }
-        .lookup-form {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .input-text {
-            flex: 1;
-            min-width: 250px;
-            padding: 1rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            background: rgba(0,0,0,0.2);
-            color: white;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-        @media (max-width: 768px) {
-            .grid-2 { grid-template-columns: 1fr; }
-        }
-        .list-item {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .list-item:last-child {
-            border-bottom: none;
-        }
-        .faq-item {
-            margin-bottom: 1rem;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1rem;
-        }
-        .faq-question {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        .faq-answer {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .modal {
-            background: var(--bg-dark);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            width: 100%;
-            max-width: 500px;
-            padding: 2rem;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        .close-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background: rgba(0,0,0,0.2);
-            color: white;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-        select.form-control {
-            appearance: none;
-        }
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .badge-success { background: rgba(34,197,94,0.1); color: var(--success); }
-        .badge-warning { background: rgba(245,158,11,0.1); color: var(--warning); }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: #0d1526; color: #f0f4ff; }
+        .public-topbar { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(13, 21, 38, 0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
+        
+        .hero { background: linear-gradient(135deg, #0f2042, #1e3a8a); padding: 64px 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.07); }
+        .hero h1 { font-family: 'Outfit', sans-serif; font-size: 40px; font-weight: 900; margin: 0 0 16px; }
+        .hero p { color: rgba(148,163,184,0.9); font-size: 18px; max-width: 650px; margin: 0 auto; line-height: 1.5; }
+
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 40px; }
+        
+        .grid-services { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 48px; }
+        .service-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; cursor: pointer; transition: 0.2s; display: flex; align-items: flex-start; gap: 16px; text-decoration: none; color: inherit; }
+        .service-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(59,130,246,0.3); transform: translateY(-2px); }
+        .service-icon { width: 48px; height: 48px; background: rgba(59,130,246,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #60a5fa; flex-shrink: 0; }
+        .service-info h3 { margin: 0 0 8px; font-size: 16px; }
+        .service-info p { margin: 0; font-size: 13px; color: rgba(148,163,184,0.7); line-height: 1.4; }
+
+        .lookup-section { max-width: 600px; margin: 0 auto 64px; background: rgba(255,255,255,0.02); padding: 32px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+        .lookup-section h2 { margin: 0 0 16px; font-size: 20px; font-family: 'Outfit', sans-serif; }
+        .lookup-flex { display: flex; gap: 12px; }
+        input, select, textarea { width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #f0f4ff; font-family: 'Inter', sans-serif; font-size: 14px; box-sizing: border-box; }
+        button { padding: 12px 24px; border-radius: 8px; border: none; background: #3b82f6; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        button:hover { background: #2563eb; }
+
+        .badge { padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; display: inline-block; }
+        .badge-pendiente { background: rgba(245,158,11,0.2); color: #fbbf24; }
+        .badge-proceso { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .badge-resuelto { background: rgba(16,185,129,0.2); color: #34d399; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal { background: #0d1526; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal h2 { margin: 0 0 24px; font-family: 'Outfit', sans-serif; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: rgba(148,163,184,0.8); }
+
+        .faq-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 16px 0; }
+        .faq-item h4 { margin: 0 0 8px; font-size: 15px; color: #e2e8f0; }
+        .faq-item p { margin: 0; font-size: 13px; color: rgba(148,163,184,0.7); }
     </style>
-    <script src="js/db.js"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- HERO -->
-        <div class="hero">
-            <h1>Portal del Vecino</h1>
-            <p>Realiza tu reclamo, consulta el estado y accede a servicios municipales de forma r&aacute;pida y sencilla.</p>
-            <div class="hero-actions">
-                <button class="btn btn-primary" onclick="openModal()">Hacer un Reclamo</button>
-                <button class="btn btn-outline" onclick="document.getElementById('lookup').scrollIntoView({behavior:'smooth'})">Consultar Estado</button>
+
+<header class="public-topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <div style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:900;color:#f0f4ff">MuniControl</div>
+      <div style="font-size:10px;color:rgba(148,163,184,0.5)">Municipio de Junin</div>
+    </div>
+  </div>
+  <div style="font-size:13px;font-weight:600;color:#f0f4ff">Portal del Vecino</div>
+  <a href="login.html" style="padding:8px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;text-decoration:none;font-size:13px;font-weight:700">Acceso municipal</a>
+</header>
+
+<div class="hero">
+  <h1>Portal del Vecino</h1>
+  <p>Tu municipio, al alcance de tu mano. Realizá trámites, consultá el estado de tus reclamos y accedé a servicios municipales en línea sin necesidad de concurrir presencialmente.</p>
+</div>
+
+<div class="container">
+    <div class="grid-services">
+        <div class="service-card" onclick="openModal('modalReclamo')">
+            <div class="service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div>
+            <div class="service-info">
+                <h3>Hacer un reclamo</h3>
+                <p>Reportá baches, luminarias apagadas, problemas de limpieza o poda.</p>
             </div>
         </div>
-
-        <!-- SERVICIOS RAPIDOS -->
-        <h2 class="section-title">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            Servicios R&aacute;pidos
-        </h2>
-        <div class="services-grid">
-            <div class="service-card" onclick="openModal()">
-                <div class="service-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                </div>
-                <div>
-                    <h3 style="margin:0">Reclamo de servicio</h3>
-                    <span style="color:var(--text-muted);font-size:0.875rem">Alumbrado, bacheo, poda</span>
-                </div>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div>
-                    <h3 style="margin:0">Consulta de deuda</h3>
-                    <span style="color:var(--text-muted);font-size:0.875rem">Tasas e impuestos</span>
-                </div>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-                </div>
-                <div>
-                    <h3 style="margin:0">Habilitaciones</h3>
-                    <span style="color:var(--text-muted);font-size:0.875rem">Comercios e industrias</span>
-                </div>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                </div>
-                <div>
-                    <h3 style="margin:0">Turnos online</h3>
-                    <span style="color:var(--text-muted);font-size:0.875rem">Salud y tr&aacute;mites</span>
-                </div>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                </div>
-                <div>
-                    <h3 style="margin:0">Tr&aacute;mites digitales</h3>
-                    <span style="color:var(--text-muted);font-size:0.875rem">Oficina virtual</span>
-                </div>
-            </div>
-            <div class="service-card">
-                <div class="service-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-                </div>
-                <div>
-                    <h3 style="margin:0">Mapa de obras</h3>
-                    <span style="color:var(--text-muted);font-size:0.875rem">Obras en ejecuci&oacute;n</span>
-                </div>
+        <div class="service-card" onclick="focusLookup()">
+            <div class="service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+            <div class="service-info">
+                <h3>Consultar estado reclamo</h3>
+                <p>Seguí el avance de tus reportes ingresando el número de seguimiento.</p>
             </div>
         </div>
-
-        <!-- LOOKUP -->
-        <div id="lookup" class="lookup-section">
-            <h2 class="section-title">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                Estado de mi reclamo
-            </h2>
-            <div class="lookup-form">
-                <input type="text" id="lookup-input" class="input-text" placeholder="Ingresa el n&uacute;mero de reclamo o tu DNI...">
-                <button class="btn btn-primary" onclick="consultarReclamo()">Consultar</button>
-            </div>
-            <div id="lookup-result" style="display:none; padding:1.5rem; background:rgba(255,255,255,0.05); border-radius:12px; margin-top:1rem;">
-                <!-- JS sets this -->
+        <div class="service-card" onclick="alert('Servicio temporalmente en mantenimiento')">
+            <div class="service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+            <div class="service-info">
+                <h3>Libre deuda municipal</h3>
+                <p>Obtené tu certificado de libre deuda de tasas de forma automática.</p>
             </div>
         </div>
-
-        <div class="grid-2">
-            <!-- ULTIMOS RECLAMOS -->
-            <div>
-                <h2 class="section-title">&Uacute;ltimos reclamos resueltos</h2>
-                <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:16px;">
-                    <div id="lista-resueltos">
-                        <!-- JS fills this -->
-                    </div>
-                </div>
+        <div class="service-card" onclick="alert('Sistema de turnos en actualizacion')">
+            <div class="service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div>
+            <div class="service-info">
+                <h3>Solicitar turno</h3>
+                <p>Sacá turno para licencias de conducir, DNI, o atención presencial.</p>
             </div>
-
-            <!-- FAQ -->
-            <div>
-                <h2 class="section-title">Preguntas Frecuentes</h2>
-                <div class="faq-item">
-                    <div class="faq-question">&iquest;C&oacute;mo hacer un reclamo?</div>
-                    <div class="faq-answer">Puedes hacerlo ingresando al bot&oacute;n "Hacer un Reclamo" en esta p&aacute;gina, llamando al 147 o acerc&aacute;ndote al centro de atenci&oacute;n municipal.</div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-question">&iquest;En cu&aacute;nto tiempo responden?</div>
-                    <div class="faq-answer">Los reclamos urgentes (ej: ca&ntilde;er&iacute;as rotas) se atienden en 24h. Los dem&aacute;s tienen un plazo est&aacute;ndar de resoluci&oacute;n de 72h h&aacute;biles.</div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-question">&iquest;C&oacute;mo seguir el estado?</div>
-                    <div class="faq-answer">Ingresa tu n&uacute;mero de reclamo o DNI en el buscador de la secci&oacute;n superior para ver en tiempo real en qu&eacute; &aacute;rea se encuentra.</div>
-                </div>
+        </div>
+        <div class="service-card" onclick="alert('Redirigiendo a guia de tramites...')">
+            <div class="service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>
+            <div class="service-info">
+                <h3>Habilitaciones comerciales</h3>
+                <p>Guía de requisitos y inicio de trámite para nuevos comercios.</p>
+            </div>
+        </div>
+        <div class="service-card" onclick="alert('Atencion Ciudadana: 0800-XXX-XXXX')">
+            <div class="service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></div>
+            <div class="service-info">
+                <h3>Contacto municipal</h3>
+                <p>Teléfonos útiles, emergencias y redes sociales oficiales.</p>
             </div>
         </div>
     </div>
 
-    <!-- MODAL NUEVO RECLAMO -->
-    <div id="modal-reclamo" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Nuevo Reclamo</h3>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div id="form-content">
-                <div class="form-group">
-                    <label>Nombre completo</label>
-                    <input type="text" id="r_nombre" class="form-control" placeholder="Juan P&eacute;rez">
-                </div>
-                <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                    <div>
-                        <label>DNI</label>
-                        <input type="text" id="r_dni" class="form-control" placeholder="12345678">
-                    </div>
-                    <div>
-                        <label>Tel&eacute;fono</label>
-                        <input type="text" id="r_telefono" class="form-control" placeholder="2364...">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="r_email" class="form-control" placeholder="juan@ejemplo.com">
-                </div>
-                <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                    <div>
-                        <label>Categor&iacute;a</label>
-                        <select id="r_categoria" class="form-control">
-                            <option>Alumbrado</option>
-                            <option>Bacheo</option>
-                            <option>Limpieza</option>
-                            <option>Poda</option>
-                            <option>Otros</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Barrio</label>
-                        <select id="r_barrio" class="form-control">
-                            <option>Centro</option>
-                            <option>Villa Belgrano</option>
-                            <option>Pueblo Nuevo</option>
-                            <option>Prado Espa&ntilde;ol</option>
-                            <option>Nuestra Se&ntilde;ora de Lujan</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Descripci&oacute;n</label>
-                    <textarea id="r_descripcion" class="form-control" rows="3" placeholder="Describe el problema..."></textarea>
-                </div>
-                <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="submitReclamo()">Enviar Reclamo</button>
-            </div>
-            <div id="success-message" style="display:none; text-align:center; padding:2rem 0;">
-                <div style="color:var(--success); margin-bottom:1rem;">
-                    <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin:0 auto;"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h3 style="margin:0 0 0.5rem;">Reclamo Recibido</h3>
-                <p style="color:var(--text-muted);">Tu n&uacute;mero de seguimiento es: <strong id="ticket-number" style="color:white; font-size:1.25rem;"></strong></p>
-                <button class="btn btn-outline" style="margin-top:1rem;" onclick="closeModal()">Cerrar</button>
-            </div>
+    <div class="lookup-section" id="lookupSection">
+        <h2>Consultá tu reclamo</h2>
+        <div class="lookup-flex">
+            <input type="text" id="lookupInput" placeholder="Número de reclamo (ej: R-2026-001)">
+            <button onclick="lookupReclamo()">Consultar</button>
         </div>
+        <div id="lookupResult" style="margin-top:24px;display:none;background:rgba(0,0,0,0.2);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.05)"></div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadResueltos();
-        });
+    <div id="misReclamosContainer" style="display:none;margin-bottom:64px">
+        <h2 style="font-family:'Outfit',sans-serif">Mis Reclamos Recientes</h2>
+        <div id="misReclamosList" style="display:flex;flex-direction:column;gap:12px;margin-top:16px"></div>
+    </div>
 
-        function openModal() {
-            document.getElementById('modal-reclamo').style.display = 'flex';
-            document.getElementById('form-content').style.display = 'block';
-            document.getElementById('success-message').style.display = 'none';
-        }
+    <div style="max-width:800px;margin:0 auto 64px">
+        <h2 style="font-family:'Outfit',sans-serif;text-align:center;margin-bottom:32px">Preguntas Frecuentes</h2>
+        <div class="faq-item">
+            <h4>¿Cuánto tiempo tarda en resolverse mi reclamo?</h4>
+            <p>El plazo máximo según tipo de reclamo varía. Luminarias (72hs), baches menores (7 días), recolección especial (48hs). Podés consultar el estado con tu número de seguimiento.</p>
+        </div>
+        <div class="faq-item">
+            <h4>¿Puedo hacer el reclamo de forma anónima?</h4>
+            <p>Sí, pero sin datos de contacto no podremos notificarte sobre la resolución o pedirte precisiones si no encontramos el lugar indicado.</p>
+        </div>
+        <div class="faq-item">
+            <h4>¿A dónde llamo si es una emergencia?</h4>
+            <p>Para emergencias (accidentes, caída de árboles, cables cortados) llamá al 103 (Defensa Civil) o 147 (Atención Ciudadana) las 24 horas.</p>
+        </div>
+    </div>
+</div>
 
-        function closeModal() {
-            document.getElementById('modal-reclamo').style.display = 'none';
-        }
-
-        function submitReclamo() {
-            const ticket = 'REQ-' + Math.floor(Math.random() * 100000);
-            sessionStorage.setItem('ultimo_ticket', ticket);
+<!-- Modal Nuevo Reclamo -->
+<div class="modal-overlay" id="modalReclamo">
+    <div class="modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <h2 style="margin:0">Ingresar Nuevo Reclamo</h2>
+            <button style="background:transparent;padding:4px;color:rgba(255,255,255,0.5)" onclick="closeModal('modalReclamo')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <form id="formReclamo" onsubmit="submitReclamo(event)">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group"><label>Nombre y Apellido</label><input type="text" id="r_nombre" required></div>
+                <div class="form-group"><label>DNI</label><input type="text" id="r_dni" required></div>
+                <div class="form-group"><label>Teléfono</label><input type="text" id="r_tel" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="r_email"></div>
+            </div>
+            <div style="height:1px;background:rgba(255,255,255,0.1);margin:16px 0"></div>
+            <div class="form-group">
+                <label>Tipo de Reclamo</label>
+                <select id="r_tipo" required>
+                    <option value="">Seleccione...</option>
+                    <option value="Bache en calzada">Bache en calzada</option>
+                    <option value="Luminaria apagada">Luminaria apagada</option>
+                    <option value="Limpieza/Basural">Limpieza / Basural</option>
+                    <option value="Poda de arbol">Poda de árbol</option>
+                    <option value="Perdida de agua">Pérdida de agua</option>
+                </select>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+                <div class="form-group"><label>Calle y Número</label><input type="text" id="r_direccion" required></div>
+                <div class="form-group"><label>Barrio</label><select id="r_barrio"><option value="Centro">Centro</option><option value="Sur">Sur</option><option value="Norte">Norte</option></select></div>
+            </div>
+            <div class="form-group"><label>Descripción del problema</label><textarea id="r_desc" rows="3" required></textarea></div>
+            <div class="form-group"><label>Adjuntar Foto (opcional)</label><input type="file" accept="image/*"></div>
             
-            document.getElementById('form-content').style.display = 'none';
-            document.getElementById('ticket-number').textContent = ticket;
-            document.getElementById('success-message').style.display = 'block';
-        }
+            <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px">
+                <button type="button" style="background:transparent;border:1px solid rgba(255,255,255,0.2)" onclick="closeModal('modalReclamo')">Cancelar</button>
+                <button type="submit">Enviar Reclamo</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        function consultarReclamo() {
-            const input = document.getElementById('lookup-input').value;
-            const res = document.getElementById('lookup-result');
-            
-            if(!input) return;
+<div style="text-align:center;padding:24px;border-top:1px solid rgba(255,255,255,0.06);">
+  <p style="font-size:11px;color:rgba(148,163,184,0.35)">Municipalidad de Junin - Av. Rivadavia 143 - (0236) 4XX-XXXX</p>
+</div>
 
-            res.style.display = 'block';
-            res.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
-                    <div>
-                        <h4 style="margin:0 0 0.25rem; font-size:1.125rem;">Reclamo ${input}</h4>
-                        <p style="margin:0; color:var(--text-muted);">Bacheo en calle principal</p>
-                    </div>
-                    <span class="badge badge-warning">En Proceso</span>
+<script>
+var LOOKUP_DATA = {
+  'R-2026-001': {tipo:'Bache en calzada',direccion:'Av. San Martin 1200',estado:'pendiente',fechaIngreso:'28/07/2026',estResolucion:'05/08/2026',area:'Obras Publicas'},
+  'R-2026-002': {tipo:'Luminaria apagada',direccion:'Belgrano entre Mitre y Rivadavia',estado:'en_proceso',fechaIngreso:'30/07/2026',estResolucion:'06/08/2026',area:'Obras Publicas'},
+  'R-2026-003': {tipo:'Perdida de agua',direccion:'Moreno 400',estado:'en_proceso',fechaIngreso:'31/07/2026',estResolucion:'03/08/2026',area:'OSSE Municipal'}
+};
+
+function focusLookup() {
+    document.getElementById('lookupInput').focus();
+    document.getElementById('lookupSection').scrollIntoView({behavior:'smooth'});
+}
+
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function formatStateBadge(state) {
+    if(state === 'pendiente') return '<span class="badge badge-pendiente">Pendiente</span>';
+    if(state === 'en_proceso') return '<span class="badge badge-proceso">En Proceso</span>';
+    if(state === 'resuelto') return '<span class="badge badge-resuelto">Resuelto</span>';
+    return `<span class="badge" style="background:rgba(255,255,255,0.1)">${state}</span>`;
+}
+
+function lookupReclamo() {
+    var val = document.getElementById('lookupInput').value.trim().toUpperCase();
+    var resDiv = document.getElementById('lookupResult');
+    if(!val) { alert('Ingrese un numero'); return; }
+    
+    var data = LOOKUP_DATA[val];
+    
+    // Check local storage too
+    if(!data) {
+        var local = JSON.parse(localStorage.getItem('mis_reclamos') || '[]');
+        var found = local.find(r => r.numero === val);
+        if(found) data = { tipo: found.tipo, direccion: found.direccion, estado: found.estado, fechaIngreso: found.fecha, estResolucion: 'A confirmar', area: 'Municipalidad' };
+    }
+
+    if(data) {
+        resDiv.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                <div>
+                    <h3 style="margin:0 0 4px">${val} - ${data.tipo}</h3>
+                    <div style="font-size:13px;color:rgba(148,163,184,0.7)">${data.direccion}</div>
                 </div>
-                <div style="position:relative; padding-left:1.5rem; border-left:2px solid var(--border-color);">
-                    <div style="position:absolute; left:-6px; top:0; width:10px; height:10px; border-radius:50%; background:var(--primary);"></div>
-                    <p style="margin:0 0 0.5rem; font-size:0.875rem; font-weight:600;">Asignado a Obras P&uacute;blicas</p>
-                    <p style="margin:0; font-size:0.8rem; color:var(--text-muted);">Hace 2 d&iacute;as</p>
+                ${formatStateBadge(data.estado)}
+            </div>
+            <div style="display:flex;gap:32px;font-size:13px;background:rgba(0,0,0,0.3);padding:12px;border-radius:8px">
+                <div><strong style="display:block;color:rgba(148,163,184,0.7)">Fecha Ingreso</strong>${data.fechaIngreso}</div>
+                <div><strong style="display:block;color:rgba(148,163,184,0.7)">Área Responsable</strong>${data.area}</div>
+                <div><strong style="display:block;color:rgba(148,163,184,0.7)">Resolución Estimada</strong>${data.estResolucion}</div>
+            </div>
+            <div style="margin-top:16px;font-size:12px;color:rgba(148,163,184,0.6);text-align:center">Para consultas llame al 0236-4XX-XXXX</div>
+        `;
+        resDiv.style.display = 'block';
+    } else {
+        resDiv.innerHTML = '<div style="color:#f87171">No se encontro el reclamo. Verifique el numero e intente nuevamente.</div>';
+        resDiv.style.display = 'block';
+    }
+}
+
+function submitReclamo(e) {
+    e.preventDefault();
+    var tipo = document.getElementById('r_tipo').value;
+    var dir = document.getElementById('r_direccion').value;
+    var num = 'R-' + new Date().getFullYear() + '-' + Math.floor(Math.random()*900 + 100);
+    
+    var newR = { numero: num, tipo: tipo, direccion: dir, fecha: new Date().toLocaleDateString('es-AR'), estado: 'pendiente' };
+    
+    var local = JSON.parse(localStorage.getItem('mis_reclamos') || '[]');
+    local.push(newR);
+    localStorage.setItem('mis_reclamos', JSON.stringify(local));
+    
+    closeModal('modalReclamo');
+    alert('Reclamo ingresado con exito. Su numero de seguimiento es: ' + num);
+    document.getElementById('formReclamo').reset();
+    loadMisReclamos();
+}
+
+function loadMisReclamos() {
+    var local = JSON.parse(localStorage.getItem('mis_reclamos') || '[]');
+    if(local.length > 0) {
+        document.getElementById('misReclamosContainer').style.display = 'block';
+        var list = document.getElementById('misReclamosList');
+        list.innerHTML = '';
+        local.forEach(function(r) {
+            list.innerHTML += `
+                <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:16px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <div style="font-weight:600">${r.numero} - ${r.tipo}</div>
+                        <div style="font-size:12px;color:rgba(148,163,184,0.6)">${r.fecha} • ${r.direccion}</div>
+                    </div>
+                    ${formatStateBadge(r.estado)}
                 </div>
             `;
-        }
+        });
+    }
+}
 
-        function loadResueltos() {
-            const container = document.getElementById('lista-resueltos');
-            let reclamos = [];
-            
-            if(typeof MuniDB !== 'undefined' && MuniDB.getAll) {
-                const dbReclamos = MuniDB.getAll('reclamos');
-                if(dbReclamos && dbReclamos.length > 0) {
-                    reclamos = dbReclamos.filter(r => r.estado && r.estado.toLowerCase() === 'resuelto').slice(0, 5);
-                }
-            }
-
-            if(reclamos.length === 0) {
-                reclamos = [
-                    {categoria: 'Alumbrado', barrio: 'Centro', dias: 2, fecha: '28 Jul'},
-                    {categoria: 'Poda', barrio: 'Villa Belgrano', dias: 4, fecha: '27 Jul'},
-                    {categoria: 'Bacheo', barrio: 'Pueblo Nuevo', dias: 1, fecha: '25 Jul'},
-                    {categoria: 'Limpieza', barrio: 'Prado Espa&ntilde;ol', dias: 2, fecha: '24 Jul'},
-                    {categoria: 'Alumbrado', barrio: 'Centro', dias: 1, fecha: '22 Jul'}
-                ];
-            }
-
-            let html = '';
-            reclamos.forEach(r => {
-                html += `
-                    <div class="list-item">
-                        <div>
-                            <div style="font-weight:600;">${r.categoria}</div>
-                            <div style="font-size:0.875rem; color:var(--text-muted);">${r.barrio}</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div class="badge badge-success">Resuelto en ${r.dias} d&iacute;as</div>
-                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">${r.fecha}</div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-    </script>
+document.addEventListener('DOMContentLoaded', loadMisReclamos);
+</script>
 </body>
 </html>

@@ -1,303 +1,356 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Centro de Exportacion | MuniControl</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    :root {
-      --bg-dark: #0f172a;
-      --card-bg: #1e293b;
-      --accent: #3b82f6;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-    }
-    body { margin: 0; padding: 0; background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
-    .layout-wrapper { display: flex; width: 100%; height: 100%; }
-    .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 30px; }
-    
-    .page-header { margin-bottom: 30px; }
-    .page-title { font-family: 'Outfit', sans-serif; font-size: 28px; margin: 0 0 5px 0; }
-    .page-subtitle { color: var(--text-muted); font-size: 15px; margin: 0; }
-    
-    .export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px; }
-    
-    .export-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden; }
-    .export-card:hover { border-color: rgba(59,130,246,0.5); transform: translateY(-2px); transition: all 0.2s; }
-    
-    .card-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(59,130,246,0.1); display: flex; align-items: center; justify-content: center; color: #60a5fa; }
-    .card-icon svg { width: 24px; height: 24px; fill: currentColor; }
-    
-    .card-title { font-size: 16px; font-weight: 600; margin: 0; }
-    .card-desc { font-size: 13px; color: var(--text-muted); margin: 0; flex: 1; }
-    
-    .format-badge { position: absolute; top: 20px; right: 20px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-    .format-pdf { background: rgba(239,68,68,0.1); color: #f87171; }
-    .format-excel { background: rgba(16,185,129,0.1); color: #34d399; }
-    .format-csv { background: rgba(245,158,11,0.1); color: #fbbf24; }
-    
-    .btn-download { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
-    .btn-download:hover { background: #2563eb; }
-    
-    .progress-bar-container { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 10px; display: none; }
-    .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
-    
-    .log-section { background: var(--card-bg); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); padding: 20px; }
-    .log-title { font-family: 'Outfit', sans-serif; font-size: 18px; margin: 0 0 15px 0; }
-    
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    th { color: var(--text-muted); font-weight: 500; font-size: 13px; }
-    
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Exportación - MuniControl</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { margin: 0; font-family: 'Inter', sans-serif; background: #0d1526; color: #f0f4ff; }
+        
+        .container { padding: 40px; max-width: 1200px; margin: 0 auto; }
+        
+        .tabs { display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 32px; }
+        .tab { padding: 12px 24px; cursor: pointer; color: rgba(148,163,184,0.8); font-weight: 500; font-size: 14px; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .tab:hover { color: #f0f4ff; }
+        .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .export-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; }
+        .export-card:hover { border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.02); }
+        .ec-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .ec-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .badge-pdf { background: rgba(239,68,68,0.2); color: #f87171; }
+        .badge-xls { background: rgba(16,185,129,0.2); color: #34d399; }
+        
+        .ec-title { font-family: 'Outfit', sans-serif; font-size: 18px; margin: 0 0 8px; }
+        .ec-desc { font-size: 13px; color: rgba(148,163,184,0.7); flex: 1; margin: 0 0 16px; line-height: 1.4; }
+        .ec-meta { font-size: 11px; color: rgba(148,163,184,0.5); margin-bottom: 16px; }
+        
+        button { padding: 10px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+        th { font-size: 11px; text-transform: uppercase; color: rgba(148,163,184,0.7); font-weight: 600; }
+
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: #fff; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; z-index: 100; font-size: 14px; font-weight: 500; }
+    </style>
 </head>
 <body>
-  <div class="layout-wrapper">
-    <aside class="sidebar" id="sidebar"></aside>
+
+<div id="nav-placeholder"></div>
+
+<div class="container">
+    <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:16px 20px;margin-bottom:24px">
+        <div style="font-weight:700;color:#60a5fa;margin-bottom:4px;font-family:'Outfit',sans-serif;font-size:18px">Centro de Exportación Municipal</div>
+        <div style="font-size:13px;color:rgba(148,163,184,0.8)">Genera reportes oficiales para auditorias, presentaciones y control. Todos los documentos incluyen firma digital y sello municipal.</div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('financiero', this)">FINANCIERO</div>
+        <div class="tab" onclick="switchTab('rrhh', this)">RRHH</div>
+        <div class="tab" onclick="switchTab('operacional', this)">OPERACIONAL</div>
+        <div class="tab" onclick="switchTab('auditoria', this)">AUDITORÍA</div>
+    </div>
+
+    <!-- FINANCIERO -->
+    <div id="tab-financiero" class="tab-content active">
+        <div class="grid">
+            <div class="export-card">
+                <div class="ec-header">
+                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                    <span class="badge badge-pdf">PDF</span>
+                </div>
+                <h3 class="ec-title">Reporte Ejecutivo Mensual</h3>
+                <p class="ec-desc">Resumen integral de gastos e ingresos. Para el Intendente y Concejo Deliberante.</p>
+                <div class="ec-meta">Última generación: ayer</div>
+                <button class="btn-primary" onclick="exportPDF('Reporte Ejecutivo Mensual')">Generar PDF</button>
+            </div>
+            
+            <div class="export-card">
+                <div class="ec-header">
+                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg></div>
+                    <span class="badge badge-xls">XLSX</span>
+                </div>
+                <h3 class="ec-title">Balance de Pagos</h3>
+                <p class="ec-desc">Detalle de todos los pagos emitidos. Para el área de Hacienda y Auditoría interna.</p>
+                <div class="ec-meta">Última generación: hoy</div>
+                <button class="btn-success" onclick="exportExcel('Balance de Pagos', 'pagos')">Generar Excel</button>
+            </div>
+            
+            <div class="export-card">
+                <div class="ec-header">
+                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg></div>
+                    <span class="badge badge-pdf">PDF</span>
+                </div>
+                <h3 class="ec-title">Ejecución Presupuestaria</h3>
+                <p class="ec-desc">Avance del presupuesto por secretaría. Para presentación a organismos provinciales.</p>
+                <div class="ec-meta">Última generación: hace 3 días</div>
+                <button class="btn-primary" onclick="exportPDF('Ejecucion Presupuestaria')">Generar PDF</button>
+            </div>
+            
+            <div class="export-card">
+                <div class="ec-header">
+                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+                    <span class="badge badge-xls">XLSX</span>
+                </div>
+                <h3 class="ec-title">Listado de Proveedores</h3>
+                <p class="ec-desc">Padrón de proveedores activos y montos. Para control de contratos y vencimientos.</p>
+                <div class="ec-meta">Última generación: hace 1 semana</div>
+                <button class="btn-success" onclick="exportExcel('Listado de Proveedores', 'proveedores')">Generar Excel</button>
+            </div>
+            
+            <div class="export-card">
+                <div class="ec-header">
+                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+                    <span class="badge badge-xls">XLSX</span>
+                </div>
+                <h3 class="ec-title">Flujo de Caja Mensual</h3>
+                <p class="ec-desc">Proyección de ingresos y egresos. Para la Tesorería Municipal.</p>
+                <div class="ec-meta">Última generación: hace 2 días</div>
+                <button class="btn-success" onclick="exportExcel('Flujo de Caja', 'caja')">Generar Excel</button>
+            </div>
+            
+            <div class="export-card">
+                <div class="ec-header">
+                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+                    <span class="badge badge-pdf">PDF</span>
+                </div>
+                <h3 class="ec-title">Comparativo Anual</h3>
+                <p class="ec-desc">Evolución interanual del gasto. Para análisis de tendencias y planificación.</p>
+                <div class="ec-meta">Última generación: hace 1 mes</div>
+                <button class="btn-primary" onclick="exportPDF('Comparativo Anual')">Generar PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RRHH -->
+    <div id="tab-rrhh" class="tab-content">
+        <div class="grid">
+            <div class="export-card">
+                <div class="ec-header"><div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><span class="badge badge-xls">XLSX</span></div>
+                <h3 class="ec-title">Nómina Completa</h3>
+                <p class="ec-desc">Lista de empleados con legajo, cargo y salario.</p>
+                <div class="ec-meta">Última generación: hace 3 días</div>
+                <button class="btn-success" onclick="exportExcel('Nomina Completa', 'empleados')">Generar Excel</button>
+            </div>
+            <div class="export-card">
+                <div class="ec-header"><div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div><span class="badge badge-xls">XLSX</span></div>
+                <h3 class="ec-title">Ausentismo y Licencias</h3>
+                <p class="ec-desc">Control de asistencia para RRHH.</p>
+                <div class="ec-meta">Última generación: hoy</div>
+                <button class="btn-success" onclick="exportExcel('Ausentismo', 'ausentismo')">Generar Excel</button>
+            </div>
+            <div class="export-card">
+                <div class="ec-header"><div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg></div><span class="badge badge-pdf">PDF</span></div>
+                <h3 class="ec-title">Evolución de Planta</h3>
+                <p class="ec-desc">Crecimiento de personal. Para Concejo Deliberante.</p>
+                <div class="ec-meta">Última generación: 15 días</div>
+                <button class="btn-primary" onclick="exportPDF('Evolucion de Planta')">Generar PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPERACIONAL -->
+    <div id="tab-operacional" class="tab-content">
+        <div class="grid">
+            <div class="export-card">
+                <div class="ec-header"><div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div><span class="badge badge-xls">XLSX</span></div>
+                <h3 class="ec-title">Estado de Reclamos</h3>
+                <p class="ec-desc">Reclamos ciudadanos por barrio y estado.</p>
+                <div class="ec-meta">Última generación: ayer</div>
+                <button class="btn-success" onclick="exportExcel('Reclamos Ciudadanos', 'reclamos')">Generar Excel</button>
+            </div>
+        </div>
+    </div>
     
-    <main class="main-content">
-      <div class="page-header">
-        <h1 class="page-title">Centro de Exportacion</h1>
-        <p class="page-subtitle">Genera reportes y descarga datos en multiples formatos</p>
-      </div>
-      
-      <div class="export-grid">
-        <!-- Card 1 -->
-        <div class="export-card">
-          <span class="format-badge format-pdf">PDF</span>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9.5 8.5L8 9.5 6.5 11 5 9.5v-2h4.5v4zM19 19H5v-4h14v4zm0-6h-7V5h7v8z"/></svg>
-          </div>
-          <h3 class="card-title">Reporte Ejecutivo Mensual</h3>
-          <p class="card-desc">Resumen completo de KPIs y metricas del mes</p>
-          <div class="progress-bar-container" id="pb-1"><div class="progress-bar" id="p-1"></div></div>
-          <button class="btn-download" onclick="generatePDF('Reporte Ejecutivo', 1)">Descargar Reporte</button>
-        </div>
-        
-        <!-- Card 2 -->
-        <div class="export-card">
-          <span class="format-badge format-excel">EXCEL</span>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9h-2V7h-2v5H6v-2H4v2c0 1.1.9 2 2 2h2v5h2v-5h2v2h2v-2h2v-2h-2v2zm6 2h-2v-2h2v2zm0-4h-2V8h2v2z"/></svg>
-          </div>
-          <h3 class="card-title">Nomina de Personal</h3>
-          <p class="card-desc">Lista completa de empleados con salarios</p>
-          <div class="progress-bar-container" id="pb-2"><div class="progress-bar" id="p-2"></div></div>
-          <button class="btn-download" onclick="generateExcel('Nomina Personal', 2)">Descargar Datos</button>
-        </div>
-        
-        <!-- Card 3 -->
-        <div class="export-card">
-          <span class="format-badge format-excel">EXCEL</span>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
-          </div>
-          <h3 class="card-title">Pagos y Proveedores</h3>
-          <p class="card-desc">Historial de pagos del mes actual</p>
-          <div class="progress-bar-container" id="pb-3"><div class="progress-bar" id="p-3"></div></div>
-          <button class="btn-download" onclick="generateExcel('Pagos y Proveedores', 3)">Descargar Datos</button>
-        </div>
-        
-        <!-- Card 4 -->
-        <div class="export-card">
-          <span class="format-badge format-pdf">PDF</span>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-          </div>
-          <h3 class="card-title">Presupuesto por Secretaria</h3>
-          <p class="card-desc">Ejecucion presupuestaria detallada</p>
-          <div class="progress-bar-container" id="pb-4"><div class="progress-bar" id="p-4"></div></div>
-          <button class="btn-download" onclick="generatePDF('Presupuesto por Secretaria', 4)">Descargar Reporte</button>
-        </div>
-        
-        <!-- Card 5 -->
-        <div class="export-card">
-          <span class="format-badge format-csv">CSV</span>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-          </div>
-          <h3 class="card-title">Reclamos 311</h3>
-          <p class="card-desc">Todos los reclamos del periodo</p>
-          <div class="progress-bar-container" id="pb-5"><div class="progress-bar" id="p-5"></div></div>
-          <button class="btn-download" onclick="generateCSV('Reclamos 311', 5)">Descargar CSV</button>
-        </div>
-        
-        <!-- Card 6 -->
-        <div class="export-card">
-          <span class="format-badge format-pdf">PDF</span>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8z"/></svg>
-          </div>
-          <h3 class="card-title">Obras Municipales</h3>
-          <p class="card-desc">Estado de avance de obras en ejecucion</p>
-          <div class="progress-bar-container" id="pb-6"><div class="progress-bar" id="p-6"></div></div>
-          <button class="btn-download" onclick="generatePDF('Obras Municipales', 6)">Descargar Reporte</button>
-        </div>
-      </div>
-      
-      <div class="log-section">
-        <h2 class="log-title">Ultimas Exportaciones</h2>
+    <!-- AUDITORIA -->
+    <div id="tab-auditoria" class="tab-content">
+        <p style="color:rgba(148,163,184,0.7)">No hay reportes de auditoría configurados para su perfil.</p>
+    </div>
+
+    <!-- Recent Exports Table -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:24px;margin-top:40px">
+        <h3 style="margin:0 0 16px;font-family:'Outfit',sans-serif;font-size:18px">Exportaciones Recientes</h3>
         <table>
-          <thead>
-            <tr>
-              <th>Archivo</th>
-              <th>Formato</th>
-              <th>Generado por</th>
-              <th>Fecha</th>
-              <th>Tamano</th>
-            </tr>
-          </thead>
-          <tbody id="logTableBody">
-            <tr>
-              <td>Reporte_Ejecutivo_Jul26.pdf</td>
-              <td><span class="format-badge format-pdf" style="position:static">PDF</span></td>
-              <td>G. Hacienda</td>
-              <td>01/08/2026</td>
-              <td>2.4 MB</td>
-            </tr>
-            <tr>
-              <td>Nomina_Personal_Jul26.xlsx</td>
-              <td><span class="format-badge format-excel" style="position:static">EXCEL</span></td>
-              <td>RRHH</td>
-              <td>30/07/2026</td>
-              <td>5.1 MB</td>
-            </tr>
-            <tr>
-              <td>Reclamos_Q2.csv</td>
-              <td><span class="format-badge format-csv" style="position:static">CSV</span></td>
-              <td>Atencion Ciudadana</td>
-              <td>15/07/2026</td>
-              <td>12.8 MB</td>
-            </tr>
-            <tr>
-              <td>Obras_Centro_Avance.pdf</td>
-              <td><span class="format-badge format-pdf" style="position:static">PDF</span></td>
-              <td>Obras Publicas</td>
-              <td>10/07/2026</td>
-              <td>4.2 MB</td>
-            </tr>
-            <tr>
-              <td>Pagos_Jun26.xlsx</td>
-              <td><span class="format-badge format-excel" style="position:static">EXCEL</span></td>
-              <td>Tesoreria</td>
-              <td>05/07/2026</td>
-              <td>1.9 MB</td>
-            </tr>
-          </tbody>
+            <thead>
+                <tr>
+                    <th>Archivo</th>
+                    <th>Formato</th>
+                    <th>Generado por</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="recentTable">
+                <tr>
+                    <td>Balance_Pagos_2026-08-01.xlsx</td>
+                    <td><span class="badge badge-xls">XLSX</span></td>
+                    <td>g.admin</td>
+                    <td>Hoy, 09:15</td>
+                    <td><a href="#" style="color:#60a5fa;text-decoration:none">Descargar</a></td>
+                </tr>
+                <tr>
+                    <td>Reporte_Ejecutivo_Julio.pdf</td>
+                    <td><span class="badge badge-pdf">PDF</span></td>
+                    <td>intendencia</td>
+                    <td>Ayer, 18:30</td>
+                    <td><a href="#" style="color:#60a5fa;text-decoration:none">Descargar</a></td>
+                </tr>
+            </tbody>
         </table>
-      </div>
-    </main>
+    </div>
+
+</div>
+
+<!-- Progress Modal -->
+<div id="exportProgress" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#0d1526;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;text-align:center;min-width:320px;box-shadow:0 10px 25px rgba(0,0,0,0.5)">
+    <div style="font-size:14px;font-weight:700;color:#f0f4ff;margin-bottom:16px" id="exportProgressTitle">Generando reporte...</div>
+    <div style="background:rgba(255,255,255,0.06);border-radius:99px;height:6px;overflow:hidden">
+      <div id="exportProgressBar" style="height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:99px;transition:width 0.5s ease;width:0%"></div>
+    </div>
+    <div style="font-size:12px;color:rgba(148,163,184,0.5);margin-top:12px">Incluyendo firma digital y sello municipal...</div>
   </div>
+</div>
 
-  <script src="js/nav.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (typeof buildSidebar === 'function') buildSidebar('exportar');
-    });
+<div id="toast" class="toast"></div>
 
-    function simulateProgress(id, callback) {
-      const container = document.getElementById('pb-' + id);
-      const bar = document.getElementById('p-' + id);
-      container.style.display = 'block';
-      bar.style.width = '0%';
-      
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 30;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          bar.style.width = '100%';
-          setTimeout(() => {
-            container.style.display = 'none';
-            callback();
-          }, 500);
+<!-- Include nav.js -->
+<script src="nav.js"></script>
+
+<script>
+function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    el.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function showToast(msg) {
+    var toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(function() { toast.style.display = 'none'; }, 3000);
+}
+
+function showExportProgress(title) {
+    var div = document.getElementById('exportProgress');
+    div.style.display = 'flex';
+    document.getElementById('exportProgressTitle').textContent = 'Generando: ' + title;
+    var bar = document.getElementById('exportProgressBar');
+    bar.style.width = '0%';
+    setTimeout(function(){bar.style.width='40%';}, 300);
+    setTimeout(function(){bar.style.width='80%';}, 900);
+}
+
+function hideExportProgress() {
+    var div = document.getElementById('exportProgress');
+    document.getElementById('exportProgressBar').style.width = '100%';
+    setTimeout(function(){ div.style.display = 'none'; }, 400);
+}
+
+function addRecent(title, type) {
+    var tbody = document.getElementById('recentTable');
+    var tr = document.createElement('tr');
+    var badge = type === 'pdf' ? '<span class="badge badge-pdf">PDF</span>' : '<span class="badge badge-xls">XLSX</span>';
+    var ext = type === 'pdf' ? '.pdf' : '.xlsx';
+    var filename = title.replace(/ /g,'_') + '_' + new Date().toISOString().split('T')[0] + ext;
+    
+    tr.innerHTML = `
+        <td>${filename}</td>
+        <td>${badge}</td>
+        <td>yo (actual)</td>
+        <td>Recién</td>
+        <td><a href="#" style="color:#60a5fa;text-decoration:none">Descargar</a></td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
+}
+
+function exportPDF(title) {
+    showExportProgress(title);
+    setTimeout(function() {
+        if (!window.jspdf) { alert('Modulo PDF cargando...'); hideExportProgress(); return; }
+        
+        var doc = new window.jspdf.jsPDF();
+        doc.setFontSize(18);
+        doc.text('Municipio de Junin', 20, 20);
+        doc.setFontSize(14);
+        doc.text(title, 20, 35);
+        doc.setFontSize(10);
+        doc.text('Generado: ' + new Date().toLocaleDateString('es-AR'), 20, 45);
+        doc.text('Sistema: MuniControl v2.0 - Exportacion Oficial', 20, 52);
+        doc.line(20, 58, 190, 58);
+        
+        doc.setFontSize(9);
+        var y = 68;
+        
+        if (window.MuniDB) {
+            var pagos = MuniDB.getAll('pagos').slice(0, 15);
+            pagos.forEach(function(p) {
+                doc.text(p.proveedor || 'Proveedor', 20, y);
+                doc.text('$' + (p.monto/1000000).toFixed(2) + 'M', 150, y);
+                y += 8;
+                if (y > 270) { doc.addPage(); y = 20; }
+            });
         } else {
-          bar.style.width = progress + '%';
+            doc.text('Datos de prueba generados por el sistema', 20, y);
         }
-      }, 200);
-    }
+        
+        doc.save(title.replace(/ /g,'_') + '_' + new Date().toISOString().split('T')[0] + '.pdf');
+        
+        hideExportProgress();
+        showToast('PDF generado exitosamente');
+        addRecent(title, 'pdf');
+    }, 1500);
+}
 
-    function addLogEntry(filename, format, size) {
-      const tbody = document.getElementById('logTableBody');
-      const tr = document.createElement('tr');
-      
-      let badgeClass = '';
-      if (format === 'PDF') badgeClass = 'format-pdf';
-      else if (format === 'EXCEL') badgeClass = 'format-excel';
-      else if (format === 'CSV') badgeClass = 'format-csv';
-      
-      const today = new Date();
-      const dateStr = today.getDate().toString().padStart(2, '0') + '/' + (today.getMonth()+1).toString().padStart(2, '0') + '/' + today.getFullYear();
-      
-      tr.innerHTML = \`
-        <td>\${filename}</td>
-        <td><span class="format-badge \${badgeClass}" style="position:static">\${format}</span></td>
-        <td>Usuario Actual</td>
-        <td>\${dateStr}</td>
-        <td>\${size}</td>
-      \`;
-      tbody.insertBefore(tr, tbody.firstChild);
-    }
-
-    function generatePDF(title, id) {
-      simulateProgress(id, () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+function exportExcel(title, dataKey) {
+    showExportProgress(title);
+    setTimeout(function() {
+        if (!window.XLSX) { alert('Modulo Excel cargando...'); hideExportProgress(); return; }
         
-        doc.setFontSize(22);
-        doc.text("MuniControl", 20, 20);
-        doc.setFontSize(16);
-        doc.text(title, 20, 30);
+        var data = [];
+        if (window.MuniDB) {
+            if (dataKey === 'pagos') {
+                data = MuniDB.getAll('pagos').map(function(p) {
+                    return { Fecha:p.fecha, Proveedor:p.proveedor, Concepto:p.concepto, Secretaria:p.secretaria, Monto:p.monto };
+                });
+            } else if (dataKey === 'empleados') {
+                data = MuniDB.getAll('empleados').map(function(e) {
+                    return { Legajo:e.legajo, Nombre:e.nombre+' '+e.apellido, Secretaria:e.secretaria, Cargo:e.cargo, Salario:e.salario, Estado:e.estado };
+                });
+            } else if (dataKey === 'reclamos') {
+                data = MuniDB.getAll('reclamos').map(function(r) {
+                    return { Numero:r.numero, Tipo:r.tipo, Barrio:r.barrio, Estado:r.estado, Prioridad:r.prioridad, FechaIngreso:r.fechaIngreso };
+                });
+            }
+        }
         
-        doc.setFontSize(12);
-        doc.text("Fecha de generacion: " + new Date().toLocaleDateString(), 20, 40);
+        if (!data.length) data = [{Info:'Sin datos disponibles en base local',Sistema:'MuniControl',Fecha:new Date().toLocaleDateString('es-AR')}];
         
-        doc.text("Este es un reporte generado automaticamente por la plataforma MuniControl.", 20, 60);
-        doc.text("Contiene informacion consolidada del modulo seleccionado.", 20, 70);
+        var ws = XLSX.utils.json_to_sheet(data);
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+        XLSX.writeFile(wb, title.replace(/ /g,'_') + '_' + new Date().toISOString().split('T')[0] + '.xlsx');
         
-        const filename = title.replace(/\\s+/g, '_') + '.pdf';
-        doc.save(filename);
-        addLogEntry(filename, 'PDF', '1.2 MB');
-      });
-    }
-
-    function generateExcel(title, id) {
-      simulateProgress(id, () => {
-        const ws_data = [
-          ["ID", "Concepto", "Monto", "Fecha"],
-          [1, "Sueldos y Jornales", 45000000, "2026-08-01"],
-          [2, "Mantenimiento Urbano", 12500000, "2026-08-02"],
-          [3, "Insumos Hospitalarios", 8300000, "2026-08-05"]
-        ];
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Datos");
-        
-        const filename = title.replace(/\\s+/g, '_') + '.xlsx';
-        XLSX.writeFile(wb, filename);
-        addLogEntry(filename, 'EXCEL', '0.8 MB');
-      });
-    }
-
-    function generateCSV(title, id) {
-      simulateProgress(id, () => {
-        const data = "ID,Reclamo,Estado,Fecha\\n1,Bache en Av. San Martin,Pendiente,2026-08-01\\n2,Luminaria rota,Resuelto,2026-08-02";
-        const blob = new Blob([data], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('href', url);
-        const filename = title.replace(/\\s+/g, '_') + '.csv';
-        a.setAttribute('download', filename);
-        a.click();
-        addLogEntry(filename, 'CSV', '0.1 MB');
-      });
-    }
-  </script>
+        hideExportProgress();
+        showToast('Excel generado exitosamente');
+        addRecent(title, 'xls');
+    }, 1500);
+}
+</script>
 </body>
 </html>

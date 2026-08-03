@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -269,6 +269,22 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span class="notif-dot"></span>
         </button>
+        <!-- LIVE WIDGETS in topbar-right, before the avatar -->
+        <div id="weatherWidget" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;cursor:default" title="Clima en Junin">
+          <div id="weatherIcon" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center"></div>
+          <div style="display:flex;flex-direction:column">
+            <span id="weatherTemp" style="font-size:13px;font-weight:800;color:#f0f4ff;line-height:1.1">--</span>
+            <span id="weatherDesc" style="font-size:9px;color:rgba(148,163,184,0.5);line-height:1">Junin</span>
+          </div>
+        </div>
+
+        <div id="dolarWidget" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;cursor:default" title="Tipos de cambio">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <div style="display:flex;flex-direction:column">
+            <span id="dolarOficial" style="font-size:11px;font-weight:800;color:#10b981;line-height:1.1">$--</span>
+            <span id="dolarBlue" style="font-size:9px;color:rgba(148,163,184,0.5);line-height:1">Blue $--</span>
+          </div>
+        </div>
         <div class="topbar-avatar" id="topbarAvatar" title="Perfil">SA</div>
       </div>
     </header>
@@ -433,6 +449,39 @@
         </div>
 
       </section>
+
+      <!-- LIVE DATA ROW -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Weather Card -->
+        <div class="card" style="background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(13,21,38,0.9));border:1px solid var(--border);border-radius:16px;padding:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.45);margin-bottom:4px">Clima en tiempo real</div>
+              <div style="font-size:11px;color:rgba(148,163,184,0.4)">Junin, Buenos Aires</div>
+            </div>
+            <div id="weatherCardIcon" style="width:40px;height:40px"></div>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:12px">
+            <div id="weatherCardTemp" style="font-family:Outfit,sans-serif;font-size:40px;font-weight:900;color:#f0f4ff;line-height:1">--</div>
+            <div style="padding-bottom:6px">
+              <div id="weatherCardDesc" style="font-size:12px;color:rgba(148,163,184,0.7)">Cargando...</div>
+              <div style="font-size:10px;color:rgba(148,163,184,0.4)">Actualizado ahora</div>
+            </div>
+          </div>
+          <div id="weatherFull"></div>
+        </div>
+        
+        <!-- Dolar Card -->
+        <div class="card" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(13,21,38,0.9));border:1px solid var(--border);border-radius:16px;padding:20px;">
+          <div style="margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.45);margin-bottom:2px">Tipo de cambio USD/ARS</div>
+            <div style="font-size:10px;color:rgba(148,163,184,0.4)">Datos en tiempo real</div>
+          </div>
+          <div id="dolarFull">
+            <div style="text-align:center;padding:20px;color:rgba(148,163,184,0.4);font-size:13px">Cargando...</div>
+          </div>
+        </div>
+      </div>
 
       <!-- ALERTS ROW -->
       <div class="alerts-row">
@@ -618,6 +667,81 @@
   <script src="js/analytics-live.js"></script>
   <script src="js/theme-switcher.js"></script>
   <script src="js/onboarding.js"></script>
+  <script src="js/api-live.js"></script>
+  <script>
+    // LIVE API WIDGETS
+    function initLiveWidgets() {
+      if (!window.MuniAPI) return;
+      
+      // Weather
+      MuniAPI.getWeather()
+        .then(function(w) {
+          var icon = document.getElementById('weatherIcon');
+          var temp = document.getElementById('weatherTemp');
+          var desc = document.getElementById('weatherDesc');
+          if (icon) icon.innerHTML = MuniAPI.getWeatherSVG(w.code);
+          if (temp) temp.textContent = w.temp + 'C';
+          if (desc) desc.textContent = w.desc;
+          // Also update any weatherFull div if exists
+          var full = document.getElementById('weatherFull');
+          if (full) {
+            full.innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
+              '<div><span style="color:rgba(148,163,184,0.6);font-size:11px">Humedad</span><br><strong style="font-size:16px">' + w.humidity + '%</strong></div>' +
+              '<div><span style="color:rgba(148,163,184,0.6);font-size:11px">Viento</span><br><strong style="font-size:16px">' + w.wind + 'km/h</strong></div>' +
+              '<div><span style="color:rgba(148,163,184,0.6);font-size:11px">Sensacion</span><br><strong style="font-size:16px">' + w.feelsLike + 'C</strong></div>' +
+              '<div><span style="color:rgba(148,163,184,0.6);font-size:11px">UV</span><br><strong style="font-size:16px">' + w.uv + '</strong></div>' +
+            '</div>';
+          }
+          var cardIcon = document.getElementById('weatherCardIcon');
+          if (cardIcon) cardIcon.innerHTML = MuniAPI.getWeatherSVG(w.code);
+          var cardTemp = document.getElementById('weatherCardTemp');
+          if (cardTemp) cardTemp.textContent = w.temp + 'C';
+          var cardDesc = document.getElementById('weatherCardDesc');
+          if (cardDesc) cardDesc.textContent = w.desc;
+        })
+        .catch(function() { /* silent fail */ });
+      
+      // Dolar
+      MuniAPI.getDolar()
+        .then(function(d) {
+          var of = document.getElementById('dolarOficial');
+          var bl = document.getElementById('dolarBlue');
+          if (of && d.oficial) of.textContent = '$' + d.oficial.venta.toLocaleString('es-AR');
+          if (bl && d.blue) bl.textContent = 'Blue $' + d.blue.venta.toLocaleString('es-AR');
+          // Update full dolar card if exists
+          var full = document.getElementById('dolarFull');
+          if (full && d.oficial && d.blue) {
+            var brechaNum = Math.round((d.blue.venta - d.oficial.venta) / d.oficial.venta * 100);
+            full.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">' +
+              dolarCell('Oficial', d.oficial.venta, '#10b981') +
+              dolarCell('Blue', d.blue.venta, '#f59e0b') +
+              dolarCell('Tarjeta', d.tarjeta ? d.tarjeta.venta : '---', '#8b5cf6') +
+            '</div>' +
+            '<div style="margin-top:12px;font-size:11px;color:rgba(148,163,184,0.5)">Brecha: ' + brechaNum + '% | Actualizado: ' + new Date().toLocaleTimeString('es-AR') + '</div>';
+          }
+        })
+        .catch(function() { /* silent fail */ });
+    }
+
+    function dolarCell(label, val, color) {
+      var display = typeof val === 'number' ? '$' + val.toLocaleString('es-AR') : val;
+      return '<div style="text-align:center;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">' +
+        '<div style="font-size:18px;font-weight:900;font-family:Outfit,sans-serif;color:' + color + '">' + display + '</div>' +
+        '<div style="font-size:10px;color:rgba(148,163,184,0.5);margin-top:2px;font-weight:700;text-transform:uppercase">' + label + '</div>' +
+      '</div>';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load api-live.js dynamically if not loaded
+      if (!window.MuniAPI) {
+        var s = document.createElement('script'); s.src = 'js/api-live.js';
+        s.onload = function() { initLiveWidgets(); };
+        document.head.appendChild(s);
+      } else {
+        initLiveWidgets();
+      }
+    });
+  </script>
 
 <!-- BOTTOM NAV (mobile) -->
 <nav class="bottom-nav-bar" id="bottomNav">

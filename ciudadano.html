@@ -112,13 +112,22 @@
         </div>
     </div>
 
-    <div class="lookup-section" id="lookupSection">
-        <h2>Consultá tu reclamo</h2>
-        <div class="lookup-flex">
-            <input type="text" id="lookupInput" placeholder="Número de reclamo (ej: R-2026-001)">
-            <button onclick="lookupReclamo()">Consultar</button>
-        </div>
-        <div id="lookupResult" style="margin-top:24px;display:none;background:rgba(0,0,0,0.2);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.05)"></div>
+    <div style="display:flex; flex-wrap:wrap; gap:24px; max-width:900px; margin:0 auto 64px;">
+      <div class="lookup-section" id="lookupSection" style="flex:1; min-width:300px; margin:0;">
+          <h2>Consultá tu reclamo</h2>
+          <div class="lookup-flex">
+              <input type="text" id="lookupInput" placeholder="Número de reclamo (ej: R-2026-001)">
+              <button onclick="lookupReclamo()">Consultar</button>
+          </div>
+          <div id="lookupResult" style="margin-top:24px;display:none;background:rgba(0,0,0,0.2);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.05)"></div>
+      </div>
+
+      <!-- QR de pago -->
+      <div class="card" style="text-align:center;padding:32px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:16px;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.45);margin-bottom:12px">Paga tu tasa desde tu celular</div>
+        <img id="qrPayment" src="" alt="QR de pago" style="width:160px;height:160px;border-radius:12px;border:2px solid rgba(59,130,246,0.2)" loading="lazy">
+        <div style="font-size:11px;color:rgba(148,163,184,0.5);margin-top:8px">Escaneá con Mercado Pago o tu banco</div>
+      </div>
     </div>
 
     <div id="misReclamosContainer" style="display:none;margin-bottom:64px">
@@ -286,6 +295,23 @@ function loadMisReclamos() {
 }
 
 document.addEventListener('DOMContentLoaded', loadMisReclamos);
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Generate QR for payment
+  if (!window.MuniAPI) {
+    var s = document.createElement('script'); s.src = 'js/api-live.js';
+    s.onload = loadCiudadanoAPIs;
+    document.head.appendChild(s);
+  } else { loadCiudadanoAPIs(); }
+});
+
+function loadCiudadanoAPIs() {
+  var qrImg = document.getElementById('qrPayment');
+  if (qrImg && window.MuniAPI) {
+    qrImg.src = MuniAPI.getQRUrl('https://municipio-junin.vercel.app/ciudadano.html?pago=tasa-municipal&muni=junin');
+  }
+}
 </script>
+<script src="js/api-live.js"></script>
 </body>
 </html>

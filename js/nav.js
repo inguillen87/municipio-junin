@@ -195,14 +195,17 @@ window.buildSidebar = function(activeId) {
 function adjustMainContent(collapsed) {
   var main = document.getElementById('mainContent');
   if (!main) return;
+  var w = collapsed ? '64px' : '260px';
+  // Drive ALL layout via the CSS variable — dashboard.css already uses var(--sidebar-w)
+  document.documentElement.style.setProperty('--sidebar-w', w);
   if (collapsed) {
-    main.style.marginLeft = '64px';
-    main.style.width = 'calc(100% - 64px)';
     main.classList.add('sidebar-collapsed');
+    main.style.marginLeft = '';
+    main.style.width = '';
   } else {
-    main.style.marginLeft = '260px';
-    main.style.width = 'calc(100% - 260px)';
     main.classList.remove('sidebar-collapsed');
+    main.style.marginLeft = '';
+    main.style.width = '';
   }
 }
 

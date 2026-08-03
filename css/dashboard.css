@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    DASHBOARD EJECUTIVO — MUNICIPIO DE JUNÍN
    Design System & Component Styles
    ============================================================ */
@@ -34,8 +34,9 @@
   --teal:    #06b6d4;
   --teal-glow: rgba(6,182,212,0.25);
 
-  --sidebar-w: 240px;
+  --sidebar-w: 260px;
   --topbar-h:  64px;
+
   --radius:    14px;
   --radius-sm: 8px;
   --shadow:    0 4px 24px rgba(0,0,0,0.4);
@@ -315,12 +316,16 @@ body {
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-w);
+  width: calc(100% - var(--sidebar-w));
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: margin-left var(--transition);
+  transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1),
+              width 0.28s cubic-bezier(0.4,0,0.2,1);
+  box-sizing: border-box;
 }
-.main-content.expanded { margin-left: 64px; }
+.main-content.expanded { margin-left: 64px; width: calc(100% - 64px); }
+
 
 /* ── TOPBAR ── */
 .topbar {

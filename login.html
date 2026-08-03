@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -541,33 +541,32 @@
 
     <div class="divider"><span>Acceso rapido por rol</span></div>
 
-    <div class="demo-title">Usuarios de demostración</div>
+    <div class="demo-title">Usuarios de demostración — Municipio de Junín</div>
     <div class="demo-grid">
-      <button class="demo-card" onclick="fillUser('superadmin@municontrol.com','SuperAdmin2026!')">
-        <div class="demo-card-role" style="color:#f59e0b">Super Admin</div>
-        <div class="demo-card-email">superadmin@municontrol.com</div>
+      <!-- ADMIN MUNICIPAL — el usuario principal de cada municipio -->
+      <button class="demo-card" onclick="fillUser('admin@junin.gov.ar','Junin2026!')" style="border-color:rgba(59,130,246,0.4);background:rgba(59,130,246,0.08);grid-column:span 2">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏛️</div>
+          <div style="text-align:left">
+            <div class="demo-card-role" style="color:#60a5fa;font-size:13px">👑 Admin Municipal <span style="font-size:10px;background:rgba(59,130,246,0.15);padding:2px 8px;border-radius:99px;margin-left:4px">Acceso total</span></div>
+            <div class="demo-card-email" style="font-size:12px">admin@junin.gov.ar — Junin2026!</div>
+          </div>
+        </div>
       </button>
-      <button class="demo-card" onclick="fillUser('intendente@junin.gob.ar','Junin2026!')">
-        <div class="demo-card-role" style="color:#3b82f6">Intendente</div>
-        <div class="demo-card-email">intendente@junin.gob.ar</div>
+      <button class="demo-card" onclick="fillUser('intendente@junin.gov.ar','Junin2026!')">
+        <div class="demo-card-role" style="color:#3b82f6">🏠 Intendente</div>
+        <div class="demo-card-email">intendente@junin.gov.ar</div>
       </button>
-      <button class="demo-card" onclick="fillUser('hacienda@junin.gob.ar','Hacienda2026!')">
-        <div class="demo-card-role" style="color:#10b981">Hacienda</div>
-        <div class="demo-card-email">hacienda@junin.gob.ar</div>
+      <button class="demo-card" onclick="fillUser('contador@junin.gov.ar','Junin2026!')">
+        <div class="demo-card-role" style="color:#10b981">🏦 Contador</div>
+        <div class="demo-card-email">contador@junin.gov.ar</div>
       </button>
-      <button class="demo-card" onclick="fillUser('rrhh@junin.gob.ar','RRHH2026!')">
-        <div class="demo-card-role" style="color:#8b5cf6">RRHH</div>
-        <div class="demo-card-email">rrhh@junin.gob.ar</div>
-      </button>
-      <button class="demo-card" onclick="fillUser('analista@junin.gob.ar','Analytics2026!')">
-        <div class="demo-card-role" style="color:#06b6d4">Analista</div>
-        <div class="demo-card-email">analista@junin.gob.ar</div>
-      </button>
-      <button class="demo-card" onclick="fillUser('demo@demo.com','demo123')">
-        <div class="demo-card-role" style="color:#64748b">Demo</div>
-        <div class="demo-card-email">demo@demo.com</div>
+      <button class="demo-card" onclick="fillUser('demo@junin.gov.ar','Junin2026!')">
+        <div class="demo-card-role" style="color:#64748b">👁️ Solo lectura</div>
+        <div class="demo-card-email">demo@junin.gov.ar</div>
       </button>
     </div>
+    <div style="text-align:center;font-size:11px;color:rgba(100,116,139,0.5);margin-top:8px">Todos los usuarios demo usan la contraseña <strong style="color:rgba(148,163,184,0.6)">Junin2026!</strong></div>
 
     <div class="security-row">
       <span class="sec-badge">AES-256</span>
@@ -579,12 +578,10 @@
 
   <script>
     const USERS = [
-      { email:'superadmin@municontrol.com', pass:'SuperAdmin2026!', name:'Super Admin', role:'SUPER_ADMIN', secretaria:'Sistema' },
-      { email:'intendente@junin.gob.ar',    pass:'Junin2026!',      name:'Marcelo Gutierrez', role:'INTENDENTE', secretaria:'Intendencia' },
-      { email:'hacienda@junin.gob.ar',      pass:'Hacienda2026!',   name:'Maria Garcia',  role:'TENANT_ADMIN', secretaria:'Hacienda' },
-      { email:'rrhh@junin.gob.ar',          pass:'RRHH2026!',       name:'Carlos Lopez',  role:'TENANT_USER',  secretaria:'RRHH' },
-      { email:'analista@junin.gob.ar',      pass:'Analytics2026!',  name:'Ana Martinez',  role:'TENANT_USER',  secretaria:'Analitica' },
-      { email:'demo@demo.com',              pass:'demo123',          name:'Usuario Demo',  role:'DEMO',         secretaria:'Demo' },
+      { email:'admin@junin.gov.ar',       pass:'Junin2026!',  name:'Admin Municipal',     role:'TENANT_ADMIN', secretaria:'Sistema',     tenantId:'cmscpl5zl0000uhybzimnz2wx' },
+      { email:'intendente@junin.gov.ar',  pass:'Junin2026!',  name:'Sr. Intendente',       role:'INTENDENTE',   secretaria:'Intendencia', tenantId:'cmscpl5zl0000uhybzimnz2wx' },
+      { email:'contador@junin.gov.ar',    pass:'Junin2026!',  name:'Cont. General',        role:'CONTADOR',     secretaria:'Hacienda',    tenantId:'cmscpl5zl0000uhybzimnz2wx' },
+      { email:'demo@junin.gov.ar',        pass:'Junin2026!',  name:'Usuario Demo',         role:'DEMO',         secretaria:'Demo',        tenantId:'cmscpl5zl0000uhybzimnz2wx' },
     ];
 
     function fillUser(email, pass) {

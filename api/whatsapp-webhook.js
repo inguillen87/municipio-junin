@@ -133,13 +133,13 @@ async function processMessage(msg, metadata) {
 // BANNERS PARA PLANTILLAS RICAS (Imágenes de Unsplash)
 // ══════════════════════════════════════════════════════════════
 const BANNERS = {
-  obras: 'https://images.unsplash.com/photo-1541888086225-ee5e638b69da?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  licitaciones: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  rrhh: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  hacienda: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  reclamos: 'https://images.unsplash.com/photo-1508247225956-4b4dcb8c6426?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  reporte: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  menu: 'https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+  obras: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Obras',
+  licitaciones: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Licitaciones',
+  rrhh: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=RRHH',
+  hacienda: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Hacienda',
+  reclamos: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Reclamos',
+  reporte: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Reporte',
+  menu: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Menu'
 };
 
 // ══════════════════════════════════════════════════════════════

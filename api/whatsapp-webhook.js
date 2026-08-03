@@ -29,29 +29,28 @@ export default async function handler(req, res) {
   // ── POST: Incoming messages ────────────────────────────────
   if (req.method !== 'POST') return res.status(405).end();
 
-  // Meta requiere 200 inmediato para no reintentar
-  res.status(200).json({ status: 'received' });
-
   try {
     const body = req.body;
-    if (!body?.object || body.object !== 'whatsapp_business_account') return;
+    if (body?.object === 'whatsapp_business_account') {
+      const entries = body.entry || [];
+      for (const entry of entries) {
+        const changes = entry.changes || [];
+        for (const change of changes) {
+          if (change.field !== 'messages') continue;
+          const value = change.value || {};
+          const messages = value.messages || [];
 
-    const entries = body.entry || [];
-    for (const entry of entries) {
-      const changes = entry.changes || [];
-      for (const change of changes) {
-        if (change.field !== 'messages') continue;
-        const value = change.value || {};
-        const messages = value.messages || [];
-
-        for (const msg of messages) {
-          await processMessage(msg, value.metadata);
+          for (const msg of messages) {
+            await processMessage(msg, value.metadata);
+          }
         }
       }
     }
   } catch (err) {
     console.error('WhatsApp webhook error:', err);
   }
+
+  return res.status(200).json({ status: 'received' });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -367,7 +366,7 @@ async function sendWhatsApp(to, phoneId, text) {
   }
 
   try {
-    await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+    const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -378,9 +377,15 @@ async function sendWhatsApp(to, phoneId, text) {
         recipient_type: 'individual',
         to,
         type: 'text',
-        text: { preview_url: true, body: text },
+        text: { preview_url: false, body: text },
       }),
     });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('WhatsApp Graph API Error:', res.status, errText);
+    } else {
+      console.log('✅ WhatsApp message sent to', to);
+    }
   } catch (e) {
     console.error('WhatsApp send error:', e.message);
   }

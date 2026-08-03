@@ -1,88 +1,157 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mapa - Junín</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#060b18">
+  <title>Mapa Smart City | MuniControl</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="css/dashboard.css">
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #0f172a;
-      color: #f8fafc;
-      font-family: 'Inter', sans-serif;
-      overflow: hidden;
+    /* Map page overrides */
+    html, body { height: 100%; overflow: hidden; }
+
+    .map-wrapper {
+      position: fixed;
+      top: 0; left: var(--sidebar-w, 260px); right: 0; bottom: 0;
+      display: flex;
+      transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
     }
+    .sidebar.collapsed ~ .map-wrapper,
+    body.sidebar-collapsed .map-wrapper { left: 64px; }
+
+    /* Left control panel */
+    #mapPanel {
+      width: 220px;
+      min-width: 220px;
+      background: rgba(6,11,24,0.97);
+      border-right: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    /* Map tile area */
+    #map {
+      flex: 1;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Leaflet popup style */
     .leaflet-popup-content-wrapper {
       background: #ffffff;
       color: #1e293b;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      border: none;
+    }
+    .leaflet-popup-tip { background: #ffffff; }
+    .leaflet-popup-content { margin: 14px 16px; }
+
+    /* Panel sections */
+    .panel-section {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .panel-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: rgba(148,163,184,0.4);
+      margin-bottom: 10px;
+    }
+    .layer-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .layer-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .layer-row input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; }
+    .layer-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .layer-count { font-size: 11px; font-weight: 700; color: rgba(148,163,184,0.5); }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px;
+    }
+    .stat-label { color: rgba(148,163,184,0.6); }
+    .stat-val   { font-weight: 800; }
+
+    #addressSearch {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      padding: 8px 12px;
+      color: #f0f4ff;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
     }
-    .leaflet-popup-tip {
-      background: #ffffff;
-    }
-    .leaflet-popup-content {
-      margin: 12px;
-    }
+    #addressSearch:focus { border-color: rgba(59,130,246,0.5); }
+    #addressSearch::placeholder { color: rgba(148,163,184,0.4); }
+
+    /* Map attribution */
+    .leaflet-control-attribution { font-size: 9px !important; }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar Container (handled by nav.js) -->
-  <div id="sidebar"></div>
+  <!-- Sidebar (built by nav.js) -->
+  <aside class="sidebar" id="sidebar"></aside>
 
-  <!-- Main Content Wrapper -->
-  <div id="mainContent" style="position:absolute;top:0;left:0;right:0;bottom:0">;top:0;left:60px;right:0;bottom:0;display:flex">
-    
-    <!-- Left panel controls -->
-    <div id="mapPanel" style="width:240px;background:rgba(6,11,24,0.95);border-right:1px solid rgba(255,255,255,0.07);z-index:1000;display:flex;flex-direction:column;overflow:hidden">
-      
-      <!-- Topbar passthrough -->
-      <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06)">
-        <div style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:900;color:#f0f4ff">Mapa Smart City</div>
-        <div style="font-size:11px;color:rgba(148,163,184,0.5)">Municipio de Junin</div>
+  <!-- Map wrapper — positioned next to sidebar -->
+  <div class="map-wrapper" id="mapWrapper">
+
+    <!-- Left control panel -->
+    <div id="mapPanel">
+
+      <div class="panel-section">
+        <div style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:900;color:#f0f4ff;margin-bottom:2px">Mapa Smart City</div>
+        <div style="font-size:11px;color:rgba(148,163,184,0.5)">Municipio de Junín, Mendoza</div>
       </div>
-      
+
       <!-- Layer toggles -->
-      <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06)">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.4);margin-bottom:10px">Capas</div>
-        
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:8px">
-          <input type="checkbox" id="layerObras" checked onchange="toggleLayer('obras',this.checked)" style="accent-color:#f59e0b;width:16px;height:16px">
-          <span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#fbbf24">
-            <span style="width:10px;height:10px;background:#f59e0b;border-radius:50%;flex-shrink:0"></span>
-            Obras activas
-          </span>
-          <span id="countObras" style="margin-left:auto;font-size:11px;font-weight:700;color:rgba(148,163,184,0.5)">0</span>
+      <div class="panel-section">
+        <div class="panel-label">Capas</div>
+        <label class="layer-row">
+          <input type="checkbox" id="layerObras" checked onchange="toggleLayer('obras',this.checked)" style="accent-color:#f59e0b">
+          <span class="layer-dot" style="background:#f59e0b"></span>
+          <span class="layer-name" style="color:#fbbf24">Obras activas</span>
+          <span class="layer-count" id="countObras">0</span>
         </label>
-        
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:8px">
-          <input type="checkbox" id="layerReclamos" checked onchange="toggleLayer('reclamos',this.checked)" style="accent-color:#ef4444;width:16px;height:16px">
-          <span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#f87171">
-            <span style="width:10px;height:10px;background:#ef4444;border-radius:50%;flex-shrink:0"></span>
-            Reclamos
-          </span>
-          <span id="countReclamos" style="margin-left:auto;font-size:11px;font-weight:700;color:rgba(148,163,184,0.5)">0</span>
+        <label class="layer-row">
+          <input type="checkbox" id="layerReclamos" checked onchange="toggleLayer('reclamos',this.checked)" style="accent-color:#ef4444">
+          <span class="layer-dot" style="background:#ef4444"></span>
+          <span class="layer-name" style="color:#f87171">Reclamos</span>
+          <span class="layer-count" id="countReclamos">0</span>
         </label>
-        
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-          <input type="checkbox" id="layerServicios" checked onchange="toggleLayer('servicios',this.checked)" style="accent-color:#3b82f6;width:16px;height:16px">
-          <span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#60a5fa">
-            <span style="width:10px;height:10px;background:#3b82f6;border-radius:50%;flex-shrink:0"></span>
-            Servicios
-          </span>
-          <span id="countServicios" style="margin-left:auto;font-size:11px;font-weight:700;color:rgba(148,163,184,0.5)">0</span>
+        <label class="layer-row" style="margin-bottom:0">
+          <input type="checkbox" id="layerServicios" checked onchange="toggleLayer('servicios',this.checked)" style="accent-color:#3b82f6">
+          <span class="layer-dot" style="background:#3b82f6"></span>
+          <span class="layer-name" style="color:#60a5fa">Servicios</span>
+          <span class="layer-count" id="countServicios">0</span>
         </label>
       </div>
-      
-      <!-- Filter reclamos by estado -->
-      <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06)">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.4);margin-bottom:10px">Filtrar reclamos</div>
+
+      <!-- Filter reclamos -->
+      <div class="panel-section">
+        <div class="panel-label">Filtrar reclamos</div>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;font-size:12px;color:rgba(148,163,184,0.7)">
           <input type="radio" name="recFilter" value="todos" checked onchange="filterReclamos(this.value)"> Todos
         </label>
@@ -93,182 +162,225 @@
           <input type="radio" name="recFilter" value="en_proceso" onchange="filterReclamos(this.value)"> En proceso
         </label>
       </div>
-      
-      <!-- Quick stats -->
-      <div style="padding:14px 16px;flex:1">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.4);margin-bottom:10px">Resumen</div>
-        <div id="mapStats" style="display:flex;flex-direction:column;gap:8px"></div>
+
+      <!-- Stats -->
+      <div class="panel-section" style="flex:1">
+        <div class="panel-label">Resumen</div>
+        <div id="mapStats"></div>
       </div>
-      
+
       <!-- Address search -->
-      <div style="padding:14px 16px;border-top:1px solid rgba(255,255,255,0.06)">
-        <input type="text" id="addressSearch" placeholder="Buscar calle..." 
-          style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:12px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box"
+      <div class="panel-section">
+        <input type="text" id="addressSearch" placeholder="Buscar calle..."
           onkeydown="if(event.key==='Enter')searchAddress(this.value)">
       </div>
     </div>
 
-    <!-- Map area (to the right of the panel) -->
-    <div id="map" style="flex:1;position:relative;"></div>
+    <!-- Leaflet map -->
+    <div id="map"></div>
+
   </div>
 
-  <script src="db.js"></script>
-  <script src="nav.js"></script>
+  <script src="js/theme-switcher.js"></script>
+  <script src="js/nav.js"></script>
   <script>
-    if (typeof buildSidebar === 'function') {
-      buildSidebar('mapa');
-    }
+    // Build sidebar
+    if (typeof buildSidebar === 'function') buildSidebar('mapa');
 
-    // OBRAS (with real Junin coordinates)
+    // Sync map wrapper left with sidebar collapse
+    (function syncMapLeft() {
+      function update() {
+        var w = document.documentElement.style.getPropertyValue('--sidebar-w') || '260px';
+        document.getElementById('mapWrapper').style.left = w;
+      }
+      update();
+      var observer = new MutationObserver(update);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+    })();
+
+    // ── DATA: Coordenadas reales de Junín, Mendoza (-33.13, -69.00) ──
+    var CENTER = [-33.1283, -69.0042]; // Plaza Central de Junín, Mendoza
+
     var OBRAS_DATA = [
-      {id:'O001',nombre:'Pavimentacion Av. San Martin 2300-2800',estado:'en_ejecucion',avance:45,monto:'$85M',contratista:'Constructora Sur SA',lat:-34.5868,lng:-60.9433},
-      {id:'O002',nombre:'Recoleccion Residuos Zona Norte',estado:'en_ejecucion',avance:78,monto:'$42M',contratista:'Servicios Municipales SRL',lat:-34.5780,lng:-60.9380},
-      {id:'O003',nombre:'Iluminacion LED Parque Municipal',estado:'finalizada',avance:100,monto:'$18.7M',contratista:'ElectroMunicipal SA',lat:-34.5910,lng:-60.9510},
-      {id:'O004',nombre:'Playón Deportivo Barrio Sur',estado:'en_ejecucion',avance:32,monto:'$22.4M',contratista:'Obras y Servicios SRL',lat:-34.5950,lng:-60.9460},
-      {id:'O005',nombre:'Red Vial Urbana y Rural',estado:'en_ejecucion',avance:58,monto:'$61M',contratista:'Vial Argentina SA',lat:-34.5820,lng:-60.9550},
-      {id:'O006',nombre:'Centro de Salud Barrio Norte',estado:'planificada',avance:0,monto:'$34M',contratista:'Pendiente',lat:-34.5770,lng:-60.9400},
-      {id:'O007',nombre:'Parque Lineal Laguna de Gomez',estado:'en_ejecucion',avance:71,monto:'$15M',contratista:'Verde Urbano SA',lat:-34.5680,lng:-60.9300},
-      {id:'O008',nombre:'Renovacion Red Cloacal Centro',estado:'en_ejecucion',avance:24,monto:'$48M',contratista:'AguasMunicipales',lat:-34.5855,lng:-60.9460},
+      {id:'O001',nombre:'Repavimentación Calle San Martín',estado:'en_ejecucion',avance:62,monto:'$85M',contratista:'Constructora Andina SA',lat:-33.1265,lng:-69.0031},
+      {id:'O002',nombre:'Red de Agua Potable Barrio Norte',estado:'en_ejecucion',avance:38,monto:'$42M',contratista:'AguasMendoza SRL',lat:-33.1240,lng:-69.0058},
+      {id:'O003',nombre:'Iluminación LED Plaza Central',estado:'finalizada',avance:100,monto:'$18.7M',contratista:'ElectroMendoza SA',lat:-33.1283,lng:-69.0042},
+      {id:'O004',nombre:'Playón Deportivo Barrio Sur',estado:'en_ejecucion',avance:45,monto:'$22.4M',contratista:'Obras Cuyo SRL',lat:-33.1320,lng:-69.0060},
+      {id:'O005',nombre:'Bacheo y Red Vial Urbana',estado:'en_ejecucion',avance:71,monto:'$61M',contratista:'Vial Andina SA',lat:-33.1300,lng:-69.0015},
+      {id:'O006',nombre:'Centro de Salud Primario',estado:'planificada',avance:0,monto:'$34M',contratista:'Pendiente licitación',lat:-33.1255,lng:-68.9990},
+      {id:'O007',nombre:'Parque Lineal Ruta 7',estado:'en_ejecucion',avance:55,monto:'$15M',contratista:'Verde Andino SA',lat:-33.1350,lng:-69.0080},
+      {id:'O008',nombre:'Renovación Red Cloacal Centro',estado:'en_ejecucion',avance:28,monto:'$48M',contratista:'SaneamientoMend.',lat:-33.1290,lng:-69.0050},
     ];
 
-    // RECLAMOS (pendientes/en proceso con coords)
     var RECLAMOS_DATA = [
-      {id:'R001',tipo:'Bache en calzada',estado:'pendiente',prioridad:'alta',barrio:'Centro',lat:-34.5862,lng:-60.9421},
-      {id:'R002',tipo:'Luminaria apagada',estado:'en_proceso',prioridad:'media',barrio:'Belgrano',lat:-34.5890,lng:-60.9445},
-      {id:'R003',tipo:'Perdida de agua',estado:'en_proceso',prioridad:'alta',barrio:'Moreno',lat:-34.5845,lng:-60.9480},
-      {id:'R004',tipo:'Residuos no recolectados',estado:'pendiente',prioridad:'media',barrio:'Norte',lat:-34.5790,lng:-60.9410},
-      {id:'R005',tipo:'Arbol caido',estado:'resuelto',prioridad:'alta',barrio:'Italia',lat:-34.5870,lng:-60.9395},
-      {id:'R006',tipo:'Bache en calzada',estado:'pendiente',prioridad:'media',barrio:'Centro',lat:-34.5880,lng:-60.9430},
-      {id:'R007',tipo:'Semaforo roto',estado:'pendiente',prioridad:'alta',barrio:'Centro',lat:-34.5858,lng:-60.9440},
-      {id:'R008',tipo:'Perdida de gas',estado:'en_proceso',prioridad:'alta',barrio:'Alem',lat:-34.5830,lng:-60.9455},
-      {id:'R009',tipo:'Basural clandestino',estado:'en_proceso',prioridad:'baja',barrio:'Sur',lat:-34.5930,lng:-60.9420},
-      {id:'R010',tipo:'Luminaria apagada',estado:'resuelto',prioridad:'media',barrio:'Belgrano',lat:-34.5900,lng:-60.9465},
-      {id:'R011',tipo:'Bache en calzada',estado:'pendiente',prioridad:'alta',barrio:'Rivadavia',lat:-34.5840,lng:-60.9395},
-      {id:'R012',tipo:'Arbolado enfermo',estado:'pendiente',prioridad:'baja',barrio:'Parque',lat:-34.5915,lng:-60.9490},
+      {id:'R001',tipo:'Bache en calzada',estado:'pendiente',prioridad:'alta',barrio:'Centro',lat:-33.1275,lng:-69.0038},
+      {id:'R002',tipo:'Luminaria apagada',estado:'en_proceso',prioridad:'media',barrio:'Norte',lat:-33.1248,lng:-69.0062},
+      {id:'R003',tipo:'Pérdida de agua',estado:'en_proceso',prioridad:'alta',barrio:'Oeste',lat:-33.1305,lng:-69.0075},
+      {id:'R004',tipo:'Residuos no recolectados',estado:'pendiente',prioridad:'media',barrio:'Sur',lat:-33.1335,lng:-69.0028},
+      {id:'R005',tipo:'Árbol caído',estado:'resuelto',prioridad:'alta',barrio:'Centro',lat:-33.1270,lng:-69.0010},
+      {id:'R006',tipo:'Bache en calzada',estado:'pendiente',prioridad:'media',barrio:'Este',lat:-33.1295,lng:-68.9998},
+      {id:'R007',tipo:'Semáforo roto',estado:'pendiente',prioridad:'alta',barrio:'Centro',lat:-33.1280,lng:-69.0048},
+      {id:'R008',tipo:'Pérdida de gas',estado:'en_proceso',prioridad:'alta',barrio:'Norte',lat:-33.1255,lng:-69.0035},
+      {id:'R009',tipo:'Basural clandestino',estado:'en_proceso',prioridad:'baja',barrio:'Sur',lat:-33.1340,lng:-69.0055},
+      {id:'R010',tipo:'Luminaria apagada',estado:'resuelto',prioridad:'media',barrio:'Oeste',lat:-33.1315,lng:-69.0070},
+      {id:'R011',tipo:'Bache en calzada',estado:'pendiente',prioridad:'alta',barrio:'Centro',lat:-33.1288,lng:-69.0022},
+      {id:'R012',tipo:'Arbolado enfermo',estado:'pendiente',prioridad:'baja',barrio:'Parque',lat:-33.1260,lng:-69.0080},
     ];
 
-    // SERVICIOS MUNICIPALES (key locations)
     var SERVICIOS_DATA = [
-      {nombre:'Municipalidad de Junin',tipo:'gobierno',lat:-34.5868,lng:-60.9433,tel:'(0236) 4XX-XXXX',horario:'Lun-Vie 7:30-14:30'},
-      {nombre:'Hospital Municipal Domingo Gateno',tipo:'salud',lat:-34.5820,lng:-60.9480,tel:'(0236) 4XX-XXXX',horario:'24 horas'},
-      {nombre:'Terminal de Omnibus',tipo:'transporte',lat:-34.5850,lng:-60.9510,tel:'(0236) 4XX-XXXX',horario:'5:00-23:00'},
-      {nombre:'Biblioteca Municipal',tipo:'cultura',lat:-34.5830,lng:-60.9400,tel:'(0236) 4XX-XXXX',horario:'Lun-Vie 8-20'},
-      {nombre:'Polideportivo Municipal Sur',tipo:'deporte',lat:-34.5950,lng:-60.9390,tel:'(0236) 4XX-XXXX',horario:'7:00-22:00'},
-      {nombre:'Centro de Jubilados',tipo:'social',lat:-34.5875,lng:-60.9415,tel:'(0236) 4XX-XXXX',horario:'Lun-Vie 9-17'},
-      {nombre:'Cementerio Municipal',tipo:'servicios',lat:-34.5960,lng:-60.9350,tel:'(0236) 4XX-XXXX',horario:'8:00-18:00'},
-      {nombre:'Guarderia Municipal',tipo:'social',lat:-34.5810,lng:-60.9440,tel:'(0236) 4XX-XXXX',horario:'7:30-17:30'},
-      {nombre:'Estadio Ciudad de Junin',tipo:'deporte',lat:-34.5770,lng:-60.9500,tel:'(0236) 4XX-XXXX',horario:'Eventos'},
-      {nombre:'Delegacion Barrio Norte',tipo:'gobierno',lat:-34.5760,lng:-60.9380,tel:'(0236) 4XX-XXXX',horario:'Lun-Vie 8-14'},
+      {nombre:'Municipalidad de Junín',tipo:'Gobierno',lat:-33.1283,lng:-69.0042,tel:'(0263) 4XX-XXXX',horario:'Lun-Vie 7:30-14:30'},
+      {nombre:'Hospital Gral. Las Heras',tipo:'Salud',lat:-33.1270,lng:-69.0015,tel:'(0263) 4XX-XXXX',horario:'24 horas'},
+      {nombre:'Terminal de Ómnibus',tipo:'Transporte',lat:-33.1310,lng:-68.9985,tel:'(0263) 4XX-XXXX',horario:'5:00-23:00'},
+      {nombre:'Biblioteca Municipal',tipo:'Cultura',lat:-33.1275,lng:-69.0065,tel:'(0263) 4XX-XXXX',horario:'Lun-Vie 8-20'},
+      {nombre:'Polideportivo Municipal',tipo:'Deporte',lat:-33.1330,lng:-69.0090,tel:'(0263) 4XX-XXXX',horario:'7:00-22:00'},
+      {nombre:'Centro de Jubilados',tipo:'Social',lat:-33.1265,lng:-69.0030,tel:'(0263) 4XX-XXXX',horario:'Lun-Vie 9-17'},
+      {nombre:'Cementerio Municipal',tipo:'Servicios',lat:-33.1360,lng:-69.0100,tel:'(0263) 4XX-XXXX',horario:'8:00-18:00'},
+      {nombre:'Jardín de Infantes Nº 1',tipo:'Educación',lat:-33.1250,lng:-69.0050,tel:'(0263) 4XX-XXXX',horario:'8:00-12:00'},
+      {nombre:'Delegación Barrio Norte',tipo:'Gobierno',lat:-33.1235,lng:-69.0040,tel:'(0263) 4XX-XXXX',horario:'Lun-Vie 8-14'},
+      {nombre:'Defensa Civil',tipo:'Emergencias',lat:-33.1300,lng:-69.0060,tel:'103',horario:'24 horas'},
     ];
 
+    // Icons
     function makeIcon(color, label) {
       return L.divIcon({
         className: '',
-        html: '<div style="width:32px;height:32px;background:'+color+';border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid rgba(255,255,255,0.3);box-shadow:0 2px 8px rgba(0,0,0,0.4)"><div style="transform:rotate(45deg);display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;font-weight:800;color:white">'+label+'</div></div>',
-        iconSize: [32,32],
-        iconAnchor: [16,32],
-        popupAnchor: [0,-32]
+        html: '<div style="width:30px;height:30px;background:'+color+';border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid rgba(255,255,255,0.4);box-shadow:0 3px 10px rgba(0,0,0,0.5)"><div style="transform:rotate(45deg);display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;font-weight:900;color:white">'+label+'</div></div>',
+        iconSize: [30,30], iconAnchor: [15,30], popupAnchor: [0,-32]
       });
     }
 
-    var obraIcon    = makeIcon('#f59e0b','O');
-    var recPendIcon = makeIcon('#ef4444','!');
-    var recProcIcon = makeIcon('#f59e0b','~');
-    var recResIcon  = makeIcon('#10b981','v');
-    var servIcon    = makeIcon('#3b82f6','S');
-
-    function obraPopup(o) {
-      return '<div style="font-family:Inter,sans-serif;min-width:220px">' +
-        '<div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#1e293b">' + o.nombre + '</div>' +
-        '<div style="font-size:12px;margin-bottom:4px">Estado: <strong>' + o.estado + '</strong></div>' +
-        '<div style="font-size:12px;margin-bottom:4px">Contratista: ' + o.contratista + '</div>' +
-        '<div style="font-size:12px;margin-bottom:8px">Monto: <strong>' + o.monto + '</strong></div>' +
-        '<div style="background:#f1f5f9;border-radius:4px;height:8px;overflow:hidden">' +
-        '<div style="height:100%;background:' + (o.avance>=70?'#10b981':o.avance>=40?'#f59e0b':'#ef4444') + ';width:'+o.avance+'%"></div></div>' +
-        '<div style="font-size:11px;text-align:right;margin-top:4px">' + o.avance + '% completado</div>' +
-        '</div>';
-    }
+    var icons = {
+      obra:    makeIcon('#f59e0b','O'),
+      recPend: makeIcon('#ef4444','!'),
+      recProc: makeIcon('#fb923c','~'),
+      recRes:  makeIcon('#10b981','✓'),
+      serv:    makeIcon('#3b82f6','S'),
+    };
 
     var map;
-    var layers = { obras: L.layerGroup(), reclamos: L.layerGroup(), servicios: L.layerGroup() };
+    var layers = {
+      obras:     L.layerGroup(),
+      reclamos:  L.layerGroup(),
+      servicios: L.layerGroup()
+    };
 
     function toggleLayer(name, visible) {
-      if (visible) { map.addLayer(layers[name]); }
-      else { map.removeLayer(layers[name]); }
+      if (visible) map.addLayer(layers[name]);
+      else map.removeLayer(layers[name]);
     }
 
     function filterReclamos(estado) {
       layers.reclamos.clearLayers();
-      var data = RECLAMOS_DATA;
-      if (window.MuniDB) { 
-        try { 
-          var d = MuniDB.getAll('reclamos'); 
-          if(d && d.length) {
-            // merge coords if available, otherwise just use mock
-            data = d; 
-          }
-        } catch(e){} 
-      }
-      data.forEach(function(r){
+      RECLAMOS_DATA.forEach(function(r) {
         if (estado !== 'todos' && r.estado !== estado) return;
-        var icon = r.estado==='resuelto' ? recResIcon : r.estado==='en_proceso' ? recProcIcon : recPendIcon;
-        var m = L.marker([r.lat||(-34.585+Math.random()*0.02), r.lng||(-60.943+Math.random()*0.02)], {icon:icon})
-          .bindPopup('<div style="font-family:Inter,sans-serif;color:#1e293b"><div style="font-size:13px;font-weight:700;margin-bottom:4px">'+(r.tipo||r.asunto)+'</div><div style="font-size:12px;margin-bottom:2px">Estado: <strong>'+r.estado+'</strong></div><div style="font-size:12px;margin-bottom:2px">Barrio: '+(r.barrio||'')+'</div><div style="font-size:11px;color:#64748b">ID: '+(r.id||'')+'</div></div>');
-        layers.reclamos.addLayer(m);
+        var icon = r.estado === 'resuelto' ? icons.recRes : r.estado === 'en_proceso' ? icons.recProc : icons.recPend;
+        L.marker([r.lat, r.lng], {icon: icon})
+          .bindPopup(
+            '<div style="font-family:Inter,sans-serif;color:#1e293b;min-width:180px">' +
+            '<div style="font-size:13px;font-weight:700;margin-bottom:6px">' + r.tipo + '</div>' +
+            '<div style="font-size:12px;margin-bottom:3px">Estado: <strong>' + r.estado + '</strong></div>' +
+            '<div style="font-size:12px;margin-bottom:3px">Barrio: ' + r.barrio + '</div>' +
+            '<div style="font-size:12px">Prioridad: <span style="font-weight:700;color:' + (r.prioridad==='alta'?'#ef4444':r.prioridad==='media'?'#f59e0b':'#10b981') + '">' + r.prioridad + '</span></div>' +
+            '<div style="font-size:10px;color:#94a3b8;margin-top:6px">ID: ' + r.id + '</div>' +
+            '</div>'
+          ).addTo(layers.reclamos);
       });
+    }
+
+    function obraPopup(o) {
+      return '<div style="font-family:Inter,sans-serif;color:#1e293b;min-width:220px">' +
+        '<div style="font-size:13px;font-weight:700;margin-bottom:8px">' + o.nombre + '</div>' +
+        '<div style="font-size:12px;margin-bottom:3px">Estado: <strong>' + o.estado + '</strong></div>' +
+        '<div style="font-size:12px;margin-bottom:3px">Contratista: ' + o.contratista + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px">Monto: <strong>' + o.monto + '</strong></div>' +
+        '<div style="background:#f1f5f9;border-radius:4px;height:8px;overflow:hidden">' +
+        '<div style="height:100%;background:' + (o.avance>=70?'#10b981':o.avance>=40?'#f59e0b':'#ef4444') + ';width:'+o.avance+'%"></div></div>' +
+        '<div style="font-size:11px;text-align:right;margin-top:4px;color:#64748b">' + o.avance + '% completado</div>' +
+        '</div>';
     }
 
     function updateStats() {
-      var pendRec = RECLAMOS_DATA.filter(function(r){return r.estado==='pendiente';}).length;
-      var obrasEjec = OBRAS_DATA.filter(function(o){return o.estado==='en_ejecucion';}).length;
-      document.getElementById('mapStats').innerHTML = [
-        statRow('Obras en ejecucion', obrasEjec, '#f59e0b'),
+      var pendRec  = RECLAMOS_DATA.filter(function(r){return r.estado==='pendiente';}).length;
+      var obrasEj  = OBRAS_DATA.filter(function(o){return o.estado==='en_ejecucion';}).length;
+      var avgAvance= Math.round(OBRAS_DATA.reduce(function(s,o){return s+o.avance;},0)/OBRAS_DATA.length);
+      var html = [
+        statRow('Obras en ejecución', obrasEj, '#f59e0b'),
         statRow('Reclamos pendientes', pendRec, '#ef4444'),
         statRow('Servicios mapeados', SERVICIOS_DATA.length, '#3b82f6'),
-        statRow('Avance prom. obras', Math.round(OBRAS_DATA.reduce(function(s,o){return s+o.avance;},0)/OBRAS_DATA.length)+'%', '#10b981'),
+        statRow('Avance prom. obras', avgAvance+'%', '#10b981'),
       ].join('');
-      document.getElementById('countObras').textContent = OBRAS_DATA.length;
-      document.getElementById('countReclamos').textContent = RECLAMOS_DATA.length;
+      document.getElementById('mapStats').innerHTML = html;
+      document.getElementById('countObras').textContent    = OBRAS_DATA.length;
+      document.getElementById('countReclamos').textContent  = RECLAMOS_DATA.length;
       document.getElementById('countServicios').textContent = SERVICIOS_DATA.length;
     }
-    
+
     function statRow(label, val, color) {
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="font-size:12px;color:rgba(148,163,184,0.6)">'+label+'</span><span style="font-size:13px;font-weight:800;color:'+color+'">'+val+'</span></div>';
+      return '<div class="stat-row"><span class="stat-label">' + label + '</span>' +
+             '<span class="stat-val" style="color:' + color + '">' + val + '</span></div>';
     }
 
     function searchAddress(val) {
-      if(!val) return;
-      alert("Búsqueda simulada de: " + val);
+      if (!val) return;
+      // Nominatim geocode (OpenStreetMap)
+      fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(val + ', Junín, Mendoza, Argentina') + '&format=json&limit=1')
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          if (data && data.length > 0) {
+            var lat = parseFloat(data[0].lat);
+            var lon = parseFloat(data[0].lon);
+            map.setView([lat, lon], 17);
+            L.marker([lat, lon]).addTo(map)
+              .bindPopup('<strong>' + (data[0].display_name || val) + '</strong>').openPopup();
+          } else {
+            alert('No se encontró: ' + val + ' en Junín, Mendoza');
+          }
+        })
+        .catch(function(){ alert('Error de búsqueda. Verificá la conexión.'); });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      map = L.map('map', {zoomControl:false}).setView([-34.5868,-60.9433], 14);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-        attribution:'&copy; OpenStreetMap &copy; CARTO', subdomains:'abcd', maxZoom:19
+      // Init map centered on Junín, Mendoza
+      map = L.map('map', { zoomControl: false }).setView(CENTER, 15);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
       }).addTo(map);
-      L.control.zoom({position:'topright'}).addTo(map);
-      
-      // Add all layers to map
-      layers.obras.addTo(map);
-      layers.reclamos.addTo(map);
-      layers.servicios.addTo(map);
-      
-      // Populate obras layer
-      OBRAS_DATA.forEach(function(o){
-        L.marker([o.lat,o.lng],{icon:obraIcon}).bindPopup(obraPopup(o)).addTo(layers.obras);
+
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      // Add layers to map
+      Object.values(layers).forEach(function(lg){ lg.addTo(map); });
+
+      // Populate obras
+      OBRAS_DATA.forEach(function(o) {
+        L.marker([o.lat, o.lng], { icon: icons.obra })
+          .bindPopup(obraPopup(o))
+          .addTo(layers.obras);
       });
-      
+
       // Populate reclamos
       filterReclamos('todos');
-      
+
       // Populate servicios
-      SERVICIOS_DATA.forEach(function(s){
-        L.marker([s.lat,s.lng],{icon:servIcon})
-          .bindPopup('<div style="font-family:Inter,sans-serif;color:#1e293b"><div style="font-size:13px;font-weight:700;margin-bottom:4px">'+s.nombre+'</div><div style="font-size:12px;margin-bottom:2px">Tipo: <strong>'+s.tipo+'</strong></div><div style="font-size:12px;margin-bottom:2px">Horario: '+s.horario+'</div><div style="font-size:12px">Tel: '+s.tel+'</div></div>')
-          .addTo(layers.servicios);
+      SERVICIOS_DATA.forEach(function(s) {
+        L.marker([s.lat, s.lng], { icon: icons.serv })
+          .bindPopup(
+            '<div style="font-family:Inter,sans-serif;color:#1e293b;min-width:180px">' +
+            '<div style="font-size:13px;font-weight:700;margin-bottom:6px">' + s.nombre + '</div>' +
+            '<div style="font-size:12px;margin-bottom:3px">Tipo: <strong>' + s.tipo + '</strong></div>' +
+            '<div style="font-size:12px;margin-bottom:3px">Horario: ' + s.horario + '</div>' +
+            '<div style="font-size:12px">Tel: ' + s.tel + '</div>' +
+            '</div>'
+          ).addTo(layers.servicios);
       });
-      
+
       updateStats();
+
+      // Invalidate size after sidebar transition
+      setTimeout(function(){ map.invalidateSize(); }, 350);
     });
   </script>
 </body>

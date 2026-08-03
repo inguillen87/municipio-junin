@@ -30,6 +30,7 @@ var NAV_ITEMS = [
   { id:'dashboard',    href:'index.html',         icon:'chart',   label:'Panel Principal',    section:'PRINCIPAL',     access:'all' },
   { id:'analytics',   href:'analytics.html',      icon:'bar',     label:'Reportes',           section:'PRINCIPAL',     access:'all' },
   { id:'inteligencia', href:'inteligencia.html', icon:'ai',    label:'Inteligencia Ejecutiva',  section:'PRINCIPAL',   access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
+  { id:'auditoria', href:'auditoria.html', icon:'shield', label:'Auditoría de Datos', section:'ADMINISTRACIÓN', access:['SUPER_ADMIN','TENANT_ADMIN'] },
   { id:'reportes',    href:'reportes.html',        icon:'doc',     label:'Centro de Reportes', section:'PRINCIPAL',     access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
   { id:'hacienda',    href:'hacienda.html',        icon:'bank',    label:'Hacienda',           section:'GESTION',       access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
   { id:'presupuesto', href:'presupuesto.html',     icon:'wallet',  label:'Presupuesto',        section:'GESTION',       access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },

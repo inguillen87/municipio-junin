@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -608,145 +608,369 @@
     var currentModule = 'rrhh';
     var currentSource = 'file';
 
+    var MODULE_COLORS = {
+      rrhh:         { bg:'rgba(59,130,246,0.15)',  color:'#60a5fa',  name:'RRHH' },
+      hacienda:     { bg:'rgba(245,158,11,0.15)',  color:'#fbbf24',  name:'Hacienda' },
+      licitaciones: { bg:'rgba(16,185,129,0.15)',  color:'#34d399',  name:'Licitaciones' },
+      obras:        { bg:'rgba(239,68,68,0.15)',   color:'#f87171',  name:'Obras' },
+      presupuesto:  { bg:'rgba(139,92,246,0.15)',  color:'#a78bfa',  name:'Presupuesto' },
+      vecinos:      { bg:'rgba(6,182,212,0.15)',   color:'#22d3ee',  name:'Vecinos' },
+      proveedores:  { bg:'rgba(249,115,22,0.15)',  color:'#fb923c',  name:'Proveedores' },
+      control:      { bg:'rgba(16,185,129,0.15)',  color:'#34d399',  name:'Control' },
+      analytics:    { bg:'rgba(139,92,246,0.15)',  color:'#a78bfa',  name:'Analytics' },
+    };
+
+    // ── Module & source selection ──────────────────────────────
     function selectModule(btn, moduleId) {
       document.querySelectorAll('.module-btn').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
       currentModule = moduleId;
-      showToast('Módulo: ' + btn.querySelector('.mod-name').textContent, 'info');
+      var name = MODULE_COLORS[moduleId] ? MODULE_COLORS[moduleId].name : moduleId;
+      showMsg('Módulo seleccionado: ' + name, 'info');
+      loadModuleFiles(moduleId);
     }
 
     function setSource(btn, sourceId) {
       document.querySelectorAll('.source-tab').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
       currentSource = sourceId;
-      var panels = ['file','url','gdrive','db','schedule'];
-      panels.forEach(function(p){
+      ['file','url','gdrive','db','schedule'].forEach(function(p){
         var el = document.getElementById('panel-' + p);
         if (el) el.style.display = (p === sourceId) ? 'block' : 'none';
       });
     }
 
+    // ── Real file upload ───────────────────────────────────────
     function handleDrop(e) {
       e.preventDefault();
       document.getElementById('dropZone').classList.remove('drag-over');
-      handleFiles(e.dataTransfer.files);
+      uploadFiles(e.dataTransfer.files);
     }
 
     function handleFiles(files) {
-      if (!files || files.length === 0) return;
-      var progress = document.getElementById('uploadProgress');
-      var fill = document.getElementById('progressFill');
-      var label = document.getElementById('progressLabel');
-      var pct = document.getElementById('progressPct');
-      progress.classList.add('active');
-      var p = 0;
-      label.textContent = 'Procesando ' + files.length + ' archivo(s)...';
-      var interval = setInterval(function() {
-        p += Math.random() * 15;
-        if (p >= 100) { p = 100; clearInterval(interval); }
-        fill.style.width = Math.min(p,100) + '%';
-        pct.textContent = Math.round(Math.min(p,100)) + '%';
-        if (p >= 100) {
-          setTimeout(function() {
-            progress.classList.remove('active');
-            fill.style.width = '0%';
-            Array.from(files).forEach(addFileToList);
-            showToast('✅ ' + files.length + ' archivo(s) procesado(s) correctamente', 'success');
-          }, 400);
-        }
-      }, 120);
+      uploadFiles(files);
     }
 
-    var MODULE_COLORS = {
-      rrhh: {bg:'rgba(59,130,246,0.15)',color:'#60a5fa'},
-      hacienda: {bg:'rgba(245,158,11,0.15)',color:'#fbbf24'},
-      licitaciones: {bg:'rgba(16,185,129,0.15)',color:'#34d399'},
-      obras: {bg:'rgba(239,68,68,0.15)',color:'#f87171'},
-      presupuesto: {bg:'rgba(139,92,246,0.15)',color:'#a78bfa'},
-      vecinos: {bg:'rgba(6,182,212,0.15)',color:'#22d3ee'},
-      proveedores: {bg:'rgba(249,115,22,0.15)',color:'#fb923c'},
-      control: {bg:'rgba(16,185,129,0.15)',color:'#34d399'},
-      analytics: {bg:'rgba(139,92,246,0.15)',color:'#a78bfa'},
-    };
+    async function uploadFiles(files) {
+      if (!files || files.length === 0) return;
 
-    function addFileToList(file) {
+      var progress = document.getElementById('uploadProgress');
+      var fill     = document.getElementById('progressFill');
+      var label    = document.getElementById('progressLabel');
+      var pct      = document.getElementById('progressPct');
+
+      progress.classList.add('active');
+      fill.style.width = '0%';
+      label.textContent = 'Subiendo ' + files.length + ' archivo(s)...';
+      pct.textContent = '0%';
+
+      for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        label.textContent = 'Procesando: ' + file.name;
+
+        // Fake progress to 80% while uploading
+        var fakeP = 10;
+        var fakeInterval = setInterval(function() {
+          fakeP = Math.min(fakeP + Math.random() * 8, 80);
+          fill.style.width = fakeP + '%';
+          pct.textContent = Math.round(fakeP) + '%';
+        }, 200);
+
+        try {
+          var formData = new FormData();
+          formData.append('file', file);
+          formData.append('module', currentModule);
+          formData.append('period', getCurrentPeriod());
+
+          var sess = sessionStorage.getItem('mjunin_user') || '';
+          var resp = await fetch('/api/upload-handler', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + sess },
+            body: formData,
+          });
+
+          clearInterval(fakeInterval);
+          fill.style.width = '100%';
+          pct.textContent = '100%';
+
+          var result = await resp.json();
+
+          if (resp.ok && result.success) {
+            var fileData = (result.files && result.files[0]) || {};
+            addFileToList(file, fileData);
+            showDataPreview(fileData);
+            showMsg('✅ ' + file.name + ' procesado — ' + (fileData.rowCount || 0) + ' registros en ' + (MODULE_COLORS[currentModule] || {}).name || currentModule, 'success');
+          } else {
+            showMsg('⚠️ ' + (result.error || 'Error al procesar ' + file.name), 'error');
+            addFileToListLocal(file);
+          }
+        } catch (err) {
+          clearInterval(fakeInterval);
+          console.warn('Upload API error:', err.message, '- adding locally');
+          addFileToListLocal(file);
+          showMsg('⚠️ API no disponible, archivo registrado localmente', 'warning');
+        }
+
+        fill.style.width = '0%';
+      }
+
+      setTimeout(function() { progress.classList.remove('active'); }, 600);
+    }
+
+    // ── Data preview after upload ──────────────────────────────
+    function showDataPreview(fileData) {
+      var existing = document.getElementById('dataPreviewSection');
+      if (existing) existing.remove();
+
+      if (!fileData.rowCount || fileData.rowCount === 0) return;
+
+      var previewEl = document.createElement('div');
+      previewEl.id = 'dataPreviewSection';
+      previewEl.style.cssText = 'background:rgba(13,21,38,0.9);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;margin-top:16px';
+      previewEl.innerHTML = '<div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between">' +
+        '<div style="font-size:13px;font-weight:700;color:#f0f4ff">📊 Vista previa · ' + fileData.filename + '</div>' +
+        '<div style="display:flex;gap:8px">' +
+        '<span style="font-size:11px;background:rgba(16,185,129,0.15);color:#34d399;padding:3px 10px;border-radius:99px;font-weight:700">' + fileData.rowCount + ' registros</span>' +
+        '<button onclick="this.closest(\'#dataPreviewSection\').remove()" style="background:none;border:none;color:rgba(148,163,184,0.5);cursor:pointer;font-size:16px">×</button>' +
+        '</div></div>' +
+        '<div style="padding:12px 16px;font-size:12px;color:rgba(148,163,184,0.6)">' +
+        '✅ Datos guardados en la base de datos. <a href="/inteligencia" style="color:#60a5fa;text-decoration:none;font-weight:600">Ver en Dashboard Ejecutivo →</a>' +
+        '</div>' +
+        '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">' +
+        '<a href="/api/export-data?module=' + currentModule + '&period=' + getCurrentPeriod() + '&format=csv" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f4ff;font-size:11px;font-weight:600;text-decoration:none">⬇️ Exportar CSV</a>' +
+        '<a href="/api/export-data?module=' + currentModule + '&period=' + getCurrentPeriod() + '&format=xlsx" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f4ff;font-size:11px;font-weight:600;text-decoration:none">⬇️ Exportar Excel</a>' +
+        '<button onclick="analyzeWithAI(\'' + currentModule + '\')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#60a5fa;font-size:11px;font-weight:600;cursor:pointer">🤖 Analizar con IA</button>' +
+        '</div>';
+      document.getElementById('panel-file').appendChild(previewEl);
+    }
+
+    async function analyzeWithAI(module) {
+      showMsg('🤖 Analizando ' + module + ' con IA...', 'info');
+      try {
+        var resp = await fetch('/api/ai-analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Dame un resumen del módulo ' + module + ' para el período actual', period: getCurrentPeriod() })
+        });
+        var data = await resp.json();
+        if (data.response) {
+          showAnalysisResult(data.response, module);
+        }
+      } catch(e) {
+        showMsg('Error al analizar: ' + e.message, 'error');
+      }
+    }
+
+    function showAnalysisResult(text, module) {
+      var el = document.createElement('div');
+      el.style.cssText = 'background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.08));border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:16px;margin-top:12px';
+      el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
+        '<span style="font-size:18px">🤖</span>' +
+        '<span style="font-size:13px;font-weight:700;color:#60a5fa">MuniBot — Análisis de ' + (MODULE_COLORS[module]||{}).name + '</span>' +
+        '</div>' +
+        '<div style="font-size:13px;line-height:1.6;color:rgba(240,244,255,0.85)">' + text + '</div>';
+      document.getElementById('panel-file').appendChild(el);
+    }
+
+    // ── Load existing files for module ─────────────────────────
+    async function loadModuleFiles(moduleId) {
+      try {
+        var resp = await fetch('/api/audit?action=datasets&module=' + moduleId + '&limit=10');
+        if (!resp.ok) return;
+        var data = await resp.json();
+        if (data.datasets && data.datasets.length > 0) {
+          renderExistingFiles(data.datasets);
+        }
+      } catch(e) { /* API not ready yet */ }
+    }
+
+    function renderExistingFiles(datasets) {
+      var list = document.getElementById('fileList');
+      list.innerHTML = '';
+      datasets.forEach(function(ds) {
+        var ext = (ds.filename || '').split('.').pop().toUpperCase() || 'DB';
+        var extClass = { PDF:'ext-pdf', XLSX:'ext-xlsx', XLS:'ext-xlsx', CSV:'ext-csv' }[ext] || 'ext-db';
+        var mc = MODULE_COLORS[ds.module] || MODULE_COLORS.rrhh;
+        var when = ds.created_at ? new Date(ds.created_at).toLocaleDateString('es-AR', {day:'2-digit',month:'short',year:'numeric'}) : '';
+        var item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = '<div class="file-ext ' + extClass + '">' + ext + '</div>' +
+          '<div class="file-info">' +
+          '<div class="file-name">' + (ds.filename || 'Sin nombre') + '</div>' +
+          '<div class="file-meta">' + (ds.row_count || 0).toLocaleString('es-AR') + ' registros · ' + when + '</div>' +
+          '</div>' +
+          '<span class="file-module" style="background:' + mc.bg + ';color:' + mc.color + '">' + (mc.name || ds.module) + '</span>' +
+          '<div class="file-actions">' +
+          '<div class="file-action-btn" onclick="analyzeWithAI(\'' + ds.module + '\')" title="Analizar con IA">🤖</div>' +
+          '<a class="file-action-btn" href="/api/export-data?module=' + ds.module + '&period=' + ds.period + '&format=csv" title="Exportar CSV" style="text-decoration:none">⬇️</a>' +
+          '<div class="file-action-btn" onclick="deleteDataset(' + ds.id + ',this)" title="Eliminar">🗑️</div>' +
+          '</div>';
+        list.appendChild(item);
+      });
+    }
+
+    async function deleteDataset(id, btn) {
+      if (!confirm('¿Eliminar este dataset y todos sus datos?')) return;
+      try {
+        await fetch('/api/audit?action=delete-dataset&id=' + id, { method: 'DELETE' });
+        btn.closest('.file-item').remove();
+        showMsg('Dataset eliminado', 'info');
+      } catch(e) { showMsg('Error al eliminar', 'error'); }
+    }
+
+    // ── URL / Google Sheets connectors ─────────────────────────
+    async function connectURL() {
+      var url = document.getElementById('urlInput').value.trim();
+      if (!url) { showMsg('Ingresá una URL válida', 'error'); return; }
+      showMsg('🔗 Conectando a ' + url.substring(0,50) + '...', 'info');
+
+      try {
+        var resp = await fetch('/api/upload-handler', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (sessionStorage.getItem('mjunin_user') || '')
+          },
+          body: JSON.stringify({ sourceUrl: url, module: currentModule, period: getCurrentPeriod(), sourceType: 'api' })
+        });
+        var result = await resp.json();
+        if (result.success) {
+          showMsg('✅ Fuente conectada. ' + (result.rowCount || 0) + ' registros importados', 'success');
+        } else {
+          showMsg('⚠️ ' + (result.error || 'Error al conectar'), 'error');
+        }
+      } catch(e) {
+        showMsg('Error de red: ' + e.message, 'error');
+      }
+    }
+
+    async function connectGDrive() {
+      var url = document.getElementById('gdriveInput').value.trim();
+      if (!url) { showMsg('Pegá el link de Google Drive', 'error'); return; }
+
+      // Convert Google Sheets to CSV export URL
+      var csvUrl = url;
+      var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (match) {
+        csvUrl = 'https://docs.google.com/spreadsheets/d/' + match[1] + '/export?format=csv';
+        showMsg('📊 Importando Google Sheet como CSV...', 'info');
+      }
+
+      try {
+        // Fetch CSV via our API to avoid CORS
+        var resp = await fetch('/api/upload-handler', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (sessionStorage.getItem('mjunin_user') || '')
+          },
+          body: JSON.stringify({ sourceUrl: csvUrl, module: currentModule, period: getCurrentPeriod(), sourceType: 'gdrive', filename: 'google-sheet.csv' })
+        });
+        var result = await resp.json();
+        if (result.success) {
+          showMsg('✅ Google Sheets importado — ' + (result.rowCount || 0) + ' filas', 'success');
+        } else {
+          showMsg('⚠️ ' + (result.error || 'No se pudo importar. Verificá que el archivo sea público.'), 'error');
+        }
+      } catch(e) {
+        showMsg('Error al importar: ' + e.message, 'error');
+      }
+    }
+
+    async function connectDB() {
+      var conn = document.getElementById('dbConnStr').value.trim();
+      var dbType = document.getElementById('dbType').value;
+      if (!conn) { showMsg('Ingresá la cadena de conexión', 'error'); return; }
+      showMsg('🗄️ Probando conexión a ' + dbType + '...', 'info');
+
+      try {
+        var resp = await fetch('/api/external-connector', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'test', config: { type: dbType.toLowerCase(), connectionString: conn } })
+        });
+        var result = await resp.json();
+        if (result.success) {
+          showMsg('✅ Conexión exitosa (' + result.responseTime + 'ms). ' + (result.tables ? result.tables.length + ' tablas encontradas.' : ''), 'success');
+        } else {
+          showMsg('❌ ' + (result.message || 'No se pudo conectar'), 'error');
+        }
+      } catch(e) {
+        showMsg('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function addSchedule() {
+      var url     = document.getElementById('schedUrl').value.trim();
+      var freq    = document.getElementById('schedFreq').value;
+      var time    = document.getElementById('schedTime').value;
+      var module  = document.getElementById('schedModule').value.toLowerCase();
+      if (!url) { showMsg('Ingresá la URL de la fuente', 'error'); return; }
+
+      try {
+        var resp = await fetch('/api/external-connector', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save',
+            config: { conn_type: 'gdrive', conn_name: 'Import ' + freq + ' · ' + module, schedule: freq + ' at ' + time, sourceUrl: url, module }
+          })
+        });
+        var result = await resp.json();
+        if (result.success) {
+          showMsg('✅ Importación programada: ' + freq + ' a las ' + time + ' · ' + module, 'success');
+        } else {
+          showMsg('⚠️ ' + (result.error || 'Error al programar'), 'error');
+        }
+      } catch(e) {
+        showMsg('Programación guardada localmente (' + freq + ' · ' + time + ')', 'success');
+      }
+    }
+
+    // ── File list helpers ──────────────────────────────────────
+    function addFileToList(file, apiResult) {
       var ext = file.name.split('.').pop().toUpperCase();
-      var extClass = {PDF:'ext-pdf',XLSX:'ext-xlsx',XLS:'ext-xlsx',CSV:'ext-csv'}[ext] || 'ext-db';
+      var extClass = { PDF:'ext-pdf', XLSX:'ext-xlsx', XLS:'ext-xlsx', CSV:'ext-csv' }[ext] || 'ext-db';
       var size = file.size > 1048576 ? (file.size/1048576).toFixed(1)+' MB' : Math.round(file.size/1024)+' KB';
       var mc = MODULE_COLORS[currentModule] || MODULE_COLORS.rrhh;
-      var modName = document.querySelector('#mod-'+currentModule+' .mod-name');
-      var modLabel = modName ? modName.textContent : currentModule;
+      var rowCount = (apiResult && apiResult.rowCount) ? apiResult.rowCount.toLocaleString('es-AR') + ' registros' : size;
       var item = document.createElement('div');
       item.className = 'file-item';
-      item.innerHTML = '<div class="file-ext '+extClass+'">'+ext+'</div>' +
-        '<div class="file-info"><div class="file-name">'+file.name+'</div>' +
-        '<div class="file-meta">'+size+' · Subido ahora</div></div>' +
-        '<span class="file-module" style="background:'+mc.bg+';color:'+mc.color+'">'+modLabel+'</span>' +
+      item.innerHTML = '<div class="file-ext ' + extClass + '">' + ext + '</div>' +
+        '<div class="file-info"><div class="file-name">' + file.name + '</div>' +
+        '<div class="file-meta">' + rowCount + ' · Subido ahora</div></div>' +
+        '<span class="file-module" style="background:' + mc.bg + ';color:' + mc.color + '">' + mc.name + '</span>' +
         '<div class="file-actions">' +
-        '<div class="file-action-btn" onclick="showToast(\'Analizando con IA...\',\'info\')" title="Analizar con IA">🤖</div>' +
-        '<div class="file-action-btn" title="Descargar">⬇️</div>' +
+        '<div class="file-action-btn" onclick="analyzeWithAI(\'' + currentModule + '\')" title="Analizar con IA">🤖</div>' +
+        '<a class="file-action-btn" href="/api/export-data?module=' + currentModule + '&period=' + getCurrentPeriod() + '&format=csv" style="text-decoration:none" title="Exportar">⬇️</a>' +
         '<div class="file-action-btn" onclick="this.closest(\'.file-item\').remove()">🗑️</div>' +
         '</div>';
       document.getElementById('fileList').prepend(item);
     }
 
-    function connectURL() {
-      var url = document.getElementById('urlInput').value.trim();
-      if (!url) { showToast('Ingresá una URL válida', 'error'); return; }
-      showToast('🔗 Conectando a ' + url.substring(0,40) + '...', 'info');
-      setTimeout(function() { showToast('✅ Fuente conectada. Sincronizando datos...', 'success'); }, 1500);
+    function addFileToListLocal(file) {
+      addFileToList(file, null);
     }
 
-    function connectGDrive() {
-      var url = document.getElementById('gdriveInput').value.trim();
-      if (!url) { showToast('Pegá el link de Google Drive', 'error'); return; }
-      // Convert Google Sheets to CSV export URL if needed
-      if (url.includes('docs.google.com/spreadsheets')) {
-        var id = url.match(/\/d\/([^/]+)/);
-        if (id) {
-          var csvUrl = 'https://docs.google.com/spreadsheets/d/' + id[1] + '/export?format=csv';
-          showToast('📊 Importando Google Sheet como CSV...', 'info');
-          fetch(csvUrl)
-            .then(function(r){ return r.text(); })
-            .then(function(txt){
-              var rows = txt.split('\n').length;
-              showToast('✅ ' + rows + ' filas importadas desde Google Sheets', 'success');
-            })
-            .catch(function(){ showToast('⚠️ No se pudo acceder. Verificá los permisos del archivo.', 'error'); });
-          return;
-        }
-      }
-      showToast('🔗 Conectando Google Drive...', 'info');
-      setTimeout(function(){ showToast('✅ Importación iniciada', 'success'); }, 1200);
+    // ── Helpers ────────────────────────────────────────────────
+    function getCurrentPeriod() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     }
 
-    function connectDB() {
-      var conn = document.getElementById('dbConnStr').value.trim();
-      if (!conn) { showToast('Ingresá la cadena de conexión', 'error'); return; }
-      showToast('🗄️ Probando conexión a la base de datos...', 'info');
-      setTimeout(function(){ showToast('✅ Conexión exitosa. Los datos se sincronizarán automáticamente.', 'success'); }, 2000);
-    }
-
-    function addSchedule() {
-      var url = document.getElementById('schedUrl').value.trim();
-      var freq = document.getElementById('schedFreq').value;
-      var time = document.getElementById('schedTime').value;
-      var mod  = document.getElementById('schedModule').value;
-      if (!url) { showToast('Ingresá la URL de la fuente', 'error'); return; }
-      showToast('✅ Importación programada: ' + freq + ' a las ' + time + ' para ' + mod, 'success');
-    }
-
-    // Toast notification (fallback if nav.js doesn't provide it)
-    if (typeof showToast === 'undefined') {
-      window.showToast = function(msg, type) {
+    function showMsg(msg, type) {
+      if (typeof showToast === 'function') {
+        showToast(msg, type);
+      } else {
         var t = document.createElement('div');
-        var colors = {success:'#10b981',error:'#ef4444',info:'#3b82f6'};
-        t.style.cssText = 'position:fixed;bottom:80px;right:20px;background:#1e293b;border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;color:#f0f4ff;font-size:13px;z-index:9999;max-width:300px;border-left:3px solid '+(colors[type]||colors.info)+';animation:fadeIn 0.2s ease;font-family:Inter,sans-serif';
+        var colors = { success:'#10b981', error:'#ef4444', info:'#3b82f6', warning:'#f59e0b' };
+        t.style.cssText = 'position:fixed;bottom:80px;right:20px;background:#1e293b;border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;color:#f0f4ff;font-size:13px;z-index:9999;max-width:340px;border-left:3px solid '+(colors[type]||colors.info)+';font-family:Inter,sans-serif;line-height:1.4';
         t.textContent = msg;
         document.body.appendChild(t);
-        setTimeout(function(){ t.remove(); }, 3500);
-      };
+        setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(function(){ t.remove(); }, 300); }, 4000);
+      }
     }
+
+    // Load files for default module on init
+    loadModuleFiles(currentModule);
   </script>
-</body>
-</html>

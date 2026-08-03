@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría y Conectividad - MuniControl</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        :root {
+            --bg-dark: #060b18;
+            --card: rgba(13,21,38,0.9);
+            --text-main: #f0f4ff;
+            --text-muted: #94a3b8;
+            --blue: #3b82f6;
+            --red: #ef4444;
+            --green: #10b981;
+            --yellow: #f59e0b;
+            --border: rgba(255,255,255,0.1);
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+        }
+        #sidebar-container {
+            width: 250px;
+            flex-shrink: 0;
+        }
+        main {
+            flex-grow: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 { margin-top: 0; }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .kpi-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--blue);
+            margin: 0.5rem 0;
+        }
+        .kpi-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+        
+        .btn {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+        .btn-danger { background: var(--red); }
+        
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+            margin-top: 1rem;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 0.25rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--blue);
+        }
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: -1.75rem;
+            top: 1rem;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        .timeline-item:last-child::after { display: none; }
+        .timeline-date { font-size: 0.75rem; color: var(--text-muted); }
+        
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+    
+    <main>
+        <h1>Auditoría y Conectividad Avanzada</h1>
+        
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Datasets Subidos</div>
+                <div class="kpi-value" id="kpi-datasets">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Filas Procesadas</div>
+                <div class="kpi-value" id="kpi-rows">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Última Subida</div>
+                <div class="kpi-value" style="font-size: 1.25rem; margin-top: 1rem;" id="kpi-last">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Módulos Activos</div>
+                <div class="kpi-value" style="font-size: 1.25rem; margin-top: 1rem;" id="kpi-modules">-</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Historial de Subidas de Datos</h2>
+            <table id="datasets-table">
+                <thead>
+                    <tr>
+                        <th>Módulo</th>
+                        <th>Archivo</th>
+                        <th>Período</th>
+                        <th>Filas</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6" style="text-align: center;">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div>
+                <h2>Conexiones Externas (Bases de Datos)</h2>
+                <div id="connections-list">
+                    <p style="color: var(--text-muted)">Cargando conexiones...</p>
+                </div>
+                <button class="btn" style="margin-top: 1rem;" onclick="alert('Funcionalidad de nueva conexión en desarrollo')">+ Nueva Conexión</button>
+            </div>
+            <div>
+                <h2>Actividad Reciente</h2>
+                <div class="timeline" id="timeline-list">
+                    <p style="color: var(--text-muted)">Cargando actividad...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/nav.js"></script>
+    <script>
+        if (typeof buildSidebar === 'function') {
+            buildSidebar('auditoria');
+        }
+
+        async function loadAuditData() {
+            try {
+                // Overview
+                const resOverview = await fetch('/api/audit?action=overview');
+                if (resOverview.ok) {
+                    const stats = await resOverview.json();
+                    document.getElementById('kpi-datasets').textContent = stats.totalDatasets || 0;
+                    document.getElementById('kpi-rows').textContent = stats.totalRows ? stats.totalRows.toLocaleString('es-AR') : 0;
+                    document.getElementById('kpi-last').textContent = stats.lastUpload ? new Date(stats.lastUpload).toLocaleDateString('es-AR') : 'N/A';
+                    document.getElementById('kpi-modules').textContent = (stats.activeModules || []).join(', ') || 'Ninguno';
+                }
+
+                // Datasets
+                const resDatasets = await fetch('/api/audit?action=datasets');
+                if (resDatasets.ok) {
+                    const { data } = await resDatasets.json();
+                    const tbody = document.querySelector('#datasets-table tbody');
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No hay datasets registrados</td></tr>';
+                    } else {
+                        tbody.innerHTML = data.map(d => `
+                            <tr>
+                                <td><span class="badge">${d.module}</span></td>
+                                <td>${d.filename || 'N/A'}</td>
+                                <td>${d.period || 'N/A'}</td>
+                                <td>${d.row_count || 0}</td>
+                                <td>${new Date(d.created_at).toLocaleDateString('es-AR')}</td>
+                                <td>
+                                    <button class="btn btn-sm" onclick="exportData('${d.module}', '${d.period}')">Exportar</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteDataset(${d.id})">Borrar</button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+
+                // Connections
+                const resConnections = await fetch('/api/audit?action=connections');
+                if (resConnections.ok) {
+                    const { data } = await resConnections.json();
+                    const connList = document.getElementById('connections-list');
+                    if (!data || data.length === 0) {
+                        connList.innerHTML = '<p style="color: var(--text-muted)">No hay conexiones configuradas.</p>';
+                    } else {
+                        connList.innerHTML = data.map(c => `
+                            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--border);">
+                                <strong>${c.name}</strong> <span class="badge" style="float:right">${c.type}</span>
+                                <div style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">${c.host}:${c.port} - ${c.database}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                // Timeline
+                const resTimeline = await fetch('/api/audit?action=timeline');
+                if (resTimeline.ok) {
+                    const { data } = await resTimeline.json();
+                    const tlList = document.getElementById('timeline-list');
+                    if (!data || data.length === 0) {
+                        tlList.innerHTML = '<p style="color: var(--text-muted)">No hay actividad reciente.</p>';
+                    } else {
+                        tlList.innerHTML = data.slice(0, 10).map(t => `
+                            <div class="timeline-item">
+                                <div><strong>${t.type === 'upload' ? 'Subida de Datos' : 'Reporte Generado'}</strong></div>
+                                <div style="color: var(--text-muted); font-size: 0.875rem;">${t.description}</div>
+                                <div class="timeline-date">${new Date(t.created_at).toLocaleString('es-AR')}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading audit data:', error);
+            }
+        }
+
+        async function deleteDataset(id) {
+            if (confirm('¿Está seguro de eliminar este dataset y todos sus datos?')) {
+                try {
+                    const res = await fetch(`/api/audit?action=delete-dataset&id=${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        alert('Dataset eliminado');
+                        loadAuditData();
+                    } else {
+                        alert('Error al eliminar');
+                    }
+                } catch(e) {
+                    alert('Error de conexión');
+                }
+            }
+        }
+
+        function exportData(module, period) {
+            window.location.href = `/api/export-data?module=${module}&period=${period}&format=csv`;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAuditData);
+    </script>
+</body>
+</html>

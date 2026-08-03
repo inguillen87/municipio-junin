@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const tenant = await prisma.tenant.upsert({
       where: { slug: 'junin' },
       update: { name: 'Municipalidad de Junin', shortName: 'Junin', province: 'Buenos Aires' },
-      create: { slug: 'junin', name: 'Municipalidad de Junin', shortName: 'Junin', province: 'Buenos Aires', active: true }
+      create: { slug: 'junin', name: 'Municipalidad de Junin', shortName: 'Junin', province: 'Buenos Aires', plan: 'DEMO', status: 'TRIAL' }
     });
 
     const tenantId = tenant.id;
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       await prisma.user.upsert({
         where: { email: u.email },
         update: { passwordHash, tenantId, role: u.role, name: u.name },
-        create: { email: u.email, name: u.name, role: u.role, passwordHash, tenantId, active: true }
+        create: { email: u.email, name: u.name, role: u.role, passwordHash, tenantId }
       });
     }
 

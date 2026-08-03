@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // NAV.JS v6 - Sidebar collapsible + Mobile hamburger
 // Desktop: sidebar toggle 260px <-> 64px (icon-only mode)
 // Mobile: slide in/out with overlay
@@ -29,6 +29,7 @@ window.requireRole = function(allowedRoles) {
 var NAV_ITEMS = [
   { id:'dashboard',    href:'index.html',         icon:'chart',   label:'Panel Principal',    section:'PRINCIPAL',     access:'all' },
   { id:'analytics',   href:'analytics.html',      icon:'bar',     label:'Reportes',           section:'PRINCIPAL',     access:'all' },
+  { id:'inteligencia', href:'inteligencia.html', icon:'ai',    label:'Inteligencia Ejecutiva',  section:'PRINCIPAL',   access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
   { id:'reportes',    href:'reportes.html',        icon:'doc',     label:'Centro de Reportes', section:'PRINCIPAL',     access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
   { id:'hacienda',    href:'hacienda.html',        icon:'bank',    label:'Hacienda',           section:'GESTION',       access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },
   { id:'presupuesto', href:'presupuesto.html',     icon:'wallet',  label:'Presupuesto',        section:'GESTION',       access:['SUPER_ADMIN','TENANT_ADMIN','INTENDENTE'] },

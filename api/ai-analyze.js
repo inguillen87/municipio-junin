@@ -1,16 +1,7 @@
-// api/ai-analyze.js
-// MuniBot con contexto real de datos de la DB
-// Cuando el usuario pregunta algo, este endpoint:
-//   1. Detecta el módulo relevante
-//   2. Consulta los datos reales en Neon
-//   3. Construye un prompt rico con datos reales
-//   4. Llama al LLM y devuelve respuesta inteligente
+import pg from 'pg';
+const { Pool } = pg;
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-import { neon } from '@neondatabase/serverless';
-
-const sql = neon(process.env.DATABASE_URL);
-
-// Keywords para detectar módulo desde la pregunta
 const MODULE_KEYWORDS = {
   rrhh:         ['empleado','personal','sueldo','salario','rrhh','legajo','hora extra','ausentismo','planilla','nomina','nómina','licencia'],
   hacienda:     ['gasto','ingreso','egreso','recaudacion','recaudación','hacienda','caja','tesorería','tesoreria','balance','financiero'],
@@ -37,37 +28,28 @@ export default async function handler(req, res) {
   const period = getCurrentPeriod();
 
   try {
-    // 1. Detect relevant modules from question
     const relevantModules = Object.entries(MODULE_KEYWORDS)
       .filter(([, keywords]) => keywords.some(k => lowerMsg.includes(k)))
       .map(([mod]) => mod);
 
-    // 2. Fetch real data from Neon for relevant modules
     let dataContext = '';
     let hasRealData = false;
 
     for (const mod of relevantModules.slice(0, 3)) {
       try {
-        // Get latest dataset info
-        const [datasetInfo] = await sql`
-          SELECT id, filename, row_count, period, created_at
-          FROM datasets
-          WHERE module = ${mod}
-          ORDER BY created_at DESC
-          LIMIT 1
-        `;
+        const infoRes = await pool.query(
+          "SELECT id, filename, row_count, period, created_at FROM datasets WHERE module = $1 ORDER BY created_at DESC LIMIT 1",
+          [mod]
+        );
+        const datasetInfo = infoRes.rows[0];
 
         if (datasetInfo) {
           hasRealData = true;
-          // Get a sample of data points
-          const dataPoints = await sql`
-            SELECT data FROM data_points
-            WHERE module = ${mod}
-            ORDER BY created_at DESC
-            LIMIT 50
-          `;
-
-          const rows = dataPoints.map(d => d.data);
+          const dataPointsRes = await pool.query(
+            "SELECT data FROM data_points WHERE module = $1 ORDER BY created_at DESC LIMIT 50",
+            [mod]
+          );
+          const rows = dataPointsRes.rows.map(d => d.data);
           const summary = buildDataSummary(mod, rows, datasetInfo);
           dataContext += `\n## Datos reales de ${mod.toUpperCase()} (${datasetInfo.period}):\n${summary}\n`;
         }
@@ -76,46 +58,34 @@ export default async function handler(req, res) {
       }
     }
 
-    // Also get latest intelligence reports if available
     try {
-      const reports = await sql`
-        SELECT type, result, ai_summary, alert_level, created_at
-        FROM intelligence_reports
-        WHERE created_at > NOW() - INTERVAL '30 days'
-        ORDER BY created_at DESC
-        LIMIT 5
-      `;
-
-      if (reports.length > 0) {
+      const reportsRes = await pool.query(
+        "SELECT type, result, ai_summary, alert_level, created_at FROM intelligence_reports WHERE created_at > NOW() - INTERVAL '30 days' ORDER BY created_at DESC LIMIT 5"
+      );
+      if (reportsRes.rows.length > 0) {
         dataContext += '\n## Análisis cruzados recientes:\n';
-        reports.forEach(r => {
+        reportsRes.rows.forEach(r => {
           dataContext += `- ${r.type} (${r.alert_level}): ${r.ai_summary || JSON.stringify(r.result).substring(0, 100)}\n`;
         });
         hasRealData = true;
       }
     } catch (e) { /* ignore */ }
 
-    // 3. Build rich system prompt with real data
     const SYSTEM = buildSystemPrompt(dataContext, hasRealData);
 
-    // 4. Call LLM with real data context
     const MODELS = [
       'Qwen/Qwen2.5-72B-Instruct',
       'meta-llama/Llama-3.3-70B-Instruct',
     ];
 
     let response = null;
-
     for (const modelId of MODELS) {
       try {
         const hfRes = await fetch(
           `https://api-inference.huggingface.co/models/${modelId}/v1/chat/completions`,
           {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
               model: modelId,
               messages: [
@@ -129,7 +99,7 @@ export default async function handler(req, res) {
           }
         );
 
-        if (!hfRes.ok) { continue; }
+        if (!hfRes.ok) continue;
         const data = await hfRes.json();
         const text = data?.choices?.[0]?.message?.content?.trim();
         if (text) { response = text; break; }
@@ -153,8 +123,6 @@ export default async function handler(req, res) {
   }
 }
 
-// ── HELPERS ──────────────────────────────────────────────────────
-
 function buildDataSummary(module, rows, datasetInfo) {
   if (!rows.length) return 'Sin filas de datos.';
 
@@ -167,20 +135,17 @@ function buildDataSummary(module, rows, datasetInfo) {
     summary.push(`Empleados en muestra: ${rows.length}`);
     if (totalSueldo > 0) summary.push(`Gasto salarial muestra: $${totalSueldo.toLocaleString('es-AR')}`);
     if (hsExtra > 0) summary.push(`Horas extra muestra: ${hsExtra.toLocaleString('es-AR')}h`);
-    // First few rows
     rows.slice(0, 3).forEach(r => {
       const name = r.nombre || r.apellido || r.empleado || '';
       const area = r.area || r.secretaria || r.departamento || '';
       const sueldo = r.sueldo || r.salario || '';
       if (name || area) summary.push(`  • ${name} ${area ? '(' + area + ')' : ''} ${sueldo ? '- $' + Number(sueldo).toLocaleString('es-AR') : ''}`);
     });
-
   } else if (module === 'hacienda') {
     const totalIngresos = rows.filter(r => String(r.tipo||'').toLowerCase()==='ingreso').reduce((s,r)=>s+Number(r.monto||0),0);
     const totalEgresos = rows.filter(r => String(r.tipo||'').toLowerCase()==='egreso').reduce((s,r)=>s+Number(r.monto||0),0);
     if (totalIngresos) summary.push(`Ingresos muestra: $${totalIngresos.toLocaleString('es-AR')}`);
     if (totalEgresos) summary.push(`Egresos muestra: $${totalEgresos.toLocaleString('es-AR')}`);
-
   } else if (module === 'obras') {
     const avgAvance = rows.length > 0 ? rows.reduce((s,r)=>s+Number(r.avance||r.progreso||0),0)/rows.length : 0;
     summary.push(`Avance promedio: ${avgAvance.toFixed(0)}%`);
@@ -189,9 +154,7 @@ function buildDataSummary(module, rows, datasetInfo) {
       const avance = r.avance || r.progreso || '';
       if (nombre) summary.push(`  • ${nombre}: ${avance}%`);
     });
-
   } else {
-    // Generic: show first row keys as structure
     if (rows[0]) {
       summary.push(`Campos: ${Object.keys(rows[0]).join(', ')}`);
       summary.push(`Primeros registros: ${JSON.stringify(rows.slice(0,2))}`);

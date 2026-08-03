@@ -1,6 +1,6 @@
 // ============================================================
-// SCHEMA.PRISMA — GovTech Platform SaaS
-// Multi-tenant: Tenants, Users, Roles, Modules
+// SCHEMA.PRISMA v2 - GovTech Municipal Platform
+// Multi-tenant: Tenants, Users + full municipal data
 // DB: Neon PostgreSQL (serverless) via Prisma
 // ============================================================
 
@@ -9,25 +9,26 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
-// ── ENUMS ────────────────────────────────────────────────────
-
 enum Role {
-  SUPER_ADMIN   // Acceso total: gestiona todos los tenants
-  TENANT_ADMIN  // Admin de su municipio
-  TENANT_USER   // Usuario normal de su municipio
-  DEMO          // Acceso demo limitado (solo lectura)
+  SUPER_ADMIN
+  INTENDENTE
+  TENANT_ADMIN
+  TENANT_USER
+  CONTADOR
+  INSPECTOR
+  DEMO
 }
 
 enum Plan {
-  STARTER       // < 500 empleados — $299 USD/mes
-  PROFESSIONAL  // 500–2.000 — $799 USD/mes
-  ENTERPRISE    // > 2.000 — $1.999 USD/mes
-  TRIAL         // Período de prueba (30 días)
-  DEMO          // Plan demo gratuito
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+  TRIAL
+  DEMO
 }
 
 enum TenantStatus {
@@ -37,45 +38,40 @@ enum TenantStatus {
   CANCELLED
 }
 
-// ── TENANTS (Municipios) ─────────────────────────────────────
-
 model Tenant {
-  id           String       @id @default(cuid())
-  slug         String       @unique  // "junin-mendoza", "demo"
-  name         String                // "Municipalidad de Junín"
-  shortName    String                // "Junín"
-  province     String?
-  country      String       @default("Argentina")
-  population   Int?                  // Habitantes
-  employees    Int?                  // Empleados municipales
-  budgetAnnual BigInt?               // Presupuesto anual en centavos
-  currency     String       @default("ARS")
-  timezone     String       @default("America/Argentina/Mendoza")
-  logoEmoji    String       @default("🏛️")
-  logoUrl      String?               // URL de imagen del escudo
-  themePrimary String       @default("#3b82f6")
-  themeAccent  String       @default("#6366f1")
-  themeBackground String   @default("#060b18")
-  contactEmail String?
-  contactPhone String?
-  website      String?
-  plan         Plan         @default(DEMO)
-  status       TenantStatus @default(TRIAL)
-  trialEndsAt  DateTime?             // Fin del período trial
-  billingEmail String?
-  mrr          Int          @default(0) // Monthly Recurring Revenue en USD cents
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  slug            String       @unique
+  name            String
+  shortName       String
+  province        String?
+  country         String       @default("Argentina")
+  population      Int?
+  logoUrl         String?
+  themePrimary    String       @default("#3b82f6")
+  themeAccent     String       @default("#6366f1")
+  themeBackground String       @default("#060b18")
+  contactEmail    String?
+  contactPhone    String?
+  website         String?
+  plan            Plan         @default(DEMO)
+  status          TenantStatus @default(TRIAL)
+  trialEndsAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  // Relaciones
-  users        User[]
-  modules      TenantModule[]
-  auditLogs    AuditLog[]
+  users           User[]
+  empleados       Empleado[]
+  pagos           Pago[]
+  reclamos        Reclamo[]
+  obras           Obra[]
+  presupuestos    Presupuesto[]
+  licitaciones    Licitacion[]
+  auditLogs       AuditLog[]
+  documentos      Documento[]
+  notificaciones  Notificacion[]
 
   @@map("tenants")
 }
-
-// ── USERS ────────────────────────────────────────────────────
 
 model User {
   id           String    @id @default(cuid())
@@ -83,35 +79,198 @@ model User {
   passwordHash String
   name         String
   role         Role      @default(TENANT_USER)
-  tenantId     String?             // null solo para SUPER_ADMIN
+  tenantId     String?
   tenant       Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   active       Boolean   @default(true)
-  avatar       String?             // Iniciales o URL
+  avatar       String?
   lastLogin    DateTime?
   loginCount   Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  // Relaciones
   auditLogs    AuditLog[]
 
   @@map("users")
 }
 
-// ── TENANT MODULES ───────────────────────────────────────────
+model Empleado {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  legajo          String
+  nombre          String
+  apellido        String
+  dni             String?
+  cargo           String
+  categoria       String?
+  secretaria      String
+  area            String?
+  tipoContrato    String    @default("Planta Permanente")
+  salarioBruto    Float
+  salarioNeto     Float?
+  fechaIngreso    DateTime?
+  fechaNacimiento DateTime?
+  email           String?
+  telefono        String?
+  domicilio       String?
+  estado          String    @default("Activo")
+  observaciones   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-model TenantModule {
-  id        String  @id @default(cuid())
-  tenantId  String
-  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  module    String  // "dashboard", "rrhh", "licitaciones", "mapa", etc.
-  active    Boolean @default(true)
-
-  @@unique([tenantId, module])
-  @@map("tenant_modules")
+  @@unique([tenantId, legajo])
+  @@map("empleados")
 }
 
-// ── AUDIT LOG ────────────────────────────────────────────────
+model Pago {
+  id             String    @id @default(cuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  numero         String?
+  proveedor      String
+  cuit           String?
+  concepto       String
+  secretaria     String
+  monto          Float
+  moneda         String    @default("ARS")
+  fecha          DateTime
+  fechaPago      DateTime?
+  estado         String    @default("Pagado")
+  categoria      String?
+  comprobanteUrl String?
+  observaciones  String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("pagos")
+}
+
+model Presupuesto {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  secretaria String
+  codigo     String?
+  programa   String?
+  asignado   Float
+  ejecutado  Float    @default(0)
+  periodo    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tenantId, secretaria, periodo])
+  @@map("presupuestos")
+}
+
+model Reclamo {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  numero        String
+  categoria     String
+  subcategoria  String?
+  descripcion   String
+  estado        String    @default("Pendiente")
+  prioridad     String    @default("Media")
+  barrio        String?
+  domicilio     String?
+  lat           Float?
+  lng           Float?
+  nombre        String?
+  telefono      String?
+  email         String?
+  agente        String?
+  fechaAsignado DateTime?
+  fechaCierre   DateTime?
+  observaciones String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, numero])
+  @@map("reclamos")
+}
+
+model Obra {
+  id               String    @id @default(cuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  nombre           String
+  descripcion      String?
+  contratista      String?
+  monto            Float?
+  moneda           String    @default("ARS")
+  avance           Int       @default(0)
+  estado           String    @default("En ejecucion")
+  barrio           String?
+  domicilio        String?
+  lat              Float?
+  lng              Float?
+  fechaInicio      DateTime?
+  fechaFinEstimada DateTime?
+  fechaFin         DateTime?
+  licitacionId     String?
+  observaciones    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("obras")
+}
+
+model Licitacion {
+  id                String    @id @default(cuid())
+  tenantId          String
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  numero            String
+  tipo              String    @default("Licitacion Publica")
+  objeto            String
+  montoBase         Float?
+  adjudicadoA       String?
+  montoAdjudicado   Float?
+  estado            String    @default("En preparacion")
+  fechaApertura     DateTime?
+  fechaAdjudicacion DateTime?
+  secretaria        String?
+  expediente        String?
+  observaciones     String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([tenantId, numero])
+  @@map("licitaciones")
+}
+
+model Documento {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  nombre    String
+  tipo      String
+  url       String
+  size      Int?
+  mimeType  String?
+  modulo    String?
+  entidadId String?
+  subidoPor String?
+  createdAt DateTime @default(now())
+
+  @@map("documentos")
+}
+
+model Notificacion {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tipo      String
+  titulo    String
+  cuerpo    String
+  modulo    String?
+  href      String?
+  leida     Boolean  @default(false)
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@map("notificaciones")
+}
 
 model AuditLog {
   id        String   @id @default(cuid())
@@ -119,28 +278,25 @@ model AuditLog {
   tenant    Tenant?  @relation(fields: [tenantId], references: [id])
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
-  action    String   // "LOGIN", "CREATE_USER", "UPDATE_TENANT", etc.
-  entity    String?  // "User", "Tenant", "Contract"
+  action    String
+  entity    String?
   entityId  String?
   details   Json?
   ip        String?
-  userAgent String?
   createdAt DateTime @default(now())
 
   @@map("audit_logs")
 }
 
-// ── INVITATIONS ──────────────────────────────────────────────
-
 model Invitation {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   email     String
-  role      Role     @default(TENANT_USER)
+  role      Role      @default(TENANT_USER)
   tenantId  String
-  token     String   @unique @default(cuid())
+  token     String    @unique @default(cuid())
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@map("invitations")
 }

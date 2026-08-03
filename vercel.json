@@ -1,6 +1,7 @@
 {
   "version": 2,
   "name": "municipio-junin",
+  "functions": { "api/**/*.js": { "maxDuration": 30 } },
   "routes": [
     { "src": "^/$", "dest": "/login.html" },
     {

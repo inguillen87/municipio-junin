@@ -1,536 +1,303 @@
-﻿<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Generar Informes — MuniControl</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/exportar.css" />
-</head>
-<body>
-  <aside class="sidebar" id="sidebar"></aside>
-
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
-        <div class="page-title">
-          <h1>Centro de Exportación</h1>
-          <span class="breadcrumb">Reportes Profesionales en PDF y Excel</span>
-        </div>
-      </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <div class="topbar-avatar">MA</div>
-      </div>
-    </header>
-
-    <div class="content-wrapper">
-
-      <!-- SELECTOR DE REPORTE -->
-      <div class="export-layout">
-
-        <!-- PANEL IZQUIERDO: Tipos de reporte -->
-        <aside class="export-sidebar">
-          <h3 class="export-section-title">📋 Tipo de Reporte</h3>
-          <div class="report-list" id="reportList">
-
-            <div class="report-item active" data-report="ejecutivo">
-              <span class="report-icon">📊</span>
-              <div class="report-info">
-                <span class="report-name">Informe Ejecutivo</span>
-                <span class="report-desc">Para el intendente</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="rrhh">
-              <span class="report-icon">👥</span>
-              <div class="report-info">
-                <span class="report-name">Recursos Humanos</span>
-                <span class="report-desc">Nómina y gastos salariales</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="gastos">
-              <span class="report-icon">💰</span>
-              <div class="report-info">
-                <span class="report-name">Gastos por Secretaría</span>
-                <span class="report-desc">Presupuesto vs ejecutado</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="reclamos">
-              <span class="report-icon">🏘️</span>
-              <div class="report-info">
-                <span class="report-name">Reclamos Vecinales</span>
-                <span class="report-desc">Estado y evolución</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="flota">
-              <span class="report-icon">🚗</span>
-              <div class="report-info">
-                <span class="report-name">Flota y Combustible</span>
-                <span class="report-desc">Consumo y mantenimiento</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="talleres">
-              <span class="report-icon">🔧</span>
-              <div class="report-info">
-                <span class="report-name">Talleres Municipales</span>
-                <span class="report-desc">Órdenes y stock</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="horasextra">
-              <span class="report-icon">⏱️</span>
-              <div class="report-info">
-                <span class="report-name">Horas Extra</span>
-                <span class="report-desc">Por área y empleado</span>
-              </div>
-            </div>
-
-          </div>
-
-          <div class="export-options-section">
-            <h3 class="export-section-title">⚙️ Opciones</h3>
-            <div class="option-group">
-              <label class="option-label">Período</label>
-              <select class="option-select" id="optPeriodo">
-                <option>Agosto 2026</option>
-                <option>Julio 2026</option>
-                <option>Junio 2026</option>
-                <option>1er Semestre 2026</option>
-                <option>Año completo 2026</option>
-              </select>
-            </div>
-            <div class="option-group">
-              <label class="option-label">Secretaría</label>
-              <select class="option-select" id="optSecretaria">
-                <option value="">Todas las áreas</option>
-                <option>Obras Públicas</option>
-                <option>Educación</option>
-                <option>Salud</option>
-                <option>Seguridad</option>
-                <option>Medio Ambiente</option>
-                <option>Intendencia</option>
-              </select>
-            </div>
-            <label class="option-check">
-              <input type="checkbox" id="optLogo" checked />
-              <span>Incluir logo municipal</span>
-            </label>
-            <label class="option-check">
-              <input type="checkbox" id="optFirma" checked />
-              <span>Pie de firma</span>
-            </label>
-            <label class="option-check">
-              <input type="checkbox" id="optGraficos" />
-              <span>Incluir gráficos (próximamente)</span>
-            </label>
-          </div>
-        </aside>
-
-        <!-- PANEL DERECHO: Preview + Exportar -->
-        <div class="export-main">
-
-          <!-- PREVIEW CARD -->
-          <div class="preview-card" id="previewCard">
-            <div class="preview-header">
-              <div class="preview-doc-header">
-                <div class="preview-logo">🏛️</div>
-                <div>
-                  <div class="preview-title-mun">MUNICIPIO DE JUNÍN</div>
-                  <div class="preview-subtitle">Sistema de Gestión Municipal</div>
-                </div>
-                <div class="preview-date" id="previewDate"></div>
-              </div>
-              <div class="preview-divider"></div>
-              <h2 class="preview-report-title" id="previewTitle">Informe Ejecutivo</h2>
-              <p class="preview-period" id="previewPeriod">Período: Agosto 2026</p>
-            </div>
-            <div class="preview-body" id="previewBody">
-              <!-- Generado por JS -->
-            </div>
-            <div class="preview-footer">
-              <span>Municipio de Junín · Sistema Digital Municipal v1.0</span>
-              <span>Documento generado automáticamente · Confidencial</span>
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Generar Informes — MuniControl</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/exportar.css" />
+  <title>Centro de Exportacion | MuniControl</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body { margin: 0; padding: 0; background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+    .layout-wrapper { display: flex; width: 100%; height: 100%; }
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 30px; }
+    
+    .page-header { margin-bottom: 30px; }
+    .page-title { font-family: 'Outfit', sans-serif; font-size: 28px; margin: 0 0 5px 0; }
+    .page-subtitle { color: var(--text-muted); font-size: 15px; margin: 0; }
+    
+    .export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    
+    .export-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden; }
+    .export-card:hover { border-color: rgba(59,130,246,0.5); transform: translateY(-2px); transition: all 0.2s; }
+    
+    .card-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(59,130,246,0.1); display: flex; align-items: center; justify-content: center; color: #60a5fa; }
+    .card-icon svg { width: 24px; height: 24px; fill: currentColor; }
+    
+    .card-title { font-size: 16px; font-weight: 600; margin: 0; }
+    .card-desc { font-size: 13px; color: var(--text-muted); margin: 0; flex: 1; }
+    
+    .format-badge { position: absolute; top: 20px; right: 20px; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .format-pdf { background: rgba(239,68,68,0.1); color: #f87171; }
+    .format-excel { background: rgba(16,185,129,0.1); color: #34d399; }
+    .format-csv { background: rgba(245,158,11,0.1); color: #fbbf24; }
+    
+    .btn-download { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn-download:hover { background: #2563eb; }
+    
+    .progress-bar-container { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 10px; display: none; }
+    .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
+    
+    .log-section { background: var(--card-bg); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); padding: 20px; }
+    .log-title { font-family: 'Outfit', sans-serif; font-size: 18px; margin: 0 0 15px 0; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    th { color: var(--text-muted); font-weight: 500; font-size: 13px; }
+    
+  </style>
 </head>
 <body>
-  <aside class="sidebar" id="sidebar"></aside>
-
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
-        <div class="page-title">
-          <h1>Centro de Exportación</h1>
-          <span class="breadcrumb">Reportes Profesionales en PDF y Excel</span>
+  <div class="layout-wrapper">
+    <aside class="sidebar" id="sidebar"></aside>
+    
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">Centro de Exportacion</h1>
+        <p class="page-subtitle">Genera reportes y descarga datos en multiples formatos</p>
+      </div>
+      
+      <div class="export-grid">
+        <!-- Card 1 -->
+        <div class="export-card">
+          <span class="format-badge format-pdf">PDF</span>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9.5 8.5L8 9.5 6.5 11 5 9.5v-2h4.5v4zM19 19H5v-4h14v4zm0-6h-7V5h7v8z"/></svg>
+          </div>
+          <h3 class="card-title">Reporte Ejecutivo Mensual</h3>
+          <p class="card-desc">Resumen completo de KPIs y metricas del mes</p>
+          <div class="progress-bar-container" id="pb-1"><div class="progress-bar" id="p-1"></div></div>
+          <button class="btn-download" onclick="generatePDF('Reporte Ejecutivo', 1)">Descargar Reporte</button>
+        </div>
+        
+        <!-- Card 2 -->
+        <div class="export-card">
+          <span class="format-badge format-excel">EXCEL</span>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9h-2V7h-2v5H6v-2H4v2c0 1.1.9 2 2 2h2v5h2v-5h2v2h2v-2h2v-2h-2v2zm6 2h-2v-2h2v2zm0-4h-2V8h2v2z"/></svg>
+          </div>
+          <h3 class="card-title">Nomina de Personal</h3>
+          <p class="card-desc">Lista completa de empleados con salarios</p>
+          <div class="progress-bar-container" id="pb-2"><div class="progress-bar" id="p-2"></div></div>
+          <button class="btn-download" onclick="generateExcel('Nomina Personal', 2)">Descargar Datos</button>
+        </div>
+        
+        <!-- Card 3 -->
+        <div class="export-card">
+          <span class="format-badge format-excel">EXCEL</span>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+          </div>
+          <h3 class="card-title">Pagos y Proveedores</h3>
+          <p class="card-desc">Historial de pagos del mes actual</p>
+          <div class="progress-bar-container" id="pb-3"><div class="progress-bar" id="p-3"></div></div>
+          <button class="btn-download" onclick="generateExcel('Pagos y Proveedores', 3)">Descargar Datos</button>
+        </div>
+        
+        <!-- Card 4 -->
+        <div class="export-card">
+          <span class="format-badge format-pdf">PDF</span>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+          </div>
+          <h3 class="card-title">Presupuesto por Secretaria</h3>
+          <p class="card-desc">Ejecucion presupuestaria detallada</p>
+          <div class="progress-bar-container" id="pb-4"><div class="progress-bar" id="p-4"></div></div>
+          <button class="btn-download" onclick="generatePDF('Presupuesto por Secretaria', 4)">Descargar Reporte</button>
+        </div>
+        
+        <!-- Card 5 -->
+        <div class="export-card">
+          <span class="format-badge format-csv">CSV</span>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+          </div>
+          <h3 class="card-title">Reclamos 311</h3>
+          <p class="card-desc">Todos los reclamos del periodo</p>
+          <div class="progress-bar-container" id="pb-5"><div class="progress-bar" id="p-5"></div></div>
+          <button class="btn-download" onclick="generateCSV('Reclamos 311', 5)">Descargar CSV</button>
+        </div>
+        
+        <!-- Card 6 -->
+        <div class="export-card">
+          <span class="format-badge format-pdf">PDF</span>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.8l7.2 14.2H4.8L12 5.8z"/></svg>
+          </div>
+          <h3 class="card-title">Obras Municipales</h3>
+          <p class="card-desc">Estado de avance de obras en ejecucion</p>
+          <div class="progress-bar-container" id="pb-6"><div class="progress-bar" id="p-6"></div></div>
+          <button class="btn-download" onclick="generatePDF('Obras Municipales', 6)">Descargar Reporte</button>
         </div>
       </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <div class="topbar-avatar">MA</div>
+      
+      <div class="log-section">
+        <h2 class="log-title">Ultimas Exportaciones</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Archivo</th>
+              <th>Formato</th>
+              <th>Generado por</th>
+              <th>Fecha</th>
+              <th>Tamano</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody">
+            <tr>
+              <td>Reporte_Ejecutivo_Jul26.pdf</td>
+              <td><span class="format-badge format-pdf" style="position:static">PDF</span></td>
+              <td>G. Hacienda</td>
+              <td>01/08/2026</td>
+              <td>2.4 MB</td>
+            </tr>
+            <tr>
+              <td>Nomina_Personal_Jul26.xlsx</td>
+              <td><span class="format-badge format-excel" style="position:static">EXCEL</span></td>
+              <td>RRHH</td>
+              <td>30/07/2026</td>
+              <td>5.1 MB</td>
+            </tr>
+            <tr>
+              <td>Reclamos_Q2.csv</td>
+              <td><span class="format-badge format-csv" style="position:static">CSV</span></td>
+              <td>Atencion Ciudadana</td>
+              <td>15/07/2026</td>
+              <td>12.8 MB</td>
+            </tr>
+            <tr>
+              <td>Obras_Centro_Avance.pdf</td>
+              <td><span class="format-badge format-pdf" style="position:static">PDF</span></td>
+              <td>Obras Publicas</td>
+              <td>10/07/2026</td>
+              <td>4.2 MB</td>
+            </tr>
+            <tr>
+              <td>Pagos_Jun26.xlsx</td>
+              <td><span class="format-badge format-excel" style="position:static">EXCEL</span></td>
+              <td>Tesoreria</td>
+              <td>05/07/2026</td>
+              <td>1.9 MB</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </header>
-
-    <div class="content-wrapper">
-
-      <!-- SELECTOR DE REPORTE -->
-      <div class="export-layout">
-
-        <!-- PANEL IZQUIERDO: Tipos de reporte -->
-        <aside class="export-sidebar">
-          <h3 class="export-section-title">📋 Tipo de Reporte</h3>
-          <div class="report-list" id="reportList">
-
-            <div class="report-item active" data-report="ejecutivo">
-              <span class="report-icon">📊</span>
-              <div class="report-info">
-                <span class="report-name">Informe Ejecutivo</span>
-                <span class="report-desc">Para el intendente</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="rrhh">
-              <span class="report-icon">👥</span>
-              <div class="report-info">
-                <span class="report-name">Recursos Humanos</span>
-                <span class="report-desc">Nómina y gastos salariales</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="gastos">
-              <span class="report-icon">💰</span>
-              <div class="report-info">
-                <span class="report-name">Gastos por Secretaría</span>
-                <span class="report-desc">Presupuesto vs ejecutado</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="reclamos">
-              <span class="report-icon">🏘️</span>
-              <div class="report-info">
-                <span class="report-name">Reclamos Vecinales</span>
-                <span class="report-desc">Estado y evolución</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="flota">
-              <span class="report-icon">🚗</span>
-              <div class="report-info">
-                <span class="report-name">Flota y Combustible</span>
-                <span class="report-desc">Consumo y mantenimiento</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="talleres">
-              <span class="report-icon">🔧</span>
-              <div class="report-info">
-                <span class="report-name">Talleres Municipales</span>
-                <span class="report-desc">Órdenes y stock</span>
-              </div>
-            </div>
-
-            <div class="report-item" data-report="horasextra">
-              <span class="report-icon">⏱️</span>
-              <div class="report-info">
-                <span class="report-name">Horas Extra</span>
-                <span class="report-desc">Por área y empleado</span>
-              </div>
-            </div>
-
-          </div>
-
-          <div class="export-options-section">
-            <h3 class="export-section-title">⚙️ Opciones</h3>
-            <div class="option-group">
-              <label class="option-label">Período</label>
-              <select class="option-select" id="optPeriodo">
-                <option>Agosto 2026</option>
-                <option>Julio 2026</option>
-                <option>Junio 2026</option>
-                <option>1er Semestre 2026</option>
-                <option>Año completo 2026</option>
-              </select>
-            </div>
-            <div class="option-group">
-              <label class="option-label">Secretaría</label>
-              <select class="option-select" id="optSecretaria">
-                <option value="">Todas las áreas</option>
-                <option>Obras Públicas</option>
-                <option>Educación</option>
-                <option>Salud</option>
-                <option>Seguridad</option>
-                <option>Medio Ambiente</option>
-                <option>Intendencia</option>
-              </select>
-            </div>
-            <label class="option-check">
-              <input type="checkbox" id="optLogo" checked />
-              <span>Incluir logo municipal</span>
-            </label>
-            <label class="option-check">
-              <input type="checkbox" id="optFirma" checked />
-              <span>Pie de firma</span>
-            </label>
-            <label class="option-check">
-              <input type="checkbox" id="optGraficos" />
-              <span>Incluir gráficos (próximamente)</span>
-            </label>
-          </div>
-        </aside>
-
-        <!-- PANEL DERECHO: Preview + Exportar -->
-        <div class="export-main">
-
-          <!-- PREVIEW CARD -->
-          <div class="preview-card" id="previewCard">
-            <div class="preview-header">
-              <div class="preview-doc-header">
-                <div class="preview-logo">🏛️</div>
-                <div>
-                  <div class="preview-title-mun">MUNICIPIO DE JUNÍN</div>
-                  <div class="preview-subtitle">Sistema de Gestión Municipal</div>
-                </div>
-                <div class="preview-date" id="previewDate"></div>
-              </div>
-              <div class="preview-divider"></div>
-              <h2 class="preview-report-title" id="previewTitle">Informe Ejecutivo</h2>
-              <p class="preview-period" id="previewPeriod">Período: Agosto 2026</p>
-            </div>
-            <div class="preview-body" id="previewBody">
-              <!-- Generado por JS -->
-            </div>
-            <div class="preview-footer">
-              <span>Municipio de Junín · Sistema Digital Municipal v1.0</span>
-              <span>Documento generado automáticamente · Confidencial</span>
-            </div>
-          </div>
-
-          <!-- BOTONES EXPORT -->
-          <div class="export-actions">
-            <div class="export-actions-label">Exportar como:</div>
-            <button class="export-btn pdf" id="btnExportPDF" onclick="exportPDF()">
-              <span class="export-btn-icon">📑</span>
-              <div>
-                <span class="export-btn-title">Exportar PDF</span>
-                <span class="export-btn-desc">Documento profesional A4</span>
-              </div>
-            </button>
-            <button class="export-btn excel" id="btnExportExcel" onclick="exportExcel()">
-              <span class="export-btn-icon">📊</span>
-              <div>
-                <span class="export-btn-title">Exportar Excel</span>
-                <span class="export-btn-desc">Planilla con datos y fórmulas</span>
-              </div>
-            </button>
-            <button class="export-btn print" id="btnPrint">
-              <span class="export-btn-icon">🖨️</span>
-              <div>
-                <span class="export-btn-title">Imprimir</span>
-                <span class="export-btn-desc">Enviar a impresora</span>
-              </div>
-            </button>
-            <button class="export-btn" id="btnPreviewModal">
-              <span class="export-btn-icon">👁️</span>
-              <div>
-                <span class="export-btn-title">Vista Previa</span>
-                <span class="export-btn-desc">Ver reporte ampliado</span>
-              </div>
-            </button>
-          </div>
-          
-          <div id="exportProgressContainer" style="display:none; margin-top:20px; padding:15px; background:var(--bg-card); border-radius:10px; border:1px solid var(--border);">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-              <span id="exportProgressStatus" style="font-size:13px; font-weight:600;">Generando reporte...</span>
-              <span id="exportProgressPct" style="font-size:13px; color:var(--primary);">0%</span>
-            </div>
-            <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:99px; overflow:hidden;">
-              <div id="exportProgressBar" style="height:100%; width:0%; background:var(--primary); transition:width 0.2s;"></div>
-            </div>
-            <div id="exportDownloadLink" style="display:none; margin-top:12px; text-align:center;">
-              <a href="#" id="exportAnchor" download style="color:var(--primary); text-decoration:none; font-weight:600; font-size:14px;">⬇️ Descargar Archivo</a>
-            </div>
-          </div>
-
-          <!-- RECENT EXPORTS -->
-          <div class="recent-exports">
-            <h3 class="export-section-title">🕐 Exportaciones Recientes</h3>
-            <div id="recentList">
-              <div class="recent-item">
-                <span class="recent-icon pdf">PDF</span>
-                <div class="recent-info"><span class="recent-name">Informe Ejecutivo Agosto 2026</span><span class="recent-time">Hace 2 horas</span></div>
-                <button class="recent-download">⬇</button>
-              </div>
-              <div class="recent-item">
-                <span class="recent-icon excel">XLS</span>
-                <div class="recent-info"><span class="recent-name">RRHH — Nómina Completa</span><span class="recent-time">Ayer 15:30</span></div>
-                <button class="recent-download">⬇</button>
-              </div>
-              <div class="recent-item">
-                <span class="recent-icon pdf">PDF</span>
-                <div class="recent-info"><span class="recent-name">Gastos por Secretaría — Julio</span><span class="recent-time">Lunes 09:15</span></div>
-                <button class="recent-download">⬇</button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-  </main>
-  
-  <div class="modal-overlay" id="modalVistaPrevia" style="display:none;">
-    <div class="modal" style="max-width:800px; width:90%; height:80vh; display:flex; flex-direction:column;">
-      <div class="modal-header">
-        <h3 id="modalTitle">Vista Previa</h3>
-        <button class="modal-close" onclick="document.getElementById('modalVistaPrevia').style.display='none'">✕</button>
-      </div>
-      <div class="modal-body" style="flex:1; overflow-y:auto; background:white; color:black; padding:20px;" id="modalContent">
-        <!-- Renderizado dinámico -->
-      </div>
-    </div>
+    </main>
   </div>
 
-  <script src='js/db.js'></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-  <script>
-  // Verificar sesión activa
-  (function() {
-    try {
-      var t = localStorage.getItem('govtech_theme');
-      if (t) document.documentElement.setAttribute('data-theme', t);
-      var u = sessionStorage.getItem('mjunin_user');
-      if (!u) { window.location.replace('login.html'); }
-    } catch(e) {}
-  })();
-</script>
-  <script src='js/db.js'></script>
   <script src="js/nav.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/data.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/exportar.js"></script>
-  <script src='js/db.js'></script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/db.js'></script>
-  <script src='js/bottom-nav.js'></script>
-  <script src='js/notifications.js'></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof buildSidebar === 'function') buildSidebar('exportar');
+    });
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-<script>
-function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Municipalidad de Junín', 105, 20, {align:'center'});
-  doc.setFontSize(14);
-  doc.text('Informe Ejecutivo Municipal', 105, 32, {align:'center'});
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Generado: ${new Date().toLocaleDateString('es-AR', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}`, 105, 42, {align:'center'});
-  
-  // Data from MuniDB
-  let y = 60;
-  if (window.MuniDB) {
-    const empleados = MuniDB.getAll('empleados');
-    const pagos = MuniDB.getAll('pagos');
-    
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('RECURSOS HUMANOS', 20, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    y += 10;
-    doc.text(`Total empleados: ${empleados.length}`, 25, y); y += 7;
-    doc.text(`Activos: ${empleados.filter(e=>e.estado==='activo').length}`, 25, y); y += 7;
-    doc.text(`Nómina mensual: $${empleados.reduce((s,e)=>s+(e.salario||0),0).toLocaleString('es-AR')}`, 25, y); y += 14;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('HACIENDA', 20, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    y += 10;
-    const totalPagos = pagos.reduce((s,p)=>s+(p.monto||0),0);
-    doc.text(`Total pagos: $${totalPagos.toLocaleString('es-AR')}`, 25, y); y += 7;
-    doc.text(`Pagos realizados: ${pagos.filter(p=>p.estado==='pagado').length}`, 25, y); y += 7;
-  }
-  
-  doc.setFontSize(8);
-  doc.setTextColor(150);
-  doc.text('MuniControl — Sistema de Gestión Municipal — Municipalidad de Junín', 105, 285, {align:'center'});
-  
-  doc.save(`Informe_Municipal_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf`);
-  if (typeof showToast !== 'undefined') showToast('✅ PDF descargado exitosamente', 'success');
-}
+    function simulateProgress(id, callback) {
+      const container = document.getElementById('pb-' + id);
+      const bar = document.getElementById('p-' + id);
+      container.style.display = 'block';
+      bar.style.width = '0%';
+      
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 30;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          bar.style.width = '100%';
+          setTimeout(() => {
+            container.style.display = 'none';
+            callback();
+          }, 500);
+        } else {
+          bar.style.width = progress + '%';
+        }
+      }, 200);
+    }
 
-function exportExcel() {
-  if (!window.XLSX) { showToast('⚠️ Cargando SheetJS...', 'warning'); return; }
-  const wb = XLSX.utils.book_new();
-  
-  if (window.MuniDB) {
-    const empleados = MuniDB.getAll('empleados');
-    const ws = XLSX.utils.json_to_sheet(empleados.map(e => ({
-      Legajo: e.legajo, Apellido: e.apellido, Nombre: e.nombre,
-      Secretaría: e.secretaria, Cargo: e.cargo, Estado: e.estado,
-      Salario: e.salario, 'Horas Extra': e.horasExtra
-    })));
-    XLSX.utils.book_append_sheet(wb, ws, 'Personal');
-    
-    const pagos = MuniDB.getAll('pagos');
-    const ws2 = XLSX.utils.json_to_sheet(pagos.map(p => ({
-      ID: p.id, Proveedor: p.proveedor, Concepto: p.concepto,
-      Monto: p.monto, Estado: p.estado, Fecha: p.fecha
-    })));
-    XLSX.utils.book_append_sheet(wb, ws2, 'Pagos');
-  }
-  
-  XLSX.writeFile(wb, `MuniControl_Export_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`);
-  if (typeof showToast !== 'undefined') showToast('✅ Excel descargado con datos reales', 'success');
-}
-</script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
+    function addLogEntry(filename, format, size) {
+      const tbody = document.getElementById('logTableBody');
+      const tr = document.createElement('tr');
+      
+      let badgeClass = '';
+      if (format === 'PDF') badgeClass = 'format-pdf';
+      else if (format === 'EXCEL') badgeClass = 'format-excel';
+      else if (format === 'CSV') badgeClass = 'format-csv';
+      
+      const today = new Date();
+      const dateStr = today.getDate().toString().padStart(2, '0') + '/' + (today.getMonth()+1).toString().padStart(2, '0') + '/' + today.getFullYear();
+      
+      tr.innerHTML = \`
+        <td>\${filename}</td>
+        <td><span class="format-badge \${badgeClass}" style="position:static">\${format}</span></td>
+        <td>Usuario Actual</td>
+        <td>\${dateStr}</td>
+        <td>\${size}</td>
+      \`;
+      tbody.insertBefore(tr, tbody.firstChild);
+    }
+
+    function generatePDF(title, id) {
+      simulateProgress(id, () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFontSize(22);
+        doc.text("MuniControl", 20, 20);
+        doc.setFontSize(16);
+        doc.text(title, 20, 30);
+        
+        doc.setFontSize(12);
+        doc.text("Fecha de generacion: " + new Date().toLocaleDateString(), 20, 40);
+        
+        doc.text("Este es un reporte generado automaticamente por la plataforma MuniControl.", 20, 60);
+        doc.text("Contiene informacion consolidada del modulo seleccionado.", 20, 70);
+        
+        const filename = title.replace(/\\s+/g, '_') + '.pdf';
+        doc.save(filename);
+        addLogEntry(filename, 'PDF', '1.2 MB');
+      });
+    }
+
+    function generateExcel(title, id) {
+      simulateProgress(id, () => {
+        const ws_data = [
+          ["ID", "Concepto", "Monto", "Fecha"],
+          [1, "Sueldos y Jornales", 45000000, "2026-08-01"],
+          [2, "Mantenimiento Urbano", 12500000, "2026-08-02"],
+          [3, "Insumos Hospitalarios", 8300000, "2026-08-05"]
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Datos");
+        
+        const filename = title.replace(/\\s+/g, '_') + '.xlsx';
+        XLSX.writeFile(wb, filename);
+        addLogEntry(filename, 'EXCEL', '0.8 MB');
+      });
+    }
+
+    function generateCSV(title, id) {
+      simulateProgress(id, () => {
+        const data = "ID,Reclamo,Estado,Fecha\\n1,Bache en Av. San Martin,Pendiente,2026-08-01\\n2,Luminaria rota,Resuelto,2026-08-02";
+        const blob = new Blob([data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        const filename = title.replace(/\\s+/g, '_') + '.csv';
+        a.setAttribute('download', filename);
+        a.click();
+        addLogEntry(filename, 'CSV', '0.1 MB');
+      });
+    }
+  </script>
 </body>
 </html>
-

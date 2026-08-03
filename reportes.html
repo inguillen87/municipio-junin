@@ -1,272 +1,258 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#060b18">
-  <title>Reportes Ejecutivos | MuniControl</title>
-  <link rel="icon" href="favicon.ico">
-  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8" />
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Centro de Reportes | MuniControl</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    .report-card {
-      background: var(--card-bg, rgba(13,21,38,0.9));
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 16px;
-      padding: 24px;
-      transition: all 0.25s;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255,255,255,0.1);
     }
-    .report-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--accent, linear-gradient(90deg,#3b82f6,#8b5cf6));
-    }
-    .report-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-      border-color: rgba(255,255,255,0.12);
-    }
-    .report-icon { font-size: 40px; margin-bottom: 14px; }
-    .report-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 8px; }
-    .report-desc { font-size: 12px; color: rgba(148,163,184,0.7); line-height: 1.6; margin-bottom: 16px; }
-    .report-meta { display: flex; gap: 12px; align-items: center; }
-    .report-badge { font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 99px; }
-    .report-freq { font-size: 11px; color: rgba(100,116,139,0.6); }
-    .scheduled-row {
-      display: flex; align-items: center; gap: 16px; padding: 14px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      transition: background 0.15s;
-    }
-    .scheduled-row:hover { background: rgba(255,255,255,0.02); }
+    body { margin: 0; padding: 0; background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+    .layout-wrapper { display: flex; width: 100%; height: 100%; }
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 30px; }
+    
+    .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
+    .page-title { font-family: 'Outfit', sans-serif; font-size: 28px; margin: 0 0 5px 0; }
+    .page-subtitle { color: var(--text-muted); font-size: 15px; margin: 0; }
+    
+    .period-selector { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; }
+    
+    .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+    .tab-btn { background: transparent; border: none; color: var(--text-muted); font-size: 15px; font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; }
+    .tab-btn.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .tab-btn:hover:not(.active) { color: var(--text-main); background: rgba(255,255,255,0.05); }
+    
+    .report-panel { display: none; flex-direction: column; gap: 20px; }
+    .report-panel.active { display: flex; }
+    
+    .report-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; display: flex; flex-direction: column; gap: 20px; }
+    .report-card-header { display: flex; justify-content: space-between; align-items: center; }
+    .report-title { margin: 0; font-size: 18px; font-family: 'Outfit', sans-serif; }
+    
+    .btn-export { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .btn-export:hover { background: rgba(255,255,255,0.1); }
+    
+    .chart-container { width: 100%; height: 300px; position: relative; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+    th { color: var(--text-muted); font-weight: 500; font-size: 13px; }
+    
+    .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   </style>
 </head>
 <body>
-  <aside class="sidebar" id="sidebar"></aside>
-
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
-        <div class="page-title">
-          <h1>Centro de Reportes</h1>
-          <span class="breadcrumb">Informes ejecutivos y exportaciones del municipio</span>
+  <div class="layout-wrapper">
+    <aside class="sidebar" id="sidebar"></aside>
+    
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Centro de Reportes</h1>
+          <p class="page-subtitle">Analisis detallado de la gestion municipal</p>
+        </div>
+        <select class="period-selector">
+          <option>Agosto 2026</option>
+          <option>Julio 2026</option>
+          <option>Q3 2026</option>
+          <option>Anual 2026</option>
+        </select>
+      </div>
+      
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('mensual')">Mensual</button>
+        <button class="tab-btn" onclick="showTab('rrhh')">RRHH</button>
+        <button class="tab-btn" onclick="showTab('financiero')">Financiero</button>
+        <button class="tab-btn" onclick="showTab('operacional')">Operacional</button>
+      </div>
+      
+      <!-- Mensual Tab -->
+      <div id="tab-mensual" class="report-panel active">
+        <div class="report-card">
+          <div class="report-card-header">
+            <h3 class="report-title">Gasto Mensual Evolutivo</h3>
+            <button class="btn-export">Exportar PDF</button>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-gasto-lineal"></canvas>
+          </div>
         </div>
       </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <button onclick="generateAllReports()" style="padding:9px 18px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:white;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">📥 Generar todos</button>
-      </div>
-    </header>
-
-    <div class="page-content">
-
-      <!-- KPI ROW -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px">
-        <div class="card" style="padding:16px;text-align:center">
-          <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#3b82f6" id="reportsTotalGenerated">47</div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.6)">Reportes generados</div>
-        </div>
-        <div class="card" style="padding:16px;text-align:center">
-          <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#10b981">3</div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.6)">Programados</div>
-        </div>
-        <div class="card" style="padding:16px;text-align:center">
-          <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#f59e0b">2</div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.6)">Pendientes</div>
-        </div>
-        <div class="card" style="padding:16px;text-align:center">
-          <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#8b5cf6">5</div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.6)">Destinatarios</div>
-        </div>
-      </div>
-
-      <!-- REPORT CATEGORIES -->
-      <div style="margin-bottom:24px">
-        <div style="font-size:13px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px">⭐ Reportes destacados</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px" id="reportsGrid"></div>
-      </div>
-
-      <!-- SCHEDULED REPORTS -->
-      <div class="card" style="margin-bottom:20px">
-        <div style="padding:16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center">
-          <h3 style="margin:0;font-size:14px;font-weight:800">🗓️ Reportes programados</h3>
-          <button onclick="addSchedule()" style="padding:6px 14px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#60a5fa;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">+ Programar nuevo</button>
-        </div>
-        <div id="scheduledList"></div>
-      </div>
-
-      <!-- RECENT REPORTS -->
-      <div class="card">
-        <div style="padding:16px;border-bottom:1px solid rgba(255,255,255,0.06)">
-          <h3 style="margin:0;font-size:14px;font-weight:800">📄 Historial reciente</h3>
-        </div>
-        <div style="padding:0">
-          <table style="width:100%;border-collapse:collapse;font-size:13px">
+      
+      <!-- RRHH Tab -->
+      <div id="tab-rrhh" class="report-panel">
+        <div class="report-card">
+          <div class="report-card-header">
+            <h3 class="report-title">Ausentismo por Mes</h3>
+            <button class="btn-export">Exportar Excel</button>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-ausentismo"></canvas>
+          </div>
+          <table>
             <thead>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
-                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Reporte</th>
-                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Tipo</th>
-                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Generado</th>
-                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Tamaño</th>
-                <th style="text-align:left;padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.5)">Acciones</th>
-              </tr>
+              <tr><th>Mes</th><th>Total Empleados</th><th>Dias Ausencia</th><th>Indice Ausentismo</th></tr>
             </thead>
-            <tbody id="reportsHistory"></tbody>
+            <tbody>
+              <tr><td>Mayo 2026</td><td>1235</td><td>420</td><td>1.6%</td></tr>
+              <tr><td>Junio 2026</td><td>1235</td><td>510</td><td>1.9%</td></tr>
+              <tr><td>Julio 2026</td><td>1240</td><td>850</td><td>3.1% (Pico invernal)</td></tr>
+              <tr><td>Agosto 2026</td><td>1247</td><td>310</td><td>1.1%</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
-    </div>
-  </main>
+      
+      <!-- Financiero Tab -->
+      <div id="tab-financiero" class="report-panel">
+        <div class="grid-2col">
+          <div class="report-card">
+            <div class="report-card-header">
+              <h3 class="report-title">Distribucion por Secretaria</h3>
+              <button class="btn-export">Exportar PDF</button>
+            </div>
+            <div class="chart-container" style="height: 250px;">
+              <canvas id="chart-distribucion"></canvas>
+            </div>
+          </div>
+          <div class="report-card">
+            <div class="report-card-header">
+              <h3 class="report-title">Detalle de Ejecucion</h3>
+              <button class="btn-export">Exportar Excel</button>
+            </div>
+            <table>
+              <thead>
+                <tr><th>Secretaria</th><th>Asignado</th><th>Ejecutado</th><th>%</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Obras Publicas</td><td>$120.5M</td><td>$48.2M</td><td>40%</td></tr>
+                <tr><td>Salud</td><td>$85.0M</td><td>$52.1M</td><td>61%</td></tr>
+                <tr><td>Seguridad</td><td>$65.3M</td><td>$30.0M</td><td>46%</td></tr>
+                <tr><td>Educacion</td><td>$45.0M</td><td>$18.5M</td><td>41%</td></tr>
+                <tr><td>Otros</td><td>$84.2M</td><td>$16.5M</td><td>20%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Operacional Tab -->
+      <div id="tab-operacional" class="report-panel">
+        <div class="report-card">
+          <div class="report-card-header">
+            <h3 class="report-title">Reclamos por Categoria</h3>
+            <button class="btn-export">Exportar PDF</button>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-reclamos"></canvas>
+          </div>
+        </div>
+      </div>
+      
+    </main>
+  </div>
 
   <script src="js/nav.js"></script>
-  <script src="js/toast.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/permissions.js"></script>
   <script>
-    const REPORTS = [
-      {
-        id:'r_ejecutivo', icon:'🏠', title:'Informe Ejecutivo Mensual',
-        desc:'KPIs del municipio, ejecución presupuestaria, reclamos y obras. Ideal para el Intendente.',
-        freq:'Mensual', badge:'PDF', badgeColor:'#ef4444',
-        accent:'linear-gradient(90deg,#3b82f6,#8b5cf6)'
-      },
-      {
-        id:'r_hacienda', icon:'🏦', title:'Informe de Hacienda',
-        desc:'Pagos realizados, proveedores, flujo de caja y comparativa presupuestaria mes a mes.',
-        freq:'Quincenal', badge:'Excel', badgeColor:'#10b981',
-        accent:'linear-gradient(90deg,#10b981,#059669)'
-      },
-      {
-        id:'r_rrhh', icon:'👥', title:'Nómina y Personal',
-        desc:'Planta activa, horas extra, ausentismo por secretaría y alertas de contratos próximos a vencer.',
-        freq:'Mensual', badge:'PDF+Excel', badgeColor:'#8b5cf6',
-        accent:'linear-gradient(90deg,#8b5cf6,#7c3aed)'
-      },
-      {
-        id:'r_obras', icon:'🏗️', title:'Estado de Obras',
-        desc:'Avance por obra, contratista, ejecutado vs. presupuesto y fotos de progreso.',
-        freq:'Semanal', badge:'PDF', badgeColor:'#f59e0b',
-        accent:'linear-gradient(90deg,#f59e0b,#d97706)'
-      },
-      {
-        id:'r_reclamos', icon:'🏘️', title:'Reclamos 311',
-        desc:'SLA por tipo de reclamo, mapa de calor por zona, resolución y tiempos promedio.',
-        freq:'Semanal', badge:'PDF', badgeColor:'#06b6d4',
-        accent:'linear-gradient(90deg,#06b6d4,#0284c7)'
-      },
-      {
-        id:'r_transparencia', icon:'🔍', title:'Reporte de Transparencia',
-        desc:'Pagos públicos del período, contratos adjudicados y montos. Para el portal Cuentas Claras.',
-        freq:'Mensual', badge:'Open Data', badgeColor:'#84cc16',
-        accent:'linear-gradient(90deg,#84cc16,#65a30d)'
-      },
-    ];
-
-    const SCHEDULED = [
-      { name:'Informe Ejecutivo Julio 2026', freq:'🗓️ 1ro de cada mes', next:'01/08/2026', dest:'intendente@junin.gob.ar', status:'activo' },
-      { name:'Nómina quincenal', freq:'🗓️ Día 15 y último', next:'15/08/2026', dest:'hacienda@junin.gob.ar', status:'activo' },
-      { name:'Reclamos 311 semanal', freq:'🗓️ Todos los lunes', next:'04/08/2026', dest:'secretaria@junin.gob.ar', status:'activo' },
-    ];
-
-    const HISTORY = [
-      { name:'Informe Ejecutivo Junio 2026', tipo:'PDF', fecha:'01/07/2026 08:00', size:'2.3 MB' },
-      { name:'Nómina 15/06/2026', tipo:'Excel', fecha:'15/06/2026 07:30', size:'890 KB' },
-      { name:'Estado Obras Q2', tipo:'PDF', fecha:'30/06/2026 12:00', size:'4.1 MB' },
-      { name:'Reclamos semana 26', tipo:'PDF', fecha:'29/06/2026 09:00', size:'1.2 MB' },
-      { name:'Transparencia Junio', tipo:'Open Data', fecha:'01/07/2026 09:00', size:'340 KB' },
-    ];
-
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', () => {
       if (typeof buildSidebar === 'function') buildSidebar('reportes');
-      renderReports();
-      renderScheduled();
-      renderHistory();
+      initCharts();
     });
 
-    function renderReports() {
-      const grid = document.getElementById('reportsGrid');
-      if (!grid) return;
-      grid.innerHTML = REPORTS.map(r => `
-        <div class="report-card" style="--accent:${r.accent}" onclick="downloadReport('${r.id}')">
-          <div class="report-icon">${r.icon}</div>
-          <div class="report-title">${r.title}</div>
-          <div class="report-desc">${r.desc}</div>
-          <div class="report-meta">
-            <span class="report-badge" style="background:${r.badgeColor}22;color:${r.badgeColor}">${r.badge}</span>
-            <span class="report-freq">🔄 ${r.freq}</span>
-            <button onclick="event.stopPropagation();scheduleReport('${r.id}')" style="margin-left:auto;padding:5px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(148,163,184,0.7);border-radius:7px;cursor:pointer;font-size:10px;font-weight:700">🗓️ Programar</button>
-          </div>
-        </div>
-      `).join('');
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.report-panel').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
     }
 
-    function renderScheduled() {
-      const list = document.getElementById('scheduledList');
-      if (!list) return;
-      list.innerHTML = SCHEDULED.map(s => `
-        <div class="scheduled-row">
-          <span style="font-size:20px">🔔</span>
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:700">${s.name}</div>
-            <div style="font-size:11px;color:rgba(148,163,184,0.5);margin-top:2px">${s.freq} — Para: ${s.dest}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;font-weight:700;color:#10b981">Próximo: ${s.next}</div>
-            <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;background:rgba(16,185,129,0.1);color:#10b981">${s.status}</span>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderHistory() {
-      const tbody = document.getElementById('reportsHistory');
-      if (!tbody) return;
-      const tipos = {'PDF':'#ef4444', 'Excel':'#10b981', 'Open Data':'#84cc16'};
-      tbody.innerHTML = HISTORY.map(h => `
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
-          <td style="padding:12px 16px;font-weight:600;font-size:13px">${h.name}</td>
-          <td style="padding:12px 16px">
-            <span style="font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;background:${tipos[h.tipo]||'#3b82f6'}22;color:${tipos[h.tipo]||'#3b82f6'}">${h.tipo}</span>
-          </td>
-          <td style="padding:12px 16px;font-size:12px;color:rgba(148,163,184,0.7)">${h.fecha}</td>
-          <td style="padding:12px 16px;font-size:12px;color:rgba(148,163,184,0.7)">${h.size}</td>
-          <td style="padding:12px 16px">
-            <button onclick="downloadReport('${h.name}')" style="padding:5px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#60a5fa;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700">↓ Descargar</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function downloadReport(id) {
-      if (typeof showToast !== 'undefined') showToast('📥 Generando reporte... 2-3 segundos', 'info');
-      setTimeout(() => {
-        if (typeof showToast !== 'undefined') showToast('✅ Reporte listo para descargar', 'success');
-      }, 2500);
-    }
-
-    function generateAllReports() {
-      if (typeof showToast !== 'undefined') showToast('🚀 Generando todos los reportes del período...', 'info');
-      setTimeout(() => {
-        document.getElementById('reportsTotalGenerated').textContent = '53';
-        if (typeof showToast !== 'undefined') showToast('✅ 6 reportes generados y enviados a los destinatarios', 'success');
-      }, 3000);
-    }
-
-    function scheduleReport(id) {
-      if (typeof showToast !== 'undefined') showToast('🗓️ Reporte programado exitosamente', 'success');
-    }
-
-    function addSchedule() {
-      if (typeof showToast !== 'undefined') showToast('🗓️ Funcionalidad disponible en la versión premium', 'info');
+    function initCharts() {
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.font.family = 'Inter';
+      
+      // Gasto Lineal
+      new Chart(document.getElementById('chart-gasto-lineal'), {
+        type: 'line',
+        data: {
+          labels: ['Sep', 'Oct', 'Nov', 'Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago'],
+          datasets: [{
+            label: 'Gasto Real (Millones $)',
+            data: [142, 145, 148, 165, 150, 152, 155, 154, 158, 160, 162, 165.3],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.1)',
+            fill: true,
+            tension: 0.4
+          }, {
+            label: 'Presupuestado',
+            data: [140, 140, 140, 155, 155, 155, 155, 155, 160, 160, 160, 160],
+            borderColor: '#94a3b8',
+            borderDash: [5, 5],
+            fill: false,
+            tension: 0
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+      
+      // Distribucion Donut
+      new Chart(document.getElementById('chart-distribucion'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Obras Publicas', 'Salud', 'Seguridad', 'Educacion', 'Otros'],
+          datasets: [{
+            data: [48.2, 52.1, 30.0, 18.5, 16.5],
+            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'],
+            borderWidth: 0
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+      });
+      
+      // Reclamos Bar
+      new Chart(document.getElementById('chart-reclamos'), {
+        type: 'bar',
+        data: {
+          labels: ['Bacheo', 'Luminarias', 'Recoleccion', 'Arbolado', 'Cloacas', 'Transito'],
+          datasets: [{
+            label: 'Reclamos Abiertos',
+            data: [85, 120, 45, 30, 25, 40],
+            backgroundColor: '#3b82f6'
+          }, {
+            label: 'Resueltos (Mes)',
+            data: [70, 140, 60, 25, 30, 50],
+            backgroundColor: '#10b981'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+      });
+      
+      // Ausentismo Line
+      new Chart(document.getElementById('chart-ausentismo'), {
+        type: 'line',
+        data: {
+          labels: ['Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago'],
+          datasets: [{
+            label: 'Indice de Ausentismo (%)',
+            data: [1.2, 1.4, 1.6, 1.9, 3.1, 1.1],
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239,68,68,0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
     }
   </script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
 </body>
 </html>
-

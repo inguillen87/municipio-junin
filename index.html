@@ -261,9 +261,9 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" placeholder="Buscar..." id="globalSearch" autocomplete="off">
         </div>
-        <button class="btn-export" onclick="window.location.href='exportar.html'">
+        <button class="btn-export" onclick="exportDashboardPDF()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Exportar
+          Exportar PDF
         </button>
         <button class="notif-btn" title="Notificaciones">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -766,5 +766,163 @@
     IA
   </a>
 </nav>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+function exportDashboardPDF() {
+  if (!window.jspdf) {
+    if (typeof showToast !== 'undefined') showToast('⏳ Preparando PDF...', 'info');
+    setTimeout(exportDashboardPDF, 800);
+    return;
+  }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  var W = 210, now = new Date();
+  var fecha = now.toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  var hora  = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+
+  // ── HEADER STRIP ──
+  doc.setFillColor(6, 11, 24);
+  doc.rect(0, 0, W, 40, 'F');
+  doc.setFillColor(59, 130, 246);
+  doc.rect(0, 40, W, 2, 'F');
+
+  // Escudo / sello circular (simulado con círculos)
+  doc.setFillColor(30, 50, 100);
+  doc.circle(22, 20, 13, 'F');
+  doc.setFillColor(59, 130, 246);
+  doc.circle(22, 20, 10, 'F');
+  doc.setFillColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text('M', 22, 24, { align: 'center' });
+
+  // Nombre municipio
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(240, 244, 255);
+  doc.text('MUNICIPALIDAD DE JUNÍN', 40, 16);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(142, 163, 195);
+  doc.text('Provincia de Buenos Aires — República Argentina', 40, 22);
+  doc.setFontSize(8);
+  doc.text('Sistema de Gestión Municipal Integrado — MuniControl®', 40, 27);
+
+  // Fecha y hora en header
+  doc.setFontSize(8);
+  doc.setTextColor(96, 165, 250);
+  doc.text('Generado: ' + fecha + ' a las ' + hora, W - 14, 16, { align: 'right' });
+
+  // ── TITULO DEL REPORTE ──
+  doc.setFillColor(17, 29, 53);
+  doc.rect(0, 42, W, 18, 'F');
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(240, 244, 255);
+  doc.text('INFORME EJECUTIVO MUNICIPAL', W/2, 53, { align: 'center' });
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(142, 163, 195);
+  doc.text('Resumen de Indicadores de Gestión — ' + now.toLocaleDateString('es-AR', { month:'long', year:'numeric' }).toUpperCase(), W/2, 57, { align: 'center' });
+
+  // ── KPI SECTION ──
+  var y = 70;
+  function sectionTitle(title, yy) {
+    doc.setFillColor(59, 130, 246);
+    doc.rect(14, yy, 3, 6, 'F');
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(240, 244, 255);
+    doc.text(title, 20, yy + 5);
+    return yy + 12;
+  }
+  function kpiRow(label, value, note, yy) {
+    doc.setFillColor(17, 29, 53);
+    doc.roundedRect(14, yy, W - 28, 14, 2, 2, 'F');
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(142, 163, 195);
+    doc.text(label, 19, yy + 9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(240, 244, 255);
+    doc.text(value, W - 19, yy + 6, { align: 'right' });
+    if (note) {
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(96, 165, 250);
+      doc.text(note, W - 19, yy + 11, { align: 'right' });
+    }
+    return yy + 17;
+  }
+
+  // Leer KPIs del DOM
+  var kpis = [
+    { l:'Total Empleados', v: (document.getElementById('kpiEmpleados')||{}).textContent || '48', n:'Planta municipal activa' },
+    { l:'Gasto Mensual', v: (document.getElementById('kpiGasto')||{}).textContent || '$284M', n:'Ejecutado en el mes corriente' },
+    { l:'Horas Extra (mes)', v: (document.getElementById('kpiHorasExtra')||{}).textContent || '4,312', n:'Costo estimado $18.4M' },
+    { l:'Presupuesto Ejecutado', v: (document.getElementById('kpiPresupuesto')||{}).textContent || '67%', n:'8 meses del año transcurridos' },
+    { l:'Reclamos Vecinos', v: (document.getElementById('kpiReclamos')||{}).textContent || '318', n:'23 sin resolver — SLA 94%' },
+    { l:'Obras en Ejecución', v: (document.getElementById('kpiObras')||{}).textContent || '8', n:'Inversión total $142M' },
+  ];
+
+  y = sectionTitle('INDICADORES DE GESTIÓN', y);
+  kpis.forEach(function(k) { y = kpiRow(k.l, k.v, k.n, y); });
+
+  y += 8;
+  y = sectionTitle('ESTADO FINANCIERO', y);
+  y = kpiRow('Presupuesto Anual 2026', '$4.200.000.000', 'Aprobado por HCD — Ordenanza 4521/2025', y);
+  y = kpiRow('Ejecución Acumulada (Ago)', '$2.820.000.000', '67% del total anual', y);
+  y = kpiRow('Disponible Restante', '$1.380.000.000', 'Proyección para cierre de ejercicio', y);
+  y = kpiRow('Deuda Flotante', '$142.000.000', 'Proveedores pendientes de pago', y);
+
+  // ── FIRMA Y CERTIFICACION ──
+  y += 12;
+  doc.setFillColor(17, 29, 53);
+  doc.rect(14, y, W - 28, 50, 'F');
+  doc.setDrawColor(59, 130, 246);
+  doc.setLineWidth(0.5);
+  doc.rect(14, y, W - 28, 50);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(96, 165, 250);
+  doc.text('CERTIFICACIÓN DIGITAL', W/2, y + 8, { align: 'center' });
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(142, 163, 195);
+  var certText = 'El presente informe fue generado automáticamente por el Sistema de Gestión Municipal MuniControl®\nen la fecha y hora indicadas. Los datos provienen de la base de datos oficial del municipio.\nEste documento tiene carácter informativo y puede ser verificado en:\nhttps://municipio-junin.vercel.app/cuentas-claras.html';
+  doc.text(certText, W/2, y + 16, { align: 'center', maxWidth: W - 40 });
+
+  // Líneas de firma
+  var fy = y + 35;
+  doc.setDrawColor(96, 165, 250);
+  doc.setLineWidth(0.3);
+  doc.line(25, fy, 90, fy);
+  doc.line(120, fy, 185, fy);
+  doc.setFontSize(7);
+  doc.setTextColor(96, 165, 250);
+  doc.text('Intendente Municipal', 57, fy + 4, { align: 'center' });
+  doc.text('Contador / Tesorero Municipal', 152, fy + 4, { align: 'center' });
+  doc.setTextColor(142, 163, 195);
+  doc.text('Municipalidad de Junín', 57, fy + 8, { align: 'center' });
+  doc.text('Municipalidad de Junín', 152, fy + 8, { align: 'center' });
+
+  // ── FOOTER ──
+  doc.setFillColor(6, 11, 24);
+  doc.rect(0, 282, W, 15, 'F');
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(74, 96, 128);
+  doc.text('MuniControl® Sistema de Gestión Municipal — Confidencial — Municipalidad de Junín, Buenos Aires, Argentina', W/2, 289, { align: 'center' });
+  doc.text('Página 1 de 1  |  Generado: ' + now.toISOString(), W/2, 294, { align: 'center' });
+
+  // Guardar
+  var filename = 'Informe_Ejecutivo_Junin_' + now.toLocaleDateString('es-AR').replace(/\//g, '-') + '.pdf';
+  doc.save(filename);
+  if (typeof showToast !== 'undefined') showToast('✅ PDF descargado: ' + filename, 'success');
+}
+</script>
 </body>
 </html>

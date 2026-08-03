@@ -129,10 +129,11 @@ window.buildSidebar = function(activeId) {
 
   // Logo + collapse button
   html += '<div class="sb-logo">';
-  html += '<div class="sb-logo-icon">' + getIcon('logo') + '</div>';
-  html += '<div class="sb-logo-text"><div class="sb-logo-name">MuniControl</div><div class="sb-logo-sub">Junin 2026</div></div>';
+  html += '<div class="sb-logo-icon"><img src="img/municontrol-logo-new.jpg" alt="MuniControl" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.parentElement.innerHTML=\'<span style=\'font-family:Outfit,sans-serif;font-size:16px;font-weight:900;color:white;\'>M</span>\'"></div>';
+  html += '<div class="sb-logo-text"><div class="sb-logo-name">MuniControl</div><div class="sb-logo-sub">Junín 2026</div></div>';
   html += '<button class="sb-collapse-btn" id="sidebarCollapseBtn" title="Colapsar sidebar">' + getIcon('arrowLeft') + '</button>';
   html += '</div>';
+
 
   // Nav
   html += '<nav class="sb-nav">';

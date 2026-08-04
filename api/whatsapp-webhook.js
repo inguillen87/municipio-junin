@@ -1,9 +1,8 @@
 // api/whatsapp-webhook.js
-// MuniControl WhatsApp Bot v2 — Professional Templates
-// Meta WhatsApp Business Cloud API v21.0
+// MuniControl WhatsApp Bot v3 — Clean Professional Design
+// No image spam, just clean formatted text + interactive buttons
 
 const BASE = 'https://municipio-junin.vercel.app';
-const IMG = BASE + '/img/wa';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -54,73 +53,51 @@ async function route(msg, meta) {
       txt = (ir.list_reply && ir.list_reply.id) || '';
     }
   } else {
-    if (msg.type === 'audio' || msg.type === 'image' || msg.type === 'document') {
-      await send(from, pid, 'text', { body: 'Recibi tu archivo. Escribime tu consulta como texto.' });
-    }
     return;
   }
 
   if (!txt || !txt.trim()) return;
   const t = txt.trim().toLowerCase();
-  console.log('[WA] from:', from, 'cmd:', t);
 
-  // Command routing
-  if (t === 'cmd_menu' || t === 'menu' || t === 'hola' || t === 'inicio' || (t.indexOf('hola') >= 0 && t.length < 20)) {
-    return await cmdMenu(from, pid);
-  }
-  if (t === 'cmd_obras' || t === 'obras' || t.indexOf('obra') >= 0) {
-    return await cmdObras(from, pid);
-  }
-  if (t === 'cmd_licitaciones' || t === 'licitaciones' || t.indexOf('licitacion') >= 0) {
-    return await cmdLicitaciones(from, pid);
-  }
-  if (t === 'cmd_rrhh' || t === 'rrhh' || t === 'personal' || t.indexOf('empleado') >= 0) {
-    return await cmdRRHH(from, pid);
-  }
-  if (t === 'cmd_hacienda' || t === 'hacienda' || t === 'finanzas' || t.indexOf('gasto') >= 0 || t.indexOf('presupuesto') >= 0 || t.indexOf('cuanto') >= 0) {
-    return await cmdHacienda(from, pid);
-  }
-  if (t === 'cmd_reclamos' || t === 'reclamos' || t.indexOf('reclam') >= 0) {
-    return await cmdReclamos(from, pid);
-  }
-  if (t === 'cmd_reporte' || t === 'reporte' || t === 'informe' || t.indexOf('report') >= 0) {
-    return await cmdReporte(from, pid);
-  }
-  if (t === 'cmd_ayuda' || t === 'ayuda' || t === 'help') {
-    return await cmdAyuda(from, pid);
-  }
+  if (t === 'cmd_menu' || t === 'menu' || t === 'hola' || t === 'inicio' || (t.indexOf('hola') >= 0 && t.length < 20)) return await cmdMenu(from, pid);
+  if (t === 'cmd_obras' || t === 'obras' || t.indexOf('obra') >= 0) return await cmdObras(from, pid);
+  if (t === 'cmd_licitaciones' || t === 'licitaciones' || t.indexOf('licitacion') >= 0) return await cmdLicitaciones(from, pid);
+  if (t === 'cmd_rrhh' || t === 'rrhh' || t === 'personal' || t.indexOf('empleado') >= 0) return await cmdRRHH(from, pid);
+  if (t === 'cmd_hacienda' || t === 'hacienda' || t === 'finanzas' || t.indexOf('gasto') >= 0 || t.indexOf('presupuesto') >= 0 || t.indexOf('cuanto') >= 0) return await cmdHacienda(from, pid);
+  if (t === 'cmd_reclamos' || t === 'reclamos' || t.indexOf('reclam') >= 0) return await cmdReclamos(from, pid);
+  if (t === 'cmd_reporte' || t === 'reporte' || t === 'informe' || t.indexOf('report') >= 0) return await cmdReporte(from, pid);
+  if (t === 'cmd_ayuda' || t === 'ayuda' || t === 'help') return await cmdAyuda(from, pid);
 
-  // Free query fallback
   await cmdLibre(from, pid, txt);
 }
 
 // ================================================================
-// MENU PRINCIPAL
+// MENU — Lista interactiva (1 solo mensaje limpio)
 // ================================================================
 async function cmdMenu(to, pid) {
   await send(to, pid, 'interactive', {
     type: 'list',
-    header: { type: 'text', text: 'MuniControl - Junin' },
-    body: { text: 'Hola! Soy *MuniBot*, tu asistente inteligente del Municipio de Junin, Mendoza.\n\nElegi un area para consultar:' },
-    footer: { text: 'MuniControl v2.0 | GovTech' },
+    header: { type: 'text', text: 'MUNICONTROL' },
+    body: { text: 'Bienvenido al sistema de gestion inteligente del Municipio de Junin, Mendoza.\n\nSelecciona un area para consultar informacion en tiempo real.' },
+    footer: { text: 'v2.0 | GovTech Argentina' },
     action: {
-      button: 'Abrir Menu',
+      button: 'Ver Areas',
       sections: [
         {
           title: 'Gestion Municipal',
           rows: [
-            { id: 'cmd_obras', title: 'Obras Publicas', description: 'Avance de obras e inversiones' },
-            { id: 'cmd_hacienda', title: 'Hacienda y Finanzas', description: 'Balance, gastos e ingresos' },
-            { id: 'cmd_rrhh', title: 'Recursos Humanos', description: 'Nomina y estructura' },
-            { id: 'cmd_licitaciones', title: 'Licitaciones', description: 'Contratos y adjudicaciones' },
-            { id: 'cmd_reclamos', title: 'Reclamos 311', description: 'Servicios urbanos' }
+            { id: 'cmd_obras', title: 'Obras Publicas', description: '8 proyectos | $142.5M invertidos' },
+            { id: 'cmd_hacienda', title: 'Hacienda y Finanzas', description: 'Balance +$14.9M | 67% ejec.' },
+            { id: 'cmd_rrhh', title: 'Recursos Humanos', description: '1,247 empleados | 3.2% ausent.' },
+            { id: 'cmd_licitaciones', title: 'Licitaciones', description: '5 procesos | $85.4M licitados' },
+            { id: 'cmd_reclamos', title: 'Reclamos 311', description: '92.7% resueltos | 3.2 dias prom.' }
           ]
         },
         {
           title: 'Inteligencia',
           rows: [
-            { id: 'cmd_reporte', title: 'Informe Ejecutivo', description: 'Resumen con IA' },
-            { id: 'cmd_ayuda', title: 'Ayuda', description: 'Comandos disponibles' }
+            { id: 'cmd_reporte', title: 'Informe Ejecutivo IA', description: 'Analisis sintetico inteligente' },
+            { id: 'cmd_ayuda', title: 'Ayuda', description: 'Lista de comandos' }
           ]
         }
       ]
@@ -129,263 +106,172 @@ async function cmdMenu(to, pid) {
 }
 
 // ================================================================
-// OBRAS
+// OBRAS — Botones interactivos (1 solo mensaje)
 // ================================================================
 async function cmdObras(to, pid) {
-  await send(to, pid, 'image', {
-    link: IMG + '/obras.jpg',
-    caption: [
-      '*OBRAS PUBLICAS*',
-      '_Municipio de Junin | Agosto 2026_',
-      '',
-      'Proyectos activos .... *8*',
-      'Inversion total ........... *$142.5M*',
-      'Avance promedio ...... *68%*',
-      '',
-      '▓▓▓▓▓▓▓▓░░ *82%* Av. San Martin',
-      '▓▓▓▓▓░░░░░ *45%* Red Agua B.Norte',
-      '▓▓▓▓▓▓▓▓▓░ *95%* LED Parque Retamo'
-    ].join('\n')
+  await send(to, pid, 'interactive', {
+    type: 'button',
+    body: { text: '🏗 *OBRAS PUBLICAS*\n_Junin, Mendoza · Ago 2026_\n\n━━━━━━━━━━━━━━━━\n\n*Resumen*\nProyectos activos .... *8*\nInversion total .......... *$142.5M*\nAvance promedio ...... *68%*\n\n*Destacados*\n▓▓▓▓▓▓▓▓░░ 82% Pav. Av. San Martin\n▓▓▓▓▓░░░░░ 45% Red Agua B. Norte\n▓▓▓▓▓▓▓▓▓░ 95% LED Parque Retamo\n\n━━━━━━━━━━━━━━━━' },
+    footer: { text: 'MuniControl · GovTech' },
+    action: {
+      buttons: [
+        { type: 'reply', reply: { id: 'cmd_reporte', title: 'Informe Ejecutivo' } },
+        { type: 'reply', reply: { id: 'cmd_hacienda', title: 'Ver Finanzas' } },
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu' } }
+      ]
+    }
   });
-  await navButtons(to, pid, 'Queres ver otro modulo?', [
-    { id: 'cmd_reporte', title: 'Informe Ejecutivo' },
-    { id: 'cmd_hacienda', title: 'Ver Finanzas' },
-    { id: 'cmd_menu', title: 'Menu Principal' }
-  ]);
 }
 
 // ================================================================
 // HACIENDA
 // ================================================================
 async function cmdHacienda(to, pid) {
-  await send(to, pid, 'image', {
-    link: IMG + '/hacienda.jpg',
-    caption: [
-      '*HACIENDA Y FINANZAS*',
-      '_Municipio de Junin | Agosto 2026_',
-      '',
-      'Ingresos ........... *$180.2M* (+8%)',
-      'Gastos .............. *$165.3M*',
-      'Balance ............. *+$14.9M*',
-      '',
-      '▓▓▓▓▓▓▓░░░ *67%* Ejec. Presup.',
-      '',
-      '*Distribucion:*',
-      '■■■■■■■■■■ Personal   51%',
-      '■■■■■□□□□□ Obras      29%',
-      '■■■□□□□□□□ Servicios  20%'
-    ].join('\n')
+  await send(to, pid, 'interactive', {
+    type: 'button',
+    body: { text: '💰 *HACIENDA Y FINANZAS*\n_Junin, Mendoza · Ago 2026_\n\n━━━━━━━━━━━━━━━━\n\n*Balance Mensual*\nIngresos ........... *$180.2M* (+8%)\nGastos .............. *$165.3M*\nSuperavit .......... *+$14.9M*\n\n▓▓▓▓▓▓▓░░░ *67%* Ejec. Presupuestaria\n\n*Distribucion*\n■■■■■■■■■■ Personal    51%\n■■■■■□□□□□ Obras         29%\n■■■□□□□□□□ Servicios    20%\n\n━━━━━━━━━━━━━━━━' },
+    footer: { text: 'MuniControl · GovTech' },
+    action: {
+      buttons: [
+        { type: 'reply', reply: { id: 'cmd_reporte', title: 'Informe Ejecutivo' } },
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu' } }
+      ]
+    }
   });
-  await navButtons(to, pid, 'Queres ver otro modulo?', [
-    { id: 'cmd_reporte', title: 'Informe Ejecutivo' },
-    { id: 'cmd_menu', title: 'Menu Principal' }
-  ]);
 }
 
 // ================================================================
 // RRHH
 // ================================================================
 async function cmdRRHH(to, pid) {
-  await send(to, pid, 'image', {
-    link: IMG + '/rrhh.jpg',
-    caption: [
-      '*RECURSOS HUMANOS*',
-      '_Municipio de Junin | Agosto 2026_',
-      '',
-      'Empleados activos ..... *1,247*',
-      'Masa salarial ............... *$485.0M*',
-      'Horas extra .................. *4,312 hrs*',
-      'Ausentismo ................. *3.2%*',
-      '',
-      '*Distribucion:*',
-      '■■■■■■■■□□ Serv. Publicos  410',
-      '■■■■■■□□□□ Obras            340',
-      '■■■■□□□□□□ Salud             215'
-    ].join('\n')
+  await send(to, pid, 'interactive', {
+    type: 'button',
+    body: { text: '👥 *RECURSOS HUMANOS*\n_Junin, Mendoza · Ago 2026_\n\n━━━━━━━━━━━━━━━━\n\n*Indicadores*\nEmpleados activos ..... *1,247*\nMasa salarial ............... *$485.0M*\nHoras extra .................. *4,312 hrs*\nAusentismo ................. *3.2%*\n\n*Estructura*\n■■■■■■■■□□ Serv. Publicos  410\n■■■■■■□□□□ Obras Pub.       340\n■■■■□□□□□□ Salud y Des.    215\n■■■□□□□□□□ Gobierno          150\n\n━━━━━━━━━━━━━━━━' },
+    footer: { text: 'MuniControl · GovTech' },
+    action: {
+      buttons: [
+        { type: 'reply', reply: { id: 'cmd_hacienda', title: 'Ver Finanzas' } },
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu' } }
+      ]
+    }
   });
-  await navButtons(to, pid, 'Queres ver otro modulo?', [
-    { id: 'cmd_hacienda', title: 'Ver Finanzas' },
-    { id: 'cmd_menu', title: 'Menu Principal' }
-  ]);
 }
 
 // ================================================================
 // LICITACIONES
 // ================================================================
 async function cmdLicitaciones(to, pid) {
-  await send(to, pid, 'image', {
-    link: IMG + '/licitaciones.jpg',
-    caption: [
-      '*LICITACIONES PUBLICAS*',
-      '_Municipio de Junin | Agosto 2026_',
-      '',
-      'Procesos activos ........ *5*',
-      'Monto licitado ............ *$85.4M*',
-      'Cumplimiento SLA ..... *100%*',
-      '',
-      '*Adjudicaciones:*',
-      '1. Const. Barrial S.A. *$32.0M*',
-      '2. Insumos Cuyo SRL *$14.2M*',
-      '3. Electricidad Junin *$9.8M*'
-    ].join('\n')
+  await send(to, pid, 'interactive', {
+    type: 'button',
+    body: { text: '📄 *LICITACIONES PUBLICAS*\n_Junin, Mendoza · Ago 2026_\n\n━━━━━━━━━━━━━━━━\n\n*Resumen*\nProcesos activos ........ *5*\nMonto licitado ............ *$85.4M*\nCumplimiento SLA ..... *100%*\n\n*Adjudicaciones*\n1. Const. Barrial S.A. — *$32.0M*\n2. Insumos Cuyo SRL — *$14.2M*\n3. Electricidad Junin — *$9.8M*\n\n━━━━━━━━━━━━━━━━' },
+    footer: { text: 'MuniControl · GovTech' },
+    action: {
+      buttons: [
+        { type: 'reply', reply: { id: 'cmd_obras', title: 'Ver Obras' } },
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu' } }
+      ]
+    }
   });
-  await navButtons(to, pid, 'Queres ver otro modulo?', [
-    { id: 'cmd_obras', title: 'Ver Obras' },
-    { id: 'cmd_menu', title: 'Menu Principal' }
-  ]);
 }
 
 // ================================================================
 // RECLAMOS
 // ================================================================
 async function cmdReclamos(to, pid) {
-  await send(to, pid, 'image', {
-    link: IMG + '/reclamos.jpg',
-    caption: [
-      '*RECLAMOS 311*',
-      '_Junin, Mendoza | Agosto 2026_',
-      '',
-      'Total reclamos .......... *318*',
-      'Resueltos ................... *295* (92.7%)',
-      'Pendientes ................. *23*',
-      'Tiempo promedio ........ *3.2 dias*',
-      '',
-      '▓▓▓▓▓▓▓▓▓░ *92.7%* resueltos',
-      '',
-      '*Top categorias:*',
-      '1. Alumbrado .... 112 casos',
-      '2. Baches ........... 85 casos',
-      '3. Arbolado ........ 64 casos'
-    ].join('\n')
+  await send(to, pid, 'interactive', {
+    type: 'button',
+    body: { text: '📢 *RECLAMOS 311*\n_Junin, Mendoza · Ago 2026_\n\n━━━━━━━━━━━━━━━━\n\n*Panel de Control*\nTotal reclamos .......... *318*\nResueltos ................... *295* (92.7%)\nEn proceso ................. *23*\nTiempo prom. ............ *3.2 dias*\n\n▓▓▓▓▓▓▓▓▓░ *92.7%* resueltos\n\n*Top Categorias*\n1. Alumbrado .... 112 casos\n2. Baches ........... 85 casos\n3. Arbolado ........ 64 casos\n\n━━━━━━━━━━━━━━━━' },
+    footer: { text: 'MuniControl · GovTech' },
+    action: {
+      buttons: [
+        { type: 'reply', reply: { id: 'cmd_reporte', title: 'Informe Ejecutivo' } },
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu' } }
+      ]
+    }
   });
-  await navButtons(to, pid, 'Queres ver otro modulo?', [
-    { id: 'cmd_reporte', title: 'Informe Ejecutivo' },
-    { id: 'cmd_menu', title: 'Menu Principal' }
-  ]);
 }
 
 // ================================================================
-// REPORTE EJECUTIVO
+// REPORTE
 // ================================================================
 async function cmdReporte(to, pid) {
-  await send(to, pid, 'image', {
-    link: IMG + '/reporte.jpg',
-    caption: [
-      '*INFORME EJECUTIVO*',
-      '_Generado por IA | Agosto 2026_',
-      '',
-      'Balance financiero saludable',
-      'con superavit de *+$14.9M* y',
-      'ejecucion presupuestaria del *67%*.',
-      '',
-      '*Indicadores:*',
-      'Finanzas ... +$14.9M ...... OK',
-      'Obras ........ 68% avance . OK',
-      'RRHH ........ 3.2% ausent. OK',
-      'Reclamos .. 92.7% resol. OK',
-      'SLA ............ 94.1% .......... OK'
-    ].join('\n')
+  await send(to, pid, 'interactive', {
+    type: 'button',
+    body: { text: '📊 *INFORME EJECUTIVO*\n_Generado por IA · Ago 2026_\n\n━━━━━━━━━━━━━━━━\n\nEl municipio mantiene un balance financiero saludable con superavit de *+$14.9M* y ejecucion presupuestaria del *67%*. Las obras avanzan al 68% y el SLA de reclamos alcanza el 94.1%.\n\n*Tablero*\n✅ Finanzas ... +$14.9M\n✅ Obras ........ 68% avance\n✅ RRHH ........ 3.2% ausent.\n✅ Reclamos .. 92.7% resol.\n✅ SLA ............ 94.1%\n\n━━━━━━━━━━━━━━━━' },
+    footer: { text: 'MuniControl · GovTech' },
+    action: {
+      buttons: [
+        { type: 'reply', reply: { id: 'cmd_hacienda', title: 'Ver Finanzas' } },
+        { type: 'reply', reply: { id: 'cmd_obras', title: 'Ver Obras' } },
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu' } }
+      ]
+    }
   });
-  await navButtons(to, pid, 'Queres ver otro modulo?', [
-    { id: 'cmd_hacienda', title: 'Ver Finanzas' },
-    { id: 'cmd_obras', title: 'Ver Obras' },
-    { id: 'cmd_menu', title: 'Menu Principal' }
-  ]);
 }
 
 // ================================================================
 // AYUDA
 // ================================================================
 async function cmdAyuda(to, pid) {
-  await send(to, pid, 'text', {
-    body: [
-      '*MUNICONTROL — AYUDA*',
-      '',
-      '*obras* — Avance de obras',
-      '*hacienda* — Balance financiero',
-      '*rrhh* — Nomina y personal',
-      '*licitaciones* — Contratos',
-      '*reclamos* — Reclamos 311',
-      '*reporte* — Informe ejecutivo IA',
-      '*menu* — Menu interactivo',
-      '',
-      'O escribi cualquier pregunta.'
-    ].join('\n')
-  });
-}
-
-// ================================================================
-// CONSULTA LIBRE
-// ================================================================
-async function cmdLibre(to, pid, txt) {
-  await send(to, pid, 'text', {
-    body: [
-      '*MUNIBOT — Asistente IA*',
-      '',
-      'Recibi: _"' + txt.substring(0, 100) + '"_',
-      '',
-      'Para consultas especificas',
-      'escribi *menu* y elegi un area.',
-      '',
-      '_MuniControl v2.0_'
-    ].join('\n')
-  });
-}
-
-// ================================================================
-// NAV BUTTONS (separate message for reliability)
-// ================================================================
-async function navButtons(to, pid, text, btns) {
   await send(to, pid, 'interactive', {
     type: 'button',
-    body: { text: text },
-    footer: { text: 'MuniControl | GovTech' },
+    body: { text: '❓ *AYUDA — MUNICONTROL*\n\n*Comandos:*\n• *obras* — Obras publicas\n• *hacienda* — Finanzas\n• *rrhh* — Personal\n• *licitaciones* — Contratos\n• *reclamos* — Reclamos 311\n• *reporte* — Informe IA\n\nO escribi cualquier pregunta.' },
+    footer: { text: 'MuniControl · GovTech' },
     action: {
-      buttons: btns.slice(0, 3).map(function(b) {
-        return { type: 'reply', reply: { id: b.id, title: b.title } };
-      })
+      buttons: [
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu' } }
+      ]
     }
   });
 }
 
 // ================================================================
-// CORE SENDER
+// LIBRE
+// ================================================================
+async function cmdLibre(to, pid, txt) {
+  await send(to, pid, 'interactive', {
+    type: 'button',
+    body: { text: '🤖 *MUNIBOT*\n\nRecibi: _"' + txt.substring(0, 80) + '"_\n\nPara datos especificos usa el menu.' },
+    footer: { text: 'MuniControl · GovTech' },
+    action: {
+      buttons: [
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu' } }
+      ]
+    }
+  });
+}
+
+// ================================================================
+// SEND (1 solo mensaje por interaccion, con retry AR)
 // ================================================================
 async function send(to, pid, type, content) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   if (!token || !pid) return;
 
-  var payload = { messaging_product: 'whatsapp', to: '__REPLACE__', type: type };
+  var payload = { messaging_product: 'whatsapp', to: 'X', type: type };
   if (type === 'text') payload.text = content;
   else if (type === 'image') payload.image = content;
   else if (type === 'interactive') payload.interactive = content;
-  else return;
 
   var url = 'https://graph.facebook.com/v21.0/' + pid + '/messages';
 
-  var doSend = async function(recipient) {
-    var body = JSON.stringify(payload).replace('"__REPLACE__"', '"' + recipient + '"');
-    var r = await fetch(url, {
+  var doSend = async function(r) {
+    var b = JSON.stringify(payload).replace('"X"', '"' + r + '"');
+    var resp = await fetch(url, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: body
+      body: b
     });
-    var t = await r.text();
-    return { ok: r.ok, s: r.status, t: t };
+    var t = await resp.text();
+    return { ok: resp.ok, t: t };
   };
 
   var res = await doSend(to);
-
   if (!res.ok && res.t.indexOf('131030') >= 0) {
     var alt = null;
     if (to.startsWith('549') && to.length >= 13) alt = '54' + to.substring(3);
-    else if (to.startsWith('54') && !to.startsWith('549') && to.length >= 12) alt = '549' + to.substring(2);
-    if (alt) {
-      console.log('[WA] retry:', alt);
-      res = await doSend(alt);
-    }
+    else if (to.startsWith('54') && !to.startsWith('549')) alt = '549' + to.substring(2);
+    if (alt) res = await doSend(alt);
   }
-
-  if (!res.ok) console.error('[WA] FAIL:', res.s, res.t.substring(0, 200));
-  else console.log('[WA] OK to', to);
+  if (!res.ok) console.error('[WA]', res.t.substring(0, 200));
 }

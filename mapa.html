@@ -4,187 +4,297 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#060b18">
-  <title>Mapa Smart City | MuniControl</title>
+  <title>Mapa Smart City | MuniControl Junín</title>
   <link rel="icon" href="favicon.ico">
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  
   <link rel="stylesheet" href="css/dashboard.css">
+
   <style>
-    /* Map page overrides */
-    html, body { height: 100%; overflow: hidden; }
-
-    .map-wrapper {
-      position: fixed;
-      top: 0; left: var(--sidebar-w, 260px); right: 0; bottom: 0;
-      display: flex;
-      transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #060b18;
+      font-family: 'Inter', sans-serif;
     }
-    .sidebar.collapsed ~ .map-wrapper,
-    body.sidebar-collapsed .map-wrapper { left: 64px; }
 
-    /* Left control panel */
-    #mapPanel {
-      width: 220px;
-      min-width: 220px;
-      background: rgba(6,11,24,0.97);
-      border-right: 1px solid rgba(255,255,255,0.07);
+    /* Layout Container */
+    .map-container {
+      position: fixed;
+      top: 0;
+      left: var(--sidebar-w, 260px);
+      right: 0;
+      bottom: 0;
+      display: flex;
+      transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    body.sidebar-collapsed .map-container {
+      left: 64px;
+    }
+
+    /* Control Panel (Left Sidebar inside Map) */
+    .map-panel {
+      width: 280px;
+      min-width: 280px;
+      background: rgba(10, 16, 31, 0.95);
+      backdrop-filter: blur(16px);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
-      z-index: 10;
+      z-index: 1000;
+      box-shadow: 5px 0 25px rgba(0,0,0,0.5);
     }
 
-    /* Map tile area */
-    #map {
-      flex: 1;
-      height: 100%;
-      z-index: 1;
+    .panel-header {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
     }
 
-    /* Leaflet popup style */
-    .leaflet-popup-content-wrapper {
-      background: #ffffff;
-      color: #1e293b;
-      border-radius: 10px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-      border: none;
+    .panel-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      color: #f0f4ff;
+      margin: 0 0 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .leaflet-popup-tip { background: #ffffff; }
-    .leaflet-popup-content { margin: 14px 16px; }
 
-    /* Panel sections */
+    .panel-header p {
+      margin: 0;
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.6);
+    }
+
     .panel-section {
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .panel-label {
+
+    .section-title {
       font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: rgba(148,163,184,0.4);
-      margin-bottom: 10px;
+      letter-spacing: 1px;
+      color: rgba(148, 163, 184, 0.5);
+      margin-bottom: 12px;
     }
-    .layer-row {
+
+    /* Layer Options */
+    .layer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .layer-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .layer-left {
       display: flex;
       align-items: center;
       gap: 10px;
-      cursor: pointer;
-      margin-bottom: 8px;
     }
-    .layer-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .layer-row input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; }
-    .layer-name { font-size: 13px; font-weight: 600; flex: 1; }
-    .layer-count { font-size: 11px; font-weight: 700; color: rgba(148,163,184,0.5); }
 
-    .stat-row {
+    .layer-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .layer-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f0f4ff;
+    }
+
+    .layer-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(240, 244, 255, 0.8);
+    }
+
+    /* Search Box */
+    .search-box {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #ffffff;
+      font-size: 13px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: #3b82f6;
+    }
+
+    /* Stats Grid */
+    .stats-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stat-card {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
       font-size: 12px;
+      color: rgba(148, 163, 184, 0.7);
     }
-    .stat-label { color: rgba(148,163,184,0.6); }
-    .stat-val   { font-weight: 800; }
 
-    #addressSearch {
+    .stat-value {
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    /* Leaflet Map Canvas */
+    #map {
+      flex: 1;
+      height: 100%;
       width: 100%;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
-      padding: 8px 12px;
-      color: #f0f4ff;
-      font-size: 12px;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      box-sizing: border-box;
-      transition: border-color 0.2s;
+      background: #060b18;
     }
-    #addressSearch:focus { border-color: rgba(59,130,246,0.5); }
-    #addressSearch::placeholder { color: rgba(148,163,184,0.4); }
 
-    /* Map attribution */
-    .leaflet-control-attribution { font-size: 9px !important; }
+    /* Custom Leaflet Styling */
+    .leaflet-popup-content-wrapper {
+      background: #0d1526 !important;
+      color: #f0f4ff !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+    }
+    .leaflet-popup-tip {
+      background: #0d1526 !important;
+    }
 
-    /* Mobile Responsive Overrides */
+    /* Mobile Adaptations */
     @media (max-width: 768px) {
-      .map-wrapper { left: 0 !important; flex-direction: column-reverse; }
-      #mapPanel { width: 100%; min-width: 100%; height: 250px; flex: none; border-right: none; border-top: 1px solid rgba(255,255,255,0.07); }
-      #map { height: calc(100vh - 250px); }
-      .sidebar { display: none; }
+      .map-container {
+        left: 0 !important;
+        flex-direction: column-reverse;
+      }
+      .map-panel {
+        width: 100% !important;
+        min-width: 100% !important;
+        height: 240px;
+        flex: none;
+      }
+      #map {
+        height: calc(100vh - 240px);
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar (built by nav.js) -->
+  <!-- Sidebar Component -->
   <aside class="sidebar" id="sidebar"></aside>
 
-  <!-- Map wrapper — positioned next to sidebar -->
-  <div class="map-wrapper" id="mapWrapper">
-
-    <!-- Left control panel -->
-    <div id="mapPanel">
-
-      <div class="panel-section">
-        <div style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:900;color:#f0f4ff;margin-bottom:2px">Mapa Smart City</div>
-        <div style="font-size:11px;color:rgba(148,163,184,0.5)">Municipio de Junín, Mendoza</div>
+  <!-- Map Wrapper -->
+  <div class="map-container" id="mapContainer">
+    
+    <!-- Control Panel -->
+    <div class="map-panel">
+      <div class="panel-header">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          Mapa Smart City
+        </h2>
+        <p>Municipio de Junín, Mendoza</p>
       </div>
 
-      <!-- Layer toggles -->
+      <!-- Capas de Información -->
       <div class="panel-section">
-        <div class="panel-label">Capas</div>
-        <label class="layer-row">
-          <input type="checkbox" id="layerObras" checked onchange="toggleLayer('obras',this.checked)" style="accent-color:#f59e0b">
-          <span class="layer-dot" style="background:#f59e0b"></span>
-          <span class="layer-name" style="color:#fbbf24">Obras activas</span>
-          <span class="layer-count" id="countObras">0</span>
+        <div class="section-title">Capas Interactivas</div>
+        
+        <label class="layer-item">
+          <div class="layer-left">
+            <input type="checkbox" id="layerObras" checked onchange="toggleLayer('obras', this.checked)">
+            <span class="layer-dot" style="background:#f59e0b; box-shadow: 0 0 8px #f59e0b"></span>
+            <span class="layer-title">Obras Públicas</span>
+          </div>
+          <span class="layer-badge" id="countObras">8</span>
         </label>
-        <label class="layer-row">
-          <input type="checkbox" id="layerReclamos" checked onchange="toggleLayer('reclamos',this.checked)" style="accent-color:#ef4444">
-          <span class="layer-dot" style="background:#ef4444"></span>
-          <span class="layer-name" style="color:#f87171">Reclamos</span>
-          <span class="layer-count" id="countReclamos">0</span>
-        </label>
-        <label class="layer-row" style="margin-bottom:0">
-          <input type="checkbox" id="layerServicios" checked onchange="toggleLayer('servicios',this.checked)" style="accent-color:#3b82f6">
-          <span class="layer-dot" style="background:#3b82f6"></span>
-          <span class="layer-name" style="color:#60a5fa">Servicios</span>
-          <span class="layer-count" id="countServicios">0</span>
-        </label>
-      </div>
 
-      <!-- Filter reclamos -->
-      <div class="panel-section">
-        <div class="panel-label">Filtrar reclamos</div>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;font-size:12px;color:rgba(148,163,184,0.7)">
-          <input type="radio" name="recFilter" value="todos" checked onchange="filterReclamos(this.value)"> Todos
+        <label class="layer-item">
+          <div class="layer-left">
+            <input type="checkbox" id="layerReclamos" checked onchange="toggleLayer('reclamos', this.checked)">
+            <span class="layer-dot" style="background:#ef4444; box-shadow: 0 0 8px #ef4444"></span>
+            <span class="layer-title">Reclamos 311</span>
+          </div>
+          <span class="layer-badge" id="countReclamos">12</span>
         </label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;font-size:12px;color:#f87171">
-          <input type="radio" name="recFilter" value="pendiente" onchange="filterReclamos(this.value)"> Solo pendientes
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#fbbf24">
-          <input type="radio" name="recFilter" value="en_proceso" onchange="filterReclamos(this.value)"> En proceso
+
+        <label class="layer-item">
+          <div class="layer-left">
+            <input type="checkbox" id="layerServicios" checked onchange="toggleLayer('servicios', this.checked)">
+            <span class="layer-dot" style="background:#3b82f6; box-shadow: 0 0 8px #3b82f6"></span>
+            <span class="layer-title">Servicios / Edificios</span>
+          </div>
+          <span class="layer-badge" id="countServicios">10</span>
         </label>
       </div>
 
-      <!-- Stats -->
-      <div class="panel-section" style="flex:1">
-        <div class="panel-label">Resumen</div>
-        <div id="mapStats"></div>
+      <!-- Buscador -->
+      <div class="panel-section">
+        <div class="section-title">Búsqueda Territorial</div>
+        <div class="search-box">
+          <input type="text" id="searchInput" class="search-input" placeholder="Buscar calle o barrio..." onkeydown="if(event.key==='Enter') searchLocation(this.value)">
+        </div>
       </div>
 
-      <!-- Address search -->
-      <div class="panel-section">
-        <input type="text" id="addressSearch" placeholder="Buscar calle..."
-          onkeydown="if(event.key==='Enter')searchAddress(this.value)">
+      <!-- Estadísticas Rápidas -->
+      <div class="panel-section" style="flex:1; border-bottom:none">
+        <div class="section-title">Resumen Urbano</div>
+        <div class="stats-container">
+          <div class="stat-card">
+            <span>Obras en Ejecución</span>
+            <span class="stat-value" style="color:#f59e0b">6</span>
+          </div>
+          <div class="stat-card">
+            <span>Reclamos Pendientes</span>
+            <span class="stat-value" style="color:#ef4444">5</span>
+          </div>
+          <div class="stat-card">
+            <span>SLA Cumplimiento 311</span>
+            <span class="stat-value" style="color:#10b981">94%</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Leaflet map -->
+    <!-- Map Canvas -->
     <div id="map"></div>
 
   </div>
@@ -192,205 +302,132 @@
   <script src="js/theme-switcher.js"></script>
   <script src="js/nav.js"></script>
   <script>
-    // Build sidebar
     if (typeof buildSidebar === 'function') buildSidebar('mapa');
 
-    // Sync map wrapper left with sidebar collapse
-    (function syncMapLeft() {
-      function update() {
-        var w = document.documentElement.style.getPropertyValue('--sidebar-w') || '260px';
-        document.getElementById('mapWrapper').style.left = w;
-      }
-      update();
-      var observer = new MutationObserver(update);
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
-    })();
-
-    // ── DATA: Coordenadas reales de Junín, Mendoza (-33.13, -69.00) ──
-    var CENTER = [-33.1283, -69.0042]; // Plaza Central de Junín, Mendoza
-
-    var OBRAS_DATA = [
-      {id:'O001',nombre:'Repavimentación Calle San Martín',estado:'en_ejecucion',avance:62,monto:'$85M',contratista:'Constructora Andina SA',lat:-33.1265,lng:-69.0031},
-      {id:'O002',nombre:'Red de Agua Potable Barrio Norte',estado:'en_ejecucion',avance:38,monto:'$42M',contratista:'AguasMendoza SRL',lat:-33.1240,lng:-69.0058},
-      {id:'O003',nombre:'Iluminación LED Plaza Central',estado:'finalizada',avance:100,monto:'$18.7M',contratista:'ElectroMendoza SA',lat:-33.1283,lng:-69.0042},
-      {id:'O004',nombre:'Playón Deportivo Barrio Sur',estado:'en_ejecucion',avance:45,monto:'$22.4M',contratista:'Obras Cuyo SRL',lat:-33.1320,lng:-69.0060},
-      {id:'O005',nombre:'Bacheo y Red Vial Urbana',estado:'en_ejecucion',avance:71,monto:'$61M',contratista:'Vial Andina SA',lat:-33.1300,lng:-69.0015},
-      {id:'O006',nombre:'Centro de Salud Primario',estado:'planificada',avance:0,monto:'$34M',contratista:'Pendiente licitación',lat:-33.1255,lng:-68.9990},
-      {id:'O007',nombre:'Parque Lineal Ruta 7',estado:'en_ejecucion',avance:55,monto:'$15M',contratista:'Verde Andino SA',lat:-33.1350,lng:-69.0080},
-      {id:'O008',nombre:'Renovación Red Cloacal Centro',estado:'en_ejecucion',avance:28,monto:'$48M',contratista:'SaneamientoMend.',lat:-33.1290,lng:-69.0050},
-    ];
-
-    var RECLAMOS_DATA = [
-      {id:'R001',tipo:'Bache en calzada',estado:'pendiente',prioridad:'alta',barrio:'Centro',lat:-33.1275,lng:-69.0038},
-      {id:'R002',tipo:'Luminaria apagada',estado:'en_proceso',prioridad:'media',barrio:'Norte',lat:-33.1248,lng:-69.0062},
-      {id:'R003',tipo:'Pérdida de agua',estado:'en_proceso',prioridad:'alta',barrio:'Oeste',lat:-33.1305,lng:-69.0075},
-      {id:'R004',tipo:'Residuos no recolectados',estado:'pendiente',prioridad:'media',barrio:'Sur',lat:-33.1335,lng:-69.0028},
-      {id:'R005',tipo:'Árbol caído',estado:'resuelto',prioridad:'alta',barrio:'Centro',lat:-33.1270,lng:-69.0010},
-      {id:'R006',tipo:'Bache en calzada',estado:'pendiente',prioridad:'media',barrio:'Este',lat:-33.1295,lng:-68.9998},
-      {id:'R007',tipo:'Semáforo roto',estado:'pendiente',prioridad:'alta',barrio:'Centro',lat:-33.1280,lng:-69.0048},
-      {id:'R008',tipo:'Pérdida de gas',estado:'en_proceso',prioridad:'alta',barrio:'Norte',lat:-33.1255,lng:-69.0035},
-      {id:'R009',tipo:'Basural clandestino',estado:'en_proceso',prioridad:'baja',barrio:'Sur',lat:-33.1340,lng:-69.0055},
-      {id:'R010',tipo:'Luminaria apagada',estado:'resuelto',prioridad:'media',barrio:'Oeste',lat:-33.1315,lng:-69.0070},
-      {id:'R011',tipo:'Bache en calzada',estado:'pendiente',prioridad:'alta',barrio:'Centro',lat:-33.1288,lng:-69.0022},
-      {id:'R012',tipo:'Arbolado enfermo',estado:'pendiente',prioridad:'baja',barrio:'Parque',lat:-33.1260,lng:-69.0080},
-    ];
-
-    var SERVICIOS_DATA = [
-      {nombre:'Municipalidad de Junín',tipo:'Gobierno',lat:-33.1283,lng:-69.0042,tel:'(0263) 4XX-XXXX',horario:'Lun-Vie 7:30-14:30'},
-      {nombre:'Hospital Gral. Las Heras',tipo:'Salud',lat:-33.1270,lng:-69.0015,tel:'(0263) 4XX-XXXX',horario:'24 horas'},
-      {nombre:'Terminal de Ómnibus',tipo:'Transporte',lat:-33.1310,lng:-68.9985,tel:'(0263) 4XX-XXXX',horario:'5:00-23:00'},
-      {nombre:'Biblioteca Municipal',tipo:'Cultura',lat:-33.1275,lng:-69.0065,tel:'(0263) 4XX-XXXX',horario:'Lun-Vie 8-20'},
-      {nombre:'Polideportivo Municipal',tipo:'Deporte',lat:-33.1330,lng:-69.0090,tel:'(0263) 4XX-XXXX',horario:'7:00-22:00'},
-      {nombre:'Centro de Jubilados',tipo:'Social',lat:-33.1265,lng:-69.0030,tel:'(0263) 4XX-XXXX',horario:'Lun-Vie 9-17'},
-      {nombre:'Cementerio Municipal',tipo:'Servicios',lat:-33.1360,lng:-69.0100,tel:'(0263) 4XX-XXXX',horario:'8:00-18:00'},
-      {nombre:'Jardín de Infantes Nº 1',tipo:'Educación',lat:-33.1250,lng:-69.0050,tel:'(0263) 4XX-XXXX',horario:'8:00-12:00'},
-      {nombre:'Delegación Barrio Norte',tipo:'Gobierno',lat:-33.1235,lng:-69.0040,tel:'(0263) 4XX-XXXX',horario:'Lun-Vie 8-14'},
-      {nombre:'Defensa Civil',tipo:'Emergencias',lat:-33.1300,lng:-69.0060,tel:'103',horario:'24 horas'},
-    ];
-
-    // Icons
-    function makeIcon(color, label) {
-      return L.divIcon({
-        className: '',
-        html: '<div style="width:30px;height:30px;background:'+color+';border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid rgba(255,255,255,0.4);box-shadow:0 3px 10px rgba(0,0,0,0.5)"><div style="transform:rotate(45deg);display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;font-weight:900;color:white">'+label+'</div></div>',
-        iconSize: [30,30], iconAnchor: [15,30], popupAnchor: [0,-32]
-      });
-    }
-
-    var icons = {
-      obra:    makeIcon('#f59e0b','O'),
-      recPend: makeIcon('#ef4444','!'),
-      recProc: makeIcon('#fb923c','~'),
-      recRes:  makeIcon('#10b981','✓'),
-      serv:    makeIcon('#3b82f6','S'),
-    };
-
+    // Coordenadas Junín, Mendoza (-33.1283, -69.0042)
+    var JUNIN_CENTER = [-33.1283, -69.0042];
     var map;
-    var layers = {
-      obras:     L.layerGroup(),
-      reclamos:  L.layerGroup(),
+
+    // Datos de Obras Públicas
+    var OBRAS = [
+      { id: 'O01', nombre: 'Repavimentación Av. San Martín', avance: 82, estado: 'En ejecución', lat: -33.1265, lng: -69.0031 },
+      { id: 'O02', nombre: 'Red de Agua Potable Barrio Norte', avance: 45, estado: 'En ejecución', lat: -33.1240, lng: -69.0058 },
+      { id: 'O03', nombre: 'Recambio LED Parque Retamo', avance: 95, estado: 'Finalizada', lat: -33.1283, lng: -69.0042 },
+      { id: 'O04', nombre: 'Playón Deportivo Barrio Sur', avance: 30, estado: 'En ejecución', lat: -33.1320, lng: -69.0060 },
+      { id: 'O05', nombre: 'Bacheo y Asfalto Zona Centro', avance: 65, estado: 'En ejecución', lat: -33.1300, lng: -69.0015 },
+      { id: 'O06', nombre: 'Parque Lineal Av. Mitre', avance: 50, estado: 'En ejecución', lat: -33.1350, lng: -69.0080 }
+    ];
+
+    // Datos de Reclamos 311
+    var RECLAMOS = [
+      { id: 'R01', tipo: 'Bache en calzada', estado: 'Pendiente', barrio: 'Centro', lat: -33.1275, lng: -69.0038 },
+      { id: 'R02', tipo: 'Luminaria apagada', estado: 'En proceso', barrio: 'Norte', lat: -33.1248, lng: -69.0062 },
+      { id: 'R03', tipo: 'Pérdida de agua', estado: 'En proceso', barrio: 'Oeste', lat: -33.1305, lng: -69.0075 },
+      { id: 'R04', tipo: 'Residuos no recolectados', estado: 'Pendiente', barrio: 'Sur', lat: -33.1335, lng: -69.0028 },
+      { id: 'R05', tipo: 'Arbolado enfermo', estado: 'Pendiente', barrio: 'Centro', lat: -33.1288, lng: -69.0022 }
+    ];
+
+    // Servicios Municipales
+    var SERVICIOS = [
+      { nombre: 'Municipalidad de Junín', tipo: 'Edificio Central', lat: -33.1283, lng: -69.0042 },
+      { nombre: 'Hospital Las Heras', tipo: 'Salud', lat: -33.1270, lng: -69.0015 },
+      { nombre: 'Polideportivo Municipal', tipo: 'Deportes', lat: -33.1330, lng: -69.0090 },
+      { nombre: 'Terminal de Ómnibus', tipo: 'Transporte', lat: -33.1310, lng: -68.9985 }
+    ];
+
+    var layerGroups = {
+      obras: L.layerGroup(),
+      reclamos: L.layerGroup(),
       servicios: L.layerGroup()
     };
 
-    function toggleLayer(name, visible) {
-      if (visible) map.addLayer(layers[name]);
-      else map.removeLayer(layers[name]);
-    }
-
-    function filterReclamos(estado) {
-      layers.reclamos.clearLayers();
-      RECLAMOS_DATA.forEach(function(r) {
-        if (estado !== 'todos' && r.estado !== estado) return;
-        var icon = r.estado === 'resuelto' ? icons.recRes : r.estado === 'en_proceso' ? icons.recProc : icons.recPend;
-        L.marker([r.lat, r.lng], {icon: icon})
-          .bindPopup(
-            '<div style="font-family:Inter,sans-serif;color:#1e293b;min-width:180px">' +
-            '<div style="font-size:13px;font-weight:700;margin-bottom:6px">' + r.tipo + '</div>' +
-            '<div style="font-size:12px;margin-bottom:3px">Estado: <strong>' + r.estado + '</strong></div>' +
-            '<div style="font-size:12px;margin-bottom:3px">Barrio: ' + r.barrio + '</div>' +
-            '<div style="font-size:12px">Prioridad: <span style="font-weight:700;color:' + (r.prioridad==='alta'?'#ef4444':r.prioridad==='media'?'#f59e0b':'#10b981') + '">' + r.prioridad + '</span></div>' +
-            '<div style="font-size:10px;color:#94a3b8;margin-top:6px">ID: ' + r.id + '</div>' +
-            '</div>'
-          ).addTo(layers.reclamos);
+    function createCustomMarker(color, label) {
+      return L.divIcon({
+        className: '',
+        html: `<div style="width:28px;height:28px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 0 10px ${color};display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);color:white;font-size:10px;font-weight:900">${label}</span></div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 28]
       });
     }
 
-    function obraPopup(o) {
-      return '<div style="font-family:Inter,sans-serif;color:#1e293b;min-width:220px">' +
-        '<div style="font-size:13px;font-weight:700;margin-bottom:8px">' + o.nombre + '</div>' +
-        '<div style="font-size:12px;margin-bottom:3px">Estado: <strong>' + o.estado + '</strong></div>' +
-        '<div style="font-size:12px;margin-bottom:3px">Contratista: ' + o.contratista + '</div>' +
-        '<div style="font-size:12px;margin-bottom:8px">Monto: <strong>' + o.monto + '</strong></div>' +
-        '<div style="background:#f1f5f9;border-radius:4px;height:8px;overflow:hidden">' +
-        '<div style="height:100%;background:' + (o.avance>=70?'#10b981':o.avance>=40?'#f59e0b':'#ef4444') + ';width:'+o.avance+'%"></div></div>' +
-        '<div style="font-size:11px;text-align:right;margin-top:4px;color:#64748b">' + o.avance + '% completado</div>' +
-        '</div>';
-    }
+    function initMap() {
+      map = L.map('map', { zoomControl: false }).setView(JUNIN_CENTER, 15);
 
-    function updateStats() {
-      var pendRec  = RECLAMOS_DATA.filter(function(r){return r.estado==='pendiente';}).length;
-      var obrasEj  = OBRAS_DATA.filter(function(o){return o.estado==='en_ejecucion';}).length;
-      var avgAvance= Math.round(OBRAS_DATA.reduce(function(s,o){return s+o.avance;},0)/OBRAS_DATA.length);
-      var html = [
-        statRow('Obras en ejecución', obrasEj, '#f59e0b'),
-        statRow('Reclamos pendientes', pendRec, '#ef4444'),
-        statRow('Servicios mapeados', SERVICIOS_DATA.length, '#3b82f6'),
-        statRow('Avance prom. obras', avgAvance+'%', '#10b981'),
-      ].join('');
-      document.getElementById('mapStats').innerHTML = html;
-      document.getElementById('countObras').textContent    = OBRAS_DATA.length;
-      document.getElementById('countReclamos').textContent  = RECLAMOS_DATA.length;
-      document.getElementById('countServicios').textContent = SERVICIOS_DATA.length;
-    }
-
-    function statRow(label, val, color) {
-      return '<div class="stat-row"><span class="stat-label">' + label + '</span>' +
-             '<span class="stat-val" style="color:' + color + '">' + val + '</span></div>';
-    }
-
-    function searchAddress(val) {
-      if (!val) return;
-      // Nominatim geocode (OpenStreetMap)
-      fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(val + ', Junín, Mendoza, Argentina') + '&format=json&limit=1')
-        .then(function(r){ return r.json(); })
-        .then(function(data) {
-          if (data && data.length > 0) {
-            var lat = parseFloat(data[0].lat);
-            var lon = parseFloat(data[0].lon);
-            map.setView([lat, lon], 17);
-            L.marker([lat, lon]).addTo(map)
-              .bindPopup('<strong>' + (data[0].display_name || val) + '</strong>').openPopup();
-          } else {
-            alert('No se encontró: ' + val + ' en Junín, Mendoza');
-          }
-        })
-        .catch(function(){ alert('Error de búsqueda. Verificá la conexión.'); });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      // Init map centered on Junín, Mendoza
-      map = L.map('map', { zoomControl: false }).setView(CENTER, 15);
-
+      // CartoDB Dark Matter tiles + Fallback
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
       }).addTo(map);
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // Add layers to map
-      Object.values(layers).forEach(function(lg){ lg.addTo(map); });
-
-      // Populate obras
-      OBRAS_DATA.forEach(function(o) {
-        L.marker([o.lat, o.lng], { icon: icons.obra })
-          .bindPopup(obraPopup(o))
-          .addTo(layers.obras);
+      // Cargar Capa Obras
+      OBRAS.forEach(o => {
+        L.marker([o.lat, o.lng], { icon: createCustomMarker('#f59e0b', '🏗️') })
+          .bindPopup(`
+            <div style="padding:4px">
+              <strong style="font-size:14px;color:#60a5fa">${o.nombre}</strong><br>
+              <span style="font-size:12px;color:#cbd5e1">Estado: ${o.estado}</span><br>
+              <div style="background:rgba(255,255,255,0.1);border-radius:4px;height:6px;margin-top:8px;overflow:hidden">
+                <div style="background:#f59e0b;width:${o.avance}%;height:100%"></div>
+              </div>
+              <span style="font-size:10px;color:#94a3b8;float:right;margin-top:2px">${o.avance}% completado</span>
+            </div>
+          `)
+          .addTo(layerGroups.obras);
       });
 
-      // Populate reclamos
-      filterReclamos('todos');
-
-      // Populate servicios
-      SERVICIOS_DATA.forEach(function(s) {
-        L.marker([s.lat, s.lng], { icon: icons.serv })
-          .bindPopup(
-            '<div style="font-family:Inter,sans-serif;color:#1e293b;min-width:180px">' +
-            '<div style="font-size:13px;font-weight:700;margin-bottom:6px">' + s.nombre + '</div>' +
-            '<div style="font-size:12px;margin-bottom:3px">Tipo: <strong>' + s.tipo + '</strong></div>' +
-            '<div style="font-size:12px;margin-bottom:3px">Horario: ' + s.horario + '</div>' +
-            '<div style="font-size:12px">Tel: ' + s.tel + '</div>' +
-            '</div>'
-          ).addTo(layers.servicios);
+      // Cargar Capa Reclamos
+      RECLAMOS.forEach(r => {
+        L.marker([r.lat, r.lng], { icon: createCustomMarker('#ef4444', '🚨') })
+          .bindPopup(`
+            <div style="padding:4px">
+              <strong style="font-size:14px;color:#f87171">${r.tipo}</strong><br>
+              <span style="font-size:12px;color:#cbd5e1">Barrio: ${r.barrio}</span><br>
+              <span style="font-size:11px;font-weight:700;color:#f59e0b">Estado: ${r.estado}</span>
+            </div>
+          `)
+          .addTo(layerGroups.reclamos);
       });
 
-      updateStats();
+      // Cargar Capa Servicios
+      SERVICIOS.forEach(s => {
+        L.marker([s.lat, s.lng], { icon: createCustomMarker('#3b82f6', '🏛️') })
+          .bindPopup(`
+            <div style="padding:4px">
+              <strong style="font-size:14px;color:#34d399">${s.nombre}</strong><br>
+              <span style="font-size:12px;color:#cbd5e1">${s.tipo}</span>
+            </div>
+          `)
+          .addTo(layerGroups.servicios);
+      });
 
-      // Invalidate size after sidebar transition
-      setTimeout(function(){ map.invalidateSize(); }, 350);
-    });
+      // Activar todas las capas
+      Object.values(layerGroups).forEach(lg => lg.addTo(map));
+
+      // Ajustar mapa
+      setTimeout(() => { map.invalidateSize(); }, 300);
+    }
+
+    function toggleLayer(name, visible) {
+      if (visible) map.addLayer(layerGroups[name]);
+      else map.removeLayer(layerGroups[name]);
+    }
+
+    function searchLocation(query) {
+      if (!query) return;
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', Junín, Mendoza, Argentina')}&format=json&limit=1`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            map.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 17);
+          } else {
+            alert("No se encontró la ubicación en Junín.");
+          }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initMap);
   </script>
-  <script src='js/bottom-nav.js'></script>
 </body>
 </html>

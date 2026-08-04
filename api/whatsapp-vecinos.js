@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 
 async function route(msg, meta) {
   const from = msg.from;
-  const pid = meta.phone_number_id || process.env.WHATSAPP_PHONE_ID;
+  const pid = meta.phone_number_id || process.env.WHATSAPP_PHONE_ID_VECINOS || process.env.WHATSAPP_PHONE_ID;
   let txt = '';
   let payloadId = '';
 

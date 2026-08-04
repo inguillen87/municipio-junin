@@ -1,6 +1,9 @@
 // api/whatsapp-webhook.js
-// Meta WhatsApp Business Cloud API - Webhook
-// Docs: https://developers.facebook.com/docs/whatsapp/cloud-api
+// MuniControl WhatsApp Bot — Plantillas Profesionales con Banners
+// Meta WhatsApp Business Cloud API v21.0
+
+const BASE_URL = 'https://municipio-junin.vercel.app';
+const IMG_BASE = BASE_URL + '/img/wa';
 
 export default async function handler(req, res) {
   // GET: Webhook verification
@@ -8,419 +11,480 @@ export default async function handler(req, res) {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
-
     if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-      console.log('[WA] Webhook verified OK');
+      console.log('[WA] Webhook verified');
       return res.status(200).send(challenge);
     }
     return res.status(403).json({ error: 'Verification failed' });
   }
 
-  // POST: Incoming messages
-  if (req.method !== 'POST') {
-    return res.status(405).end();
-  }
+  if (req.method !== 'POST') return res.status(405).end();
 
   try {
     const body = req.body;
-    console.log('[WA] Webhook POST received:', JSON.stringify(body).substring(0, 500));
-
     if (body && body.object === 'whatsapp_business_account') {
-      const entries = body.entry || [];
-      for (const entry of entries) {
-        const changes = entry.changes || [];
-        for (const change of changes) {
+      for (const entry of (body.entry || [])) {
+        for (const change of (entry.changes || [])) {
           if (change.field !== 'messages') continue;
-          const value = change.value || {};
-          const messages = value.messages || [];
-          const metadata = value.metadata || {};
-
-          for (const msg of messages) {
-            console.log('[WA] Processing message from:', msg.from, 'type:', msg.type, 'phoneId:', metadata.phone_number_id);
-            await processMessage(msg, metadata);
+          const val = change.value || {};
+          for (const msg of (val.messages || [])) {
+            await processMessage(msg, val.metadata || {});
           }
         }
       }
     }
   } catch (err) {
-    console.error('[WA] Webhook error:', err.message, err.stack);
+    console.error('[WA] Error:', err.message);
   }
 
   return res.status(200).json({ status: 'received' });
 }
 
-// ========================================
-// PROCESS MESSAGE
-// ========================================
+// ================================================================
+// MESSAGE ROUTER
+// ================================================================
 async function processMessage(msg, metadata) {
   const from = msg.from;
   const phoneId = metadata.phone_number_id || process.env.WHATSAPP_PHONE_ID;
-  const msgType = msg.type;
 
   let userText = '';
-
-  if (msgType === 'text') {
-    userText = (msg.text && msg.text.body) ? msg.text.body : '';
-  } else if (msgType === 'interactive') {
-    const inter = msg.interactive || {};
-    if (inter.button_reply) {
-      userText = inter.button_reply.id || inter.button_reply.title || '';
-    } else if (inter.list_reply) {
-      userText = inter.list_reply.id || inter.list_reply.title || '';
-    }
-  } else if (msgType === 'audio') {
-    await sendText(from, phoneId, 'Recibi tu audio. Por ahora procesamos mensajes de texto. Escribime tu consulta y te respondo al instante.');
+  if (msg.type === 'text') {
+    userText = (msg.text && msg.text.body) || '';
+  } else if (msg.type === 'interactive') {
+    const i = msg.interactive || {};
+    userText = (i.button_reply && i.button_reply.id) || (i.list_reply && i.list_reply.id) || (i.button_reply && i.button_reply.title) || (i.list_reply && i.list_reply.title) || '';
+  } else if (msg.type === 'audio') {
+    await sendText(from, phoneId, 'Recibi tu audio. Escribime tu consulta como texto y te respondo al instante.');
     return;
-  } else if (msgType === 'document' || msgType === 'image') {
-    await sendText(from, phoneId, 'Recibi tu archivo. Podes gestionarlo en el Hub de Datos: https://municipio-junin.vercel.app/importar.html');
+  } else if (msg.type === 'document' || msg.type === 'image') {
+    await sendText(from, phoneId, 'Recibi tu archivo. Podes subirlo en: ' + BASE_URL + '/importar.html');
     return;
-  } else {
-    return;
-  }
+  } else { return; }
 
   if (!userText || !userText.trim()) return;
+  const t = userText.trim().toLowerCase();
 
-  const text = userText.trim().toLowerCase();
-  console.log('[WA] Parsed user text:', text);
-
-  // 1. Comandos directos
-  if (text === 'cmd_menu' || text === '/menu' || text === 'menu' || text === 'hola' || text === 'inicio' || text.indexOf('hola') >= 0) {
-    await sendMenuPrincipal(from, phoneId);
-    return;
+  // Route commands
+  if (t === 'cmd_menu' || t === '/menu' || t === 'menu' || t === 'hola' || t === 'inicio' || t === 'hi' || t.indexOf('hola') >= 0) {
+    return await sendWelcome(from, phoneId);
+  }
+  if (t === 'cmd_obras' || t === '/obras' || t === 'obras' || t.indexOf('obra') >= 0) {
+    return await sendObras(from, phoneId);
+  }
+  if (t === 'cmd_licitaciones' || t === '/licitaciones' || t === 'licitaciones' || t.indexOf('licitacion') >= 0) {
+    return await sendLicitaciones(from, phoneId);
+  }
+  if (t === 'cmd_rrhh' || t === '/rrhh' || t === 'rrhh' || t === 'personal' || t.indexOf('empleado') >= 0) {
+    return await sendRRHH(from, phoneId);
+  }
+  if (t === 'cmd_hacienda' || t === '/hacienda' || t === 'hacienda' || t === 'finanzas' || t.indexOf('gasto') >= 0 || t.indexOf('ingreso') >= 0) {
+    return await sendHacienda(from, phoneId);
+  }
+  if (t === 'cmd_reclamos' || t === '/reclamos' || t === 'reclamos' || t === 'reclamo' || t.indexOf('reclam') >= 0) {
+    return await sendReclamos(from, phoneId);
+  }
+  if (t === 'cmd_reporte' || t === '/reporte' || t === 'reporte' || t === 'informe' || t.indexOf('report') >= 0) {
+    return await sendReporte(from, phoneId);
+  }
+  if (t === 'cmd_ayuda' || t === '/ayuda' || t === 'ayuda' || t === 'help') {
+    return await sendAyuda(from, phoneId);
   }
 
-  if (text === 'cmd_obras' || text === '/obras' || text === 'obras' || text.indexOf('obra') >= 0) {
-    await replyObras(from, phoneId);
-    return;
-  }
-
-  if (text === 'cmd_licitaciones' || text === '/licitaciones' || text === 'licitaciones' || text.indexOf('licitacion') >= 0) {
-    await replyLicitaciones(from, phoneId);
-    return;
-  }
-
-  if (text === 'cmd_rrhh' || text === '/rrhh' || text === 'rrhh' || text === 'personal' || text === 'empleados' || text.indexOf('empleado') >= 0) {
-    await replyRRHH(from, phoneId);
-    return;
-  }
-
-  if (text === 'cmd_hacienda' || text === '/hacienda' || text === 'hacienda' || text === 'finanzas' || text.indexOf('gasto') >= 0 || text.indexOf('ingreso') >= 0) {
-    await replyHacienda(from, phoneId);
-    return;
-  }
-
-  if (text === 'cmd_reclamos' || text === '/reclamos' || text === 'reclamos' || text === 'reclamo' || text.indexOf('reclam') >= 0) {
-    await replyReclamos(from, phoneId);
-    return;
-  }
-
-  if (text === 'cmd_reporte' || text === '/reporte' || text === 'reporte' || text === 'informe' || text.indexOf('report') >= 0) {
-    await replyReporte(from, phoneId);
-    return;
-  }
-
-  if (text === 'cmd_ayuda' || text === '/ayuda' || text === 'ayuda' || text === 'help') {
-    await replyAyuda(from, phoneId);
-    return;
-  }
-
-  // 2. Consulta libre
-  await replyLibre(from, phoneId, userText);
+  // Free query
+  await sendFreeQuery(from, phoneId, userText);
 }
 
-// ========================================
-// HANDLERS - Rich responses con botones
-// ========================================
+// ================================================================
+// WELCOME — Menu Principal con imagen + lista interactiva
+// ================================================================
+async function sendWelcome(to, phoneId) {
+  // Primero enviamos la imagen de bienvenida
+  await sendImageMessage(to, phoneId, IMG_BASE + '/menu.jpg', [
+    '*MUNICONTROL*',
+    '_Sistema de Gestion Municipal Inteligente_',
+    '',
+    'Bienvenido al asistente oficial del',
+    'Municipio de Junin, Mendoza.',
+    '',
+    'Selecciona un area para consultar'
+  ].join('\n'));
 
-async function replyObras(from, phoneId) {
-  const body = [
-    '*MuniControl - Obras Publicas*',
-    'Junin, Mendoza | Agosto 2026',
-    '',
-    '*Estado General:*',
-    '- Obras Activas: *8 proyectos*',
-    '- Inversion Total: *$142.5M*',
-    '- Avance Promedio: *68%*',
-    '',
-    '*Proyectos Destacados:*',
-    '> Pavimentacion Av. San Martin - 82%',
-    '> Red de Agua Barrio Norte - 45%',
-    '> Luminarias LED Parque Retamo - 95%',
-    '',
-    'Ver mapa: municipio-junin.vercel.app/mapa.html'
-  ].join('\n');
-
-  await sendButtons(from, phoneId, body, [
-    { type: 'reply', reply: { id: 'cmd_reporte', title: 'Ver Reporte' } },
-    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
-  ]);
-}
-
-async function replyLicitaciones(from, phoneId) {
-  const body = [
-    '*MuniControl - Licitaciones Publicas*',
-    'Municipio de Junin',
-    '',
-    '*Resumen de Contrataciones:*',
-    '- Licitaciones Activas: *5 procesos*',
-    '- Monto Total Licitado: *$85.4M*',
-    '- Cumplimiento SLA: *100%*',
-    '',
-    '*Ultimas Adjudicaciones:*',
-    '1. Const. Barrial S.A. - *$32.0M*',
-    '2. Insumos Cuyo SRL - *$14.2M*',
-    '3. Electricidad Junin - *$9.8M*',
-    '',
-    'Portal: municipio-junin.vercel.app/licitaciones.html'
-  ].join('\n');
-
-  await sendButtons(from, phoneId, body, [
-    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
-  ]);
-}
-
-async function replyRRHH(from, phoneId) {
-  const body = [
-    '*MuniControl - Recursos Humanos*',
-    'Municipio de Junin',
-    '',
-    '*Indicadores de Nomina:*',
-    '- Empleados Activos: *1,247*',
-    '- Masa Salarial Mensual: *$485.0M*',
-    '- Horas Extra (Mes): *4,312 hrs*',
-    '- Ausentismo: *3.2%* (Normal)',
-    '',
-    '*Distribucion por Secretaria:*',
-    '- Obras Publicas: 340 empleados',
-    '- Salud y Desarrollo: 215 empleados',
-    '- Servicios Publicos: 410 empleados',
-    '',
-    'Portal: municipio-junin.vercel.app/rrhh.html'
-  ].join('\n');
-
-  await sendButtons(from, phoneId, body, [
-    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
-  ]);
-}
-
-async function replyHacienda(from, phoneId) {
-  const body = [
-    '*MuniControl - Hacienda y Finanzas*',
-    'Municipio de Junin',
-    '',
-    '*Balance Financiero:*',
-    '- Ingresos del Mes: *$180.2M* (+8%)',
-    '- Gastos del Mes: *$165.3M*',
-    '- Balance Operativo: *+$14.9M*',
-    '- Ejecucion Presupuestaria: *67%*',
-    '',
-    'Transparencia: municipio-junin.vercel.app/cuentas-claras.html'
-  ].join('\n');
-
-  await sendButtons(from, phoneId, body, [
-    { type: 'reply', reply: { id: 'cmd_reporte', title: 'Ver Reporte' } },
-    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
-  ]);
-}
-
-async function replyReclamos(from, phoneId) {
-  const body = [
-    '*MuniControl - Reclamos 311*',
-    'Junin, Mendoza',
-    '',
-    '*Estado de Servicios Urbanos:*',
-    '- Total Reclamos: *318*',
-    '- Resueltos: *295* (92.7%)',
-    '- Pendientes: *23 en proceso*',
-    '- Tiempo Promedio: *3.2 dias*',
-    '',
-    '*Categorias Mas Frecuentes:*',
-    '1. Alumbrado Publico: 112 casos',
-    '2. Reparacion de Baches: 85 casos',
-    '3. Arbolado y Limpieza: 64 casos',
-    '',
-    'Mapa: municipio-junin.vercel.app/vecinos.html'
-  ].join('\n');
-
-  await sendButtons(from, phoneId, body, [
-    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
-  ]);
-}
-
-async function replyReporte(from, phoneId) {
-  const body = [
-    '*INFORME EJECUTIVO MUNICONTROL*',
-    'Municipio de Junin - Mendoza',
-    '',
-    '*Analisis Sintetico por IA:*',
-    'El municipio mantiene un balance financiero saludable (+$14.9M) con un 67% de ejecucion presupuestaria. Las obras prioritarias registran un avance del 68% y el cumplimiento del SLA de reclamos alcanza el 94.1%.',
-    '',
-    '*Metricas Clave:*',
-    '- Empleados: 1,247 activos',
-    '- Gasto Mensual: $165.3M',
-    '- Obras: 8 activas ($142.5M)',
-    '- Reclamos: 92.7% resueltos',
-    '',
-    'Dashboard: municipio-junin.vercel.app/index.html'
-  ].join('\n');
-
-  await sendButtons(from, phoneId, body, [
-    { type: 'reply', reply: { id: 'cmd_hacienda', title: 'Ver Finanzas' } },
-    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
-  ]);
-}
-
-async function replyAyuda(from, phoneId) {
-  const body = [
-    '*MuniControl - Comandos Disponibles*',
-    '',
-    '*obras* - Estado de obras publicas',
-    '*licitaciones* - Contratos y adjudicaciones',
-    '*rrhh* - Nomina y datos de personal',
-    '*hacienda* - Resumen financiero y gastos',
-    '*reclamos* - Sistema de reclamos 311',
-    '*reporte* - Informe ejecutivo con IA',
-    '*menu* - Menu interactivo principal',
-    '',
-    'O haceme cualquier consulta en lenguaje natural.'
-  ].join('\n');
-
-  await sendText(from, phoneId, body);
-}
-
-async function replyLibre(from, phoneId, userText) {
-  try {
-    const lower = userText.toLowerCase();
-    if (lower.indexOf('gasto') >= 0 || lower.indexOf('presupuesto') >= 0 || lower.indexOf('cuanto') >= 0) {
-      const body = [
-        '*MuniControl IA - Consulta Financiera*',
-        '',
-        'El gasto total del mes actual es de *$165.3M* sobre un presupuesto estimado de *$180.0M* (67% de ejecucion anual).',
-        '',
-        '- Obras Publicas: $48.2M (29%)',
-        '- Personal (RRHH): $85.0M (51%)',
-        '- Servicios y Operacion: $32.1M (20%)',
-        '',
-        'Detalle: municipio-junin.vercel.app/cuentas-claras.html'
-      ].join('\n');
-      await sendButtons(from, phoneId, body, [
-        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
-      ]);
-      return;
-    }
-
-    const body = [
-      '*MuniBot - Asistente IA*',
-      '',
-      'Recibi tu consulta: "' + userText + '"',
-      '',
-      'El Municipio de Junin mantiene todas las areas operativas funcionando con normalidad.',
-      '',
-      'Dashboard: municipio-junin.vercel.app/index.html',
-      'Chat IA: municipio-junin.vercel.app/ia.html'
-    ].join('\n');
-    await sendText(from, phoneId, body);
-  } catch (e) {
-    console.error('[WA] Free query error:', e.message);
-    await sendText(from, phoneId, 'Asistente MuniControl: Para ver mas detalles visita https://municipio-junin.vercel.app/index.html');
-  }
-}
-
-// ========================================
-// MENU PRINCIPAL (List Message)
-// ========================================
-
-async function sendMenuPrincipal(to, phoneId) {
-  const payload = {
+  // Luego el menu interactivo tipo lista
+  await callAPI(to, phoneId, {
     messaging_product: 'whatsapp',
-    to: to,
+    to: '__TO__',
     type: 'interactive',
     interactive: {
       type: 'list',
-      header: { type: 'text', text: 'MuniControl - Junin' },
-      body: { text: 'Hola! Soy MuniBot, tu asistente inteligente del Municipio de Junin.\n\nElegi un area para consultar o escribi tu pregunta directamente.' },
-      footer: { text: 'Sistema de Gestion Inteligente' },
+      header: { type: 'text', text: 'Menu de Consultas' },
+      body: { text: 'Toca el boton de abajo para ver todas las opciones disponibles. Tambien podes escribir directamente tu consulta.' },
+      footer: { text: 'MuniControl v2.0 | GovTech' },
       action: {
-        button: 'Ver opciones',
+        button: 'Abrir Menu',
         sections: [
           {
-            title: 'Consultas por Area',
+            title: 'Gestion Municipal',
             rows: [
-              { id: 'cmd_obras', title: 'Obras Publicas', description: 'Estado y avance de obras' },
+              { id: 'cmd_obras', title: 'Obras Publicas', description: 'Avance de obras e inversiones' },
+              { id: 'cmd_hacienda', title: 'Hacienda y Finanzas', description: 'Balance, gastos e ingresos' },
+              { id: 'cmd_rrhh', title: 'Recursos Humanos', description: 'Nomina, ausentismo y estructura' },
               { id: 'cmd_licitaciones', title: 'Licitaciones', description: 'Contratos y adjudicaciones' },
-              { id: 'cmd_rrhh', title: 'Personal (RRHH)', description: 'Datos de empleados y nomina' },
-              { id: 'cmd_hacienda', title: 'Hacienda', description: 'Resumen financiero y gastos' },
-              { id: 'cmd_reclamos', title: 'Reclamos 311', description: 'Servicios urbanos y SLA' }
+              { id: 'cmd_reclamos', title: 'Reclamos 311', description: 'Estado de reclamos vecinales' }
             ]
           },
           {
-            title: 'Reportes e Inteligencia',
+            title: 'Inteligencia y Reportes',
             rows: [
-              { id: 'cmd_reporte', title: 'Informe Ejecutivo', description: 'Resumen gerencial con IA' },
-              { id: 'cmd_ayuda', title: 'Ayuda', description: 'Comandos disponibles' }
+              { id: 'cmd_reporte', title: 'Informe Ejecutivo IA', description: 'Resumen gerencial inteligente' },
+              { id: 'cmd_ayuda', title: 'Ayuda y Comandos', description: 'Lista completa de comandos' }
             ]
           }
         ]
       }
     }
-  };
-
-  await callWhatsAppAPI(to, phoneId, payload);
+  });
 }
 
-// ========================================
+// ================================================================
+// OBRAS PUBLICAS
+// ================================================================
+async function sendObras(to, phoneId) {
+  await sendRichCard(to, phoneId, IMG_BASE + '/obras.jpg', [
+    '*OBRAS PUBLICAS*',
+    '_Municipio de Junin | Agosto 2026_',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Resumen General*',
+    'Proyectos activos ..... *8*',
+    'Inversion total .......... *$142.5M*',
+    'Avance promedio ...... *68%*',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Proyectos Destacados*',
+    '',
+    '▓▓▓▓▓▓▓▓░░ *82%*',
+    'Pavimentacion Av. San Martin',
+    '_Estado: En termino_',
+    '',
+    '▓▓▓▓▓░░░░░ *45%*',
+    'Red de Agua Barrio Norte',
+    '_Estado: En progreso_',
+    '',
+    '▓▓▓▓▓▓▓▓▓░ *95%*',
+    'Luminarias LED Parque Retamo',
+    '_Estado: Finalizando_',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━'
+  ].join('\n'), [
+    { type: 'reply', reply: { id: 'cmd_reporte', title: 'Informe Ejecutivo' } },
+    { type: 'reply', reply: { id: 'cmd_hacienda', title: 'Ver Finanzas' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
+  ]);
+}
+
+// ================================================================
+// HACIENDA Y FINANZAS
+// ================================================================
+async function sendHacienda(to, phoneId) {
+  await sendRichCard(to, phoneId, IMG_BASE + '/hacienda.jpg', [
+    '*HACIENDA Y FINANZAS*',
+    '_Municipio de Junin | Agosto 2026_',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Balance del Mes*',
+    '',
+    'Ingresos ........... *$180.2M*  (+8%)',
+    'Gastos .............. *$165.3M*',
+    'Balance ............. *+$14.9M*',
+    '',
+    '▓▓▓▓▓▓▓░░░ *67%*',
+    '_Ejecucion Presupuestaria Anual_',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Distribucion de Gastos*',
+    '',
+    '■■■■■■■■■■ Personal   51%',
+    '■■■■■□□□□□ Obras      29%',
+    '■■■□□□□□□□ Servicios  20%',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━'
+  ].join('\n'), [
+    { type: 'reply', reply: { id: 'cmd_reporte', title: 'Informe Ejecutivo' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
+  ]);
+}
+
+// ================================================================
+// RECURSOS HUMANOS
+// ================================================================
+async function sendRRHH(to, phoneId) {
+  await sendRichCard(to, phoneId, IMG_BASE + '/rrhh.jpg', [
+    '*RECURSOS HUMANOS*',
+    '_Municipio de Junin | Agosto 2026_',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Indicadores de Nomina*',
+    '',
+    'Empleados activos ..... *1,247*',
+    'Masa salarial ............... *$485.0M*',
+    'Horas extra (mes) ....... *4,312 hrs*',
+    'Ausentismo ................. *3.2%*',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Estructura por Secretaria*',
+    '',
+    '■■■■■■■■□□ Serv. Publicos  410',
+    '■■■■■■□□□□ Obras Publicas  340',
+    '■■■■□□□□□□ Salud y Des.    215',
+    '■■■□□□□□□□ Gobierno         150',
+    '■■□□□□□□□□ Hacienda         132',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━'
+  ].join('\n'), [
+    { type: 'reply', reply: { id: 'cmd_hacienda', title: 'Ver Finanzas' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
+  ]);
+}
+
+// ================================================================
+// LICITACIONES
+// ================================================================
+async function sendLicitaciones(to, phoneId) {
+  await sendRichCard(to, phoneId, IMG_BASE + '/licitaciones.jpg', [
+    '*LICITACIONES PUBLICAS*',
+    '_Municipio de Junin | Agosto 2026_',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Resumen de Contrataciones*',
+    '',
+    'Procesos activos ........ *5*',
+    'Monto total licitado ... *$85.4M*',
+    'Cumplimiento SLA ..... *100%*',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Ultimas Adjudicaciones*',
+    '',
+    '1. *Const. Barrial S.A.*',
+    '   $32.0M - Obra civil',
+    '',
+    '2. *Insumos Cuyo SRL*',
+    '   $14.2M - Insumos de salud',
+    '',
+    '3. *Electricidad Junin*',
+    '   $9.8M - Servicios electricos',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━'
+  ].join('\n'), [
+    { type: 'reply', reply: { id: 'cmd_obras', title: 'Ver Obras' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
+  ]);
+}
+
+// ================================================================
+// RECLAMOS 311
+// ================================================================
+async function sendReclamos(to, phoneId) {
+  await sendRichCard(to, phoneId, IMG_BASE + '/reclamos.jpg', [
+    '*RECLAMOS 311*',
+    '_Servicios Urbanos | Junin, Mendoza_',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Panel de Control*',
+    '',
+    'Total reclamos .......... *318*',
+    'Resueltos ................... *295*  (92.7%)',
+    'En proceso ................. *23*',
+    'Tiempo promedio ........ *3.2 dias*',
+    '',
+    '▓▓▓▓▓▓▓▓▓░ *92.7% resueltos*',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Top Categorias*',
+    '',
+    '■■■■■■■■■■ Alumbrado   112',
+    '■■■■■■■□□□ Baches       85',
+    '■■■■■□□□□□ Arbolado      64',
+    '■■■□□□□□□□ Limpieza      57',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━'
+  ].join('\n'), [
+    { type: 'reply', reply: { id: 'cmd_reporte', title: 'Informe Ejecutivo' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
+  ]);
+}
+
+// ================================================================
+// INFORME EJECUTIVO
+// ================================================================
+async function sendReporte(to, phoneId) {
+  await sendRichCard(to, phoneId, IMG_BASE + '/reporte.jpg', [
+    '*INFORME EJECUTIVO*',
+    '_Generado por IA | Agosto 2026_',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Analisis Sintetico*',
+    '',
+    'El municipio mantiene un balance',
+    'financiero saludable con superavit',
+    'de $14.9M y ejecucion presupuestaria',
+    'del 67%. Las obras prioritarias',
+    'avanzan al 68% y los reclamos',
+    'se resuelven en 3.2 dias promedio.',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Tablero de Indicadores*',
+    '',
+    'Finanzas .... +$14.9M .... OK',
+    'Obras ......... 68% avance .. OK',
+    'RRHH ......... 3.2% ausent. . OK',
+    'Reclamos ... 92.7% resol. .. OK',
+    'SLA ............. 94.1% ........... OK',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '_Reporte completo en el Dashboard_'
+  ].join('\n'), [
+    { type: 'reply', reply: { id: 'cmd_hacienda', title: 'Ver Finanzas' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
+  ]);
+}
+
+// ================================================================
+// AYUDA
+// ================================================================
+async function sendAyuda(to, phoneId) {
+  await sendText(to, phoneId, [
+    '*MUNICONTROL — AYUDA*',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '*Comandos Disponibles*',
+    '',
+    '*obras*       Avance de obras publicas',
+    '*hacienda*  Balance financiero',
+    '*rrhh*         Nomina y personal',
+    '*licitaciones*  Contratos publicos',
+    '*reclamos*  Reclamos vecinales 311',
+    '*reporte*     Informe ejecutivo con IA',
+    '*menu*        Menu interactivo',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    'Tambien podes escribir cualquier',
+    'pregunta en lenguaje natural.',
+    '',
+    '_MuniControl v2.0 | GovTech_'
+  ].join('\n'));
+}
+
+// ================================================================
+// CONSULTA LIBRE
+// ================================================================
+async function sendFreeQuery(to, phoneId, userText) {
+  try {
+    const lower = userText.toLowerCase();
+    if (lower.indexOf('gasto') >= 0 || lower.indexOf('presupuesto') >= 0 || lower.indexOf('cuanto') >= 0) {
+      return await sendHacienda(to, phoneId);
+    }
+    await sendText(to, phoneId, [
+      '*MUNIBOT — Asistente IA*',
+      '',
+      'Recibi tu consulta:',
+      '_"' + userText + '"_',
+      '',
+      'El Municipio de Junin mantiene',
+      'todas las areas operativas',
+      'funcionando con normalidad.',
+      '',
+      'Para consultas especificas usa',
+      'los comandos del *menu*.',
+      '',
+      'Dashboard: ' + BASE_URL + '/index.html',
+      '',
+      '_MuniControl v2.0 | GovTech_'
+    ].join('\n'));
+  } catch (e) {
+    await sendText(to, phoneId, 'MuniControl: Visita ' + BASE_URL + '/index.html');
+  }
+}
+
+// ================================================================
 // SEND HELPERS
-// ========================================
+// ================================================================
 
-async function sendText(to, phoneId, body) {
-  const payload = {
+// Enviar imagen con caption (para bienvenida)
+async function sendImageMessage(to, phoneId, imageUrl, caption) {
+  await callAPI(to, phoneId, {
     messaging_product: 'whatsapp',
-    recipient_type: 'individual',
-    to: to,
-    type: 'text',
-    text: { preview_url: true, body: body }
-  };
-  await callWhatsAppAPI(to, phoneId, payload);
+    to: '__TO__',
+    type: 'image',
+    image: {
+      link: imageUrl,
+      caption: caption
+    }
+  });
 }
 
-async function sendButtons(to, phoneId, bodyText, buttons) {
-  const payload = {
+// Enviar tarjeta rica: imagen + texto + botones
+async function sendRichCard(to, phoneId, imageUrl, bodyText, buttons) {
+  // Enviar imagen con datos como caption
+  await callAPI(to, phoneId, {
     messaging_product: 'whatsapp',
-    to: to,
+    to: '__TO__',
     type: 'interactive',
     interactive: {
       type: 'button',
+      header: {
+        type: 'image',
+        image: { link: imageUrl }
+      },
       body: { text: bodyText },
-      footer: { text: 'Municipalidad de Junin - GovTech' },
+      footer: { text: 'Municipalidad de Junin | MuniControl' },
       action: {
         buttons: buttons.slice(0, 3)
       }
     }
-  };
-  await callWhatsAppAPI(to, phoneId, payload);
+  });
 }
 
-// ========================================
-// CORE API CALLER with AR/MX phone fix
-// ========================================
+// Enviar texto simple
+async function sendText(to, phoneId, body) {
+  await callAPI(to, phoneId, {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: '__TO__',
+    type: 'text',
+    text: { preview_url: true, body: body }
+  });
+}
 
-async function callWhatsAppAPI(to, phoneId, payload) {
+// ================================================================
+// CORE API CALLER (con workaround AR/MX)
+// ================================================================
+async function callAPI(to, phoneId, payload) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  if (!token) {
-    console.error('[WA] WHATSAPP_ACCESS_TOKEN not set!');
-    return;
-  }
-  if (!phoneId) {
-    console.error('[WA] WHATSAPP_PHONE_ID not set!');
+  if (!token || !phoneId) {
+    console.error('[WA] Missing token or phoneId');
     return;
   }
 
   const url = 'https://graph.facebook.com/v21.0/' + phoneId + '/messages';
 
   const doSend = async (recipient) => {
-    const body = JSON.stringify({ ...payload, to: recipient });
-    console.log('[WA] Sending to', recipient, 'via phoneId', phoneId, '- payload size:', body.length);
-
+    // Replace __TO__ placeholder with actual recipient
+    const body = JSON.stringify(payload).replace(/"__TO__"/g, '"' + recipient + '"');
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -429,48 +493,29 @@ async function callWhatsAppAPI(to, phoneId, payload) {
       },
       body: body
     });
-
-    const responseText = await response.text();
-    console.log('[WA] API response:', response.status, responseText.substring(0, 300));
-    return { ok: response.ok, status: response.status, text: responseText };
+    const text = await response.text();
+    return { ok: response.ok, status: response.status, text: text };
   };
 
-  // First attempt
   let result = await doSend(to);
 
-  if (!result.ok) {
-    console.error('[WA] Send failed for ' + to + ': ' + result.status + ' ' + result.text);
-
-    // Workaround: Argentina phone number format mismatch in Meta Sandbox
-    // Meta sometimes registers numbers as 54XXXXXXXXXX but webhook receives 549XXXXXXXXXX
-    if (result.text.indexOf('131030') >= 0 || result.text.indexOf('not in allowed') >= 0) {
-      let altNumber = null;
-
-      if (to.startsWith('549') && to.length >= 13) {
-        // Try removing the 9: 549XXXXXXXX -> 54XXXXXXXX
-        altNumber = '54' + to.substring(3);
-      } else if (to.startsWith('54') && !to.startsWith('549') && to.length >= 12) {
-        // Try adding the 9: 54XXXXXXXX -> 549XXXXXXXX
-        altNumber = '549' + to.substring(2);
-      } else if (to.startsWith('521') && to.length >= 12) {
-        // Mexico: remove the 1
-        altNumber = '52' + to.substring(3);
-      } else if (to.startsWith('52') && !to.startsWith('521') && to.length >= 11) {
-        // Mexico: add the 1
-        altNumber = '521' + to.substring(2);
-      }
-
-      if (altNumber) {
-        console.log('[WA] Retrying with alternate number format: ' + altNumber);
-        result = await doSend(altNumber);
-        if (result.ok) {
-          console.log('[WA] SUCCESS with alternate format ' + altNumber);
-        } else {
-          console.error('[WA] Retry also failed for ' + altNumber + ': ' + result.text);
-        }
-      }
+  if (!result.ok && result.text.indexOf('131030') >= 0) {
+    // Argentina phone number format workaround
+    let alt = null;
+    if (to.startsWith('549') && to.length >= 13) {
+      alt = '54' + to.substring(3);
+    } else if (to.startsWith('54') && !to.startsWith('549') && to.length >= 12) {
+      alt = '549' + to.substring(2);
     }
+    if (alt) {
+      console.log('[WA] Retry with:', alt);
+      result = await doSend(alt);
+    }
+  }
+
+  if (result.ok) {
+    console.log('[WA] Sent OK to', to);
   } else {
-    console.log('[WA] Message sent OK to ' + to);
+    console.error('[WA] FAIL:', result.status, result.text.substring(0, 200));
   }
 }

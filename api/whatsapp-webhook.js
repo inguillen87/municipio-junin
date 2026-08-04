@@ -1,30 +1,31 @@
 // api/whatsapp-webhook.js
-// Meta WhatsApp Business Cloud API — Webhook para recibir y responder mensajes
+// Meta WhatsApp Business Cloud API - Webhook
 // Docs: https://developers.facebook.com/docs/whatsapp/cloud-api
 
-import pg from 'pg';
-const { Pool } = pg;
-
 export default async function handler(req, res) {
-  // ── GET: Webhook verification ──
+  // GET: Webhook verification
   if (req.method === 'GET') {
-    const mode      = req.query['hub.mode'];
-    const token     = req.query['hub.verify_token'];
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
     if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-      console.log('✅ WhatsApp webhook verified');
+      console.log('[WA] Webhook verified OK');
       return res.status(200).send(challenge);
     }
     return res.status(403).json({ error: 'Verification failed' });
   }
 
-  // ── POST: Incoming messages ──
-  if (req.method !== 'POST') return res.status(405).end();
+  // POST: Incoming messages
+  if (req.method !== 'POST') {
+    return res.status(405).end();
+  }
 
   try {
     const body = req.body;
-    if (body?.object === 'whatsapp_business_account') {
+    console.log('[WA] Webhook POST received:', JSON.stringify(body).substring(0, 500));
+
+    if (body && body.object === 'whatsapp_business_account') {
       const entries = body.entry || [];
       for (const entry of entries) {
         const changes = entry.changes || [];
@@ -32,318 +33,444 @@ export default async function handler(req, res) {
           if (change.field !== 'messages') continue;
           const value = change.value || {};
           const messages = value.messages || [];
+          const metadata = value.metadata || {};
 
           for (const msg of messages) {
-            await processMessage(msg, value.metadata);
+            console.log('[WA] Processing message from:', msg.from, 'type:', msg.type, 'phoneId:', metadata.phone_number_id);
+            await processMessage(msg, metadata);
           }
         }
       }
     }
   } catch (err) {
-    console.error('WhatsApp webhook error:', err);
+    console.error('[WA] Webhook error:', err.message, err.stack);
   }
 
   return res.status(200).json({ status: 'received' });
 }
 
-// ══════════════════════════════════════════════════════════════
+// ========================================
 // PROCESS MESSAGE
-// ══════════════════════════════════════════════════════════════
+// ========================================
 async function processMessage(msg, metadata) {
-  const from    = msg.from;                    // número del remitente
-  const phoneId = metadata?.phone_number_id || process.env.WHATSAPP_PHONE_ID;
-  const msgType = msg.type;                    // text, image, audio, document, interactive
+  const from = msg.from;
+  const phoneId = metadata.phone_number_id || process.env.WHATSAPP_PHONE_ID;
+  const msgType = msg.type;
 
   let userText = '';
 
   if (msgType === 'text') {
-    userText = msg.text?.body || '';
+    userText = (msg.text && msg.text.body) ? msg.text.body : '';
   } else if (msgType === 'interactive') {
-    userText = msg.interactive?.button_reply?.id || msg.interactive?.list_reply?.id || msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || '';
+    const inter = msg.interactive || {};
+    if (inter.button_reply) {
+      userText = inter.button_reply.id || inter.button_reply.title || '';
+    } else if (inter.list_reply) {
+      userText = inter.list_reply.id || inter.list_reply.title || '';
+    }
   } else if (msgType === 'audio') {
-    await sendWhatsAppText(from, phoneId, '🎤 Recibí tu audio. Por ahora procesamos mensajes de texto. Escribime tu consulta y te respondo al instante.');
+    await sendText(from, phoneId, 'Recibi tu audio. Por ahora procesamos mensajes de texto. Escribime tu consulta y te respondo al instante.');
     return;
   } else if (msgType === 'document' || msgType === 'image') {
-    await sendWhatsAppText(from, phoneId, '📎 Recibí tu archivo. Podés gestionarlo en el Hub de Datos: https://municipio-junin.vercel.app/importar.html');
+    await sendText(from, phoneId, 'Recibi tu archivo. Podes gestionarlo en el Hub de Datos: https://municipio-junin.vercel.app/importar.html');
     return;
   } else {
     return;
   }
 
-  if (!userText.trim()) return;
+  if (!userText || !userText.trim()) return;
 
   const text = userText.trim().toLowerCase();
+  console.log('[WA] Parsed user text:', text);
 
-  // ── 1. Comandos directos ──────────────────────────────────
-  if (text === 'cmd_menu' || text === '/menu' || text === 'menu' || text === 'hola' || text === 'inicio' || text.includes('hola')) {
-    await sendMenuInteractivo(from, phoneId);
+  // 1. Comandos directos
+  if (text === 'cmd_menu' || text === '/menu' || text === 'menu' || text === 'hola' || text === 'inicio' || text.indexOf('hola') >= 0) {
+    await sendMenuPrincipal(from, phoneId);
     return;
   }
 
-  if (text === 'cmd_obras' || text === '/obras' || text === 'obras' || text.includes('obra')) {
-    await handleObrasQuery(from, phoneId);
+  if (text === 'cmd_obras' || text === '/obras' || text === 'obras' || text.indexOf('obra') >= 0) {
+    await replyObras(from, phoneId);
     return;
   }
 
-  if (text === 'cmd_licitaciones' || text === '/licitaciones' || text === 'licitaciones' || text.includes('licitacion')) {
-    await handleLicitacionesQuery(from, phoneId);
+  if (text === 'cmd_licitaciones' || text === '/licitaciones' || text === 'licitaciones' || text.indexOf('licitacion') >= 0) {
+    await replyLicitaciones(from, phoneId);
     return;
   }
 
-  if (text === 'cmd_rrhh' || text === '/rrhh' || text === 'rrhh' || text === 'personal' || text === 'empleados' || text.includes('empleado')) {
-    await handleRRHHQuery(from, phoneId);
+  if (text === 'cmd_rrhh' || text === '/rrhh' || text === 'rrhh' || text === 'personal' || text === 'empleados' || text.indexOf('empleado') >= 0) {
+    await replyRRHH(from, phoneId);
     return;
   }
 
-  if (text === 'cmd_hacienda' || text === '/hacienda' || text === 'hacienda' || text === 'finanzas' || text.includes('gasto') || text.includes('ingreso')) {
-    await handleHaciendaQuery(from, phoneId);
+  if (text === 'cmd_hacienda' || text === '/hacienda' || text === 'hacienda' || text === 'finanzas' || text.indexOf('gasto') >= 0 || text.indexOf('ingreso') >= 0) {
+    await replyHacienda(from, phoneId);
     return;
   }
 
-  if (text === 'cmd_reclamos' || text === '/reclamos' || text === 'reclamos' || text === 'reclamo' || text.includes('reclam')) {
-    await handleReclamosQuery(from, phoneId);
+  if (text === 'cmd_reclamos' || text === '/reclamos' || text === 'reclamos' || text === 'reclamo' || text.indexOf('reclam') >= 0) {
+    await replyReclamos(from, phoneId);
     return;
   }
 
-  if (text === 'cmd_reporte' || text === '/reporte' || text === 'reporte' || text === 'informe' || text.includes('report')) {
-    await handleReporteQuery(from, phoneId);
+  if (text === 'cmd_reporte' || text === '/reporte' || text === 'reporte' || text === 'informe' || text.indexOf('report') >= 0) {
+    await replyReporte(from, phoneId);
     return;
   }
 
   if (text === 'cmd_ayuda' || text === '/ayuda' || text === 'ayuda' || text === 'help') {
-    await sendWhatsAppText(from, phoneId,
-      '🤖 *MuniControl — Comandos Disponibles*nn' +
-      '🏗️ *obras* — Estado de obras públicasn' +
-      '📄 *licitaciones* — Contratos y adjudicacionesn' +
-      '👥 *rrhh* — Nómina y datos de personaln' +
-      '💰 *hacienda* — Resumen financiero y gastosn' +
-      '📢 *reclamos* — Sistema de reclamos 311n' +
-      '📊 *reporte* — Informe ejecutivo con IAn' +
-      '📋 *menu* — Menú interactivo principalnn' +
-      '💬 O haceme cualquier consulta en lenguaje natural.'
-    );
+    await replyAyuda(from, phoneId);
     return;
   }
 
-  // ── 2. Consulta libre → MuniBot IA ────────────────────────
-  await handleFreeQuery(from, phoneId, userText);
+  // 2. Consulta libre
+  await replyLibre(from, phoneId, userText);
 }
 
-// ══════════════════════════════════════════════════════════════
-// BANNERS PARA PLANTILLAS RICAS (Imágenes de Unsplash)
-// ══════════════════════════════════════════════════════════════
-const BANNERS = {
-  obras: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Obras',
-  licitaciones: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Licitaciones',
-  rrhh: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=RRHH',
-  hacienda: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Hacienda',
-  reclamos: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Reclamos',
-  reporte: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Reporte',
-  menu: 'https://placehold.co/800x400/0f172a/ffffff.jpg?text=Menu'
-};
+// ========================================
+// HANDLERS - Rich responses con botones
+// ========================================
 
-// ══════════════════════════════════════════════════════════════
-// HANDLERS POR MÓDULO (RICH RESPONSES)
-// ══════════════════════════════════════════════════════════════
+async function replyObras(from, phoneId) {
+  const body = [
+    '*MuniControl - Obras Publicas*',
+    'Junin, Mendoza | Agosto 2026',
+    '',
+    '*Estado General:*',
+    '- Obras Activas: *8 proyectos*',
+    '- Inversion Total: *$142.5M*',
+    '- Avance Promedio: *68%*',
+    '',
+    '*Proyectos Destacados:*',
+    '> Pavimentacion Av. San Martin - 82%',
+    '> Red de Agua Barrio Norte - 45%',
+    '> Luminarias LED Parque Retamo - 95%',
+    '',
+    'Ver mapa: municipio-junin.vercel.app/mapa.html'
+  ].join('\n');
 
-async function handleObrasQuery(from, phoneId) {
-  const text = `🏗️ *MuniControl — Obras Públicas*n📍 *Junín, Mendoza* · Agosto 2026nn📊 *Estado General:*n• Obras Activas: *8 proyectos*n• Inversión Total: *$142.5M*n• Avance Promedio: *68%*nn📌 *Proyectos Destacados:*n🟢 *Pavimentación Av. San Martín* — 82%n🟡 *Red de Agua Barrio Norte* — 45%n🟢 *Luminarias LED Parque Retamo* — 95%nn🔗 *Mapa web:* municipio-junin.vercel.app/mapa.html`;
-  
-  await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.obras, text, [
-    { type: 'reply', reply: { id: 'cmd_reporte', title: '📊 Ver Reporte' } },
-    { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
+  await sendButtons(from, phoneId, body, [
+    { type: 'reply', reply: { id: 'cmd_reporte', title: 'Ver Reporte' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
   ]);
 }
 
-async function handleLicitacionesQuery(from, phoneId) {
-  const text = `📄 *MuniControl — Licitaciones*n🏛️ *Municipio de Junín*nn📊 *Resumen de Contrataciones:*n• Licitaciones Activas: *5 procesos*n• Monto Total Licitado: *$85.4M*n• Cumplimiento SLA: *100%*nn🏢 *Últimas Adjudicaciones:*n1. Const. Barrial S.A. — *$32.0M*n2. Insumos Cuyo SRL — *$14.2M*nn🔗 *Portal web:* municipio-junin.vercel.app/licitaciones.html`;
-  
-  await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.licitaciones, text, [
-    { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
+async function replyLicitaciones(from, phoneId) {
+  const body = [
+    '*MuniControl - Licitaciones Publicas*',
+    'Municipio de Junin',
+    '',
+    '*Resumen de Contrataciones:*',
+    '- Licitaciones Activas: *5 procesos*',
+    '- Monto Total Licitado: *$85.4M*',
+    '- Cumplimiento SLA: *100%*',
+    '',
+    '*Ultimas Adjudicaciones:*',
+    '1. Const. Barrial S.A. - *$32.0M*',
+    '2. Insumos Cuyo SRL - *$14.2M*',
+    '3. Electricidad Junin - *$9.8M*',
+    '',
+    'Portal: municipio-junin.vercel.app/licitaciones.html'
+  ].join('\n');
+
+  await sendButtons(from, phoneId, body, [
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
   ]);
 }
 
-async function handleRRHHQuery(from, phoneId) {
-  const text = `👥 *MuniControl — Recursos Humanos*n🏛️ *Municipio de Junín*nn📊 *Indicadores de Nómina:*n• Empleados Activos: *1,247*n• Masa Salarial Mensual: *$485.0M*n• Horas Extra (Mes): *4,312 hrs*n• Ausentismo: *3.2%* (Normal)nn📌 *Distribución:*n• Obras Públicas: 340 emp.n• Salud & Des.: 215 emp.n• Serv. Públicos: 410 emp.nn🔗 *Portal web:* municipio-junin.vercel.app/rrhh.html`;
-  
-  await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.rrhh, text, [
-    { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
+async function replyRRHH(from, phoneId) {
+  const body = [
+    '*MuniControl - Recursos Humanos*',
+    'Municipio de Junin',
+    '',
+    '*Indicadores de Nomina:*',
+    '- Empleados Activos: *1,247*',
+    '- Masa Salarial Mensual: *$485.0M*',
+    '- Horas Extra (Mes): *4,312 hrs*',
+    '- Ausentismo: *3.2%* (Normal)',
+    '',
+    '*Distribucion por Secretaria:*',
+    '- Obras Publicas: 340 empleados',
+    '- Salud y Desarrollo: 215 empleados',
+    '- Servicios Publicos: 410 empleados',
+    '',
+    'Portal: municipio-junin.vercel.app/rrhh.html'
+  ].join('\n');
+
+  await sendButtons(from, phoneId, body, [
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
   ]);
 }
 
-async function handleHaciendaQuery(from, phoneId) {
-  const text = `💰 *MuniControl — Hacienda & Finanzas*n🏛️ *Municipio de Junín*nn📊 *Balance Financiero:*n🟢 Ingresos del Mes: *$180.2M*n🔴 Gastos del Mes: *$165.3M*n⚖️ Balance Operativo: *+$14.9M*n📈 Ejecución Presupuestaria: *67%*nn🔍 *Transparencia web:* municipio-junin.vercel.app/cuentas-claras.html`;
-  
-  await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.hacienda, text, [
-    { type: 'reply', reply: { id: 'cmd_reporte', title: '📊 Ver Reporte' } },
-    { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
+async function replyHacienda(from, phoneId) {
+  const body = [
+    '*MuniControl - Hacienda y Finanzas*',
+    'Municipio de Junin',
+    '',
+    '*Balance Financiero:*',
+    '- Ingresos del Mes: *$180.2M* (+8%)',
+    '- Gastos del Mes: *$165.3M*',
+    '- Balance Operativo: *+$14.9M*',
+    '- Ejecucion Presupuestaria: *67%*',
+    '',
+    'Transparencia: municipio-junin.vercel.app/cuentas-claras.html'
+  ].join('\n');
+
+  await sendButtons(from, phoneId, body, [
+    { type: 'reply', reply: { id: 'cmd_reporte', title: 'Ver Reporte' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
   ]);
 }
 
-async function handleReclamosQuery(from, phoneId) {
-  const text = `📢 *MuniControl — Reclamos 311*n📍 *Junín, Mendoza*nn📊 *Estado de Servicios Urbanos:*n• Total Reclamos: *318*n✅ Resueltos: *295* (92.7%)n⏳ Pendientes: *23 en proceso*n⏱️ Tiempo Promedio: *3.2 días*nn📌 *Más Frecuentes:*n1. Alumbrado: 112 casosn2. Baches: 85 casosn3. Arbolado: 64 casosnn🔗 *Mapa web:* municipio-junin.vercel.app/vecinos.html`;
-  
-  await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.reclamos, text, [
-    { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
+async function replyReclamos(from, phoneId) {
+  const body = [
+    '*MuniControl - Reclamos 311*',
+    'Junin, Mendoza',
+    '',
+    '*Estado de Servicios Urbanos:*',
+    '- Total Reclamos: *318*',
+    '- Resueltos: *295* (92.7%)',
+    '- Pendientes: *23 en proceso*',
+    '- Tiempo Promedio: *3.2 dias*',
+    '',
+    '*Categorias Mas Frecuentes:*',
+    '1. Alumbrado Publico: 112 casos',
+    '2. Reparacion de Baches: 85 casos',
+    '3. Arbolado y Limpieza: 64 casos',
+    '',
+    'Mapa: municipio-junin.vercel.app/vecinos.html'
+  ].join('\n');
+
+  await sendButtons(from, phoneId, body, [
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
   ]);
 }
 
-async function handleReporteQuery(from, phoneId) {
-  const text = `📊 *INFORME EJECUTIVO MUNICONTROL*n🏛️ *Municipio de Junín — Mendoza*nn🤖 *Análisis Sintético por IA:*nEl municipio mantiene un balance financiero saludable (+ $14.9M) con un 67% de ejecución presupuestaria. Las obras prioritarias registran un avance del 68% y el cumplimiento del SLA de reclamos alcanza el 94.1%.nn📌 *Métricas Clave:*n• Empleados: 1,247n• Gasto: $165.3Mn• Obras: 8 activasnn🔗 *Dashboard web:* municipio-junin.vercel.app/index.html`;
-  
-  await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.reporte, text, [
-    { type: 'reply', reply: { id: 'cmd_hacienda', title: '💰 Ver Finanzas' } },
-    { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
+async function replyReporte(from, phoneId) {
+  const body = [
+    '*INFORME EJECUTIVO MUNICONTROL*',
+    'Municipio de Junin - Mendoza',
+    '',
+    '*Analisis Sintetico por IA:*',
+    'El municipio mantiene un balance financiero saludable (+$14.9M) con un 67% de ejecucion presupuestaria. Las obras prioritarias registran un avance del 68% y el cumplimiento del SLA de reclamos alcanza el 94.1%.',
+    '',
+    '*Metricas Clave:*',
+    '- Empleados: 1,247 activos',
+    '- Gasto Mensual: $165.3M',
+    '- Obras: 8 activas ($142.5M)',
+    '- Reclamos: 92.7% resueltos',
+    '',
+    'Dashboard: municipio-junin.vercel.app/index.html'
+  ].join('\n');
+
+  await sendButtons(from, phoneId, body, [
+    { type: 'reply', reply: { id: 'cmd_hacienda', title: 'Ver Finanzas' } },
+    { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
   ]);
 }
 
-// ══════════════════════════════════════════════════════════════
-// CONSULTA LIBRE (IA PROCESADOR)
-// ══════════════════════════════════════════════════════════════
+async function replyAyuda(from, phoneId) {
+  const body = [
+    '*MuniControl - Comandos Disponibles*',
+    '',
+    '*obras* - Estado de obras publicas',
+    '*licitaciones* - Contratos y adjudicaciones',
+    '*rrhh* - Nomina y datos de personal',
+    '*hacienda* - Resumen financiero y gastos',
+    '*reclamos* - Sistema de reclamos 311',
+    '*reporte* - Informe ejecutivo con IA',
+    '*menu* - Menu interactivo principal',
+    '',
+    'O haceme cualquier consulta en lenguaje natural.'
+  ].join('\n');
 
-async function handleFreeQuery(from, phoneId, userText) {
+  await sendText(from, phoneId, body);
+}
+
+async function replyLibre(from, phoneId, userText) {
   try {
-    const textLower = userText.toLowerCase();
-
-    if (textLower.includes('gasto') || textLower.includes('presupuesto') || textLower.includes('cuanto')) {
-      const text = `💰 *MuniControl IA — Consulta Financiera*nnEl gasto total del mes actual es de *$165.3M* sobre un presupuesto estimado de *$180.0M* (67% de ejecución anual).nn• Obras Públicas: $48.2M (29%)n• Personal (RRHH): $85.0M (51%)n• Servicios & Operación: $32.1M (20%)nn🔗 *Cuentas Claras:* municipio-junin.vercel.app/cuentas-claras.html`;
-      await sendWhatsAppInteractiveButton(from, phoneId, BANNERS.hacienda, text, [
-        { type: 'reply', reply: { id: 'cmd_menu', title: '📋 Menú Principal' } }
+    const lower = userText.toLowerCase();
+    if (lower.indexOf('gasto') >= 0 || lower.indexOf('presupuesto') >= 0 || lower.indexOf('cuanto') >= 0) {
+      const body = [
+        '*MuniControl IA - Consulta Financiera*',
+        '',
+        'El gasto total del mes actual es de *$165.3M* sobre un presupuesto estimado de *$180.0M* (67% de ejecucion anual).',
+        '',
+        '- Obras Publicas: $48.2M (29%)',
+        '- Personal (RRHH): $85.0M (51%)',
+        '- Servicios y Operacion: $32.1M (20%)',
+        '',
+        'Detalle: municipio-junin.vercel.app/cuentas-claras.html'
+      ].join('\n');
+      await sendButtons(from, phoneId, body, [
+        { type: 'reply', reply: { id: 'cmd_menu', title: 'Menu Principal' } }
       ]);
       return;
     }
 
-    const aiMsg = `🤖 *MuniBot — Asistente IA*nnRecibí tu consulta: _"${userText}"_nnEl Municipio de Junín mantiene todas las áreas operativas funcionando con normalidad. Podés consultar el estado detallado en la plataforma:nn🏛️ *Dashboard*: municipio-junin.vercel.app/index.htmln💬 *Chat IA*: municipio-junin.vercel.app/ia.html`;
-    await sendWhatsAppText(from, phoneId, aiMsg);
+    const body = [
+      '*MuniBot - Asistente IA*',
+      '',
+      'Recibi tu consulta: "' + userText + '"',
+      '',
+      'El Municipio de Junin mantiene todas las areas operativas funcionando con normalidad.',
+      '',
+      'Dashboard: municipio-junin.vercel.app/index.html',
+      'Chat IA: municipio-junin.vercel.app/ia.html'
+    ].join('\n');
+    await sendText(from, phoneId, body);
   } catch (e) {
-    await sendWhatsAppText(from, phoneId, '🤖 Asistente MuniControl: Para ver más detalles visitá https://municipio-junin.vercel.app/index.html');
+    console.error('[WA] Free query error:', e.message);
+    await sendText(from, phoneId, 'Asistente MuniControl: Para ver mas detalles visita https://municipio-junin.vercel.app/index.html');
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// META WHATSAPP CLOUD API HELPERS
-// ══════════════════════════════════════════════════════════════
+// ========================================
+// MENU PRINCIPAL (List Message)
+// ========================================
 
-async function dispatchWhatsAppPayload(to, phoneId, payloadFactory) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  if (!token || !phoneId) {
-    console.warn('WhatsApp not configured:', { hasToken: !!token, phoneId });
-    return;
-  }
-
-  const sendMessage = async (recipient) => {
-    const payload = payloadFactory(recipient);
-    return await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-  };
-
-  let res = await sendMessage(to);
-
-  if (!res.ok) {
-    let errText = await res.text();
-    console.error(`WhatsApp Graph API Error for ${to}:`, res.status, errText);
-
-    // FIX FOR ARGENTINA & MEXICO SANDBOX NUMBERING BUG (#131030)
-    // Cuando el número de test es ingresado en Meta, frecuentemente borra el 9 (AR) o 1 (MX)
-    // y luego el Webhook lo recibe con 9 o 1. Esto causa mismatch y falla de envío.
-    if (errText.includes('131030') || errText.includes('not in allowed list') || res.status === 400) {
-      let retryTo = null;
-      if (to.startsWith('549') && to.length >= 13) {
-        retryTo = '54' + to.substring(3); // AR: Quitar el 9
-      } else if (to.startsWith('521') && to.length >= 12) {
-        retryTo = '52' + to.substring(3); // MX: Quitar el 1
-      } else if (to.startsWith('54') && !to.startsWith('549') && to.length >= 12) {
-        retryTo = '549' + to.substring(2); // AR: Agregar el 9
-      } else if (to.startsWith('52') && !to.startsWith('521') && to.length >= 11) {
-        retryTo = '521' + to.substring(2); // MX: Agregar el 1
-      }
-
-      if (retryTo) {
-        console.log(`[WORKAROUND] Retrying message with format: ${retryTo}`);
-        res = await sendMessage(retryTo);
-        if (!res.ok) {
-          errText = await res.text();
-          console.error(`[WORKAROUND FAILED] Retry API Error for ${retryTo}:`, res.status, errText);
-        } else {
-          console.log(`✅ [WORKAROUND SUCCESS] WhatsApp message sent to ${retryTo}`);
-        }
-      }
-    }
-  } else {
-    console.log('✅ WhatsApp message sent to', to);
-  }
-}
-
-async function sendWhatsAppText(to, phoneId, text) {
-  await dispatchWhatsAppPayload(to, phoneId, (recipient) => ({
+async function sendMenuPrincipal(to, phoneId) {
+  const payload = {
     messaging_product: 'whatsapp',
-    recipient_type: 'individual',
-    to: recipient,
-    type: 'text',
-    text: { preview_url: true, body: text },
-  }));
-}
-
-async function sendWhatsAppInteractiveButton(to, phoneId, imageUrl, text, buttons) {
-  await dispatchWhatsAppPayload(to, phoneId, (recipient) => ({
-    messaging_product: 'whatsapp',
-    to: recipient,
-    type: 'interactive',
-    interactive: {
-      type: 'button',
-      header: imageUrl ? {
-        type: 'image',
-        image: { link: imageUrl }
-      } : undefined,
-      body: { text: text },
-      footer: { text: 'Municipalidad de Junín · GovTech' },
-      action: {
-        buttons: buttons.slice(0, 3) // Meta permite máx 3 botones
-      }
-    }
-  }));
-}
-
-async function sendMenuInteractivo(to, phoneId) {
-  // Para el menú principal usamos un "list" message porque tiene muchas opciones.
-  // Los List messages NO soportan header tipo 'image', solo 'text'.
-  await dispatchWhatsAppPayload(to, phoneId, (recipient) => ({
-    messaging_product: 'whatsapp',
-    to: recipient,
+    to: to,
     type: 'interactive',
     interactive: {
       type: 'list',
-      header: { type: 'text', text: '🏛️ MuniControl — Junín, Mendoza' },
-      body: { text: '¡Hola! Soy MuniBot, tu asistente inteligente.nnHe diseñado hermosas plantillas interactivas para que veas la información de manera profesional.nn¿Qué área querés consultar hoy?' },
-      footer: { text: 'Sistema de Gestión Inteligente' },
+      header: { type: 'text', text: 'MuniControl - Junin' },
+      body: { text: 'Hola! Soy MuniBot, tu asistente inteligente del Municipio de Junin.\n\nElegi un area para consultar o escribi tu pregunta directamente.' },
+      footer: { text: 'Sistema de Gestion Inteligente' },
       action: {
         button: 'Ver opciones',
         sections: [
           {
-            title: 'Consultas por Área',
+            title: 'Consultas por Area',
             rows: [
-              { id: 'cmd_obras',        title: '🏗️ Obras Públicas',    description: 'Estado y avance de obras' },
-              { id: 'cmd_licitaciones', title: '📄 Licitaciones',       description: 'Contratos y adjudicaciones' },
-              { id: 'cmd_rrhh',         title: '👥 Personal (RRHH)',    description: 'Datos de empleados y nómina' },
-              { id: 'cmd_hacienda',     title: '💰 Hacienda',           description: 'Resumen financiero y gastos' },
-              { id: 'cmd_reclamos',     title: '📢 Reclamos 311',       description: 'Servicios urbanos y SLA' },
-            ],
+              { id: 'cmd_obras', title: 'Obras Publicas', description: 'Estado y avance de obras' },
+              { id: 'cmd_licitaciones', title: 'Licitaciones', description: 'Contratos y adjudicaciones' },
+              { id: 'cmd_rrhh', title: 'Personal (RRHH)', description: 'Datos de empleados y nomina' },
+              { id: 'cmd_hacienda', title: 'Hacienda', description: 'Resumen financiero y gastos' },
+              { id: 'cmd_reclamos', title: 'Reclamos 311', description: 'Servicios urbanos y SLA' }
+            ]
           },
           {
-            title: 'Reportes & Inteligencia',
+            title: 'Reportes e Inteligencia',
             rows: [
-              { id: 'cmd_reporte', title: '📊 Informe Ejecutivo',  description: 'Resumen gerencial con IA' },
-              { id: 'cmd_ayuda',   title: '❓ Ayuda',              description: 'Comandos disponibles' },
-            ],
-          },
-        ],
+              { id: 'cmd_reporte', title: 'Informe Ejecutivo', description: 'Resumen gerencial con IA' },
+              { id: 'cmd_ayuda', title: 'Ayuda', description: 'Comandos disponibles' }
+            ]
+          }
+        ]
+      }
+    }
+  };
+
+  await callWhatsAppAPI(to, phoneId, payload);
+}
+
+// ========================================
+// SEND HELPERS
+// ========================================
+
+async function sendText(to, phoneId, body) {
+  const payload = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: to,
+    type: 'text',
+    text: { preview_url: true, body: body }
+  };
+  await callWhatsAppAPI(to, phoneId, payload);
+}
+
+async function sendButtons(to, phoneId, bodyText, buttons) {
+  const payload = {
+    messaging_product: 'whatsapp',
+    to: to,
+    type: 'interactive',
+    interactive: {
+      type: 'button',
+      body: { text: bodyText },
+      footer: { text: 'Municipalidad de Junin - GovTech' },
+      action: {
+        buttons: buttons.slice(0, 3)
+      }
+    }
+  };
+  await callWhatsAppAPI(to, phoneId, payload);
+}
+
+// ========================================
+// CORE API CALLER with AR/MX phone fix
+// ========================================
+
+async function callWhatsAppAPI(to, phoneId, payload) {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  if (!token) {
+    console.error('[WA] WHATSAPP_ACCESS_TOKEN not set!');
+    return;
+  }
+  if (!phoneId) {
+    console.error('[WA] WHATSAPP_PHONE_ID not set!');
+    return;
+  }
+
+  const url = 'https://graph.facebook.com/v21.0/' + phoneId + '/messages';
+
+  const doSend = async (recipient) => {
+    const body = JSON.stringify({ ...payload, to: recipient });
+    console.log('[WA] Sending to', recipient, 'via phoneId', phoneId, '- payload size:', body.length);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
       },
-    },
-  }));
+      body: body
+    });
+
+    const responseText = await response.text();
+    console.log('[WA] API response:', response.status, responseText.substring(0, 300));
+    return { ok: response.ok, status: response.status, text: responseText };
+  };
+
+  // First attempt
+  let result = await doSend(to);
+
+  if (!result.ok) {
+    console.error('[WA] Send failed for ' + to + ': ' + result.status + ' ' + result.text);
+
+    // Workaround: Argentina phone number format mismatch in Meta Sandbox
+    // Meta sometimes registers numbers as 54XXXXXXXXXX but webhook receives 549XXXXXXXXXX
+    if (result.text.indexOf('131030') >= 0 || result.text.indexOf('not in allowed') >= 0) {
+      let altNumber = null;
+
+      if (to.startsWith('549') && to.length >= 13) {
+        // Try removing the 9: 549XXXXXXXX -> 54XXXXXXXX
+        altNumber = '54' + to.substring(3);
+      } else if (to.startsWith('54') && !to.startsWith('549') && to.length >= 12) {
+        // Try adding the 9: 54XXXXXXXX -> 549XXXXXXXX
+        altNumber = '549' + to.substring(2);
+      } else if (to.startsWith('521') && to.length >= 12) {
+        // Mexico: remove the 1
+        altNumber = '52' + to.substring(3);
+      } else if (to.startsWith('52') && !to.startsWith('521') && to.length >= 11) {
+        // Mexico: add the 1
+        altNumber = '521' + to.substring(2);
+      }
+
+      if (altNumber) {
+        console.log('[WA] Retrying with alternate number format: ' + altNumber);
+        result = await doSend(altNumber);
+        if (result.ok) {
+          console.log('[WA] SUCCESS with alternate format ' + altNumber);
+        } else {
+          console.error('[WA] Retry also failed for ' + altNumber + ': ' + result.text);
+        }
+      }
+    }
+  } else {
+    console.log('[WA] Message sent OK to ' + to);
+  }
 }

@@ -261,7 +261,7 @@ function initMobileToggle(sidebarEl) {
   ov.parentNode.replaceChild(freshOv, ov);
   freshOv.addEventListener('click', closeMobile);
 
-  // menuBtn wiring
+  // menuBtn wiring (desktop collapse + mobile drawer)
   function wireMenuBtn() {
     var btn = document.getElementById('menuBtn');
     if (!btn) return;
@@ -269,9 +269,18 @@ function initMobileToggle(sidebarEl) {
     btn.parentNode.replaceChild(fresh, btn);
     fresh.addEventListener('click', function(e) {
       e.stopPropagation();
-      if (sidebarEl.classList.contains('mobile-open')) { closeMobile(); } else { openMobile(); }
+      if (window.innerWidth <= 900) {
+        if (sidebarEl.classList.contains('mobile-open')) { closeMobile(); } else { openMobile(); }
+      } else {
+        var collapsed = sidebarEl.classList.toggle('collapsed');
+        setCollapsed(collapsed);
+        adjustMainContent(collapsed);
+        updateCollapseBtnIcon(sidebarEl);
+      }
     });
     fresh.innerHTML = getIcon('hamburger');
+    fresh.style.display = 'inline-flex';
+    fresh.title = 'Colapsar / Expandir menú (Agrandar pantalla)';
   }
 
   wireMenuBtn();

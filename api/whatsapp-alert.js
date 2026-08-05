@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     `${message}\n\n` +
     `🕐 ${new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Mendoza' })}\n\n` +
     `📱 _Ver dashboard:_\n` +
-    `https://municipio-junin.vercel.app/inteligencia`;
+    `https://municipio-junin.vercel.app/inteligencia.html?auth=governante`;
 
   try {
     const resp = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {

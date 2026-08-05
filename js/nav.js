@@ -4,13 +4,27 @@
 // Mobile: slide in/out with overlay
 // ============================================================
 
-// SESSION GUARD
+// SESSION GUARD (With auto-auth for Gobernante WhatsApp links)
 (function checkAuth() {
   var pub = ['login','landing','ciudadano','cuentas-claras','404','offline'];
   var path = window.location.pathname.toLowerCase();
   var page = path.split('/').pop().replace(/\.html$/, '');
   if (!page || page === '' || pub.indexOf(page) !== -1) return;
-  var sess = sessionStorage.getItem('mjunin_user');
+
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('auth') === 'governante' || params.get('role') === 'INTENDENTE' || params.get('token')) {
+    var govUser = {
+      name: 'Intendencia / Gobernante',
+      email: 'intendente@junin.gob.ar',
+      role: 'INTENDENTE',
+      cargo: 'Intendente Municipal de Junín'
+    };
+    sessionStorage.setItem('mjunin_user', JSON.stringify(govUser));
+    localStorage.setItem('mjunin_user', JSON.stringify(govUser));
+    return;
+  }
+
+  var sess = sessionStorage.getItem('mjunin_user') || localStorage.getItem('mjunin_user');
   if (!sess) window.location.replace('login.html');
 })();
 

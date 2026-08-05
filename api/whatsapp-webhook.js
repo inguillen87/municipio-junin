@@ -128,7 +128,7 @@ async function cmdMenuGobernantes(to, pid) {
     `• *5* - Recursos Humanos (1,247 empl.)\n` +
     `• *6* - Licitaciones Públicas (5 activas)\n` +
     `• *7* - Descargar Informe PDF Oficial\n\n` +
-    `📱 _Escribí el número para consultar._`;
+    `💻 *Acceso Directo al Dashboard:* \n${BASE}/inteligencia.html?auth=governante`;
 
   await send(to, pid, 'text', textMenu);
 }
@@ -138,7 +138,8 @@ async function cmdMenuVecinos(to, pid) {
     `🏘️ *PORTAL VECINO JUNÍN 311*\n\n` +
     `• Escribí *reclamos* para registrar un reporte.\n` +
     `• Escribí *turnos* para pedir un turno web.\n` +
-    `• O enviá tu *ubicación GPS* / *foto*.`;
+    `• O enviá tu *ubicación GPS* / *foto*.\n\n` +
+    `💻 *Portal Web Ciudadano:*\n${BASE}/ciudadano.html`;
 
   await send(to, pid, 'text', textMenu);
 }
@@ -151,7 +152,8 @@ async function cmdHacienda(to, pid) {
     `• Gastos: *$165.3M*\n` +
     `• Superávit: *+$14.9M*\n\n` +
     `▓▓▓▓▓▓▓░░░ *67%* Ejecución Presupuestaria\n\n` +
-    `📄 *Descargar Informe PDF:* \n${BASE}/api/pdf-report?type=presupuesto`
+    `📄 *Descargar Informe PDF:* \n${BASE}/api/pdf-report?type=presupuesto\n\n` +
+    `💻 *Abrir Módulo Web:* \n${BASE}/hacienda.html?auth=governante`
   );
 }
 
@@ -163,7 +165,8 @@ async function cmdObras(to, pid) {
     `2. Luminarias LED Centro (90% avance)\n` +
     `3. Renovación Red Cloacal (30% avance)\n\n` +
     `Inversión Total: *$142.5M*\n\n` +
-    `📄 *Descargar Reporte Obras PDF:* \n${BASE}/api/pdf-report?type=obras`
+    `📄 *Descargar Reporte Obras PDF:* \n${BASE}/api/pdf-report?type=obras\n\n` +
+    `💻 *Abrir Módulo Web:* \n${BASE}/obras.html?auth=governante`
   );
 }
 
@@ -173,7 +176,8 @@ async function cmdRRHH(to, pid) {
     `• Empleados Activos: *1,247*\n` +
     `• Masa Salarial: *$485.0M*\n` +
     `• Ausentismo: *3.2%* (Normal)\n\n` +
-    `📄 *Descargar Reporte RRHH PDF:* \n${BASE}/api/pdf-report?type=rrhh`
+    `📄 *Descargar Reporte RRHH PDF:* \n${BASE}/api/pdf-report?type=rrhh\n\n` +
+    `💻 *Abrir Módulo Web:* \n${BASE}/rrhh.html?auth=governante`
   );
 }
 
@@ -182,7 +186,8 @@ async function cmdLicitaciones(to, pid) {
     `📄 *LICITACIONES PÚBLICAS*\n_Junín, Mendoza · Ago 2026_\n\n` +
     `• Licitaciones Activas: *5*\n` +
     `• Monto Licitado: *$85.4M*\n` +
-    `• Cumplimiento SLA: *100%*`
+    `• Cumplimiento SLA: *100%*\n\n` +
+    `💻 *Abrir Módulo Web:* \n${BASE}/licitaciones.html?auth=governante`
   );
 }
 

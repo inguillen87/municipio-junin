@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#060b18">
+  <title>Formulario Municipal | MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b18;
+      --surface: #0d1526;
+      --card: #111d35;
+      --primary: #3b82f6;
+      --text: #f0f4ff;
+      --muted: #8ea3c3;
+      --border: rgba(255,255,255,0.08);
+      --success: #10b981;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+
+    .form-container {
+      width: 100%; max-width: 640px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 24px; padding: 36px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    
+    .form-header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .muni-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25); color: #60a5fa; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; margin-bottom: 16px; }
+    .form-title { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .form-subtitle { font-size: 14px; color: var(--muted); }
+
+    .form-group { margin-bottom: 24px; text-align: left; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .form-input {
+      width: 100%; background: var(--card); border: 1px solid var(--border);
+      color: var(--text); padding: 14px 16px; border-radius: 14px;
+      font-size: 14px; outline: none; transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--primary); }
+    textarea.form-input { min-height: 100px; resize: vertical; }
+
+    .btn-submit {
+      width: 100%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; border: none;
+      padding: 16px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.2s;
+    }
+    .btn-submit:active { transform: scale(0.98); }
+
+    .success-card { text-align: center; padding: 40px 20px; display: none; }
+    .success-icon { width: 64px; height: 64px; border-radius: 50%; background: rgba(16,185,129,0.15); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px auto; }
+    .ticket-badge { background: var(--card); border: 1px solid var(--border); padding: 12px 20px; border-radius: 16px; display: inline-block; margin-top: 16px; font-family: monospace; font-size: 16px; font-weight: 700; color: #60a5fa; }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    
+    <div id="formBody">
+      <div class="form-header">
+        <div class="muni-badge">
+          <img src="img/municontrol-icon.jpg" width="18" height="18" style="border-radius:4px" onerror="this.style.display='none'">
+          Municipalidad de Junín — Mendoza
+        </div>
+        <h1 class="form-title" id="displayTitle">Formulario Municipal</h1>
+        <p class="form-subtitle">Completá los campos requeridos para registrar tu trámite o solicitud digital.</p>
+      </div>
+
+      <form id="publicForm" onsubmit="submitForm(event)">
+        <div id="fieldsContainer">
+          <!-- Default fields for demo -->
+          <div class="form-group">
+            <label>Nombre y Apellido <span style="color:#ef4444">*</span></label>
+            <input type="text" class="form-input" placeholder="Ej: María González" required>
+          </div>
+          <div class="form-group">
+            <label>DNI / CUIT <span style="color:#ef4444">*</span></label>
+            <input type="text" class="form-input" placeholder="Ej: 34.582.190" required>
+          </div>
+          <div class="form-group">
+            <label>Correo Electrónico <span style="color:#ef4444">*</span></label>
+            <input type="email" class="form-input" placeholder="usuario@gmail.com" required>
+          </div>
+          <div class="form-group">
+            <label>Teléfono de Contacto <span style="color:#ef4444">*</span></label>
+            <input type="tel" class="form-input" placeholder="236 4XX-XXXX" required>
+          </div>
+          <div class="form-group">
+            <label>Detalle o Motivo de la Solicitud <span style="color:#ef4444">*</span></label>
+            <textarea class="form-input" placeholder="Describí los detalles de tu trámite o consulta..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Adjuntar Documentación (Opcional)</label>
+            <input type="file" class="form-input" style="padding:10px">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">
+          Enviar Formulario Digital
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div class="success-card" id="successCard">
+      <div class="success-icon">✓</div>
+      <h2 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;margin-bottom:8px">Formulario Recibido</h2>
+      <p style="color:var(--muted);font-size:14px">Tu solicitud ha sido registrada exitosamente en el sistema de la Municipalidad de Junín.</p>
+      
+      <div class="ticket-badge" id="ticketId">#FORM-2026-8492</div>
+      
+      <p style="color:var(--muted);font-size:12px;margin-top:24px">Te enviamos una copia a tu correo electrónico.<br>Podés cerrar esta ventana.</p>
+    </div>
+
+  </div>
+
+  <script>
+    const FORMS_DATA = {
+      'f001': { title: 'Reclamo Vecinal 2026', subtitle: 'Reporte directo de baches, luminarias, arbolado y servicios urbanos.' },
+      'f002': { title: 'Encuesta de Satisfacción Ciudadana', subtitle: 'Tu opinión nos ayuda a mejorar los servicios municipales de Junín.' },
+      'f003': { title: 'Alta de Proveedores Q3', subtitle: 'Registro e inscripción de proveedores para compras y contrataciones.' },
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id') || 'f001';
+      const info = FORMS_DATA[id];
+      if (info) {
+        document.getElementById('displayTitle').textContent = info.title;
+        document.title = info.title + ' | MuniControl';
+      }
+    });
+
+    function submitForm(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.textContent = 'Enviando...';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        const num = Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('ticketId').textContent = `#FORM-2026-${num}`;
+        document.getElementById('formBody').style.display = 'none';
+        document.getElementById('successCard').style.display = 'block';
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

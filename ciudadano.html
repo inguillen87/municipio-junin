@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#000000">
   <title>Muni Junín | Ciudadano</title>
+  <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -77,7 +78,7 @@
       display: flex; gap: 16px; overflow-x: auto;
       padding-bottom: 16px; margin-bottom: 16px;
       scroll-snap-type: x mandatory;
-      scrollbar-width: none; /* Firefox */
+      scrollbar-width: none;
     }
     .featured-scroll::-webkit-scrollbar { display: none; }
     
@@ -160,9 +161,9 @@
     .nav-item svg { transition: 0.2s; }
     .nav-item:active svg { transform: scale(0.85); }
 
-    /* Reclamo Sheet (Bottom Sheet) */
+    /* Bottom Sheets */
     .sheet-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
       z-index: 1000; display: none; opacity: 0; transition: opacity 0.3s;
     }
     .sheet {
@@ -170,6 +171,7 @@
       background: var(--surface); border-top-left-radius: 32px; border-top-right-radius: 32px;
       border: 1px solid var(--border); border-bottom: none;
       padding: 24px; padding-bottom: 48px; z-index: 1001;
+      max-height: 85vh; overflow-y: auto;
       transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1);
     }
     .sheet-handle {
@@ -192,6 +194,13 @@
       cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
     }
 
+    /* QR Result Card */
+    .qr-card {
+      background: #ffffff; color: #000000; padding: 24px; border-radius: 24px;
+      text-align: center; margin-top: 16px;
+    }
+    .qr-card h4 { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+    .qr-card p { font-size: 0.85rem; color: #666666; margin-bottom: 16px; }
   </style>
 </head>
 <body>
@@ -207,7 +216,7 @@
         <p>Junín, Mendoza</p>
       </div>
     </div>
-    <button class="profile-btn">
+    <button class="profile-btn" onclick="openProfile()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
     </button>
   </header>
@@ -215,7 +224,7 @@
   <main>
     <!-- Greeting -->
     <div class="greeting">
-      <h2>Hola, Juan 👋</h2>
+      <h2>Hola, Vecino 👋</h2>
       <p>Bienvenido al portal ciudadano inteligente</p>
     </div>
 
@@ -233,58 +242,42 @@
         <div class="card-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         </div>
-        <h3>Nuevo Reclamo</h3>
+        <h3>Nuevo Reclamo 311</h3>
         <p>Reportá baches, luces o limpieza en 3 simples pasos.</p>
-        <button class="btn-pill outline" onclick="openSheet()">Iniciar Reclamo</button>
+        <button class="btn-pill outline" onclick="openSheet('reclamoSheet')">Iniciar Reclamo</button>
       </div>
     </div>
 
     <!-- Quick Actions -->
     <h3 class="section-title">Servicios Digitales</h3>
     <div class="grid-actions">
-      <div class="action-item" onclick="openSheet()">
+      <div class="action-item" onclick="openSheet('reclamoSheet')">
         <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
         <span class="action-label">Reclamos</span>
       </div>
-      <div class="action-item">
-        <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></div>
-        <span class="action-label">Deudas</span>
-      </div>
-      <div class="action-item">
-        <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-        <span class="action-label">Trámites</span>
-      </div>
-      <div class="action-item">
-        <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg></div>
-        <span class="action-label">MuniBot</span>
+      <div class="action-item" onclick="openSheet('turnosSheet')">
+        <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
+        <span class="action-label">Sacar Turno</span>
       </div>
       <div class="action-item" onclick="window.location.href='mapa.html'">
         <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
-        <span class="action-label">Mapa</span>
+        <span class="action-label">Mapa Smart</span>
       </div>
-      <div class="action-item">
-        <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg></div>
-        <span class="action-label">Noticias</span>
-      </div>
-      <div class="action-item">
-        <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div>
-        <span class="action-label">Eventos</span>
-      </div>
-      <div class="action-item">
-        <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
-        <span class="action-label">Ajustes</span>
+      <div class="action-item" onclick="window.location.href='cuentas-claras.html'">
+        <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></div>
+        <span class="action-label">Transparencia</span>
       </div>
     </div>
 
     <!-- Recent Activity -->
-    <h3 class="section-title">Tus Gestiones</h3>
+    <h3 class="section-title">Tus Reclamos y Turnos</h3>
     <div class="list-group" id="activityList">
       <div class="list-item">
         <div class="item-left">
           <div class="item-icon" style="color:var(--primary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
           <div>
-            <div class="item-title">Luminaria Apagada</div>
-            <div class="item-desc">Rivadavia 1200 · Hace 2 días</div>
+            <div class="item-title">Luminaria Apagada (#2026-081)</div>
+            <div class="item-desc">Av. San Martín 1200 · Hace 2 días</div>
           </div>
         </div>
         <div class="status-badge pending">En Proceso</div>
@@ -293,11 +286,11 @@
         <div class="item-left">
           <div class="item-icon" style="color:var(--success)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
           <div>
-            <div class="item-title">Pago Tasas (Julio)</div>
-            <div class="item-desc">Confirmado · 15/07/2026</div>
+            <div class="item-title">Turno Licencia de Conducir</div>
+            <div class="item-desc">Confirmado · 12/08 09:30 hs</div>
           </div>
         </div>
-        <div class="status-badge success">Pagado</div>
+        <div class="status-badge success">Confirmado</div>
       </div>
     </div>
 
@@ -305,31 +298,31 @@
 
   <!-- Bottom Navigation -->
   <nav class="bottom-nav">
-    <div class="nav-item active">
+    <div class="nav-item active" onclick="switchNav(this)">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
       <span>Inicio</span>
     </div>
-    <div class="nav-item">
+    <div class="nav-item" onclick="openSheet('reclamoSheet')">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
       <span>Reclamos</span>
     </div>
-    <div class="nav-item">
+    <div class="nav-item" onclick="openSheet('turnosSheet')">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
       <span>Turnos</span>
     </div>
-    <div class="nav-item">
+    <div class="nav-item" onclick="openProfile()">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
       <span>Perfil</span>
     </div>
   </nav>
 
   <!-- Bottom Sheet Overlay -->
-  <div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+  <div class="sheet-overlay" id="sheetOverlay" onclick="closeSheets()"></div>
   
-  <!-- New Reclamo Bottom Sheet -->
+  <!-- Reclamo Bottom Sheet -->
   <div class="sheet" id="reclamoSheet">
     <div class="sheet-handle"></div>
-    <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 24px;">Nuevo Reclamo</h2>
+    <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 24px;">Nuevo Reclamo 311</h2>
     
     <div class="form-group">
       <label>Categoría</label>
@@ -359,23 +352,83 @@
     </button>
   </div>
 
+  <!-- Turnos Bottom Sheet -->
+  <div class="sheet" id="turnosSheet">
+    <div class="sheet-handle"></div>
+    <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 24px;">Sacar Turno Municipal</h2>
+    
+    <div class="form-group">
+      <label>Trámite / Área</label>
+      <select class="form-input" id="t_tramite">
+        <option>Licencia de Conducir (Renovación / Primera Vez)</option>
+        <option>Atención Médica (Centro de Salud)</option>
+        <option>Zoonosis & Vacunación de Mascotas</option>
+        <option>Habilitación Comercial</option>
+        <option>Asesoramiento Jurídico Ciudadano</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>Fecha Preferida</label>
+      <input type="date" class="form-input" id="t_fecha" value="2026-08-12">
+    </div>
+
+    <div class="form-group">
+      <label>Horario Disponible</label>
+      <select class="form-input" id="t_hora">
+        <option>08:30 hs</option>
+        <option>09:15 hs</option>
+        <option>10:30 hs</option>
+        <option>11:45 hs</option>
+        <option>12:30 hs</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Nombre y DNI del Ciudadano</label>
+      <input type="text" class="form-input" id="t_dni" placeholder="Ej: Juan Pérez - DNI 38.452.123">
+    </div>
+    
+    <button class="btn-primary" onclick="submitTurno()">
+      Confirmar y Generar Pase QR
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </button>
+
+    <div id="qrResultArea" style="display:none"></div>
+  </div>
+
   <script>
     // Sheet logic
     const overlay = document.getElementById('sheetOverlay');
-    const sheet = document.getElementById('reclamoSheet');
-    
-    function openSheet() {
+    let activeSheet = null;
+
+    function openSheet(id) {
+      closeSheets();
+      activeSheet = document.getElementById(id);
+      if (!activeSheet) return;
       overlay.style.display = 'block';
       setTimeout(() => {
         overlay.style.opacity = '1';
-        sheet.style.transform = 'translateY(0)';
+        activeSheet.style.transform = 'translateY(0)';
       }, 10);
     }
     
-    function closeSheet() {
-      sheet.style.transform = 'translateY(100%)';
+    function closeSheets() {
+      if (activeSheet) {
+        activeSheet.style.transform = 'translateY(100%)';
+        activeSheet = null;
+      }
       overlay.style.opacity = '0';
       setTimeout(() => { overlay.style.display = 'none'; }, 300);
+    }
+
+    function switchNav(el) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function openProfile() {
+      alert("Portal Ciudadano MuniControl v2.0 - Junín, Mendoza\nSesión: Vecino Autenticado (DNI Verificado)");
     }
     
     function submitReclamo() {
@@ -383,36 +436,65 @@
       const dir = document.getElementById('r_dir').value;
       if (!dir) { alert("Por favor ingresá la ubicación."); return; }
       
-      const btn = document.querySelector('.btn-primary');
-      btn.innerHTML = '<div style="width:20px;height:20px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite"></div> Procesando...';
-      
-      setTimeout(() => {
-        closeSheet();
-        btn.innerHTML = 'Enviar Reclamo';
-        
-        // Add to list visually
-        const list = document.getElementById('activityList');
-        const html = `
-          <div class="list-item" style="animation: fadeIn 0.5s ease">
-            <div class="item-left">
-              <div class="item-icon" style="color:var(--primary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
-              <div>
-                <div class="item-title">${cat}</div>
-                <div class="item-desc">${dir} · Justo ahora</div>
-              </div>
+      const num = Math.floor(100 + Math.random() * 900);
+      const list = document.getElementById('activityList');
+      const html = `
+        <div class="list-item" style="animation: fadeIn 0.5s ease">
+          <div class="item-left">
+            <div class="item-icon" style="color:var(--primary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+            <div>
+              <div class="item-title">${cat} (#2026-${num})</div>
+              <div class="item-desc">${dir} · Justo ahora</div>
             </div>
-            <div class="status-badge pending">Pendiente</div>
           </div>
-        `;
-        list.insertAdjacentHTML('afterbegin', html);
-        document.getElementById('r_dir').value = '';
-      }, 1200);
+          <div class="status-badge pending">Pendiente</div>
+        </div>
+      `;
+      list.insertAdjacentHTML('afterbegin', html);
+      closeSheets();
+      alert("✅ Reclamo #2026-" + num + " ingresado exitosamente. Notificado a cuadrillas de Junín.");
+      document.getElementById('r_dir').value = '';
     }
 
-    // Add spin animation dynamically
-    const style = document.createElement('style');
-    style.innerHTML = '@keyframes spin { 100% { transform: rotate(360deg); } } @keyframes fadeIn { from { opacity: 0; background: var(--surface-light); } to { opacity: 1; background: transparent; } }';
-    document.head.appendChild(style);
+    function submitTurno() {
+      const tramite = document.getElementById('t_tramite').value;
+      const fecha = document.getElementById('t_fecha').value;
+      const hora = document.getElementById('t_hora').value;
+      const dni = document.getElementById('t_dni').value || "Juan Pérez - DNI 38.452.123";
+      
+      const res = document.getElementById('qrResultArea');
+      res.style.display = 'block';
+      res.innerHTML = `
+        <div class="qr-card">
+          <h4>Pase Digital QR #TN-8492</h4>
+          <p>${tramite}<br><strong>${fecha} a las ${hora}</strong></p>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=MUNI-JUNIN-TURNO-8492" alt="QR Turno" style="border-radius:12px;margin:8px 0;width:150px;height:150px">
+          <p style="font-size:0.75rem;color:#888">Presentá este código QR en la mesa de entrada municipal.</p>
+        </div>
+      `;
+
+      const list = document.getElementById('activityList');
+      const html = `
+        <div class="list-item" style="animation: fadeIn 0.5s ease">
+          <div class="item-left">
+            <div class="item-icon" style="color:var(--success)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+            <div>
+              <div class="item-title">Turno: ${tramite.split('(')[0]}</div>
+              <div class="item-desc">${fecha} · ${hora}</div>
+            </div>
+          </div>
+          <div class="status-badge success">Confirmado</div>
+        </div>
+      `;
+      list.insertAdjacentHTML('afterbegin', html);
+    }
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg error:', err));
+      });
+    }
   </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -569,7 +569,7 @@
                         <button class="action-btn" title="Ver detalle" onclick="openDetail('${r.id}')">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         </button>
-                        <button class="action-btn" title="Cambiar Estado">
+                        <button class="action-btn" title="Cambiar Estado (Pendiente -> En proceso -> Resuelto)" onclick="toggleState('${r.id}')">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                         </button>
                         <button class="action-btn" title="Asignar">
@@ -698,19 +698,39 @@
             setTimeout(() => { suc.style.display = 'none'; }, 5000);
         }
 
+        // State Changer Function for Table Rows
+        function toggleState(id) {
+            let r = reclamosData.find(x => x.id === id);
+            if (!r) return;
+            let nextMap = { 'pendiente': 'en_proceso', 'en_proceso': 'resuelto', 'resuelto': 'pendiente', 'derivado': 'en_proceso' };
+            let newStatus = nextMap[r.estado] || 'en_proceso';
+            r.estado = newStatus;
+            renderTable();
+            updateKPIs();
+            if (window.showToast) window.showToast("Reclamo " + id + " -> " + formatState(newStatus).toUpperCase(), "success");
+        }
+
+        function changeState(id, newStatus) {
+            let r = reclamosData.find(x => x.id === id);
+            if (!r) return;
+            r.estado = newStatus;
+            renderTable();
+            updateKPIs();
+            if (window.showToast) window.showToast("Reclamo " + id + " -> " + formatState(newStatus).toUpperCase(), "success");
+        }
+
         // Map
         let map;
         function initMap() {
-            map = L.map('map-container').setView([-34.5868, -60.9433], 13);
+            map = L.map('map-container').setView([-33.1283, -69.0042], 14);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
             }).addTo(map);
 
             // Add markers
             reclamosData.forEach((r, i) => {
-                // Generate fake coordinates near center
-                let lat = -34.5868 + (Math.random() - 0.5) * 0.04;
-                let lng = -60.9433 + (Math.random() - 0.5) * 0.04;
+                let lat = -33.1283 + (Math.random() - 0.5) * 0.02;
+                let lng = -69.0042 + (Math.random() - 0.5) * 0.02;
 
                 let color = r.estado === 'resuelto' ? '#10b981' : (r.estado === 'pendiente' ? '#ef4444' : '#f59e0b');
 

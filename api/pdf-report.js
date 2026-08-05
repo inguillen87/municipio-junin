@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
-  const type = (req.query.type || 'resumen').toLowerCase();
+  const reqUrl = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
+  const type = (reqUrl.searchParams.get('type') || req.query?.type || 'resumen').toLowerCase();
   const dateStr = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
   const timeStr = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 

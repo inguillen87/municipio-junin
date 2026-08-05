@@ -7,10 +7,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Use GET' });
   }
 
+  const reqUrl = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_ID;
   const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
-  const targetPhone = req.query.to;
+  const targetPhone = reqUrl.searchParams.get('to') || req.query?.to;
 
   // Step 1: Check env vars
   const diagnostics = {

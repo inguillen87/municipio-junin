@@ -1,6 +1,4 @@
-// api/whatsapp-vecinos.js
-// MuniControl WhatsApp Bot v3 — CIUDADANOS (Vecinos)
-// Canal separado exclusivamente para atención vecinal.
+import { sendReclamoConfirmacionTemplate, sendTurnoConfirmacionTemplate } from './lib/whatsapp-templates.js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -237,9 +235,23 @@ async function cmdLibreVecino(to, pid, txt) {
   }
   if (txt === 'cmd_rec_fin') {
     const num = Math.floor(1000 + Math.random() * 9000);
+    const ticketId = `2026-${num}`;
+    
+    // Disparar plantilla oficial de Meta WhatsApp Cloud API
+    try {
+      await sendReclamoConfirmacionTemplate({
+        to: to,
+        nombre: 'Vecino/a',
+        ticketId: ticketId,
+        categoria: 'Reclamo 311',
+        estado: 'Pendiente de asignación',
+        link: 'https://municipio-junin.vercel.app/ciudadano.html'
+      });
+    } catch(e) { console.error('Template err:', e); }
+
     await send(to, pid, 'interactive', {
       type: 'button',
-      body: { text: `✅ *RECLAMO GENERADO*\n\nTu número de seguimiento es el *#2026-${num}*.\n\nLas cuadrillas ya fueron notificadas.` },
+      body: { text: `✅ *RECLAMO GENERADO*\n\nTu número de seguimiento es el *#${ticketId}*.\n\nLas cuadrillas ya fueron notificadas.` },
       action: {
         buttons: [
           { type: 'reply', reply: { id: 'cmd_inicio', title: 'Inicio' } }

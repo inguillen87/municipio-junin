@@ -1,6 +1,4 @@
-// api/whatsapp-webhook.js
-// MuniControl WhatsApp Bot v3 — Clean Professional Design
-// No image spam, just clean formatted text + interactive buttons
+import { sendAlertaEjecutivaTemplate } from './lib/whatsapp-templates.js';
 
 const BASE = 'https://municipio-junin.vercel.app';
 

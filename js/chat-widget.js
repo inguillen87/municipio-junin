@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // chat-widget.js — MuniBot Floating Chat Widget
 // Appears on all pages, uses HF or demo responses
 // ============================================================
@@ -220,7 +220,7 @@
       if (!messages) return;
       const div = document.createElement('div');
       div.className = role === 'bot' ? 'msg-bot' : 'msg-user';
-      div.innerHTML = text.replace(/\n/g, '<br>') + \`<span class="msg-time">\${timeNow()}</span>\`;
+      div.innerHTML = text.replace(/\n/g, '<br>') + '<span class="msg-time">' + timeNow() + '</span>';
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
     },

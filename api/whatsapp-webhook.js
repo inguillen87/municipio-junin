@@ -195,7 +195,7 @@ async function cmdReclamos(to, pid) {
 async function cmdReporte(to, pid) {
   await send(to, pid, 'interactive', {
     type: 'button',
-    body: { text: '📊 *INFORME EJECUTIVO*\n_Generado por IA · Ago 2026_\n\n━━━━━━━━━━━━━━━━\n\nEl municipio mantiene un balance financiero saludable con superavit de *+$14.9M* y ejecucion presupuestaria del *67%*. Las obras avanzan al 68% y el SLA de reclamos alcanza el 94.1%.\n\n*Tablero*\n✅ Finanzas ... +$14.9M\n✅ Obras ........ 68% avance\n✅ RRHH ........ 3.2% ausent.\n✅ Reclamos .. 92.7% resol.\n✅ SLA ............ 94.1%\n\n━━━━━━━━━━━━━━━━' },
+    body: { text: '📊 *INFORME EJECUTIVO*\n_Generado por IA · Ago 2026_\n\n━━━━━━━━━━━━━━━━\n\nEl municipio mantiene un balance financiero saludable con superavit de *+$14.9M* y ejecucion presupuestaria del *67%*. Las obras avanzan al 68% y el SLA de reclamos alcanza el 94.1%.\n\n*Tablero*\n✅ Finanzas ... +$14.9M\n✅ Obras ........ 68% avance\n✅ RRHH ........ 3.2% ausent.\n✅ Reclamos .. 92.7% resol.\n✅ SLA ............ 94.1%\n\n📥 *Descargar Informe PDF Oficial:*\nhttps://municipio-junin.vercel.app/api/pdf-report?type=resumen\n\n━━━━━━━━━━━━━━━━' },
     footer: { text: 'MuniControl · GovTech' },
     action: {
       buttons: [

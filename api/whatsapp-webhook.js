@@ -45,7 +45,9 @@ export default async function handler(req, res) {
 // ================================================================
 async function route(msg, meta) {
   const from = msg.from;
-  const pid = meta.phone_number_id || process.env.WHATSAPP_PHONE_ID;
+  const pid = (meta.phone_number_id && meta.phone_number_id !== '123456123') 
+    ? meta.phone_number_id 
+    : (process.env.WHATSAPP_PHONE_ID || '1250694471458832');
   let txt = '';
 
   if (msg.type === 'text') {

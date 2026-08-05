@@ -202,10 +202,10 @@ function computeHaciendaMetrics(data) {
 async function generateExecutiveNarrative(period, rrhh, hacienda, modules) {
   const token = process.env.MUNI_HF_TOKEN;
   if (!token) return 'Narrativa AI no configurada.';
-  const ctx = \`Período: \${period}\nRRHH: \${rrhh ? \`\${rrhh.employeeCount} empleados\` : 'Sin datos'}\nHacienda: \${hacienda ? \`Ingresos $\${hacienda.ingresos}\` : 'Sin datos'}\`;
+  const ctx = `Período: ${period}\nRRHH: ${rrhh ? `${rrhh.employeeCount} empleados` : 'Sin datos'}\nHacienda: ${hacienda ? `Ingresos $${hacienda.ingresos}` : 'Sin datos'}`;
   try {
     const resp = await fetch('https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions', {
-      method: 'POST', headers: { 'Authorization': \`Bearer \${token}\`, 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'Qwen/Qwen2.5-72B-Instruct', messages: [{ role: 'system', content: 'Sos analista de datos del Municipio de Junín. Escribí 3 oraciones.' }, { role: 'user', content: ctx }], max_tokens: 300, temperature: 0.5 })
     });
     const data = await resp.json();
@@ -215,5 +215,5 @@ async function generateExecutiveNarrative(period, rrhh, hacienda, modules) {
 
 function getCurrentPeriod() {
   const d = new Date();
-  return \`\${d.getFullYear()}-\${String(d.getMonth() + 1).padStart(2, '0')}\`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }

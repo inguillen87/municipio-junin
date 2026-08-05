@@ -449,23 +449,57 @@
     }
   }
 
-  // ── TEXT-TO-SPEECH (AI speaks back) ───────────────────────
+  // ── CLEAN TEXT FOR SPOKEN VOICE SYNTHESIS ──────────────────
+  function cleanTextForVoiceSpeech(text) {
+    if (!text) return '';
+    
+    // Remove HTML tags & entities
+    let str = text.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, ' ');
+    
+    // Remove emojis
+    str = str.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
+
+    // Remove markdown symbols (asterisks, hashes, bullets, dashes, tildes)
+    str = str.replace(/[\*\_\#\~\•\-\—\–]/g, ' ');
+
+    // Remove item numbers "1.", "2.", "3."
+    str = str.replace(/\b\d+\.\s*/g, '');
+
+    // Clean currency formatting for natural spoken speech
+    str = str.replace(/\$(\d+)[\.](\d+)[\.](\d+),?\d*\s*ARS/gi, '$1 millones $2 mil pesos');
+    str = str.replace(/\$(\d+)[\.](\d+)M/gi, '$1 millones $200 mil pesos');
+    str = str.replace(/ARS/gi, 'pesos');
+    str = str.replace(/%\s*/g, ' por ciento ');
+
+    // Normalize multiple spaces into smooth single spaces
+    str = str.replace(/\s+/g, ' ').trim();
+    return str;
+  }
+
+  // ── TEXT-TO-SPEECH (AI speaks back with clean voice) ──────
   function speakResponse(text) {
     if (!_speakerEnabled) return;
     if (!window.speechSynthesis) return;
 
     stopSpeaking();
 
-    // Clean text for TTS (remove HTML tags)
-    var clean = text.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, ' ').trim();
+    // Clean markdown and formatting noise for voice engine
+    var clean = cleanTextForVoiceSpeech(text);
     if (!clean) return;
 
-    // Limit to first ~400 chars for readability
-    if (clean.length > 400) clean = clean.substring(0, 400) + '...';
+    // Limit to first ~350 chars for executive clarity
+    if (clean.length > 350) {
+      var dotIdx = clean.indexOf('.', 250);
+      if (dotIdx > 0 && dotIdx < 380) {
+        clean = clean.substring(0, dotIdx + 1);
+      } else {
+        clean = clean.substring(0, 350) + '.';
+      }
+    }
 
     _currentUtterance = new SpeechSynthesisUtterance(clean);
     _currentUtterance.lang = 'es-AR';
-    _currentUtterance.rate = 0.95;   // slightly slower = more natural
+    _currentUtterance.rate = 0.95;   // slightly slower = natural executive voice
     _currentUtterance.pitch = 1.0;
     _currentUtterance.volume = 1.0;
 

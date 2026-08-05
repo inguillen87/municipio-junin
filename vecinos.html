@@ -742,7 +742,12 @@
             animateRow(id);
             if (newStatus === 'resuelto') {
                 if (typeof confetti === 'function') confetti(42);
-                if (window.showToast) window.showToast("✅ Reclamo " + id + " marcado como RESUELTO. Notificando al vecino por WhatsApp.", "success");
+                if (window.showToast) window.showToast("✅ Reclamo " + id + " marcado como RESUELTO. Notificación enviada por WhatsApp al vecino.", "success");
+                fetch('/api/whatsapp-alert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: r.telefono || '5492613168608', ticketId: id, status: 'RESUELTO', type: r.tipo })
+                }).catch(() => {});
             } else {
                 if (window.showToast) window.showToast("Reclamo " + id + " -> " + formatState(newStatus).toUpperCase(), "info");
             }

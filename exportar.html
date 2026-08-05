@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -282,42 +282,19 @@ function addRecent(title, type) {
 
 function exportPDF(title) {
     showExportProgress(title);
-    setTimeout(function() {
-        if (!window.jspdf) { alert('Modulo PDF cargando...'); hideExportProgress(); return; }
-        
-        var doc = new window.jspdf.jsPDF();
-        doc.setFontSize(18);
-        doc.text('Municipio de Junin', 20, 20);
-        doc.setFontSize(14);
-        doc.text(title, 20, 35);
-        doc.setFontSize(10);
-        doc.text('Generado: ' + new Date().toLocaleDateString('es-AR'), 20, 45);
-        doc.text('Sistema: MuniControl v2.0 - Exportacion Oficial', 20, 52);
-        doc.line(20, 58, 190, 58);
-        
-        doc.setFontSize(9);
-        var y = 68;
-        
-        if (window.MuniDB) {
-            var pagos = MuniDB.getAll('pagos').slice(0, 15);
-            pagos.forEach(function(p) {
-                doc.text(p.proveedor || 'Proveedor', 20, y);
-                doc.text('$' + (p.monto/1000000).toFixed(2) + 'M', 150, y);
-                y += 8;
-                if (y > 270) { doc.addPage(); y = 20; }
-            });
-        } else {
-            doc.text('Datos de prueba generados por el sistema', 20, y);
-        }
-        
-        doc.save(title.replace(/ /g,'_') + '_' + new Date().toISOString().split('T')[0] + '.pdf');
-        
-        hideExportProgress();
-        showToast('PDF generado exitosamente');
-        addRecent(title, 'pdf');
-    }, 1500);
-}
+    var pdfType = title.toLowerCase().includes('presupuest') || title.toLowerCase().includes('balance') ? 'presupuesto' :
+                  title.toLowerCase().includes('obra') ? 'obras' :
+                  title.toLowerCase().includes('rrhh') || title.toLowerCase().includes('nomina') ? 'rrhh' :
+                  title.toLowerCase().includes('reclam') ? 'reclamos' : 'resumen';
 
+    setTimeout(function() {
+        window.open('/api/pdf-report?type=' + pdfType, '_blank');
+        hideExportProgress();
+        addRecent(title, 'pdf');
+        showToast('✅ Reporte PDF generado exitosamente');
+    }, 1000);
+}
+        
 function exportExcel(title, dataKey) {
     showExportProgress(title);
     setTimeout(function() {

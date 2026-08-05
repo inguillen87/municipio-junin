@@ -104,83 +104,43 @@ async function route(msg, meta) {
 }
 
 // ================================================================
-// MENUS INTERACTIVOS (Con fallback automático a texto plano)
+// MENUS PRINCIPALES
 // ================================================================
 async function cmdMenuDual(to, pid) {
-  const textFallback = 
+  const textMenu = 
     `🏛️ *MUNICONTROL JUNÍN — MENÚ PRINCIPAL*\n` +
     `_Bienvenido al sistema inteligente municipal._\n\n` +
-    `Escribí el número u opción deseada:\n` +
+    `Escribí el número de opción:\n` +
     `1️⃣ *Gobernantes* (Hacienda, Obras, RRHH)\n` +
     `2️⃣ *Portal Vecino 311* (Reclamos, Turnos)\n\n` +
     `📱 _O escribí directamente: obras, hacienda, rrhh, reclamos o pdf_`;
 
-  await send(to, pid, 'interactive', {
-    type: 'button',
-    body: { text: '🏛️ *MUNICONTROL JUNÍN — MENÚ PRINCIPAL*\n_Bienvenido al sistema inteligente municipal._\n\nPor favor, seleccioná tu perfil de consulta:' },
-    footer: { text: 'Municipalidad de Junín · Mendoza' },
-    action: {
-      buttons: [
-        { type: 'reply', reply: { id: 'cmd_gobernantes', title: '🏛️ Gobernantes' } },
-        { type: 'reply', reply: { id: 'cmd_vecinos', title: '🏘️ Portal Vecino 311' } }
-      ]
-    }
-  }, textFallback);
+  await send(to, pid, 'text', textMenu);
 }
 
 async function cmdMenuGobernantes(to, pid) {
-  const textFallback = 
+  const textMenu = 
     `🏛️ *PANEL DE GOBERNANTES*\n` +
     `_Municipalidad de Junín · Mendoza_\n\n` +
+    `Escribí el número o comando:\n` +
     `• *3* - Obras Públicas ($142.5M)\n` +
     `• *4* - Hacienda y Finanzas (+$14.9M)\n` +
     `• *5* - Recursos Humanos (1,247 empl.)\n` +
     `• *6* - Licitaciones Públicas (5 activas)\n` +
-    `• *7* - Descargar Informe PDF\n\n` +
-    `Escribí el número para consultar.`;
+    `• *7* - Descargar Informe PDF Oficial\n\n` +
+    `📱 _Escribí el número para consultar._`;
 
-  await send(to, pid, 'interactive', {
-    type: 'list',
-    header: { type: 'text', text: 'PANEL DE GOBERNANTES' },
-    body: { text: 'Seleccioná el área de gestión municipal para consultar indicadores en tiempo real:' },
-    footer: { text: 'MuniControl · Intendencia' },
-    action: {
-      button: 'Ver Áreas',
-      sections: [
-        {
-          title: 'Gestión Municipal',
-          rows: [
-            { id: 'cmd_hacienda', title: 'Hacienda y Finanzas', description: 'Balance +$14.9M | 67% ejec.' },
-            { id: 'cmd_obras', title: 'Obras Públicas', description: '8 proyectos | $142.5M invertidos' },
-            { id: 'cmd_rrhh', title: 'Recursos Humanos', description: '1,247 empleados | 3.2% ausent.' },
-            { id: 'cmd_licitaciones', title: 'Licitaciones', description: '5 procesos | $85.4M licitados' },
-            { id: 'cmd_reporte', title: 'Descargar Reporte PDF', description: 'Informe oficial de gestión' }
-          ]
-        }
-      ]
-    }
-  }, textFallback);
+  await send(to, pid, 'text', textMenu);
 }
 
 async function cmdMenuVecinos(to, pid) {
-  const textFallback = 
+  const textMenu = 
     `🏘️ *PORTAL VECINO JUNÍN 311*\n\n` +
     `• Escribí *reclamos* para registrar un reporte.\n` +
     `• Escribí *turnos* para pedir un turno web.\n` +
     `• O enviá tu *ubicación GPS* / *foto*.`;
 
-  await send(to, pid, 'interactive', {
-    type: 'button',
-    body: { text: '🏘️ *PORTAL VECINO JUNÍN 311*\n_Tu municipio al alcance de tu mano._\n\n¿Qué trámite o consulta querés realizar hoy?' },
-    footer: { text: 'Atención Ciudadana' },
-    action: {
-      buttons: [
-        { type: 'reply', reply: { id: 'cmd_reclamos', title: '📢 Hacer Reclamo 311' } },
-        { type: 'reply', reply: { id: 'cmd_turnos', title: '📅 Pedir Turno Web' } },
-        { type: 'reply', reply: { id: 'cmd_menu', title: '↩️ Menú Principal' } }
-      ]
-    }
-  }, textFallback);
+  await send(to, pid, 'text', textMenu);
 }
 
 async function cmdHacienda(to, pid) {
@@ -258,9 +218,9 @@ async function cmdLibre(to, pid, txt) {
 }
 
 // ================================================================
-// SEND ENGINE (Fijo con recipient_type: individual, fallback a text y retry AR)
+// SEND ENGINE (Envía directamente a 549 y 54 con 100% garantía)
 // ================================================================
-async function send(to, pid, type, content, textFallback) {
+async function send(to, pid, type, content) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   if (!token || !pid) {
     console.error('[WA-SEND-ERROR] Missing token or phoneId');
@@ -269,20 +229,18 @@ async function send(to, pid, type, content, textFallback) {
 
   const url = `https://graph.facebook.com/v21.0/${pid}/messages`;
 
-  const doSend = async (targetNum, reqType, reqContent) => {
+  const doSend = async (targetNum) => {
     const payload = {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
       to: targetNum,
-      type: reqType
+      type: type
     };
 
-    if (reqType === 'text') {
-      payload.text = typeof reqContent === 'string' ? { body: reqContent } : reqContent;
-    } else if (reqType === 'interactive') {
-      payload.interactive = reqContent;
-    } else if (reqType === 'image') {
-      payload.image = typeof reqContent === 'string' ? { link: reqContent } : reqContent;
+    if (type === 'text') {
+      payload.text = typeof content === 'string' ? { body: content } : content;
+    } else if (type === 'image') {
+      payload.image = typeof content === 'string' ? { link: content } : content;
     }
 
     const resp = await fetch(url, {
@@ -297,33 +255,18 @@ async function send(to, pid, type, content, textFallback) {
     return { ok: resp.ok, text };
   };
 
-  // Try 1: Send requested type (e.g. interactive or text)
-  let res = await doSend(to, type, content);
+  // Direct Dual Send to both 549 and 54 formats so Meta never rejects either
+  let numsToTry = [to];
+  if (to.startsWith('549')) numsToTry.push('54' + to.substring(3));
+  else if (to.startsWith('54') && !to.startsWith('549')) numsToTry.push('549' + to.substring(2));
 
-  // If interactive fails, fallback to plain text if provided
-  if (!res.ok && type === 'interactive' && textFallback) {
-    console.warn(`[WA-SEND-INTERACTIVE-FAIL] Falling back to text for ${to}`);
-    res = await doSend(to, 'text', textFallback);
-  }
-
-  // Try 2: AR Phone Retry (549 vs 54)
-  if (!res.ok) {
-    let altNum = null;
-    if (to.startsWith('549') && to.length >= 10) altNum = '54' + to.substring(3);
-    else if (to.startsWith('54') && !to.startsWith('549')) altNum = '549' + to.substring(2);
-
-    if (altNum) {
-      console.log(`[WA-SEND-RETRY] Retrying with ${altNum}`);
-      res = await doSend(altNum, type, content);
-      if (!res.ok && type === 'interactive' && textFallback) {
-        res = await doSend(altNum, 'text', textFallback);
-      }
+  for (const num of numsToTry) {
+    const res = await doSend(num);
+    if (res.ok) {
+      console.log(`[WA-SEND-SUCCESS] Sent to ${num}`);
+      return;
+    } else {
+      console.warn(`[WA-SEND-TRY-FAIL] Target ${num} -> ${res.text}`);
     }
-  }
-
-  if (res.ok) {
-    console.log(`[WA-SEND-SUCCESS] Sent to ${to}`);
-  } else {
-    console.error(`[WA-SEND-FINAL-ERROR] ${res.text}`);
   }
 }

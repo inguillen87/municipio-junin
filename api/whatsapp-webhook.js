@@ -309,7 +309,7 @@ async function send(to, pid, type, content, textFallback) {
   // Try 2: AR Phone Retry (549 vs 54)
   if (!res.ok) {
     let altNum = null;
-    if (to.startsWith('549') && to.length >= 13) altNum = '54' + to.substring(3);
+    if (to.startsWith('549') && to.length >= 10) altNum = '54' + to.substring(3);
     else if (to.startsWith('54') && !to.startsWith('549')) altNum = '549' + to.substring(2);
 
     if (altNum) {

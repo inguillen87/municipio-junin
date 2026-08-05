@@ -113,6 +113,7 @@
     /* ── WELCOME BANNER ─────────────────────────────────────── */
     .welcome-banner {
       background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 60%, #1e3a8a 100%);
+      background-size: 200% 200%;
       border: 1px solid rgba(59,130,246,0.3);
       border-radius: 16px; padding: 24px 28px;
       display: flex; align-items: center; justify-content: space-between; gap: 20px;
@@ -304,7 +305,7 @@
     <div class="content-wrapper">
 
       <!-- WELCOME -->
-      <div class="welcome-banner" id="welcomeBanner">
+      <div class="welcome-banner gradient-animate" id="welcomeBanner" data-reveal="zoom">
         <div class="welcome-content">
           <h2 id="welcomeGreeting">Bienvenido</h2>
           <div class="welcome-meta">
@@ -349,14 +350,14 @@
       <!-- KPI CARDS -->
       <section class="kpi-grid" id="kpiGrid">
 
-        <div class="kpi-card">
+        <div class="kpi-card card-lift" data-reveal>
           <div class="kpi-header">
             <span class="kpi-label">Total Empleados</span>
             <div class="kpi-icon blue">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-empleados-val">1,247</div>
+          <div class="kpi-value" id="kpi-empleados-val" data-count="1247" data-currency="false">1,247</div>
           <div class="kpi-footer">
             <span class="kpi-trend up">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
@@ -367,14 +368,14 @@
           </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card card-lift" data-reveal>
           <div class="kpi-header">
             <span class="kpi-label">Gasto Mensual</span>
             <div class="kpi-icon amber">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-gastos-val">$284M</div>
+          <div class="kpi-value" id="kpi-gastos-val" data-count="284" data-prefix="$" data-suffix="M" data-currency="false">$284M</div>
           <div class="kpi-footer">
             <span class="kpi-trend down">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
@@ -385,14 +386,14 @@
           </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card card-lift" data-reveal>
           <div class="kpi-header">
             <span class="kpi-label">Horas Extra (mes)</span>
             <div class="kpi-icon red">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-horas-val">4,312</div>
+          <div class="kpi-value" id="kpi-horas-val" data-count="4312" data-currency="false">4,312</div>
           <div class="kpi-footer">
             <span class="kpi-trend down">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
@@ -403,28 +404,28 @@
           </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card card-lift" data-reveal>
           <div class="kpi-header">
             <span class="kpi-label">Presupuesto Ejecutado</span>
             <div class="kpi-icon violet">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="17" y="13" width="4" height="8"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-presupuesto-val">67%</div>
+          <div class="kpi-value" id="kpi-presupuesto-val" data-count="67" data-suffix="%" data-currency="false">67%</div>
           <div class="kpi-footer">
             <div class="sparkline"><div class="sparkline-fill" id="presupProgressBar" style="width:67%;background:#8b5cf6"></div></div>
             <span class="kpi-sub">8 meses del ano</span>
           </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card card-lift" data-reveal>
           <div class="kpi-header">
             <span class="kpi-label">Reclamos Vecinos</span>
             <div class="kpi-icon green">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-reclamos-val">318</div>
+          <div class="kpi-value" id="kpi-reclamos-val" data-count="318" data-currency="false">318</div>
           <div class="kpi-footer">
             <span class="kpi-trend up" style="color:#f59e0b">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -435,14 +436,14 @@
           </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card card-lift" data-reveal>
           <div class="kpi-header">
             <span class="kpi-label">Obras en Ejecucion</span>
             <div class="kpi-icon teal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpi-obras-val">8</div>
+          <div class="kpi-value" id="kpi-obras-val" data-count="8" data-currency="false">8</div>
           <div class="kpi-footer">
             <span class="kpi-trend up">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
@@ -506,14 +507,14 @@
 
       <!-- CHARTS -->
       <div class="charts-grid">
-        <div class="chart-card">
+        <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div class="chart-title">Gasto Mensual</div>
             <div class="chart-sub">Evolucion 2025-2026</div>
           </div>
           <canvas id="chartGastoMensual" height="180"></canvas>
         </div>
-        <div class="chart-card">
+        <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div class="chart-title">Presupuesto por Secretaria</div>
             <div class="chart-sub">Distribucion actual</div>
@@ -524,7 +525,7 @@
 
       <!-- BOTTOM: Pagos + Actividad -->
       <div class="bottom-grid">
-        <div class="chart-card">
+        <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div class="chart-title">Ultimos Pagos</div>
             <div class="chart-sub">Checkbook municipal</div>
@@ -543,7 +544,7 @@
             </tbody>
           </table>
         </div>
-        <div class="chart-card">
+        <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div class="chart-title">Actividad Reciente</div>
             <div class="chart-sub">Ultimas acciones del sistema</div>
@@ -641,25 +642,25 @@
           var emp = MuniDB.getAll('empleados');
           var activos = emp.filter(function(e){return e.estado==='activo';}).length;
           var kpe = document.getElementById('kpi-empleados-val');
-          if(kpe) kpe.textContent = activos.toLocaleString('es-AR');
+          if(kpe) { if(window.motionKit) window.motionKit.countUp(kpe, activos, {currency:false}); else kpe.textContent = activos.toLocaleString('es-AR'); }
         } catch(e){}
         try {
           var rec = MuniDB.getAll('reclamos');
           var pend = rec.filter(function(r){return r.estado!=='resuelto';}).length;
           var kpr = document.getElementById('kpi-reclamos-val');
-          if(kpr) kpr.textContent = pend;
+          if(kpr) { if(window.motionKit) window.motionKit.countUp(kpr, pend, {currency:false}); else kpr.textContent = pend; }
         } catch(e){}
         try {
           var pag = MuniDB.getAll('pagos');
           var total = pag.reduce(function(s,p){return s+(p.monto||0);},0);
           var kpg = document.getElementById('kpi-gastos-val');
-          if(kpg) kpg.textContent = '$'+(total/1000000).toFixed(0)+'M';
+          if(kpg) { if(window.motionKit) window.motionKit.countUp(kpg, total/1000000, {prefix:'$', suffix:'M', currency:false}); else kpg.textContent = '$'+(total/1000000).toFixed(0)+'M'; }
         } catch(e){}
         try {
           var obr = MuniDB.getAll('obras');
           var enEjec = obr.filter(function(o){return o.estado==='en_ejecucion';}).length;
           var kpo = document.getElementById('kpi-obras-val');
-          if(kpo) kpo.textContent = enEjec;
+          if(kpo) { if(window.motionKit) window.motionKit.countUp(kpo, enEjec, {currency:false}); else kpo.textContent = enEjec; }
         } catch(e){}
       }
     });
@@ -677,7 +678,13 @@
     // LIVE API WIDGETS
     function initLiveWidgets() {
       if (!window.MuniAPI) return;
-      
+
+      // Skeleton state mientras cargan las APIs
+      var skelEls = ['weatherTemp','weatherDesc','weatherCardTemp','weatherCardDesc','weatherFull','dolarFull'];
+      skelEls.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && window.motionKit) window.motionKit.skeleton(el, true);
+      });
       // Weather
       MuniAPI.getWeather()
         .then(function(w) {
@@ -685,8 +692,8 @@
           var temp = document.getElementById('weatherTemp');
           var desc = document.getElementById('weatherDesc');
           if (icon) icon.innerHTML = MuniAPI.getWeatherSVG(w.code);
-          if (temp) temp.textContent = w.temp + 'C';
-          if (desc) desc.textContent = w.desc;
+          if (temp) { if (window.motionKit) window.motionKit.skeleton(temp, false); temp.textContent = w.temp + 'C'; }
+          if (desc) { if (window.motionKit) window.motionKit.skeleton(desc, false); desc.textContent = w.desc; }
           // Also update any weatherFull div if exists
           var full = document.getElementById('weatherFull');
           if (full) {
@@ -700,15 +707,17 @@
           var cardIcon = document.getElementById('weatherCardIcon');
           if (cardIcon) cardIcon.innerHTML = MuniAPI.getWeatherSVG(w.code);
           var cardTemp = document.getElementById('weatherCardTemp');
-          if (cardTemp) cardTemp.textContent = w.temp + 'C';
+          if (cardTemp) { if (window.motionKit) window.motionKit.skeleton(cardTemp, false); cardTemp.textContent = w.temp + 'C'; }
           var cardDesc = document.getElementById('weatherCardDesc');
-          if (cardDesc) cardDesc.textContent = w.desc;
+          if (cardDesc) { if (window.motionKit) window.motionKit.skeleton(cardDesc, false); cardDesc.textContent = w.desc; }
         })
         .catch(function() { /* silent fail */ });
       
       // Dolar
       MuniAPI.getDolar()
         .then(function(d) {
+          var dFull = document.getElementById('dolarFull');
+          if (dFull && window.motionKit) window.motionKit.skeleton(dFull, false);
           var of = document.getElementById('dolarOficial');
           var bl = document.getElementById('dolarBlue');
           if (of && d.oficial) of.textContent = '$' + d.oficial.venta.toLocaleString('es-AR');
@@ -964,5 +973,6 @@ document.addEventListener('keydown', function(e) {
   </nav>
 
   <script src='js/bottom-nav.js'></script>
-</body>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

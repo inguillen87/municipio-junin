@@ -173,25 +173,25 @@
             <!-- TAB 1: Dashboard -->
             <div id="dashboard" class="tab-content active">
                 <div class="kpi-grid">
-                    <div class="kpi-card">
+                    <div class="kpi-card card-lift" data-reveal>
                         <div class="kpi-title">Reclamos Activos</div>
-                        <div class="kpi-value" id="kpi-activos">...</div>
+                        <div class="kpi-value" id="kpi-activos" data-count="8" data-currency="false">...</div>
                     </div>
-                    <div class="kpi-card">
+                    <div class="kpi-card card-lift" data-reveal>
                         <div class="kpi-title">Resueltos este mes</div>
-                        <div class="kpi-value" id="kpi-resueltos">...</div>
+                        <div class="kpi-value" id="kpi-resueltos" data-count="2" data-currency="false">...</div>
                     </div>
-                    <div class="kpi-card">
+                    <div class="kpi-card card-lift" data-reveal>
                         <div class="kpi-title">Tiempo Promedio Resolución</div>
                         <div class="kpi-value">3.2 días</div>
                     </div>
-                    <div class="kpi-card">
+                    <div class="kpi-card card-lift" data-reveal>
                         <div class="kpi-title">SLA Cumplido (Global)</div>
-                        <div class="kpi-value">94%</div>
+                        <div class="kpi-value" data-count="94" data-suffix="%" data-currency="false">94%</div>
                     </div>
-                    <div class="kpi-card" style="border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.05);">
+                    <div class="kpi-card card-lift" data-reveal style="border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.05);">
                         <div class="kpi-title" style="color: var(--danger)">Críticos Sin Resolver</div>
-                        <div class="kpi-value" id="kpi-criticos" style="color: var(--danger)">...</div>
+                        <div class="kpi-value" id="kpi-criticos" data-count="4" data-currency="false" style="color: var(--danger)">...</div>
                     </div>
                 </div>
 
@@ -496,9 +496,16 @@
             let resueltos = reclamosData.filter(r => r.estado === 'resuelto');
             let criticos = activos.filter(r => r.prioridad === 'alta');
 
-            document.getElementById('kpi-activos').textContent = activos.length;
-            document.getElementById('kpi-resueltos').textContent = resueltos.length;
-            document.getElementById('kpi-criticos').textContent = criticos.length;
+            setCountUp('kpi-activos', activos.length);
+            setCountUp('kpi-resueltos', resueltos.length);
+            setCountUp('kpi-criticos', criticos.length);
+        }
+        function setCountUp(id, val) {
+            const el = document.getElementById(id);
+            if (!val && el) el.innerHTML = '…';
+            if (!el) return;
+            if (window.motionKit) window.motionKit.countUp(el, val, { currency: false });
+            else el.textContent = typeof val === 'number' ? val.toLocaleString('es-AR') : val;
         }
 
         function initChart() {
@@ -555,6 +562,7 @@
                 let desc = r.descripcion.length > 40 ? r.descripcion.substring(0,40)+'...' : r.descripcion;
 
                 let tr = document.createElement('tr');
+                tr.setAttribute('data-id', r.id);
                 tr.innerHTML = `
                     <td style="font-weight:600">${r.id}</td>
                     <td>${fdate}</td>
@@ -698,7 +706,31 @@
             setTimeout(() => { suc.style.display = 'none'; }, 5000);
         }
 
-        // State Changer Function for Table Rows
+       // State Changer Function for Table Rows
+        function animateRow(id) {
+            const tr = document.querySelector('tr[data-id="' + id + '"]');
+            if (tr && window.motionKit) window.motionKit.flash(tr);
+        }
+        function confetti(count) {
+            count = count || 34;
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                const left = Math.random() * 100;
+                const delay = Math.random() * 1.2;
+                const dur = 1.1 + Math.random() * 0.7;
+                const size = 5 + Math.random() * 6;
+                p.style.cssText = 'position:fixed;left:' + left + 'vw;top:-6px;width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + colors[i % colors.length] + ';pointer-events:none;z-index:10000;box-shadow:0 0 6px ' + colors[i % colors.length] + ';animation:confettiFall ' + dur + 's ' + delay + 's forwards;opacity:0;';
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), (dur + delay + 0.3) * 1000);
+            }
+            if (!document.getElementById('confetti-style')) {
+                const s = document.createElement('style');
+                s.id = 'confetti-style';
+                s.textContent = '@keyframes confettiFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(80vh) rotate(360deg);opacity:0}}';
+                document.head.appendChild(s);
+            }
+        }
         function toggleState(id) {
             let r = reclamosData.find(x => x.id === id);
             if (!r) return;
@@ -707,7 +739,13 @@
             r.estado = newStatus;
             renderTable();
             updateKPIs();
-            if (window.showToast) window.showToast("Reclamo " + id + " -> " + formatState(newStatus).toUpperCase(), "success");
+            animateRow(id);
+            if (newStatus === 'resuelto') {
+                if (typeof confetti === 'function') confetti(42);
+                if (window.showToast) window.showToast("✅ Reclamo " + id + " marcado como RESUELTO. Notificando al vecino por WhatsApp.", "success");
+            } else {
+                if (window.showToast) window.showToast("Reclamo " + id + " -> " + formatState(newStatus).toUpperCase(), "info");
+            }
         }
 
         function changeState(id, newStatus) {
@@ -716,7 +754,13 @@
             r.estado = newStatus;
             renderTable();
             updateKPIs();
-            if (window.showToast) window.showToast("Reclamo " + id + " -> " + formatState(newStatus).toUpperCase(), "success");
+            animateRow(id);
+            if (newStatus === 'resuelto') {
+                if (typeof confetti === 'function') confetti(42);
+                if (window.showToast) window.showToast("✅ Reclamo " + id + " marcado como RESUELTO.", "success");
+            } else {
+                if (window.showToast) window.showToast("Reclamo " + id + " -> " + formatState(newStatus).toUpperCase(), "success");
+            }
         }
 
         // Map
@@ -759,5 +803,6 @@
   <script src="js/theme-switcher.js"></script>
   <script src="js/nav.js"></script>
   <script src='js/bottom-nav.js'></script>
-</body>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

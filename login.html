@@ -300,6 +300,7 @@
     .btn-login {
       width: 100%;
       padding: 14px;
+      position: relative; overflow: hidden;
       background: linear-gradient(135deg, #3b82f6, #8b5cf6);
       border: none;
       border-radius: 12px;
@@ -321,9 +322,18 @@
     .btn-login:active { transform: translateY(0); }
 
     .btn-login.loading {
-      opacity: 0.8;
+      opacity: 0.92;
       pointer-events: none;
     }
+    .btn-login.loading::after {
+      content: '';
+      position: absolute;
+      right: 14px; top: 50%; transform: translateY(-50%);
+      width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spinLogin 0.7s linear infinite;
+    }
+    @keyframes spinLogin { to { transform: translateY(-50%) rotate(360deg); } }
 
     /* ERROR */
     .error-msg {
@@ -452,22 +462,22 @@
       Sistema integral para municipios modernos. Presupuesto, RRHH, obras, reclamos y transparencia en una sola plataforma.
     </p>
 
-    <div class="features">
-      <div class="feature-item">
+       <div class="features">
+      <div class="feature-item" data-reveal>
         <div class="feature-icon" style="background:rgba(59,130,246,0.15)">&#128200;</div>
         <div>
           <div class="feature-text">Analytics en tiempo real</div>
           <div class="feature-sub">Metricas, KPIs y graficos ejecutivos</div>
         </div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item" data-reveal>
         <div class="feature-icon" style="background:rgba(16,185,129,0.15)">&#129504;</div>
         <div>
           <div class="feature-text">Asistente IA Municipal</div>
           <div class="feature-sub">Consultas, resumenes y predicciones</div>
         </div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item" data-reveal>
         <div class="feature-icon" style="background:rgba(139,92,246,0.15)">&#128274;</div>
         <div>
           <div class="feature-text">Roles y permisos granulares</div>
@@ -480,17 +490,17 @@
     <div class="kpi-cards">
       <div class="kpi-card">
         <div class="kpi-label">Empleados activos</div>
-        <div class="kpi-value" style="color:#60a5fa">1,204</div>
+        <div class="kpi-value" data-count="1204" data-currency="false" style="color:#60a5fa">1,204</div>
         <div class="kpi-trend" style="color:#10b981">+12 este mes</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Reclamos resueltos</div>
-        <div class="kpi-value" style="color:#34d399">94%</div>
+        <div class="kpi-value" data-count="94" data-suffix="%" data-currency="false" style="color:#34d399">94%</div>
         <div class="kpi-trend" style="color:#10b981">SLA cumplido</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Presupuesto ejecutado</div>
-        <div class="kpi-value" style="color:#a78bfa">67%</div>
+        <div class="kpi-value" data-count="67" data-suffix="%" data-currency="false" style="color:#a78bfa">67%</div>
         <div class="kpi-trend" style="color:#f59e0b">Normal</div>
       </div>
     </div>
@@ -503,7 +513,7 @@
       <p>Ingresa tus credenciales para acceder</p>
     </div>
 
-    <div class="error-msg" id="errorMsg">Credenciales incorrectas. Verificá el email y la contraseña.</div>
+    <div class="error-msg" id="errorMsg" role="alert" aria-live="polite">Credenciales incorrectas. Verificá el email y la contraseña.</div>
 
     <form id="loginForm" onsubmit="doLogin(event)" autocomplete="on">
       <div class="form-group">
@@ -648,5 +658,6 @@
   <script src="js/theme-switcher.js"></script>
   <script src="js/nav.js"></script>
   <script src='js/bottom-nav.js'></script>
-</body>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

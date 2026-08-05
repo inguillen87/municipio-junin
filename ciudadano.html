@@ -158,8 +158,19 @@
     }
     .nav-item.active { color: var(--primary); }
     .nav-item span { font-size: 0.7rem; font-weight: 600; }
-    .nav-item svg { transition: 0.2s; }
+    .nav-item svg { transition: 0.25s cubic-bezier(0.34,1.56,0.64,1); }
     .nav-item:active svg { transform: scale(0.85); }
+    .nav-item { position: relative; }
+    .nav-item::after {
+      content: ''; position: absolute; bottom: -8px; left: 50%;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--primary); opacity: 0;
+      transform: translateX(-50%) scale(0);
+      transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+    .nav-item.active::after { opacity: 1; transform: translateX(-50%) scale(1); }
+    .nav-item.active svg { transform: translateY(-3px) scale(1.15); }
 
     /* Bottom Sheets */
     .sheet-overlay {
@@ -201,6 +212,20 @@
     }
     .qr-card h4 { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
     .qr-card p { font-size: 0.85rem; color: #666666; margin-bottom: 16px; }
+
+    /* Mini Toast (reemplaza alert) */
+    #miniToast {
+      position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(20px);
+      background: rgba(20, 26, 34, 0.96); border: 1px solid rgba(59,130,246,0.35);
+      color: #fff; padding: 14px 20px; border-radius: 16px; font-size: 0.85rem;
+      font-weight: 600; z-index: 2000; max-width: 88vw; text-align: center;
+      opacity: 0; pointer-events: none; backdrop-filter: blur(12px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    #miniToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #miniToast.success { border-color: rgba(16,185,129,0.4); }
+    #miniToast.error { border-color: rgba(239,68,68,0.4); }
   </style>
 </head>
 <body>
@@ -223,14 +248,14 @@
 
   <main>
     <!-- Greeting -->
-    <div class="greeting">
+    <div class="greeting" data-reveal>
       <h2>Hola, Vecino 👋</h2>
       <p>Bienvenido al portal ciudadano inteligente</p>
     </div>
 
     <!-- Featured -->
     <div class="featured-scroll">
-      <div class="card gradient-2">
+      <div class="card gradient-2" data-reveal>
         <div class="card-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         </div>
@@ -238,7 +263,7 @@
         <p>Tenés saldo a favor de <strong>$4.500</strong> por pago anual.</p>
         <button class="btn-pill">Ver Estado</button>
       </div>
-      <div class="card gradient-1">
+      <div class="card gradient-1" data-reveal>
         <div class="card-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         </div>
@@ -249,8 +274,8 @@
     </div>
 
     <!-- Quick Actions -->
-    <h3 class="section-title">Servicios Digitales</h3>
-    <div class="grid-actions">
+    <h3 class="section-title" data-reveal>Servicios Digitales</h3>
+    <div class="grid-actions" data-reveal>
       <div class="action-item" onclick="openSheet('reclamoSheet')">
         <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
         <span class="action-label">Reclamos</span>
@@ -428,18 +453,18 @@
     }
 
     function openProfile() {
-      alert("Portal Ciudadano MuniControl v2.0 - Junín, Mendoza\nSesión: Vecino Autenticado (DNI Verificado)");
+      showMiniToast('👤 Portal Ciudadano MuniControl v2.0 — Sesión: Vecino Autenticado (DNI Verificado)', 'success');
     }
     
     function submitReclamo() {
       const cat = document.getElementById('r_cat').value;
       const dir = document.getElementById('r_dir').value;
-      if (!dir) { alert("Por favor ingresá la ubicación."); return; }
+      if (!dir) { showMiniToast('⚠️ Por favor ingresá la ubicación.', 'error'); return; }
       
       const num = Math.floor(100 + Math.random() * 900);
       const list = document.getElementById('activityList');
       const html = `
-        <div class="list-item" style="animation: fadeIn 0.5s ease">
+        <div class="list-item pop-in">
           <div class="item-left">
             <div class="item-icon" style="color:var(--primary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
             <div>
@@ -452,7 +477,7 @@
       `;
       list.insertAdjacentHTML('afterbegin', html);
       closeSheets();
-      alert("✅ Reclamo #2026-" + num + " ingresado exitosamente. Notificado a cuadrillas de Junín.");
+      showMiniToast("✅ Reclamo #2026-" + num + " ingresado. Notificado a cuadrillas de Junín.", 'success');
       document.getElementById('r_dir').value = '';
     }
 
@@ -465,7 +490,7 @@
       const res = document.getElementById('qrResultArea');
       res.style.display = 'block';
       res.innerHTML = `
-        <div class="qr-card">
+        <div class="qr-card pop-in">
           <h4>Pase Digital QR #TN-8492</h4>
           <p>${tramite}<br><strong>${fecha} a las ${hora}</strong></p>
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=MUNI-JUNIN-TURNO-8492" alt="QR Turno" style="border-radius:12px;margin:8px 0;width:150px;height:150px">
@@ -475,7 +500,7 @@
 
       const list = document.getElementById('activityList');
       const html = `
-        <div class="list-item" style="animation: fadeIn 0.5s ease">
+        <div class="list-item pop-in">
           <div class="item-left">
             <div class="item-icon" style="color:var(--success)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
             <div>
@@ -487,6 +512,30 @@
         </div>
       `;
       list.insertAdjacentHTML('afterbegin', html);
+      showMiniToast('✅ Turno confirmado. Pase QR generado.', 'success');
+      setTimeout(() => { res.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
+    }
+
+    // Mini toast
+    function showMiniToast(msg, type) {
+      let t = document.getElementById('miniToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'miniToast';
+        document.body.appendChild(t);
+      }
+      t.className = 'show ' + (type || '');
+      t.textContent = msg;
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
+    // pop-in fallback (si motion-system.css no está en esta PWA)
+    if (!document.querySelector('style[data-pop-in]')) {
+      const s = document.createElement('style');
+      s.setAttribute('data-pop-in', '1');
+      s.textContent = '@keyframes popIn { from { opacity:0; transform: scale(0.92) translateY(10px); } to { opacity:1; transform:none; } } .pop-in { animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }';
+      document.head.appendChild(s);
     }
 
     // Register Service Worker for PWA
@@ -496,5 +545,6 @@
       });
     }
   </script>
-</body>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

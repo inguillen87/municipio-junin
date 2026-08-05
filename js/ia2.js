@@ -75,14 +75,20 @@ async function sendMessage(texto) {
   if (uploadedDocs.length > 0) {
     respuesta = responderConDocumentos(texto, uploadedDocs);
   } else if (window.procesarMensajeIA) {
-    respuesta = window.procesarMensajeIA(texto);
+    respuesta = await window.procesarMensajeIA(texto);
   } else {
     respuesta = `<div class="iíanswer-card"><p style="color:rgba(148,163,184,0.8)">Cargando motor de respuestas... Por favor reintentá en un momento.</p></div>`;
   }
 
   // Reemplazar el typing indicator
   const typingEl = document.getElementById(typingId);
-  if (typingEl) typingEl.innerHTML = respuesta;
+  if (typingEl) {
+    typingEl.innerHTML = respuesta;
+    const card = typingEl.querySelector('.iíanswer-card');
+    if (card) {
+      card.classList.add('pop-in');
+    }
+  }
   chatHistory.push({ role: 'ia', content: respuesta });
 
   scrollToBottom();

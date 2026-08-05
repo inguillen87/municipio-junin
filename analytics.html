@@ -100,29 +100,29 @@
 
       <!-- KPI row -->
       <div class="kpi-row">
-        <div class="kpi-mini">
+        <div class="kpi-mini card-lift" data-reveal>
           <div class="kpi-mini-label">Gasto total</div>
-          <div class="kpi-mini-value" id="statGasto">$284M</div>
+          <div class="kpi-mini-value" id="statGasto" data-count="284" data-prefix="$" data-suffix="M" data-currency="false">$284M</div>
           <div class="kpi-mini-trend down">-4.2% vs julio</div>
         </div>
-        <div class="kpi-mini">
+        <div class="kpi-mini card-lift" data-reveal>
           <div class="kpi-mini-label">Empleados activos</div>
-          <div class="kpi-mini-value" id="statEmp">1,247</div>
+          <div class="kpi-mini-value" id="statEmp" data-count="1247" data-currency="false">1,247</div>
           <div class="kpi-mini-trend up">+12 este mes</div>
         </div>
-        <div class="kpi-mini">
+        <div class="kpi-mini card-lift" data-reveal>
           <div class="kpi-mini-label">Reclamos resueltos</div>
-          <div class="kpi-mini-value" id="statRec">295</div>
+          <div class="kpi-mini-value" id="statRec" data-count="295" data-currency="false">295</div>
           <div class="kpi-mini-trend up">92.8% SLA</div>
         </div>
-        <div class="kpi-mini">
+        <div class="kpi-mini card-lift" data-reveal>
           <div class="kpi-mini-label">Presupuesto ejec.</div>
-          <div class="kpi-mini-value" id="statPres">67%</div>
+          <div class="kpi-mini-value" id="statPres" data-count="67" data-suffix="%" data-currency="false">67%</div>
           <div class="kpi-mini-trend neutral">normal para agosto</div>
         </div>
-        <div class="kpi-mini">
+        <div class="kpi-mini card-lift" data-reveal>
           <div class="kpi-mini-label">Horas extra</div>
-          <div class="kpi-mini-value" id="statHe">4,312</div>
+          <div class="kpi-mini-value" id="statHe" data-count="4312" data-currency="false">4,312</div>
           <div class="kpi-mini-trend down">-8% vs julio</div>
         </div>
       </div>
@@ -130,7 +130,7 @@
       <!-- MAIN CHARTS -->
       <div class="charts-main">
 
-        <div class="chart-card">
+        <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div><div class="chart-title">Evolucion de Gastos</div><div class="chart-sub">Ultimos 12 meses</div></div>
             <span class="chart-badge badge-blue">$284M</span>
@@ -138,7 +138,7 @@
           <canvas id="chartGastoMensual" height="200"></canvas>
         </div>
 
-        <div class="chart-card">
+        <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div><div class="chart-title">Presupuesto por Secretaria</div><div class="chart-sub">Distribucion 2026</div></div>
             <span class="chart-badge badge-green">67% ejec.</span>
@@ -150,7 +150,7 @@
 
       <div class="charts-bottom">
 
-        <div class="chart-card">
+        <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div><div class="chart-title">Horas Extra por Mes</div><div class="chart-sub">Ultimos 6 meses</div></div>
             <span class="chart-badge badge-red">-8% vs julio</span>
@@ -158,7 +158,7 @@
           <canvas id="chartHorasExtra" height="200"></canvas>
         </div>
 
-        <div class="chart-card">
+        <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div><div class="chart-title">Reclamos por Tipo</div><div class="chart-sub">Distribucion agosto</div></div>
             <span class="chart-badge badge-blue">318 total</span>
@@ -177,7 +177,7 @@
       </div>
 
       <!-- Rankings table -->
-      <div class="chart-card" style="margin-top:16px">
+      <div class="chart-card card-lift" data-reveal style="margin-top:16px">
         <div class="chart-header">
           <div><div class="chart-title">Ranking de Secretarias</div><div class="chart-sub">Eficiencia y ejecucion presupuestaria</div></div>
         </div>
@@ -319,17 +319,21 @@
     if (window.MuniDB) {
       try {
         var emp = MuniDB.getAll('empleados').filter(function(e){return e.estado==='activo';}).length;
-        document.getElementById('statEmp').textContent = emp.toLocaleString('es-AR');
+        var elEmp = document.getElementById('statEmp');
+        if (elEmp) { if (window.motionKit) window.motionKit.countUp(elEmp, emp, {currency:false}); else elEmp.textContent = emp.toLocaleString('es-AR'); }
         var pag = MuniDB.getAll('pagos').reduce(function(s,p){return s+(p.monto||0);},0);
-        document.getElementById('statGasto').textContent = '$'+Math.round(pag/1000000)+'M';
+        var elGasto = document.getElementById('statGasto');
+        if (elGasto) { if (window.motionKit) window.motionKit.countUp(elGasto, pag/1000000, {prefix:'$', suffix:'M', currency:false}); else elGasto.textContent = '$'+Math.round(pag/1000000)+'M'; }
         var rec = MuniDB.getAll('reclamos');
         var res = rec.filter(function(r){return r.estado==='resuelto';}).length;
-        document.getElementById('statRec').textContent = res;
+        var elRec = document.getElementById('statRec');
+        if (elRec) { if (window.motionKit) window.motionKit.countUp(elRec, res, {currency:false}); else elRec.textContent = res; }
       } catch(e){}
     }
   });
   </script>
   <script src="js/theme-switcher.js"></script>
   <script src='js/bottom-nav.js'></script>
-</body>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

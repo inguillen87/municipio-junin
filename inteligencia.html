@@ -378,25 +378,25 @@
 
       <!-- KPI Strip -->
       <div class="kpi-strip">
-        <div class="kpi-tile blue">
+        <div class="kpi-tile blue card-lift" data-reveal>
           <div class="kpi-tile-icon">👥</div>
           <div class="kpi-tile-val" id="kpiEmpleados">—</div>
           <div class="kpi-tile-label">Empleados activos</div>
           <div class="kpi-tile-delta flat" id="kpiEmpleadosDelta">Cargando...</div>
         </div>
-        <div class="kpi-tile green">
+        <div class="kpi-tile green card-lift" data-reveal>
           <div class="kpi-tile-icon">💰</div>
           <div class="kpi-tile-val" id="kpiGasto">—</div>
           <div class="kpi-tile-label">Gasto mensual</div>
           <div class="kpi-tile-delta flat" id="kpiGastoDelta">Cargando...</div>
         </div>
-        <div class="kpi-tile amber">
+        <div class="kpi-tile amber card-lift" data-reveal>
           <div class="kpi-tile-icon">🏗️</div>
           <div class="kpi-tile-val" id="kpiObras">—</div>
           <div class="kpi-tile-label">Obras activas</div>
           <div class="kpi-tile-delta flat" id="kpiObrasDelta">Cargando...</div>
         </div>
-        <div class="kpi-tile purple">
+        <div class="kpi-tile purple card-lift" data-reveal>
           <div class="kpi-tile-icon">📋</div>
           <div class="kpi-tile-val" id="kpiLic">—</div>
           <div class="kpi-tile-label">Licitaciones</div>
@@ -408,7 +408,7 @@
       <div class="exec-grid" id="execGrid">
 
         <!-- 1. Ejecución salarial -->
-        <div class="intel-card">
+        <div class="intel-card card-lift" data-reveal>
           <div class="intel-card-header">
             <div class="intel-card-title">💼 RRHH × Hacienda</div>
             <span class="intel-badge badge-neutral" id="badge-salary">—</span>
@@ -422,7 +422,7 @@
         </div>
 
         <!-- 2. Obras -->
-        <div class="intel-card">
+        <div class="intel-card card-lift" data-reveal>
           <div class="intel-card-header">
             <div class="intel-card-title">🏗️ Obras Públicas</div>
             <span class="intel-badge badge-neutral" id="badge-obras">—</span>
@@ -434,7 +434,7 @@
         </div>
 
         <!-- 3. Licitaciones -->
-        <div class="intel-card">
+        <div class="intel-card card-lift" data-reveal>
           <div class="intel-card-header">
             <div class="intel-card-title">📋 Licitaciones</div>
             <span class="intel-badge badge-neutral" id="badge-lic">—</span>
@@ -919,5 +919,6 @@
     // Auto-load
     loadDashboard();
   </script>
-</body>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

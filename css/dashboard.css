@@ -3,6 +3,9 @@
    Design System & Component Styles
    ============================================================ */
 
+/* Motion System global (animaciones UX de toda la plataforma) */
+@import url("motion-system.css");
+
 /* ── RESET & BASE ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -2451,7 +2454,7 @@ a, button { -webkit-tap-highlight-color: rgba(59,130,246,0.1); }
   transform: scale(0.96) !important;
 }
 /* ---------------------------------------------------------------
-   MOBILE & PWA � RESPONSIVE OVERHAUL
+   MOBILE & PWA � RESPONSIVE OVERHAUL
    --------------------------------------------------------------- */
 
 /* -- Topbar mobile: hide widgets, keep title + menu + avatar -- */
@@ -2500,7 +2503,7 @@ a, button { -webkit-tap-highlight-color: rgba(59,130,246,0.1); }
   .notif-btn { width: 36px; height: 36px; padding: 0; justify-content: center; }
   #themeToggleBtn { width: 36px; height: 36px; padding: 0; justify-content: center; }
 
-  /* User avatar � smaller on mobile */
+  /* User avatar � smaller on mobile */
   .topbar-avatar,
   [class*="avatar"]:not(.msg-avatar):not(.user-avatar-small) {
     width: 32px !important;

@@ -353,8 +353,8 @@
           ${data[di].map(v => {
             const pct = v / maxVal;
             const alpha = Math.max(0.05, pct * 0.85);
-            const color = pct > 0.7 ? \`rgba(239,68,68,\${alpha})\` : pct > 0.4 ? \`rgba(245,158,11,\${alpha})\` : \`rgba(59,130,246,\${alpha})\`;
-            return \`<div style="background:\${color};border-radius:3px;aspect-ratio:1;cursor:default;transition:transform 0.15s" title="\${v} acciones" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></div>\`;
+            const color = pct > 0.7 ? `rgba(239,68,68,${alpha})` : pct > 0.4 ? `rgba(245,158,11,${alpha})` : `rgba(59,130,246,${alpha})`;
+            return `<div style="background:${color};border-radius:3px;aspect-ratio:1;cursor:default;transition:transform 0.15s" title="${v} acciones" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></div>`;
           }).join('')}
         `).join('')}
       </div>

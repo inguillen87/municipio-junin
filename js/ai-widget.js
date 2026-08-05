@@ -5,6 +5,8 @@
 (function() {
   'use strict';
 
+  var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // ── KNOWLEDGE BASE ────────────────────────────────────────
   const KB = [
     // Dashboard / General
@@ -70,10 +72,27 @@
 
   // ── FORMAT MARKDOWN ───────────────────────────────────────
   function fmt(text) {
-    return text
+    let out = String(text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#60a5fa">$1</a>')
-      .replace(/\n/g, '<br>');
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:#60a5fa">$1</a>');
+
+    // Renderear listas "-" y "•" como <ul><li>
+    const lines = out.split('\n');
+    out = '';
+    let inList = false;
+    lines.forEach(function(line) {
+      const m = line.match(/^\s*(?:-|•)\s+(.*)$/);
+      if (m) {
+        if (!inList) { out += '<ul style="margin:6px 0 2px;padding-left:16px">'; inList = true; }
+        out += '<li style="margin:3px 0;line-height:1.5">' + m[1] + '</li>';
+      } else {
+        if (inList) { out += '</ul>'; inList = false; }
+        out += line + '\n';
+      }
+    });
+    if (inList) out += '</ul>';
+    return out.replace(/\n/g, '<br>');
   }
 
   // ── INJECT CSS ────────────────────────────────────────────
@@ -194,6 +213,24 @@
     }
     .aw-quick-btn:hover { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); color: #93c5fd; }
 
+    .aw-feedback {
+      display: flex; gap: 4px; margin: -2px 0 4px;
+      padding-left: 36px; opacity: 0; transition: opacity 0.2s;
+    }
+    .aw-msg.bot:hover .aw-feedback, .aw-feedback.show { opacity: 1; }
+    .aw-fb-btn {
+      background: none; border: 1px solid transparent; color: rgba(148,163,184,0.5);
+      font-size: 12px; padding: 2px 6px; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+    }
+    .aw-fb-btn:hover { color: #f0f4ff; border-color: rgba(255,255,255,0.12); }
+    .aw-fb-btn.sel { color: #60a5fa; border-color: rgba(59,130,246,0.35); background: rgba(59,130,246,0.1); }
+    .aw-clear {
+      background: none; border: none; color: rgba(148,163,184,0.5);
+      font-size: 15px; cursor: pointer; padding: 3px; transition: color 0.15s; margin-left: auto;
+    }
+    .aw-clear:hover { color: #fbbf24; }
+    .aw-close { margin-left: 0; }
+
     .aw-input-row {
       display: flex; align-items: center; gap: 8px;
       padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.07);
@@ -239,6 +276,7 @@
         <div class="aw-title">Asistente IA Municipal</div>
         <div class="aw-sub aw-online"><span class="aw-dot"></span> GovTech Platform · En línea</div>
       </div>
+      <button class="aw-clear" id="aw-clear-btn" title="Limpiar conversación">🗑️</button>
       <button class="aw-close" id="aw-close-btn">✕</button>
     </div>
     <div class="aw-messages" id="aw-messages"></div>
@@ -266,16 +304,66 @@
   // ── MESSAGES ──────────────────────────────────────────────
   const messagesEl = panel.querySelector('#aw-messages');
 
-  function addMessage(text, isUser = false) {
+  // Persistencia de conversación
+  const STORE_KEY = 'mjunin_ai_chat_v1';
+  let store = [];
+  function loadStore() { try { const d = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); store = Array.isArray(d) ? d : []; } catch (e) { store = []; } }
+  function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store.slice(-40))); } catch (e) {} }
+
+  function escapeHtml(t) {
+    return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function addMessage(text, isUser, opts) {
+    opts = opts || {};
     const msg = document.createElement('div');
-    msg.className = `aw-msg ${isUser ? 'user' : 'bot'}`;
-    msg.innerHTML = `
-      <div class="aw-msg-icon">${isUser ? '👤' : '🤖'}</div>
-      <div class="aw-bubble">${isUser ? text : fmt(text)}</div>
-    `;
+    msg.className = 'aw-msg ' + (isUser ? 'user' : 'bot');
+    msg.innerHTML =
+      '<div class="aw-msg-icon">' + (isUser ? '👤' : '🤖') + '</div>' +
+      '<div class="aw-bubble">' + (isUser ? escapeHtml(text) : (opts.typing && !reducedMotion ? '' : fmt(text))) + '</div>';
+    if (!isUser) {
+      const fb = document.createElement('div');
+      fb.className = 'aw-feedback';
+      fb.innerHTML = '<button class="aw-fb-btn" data-v="up" title="Útil">👍</button><button class="aw-fb-btn" data-v="down" title="No útil">👎</button>';
+      fb.addEventListener('click', (e) => {
+        const b = e.target.closest('.aw-fb-btn');
+        if (!b) return;
+        fb.querySelectorAll('.aw-fb-btn').forEach(x => x.classList.remove('sel'));
+        b.classList.add('sel');
+        try { localStorage.setItem('mjunin_ai_feedback', String(Date.now()).slice(0,10)); } catch (err) {}
+      });
+      msg.appendChild(fb);
+    }
     messagesEl.appendChild(msg);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+    if (opts.typing && !reducedMotion) {
+      typewriter(msg.querySelector('.aw-bubble'), text);
+    }
+    store.push({ role: isUser ? 'user' : 'bot', text: String(text) });
+    saveStore();
     return msg;
+  }
+
+  // Efecto máquina de escribir (typewriter)
+  function typewriter(el, raw) {
+    const full = fmt(raw);
+    if (!el || !full) return;
+    let i = 0, opening = false, openedAt = 0;
+    el.textContent = '';
+    function tick() {
+      i += 1 + Math.floor(Math.random() * 2);
+      if (i > full.length) { el.innerHTML = full; messagesEl.scrollTop = messagesEl.scrollHeight; return; }
+      const chunk = full.slice(0, i);
+      const left = chunk.match(/<[^>]*$/g);
+      if (left && !/<[^>]*>/.test(left[0])) {
+        const close = full.indexOf('>', i);
+        if (close !== -1) i = close + 1;
+      }
+      el.innerHTML = full.slice(0, i);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   }
 
   function showTyping() {
@@ -293,6 +381,31 @@
     messagesEl.appendChild(msg);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return msg;
+  }
+
+  // Sugerencias contextuales según la consulta
+  const SUGGEST = [
+    { match: ['presupuesto','partida','ejecutado'], chips: ['Riesgo de partidas','Ejecutado por secretaría','Disponible restante'] },
+    { match: ['empleado','personal','rrhh','sueldo','nomina'], chips: ['Costo total de personal','Presentismo del mes','Licencias activas'] },
+    { match: ['reclamo','vecino','queja','311'], chips: ['Zona con más reclamos','Tipo más frecuente','SLA promedio'] },
+    { match: ['obra','infraestructura','paviment'], chips: ['Presupuesto total obras','Avance promedio','Obra más atrasada'] },
+    { match: ['contrato','proveedor','licitacion'], chips: ['Próximos vencimientos','Posibles ahorros','Total de contratos'] },
+    { match: ['hacienda','gasto','ingreso','financiero'], chips: ['Balance del mes','Gasto por secretaría','Deuda flotante'] },
+  ];
+  function renderSuggestions(text) {
+    const t = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let chips = QUICK.map(q => q.label);
+    for (const s of SUGGEST) {
+      if (s.match.some(m => t.includes(m))) { chips = s.chips; break; }
+    }
+    quickEl.innerHTML = '';
+    chips.forEach(label => {
+      const btn = document.createElement('button');
+      btn.className = 'aw-quick-btn';
+      btn.textContent = label;
+      btn.onclick = () => sendMessage(label);
+      quickEl.appendChild(btn);
+    });
   }
 
   async function sendMessage(text) {
@@ -313,7 +426,8 @@
     setTimeout(() => {
       typing.remove();
       const response = findResponse(userText);
-      addMessage(response, false);
+      addMessage(response, false, { typing: true });
+      renderSuggestions(userText);
     }, delay);
   }
 
@@ -325,10 +439,23 @@
     panel.classList.add('show');
     toggle.classList.add('open');
     panel.querySelector('#ai-widget-icon') && (document.getElementById('ai-widget-icon').textContent = '✕');
-    // Saludo inicial
+    // Restaurar conversación previa o saludar
     if (messagesEl.children.length === 0) {
-      const page = document.title.split('—')[0].trim() || 'el sistema';
-      setTimeout(() => addMessage(`¡Hola! 👋 Estás en **${page}**. Soy tu Asistente IA Municipal.\n\nPodés preguntarme sobre presupuesto, contratos, empleados, reclamos o cualquier módulo. También podés hablar usando el 🎙️ micrófono. ¿En qué te ayudo?`), 300);
+      const prev = loadStore();
+      if (prev.length) {
+        prev.forEach(m => {
+          const msg = document.createElement('div');
+          msg.className = 'aw-msg ' + (m.role === 'user' ? 'user' : 'bot');
+          msg.innerHTML =
+            '<div class="aw-msg-icon">' + (m.role === 'user' ? '👤' : '🤖') + '</div>' +
+            '<div class="aw-bubble">' + (m.role === 'user' ? escapeHtml(m.text) : fmt(m.text)) + '</div>';
+          messagesEl.appendChild(msg);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      } else {
+        const page = document.title.split('—')[0].trim() || 'el sistema';
+        setTimeout(() => addMessage(`¡Hola! 👋 Estás en **${page}**. Soy tu Asistente IA Municipal.\n\nPodés preguntarme sobre presupuesto, contratos, empleados, reclamos o cualquier módulo. También podés hablar usando el 🎙️ micrófono. ¿En qué te ayudo?`), 300);
+      }
     }
   }
 
@@ -341,6 +468,13 @@
 
   toggle.addEventListener('click', () => isOpen ? closeWidget() : openWidget());
   panel.querySelector('#aw-close-btn').addEventListener('click', closeWidget);
+  panel.querySelector('#aw-clear-btn').addEventListener('click', () => {
+    messagesEl.innerHTML = '';
+    store = [];
+    saveStore();
+    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+    if (typeof showToast !== 'undefined') showToast('🧹 Conversación limpiada', 'info');
+  });
 
   // ── SEND ──────────────────────────────────────────────────
   panel.querySelector('#aw-send').addEventListener('click', () => sendMessage());

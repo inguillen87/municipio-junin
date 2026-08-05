@@ -198,6 +198,24 @@
       background: #0d1526 !important;
     }
 
+    /* Marker drop-in animation */
+    @keyframes markerDrop {
+      from { opacity: 0; transform: translateY(-18px) scale(0.4); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .map-marker { animation: markerDrop 0.45s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+    /* Mini toast para el mapa */
+    #mapToast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px);
+      background: rgba(13,21,38,0.96); color: #f0f4ff; padding: 12px 20px;
+      border: 1px solid rgba(59,130,246,0.35); border-radius: 12px; font-size: 13px;
+      font-weight: 600; z-index: 2000; opacity: 0; pointer-events: none;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    #mapToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
     /* Mobile Adaptations */
     @media (max-width: 768px) {
       .map-container {
@@ -280,15 +298,15 @@
         <div class="stats-container">
           <div class="stat-card">
             <span>Obras en Ejecución</span>
-            <span class="stat-value" style="color:#f59e0b">6</span>
+            <span class="stat-value" data-count="6" data-currency="false" style="color:#f59e0b">6</span>
           </div>
           <div class="stat-card">
             <span>Reclamos Pendientes</span>
-            <span class="stat-value" style="color:#ef4444">5</span>
+            <span class="stat-value" data-count="5" data-currency="false" style="color:#ef4444">5</span>
           </div>
           <div class="stat-card">
             <span>SLA Cumplimiento 311</span>
-            <span class="stat-value" style="color:#10b981">94%</span>
+            <span class="stat-value" data-count="94" data-suffix="%" data-currency="false" style="color:#10b981">94%</span>
           </div>
         </div>
       </div>
@@ -343,8 +361,8 @@
 
     function createCustomMarker(color, label) {
       return L.divIcon({
-        className: '',
-        html: `<div style="width:28px;height:28px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 0 10px ${color};display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);color:white;font-size:10px;font-weight:900">${label}</span></div>`,
+        className: 'map-marker',
+        html: `<div style="width:28px;height:28px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 0 12px ${color};display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);color:white;font-size:10px;font-weight:900">${label}</span></div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 28]
       });
@@ -414,6 +432,13 @@
       else map.removeLayer(layerGroups[name]);
     }
 
+    function showMapToast(msg) {
+      let t = document.getElementById('mapToast');
+      if (!t) { t = document.createElement('div'); t.id = 'mapToast'; document.body.appendChild(t); }
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
     function searchLocation(query) {
       if (!query) return;
       fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', Junín, Mendoza, Argentina')}&format=json&limit=1`)
@@ -422,12 +447,13 @@
           if (data && data.length > 0) {
             map.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 17);
           } else {
-            alert("No se encontró la ubicación en Junín.");
+            showMapToast("No se encontró la ubicación en Junín.");
           }
         });
     }
 
     document.addEventListener('DOMContentLoaded', initMap);
   </script>
-</body>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

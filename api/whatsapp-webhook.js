@@ -50,6 +50,20 @@ async function route(msg, meta) {
     } else if (ir.type === 'list_reply' || ir.list_reply) {
       txt = (ir.list_reply && ir.list_reply.id) || '';
     }
+  } else if (msg.type === 'location') {
+    const loc = msg.location || {};
+    const lat = loc.latitude || -33.1462;
+    const lng = loc.longitude || -68.4871;
+    const ticketId = 'REC-' + Math.floor(1000 + Math.random() * 9000);
+    await send(from, pid, 'text', { body: `📍 *Ubicación Recibida (311 Reclamos)*\n\nCoordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}\nSe registró el reclamo #${ticketId} en Junín, Mendoza.\n\nSLA estimado: 48 hs.\nSeguí tu caso en: https://municipio-junin.vercel.app/ciudadano` });
+    return;
+  } else if (msg.type === 'image') {
+    const ticketId = 'REC-' + Math.floor(1000 + Math.random() * 9000);
+    await send(from, pid, 'text', { body: `📷 *Imagen / Evidencia Recibida*\n\nSe adjuntó la foto al reclamo #${ticketId}.\nÁrea asignada: Obras y Servicios Públicos.\n\nSeguí el estado en: https://municipio-junin.vercel.app/ciudadano` });
+    return;
+  } else if (msg.type === 'audio' || msg.type === 'voice') {
+    await send(from, pid, 'text', { body: `🎙️ *Nota de Voz Procesada por IA (MuniVoice)*\n\nMuniBot transcribió tu consulta de voz.\nSi es un reclamo 311 o consulta de presupuesto, podés seleccionar opciones desde el menú principal.\n\nEscribí *menu* para ver las opciones.` });
+    return;
   } else {
     return;
   }

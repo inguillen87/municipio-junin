@@ -4,6 +4,7 @@
     "postinstall": "prisma generate"
   },
   "devDependencies": {
+    "playwright": "^1.62.1",
     "prisma": "^5.22.0"
   },
   "dependencies": {

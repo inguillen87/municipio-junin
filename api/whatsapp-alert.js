@@ -1,9 +1,6 @@
 // api/whatsapp-alert.js
 // Envía alertas proactivas por WhatsApp usando Meta Cloud API
-// Se usa desde cron-daily-report.js cuando hay alertas críticas
-//
-// POST /api/whatsapp-alert
-// Body: { message, severity, module, to? }
+import { sendMuniControlAlertaTemplate } from './lib/whatsapp-templates.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,20 +11,13 @@ export default async function handler(req, res) {
 
   const token   = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_ID;
-  const alertTo = process.env.WHATSAPP_ALERT_TO; // número del intendente/admin
+  const alertTo = process.env.WHATSAPP_ALERT_TO;
 
   if (!token || !phoneId) {
     return res.status(200).json({
       success: false,
       status: 'not_configured',
-      message: 'Configurá WHATSAPP_ACCESS_TOKEN y WHATSAPP_PHONE_ID en Vercel → Settings → Environment Variables',
-      steps: [
-        '1. Ir a developers.facebook.com',
-        '2. Crear app → Agregar producto WhatsApp',
-        '3. Copiar el Access Token temporal o crear System User',
-        '4. Copiar el Phone Number ID',
-        '5. Agregar como env vars en Vercel',
-      ],
+      message: 'Configurá WHATSAPP_ACCESS_TOKEN y WHATSAPP_PHONE_ID en Vercel'
     });
   }
 
@@ -35,17 +25,13 @@ export default async function handler(req, res) {
   const recipient = to || alertTo;
 
   if (!recipient) {
-    return res.status(400).json({
-      success: false,
-      error: 'No hay destinatario configurado. Agregá WHATSAPP_ALERT_TO con el número del intendente (formato: 5492614XXXXXX)',
-    });
+    return res.status(400).json({ success: false, error: 'No hay destinatario configurado.' });
   }
 
   if (!message) {
     return res.status(400).json({ success: false, error: 'message es requerido' });
   }
 
-  // Build alert message
   const icons = { critical: '🚨', warning: '⚠️', info: 'ℹ️' };
   const icon = icons[severity] || icons.info;
 
@@ -59,43 +45,53 @@ export default async function handler(req, res) {
     `📱 _Ver dashboard:_\n` +
     `https://municipio-junin.vercel.app/inteligencia.html?auth=governante`;
 
-  try {
-    const resp = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: recipient,
-        type: 'text',
-        text: { preview_url: true, body: alertText },
-      }),
-    });
+  // Dual format numbers
+  let numsToTry = [recipient];
+  if (recipient.startsWith('549')) numsToTry.push('54' + recipient.substring(3));
+  else if (recipient.startsWith('54') && !recipient.startsWith('549')) numsToTry.push('549' + recipient.substring(2));
 
-    const result = await resp.json();
+  for (const num of numsToTry) {
+    try {
+      const resp = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: num,
+          type: 'text',
+          text: { preview_url: true, body: alertText },
+        }),
+      });
 
-    if (resp.ok && result.messages) {
-      return res.status(200).json({
-        success: true,
-        messageId: result.messages[0]?.id,
-        to: recipient,
-        severity,
-        module,
-      });
-    } else {
-      return res.status(200).json({
-        success: false,
-        error: result.error?.message || 'Error desconocido de Meta',
-        errorCode: result.error?.code,
-        hint: result.error?.code === 131030
-          ? 'El número no tiene sesión activa de WhatsApp. El usuario debe enviar un mensaje primero.'
-          : null,
-      });
-    }
-  } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+      const result = await resp.json();
+
+      if (resp.ok && result.messages) {
+        return res.status(200).json({
+          success: true,
+          messageId: result.messages[0]?.id,
+          to: num,
+          severity,
+          module,
+        });
+      }
+    } catch (e) {}
   }
+
+  // Fallback to approved template municontrol_alerta
+  const tmplRes = await sendMuniControlAlertaTemplate({
+    to: recipient,
+    nombre: 'Gobernante',
+    reporte: `${module.toUpperCase()} - ${message.substring(0, 40)}`,
+    link: 'https://municipio-junin.vercel.app/inteligencia.html?auth=governante'
+  });
+
+  return res.status(200).json({
+    success: tmplRes.success,
+    templateFallback: true,
+    data: tmplRes
+  });
 }

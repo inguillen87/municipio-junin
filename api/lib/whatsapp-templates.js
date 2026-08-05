@@ -51,7 +51,48 @@ export async function sendMetaTemplate({ to, templateName, languageCode = 'es', 
 }
 
 /**
- * 1. Confirmación de Reclamo 311
+ * 1. Plantilla Oficial: municontrol_alerta
+ */
+export async function sendMuniControlAlertaTemplate({ to, nombre = 'Gobernante', reporte = 'Hacienda y Finanzas', link = 'https://municipio-junin.vercel.app/inteligencia.html?auth=governante' }) {
+  return await sendMetaTemplate({
+    to,
+    templateName: 'municontrol_alerta',
+    phoneId: process.env.WHATSAPP_PHONE_ID,
+    components: [
+      {
+        type: 'body',
+        parameters: [
+          { type: 'text', text: nombre },
+          { type: 'text', text: reporte },
+          { type: 'text', text: link }
+        ]
+      }
+    ]
+  });
+}
+
+/**
+ * 2. Plantilla Oficial: municontrol_menu
+ */
+export async function sendMuniControlMenuTemplate({ to, nombre = 'Gobernante', opcion = '1 (Gobernantes) o 2 (Vecinos)' }) {
+  return await sendMetaTemplate({
+    to,
+    templateName: 'municontrol_menu',
+    phoneId: process.env.WHATSAPP_PHONE_ID,
+    components: [
+      {
+        type: 'body',
+        parameters: [
+          { type: 'text', text: nombre },
+          { type: 'text', text: opcion }
+        ]
+      }
+    ]
+  });
+}
+
+/**
+ * 3. Confirmación de Reclamo 311
  */
 export async function sendReclamoConfirmacionTemplate({ to, nombre, ticketId, categoria, estado, link }) {
   return await sendMetaTemplate({
@@ -73,7 +114,7 @@ export async function sendReclamoConfirmacionTemplate({ to, nombre, ticketId, ca
 }
 
 /**
- * 2. Notificación de Reclamo Resuelto
+ * 4. Notificación de Reclamo Resuelto
  */
 export async function sendReclamoResolucionTemplate({ to, nombre, ticketId, categoria, solucion }) {
   return await sendMetaTemplate({
@@ -94,7 +135,7 @@ export async function sendReclamoResolucionTemplate({ to, nombre, ticketId, cate
 }
 
 /**
- * 3. Confirmación de Turno Municipal
+ * 5. Confirmación de Turno Municipal
  */
 export async function sendTurnoConfirmacionTemplate({ to, nombre, tramite, fecha, hora, lugar, qrCode }) {
   return await sendMetaTemplate({
@@ -116,7 +157,7 @@ export async function sendTurnoConfirmacionTemplate({ to, nombre, tramite, fecha
 }
 
 /**
- * 4. Alerta Ejecutiva para Gobernantes
+ * 6. Alerta Ejecutiva para Gobernantes
  */
 export async function sendAlertaEjecutivaTemplate({ to, area, indicador, nivel, porcentaje, link }) {
   return await sendMetaTemplate({
@@ -131,7 +172,7 @@ export async function sendAlertaEjecutivaTemplate({ to, area, indicador, nivel, 
           { type: 'text', text: indicador || 'Ejecución Presupuestaria' },
           { type: 'text', text: nivel || 'ALERTA CRÍTICA' },
           { type: 'text', text: String(porcentaje || '118') },
-          { type: 'text', text: link || 'https://municipio-junin.vercel.app/inteligencia.html' }
+          { type: 'text', text: link || 'https://municipio-junin.vercel.app/inteligencia.html?auth=governante' }
         ]
       }
     ]

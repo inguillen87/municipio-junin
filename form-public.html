@@ -64,36 +64,11 @@
           Municipalidad de Junín — Mendoza
         </div>
         <h1 class="form-title" id="displayTitle">Formulario Municipal</h1>
-        <p class="form-subtitle">Completá los campos requeridos para registrar tu trámite o solicitud digital.</p>
+        <p class="form-subtitle" id="displaySubtitle">Completá los campos requeridos para registrar tu trámite o solicitud digital.</p>
       </div>
 
       <form id="publicForm" onsubmit="submitForm(event)">
         <div id="fieldsContainer">
-          <!-- Default fields for demo -->
-          <div class="form-group">
-            <label>Nombre y Apellido <span style="color:#ef4444">*</span></label>
-            <input type="text" class="form-input" placeholder="Ej: María González" required>
-          </div>
-          <div class="form-group">
-            <label>DNI / CUIT <span style="color:#ef4444">*</span></label>
-            <input type="text" class="form-input" placeholder="Ej: 34.582.190" required>
-          </div>
-          <div class="form-group">
-            <label>Correo Electrónico <span style="color:#ef4444">*</span></label>
-            <input type="email" class="form-input" placeholder="usuario@gmail.com" required>
-          </div>
-          <div class="form-group">
-            <label>Teléfono de Contacto <span style="color:#ef4444">*</span></label>
-            <input type="tel" class="form-input" placeholder="236 4XX-XXXX" required>
-          </div>
-          <div class="form-group">
-            <label>Detalle o Motivo de la Solicitud <span style="color:#ef4444">*</span></label>
-            <textarea class="form-input" placeholder="Describí los detalles de tu trámite o consulta..." required></textarea>
-          </div>
-          <div class="form-group">
-            <label>Adjuntar Documentación (Opcional)</label>
-            <input type="file" class="form-input" style="padding:10px">
-          </div>
         </div>
 
         <button type="submit" class="btn-submit" id="submitBtn">
@@ -106,32 +81,106 @@
     <!-- SUCCESS SCREEN -->
     <div class="success-card" id="successCard">
       <div class="success-icon">✓</div>
-      <h2 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;margin-bottom:8px">Formulario Recibido</h2>
-      <p style="color:var(--muted);font-size:14px">Tu solicitud ha sido registrada exitosamente en el sistema de la Municipalidad de Junín.</p>
+      <h2 style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;margin-bottom:8px">Formulario Recibido Exitosamente</h2>
+      <p style="color:var(--muted);font-size:14px">Tu solicitud ha sido ingresada en el sistema de la Municipalidad de Junín.</p>
       
       <div class="ticket-badge" id="ticketId">#FORM-2026-8492</div>
       
-      <p style="color:var(--muted);font-size:12px;margin-top:24px">Te enviamos una copia a tu correo electrónico.<br>Podés cerrar esta ventana.</p>
+      <p style="color:var(--muted);font-size:12px;margin-top:24px">Te enviamos un comprobante de recepción por mail.<br>Podés cerrar esta ventana.</p>
     </div>
 
   </div>
 
   <script>
-    const FORMS_DATA = {
-      'f001': { title: 'Reclamo Vecinal 2026', subtitle: 'Reporte directo de baches, luminarias, arbolado y servicios urbanos.' },
-      'f002': { title: 'Encuesta de Satisfacción Ciudadana', subtitle: 'Tu opinión nos ayuda a mejorar los servicios municipales de Junín.' },
-      'f003': { title: 'Alta de Proveedores Q3', subtitle: 'Registro e inscripción de proveedores para compras y contrataciones.' },
+    const DEFAULT_FORMS = {
+      'f001': {
+        title: 'Reclamo Vecinal 2026',
+        subtitle: 'Reporte directo de baches, luminarias, arbolado y servicios urbanos.',
+        fields: [
+          { label: 'Nombre y Apellido', type: 'text', placeholder: 'Ej: María González', required: true },
+          { label: 'DNI / CUIT', type: 'text', placeholder: 'Ej: 34.582.190', required: true },
+          { label: 'Correo Electrónico', type: 'email', placeholder: 'usuario@gmail.com', required: true },
+          { label: 'Teléfono de Contacto', type: 'tel', placeholder: '236 4XX-XXXX', required: true },
+          { label: 'Detalle o Motivo de la Solicitud', type: 'textarea', placeholder: 'Describí los detalles de tu trámite o consulta...', required: true },
+          { label: 'Foto o Comprobante Adjunto', type: 'file', placeholder: '', required: false }
+        ]
+      },
+      'f002': {
+        title: 'Encuesta de Satisfacción Ciudadana',
+        subtitle: 'Tu opinión nos ayuda a mejorar los servicios municipales de Junín.',
+        fields: [
+          { label: 'Calificación General', type: 'rating', placeholder: '', required: true },
+          { label: 'Secretaría o Sector Evaludo', type: 'text', placeholder: 'Ej: Obras Públicas / Licencias', required: true },
+          { label: 'Comentarios sobre la Atención', type: 'textarea', placeholder: '¿Cómo fue tu experiencia?', required: true }
+        ]
+      },
+      'f003': {
+        title: 'Alta de Proveedores Municipal',
+        subtitle: 'Registro e inscripción de proveedores para compras y licitaciones.',
+        fields: [
+          { label: 'Razón Social / Firma', type: 'text', placeholder: 'Ej: Distribuidora Junín SRL', required: true },
+          { label: 'CUIT', type: 'text', placeholder: '30-71938210-9', required: true },
+          { label: 'Rubro / Especialidad', type: 'text', placeholder: 'Ej: Insumos de Ferretería', required: true },
+          { label: 'Email de Contacto', type: 'email', placeholder: 'ventas@proveedor.com', required: true },
+          { label: 'CBU Bancario', type: 'text', placeholder: '22 dígitos CBU', required: true }
+        ]
+      }
     };
 
     document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id') || 'f001';
-      const info = FORMS_DATA[id];
-      if (info) {
-        document.getElementById('displayTitle').textContent = info.title;
-        document.title = info.title + ' | MuniControl';
-      }
+
+      // Read custom form from localStorage if created by admin
+      let savedForms = [];
+      try { savedForms = JSON.parse(localStorage.getItem('mjunin_forms') || '[]'); } catch(e){}
+      
+      const customForm = savedForms.find(f => f.id === id);
+      const formData = customForm ? { title: customForm.name, subtitle: 'Formulario oficial de la Municipalidad de Junín.', fields: customForm.fields } : (DEFAULT_FORMS[id] || DEFAULT_FORMS['f001']);
+
+      document.getElementById('displayTitle').textContent = formData.title;
+      if (formData.subtitle) document.getElementById('displaySubtitle').textContent = formData.subtitle;
+      document.title = formData.title + ' | MuniControl';
+
+      renderPublicFields(formData.fields || DEFAULT_FORMS['f001'].fields);
     });
+
+    function renderPublicFields(fields) {
+      const container = document.getElementById('fieldsContainer');
+      container.innerHTML = fields.map(f => {
+        const reqSpan = f.required ? ' <span style="color:#ef4444">*</span>' : '';
+        if (f.type === 'textarea') {
+          return `
+            <div class="form-group">
+              <label>${f.label}${reqSpan}</label>
+              <textarea class="form-input" placeholder="${f.placeholder||''}" ${f.required?'required':''}></textarea>
+            </div>
+          `;
+        }
+        if (f.type === 'file') {
+          return `
+            <div class="form-group">
+              <label>${f.label}${reqSpan}</label>
+              <input type="file" class="form-input" style="padding:10px" ${f.required?'required':''}>
+            </div>
+          `;
+        }
+        if (f.type === 'rating') {
+          return `
+            <div class="form-group">
+              <label>${f.label}${reqSpan}</label>
+              <div style="font-size:32px;display:flex;gap:8px;cursor:pointer">⭐⭐⭐⭐⭐</div>
+            </div>
+          `;
+        }
+        return `
+          <div class="form-group">
+            <label>${f.label}${reqSpan}</label>
+            <input type="${f.type==='tel'?'tel':f.type==='email'?'email':f.type==='number'?'number':f.type==='date'?'date':'text'}" class="form-input" placeholder="${f.placeholder||''}" ${f.required?'required':''}>
+          </div>
+        `;
+      }).join('');
+    }
 
     function submitForm(e) {
       e.preventDefault();

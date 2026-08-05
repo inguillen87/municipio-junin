@@ -10,12 +10,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
   <style>
-    .builder-grid { display: grid; grid-template-columns: 260px 1fr 260px; gap: 16px; min-height: 60vh; }
-    @media (max-width: 900px) { .builder-grid { grid-template-columns: 1fr; } }
+    .builder-grid { display: grid; grid-template-columns: 260px 1fr 280px; gap: 16px; min-height: 60vh; }
+    @media (max-width: 1024px) { .builder-grid { grid-template-columns: 1fr; } }
 
-    /* QR Modal overlay */
+    /* Modals */
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
       z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-card {
@@ -27,6 +27,12 @@
       position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1); color: #8ea3c3; width: 32px; height: 32px;
       border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Phone preview wrapper */
+    .phone-wrapper {
+      width: 360px; max-width: 100%; height: 600px; background: #060b18; border: 8px solid #1e293b;
+      border-radius: 36px; padding: 20px; overflow-y: auto; text-align: left; margin: 0 auto; box-shadow: 0 20px 40px rgba(0,0,0,0.8);
     }
   </style>
 </head>
@@ -53,10 +59,10 @@
       <!-- FORM TEMPLATES -->
       <div class="card" style="margin-bottom:20px">
         <div style="padding:16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between">
-          <h3 style="margin:0;font-size:14px;font-weight:800">📜 Plantillas municipales</h3>
-          <span style="font-size:11px;color:var(--text-muted)">Listo para usar en minutos</span>
+          <h3 style="margin:0;font-size:14px;font-weight:800">📜 Plantillas municipales prediseñadas</h3>
+          <span style="font-size:11px;color:var(--text-muted)">Seleccioná para cargar en 1 segundo</span>
         </div>
-        <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px" id="templatesGrid">
+        <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px" id="templatesGrid">
         </div>
       </div>
 
@@ -90,11 +96,11 @@
         <!-- RIGHT: Properties Panel -->
         <div class="card">
           <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06)">
-            <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">Propiedades</div>
+            <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">Propiedades del Campo</div>
           </div>
-          <div style="padding:12px" id="propsPanel">
+          <div style="padding:16px" id="propsPanel">
             <div style="text-align:center;padding:40px 16px;color:rgba(148,163,184,0.4);font-size:13px">
-              Seleccioná un campo para editarlo
+              Seleccioná un campo del centro para editar su etiqueta y propiedades.
             </div>
           </div>
         </div>
@@ -103,7 +109,7 @@
       <!-- PUBLISHED FORMS -->
       <div class="card" style="margin-top:20px">
         <div style="padding:16px;border-bottom:1px solid rgba(255,255,255,0.06)">
-          <h3 style="margin:0;font-size:14px;font-weight:800">📱 Formularios publicados</h3>
+          <h3 style="margin:0;font-size:14px;font-weight:800">📱 Formularios activos y publicados</h3>
         </div>
         <div style="padding:16px;overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -127,7 +133,7 @@
   <!-- QR MODAL -->
   <div class="modal-overlay" id="qrModal">
     <div class="modal-card">
-      <button class="modal-close" onclick="closeQRModal()">✕</button>
+      <button class="modal-close" onclick="closeModal('qrModal')">✕</button>
       <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;margin-bottom:4px" id="qrModalTitle">Formulario Municipal</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px">Escaneá este código QR con la cámara de tu celular para ingresar.</div>
       
@@ -140,6 +146,17 @@
       <div style="display:flex;gap:10px;justify-content:center">
         <button onclick="window.print()" style="flex:1;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:white;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px">🖨️ Imprimir Afiche</button>
         <button onclick="openFormUrl()" style="flex:1;padding:12px;background:#3b82f6;color:white;border:none;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px">🚀 Abrir Formulario</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW MODAL -->
+  <div class="modal-overlay" id="previewModal">
+    <div class="modal-card" style="max-width:500px;padding:24px">
+      <button class="modal-close" onclick="closeModal('previewModal')">✕</button>
+      <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:900;margin-bottom:16px;text-align:center">📱 Vista Previa Celular</div>
+      
+      <div class="phone-wrapper" id="previewContent">
       </div>
     </div>
   </div>
@@ -164,22 +181,84 @@
     ];
 
     const TEMPLATES = [
-      { name:'Reclamo vecinal', icon:'🏘️', fields:['nombre','email','tel','direccion_reclamo','tipo_reclamo','descripcion','foto'] },
-      { name:'Solicitud de habilitación', icon:'🏪', fields:['nombre_comercio','cuit','direccion','rubro','superficie','titular'] },
-      { name:'Subsidio social', icon:'🤝', fields:['nombre','dni','fecha_nacimiento','domicilio','ingreso_familiar','cantidad_hijos','descripcion'] },
-      { name:'Permiso de obra', icon:'🏗️', fields:['propietario','direccion_obra','tipo_obra','profesional','presupuesto','fecha_inicio'] },
-      { name:'Encuesta de satisfacción', icon:'⭐', fields:['calificacion','sector','comentarios','sugerencias'] },
-      { name:'Alta de proveedor', icon:'🏢', fields:['razon_social','cuit','rubro','contacto','email','telefono','banco','cbu'] }
+      {
+        name:'Reclamo vecinal 311', icon:'🏘️',
+        fields: [
+          { type:'text', label:'Nombre y Apellido', placeholder:'Ej: Juan Pérez', required:true },
+          { type:'text', label:'DNI', placeholder:'Ej: 32.190.482', required:true },
+          { type:'tel', label:'Teléfono WhatsApp', placeholder:'236 4XX-XXXX', required:true },
+          { type:'text', label:'Dirección del Reclamo', placeholder:'Calle y altura', required:true },
+          { type:'select', label:'Tipo de Reclamo', placeholder:'Bache / Luminaria / Agua', required:true },
+          { type:'textarea', label:'Descripción de la situación', placeholder:'Explicá los detalles...', required:true },
+          { type:'file', label:'Adjuntar Foto de Evidencia', placeholder:'', required:false }
+        ]
+      },
+      {
+        name:'Solicitud de habilitación', icon:'🏪',
+        fields: [
+          { type:'text', label:'Nombre Comercial / Fantasía', placeholder:'Ej: Almacén San Martín', required:true },
+          { type:'text', label:'CUIT Titular', placeholder:'20-38492019-8', required:true },
+          { type:'text', label:'Dirección del Local', placeholder:'Av. Rivadavia 400', required:true },
+          { type:'text', label:'Rubro Principal', placeholder:'Comercio Minorista / Gastronomía', required:true },
+          { type:'number', label:'Superficie en m²', placeholder:'Ej: 80', required:true },
+          { type:'file', label:'Plano de Propiedad o Contrato de Alquiler', placeholder:'', required:true }
+        ]
+      },
+      {
+        name:'Solicitud de subsidio social', icon:'🤝',
+        fields: [
+          { type:'text', label:'Nombre Completo del Solicitante', placeholder:'Ej: Ana Rosa Martínez', required:true },
+          { type:'text', label:'DNI', placeholder:'Ej: 28.192.839', required:true },
+          { type:'date', label:'Fecha de Nacimiento', placeholder:'', required:true },
+          { type:'text', label:'Domicilio y Barrio', placeholder:'Barrio San Cayetano', required:true },
+          { type:'number', label:'Cantidad de Integrantes de la Familia', placeholder:'Ej: 4', required:true },
+          { type:'textarea', label:'Motivo de la Solicitud Social', placeholder:'Detallá la situación económica/social...', required:true }
+        ]
+      },
+      {
+        name:'Permiso de obra privada', icon:'🏗️',
+        fields: [
+          { type:'text', label:'Nombre del Propietario', placeholder:'Ej: Carlos Gómez', required:true },
+          { type:'text', label:'Ubicación de la Obra', placeholder:'Barrio Jardín Mza 14 Lote 3', required:true },
+          { type:'select', label:'Tipo de Obra', placeholder:'Construcción Nueva / Ampliación', required:true },
+          { type:'text', label:'Profesional a Cargo (Matrícula)', placeholder:'Arq. Juan López (Mat. 4819)', required:true },
+          { type:'number', label:'Presupuesto Estimado ($)', placeholder:'Ej: 15000000', required:true }
+        ]
+      },
+      {
+        name:'Encuesta de satisfacción', icon:'⭐',
+        fields: [
+          { type:'rating', label:'Calificación del Servicio Municipal', placeholder:'', required:true },
+          { type:'text', label:'Secretaría / Área Atendida', placeholder:'Ej: Licencias de Conducir', required:true },
+          { type:'textarea', label:'Comentarios o Sugerencias', placeholder:'¿En qué podemos mejorar?', required:true }
+        ]
+      },
+      {
+        name:'Alta de proveedor municipal', icon:'🏢',
+        fields: [
+          { type:'text', label:'Razón Social', placeholder:'Ej: Servicios Industriales SRL', required:true },
+          { type:'text', label:'CUIT', placeholder:'30-71829304-5', required:true },
+          { type:'text', label:'Rubro Comercial', placeholder:'Materiales de Construcción', required:true },
+          { type:'email', label:'Correo Electrónico Comercial', placeholder:'ventas@empresa.com', required:true },
+          { type:'text', label:'CBU Bancario de Cobro', placeholder:'22 dígitos', required:true }
+        ]
+      }
     ];
 
     let formFields = [];
-    let selectedField = null;
+    let selectedFieldIdx = null;
     let currentModalLink = '';
-    let publishedForms = [
-      { id:'f001', name:'Reclamo Vecinal 2026', type:'Ciudadano', responses:247, status:'activo', created:'2026-06-01' },
-      { id:'f002', name:'Encuesta Satisfacción Junio', type:'Encuesta', responses:89, status:'cerrado', created:'2026-06-15' },
-      { id:'f003', name:'Alta Proveedores Q3', type:'Interno', responses:12, status:'activo', created:'2026-07-01' }
-    ];
+    
+    // Read persisted forms or use defaults
+    let publishedForms = [];
+    try { publishedForms = JSON.parse(localStorage.getItem('mjunin_forms') || '[]'); } catch(e){}
+    if (!publishedForms.length) {
+      publishedForms = [
+        { id:'f001', name:'Reclamo Vecinal 2026', type:'Ciudadano', responses:247, status:'activo', created:'2026-06-01' },
+        { id:'f002', name:'Encuesta Satisfacción Junio', type:'Encuesta', responses:89, status:'cerrado', created:'2026-06-15' },
+        { id:'f003', name:'Alta Proveedores Q3', type:'Interno', responses:12, status:'activo', created:'2026-07-01' }
+      ];
+    }
 
     // Init
     document.addEventListener('DOMContentLoaded', function() {
@@ -212,11 +291,11 @@
       const grid = document.getElementById('templatesGrid');
       if (!grid) return;
       grid.innerHTML = TEMPLATES.map(t => `
-        <div onclick="loadTemplate('${t.name}')" style="padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02)"
-          onmouseover="this.style.borderColor='rgba(59,130,246,0.3)';this.style.background='rgba(59,130,246,0.04)'"
+        <div onclick="loadTemplate('${t.name}')" style="padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.07);cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02)"
+          onmouseover="this.style.borderColor='rgba(59,130,246,0.4)';this.style.background='rgba(59,130,246,0.05)'"
           onmouseout="this.style.borderColor='rgba(255,255,255,0.07)';this.style.background='rgba(255,255,255,0.02)'">
           <div style="font-size:28px;margin-bottom:8px">${t.icon}</div>
-          <div style="font-size:12px;font-weight:700">${t.name}</div>
+          <div style="font-size:13px;font-weight:700">${t.name}</div>
         </div>
       `).join('');
     }
@@ -226,19 +305,30 @@
       if (!t) return;
       document.getElementById('formTitle').value = t.name;
       formFields = t.fields.map((f, i) => ({
-        id: 'f_' + i,
-        type: f.includes('foto') ? 'file' : f.includes('descripcion') || f.includes('comentario') ? 'textarea' : f.includes('email') ? 'email' : f.includes('tel') || f.includes('telefono') ? 'tel' : f.includes('fecha') ? 'date' : f.includes('calificacion') ? 'rating' : 'text',
-        label: f.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()),
-        required: true
+        id: 'f_' + i + '_' + Date.now(),
+        type: f.type,
+        label: f.label,
+        placeholder: f.placeholder || '',
+        required: f.required !== undefined ? f.required : true
       }));
       renderCanvas();
+      selectedFieldIdx = null;
+      document.getElementById('propsPanel').innerHTML = '<div style="text-align:center;padding:40px 16px;color:rgba(148,163,184,0.4);font-size:13px">Plantilla cargada. Seleccioná un campo para editarlo.</div>';
       if (typeof showToast !== 'undefined') showToast(`📜 Plantilla "${name}" cargada`, 'success');
     }
 
     function addField(type) {
       const ft = FIELD_TYPES.find(f => f.type === type);
-      formFields.push({ id: 'f_' + Date.now(), type, label: ft ? ft.label : type, required: false, placeholder: '' });
+      const newField = {
+        id: 'f_' + Date.now(),
+        type: type,
+        label: ft ? ft.label : type,
+        placeholder: ft ? ft.desc : '',
+        required: false
+      };
+      formFields.push(newField);
       renderCanvas();
+      selectField(formFields.length - 1);
     }
 
     function renderCanvas() {
@@ -247,6 +337,7 @@
       const count = document.getElementById('fieldCount');
       if (!canvas) return;
       if (count) count.textContent = `${formFields.length} campo${formFields.length!==1?'s':''}`;
+      
       if (formFields.length === 0) {
         if (empty) empty.style.display = 'block';
         canvas.querySelectorAll('.field-row').forEach(el => el.remove());
@@ -254,23 +345,25 @@
       }
       if (empty) empty.style.display = 'none';
       canvas.querySelectorAll('.field-row').forEach(el => el.remove());
+      
       formFields.forEach((f, idx) => {
         const ft = FIELD_TYPES.find(x => x.type === f.type);
         const row = document.createElement('div');
         row.className = 'field-row';
+        row.id = 'field_row_' + idx;
         row.setAttribute('data-idx', idx);
-        row.style.cssText = 'padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02);position:relative;display:flex;align-items:center;gap:12px';
-        const descText = ft ? ft.desc : f.type;
+        row.style.cssText = `padding:12px 16px;border-radius:12px;border:1px solid ${selectedFieldIdx===idx?'rgba(59,130,246,0.4)':'rgba(255,255,255,0.07)'};margin-bottom:10px;cursor:pointer;transition:all 0.2s;background:${selectedFieldIdx===idx?'rgba(59,130,246,0.06)':'rgba(255,255,255,0.02)'};position:relative;display:flex;align-items:center;gap:12px`;
+        
         row.innerHTML = `
           <span style="font-size:20px;flex-shrink:0">${ft ? ft.icon : '📝'}</span>
           <div style="flex:1">
-            <div style="font-size:12px;font-weight:700;margin-bottom:4px">${f.label}${f.required ? ' <span style="color:#ef4444">*</span>' : ''}</div>
-            <div style="font-size:11px;color:rgba(148,163,184,0.5)">${f.placeholder || descText}</div>
+            <div class="row-label" style="font-size:13px;font-weight:700;margin-bottom:2px">${f.label}${f.required ? ' <span style="color:#ef4444">*</span>' : ''}</div>
+            <div class="row-sub" style="font-size:11px;color:rgba(148,163,184,0.5)">${f.placeholder || f.type}</div>
           </div>
           <div style="display:flex;gap:4px">
-            <button onclick="moveField(${idx},-1)" style="padding:4px 8px;background:rgba(255,255,255,0.05);border:none;border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:11px">↑</button>
-            <button onclick="moveField(${idx},1)" style="padding:4px 8px;background:rgba(255,255,255,0.05);border:none;border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:11px">↓</button>
-            <button onclick="removeField(${idx})" style="padding:4px 8px;background:rgba(239,68,68,0.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:11px">✕</button>
+            <button onclick="event.stopPropagation();moveField(${idx},-1)" style="padding:4px 8px;background:rgba(255,255,255,0.05);border:none;border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:11px">↑</button>
+            <button onclick="event.stopPropagation();moveField(${idx},1)" style="padding:4px 8px;background:rgba(255,255,255,0.05);border:none;border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:11px">↓</button>
+            <button onclick="event.stopPropagation();removeField(${idx})" style="padding:4px 8px;background:rgba(239,68,68,0.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:11px">✕</button>
           </div>
         `;
         row.addEventListener('click', (e) => { if (!e.target.closest('button')) selectField(idx); });
@@ -279,34 +372,47 @@
     }
 
     function selectField(idx) {
-      selectedField = idx;
+      selectedFieldIdx = idx;
       document.querySelectorAll('.field-row').forEach((r, i) => {
         r.style.borderColor = i === idx ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.07)';
-        r.style.background = i === idx ? 'rgba(59,130,246,0.05)' : 'rgba(255,255,255,0.02)';
+        r.style.background = i === idx ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.02)';
       });
+
       const f = formFields[idx];
       const panel = document.getElementById('propsPanel');
       if (!panel || !f) return;
+
+      // Build panel without destructive re-render
       panel.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:14px">
           <div>
-            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Etiqueta</label>
-            <input value="${f.label}" oninput="updateField(${idx},'label',this.value)" style="width:100%;margin-top:6px;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-primary);font-size:13px;outline:none;font-family:'Inter',sans-serif">
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Etiqueta del Campo</label>
+            <input id="propLabel" value="${f.label.replace(/"/g, '&quot;')}" oninput="onPropChange(${idx}, 'label', this.value)" style="width:100%;margin-top:6px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--text-primary);font-size:13px;outline:none">
           </div>
           <div>
-            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Placeholder</label>
-            <input value="${f.placeholder||''}" oninput="updateField(${idx},'placeholder',this.value)" placeholder="Ej: Ingresá tu nombre..." style="width:100%;margin-top:6px;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-primary);font-size:13px;outline:none;font-family:'Inter',sans-serif">
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Texto de Ejemplo (Placeholder)</label>
+            <input id="propPlaceholder" value="${(f.placeholder||'').replace(/"/g, '&quot;')}" oninput="onPropChange(${idx}, 'placeholder', this.value)" placeholder="Ej: Ingresá tu dato..." style="width:100%;margin-top:6px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--text-primary);font-size:13px;outline:none">
           </div>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
-            <input type="checkbox" ${f.required?'checked':''} onchange="updateField(${idx},'required',this.checked)" style="accent-color:#3b82f6">
-            Campo obligatorio
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding-top:4px">
+            <input type="checkbox" ${f.required?'checked':''} onchange="onPropChange(${idx}, 'required', this.checked)" style="accent-color:#3b82f6;width:16px;height:16px">
+            Campo Obligatorio
           </label>
         </div>
       `;
     }
 
-    function updateField(idx, key, val) {
-      if (formFields[idx]) { formFields[idx][key] = val; renderCanvas(); selectField(idx); }
+    // Direct state update without losing input focus!
+    function onPropChange(idx, key, val) {
+      if (!formFields[idx]) return;
+      formFields[idx][key] = val;
+
+      const row = document.getElementById('field_row_' + idx);
+      if (row) {
+        const labelEl = row.querySelector('.row-label');
+        const subEl = row.querySelector('.row-sub');
+        if (labelEl) labelEl.innerHTML = `${formFields[idx].label}${formFields[idx].required ? ' <span style="color:#ef4444">*</span>' : ''}`;
+        if (subEl) subEl.textContent = formFields[idx].placeholder || formFields[idx].type;
+      }
     }
 
     function moveField(idx, dir) {
@@ -314,11 +420,12 @@
       if (newIdx < 0 || newIdx >= formFields.length) return;
       [formFields[idx], formFields[newIdx]] = [formFields[newIdx], formFields[idx]];
       renderCanvas();
+      selectField(newIdx);
     }
 
     function removeField(idx) {
       formFields.splice(idx, 1);
-      selectedField = null;
+      selectedFieldIdx = null;
       renderCanvas();
       document.getElementById('propsPanel').innerHTML = '<div style="text-align:center;padding:40px 16px;color:rgba(148,163,184,0.4);font-size:13px">Seleccioná un campo para editarlo</div>';
     }
@@ -328,18 +435,61 @@
     function dropField(e) { e.preventDefault(); const type = e.dataTransfer.getData('fieldType'); if (type) addField(type); }
 
     function previewForm() {
-      if (formFields.length === 0) { if(typeof showToast!=='undefined') showToast('⚠️ Agrá al menos un campo primero', 'error'); return; }
-      window.open('form-public.html?id=f001', '_blank');
+      if (formFields.length === 0) {
+        if(typeof showToast!=='undefined') showToast('⚠️ Cargá al menos 1 campo para ver la vista previa', 'error');
+        return;
+      }
+
+      const title = document.getElementById('formTitle').value || 'Formulario Municipal';
+      const container = document.getElementById('previewContent');
+      
+      container.innerHTML = `
+        <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;margin-bottom:6px;color:#f0f4ff">${title}</div>
+        <div style="font-size:12px;color:#8ea3c3;margin-bottom:20px">Municipalidad de Junín — Mendoza</div>
+        
+        ${formFields.map(f => `
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:12px;font-weight:700;color:#f0f4ff;margin-bottom:6px">${f.label}${f.required?' <span style="color:#ef4444">*</span>':''}</label>
+            ${f.type === 'textarea' ? `<textarea placeholder="${f.placeholder||''}" style="width:100%;background:#111d35;border:1px solid rgba(255,255,255,0.1);color:white;padding:10px;border-radius:10px;height:70px"></textarea>` :
+              f.type === 'rating' ? '<div style="font-size:24px">⭐⭐⭐⭐⭐</div>' :
+              f.type === 'file' ? `<input type="file" style="width:100%;background:#111d35;border:1px solid rgba(255,255,255,0.1);color:white;padding:8px;border-radius:10px">` :
+              `<input type="text" placeholder="${f.placeholder||''}" style="width:100%;background:#111d35;border:1px solid rgba(255,255,255,0.1);color:white;padding:10px;border-radius:10px">`}
+          </div>
+        `).join('')}
+
+        <button style="width:100%;padding:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;border:none;border-radius:12px;font-weight:800;font-size:13px;margin-top:10px">Enviar Formulario</button>
+      `;
+
+      document.getElementById('previewModal').style.display = 'flex';
     }
 
     function publishForm() {
-      if (formFields.length === 0) { if(typeof showToast!=='undefined') showToast('⚠️ Agrá al menos un campo', 'error'); return; }
-      const name = document.getElementById('formTitle').value || 'Formulario';
+      if (formFields.length === 0) {
+        if(typeof showToast!=='undefined') showToast('⚠️ Cargá al menos 1 campo antes de publicar', 'error');
+        return;
+      }
+      const name = document.getElementById('formTitle').value || 'Formulario Municipal';
       const newId = 'f' + Date.now();
-      publishedForms.unshift({ id: newId, name, type:'Público', responses:0, status:'activo', created: new Date().toLocaleDateString('es-AR') });
+      
+      const newFormObj = {
+        id: newId,
+        name: name,
+        type: 'Público',
+        responses: 0,
+        status: 'activo',
+        created: new Date().toLocaleDateString('es-AR'),
+        fields: JSON.parse(JSON.stringify(formFields))
+      };
+
+      publishedForms.unshift(newFormObj);
+      try { localStorage.setItem('mjunin_forms', JSON.stringify(publishedForms)); } catch(e){}
+      
       renderPublishedForms();
       formFields = [];
+      selectedFieldIdx = null;
       renderCanvas();
+      document.getElementById('propsPanel').innerHTML = '<div style="text-align:center;padding:40px 16px;color:rgba(148,163,184,0.4);font-size:13px">Formulario publicado exitosamente.</div>';
+      
       if (typeof showToast !== 'undefined') showToast(`🚀 "${name}" publicado exitosamente!`, 'success');
       generateQR(newId);
     }
@@ -349,7 +499,7 @@
       if (!tbody) return;
       tbody.innerHTML = publishedForms.map(f => `
         <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
-          <td style="padding:12px 8px;font-weight:600">${f.name}</td>
+          <td style="padding:12px 8px;font-weight:600;color:#f0f4ff">${f.name}</td>
           <td style="padding:12px 8px"><span style="font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(59,130,246,0.1);color:#60a5fa;font-weight:700">${f.type}</span></td>
           <td style="padding:12px 8px;font-weight:700;color:#10b981">${f.responses}</td>
           <td style="padding:12px 8px">
@@ -385,8 +535,8 @@
       modal.style.display = 'flex';
     }
 
-    function closeQRModal() {
-      document.getElementById('qrModal').style.display = 'none';
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
     }
 
     function openFormUrl() {

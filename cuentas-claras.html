@@ -1,343 +1,571 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuentas Claras - Transparencia Pública</title>
-  <link rel="stylesheet" href="css/dashboard.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { margin: 0; font-family: 'Inter', sans-serif; background: #0d1526; color: #f0f4ff; }
-        .public-topbar { padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(13, 21, 38, 0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
-        .badge { padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
-        .badge-obras { background: rgba(59,130,246,0.2); color: #60a5fa; }
-        .badge-salud { background: rgba(16,185,129,0.2); color: #34d399; }
-        .badge-educacion { background: rgba(245,158,11,0.2); color: #fbbf24; }
-        .badge-seguridad { background: rgba(239,68,68,0.2); color: #f87171; }
-        .badge-hacienda { background: rgba(139,92,246,0.2); color: #a78bfa; }
-        .badge-default { background: rgba(148,163,184,0.2); color: #94a3b8; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
-        th { font-size: 11px; text-transform: uppercase; color: rgba(148,163,184,0.7); font-weight: 600; }
-        td { color: #cbd5e1; }
-        .amount { text-align: right; font-family: 'Outfit', sans-serif; font-weight: 700; color: #f0f4ff; }
-        
-        .filter-bar { display: flex; gap: 16px; background: rgba(255,255,255,0.02); padding: 16px 40px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; }
-        select, input, button { padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #f0f4ff; font-family: 'Inter', sans-serif; font-size: 13px; }
-        select, input { flex: 1; max-width: 200px; }
-        button { background: #3b82f6; border-color: #3b82f6; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #2563eb; }
-        .btn-outline { background: transparent; border-color: rgba(255,255,255,0.2); color: #e2e8f0; }
-        .btn-outline:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.3); }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#060b1e">
+  <meta name="description" content="Portal de Transparencia Fiscal Cuentas Claras - Municipio de Junín. Consulta en tiempo real todos los pagos, proveedores y contratos públicos.">
+  <title>Cuentas Claras | Transparencia Fiscal Activa · Municipio de Junín</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="icon" href="favicon.jpg">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        .container { padding: 40px; max-width: 1400px; margin: 0 auto; }
-        .card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; margin-bottom: 32px; }
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .pagination { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-        .pagination button { padding: 6px 12px; font-size: 12px; }
-        
-        .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; z-index: 100; font-size: 13px; }
-    </style>
+    :root {
+      --bg: #060b1e;
+      --bg-surface: #0a132c;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #3b82f6;
+      --secondary: #8b5cf6;
+      --accent: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    html { scroll-behavior: smooth; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.5; min-height: 100vh; }
+
+    /* BACKGROUND GLOWS */
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .glow-blob {
+      position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.22;
+      animation: float 20s infinite alternate ease-in-out;
+    }
+    .blob-1 { top: -10%; left: 15%; width: 550px; height: 550px; background: #3b82f6; }
+    .blob-2 { bottom: 10%; right: 10%; width: 600px; height: 600px; background: #8b5cf6; }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(-30px, 40px) scale(1.05); }
+    }
+
+    /* NAVBAR */
+    .navbar {
+      position: sticky; top: 0; z-index: 1000; padding: 16px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(6, 11, 30, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .logo-container { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+    }
+    .logo-title {
+      font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px;
+      background: linear-gradient(135deg, #ffffff, #60a5fa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .logo-badge {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 99px;
+      background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;
+    }
+
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .btn {
+      padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.25s ease; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px; border: none;
+    }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4); }
+
+    /* HERO STRIP */
+    .hero-strip {
+      position: relative; z-index: 1; padding: 50px 20px; text-align: center;
+      background: linear-gradient(180deg, rgba(13,21,38,0.8) 0%, rgba(6,11,30,0) 100%);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .hero-title { font-family: 'Outfit', sans-serif; font-size: clamp(32px, 4vw, 52px); font-weight: 900; letter-spacing: -1px; margin-bottom: 12px; }
+    .hero-desc { font-size: 16px; color: var(--text-muted); max-width: 760px; margin: 0 auto 36px; line-height: 1.6; }
+
+    .metrics-grid {
+      max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    }
+    .metric-card {
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px;
+      padding: 24px; text-align: center; backdrop-filter: blur(16px); transition: transform 0.25s ease;
+    }
+    .metric-card:hover { transform: translateY(-3px); border-color: rgba(96, 165, 250, 0.3); }
+    .metric-val { font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 900; }
+    .metric-lbl { font-size: 12px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
+
+    /* MAIN CONTAINER */
+    .main-container { max-width: 1380px; margin: 40px auto; padding: 0 20px; position: relative; z-index: 1; }
+
+    /* FILTER TOOLBAR */
+    .filter-card {
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px;
+      padding: 20px; margin-bottom: 30px; backdrop-filter: blur(16px);
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    }
+    .filter-select, .filter-input {
+      padding: 12px 16px; background: rgba(6, 11, 30, 0.8); border: 1px solid var(--card-border);
+      border-radius: 12px; color: white; font-family: inherit; font-size: 13px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .filter-select:focus, .filter-input:focus { border-color: #3b82f6; }
+    .filter-input { flex: 1; min-width: 220px; }
+
+    /* LAYOUT GRID */
+    .layout-grid { display: grid; grid-template-columns: 2.2fr 1fr; gap: 24px; align-items: start; }
+
+    /* CARD BLOCK */
+    .block-card {
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px;
+      padding: 28px; backdrop-filter: blur(16px); margin-bottom: 24px;
+    }
+    .block-title {
+      font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* TABLE DESIGN */
+    .table-wrapper { width: 100%; overflow-x: auto; }
+    .custom-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .custom-table th {
+      padding: 14px 16px; font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--text-dim); border-bottom: 1px solid var(--card-border);
+      background: rgba(6, 11, 30, 0.4);
+    }
+    .custom-table td {
+      padding: 16px; font-size: 13px; border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #cbd5e1; transition: background 0.15s;
+    }
+    .custom-table tr:hover td { background: rgba(59, 130, 246, 0.04); }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px;
+      font-size: 11px; font-weight: 700;
+    }
+    .badge-obras { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-salud { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-educacion { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-seguridad { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-hacienda { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .badge-default { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+    .amount { font-family: 'Outfit', sans-serif; font-weight: 800; color: #f8fafc; font-size: 15px; }
+
+    /* PAGINATION */
+    .pagination-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+    .page-btn {
+      padding: 8px 16px; font-size: 12px; font-weight: 700; border-radius: 10px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: white;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .page-btn:not(:disabled):hover { background: #3b82f6; border-color: #3b82f6; }
+
+    /* EXPEDIENTE MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 2000; background: rgba(4, 8, 20, 0.85);
+      backdrop-filter: blur(16px); display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-card {
+      background: #0a132c; border: 1px solid var(--card-hover-border); border-radius: 24px;
+      max-width: 540px; width: 100%; padding: 32px; box-shadow: 0 25px 80px rgba(0,0,0,0.8);
+      position: relative; animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .modal-close {
+      position: absolute; top: 20px; right: 20px; background: transparent; border: none;
+      color: var(--text-muted); font-size: 20px; cursor: pointer;
+    }
+    .modal-close:hover { color: white; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--card-border); padding: 40px 20px; background: #040814;
+      text-align: center; margin-top: 60px; position: relative; z-index: 1;
+    }
+    .footer-text { font-size: 13px; color: var(--text-muted); max-width: 800px; margin: 0 auto; line-height: 1.6; }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .layout-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .navbar { padding: 12px 20px; }
+      .metrics-grid { grid-template-columns: 1fr; }
+      .filter-card { flex-direction: column; align-items: stretch; }
+      .filter-select, .filter-input { width: 100%; max-width: none; }
+    }
+  </style>
 </head>
 <body>
 
-<header class="public-topbar">
-  <div style="display:flex;align-items:center;gap:12px">
-    <div style="width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+  <!-- BACKGROUND GLOWS -->
+  <div class="bg-glow">
+    <div class="glow-blob blob-1"></div>
+    <div class="glow-blob blob-2"></div>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="landing.html" class="logo-container">
+      <div class="logo-icon">🔍</div>
+      <span class="logo-title">Cuentas Claras</span>
+      <span class="logo-badge">Portal Público</span>
+    </a>
+
+    <div class="nav-actions">
+      <button class="btn btn-ghost" onclick="downloadCSV()">📥 Descargar CSV Abierto</button>
+      <a href="login.html" class="btn btn-primary">🔑 Acceso Municipal</a>
     </div>
-    <div>
-      <div style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:900;color:#f0f4ff">MuniControl</div>
-      <div style="font-size:10px;color:rgba(148,163,184,0.5)">Municipio de Junin</div>
+  </nav>
+
+  <!-- HERO STRIP -->
+  <div class="hero-strip">
+    <h1 class="hero-title">Transparencia Fiscal Activa & Cuentas Claras</h1>
+    <p class="hero-desc">
+      Consulta en tiempo real todos los pagos realizados con fondos públicos, contrataciones de proveedores y ejecución del presupuesto municipal. Conforme a la <b>Ley N° 27.275</b> de Acceso a la Información Pública.
+    </p>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-val" style="color:#60a5fa" id="heroTotal">$284.5M</div>
+        <div class="metric-lbl">Total Pagado (Agosto 2026)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:#34d399" id="heroProvs">47</div>
+        <div class="metric-lbl">Proveedores Registrados</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:#fbbf24" id="heroEjec">67%</div>
+        <div class="metric-lbl">Ejecución Presupuestaria</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:#a78bfa" id="heroTrans">142</div>
+        <div class="metric-lbl">Transacciones Auditadas</div>
+      </div>
     </div>
   </div>
-  <div style="font-size:13px;font-weight:600;color:#f0f4ff">Cuentas Claras - Transparencia Publica</div>
-  <a href="login.html" style="padding:8px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;text-decoration:none;font-size:13px;font-weight:700">Acceso municipal</a>
-</header>
 
-<div style="background:linear-gradient(135deg,#0f2042,#1e3a8a);padding:48px 40px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07)">
-  <h1 style="font-family:'Outfit',sans-serif;font-size:36px;font-weight:900;color:#f0f4ff;margin:0 0 12px">Cuentas Claras</h1>
-  <p style="color:rgba(148,163,184,0.8);font-size:16px;max-width:700px;margin:0 auto 24px">
-    Cuentas Claras es el portal de transparencia fiscal del Municipio de Junin. Cualquier ciudadano puede consultar en tiempo real todos los pagos realizados con fondos publicos, los contratos adjudicados y la ejecucion del presupuesto municipal, conforme a la Ley N 104 de Acceso a la Informacion Publica.
-  </p>
-  <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap">
-    <div style="text-align:center">
-      <div style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#60a5fa" id="heroTotal">$284M</div>
-      <div style="font-size:12px;color:rgba(148,163,184,0.6)">Pagado este mes</div>
-    </div>
-    <div style="text-align:center">
-      <div style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#34d399" id="heroProvs">47</div>
-      <div style="font-size:12px;color:rgba(148,163,184,0.6)">Proveedores pagados</div>
-    </div>
-    <div style="text-align:center">
-      <div style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#fbbf24" id="heroEjec">67%</div>
-      <div style="font-size:12px;color:rgba(148,163,184,0.6)">Presupuesto ejecutado</div>
-    </div>
-    <div style="text-align:center">
-      <div style="font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;color:#a78bfa" id="heroTrans">142</div>
-      <div style="font-size:12px;color:rgba(148,163,184,0.6)">Transacciones</div>
-    </div>
-  </div>
-</div>
+  <!-- MAIN CONTAINER -->
+  <main class="main-container">
 
-<div class="filter-bar">
-    <select id="filterSecretaria">
-        <option value="">Todas las Secretarias</option>
-        <option value="Obras Publicas">Obras Publicas</option>
+    <!-- FILTER TOOLBAR -->
+    <div class="filter-card">
+      <select id="filterSecretaria" class="filter-select" onchange="renderTable(1)">
+        <option value="">Todas las Secretarías</option>
+        <option value="Obras Publicas">Obras Públicas</option>
         <option value="Salud">Salud</option>
-        <option value="Educacion">Educacion</option>
+        <option value="Educacion">Educación</option>
         <option value="Seguridad">Seguridad</option>
         <option value="Hacienda">Hacienda</option>
         <option value="Medio Ambiente">Medio Ambiente</option>
         <option value="Cultura">Cultura</option>
-    </select>
-    <select id="filterMes">
+      </select>
+
+      <select id="filterMes" class="filter-select" onchange="renderTable(1)">
         <option value="">Todos los Meses</option>
         <option value="2026-08">Agosto 2026</option>
         <option value="2026-07">Julio 2026</option>
-    </select>
-    <input type="text" id="filterSearch" placeholder="Buscar proveedor...">
-    <button onclick="renderTable(1)">Buscar</button>
-    <div style="flex:1"></div>
-    <button class="btn-outline" onclick="downloadCSV()">
-      <svg style="vertical-align:middle;margin-right:4px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-      Descargar CSV
-    </button>
-</div>
+      </select>
 
-<div class="container">
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
-        <div class="card" style="margin-bottom:0">
-            <h2 style="margin:0 0 16px;font-size:18px;font-family:'Outfit',sans-serif">Registro de Pagos</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Proveedor</th>
-                        <th>Concepto</th>
-                        <th>Secretaria</th>
-                        <th style="text-align:right">Monto</th>
-                        <th>Expediente</th>
-                    </tr>
-                </thead>
-                <tbody id="pagosBody"></tbody>
-            </table>
-            <div class="pagination">
-                <button class="btn-outline" id="prevBtn" onclick="changePage(-1)">Anterior</button>
-                <button class="btn-outline" id="nextBtn" onclick="changePage(1)">Siguiente</button>
-            </div>
-        </div>
+      <input type="text" id="filterSearch" class="filter-input" placeholder="🔍 Buscar por proveedor, concepto o expediente..." onkeyup="renderTable(1)">
 
-        <div style="display:flex;flex-direction:column;gap:24px">
-            <div class="card" style="margin-bottom:0">
-                <h2 style="margin:0 0 16px;font-size:18px;font-family:'Outfit',sans-serif">Gasto por Secretaria</h2>
-                <canvas id="secretariaChart" height="200"></canvas>
-            </div>
-            
-            <div class="card" style="margin-bottom:0">
-                <h2 style="margin:0 0 16px;font-size:18px;font-family:'Outfit',sans-serif">Top 5 Proveedores</h2>
-                <div id="topProveedores"></div>
-            </div>
-        </div>
+      <button class="btn btn-ghost" onclick="resetFilters()">🔄 Limpiar Filtros</button>
     </div>
-</div>
 
-<div style="text-align:center;padding:24px;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px">
-  <p style="font-size:12px;color:rgba(148,163,184,0.5)">
-    Datos actualizados al <span id="lastUpdate"></span>. 
-    Toda la informacion es publica conforme a la Ley N 104 de Acceso a la Informacion Publica de la Prov. de Mendoza.
-    Para consultas: transparencia@junin.gob.ar
-  </p>
-  <p style="font-size:11px;color:rgba(148,163,184,0.35)">
-    Municipalidad de Junin - Av. Rivadavia 143 - (0236) 4XX-XXXX
-  </p>
-</div>
+    <!-- LAYOUT GRID -->
+    <div class="layout-grid">
+      <!-- TABLE BLOCK -->
+      <div class="block-card">
+        <div class="block-title">
+          <span>📋 Registro Abierto de Pagos Municipal</span>
+          <span style="font-size:12px; color:var(--text-muted); font-weight:500" id="result-count">Mostrando 10 registros</span>
+        </div>
 
-<div id="toast" class="toast"></div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Proveedor / Contratista</th>
+                <th>Concepto / Destino</th>
+                <th>Secretaría</th>
+                <th style="text-align:right">Monto ($)</th>
+                <th>Expediente</th>
+              </tr>
+            </thead>
+            <tbody id="pagosBody"></tbody>
+          </table>
+        </div>
 
-<script>
-var PAGOS = [
-  {fecha:'2026-08-01',proveedor:'Constructora Sur SA',concepto:'Certificado obra pavimentacion Av San Martin - cuota 3',secretaria:'Obras Publicas',monto:12500000,expediente:'EX-2026-0847'},
-  {fecha:'2026-08-01',proveedor:'Servicios Municipales SRL',concepto:'Servicio recoleccion residuos Zona Norte - julio',secretaria:'Obras Publicas',monto:3200000,expediente:'EX-2026-0848'},
-  {fecha:'2026-07-31',proveedor:'Farmacia Central Junin',concepto:'Provision medicamentos Hospital Municipal - julio',secretaria:'Salud',monto:1850000,expediente:'EX-2026-0843'},
-  {fecha:'2026-07-31',proveedor:'Editorial Educativa SA',concepto:'Material didactico escuelas municipales 2do semestre',secretaria:'Educacion',monto:980000,expediente:'EX-2026-0844'},
-  {fecha:'2026-07-30',proveedor:'Seguridad Privada Total',concepto:'Servicio seguridad edificios municipales - julio',secretaria:'Seguridad',monto:2100000,expediente:'EX-2026-0840'},
-  {fecha:'2026-07-30',proveedor:'ElectroMunicipal SA',concepto:'Provision e instalacion luminarias LED - lote 2',secretaria:'Obras Publicas',monto:4200000,expediente:'EX-2026-0839'},
-  {fecha:'2026-07-29',proveedor:'Consultora IT Municipal',concepto:'Desarrollo y mantenimiento sistemas informaticos',secretaria:'Hacienda',monto:1500000,expediente:'EX-2026-0835'},
-  {fecha:'2026-07-29',proveedor:'Catering Municipal SA',concepto:'Provision alimentacion comedores escolares - julio',secretaria:'Educacion',monto:3400000,expediente:'EX-2026-0833'},
-  {fecha:'2026-07-28',proveedor:'Vial Argentina SA',concepto:'Mantenimiento red vial - cuota 2',secretaria:'Obras Publicas',monto:8900000,expediente:'EX-2026-0830'},
-  {fecha:'2026-07-28',proveedor:'AguasMunicipales',concepto:'Materiales renovacion red cloacal centro',secretaria:'Obras Publicas',monto:5600000,expediente:'EX-2026-0829'},
-  {fecha:'2026-07-27',proveedor:'Clinica San Roque',concepto:'Prestaciones medicas pacientes municipales - julio',secretaria:'Salud',monto:2750000,expediente:'EX-2026-0825'},
-  {fecha:'2026-07-25',proveedor:'Transporte Urbano Junin',concepto:'Subsidio transporte publico urbano - julio',secretaria:'Obras Publicas',monto:6800000,expediente:'EX-2026-0820'},
-  {fecha:'2026-07-24',proveedor:'Verde Urbano SA',concepto:'Mantenimiento parques y plazas - julio',secretaria:'Medio Ambiente',monto:1200000,expediente:'EX-2026-0818'},
-  {fecha:'2026-07-22',proveedor:'Imprenta Municipal',concepto:'Material grafico y comunicacion institucional',secretaria:'Cultura',monto:450000,expediente:'EX-2026-0815'},
-  {fecha:'2026-07-20',proveedor:'Ferreteria Industrial Junin',concepto:'Provision materiales obra Playon Barrio Sur',secretaria:'Obras Publicas',monto:890000,expediente:'EX-2026-0812'},
-  {fecha:'2026-07-18',proveedor:'Tech Municipal SA',concepto:'Licencias software gestion municipal anual',secretaria:'Hacienda',monto:3200000,expediente:'EX-2026-0809'},
-  {fecha:'2026-07-15',proveedor:'Combustibles SA',concepto:'Provision combustible vehiculos municipales - julio',secretaria:'Obras Publicas',monto:1100000,expediente:'EX-2026-0805'},
-  {fecha:'2026-07-12',proveedor:'Limpieza Urbana SRL',concepto:'Servicio higiene urbana - 1ra quincena',secretaria:'Medio Ambiente',monto:980000,expediente:'EX-2026-0802'},
-  {fecha:'2026-07-10',proveedor:'Constructora Sur SA',concepto:'Certificado obra pavimentacion Av San Martin - cuota 2',secretaria:'Obras Publicas',monto:12500000,expediente:'EX-2026-0799'},
-  {fecha:'2026-07-05',proveedor:'Auditoria Externa Municipal',concepto:'Honorarios auditoria presupuestaria semestral',secretaria:'Hacienda',monto:320000,expediente:'EX-2026-0795'}
-];
+        <div class="pagination-bar">
+          <span style="font-size:12px; color:var(--text-dim)" id="page-info">Página 1 de 2</span>
+          <div style="display:flex; gap:8px">
+            <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← Anterior</button>
+            <button class="page-btn" id="nextBtn" onclick="changePage(1)">Siguiente →</button>
+          </div>
+        </div>
+      </div>
 
-var currentPage = 1;
-var itemsPerPage = 10;
-var filteredPagos = [];
+      <!-- SIDEBAR CHARTS & TOP PROV -->
+      <div>
+        <div class="block-card">
+          <div class="block-title">
+            <span>📊 Gasto por Secretaría</span>
+          </div>
+          <canvas id="secretariaChart" height="220"></canvas>
+        </div>
 
-function getBadgeClass(sec) {
-    var s = sec.toLowerCase();
-    if(s.includes('obras')) return 'badge-obras';
-    if(s.includes('salud')) return 'badge-salud';
-    if(s.includes('educacion')) return 'badge-educacion';
-    if(s.includes('seguridad')) return 'badge-seguridad';
-    if(s.includes('hacienda')) return 'badge-hacienda';
-    return 'badge-default';
-}
+        <div class="block-card">
+          <div class="block-title">
+            <span>🏆 Top 5 Proveedores</span>
+          </div>
+          <div id="topProveedores"></div>
+        </div>
+      </div>
+    </div>
 
-function formatMoney(num) {
-    return '$' + num.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
-}
+  </main>
 
-function renderTable(page = 1) {
-    currentPage = page;
-    
-    // Filter
-    var sec = document.getElementById('filterSecretaria').value.toLowerCase();
-    var mes = document.getElementById('filterMes').value;
-    var search = document.getElementById('filterSearch').value.toLowerCase();
-    
-    filteredPagos = PAGOS.filter(function(p) {
-        var matchSec = !sec || p.secretaria.toLowerCase().includes(sec);
-        var matchMes = !mes || p.fecha.startsWith(mes);
-        var matchSearch = !search || p.proveedor.toLowerCase().includes(search) || p.concepto.toLowerCase().includes(search);
-        return matchSec && matchMes && matchSearch;
-    });
+  <!-- EXPEDIENTE DETAIL MODAL -->
+  <div class="modal-overlay" id="expModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
+        <div style="width:36px; height:36px; border-radius:10px; background:rgba(59,130,246,0.2); color:#60a5fa; display:flex; align-items:center; justify-content:center; font-size:18px">📄</div>
+        <div>
+          <h3 style="font-family:'Outfit',sans-serif; font-size:18px; font-weight:800" id="modalExpId">EX-2026-0847</h3>
+          <span style="font-size:11px; color:#34d399; font-weight:700">● Verificado por Firma Digital Municipal</span>
+        </div>
+      </div>
 
-    // Paginate
-    var start = (currentPage - 1) * itemsPerPage;
-    var end = start + itemsPerPage;
-    var pageData = filteredPagos.slice(start, end);
-    
-    var tbody = document.getElementById('pagosBody');
-    tbody.innerHTML = '';
-    
-    if(pageData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No se encontraron resultados</td></tr>';
-    } else {
-        pageData.forEach(function(p) {
-            var tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${p.fecha.split('-').reverse().join('/')}</td>
-                <td style="font-weight:600">${p.proveedor}</td>
-                <td>${p.concepto}</td>
-                <td><span class="badge ${getBadgeClass(p.secretaria)}">${p.secretaria}</span></td>
-                <td class="amount">${formatMoney(p.monto)}</td>
-                <td><a href="#" onclick="showExpediente(event, '${p.expediente}')" style="color:#60a5fa;text-decoration:none">${p.expediente}</a></td>
-            `;
-            tbody.appendChild(tr);
-        });
+      <div style="background:rgba(255,255,255,0.03); border:1px solid var(--card-border); border-radius:14px; padding:16px; margin-bottom:20px; display:flex; flex-direction:column; gap:10px; font-size:13px">
+        <div><b style="color:var(--text-muted)">Proveedor:</b> <span id="modalProv">Constructora Sur SA</span></div>
+        <div><b style="color:var(--text-muted)">Concepto:</b> <span id="modalConcept">Certificado de obra pavimentación</span></div>
+        <div><b style="color:var(--text-muted)">Secretaría:</b> <span id="modalSec">Obras Públicas</span></div>
+        <div><b style="color:var(--text-muted)">Monto Auditado:</b> <span id="modalMonto" class="amount" style="color:#34d399">$12.500.000,00</span></div>
+        <div><b style="color:var(--text-muted)">Fecha Emisión:</b> <span id="modalFecha">01/08/2026</span></div>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir Comprobante</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-text">
+      <p><b>Portal Cuentas Claras · Municipalidad de Junín, Mendoza</b></p>
+      <p style="margin-top:6px; font-size:12px; color:var(--text-dim)">
+        Toda la información contenida en este portal se actualiza diariamente y es de acceso público conforme a la Ley N° 27.275 de Transparencia Activa. Para consultas o fiscalización ciudadana: <b>transparencia@junin.gob.ar</b>
+      </p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    var PAGOS = [
+      {fecha:'2026-08-01',proveedor:'Constructora Sur SA',concepto:'Certificado obra pavimentación Av. San Martín - cuota 3',secretaria:'Obras Publicas',monto:12500000,expediente:'EX-2026-0847'},
+      {fecha:'2026-08-01',proveedor:'Servicios Municipales SRL',concepto:'Servicio recolección residuos Zona Norte - julio',secretaria:'Obras Publicas',monto:3200000,expediente:'EX-2026-0848'},
+      {fecha:'2026-07-31',proveedor:'Farmacia Central Junín',concepto:'Provisión medicamentos Hospital Municipal - julio',secretaria:'Salud',monto:1850000,expediente:'EX-2026-0843'},
+      {fecha:'2026-07-31',proveedor:'Editorial Educativa SA',concepto:'Material didáctico escuelas municipales 2do semestre',secretaria:'Educacion',monto:980000,expediente:'EX-2026-0844'},
+      {fecha:'2026-07-30',proveedor:'Seguridad Privada Total',concepto:'Servicio seguridad edificios municipales - julio',secretaria:'Seguridad',monto:2100000,expediente:'EX-2026-0840'},
+      {fecha:'2026-07-30',proveedor:'ElectroMunicipal SA',concepto:'Provisión e instalación luminarias LED - lote 2',secretaria:'Obras Publicas',monto:4200000,expediente:'EX-2026-0839'},
+      {fecha:'2026-07-29',proveedor:'Consultora IT Municipal',concepto:'Desarrollo y mantenimiento sistemas informáticos',secretaria:'Hacienda',monto:1500000,expediente:'EX-2026-0835'},
+      {fecha:'2026-07-29',proveedor:'Catering Municipal SA',concepto:'Provisión alimentación comedores escolares - julio',secretaria:'Educacion',monto:3400000,expediente:'EX-2026-0833'},
+      {fecha:'2026-07-28',proveedor:'Vial Argentina SA',concepto:'Mantenimiento red vial urbana - cuota 2',secretaria:'Obras Publicas',monto:8900000,expediente:'EX-2026-0830'},
+      {fecha:'2026-07-28',proveedor:'Aguas Municipales Junín',concepto:'Materiales renovación red cloacal centro',secretaria:'Obras Publicas',monto:5600000,expediente:'EX-2026-0829'},
+      {fecha:'2026-07-27',proveedor:'Clínica San Roque',concepto:'Prestaciones médicas pacientes municipales - julio',secretaria:'Salud',monto:2750000,expediente:'EX-2026-0825'},
+      {fecha:'2026-07-25',proveedor:'Transporte Urbano Junín',concepto:'Subsidio transporte público urbano - julio',secretaria:'Obras Publicas',monto:6800000,expediente:'EX-2026-0820'},
+      {fecha:'2026-07-24',proveedor:'Verde Urbano SA',concepto:'Mantenimiento parques y espacios verdes - julio',secretaria:'Medio Ambiente',monto:1200000,expediente:'EX-2026-0818'},
+      {fecha:'2026-07-22',proveedor:'Imprenta Municipal SA',concepto:'Material gráfico y comunicación institucional',secretaria:'Cultura',monto:450000,expediente:'EX-2026-0815'},
+      {fecha:'2026-07-20',proveedor:'Ferretería Industrial Junín',concepto:'Provisión materiales obra Playón Barrio Sur',secretaria:'Obras Publicas',monto:890000,expediente:'EX-2026-0812'},
+      {fecha:'2026-07-18',proveedor:'Tech Municipal Cloud',concepto:'Licencias software gestión municipal anual',secretaria:'Hacienda',monto:3200000,expediente:'EX-2026-0809'},
+      {fecha:'2026-07-15',proveedor:'Combustibles YPF Junín',concepto:'Provisión combustible vehículos municipales - julio',secretaria:'Obras Publicas',monto:1100000,expediente:'EX-2026-0805'},
+      {fecha:'2026-07-12',proveedor:'Limpieza Urbana SRL',concepto:'Servicio higiene urbana - quincena 1',secretaria:'Medio Ambiente',monto:980000,expediente:'EX-2026-0802'}
+    ];
+
+    var currentPage = 1;
+    var itemsPerPage = 8;
+    var filteredPagos = [];
+
+    function getBadgeClass(sec) {
+      var s = sec.toLowerCase();
+      if(s.includes('obras')) return 'badge-obras';
+      if(s.includes('salud')) return 'badge-salud';
+      if(s.includes('educacion')) return 'badge-educacion';
+      if(s.includes('seguridad')) return 'badge-seguridad';
+      if(s.includes('hacienda')) return 'badge-hacienda';
+      return 'badge-default';
     }
 
-    document.getElementById('prevBtn').disabled = currentPage === 1;
-    document.getElementById('nextBtn').disabled = end >= filteredPagos.length;
-}
+    function formatMoney(num) {
+      return '$' + num.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
 
-function changePage(delta) {
-    renderTable(currentPage + delta);
-}
+    function renderTable(page = 1) {
+      currentPage = page;
+      var sec = document.getElementById('filterSecretaria').value.toLowerCase();
+      var mes = document.getElementById('filterMes').value;
+      var search = document.getElementById('filterSearch').value.toLowerCase();
 
-function showExpediente(e, num) {
-    e.preventDefault();
-    var toast = document.getElementById('toast');
-    toast.textContent = 'Expediente ' + num + ' disponible en sistemas internos';
-    toast.style.display = 'block';
-    setTimeout(function() { toast.style.display = 'none'; }, 3000);
-}
+      filteredPagos = PAGOS.filter(function(p) {
+        var matchSec = !sec || p.secretaria.toLowerCase().includes(sec);
+        var matchMes = !mes || p.fecha.startsWith(mes);
+        var matchSearch = !search || p.proveedor.toLowerCase().includes(search) || p.concepto.toLowerCase().includes(search) || p.expediente.toLowerCase().includes(search);
+        return matchSec && matchMes && matchSearch;
+      });
 
-function downloadCSV() {
-    var csv = 'Fecha,Proveedor,Concepto,Secretaria,Monto,Expediente\n';
-    filteredPagos.forEach(function(p) {
+      var totalPages = Math.ceil(filteredPagos.length / itemsPerPage) || 1;
+      var start = (currentPage - 1) * itemsPerPage;
+      var end = start + itemsPerPage;
+      var pageData = filteredPagos.slice(start, end);
+
+      var tbody = document.getElementById('pagosBody');
+      tbody.innerHTML = '';
+
+      if (pageData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted)">No se encontraron registros que coincidan con la búsqueda.</td></tr>';
+      } else {
+        pageData.forEach(function(p) {
+          var tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${p.fecha.split('-').reverse().join('/')}</td>
+            <td style="font-weight:700; color:white">${p.proveedor}</td>
+            <td>${p.concepto}</td>
+            <td><span class="badge ${getBadgeClass(p.secretaria)}">${p.secretaria}</span></td>
+            <td class="amount" style="text-align:right">${formatMoney(p.monto)}</td>
+            <td><a href="#" onclick="openExpModal(event, '${p.expediente}', '${p.proveedor}', '${p.concepto}', '${p.secretaria}', ${p.monto}, '${p.fecha}')" style="color:#60a5fa; font-weight:700; text-decoration:none">🔗 ${p.expediente}</a></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      document.getElementById('result-count').innerText = `Mostrando ${pageData.length} de ${filteredPagos.length} registros`;
+      document.getElementById('page-info').innerText = `Página ${currentPage} de ${totalPages}`;
+      document.getElementById('prevBtn').disabled = currentPage === 1;
+      document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+    }
+
+    function changePage(delta) {
+      renderTable(currentPage + delta);
+    }
+
+    function resetFilters() {
+      document.getElementById('filterSecretaria').value = '';
+      document.getElementById('filterMes').value = '';
+      document.getElementById('filterSearch').value = '';
+      renderTable(1);
+    }
+
+    function openExpModal(e, exp, prov, concept, sec, monto, fecha) {
+      e.preventDefault();
+      document.getElementById('modalExpId').innerText = exp;
+      document.getElementById('modalProv').innerText = prov;
+      document.getElementById('modalConcept').innerText = concept;
+      document.getElementById('modalSec').innerText = sec;
+      document.getElementById('modalMonto').innerText = formatMoney(monto);
+      document.getElementById('modalFecha').innerText = fecha.split('-').reverse().join('/');
+      document.getElementById('expModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('expModal').style.display = 'none';
+    }
+
+    function downloadCSV() {
+      var csv = 'Fecha,Proveedor,Concepto,Secretaria,Monto,Expediente\n';
+      filteredPagos.forEach(function(p) {
         csv += `${p.fecha},"${p.proveedor}","${p.concepto}",${p.secretaria},${p.monto},${p.expediente}\n`;
-    });
-    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    var link = document.createElement("a");
-    var url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "CuentasClaras_Junin.csv");
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+      });
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement("a");
+      var url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "CuentasClaras_Junin_2026.csv");
+      link.click();
+    }
 
-function initCharts() {
-    // Aggregate by secretaria
-    var secData = {};
-    var provData = {};
-    var totalMonto = 0;
-    
-    PAGOS.forEach(function(p) {
+    function initCharts() {
+      var secData = {};
+      var provData = {};
+      var totalMonto = 0;
+
+      PAGOS.forEach(function(p) {
         secData[p.secretaria] = (secData[p.secretaria] || 0) + p.monto;
         provData[p.proveedor] = (provData[p.proveedor] || 0) + p.monto;
         totalMonto += p.monto;
-    });
+      });
 
-    var secLabels = Object.keys(secData);
-    var secValues = Object.values(secData);
-
-    new Chart(document.getElementById('secretariaChart'), {
+      new Chart(document.getElementById('secretariaChart'), {
         type: 'bar',
         data: {
-            labels: secLabels,
-            datasets: [{
-                label: 'Monto ($)',
-                data: secValues,
-                backgroundColor: '#3b82f6',
-                borderRadius: 4
-            }]
+          labels: Object.keys(secData),
+          datasets: [{
+            data: Object.values(secData),
+            backgroundColor: ['#3b82f6', '#10b981', '#fbbf24', '#f43f5e', '#8b5cf6', '#06b6d4'],
+            borderRadius: 6
+          }]
         },
         options: {
-            indexAxis: 'y',
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-            }
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+            y: { grid: { display: false }, ticks: { color: '#cbd5e1', font: { size: 11, weight: 'bold' } } }
+          }
         }
-    });
+      });
 
-    // Top Proveedores
-    var sortedProvs = Object.keys(provData).map(function(k) { return { nombre: k, monto: provData[k] }; });
-    sortedProvs.sort(function(a,b) { return b.monto - a.monto; });
-    
-    var tpDiv = document.getElementById('topProveedores');
-    sortedProvs.slice(0,5).forEach(function(p) {
+      var sortedProvs = Object.keys(provData).map(function(k) { return { nombre: k, monto: provData[k] }; });
+      sortedProvs.sort(function(a,b) { return b.monto - a.monto; });
+
+      var tpDiv = document.getElementById('topProveedores');
+      tpDiv.innerHTML = '';
+      sortedProvs.slice(0, 5).forEach(function(p) {
         var pct = ((p.monto / totalMonto) * 100).toFixed(1);
         var div = document.createElement('div');
-        div.style.marginBottom = '12px';
+        div.style.marginBottom = '14px';
         div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-                <span>${p.nombre}</span>
-                <span class="amount">${formatMoney(p.monto)} (${pct}%)</span>
-            </div>
-            <div style="height:6px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden">
-                <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#8b5cf6,#3b82f6)"></div>
-            </div>
+          <div style="display:flex; justify-space-between; font-size:12px; margin-bottom:4px">
+            <span style="font-weight:700; color:white">${p.nombre}</span>
+            <span class="amount" style="font-size:13px">${formatMoney(p.monto)} (${pct}%)</span>
+          </div>
+          <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden">
+            <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#8b5cf6,#3b82f6)"></div>
+          </div>
         `;
         tpDiv.appendChild(div);
-    });
-}
+      });
+    }
 
-document.addEventListener('DOMContentLoaded', function() {
-    renderTable(1);
-    initCharts();
-    document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('es-AR');
-});
-</script>
-  <script src="js/theme-switcher.js"></script>
-  <script src="js/nav.js"></script>
-  <script src='js/bottom-nav.js'></script>
+    document.addEventListener('DOMContentLoaded', function() {
+      renderTable(1);
+      initCharts();
+    });
+  </script>
+
 </body>
 </html>

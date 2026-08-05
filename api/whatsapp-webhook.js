@@ -15,13 +15,20 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
-    const body = req.body;
-    if (body && body.object === 'whatsapp_business_account') {
-      for (const entry of (body.entry || [])) {
-        for (const change of (entry.changes || [])) {
-          if (change.field !== 'messages') continue;
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) {}
+    }
+    console.log('[WA-WEBHOOK-RECV]', JSON.stringify(body));
+
+    if (body) {
+      const entries = body.entry || [];
+      for (const entry of entries) {
+        const changes = entry.changes || [];
+        for (const change of changes) {
           const v = change.value || {};
-          for (const msg of (v.messages || [])) {
+          const messages = v.messages || [];
+          for (const msg of messages) {
             await route(msg, v.metadata || {});
           }
         }

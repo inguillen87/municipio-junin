@@ -6,9 +6,10 @@
 
 // SESSION GUARD
 (function checkAuth() {
-  var pub = ['login.html','landing.html','ciudadano.html','cuentas-claras.html','404.html','offline.html'];
-  var page = window.location.pathname.split('/').pop() || 'index.html';
-  if (pub.indexOf(page) !== -1) return;
+  var pub = ['login','landing','ciudadano','cuentas-claras','404','offline'];
+  var path = window.location.pathname.toLowerCase();
+  var page = path.split('/').pop().replace(/\.html$/, '');
+  if (!page || page === '' || pub.indexOf(page) !== -1) return;
   var sess = sessionStorage.getItem('mjunin_user');
   if (!sess) window.location.replace('login.html');
 })();

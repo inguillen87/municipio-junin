@@ -598,7 +598,8 @@
     function fillUser(email, pass) {
       document.getElementById('emailInput').value = email;
       document.getElementById('passInput').value = pass;
-      document.getElementById('emailInput').dispatchEvent(new Event('input'));
+      var fakeEvent = { preventDefault: function(){} };
+      doLogin(fakeEvent);
     }
 
     function togglePass() {

@@ -1,14 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#060b18">
   <title>MuniForms — Constructor de Formularios | MuniControl</title>
-  <link rel="icon" href="favicon.ico">
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    .builder-grid { display: grid; grid-template-columns: 260px 1fr 260px; gap: 16px; min-height: 60vh; }
+    @media (max-width: 900px) { .builder-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
   <aside class="sidebar" id="sidebar"></aside>
@@ -22,13 +26,13 @@
           <span class="breadcrumb">Constructor de Formularios Municipales</span>
         </div>
       </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
+      <div class="topbar-right">
         <button onclick="previewForm()" style="padding:8px 16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#10b981;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px;margin-right:8px">👁️ Vista previa</button>
         <button onclick="publishForm()" style="padding:8px 16px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:white;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px">🚀 Publicar</button>
       </div>
     </header>
 
-    <div class="page-content">
+    <div class="content-wrapper">
       
       <!-- FORM TEMPLATES -->
       <div class="card" style="margin-bottom:20px">
@@ -41,7 +45,7 @@
       </div>
 
       <!-- BUILDER -->
-      <div style="display:grid;grid-template-columns:260px 1fr 260px;gap:16px;min-height:60vh">
+      <div class="builder-grid">
         
         <!-- LEFT: Field Types -->
         <div class="card">
@@ -62,7 +66,7 @@
             <div id="canvasEmpty" style="text-align:center;padding:60px 20px;color:rgba(148,163,184,0.4)">
               <div style="font-size:48px;margin-bottom:12px">📝</div>
               <div style="font-size:14px;font-weight:700">Arrastrá campos aquí</div>
-              <div style="font-size:12px;margin-top:6px">o hace clic en una plantilla arriba</div>
+              <div style="font-size:12px;margin-top:6px">o hacé clic en una plantilla arriba</div>
             </div>
           </div>
         </div>
@@ -107,25 +111,20 @@
   <script src="js/nav.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/permissions.js"></script>
   <script>
-    // ============================================================
-    // MuniForms Builder
-    // ============================================================
-    
     const FIELD_TYPES = [
       { type:'text', icon:'📝', label:'Texto corto', desc:'Nombre, dirección, etc.' },
       { type:'textarea', icon:'📜', label:'Texto largo', desc:'Descripción detallada' },
       { type:'email', icon:'📧', label:'Email', desc:'Correo electrónico' },
       { type:'tel', icon:'📞', label:'Teléfono', desc:'Número de contacto' },
-      { type:'number', icon:'\ud83d\udd22', label:'Número', desc:'Cantidad, DNI, etc.' },
+      { type:'number', icon:'🔢', label:'Número', desc:'Cantidad, DNI, etc.' },
       { type:'date', icon:'📅', label:'Fecha', desc:'Fecha de vencimiento, etc.' },
       { type:'select', icon:'📖', label:'Selección', desc:'Lista de opciones' },
       { type:'radio', icon:'🔘', label:'Opción única', desc:'Una respuesta posible' },
       { type:'checkbox', icon:'☑️', label:'Múltiple', desc:'Varias respuestas' },
       { type:'file', icon:'📎', label:'Archivo adjunto', desc:'Foto, PDF, etc.' },
       { type:'rating', icon:'⭐', label:'Calificación', desc:'1 a 5 estrellas' },
-      { type:'signature', icon:'✍️', label:'Firma digital', desc:'Firma del ciudadano' },
+      { type:'signature', icon:'✍️', label:'Firma digital', desc:'Firma del ciudadano' }
     ];
 
     const TEMPLATES = [
@@ -134,7 +133,7 @@
       { name:'Subsidio social', icon:'🤝', fields:['nombre','dni','fecha_nacimiento','domicilio','ingreso_familiar','cantidad_hijos','descripcion'] },
       { name:'Permiso de obra', icon:'🏗️', fields:['propietario','direccion_obra','tipo_obra','profesional','presupuesto','fecha_inicio'] },
       { name:'Encuesta de satisfacción', icon:'⭐', fields:['calificacion','sector','comentarios','sugerencias'] },
-      { name:'Alta de proveedor', icon:'🏢', fields:['razon_social','cuit','rubro','contacto','email','telefono','banco','cbu'] },
+      { name:'Alta de proveedor', icon:'🏢', fields:['razon_social','cuit','rubro','contacto','email','telefono','banco','cbu'] }
     ];
 
     let formFields = [];
@@ -142,7 +141,7 @@
     let publishedForms = [
       { id:'f001', name:'Reclamo Vecinal 2026', type:'Ciudadano', responses:247, status:'activo', created:'2026-06-01' },
       { id:'f002', name:'Encuesta Satisfacción Junio', type:'Encuesta', responses:89, status:'cerrado', created:'2026-06-15' },
-      { id:'f003', name:'Alta Proveedores Q3', type:'Interno', responses:12, status:'activo', created:'2026-07-01' },
+      { id:'f003', name:'Alta Proveedores Q3', type:'Interno', responses:12, status:'activo', created:'2026-07-01' }
     ];
 
     // Init
@@ -196,7 +195,7 @@
         required: true
       }));
       renderCanvas();
-      if (typeof showToast !== 'undefined') showToast(`\ud83d\udcdc Plantilla "${name}" cargada`, 'success');
+      if (typeof showToast !== 'undefined') showToast(`📜 Plantilla "${name}" cargada`, 'success');
     }
 
     function addField(type) {
@@ -224,11 +223,12 @@
         row.className = 'field-row';
         row.setAttribute('data-idx', idx);
         row.style.cssText = 'padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02);position:relative;display:flex;align-items:center;gap:12px';
+        const descText = ft ? ft.desc : f.type;
         row.innerHTML = `
-          <span style="font-size:20px;flex-shrink:0">${ft ? ft.icon : '\ud83d\udcdd'}</span>
+          <span style="font-size:20px;flex-shrink:0">${ft ? ft.icon : '📝'}</span>
           <div style="flex:1">
             <div style="font-size:12px;font-weight:700;margin-bottom:4px">${f.label}${f.required ? ' <span style="color:#ef4444">*</span>' : ''}</div>
-            <div style="font-size:11px;color:rgba(148,163,184,0.5)">${f.placeholder || ftú.desc || f.type}</div>
+            <div style="font-size:11px;color:rgba(148,163,184,0.5)">${f.placeholder || descText}</div>
           </div>
           <div style="display:flex;gap:4px">
             <button onclick="moveField(${idx},-1)" style="padding:4px 8px;background:rgba(255,255,255,0.05);border:none;border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:11px">↑</button>
@@ -291,10 +291,10 @@
     function dropField(e) { e.preventDefault(); const type = e.dataTransfer.getData('fieldType'); if (type) addField(type); }
 
     function previewForm() {
-      if (formFields.length === 0) { if(typeof showToast!=='undefined') showToast('\u26a0\ufe0f Agrá al menos un campo primero', 'error'); return; }
+      if (formFields.length === 0) { if(typeof showToast!=='undefined') showToast('⚠️ Agrá al menos un campo primero', 'error'); return; }
       const title = document.getElementById('formTitle').value || 'Formulario';
       const html = `
-        <div style="max-width:500px;margin:0 auto;padding:20px">
+        <div style="max-width:500px;margin:0 auto;padding:20px;color:#333">
           <h2 style="margin-bottom:20px">${title}</h2>
           ${formFields.map(f => `
             <div style="margin-bottom:16px">
@@ -308,20 +308,17 @@
         </div>
       `;
       const win = window.open('', '_blank', 'width=600,height=700');
-      win.document.write(`<html><body style="font-family:Inter,sans-serif;background:#f8fafc;padding:20px">${html}  
-  
-  <script src='js/bottom-nav.js'></script>
-</body></html>`);
+      win.document.write(`<!DOCTYPE html><html><head><title>${title}</title></head><body style="font-family:Inter,sans-serif;background:#f8fafc;padding:20px">${html}</body></html>`);
     }
 
     function publishForm() {
-      if (formFields.length === 0) { if(typeof showToast!=='undefined') showToast('\u26a0\ufe0f Agrá al menos un campo', 'error'); return; }
+      if (formFields.length === 0) { if(typeof showToast!=='undefined') showToast('⚠️ Agrá al menos un campo', 'error'); return; }
       const name = document.getElementById('formTitle').value || 'Formulario';
       publishedForms.unshift({ id:'f'+Date.now(), name, type:'Público', responses:0, status:'activo', created: new Date().toLocaleDateString('es-AR') });
       renderPublishedForms();
       formFields = [];
       renderCanvas();
-      if (typeof showToast !== 'undefined') showToast(`\ud83d\ude80 "${name}" publicado exitosamente!`, 'success');
+      if (typeof showToast !== 'undefined') showToast(`🚀 "${name}" publicado exitosamente!`, 'success');
     }
 
     function renderPublishedForms() {
@@ -346,20 +343,15 @@
     function copyLink(id) {
       const link = `${window.location.origin}/form-public.html?id=${id}`;
       navigator.clipboard?.writeText(link).then(() => {
-        if(typeof showToast!=='undefined') showToast('\ud83d Link copiado al portapapeles', 'success');
+        if(typeof showToast!=='undefined') showToast('🔗 Link copiado al portapapeles', 'success');
       }).catch(() => {
-        if(typeof showToast!=='undefined') showToast('\ud83d Link: ' + link, 'info');
+        if(typeof showToast!=='undefined') showToast('🔗 Link: ' + link, 'info');
       });
     }
 
     function generateQR(id) {
-      if(typeof showToast!=='undefined') showToast('\ud83d QR generado (requiere backend para descarga)', 'info');
+      if(typeof showToast!=='undefined') showToast('📱 QR generado', 'info');
     }
   </script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
-  <script src='js/bottom-nav.js'></script>
 </body>
 </html>
-
-

@@ -216,6 +216,20 @@
     .activity-text { font-size: 13px; color: var(--text); line-height: 1.4; }
     .activity-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
+    /* ── ANIMATIONS ─────────────────────────────────────────── */
+    .chart-skeleton { background: linear-gradient(90deg, var(--bg-card, var(--surface)) 25%, var(--bg-hover, rgba(255,255,255,0.05)) 50%, var(--bg-card, var(--surface)) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; height: 250px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes pulseAlert { 0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 70% { box-shadow: 0 0 0 10px rgba(245,158,11,0); } 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } }
+    .alert-banner { animation: pulseAlert 2.5s infinite cubic-bezier(0.66, 0, 0, 1); }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .kpi-card { animation: fadeInUp 0.5s ease-out backwards; }
+    .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.15s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.2s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.25s; }
+    .kpi-card:nth-child(5) { animation-delay: 0.3s; }
+    .kpi-card:nth-child(6) { animation-delay: 0.35s; }
+
     /* ── MOBILE ─────────────────────────────────────────────── */
     @media (max-width: 900px) {
       .menu-btn { display: flex !important; }
@@ -512,14 +526,16 @@
             <div class="chart-title">Gasto Mensual</div>
             <div class="chart-sub">Evolucion 2025-2026</div>
           </div>
-          <canvas id="chartGastoMensual" height="180"></canvas>
+          <div id="skelGastoMensual" class="chart-skeleton"></div>
+          <canvas id="chartGastoMensual" height="180" style="display:none;"></canvas>
         </div>
         <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
             <div class="chart-title">Presupuesto por Secretaria</div>
             <div class="chart-sub">Distribucion actual</div>
           </div>
-          <canvas id="chartPresupuestoDoughnut" height="180"></canvas>
+          <div id="skelPresupuesto" class="chart-skeleton"></div>
+          <canvas id="chartPresupuestoDoughnut" height="180" style="display:none;"></canvas>
         </div>
       </div>
 
@@ -530,19 +546,21 @@
             <div class="chart-title">Ultimos Pagos</div>
             <div class="chart-sub">Checkbook municipal</div>
           </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Proveedor</th>
-                <th>Secretaria</th>
-                <th>Monto</th>
-              </tr>
-            </thead>
-            <tbody id="checkbookBody">
-              <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Cargando...</td></tr>
-            </tbody>
-          </table>
+          <div style="overflow-x: auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Proveedor</th>
+                  <th>Secretaria</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody id="checkbookBody">
+                <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
         <div class="chart-card card-lift" data-reveal>
           <div class="chart-header">
@@ -617,8 +635,16 @@
       // Charts
       function initCharts() {
         if(!window.Chart||!window.MuniCharts) { setTimeout(initCharts,200); return; }
-        try { MuniCharts.gastoMensual('chartGastoMensual'); } catch(e){}
-        try { MuniCharts.presupuesto('chartPresupuestoDoughnut'); } catch(e){}
+        try { 
+          MuniCharts.gastoMensual('chartGastoMensual'); 
+          var s1 = document.getElementById('skelGastoMensual'); if(s1) s1.style.display = 'none';
+          var c1 = document.getElementById('chartGastoMensual'); if(c1) c1.style.display = 'block';
+        } catch(e){}
+        try { 
+          MuniCharts.presupuesto('chartPresupuestoDoughnut'); 
+          var s2 = document.getElementById('skelPresupuesto'); if(s2) s2.style.display = 'none';
+          var c2 = document.getElementById('chartPresupuestoDoughnut'); if(c2) c2.style.display = 'block';
+        } catch(e){}
       }
       setTimeout(initCharts,400);
 

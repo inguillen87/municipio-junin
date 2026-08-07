@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { message } = req.body || {};
+  const { message, history } = req.body || {};
   if (!message) return res.status(400).json({ error: 'Message es requerido' });
 
   const promptLower = message.toLowerCase();
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     let dbData = await getLiveDatabaseMetrics();
 
     // 2. Try LLM API call if token is provided
-    let aiResponse = await tryLLMProvider(message, dbData);
+    let aiResponse = await tryLLMProvider(message, dbData, history);
 
     // 3. Fallback to Deep Intelligence Generator if LLM unavailable
     if (!aiResponse) {
@@ -119,7 +119,7 @@ function computeReclamosStats(rows) {
   return { totales: rows.length || 318, resueltos: Math.round((rows.length || 318) * 0.94) };
 }
 
-async function tryLLMProvider(userPrompt, metrics) {
+async function tryLLMProvider(userPrompt, metrics, history = []) {
   const token = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || process.env.MUNI_HF_TOKEN;
   if (!token) return null;
 
@@ -156,7 +156,8 @@ REGLAS DE RESPUESTA:
         model: isHF ? 'Qwen/Qwen2.5-72B-Instruct' : 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemMessage },
-          { role: 'user', content: userPrompt }
+          ...(history && history.length > 0 ? history : []),
+          ...(history && history.length > 0 && history[history.length - 1].content === userPrompt ? [] : [{ role: 'user', content: userPrompt }])
         ],
         max_tokens: 600,
         temperature: 0.5
@@ -228,7 +229,38 @@ function generateDeepGovTechResponse(prompt, m) {
       `📋 **Auditoría de Legajos**: El 98,4% de los legajos cuentan con acreditación digital de haberes en Banco Nación / Supervielle.`;
   }
 
-  // 5. DEFAULT EXECUTIVE ADVISOR RESPONSE
+  // 5. QUERY FOR TURNOS
+  if (prompt.includes('turno') || prompt.includes('horario')) {
+    return `Para sacar un turno de atención personalizada o consultar horarios, podés acceder al Portal Ciudadano.\n\n` +
+      `Los horarios de atención son de Lunes a Viernes de 7:30 a 13:30 hs.\n\n` +
+      `Podés solicitar turnos para Licencias de Conducir, Habilitaciones, y más en nuestro portal.`;
+  }
+
+  // 6. QUERY FOR LICITACIONES
+  if (prompt.includes('licitacion') || prompt.includes('pliego')) {
+    return `El módulo de Licitaciones muestra:\n\n` +
+      `• Procesos de licitación activos y montos.\n` +
+      `• Generación automática de pliegos mediante IA.\n` +
+      `• Posibilidad de ver el historial completo y los montos adjudicados en el portal.`;
+  }
+
+  // 7. QUERY FOR TRAMITES
+  if (prompt.includes('tramite') || prompt.includes('habilitacion') || prompt.includes('permiso')) {
+    return `Trámites y habilitaciones municipales:\n\n` +
+      `• Podés iniciar la mayoría de los trámites de manera online.\n` +
+      `• Las habilitaciones comerciales cuentan con un proceso Fast-Track.\n` +
+      `• Consultá los requisitos específicos en la sección de Trámites del Portal Ciudadano.`;
+  }
+
+  // 8. QUERY FOR SERVICIOS
+  if (prompt.includes('servicio') || prompt.includes('recoleccion') || prompt.includes('basura')) {
+    return `Servicios municipales activos:\n\n` +
+      `• **Recolección de Residuos**: Frecuencia diaria en horarios establecidos.\n` +
+      `• **Alumbrado Público**: Programa de recambio a luminarias LED en curso.\n` +
+      `• **Mantenimiento**: Si tenés algún inconveniente, te sugerimos ingresar un reclamo en la sección 311.`;
+  }
+
+  // 9. DEFAULT EXECUTIVE ADVISOR RESPONSE
   return `Hola. Como Asistente Ejecutivo e Inteligente de la Municipalidad de Junín, he procesado su consulta:\n\n` +
     `Actualmente el Municipio registra una ejecución presupuestaria de **$165,3M ARS** sobre un total anual de **$372M ARS** (44,4% ejecutado). El estado de las cuentas municipales es financieramente sólido con **$206,7M ARS disponibles**.\n\n` +
     `Podés pedirme detalles específicos sobre:\n` +

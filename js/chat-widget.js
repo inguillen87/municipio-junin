@@ -15,12 +15,47 @@
     'default': 'Entendí tu consulta. Para una respuesta más precisa, podés:\n\n• Ir a <a href="vecinos.html" style="color:#60a5fa">Reclamos 311</a>\n• Consultar <a href="cuentas-claras.html" style="color:#60a5fa">Cuentas Claras</a>\n• Llamar al: (236) 2-480000'
   };
 
-  function getResponse(msg) {
+  function getFallbackResponse(msg) {
     const ml = msg.toLowerCase();
     for (const [key, resp] of Object.entries(DEMO_RESPONSES)) {
       if (key !== 'default' && ml.includes(key)) return resp;
     }
     return DEMO_RESPONSES.default;
+  }
+
+  function formatMarkdown(text) {
+    return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+               .replace(/\*(.+?)\*/g, '<em>$1</em>')
+               .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#60a5fa">$1</a>');
+  }
+
+  async function getAIResponse(userMessage) {
+    const NAV_SHORTCUTS = {
+      'reclamo': DEMO_RESPONSES['reclamo'],
+      'tasa': DEMO_RESPONSES['tasa'],
+      'obra': DEMO_RESPONSES['obra'],
+      'turno': DEMO_RESPONSES['turno'],
+      'presupuesto': DEMO_RESPONSES['presupuesto'],
+      'horario': DEMO_RESPONSES['horario']
+    };
+
+    const ml = userMessage.toLowerCase();
+    for (const [key, resp] of Object.entries(NAV_SHORTCUTS)) {
+      if (ml.includes(key)) return resp;
+    }
+
+    try {
+      const res = await fetch('/api/ai-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+      });
+      const data = await res.json();
+      const textResponse = data.response || data.reply || 'No pude procesar tu consulta.';
+      return formatMarkdown(textResponse);
+    } catch (err) {
+      return getFallbackResponse(userMessage);
+    }
   }
 
   function timeNow() {
@@ -225,16 +260,14 @@
       messages.scrollTop = messages.scrollHeight;
     },
 
-    send: function(text) {
+    send: async function(text) {
       if (!this.isOpen) this.toggle();
       this.addMessage('user', text);
       this.showTyping();
-      const self = this;
-      setTimeout(function() {
-        self.hideTyping();
-        const response = getResponse(text);
-        self.addMessage('bot', response);
-      }, 800 + Math.random() * 600);
+      
+      const response = await getAIResponse(text);
+      this.hideTyping();
+      this.addMessage('bot', response);
     },
 
     sendInput: function() {

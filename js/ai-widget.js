@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ai-widget.js — Widget IA flotante para GovTech Platform
  * Soporta texto + voz. Se inyecta en TODAS las páginas via <script src="js/ai-widget.js">
  */
@@ -67,7 +67,7 @@
         return entry.response;
       }
     }
-    return KB[KB.length - 1].response;
+    return null;
   }
 
   // ── FORMAT MARKDOWN ───────────────────────────────────────
@@ -423,12 +423,39 @@
     const typing = showTyping();
     const delay = 600 + Math.random() * 800;
 
-    setTimeout(() => {
+    const kbResponse = findResponse(userText);
+    
+    if (kbResponse) {
+      setTimeout(() => {
+        typing.remove();
+        addMessage(kbResponse, false, { typing: true });
+        renderSuggestions(userText);
+      }, delay);
+      return;
+    }
+
+    try {
+      const history = store.slice(-5).map(m => ({ 
+        role: m.role === 'bot' ? 'assistant' : 'user', 
+        content: m.text 
+      }));
+      const res = await fetch('/api/ai-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: userText,
+          history: history
+        })
+      });
+      const data = await res.json();
+      const aiResponse = data.response || data.reply || 'Estoy procesando tu consulta...';
       typing.remove();
-      const response = findResponse(userText);
-      addMessage(response, false, { typing: true });
+      addMessage(aiResponse, false, { typing: true });
       renderSuggestions(userText);
-    }, delay);
+    } catch (err) {
+      typing.remove();
+      addMessage('🤖 No pude conectarme al servidor de IA. Intenta de nuevo en unos segundos.', false, { typing: true });
+    }
   }
 
   // ── TOGGLE PANEL ──────────────────────────────────────────

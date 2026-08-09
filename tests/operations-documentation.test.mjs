@@ -39,7 +39,7 @@ test('the living documentation package exists and distinguishes local, condition
   }
 
   const integral = read('docs/MANUAL_INTEGRAL.md');
-  assert.match(integral, /Versión documental: 1\.9\.0/i);
+  assert.match(integral, /Versión documental: 1\.10\.0/i);
   assert.match(integral, /v1\.8\.1[\s\S]{0,80}b82c0b3[\s\S]{0,80}master[\s\S]{0,80}tag/i);
   assert.match(integral, /dpl_A19n7grSSyuum3zuSQcdcaVKmt8F[\s\S]{0,80}Ready/i);
   assert.match(integral, /10\/10.*exit `0`/i);
@@ -54,7 +54,7 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(integral, /\/api\/grh-data[\s\S]{0,180}410 GRH_RAW_CONTRACT_RETIRED[\s\S]{0,120}sin leer artefactos/i);
 
   const user = read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md');
-  assert.match(user, /\| Versión \| 1\.9\.0 \|/);
+  assert.match(user, /\| Versión \| 1\.10\.0 \|/);
   for (const state of ['Operativo', 'Condicionado', 'Roadmap']) assert.match(user, new RegExp(state, 'i'));
   assert.match(user, /Tesorería/);
   assert.match(user, /Compras/);
@@ -69,22 +69,23 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(user, /close_explanation[\s\S]{0,420}422/i);
 
   const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
-  assert.match(technical, /\*\*Versión:\*\* 1\.9\.0/);
+  assert.match(technical, /\*\*Versión:\*\* 1\.10\.0/);
   assert.match(technical, /shared\/route-policy\.cjs/);
   assert.match(technical, /recurso:acción/);
   assert.match(technical, /desconocid[oa]s fallan cerrados/i);
   assert.match(technical, /17\.1 Alta administrativa retirada[\s\S]*POST \/api\/admin\/tenants[\s\S]*ACCOUNT_LIFECYCLE_NOT_GOVERNED/i);
   assert.match(technical, /PUT\/PATCH de tenant[\s\S]*TENANT_LIFECYCLE_NOT_GOVERNED/i);
   assert.doesNotMatch(technical, /Ruta administrativa disponible/i);
-  assert.match(technical, /78 firmas[\s\S]{0,80}36 Serverless[\s\S]{0,40}42 Express/i);
+  assert.match(technical, /79 firmas[\s\S]{0,80}37 Serverless[\s\S]{0,40}42 Express/i);
   assert.match(technical, /GET \/api\/grh-executive[\s\S]{0,240}grh-executive-v2/i);
   assert.match(technical, /GET \/api\/grh-quality[\s\S]{0,240}grh-quality-v1/i);
   assert.match(technical, /GET \/api\/grh-close[\s\S]{0,240}grh-close-v1/i);
+  assert.match(technical, /GET \/api\/grh-decision-brief[\s\S]{0,240}grh-decision-brief-v1/i);
   assert.match(technical, /\/api\/grh-data[\s\S]{0,240}410[\s\S]{0,120}sin leer artefactos/i);
   assert.match(technical, /profile[\s\S]{0,100}semantic[\s\S]{0,120}exclusivamente en backend/i);
 
   const roadmap = read('docs/ENTERPRISE_PRODUCT_ROADMAP.md');
-  assert.match(roadmap, /Versión: 1\.9\.0/i);
+  assert.match(roadmap, /Versión: 1\.10\.0/i);
   for (const capability of ['Apache ECharts', 'MapLibre GL JS', 'PostGIS', 'deck.gl', 'OpenTelemetry', 'CDC']) {
     assert.match(roadmap, new RegExp(capability.replace('.', '\\.'), 'i'));
   }
@@ -160,7 +161,7 @@ test('the living documentation package exists and distinguishes local, condition
   }
 
   const roleJourneys = read('docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md');
-  assert.match(roleJourneys, /\*\*Versión:\*\* 1\.9\.0/);
+  assert.match(roleJourneys, /\*\*Versión:\*\* 1\.10\.0/);
   assert.match(roleJourneys, /Operativo local[\s\S]*Condicionado[\s\S]*Roadmap/i);
   assert.match(roleJourneys, /maker[\s\S]*checker/i);
   assert.match(roleJourneys, /FIRST_LOGIN_REQUIRED/);
@@ -171,7 +172,7 @@ test('the living documentation package exists and distinguishes local, condition
   assert.doesNotMatch(roleJourneys, /^\| \[`reportes\.html`\]\([^)]*\) \| `data_points`/im);
 
   const benchmark = read('docs/GOVTECH_BENCHMARK.md');
-  assert.match(benchmark, /- Versión: 1\.9\.0/);
+  assert.match(benchmark, /- Versión: 1\.10\.0/);
   assert.match(benchmark, /seed \*\*no prepara ningún rol\*\*/i);
   assert.doesNotMatch(benchmark, /seed prepara `SUPER_ADMIN`/i);
 
@@ -229,7 +230,7 @@ test('O2A real-local evidence is documented without promoting O2B or production 
   }
 });
 
-test('documentation 1.9.0 preserves the governed close, Bot, immutable replay and release truths', () => {
+test('documentation 1.10.0 preserves the governed close, Bot, immutable replay and release truths', () => {
   const integral = read('docs/MANUAL_INTEGRAL.md');
   const user = read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md');
   const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
@@ -243,7 +244,7 @@ test('documentation 1.9.0 preserves the governed close, Bot, immutable replay an
   const benchmark = read('docs/GOVTECH_BENCHMARK.md');
 
   for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark, inApp]) {
-    assert.match(source, /1\.9\.0(?![-+0-9A-Za-z.])/, 'every living manual must expose current version 1.9.0');
+    assert.match(source, /1\.10\.0(?![-+0-9A-Za-z.])/, 'every living manual must expose current version 1.10.0');
   }
 
   for (const source of [integral, user, technical, master, enterprise, operations, pipeline, privacy, inApp]) {
@@ -289,8 +290,9 @@ test('documentation 1.9.0 preserves the governed close, Bot, immutable replay an
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 78);
-  assert.deepEqual(runtimeCounts, { serverless: 36, express: 42 });
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-09.2');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 79);
+  assert.deepEqual(runtimeCounts, { serverless: 37, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 26);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 46);
@@ -301,7 +303,7 @@ test('documentation 1.9.0 preserves the governed close, Bot, immutable replay an
   }
 });
 
-test('documentation 1.9.0 records the exact role workspace without claiming accounts from visual guidance', () => {
+test('documentation 1.10.0 records the exact role workspace without claiming accounts from visual guidance', () => {
   const accessPolicy = require('../shared/access-policy.cjs');
   const expectedRoles = [
     'SUPER_ADMIN',
@@ -326,7 +328,7 @@ test('documentation 1.9.0 records the exact role workspace without claiming acco
   const inApp = read('manuales.html');
 
   for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark, inApp]) {
-    assert.match(source, /1\.9\.0(?![-+0-9A-Za-z.])/);
+    assert.match(source, /1\.10\.0(?![-+0-9A-Za-z.])/);
     assert.match(source, /inicio\.html/);
     assert.match(source, /siete roles|siete variantes|siete inicios/i);
     assert.match(source, /(?:sin cuentas|no (?:se )?crea(?:ron)? (?:una )?(?:cuenta|cuentas|usuarios|identidades)|no aprovisiona cuentas|no prueba cuentas|no declara cuentas)/i);
@@ -356,6 +358,75 @@ test('documentation 1.9.0 records the exact role workspace without claiming acco
 
   assert.match(inApp, /10\/10/);
   assert.match(inApp, /\/roles/);
+});
+
+test('S13 1.10.0 is a truthful local decision-brief candidate', () => {
+  const candidatePaths = [
+    'CHANGELOG.md',
+    'docs/MASTER_PLAN_STATUS.md',
+    'docs/ENTERPRISE_PRODUCT_ROADMAP.md',
+    'docs/MANUAL_INTEGRAL.md',
+    'docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md',
+    'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    'docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md',
+    'docs/GOVTECH_BENCHMARK.md',
+    'manuales.html',
+  ];
+
+  const routePolicy = require('../shared/route-policy.cjs');
+  const accessPolicy = require('../shared/access-policy.cjs');
+  const releaseTruth = require('../shared/release-truth-contract.cjs');
+  const runtimeCounts = routePolicy.PROTECTED_ROUTES.reduce((counts, route) => {
+    counts[route.runtime] = (counts[route.runtime] || 0) + 1;
+    return counts;
+  }, {});
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-09.2');
+  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-09.1');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 79);
+  assert.deepEqual(runtimeCounts, { serverless: 37, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 26);
+  assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 46);
+  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 6);
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
+
+  for (const relativePath of candidatePaths) {
+    const source = read(relativePath);
+    assert.match(source, /1\.10\.0(?![-+0-9A-Za-z.])/, relativePath);
+    assert.match(source, /candidato local/i, relativePath);
+    assert.match(source, /GET \/api\/grh-decision-brief/i, relativePath);
+    assert.match(source, /grh-decision-brief-v1/i, relativePath);
+    assert.match(source, /agregados del snapshot\s+aprobado[\s\S]{0,80}validación local/i, relativePath);
+    assert.match(source, /se(?:para|paración)[\s\S]{0,100}global[\s\S]{0,100}mensual/i, relativePath);
+    assert.match(source, /temporalQuarantineRows/, relativePath);
+    assert.match(source, /k=10/, relativePath);
+    assert.match(source, /PII[\s\S]{0,100}importes[\s\S]{0,100}códigos de fuente\/celda[\s\S]{0,100}(?:labels|etiquetas)/i, relativePath);
+    assert.match(source, /CTA[\s\S]{0,100}capability/i, relativePath);
+    assert.match(source, /503[\s\S]{0,160}reintento\s+manual/i, relativePath);
+    assert.match(source, /celda[\s\S]{0,80}(?:<10|&lt;10)[\s\S]{0,100}(?:falla|fallar) cerrado/i, relativePath);
+    assert.match(source, /#decisionBrief/, relativePath);
+    assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);
+    assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos[\s\S]{0,80}79\s+(?:rutas|firmas)/i, relativePath);
+    assert.match(source, /37 Serverless[\s\S]{0,60}42 Express/i, relativePath);
+    assert.match(source, /seis APIs[\s\S]{0,80}11 checks/i, relativePath);
+    assert.match(source, /135\/135[\s\S]{0,120}104\/104[\s\S]{0,80}0 P1\/P2/i, relativePath);
+    assert.match(source, /591\s+(?:pruebas|totales)[\s\S]{0,100}590\s+aprobadas[\s\S]{0,80}0\s+fallidas[\s\S]{0,100}1\s+smoke\s+opt-in\s+omitido/i, relativePath);
+    assert.match(source, /backend[\s\S]{0,40}20\/20/i, relativePath);
+    assert.match(source, /producto S13[\s\S]{0,40}commit[\s\S]{0,30}d11fd39[\s\S]{0,80}validación[\s>]+local[\s\S]{0,40}(?:en|de)[\s>]+este[\s>]+corte/i, relativePath);
+    assert.match(source, /estos documentos no acreditan[\s\S]{0,40}Preview\/Producción/i, relativePath);
+    assert.match(source, /última[\s>]+evidencia[\s>]+remota[\s\S]{0,80}verificada[\s\S]{0,50}(?:al|en el) corte[\s\S]{0,40}v1\.9\.0/i, relativePath);
+    assert.match(source, /no (?:se )?afirma[\s\S]{0,120}(?:tag|deployment)/i, relativePath);
+    assert.doesNotMatch(source, /sin\s+commit/i, relativePath);
+    assert.match(source, /última[\s>]+evidencia[\s>]+remota[\s\S]{0,100}v1\.9\.0/i, relativePath);
+    assert.match(source, /Backend[\s\S]{0,40}1\.0\.0[\s\S]{0,100}Prisma[\s\S]{0,40}1\.1\.0/i, relativePath);
+  }
+
+  const backendManifest = JSON.parse(read('backend/package.json'));
+  assert.equal(backendManifest.version, '1.0.0');
+  assert.match(
+    read('docs/PRISMA_BASELINE_Y_DRIFT.md'),
+    /\*\*Vers(?:ión|i\\u00f3n):\*\* 1\.1\.0/
+  );
 });
 
 test('the public 1.9.0 release is exact while private MuniGuia remains local-only', () => {
@@ -432,12 +503,12 @@ test('the public 1.9.0 release is exact while private MuniGuia remains local-onl
   }
 });
 
-test('post-release 1.9.0 preserves the exact public 1.8.1 evidence without moving either tag', () => {
+test('candidate 1.10.0 preserves the exact public 1.9.0 and 1.8.1 evidence', () => {
   const rootManifest = JSON.parse(read('package.json'));
   const rootLock = JSON.parse(read('package-lock.json'));
   const backendManifest = JSON.parse(read('backend/package.json'));
   assert.equal(rootManifest.name, 'municipio-junin');
-  assert.equal(rootManifest.version, '1.9.0');
+  assert.equal(rootManifest.version, '1.10.0');
   assert.equal(rootManifest.private, true);
   assert.equal(rootLock.name, rootManifest.name);
   assert.equal(rootLock.version, rootManifest.version);
@@ -733,7 +804,7 @@ test('unsafe legacy on-prem executables stay retired behind an explicit document
 
 test('the in-app manual exposes a semantic version and its truth contract separately', () => {
   const source = read('manuales.html');
-  assert.match(source, /data-doc-version="1\.9\.0"/);
+  assert.match(source, /data-doc-version="1\.10\.0"/);
   assert.match(source, /data-doc-contract="operational-truth-v1"/);
   assert.match(source, /data-primary-source="grh"/);
   assert.match(source, /data-secondary-source-policy="personas-excluded"/);

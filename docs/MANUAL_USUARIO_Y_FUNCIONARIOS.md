@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.9.0 |
+| Versión | 1.10.0 |
 | Fecha de corte documental | 9 de agosto de 2026 |
-| Estado | Release público `v1.9.0` verificado; MuniGuía privada y autorización positiva conservan evidencia sólo local |
+| Estado | Candidato local S13 `1.10.0`; producto S13 en commit `d11fd39`, validación local en este corte |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -15,6 +15,23 @@
 Este manual está dirigido a Intendencia, secretarías, Hacienda, RRHH y personas
 operadoras autorizadas. Explica lo que la plataforma puede hacer hoy, qué depende
 de configuración y qué todavía es hoja de ruta.
+
+Estos documentos no acreditan Preview/Producción; última evidencia remota
+verificada al corte: `v1.9.0`. No se afirma aquí tag ni deployment verificados de
+`v1.10.0`. S13 incorpora `GET /api/grh-decision-brief` con
+`grh-decision-brief-v1`: un brief ejecutivo único desde agregados del snapshot
+aprobado, con validación local. Separa la señal global cross-source de la evidencia
+mensual, muestra `temporalQuarantineRows`, aplica k=10 y excluye PII, importes, códigos de fuente/celda y etiquetas/labels. Las CTA aparecen sólo
+con su capability; un 503 habilita únicamente reintento manual y una celda actual
+`<10` hace fallar cerrado el Panel integral. MuniGuía usa el anchor
+`#decisionBrief`.
+
+Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
+acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El gate queda
+preparado para seis APIs y 11 checks al desplegar. Focal raíz S13 135/135 y QA
+adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
+aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
+sigue `1.0.0` y Prisma `1.1.0`.
 
 El commit/tag `v1.9.0` es `f9d1f88` y el product commit es `ed76347`. El
 deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura `Ready` en `Production`
@@ -123,8 +140,8 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local cubre 26 recursos, 12 acciones, 46 permisos y 78
-firmas exactas: 36 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local cubre 26 recursos, 12 acciones, 46 permisos y 79
+firmas exactas: 37 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
 La política de acceso local `2026-08-09.1` entrega
@@ -308,17 +325,17 @@ reutilizando permisos más amplios.
 
 1. Desde [Inicio seguro](../inicio.html), abra el [Panel Ejecutivo GRH](../dashboard.html).
 2. Lea primero el estado de fuente, la fecha de corte y el período de referencia.
-3. Verifique que la pantalla declare `grh-executive-v2` o `grh-quality-v1`, según
-   corresponda. Ninguna de las cinco vistas ejecutivas debe solicitar
+3. Verifique que la pantalla declare `grh-executive-v2`, `grh-quality-v1` y, en
+   el Panel, `grh-decision-brief-v1`. Ninguna de las cinco vistas ejecutivas debe solicitar
    `/api/grh-data`; esa ruta retirada responde 410 aun para una sesión autorizada.
 4. Revise los indicadores en este orden:
    - participación en el control de cálculo;
    - calidad y filas en cuarentena;
    - acuerdo y cobertura de conciliación entre fuentes;
    - distribución agregada por sector y centro de costo;
-   - alertas descriptivas y su límite.
-5. Abra GRH, RRHH, [Calidad y Linaje](../control.html) o Hacienda para entender la
-   definición y procedencia detrás de cada señal.
+   - brief decisional: señal global separada de evidencia mensual, cuarentena y límites.
+5. Use sólo una CTA que aparezca para su capability; abra GRH, RRHH,
+   [Calidad y Linaje](../control.html) o Hacienda para entender la procedencia.
 6. Use el Asistente para formular una pregunta acotada y comprobar la evidencia.
 7. Registre la decisión y la validación complementaria necesaria.
 
@@ -661,7 +678,7 @@ en confiable.
 - [ ] Confirmar identidad, rol y municipio de la sesión.
 - [ ] Leer fuente, corte y período antes de los KPIs.
 - [ ] Verificar que no haya estado 401, 403, 503 o contrato inválido.
-- [ ] Revisar alertas de calidad, cuarentena y conciliación.
+- [ ] Revisar el brief de prioridades, la cuarentena y la separación global/mensual.
 - [ ] Confirmar en Calidad y Linaje que ambos contratos compartan identidad exacta.
 - [ ] Distinguir control de cálculo de pago efectivo.
 - [ ] Registrar decisiones y validaciones complementarias pendientes.
@@ -743,7 +760,7 @@ Puede indicar autenticación sin configurar, base inaccesible, contrato GRH no
 publicado o tenant de fuente no configurado.
 
 1. No use valores antiguos, demo o copiados como reemplazo.
-2. Reintente una vez desde la acción normal de la interfaz.
+2. El sistema no reintenta automáticamente. Use **Reintentar** de forma manual.
 3. Si persiste, registre el incidente y espere confirmación del equipo responsable.
 4. No declare continuidad, actualización o recuperación hasta contar con prueba.
 
@@ -751,7 +768,7 @@ publicado o tenant de fuente no configurado.
 
 Las vistas ejecutivas deben ocultar todas las métricas. El backend valida
 `profile` + `grh-semantic-v2`, pero el navegador sólo debe recibir
-`grh-executive-v2` o `grh-quality-v1`. Si el bundle, su identidad o la proyección
+`grh-executive-v2`, `grh-quality-v1` o `grh-decision-brief-v1`. Si el bundle, su identidad o la proyección
 contradicen el contrato, la API segura responde 503 sin detalles. Use
 **Reintentar** una vez; si persiste, conserve el mensaje, la ruta, el corte
 esperado y la hora. No corrija el JSON ni los conteos en el navegador.
@@ -966,6 +983,10 @@ vistas interactivas o portables.
 sin categorías, códigos ni importes.  
 **Cierre mensual explicado:** `grh-close-v1`, salida agregada k≥10 con
 componentes, controles y conciliación del período; no es pago ni contabilidad.  
+**Brief ejecutivo decisional:** `grh-decision-brief-v1`, situación, cambio y
+prioridades agregadas; no exporta PII, importes, códigos de fuente/celda o labels y no mezcla la
+señal global con la evidencia mensual.
+
 **Supresión complementaria:** protección adicional que impide reconstruir una
 celda pequeña restando los valores visibles del total.  
 **Cobertura de legajos:** proporción de claves de legajo válidas y distintas que
@@ -1009,6 +1030,7 @@ exitoso. Si falta evidencia, el estado correcto sigue siendo **Condicionado**.
 
 | Versión | Fecha | Cambio | Responsable |
 |---|---|---|---|
+| 1.10.0 | 2026-08-09 | Candidato local S13: producto en commit `d11fd39`, validación local de este corte; brief `grh-decision-brief-v1`, k=10, separación global/mensual, CTA por capability, 503/retry manual y small-cell actual fail-closed; focal 135/135, QA 104/104 con 0 P1/P2, raíz 591 totales —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido— y backend 20/20; estos documentos no acreditan Preview/Producción y `v1.9.0` es la última evidencia remota verificada al corte | Mantenedor del cambio; release todavía no promovido |
 | 1.9.0 | 2026-08-09 | Release público: commit/tag `f9d1f88`, product commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, gate 10/10 exit `0`, browser público 390/1440 px y GitHub Release live; MuniGuía privada sólo local; raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Mantenedor del cambio; registro post-release sin mover el tag |
 | 1.8.1 | 2026-08-09 | Publica `/roles` como recorrido visual; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; sin acreditar DB, cuentas, autorización positiva o datos remotos | Mantenedor del cambio; registro post-release sin mover el tag |
 | 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, superficie pública productiva 9/9 exit `0`, sin acreditar DB, cuentas reales, autorización positiva ni datos remotos | Mantenedor del cambio; aprobación institucional registrada por separado |

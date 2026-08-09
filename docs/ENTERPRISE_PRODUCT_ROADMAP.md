@@ -1,8 +1,28 @@
 # Roadmap de producto enterprise — MuniControl
 
-Versión: 1.9.0
+Versión: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
+
+El corte actual es el candidato local `1.10.0`, S13. Producto S13 en commit
+`d11fd39`; validación local en este corte. Estos documentos no acreditan
+Preview/Producción; última evidencia remota verificada al corte: `v1.9.0`.
+`GET /api/grh-decision-brief` entrega `grh-decision-brief-v1`: un brief ejecutivo
+único derivado de agregados del snapshot aprobado, con validación local, que separa
+la señal global cross-source de la evidencia mensual, expone
+`temporalQuarantineRows`, aplica k=10 y no exporta PII, importes, códigos de fuente/celda ni
+etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
+automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
+Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
+
+La route policy local es `2026-08-09.2`; la access policy permanece en
+`2026-08-09.1`. El techo exacto contiene 26 recursos, 12 acciones, 46 permisos y
+79 rutas: 37 Serverless + 42 Express. El gate queda preparado para seis APIs y
+11 checks cuando se despliegue. El focal raíz S13 cerró 135/135 y el QA
+adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
+aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
+sigue en `1.0.0` y Prisma en `1.1.0`.
+No se afirma aquí que `v1.10.0` tenga tag o deployment verificados.
 
 El release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
 commit es `ed76347`. El deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura
@@ -101,7 +121,8 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | `grh-executive-v2` y `grh-quality-v1` | Endpoints exactos y cinco UIs migrados localmente | Repetir captura de red y privacidad adversarial en preview |
 | `grh-close-v1` | Cierre mensual explicado local: componentes/control, conciliación por período y comparación consecutiva k≥10, sin PII/labels/codes | Materializar bundle y hacer smokes de Hacienda por rol/tenant en preview |
 | Centro de Calidad y Linaje GRH | Consumidor migrado localmente a `grh-quality-v1`; frontera remota observada en 401 sin sesión | Captura de red autenticada y smoke por tenant/rol con artefactos privados |
-| Panel y Centro Ejecutivo GRH | Consumidores migrados localmente a `grh-executive-v2` + `grh-quality-v1`; frontera remota observada en 401 sin sesión | Prueba por tenant/rol, datos materializados y certificación remota |
+| Panel y Centro Ejecutivo GRH | Consumidores locales de `grh-executive-v2` + `grh-quality-v1`; el Panel suma el brief único `grh-decision-brief-v1` y reemplaza alertas sueltas por prioridades gobernadas | Prueba por tenant/rol, datos materializados y certificación remota |
+| Brief ejecutivo S13 | `GET /api/grh-decision-brief`, agregado del snapshot aprobado, separación global/mensual, `temporalQuarantineRows`, k=10, CTA por capability, 503/retry manual y small-cell actual fail-closed; focal 135/135, QA 104/104 con 0 P1/P2 y raíz 591 totales —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20 | Desplegar el candidato y ejecutar el gate de seis APIs/11 checks |
 | RRHH y Hacienda | Consumidores locales sobre proyecciones seguras; Hacienda retiró el P1 global-como-mensual | Repetir smokes por rol/tenant y certificar ambos en preview |
 | Bot, Reportes y PDF | Consumidores server-side; Bot suma “Cierre explicado” sobre `grh-close-v1` y Reportes mantiene proyección portable k=10 | Materializar el par y hacer smokes por tenant/rol |
 | Frontera HTTP raw | Cerrada localmente: `/api/grh-data` responde 410 después de auth/tenant, sin leer artefactos | Verificar 401/403/410 y cero referencias UI en preview |
@@ -119,7 +140,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado | Storage, retención y restore ensayado |
-| Techo exacto `recurso:acción` | Implementado localmente: 26 recursos, 12 acciones, 46 permisos y 78 firmas de ruta (36 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
+| Techo exacto `recurso:acción` | Implementado localmente: 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta (37 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; gate baseline/release y expiración TRIAL implementados, sin migración | Baseline conectado, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | Commit/tag `v1.9.0` `f9d1f88`, product commit `ed76347`; deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, alias productivo y GitHub Release live | Browser público 390/1440 px sobre `/login` y `/roles` sin overflow, consola ni requests externos; rutas privadas anónimas redirigen al login; no inferir DB, cuentas, autorización positiva o datos remotos |
@@ -254,7 +275,7 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
 exacto por `runtime + método + ruta + recurso:acción` (26 recursos, 12 acciones,
-46 permisos y 78 firmas: 36 Serverless y 42 Express). No hay wildcard, jerarquía
+46 permisos y 79 firmas: 37 Serverless y 42 Express). No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
@@ -311,6 +332,10 @@ Incremento backend entregado localmente:
 - `GET /api/grh-close` publica `grh-close-v1`: componentes y controles de
   cálculo más conciliación real por período; sólo compara meses calendario
   consecutivos liberados k≥10 y no exporta PII, etiquetas, códigos o filas;
+- `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`: reúne una
+  situación y prioridades agregadas, conserva la señal cross-source como global,
+  usa el cierre gobernado para la evidencia mensual y expone
+  `temporalQuarantineRows` sin PII, importes, códigos de fuente/celda ni labels;
 - la protección ocurre antes del top-N, usa supresión complementaria, reconcilia
   totales y trata toda cardinalidad desconocida como protegida;
 - el backend de `GET /api/reports` construye una proyección portable k=10 y
@@ -338,7 +363,8 @@ causalidad, moneda, pago o PII y todavía no están certificadas en un deploymen
 - calidad, anomalías, faltantes y conciliación como métricas de primer nivel;
 - drill-down agregado con umbral documentado, supresión adversarial y filtros
   persistibles;
-- brief ejecutivo periódico con evidencia y acciones sugeridas;
+- extender el brief ejecutivo local a una cadencia periódica gobernada sólo
+  después de materialización, smokes y responsable operativo;
 - modelos predictivos sólo con objetivo, baseline temporal, evaluación de
   sesgo, revisión laboral/legal y decisión humana.
 

@@ -1,11 +1,30 @@
 # Manual técnico y de procedimientos de MuniControl
 
-**Versión:** 1.9.0
+**Versión:** 1.10.0
 
 **Tipo:** documento vivo
 
 **Última verificación contra el checkout local:** 2026-08-09
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
+
+> Candidato local `1.10.0`, S13: producto S13 en commit `d11fd39`; validación
+> local en este corte. Estos documentos no acreditan Preview/Producción; última
+> evidencia remota verificada al corte: `v1.9.0`. No se afirma aquí tag ni
+> deployment verificados de `v1.10.0`.
+> `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`, un brief único
+> desde agregados del snapshot aprobado, con validación local. Separa la señal global cross-source de
+> la mensual, expone `temporalQuarantineRows`, aplica k=10 y excluye PII,
+> importes, códigos de fuente/celda y etiquetas/labels. Cada CTA exige su capability; un 503 no
+> reintenta automáticamente y deja sólo reintento manual. Una celda actual `<10`
+> hace fallar cerrado el Panel.
+> MuniGuía incorpora el anchor real `#decisionBrief`.
+>
+> Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
+> acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El gate queda
+> preparado para seis APIs y 11 checks al desplegar. Focal raíz S13 135/135; QA
+> adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
+> aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
+> `1.0.0` y Prisma `1.1.0` permanecen independientes.
 
 > Estado post-release `v1.9.0`: commit/tag `f9d1f88`, product commit `ed76347`,
 > deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production` y alias
@@ -44,7 +63,7 @@ política, el rol, la variante, `navigation.help`, la capability de la superfici
 y uno de doce pathnames privados exactos.
 
 El resolver falla cerrado ante drift de política, rol, variante, capability o
-ruta. Selectors y anchors se verifican en CI; si el target no está visible, la
+ruta. El anchor nuevo `#decisionBrief` guía la lectura del brief S13. Selectors y anchors se verifican en CI; si el target no está visible, la
 guía permanece disponible y omite sólo «Ubicar». No agrega requests de IA, GRH
 u otras APIs ni accesos a storage, no lee indicadores, no crea permisos y no
 reemplaza la autorización server-side o el enlace directo al Manual.
@@ -112,8 +131,8 @@ Reglas de verdad:
 - `shared/route-policy.cjs` actúa como techo de autorización exacto por
   runtime, método, ruta y permiso `recurso:acción`. Una ruta, método, rol,
   capacidad o secreto interno no registrado se deniega.
-- La versión local `2026-08-09.1` del manifiesto contiene 26 recursos, 12
-  acciones, 46 permisos y 78 firmas de ruta protegidas: 36 Serverless y 42
+- La versión local `2026-08-09.2` del manifiesto contiene 26 recursos, 12
+  acciones, 46 permisos y 79 firmas de ruta protegidas: 37 Serverless y 42
   Express. Es un techo ejecutable exacto, no persistencia RBAC/ABAC por área.
 - `.vercelignore` excluye backend, evidencia, scripts, SQL, tests, documentos y
   artefactos JSON privados. `api/**` y `prisma/**` permanecen desplegables.
@@ -241,6 +260,7 @@ dump GRH privado
   ├→ GET /api/grh-executive → grh-executive-v2 (k=5/k=10)
   ├→ GET /api/grh-quality   → grh-quality-v1
   ├→ GET /api/grh-close     → grh-close-v1 (mensual, k=10)
+  ├→ GET /api/grh-decision-brief → grh-decision-brief-v1 (brief, k=10)
   ├→ reportes / PDF          → proyección portable k=10 en servidor
   ├→ bot close_explanation   → grh-close-v1 para un YYYY-MM liberado
   └→ GET /api/grh-data      → auth + tenant → 410, sin leer artefactos
@@ -255,6 +275,7 @@ dump GRH privado
 | `grh-executive-v2` | Participación, rankings protegidos, control de cálculo y series sensibles minimizadas | Navegador interactivo o generación portable según audiencia |
 | `grh-quality-v1` | Linaje, inventario, calidad, temporalidad, integridad y conciliación sin etiquetas, códigos ni series monetarias | Centro de Calidad y revisión técnica |
 | `grh-close-v1` | Componentes y controles de cálculo más conciliación del período exacto; comparación sólo entre meses consecutivos liberados k≥10 | Hacienda y Contaduría, como cierre analítico no vinculante |
+| `grh-decision-brief-v1` | Situación, cambio, prioridades y límites agregados; separa señal global de evidencia mensual, incluye `temporalQuarantineRows` y excluye PII, importes, códigos de fuente/celda y labels | Panel Ejecutivo; CTA local sólo con capability exacta |
 
 La tabla `grh_artifacts` conserva tenant, tipo de artefacto, versión de esquema,
 fecha de snapshot, SHA-256, JSON, estado activo y fecha de actualización.
@@ -273,14 +294,15 @@ una publicación exitosa no sustituye la evaluación del pipeline que la generó
 
 ### 4.2 Acceso
 
-`GET /api/grh-executive`, `GET /api/grh-quality` y `GET /api/grh-close` exigen:
+`GET /api/grh-executive`, `GET /api/grh-quality`, `GET /api/grh-close` y
+`GET /api/grh-decision-brief` exigen:
 
 - rol `SUPER_ADMIN`, `TENANT_ADMIN`, `INTENDENTE` o `CONTADOR`;
 - JWT válido y usuario vigente en DB;
 - tenant `ACTIVE`, o `TRIAL` con `trialEndsAt` válido y estrictamente futuro;
 - binding con el CUID real de `GRH_TENANT_ID`.
 
-Los tres endpoints son `GET`-only, responden con `Cache-Control: no-store`, validan
+Los cuatro endpoints son `GET`-only, responden con `Cache-Control: no-store`, validan
 el contrato exacto antes de publicar y devuelven un 503 sin detalles si el
 bundle o la proyección no concilian. Ninguno devuelve los objetos `profile` o
 `semantic`.
@@ -345,6 +367,29 @@ con sus componentes, control y conciliación mensual; no consulta el score globa
 Un año sin mes, período ausente o protegido devuelve 422 sin sustituirlo. No
 expone PII ni afirma moneda, pago o causalidad. El focal Bot + E2E fue 13/13,
 local y sin deployment.
+
+#### 4.3.1 Brief ejecutivo decisional S13
+
+`api/grh-decision-brief.js` construye `grh-decision-brief-v1` desde las
+proyecciones ejecutiva, de calidad y de cierre ya validadas. La prioridad
+`cross_source_material_difference` depende sólo del estado global de calidad;
+`situation` y `change` usan el período mensual gobernado. El brief no exporta
+métricas globales: el Panel las obtiene por separado desde `grh-quality-v1`.
+
+El contrato exact-key conserva `temporalQuarantineRows`, fuente/corte, k=10,
+estado, situación, cambio, prioridades allowlisted y límites. Marca como falsos
+PII, identificadores, filas, labels, códigos de fuente/celda e importes exportados;
+los códigos enum allowlisted de prioridad sí forman parte del contrato. Las únicas CTA
+posibles apuntan a `hacienda.html` con `navigation.hacienda` o `control.html` con
+`navigation.data-quality`; la prioridad sigue visible si falta la capability,
+pero el enlace no se crea.
+
+La API responde un 503 saneado ante bundle, pin, proyección o contrato inválidos.
+El cliente no reintenta automáticamente ni conserva fallback; el Panel ofrece una
+acción explícita de reintento manual. Aunque el contrato puede representar el mes actual como
+`<10`, el Panel integral exige la celda liberada y oculta toda la vista si no
+alcanza k=10. MuniGuía guía esta lectura mediante `#decisionBrief` sin nuevas
+requests GRH.
 
 ### 4.4 Centro de Calidad y Linaje GRH
 
@@ -821,6 +866,7 @@ inesperados o una suite parcial no satisfacen el gate.
 | GRH | `node --test tests/grh-dashboard.e2e.mjs` |
 | RRHH | `node --test tests/rrhh-dashboard.e2e.mjs` |
 | cierre mensual GRH/Hacienda | `node --test tests/grh-close-projection.test.mjs tests/grh-close-endpoint.test.mjs tests/grh-close-data-client.test.mjs tests/hacienda-dashboard.e2e.mjs` |
+| brief ejecutivo S13 | `node --test tests/grh-decision-brief-projection.test.mjs tests/grh-decision-brief-endpoint.test.mjs tests/grh-decision-brief-data-client.test.mjs tests/index-dashboard.e2e.mjs` |
 | Calidad y Linaje GRH | `node --test tests/grh-control.e2e.mjs` |
 | proveniencia runtime GRH | `node --test tests/grh-runtime-provenance.test.mjs` |
 | techo exacto de rutas | `node --test tests/route-policy.test.mjs tests/route-authorization-adapter.test.mjs` y `node --test backend/tests/route-authorization-policy.test.js` |
@@ -848,6 +894,11 @@ Evidencia focal UX-E1A: política, login, navegación y workspace por siete role
 en 390/1440 px cerraron 42/42 local. Incluye `SUPER_ADMIN` sin tenant, sesión
 obsoleta frente a `/api/auth/me`, perfil malformado y ausencia de requests GRH.
 No prueba cuentas aprovisionadas, DB remota, preview ni producción.
+
+Evidencia S13 local: focal raíz 135/135, QA adversarial 104/104 con 0 P1/P2,
+suite raíz final de 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in
+omitido— y backend 20/20. Este candidato no habilita commit, push, tag, Preview
+o Production.
 
 ## 13. Release, preview, producción y rollback
 
@@ -891,6 +942,9 @@ digest exacto. También exige que el rewrite sea exactamente `/inicio` →
 `/inicio.html` en `vercel.json`. Exige
 HTTPS exacto y DNS público estable, rechaza proxies ambientales, prohíbe
 redirecciones de API y requiere un header contractual distinto por endpoint.
+El contrato actual enumera seis APIs y produce 11 checks totales —cinco
+documentos más seis fronteras API— cuando se ejecuta contra un candidato
+desplegado. Para `1.10.0` esa ejecución remota sigue pendiente.
 Limita tiempo/cuerpo y devuelve un receipt JSON saneado. Código `1` significa
 que el candidato es legacy o incompleto; código `2`, que la configuración o el
 propio contrato local son inválidos. Ninguno de los dos puede promoverse.
@@ -1123,8 +1177,8 @@ APIs privadas → analítica / mapas / alertas / asistente
 - La autorización actual combina identidad, rol vigente, tenant y estado
   consultados en DB con un manifiesto exacto de rutas y permisos
   `recurso:acción`. Las listas legacy sólo pueden restringir ese techo, nunca
-  ampliarlo. La versión local cubre 26 recursos, 12 acciones, 46 permisos y 78
-  firmas exactas (36 Serverless y 42 Express). Todavía no existe persistencia de
+  ampliarlo. La versión local cubre 26 recursos, 12 acciones, 46 permisos y 79
+  firmas exactas (37 Serverless y 42 Express). Todavía no existe persistencia de
   asignaciones por área, fila, campo, vigencia ni reglas de segregación de
   funciones.
 
@@ -1220,7 +1274,7 @@ municipal ni ejecutar una decisión administrativa por sí sola.
 
 **Actual local:** existen `Tenant`, siete roles técnicos, estado del tenant,
 controles tenant-bound y una política compartida que registra de forma literal
-  26 recursos, 12 acciones, 46 permisos y 78 firmas protegidas (36 Serverless y 42
+  26 recursos, 12 acciones, 46 permisos y 79 firmas protegidas (37 Serverless y 42
 Express). No hay wildcard, jerarquía ni autorización por nombre de pantalla. Los
 adaptadores de ambos runtimes usan ese mismo techo y deniegan lo desconocido.
 Algunas tablas analíticas legacy aún dependen de un CUID ambiental y no ofrecen
@@ -1341,7 +1395,7 @@ Diagnóstico recomendado:
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
-| Techo de autorización `recurso:acción` | Operativo local | 26 recursos, 12 acciones, 46 permisos y 78 firmas exactas: 36 Serverless + 42 Express; desconocidos fallan cerrados |
+| Techo de autorización `recurso:acción` | Operativo local | 26 recursos, 12 acciones, 46 permisos y 79 firmas exactas: 37 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
 | Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |

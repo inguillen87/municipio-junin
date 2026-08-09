@@ -53,7 +53,18 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   const source = read('manuales.html');
   const docVersion = extractUniqueDocVersion(source);
   assert.match(docVersion, DOC_SEMVER_PATTERN);
-  assert.equal(docVersion, '1.9.0');
+  assert.equal(docVersion, '1.10.0');
+  assert.match(source, /candidato local[\s\S]{0,100}1\.10\.0/i);
+  assert.match(source, /producto S13[\s\S]{0,40}commit[\s\S]{0,30}d11fd39/i);
+  assert.match(source, /agregados del snapshot aprobado[\s\S]{0,80}validación local/i);
+  assert.match(source, /códigos de fuente\/celda/i);
+  assert.match(source, /estos documentos no acreditan Preview\/Producción/i);
+  assert.match(source, /última evidencia remota verificada al corte[\s\S]{0,40}v1\.9\.0/i);
+  assert.doesNotMatch(source, /sin\s+commit/i);
+  assert.match(source, /grh-decision-brief-v1/);
+  assert.match(source, /GET \/api\/grh-decision-brief/i);
+  assert.match(source, /591 pruebas[\s\S]{0,100}590 aprobadas[\s\S]{0,80}0 fallidas[\s\S]{0,100}1 smoke opt-in omitido/i);
+  assert.match(source, /backend 20\/20/i);
   assert.match(source, /data-doc-contract="operational-truth-v1"/);
   assert.match(source, /data-primary-source="grh"/);
   assert.match(source, /data-secondary-source-policy="personas-excluded"/);
@@ -90,6 +101,7 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
 test('the in-app document version accepts SemVer prereleases but rejects arbitrary and build values', () => {
   for (const value of [
     '0.0.0',
+    '1.10.0',
     '1.9.0',
     '1.8.1',
     '1.8.0',

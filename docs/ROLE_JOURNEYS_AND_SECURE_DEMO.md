@@ -1,8 +1,25 @@
 # Recorridos por rol y demostración segura — MuniControl
 
-**Versión:** 1.9.0
+**Versión:** 1.10.0
 **Fecha de corte:** 9 de agosto de 2026  
-**Estado:** release público `v1.9.0` verificado; autorización positiva, MuniGuía privada, DB conectada y ciclo de invitaciones permanecen locales o en roadmap según su evidencia
+**Estado:** candidato local S13 `1.10.0`; producto S13 en commit `d11fd39`, validación local en este corte
+
+Estos documentos no acreditan Preview/Producción; última evidencia remota
+verificada al corte: `v1.9.0`. No se afirma aquí tag ni deployment verificados de
+`v1.10.0`. S13 entrega localmente `GET /api/grh-decision-brief` y
+`grh-decision-brief-v1`: un brief ejecutivo único desde agregados del snapshot
+aprobado, con validación local. Separa señal global cross-source de evidencia
+mensual, expone `temporalQuarantineRows`, aplica k=10 y excluye PII, importes, códigos de fuente/celda y
+etiquetas/labels. Cada CTA exige su capability; un 503 permite sólo reintento
+manual y una celda actual `<10` hace fallar cerrado el Panel. MuniGuía suma el
+anchor real `#decisionBrief`.
+
+Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
+acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El gate queda
+preparado para seis APIs y 11 checks al desplegar. Focal raíz S13 135/135; QA
+adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
+aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
+`1.0.0` y Prisma `1.1.0` siguen independientes.
 
 El commit/tag `v1.9.0` es `f9d1f88` y el product commit es `ed76347`. El
 deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura `Ready` en `Production`
@@ -95,7 +112,7 @@ explícita con un rol vigente, están en **Roadmap** y no deben aprovisionarse t
 
 | Perfil objetivo | Ámbito | Recorrido principal | Segregación obligatoria |
 |---|---|---|---|
-| Intendencia | Municipio completo, sólo agregado | Panel → alerta → evidencia → consulta al Asistente → decisión registrada | No cargar, corregir ni publicar evidencia |
+| Intendencia | Municipio completo, sólo agregado | Panel → brief decisional → CTA autorizada → evidencia → decisión registrada | No cargar, corregir ni publicar evidencia |
 | Secretaría | Unidades organizativas asignadas | Indicadores del área → casos → responsables → seguimiento | Sin lectura transversal por jerarquía política |
 | Contaduría | Contabilidad y conciliación | Control → diferencias → documentación → cierre | No ejecutar el pago que concilia |
 | Tesorería | Órdenes autorizadas, caja y pago | Bandeja aprobada → validación → ejecución → comprobante | No crear y aprobar su propia orden |
@@ -113,7 +130,7 @@ explícita con un rol vigente, están en **Roadmap** y no deben aprovisionarse t
 | Superficie | Fuente o estado actual | Lectura/acción que puede demostrarse | Frontera vigente |
 |---|---|---|---|
 | [`inicio.html`](../inicio.html) | Sesión autoritativa, sin dataset | Portada, recorrido y prioridades para los siete roles vigentes | Requiere `navigation.workspace`; hace una lectura de `/api/auth/me`, cero requests GRH y falla cerrado |
-| [`dashboard.html`](../dashboard.html) | GRH privado, snapshot | Panel Ejecutivo GRH, resumen agregado, cierre del último mes sobre `grh-close-v1` y alertas de calidad | Superficie separada; requiere sesión, `navigation.dashboard`, tenant y contratos GRH válidos |
+| [`dashboard.html`](../dashboard.html) | GRH privado, snapshot | Panel Ejecutivo GRH, cierre mensual y brief único `grh-decision-brief-v1` con señal global separada de evidencia mensual | Requiere `navigation.dashboard`, tenant y cuatro contratos GRH válidos; CTA sólo por capability |
 | [`grh-ejecutivo.html`](../grh-ejecutivo.html) | GRH privado, snapshot | Serie de control, conciliación y sectores | No moneda declarada; cálculo no equivale a pago |
 | [`rrhh.html`](../rrhh.html) | GRH privado, snapshot | Dotación participante, ausencias, movimientos y calidad | Sin fichas individuales ni PII cruda |
 | [`hacienda.html`](../hacienda.html) | Control de cálculo GRH | Bruto, retenciones, neto y conciliación interna | No acredita banco, presupuesto o asiento |
@@ -281,8 +298,8 @@ no autenticado y no constituye evidencia RBAC.
 ### Intendencia — 12 minutos
 
 1. Mostrar fuente, corte, calidad y ausencia de tiempo real.
-2. Abrir Panel Ejecutivo y elegir una alerta accionable.
-3. Profundizar en GRH/RRHH/Hacienda sin exponer PII.
+2. Abrir Panel Ejecutivo y leer el brief decisional: señal global, evidencia mensual y cuarentena.
+3. Profundizar sólo mediante una CTA permitida por capability, sin exponer PII.
 4. Consultar al Asistente por un período explícito.
 5. Mostrar una capacidad fuera de evidencia y su respuesta limitada.
 6. Confirmar que el rol no puede importar ni administrar identidades.
@@ -373,7 +390,7 @@ Las fuentes técnicas actuales son
 navegación y sesión, y [`../shared/route-policy.cjs`](../shared/route-policy.cjs),
 como techo exacto de autorización server-side por `recurso:acción`, runtime,
 método y ruta. Al corte, ese techo registra 26 recursos, 12 acciones, 46
-permisos y 78 firmas exactas: 36 Serverless y 42 Express. El modelo de datos
+permisos y 79 firmas exactas: 37 Serverless y 42 Express. El modelo de datos
 propuesto, todavía inactivo, está en
 [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md); sus fases de producto se
 mantienen en [`ENTERPRISE_PRODUCT_ROADMAP.md`](ENTERPRISE_PRODUCT_ROADMAP.md) y

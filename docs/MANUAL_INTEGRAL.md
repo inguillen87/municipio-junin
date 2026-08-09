@@ -1,8 +1,26 @@
 # Manual integral y gobierno documental — MuniControl
 
-Versión documental: 1.9.0
+Versión documental: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
-Estado: release público `v1.9.0` verificado; autorización positiva y MuniGuía privada conservan evidencia sólo local
+Estado: candidato local S13 `1.10.0`; producto S13 en commit `d11fd39` y validación local en este corte
+
+Estos documentos no acreditan Preview/Producción; última evidencia remota
+verificada al corte: `v1.9.0`. No se afirma aquí tag ni deployment verificados de
+`v1.10.0`. S13 agrega `GET /api/grh-decision-brief` y el contrato
+`grh-decision-brief-v1`: un brief ejecutivo único desde agregados del snapshot
+aprobado, con validación local. Separa señal global cross-source de evidencia
+mensual, expone `temporalQuarantineRows`, aplica k=10 y no exporta PII, importes, códigos de fuente/celda ni
+etiquetas/labels. Cada CTA exige su capability; un 503 permite sólo reintento
+manual y una celda actual `<10` hace fallar cerrado el Panel integral. MuniGuía
+incorpora el anchor `#decisionBrief`.
+
+Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
+acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El gate está
+preparado para seis APIs y 11 checks al desplegar. El focal raíz S13 cerró
+135/135 y el QA adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó
+591 pruebas: 590 aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró
+20/20. Backend continúa `1.0.0` y Prisma `1.1.0`. La última
+evidencia remota sigue siendo el release público `v1.9.0`:
 
 El commit/tag `v1.9.0` es `f9d1f88` y el product commit es `ed76347`. El
 deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura `Ready` en `Production`
@@ -72,6 +90,12 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   etiquetas ni códigos de celdas. Conserva la unidad de origen con moneda no
   declarada y describe una descomposición aritmética: no prueba pago,
   contabilidad, causalidad ni tiempo real.
+- S13 agrega `GET /api/grh-decision-brief`, salida local
+  `grh-decision-brief-v1`. Resume situación, cambio y prioridades desde las tres
+  proyecciones gobernadas: mantiene global la señal cross-source, usa el período
+  mensual exacto para la evidencia corriente e incluye `temporalQuarantineRows`.
+  No exporta PII, importes, códigos de fuente/celda ni labels; las CTA requieren capability.
+  Un 503 ofrece sólo retry manual y una celda actual `<10` cierra todo el Panel.
 - La proyección ejecutiva aplica k=5 a rankings laborales interactivos y k=10 a
   compensación, ausencias, licencias, movimientos y salidas portables. Protege
   antes del top-N, aplica supresión complementaria y trata cardinalidad
@@ -123,7 +147,7 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   no se repitió el replay real de 44 MB, no se usó DB y no se desplegó. Un host
   completamente comprometido permanece fuera de la garantía.
 - El techo exacto de permisos por ruta está implementado localmente con 26
-  recursos, 12 acciones, 46 permisos y 78 firmas protegidas: 36 Serverless y 42
+  recursos, 12 acciones, 46 permisos y 79 firmas protegidas: 37 Serverless y 42
   Express. La propuesta de
   ámbitos RBAC/ABAC está aislada y no migrada: todavía no hay persistencia fina,
   lifecycle de cuentas ni cuentas por cada rol.
@@ -308,6 +332,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.10.0 | 2026-08-09 | Candidato local S13: producto en commit `d11fd39`, validación local de este corte; `grh-decision-brief-v1`, separación global/mensual, k=10, CTA por capability, 503/retry manual y small-cell actual fail-closed; focal 135/135, QA 104/104 con 0 P1/P2, raíz 591 totales —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido— y backend 20/20; estos documentos no acreditan Preview/Producción y `v1.9.0` es la última evidencia remota verificada al corte |
 | 1.9.0 | 2026-08-09 | Release público: commit/tag `f9d1f88`, product commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, gate 10/10 exit `0`, browser público 390/1440 px y GitHub Release live; MuniGuía privada sólo local; raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20; registro post-release sin mover el tag |
 | 1.8.1 | 2026-08-09 | Publica `/roles` como tour visual `public-role-tour-v1`; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate productivo 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; no acredita DB, cuentas, autorización positiva ni datos remotos |
 | 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, con superficie pública productiva certificada 9/9 exit `0`. No acredita DB, cuentas reales, autorización positiva ni datos remotos |

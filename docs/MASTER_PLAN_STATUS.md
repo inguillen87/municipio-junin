@@ -1,6 +1,6 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.9.0.
+Versión documental: 1.10.0.
 Fecha de corte: 9 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
@@ -9,6 +9,25 @@ el checkout actual (`css/components.css`, `css/animations.css`,
 `organigrama.html`, `rrhh-data/`, `api/payroll-engine.js` y
 `api/payroll-receipt.js`). Las casillas de un plan no prueban que una función esté
 implementada, conectada o validada.
+
+El corte actual es el candidato local `1.10.0`, S13. Producto S13 en commit
+`d11fd39`; validación local en este corte. Estos documentos no acreditan
+Preview/Producción; última evidencia remota verificada al corte: `v1.9.0`.
+`GET /api/grh-decision-brief` publica `grh-decision-brief-v1`, un brief ejecutivo
+único desde agregados del snapshot aprobado, con validación local: separa señal
+global cross-source de evidencia mensual, expone `temporalQuarantineRows`, aplica
+k=10 y no exporta PII, importes, códigos de fuente/celda ni
+etiquetas/labels. Las CTA requieren capability; un 503 admite sólo reintento
+manual y una celda actual `<10` hace fallar cerrado el Panel. MuniGuía apunta a
+`#decisionBrief`.
+
+Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
+acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El gate queda
+preparado para seis APIs y 11 checks al desplegar. Focal raíz S13 135/135; QA
+adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
+aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
+`1.0.0` y Prisma `1.1.0` permanecen independientes. No se afirma aquí tag ni
+deployment verificados de `v1.10.0`.
 
 El release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
 commit es `ed76347`. El deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura
@@ -101,8 +120,8 @@ Estado: **completo en código local; falta despliegue**.
 - autorización revalidada contra DB en funciones Serverless y backend Express;
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
-- techo compartido y fail-closed de 26 recursos, 12 acciones, 46 permisos y 78
-  firmas de ruta exactas (36 Serverless y 42 Express), sin wildcard ni jerarquía;
+- techo compartido y fail-closed de 26 recursos, 12 acciones, 46 permisos y 79
+  firmas de ruta exactas (37 Serverless y 42 Express), sin wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
 - XSS y caché de APIs autenticadas corregidos;
@@ -139,13 +158,17 @@ Estado: **frontera ejecutiva segura cerrada localmente; falta certificación rem
   salida sin categorías, códigos de celdas ni importes;
 - endpoint seguro `GET /api/grh-close`, contrato exacto `grh-close-v1`, k=10,
   componentes/control y conciliación real por período;
+- endpoint seguro `GET /api/grh-decision-brief`, contrato exacto
+  `grh-decision-brief-v1`, k=10 y brief ejecutivo agregado sin PII, importes,
+  códigos de fuente/celda ni etiquetas;
 - Centro de Calidad y Linaje GRH migrado localmente a `grh-quality-v1`;
 - dashboard principal transversal;
 - backend de Reportes convertido a proyección portable k=10 y contrato
   `grh-executive-report-v2`, con interfaz alineada localmente.
 
 Panel, Centro Ejecutivo GRH, Calidad, RRHH y Hacienda consumen localmente
-`/api/grh-executive` + `/api/grh-quality` y tienen cero referencias HTTP al
+`/api/grh-executive` + `/api/grh-quality`; el Panel integra además
+`/api/grh-decision-brief`. Tienen cero referencias HTTP al
 contrato fuente. `/api/grh-data` conserva autenticación y binding tenant, pero
 responde `410 GRH_RAW_CONTRACT_RETIRED` sin leer artefactos. Reportes, PDF y
 Asistente leen el bundle directamente sólo en servidor y construyen la
@@ -295,7 +318,7 @@ Estado: **techo exacto implementado y validado localmente; persistencia fina pen
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
 método y ruta, y deniega lo desconocido. El manifiesto local contiene 26
-recursos, 12 acciones, 46 permisos y 78 firmas protegidas exactas: 36 Serverless
+recursos, 12 acciones, 46 permisos y 79 firmas protegidas exactas: 37 Serverless
 y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
@@ -420,6 +443,38 @@ No se conectó, migró o escribió una DB y no se crearon identidades. El artefa
 `b82c0b3` de `v1.8.1` sí está en `master`/tag, su deployment figura `Ready` y la
 superficie pública productiva cerró 10/10 con exit `0`; ese gate no verificó
 cuentas, autorización positiva o datos municipales remotos.
+
+### S13 — Brief ejecutivo GRH gobernado
+
+Estado: **cerrado localmente como candidato `1.10.0`; producto S13 en commit
+`d11fd39`, con validación local en este corte. Estos documentos no acreditan
+Preview/Producción**.
+
+- `GET /api/grh-decision-brief` es GET-only, revalida `grh.contract:read`, usuario,
+  tenant, pin y contratos fuente; publica `grh-decision-brief-v1` con `no-store`;
+- construye un único brief desde `grh-executive-v2`, `grh-quality-v1` y
+  `grh-close-v1`, sin volver a leer o exportar objetos fuente;
+- la prioridad cross-source conserva alcance global y no se inventa desde el
+  acuerdo mensual; la situación y el cambio mensual usan exclusivamente el
+  período gobernado;
+- `temporalQuarantineRows` conserva la señal agregada de calidad; la privacidad
+  `grh-small-cell-v1` exige k=10 y excluye PII, importes, códigos de fuente/celda, etiquetas,
+  identificadores y filas;
+- las CTA exactas a Hacienda/Calidad se muestran sólo con la capability vigente;
+  503 no reintenta automáticamente y deja un único reintento manual;
+- el contrato puede representar una celda mensual protegida, pero el Panel
+  integral exige que la celda actual esté liberada: ante `<10` oculta toda la
+  vista y falla cerrado;
+- MuniGuía reemplaza la antigua lectura de alertas del Panel por el anchor real
+  `#decisionBrief`, sin agregar requests GRH ni ampliar permisos;
+- route policy `2026-08-09.2`: 79 rutas exactas, 37 Serverless + 42 Express; la
+  access policy permanece `2026-08-09.1`. El gate preparado suma seis APIs y 11
+  checks cuando exista un deployment candidato.
+
+La evidencia local disponible es focal raíz S13 135/135, QA adversarial 104/104
+con 0 P1/P2, suite raíz final de 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke
+opt-in omitido— y backend 20/20. Backend permanece `1.0.0`; Prisma, `1.1.0`. La
+última evidencia remota continúa siendo `v1.9.0`.
 
 ## Funciones que no deben “completarse” todavía
 

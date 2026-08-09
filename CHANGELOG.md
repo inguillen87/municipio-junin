@@ -16,6 +16,42 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 - Diseñar, migrar y probar la persistencia IAM antes de crear identidades.
 - Implementar y probar el lifecycle gobernado antes de entregar cuentas por rol.
 
+## [1.10.0] - 2026-08-09
+
+### Agregado
+
+- **S13 — brief ejecutivo GRH:** `GET /api/grh-decision-brief` publica el contrato
+  `grh-decision-brief-v1`, un brief único derivado de agregados del snapshot
+  aprobado, con validación local. Separa la señal global cross-source de la evidencia
+  mensual y conserva `temporalQuarantineRows` como señal de calidad explícita.
+- El Panel integra el brief con CTA allowlisted sólo cuando la sesión validada
+  contiene la `requiredCapability`. MuniGuía suma el anchor real
+  `#decisionBrief` para revisar esa separación sin ampliar autorización.
+
+### Seguridad
+
+- El contrato aplica `grh-small-cell-v1` con k=10 y no exporta PII, identificadores,
+  filas crudas, importes, códigos de fuente/celda ni etiquetas/labels. Si la celda mensual actual
+  está protegida (`<10`), el Panel integral falla cerrado y no muestra métricas.
+- Un 503 no activa retry automático ni fallback: se oculta el panel y queda sólo
+  el reintento manual. Las CTA no aparecen sin su capability exacta.
+- `shared/route-policy.cjs` avanza a `2026-08-09.2`; la access policy permanece en
+  `2026-08-09.1`. El inventario exacto es 26 recursos, 12 acciones, 46 permisos y
+  79 rutas protegidas: 37 Serverless + 42 Express.
+
+### Estado verificable
+
+- **Candidato local, todavía no release verificado.** Producto S13 en commit
+  `d11fd39`; validación local en este corte. Estos documentos no acreditan
+  Preview/Producción; última evidencia remota verificada al corte: `v1.9.0`,
+  fijada en `f9d1f88`. Este bloque no afirma tag ni deployment de `v1.10.0`.
+- El focal raíz S13 cerró 135/135 y el QA adversarial 104/104, con 0 P1/P2. La
+  suite raíz final revalidó 591 pruebas: 590 aprobadas, 0 fallidas y 1 smoke
+  opt-in omitido; backend cerró 20/20. Backend permanece en `1.0.0` y el
+  documento Prisma en `1.1.0`.
+- El gate queda preparado para seis APIs y 11 checks cuando exista un candidato
+  desplegado; esos checks no se ejecutaron para `1.10.0`.
+
 ## [1.9.0] - 2026-08-09
 
 ### Agregado

@@ -1,9 +1,28 @@
 # Benchmark GovTech para MuniControl
 
-- Versión: 1.9.0
+- Versión: 1.10.0
 - Fecha de consulta: 8 de agosto de 2026
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
+
+El corte vigente es el candidato local `1.10.0`, S13. Producto S13 en commit
+`d11fd39`; validación local en este corte. Estos documentos no acreditan
+Preview/Producción; última evidencia remota verificada al corte: `v1.9.0`.
+`GET /api/grh-decision-brief` publica `grh-decision-brief-v1`: un brief ejecutivo
+único desde agregados del snapshot aprobado, con validación local. Separa la señal
+global cross-source de la evidencia mensual, expone `temporalQuarantineRows`,
+aplica k=10 y excluye PII, importes, códigos de fuente/celda y
+etiquetas/labels. Las CTA se habilitan sólo por capability; un 503 admite sólo
+reintento manual y una celda actual `<10` hace fallar cerrado el Panel integral.
+MuniGuía usa el nuevo anchor real `#decisionBrief`.
+
+Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
+acciones, 46 permisos y 79 rutas exactas —37 Serverless + 42 Express—. El gate
+queda preparado para seis APIs y 11 checks al desplegar. La evidencia local es
+135/135 en el focal raíz S13 y 104/104 en QA adversarial con 0 P1/P2; la suite
+raíz final revalidó 591 pruebas: 590 aprobadas, 0 fallidas y 1 smoke opt-in
+omitido; backend cerró 20/20. Backend permanece `1.0.0` y Prisma
+`1.1.0`. No se afirma aquí tag ni deployment verificados de `v1.10.0`.
 
 El release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
 commit es `ed76347`. El deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura
@@ -90,6 +109,7 @@ La comparación usa como fuente de verdad interna el
 | Perfil y semántica GRH | Validados localmente | Agregados; no habilitan PII individual ni prueban pago bancario |
 | Centro Ejecutivo, RRHH, Hacienda, Reportes y Bot | Validados localmente; fronteras del preview protegido observadas en 401 sin sesión | Falta materialización privada, sesión real y smoke por tenant/rol |
 | Cierre mensual `grh-close-v1` | Validado localmente por período y k≥10 | Control de cálculo y conciliación; no moneda, pago, causalidad ni contabilidad |
+| Brief ejecutivo `grh-decision-brief-v1` | S13 local en commit `d11fd39`: situación única, separación global/mensual, cuarentena temporal, prioridades y CTA por capability | Validación local de este corte; estos documentos no acreditan Preview/Producción ni incluyen PII, importes, responsables, plazos o action ledger |
 | Inicio seguro por rol | Siete variantes, capabilities server-computed y 42/42 focal local | Es UX fail-closed; no crea cuentas, asignaciones finas ni prueba producción |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Falta storage privado, antivirus y operación remota certificada |
 | PDF/TXT/JSON y bases externas | Parcial o roadmap | No aceptar “cualquier archivo” sin parser, esquema, cuota y cuarentena |
@@ -359,7 +379,15 @@ de gobierno.
 
 ### 3.2 Contrato mínimo de un brief ejecutivo
 
-Cada alerta o brief de Intendencia debe contener:
+S13 convierte esta recomendación en una primera rebanada gobernada:
+`grh-decision-brief-v1` entrega situación, cambio, prioridades y límites desde
+agregados del snapshot aprobado, con validación local; separa la señal global de la mensual, expone
+`temporalQuarantineRows`, aplica k=10 y filtra CTA por capability. No exporta PII,
+importes, códigos de fuente/celda, labels, responsables o plazos. Ese recorte es
+deliberado: el action ledger y el workflow siguen en roadmap.
+
+El contrato ejecutivo objetivo completo debe contener, cuando exista evidencia y
+gobierno para cada campo:
 
 - título en lenguaje político-administrativo claro;
 - dominio, período y alcance territorial/organizacional;
@@ -572,7 +600,7 @@ sesiones revocables, ámbitos versionados, acceso excepcional a PII con vencimie
 rate limiting distribuido y alertas de abuso.
 
 La base local vigente no es sólo diseño: `shared/route-policy.cjs` fija 26
-recursos, 12 acciones, 46 permisos y 78 firmas exactas, 36 Serverless y 42
+recursos, 12 acciones, 46 permisos y 79 firmas exactas, 37 Serverless y 42
 Express. `shared/access-policy.cjs` `2026-08-09.1` proyecta el workspace de siete
 roles. Las asignaciones finas, SoD, lifecycle y auditoría persistida permanecen
 como propuesta aislada y no migrada.
@@ -636,7 +664,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 | **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Superficie pública vigente `v1.9.0`: commit/tag `f9d1f88`, deployment `Ready`, gate 10/10 y browser limpio; datos, cuentas y sesiones positivas pendientes |
 | **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A + UX-E2A: siete inicios, capabilities server-computed y shell institucional; IAM-MAP-01 es puro, sin persistencia, cuentas o evidencia por rol |
 | **E2 — Ingesta gobernada** | Administrativos cargan fuentes con preview, errores comprensibles y linaje | Tyler data platform, SAP API governance, Granicus forms | Original privado, antivirus, parser aislado, schema, cuarentena y persistencia comprobada | CSV/XLSX/Sheets endurecidos localmente; resto parcial |
-| **E3 — Cerebro GRH** | Intendente recibe señales explicadas y acciones con seguimiento | OpenGov planning, Tyler Insights, SAP Analytics | Insight reproducible, calidad/frescura visibles, sin PII ni causalidad falsa | Base semántica y asistente determinista locales |
+| **E3 — Cerebro GRH** | Intendente recibe señales explicadas y acciones con seguimiento | OpenGov planning, Tyler Insights, SAP Analytics | Insight reproducible, calidad/frescura visibles, sin PII ni causalidad falsa | S13 entrega localmente el brief agregado `grh-decision-brief-v1`; seguimiento/action ledger siguen pendientes |
 | **E4 — Finanzas y compras** | Circuito íntegro y dashboards que explican el gasto sin planillas paralelas | PGM/OpenGov/Tyler/SAP procure-to-pay | Fuente contable autoritativa, catálogo formal, conciliación y doble control | Sin fuente conectada; no simular |
 | **E5 — Centro geoespacial** | Mapa operativo con capas, tiempo, SLA, privacidad y acciones | Tyler GIS, ArcGIS Velocity, Civitas mapa de gestión | Geometría válida, feed monitorizado, denominador y precisión por rol | Roadmap |
 | **E6 — Continuidad** | Datos nuevos confiables y recuperación demostrable | X-Road interoperabilidad, OpenGov/Tyler/SAP operations | CDC/dump reconciliado, publicación atómica, observabilidad y restore medido | Diseñado, no activado |
@@ -650,8 +678,8 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
    lifecycle y una demo auténtica para cada rol formalmente aprovisionado; hoy
    existen siete políticas de inicio, no siete cuentas.
 3. Completar E2 con storage, antivirus, auditoría persistente y jobs asíncronos.
-4. Elevar E3 con briefs, action ledger, comparaciones válidas y diccionario completo
-   de GRH.
+4. Elevar E3 desde el brief S13 local hacia action ledger, responsables y
+   seguimiento sólo con contratos y persistencia aprobados.
 5. Solicitar contratos de datos de Hacienda/Contaduría/Tesorería/Compras antes de
    construir E4.
 6. Incorporar GIS y streaming sólo cuando exista una fuente geográfica autorizada.

@@ -44,6 +44,11 @@ const CURRENT_WORKSPACE = `<!doctype html>
   <head><title>Inicio | MuniControl</title></head>
   <body><main>Workspace institucional gobernado por rol.</main></body>
 </html>`;
+const CURRENT_ROLES = `<!doctype html>
+<html>
+  <head><title>Tour de roles | MuniControl</title></head>
+  <body><main>Recorrido publico y explicativo por roles municipales.</main></body>
+</html>`;
 const CURRENT_MANUAL = `<!doctype html>
 <html><body data-doc-version="1.5.0">
   <p>Snapshot fechado, no tiempo real</p>
@@ -97,6 +102,10 @@ async function startFixture(t, handlers = {}) {
       send(res, 200, 'text/html; charset=utf-8', CURRENT_WORKSPACE);
       return;
     }
+    if (req.url === '/roles') {
+      send(res, 200, 'text/html; charset=utf-8', CURRENT_ROLES);
+      return;
+    }
     if (req.url === '/manuales') {
       send(res, 200, 'text/html; charset=utf-8', CURRENT_MANUAL);
       return;
@@ -140,6 +149,7 @@ function inspectFixture(baseUrl, overrides = {}) {
     expectedEntryDigest: canonicalDigest(CURRENT_ENTRY),
     expectedRootDigest: canonicalDigest(CURRENT_ROOT),
     expectedWorkspaceDigest: canonicalDigest(CURRENT_WORKSPACE),
+    expectedRolesDigest: canonicalDigest(CURRENT_ROLES),
     expectedManualDigest: canonicalDigest(CURRENT_MANUAL),
     allowHttpLoopback: true,
     timeoutMs: 1_000,
@@ -175,6 +185,12 @@ function createInMemoryFetch() {
           headers: { 'content-type': 'text/html; charset=utf-8' },
         });
       }
+      if (url.pathname === '/roles') {
+        return new Response(CURRENT_ROLES, {
+          status: 200,
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        });
+      }
       if (url.pathname === '/manuales') {
         return new Response(CURRENT_MANUAL, {
           status: 200,
@@ -205,6 +221,7 @@ function inspectPublicFixture({ fetchImpl, dnsLookupImpl, baseUrl = 'https://mun
     expectedEntryDigest: canonicalDigest(CURRENT_ENTRY),
     expectedRootDigest: canonicalDigest(CURRENT_ROOT),
     expectedWorkspaceDigest: canonicalDigest(CURRENT_WORKSPACE),
+    expectedRolesDigest: canonicalDigest(CURRENT_ROLES),
     expectedManualDigest: canonicalDigest(CURRENT_MANUAL),
     fetchImpl,
     dnsLookupImpl,
@@ -221,10 +238,12 @@ function createTemporaryRepo(t, manualContents, {
   writeRoot = true,
   writeIndex = false,
   writeWorkspace = true,
+  writeRoles = true,
   writeVercel = true,
   entryContents = CURRENT_ENTRY,
   rootContents = CURRENT_ROOT,
   workspaceContents = CURRENT_WORKSPACE,
+  rolesContents = CURRENT_ROLES,
   vercelContents = VALID_VERCEL_CONFIG,
 } = {}) {
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'municontrol-release-contract-'));
@@ -234,6 +253,7 @@ function createTemporaryRepo(t, manualContents, {
   if (writeRoot) fs.writeFileSync(path.join(repoRoot, 'dashboard.html'), rootContents);
   if (writeIndex) fs.writeFileSync(path.join(repoRoot, 'index.html'), rootContents);
   if (writeWorkspace) fs.writeFileSync(path.join(repoRoot, 'inicio.html'), workspaceContents);
+  if (writeRoles) fs.writeFileSync(path.join(repoRoot, 'roles.html'), rolesContents);
   if (writeManual) fs.writeFileSync(path.join(repoRoot, 'manuales.html'), manualContents);
   return repoRoot;
 }
@@ -325,7 +345,7 @@ test('one public DNS snapshot is shared by all probes and revalidated once after
 
   assert.equal(receipt.ok, true);
   assert.equal(dnsCalls, 2);
-  assert.equal(memory.calls.length, 4 + API_PATHS.length);
+  assert.equal(memory.calls.length, 5 + API_PATHS.length);
   assert.ok(memory.calls.every((call) => call.method === 'GET' && call.redirect === 'manual'));
   assert.equal(receipt.policy.dnsAddressCount, 2);
   assert.match(receipt.policy.dnsAddressesDigest, /^[a-f0-9]{64}$/);
@@ -394,7 +414,7 @@ test('DNS rebinding between the shared snapshot and final revalidation fails the
   });
 
   assert.equal(dnsCalls, 2);
-  assert.equal(memory.calls.length, 4 + API_PATHS.length);
+  assert.equal(memory.calls.length, 5 + API_PATHS.length);
   assert.equal(receipt.ok, false);
   assert.equal(receipt.policy.dnsRevalidated, false);
   assert.deepEqual(findingCodes(receipt), ['DNS_REBINDING_DETECTED']);
@@ -411,16 +431,20 @@ test('local release contract accepts one future manual SemVer and records all ex
     {
       rootContents: CURRENT_ROOT.replace(/\n/g, '\r\n'),
       workspaceContents: CURRENT_WORKSPACE.replace(/\n/g, '\r\n'),
+      rolesContents: CURRENT_ROLES.replace(/\n/g, '\r\n'),
     },
   );
   assert.equal(readLocalManualVersion({ repoRoot }), futureVersion);
   const workspacePath = path.join(repoRoot, 'inicio.html');
+  const rolesPath = path.join(repoRoot, 'roles.html');
   const originalOpenSync = fs.openSync;
   let workspaceOpenCount = 0;
+  let rolesOpenCount = 0;
   let localContract;
   try {
     fs.openSync = function instrumentedOpenSync(filePath, ...args) {
       if (path.resolve(String(filePath)) === workspacePath) workspaceOpenCount += 1;
+      if (path.resolve(String(filePath)) === rolesPath) rolesOpenCount += 1;
       return originalOpenSync.call(this, filePath, ...args);
     };
     localContract = readLocalReleaseContract({ repoRoot });
@@ -428,10 +452,12 @@ test('local release contract accepts one future manual SemVer and records all ex
     fs.openSync = originalOpenSync;
   }
   assert.equal(workspaceOpenCount, 1);
+  assert.equal(rolesOpenCount, 1);
   assert.equal(localContract.expectedManualVersion, futureVersion);
   assert.equal(localContract.expectedEntryDigest, canonicalDigest(CURRENT_ENTRY));
   assert.equal(localContract.expectedRootDigest, canonicalDigest(CURRENT_ROOT));
   assert.equal(localContract.expectedWorkspaceDigest, canonicalDigest(CURRENT_WORKSPACE));
+  assert.equal(localContract.expectedRolesDigest, canonicalDigest(CURRENT_ROLES));
   assert.equal(
     localContract.expectedManualDigest,
     canonicalDigest(futureLocalManual),
@@ -466,6 +492,7 @@ test('local release contract accepts one future manual SemVer and records all ex
   assert.equal(cliConfiguration.expectedEntryDigest, currentLocalContract.expectedEntryDigest);
   assert.equal(cliConfiguration.expectedRootDigest, currentLocalContract.expectedRootDigest);
   assert.equal(cliConfiguration.expectedWorkspaceDigest, currentLocalContract.expectedWorkspaceDigest);
+  assert.equal(cliConfiguration.expectedRolesDigest, currentLocalContract.expectedRolesDigest);
   assert.equal(cliConfiguration.expectedManualDigest, currentLocalContract.expectedManualDigest);
 });
 
@@ -475,6 +502,7 @@ test('local release contract rejects stale index or missing, non-regular, duplic
   const missingDashboardRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeRoot: false });
   const staleIndexRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeIndex: true });
   const missingWorkspaceRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeWorkspace: false });
+  const missingRolesRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeRoles: false });
   const missingVercelRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeVercel: false });
   const nonRegularRoot = createTemporaryRepo(t, '', { writeManual: false });
   fs.mkdirSync(path.join(nonRegularRoot, 'manuales.html'));
@@ -482,6 +510,8 @@ test('local release contract rejects stale index or missing, non-regular, duplic
   fs.mkdirSync(path.join(nonRegularVercelRoot, 'vercel.json'));
   const nonRegularWorkspaceRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeWorkspace: false });
   fs.mkdirSync(path.join(nonRegularWorkspaceRoot, 'inicio.html'));
+  const nonRegularRolesRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeRoles: false });
+  fs.mkdirSync(path.join(nonRegularRolesRoot, 'roles.html'));
   const duplicateRoot = createTemporaryRepo(
     t,
     '<body data-doc-version="1.5.0"><aside data-doc-version="1.5.0"></aside></body>',
@@ -494,6 +524,10 @@ test('local release contract rejects stale index or missing, non-regular, duplic
   const emptyWorkspaceRoot = createTemporaryRepo(t, CURRENT_MANUAL, { workspaceContents: '' });
   const invalidWorkspaceRoot = createTemporaryRepo(t, CURRENT_MANUAL, {
     workspaceContents: Buffer.from([0xc3, 0x28]),
+  });
+  const emptyRolesRoot = createTemporaryRepo(t, CURRENT_MANUAL, { rolesContents: '' });
+  const invalidRolesRoot = createTemporaryRepo(t, CURRENT_MANUAL, {
+    rolesContents: Buffer.from([0xc3, 0x28]),
   });
   const invalidVercelRoot = createTemporaryRepo(t, CURRENT_MANUAL, {
     vercelContents: Buffer.from([0xc3, 0x28]),
@@ -508,6 +542,9 @@ test('local release contract rejects stale index or missing, non-regular, duplic
   const oversizedWorkspaceRoot = createTemporaryRepo(t, CURRENT_MANUAL, {
     workspaceContents: `<html>${'x'.repeat(300 * 1024)}</html>`,
   });
+  const oversizedRolesRoot = createTemporaryRepo(t, CURRENT_MANUAL, {
+    rolesContents: `<html>${'x'.repeat(300 * 1024)}</html>`,
+  });
 
   for (const repoRoot of [
     missingRoot,
@@ -515,20 +552,25 @@ test('local release contract rejects stale index or missing, non-regular, duplic
     missingDashboardRoot,
     staleIndexRoot,
     missingWorkspaceRoot,
+    missingRolesRoot,
     missingVercelRoot,
     nonRegularRoot,
     nonRegularVercelRoot,
     nonRegularWorkspaceRoot,
+    nonRegularRolesRoot,
     duplicateRoot,
     invalidRoot,
     invalidUtf8Root,
     invalidDashboardRoot,
     emptyWorkspaceRoot,
     invalidWorkspaceRoot,
+    emptyRolesRoot,
+    invalidRolesRoot,
     invalidVercelRoot,
     oversizedRoot,
     oversizedVercelRoot,
     oversizedWorkspaceRoot,
+    oversizedRolesRoot,
   ]) {
     assert.throws(
       () => readLocalReleaseContract({ repoRoot }),
@@ -625,6 +667,7 @@ test('invalid explicit SemVer or document digest stops exported inspection befor
       expectedEntryDigest: canonicalDigest(CURRENT_ENTRY),
       expectedRootDigest: canonicalDigest(CURRENT_ROOT),
       expectedWorkspaceDigest: canonicalDigest(CURRENT_WORKSPACE),
+      expectedRolesDigest: canonicalDigest(CURRENT_ROLES),
       expectedManualDigest: canonicalDigest(CURRENT_MANUAL),
       fetchImpl: forbiddenFetch,
       dnsLookupImpl: forbiddenDns,
@@ -638,6 +681,7 @@ test('invalid explicit SemVer or document digest stops exported inspection befor
       expectedEntryDigest: 'not-a-sha256',
       expectedRootDigest: canonicalDigest(CURRENT_ROOT),
       expectedWorkspaceDigest: canonicalDigest(CURRENT_WORKSPACE),
+      expectedRolesDigest: canonicalDigest(CURRENT_ROLES),
       expectedManualDigest: canonicalDigest(CURRENT_MANUAL),
       fetchImpl: forbiddenFetch,
       dnsLookupImpl: forbiddenDns,
@@ -651,6 +695,7 @@ test('invalid explicit SemVer or document digest stops exported inspection befor
       expectedEntryDigest: canonicalDigest(CURRENT_ENTRY),
       expectedRootDigest: 'not-a-sha256',
       expectedWorkspaceDigest: canonicalDigest(CURRENT_WORKSPACE),
+      expectedRolesDigest: canonicalDigest(CURRENT_ROLES),
       expectedManualDigest: canonicalDigest(CURRENT_MANUAL),
       fetchImpl: forbiddenFetch,
       dnsLookupImpl: forbiddenDns,
@@ -664,6 +709,21 @@ test('invalid explicit SemVer or document digest stops exported inspection befor
       expectedEntryDigest: canonicalDigest(CURRENT_ENTRY),
       expectedRootDigest: canonicalDigest(CURRENT_ROOT),
       expectedWorkspaceDigest: 'not-a-sha256',
+      expectedRolesDigest: canonicalDigest(CURRENT_ROLES),
+      expectedManualDigest: canonicalDigest(CURRENT_MANUAL),
+      fetchImpl: forbiddenFetch,
+      dnsLookupImpl: forbiddenDns,
+    }),
+    (error) => error.code === 'LOCAL_RELEASE_CONTRACT_INVALID',
+  );
+  await assert.rejects(
+    inspectDeployment({
+      baseUrl: 'https://municipio.example/',
+      expectedManualVersion: '1.5.0',
+      expectedEntryDigest: canonicalDigest(CURRENT_ENTRY),
+      expectedRootDigest: canonicalDigest(CURRENT_ROOT),
+      expectedWorkspaceDigest: canonicalDigest(CURRENT_WORKSPACE),
+      expectedRolesDigest: 'not-a-sha256',
       expectedManualDigest: canonicalDigest(CURRENT_MANUAL),
       fetchImpl: forbiddenFetch,
       dnsLookupImpl: forbiddenDns,
@@ -694,6 +754,12 @@ test('valid Vercel topology passes exact clean document paths without redirects'
       'text/html; charset=utf-8',
       CURRENT_WORKSPACE.replace(/\n/g, '\r\n'),
     ),
+    '/roles': (_req, res) => send(
+      res,
+      200,
+      'text/html; charset=utf-8',
+      CURRENT_ROLES.replace(/\n/g, '\r\n'),
+    ),
     '/manuales': (_req, res) => send(
       res,
       200,
@@ -719,6 +785,7 @@ test('valid Vercel topology passes exact clean document paths without redirects'
     '/',
     '/dashboard',
     '/inicio',
+    '/roles',
     '/manuales',
     ...API_PATHS,
   ]);
@@ -727,17 +794,19 @@ test('valid Vercel topology passes exact clean document paths without redirects'
   )));
   assert.equal(receipt.policy.expectedEntryDigest, canonicalDigest(CURRENT_ENTRY));
   assert.equal(receipt.policy.expectedWorkspaceDigest, canonicalDigest(CURRENT_WORKSPACE));
+  assert.equal(receipt.policy.expectedRolesDigest, canonicalDigest(CURRENT_ROLES));
   assert.equal(receipt.policy.dnsAddressCount, 1);
   assert.match(receipt.policy.dnsAddressesDigest, /^[a-f0-9]{64}$/);
   assert.equal(receipt.policy.dnsRevalidated, true);
   assert.ok(receipt.checks.every((check) => check.outcome === 'pass'));
   assert.ok(receipt.checks.filter((check) => check.path.startsWith('/api/'))
     .every((check) => check.contractMatched === true));
-  assert.equal(fixture.requests.length, 4 + API_PATHS.length);
-  for (const documentPath of ['/', '/dashboard', '/inicio', '/manuales']) {
+  assert.equal(fixture.requests.length, 5 + API_PATHS.length);
+  for (const documentPath of ['/', '/dashboard', '/inicio', '/roles', '/manuales']) {
     assert.equal(fixture.requests.filter((request) => request.path === documentPath).length, 1);
   }
   assert.equal(fixture.requests.filter((request) => request.path === '/inicio.html').length, 0);
+  assert.equal(fixture.requests.filter((request) => request.path === '/roles.html').length, 0);
   assert.equal(fixture.requests.filter((request) => request.path === '/manuales.html').length, 0);
   assert.ok(fixture.requests.every((request) => request.method === 'GET'));
   assert.ok(fixture.requests.every((request) => request.authorization === undefined));
@@ -844,6 +913,26 @@ test('workspace copied into an HTML comment cannot spoof its canonical digest', 
   assert.doesNotMatch(JSON.stringify(receipt), /Workspace anterior privado/);
 });
 
+test('roles capture drift fails exact digest without copying response content into the receipt', async (t) => {
+  const privateMarker = 'persona-privada-en-tour@example.test';
+  const fixture = await startFixture(t, {
+    '/roles': (_req, res) => send(
+      res,
+      200,
+      'text/html; charset=utf-8',
+      `<main>Tour alterado ${privateMarker}</main>`,
+    ),
+  });
+  const receipt = await inspectFixture(fixture.baseUrl);
+
+  assert.deepEqual(findingCodes(receipt, '/roles'), ['ROLES_RELEASE_DRIFT']);
+  const check = receipt.checks.find((candidate) => candidate.path === '/roles');
+  assert.equal(check.outcome, 'fail');
+  assert.equal(check.redirects, 0);
+  assert.equal(check.finalPathMatched, true);
+  assert.doesNotMatch(JSON.stringify(receipt), /persona-privada-en-tour|Tour alterado/);
+});
+
 test('manual contract drift is distinguished from root and API health', async (t) => {
   const fixture = await startFixture(t, {
     '/manuales': (_req, res) => send(
@@ -932,6 +1021,22 @@ test('workspace redirects are forbidden and the target is never followed', async
 
   assert.deepEqual(findingCodes(receipt, '/inicio'), ['WORKSPACE_REDIRECT_FORBIDDEN']);
   assert.equal(fixture.requests.some((request) => request.path === '/inicio.html'), false);
+});
+
+test('roles redirects are forbidden and the target is never followed', async (t) => {
+  const fixture = await startFixture(t, {
+    '/roles': (_req, res) => {
+      res.writeHead(302, { location: '/roles.html' });
+      res.end();
+    },
+    '/roles.html': (_req, res) => send(res, 200, 'text/html; charset=utf-8', CURRENT_ROLES),
+  });
+  const receipt = await inspectFixture(fixture.baseUrl);
+
+  assert.deepEqual(findingCodes(receipt, '/roles'), ['ROLES_REDIRECT_FORBIDDEN']);
+  assert.equal(fixture.requests.filter((request) => request.path === '/roles').length, 1);
+  assert.equal(fixture.requests.some((request) => request.path === '/roles.html'), false);
+  assert.doesNotMatch(JSON.stringify(receipt), /roles\.html/);
 });
 
 test('redirect to a different host or private IP is rejected without following it', async (t) => {
@@ -1114,6 +1219,37 @@ test('CLI rejects missing or malformed workspace captures before DNS or fetch', 
     const receipt = JSON.parse(execution.stdout);
     assert.equal(receipt.ok, false);
     assert.equal(receipt.policy.expectedWorkspaceDigest, null);
+    assert.deepEqual(receipt.findings.map((finding) => finding.code), ['LOCAL_RELEASE_CONTRACT_INVALID']);
+    assert.doesNotMatch(execution.stdout, /network-must-not-run|REQUEST_FAILED|DNS_/);
+  }
+});
+
+test('CLI rejects missing or malformed roles captures before DNS or fetch', (t) => {
+  const repositories = [
+    createTemporaryRepo(t, CURRENT_MANUAL, { writeRoles: false }),
+    createTemporaryRepo(t, CURRENT_MANUAL, {
+      rolesContents: Buffer.from([0xc3, 0x28]),
+    }),
+  ];
+
+  for (const temporaryRepo of repositories) {
+    const temporaryCli = installTemporaryCli(temporaryRepo);
+    const execution = spawnSync(
+      process.execPath,
+      [temporaryCli, '--base-url', 'https://network-must-not-run.invalid/'],
+      {
+        cwd: temporaryRepo,
+        encoding: 'utf8',
+        env: cleanCliEnvironment(),
+        windowsHide: true,
+      },
+    );
+
+    assert.equal(execution.status, 2);
+    assert.equal(execution.stderr, '');
+    const receipt = JSON.parse(execution.stdout);
+    assert.equal(receipt.ok, false);
+    assert.equal(receipt.policy.expectedRolesDigest, null);
     assert.deepEqual(receipt.findings.map((finding) => finding.code), ['LOCAL_RELEASE_CONTRACT_INVALID']);
     assert.doesNotMatch(execution.stdout, /network-must-not-run|REQUEST_FAILED|DNS_/);
   }

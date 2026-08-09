@@ -324,6 +324,32 @@
     .submit-button:active { background: #c6ddf8; }
     .submit-button:disabled { cursor: wait; opacity: .72; }
 
+    .tour-link {
+      display: flex;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 12px;
+      padding: 0 18px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .tour-link:hover { background: var(--surface-soft); }
+
+    .tour-link-note {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
     .access-policy {
       margin-top: 30px;
       padding-top: 22px;
@@ -427,6 +453,7 @@
       .mobile-wordmark::before,
       .form-input,
       .submit-button,
+      .tour-link,
       .error-message { border: 1px solid CanvasText; }
       .submit-button { background: ButtonFace; color: ButtonText; }
     }
@@ -516,6 +543,10 @@
 
           <button class="submit-button" id="btnLogin" type="submit">Ingresar al sistema</button>
         </form>
+
+        <a class="tour-link" href="/roles">
+          <span>Ver recorrido público por perfiles<span class="tour-link-note">No inicia sesión ni accede a datos</span></span>
+        </a>
 
         <section class="access-policy" aria-labelledby="accessPolicyTitle">
           <h3 id="accessPolicyTitle">Identidad emitida por la Municipalidad</h3>

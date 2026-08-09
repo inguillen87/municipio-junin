@@ -124,6 +124,8 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /No es tiempo real/);
   assert.match(source, /Sin PII/);
   assert.match(source, /Identidad emitida por la Municipalidad/);
+  assert.match(source, /class="tour-link"\s+href="\/roles"/);
+  assert.match(source, /No inicia sesi.n ni accede a datos/i);
   assert.match(source, /fetch\('\/api\/auth\/login'/);
   assert.match(source, /JSON\.stringify\(\{ email: email, password: password \}\)/);
   assert.match(source, /sessionStorage\.setItem\('mjunin_user'/);

@@ -10,8 +10,10 @@ const PORTALS = ['cuentas-claras.html', 'ciudadano.html'];
 test('public service worker invalidates the pre-routing cache while remaining network-first', async () => {
   const source = await readFile(path.join(REPO, 'sw.js'), 'utf8');
 
-  assert.match(source, /const CACHE_NAME = 'municontrol-public-v4';/);
-  assert.doesNotMatch(source, /municontrol-public-v3/);
+  assert.match(source, /const CACHE_NAME = 'municontrol-public-v5';/);
+  assert.doesNotMatch(source, /municontrol-public-v[34]/);
+  assert.match(source, /PUBLIC_ASSETS = new Set\(\[[\s\S]*'\/roles'/);
+  assert.match(source, /url\.pathname\.startsWith\('\/api\/'\)/);
   assert.match(source, /keys\.filter\(key => key !== CACHE_NAME\)\.map\(key => caches\.delete\(key\)\)/);
   assert.match(source, /fetch\(request\)[\s\S]*cache\.put\(request, copy\)/);
 });

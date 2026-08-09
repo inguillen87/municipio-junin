@@ -59,6 +59,7 @@ const PROBES = Object.freeze([
   Object.freeze({ id: 'entry', path: '/', kind: 'entry', accept: 'text/html,application/xhtml+xml' }),
   Object.freeze({ id: 'dashboard', path: '/dashboard', kind: 'root', accept: 'text/html,application/xhtml+xml' }),
   Object.freeze({ id: 'workspace', path: '/inicio', kind: 'workspace', accept: 'text/html,application/xhtml+xml' }),
+  Object.freeze({ id: 'roles', path: '/roles', kind: 'roles', accept: 'text/html,application/xhtml+xml' }),
   Object.freeze({ id: 'manual', path: '/manuales', kind: 'manual', accept: 'text/html,application/xhtml+xml' }),
   ...Object.entries(API_CONTRACTS).map(([probePath, expectedContract]) => Object.freeze({
     id: probePath.slice('/api/'.length).replaceAll('/', '-'),
@@ -86,6 +87,8 @@ const FINDING_MESSAGES = Object.freeze({
   STALE_RELEASE: 'La portada publicada no acredita el contrato ejecutivo actual.',
   WORKSPACE_RELEASE_DRIFT: 'El workspace publicado no coincide con la captura local autorizada.',
   WORKSPACE_REDIRECT_FORBIDDEN: 'El workspace debe responder en la ruta canonica exacta sin redirecciones.',
+  ROLES_RELEASE_DRIFT: 'El tour publico de roles no coincide con la captura local autorizada.',
+  ROLES_REDIRECT_FORBIDDEN: 'El tour publico de roles debe responder en la ruta canonica exacta sin redirecciones.',
   LEGACY_DEMO_DATA: 'La portada todavía expone runtime o cifras de demostración retiradas.',
   UNSAFE_REALTIME_CLAIM: 'La portada promete tiempo real sin evidencia operativa autorizada.',
   UNVERIFIED_OFFICIAL_SOURCE_CLAIM: 'La portada atribuye origen oficial conectado sin evidencia autorizada.',
@@ -262,12 +265,14 @@ export function readLocalReleaseContract({ repoRoot = defaultRepoRoot } = {}) {
   const entrySource = readCanonicalLocalDocument(repoRoot, 'login.html');
   const rootSource = readCanonicalLocalDocument(repoRoot, 'dashboard.html');
   const workspaceSource = readCanonicalLocalDocument(repoRoot, 'inicio.html');
+  const rolesSource = readCanonicalLocalDocument(repoRoot, 'roles.html');
   const manualSource = readCanonicalLocalDocument(repoRoot, 'manuales.html');
   return {
     expectedManualVersion: requireValidManualVersion(extractUniqueManualVersion(manualSource)),
     expectedEntryDigest: canonicalTextSha256(entrySource),
     expectedRootDigest: canonicalTextSha256(rootSource),
     expectedWorkspaceDigest: canonicalTextSha256(workspaceSource),
+    expectedRolesDigest: canonicalTextSha256(rolesSource),
     expectedManualDigest: canonicalTextSha256(manualSource),
   };
 }
@@ -613,6 +618,10 @@ async function fetchProbe({
         await cancelBody(response);
         throw new DeploymentTruthError('WORKSPACE_REDIRECT_FORBIDDEN');
       }
+      if (probe.kind === 'roles' && isRedirectStatus(response.status)) {
+        await cancelBody(response);
+        throw new DeploymentTruthError('ROLES_REDIRECT_FORBIDDEN');
+      }
       if (isRedirectStatus(response.status)) {
         await cancelBody(response);
         if (redirectCount >= maxRedirects) {
@@ -708,6 +717,10 @@ function inspectWorkspace(body, expectedWorkspaceDigest) {
   return canonicalTextSha256(body) === expectedWorkspaceDigest ? [] : ['WORKSPACE_RELEASE_DRIFT'];
 }
 
+function inspectRoles(body, expectedRolesDigest) {
+  return canonicalTextSha256(body) === expectedRolesDigest ? [] : ['ROLES_RELEASE_DRIFT'];
+}
+
 function inspectManual(body, expectedManualVersion, expectedManualDigest) {
   return extractUniqueManualVersion(body) === expectedManualVersion
     && canonicalTextSha256(body) === expectedManualDigest
@@ -741,6 +754,7 @@ function createPolicyReceipt({
   expectedEntryDigest,
   expectedRootDigest,
   expectedWorkspaceDigest,
+  expectedRolesDigest,
   expectedManualDigest,
   dnsAddressCount,
   dnsAddressesDigest,
@@ -758,6 +772,7 @@ function createPolicyReceipt({
     expectedEntryDigest,
     expectedRootDigest,
     expectedWorkspaceDigest,
+    expectedRolesDigest,
     expectedManualDigest,
     dnsAddressCount,
     dnsAddressesDigest,
@@ -771,6 +786,7 @@ export async function inspectDeployment({
   expectedEntryDigest,
   expectedRootDigest,
   expectedWorkspaceDigest,
+  expectedRolesDigest,
   expectedManualDigest,
   allowHttpLoopback = false,
   demoFigures = DEFAULT_DEMO_FIGURES,
@@ -785,6 +801,7 @@ export async function inspectDeployment({
   const validatedEntryDigest = requireDigest(expectedEntryDigest);
   const validatedRootDigest = requireDigest(expectedRootDigest);
   const validatedWorkspaceDigest = requireDigest(expectedWorkspaceDigest);
+  const validatedRolesDigest = requireDigest(expectedRolesDigest);
   const validatedManualDigest = requireDigest(expectedManualDigest);
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl, { allowHttpLoopback });
   if (!Array.isArray(demoFigures)
@@ -883,6 +900,11 @@ export async function inspectDeployment({
         ? inspectWorkspace(result.body, validatedWorkspaceDigest)
         : ['WORKSPACE_RELEASE_DRIFT']
       ));
+    } else if (probe.kind === 'roles') {
+      codes.push(...(result.status === 200 && result.media === 'html'
+        ? inspectRoles(result.body, validatedRolesDigest)
+        : ['ROLES_RELEASE_DRIFT']
+      ));
     } else if (probe.kind === 'manual') {
       codes.push(...(result.status === 200 && result.media === 'html'
         ? inspectManual(result.body, validatedManualVersion, validatedManualDigest)
@@ -926,6 +948,7 @@ export async function inspectDeployment({
       expectedEntryDigest: validatedEntryDigest,
       expectedRootDigest: validatedRootDigest,
       expectedWorkspaceDigest: validatedWorkspaceDigest,
+      expectedRolesDigest: validatedRolesDigest,
       expectedManualDigest: validatedManualDigest,
       dnsAddressCount: initialDns.count,
       dnsAddressesDigest: initialDns.digest,
@@ -1004,6 +1027,7 @@ function configurationFailureReceipt(code, now = () => new Date()) {
       expectedEntryDigest: null,
       expectedRootDigest: null,
       expectedWorkspaceDigest: null,
+      expectedRolesDigest: null,
       expectedManualDigest: null,
       dnsAddressCount: null,
       dnsAddressesDigest: null,

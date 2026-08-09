@@ -19,6 +19,22 @@ const DEFAULT_MAX_BODY_BYTES = 512 * 1024;
 const DEFAULT_MAX_REDIRECTS = 2;
 const DEFAULT_DEMO_FIGURES = Object.freeze(['1247']);
 const ALLOWED_ANONYMOUS_API_STATUSES = Object.freeze([401, 403]);
+const PRISMA_PRIVATE_PATH = '/prisma/schema.prisma';
+const PRISMA_DENY_ROUTE = Object.freeze({
+  src: '/prisma(?:/.*)?',
+  status: 404,
+  headers: Object.freeze({
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+  }),
+});
+const PRISMA_SOURCE_BODY_MARKERS = Object.freeze([
+  /\bgenerator\s+client\s*\{/i,
+  /\bdatasource\s+db\s*\{/i,
+  /\bprovider\s*=\s*["']prisma-client-js["']/i,
+  /@@map\s*\(\s*["']tenants["']\s*\)/i,
+  /\bpasswordHash\s+String\b/i,
+]);
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+(?:[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const PROXY_ENV_NAMES = new Set(['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY']);
@@ -61,6 +77,7 @@ const PROBES = Object.freeze([
   Object.freeze({ id: 'workspace', path: '/inicio', kind: 'workspace', accept: 'text/html,application/xhtml+xml' }),
   Object.freeze({ id: 'roles', path: '/roles', kind: 'roles', accept: 'text/html,application/xhtml+xml' }),
   Object.freeze({ id: 'manual', path: '/manuales', kind: 'manual', accept: 'text/html,application/xhtml+xml' }),
+  Object.freeze({ id: 'prisma-private', path: PRISMA_PRIVATE_PATH, kind: 'private', accept: 'text/plain,*/*;q=0.1' }),
   ...Object.entries(API_CONTRACTS).map(([probePath, expectedContract]) => Object.freeze({
     id: probePath.slice('/api/'.length).replaceAll('/', '-'),
     path: probePath,
@@ -98,6 +115,10 @@ const FINDING_MESSAGES = Object.freeze({
   API_AUTH_STATE_INVALID: 'La ruta API no devolvió un estado anónimo permitido.',
   API_CONTRACT_MISMATCH: 'La ruta API no acreditó su contrato específico.',
   API_REDIRECT_FORBIDDEN: 'Las rutas API no pueden redirigir.',
+  PRISMA_ROUTE_EXPOSED: 'La ruta privada de Prisma no devolvió el 404 canónico.',
+  PRISMA_ROUTE_BODY_EXPOSED: 'El 404 privado de Prisma contiene marcadores del schema.',
+  PRISMA_ROUTE_HEADERS_INVALID: 'El 404 privado de Prisma no acreditó no-store y nosniff.',
+  PRISMA_ROUTE_REDIRECT_FORBIDDEN: 'La ruta privada de Prisma no puede redirigir.',
   REDIRECT_ORIGIN_CHANGED: 'Una redirección intentó abandonar el origen exacto autorizado.',
   REDIRECT_TARGET_UNSAFE: 'Una redirección incluyó componentes de URL no permitidos.',
   REDIRECT_LIMIT_EXCEEDED: 'La cadena de redirecciones superó el límite permitido.',
@@ -240,6 +261,17 @@ function assertCanonicalVercelRouting(source) {
   }
   if (!config || typeof config !== 'object' || Array.isArray(config)
     || config.cleanUrls !== true || !Array.isArray(config.rewrites)) {
+    throw localReleaseContractError();
+  }
+  const prismaRoute = Array.isArray(config.routes) ? config.routes[0] : null;
+  if (!prismaRoute
+    || !hasExactKeys(prismaRoute, ['src', 'status', 'headers'])
+    || prismaRoute.src !== PRISMA_DENY_ROUTE.src
+    || prismaRoute.status !== PRISMA_DENY_ROUTE.status
+    || !hasExactKeys(prismaRoute.headers, ['Cache-Control', 'X-Content-Type-Options'])
+    || prismaRoute.headers['Cache-Control'] !== PRISMA_DENY_ROUTE.headers['Cache-Control']
+    || prismaRoute.headers['X-Content-Type-Options'] !== PRISMA_DENY_ROUTE.headers['X-Content-Type-Options']
+    || config.routes.filter((route) => route?.src === PRISMA_DENY_ROUTE.src).length !== 1) {
     throw localReleaseContractError();
   }
   for (const [sourcePath, destination] of [
@@ -518,6 +550,22 @@ function mediaKind(contentType) {
   return normalized ? 'other' : 'missing';
 }
 
+function prismaRouteHeadersMatched(headers) {
+  const cacheDirectives = String(headers.get('cache-control') || '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return cacheDirectives.includes('no-store')
+    && !cacheDirectives.includes('public')
+    && !cacheDirectives.some((directive) => directive.startsWith('s-maxage='))
+    && String(headers.get('x-content-type-options') || '').trim().toLowerCase() === 'nosniff';
+}
+
+function prismaRouteBodyMatched(body) {
+  return typeof body === 'string'
+    && !PRISMA_SOURCE_BODY_MARKERS.some((marker) => marker.test(body));
+}
+
 async function cancelBody(response) {
   try {
     await response.body?.cancel();
@@ -622,7 +670,10 @@ async function fetchProbe({
         await cancelBody(response);
         throw new DeploymentTruthError('ROLES_REDIRECT_FORBIDDEN');
       }
-      if (isRedirectStatus(response.status)) {
+      const privateRedirect = probe.kind === 'private'
+        && response.status >= 300
+        && response.status < 400;
+      if (isRedirectStatus(response.status) && !privateRedirect) {
         await cancelBody(response);
         if (redirectCount >= maxRedirects) {
           throw new DeploymentTruthError('REDIRECT_LIMIT_EXCEEDED');
@@ -660,6 +711,10 @@ async function fetchProbe({
         redirects: redirectCount,
         finalPath: currentUrl.pathname,
         apiContract: probe.kind === 'api' ? response.headers.get(API_CONTRACT_HEADER) : null,
+        privateContractMatched: probe.kind === 'private'
+          ? prismaRouteHeadersMatched(response.headers) && prismaRouteBodyMatched(body.text)
+          : null,
+        privateBodyMatched: probe.kind === 'private' ? prismaRouteBodyMatched(body.text) : null,
         body: body.text,
       };
     } catch (error) {
@@ -738,6 +793,15 @@ function inspectApi(result, probe) {
   if (result.status >= 200 && result.status < 300) codes.push('ANONYMOUS_API_EXPOSURE');
   else if (!ALLOWED_ANONYMOUS_API_STATUSES.includes(result.status)) codes.push('API_AUTH_STATE_INVALID');
   return codes;
+}
+
+function inspectPrivatePrismaRoute(result) {
+  if (result.status >= 300 && result.status < 400) {
+    return ['PRISMA_ROUTE_REDIRECT_FORBIDDEN'];
+  }
+  if (result.status !== 404) return ['PRISMA_ROUTE_EXPOSED'];
+  if (result.privateBodyMatched !== true) return ['PRISMA_ROUTE_BODY_EXPOSED'];
+  return result.privateContractMatched === true ? [] : ['PRISMA_ROUTE_HEADERS_INVALID'];
 }
 
 function checkedAt(now) {
@@ -910,6 +974,8 @@ export async function inspectDeployment({
         ? inspectManual(result.body, validatedManualVersion, validatedManualDigest)
         : ['MANUAL_VERSION_DRIFT']
       ));
+    } else if (probe.kind === 'private') {
+      codes.push(...inspectPrivatePrismaRoute(result));
     } else {
       codes.push(...inspectApi(result, probe));
     }
@@ -925,7 +991,9 @@ export async function inspectDeployment({
       finalPathMatched: result.finalPath === probe.path,
       contractMatched: probe.kind === 'api'
         ? result.apiContract === probe.expectedContract
-        : null,
+        : probe.kind === 'private'
+          ? result.status === 404 && result.privateContractMatched === true
+          : null,
       codes,
     });
   }

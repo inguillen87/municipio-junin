@@ -4,6 +4,16 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": { "api/**/*.js": { "maxDuration": 30 } },
+  "routes": [
+    {
+      "src": "/prisma(?:/.*)?",
+      "status": 404,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/login" },
     { "source": "/inicio", "destination": "/inicio.html" },

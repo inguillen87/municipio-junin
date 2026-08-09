@@ -54,8 +54,18 @@ const CURRENT_MANUAL = `<!doctype html>
   <p>Snapshot fechado, no tiempo real</p>
   <code>grh-executive-v2</code><code>grh-quality-v1</code>
 </body></html>`;
+const PRISMA_PRIVATE_PATH = '/prisma/schema.prisma';
+const PRISMA_DENY_ROUTE = Object.freeze({
+  src: '/prisma(?:/.*)?',
+  status: 404,
+  headers: Object.freeze({
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+  }),
+});
 const VALID_VERCEL_CONFIG = JSON.stringify({
   cleanUrls: true,
+  routes: [PRISMA_DENY_ROUTE],
   rewrites: [
     { source: '/', destination: '/login' },
     { source: '/inicio', destination: '/inicio.html' },
@@ -71,6 +81,7 @@ function send(res, status, contentType, body, headers = {}) {
   res.writeHead(status, {
     'content-type': contentType,
     'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
     ...headers,
   });
   res.end(body);
@@ -208,7 +219,11 @@ function createInMemoryFetch() {
       }
       return new Response('<h1>Not found</h1>', {
         status: 404,
-        headers: { 'content-type': 'text/html; charset=utf-8' },
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          'cache-control': 'no-store',
+          'x-content-type-options': 'nosniff',
+        },
       });
     },
   };
@@ -345,7 +360,7 @@ test('one public DNS snapshot is shared by all probes and revalidated once after
 
   assert.equal(receipt.ok, true);
   assert.equal(dnsCalls, 2);
-  assert.equal(memory.calls.length, 5 + API_PATHS.length);
+  assert.equal(memory.calls.length, 6 + API_PATHS.length);
   assert.ok(memory.calls.every((call) => call.method === 'GET' && call.redirect === 'manual'));
   assert.equal(receipt.policy.dnsAddressCount, 2);
   assert.match(receipt.policy.dnsAddressesDigest, /^[a-f0-9]{64}$/);
@@ -414,7 +429,7 @@ test('DNS rebinding between the shared snapshot and final revalidation fails the
   });
 
   assert.equal(dnsCalls, 2);
-  assert.equal(memory.calls.length, 5 + API_PATHS.length);
+  assert.equal(memory.calls.length, 6 + API_PATHS.length);
   assert.equal(receipt.ok, false);
   assert.equal(receipt.policy.dnsRevalidated, false);
   assert.deepEqual(findingCodes(receipt), ['DNS_REBINDING_DETECTED']);
@@ -649,6 +664,45 @@ test('local Vercel contract rejects clean URL, entry/workspace drift or a dashbo
   }
 });
 
+test('local Vercel contract requires the first exact Prisma deny route and covers normalized descendants', (t) => {
+  const validConfiguration = JSON.parse(VALID_VERCEL_CONFIG);
+  const invalidRoutes = [
+    [],
+    [{ ...PRISMA_DENY_ROUTE, status: 200 }],
+    [{ ...PRISMA_DENY_ROUTE, src: '/prisma/.*' }],
+    [{ ...PRISMA_DENY_ROUTE, headers: { 'Cache-Control': 'no-store' } }],
+    [{
+      ...PRISMA_DENY_ROUTE,
+      headers: { 'Cache-Control': 'public', 'X-Content-Type-Options': 'nosniff' },
+    }],
+    [{ src: '/.*', status: 200 }, PRISMA_DENY_ROUTE],
+  ];
+
+  for (const routes of invalidRoutes) {
+    const repoRoot = createTemporaryRepo(t, CURRENT_MANUAL, {
+      vercelContents: JSON.stringify({ ...validConfiguration, routes }),
+    });
+    assert.throws(
+      () => readLocalReleaseContract({ repoRoot }),
+      (error) => error.code === 'LOCAL_RELEASE_CONTRACT_INVALID',
+    );
+  }
+
+  const matcher = new RegExp(`^(?:${PRISMA_DENY_ROUTE.src})$`, 'i');
+  for (const requestTarget of [
+    '/prisma',
+    '/prisma/',
+    '/prisma/schema.prisma',
+    '/prisma/schema.prisma?download=1',
+    '/prisma/private/nested/file',
+  ]) {
+    assert.match(new URL(requestTarget, 'https://municipio.example').pathname, matcher);
+  }
+  for (const publicPath of ['/prism', '/prismatics', '/api/prisma']) {
+    assert.doesNotMatch(new URL(publicPath, 'https://municipio.example').pathname, matcher);
+  }
+});
+
 test('invalid explicit SemVer or document digest stops exported inspection before DNS and fetch', async () => {
   let fetchCalls = 0;
   let dnsCalls = 0;
@@ -788,6 +842,7 @@ test('valid Vercel topology passes exact clean document paths without redirects'
     '/inicio',
     '/roles',
     '/manuales',
+    PRISMA_PRIVATE_PATH,
     ...API_PATHS,
   ]);
   assert.ok(receipt.checks.every((check) => (
@@ -802,7 +857,8 @@ test('valid Vercel topology passes exact clean document paths without redirects'
   assert.ok(receipt.checks.every((check) => check.outcome === 'pass'));
   assert.ok(receipt.checks.filter((check) => check.path.startsWith('/api/'))
     .every((check) => check.contractMatched === true));
-  assert.equal(fixture.requests.length, 5 + API_PATHS.length);
+  assert.equal(receipt.checks.find((check) => check.path === PRISMA_PRIVATE_PATH).contractMatched, true);
+  assert.equal(fixture.requests.length, 6 + API_PATHS.length);
   for (const documentPath of ['/', '/dashboard', '/inicio', '/roles', '/manuales']) {
     assert.equal(fixture.requests.filter((request) => request.path === documentPath).length, 1);
   }
@@ -817,6 +873,84 @@ test('valid Vercel topology passes exact clean document paths without redirects'
   assert.doesNotMatch(serialized, /persona\.real@example\.test/);
   assert.doesNotMatch(serialized, /No autorizado/);
   assert.doesNotMatch(serialized, /release-secret/);
+});
+
+test('Prisma source probe rejects exposure, missing hardening headers and every redirect without following it', async (t) => {
+  const exposedMarker = 'model SensitivePerson { dni String }';
+  const exposed = await startFixture(t, {
+    [PRISMA_PRIVATE_PATH]: (_req, res) => send(res, 200, 'text/plain; charset=utf-8', exposedMarker),
+  });
+  const exposedReceipt = await inspectFixture(exposed.baseUrl);
+  const exposedCheck = exposedReceipt.checks.find((check) => check.path === PRISMA_PRIVATE_PATH);
+  assert.deepEqual(findingCodes(exposedReceipt, PRISMA_PRIVATE_PATH), ['PRISMA_ROUTE_EXPOSED']);
+  assert.equal(exposedCheck.status, 200);
+  assert.equal(exposedCheck.redirects, 0);
+  assert.equal(exposedCheck.finalPathMatched, true);
+  assert.equal(exposedCheck.contractMatched, false);
+  assert.doesNotMatch(JSON.stringify(exposedReceipt), /SensitivePerson|dni String/);
+
+  const missingHeaders = await startFixture(t, {
+    [PRISMA_PRIVATE_PATH]: (_req, res) => {
+      res.writeHead(404, { 'cache-control': 'no-store' });
+      res.end();
+    },
+  });
+  const missingHeadersReceipt = await inspectFixture(missingHeaders.baseUrl);
+  assert.deepEqual(
+    findingCodes(missingHeadersReceipt, PRISMA_PRIVATE_PATH),
+    ['PRISMA_ROUTE_HEADERS_INVALID'],
+  );
+
+  const leakedInNotFound = await startFixture(t, {
+    [PRISMA_PRIVATE_PATH]: (_req, res) => send(
+      res,
+      404,
+      'text/plain; charset=utf-8',
+      'generator client { provider = "prisma-client-js" }\ndatasource db { provider = "postgresql" }',
+    ),
+  });
+  const leakedInNotFoundReceipt = await inspectFixture(leakedInNotFound.baseUrl);
+  assert.deepEqual(
+    findingCodes(leakedInNotFoundReceipt, PRISMA_PRIVATE_PATH),
+    ['PRISMA_ROUTE_BODY_EXPOSED'],
+  );
+  assert.doesNotMatch(JSON.stringify(leakedInNotFoundReceipt), /prisma-client-js|datasource db/);
+
+  const contradictoryCache = await startFixture(t, {
+    [PRISMA_PRIVATE_PATH]: (_req, res) => send(
+      res,
+      404,
+      'text/plain; charset=utf-8',
+      '',
+      { 'cache-control': 'no-store, public, s-maxage=86400' },
+    ),
+  });
+  const contradictoryCacheReceipt = await inspectFixture(contradictoryCache.baseUrl);
+  assert.deepEqual(
+    findingCodes(contradictoryCacheReceipt, PRISMA_PRIVATE_PATH),
+    ['PRISMA_ROUTE_HEADERS_INVALID'],
+  );
+
+  for (const status of [300, 301, 302, 303, 307, 308]) {
+    const target = `/prisma/redirect-target-${status}`;
+    const redirected = await startFixture(t, {
+      [PRISMA_PRIVATE_PATH]: (_req, res) => {
+        res.writeHead(status, { location: target });
+        res.end();
+      },
+      [target]: (_req, res) => send(res, 404, 'text/plain; charset=utf-8', ''),
+    });
+    const redirectedReceipt = await inspectFixture(redirected.baseUrl);
+    const redirectedCheck = redirectedReceipt.checks.find((check) => check.path === PRISMA_PRIVATE_PATH);
+    assert.deepEqual(
+      findingCodes(redirectedReceipt, PRISMA_PRIVATE_PATH),
+      ['PRISMA_ROUTE_REDIRECT_FORBIDDEN'],
+    );
+    assert.equal(redirectedCheck.status, status);
+    assert.equal(redirectedCheck.redirects, 0);
+    assert.equal(redirectedCheck.finalPathMatched, true);
+    assert.equal(redirected.requests.some((request) => request.path === target), false);
+  }
 });
 
 test('real dashboard capture satisfies its exact digest and current release markers', async (t) => {

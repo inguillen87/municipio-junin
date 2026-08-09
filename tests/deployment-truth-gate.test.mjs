@@ -31,13 +31,14 @@ const CURRENT_ENTRY = `<!doctype html>
 </html>`;
 const CURRENT_ROOT = `<!doctype html>
 <html>
-  <head><title>Panel Principal | MuniControl</title></head>
+  <head><title>Panel ejecutivo GRH | MuniControl</title></head>
   <body>
     <p>Panorama ejecutivo del snapshot gobernado de GRH.</p>
     <p>Las proyecciones excluyen personas_junin.</p>
     <script src="js/grh-secure-data.js"></script>
   </body>
 </html>`;
+const REAL_DASHBOARD = fs.readFileSync(path.join(root, 'dashboard.html'), 'utf8');
 const CURRENT_WORKSPACE = `<!doctype html>
 <html>
   <head><title>Inicio | MuniControl</title></head>
@@ -746,6 +747,24 @@ test('valid Vercel topology passes exact clean document paths without redirects'
   assert.doesNotMatch(serialized, /persona\.real@example\.test/);
   assert.doesNotMatch(serialized, /No autorizado/);
   assert.doesNotMatch(serialized, /release-secret/);
+});
+
+test('real dashboard capture satisfies its exact digest and current release markers', async (t) => {
+  const fixture = await startFixture(t, {
+    '/dashboard': (_req, res) => send(
+      res,
+      200,
+      'text/html; charset=utf-8',
+      REAL_DASHBOARD,
+    ),
+  });
+  const receipt = await inspectFixture(fixture.baseUrl, {
+    expectedRootDigest: canonicalDigest(REAL_DASHBOARD),
+    maxBodyBytes: 512 * 1024,
+  });
+
+  assert.deepEqual(findingCodes(receipt, '/dashboard'), []);
+  assert.equal(receipt.checks.find((check) => check.path === '/dashboard').outcome, 'pass');
 });
 
 test('retired root-dashboard, inicio-to-index and .html-manual topology cannot pass', async (t) => {

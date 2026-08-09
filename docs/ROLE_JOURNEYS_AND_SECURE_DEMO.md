@@ -1,8 +1,8 @@
 # Recorridos por rol y demostración segura — MuniControl
 
-**Versión:** 1.7.0  
+**Versión:** 1.8.0-rc.1
 **Fecha de corte:** 9 de agosto de 2026  
-**Estado:** workspace por siete roles y techo exacto validados localmente; RBAC/ABAC fino y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
+**Estado:** workspace y shell institucional por siete roles validados localmente; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
 
 ## 1. Propósito
 
@@ -192,6 +192,12 @@ para probar invariantes sin DB, pero no habilita cuentas. Ningún rol vigente o
 futuro se aprovisiona hasta implementar invitación, MFA, sesión revocable, SoD,
 auditoría transaccional, migración y E2E.
 
+IAM-MAP-01 agrega un mapper puro entre esa foundation y el subconjunto reversible
+de la propuesta Prisma. No importa Prisma Client, no persiste y no crea usuarios,
+invitaciones, sesiones o credenciales. UX-E2A agrega un shell institucional
+compartido y accesible; organiza enlaces ya autorizados, pero no concede acceso.
+Ambos incrementos están cerrados sólo en el checkout local.
+
 ## 8. Guion de presentación por rol
 
 Toda demostración comienza en [`inicio.html`](../inicio.html), confirma rol,
@@ -289,6 +295,8 @@ produciría una demostración visual de roles, no seguridad real.
 
 El procedimiento ejecutable para baseline, receipt externo, restore y rollback
 está en [`PRISMA_BASELINE_Y_DRIFT.md`](PRISMA_BASELINE_Y_DRIFT.md).
+WP0-L todavía no fue ejecutado conectado contra una copia restaurada autorizada;
+su existencia no satisface el gate de baseline/drift ni habilita cuentas.
 
 ## 11. Mantenimiento
 
@@ -311,5 +319,12 @@ propuesto, todavía inactivo, está en
 [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md); sus fases de producto se
 mantienen en [`ENTERPRISE_PRODUCT_ROADMAP.md`](ENTERPRISE_PRODUCT_ROADMAP.md) y
 la fundación pura de lifecycle, aún no conectada, en
-[`ACCOUNT_LIFECYCLE_STATE_MACHINE.md`](ACCOUNT_LIFECYCLE_STATE_MACHINE.md). Este manual no
-puede declarar implementado algo que esas fuentes y sus pruebas no demuestren.
+[`ACCOUNT_LIFECYCLE_STATE_MACHINE.md`](ACCOUNT_LIFECYCLE_STATE_MACHINE.md), con
+su mapper puro en
+[`ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md`](ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md).
+Este manual no puede declarar implementado algo que esas fuentes y sus pruebas
+no demuestren.
+
+Cambio 1.8.0-rc.1: registra IAM-MAP-01 y UX-E2A sólo como capacidades locales y
+mantiene explícito que WP0-L no fue conectado, no existen usuarios persistidos y
+no hubo preview, deployment ni certificación productiva.

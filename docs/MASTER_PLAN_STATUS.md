@@ -1,6 +1,6 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.7.0.  
+Versión documental: 1.8.0-rc.1.
 Fecha de corte: 9 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
@@ -363,6 +363,31 @@ Estado: **cerrado en código y pruebas locales; no desplegado ni certificado**.
 Este sprint no crea cuentas, no aplica la propuesta RBAC/ABAC, no migra una DB y
 no demuestra un preview o producción. Las asignaciones finas, invitaciones, MFA,
 revocación, SoD y auditoría persistida continúan como propuesta/roadmap.
+
+### S12 — Preintegración segura y shell institucional
+
+Estado: **cerrado y validado únicamente en el checkout local; integración y
+evidencia remota pendientes**.
+
+- **WP0-L** agrega un recolector fail-closed y read-only para observar catálogos
+  y `_prisma_migrations` en una futura copia restaurada descartable. Valida
+  configuración, target persistente, TLS, credencial explícita, sesión read-only,
+  RLS, checkout limpio y output privado. No se ejecutó conectado contra una copia
+  restaurada autorizada; no prueba baseline, drift, backup, restore ni autoriza
+  una migración.
+- **IAM-MAP-01** fija un mapper puro y versionado entre la foundation de lifecycle
+  y el subconjunto reversible de la propuesta Prisma. No importa Prisma Client,
+  no abre una DB, no persiste y no crea usuarios, invitaciones, sesiones o
+  credenciales. La propuesta continúa inactiva y sin migración.
+- **UX-E2A** incorpora un shell institucional compartido en las 29 páginas raíz
+  que cargan navegación, con rail móvil, foco, contraste, targets táctiles,
+  movimiento reducido e impresión. La proyección visual respeta las capabilities
+  recibidas, pero un enlace visible no concede autorización: toda API protegida
+  conserva la autorización server-side definida por el contrato de su ruta.
+
+Este cierre local no demuestra una plataforma completa ni productiva. No se
+conectó, migró o escribió una DB, no se crearon identidades, y no hubo preview,
+deployment ni certificación remota de `1.8.0-rc.1`.
 
 ## Funciones que no deben “completarse” todavía
 

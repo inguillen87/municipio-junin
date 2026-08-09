@@ -1,6 +1,6 @@
 # Benchmark GovTech para MuniControl
 
-- Versión: 1.7.0
+- Versión: 1.8.0-rc.1
 - Fecha de consulta: 8 de agosto de 2026
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
@@ -616,7 +616,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 | Fase | Resultado que debe enamorar al usuario | Patrón incorporado del benchmark | Gate no negociable | Estado actual |
 |---|---|---|---|---|
 | **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Código local; despliegue pendiente |
-| **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A local: siete inicios + capabilities server-computed; persistencia fina, cuentas y evidencia remota pendientes |
+| **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A + UX-E2A locales: siete inicios, capabilities server-computed y shell institucional; IAM-MAP-01 es puro, sin persistencia, cuentas o evidencia remota |
 | **E2 — Ingesta gobernada** | Administrativos cargan fuentes con preview, errores comprensibles y linaje | Tyler data platform, SAP API governance, Granicus forms | Original privado, antivirus, parser aislado, schema, cuarentena y persistencia comprobada | CSV/XLSX/Sheets endurecidos localmente; resto parcial |
 | **E3 — Cerebro GRH** | Intendente recibe señales explicadas y acciones con seguimiento | OpenGov planning, Tyler Insights, SAP Analytics | Insight reproducible, calidad/frescura visibles, sin PII ni causalidad falsa | Base semántica y asistente determinista locales |
 | **E4 — Finanzas y compras** | Circuito íntegro y dashboards que explican el gasto sin planillas paralelas | PGM/OpenGov/Tyler/SAP procure-to-pay | Fuente contable autoritativa, catálogo formal, conciliación y doble control | Sin fuente conectada; no simular |
@@ -627,7 +627,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 ### 9.1 Prioridad inmediata
 
 1. Cerrar E0 y retirar/corregir la producción antigua antes de mostrarla.
-2. Llevar UX-E1A al candidato certificado y continuar E1 con persistencia,
+2. Llevar UX-E1A/UX-E2A al candidato certificado y continuar E1 con persistencia,
    lifecycle y una demo auténtica para cada rol formalmente aprovisionado; hoy
    existen siete políticas de inicio, no siete cuentas.
 3. Completar E2 con storage, antivirus, auditoría persistente y jobs asíncronos.
@@ -780,7 +780,8 @@ Cada actualización debe conservar la fecha de consulta, distinguir fuente de
 inferencia y evitar convertir marketing competitivo en requisito técnico sin una
 decisión explícita.
 
-Cambio 1.7.0: actualiza la línea base interna con `grh-close-v1`, O2A.1, el gate
-de verdad del release y UX-E1A por siete roles. Corrige el claim obsoleto del
-seed: no crea identidades. El incremento es local; no declara cuentas, DB,
-RBAC/ABAC persistido, preview o producción.
+Cambio 1.8.0-rc.1: actualiza sólo la línea base interna con WP0-L, IAM-MAP-01 y
+UX-E2A. WP0-L no fue ejecutado conectado; el mapper IAM no persiste ni crea
+usuarios; el shell institucional no concede autorización. No activa una fase del
+benchmark ni declara DB, cuentas, RBAC/ABAC persistido, preview, deployment o
+producción.

@@ -1,6 +1,6 @@
 # Roadmap de producto enterprise — MuniControl
 
-Versión: 1.7.0  
+Versión: 1.8.0-rc.1
 Fecha de corte: 9 de agosto de 2026  
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 
@@ -91,6 +91,9 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Frontera HTTP raw | Cerrada localmente: `/api/grh-data` responde 410 después de auth/tenant, sin leer artefactos | Verificar 401/403/410 y cero referencias UI en preview |
 | Autenticación DB-autoritativa | Implementada localmente | Configurar secretos, migrar y certificar producción |
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política `2026-08-09.1`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
+| WP0-L: observación de copia restaurada | Recolector read-only y fail-closed implementado y validado localmente; todavía no se ejecutó conectado | Autorizar y restaurar una copia descartable, ejecutar la observación y revisar evidencia externa; no es baseline ni migración |
+| IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Resolver drift de esquema, aprobar baseline/migración y construir el adaptador transaccional antes de aprovisionar identidades |
+| UX-E2A: shell institucional | Shell compartido validado localmente en las 29 páginas raíz con navegación; accesibilidad desktop/móvil/impresión y proyección visual por capabilities | Certificar el candidato exacto en preview; la UI no concede autorización |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Storage privado, antivirus y auditoría persistente |
 | PDF/TXT/JSON y bases externas | Parcial o planificado | Contratos de parser/conector, cuotas y sandbox |
 | Mapas operativos en tiempo real | No conectado | Fuente geográfica autorizada, PostGIS y SLA |
@@ -238,6 +241,12 @@ siete roles vigentes; `inicio.html` consume sólo `/api/auth/me`; el servidor
 proyecta capabilities y un `homeProfile` exacto; las prioridades visibles son una
 intersección autorizada; `SUPER_ADMIN` sin tenant no carga GRH. Esto no crea una
 cuenta por rol, no migra la propuesta RBAC/ABAC y no certifica el destino remoto.
+
+IAM-MAP-01 agrega una frontera pura y reversible entre la máquina de lifecycle y
+la propuesta Prisma. El mapper no importa Prisma Client, no persiste y no crea
+cuentas. UX-E2A agrega el shell institucional compartido y accesible; organiza la
+navegación autorizada, pero no transforma visibilidad en permiso. Ambos
+incrementos están validados sólo en el checkout local y no completan E1.
 
 - MFA/SSO institucional y sesiones revocables;
 - asignaciones de rol por tenant y vigencia;
@@ -450,9 +459,9 @@ Cada sprint que cambie una capacidad debe actualizar, en la misma revisión:
 Una función sin documentación operativa, responsable y procedimiento de falla no
 está terminada, aunque su interfaz se vea completa.
 
-Cambio 1.7.0: incorpora UX-E1A, un inicio seguro para los siete roles vigentes
-con capabilities calculadas en servidor, default local `inicio.html` y Panel GRH
-separado. Conserva `grh-close-v1`, O2A.1 y la verdad de release. El público sigue
-legacy/no certificado hasta `release:truth:check` exit 0. No declara cuentas,
-RBAC/ABAC persistido, actualización diaria, DB, backup, API remota, deployment ni
+Cambio 1.8.0-rc.1: registra el cierre local de WP0-L, IAM-MAP-01 y UX-E2A. WP0-L
+no se ejecutó conectado; el mapper IAM no persiste ni crea usuarios; el shell no
+concede autorización. Conserva UX-E1A, `grh-close-v1`, O2A.1 y la verdad de
+release. El público sigue legacy/no certificado hasta `release:truth:check` exit
+0. No declara DB conectada, baseline, migración, cuentas, preview, deployment ni
 certificación productiva.

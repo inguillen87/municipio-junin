@@ -4,6 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 const root = path.resolve(import.meta.dirname, '..');
+const DOC_SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
 
 function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
@@ -11,6 +12,13 @@ function read(relativePath) {
 
 function inlineScripts(source) {
   return [...source.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)].map((match) => match[1]);
+}
+
+function extractUniqueDocVersion(source) {
+  assert.equal([...source.matchAll(/\bdata-doc-version\b/gi)].length, 1);
+  const match = source.match(/\bdata-doc-version="([^"<>\r\n]+)"/i);
+  assert.ok(match, 'data-doc-version must be a quoted, single-line value');
+  return match[1];
 }
 
 test('the obsolete login copy and legacy intelligence surface are explicitly retired', () => {
@@ -43,7 +51,9 @@ test('configuration is an honest read-only gate and cannot collect browser secre
 
 test('the operations guide locks GRH provenance and removes obsolete demo documentation', () => {
   const source = read('manuales.html');
-  assert.match(source, /data-doc-version="\d+\.\d+\.\d+"/);
+  const docVersion = extractUniqueDocVersion(source);
+  assert.match(docVersion, DOC_SEMVER_PATTERN);
+  assert.equal(docVersion, '1.8.0-rc.1');
   assert.match(source, /data-doc-contract="operational-truth-v1"/);
   assert.match(source, /data-primary-source="grh"/);
   assert.match(source, /data-secondary-source-policy="personas-excluded"/);
@@ -55,6 +65,29 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   assert.doesNotMatch(source, /(?:SuperAdmin|Junin|Hacienda)2026!|demo123|@junin\.gob\.ar|@govtech\.ar/i);
   assert.doesNotMatch(source, /localStorage|sessionStorage\.setItem|js\/db\.js|ai-widget|chat-widget|fonts\.googleapis\.com/i);
   assert.doesNotMatch(source, /<script[^>]+src=["']https?:\/\//i);
+});
+
+test('the in-app document version accepts SemVer prereleases but rejects arbitrary and build values', () => {
+  for (const value of [
+    '0.0.0',
+    '1.8.0',
+    '1.8.0-rc.1',
+    '10.20.30-alpha.beta-2',
+  ]) assert.match(value, DOC_SEMVER_PATTERN, `${value} must be accepted`);
+
+  for (const value of [
+    'latest',
+    'v1.8.0',
+    '1.8',
+    '01.8.0',
+    '1.08.0',
+    '1.8.00',
+    '1.8.0-',
+    '1.8.0-01',
+    '1.8.0-rc..1',
+    '1.8.0+build.1',
+    '1.8.0-rc.1+build.1',
+  ]) assert.doesNotMatch(value, DOC_SEMVER_PATTERN, `${value} must be rejected`);
 });
 
 test('remaining operational surfaces use authenticated APIs and fail closed without fabricated units', () => {

@@ -1,6 +1,6 @@
 # Manual integral y gobierno documental — MuniControl
 
-Versión documental: 1.7.0  
+Versión documental: 1.8.0-rc.1
 Fecha de corte: 9 de agosto de 2026  
 Estado: validado sobre el checkout local; no certifica producción
 
@@ -19,6 +19,7 @@ en la misma entrega**.
 | [`ROLE_JOURNEYS_AND_SECURE_DEMO.md`](ROLE_JOURNEYS_AND_SECURE_DEMO.md) | Funcionarios, producto, seguridad, ventas e ingeniería | Recorridos por perfil, segregación de funciones y procedimiento de demos/cuentas temporales |
 | [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md) | Arquitectura, seguridad, DBA e ingeniería | Propuesta aislada de ámbitos, asignaciones, lifecycle, aprobaciones, SoD, break-glass y auditoría; no es una migración activa |
 | [`ACCOUNT_LIFECYCLE_STATE_MACHINE.md`](ACCOUNT_LIFECYCLE_STATE_MACHINE.md) | Seguridad, backend, QA y auditoría | Fundación pura de transiciones de cuenta, invitación y sesión; no persiste ni habilita identidades |
+| [`ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md`](ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md) | Seguridad, backend, DBA, QA y auditoría | Mapper puro IAM-MAP-01 entre la foundation y la propuesta Prisma; no conecta DB, no persiste ni crea usuarios |
 | [`PRISMA_BASELINE_Y_DRIFT.md`](PRISMA_BASELINE_Y_DRIFT.md) | DBA, seguridad, DevOps e ingeniería | Preflight offline/conectado, baseline real, receipt externo y atestación institucional pendiente antes de cualquier migración o cuenta por rol |
 | [`MASTER_PLAN_STATUS.md`](MASTER_PLAN_STATUS.md) | Dirección y responsables de aceptación | Diferencia entre el plan heredado y la evidencia realmente implementada |
 | [`GRH_OPERATIONS_ROADMAP.md`](GRH_OPERATIONS_ROADMAP.md) | Datos y operaciones | Evolución específica de GRH desde snapshot a lote, CDC, backups y observabilidad |
@@ -123,6 +124,12 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   fallan cerrados. La matriz local de siete roles en 390/1440 px cerró 42/42.
 - Este inicio por rol es UX y proyección de política; no crea identidades, no
   habilita el modelo RBAC/ABAC propuesto y no prueba DB, preview ni producción.
+- WP0-L y IAM-MAP-01 están cerrados como herramientas puras del checkout local.
+  WP0-L todavía no fue ejecutado conectado contra una copia restaurada autorizada;
+  el mapper IAM no importa Prisma Client, no persiste y no crea usuarios.
+- UX-E2A unifica el shell institucional en las 29 páginas raíz que cargan
+  navegación. Sus estados desktop, móvil, accesible e imprimible son experiencia
+  local; la visibilidad de un enlace no concede permisos ni certifica deployment.
 - La conexión continua, los backups propios, los mapas operativos y los ámbitos
   RBAC/ABAC persistidos por área todavía están planificados; no están
   certificados en producción.
@@ -271,6 +278,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.8.0-rc.1 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A cerrados sólo en local: observador DB aún no conectado, mapper puro sin persistencia/usuarios y shell institucional sin autoridad propia; sin preview, deployment ni certificación productiva |
 | 1.7.0 | 2026-08-09 | Incorpora el inicio seguro por siete roles con capabilities calculadas en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; 42/42 local, sin cuentas, DB ni deployment |
 | 1.6.0 | 2026-08-09 | Incorpora `grh-close-v1` en Hacienda y el Bot “Cierre explicado”, retira la atribución mensual falsa de una conciliación global, registra el bundle inmutable O2A.1 y el login institucional local; el público sigue legacy/no certificado |
 | 1.5.0 | 2026-08-09 | Registra el replay real local O2A del snapshot canónico, promoción + duplicado idempotente y LKG estable; separa O2B conectado/programado sin declarar DB, cron, backup o deployment |

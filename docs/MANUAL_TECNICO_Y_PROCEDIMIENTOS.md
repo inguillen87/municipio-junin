@@ -1,6 +1,6 @@
 # Manual técnico y de procedimientos de MuniControl
 
-**Versión:** 1.7.0
+**Versión:** 1.8.0-rc.1
 
 **Tipo:** documento vivo
 
@@ -126,6 +126,12 @@ Las siete variantes exactas son `platform-governance`,
 `municipal-operations`, `executive-leadership`, `financial-control`,
 `municipal-limited`, `territorial-unassigned` y `controlled-preview`. Definirlas
 no aprovisiona cuentas ni aplica la propuesta RBAC/ABAC persistida.
+
+UX-E2A añade `css/institutional-shell.css` como capa namespaced y compartida por
+las 29 páginas raíz que cargan navegación. La navegación desktop y el rail móvil
+se proyectan desde las capabilities válidas, restauran foco, respetan movimiento
+reducido y forced colors, y eliminan offsets al imprimir. Este shell es una
+frontera de presentación: no decide autorización ni amplía permisos de API.
 
 ### 2.4 Dos familias de tablas
 
@@ -523,6 +529,15 @@ al entorno revisado. Toda conexión remota debe declarar exactamente
 - El procedimiento completo, contrato del manifest, receipt, restore y rollback
   está en [`PRISMA_BASELINE_Y_DRIFT.md`](PRISMA_BASELINE_Y_DRIFT.md).
 
+WP0-L agrega `npm.cmd run db:baseline:inspect`. Su modo `--check-config` valida
+localmente argumentos, URL, target, output y estado Git sin conectarse. El modo
+`--connected` sólo puede ejecutarse sobre una copia restaurada descartable y
+autorizada con marcadores persistentes de DB; abre una transacción
+`REPEATABLE READ READ ONLY`, consulta catálogos y `_prisma_migrations`, y hace
+rollback ante cualquier inconsistencia. Al corte no se ejecutó conectado: no
+existe observación de una copia,
+baseline real, aprobación de drift ni autorización de migración.
+
 ### 7.2 Aprovisionamiento retirado
 
 El comando legado se conserva como gate negativo verificable:
@@ -545,6 +560,14 @@ revocables, MFA, doble aprobación y auditoría transaccional.
 PUT/PATCH de tenant responde `410 TENANT_LIFECYCLE_NOT_GOVERNED`. La fundación
 pura en [`ACCOUNT_LIFECYCLE_STATE_MACHINE.md`](ACCOUNT_LIFECYCLE_STATE_MACHINE.md)
 prueba transiciones e invariantes sin DB, pero no habilita cuentas ni tenants.
+
+IAM-MAP-01, documentado en
+[`ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md`](ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md),
+traduce únicamente el subconjunto reversible entre esa foundation y la propuesta
+Prisma. No importa Prisma Client, no abre una DB, no completa columnas de
+persistencia y no crea usuarios, invitaciones, sesiones o credenciales. Conectar
+el mapper requiere antes resolver drift de esquema, aprobar baseline/migración y
+construir un adaptador transaccional con auditoría.
 
 ## 8. Variables de entorno por grupo
 
@@ -768,6 +791,9 @@ inesperados o una suite parcial no satisfacen el gate.
 | verdad de preview/release | `node --test tests/deployment-truth-gate.test.mjs` y `npm run release:truth:check -- --base-url https://preview-approved.example` |
 | login institucional | `node --test tests/login-institutional.e2e.mjs tests/public-truth-boundaries.test.mjs tests/access-policy.test.mjs` |
 | inicio seguro por rol | `node --test tests/access-policy.test.mjs tests/login-institutional.e2e.mjs tests/navigation-layout.e2e.mjs tests/role-workspace.e2e.mjs` |
+| WP0-L read-only | `node --test tests/prisma-baseline-observation.test.mjs tests/database-url-policy.test.mjs tests/prisma-migration-gate.test.mjs` |
+| IAM-MAP-01 | `node --test tests/account-lifecycle-prisma-mapper.test.mjs tests/account-lifecycle-foundation.test.mjs tests/rbac-lifecycle-proposal.test.mjs` |
+| shell institucional UX-E2A | `node --test tests/institutional-shell.test.mjs tests/navigation-layout.e2e.mjs` |
 | bundle inmutable O2A.1 | `node --test tests/grh-pipeline-foundation.test.mjs tests/grh-pipeline-replay.test.mjs` |
 | Express | `node --test backend/tests/*.test.js` |
 
@@ -1338,6 +1364,7 @@ Fuentes de contexto vigentes a consultar junto con este manual:
 - `docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md`: recorridos, SoD y gate de cuentas por perfil;
 - `docs/RBAC_ABAC_DATA_MODEL.md`: propuesta aislada de persistencia, lifecycle, scopes y rollout de autorización;
 - `docs/ACCOUNT_LIFECYCLE_STATE_MACHINE.md`: fundación pura y no conectada de cuenta, invitación y sesión;
+- `docs/ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md`: mapper puro IAM-MAP-01, sin DB, persistencia ni identidades;
 - `docs/PRISMA_BASELINE_Y_DRIFT.md`: gate offline/release, evidencia conectada, restore y rollback antes de migrar;
 - `docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md`: recorridos, decisiones y respuesta a incidentes;
 - `NEON_SETUP.md`: Prisma/Neon y gates remotos;
@@ -1372,9 +1399,9 @@ El PR o entrega debe responder explícitamente:
 Si alguna respuesta es sí, actualizar este manual. La documentación desactualizada
 es un defecto de la feature y bloquea su Definition of Done.
 
-Cambio 1.7.0: incorpora `inicio.html` como workspace seguro de los siete roles,
-capabilities y `homeProfile` calculados en servidor, fail-closed del cliente y
-separación del Panel ejecutivo GRH. Conserva `grh-close-v1`, O2A.1 y la verdad
-de release. El público sigue legacy y no certificado. No declara cuentas,
-RBAC/ABAC persistido, extracción diaria, DB, API remota, backup, restore, ACL,
-deployment ni autenticidad de un host comprometido.
+Cambio 1.8.0-rc.1: registra WP0-L, IAM-MAP-01 y UX-E2A validados sólo en el
+checkout local. WP0-L no se ejecutó conectado; IAM-MAP-01 no persiste ni crea
+usuarios; el shell institucional no concede autorización. Conserva UX-E1A,
+`grh-close-v1`, O2A.1 y la verdad de release. El público sigue legacy y no
+certificado. No declara DB conectada, baseline, migración, cuentas, preview,
+deployment ni certificación productiva.

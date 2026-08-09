@@ -7,21 +7,20 @@
 **Última verificación contra el checkout local:** 2026-08-09
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
-> Candidato local MuniGuía `1.9.0`: `muniguia-contextual-v1` cubre doce rutas
-> privadas exactas y siete roles. Reutiliza la proyección en memoria validada
-> por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs ni accesos a
-> storage, no lee indicadores y no concede permisos. El focal cerró 10/10, la
-> suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend 20/20. Todavía
-> no existe push, tag, Preview ni Producción de `1.9.0`.
+> Estado post-release `v1.9.0`: commit/tag `f9d1f88`, product commit `ed76347`,
+> deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production` y alias
+> `https://municipio-junin.vercel.app`. `release:truth:check` cerró 10/10 exit `0`
+> con `checkedAt 2026-08-09T14:42:10Z`. El browser público verificó `/login` y
+> `/roles` —siete perfiles— a 390/1440 px sin overflow, errores de consola ni
+> requests externos; `/dashboard`, `/inicio` y `/manuales` anónimos redirigieron
+> al login. La GitHub Release
+> `https://github.com/inguillen87/municipio-junin/releases/tag/v1.9.0` está live.
 
-> Estado de verdad: el artefacto `b82c0b3` está integrado en `master` y fijado por
-> el tag `v1.8.1`; la GitHub Release está live. El deployment
-> `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, el gate productivo cerró
-> 10/10 con exit `0` y el browser 390/1440 px no mostró overflow, errores de
-> consola, requests externos ni privados. Esto no certifica DB conectada,
-> materialización GRH, cuentas reales, autorización positiva ni datos
-> municipales remotos. Este commit sólo registra evidencia documental
-> post-release y no mueve el tag `v1.8.1`.
+> MuniGuía privada `muniguia-contextual-v1` mantiene evidencia sólo local con proyección autoritativa
+> simulada: focal 10/10, suite raíz 533 totales —532 aprobadas y 1 smoke opt-in
+> omitido— y backend 20/20. No certifica autorización positiva, cuentas reales,
+> DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Este commit
+> documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
 
 ### Tour público `v1.8.1`
 
@@ -35,7 +34,7 @@ La ruta es demostración visual, no evidencia RBAC. El service worker público v
 puede cachearla con estrategia network-first y continúa excluyendo `/api`; esa
 disponibilidad no modifica el contrato de seguridad ni acredita el deployment.
 
-### MuniGuía contextual `1.9.0` — candidato local
+### MuniGuía contextual `1.9.0` — evidencia privada local
 
 `js/contextual-help-catalog.js` define un catálogo local, congelado y
 determinista; `js/contextual-help.js` monta la ayuda y
@@ -1347,7 +1346,7 @@ Diagnóstico recomendado:
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
 | Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
-| Preview/producción Vercel | Superficie pública `v1.8.1` desplegada; sesiones y datos privados no certificados | `b82c0b3` en `master`/tag, deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate 10/10 exit `0` y browser 390/1440 px limpio; faltan smokes positivos con sesión, DB y datos remotos |
+| Preview/producción Vercel | Superficie pública `v1.9.0` desplegada; sesiones positivas, MuniGuía privada y datos privados no certificados | commit/tag `f9d1f88`, product commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, gate 10/10 exit `0` y browser público 390/1440 px limpio; faltan smokes positivos con sesión, DB y datos remotos |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |
 | Correo y cron | Retirado | responden `410` y no están programados; falta auditoría tenant-bound e idempotencia |
 | WhatsApp | Condicionado | requiere `PUBLIC_APP_URL` HTTPS aprobado, proveedor, secretos, plantillas y E2E externo |
@@ -1457,10 +1456,13 @@ autentica, no usa JWT/storage y no demuestra autorización, DB, cuentas o datos
 municipales. Este commit sólo registra el cierre post-release; el tag no se
 mueve.
 
-Cambio 1.9.0 candidato local: agrega MuniGuía `muniguia-contextual-v1` en doce
-rutas privadas exactas y siete roles, con carga posterior a la proyección
-autoritativa y sin requests de IA, GRH u otras APIs, storage, lectura de
-indicadores o nuevos permisos. Selectors y anchors están verificados por CI; un
-target no visible omite sólo «Ubicar». El focal cerró 10/10, la suite raíz 532
-aprobadas + 1 smoke opt-in omitido y backend 20/20. Aún no tiene push, tag,
-Preview ni Producción; `v1.8.1` sigue siendo la evidencia remota vigente.
+Cambio documental post-release 1.9.0: registra commit/tag `f9d1f88`, product
+commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en
+`Production`, alias `https://municipio-junin.vercel.app`, gate 10/10 exit `0`
+con `checkedAt 2026-08-09T14:42:10Z`, browser público 390/1440 px sobre `/login`
+y `/roles` sin overflow, errores de consola ni requests externos, redirects
+anónimos de `/dashboard`, `/inicio` y `/manuales` al login y GitHub Release live.
+MuniGuía privada sigue sólo local con proyección autoritativa simulada; raíz 532
+aprobadas + 1 smoke opt-in omitido y backend 20/20. No certifica autorización
+positiva, cuentas reales, DB/baseline restaurado, MFA/lifecycle persistido ni GRH
+remoto. Este commit documental no mueve el tag `v1.9.0`.

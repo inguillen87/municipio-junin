@@ -2,14 +2,22 @@
 
 Versión documental: 1.9.0
 Fecha de corte: 9 de agosto de 2026  
-Estado: candidato local MuniGuía `1.9.0`, todavía sin push, tag, Preview ni Producción; la última evidencia productiva verificada continúa siendo `v1.8.1`
+Estado: release público `v1.9.0` verificado; autorización positiva y MuniGuía privada conservan evidencia sólo local
 
-MuniGuía `muniguia-contextual-v1` agrega tres pasos deterministas para doce
-rutas privadas exactas y los siete roles vigentes. Reutiliza la proyección en
-memoria validada por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs
-ni accesos a storage, no lee indicadores y no concede permisos. El focal local
-cerró 10/10, la suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend
-20/20. Esta evidencia no acredita deployment ni autorización positiva.
+El commit/tag `v1.9.0` es `f9d1f88` y el product commit es `ed76347`. El
+deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura `Ready` en `Production`
+con alias `https://municipio-junin.vercel.app`; el gate cerró 10/10 exit `0` con
+`checkedAt 2026-08-09T14:42:10Z`. El browser público verificó `/login` y `/roles`
+—siete perfiles— a 390/1440 px sin overflow, errores de consola ni requests
+externos; `/dashboard`, `/inicio` y `/manuales` anónimos redirigieron al login.
+La GitHub Release
+`https://github.com/inguillen87/municipio-junin/releases/tag/v1.9.0` está live.
+
+MuniGuía privada `muniguia-contextual-v1` conserva evidencia sólo local con proyección autoritativa
+simulada: focal 10/10, suite raíz 533 totales —532 aprobadas y 1 smoke opt-in
+omitido— y backend 20/20. La evidencia remota no certifica autorización positiva,
+cuentas reales, DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto.
+Este commit documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
 
 ## Cómo usar este paquete
 
@@ -145,7 +153,7 @@ licitaciones, capacitación y futuras entregas a otros municipios.
 - La conexión continua, los backups propios, los mapas operativos y los ámbitos
   RBAC/ABAC persistidos por área todavía están planificados; no están
   certificados en producción.
-- `v1.8.1` corresponde al artefacto `b82c0b3` en `master` y en su tag; el
+- Como antecedente, `v1.8.1` corresponde al artefacto `b82c0b3` en `master` y en su tag; el
   deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, la GitHub Release
   está live y `release:truth:check` productivo cerró 10/10 con exit `0`.
 - El navegador productivo cerró a 390 px y 1440 px sin overflow horizontal,
@@ -300,7 +308,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
-| 1.9.0 | 2026-08-09 | Candidato local MuniGuía `muniguia-contextual-v1` en doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20; todavía sin push, tag, Preview ni Producción |
+| 1.9.0 | 2026-08-09 | Release público: commit/tag `f9d1f88`, product commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, gate 10/10 exit `0`, browser público 390/1440 px y GitHub Release live; MuniGuía privada sólo local; raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20; registro post-release sin mover el tag |
 | 1.8.1 | 2026-08-09 | Publica `/roles` como tour visual `public-role-tour-v1`; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate productivo 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; no acredita DB, cuentas, autorización positiva ni datos remotos |
 | 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, con superficie pública productiva certificada 9/9 exit `0`. No acredita DB, cuentas reales, autorización positiva ni datos remotos |
 | 1.7.0 | 2026-08-09 | Incorpora el inicio seguro por siete roles con capabilities calculadas en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; 42/42 local, sin cuentas, DB ni deployment |

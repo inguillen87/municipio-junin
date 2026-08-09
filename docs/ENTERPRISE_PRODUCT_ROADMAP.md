@@ -4,13 +4,21 @@ Versión: 1.9.0
 Fecha de corte: 9 de agosto de 2026  
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 
-El candidato local `1.9.0` incorpora MuniGuía `muniguia-contextual-v1` en doce
-rutas privadas exactas y siete roles. Reutiliza la proyección en memoria
-validada por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs ni
-accesos a storage, no lee indicadores y no concede permisos. El focal cerró
-10/10, la suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend 20/20.
-Todavía no tiene push, tag, Preview ni Producción; la evidencia remota vigente
-sigue siendo `v1.8.1`.
+El release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
+commit es `ed76347`. El deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura
+`Ready` en `Production` con alias `https://municipio-junin.vercel.app`; el gate
+cerró 10/10 exit `0` con `checkedAt 2026-08-09T14:42:10Z`. El browser público
+verificó `/login` y `/roles` —siete perfiles— a 390/1440 px sin overflow,
+errores de consola ni requests externos; `/dashboard`, `/inicio` y `/manuales`
+anónimos redirigieron al login. La GitHub Release
+`https://github.com/inguillen87/municipio-junin/releases/tag/v1.9.0` está live.
+
+MuniGuía privada sigue sólo local con proyección autoritativa simulada: focal
+10/10, suite raíz 533 totales —532 aprobadas y 1 smoke opt-in omitido— y backend
+20/20. Selectors y anchors siguen verificados por CI; si el target no está
+visible, se omite sólo «Ubicar». La evidencia remota no certifica autorización positiva, cuentas reales,
+DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Este commit
+documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
 
 ## Propósito
 
@@ -100,7 +108,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Autenticación DB-autoritativa | Implementada localmente | Configurar secretos, migrar y certificar producción |
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política `2026-08-09.1`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
 | Tour visual público de roles | `/roles` y `public-role-tour-v1` publicados en `v1.8.1` para siete perfiles; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Mantener el gate público y no confundir el recorrido con RBAC ni autorización positiva |
-| MuniGuía contextual | Candidato local `muniguia-contextual-v1`: tres pasos deterministas para doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Sin push, tag, Preview ni Producción; mantener autorización server-side y Manual como fallback |
+| MuniGuía contextual | Evidencia privada sólo local para `muniguia-contextual-v1`: tres pasos deterministas para doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Proyección autoritativa simulada; mantener autorización server-side y Manual como fallback; no confundir con el smoke público |
 | WP0-L: observación de copia restaurada | Recolector read-only y fail-closed implementado y validado localmente; todavía no se ejecutó conectado | Autorizar y restaurar una copia descartable, ejecutar la observación y revisar evidencia externa; no es baseline ni migración |
 | IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Resolver drift de esquema, aprobar baseline/migración y construir el adaptador transaccional antes de aprovisionar identidades |
 | UX-E2A: shell institucional | Shell compartido en `v1.8.1`; la superficie pública productiva cerró 10/10 con exit `0` | Mantener pruebas por rol; la UI no concede autorización ni prueba datos privados |
@@ -113,8 +121,8 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Backups propios | Diseñado, no certificado | Storage, retención y restore ensayado |
 | Techo exacto `recurso:acción` | Implementado localmente: 26 recursos, 12 acciones, 46 permisos y 78 firmas de ruta (36 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; gate baseline/release y expiración TRIAL implementados, sin migración | Baseline conectado, migración, policy engine, lifecycle de cuentas y matriz aprobada |
-| Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/` forma parte del gate productivo 10/10 de `v1.8.1` | No implica cuentas reales ni autoriza datos privados |
-| Producción remota | Artefacto `b82c0b3` en `master`/tag `v1.8.1`; deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate 10/10 exit `0`, GitHub Release live | Browser productivo 390/1440 px sin overflow, consola, requests externos ni privados; no inferir DB, cuentas, autorización positiva o datos remotos |
+| Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
+| Producción remota | Commit/tag `v1.9.0` `f9d1f88`, product commit `ed76347`; deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, alias productivo y GitHub Release live | Browser público 390/1440 px sobre `/login` y `/roles` sin overflow, consola ni requests externos; rutas privadas anónimas redirigen al login; no inferir DB, cuentas, autorización positiva o datos remotos |
 
 El gate E0.1 del workspace también está cerrado localmente: `/inicio` debe
 reescribirse exactamente a `/inicio.html`, responder sin redirects y coincidir
@@ -122,10 +130,10 @@ con el SHA-256 canónico de una única captura UTF-8/LF de `inicio.html`. Rechaz
 topología anterior hacia `index.html`, archivos ambiguos y comment spoof antes
 de promover. El focal fue 31/31 y el consolidado workspace + release truth,
 45/45. El preview protegido aporta el antecedente manual. La evidencia
-productiva vigente de `v1.8.1` es el gate público 10/10 con exit `0` sobre el
-artefacto `b82c0b3`, incluido `/roles`. La prueba de navegador en producción a
-390 px y 1440 px cerró sin overflow, errores de consola, requests externos ni
-privados; la GitHub Release está live.
+productiva vigente de `v1.9.0` es el gate público 10/10 con exit `0` sobre el
+product commit `ed76347`, incluido `/roles`. La prueba de navegador en producción
+a 390 px y 1440 px cerró sin overflow, errores de consola ni requests externos;
+la GitHub Release está live.
 
 ## Arquitectura de roles objetivo
 
@@ -488,9 +496,13 @@ consola ni requests externos/privados y la GitHub Release está live. Esto no
 demuestra DB, cuentas, autorización positiva ni datos remotos. Este commit sólo
 registra evidencia documental post-release y no mueve el tag `v1.8.1`.
 
-Cambio 1.9.0 candidato local: agrega MuniGuía `muniguia-contextual-v1` para
-doce rutas privadas exactas y siete roles. No agrega requests de IA, GRH u otras
-APIs ni accesos a storage, no lee indicadores ni concede permisos. Selectors y
-anchors están verificados por CI; si el target no está visible, se omite sólo
-«Ubicar». El focal cerró 10/10, la raíz 532 aprobadas + 1 smoke opt-in omitido
-y backend 20/20. Todavía no existe push, tag, Preview ni Producción de `1.9.0`.
+Cambio documental post-release 1.9.0: registra commit/tag `f9d1f88`, product
+commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en
+`Production`, alias `https://municipio-junin.vercel.app`, gate 10/10 exit `0`
+con `checkedAt 2026-08-09T14:42:10Z`, browser público 390/1440 px sobre `/login`
+y `/roles` sin overflow, errores de consola ni requests externos, redirects
+anónimos de `/dashboard`, `/inicio` y `/manuales` al login y GitHub Release live.
+MuniGuía privada sigue sólo local con proyección autoritativa simulada; raíz 532
+aprobadas + 1 smoke opt-in omitido y backend 20/20. No certifica autorización
+positiva, cuentas reales, DB/baseline restaurado, MFA/lifecycle persistido ni GRH
+remoto. Este commit documental no mueve el tag `v1.9.0`.

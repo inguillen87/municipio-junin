@@ -5,13 +5,21 @@
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
 
-El candidato local `1.9.0` incorpora MuniGuía `muniguia-contextual-v1` en doce
-rutas privadas exactas y siete roles. Reutiliza la proyección en memoria
-validada por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs ni
-accesos a storage, no lee indicadores y no concede permisos. La evidencia actual
-es focal 10/10, suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend
-20/20, todavía sin push, tag, Preview ni Producción. La última evidencia remota
-verificada sigue siendo `v1.8.1`.
+El release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
+commit es `ed76347`. El deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura
+`Ready` en `Production` con alias `https://municipio-junin.vercel.app`; el gate
+cerró 10/10 exit `0` con `checkedAt 2026-08-09T14:42:10Z`. El browser público
+verificó `/login` y `/roles` —siete perfiles— a 390/1440 px sin overflow,
+errores de consola ni requests externos; `/dashboard`, `/inicio` y `/manuales`
+anónimos redirigieron al login. La GitHub Release
+`https://github.com/inguillen87/municipio-junin/releases/tag/v1.9.0` está live.
+
+MuniGuía privada `muniguia-contextual-v1` sigue sólo local con proyección autoritativa simulada: focal
+10/10, suite raíz 533 totales —532 aprobadas y 1 smoke opt-in omitido— y backend
+20/20. Selectors y anchors siguen verificados por CI; si el target no está
+visible, se omite sólo «Ubicar». La evidencia remota no certifica autorización positiva, cuentas reales,
+DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Este commit
+documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
 
 ## Executive Summary
 
@@ -90,14 +98,14 @@ La comparación usa como fuente de verdad interna el
 | GIS y mapas operativos | Roadmap | Un mapa base no convierte un dato histórico en tiempo real |
 | CDC, micro-lotes y backups propios | Diseñados, no activados | RPO/RTO sólo pueden publicarse después de restaurar y medir |
 | Replay O2A/O2A.1 | Replay real local preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` probadas con fixtures | No es operación conectada, backup, firma del host ni deployment |
-| Producción remota | Artefacto `b82c0b3` en `master`/tag `v1.8.1`; deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, GitHub Release live | Evidencia limitada a superficies públicas; no DB, cuentas, autorización positiva ni datos remotos |
-| Verdad del release | `release:truth:check` productivo 10/10 exit `0`; browser 390/1440 px sin overflow, consola, requests externos ni destinos privados | Mantener commit/deployment/tag exactos; el registro post-release no mueve el tag |
+| Producción remota | Commit/tag `v1.9.0` `f9d1f88`, product commit `ed76347`; deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, alias productivo y GitHub Release live | Evidencia limitada a superficies públicas; no DB, cuentas, autorización positiva ni datos remotos |
+| Verdad del release | `release:truth:check` productivo 10/10 exit `0`, `checkedAt 2026-08-09T14:42:10Z`; browser público 390/1440 px sobre `/login` y `/roles` sin overflow, consola ni requests externos; rutas privadas anónimas redirigen al login | Mantener commit/deployment/tag exactos; el registro post-release no mueve el tag |
 
 El focal E0.1 de verdad de `/inicio` cerró 31/31 y el consolidado workspace +
 release truth, 45/45 local. Fija una captura UTF-8/LF y SHA-256, y rechaza
-rewrite antiguo, redirects y comment spoof. El cierre remoto posterior del
-artefacto `b82c0b3` aporta por separado deployment `Ready`, gate productivo 10/10
-exit `0` y browser 390/1440 px limpio; no demuestra DB, cuentas, autorización
+rewrite antiguo, redirects y comment spoof. El cierre remoto actual de
+`v1.9.0` aporta por separado deployment `Ready`, gate productivo 10/10 exit `0`
+y browser 390/1440 px limpio; no demuestra DB, cuentas, autorización
 positiva ni datos remotos.
 
 ## 2. Qué demuestran los referentes
@@ -625,7 +633,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 
 | Fase | Resultado que debe enamorar al usuario | Patrón incorporado del benchmark | Gate no negociable | Estado actual |
 |---|---|---|---|---|
-| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Superficie pública `v1.8.1` productiva: `b82c0b3`, deployment `Ready`, gate 10/10 y browser limpio; datos, cuentas y sesiones positivas pendientes |
+| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Superficie pública vigente `v1.9.0`: commit/tag `f9d1f88`, deployment `Ready`, gate 10/10 y browser limpio; datos, cuentas y sesiones positivas pendientes |
 | **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A + UX-E2A: siete inicios, capabilities server-computed y shell institucional; IAM-MAP-01 es puro, sin persistencia, cuentas o evidencia por rol |
 | **E2 — Ingesta gobernada** | Administrativos cargan fuentes con preview, errores comprensibles y linaje | Tyler data platform, SAP API governance, Granicus forms | Original privado, antivirus, parser aislado, schema, cuarentena y persistencia comprobada | CSV/XLSX/Sheets endurecidos localmente; resto parcial |
 | **E3 — Cerebro GRH** | Intendente recibe señales explicadas y acciones con seguimiento | OpenGov planning, Tyler Insights, SAP Analytics | Insight reproducible, calidad/frescura visibles, sin PII ni causalidad falsa | Base semántica y asistente determinista locales |
@@ -637,7 +645,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 ### 9.1 Prioridad inmediata
 
 1. Continuar E0 sobre integración privada: DB, datos materializados y smokes
-   autenticados por rol/tenant; la superficie pública `v1.8.1` ya está cerrada.
+   autenticados por rol/tenant; la superficie pública vigente `v1.9.0` ya está cerrada.
 2. Completar la certificación de UX-E1A/UX-E2A y continuar E1 con persistencia,
    lifecycle y una demo auténtica para cada rol formalmente aprovisionado; hoy
    existen siete políticas de inicio, no siete cuentas.
@@ -807,10 +815,13 @@ gate productivo cerró 10/10 exit `0`, el browser 390/1440 px quedó sin overflo
 consola, requests externos o destinos privados y la GitHub Release está live.
 Este commit sólo registra evidencia documental post-release y no mueve el tag.
 
-Cambio 1.9.0 candidato local: MuniGuía aporta ayuda contextual determinista en
-doce rutas privadas exactas para los siete roles, sin agregar requests de IA,
-GRH u otras APIs, storage, lectura de indicadores o permisos. El resolver falla
-cerrado ante drift de política, rol, variante, capability o ruta; selectors y
-anchors están verificados por CI y un target no visible omite sólo «Ubicar». El
-focal cerró 10/10, la raíz 532 aprobadas + 1 smoke opt-in omitido y backend
-20/20. Todavía no existe push, tag, Preview ni Producción de `1.9.0`.
+Cambio documental post-release 1.9.0: registra commit/tag `f9d1f88`, product
+commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en
+`Production`, alias `https://municipio-junin.vercel.app`, gate 10/10 exit `0`
+con `checkedAt 2026-08-09T14:42:10Z`, browser público 390/1440 px sobre `/login`
+y `/roles` sin overflow, errores de consola ni requests externos, redirects
+anónimos de `/dashboard`, `/inicio` y `/manuales` al login y GitHub Release live.
+MuniGuía privada sigue sólo local con proyección autoritativa simulada; raíz 532
+aprobadas + 1 smoke opt-in omitido y backend 20/20. No certifica autorización
+positiva, cuentas reales, DB/baseline restaurado, MFA/lifecycle persistido ni GRH
+remoto. Este commit documental no mueve el tag `v1.9.0`.

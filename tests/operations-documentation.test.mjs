@@ -243,7 +243,7 @@ test('documentation 1.9.0 preserves the governed close, Bot, immutable replay an
   const benchmark = read('docs/GOVTECH_BENCHMARK.md');
 
   for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark, inApp]) {
-    assert.match(source, /1\.9\.0(?![-+0-9A-Za-z.])/, 'every living manual must expose candidate version 1.9.0');
+    assert.match(source, /1\.9\.0(?![-+0-9A-Za-z.])/, 'every living manual must expose current version 1.9.0');
   }
 
   for (const source of [integral, user, technical, master, enterprise, operations, pipeline, privacy, inApp]) {
@@ -358,8 +358,8 @@ test('documentation 1.9.0 records the exact role workspace without claiming acco
   assert.match(inApp, /\/roles/);
 });
 
-test('MuniGuia 1.9.0 is documented as a local-only contextual-help candidate', () => {
-  const candidatePaths = [
+test('the public 1.9.0 release is exact while private MuniGuia remains local-only', () => {
+  const releasePaths = [
     'CHANGELOG.md',
     'docs/MASTER_PLAN_STATUS.md',
     'docs/ENTERPRISE_PRODUCT_ROADMAP.md',
@@ -371,26 +371,44 @@ test('MuniGuia 1.9.0 is documented as a local-only contextual-help candidate', (
     'manuales.html',
   ];
 
-  for (const relativePath of candidatePaths) {
+  for (const relativePath of releasePaths) {
     const source = read(relativePath);
     assert.match(source, /1\.9\.0(?![-+0-9A-Za-z.])/, `${relativePath} must expose 1.9.0`);
     assert.match(source, /MuniGu[ií]a/i);
     assert.match(source, /muniguia-contextual-v1/);
+    assert.match(source, /f9d1f88/);
+    assert.match(source, /ed76347/);
+    assert.match(source, /dpl_Euk4csdfWw5rayohoW3xXo1vXayY/);
+    assert.match(source, /Ready/);
+    assert.match(source, /Production/);
+    assert.match(source, /https:\/\/municipio-junin\.vercel\.app/);
+    assert.match(source, /(?:release:truth:check|gate)[\s\S]{0,120}10\/10[\s\S]{0,80}exit\s*`?(?:<code>)?0/i);
+    assert.match(source, /checkedAt 2026-08-09T14:42:10Z/);
+    assert.match(source, /\/login/);
+    assert.match(source, /\/roles/);
+    assert.match(source, /siete perfiles/i);
+    assert.match(source, /390(?:\s*px)?[\s\S]{0,80}1440(?:\s*px)?/i);
+    assert.match(source, /overflow/i);
+    assert.match(source, /errores de consola/i);
+    assert.match(source, /requests externos/i);
+    for (const pathname of ['/dashboard', '/inicio', '/manuales']) assert.match(source, new RegExp(pathname));
+    assert.match(source, /an[oó]nimos[\s\S]{0,100}redirigieron[\s\S]{0,20}al login/i);
+    assert.match(source, /https:\/\/github\.com\/inguillen87\/municipio-junin\/releases\/tag\/v1\.9\.0/);
+    assert.match(source, /GitHub Release[\s\S]{0,100}live/i);
     assert.match(source, /10\/10/);
     assert.match(source, /532/);
     assert.match(source, /1\s+smoke\s+opt-in\s+omitido/i);
     assert.match(source, /backend[\s\S]{0,40}20\/20/i);
-    assert.match(source, /(?:todav[ií]a\s+)?(?:no\s+(?:tiene|existe)|sin)\s+push[\s\S]{0,100}tag[\s\S]{0,100}Preview[\s\S]{0,100}Producci[oó]n/i,
-      `${relativePath} must keep 1.9.0 local-only`);
+    assert.match(source, /MuniGu[ií]a privada[\s\S]{0,120}(?:s[oó]lo|evidencia)[\s\S]{0,60}local/i);
+    assert.match(source, /proyecci[oó]n\s+autoritativa\s+simulada/i);
+    assert.match(source, /(?:no certifica|no acredita)/i);
+    for (const boundary of [/autorizaci[oó]n positiva/i, /cuentas reales/i, /DB/i, /baseline restaurado/i, /MFA\/lifecycle persistido/i, /GRH remoto/i]) {
+      assert.match(source, boundary);
+    }
+    assert.match(source, /(?:documental|registro)[\s\S]{0,40}post-release[\s\S]{0,100}no\s+mueve[\s\S]{0,60}tag/i);
   }
 
   for (const relativePath of [
-    'docs/MANUAL_INTEGRAL.md',
-    'docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md',
-    'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
-    'docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md',
-    'docs/GOVTECH_BENCHMARK.md',
-    'docs/ENTERPRISE_PRODUCT_ROADMAP.md',
     'manuales.html',
   ]) {
     const source = read(relativePath);
@@ -414,7 +432,7 @@ test('MuniGuia 1.9.0 is documented as a local-only contextual-help candidate', (
   }
 });
 
-test('versioned 1.9.0 candidate preserves the exact public 1.8.1 evidence without moving its tag', () => {
+test('post-release 1.9.0 preserves the exact public 1.8.1 evidence without moving either tag', () => {
   const rootManifest = JSON.parse(read('package.json'));
   const rootLock = JSON.parse(read('package-lock.json'));
   const backendManifest = JSON.parse(read('backend/package.json'));
@@ -481,8 +499,11 @@ test('versioned 1.9.0 candidate preserves the exact public 1.8.1 evidence withou
     assert.match(source, /(?:requests? externos?|external)/i);
     assert.match(source, /(?:requests?\s+privados?|destinos\s+privados|links?\s+privados|externos\s*(?:\/|ni)\s*privados)/i);
     assert.match(source, /GitHub Release[\s\S]{0,80}live/i);
-    assert.match(source, /no\s+(?:demuestra|declara|acredita|certifica|infiere)[\s\S]{0,180}DB[\s\S]{0,180}cuentas[\s\S]{0,180}autorización\s+positiva[\s\S]{0,180}datos[\s\S]{0,40}remotos/i,
-      'public release evidence must not be promoted to DB, account, authorization or remote-data evidence');
+    assert.match(source, /no\s+(?:demuestra|declara|acredita|certifica|infiere)/i,
+      'public release evidence must retain an explicit non-certification boundary');
+    for (const boundary of [/DB/i, /cuentas/i, /autorización\s+positiva/i, /datos[\s\S]{0,40}remotos/i]) {
+      assert.match(source, boundary, 'public release evidence must not be promoted beyond public surfaces');
+    }
     assert.match(source, /(?:s[oó]lo\s+registr(?:a|ó)|registro)[\s\S]{0,100}(?:evidencia documental\s+)?post-release/i);
     assert.match(source, /no (?:mueve|movi[oó])[\s\S]{0,60}(?:el )?tag/i);
     assert.doesNotMatch(source, /v1\.8\.1[\s\S]{0,180}(?:pendiente de push|requiere push|permanece local)/i,
@@ -574,7 +595,7 @@ test('the documented test commands use the cross-platform suite runner', () => {
     assert.match(source, /no (?:demuestra|prueba)[\s\S]{0,30}propiedad institucional del dominio/i);
   }
   assert.match(read('docs/MASTER_PLAN_STATUS.md'), /Gate de verdad del release[\s\S]*b82c0b3[\s\S]{0,180}v1\.8\.1[\s\S]{0,180}10\/10[\s\S]{0,120}exit `0`/i);
-  assert.match(read('docs/MASTER_PLAN_STATUS.md'), /(?:incluido|cubiert)[\s\S]{0,80}\/roles|\/roles[\s\S]{0,180}(?:incluido|cubiert)/i);
+  assert.match(read('docs/MASTER_PLAN_STATUS.md'), /browser p[uú]blico[\s\S]{0,120}\/login[\s\S]{0,80}\/roles/i);
 });
 
 test('runtime baselines are pinned and the current engineering environment passes preflight', () => {

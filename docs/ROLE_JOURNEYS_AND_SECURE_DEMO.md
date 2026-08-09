@@ -2,15 +2,26 @@
 
 **Versión:** 1.9.0
 **Fecha de corte:** 9 de agosto de 2026  
-**Estado:** candidato local MuniGuía `1.9.0`, todavía sin push, tag, Preview ni Producción; la última evidencia productiva verificada continúa siendo `v1.8.1`; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
+**Estado:** release público `v1.9.0` verificado; autorización positiva, MuniGuía privada, DB conectada y ciclo de invitaciones permanecen locales o en roadmap según su evidencia
 
-MuniGuía implementa localmente `muniguia-contextual-v1` para doce rutas
-privadas exactas y los siete roles vigentes. Se monta sólo después de validar
-política, rol, variante, `navigation.help`, capability y ruta; no agrega requests
-de IA, GRH u otras APIs ni accesos a storage, no lee indicadores y no concede
-permisos. Reutiliza la proyección en memoria validada por `/api/auth/me`. El focal
-cerró 10/10, la suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend
-20/20. Son pruebas locales: no acreditan deployment ni autorización positiva.
+El commit/tag `v1.9.0` es `f9d1f88` y el product commit es `ed76347`. El
+deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura `Ready` en `Production`
+con alias `https://municipio-junin.vercel.app`; `release:truth:check` cerró
+10/10 exit `0` con `checkedAt 2026-08-09T14:42:10Z`. El browser público verificó
+`/login` y `/roles` —siete perfiles— a 390/1440 px sin overflow, errores de
+consola ni requests externos; `/dashboard`, `/inicio` y `/manuales` anónimos
+redirigieron al login. La GitHub Release
+`https://github.com/inguillen87/municipio-junin/releases/tag/v1.9.0` está live.
+
+MuniGuía `muniguia-contextual-v1` conserva evidencia privada sólo local, con una
+proyección autoritativa simulada: focal 10/10, suite raíz 533 totales —532
+aprobadas y 1 smoke opt-in omitido— y backend 20/20. No agrega requests de IA,
+GRH u otras APIs ni accesos a storage, no lee indicadores y no concede permisos.
+Selectors y anchors siguen verificados por CI; si el target no está visible, se
+omite sólo «Ubicar».
+La evidencia remota no certifica autorización positiva, cuentas reales, DB o
+baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Este commit
+documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
 
 ## 1. Propósito
 
@@ -31,7 +42,7 @@ puede ayudar a comprender el permiso, pero nunca reemplaza esa frontera.
 | Condicionado | Existe el flujo, pero requiere DB, tenant, proveedor o artefacto privado configurado | Se prueba sólo en un preview preparado; sin configuración debe fallar cerrado |
 | Roadmap | Falta política, migración, fuente o evidencia remota | Se muestra como diseño futuro, nunca como operación simulada |
 
-El artefacto `b82c0b3` está integrado en `master` y fijado por el tag `v1.8.1`;
+Como antecedente, el artefacto `b82c0b3` está integrado en `master` y fijado por el tag `v1.8.1`;
 la GitHub Release está live. El deployment
 `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, el gate productivo cerró 10/10
 con exit `0` y el browser de producción a 390 px y 1440 px quedó sin overflow,
@@ -387,11 +398,13 @@ cerró 10/10 exit `0`, el browser 390/1440 px quedó sin overflow, consola,
 requests externos o destinos privados y la GitHub Release está live. Este commit
 sólo registra evidencia documental post-release y no mueve el tag `v1.8.1`.
 
-Cambio 1.9.0 candidato local: incorpora MuniGuía
-`muniguia-contextual-v1` para doce rutas privadas exactas y siete roles. El
-resolver falla cerrado ante drift de política, rol, variante, capability o ruta;
-selectors y anchors están verificados por CI y, si el target no está visible,
-sólo se omite «Ubicar». No agrega requests de IA, GRH u otras APIs ni accesos a
-storage, no lee indicadores ni concede permisos. La evidencia actual es focal
-10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20, todavía sin
-push, tag, Preview ni Producción.
+Cambio documental post-release 1.9.0: registra commit/tag `f9d1f88`, product
+commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en
+`Production`, alias `https://municipio-junin.vercel.app`, gate 10/10 exit `0`
+con `checkedAt 2026-08-09T14:42:10Z`, browser público 390/1440 px sobre `/login`
+y `/roles` sin overflow, errores de consola ni requests externos, redirects
+anónimos de `/dashboard`, `/inicio` y `/manuales` al login y GitHub Release live.
+MuniGuía privada sigue sólo local con proyección autoritativa simulada; raíz
+532 aprobadas + 1 smoke opt-in omitido y backend 20/20. No certifica autorización
+positiva, cuentas reales, DB/baseline restaurado, MFA/lifecycle persistido ni GRH
+remoto. Este commit documental no mueve el tag `v1.9.0`.

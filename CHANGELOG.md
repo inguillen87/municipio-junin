@@ -38,12 +38,23 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Estado verificable
 
-- **Candidato local, todavía sin push, tag, Preview ni Producción.** El focal
-  MuniGuía cerró 10/10; la suite raíz cerró 532 pruebas aprobadas y 1 smoke
-  opt-in omitido; el backend cerró 20/20.
-- Esta evidencia local no demuestra deployment, cuentas nuevas, autorización
-  positiva, DB conectada ni datos municipales remotos. La última evidencia
-  productiva verificada continúa siendo `v1.8.1`.
+- **Release público `v1.9.0` verificado.** El commit y tag `v1.9.0` apuntan a
+  `f9d1f88`; el product commit es `ed76347`. El deployment
+  `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura `Ready` en `Production` con alias
+  `https://municipio-junin.vercel.app`.
+- `release:truth:check` cerró 10/10 con exit `0` y
+  `checkedAt 2026-08-09T14:42:10Z`. El browser público verificó `/login` y
+  `/roles` —sus siete perfiles— a 390 px y 1440 px sin overflow, errores de
+  consola ni requests externos; `/dashboard`, `/inicio` y `/manuales` anónimos
+  redirigieron al login.
+- La GitHub Release
+  `https://github.com/inguillen87/municipio-junin/releases/tag/v1.9.0` está live.
+  El focal MuniGuía cerró 10/10; la suite raíz cerró 533 pruebas totales: 532
+  aprobadas y 1 smoke opt-in omitido; el backend cerró 20/20.
+- La autorización positiva y MuniGuía privada sólo tienen evidencia local con
+  una proyección autoritativa simulada. Este cierre no certifica cuentas reales,
+  DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. El commit
+  documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
 
 ## [1.8.1] - 2026-08-09
 

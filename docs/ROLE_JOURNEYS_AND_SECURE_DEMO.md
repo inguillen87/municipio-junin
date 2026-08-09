@@ -1,8 +1,16 @@
 # Recorridos por rol y demostración segura — MuniControl
 
-**Versión:** 1.8.1
+**Versión:** 1.9.0
 **Fecha de corte:** 9 de agosto de 2026  
-**Estado:** artefacto `b82c0b3` integrado en `master`/tag `v1.8.1`, deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate productivo 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
+**Estado:** candidato local MuniGuía `1.9.0`, todavía sin push, tag, Preview ni Producción; la última evidencia productiva verificada continúa siendo `v1.8.1`; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
+
+MuniGuía implementa localmente `muniguia-contextual-v1` para doce rutas
+privadas exactas y los siete roles vigentes. Se monta sólo después de validar
+política, rol, variante, `navigation.help`, capability y ruta; no agrega requests
+de IA, GRH u otras APIs ni accesos a storage, no lee indicadores y no concede
+permisos. Reutiliza la proyección en memoria validada por `/api/auth/me`. El focal
+cerró 10/10, la suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend
+20/20. Son pruebas locales: no acreditan deployment ni autorización positiva.
 
 ## 1. Propósito
 
@@ -378,3 +386,12 @@ está en `master`/tag `v1.8.1`, el deployment figura `Ready`, el gate productivo
 cerró 10/10 exit `0`, el browser 390/1440 px quedó sin overflow, consola,
 requests externos o destinos privados y la GitHub Release está live. Este commit
 sólo registra evidencia documental post-release y no mueve el tag `v1.8.1`.
+
+Cambio 1.9.0 candidato local: incorpora MuniGuía
+`muniguia-contextual-v1` para doce rutas privadas exactas y siete roles. El
+resolver falla cerrado ante drift de política, rol, variante, capability o ruta;
+selectors y anchors están verificados por CI y, si el target no está visible,
+sólo se omite «Ubicar». No agrega requests de IA, GRH u otras APIs ni accesos a
+storage, no lee indicadores ni concede permisos. La evidencia actual es focal
+10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20, todavía sin
+push, tag, Preview ni Producción.

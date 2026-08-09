@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.8.1 |
+| Versión | 1.9.0 |
 | Fecha de corte documental | 9 de agosto de 2026 |
-| Estado | Artefacto `b82c0b3` en `master`/tag `v1.8.1`; deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate productivo 10/10 exit `0` y GitHub Release live |
+| Estado | Candidato local MuniGuía `1.9.0`, todavía sin push, tag, Preview ni Producción; la última evidencia productiva verificada sigue siendo `v1.8.1` |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -15,6 +15,13 @@
 Este manual está dirigido a Intendencia, secretarías, Hacienda, RRHH y personas
 operadoras autorizadas. Explica lo que la plataforma puede hacer hoy, qué depende
 de configuración y qué todavía es hoja de ruta.
+
+MuniGuía (`muniguia-contextual-v1`) ofrece tres pasos contextuales para doce
+rutas privadas exactas y los siete roles vigentes. Reutiliza la proyección en
+memoria validada por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs
+ni accesos a storage, no lee indicadores y no concede permisos. Su evidencia
+actual es local: focal 10/10, suite raíz 532 aprobadas más 1 smoke opt-in omitido
+y backend 20/20. No acredita un despliegue ni autorización positiva.
 
 No reemplaza normas municipales, controles contables, procedimientos de RRHH ni
 dictámenes legales. Tampoco constituye evidencia de que el checkout local esté
@@ -993,6 +1000,7 @@ exitoso. Si falta evidencia, el estado correcto sigue siendo **Condicionado**.
 
 | Versión | Fecha | Cambio | Responsable |
 |---|---|---|---|
+| 1.9.0 | 2026-08-09 | Candidato local MuniGuía `muniguia-contextual-v1`: tres pasos en doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20; sin push, tag, Preview ni Producción | Mantenedor del cambio; evidencia remota pendiente |
 | 1.8.1 | 2026-08-09 | Publica `/roles` como recorrido visual; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; sin acreditar DB, cuentas, autorización positiva o datos remotos | Mantenedor del cambio; registro post-release sin mover el tag |
 | 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, superficie pública productiva 9/9 exit `0`, sin acreditar DB, cuentas reales, autorización positiva ni datos remotos | Mantenedor del cambio; aprobación institucional registrada por separado |
 | 1.7.0 | 2026-08-09 | Agrega Inicio seguro para los siete roles vigentes, capabilities y perfil calculados en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; corrige Reportes como operativo local, sin cuentas, DB ni deployment | Mantenedor del cambio; aprobación institucional pendiente del release |

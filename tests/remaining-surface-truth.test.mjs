@@ -53,7 +53,7 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   const source = read('manuales.html');
   const docVersion = extractUniqueDocVersion(source);
   assert.match(docVersion, DOC_SEMVER_PATTERN);
-  assert.equal(docVersion, '1.8.1');
+  assert.equal(docVersion, '1.9.0');
   assert.match(source, /data-doc-contract="operational-truth-v1"/);
   assert.match(source, /data-primary-source="grh"/);
   assert.match(source, /data-secondary-source-policy="personas-excluded"/);
@@ -63,7 +63,7 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   assert.match(source, /release:truth:check[\s\S]{0,100}10\/10[\s\S]{0,80}exit\s*<code>0<\/code>/i);
   assert.match(source, /390(?:\s*px)?[\s\S]{0,100}1440(?:\s*px)?[\s\S]{0,180}sin overflow/i);
   assert.match(source, /GitHub Release[\s\S]{0,80}live/i);
-  assert.match(source, /sólo registra evidencia documental post-release[\s\S]{0,100}no mueve el tag/i);
+  assert.match(source, /s[oó]lo registr(?:a|ó) evidencia documental post-release[\s\S]{0,100}no (?:mueve|movi[oó]) el tag/i);
   assert.doesNotMatch(source, /v1\.8\.1[\s\S]{0,180}(?:pendiente de push|requiere push|permanece local)/i);
   assert.match(source, /backup de Personas.*fuera del contrato analítico/is);
   assert.match(source, /Control de cálculo, no pago bancario/i);
@@ -77,6 +77,7 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
 test('the in-app document version accepts SemVer prereleases but rejects arbitrary and build values', () => {
   for (const value of [
     '0.0.0',
+    '1.9.0',
     '1.8.1',
     '1.8.0',
     '1.8.0-rc.1',

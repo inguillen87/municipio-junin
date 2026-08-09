@@ -1,6 +1,6 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.8.1.
+Versión documental: 1.9.0.
 Fecha de corte: 9 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
@@ -9,6 +9,15 @@ el checkout actual (`css/components.css`, `css/animations.css`,
 `organigrama.html`, `rrhh-data/`, `api/payroll-engine.js` y
 `api/payroll-receipt.js`). Las casillas de un plan no prueban que una función esté
 implementada, conectada o validada.
+
+El candidato local `1.9.0` agrega MuniGuía `muniguia-contextual-v1` para doce
+rutas privadas exactas y siete roles. Valida política, rol, variante,
+`navigation.help`, capability y ruta antes de montarse; reutiliza la proyección
+en memoria validada por `/api/auth/me`, sin agregar requests de IA, GRH u otras
+APIs ni accesos a storage, sin leer indicadores ni conceder permisos. El focal
+cerró 10/10, la suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend
+20/20. Todavía no tiene push, tag, Preview ni Producción; `v1.8.1` permanece
+como la última evidencia productiva verificada.
 
 ## Gate de verdad del release
 
@@ -480,3 +489,11 @@ exit `0` y el navegador 390/1440 px no mostró overflow, errores de consola,
 requests externos ni privados. Es evidencia pública acotada, no DB, cuentas,
 autorización positiva o datos remotos. Este commit sólo registra el cierre
 post-release y no mueve el tag.
+
+Cambio documental 1.9.0 candidato local: incorpora MuniGuía
+`muniguia-contextual-v1` con ayuda determinista en doce rutas privadas exactas
+y siete roles. No agrega requests de IA, GRH u otras APIs ni accesos a storage,
+no lee indicadores ni cambia autorización. El focal cerró 10/10, la raíz 532
+aprobadas más 1 smoke opt-in omitido y backend 20/20. No existe todavía push,
+tag, Preview o Producción de `1.9.0`; el cierre remoto vigente sigue siendo
+`v1.8.1`.

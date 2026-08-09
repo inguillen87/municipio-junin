@@ -1,11 +1,18 @@
 # Manual técnico y de procedimientos de MuniControl
 
-**Versión:** 1.8.1
+**Versión:** 1.9.0
 
 **Tipo:** documento vivo
 
 **Última verificación contra el checkout local:** 2026-08-09
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
+
+> Candidato local MuniGuía `1.9.0`: `muniguia-contextual-v1` cubre doce rutas
+> privadas exactas y siete roles. Reutiliza la proyección en memoria validada
+> por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs ni accesos a
+> storage, no lee indicadores y no concede permisos. El focal cerró 10/10, la
+> suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend 20/20. Todavía
+> no existe push, tag, Preview ni Producción de `1.9.0`.
 
 > Estado de verdad: el artefacto `b82c0b3` está integrado en `master` y fijado por
 > el tag `v1.8.1`; la GitHub Release está live. El deployment
@@ -27,6 +34,21 @@ DB o datos municipales. Su única navegación operativa apunta a `/login`.
 La ruta es demostración visual, no evidencia RBAC. El service worker público v5
 puede cachearla con estrategia network-first y continúa excluyendo `/api`; esa
 disponibilidad no modifica el contrato de seguridad ni acredita el deployment.
+
+### MuniGuía contextual `1.9.0` — candidato local
+
+`js/contextual-help-catalog.js` define un catálogo local, congelado y
+determinista; `js/contextual-help.js` monta la ayuda y
+`css/contextual-help.css` resuelve presentación accesible. `js/nav.js` importa
+esos assets sólo después de validar la proyección autoritativa en memoria, la
+política, el rol, la variante, `navigation.help`, la capability de la superficie
+y uno de doce pathnames privados exactos.
+
+El resolver falla cerrado ante drift de política, rol, variante, capability o
+ruta. Selectors y anchors se verifican en CI; si el target no está visible, la
+guía permanece disponible y omite sólo «Ubicar». No agrega requests de IA, GRH
+u otras APIs ni accesos a storage, no lee indicadores, no crea permisos y no
+reemplaza la autorización server-side o el enlace directo al Manual.
 
 ## 1. Propósito y regla de mantenimiento
 
@@ -1434,3 +1456,11 @@ consola ni requests externos/privados y la GitHub Release está live. El tour no
 autentica, no usa JWT/storage y no demuestra autorización, DB, cuentas o datos
 municipales. Este commit sólo registra el cierre post-release; el tag no se
 mueve.
+
+Cambio 1.9.0 candidato local: agrega MuniGuía `muniguia-contextual-v1` en doce
+rutas privadas exactas y siete roles, con carga posterior a la proyección
+autoritativa y sin requests de IA, GRH u otras APIs, storage, lectura de
+indicadores o nuevos permisos. Selectors y anchors están verificados por CI; un
+target no visible omite sólo «Ubicar». El focal cerró 10/10, la suite raíz 532
+aprobadas + 1 smoke opt-in omitido y backend 20/20. Aún no tiene push, tag,
+Preview ni Producción; `v1.8.1` sigue siendo la evidencia remota vigente.

@@ -1,8 +1,15 @@
 # Manual integral y gobierno documental — MuniControl
 
-Versión documental: 1.8.1
+Versión documental: 1.9.0
 Fecha de corte: 9 de agosto de 2026  
-Estado: artefacto `b82c0b3` en `master`/tag `v1.8.1`, deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate productivo 10/10 exit `0` y GitHub Release live
+Estado: candidato local MuniGuía `1.9.0`, todavía sin push, tag, Preview ni Producción; la última evidencia productiva verificada continúa siendo `v1.8.1`
+
+MuniGuía `muniguia-contextual-v1` agrega tres pasos deterministas para doce
+rutas privadas exactas y los siete roles vigentes. Reutiliza la proyección en
+memoria validada por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs
+ni accesos a storage, no lee indicadores y no concede permisos. El focal local
+cerró 10/10, la suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend
+20/20. Esta evidencia no acredita deployment ni autorización positiva.
 
 ## Cómo usar este paquete
 
@@ -293,6 +300,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.9.0 | 2026-08-09 | Candidato local MuniGuía `muniguia-contextual-v1` en doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20; todavía sin push, tag, Preview ni Producción |
 | 1.8.1 | 2026-08-09 | Publica `/roles` como tour visual `public-role-tour-v1`; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate productivo 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; no acredita DB, cuentas, autorización positiva ni datos remotos |
 | 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, con superficie pública productiva certificada 9/9 exit `0`. No acredita DB, cuentas reales, autorización positiva ni datos remotos |
 | 1.7.0 | 2026-08-09 | Incorpora el inicio seguro por siete roles con capabilities calculadas en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; 42/42 local, sin cuentas, DB ni deployment |

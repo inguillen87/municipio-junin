@@ -1,8 +1,16 @@
 # Roadmap de producto enterprise — MuniControl
 
-Versión: 1.8.1
+Versión: 1.9.0
 Fecha de corte: 9 de agosto de 2026  
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
+
+El candidato local `1.9.0` incorpora MuniGuía `muniguia-contextual-v1` en doce
+rutas privadas exactas y siete roles. Reutiliza la proyección en memoria
+validada por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs ni
+accesos a storage, no lee indicadores y no concede permisos. El focal cerró
+10/10, la suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend 20/20.
+Todavía no tiene push, tag, Preview ni Producción; la evidencia remota vigente
+sigue siendo `v1.8.1`.
 
 ## Propósito
 
@@ -92,6 +100,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Autenticación DB-autoritativa | Implementada localmente | Configurar secretos, migrar y certificar producción |
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política `2026-08-09.1`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
 | Tour visual público de roles | `/roles` y `public-role-tour-v1` publicados en `v1.8.1` para siete perfiles; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Mantener el gate público y no confundir el recorrido con RBAC ni autorización positiva |
+| MuniGuía contextual | Candidato local `muniguia-contextual-v1`: tres pasos deterministas para doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Sin push, tag, Preview ni Producción; mantener autorización server-side y Manual como fallback |
 | WP0-L: observación de copia restaurada | Recolector read-only y fail-closed implementado y validado localmente; todavía no se ejecutó conectado | Autorizar y restaurar una copia descartable, ejecutar la observación y revisar evidencia externa; no es baseline ni migración |
 | IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Resolver drift de esquema, aprobar baseline/migración y construir el adaptador transaccional antes de aprovisionar identidades |
 | UX-E2A: shell institucional | Shell compartido en `v1.8.1`; la superficie pública productiva cerró 10/10 con exit `0` | Mantener pruebas por rol; la UI no concede autorización ni prueba datos privados |
@@ -478,3 +487,10 @@ gate productivo cerró 10/10 exit `0`, el browser 390/1440 px no mostró overflo
 consola ni requests externos/privados y la GitHub Release está live. Esto no
 demuestra DB, cuentas, autorización positiva ni datos remotos. Este commit sólo
 registra evidencia documental post-release y no mueve el tag `v1.8.1`.
+
+Cambio 1.9.0 candidato local: agrega MuniGuía `muniguia-contextual-v1` para
+doce rutas privadas exactas y siete roles. No agrega requests de IA, GRH u otras
+APIs ni accesos a storage, no lee indicadores ni concede permisos. Selectors y
+anchors están verificados por CI; si el target no está visible, se omite sólo
+«Ubicar». El focal cerró 10/10, la raíz 532 aprobadas + 1 smoke opt-in omitido
+y backend 20/20. Todavía no existe push, tag, Preview ni Producción de `1.9.0`.

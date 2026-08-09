@@ -1,9 +1,17 @@
 # Benchmark GovTech para MuniControl
 
-- Versión: 1.8.1
+- Versión: 1.9.0
 - Fecha de consulta: 8 de agosto de 2026
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
+
+El candidato local `1.9.0` incorpora MuniGuía `muniguia-contextual-v1` en doce
+rutas privadas exactas y siete roles. Reutiliza la proyección en memoria
+validada por `/api/auth/me`; no agrega requests de IA, GRH u otras APIs ni
+accesos a storage, no lee indicadores y no concede permisos. La evidencia actual
+es focal 10/10, suite raíz 532 aprobadas más 1 smoke opt-in omitido y backend
+20/20, todavía sin push, tag, Preview ni Producción. La última evidencia remota
+verificada sigue siendo `v1.8.1`.
 
 ## Executive Summary
 
@@ -798,3 +806,11 @@ no acredita seguridad por roles. El artefacto `b82c0b3` está en `master`/tag
 gate productivo cerró 10/10 exit `0`, el browser 390/1440 px quedó sin overflow,
 consola, requests externos o destinos privados y la GitHub Release está live.
 Este commit sólo registra evidencia documental post-release y no mueve el tag.
+
+Cambio 1.9.0 candidato local: MuniGuía aporta ayuda contextual determinista en
+doce rutas privadas exactas para los siete roles, sin agregar requests de IA,
+GRH u otras APIs, storage, lectura de indicadores o permisos. El resolver falla
+cerrado ante drift de política, rol, variante, capability o ruta; selectors y
+anchors están verificados por CI y un target no visible omite sólo «Ubicar». El
+focal cerró 10/10, la raíz 532 aprobadas + 1 smoke opt-in omitido y backend
+20/20. Todavía no existe push, tag, Preview ni Producción de `1.9.0`.

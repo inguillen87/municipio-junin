@@ -13,6 +13,10 @@ implementada, conectada o validada.
 El corte actual es el release público verificado `v1.10.0`. El producto S13 está
 en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
 sobre el snapshot aprobado.
+El incremento técnico vigente es S14B `Unreleased`: aisló los targets DB de
+Preview y Production, exigió `sslmode=verify-full`, identificó el mapping Neon y
+ejecutó WP0 conectado sobre un restore descartable. No modifica el release
+público ni habilita baseline, migraciones, cuentas o lifecycle.
 `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`, un brief ejecutivo
 único desde agregados del snapshot aprobado, con validación local: separa señal
 global cross-source de evidencia mensual, expone `temporalQuarantineRows`, aplica
@@ -496,8 +500,8 @@ cuentas, MFA/lifecycle ni datos GRH remotos.
 
 ### S14A — WP0-L v2 y aislamiento de configuración
 
-Estado: **contrato local cerrado; ejecución conectada pendiente y aislamiento de
-configuración en NO-GO**.
+Estado histórico: **contrato local cerrado; el NO-GO de configuración observado
+en S14A fue resuelto posteriormente por S14B**.
 
 - `wp0_restored_copy_observation` v2 conserva los estados `absent`, `empty`,
   `inconsistent` y `valid`. Los tres primeros usan
@@ -507,23 +511,59 @@ configuración en NO-GO**.
   lugar de SQL crudo. Sus límites fail-closed —sin truncado— son 20.000 filas,
   1 KiB por campo distinto de la definición, 256 KiB por definición y 4 MiB
   acumulados.
-- La evidencia de S14A proviene de fixtures y adapters locales. No se abrió una
+- La evidencia propia de S14A provino de fixtures y adapters locales. En ese
+  corte no se abrió una
   conexión PostgreSQL, no se observó una copia restaurada real y no se probó la
   compatibilidad dinámica con PostgreSQL o Neon.
 - La revalidación local S14A mediante `npm.cmd run test:all` cerró 611 pruebas
   raíz —610 aprobadas, 0 fallidas y 1 smoke opt-in omitido— y backend 20/20.
   Este conteo corresponde al incremento `Unreleased`; no sustituye la evidencia
   histórica 591/590 del release público `v1.10.0`.
-- La auditoría runtime de configuración usó fingerprints no reversibles, sin
-  exponer URLs ni credenciales. Preview y Production resolvieron al mismo destino
-  lógico: `DB_CONFIG_ISOLATION=FAIL`. La configuración observada resultó
-  `DB_CONFIG_SSLMODE_VERIFY_FULL=false`; no hubo conexión ni handshake TLS. El
-  vínculo con un proyecto y branch Neon permanece `NEON_MAPPING=UNKNOWN`.
+- La auditoría runtime de S14A usó fingerprints no reversibles, sin exponer URLs
+  ni credenciales. En aquel corte Preview y Production resolvieron al mismo
+  destino lógico: `DB_CONFIG_ISOLATION=FAIL`; la configuración dio
+  `DB_CONFIG_SSLMODE_VERIFY_FULL=false` y el vínculo con Neon quedó
+  `NEON_MAPPING=UNKNOWN`. Es un antecedente, no el estado actual.
 - La evidencia pública vigente de `v1.10.0` permanece 11/11 en su alcance
-  público; S14A no la modifica ni la recertifica. El incremento queda
-  `Unreleased`, sin bump de paquete o tag. `v1.11.0` se reserva para S14B
-  conectado después de corregir aislamiento/TLS, resolver el mapping y ejecutar
-  WP0 sobre un restore descartable autorizado.
+  público; S14A no la modificó ni la recertificó. No produjo bump, tag ni
+  `v1.11.0`.
+
+### S14B — aislamiento DB y observación WP0 conectada
+
+Estado: **objetivo técnico conectado cerrado como descubrimiento no aprobable;
+incremento `Unreleased`, sin release ni baseline**.
+
+- Preview y Production quedaron mapeados a branches DB distintos; las conexiones
+  remotas de runtime y migración exigen `sslmode=verify-full`. La reauditoría
+  cerró `DB_CONFIG_ISOLATION=PASS`, `DB_CONFIG_SSLMODE_VERIFY_FULL=true` y
+  `NEON_MAPPING=IDENTIFIED`. Esto acredita los targets DB observados, no la
+  plataforma privada completa ni autorización positiva.
+- El control plane confirmó por separado el snapshot
+  `snap-autumn-shape-ac7473wo` desde main y el restore descartable
+  `br-flat-waterfall-acylyfjv`. Después de WP0, el cleanup confirmó restore y
+  snapshot ausentes, main y Preview `ready`, el directorio temporal ausente y el
+  artefacto externo retenido.
+- WP0 se ejecutó conectado desde
+  `38b25e80e8413cc8688f393de2930e77098eb3f4` con observador de mínimo privilegio,
+  transacción `REPEATABLE READ READ ONLY` y socket cliente `TLSv1.3`. El artefacto
+  externo registró 968 filas de catálogo y `_prisma_migrations` `absent`; quedó
+  `discovery_non_approvable` y `approvalEligible:false`.
+- El artefacto
+  `wp0-observation-48054484dbcd80ffbaa46a197a97ccfb3a8a1a97223e868dc1e755d010d8ada4`,
+  SHA-256
+  `64b1571c36adafe6d6b65b11c3fd109131e7e7bcff84c4cd060dfbdea82573a1`,
+  mantiene `externalReferencesVerified:false`,
+  `backupRestoreRelationVerified:false`, `reviewerIndependenceVerified:false` y
+  `signedProviderReceiptVerified:false`. La auditoría de control plane es
+  evidencia separada; no altera esos flags ni autoriza DDL.
+- Una credencial owner expuesta en una salida administrativa fue rotada y su valor
+  anterior quedó invalidado, sin reproducir el secreto.
+- La suite raíz S14B cerró 619 pruebas —618 aprobadas, 0 fallidas y 1 smoke opt-in
+  omitido—; backend cerró 20/20. No sustituye la evidencia histórica 591/590 ni
+  el gate público 11/11 de `v1.10.0`.
+- No existe baseline Prisma, historia de migraciones, drift aprobado, cuenta o
+  lifecycle persistido. S14B sigue `Unreleased`, sin bump, tag, GitHub Release o
+  `v1.11.0`.
 
 ## Funciones que no deben “completarse” todavía
 

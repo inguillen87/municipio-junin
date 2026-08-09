@@ -451,7 +451,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   );
 });
 
-test('S14A closes WP0-L v2 locally and records the DB configuration NO-GO without releasing 1.11.0', () => {
+test('S14B records isolated DB targets and connected WP0 discovery without releasing 1.11.0', () => {
   const closurePaths = [
     'CHANGELOG.md',
     'docs/MASTER_PLAN_STATUS.md',
@@ -462,23 +462,26 @@ test('S14A closes WP0-L v2 locally and records the DB configuration NO-GO withou
 
   for (const relativePath of closurePaths) {
     const source = read(relativePath);
-    assert.match(source, /S14A/, `${relativePath} must identify the local sprint`);
-    assert.match(source, /(?:contrato[^\r\n]{0,80}v2|wp0_restored_copy_observation[^\r\n]{0,40}v2)/i,
-      `${relativePath} must identify observation contract v2`);
-    for (const state of ['absent', 'empty', 'inconsistent', 'valid']) {
-      assert.match(source, new RegExp(`\\b${state}\\b`), `${relativePath} must preserve ${state}`);
-    }
+    assert.match(source, /S14A/, `${relativePath} must preserve S14A as antecedent`);
+    assert.match(source, /S14B/, `${relativePath} must identify the connected sprint`);
+    assert.match(source, /branches[^\r\n]{0,40}distintos/i,
+      `${relativePath} must record distinct Preview/Production DB branches`);
+    assert.match(source, /sslmode=verify-full/i,
+      `${relativePath} must require verify-full on remote connections`);
+    assert.match(source, /DB_CONFIG_ISOLATION=PASS/);
+    assert.match(source, /DB_CONFIG_SSLMODE_VERIFY_FULL=true/);
+    assert.match(source, /NEON_MAPPING=IDENTIFIED/);
+    assert.match(source, /\babsent\b/);
     assert.match(source, /discovery_non_approvable/);
     assert.match(source, /approvalEligible:false/);
-    assert.match(source, /DB_CONFIG_ISOLATION=FAIL/);
-    assert.match(source, /DB_CONFIG_SSLMODE_VERIFY_FULL=false/);
-    assert.match(source, /NEON_MAPPING=UNKNOWN/);
-    assert.match(source, /\b(?:no|sin)[\s\S]{0,120}conexi[oó]n PostgreSQL/i,
-      `${relativePath} must not promote configuration inspection to a DB connection`);
+    assert.match(source, /credencial owner[\s\S]{0,160}rot(?:ad[ao]|ó)[\s\S]{0,160}invalid/i,
+      `${relativePath} must record rotation and invalidation of the exposed owner credential`);
+    assert.match(source, /Unreleased/);
+    assert.match(source, /(?:no (?:existe|crea|habilita|convierte|produce|es)|sin)[^\r\n]{0,160}baseline/i,
+      `${relativePath} must keep the baseline boundary closed`);
     assert.match(source, /v1\.10\.0/);
     assert.match(source, /11\/11/);
     assert.match(source, /v1\.11\.0/);
-    assert.match(source, /S14B/);
   }
 
   const runbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
@@ -523,7 +526,35 @@ test('S14A closes WP0-L v2 locally and records the DB configuration NO-GO withou
     'the backend-side proxy hop must not become the WP0 TLS authority'
   );
   assert.match(runbook, /20\.000 filas[\s\S]{0,100}1 KiB[\s\S]{0,100}256 KiB[\s\S]{0,100}4 MiB/i);
-  assert.match(runbook, /no se inspeccion(?:ó|\\u00f3) ni modific(?:ó|\\u00f3) ninguna base remota/i);
+  assert.match(runbook, /WP0-L v2 ejecutado conectado/i);
+  assert.match(runbook, /38b25e80e8413cc8688f393de2930e77098eb3f4/);
+  assert.match(runbook, /wp0-observation-48054484dbcd80ffbaa46a197a97ccfb3a8a1a97223e868dc1e755d010d8ada4/);
+  assert.match(runbook, /64b1571c36adafe6d6b65b11c3fd109131e7e7bcff84c4cd060dfbdea82573a1/);
+  assert.match(runbook, /snap-autumn-shape-ac7473wo/);
+  assert.match(runbook, /br-flat-waterfall-acylyfjv/);
+  assert.match(runbook, /`TLSv1\.3`/);
+  assert.match(runbook, /968 filas/);
+  assert.match(runbook, /`REPEATABLE READ READ ONLY`/);
+  assert.match(runbook, /restore y snapshot ausentes[\s\S]{0,100}main y[\s\S]{0,40}Preview `ready`/i);
+
+  const evidenceFlags = [
+    'externalReferencesVerified:false',
+    'backupRestoreRelationVerified:false',
+    'reviewerIndependenceVerified:false',
+    'signedProviderReceiptVerified:false',
+  ];
+  for (const relativePath of [
+    'docs/PRISMA_BASELINE_Y_DRIFT.md',
+    'docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md',
+    'docs/MANUAL_INTEGRAL.md',
+  ]) {
+    const source = read(relativePath);
+    for (const flag of evidenceFlags) {
+      assert.match(source, new RegExp(flag), `${relativePath} must keep ${flag}`);
+    }
+    assert.doesNotMatch(source, /approvalEligible:true/,
+      `${relativePath} must never promote the discovery artifact`);
+  }
 
   const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
   assert.doesNotMatch(technical, /rollback ante cualquier inconsistencia/i);
@@ -540,8 +571,8 @@ test('S14A closes WP0-L v2 locally and records the DB configuration NO-GO withou
     const source = read(relativePath);
     assert.match(
       source,
-      /revalidaci[oó]n local S14A[\s\S]{0,160}611 pruebas[\s\S]{0,80}610 aprobadas[\s\S]{0,60}0 fallidas[\s\S]{0,100}1 smoke opt-in omitido[\s\S]{0,100}backend(?: cerr[oó])? 20\/20/i,
-      `${relativePath} must pin the final S14A QA evidence`
+      /(?:revalidaci[oó]n local S14B|suite ra[ií]z S14B)[\s\S]{0,160}619 pruebas[\s\S]{0,80}618 aprobadas[\s\S]{0,60}0 fallidas[\s\S]{0,100}1 smoke opt-in\s+omitido[\s\S]{0,100}backend(?: cerr[oó])? 20\/20/i,
+      `${relativePath} must pin the final S14B QA evidence`
     );
     assert.match(source, /no (?:reemplaz(?:a|an)|sustituye)[\s\S]{0,80}hist[oó]rica 591\/590[\s\S]{0,80}v1\.10\.0/i,
       `${relativePath} must preserve the historical v1.10.0 counts`);
@@ -667,8 +698,6 @@ test('release 1.10.0 preserves the exact public 1.9.0 and 1.8.1 evidence', () =>
     assert.match(source, /WP0-L/);
     assert.match(source, /IAM-MAP-01/);
     assert.match(source, /UX-E2A/);
-    assert.match(source, /(?:no|todav[ií]a no|a[uú]n no)[^\r\n]{0,160}conectad/i,
-      'WP0-L must not be represented as a connected observation');
     assert.match(source, /(?:no persiste|sin persistencia)/i,
       'IAM-MAP-01 must not imply persisted users');
     assert.match(source, /(?:no crea|sin)[^\r\n]{0,120}(?:usuarios|identidades|cuentas)/i,
@@ -717,8 +746,8 @@ test('release 1.10.0 preserves the exact public 1.9.0 and 1.8.1 evidence', () =>
 
   const prismaRunbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
   assert.match(prismaRunbook, /\*\*Versi\\u00f3n:\*\* 1\.2\.0/);
-  assert.match(prismaRunbook, /WP0-L implementado y validado localmente/);
-  assert.match(prismaRunbook, /ejecución conectada[\s\S]{0,100}pendiente/i);
+  assert.match(prismaRunbook, /WP0-L v2 ejecutado conectado/);
+  assert.match(prismaRunbook, /historia Prisma `absent`[\s\S]{0,100}baseline real[\s\S]{0,100}pendiente/i);
 });
 
 test('the public role tour is documented as visual-only and cannot impersonate authorization', () => {

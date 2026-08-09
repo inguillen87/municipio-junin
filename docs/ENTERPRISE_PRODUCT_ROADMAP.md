@@ -7,6 +7,10 @@ Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 El corte actual es el release público verificado `v1.10.0`. El producto S13 está
 en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
 sobre el snapshot aprobado.
+S14B es un incremento técnico `Unreleased`: separó los targets DB de Preview y
+Production, impuso `sslmode=verify-full`, identificó el mapping Neon y ejecutó
+WP0 conectado. El resultado es descubrimiento no aprobable; no crea baseline,
+migraciones, cuentas, lifecycle, tag ni `v1.11.0`.
 `GET /api/grh-decision-brief` entrega `grh-decision-brief-v1`: un brief ejecutivo
 único derivado de agregados del snapshot aprobado, con validación local, que separa
 la señal global cross-source de la evidencia mensual, expone
@@ -144,8 +148,8 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política `2026-08-09.1`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
 | Tour visual público de roles | `/roles` y `public-role-tour-v1` publicados en `v1.8.1` para siete perfiles; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Mantener el gate público y no confundir el recorrido con RBAC ni autorización positiva |
 | MuniGuía contextual | Evidencia privada sólo local para `muniguia-contextual-v1`: tres pasos deterministas para doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Proyección autoritativa simulada; mantener autorización server-side y Manual como fallback; no confundir con el smoke público |
-| WP0-L: observación de copia restaurada | S14A cierra localmente `wp0_restored_copy_observation` v2 con `absent`/`empty`/`inconsistent` como `discovery_non_approvable`, `valid` como `strict` y `approvalEligible:false` en todos los estados; catálogo canónico con `definitionSha256` y límites fail-closed de 20.000 filas, 1 KiB por campo no-definition, 256 KiB por definición y 4 MiB acumulados; sólo fixtures/adapters, sin conexión PostgreSQL | S14B: autorizar y restaurar una copia descartable, ejecutar la observación conectada y revisar evidencia externa; no es baseline ni migración |
-| Aislamiento DB Preview/Production | Auditoría de configuración con fingerprints no reversibles y sin secretos: mismo destino lógico, `DB_CONFIG_ISOLATION=FAIL`; configuración observada `DB_CONFIG_SSLMODE_VERIFY_FULL=false`; mapping de proyecto/branch Neon `NEON_MAPPING=UNKNOWN`; no hubo conexión ni handshake TLS | Separar destinos, exigir `sslmode=verify-full`, resolver proveedor/proyecto/branch y repetir la auditoría antes de cualquier WP0 conectado o cuenta |
+| WP0-L: observación de copia restaurada | S14B ejecutado conectado desde `38b25e8` sobre restore descartable: observador de mínimo privilegio, `REPEATABLE READ READ ONLY`, `TLSv1.3`, 968 filas de catálogo y `_prisma_migrations` `absent`; resultado `discovery_non_approvable`, `approvalEligible:false`; artefacto externo retenido con cuatro flags de evidencia en `false` | Construir baseline curado, evaluar drift y obtener receipt + atestación institucional independientes; la observación no es approval, migración ni autorización DDL |
+| Aislamiento DB Preview/Production | Targets mapeados a branches distintos; `DB_CONFIG_ISOLATION=PASS`, `DB_CONFIG_SSLMODE_VERIFY_FULL=true`, `NEON_MAPPING=IDENTIFIED`; credencial owner expuesta durante la operación rotada e invalidada | Mantener la separación y `verify-full`; no confundir aislamiento de targets DB con sesión positiva, datos privados o lifecycle gobernado |
 | IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Resolver drift de esquema, aprobar baseline/migración y construir el adaptador transaccional antes de aprovisionar identidades |
 | UX-E2A: shell institucional | Shell compartido en `v1.8.1`; la superficie pública productiva cerró 10/10 con exit `0` | Mantener pruebas por rol; la UI no concede autorización ni prueba datos privados |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Storage privado, antivirus y auditoría persistente |
@@ -154,7 +158,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2A/O2A.1: replay del snapshot GRH | Replay real previo preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas después con fixtures | Autenticar host/runtime y adapter conectado; no asumir que O2A.1 repitió los 44 MB |
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
-| Backups propios | Diseñado, no certificado | Storage, retención y restore ensayado |
+| Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
 | Techo exacto `recurso:acción` | Implementado localmente: 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta (37 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; gate baseline/release y expiración TRIAL implementados, sin migración | Baseline conectado, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
@@ -523,13 +527,16 @@ Cada sprint que cambie una capacidad debe actualizar, en la misma revisión:
 Una función sin documentación operativa, responsable y procedimiento de falla no
 está terminada, aunque su interfaz se vea completa.
 
-Incremento `Unreleased` S14A: cierra exclusivamente el contrato local WP0-L v2 y
-registra `DB_CONFIG_ISOLATION=FAIL`, `DB_CONFIG_SSLMODE_VERIFY_FULL=false` y
-`NEON_MAPPING=UNKNOWN`. No declara conexión PostgreSQL, copia restaurada, baseline
-o drift aprobado; tampoco modifica ni recertifica la evidencia pública 11/11 de
-`v1.10.0`. No hay bump de paquete, tag o GitHub Release. `v1.11.0` queda reservado
-para S14B conectado después de cerrar aislamiento, TLS, mapping y restore
-autorizado.
+Antecedente `Unreleased` S14A: cerró el contrato local WP0-L v2 y registró el
+NO-GO `DB_CONFIG_ISOLATION=FAIL`, `DB_CONFIG_SSLMODE_VERIFY_FULL=false` y
+`NEON_MAPPING=UNKNOWN`. S14B resolvió ese NO-GO con branches distintos,
+`sslmode=verify-full` y mapping identificado, y ejecutó WP0 conectado sobre el
+restore descartable confirmado por el control plane. El artefacto quedó
+`discovery_non_approvable`, `approvalEligible:false`, con historia `absent` y los
+cuatro flags de evidencia en `false`; la suite raíz cerró 619 pruebas —618
+aprobadas y 1 smoke opt-in omitido— y backend 20/20. El incremento sigue
+`Unreleased`: no modifica ni recertifica el 11/11 público de `v1.10.0` y no crea
+baseline, migración, cuenta, lifecycle, bump, tag, GitHub Release ni `v1.11.0`.
 
 Cambio 1.8.0: registra WP0-L, IAM-MAP-01, UX-E2A y el antecedente del preview
 protegido `fa5dcc5`. El release quedó en `master` y la superficie pública

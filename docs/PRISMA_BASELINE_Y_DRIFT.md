@@ -2,7 +2,7 @@
 
 **Versi\u00f3n:** 1.2.0
 **Fecha de corte:** 9 de agosto de 2026
-**Estado:** WP0-L implementado y validado localmente (contrato v2 con fixtures); ejecución conectada pendiente; baseline real y atestación de release pendientes
+**Estado:** WP0-L v2 ejecutado conectado sobre restore descartable; historia Prisma `absent`, descubrimiento no aprobable; baseline real y atestación de release pendientes
 **Alcance:** esquema core Prisma y futura migraci\u00f3n RBAC/ABAC
 
 ## 1. Decisi\u00f3n operativa
@@ -36,10 +36,13 @@ la base siga sin drift ni autoriza DDL. Por eso `--release` termina siempre con
 - No existe todav\u00eda `prisma/migrations/` ni `migration_lock.toml`.
 - Los SQL de `database/migrations/` y `migrations/` no forman una historia Prisma
   compatible. Hay nombres de tablas que colisionan con estructuras diferentes.
-- No se inspeccion\u00f3 ni modific\u00f3 ninguna base remota en este sprint.
-- El contrato de observaci\u00f3n v2 y sus consultas allowlisted s\u00f3lo se probaron con
-  adapters sint\u00e9ticos. Todav\u00eda no existe evidencia de compatibilidad din\u00e1mica
-  contra una versi\u00f3n PostgreSQL restaurada real.
+- S14B inspeccionó una copia restaurada descartable mediante el recolector
+  conectado. El inspector no ejecutó DDL/DML ni leyó filas de negocio; el
+  comentario de target, el rol observador y sus ACL fueron preparados fuera de la
+  herramienta exclusivamente en el restore.
+- El contrato v2 y sus consultas allowlisted conservan cobertura por adapters
+  sintéticos y suman evidencia dinámica contra PostgreSQL restaurado. Esa
+  ejecución no crea una historia Prisma, no evalúa drift y no autoriza release.
 - `npm.cmd run db:baseline:status` debe finalizar con c\u00f3digo 1 y
   `MIGRATIONS_MISSING`. Ese rojo es intencional.
 
@@ -141,9 +144,9 @@ convierten una DB productiva en una copia segura.
 
 El contrato v2 exige PostgreSQL 12 o posterior. Verifica primero la identidad y
 `server_version_num`; si la versi\u00f3n es menor, hace rollback antes de consultar
-reloj, transporte, rol, inventario o historia. Este orden s\u00f3lo est\u00e1 cubierto por
-fixtures en este sprint: todav\u00eda falta la prueba din\u00e1mica sobre un PostgreSQL
-restaurado real.
+reloj, transporte, rol, inventario o historia. Los fixtures cubren el orden
+adversarial de fallos; S14B agregó una ejecución dinámica compatible sobre un
+PostgreSQL restaurado real sin ampliar la autoridad del artefacto.
 
 El contrato v2 fija `prisma/schema.prisma` leyendo sus bytes directamente desde
 el blob del commit verificado y registra `schemaSha256`; no hashea el archivo
@@ -163,8 +166,9 @@ certificado, protocolo, cipher y bits reconocibles antes de iniciar el
 inventario. No se usa `pg_stat_ssl` como autoridad porque un proxy PostgreSQL
 administrado puede terminar TLS antes del backend y devolver `ssl=false` aunque
 el socket cliente est\u00e9 cifrado y autorizado. Esa comprobaci\u00f3n runtime no prueba
-por s\u00ed sola que el hostname pertenezca al branch/restore declarado; el mapping
-del proveedor y la relaci\u00f3n backup→restore siguen pendientes de atestaci\u00f3n externa.
+por s\u00ed sola que el hostname pertenezca al branch/restore declarado. En S14B el
+control plane confirmó por separado el mapping y la relación snapshot→restore;
+esa evidencia externa no se autoafirma dentro del artefacto WP0.
 
 Primero validar configuraci\u00f3n, sin conexi\u00f3n ni escritura:
 
@@ -259,6 +263,46 @@ En Windows este recolector no atesta la DACL efectiva: esa limitaci\u00f3n y
 evidencia externa antes de cualquier uso institucional.
 El directorio `scripts/` ya est\u00e1 excluido del bundle Vercel; este flujo tampoco
 debe ejecutarse como Function o job de producci\u00f3n.
+
+### Corte conectado S14B — descubrimiento no aprobable
+
+La reauditoría previa separó los targets DB de Preview y Production y registró
+`DB_CONFIG_ISOLATION=PASS`, `DB_CONFIG_SSLMODE_VERIFY_FULL=true` y
+`NEON_MAPPING=IDENTIFIED`. Las conexiones remotas de runtime y migración exigen
+`sslmode=verify-full`. Esto acredita los targets observados, no una sesión privada
+positiva ni un release de datos.
+
+El control plane del proveedor confirmó por separado el snapshot
+`snap-autumn-shape-ac7473wo` creado desde main y el restore descartable
+`br-flat-waterfall-acylyfjv`. WP0 se ejecutó desde el commit
+`38b25e80e8413cc8688f393de2930e77098eb3f4` con observador de mínimo privilegio,
+sin membresías ni capacidades elevadas, y una transacción
+`REPEATABLE READ READ ONLY`. El socket cliente negoció `TLSv1.3` y el catálogo
+canónico registró 968 filas.
+
+El artefacto externo
+`wp0-observation-48054484dbcd80ffbaa46a197a97ccfb3a8a1a97223e868dc1e755d010d8ada4`,
+SHA-256
+`64b1571c36adafe6d6b65b11c3fd109131e7e7bcff84c4cd060dfbdea82573a1`,
+encontró `_prisma_migrations` `absent`; por contrato quedó
+`discovery_non_approvable` y `approvalEligible:false`. Mantiene
+`externalReferencesVerified:false`, `backupRestoreRelationVerified:false`,
+`reviewerIndependenceVerified:false` y `signedProviderReceiptVerified:false`.
+También conserva `certificateChainAttested:false` y
+`directEndpointAttested:false`: el socket autorizado no reemplaza una atestación
+firmada del proveedor.
+
+La auditoría externa del control plane confirmó snapshot→restore de forma
+separada y el cleanup posterior confirmó restore y snapshot ausentes, main y
+Preview `ready`, el directorio temporal ausente y el artefacto externo retenido.
+Esos hechos no mutan los flags del artefacto. Durante la operación una salida
+administrativa expuso una credencial owner; fue rotada y el valor anterior quedó
+invalidado, sin reproducir el secreto.
+
+La suite raíz cerró 619 pruebas —618 aprobadas, 0 fallidas y 1 smoke opt-in
+omitido— y backend 20/20. S14B sigue `Unreleased`: `v1.10.0` conserva su release
+público 11/11 y no existe baseline, migración, drift aprobado, cuenta, lifecycle,
+bump, tag, GitHub Release o `v1.11.0`.
 
 1. Congelar commit, digest del schema, target l\u00f3gico y ventana.
 2. Crear backup privado y registrar identificador, RPO, tama\u00f1o y custodio.
@@ -423,8 +467,11 @@ firma f\u00edsica/PK/UUID Prisma, RLS fail-closed, particiones declarativas, sin
 contra artefactos forjados y Proxy din\u00e1mico, timestamps con offset, herencia
 ordinaria separada, caps de historia/artefacto, budget/sentinel SQL, frontera
 pretty, output exclusivo y estados `valid`, `absent`, `empty` e `inconsistent`.
-Son fixtures con adapter inyectado; no certifican PostgreSQL,
-proveedor, DACL Windows, backup, restore ni drift reales.
+Son fixtures con adapter inyectado; por sí solos no certifican PostgreSQL,
+proveedor, DACL Windows, backup, restore ni drift reales. S14B añadió una
+observación conectada separada, pero su estado `absent`, sus flags externos en
+`false` y `approvalEligible:false` mantienen bloqueados baseline, drift y release.
 
-Los fixtures prueban la l\u00f3gica del gate. No son evidencia de una DB municipal,
-un backup real ni un restore real.
+Los fixtures prueban la lógica del gate; el artefacto S14B prueba únicamente la
+observación read-only realizada. Ninguno sustituye la atestación externa o la
+autorización institucional.

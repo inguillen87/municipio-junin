@@ -12,7 +12,18 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Agregado
 
-- **S14A — contrato local WP0-L v2:**
+- **S14B — aislamiento DB y observación WP0 conectada (`Unreleased`):**
+  Preview y Production quedaron mapeados a branches DB distintos y las cuatro
+  conexiones remotas de runtime/migración exigen `sslmode=verify-full`. El
+  mapping de proveedor, proyecto y branch quedó identificado. Esto acredita el
+  aislamiento de los targets DB observados, no una plataforma privada completa,
+  cuentas reales ni autorización positiva.
+- El control plane del proveedor confirmó por separado que el snapshot
+  `snap-autumn-shape-ac7473wo` provenía de main y que el restore descartable
+  `br-flat-waterfall-acylyfjv` estaba `ready`. Tras la observación, el cleanup
+  confirmó ausentes tanto el restore como el snapshot, main y Preview `ready`,
+  el directorio temporal ausente y el artefacto externo retenido fuera del repo.
+- **Antecedente S14A — contrato local WP0-L v2:**
   `wp0_restored_copy_observation` distingue `absent`, `empty`, `inconsistent` y
   `valid`. Los tres primeros estados producen `discovery_non_approvable`; `valid`
   produce `strict`; todos conservan `approvalEligible:false` y no habilitan un
@@ -24,36 +35,46 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Seguridad
 
-- La auditoría runtime de configuración utilizó fingerprints no reversibles y no
-  expuso URLs ni credenciales. Preview y Production resolvieron al mismo destino
-  lógico: `DB_CONFIG_ISOLATION=FAIL`. La configuración observada dio
-  `DB_CONFIG_SSLMODE_VERIFY_FULL=false`; fue parseo de configuración, no una
-  conexión PostgreSQL ni un handshake TLS.
-- El inventario accesible no permitió vincular inequívocamente ese destino con un
-  proyecto y branch Neon: `NEON_MAPPING=UNKNOWN`. No se ejecutó WP0-L conectado,
-  no se inspeccionó una copia restaurada real y no existe autorización DDL.
+- Como antecedente, S14A había registrado `DB_CONFIG_ISOLATION=FAIL`,
+  `DB_CONFIG_SSLMODE_VERIFY_FULL=false` y `NEON_MAPPING=UNKNOWN`; esos valores
+  describen aquel NO-GO y no el estado actual.
+- La reauditoría cerró `DB_CONFIG_ISOLATION=PASS`,
+  `DB_CONFIG_SSLMODE_VERIFY_FULL=true` y `NEON_MAPPING=IDENTIFIED`, sin persistir
+  URLs ni secretos. WP0 usó un observador de mínimo privilegio y una transacción
+  `REPEATABLE READ READ ONLY`; el socket cliente negoció `TLSv1.3` antes del
+  inventario. Esto no autoatesta la cadena del certificado ni el endpoint
+  directo del proveedor.
+- Durante la operación una salida administrativa expuso una credencial owner. La
+  credencial fue rotada, el valor anterior quedó invalidado y no se reproduce en
+  el repositorio ni en esta documentación.
 
 ### Estado verificable
 
-- S14A cierra únicamente el contrato v2 local con fixtures y adapters inyectados.
-  No declara PostgreSQL conectado, DB municipal observada, backup, restore,
-  baseline, drift aprobado, aislamiento de entornos ni TLS verificado.
-- La revalidación local S14A con `npm.cmd run test:all` cerró 611 pruebas raíz:
-  610 aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Estos
+- WP0 se ejecutó conectado desde el commit
+  `38b25e80e8413cc8688f393de2930e77098eb3f4`. El artefacto externo
+  `wp0-observation-48054484dbcd80ffbaa46a197a97ccfb3a8a1a97223e868dc1e755d010d8ada4`
+  tiene SHA-256
+  `64b1571c36adafe6d6b65b11c3fd109131e7e7bcff84c4cd060dfbdea82573a1`,
+  registró 968 filas de catálogo y encontró `_prisma_migrations` `absent`.
+  Quedó `discovery_non_approvable` y `approvalEligible:false`.
+- El artefacto conserva `externalReferencesVerified:false`,
+  `backupRestoreRelationVerified:false`, `reviewerIndependenceVerified:false` y
+  `signedProviderReceiptVerified:false`. La auditoría del control plane es
+  evidencia externa separada y no convierte la observación en approval, baseline,
+  migración, drift aprobado o autorización DDL.
+- La revalidación local S14B con `npm.cmd run test:all` cerró 619 pruebas raíz:
+  618 aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Estos
   conteos pertenecen al incremento `Unreleased` y no reemplazan la evidencia
   histórica 591/590 de `v1.10.0`.
-- S14A no modifica ni recertifica el release público `v1.10.0`: se conserva su
-  evidencia vigente de 11/11 dentro del alcance público ya registrado. Este
-  incremento permanece `Unreleased`, sin bump de paquete, tag ni GitHub Release.
-  `v1.11.0` queda reservado para S14B conectado, sujeto a aislamiento real entre
-  Preview y Production, `sslmode=verify-full`, mapping inequívoco de proveedor,
-  proyecto y branch, y WP0 sobre un restore descartable autorizado.
+- S14B no modifica ni recertifica el release público `v1.10.0`: se conserva su
+  evidencia vigente de 11/11 dentro del alcance público ya registrado. El
+  incremento permanece `Unreleased`, sin bump de paquete, tag, `v1.11.0` ni
+  GitHub Release.
 
 ### Pendiente
 
-- Ejecutar S14B/WP0 conectado sobre una copia restaurada descartable y autorizada
-  sólo después de corregir y volver a verificar el aislamiento, TLS y mapping del
-  destino.
+- Construir y revisar el baseline real desde el estado observado, evaluar drift y
+  producir el receipt y la atestación institucional independientes antes de DDL.
 - Diseñar, migrar y probar la persistencia IAM antes de crear identidades.
 - Implementar y probar el lifecycle gobernado antes de entregar cuentas por rol.
 

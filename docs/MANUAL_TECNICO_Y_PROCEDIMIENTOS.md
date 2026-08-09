@@ -10,6 +10,10 @@
 > Release público `v1.10.0` verificado; producto S13 en commit `d11fd39`. La
 > sesión privada positiva y S13 privado conservan validación local sobre el
 > snapshot aprobado.
+> S14B permanece `Unreleased`: Preview y Production usan branches DB distintos,
+> las conexiones remotas exigen `sslmode=verify-full`, el mapping Neon quedó
+> identificado y WP0 se ejecutó conectado. El resultado no es baseline,
+> migración, cuenta, lifecycle ni release `v1.11.0`.
 > `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`, un brief único
 > desde agregados del snapshot aprobado, con validación local. Separa la señal global cross-source de
 > la mensual, expone `temporalQuarantineRows`, aplica k=10 y excluye PII,
@@ -635,11 +639,12 @@ autorizada con marcadores persistentes de DB; abre una transacción
 observación completa los controles, persiste tanto `valid` como `absent`, `empty`
 o `inconsistent` y ejecuta `COMMIT`; los tres últimos estados quedan
 `discovery_non_approvable`. Ejecuta `ROLLBACK` sólo ante un fallo o una violación
-del contrato, no por el estado semántico no aprobable de la historia. Al corte no
-se ejecutó conectado: no existe observación de una copia,
-baseline real, aprobación de drift ni autorización de migración.
+del contrato, no por el estado semántico no aprobable de la historia. La
+observación no se convierte en aprobación aunque complete los controles. S14B sí lo ejecutó
+conectado sobre un restore descartable: existe un artefacto de descubrimiento,
+pero no baseline real, aprobación de drift ni autorización de migración.
 
-#### Evidencia S14A — contrato local y configuración
+#### Antecedente S14A — contrato local y configuración
 
 S14A cierra sólo `wp0_restored_copy_observation` v2 con fixtures y adapters
 inyectados. La historia distingue `absent`, `empty`, `inconsistent` y `valid`:
@@ -650,20 +655,51 @@ fail-closed, sin truncado, de 20.000 filas, 1 KiB por campo distinto de la
 definición, 256 KiB por definición y 4 MiB acumulados. El contrato detallado y
 sus límites adicionales están en el runbook Prisma `1.2.0`.
 
-La auditoría runtime de configuración usó fingerprints no reversibles y no
-expuso URLs ni credenciales. Preview y Production resolvieron al mismo destino
+La auditoría runtime de S14A usó fingerprints no reversibles y no expuso URLs ni
+credenciales. En aquel corte Preview y Production resolvieron al mismo destino
 lógico: `DB_CONFIG_ISOLATION=FAIL`; la configuración observada dio
-`DB_CONFIG_SSLMODE_VERIFY_FULL=false`. El proyecto y branch Neon no pudieron
-mapearse inequívocamente: `NEON_MAPPING=UNKNOWN`. Fue una inspección de
-configuración: no abrió una conexión PostgreSQL, no realizó handshake TLS y no
-observó una copia restaurada real.
+`DB_CONFIG_SSLMODE_VERIFY_FULL=false` y el mapping quedó
+`NEON_MAPPING=UNKNOWN`. Ese NO-GO es antecedente y fue resuelto por S14B; S14A no
+produjo bump, tag, GitHub Release o `v1.11.0`.
 
-Este NO-GO bloquea S14B conectado y cualquier cuenta. S14A no modifica ni
-recertifica el release público `v1.10.0`; su evidencia vigente permanece 11/11
-dentro del alcance público registrado. No hay bump de paquete, tag o GitHub
-Release. `v1.11.0` se reserva para S14B únicamente después de separar Preview y
-Production, exigir `sslmode=verify-full`, resolver proveedor/proyecto/branch y
-ejecutar WP0 sobre un restore descartable autorizado.
+#### Evidencia S14B — aislamiento y descubrimiento conectado
+
+La reauditoría de configuración cerró `DB_CONFIG_ISOLATION=PASS`,
+`DB_CONFIG_SSLMODE_VERIFY_FULL=true` y `NEON_MAPPING=IDENTIFIED`: Preview y
+Production quedaron mapeados a branches DB distintos y las conexiones remotas de
+runtime/migración exigen exactamente `sslmode=verify-full`. Esto acredita los
+targets DB observados, no una sesión positiva ni datos privados certificados.
+
+El control plane confirmó por separado que `snap-autumn-shape-ac7473wo` provenía
+de main y que `br-flat-waterfall-acylyfjv` era su restore descartable. WP0 se
+ejecutó desde `38b25e80e8413cc8688f393de2930e77098eb3f4` con un observador sin
+privilegios elevados ni membresías, una transacción `REPEATABLE READ READ ONLY` y
+el socket cliente autorizado en `TLSv1.3`. El inventario canónico registró 968
+filas; `_prisma_migrations` resultó `absent`, por lo que la colección quedó
+`discovery_non_approvable` y `approvalEligible:false`.
+
+El artefacto externo
+`wp0-observation-48054484dbcd80ffbaa46a197a97ccfb3a8a1a97223e868dc1e755d010d8ada4`,
+SHA-256
+`64b1571c36adafe6d6b65b11c3fd109131e7e7bcff84c4cd060dfbdea82573a1`,
+mantiene `externalReferencesVerified:false`,
+`backupRestoreRelationVerified:false`, `reviewerIndependenceVerified:false` y
+`signedProviderReceiptVerified:false`. La auditoría del control plane es evidencia
+externa separada: no muta esos flags ni convierte WP0 en approval, receipt de
+release, baseline, migración, drift aprobado o autorización DDL. La validación del
+socket tampoco cambia `certificateChainAttested:false` ni
+`directEndpointAttested:false`.
+
+Durante la operación una salida administrativa expuso una credencial owner. Se
+rotó la credencial, se verificó la invalidación del valor anterior y no se
+reproduce el secreto. El cleanup posterior confirmó restore y snapshot ausentes,
+main y Preview `ready`, el directorio temporal ausente y el artefacto externo
+retenido fuera del checkout.
+
+S14B cerró 619 pruebas raíz —618 aprobadas, 0 fallidas y 1 smoke opt-in omitido—
+y backend 20/20. Sigue `Unreleased`: `v1.10.0` conserva su evidencia pública
+histórica 11/11 y no existe bump, tag, GitHub Release `v1.11.0`, baseline,
+migración, drift aprobado, cuenta o lifecycle persistido.
 
 ### 7.2 Aprovisionamiento retirado
 
@@ -944,6 +980,11 @@ suite raíz final de 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in
 omitido— y backend 20/20. Por sí sola, esa evidencia focal no habilitaba commit,
 push, tag, Preview o Production; el release público externo verificado se registra
 en el bloque post-release anterior.
+
+Evidencia S14B local/conectada: suite raíz 619 —618 aprobadas, 0 fallidas y 1
+smoke opt-in omitido— y backend 20/20. La observación WP0 conectada sigue siendo
+`discovery_non_approvable`; estos conteos no recertifican `v1.10.0` ni habilitan
+baseline, migración, cuenta o release.
 
 ## 13. Release, preview, producción y rollback
 
@@ -1443,6 +1484,7 @@ Diagnóstico recomendado:
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
 | Techo de autorización `recurso:acción` | Operativo local | 26 recursos, 12 acciones, 46 permisos y 79 firmas exactas: 37 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
+| WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
 | Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
@@ -1455,7 +1497,7 @@ Diagnóstico recomendado:
 | Usuarios demo por rol | Roadmap bloqueado | altas y seed responden 410/fallan con código 1; falta workflow aislado, temporal, rotado y auditado |
 | Presupuesto/obras/compras con fuente real | Condicionado | no mostrar datos hasta integrar contrato gobernado |
 | Ingesta unificada de archivos y DB | Roadmap | existen entradas separadas; faltan landing, linaje y orquestación comunes |
-| Backup automatizado y restore probado | Roadmap | controles definidos, sin evidencia operativa |
+| Backup automatizado y restore probado | Roadmap | S14B confirmó y eliminó un snapshot→restore descartable mediante control plane; no certifica retención, automatización, RPO/RTO ni restore operativo periódico |
 | O2B extracción conectada/programada y CDC | Roadmap | requiere acceso read-only/TLS, landing, staging, scheduler, identidad de workload y SLA |
 | Mapas y analítica geoespacial | Roadmap | sin fuente geo gobernada; no dibujar coordenadas ni calor inventados |
 | Analítica ejecutiva cross-domain | Roadmap | GRH descriptivo existe; otros dominios requieren contratos y reconciliación |

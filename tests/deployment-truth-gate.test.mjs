@@ -779,6 +779,7 @@ test('valid Vercel topology passes exact clean document paths without redirects'
     '/api/grh-executive',
     '/api/grh-quality',
     '/api/grh-close',
+    '/api/grh-decision-brief',
     '/api/grh-data',
   ]);
   assert.deepEqual(receipt.checks.map((check) => check.path), [
@@ -984,6 +985,17 @@ test('generic anonymous JSON without the route-specific shared contract header i
       }),
       { [API_CONTRACT_HEADER]: API_CONTRACTS['/api/auth/me'] },
     ),
+    '/api/grh-decision-brief': (_req, res) => send(
+      res,
+      401,
+      'application/json; charset=utf-8',
+      JSON.stringify({
+        error: 'No autorizado',
+        privateDetail: 'persona.decision@example.test',
+        token: 'release-decision-secret',
+      }),
+      { [API_CONTRACT_HEADER]: API_CONTRACTS['/api/grh-close'] },
+    ),
   });
   const receipt = await inspectFixture(fixture.baseUrl);
   const check = receipt.checks.find((candidate) => candidate.path === '/api/auth/me');
@@ -992,21 +1004,52 @@ test('generic anonymous JSON without the route-specific shared contract header i
   assert.deepEqual(findingCodes(receipt, '/api/auth/me'), ['API_CONTRACT_MISMATCH']);
   assert.deepEqual(findingCodes(receipt, '/api/grh-executive'), ['API_CONTRACT_MISMATCH']);
   assert.deepEqual(findingCodes(receipt, '/api/grh-close'), ['API_CONTRACT_MISMATCH']);
+  assert.deepEqual(findingCodes(receipt, '/api/grh-decision-brief'), ['API_CONTRACT_MISMATCH']);
   assert.equal(check.contractMatched, false);
-  assert.doesNotMatch(serialized, /persona\.cierre|release-close-secret|No autorizado/);
+  assert.doesNotMatch(serialized, /persona\.(?:cierre|decision)|release-(?:close|decision)-secret|No autorizado/);
 });
 
 test('API redirects are forbidden even when same-origin and are never followed', async (t) => {
   const fixture = await startFixture(t, {
-    '/api/grh-executive': (_req, res) => {
-      res.writeHead(302, { location: '/api/grh-quality' });
+    '/api/grh-decision-brief': (_req, res) => {
+      res.writeHead(302, { location: '/api/grh-executive' });
       res.end();
     },
   });
   const receipt = await inspectFixture(fixture.baseUrl);
 
-  assert.deepEqual(findingCodes(receipt, '/api/grh-executive'), ['API_REDIRECT_FORBIDDEN']);
-  assert.equal(fixture.requests.filter((request) => request.path === '/api/grh-quality').length, 1);
+  assert.deepEqual(findingCodes(receipt, '/api/grh-decision-brief'), ['API_REDIRECT_FORBIDDEN']);
+  assert.equal(fixture.requests.filter((request) => request.path === '/api/grh-executive').length, 1);
+});
+
+test('decision brief release probe uses only the canonical path and rejects catch-all JSON', async (t) => {
+  const fixture = await startFixture(t, {
+    '/api/grh-decision-brief': (_req, res) => send(
+      res,
+      401,
+      'application/json; charset=utf-8',
+      JSON.stringify({ error: 'Catch-all anonimo' }),
+    ),
+    '/api/grh-decision-brief/': (_req, res) => send(
+      res,
+      401,
+      'application/json; charset=utf-8',
+      JSON.stringify({ error: 'Alias no canonico' }),
+      { [API_CONTRACT_HEADER]: API_CONTRACTS['/api/grh-decision-brief'] },
+    ),
+  });
+  const receipt = await inspectFixture(fixture.baseUrl);
+
+  assert.deepEqual(
+    findingCodes(receipt, '/api/grh-decision-brief'),
+    ['API_CONTRACT_MISMATCH'],
+  );
+  const check = receipt.checks.find(candidate => candidate.path === '/api/grh-decision-brief');
+  assert.equal(check.redirects, 0);
+  assert.equal(check.finalPathMatched, true);
+  assert.equal(fixture.requests.filter(request => request.path === '/api/grh-decision-brief').length, 1);
+  assert.equal(fixture.requests.some(request => request.path === '/api/grh-decision-brief/'), false);
+  assert.doesNotMatch(JSON.stringify(receipt), /Catch-all anonimo|Alias no canonico/);
 });
 
 test('workspace redirects are forbidden and the target is never followed', async (t) => {

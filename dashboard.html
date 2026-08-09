@@ -34,6 +34,7 @@
       --exec-muted: #8394ad;
       --exec-blue: #64a8ff;
       --exec-blue-rgb: 100,168,255;
+      --exec-focus: #64a8ff;
       --exec-teal: #50d3c4;
       --exec-teal-rgb: 80,211,196;
       --exec-violet: #aa98ff;
@@ -60,16 +61,17 @@
       --exec-text: #12223b;
       --exec-text-soft: #405573;
       --exec-muted: #586981;
-      --exec-blue: #2878db;
-      --exec-blue-rgb: 40,120,219;
+      --exec-blue: #1f5fae;
+      --exec-blue-rgb: 31,95,174;
+      --exec-focus: #1f5fae;
       --exec-teal: #07766c;
       --exec-teal-rgb: 7,118,108;
       --exec-violet: #6654d9;
       --exec-violet-rgb: 102,84,217;
-      --exec-amber: #a86104;
-      --exec-amber-rgb: 168,97,4;
-      --exec-red: #c43d50;
-      --exec-red-rgb: 196,61,80;
+      --exec-amber: #884900;
+      --exec-amber-rgb: 136,73,0;
+      --exec-red: #a52f43;
+      --exec-red-rgb: 165,47,67;
       --exec-green: #137b59;
       --exec-green-rgb: 19,123,89;
       --exec-shadow: 0 18px 48px rgba(28,55,92,.1);
@@ -104,7 +106,7 @@
       transition: transform .18s ease;
     }
     .exec-skip:focus { transform: translateY(0); }
-    :focus-visible { outline: 3px solid rgba(var(--exec-blue-rgb),.55); outline-offset: 3px; }
+    :focus-visible { outline: 3px solid var(--exec-focus) !important; outline-offset: 3px !important; }
 
     .exec-topbar {
       min-height: 64px;
@@ -120,7 +122,6 @@
     .exec-source-state,
     .exec-panel-head,
     .exec-legend,
-    .exec-alert,
     .exec-rank-meta,
     .exec-source-row,
     .exec-roadmap-item,
@@ -513,35 +514,147 @@
     .exec-legend span { display: inline-flex; align-items: center; gap: 6px; }
     .exec-legend i { width: 18px; height: 2px; border-radius: 99px; background: var(--legend); }
 
-    .exec-alerts { display: grid; gap: 9px; }
-    .exec-alert {
-      align-items: flex-start;
-      gap: 11px;
-      padding: 13px;
+    .exec-decision-brief {
+      position: relative;
+      overflow: hidden;
+      margin-top: 16px;
+      padding: clamp(20px,2.4vw,30px);
+      border: 1px solid rgba(var(--exec-red-rgb),.28);
+      border-radius: var(--exec-radius-lg);
+      background:
+        linear-gradient(118deg,rgba(var(--exec-red-rgb),.085),transparent 45%),
+        var(--exec-surface);
+      box-shadow: 0 14px 36px rgba(0,0,0,.09);
+    }
+    .exec-decision-brief::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--exec-red);
+    }
+    .exec-decision-head {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: 24px;
+      align-items: start;
+    }
+    .exec-decision-eyebrow {
+      margin: 0 0 7px;
+      color: var(--exec-red);
+      font-size: 9.5px;
+      font-weight: 860;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .exec-decision-head h3 {
+      margin: 0;
+      color: var(--exec-text);
+      font-size: clamp(23px,2.4vw,34px);
+      letter-spacing: -.035em;
+      line-height: 1.08;
+    }
+    .exec-decision-headline {
+      max-width: 840px;
+      margin: 10px 0 0;
+      color: var(--exec-text-soft);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .exec-decision-meta { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+    .exec-decision-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--exec-border);
+      border-radius: 999px;
+      background: var(--exec-soft);
+      color: var(--exec-text-soft);
+      font-size: 9.5px;
+      font-weight: 820;
+      white-space: nowrap;
+    }
+    .exec-decision-tag[data-status="attention_required"] {
+      border-color: rgba(var(--exec-red-rgb),.34);
+      background: rgba(var(--exec-red-rgb),.09);
+      color: var(--exec-red);
+    }
+    .exec-decision-tag[data-status="review_recommended"] {
+      border-color: rgba(var(--exec-amber-rgb),.32);
+      background: rgba(var(--exec-amber-rgb),.08);
+      color: var(--exec-amber);
+    }
+    .exec-decision-tag[data-status="context_only"] { color: var(--exec-blue); }
+    .exec-decision-evidence {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 10px;
+      margin: 20px 0 0;
+    }
+    .exec-decision-proof {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--exec-border);
+      border-radius: 12px;
+      background: rgba(0,0,0,.075);
+    }
+    [data-theme="light"] .exec-decision-proof { background: rgba(var(--exec-blue-rgb),.025); }
+    .exec-decision-proof dt {
+      color: var(--exec-muted);
+      font-size: 9px;
+      font-weight: 820;
+      letter-spacing: .055em;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+    .exec-decision-proof dd { margin: 8px 0 0; }
+    .exec-decision-proof strong {
+      display: block;
+      color: var(--exec-text);
+      font-size: clamp(21px,2vw,29px);
+      font-weight: 830;
+      letter-spacing: -.035em;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+    }
+    .exec-decision-proof span { display: block; margin-top: 6px; color: var(--exec-muted); font-size: 9.5px; line-height: 1.45; }
+    .exec-decision-priorities {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 10px;
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .exec-decision-priority {
+      display: flex;
+      min-width: 0;
+      padding: 14px;
       border: 1px solid var(--exec-border);
       border-radius: 12px;
       background: var(--exec-soft);
+      flex-direction: column;
     }
-    .exec-alert[data-tone="critical"] { border-color: rgba(var(--exec-red-rgb),.25); background: rgba(var(--exec-red-rgb),.055); }
-    .exec-alert[data-tone="warn"] { border-color: rgba(var(--exec-amber-rgb),.24); }
-    .exec-alert-index {
-      display: grid;
-      width: 28px;
-      height: 28px;
-      flex: 0 0 auto;
-      place-items: center;
-      border-radius: 8px;
-      background: rgba(var(--exec-blue-rgb),.11);
+    .exec-decision-priority[data-severity="critical"] { border-color: rgba(var(--exec-red-rgb),.24); }
+    .exec-decision-priority[data-severity="warning"] { border-color: rgba(var(--exec-amber-rgb),.22); }
+    .exec-decision-priority strong { color: var(--exec-text); font-size: 12px; line-height: 1.4; }
+    .exec-decision-priority p { margin: 5px 0 0; color: var(--exec-text-soft); font-size: 10.5px; line-height: 1.5; }
+    .exec-decision-cta {
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      min-height: 44px;
+      margin-top: auto;
+      padding-top: 11px;
       color: var(--exec-blue);
-      font-size: 10px;
-      font-weight: 850;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-decoration: none;
     }
-    .exec-alert[data-tone="critical"] .exec-alert-index { background: rgba(var(--exec-red-rgb),.13); color: var(--exec-red); }
-    .exec-alert[data-tone="warn"] .exec-alert-index { background: rgba(var(--exec-amber-rgb),.12); color: var(--exec-amber); }
-    .exec-alert strong { display: block; color: var(--exec-text); font-size: 12px; }
-    .exec-alert p { margin: 4px 0 0; color: var(--exec-text-soft); font-size: 10.5px; line-height: 1.48; }
-    .exec-alert a { display: inline-block; margin-top: 7px; color: var(--exec-blue); font-size: 10.5px; font-weight: 780; text-decoration: none; }
-    .exec-alert a:hover { text-decoration: underline; }
+    .exec-decision-cta:hover { text-decoration: underline; }
+    .exec-decision-limit { margin: 12px 0 0; color: var(--exec-muted); font-size: 9.5px; line-height: 1.55; }
+    .exec-layout-full { grid-template-columns: minmax(0,1fr); }
 
     .exec-ranks { display: grid; gap: 13px; }
     .exec-rank-item { min-width: 0; }
@@ -655,6 +768,8 @@
       .exec-methodology-content { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .exec-close-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
       .exec-close-comparison { grid-template-columns: 1fr; }
+      .exec-decision-head { grid-template-columns: 1fr; gap: 14px; }
+      .exec-decision-meta { justify-content: flex-start; }
     }
     @media (max-width: 900px) {
       .main-content { width: 100% !important; margin-left: 0 !important; transform: none !important; transition: none !important; }
@@ -678,6 +793,7 @@
       .exec-close-head { flex-direction: column; gap: 11px; }
       .exec-close-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .exec-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .exec-decision-evidence,.exec-decision-priorities { grid-template-columns: 1fr; }
       .exec-panel { padding: 17px; border-radius: 16px; }
       .exec-panel-head { align-items: flex-start; flex-direction: column; }
       .exec-chart-controls { width: 100%; justify-content: space-between; }
@@ -708,6 +824,8 @@
       html body > main#mainContent.main-content { width: 100vw !important; max-width: none !important; margin: 0 !important; margin-left: 0 !important; transform: none !important; transition: none !important; animation: none !important; }
       .exec-shell { width: 100%; max-width: none; padding: 0; }
       .exec-hero,.exec-stat,.exec-panel,.exec-access-card,.exec-methodology { box-shadow: none; break-inside: avoid; }
+      .exec-decision-brief { box-shadow: none; break-inside: avoid; }
+      .exec-decision-cta { display: none; }
       .exec-panel { contain: none; content-visibility: visible; }
       .exec-access-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
       .exec-methodology[open] summary { display: block !important; }
@@ -753,13 +871,13 @@
           <span class="exec-chip"><strong>Histórico</strong> no tiempo real</span>
           <span class="exec-chip"><strong>Privacidad k≥5</strong> celdas pequeñas agrupadas</span>
           <span class="exec-chip"><strong>Moneda</strong> no declarada</span>
-          <span class="exec-chip"><strong id="sourceCountChip">—/3</strong> contratos requeridos</span>
+          <span class="exec-chip"><strong id="sourceCountChip">—/4</strong> contratos requeridos</span>
         </div>
       </section>
 
       <div class="exec-loading" id="loadStatus" role="status" aria-live="polite">
         <span class="exec-spinner" aria-hidden="true"></span>
-        <div><strong>Construyendo el panorama</strong><p>Validando las proyecciones ejecutiva, de calidad y de cierre mensual del mismo corte GRH.</p></div>
+        <div><strong>Construyendo el panorama</strong><p>Validando las proyecciones ejecutiva, de calidad, cierre mensual y brief decisional del mismo corte GRH.</p></div>
       </div>
 
       <div class="exec-error" id="loadError" role="alert" hidden>
@@ -769,6 +887,36 @@
       </div>
 
       <div class="exec-data" id="dataViews" hidden>
+        <section class="exec-decision-brief" id="decisionBrief" aria-labelledby="decisionBriefTitle" aria-describedby="decisionBriefHeadline" data-contract="grh-decision-brief-v1" data-privacy-threshold="10">
+          <div class="exec-decision-head">
+            <div>
+              <p class="exec-decision-eyebrow">Brief decisional · revisión humana</p>
+              <h3 id="decisionBriefTitle">Qué requiere revisión ahora</h3>
+              <p class="exec-decision-headline" id="decisionBriefHeadline">—</p>
+            </div>
+            <div class="exec-decision-meta" aria-label="Estado y frontera del brief">
+              <span class="exec-decision-tag" id="decisionBriefStatus" role="status" aria-live="polite">—</span>
+              <span class="exec-decision-tag" id="decisionBriefBoundary">k≥10 · snapshot</span>
+            </div>
+          </div>
+          <dl class="exec-decision-evidence" aria-label="Evidencia gobernada del período y del snapshot">
+            <div class="exec-decision-proof">
+              <dt>Acuerdo mensual</dt>
+              <dd><strong id="decisionAgreement">—</strong><span id="decisionAgreementNote">—</span></dd>
+            </div>
+            <div class="exec-decision-proof">
+              <dt>Cambio frente al mes anterior</dt>
+              <dd><strong id="decisionChange">—</strong><span id="decisionChangeNote">—</span></dd>
+            </div>
+            <div class="exec-decision-proof">
+              <dt>Calidad y cuarentena</dt>
+              <dd><strong id="decisionQuality">—</strong><span id="decisionQualityNote">—</span></dd>
+            </div>
+          </dl>
+          <ol class="exec-decision-priorities" id="decisionPriorities" aria-label="Prioridades de revisión" aria-live="polite"></ol>
+          <p class="exec-decision-limit" id="decisionBriefLimits">—</p>
+        </section>
+
         <section class="exec-kpis" aria-label="Indicadores ejecutivos del snapshot GRH">
           <article class="exec-stat">
             <div class="exec-stat-label">Participantes en liquidación</div>
@@ -859,7 +1007,7 @@
           <p class="exec-close-limit">Deltas aritméticos descriptivos: no atribuyen motivos ni certifican una operación externa. Este brief no expone componentes cuantitativos, categorías ni identificadores.</p>
         </section>
 
-        <section class="exec-layout" aria-label="Tendencia y prioridades">
+        <section class="exec-layout exec-layout-full" aria-label="Tendencia del control de cálculo">
           <article class="exec-panel">
             <div class="exec-panel-head">
               <div>
@@ -888,13 +1036,6 @@
             </div>
           </article>
 
-          <article class="exec-panel">
-            <div class="exec-panel-head">
-              <div><h3>Prioridades para conducción</h3><p class="exec-panel-subtitle">Alertas descriptivas con destino de revisión. No son notificaciones en vivo ni tareas asignadas.</p></div>
-              <span class="exec-panel-badge">4 focos</span>
-            </div>
-            <div class="exec-alerts" id="alertsList" aria-live="polite"></div>
-          </article>
         </section>
 
         <section class="exec-layout exec-layout-balanced" aria-label="Distribución de participantes">
@@ -981,7 +1122,7 @@
             <div><strong>Privacidad y procedencia</strong>La vista consume proyecciones gobernadas, excluye <code>personas_junin</code> y aplica k≥5 a categorías y k≥10 a métricas sensibles. Las celdas protegidas nunca se convierten en cero.</div>
             <div><strong>Actualización</strong>El panel muestra un snapshot histórico. La ingesta incremental y la operación en tiempo real siguen pendientes y se rotulan como no operativas.</div>
             <div><strong>Alcance institucional</strong>Este panorama cubre GRH. Presupuesto, obras, reclamos y otros dominios no se agregan hasta contar con contratos gobernados equivalentes.</div>
-            <div><strong>Comportamiento ante fallas</strong>Las proyecciones ejecutiva, de calidad y de cierre mensual son obligatorias y deben compartir sistema, archivo, SHA y corte. Ante cualquier falla el panel oculta todas las métricas y permite reintentar.</div>
+            <div><strong>Comportamiento ante fallas</strong>Las proyecciones ejecutiva, de calidad, cierre mensual y brief decisional son obligatorias y deben compartir sistema, archivo, SHA y corte. Ante cualquier falla el panel oculta todas las métricas y permite reintentar.</div>
           </div>
         </details>
 
@@ -998,6 +1139,7 @@
   <script src="js/auth-fetch.js"></script>
   <script src="js/grh-secure-data.js"></script>
   <script src="js/grh-close-data.js"></script>
+  <script src="js/grh-decision-brief-data.js"></script>
   <script>
     (function () {
       'use strict';
@@ -1011,7 +1153,7 @@
       var civilDateFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeZone:'UTC'});
       var dateTimeFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Argentina/Buenos_Aires'});
       var monthFormatter = new Intl.DateTimeFormat('es-AR',{month:'short',year:'numeric',timeZone:'UTC'});
-      var state = { executive:null, quality:null, monthlyClose:null, series:[], range:'12', loadSequence:0 };
+      var state = { executive:null, quality:null, monthlyClose:null, decisionBrief:null, series:[], range:'12', loadSequence:0 };
       var elements = {};
 
       function byId(id) { return document.getElementById(id); }
@@ -1020,11 +1162,13 @@
           'executiveDashboard','topbarSourceState','topbarSourceText','execThemeToggle','snapshotChip','referencePeriodChip','sourceCountChip',
           'loadStatus','loadError','loadErrorMessage','retryLoad','dataViews','kpiParticipants','kpiParticipantsNote','kpiQuality',
           'kpiQualityNote','kpiCrossScore','kpiCrossScoreNote','kpiAgreement','kpiAgreementNote','kpiCoverage','kpiCoverageNote',
-          'kpiRows','kpiRowsNote','trendRange','trendBadge','calculationChart','chartSummary','alertsList','costCenterBadge',
+          'kpiRows','kpiRowsNote','trendRange','trendBadge','calculationChart','chartSummary','costCenterBadge',
           'costCenterRanks','sectorBadge','sectorRanks','sourceList','roadmapList','sourceFile','sourceHash','profileGeneratedAt','semanticGeneratedAt',
           'monthlyCloseBrief','closePeriodBadge','closeParticipants','closeControlMetric','closeControlStatus','closeControlNote',
           'closeCoverage','closeExactness','closeAgreement','closeComparison','closeComparisonTitle','closeComparisonNote',
-          'closeParticipantDelta','closeCoverageDelta','closeExactnessDelta','closeAgreementDelta'
+          'closeParticipantDelta','closeCoverageDelta','closeExactnessDelta','closeAgreementDelta','decisionBrief',
+          'decisionBriefHeadline','decisionBriefStatus','decisionBriefBoundary','decisionAgreement','decisionAgreementNote',
+          'decisionChange','decisionChangeNote','decisionQuality','decisionQualityNote','decisionPriorities','decisionBriefLimits'
         ].forEach(function (id) { elements[id] = byId(id); });
       }
       function setText(element,value) { element.textContent = value === null || value === undefined ? '—' : String(value); }
@@ -1050,24 +1194,51 @@
       }
       function addSvgTitle(parent,textValue) { parent.appendChild(createSvg('title',{},textValue)); }
 
-      function normalizeExperience(experience,close) {
-        if(!experience || !experience.executive || !experience.quality || !close) fail('Las tres proyecciones GRH no están disponibles.');
+      function normalizeExperience(experience,close,decisionBrief) {
+        if(!experience || !experience.executive || !experience.quality || !close || !decisionBrief) fail('Las cuatro proyecciones GRH no están disponibles.');
         var executive = experience.executive;
         var quality = experience.quality;
-        var sources = [executive.source,quality.source,close.source];
+        var sources = [executive.source,quality.source,close.source,decisionBrief.source];
         var identityKeys = ['canonicalSystem','sourceFile','sourceSha256','snapshotAsOf'];
         if(!sources.every(function (source) {
           return source && identityKeys.every(function (key) { return source[key] === sources[0][key]; });
         })) fail('Las proyecciones GRH no pertenecen a la misma fuente y corte.');
         if(close.privacy.threshold !== 10 || close.privacy.containsPii !== false ||
-            close.source.latestValidCalculationPeriod !== executive.workforce.referencePeriod) {
-          fail('El cierre mensual no supera la frontera ejecutiva de privacidad y período.');
+            decisionBrief.privacy.threshold !== 10 || decisionBrief.privacy.containsPii !== false ||
+            decisionBrief.privacy.monetaryAmountsExported !== false ||
+            close.source.latestValidCalculationPeriod !== executive.workforce.referencePeriod ||
+            decisionBrief.period !== executive.workforce.referencePeriod) {
+          fail('El cierre mensual y el brief decisional no superan la frontera ejecutiva de privacidad y período.');
         }
         var latestClose = close.series.find(function (row) {
           return row.period === close.source.latestValidCalculationPeriod;
         });
         if(!latestClose || latestClose.privacyStatus !== 'released') {
-          fail('El último período mensual no está publicado bajo k≥10.');
+          fail('El panel integral exige el último período mensual publicado bajo k≥10; una celda actual protegida oculta toda la vista.');
+        }
+        var situation = decisionBrief.situation;
+        if(situation.participantCount !== latestClose.participantCount ||
+            situation.participantDisplay !== latestClose.participantDisplay ||
+            situation.runCoveragePct !== latestClose.reconciliation.runCoveragePct ||
+            situation.metricExactRatePct !== latestClose.reconciliation.metricExactRatePct ||
+            situation.valueAgreementPct !== latestClose.reconciliation.valueAgreementPct ||
+            situation.identityWithinRoundingTolerance !== latestClose.control.identityWithinRoundingTolerance ||
+            situation.qualityScorePct !== quality.quality.score ||
+            situation.temporalQuarantineRows !== quality.temporal.quarantineRows) {
+          fail('El brief decisional no coincide con la evidencia mensual y de calidad gobernada.');
+        }
+        var expectedChangeStatus = close.comparison.status === 'released'
+          ? 'released'
+          : close.comparison.reason === 'privacy_protected' ? 'privacy_protected' : 'period_missing';
+        if(decisionBrief.change.status !== expectedChangeStatus ||
+            decisionBrief.change.previousPeriod !== close.comparison.previousPeriod ||
+            (expectedChangeStatus === 'released' && (
+              decisionBrief.change.participantDelta !== close.comparison.participantDelta ||
+              decisionBrief.change.runCoverageDeltaPctPoints !== close.comparison.reconciliationDeltas.runCoveragePct ||
+              decisionBrief.change.metricExactRateDeltaPctPoints !== close.comparison.reconciliationDeltas.metricExactRatePct ||
+              decisionBrief.change.valueAgreementDeltaPctPoints !== close.comparison.reconciliationDeltas.valueAgreementPct
+            ))) {
+          fail('El cambio mensual del brief decisional no coincide con el cierre gobernado.');
         }
         var series = executive.compensation.series.filter(function (row) {
           return row.privacyStatus === 'released';
@@ -1084,6 +1255,7 @@
         return {
           executive:executive,
           quality:quality,
+          decisionBrief:decisionBrief,
           monthlyClose:{
             period:latestClose.period,
             participantCount:latestClose.participantCount,
@@ -1161,28 +1333,108 @@
         setText(elements.chartSummary,numberFormatter.format(points.length)+' períodos liberados por k≥10. Último neto: '+formatSourceUnits(last.net)+'; retenciones: '+formatSourceUnits(last.withholdings)+'. Los intervalos protegidos no se imputan. Moneda no declarada; no es pago bancario.');
       }
 
-      function appendAlert(index,tone,title,copy,href,action) {
-        var item = document.createElement('div');
-        var marker = document.createElement('span');
-        var body = document.createElement('div');
+      var DECISION_STATUS_COPY = Object.freeze({
+        attention_required:Object.freeze({ label:'Revisión prioritaria', headline:'El control cross-source del snapshot requiere revisión prioritaria; el acuerdo mensual aporta evidencia separada.' }),
+        review_recommended:Object.freeze({ label:'Revisión recomendada', headline:'La calidad del corte requiere revisión antes de ampliar su uso.' }),
+        context_only:Object.freeze({ label:'Sólo contexto', headline:'No hay una alerta mensual publicable; conserve los límites del snapshot.' })
+      });
+      var DECISION_PRIORITY_COPY = Object.freeze({
+        cross_source_material_difference:Object.freeze({
+          title:'El control cross-source requiere revisión',
+          copy:'La señal pertenece al snapshot completo; el acuerdo mensual se presenta como evidencia separada.',
+          action:'Revisar en Hacienda →'
+        }),
+        temporal_quarantine_present:Object.freeze({
+          title:'La cuarentena temporal sigue abierta',
+          copy:'Los registros fuera del universo válido deben revisarse antes de ampliar el corte.',
+          action:'Abrir Calidad y Linaje →'
+        }),
+        historical_snapshot:Object.freeze({
+          title:'La lectura no es operativa en vivo',
+          copy:'El corte publicado conserva contexto histórico.',
+          action:null
+        })
+      });
+      var DECISION_LIMIT_COPY = Object.freeze({
+        historical_snapshot_not_realtime:'snapshot histórico',
+        calculation_control_not_bank_disbursement:'control de cálculo',
+        currency_not_declared_in_source:'moneda no declarada',
+        arithmetic_decomposition_not_causal_explanation:'lectura descriptiva',
+        snapshot_reconciliation_not_monthly_series:'conciliación global separada'
+      });
+
+      function currentDecisionCapabilities() {
+        var projection = window.MuniAccess && typeof window.MuniAccess.getValidatedSession === 'function'
+          ? window.MuniAccess.getValidatedSession()
+          : null;
+        if(!projection || !Array.isArray(projection.capabilities)) return [];
+        return projection.capabilities.filter(function (capability) {
+          return capability === 'navigation.hacienda' || capability === 'navigation.data-quality';
+        });
+      }
+
+      function appendDecisionPriority(priority,capabilities) {
+        var copy = DECISION_PRIORITY_COPY[priority.code];
+        if(!copy) fail('El brief decisional contiene una prioridad desconocida.');
+        var item = document.createElement('li');
         var heading = document.createElement('strong');
         var paragraph = document.createElement('p');
-        item.className = 'exec-alert'; item.dataset.tone = tone;
-        marker.className = 'exec-alert-index'; marker.textContent = String(index).padStart(2,'0');
-        heading.textContent = title; paragraph.textContent = copy;
-        body.append(heading,paragraph);
-        if(href) { var link = document.createElement('a'); link.href = href; link.textContent = action; body.appendChild(link); }
-        item.append(marker,body); elements.alertsList.appendChild(item);
+        item.className = 'exec-decision-priority';
+        item.dataset.severity = priority.severity;
+        heading.textContent = copy.title;
+        paragraph.textContent = copy.copy;
+        item.append(heading,paragraph);
+        var canOpen = priority.href && priority.requiredCapability &&
+          capabilities.indexOf(priority.requiredCapability) !== -1;
+        if(canOpen) {
+          var link = document.createElement('a');
+          link.className = 'exec-decision-cta';
+          link.href = priority.href;
+          link.textContent = copy.action;
+          item.appendChild(link);
+        }
+        elements.decisionPriorities.appendChild(item);
       }
-      function renderAlerts() {
-        var quality = state.quality;
-        var cross = quality.reconciliation;
-        var quarantined = quality.temporal.quarantineRows;
-        elements.alertsList.replaceChildren();
-        appendAlert(1,'critical','Conciliación global materialmente incompleta','Agregado del snapshot: score '+percentFormatter.format(cross.scorePct)+'% y acuerdo de valores '+percentFormatter.format(cross.valueAgreementPct)+'%. No corresponde al último mes ni la cobertura global compensa esta diferencia.','hacienda.html','Revisar en Hacienda →');
-        appendAlert(2,'warn',numberFormatter.format(quarantined)+' filas temporales en cuarentena','Quedaron fuera del universo válido por reglas temporales. Deben revisarse antes de ampliar el corte.','grh-ejecutivo.html','Abrir calidad GRH →');
-        appendAlert(3,'warn','Snapshot histórico, no operación en vivo','El corte es '+civilDateFormatter.format(new Date(quality.source.snapshotAsOf+'T00:00:00Z'))+'. La ingesta incremental todavía no está operativa.',null,null);
-        appendAlert(4,'warn','Alcance institucional limitado a GRH','Presupuesto, obras, reclamos y otros dominios no se muestran hasta disponer de contratos gobernados equivalentes.',null,null);
+
+      function renderDecisionBrief(brief) {
+        var statusCopy = DECISION_STATUS_COPY[brief.status];
+        if(!statusCopy) fail('El brief decisional contiene un estado desconocido.');
+        setText(elements.decisionBriefHeadline,statusCopy.headline);
+        setText(elements.decisionBriefStatus,statusCopy.label);
+        elements.decisionBrief.dataset.status = brief.status;
+        elements.decisionBriefStatus.dataset.status = brief.status;
+        setText(elements.decisionBriefBoundary,'k≥'+brief.privacy.threshold+' · snapshot '+
+          civilDateFormatter.format(new Date(brief.source.snapshotAsOf+'T00:00:00Z')));
+
+        var situation = brief.situation;
+        setText(elements.decisionAgreement,situation.valueAgreementPct === null
+          ? 'Protegido'
+          : percentFormatter.format(situation.valueAgreementPct)+'%');
+        setText(elements.decisionAgreementNote,formatMonth(brief.period)+' · evidencia mensual k≥10.');
+        if(brief.change.status === 'released') {
+          setText(elements.decisionChange,formatSignedPoints(brief.change.valueAgreementDeltaPctPoints));
+          setText(elements.decisionChangeNote,formatMonth(brief.change.previousPeriod)+' → '+formatMonth(brief.period)+'.');
+        } else if(brief.change.status === 'privacy_protected') {
+          // normalizeExperience ya exigió que el período actual esté publicado; esta rama sólo describe el mes anterior.
+          setText(elements.decisionChange,'Protegido');
+          setText(elements.decisionChangeNote,'El mes anterior no es publicable bajo k≥10.');
+        } else if(brief.change.status === 'period_missing') {
+          setText(elements.decisionChange,'Sin comparación');
+          setText(elements.decisionChangeNote,'No existe un mes calendario anterior publicado.');
+        } else {
+          fail('El brief decisional contiene un cambio desconocido.');
+        }
+        setText(elements.decisionQuality,qualityFormatter.format(situation.qualityScorePct)+'/100');
+        setText(elements.decisionQualityNote,'Snapshot · '+numberFormatter.format(situation.temporalQuarantineRows)+' filas temporales en cuarentena.');
+
+        elements.decisionPriorities.replaceChildren();
+        var capabilities = currentDecisionCapabilities();
+        brief.priorities.forEach(function (priority) { appendDecisionPriority(priority,capabilities); });
+        var limits = brief.limits.map(function (limit) {
+          if(!DECISION_LIMIT_COPY[limit]) fail('El brief decisional contiene un límite desconocido.');
+          return DECISION_LIMIT_COPY[limit];
+        });
+        setText(elements.decisionBriefLimits,'Límites: '+limits.join(' · ')+'.');
       }
 
       function renderRanking(container,rows,color) {
@@ -1220,10 +1472,17 @@
       }
       function renderSources() {
         elements.sourceList.replaceChildren();
-        appendSource('', 'Tres proyecciones conciliadas', 'Ejecutiva v2, calidad v1 y cierre v1 comparten sistema, archivo, SHA-256 y fecha de corte.');
+        appendSource('', 'Cuatro proyecciones conciliadas', 'Ejecutiva v2, calidad v1, cierre v1 y brief decisional v1 comparten sistema, archivo, SHA-256 y fecha de corte.');
         appendSource('', 'Privacidad aplicada', 'Categorías k≥5; métricas sensibles k≥10; sin PII, identificadores, filas crudas ni valores suprimidos.');
         appendSource('warn', 'Snapshot histórico', 'Corte '+civilDateFormatter.format(new Date(state.quality.source.snapshotAsOf+'T00:00:00Z'))+' · realtime=false.');
-        appendSource('warn', 'Control cross-source global con diferencias', 'Estado '+state.quality.reconciliation.status+' · score global '+percentFormatter.format(state.quality.reconciliation.scorePct)+'%.');
+        var reconciliation = state.quality.reconciliation;
+        if(reconciliation.status === 'reconciled') {
+          appendSource('', 'Control cross-source global conciliado', 'Conciliación global cerrada bajo el contrato de calidad · score '+percentFormatter.format(reconciliation.scorePct)+'%.');
+        } else if(reconciliation.status === 'material_differences_detected') {
+          appendSource('warn', 'Control cross-source global con diferencias', 'Persisten diferencias en el snapshot completo · score '+percentFormatter.format(reconciliation.scorePct)+'%.');
+        } else {
+          fail('La proyección de calidad contiene un estado de conciliación desconocido.');
+        }
       }
 
       function appendRoadmap(step,tone,title,copy) {
@@ -1284,6 +1543,7 @@
         state.executive = contract.executive;
         state.quality = contract.quality;
         state.monthlyClose = contract.monthlyClose;
+        state.decisionBrief = contract.decisionBrief;
         state.series = contract.series;
         var workforce = contract.executive.workforce;
         var quality = contract.quality.quality;
@@ -1291,7 +1551,7 @@
         var quarantined = contract.quality.temporal.quarantineRows;
         setText(elements.snapshotChip,civilDateFormatter.format(new Date(contract.snapshot+'T00:00:00Z')));
         setText(elements.referencePeriodChip,formatMonth(workforce.referencePeriod));
-        setText(elements.sourceCountChip,'3/3');
+        setText(elements.sourceCountChip,'4/4');
         setText(elements.kpiParticipants,numberFormatter.format(contract.participants));
         setText(elements.kpiParticipantsNote,formatMonth(workforce.referencePeriod)+' · participación en cálculo, no dotación activa.');
         setText(elements.kpiQuality,qualityFormatter.format(quality.score)+'/100');
@@ -1306,8 +1566,9 @@
         setText(elements.kpiRowsNote,numberFormatter.format(contract.totalRows)+' filas · '+numberFormatter.format(contract.totalTables)+' tablas.');
         setText(elements.costCenterBadge,'k≥5 · '+numberFormatter.format(contract.participants));
         setText(elements.sectorBadge,'k≥5 · '+formatMonth(workforce.referencePeriod));
+        renderDecisionBrief(contract.decisionBrief);
         renderMonthlyClose(contract.monthlyClose);
-        renderChart(); renderAlerts();
+        renderChart();
         renderRanking(elements.costCenterRanks,contract.costCenters,'var(--exec-blue)');
         renderRanking(elements.sectorRanks,contract.sectors,'var(--exec-violet)');
         renderSources(); renderRoadmap();
@@ -1324,20 +1585,20 @@
       }
 
       function resetView() {
-        state.executive = null; state.quality = null; state.monthlyClose = null; state.series = [];
+        state.executive = null; state.quality = null; state.monthlyClose = null; state.decisionBrief = null; state.series = [];
         elements.dataViews.hidden = true;
         elements.loadError.hidden = true;
         elements.loadStatus.hidden = false;
         elements.executiveDashboard.setAttribute('aria-busy','true');
         elements.topbarSourceState.removeAttribute('data-state');
         setText(elements.topbarSourceText,'Validando fuentes GRH');
-        setText(elements.sourceCountChip,'—/3');
+        setText(elements.sourceCountChip,'—/4');
       }
       function showError(error) {
         var authError = window.MuniAuth && window.MuniAuth.isAuthError && window.MuniAuth.isAuthError(error);
         setText(elements.loadErrorMessage,authError
           ? 'La sesión no es válida; se redirigirá al acceso seguro.'
-          : 'Las proyecciones ejecutiva, de calidad y de cierre mensual son obligatorias. No se muestran métricas ni valores de respaldo. '+(error && error.message ? error.message : 'Error sin detalle.'));
+          : 'Las proyecciones ejecutiva, de calidad, cierre mensual y brief decisional son obligatorias. No se muestran métricas ni valores de respaldo. '+(error && error.message ? error.message : 'Error sin detalle.'));
         elements.loadStatus.hidden = true;
         elements.dataViews.hidden = true;
         elements.loadError.hidden = false;
@@ -1378,12 +1639,14 @@
         try {
           if(!window.MuniGrhData || typeof window.MuniGrhData.loadExperience !== 'function') fail('El cliente seguro GRH no está disponible.');
           if(!window.MuniGrhClose || typeof window.MuniGrhClose.load !== 'function') fail('El cliente seguro de cierre mensual no está disponible.');
+          if(!window.MuniGrhDecisionBrief || typeof window.MuniGrhDecisionBrief.load !== 'function') fail('El cliente seguro del brief decisional no está disponible.');
           var projections = await Promise.all([
             window.MuniGrhData.loadExperience({ timeoutMs:10000 }),
-            window.MuniGrhClose.load({ timeoutMs:10000 })
+            window.MuniGrhClose.load({ timeoutMs:10000 }),
+            window.MuniGrhDecisionBrief.load({ timeoutMs:10000 })
           ]);
           if(sequence !== state.loadSequence) return;
-          renderAll(normalizeExperience(projections[0],projections[1]));
+          renderAll(normalizeExperience(projections[0],projections[1],projections[2]));
         } catch(error) {
           if(sequence !== state.loadSequence) return;
           showError(error);

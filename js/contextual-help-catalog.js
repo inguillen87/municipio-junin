@@ -93,7 +93,7 @@ const PAGES = deepFreeze({
     steps: [
       { id: 'confirm-snapshot', selector: '#snapshotChip', title: 'Confirmá el corte', copy: 'Revisá fecha, fuente y estado del snapshot antes de comparar indicadores o tomar una decisión.' },
       { id: 'read-close', selector: '#monthlyCloseBrief', title: 'Leé el cierre mensual', copy: 'Separá participantes, calidad, conciliación y límites; el cálculo no demuestra pago ni causalidad.' },
-      { id: 'prioritize-alert', selector: '#alertsList', title: 'Priorizá una revisión', copy: 'Elegí una alerta con evidencia disponible y profundizá sólo en una superficie autorizada.' },
+      { id: 'review-decision-brief', selector: '#decisionBrief', title: 'Revisá el brief decisional', copy: 'Separá la señal global de la evidencia mensual y profundizá sólo mediante una acción autorizada para tu perfil.' },
     ],
   },
   reports: {

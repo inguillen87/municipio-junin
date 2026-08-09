@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
+import { buildGrhDecisionBriefProjection } from '../api/lib/grh-decision-brief-projection.js';
 import { buildGrhExecutiveProjection } from '../api/lib/grh-executive-projection.js';
 import { buildGrhQualityProjection } from '../api/lib/grh-quality-projection.js';
 import accessPolicy from '../shared/access-policy.cjs';
@@ -23,10 +24,14 @@ const PROJECTIONS = HAS_PRIVATE_GRH ? await (async () => {
     readFile(path.join(REPO, 'api', '_data', 'grh-profile.json'), 'utf8').then(JSON.parse),
     readFile(path.join(REPO, 'api', '_data', 'grh-semantic.json'), 'utf8').then(JSON.parse),
   ]);
+  const executive = buildGrhExecutiveProjection(semantic, { audience: 'interactive' });
+  const quality = buildGrhQualityProjection(profile, semantic);
+  const close = buildGrhCloseProjection(semantic);
   return {
-    executive: buildGrhExecutiveProjection(semantic, { audience: 'interactive' }),
-    quality: buildGrhQualityProjection(profile, semantic),
-    close: buildGrhCloseProjection(semantic),
+    executive,
+    quality,
+    close,
+    decision: buildGrhDecisionBriefProjection(executive, quality, close),
   };
 })() : null;
 const CONTENT_TYPES = {
@@ -71,6 +76,20 @@ function projectedUser(role = 'INTENDENTE', tenantId = 'tenant-junin-test') {
   };
 }
 
+function projectedUserWithout(...deniedCapabilities) {
+  const user = projectedUser('INTENDENTE');
+  const denied = new Set(deniedCapabilities);
+  return {
+    ...user,
+    capabilities: user.capabilities.filter(capability => !denied.has(capability)),
+    homeProfile: {
+      ...user.homeProfile,
+      priorityCapabilities: user.homeProfile.priorityCapabilities
+        .filter(capability => !denied.has(capability)),
+    },
+  };
+}
+
 function contrastRatio(foreground, background) {
   const luminance = value => {
     const channels = String(value).match(/[\d.]+/g)?.slice(0, 3).map(Number);
@@ -88,6 +107,105 @@ function contrastRatio(foreground, background) {
   return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
 }
 
+function parseCssRgba(value) {
+  const channels = String(value).match(/[\d.]+/g)?.map(Number);
+  assert.ok(channels && channels.length >= 3, `expected CSS rgb/rgba color, received ${value}`);
+  return {
+    red: channels[0],
+    green: channels[1],
+    blue: channels[2],
+    alpha: channels.length >= 4 ? channels[3] : 1,
+  };
+}
+
+function compositeCssColor(foreground, background) {
+  const front = parseCssRgba(foreground);
+  const back = parseCssRgba(background);
+  const alpha = front.alpha + back.alpha * (1 - front.alpha);
+  assert.ok(alpha > 0, 'composited background must be visible');
+  const channel = (frontValue, backValue) =>
+    Math.round((frontValue * front.alpha + backValue * back.alpha * (1 - front.alpha)) / alpha);
+  return `rgb(${channel(front.red, back.red)}, ${channel(front.green, back.green)}, ${channel(front.blue, back.blue)})`;
+}
+
+function cloneProjection(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function suppressCloseRow(close, period) {
+  const row = close.series.find(item => item.period === period);
+  assert.ok(row, `expected close row ${period}`);
+  row.participantCount = null;
+  row.participantDisplay = '<10';
+  row.privacyStatus = 'suppressed';
+  for (const group of [row.components, row.control, row.reconciliation]) {
+    for (const key of Object.keys(group)) group[key] = null;
+  }
+}
+
+function protectCloseComparison(close) {
+  close.comparison.status = 'unavailable';
+  close.comparison.reason = 'privacy_protected';
+  close.comparison.participantDelta = null;
+  for (const group of [close.comparison.componentDeltas, close.comparison.reconciliationDeltas]) {
+    for (const key of Object.keys(group)) group[key] = null;
+  }
+}
+
+function protectedCloseProjection({ current }) {
+  const close = cloneProjection(PROJECTIONS.close);
+  suppressCloseRow(
+    close,
+    current ? close.source.latestValidCalculationPeriod : close.comparison.previousPeriod,
+  );
+  protectCloseComparison(close);
+  return close;
+}
+
+function protectedDecisionProjection({ current }) {
+  const decision = cloneProjection(PROJECTIONS.decision);
+  decision.change.status = 'privacy_protected';
+  decision.change.participantDelta = null;
+  decision.change.runCoverageDeltaPctPoints = null;
+  decision.change.metricExactRateDeltaPctPoints = null;
+  decision.change.valueAgreementDeltaPctPoints = null;
+  if (current) {
+    decision.situation.participantCount = null;
+    decision.situation.participantDisplay = '<10';
+    decision.situation.runCoveragePct = null;
+    decision.situation.metricExactRatePct = null;
+    decision.situation.valueAgreementPct = null;
+    decision.situation.identityWithinRoundingTolerance = null;
+  }
+  return decision;
+}
+
+function reconciledQualityProjection() {
+  const quality = cloneProjection(PROJECTIONS.quality);
+  const reconciliation = quality.reconciliation;
+  reconciliation.status = 'reconciled';
+  reconciliation.totpagoRuns = reconciliation.calculationRuns;
+  reconciliation.unionRuns = reconciliation.calculationRuns;
+  reconciliation.matchedRuns = reconciliation.calculationRuns;
+  reconciliation.fullyReconciledRuns = reconciliation.calculationRuns;
+  reconciliation.runCoveragePct = 100;
+  reconciliation.metricExactRatePct = 100;
+  reconciliation.valueAgreementPct = 100;
+  reconciliation.scorePct = 100;
+  reconciliation.absoluteVarianceCents = 0;
+  quality.quality.risks.totpagoCrossSourceMismatch = false;
+  return quality;
+}
+
+function reconciledDecisionProjection() {
+  const decision = cloneProjection(PROJECTIONS.decision);
+  decision.status = 'review_recommended';
+  decision.priorities = decision.priorities.filter(priority =>
+    priority.code !== 'cross_source_material_difference'
+  );
+  return decision;
+}
+
 async function createServer(requestLog, options = {}) {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
@@ -95,6 +213,7 @@ async function createServer(requestLog, options = {}) {
       '/api/grh-executive': 'executive',
       '/api/grh-quality': 'quality',
       '/api/grh-close': 'close',
+      '/api/grh-decision-brief': 'decision',
     };
     const contract = governedContracts[url.pathname];
     if (contract) {
@@ -110,11 +229,39 @@ async function createServer(requestLog, options = {}) {
         return;
       }
       let payload = PROJECTIONS[contract];
+      if (options.currentCloseProtected) {
+        if (contract === 'close') payload = protectedCloseProjection({ current: true });
+        if (contract === 'decision') payload = protectedDecisionProjection({ current: true });
+      }
+      if (options.previousCloseProtected) {
+        if (contract === 'close') payload = protectedCloseProjection({ current: false });
+        if (contract === 'decision') payload = protectedDecisionProjection({ current: false });
+      }
+      if (options.globalReconciled) {
+        if (contract === 'quality') payload = reconciledQualityProjection();
+        if (contract === 'decision') payload = reconciledDecisionProjection();
+      }
       if (contract === 'close' && options.closeSourceMismatch) {
-        payload = JSON.parse(JSON.stringify(payload));
+        payload = cloneProjection(payload);
         payload.source.sourceSha256 = 'f'.repeat(64);
       }
-      response.writeHead(200, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
+      if (contract === 'decision' && (options.decisionSourceMismatch || options.decisionMalformed || options.decisionUnknownEnum)) {
+        payload = cloneProjection(payload);
+        if (options.decisionSourceMismatch) payload.source.sourceSha256 = 'f'.repeat(64);
+        if (options.decisionMalformed) payload.situation.unexpectedEmployeeField = 'forbidden';
+        if (options.decisionUnknownEnum) payload.priorities[0].code = 'automatic_action';
+      }
+      const contractVersions = {
+        executive: 'grh-executive-v2',
+        quality: 'grh-quality-v1',
+        close: 'grh-close-v1',
+        decision: options.decisionContractMismatch ? 'grh-decision-brief-v0' : 'grh-decision-brief-v1',
+      };
+      response.writeHead(200, {
+        'Content-Type': CONTENT_TYPES['.json'],
+        'Cache-Control': 'no-store, private',
+        'X-MuniControl-Contract': contractVersions[contract],
+      });
       response.end(JSON.stringify(payload));
       return;
     }
@@ -191,6 +338,28 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       agreement: document.querySelector('#kpiAgreement')?.textContent.trim(),
       coverage: document.querySelector('#kpiCoverage')?.textContent.trim(),
       sourceCount: document.querySelector('#sourceCountChip')?.textContent.trim(),
+      decisionTitle: document.querySelector('#decisionBriefTitle')?.textContent.trim(),
+      decisionStatus: document.querySelector('#decisionBriefStatus')?.textContent.trim(),
+      decisionBoundary: document.querySelector('#decisionBriefBoundary')?.textContent.trim(),
+      decisionAgreement: document.querySelector('#decisionAgreement')?.textContent.trim(),
+      decisionChange: document.querySelector('#decisionChange')?.textContent.trim(),
+      decisionQuality: document.querySelector('#decisionQuality')?.textContent.trim(),
+      decisionQualityNote: document.querySelector('#decisionQualityNote')?.textContent.trim(),
+      decisionPriorityCount: document.querySelectorAll('#decisionPriorities .exec-decision-priority').length,
+      decisionPriorityTitles: Array.from(document.querySelectorAll('#decisionPriorities .exec-decision-priority strong')).map(node => node.textContent.trim()),
+      decisionCtas: Array.from(document.querySelectorAll('#decisionPriorities .exec-decision-cta')).map(node => node.getAttribute('href')),
+      decisionText: document.querySelector('#decisionBrief')?.textContent.replace(/\s+/g, ' ').trim(),
+      decisionTop: document.querySelector('#decisionBrief')?.getBoundingClientRect().top,
+      decisionContract: document.querySelector('#decisionBrief')?.dataset.contract,
+      decisionLabelledBy: document.querySelector('#decisionBrief')?.getAttribute('aria-labelledby'),
+      decisionDescribedBy: document.querySelector('#decisionBrief')?.getAttribute('aria-describedby'),
+      decisionStatusRole: document.querySelector('#decisionBriefStatus')?.getAttribute('role'),
+      decisionEvidenceTag: document.querySelector('.exec-decision-evidence')?.tagName,
+      decisionPriorityTag: document.querySelector('#decisionPriorities')?.tagName,
+      decisionEyebrowColor: getComputedStyle(document.querySelector('.exec-decision-eyebrow')).color,
+      decisionHeadlineColor: getComputedStyle(document.querySelector('.exec-decision-headline')).color,
+      theme: document.documentElement.getAttribute('data-theme'),
+      decisionAnimationDuration: getComputedStyle(document.querySelector('.exec-decision-priority')).animationDuration,
       closePrivacy: document.querySelector('#monthlyCloseBrief')?.dataset.privacyThreshold,
       closePeriod: document.querySelector('#closePeriodBadge')?.textContent.trim(),
       closeParticipants: document.querySelector('#closeParticipants')?.textContent.trim(),
@@ -212,6 +381,8 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       sectorRows: document.querySelectorAll('#sectorRanks .exec-rank-item').length,
       costProtected: document.querySelector('#costCenterRanks [data-privacy-status="protected_aggregate"] .exec-rank-label')?.textContent.trim(),
       sectorProtected: document.querySelector('#sectorRanks [data-privacy-status="protected_aggregate"] .exec-rank-label')?.textContent.trim(),
+      sourceTitles: Array.from(document.querySelectorAll('#sourceList .exec-source-row strong')).map(node => node.textContent.trim()),
+      sourceText: document.querySelector('#sourceList')?.textContent.replace(/\s+/g, ' ').trim(),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       errorVisible: !document.querySelector('#loadError')?.hidden,
     }));
@@ -222,7 +393,44 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.equal(result.cross, '63,9%');
     assert.equal(result.agreement, '19,0%');
     assert.equal(result.coverage, '97,8%');
-    assert.equal(result.sourceCount, '3/3');
+    assert.equal(result.sourceCount, '4/4');
+    assert.equal(result.decisionTitle, 'Qué requiere revisión ahora');
+    assert.equal(result.decisionStatus, 'Revisión prioritaria');
+    assert.equal(result.decisionBoundary, 'k≥10 · snapshot 6 ago 2026');
+    assert.equal(result.decisionAgreement, '6,5%');
+    assert.equal(result.decisionChange, '+5,8 pp');
+    assert.equal(result.decisionQuality, '88,99/100');
+    assert.equal(result.decisionQualityNote, 'Snapshot · 20.534 filas temporales en cuarentena.');
+    assert.equal(result.decisionPriorityCount, 3);
+    assert.deepEqual(result.decisionPriorityTitles, [
+      'El control cross-source requiere revisión',
+      'La cuarentena temporal sigue abierta',
+      'La lectura no es operativa en vivo',
+    ]);
+    assert.deepEqual(result.decisionCtas, ['hacienda.html', 'control.html']);
+    assert.equal(result.decisionContract, 'grh-decision-brief-v1');
+    assert.equal(result.decisionLabelledBy, 'decisionBriefTitle');
+    assert.equal(result.decisionDescribedBy, 'decisionBriefHeadline');
+    assert.equal(result.decisionStatusRole, 'status');
+    assert.equal(result.decisionEvidenceTag, 'DL');
+    assert.equal(result.decisionPriorityTag, 'OL');
+    assert.equal(result.theme, 'dark');
+    assert.ok(result.decisionTop >= 0 && result.decisionTop < viewport.height, `${viewport.name} decision brief heading must start above the fold`);
+    assert.match(result.decisionText, /snapshot completo.+evidencia separada/i);
+    assert.doesNotMatch(result.decisionText, /(?:\$|\bARS\b|\bCBU\b|\bCUIL\b|\bDNI\b|nombre|apellido|companyCode|sourceCode|\blabel\b|concepto|u\. fuente|importe|causa|responsable|plazo|pago|contable)/i);
+    const conservativeDarkBackground = 'rgb(31, 25, 40)';
+    assert.ok(
+      contrastRatio(result.decisionEyebrowColor, conservativeDarkBackground) >= 4.5,
+      `dark decision eyebrow contrast must pass AA: ${JSON.stringify(result)}`,
+    );
+    assert.ok(
+      contrastRatio(result.decisionHeadlineColor, conservativeDarkBackground) >= 4.5,
+      `dark decision headline contrast must pass AA: ${JSON.stringify(result)}`,
+    );
+    if (viewport.reducedMotion === 'reduce') assert.ok(
+      Number.parseFloat(result.decisionAnimationDuration) <= 0.00001,
+      `reduced motion must collapse decision animations: ${result.decisionAnimationDuration}`,
+    );
     assert.equal(result.closePrivacy, '10');
     assert.equal(result.closePeriod, 'jul 2026 · k≥10');
     assert.equal(result.closeParticipants, '856');
@@ -246,11 +454,31 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.equal(result.sectorRows, 6);
     assert.equal(result.costProtected, 'Otros (celdas protegidas)');
     assert.equal(result.sectorProtected, 'Otros (celdas protegidas)');
+    assert.equal(result.sourceTitles.includes('Control cross-source global con diferencias'), true);
+    assert.match(result.sourceText, /snapshot completo/i);
+    assert.doesNotMatch(result.sourceText, /material_differences_detected|\breconciled\b/);
     assert.equal(result.overflow, 0, `${viewport.name} must not overflow horizontally`);
     assert.equal(result.errorVisible, false);
     assert.deepEqual(consoleErrors, []);
     assert.deepEqual(externalRequests, []);
     assert.deepEqual(rawContractRequests, []);
+
+    const firstCta = page.locator('#decisionPriorities .exec-decision-cta').first();
+    await firstCta.focus();
+    const firstFocus = await page.evaluate(() => ({
+      href: document.activeElement?.getAttribute('href'),
+      height: document.activeElement?.getBoundingClientRect().height,
+      outlineStyle: getComputedStyle(document.activeElement).outlineStyle,
+    }));
+    assert.equal(firstFocus.href, 'hacienda.html');
+    assert.ok(firstFocus.height >= 44, `${viewport.name} CTA target must be at least 44px tall`);
+    await page.keyboard.press('Tab');
+    const keyboardFocus = await page.evaluate(() => ({
+      href: document.activeElement?.getAttribute('href'),
+      focused: document.activeElement?.matches(':focus'),
+    }));
+    assert.equal(keyboardFocus.href, 'control.html');
+    assert.equal(keyboardFocus.focused, true);
 
     await page.click('#execThemeToggle');
     await page.waitForFunction(() => {
@@ -260,14 +488,35 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
         getComputedStyle(summary).color !== 'rgb(131, 148, 173)' &&
         getComputedStyle(eyebrow).color !== 'rgb(80, 211, 196)';
     });
-    const lightTheme = await page.evaluate(() => ({
-      theme: document.documentElement.getAttribute('data-theme'),
-      mutedVariable: getComputedStyle(document.documentElement).getPropertyValue('--exec-muted').trim(),
-      tealVariable: getComputedStyle(document.documentElement).getPropertyValue('--exec-teal').trim(),
-      summaryColor: getComputedStyle(document.querySelector('.exec-close-summary')).color,
-      eyebrowColor: getComputedStyle(document.querySelector('.exec-close-eyebrow')).color,
-      labelColor: getComputedStyle(document.querySelector('.exec-close-metric span')).color,
-    }));
+    const lightTheme = await page.evaluate(() => {
+      const rootStyle = getComputedStyle(document.documentElement);
+      const decision = document.querySelector('#decisionBrief');
+      const statusTag = document.querySelector('#decisionBriefStatus');
+      const originalStatus = statusTag.dataset.status;
+      const statusStyles = {};
+      for (const status of ['attention_required', 'review_recommended', 'context_only']) {
+        statusTag.dataset.status = status;
+        const style = getComputedStyle(statusTag);
+        statusStyles[status] = { color: style.color, backgroundColor: style.backgroundColor };
+      }
+      statusTag.dataset.status = originalStatus;
+      const cta = document.querySelector('.exec-decision-cta');
+      return {
+        theme: document.documentElement.getAttribute('data-theme'),
+        mutedVariable: rootStyle.getPropertyValue('--exec-muted').trim(),
+        tealVariable: rootStyle.getPropertyValue('--exec-teal').trim(),
+        focusVariable: rootStyle.getPropertyValue('--exec-focus').trim(),
+        summaryColor: getComputedStyle(document.querySelector('.exec-close-summary')).color,
+        eyebrowColor: getComputedStyle(document.querySelector('.exec-close-eyebrow')).color,
+        labelColor: getComputedStyle(document.querySelector('.exec-close-metric span')).color,
+        decisionEyebrowColor: getComputedStyle(document.querySelector('.exec-decision-eyebrow')).color,
+        decisionHeadlineColor: getComputedStyle(document.querySelector('.exec-decision-headline')).color,
+        decisionSurface: getComputedStyle(decision).backgroundColor,
+        ctaColor: getComputedStyle(cta).color,
+        ctaContainerBackground: getComputedStyle(cta.closest('.exec-decision-priority')).backgroundColor,
+        statusStyles,
+      };
+    });
     assert.equal(lightTheme.theme, 'light');
     const conservativeLightBackground = 'rgb(234, 245, 244)';
     assert.ok(
@@ -282,13 +531,79 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       contrastRatio(lightTheme.labelColor, conservativeLightBackground) >= 4.5,
       `label contrast must pass AA: ${JSON.stringify(lightTheme)}`
     );
+    const conservativeDecisionBackground = 'rgb(255, 245, 246)';
+    assert.ok(
+      contrastRatio(lightTheme.decisionEyebrowColor, conservativeDecisionBackground) >= 4.5,
+      `decision eyebrow contrast must pass AA: ${JSON.stringify(lightTheme)}`
+    );
+    assert.ok(
+      contrastRatio(lightTheme.decisionHeadlineColor, conservativeDecisionBackground) >= 4.5,
+      `decision headline contrast must pass AA: ${JSON.stringify(lightTheme)}`
+    );
+    for (const [surfaceName, surface] of [
+      ['actual', lightTheme.decisionSurface],
+      ['conservative', conservativeDecisionBackground],
+    ]) {
+      const ctaBackground = compositeCssColor(lightTheme.ctaContainerBackground, surface);
+      assert.ok(
+        contrastRatio(lightTheme.ctaColor, ctaBackground) >= 4.5,
+        `light CTA contrast must pass AA on ${surfaceName} background: ${JSON.stringify({ lightTheme, ctaBackground })}`,
+      );
+      for (const [status, styles] of Object.entries(lightTheme.statusStyles)) {
+        const statusBackground = compositeCssColor(styles.backgroundColor, surface);
+        assert.ok(
+          contrastRatio(styles.color, statusBackground) >= 4.5,
+          `light ${status} tag contrast must pass AA on ${surfaceName} background: ${JSON.stringify({ styles, statusBackground })}`,
+        );
+      }
+    }
+
+    await page.evaluate(() => document.activeElement?.blur());
+    let lightFocus = null;
+    for (let step = 0; step < 60 && !lightFocus; step += 1) {
+      await page.keyboard.press('Tab');
+      lightFocus = await page.evaluate(() => {
+        const active = document.activeElement;
+        if (!active?.matches('.exec-decision-cta')) return null;
+        const style = getComputedStyle(active);
+        return {
+          color: style.outlineColor,
+          style: style.outlineStyle,
+          width: style.outlineWidth,
+          offset: style.outlineOffset,
+        };
+      });
+    }
+    assert.ok(lightFocus, `${viewport.name} must reach a decision CTA by keyboard`);
+    assert.equal(lightFocus.style, 'solid');
+    assert.ok(Number.parseFloat(lightFocus.width) >= 3);
+    assert.equal(parseCssRgba(lightFocus.color).alpha, 1);
+    assert.ok(
+      contrastRatio(lightFocus.color, 'rgb(255, 255, 255)') >= 3,
+      `light focus contrast must pass 3:1 on white: ${JSON.stringify(lightFocus)}`,
+    );
+    assert.ok(
+      contrastRatio(lightFocus.color, lightTheme.decisionSurface) >= 3,
+      `light focus contrast must pass 3:1 on surface: ${JSON.stringify({ lightFocus, lightTheme })}`,
+    );
+
+    await page.emulateMedia({ media: 'print', colorScheme: 'light', reducedMotion: 'reduce' });
+    const printView = await page.evaluate(() => ({
+      briefDisplay: getComputedStyle(document.querySelector('#decisionBrief')).display,
+      ctaDisplays: Array.from(document.querySelectorAll('.exec-decision-cta')).map(node => getComputedStyle(node).display),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    assert.notEqual(printView.briefDisplay, 'none');
+    assert.equal(printView.ctaDisplays.every(value => value === 'none'), true);
+    assert.equal(printView.overflow, 0, `${viewport.name} print view must not overflow horizontally`);
     await context.close();
   }
 
-  assert.equal(requestLog.length, 6);
-  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['close', 'close', 'executive', 'executive', 'quality', 'quality']);
+  assert.equal(requestLog.length, 8);
+  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['close', 'close', 'decision', 'decision', 'executive', 'executive', 'quality', 'quality']);
   assert.deepEqual([...new Set(requestLog.map(item => item.pathname))].sort(), [
     '/api/grh-close',
+    '/api/grh-decision-brief',
     '/api/grh-executive',
     '/api/grh-quality',
   ]);
@@ -394,6 +709,224 @@ test('main executive dashboard fails closed and retries when the monthly close r
   await context.close();
 });
 
+test('main executive dashboard fails closed and performs one manual retry when the decision brief returns 503', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog, { decisionUnavailable: true });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  await seedSession(context);
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#loadError:not([hidden])');
+  assert.equal(await page.locator('#dataViews').evaluate(node => node.hidden), true);
+  assert.equal(await page.locator('#decisionPriorities .exec-decision-priority').count(), 0);
+  assert.equal(requestLog.filter(item => item.contract === 'decision').length, 1);
+
+  const retryResponse = page.waitForResponse(response =>
+    new URL(response.url()).pathname === '/api/grh-decision-brief' && response.status() === 503
+  );
+  await page.click('#retryLoad');
+  await retryResponse;
+  await page.waitForSelector('#loadError:not([hidden])');
+  assert.equal(requestLog.filter(item => item.contract === 'decision').length, 2);
+  assert.equal(requestLog.some(item => /grh-data|profile|semantic/i.test(item.pathname)), false);
+  await context.close();
+});
+
+test('a protected current close keeps the integral dashboard fail-closed without leaking S13 figures', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog, { currentCloseProtected: true });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  await seedSession(context);
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#loadError:not([hidden])');
+  const result = await page.evaluate(() => ({
+    dataHidden: document.querySelector('#dataViews')?.hidden,
+    error: document.querySelector('#loadErrorMessage')?.textContent.trim(),
+    sourceCount: document.querySelector('#sourceCountChip')?.textContent.trim(),
+    decisionStatus: document.querySelector('#decisionBriefStatus')?.textContent.trim(),
+    agreement: document.querySelector('#decisionAgreement')?.textContent.trim(),
+    change: document.querySelector('#decisionChange')?.textContent.trim(),
+    quality: document.querySelector('#decisionQuality')?.textContent.trim(),
+    closePeriod: document.querySelector('#closePeriodBadge')?.textContent.trim(),
+    priorityCount: document.querySelectorAll('#decisionPriorities .exec-decision-priority').length,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  assert.equal(result.dataHidden, true);
+  assert.match(result.error, /panel integral.+k≥10.+protegida/i);
+  assert.equal(result.sourceCount, '—/4');
+  assert.equal(result.decisionStatus, '—');
+  assert.equal(result.agreement, '—');
+  assert.equal(result.change, '—');
+  assert.equal(result.quality, '—');
+  assert.equal(result.closePeriod, '—');
+  assert.equal(result.priorityCount, 0);
+  assert.equal(result.overflow, 0);
+  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['close', 'decision', 'executive', 'quality']);
+  await context.close();
+});
+
+test('privacy_protected comparison copy refers only to the previous month after current release', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog, { previousCloseProtected: true });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await seedSession(context);
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('#executiveDashboard[aria-busy="false"]');
+  const result = await page.evaluate(() => ({
+    dataHidden: document.querySelector('#dataViews')?.hidden,
+    errorHidden: document.querySelector('#loadError')?.hidden,
+    agreement: document.querySelector('#decisionAgreement')?.textContent.trim(),
+    change: document.querySelector('#decisionChange')?.textContent.trim(),
+    note: document.querySelector('#decisionChangeNote')?.textContent.trim(),
+    closeComparison: document.querySelector('#closeComparisonTitle')?.textContent.trim(),
+  }));
+  assert.equal(result.dataHidden, false);
+  assert.equal(result.errorHidden, true);
+  assert.equal(result.agreement, '6,5%');
+  assert.equal(result.change, 'Protegido');
+  assert.equal(result.note, 'El mes anterior no es publicable bajo k≥10.');
+  assert.equal(result.closeComparison, 'Comparación no publicable');
+  await context.close();
+});
+
+test('global reconciliation copy stays independent from a monthly agreement difference', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog, { globalReconciled: true });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await seedSession(context);
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('#executiveDashboard[aria-busy="false"]');
+  const result = await page.evaluate(() => ({
+    globalScore: document.querySelector('#kpiCrossScore')?.textContent.trim(),
+    monthlyAgreement: document.querySelector('#decisionAgreement')?.textContent.trim(),
+    decisionStatus: document.querySelector('#decisionBriefStatus')?.textContent.trim(),
+    priorityTitles: Array.from(document.querySelectorAll('#decisionPriorities strong')).map(node => node.textContent.trim()),
+    ctas: Array.from(document.querySelectorAll('#decisionPriorities .exec-decision-cta')).map(node => node.getAttribute('href')),
+    sourceTitles: Array.from(document.querySelectorAll('#sourceList .exec-source-row strong')).map(node => node.textContent.trim()),
+    sourceText: document.querySelector('#sourceList')?.textContent.replace(/\s+/g, ' ').trim(),
+  }));
+  assert.equal(result.globalScore, '100,0%');
+  assert.equal(result.monthlyAgreement, '6,5%');
+  assert.equal(result.decisionStatus, 'Revisión recomendada');
+  assert.equal(result.priorityTitles.includes('El control cross-source requiere revisión'), false);
+  assert.deepEqual(result.ctas, ['control.html']);
+  assert.equal(result.sourceTitles.includes('Control cross-source global conciliado'), true);
+  assert.equal(result.sourceTitles.includes('Control cross-source global con diferencias'), false);
+  assert.match(result.sourceText, /conciliación global cerrada/i);
+  assert.doesNotMatch(result.sourceText, /material_differences_detected|\breconciled\b/);
+  await context.close();
+});
+
+test('main executive dashboard rejects malformed, unknown, header-drifted and SHA-mismatched decision briefs', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const cases = [
+    ['malformed exact schema', { decisionMalformed: true }],
+    ['unknown enum', { decisionUnknownEnum: true }],
+    ['contract header mismatch', { decisionContractMismatch: true }],
+    ['source SHA mismatch', { decisionSourceMismatch: true }],
+  ];
+
+  for (const [name, options] of cases) {
+    await t.test(name, async () => {
+      const requestLog = [];
+      const server = await createServer(requestLog, options);
+      const baseUrl = `http://127.0.0.1:${server.address().port}`;
+      const browser = await chromium.launch({ headless: true });
+      try {
+        const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+        await seedSession(context);
+        const page = await context.newPage();
+        await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('#loadError:not([hidden])');
+        const result = await page.evaluate(() => ({
+          dataHidden: document.querySelector('#dataViews')?.hidden,
+          busy: document.querySelector('#executiveDashboard')?.getAttribute('aria-busy'),
+          priorityCount: document.querySelectorAll('#decisionPriorities .exec-decision-priority').length,
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        }));
+        assert.equal(result.dataHidden, true, name);
+        assert.equal(result.busy, 'false', name);
+        assert.equal(result.priorityCount, 0, name);
+        assert.equal(result.overflow, 0, name);
+        assert.equal(requestLog.filter(item => item.contract === 'decision').length, 1, name);
+        assert.equal(requestLog.some(item => /grh-data|profile|semantic/i.test(item.pathname)), false, name);
+        await context.close();
+      } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+      }
+    });
+  }
+});
+
+test('decision brief CTAs are derived only from the current validated navigation capabilities', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const cases = [
+    ['Hacienda denied', ['navigation.hacienda'], ['control.html']],
+    ['data quality denied', ['navigation.data-quality'], ['hacienda.html']],
+    ['both destinations denied', ['navigation.hacienda', 'navigation.data-quality'], []],
+  ];
+
+  for (const [name, denied, expectedHrefs] of cases) {
+    await t.test(name, async () => {
+      const requestLog = [];
+      const server = await createServer(requestLog, { authUser: projectedUserWithout(...denied) });
+      const baseUrl = `http://127.0.0.1:${server.address().port}`;
+      const browser = await chromium.launch({ headless: true });
+      try {
+        const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+        await seedSession(context);
+        const page = await context.newPage();
+        await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
+        await page.waitForSelector('#executiveDashboard[aria-busy="false"]');
+        const hrefs = await page.locator('#decisionPriorities .exec-decision-cta').evaluateAll(nodes =>
+          nodes.map(node => node.getAttribute('href'))
+        );
+        assert.deepEqual(hrefs, expectedHrefs, name);
+        assert.equal(await page.locator('#decisionPriorities .exec-decision-priority').count(), 3, name);
+        assert.equal(requestLog.filter(item => item.contract === 'decision').length, 1, name);
+        await context.close();
+      } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+      }
+    });
+  }
+});
+
 test('main executive dashboard fails closed when close provenance mismatches the executive source', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
   const server = await createServer(requestLog, { closeSourceMismatch: true });
@@ -420,7 +953,7 @@ test('main executive dashboard fails closed when close provenance mismatches the
   assert.equal(result.busy, 'false');
   assert.match(result.error, /misma fuente|mismo corte|proyecciones GRH/i);
   assert.equal(result.overflow, 0);
-  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['close', 'executive', 'quality']);
+  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['close', 'decision', 'executive', 'quality']);
   assert.equal(requestLog.every(item => item.requestTarget === item.pathname), true);
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
   assert.equal(requestLog.some(item => /grh-data|profile|semantic/i.test(item.pathname)), false);

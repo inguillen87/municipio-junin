@@ -17,6 +17,7 @@ const EXPECTED_SERVERLESS = [
   'GET /grh-executive',
   'GET /grh-quality',
   'GET /grh-close',
+  'GET /grh-decision-brief',
   'POST /ai-analyze',
   'GET /pdf-report',
   'POST /ai-proxy',
@@ -149,6 +150,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'google-sheets.js',
     'grh-data.js',
     'grh-close.js',
+    'grh-decision-brief.js',
     'grh-executive.js',
     'grh-quality.js',
     'intelligence.js',
@@ -211,6 +213,11 @@ test('route authorization is exact by runtime, method and path', () => {
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-close?period=ignored'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-close'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-close'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-decision-brief'), true);
+  assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-decision-brief?view=current'), true);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-decision-brief'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-decision-brief'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-decision-brief/future'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/reports?period=2026-07'), true);
   assert.equal(esmPolicy.authorizeRoute('TESORERIA', runtime.SERVERLESS, 'GET', '/api/reports'), false);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-data'), false);
@@ -239,6 +246,7 @@ test('internal bearer routes and secret names are explicitly scoped', () => {
   assert.equal(esmPolicy.isInternalRouteAllowed(runtime.SERVERLESS, 'GET', '/api/cron-daily-report', 'CRON_SECRET'), true);
 
   assert.equal(esmPolicy.isInternalRouteAllowed(runtime.SERVERLESS, 'GET', '/api/grh-data', 'CRON_SECRET'), false);
+  assert.equal(esmPolicy.isInternalRouteAllowed(runtime.SERVERLESS, 'GET', '/api/grh-decision-brief', 'CRON_SECRET'), false);
   assert.equal(esmPolicy.isInternalRouteAllowed(runtime.SERVERLESS, 'GET', '/api/reports', 'OTHER_SECRET'), false);
   assert.equal(esmPolicy.isInternalRouteAllowed(runtime.EXPRESS, 'GET', '/api/reports', 'CRON_SECRET'), false);
   assert.equal(esmPolicy.authorizeRoute('SUPER_ADMIN', runtime.SERVERLESS, 'GET', '/api/cron-daily-report'), false);

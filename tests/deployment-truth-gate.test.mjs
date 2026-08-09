@@ -57,6 +57,7 @@ const CURRENT_MANUAL = `<!doctype html>
 const PRISMA_PRIVATE_PATH = '/prisma/schema.prisma';
 const PRISMA_DENY_ROUTE = Object.freeze({
   src: '/prisma(?:/.*)?',
+  dest: '/404.html',
   status: 404,
   headers: Object.freeze({
     'Cache-Control': 'no-store',
@@ -668,6 +669,7 @@ test('local Vercel contract requires the first exact Prisma deny route and cover
   const validConfiguration = JSON.parse(VALID_VERCEL_CONFIG);
   const invalidRoutes = [
     [],
+    [{ ...PRISMA_DENY_ROUTE, dest: '/prisma/schema.prisma' }],
     [{ ...PRISMA_DENY_ROUTE, status: 200 }],
     [{ ...PRISMA_DENY_ROUTE, src: '/prisma/.*' }],
     [{ ...PRISMA_DENY_ROUTE, headers: { 'Cache-Control': 'no-store' } }],

@@ -22,6 +22,7 @@ const ALLOWED_ANONYMOUS_API_STATUSES = Object.freeze([401, 403]);
 const PRISMA_PRIVATE_PATH = '/prisma/schema.prisma';
 const PRISMA_DENY_ROUTE = Object.freeze({
   src: '/prisma(?:/.*)?',
+  dest: '/404.html',
   status: 404,
   headers: Object.freeze({
     'Cache-Control': 'no-store',
@@ -265,8 +266,9 @@ function assertCanonicalVercelRouting(source) {
   }
   const prismaRoute = Array.isArray(config.routes) ? config.routes[0] : null;
   if (!prismaRoute
-    || !hasExactKeys(prismaRoute, ['src', 'status', 'headers'])
+    || !hasExactKeys(prismaRoute, ['src', 'dest', 'status', 'headers'])
     || prismaRoute.src !== PRISMA_DENY_ROUTE.src
+    || prismaRoute.dest !== PRISMA_DENY_ROUTE.dest
     || prismaRoute.status !== PRISMA_DENY_ROUTE.status
     || !hasExactKeys(prismaRoute.headers, ['Cache-Control', 'X-Content-Type-Options'])
     || prismaRoute.headers['Cache-Control'] !== PRISMA_DENY_ROUTE.headers['Cache-Control']

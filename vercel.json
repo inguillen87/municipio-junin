@@ -5,8 +5,7 @@
   "trailingSlash": false,
   "functions": { "api/**/*.js": { "maxDuration": 30 } },
   "rewrites": [
-    { "source": "/", "destination": "/login.html" },
-    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/", "destination": "/login" },
     { "source": "/inicio", "destination": "/inicio.html" },
     { "source": "/api/whatsapp/webhook", "destination": "/api/whatsapp-webhook" }
   ],

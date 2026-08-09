@@ -1,8 +1,8 @@
 # Manual integral y gobierno documental — MuniControl
 
-Versión documental: 1.7.0  
+Versión documental: 1.8.0
 Fecha de corte: 9 de agosto de 2026  
-Estado: validado sobre el checkout local; no certifica producción
+Estado: checkout validado y preview protegido verificado de forma acotada; no certifica producción
 
 ## Cómo usar este paquete
 
@@ -19,6 +19,7 @@ en la misma entrega**.
 | [`ROLE_JOURNEYS_AND_SECURE_DEMO.md`](ROLE_JOURNEYS_AND_SECURE_DEMO.md) | Funcionarios, producto, seguridad, ventas e ingeniería | Recorridos por perfil, segregación de funciones y procedimiento de demos/cuentas temporales |
 | [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md) | Arquitectura, seguridad, DBA e ingeniería | Propuesta aislada de ámbitos, asignaciones, lifecycle, aprobaciones, SoD, break-glass y auditoría; no es una migración activa |
 | [`ACCOUNT_LIFECYCLE_STATE_MACHINE.md`](ACCOUNT_LIFECYCLE_STATE_MACHINE.md) | Seguridad, backend, QA y auditoría | Fundación pura de transiciones de cuenta, invitación y sesión; no persiste ni habilita identidades |
+| [`ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md`](ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md) | Seguridad, backend, DBA, QA y auditoría | Mapper puro IAM-MAP-01 entre la foundation y la propuesta Prisma; no conecta DB, no persiste ni crea usuarios |
 | [`PRISMA_BASELINE_Y_DRIFT.md`](PRISMA_BASELINE_Y_DRIFT.md) | DBA, seguridad, DevOps e ingeniería | Preflight offline/conectado, baseline real, receipt externo y atestación institucional pendiente antes de cualquier migración o cuenta por rol |
 | [`MASTER_PLAN_STATUS.md`](MASTER_PLAN_STATUS.md) | Dirección y responsables de aceptación | Diferencia entre el plan heredado y la evidencia realmente implementada |
 | [`GRH_OPERATIONS_ROADMAP.md`](GRH_OPERATIONS_ROADMAP.md) | Datos y operaciones | Evolución específica de GRH desde snapshot a lote, CDC, backups y observabilidad |
@@ -122,7 +123,14 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   Roles o perfiles desconocidos, capabilities ausentes y versiones obsoletas
   fallan cerrados. La matriz local de siete roles en 390/1440 px cerró 42/42.
 - Este inicio por rol es UX y proyección de política; no crea identidades, no
-  habilita el modelo RBAC/ABAC propuesto y no prueba DB, preview ni producción.
+  habilita el modelo RBAC/ABAC propuesto y no prueba DB ni producción. El preview
+  protegido sólo observó rutas públicas y rechazos 401 sin cuentas.
+- WP0-L y IAM-MAP-01 están cerrados como herramientas puras del checkout local.
+  WP0-L todavía no fue ejecutado conectado contra una copia restaurada autorizada;
+  el mapper IAM no importa Prisma Client, no persiste y no crea usuarios.
+- UX-E2A unifica el shell institucional en las 29 páginas raíz que cargan
+  navegación. Sus estados desktop, móvil, accesible e imprimible son experiencia
+  local; la visibilidad de un enlace no concede permisos ni certifica deployment.
 - La conexión continua, los backups propios, los mapas operativos y los ámbitos
   RBAC/ABAC persistidos por área todavía están planificados; no están
   certificados en producción.
@@ -133,12 +141,18 @@ licitaciones, capacitación y futuras entregas a otros municipios.
 - E0.1 incorpora localmente `/inicio` al gate: exige el rewrite exacto a
   `/inicio.html`, una captura UTF-8/LF con SHA-256, HTML 200 sin redirects y
   digest remoto idéntico. El focal cerró 31/31 y el consolidado con workspace,
-  45/45. Esto detecta drift y spoof; no demuestra que el destino ya fue
-  desplegado.
+  45/45. El preview protegido `fa5dcc5` verificó manualmente `/dashboard`,
+  `/inicio` y `/manuales` con huella exacta; `/` mostró el acceso esperado con
+  una única inyección conocida de Vercel Live. Esto no sustituye el gate anónimo
+  ni demuestra producción.
+- Las cinco fronteras API del mismo preview respondieron 401 sin sesión con su
+  contrato específico por ruta. No se probaron cuentas, tenant, artefactos GRH,
+  DB conectada ni autorización positiva.
 - El acceso local usa una portada institucional sobria, autocontenida,
   responsive, navegable por teclado y compatible con movimiento reducido. No
   publica identidades demo, accesos rápidos ni claims de capacidades ausentes.
-  Esta mejora de login tampoco está desplegada ni certificada remotamente.
+  Esta portada fue observada en preview protegido, pero no está certificada en
+  producción y no demuestra identidades reales.
 
 ## Paquete de capacitación por audiencia
 
@@ -271,6 +285,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; preview protegido `fa5dcc5` verificado manualmente en rutas canónicas y cinco rechazos API 401. La única diferencia conocida de `/` fue una inyección de Vercel Live; sin DB, cuentas reales, merge a `master` ni certificación productiva |
 | 1.7.0 | 2026-08-09 | Incorpora el inicio seguro por siete roles con capabilities calculadas en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; 42/42 local, sin cuentas, DB ni deployment |
 | 1.6.0 | 2026-08-09 | Incorpora `grh-close-v1` en Hacienda y el Bot “Cierre explicado”, retira la atribución mensual falsa de una conciliación global, registra el bundle inmutable O2A.1 y el login institucional local; el público sigue legacy/no certificado |
 | 1.5.0 | 2026-08-09 | Registra el replay real local O2A del snapshot canónico, promoción + duplicado idempotente y LKG estable; separa O2B conectado/programado sin declarar DB, cron, backup o deployment |

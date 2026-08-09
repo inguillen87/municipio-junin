@@ -1,8 +1,8 @@
 # Recorridos por rol y demostración segura — MuniControl
 
-**Versión:** 1.7.0  
+**Versión:** 1.8.0
 **Fecha de corte:** 9 de agosto de 2026  
-**Estado:** workspace por siete roles y techo exacto validados localmente; RBAC/ABAC fino y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
+**Estado:** workspace y shell institucional por siete roles validados localmente; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
 
 ## 1. Propósito
 
@@ -88,7 +88,7 @@ explícita con un rol vigente, están en **Roadmap** y no deben aprovisionarse t
 | Superficie | Fuente o estado actual | Lectura/acción que puede demostrarse | Frontera vigente |
 |---|---|---|---|
 | [`inicio.html`](../inicio.html) | Sesión autoritativa, sin dataset | Portada, recorrido y prioridades para los siete roles vigentes | Requiere `navigation.workspace`; hace una lectura de `/api/auth/me`, cero requests GRH y falla cerrado |
-| [`index.html`](../index.html) | GRH privado, snapshot | Panel Ejecutivo GRH, resumen agregado, cierre del último mes sobre `grh-close-v1` y alertas de calidad | Superficie separada; requiere sesión, `navigation.dashboard`, tenant y contratos GRH válidos |
+| [`dashboard.html`](../dashboard.html) | GRH privado, snapshot | Panel Ejecutivo GRH, resumen agregado, cierre del último mes sobre `grh-close-v1` y alertas de calidad | Superficie separada; requiere sesión, `navigation.dashboard`, tenant y contratos GRH válidos |
 | [`grh-ejecutivo.html`](../grh-ejecutivo.html) | GRH privado, snapshot | Serie de control, conciliación y sectores | No moneda declarada; cálculo no equivale a pago |
 | [`rrhh.html`](../rrhh.html) | GRH privado, snapshot | Dotación participante, ausencias, movimientos y calidad | Sin fichas individuales ni PII cruda |
 | [`hacienda.html`](../hacienda.html) | Control de cálculo GRH | Bruto, retenciones, neto y conciliación interna | No acredita banco, presupuesto o asiento |
@@ -155,6 +155,14 @@ evidencia_cross_tenant:
 revocacion_final:
 ```
 
+La verificación manual disponible de `fa5dcc5` es más estrecha que ese registro:
+en el preview protegido, `/dashboard`, `/inicio` y `/manuales` coincidieron con
+su huella canónica; `/` mostró el acceso con una única inyección conocida de
+Vercel Live; y las cinco fronteras API rechazaron la ausencia de sesión con 401
+y contrato específico por ruta. No hubo identidades, tenant demo, autorización
+positiva, datos GRH ni prueba cross-tenant; por eso no se presenta como demo por
+rol ni como certificación de producción.
+
 ### 7.3 Ciclo de cuenta objetivo
 
 El ciclo enterprise requerido es:
@@ -191,6 +199,12 @@ La máquina de estados pura documentada en
 para probar invariantes sin DB, pero no habilita cuentas. Ningún rol vigente o
 futuro se aprovisiona hasta implementar invitación, MFA, sesión revocable, SoD,
 auditoría transaccional, migración y E2E.
+
+IAM-MAP-01 agrega un mapper puro entre esa foundation y el subconjunto reversible
+de la propuesta Prisma. No importa Prisma Client, no persiste y no crea usuarios,
+invitaciones, sesiones o credenciales. UX-E2A agrega un shell institucional
+compartido y accesible; organiza enlaces ya autorizados, pero no concede acceso.
+Ambos incrementos están cerrados sólo en el checkout local.
 
 ## 8. Guion de presentación por rol
 
@@ -289,6 +303,8 @@ produciría una demostración visual de roles, no seguridad real.
 
 El procedimiento ejecutable para baseline, receipt externo, restore y rollback
 está en [`PRISMA_BASELINE_Y_DRIFT.md`](PRISMA_BASELINE_Y_DRIFT.md).
+WP0-L todavía no fue ejecutado conectado contra una copia restaurada autorizada;
+su existencia no satisface el gate de baseline/drift ni habilita cuentas.
 
 ## 11. Mantenimiento
 
@@ -311,5 +327,14 @@ propuesto, todavía inactivo, está en
 [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md); sus fases de producto se
 mantienen en [`ENTERPRISE_PRODUCT_ROADMAP.md`](ENTERPRISE_PRODUCT_ROADMAP.md) y
 la fundación pura de lifecycle, aún no conectada, en
-[`ACCOUNT_LIFECYCLE_STATE_MACHINE.md`](ACCOUNT_LIFECYCLE_STATE_MACHINE.md). Este manual no
-puede declarar implementado algo que esas fuentes y sus pruebas no demuestren.
+[`ACCOUNT_LIFECYCLE_STATE_MACHINE.md`](ACCOUNT_LIFECYCLE_STATE_MACHINE.md), con
+su mapper puro en
+[`ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md`](ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md).
+Este manual no puede declarar implementado algo que esas fuentes y sus pruebas
+no demuestren.
+
+Cambio 1.8.0: registra IAM-MAP-01 y UX-E2A y la evidencia acotada del preview
+protegido `fa5dcc5`. Mantiene explícito que WP0-L no fue conectado, no existen
+usuarios persistidos ni cuentas reales, la inyección conocida de Vercel Live
+impidió igualdad byte a byte de `/`, y no hubo merge a `master`, demo por rol ni
+certificación productiva.

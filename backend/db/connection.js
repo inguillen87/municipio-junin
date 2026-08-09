@@ -2,25 +2,27 @@
 // db/connection.js — Conexión PostgreSQL fail-closed
 // ============================================================
 const { Pool } = require('pg');
+const { inspectDatabaseUrl } = require('../../shared/database-url-policy.cjs');
 require('dotenv').config();
 
 let pool = null;
 let databaseUnavailable = true;
 
 function validateDatabaseConfiguration(environment = process.env) {
-  const connectionString = String(environment.DATABASE_URL || '').trim();
-  if (!connectionString) throw new Error('DATABASE_URL_REQUIRED');
-  if (environment.NODE_ENV !== 'production') return connectionString;
-  let parsed;
+  const connectionString = environment.DATABASE_URL;
   try {
-    parsed = new URL(connectionString);
-  } catch {
-    throw new Error('DATABASE_URL_INVALID');
+    return inspectDatabaseUrl(connectionString, {
+      nodeEnv: environment.NODE_ENV,
+      environment,
+    }).connectionString;
+  } catch (error) {
+    if (typeof error?.code === 'string' && error.code) {
+      const boundaryError = new Error(error.code);
+      boundaryError.code = error.code;
+      throw boundaryError;
+    }
+    throw error;
   }
-  if (!['postgres:', 'postgresql:'].includes(parsed.protocol) || parsed.searchParams.get('sslmode') !== 'verify-full') {
-    throw new Error('DATABASE_TLS_VERIFY_FULL_REQUIRED');
-  }
-  return connectionString;
 }
 
 async function connect() {

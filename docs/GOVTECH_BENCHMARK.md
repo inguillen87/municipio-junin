@@ -1,6 +1,6 @@
 # Benchmark GovTech para MuniControl
 
-- Versión: 1.7.0
+- Versión: 1.8.0
 - Fecha de consulta: 8 de agosto de 2026
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
@@ -72,7 +72,7 @@ La comparación usa como fuente de verdad interna el
 |---|---|---|
 | Fuente de personal | Snapshot GRH del 6 de agosto de 2026 | No es tiempo real; `personas_junin` no se cruza ni migra |
 | Perfil y semántica GRH | Validados localmente | Agregados; no habilitan PII individual ni prueban pago bancario |
-| Centro Ejecutivo, RRHH, Hacienda, Reportes y Bot | Validados localmente | Falta materialización privada, preview autenticado y smoke remoto |
+| Centro Ejecutivo, RRHH, Hacienda, Reportes y Bot | Validados localmente; fronteras del preview protegido observadas en 401 sin sesión | Falta materialización privada, sesión real y smoke por tenant/rol |
 | Cierre mensual `grh-close-v1` | Validado localmente por período y k≥10 | Control de cálculo y conciliación; no moneda, pago, causalidad ni contabilidad |
 | Inicio seguro por rol | Siete variantes, capabilities server-computed y 42/42 focal local | Es UX fail-closed; no crea cuentas, asignaciones finas ni prueba producción |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Falta storage privado, antivirus y operación remota certificada |
@@ -615,8 +615,8 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 
 | Fase | Resultado que debe enamorar al usuario | Patrón incorporado del benchmark | Gate no negociable | Estado actual |
 |---|---|---|---|---|
-| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Código local; despliegue pendiente |
-| **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A local: siete inicios + capabilities server-computed; persistencia fina, cuentas y evidencia remota pendientes |
+| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Preview protegido `fa5dcc5` verificado sólo en routing/huellas y rechazos 401; producción, datos y cuentas pendientes |
+| **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A + UX-E2A: siete inicios, capabilities server-computed y shell institucional; IAM-MAP-01 es puro, sin persistencia, cuentas o evidencia por rol |
 | **E2 — Ingesta gobernada** | Administrativos cargan fuentes con preview, errores comprensibles y linaje | Tyler data platform, SAP API governance, Granicus forms | Original privado, antivirus, parser aislado, schema, cuarentena y persistencia comprobada | CSV/XLSX/Sheets endurecidos localmente; resto parcial |
 | **E3 — Cerebro GRH** | Intendente recibe señales explicadas y acciones con seguimiento | OpenGov planning, Tyler Insights, SAP Analytics | Insight reproducible, calidad/frescura visibles, sin PII ni causalidad falsa | Base semántica y asistente determinista locales |
 | **E4 — Finanzas y compras** | Circuito íntegro y dashboards que explican el gasto sin planillas paralelas | PGM/OpenGov/Tyler/SAP procure-to-pay | Fuente contable autoritativa, catálogo formal, conciliación y doble control | Sin fuente conectada; no simular |
@@ -627,7 +627,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 ### 9.1 Prioridad inmediata
 
 1. Cerrar E0 y retirar/corregir la producción antigua antes de mostrarla.
-2. Llevar UX-E1A al candidato certificado y continuar E1 con persistencia,
+2. Completar la certificación de UX-E1A/UX-E2A y continuar E1 con persistencia,
    lifecycle y una demo auténtica para cada rol formalmente aprovisionado; hoy
    existen siete políticas de inicio, no siete cuentas.
 3. Completar E2 con storage, antivirus, auditoría persistente y jobs asíncronos.
@@ -780,7 +780,10 @@ Cada actualización debe conservar la fecha de consulta, distinguir fuente de
 inferencia y evitar convertir marketing competitivo en requisito técnico sin una
 decisión explícita.
 
-Cambio 1.7.0: actualiza la línea base interna con `grh-close-v1`, O2A.1, el gate
-de verdad del release y UX-E1A por siete roles. Corrige el claim obsoleto del
-seed: no crea identidades. El incremento es local; no declara cuentas, DB,
-RBAC/ABAC persistido, preview o producción.
+Cambio 1.8.0: actualiza la línea base con WP0-L, IAM-MAP-01, UX-E2A y la
+verificación manual del preview protegido `fa5dcc5`: `/dashboard`, `/inicio` y
+`/manuales` con huella canónica exacta; `/` con una única inyección conocida de
+Vercel Live; cinco fronteras API en 401 con contrato específico por ruta. WP0-L
+no fue ejecutado conectado; el mapper IAM no persiste ni crea usuarios; el shell
+no concede autorización. No declara DB, cuentas reales, RBAC/ABAC persistido,
+datos remotos, merge a `master` ni producción.

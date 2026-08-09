@@ -70,7 +70,7 @@ test('the Serverless login never issues a token to a tenantless municipal role',
     NODE_ENV: process.env.NODE_ENV,
   };
   Object.assign(process.env, {
-    DATABASE_URL: 'postgresql://localhost/municontrol-test',
+    DATABASE_URL: 'postgresql://local@localhost/municontrol-test',
     JWT_SECRET: 'auth-input-test-secret-with-sufficient-length',
     NODE_ENV: 'development',
   });

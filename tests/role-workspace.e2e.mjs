@@ -40,7 +40,7 @@ const ACTION_CAPABILITIES = new Set([
 ]);
 const BOTTOM_HREF = new Map([
   ['navigation.workspace', 'inicio.html'],
-  ['navigation.dashboard', 'index.html'],
+  ['navigation.dashboard', 'dashboard.html'],
   ['navigation.reports', 'reportes.html'],
   ['navigation.hacienda', 'hacienda.html'],
   ['navigation.grh-executive', 'grh-ejecutivo.html'],

@@ -78,9 +78,13 @@ El gate es GET-only, exige un origen HTTPS exacto, resolución DNS pública y
 estable, y rechaza credenciales, proxy ambiental, path, query y fragmento.
 Compara las huellas SHA-256 canónicas de la portada de acceso (`/`), el panel
 ejecutivo (`/dashboard`) y el manual limpio (`/manuales`) contra `login.html`,
-`index.html` y `manuales.html` del checkout. También verifica que esas rutas
-coincidan con `vercel.json`. Las APIs no pueden redirigir y cada una debe devolver
-su header contractual propio antes de exigir autenticación. Un `404`, un muro
+`dashboard.html` y `manuales.html` del checkout. También exige que `cleanUrls`
+resuelva `/dashboard` desde `dashboard.html`, que `/` se reescriba al clean URL
+`/login` respaldado por `login.html`, sin rewrite propio de dashboard ni
+`index.html`, y que las rutas explícitas coincidan con `vercel.json`. Las APIs no
+pueden
+redirigir y cada una debe devolver su header contractual propio antes de exigir
+autenticación. Un `404`, un muro
 genérico, HTML servido como API, dato demo, runtime `MuniDB`, claim de tiempo real
 o cualquier drift documental bloquea la promoción.
 

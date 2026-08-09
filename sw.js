@@ -1,5 +1,5 @@
 // Public-shell-only service worker. Authenticated/API responses are never cached.
-const CACHE_NAME = 'municontrol-public-v3';
+const CACHE_NAME = 'municontrol-public-v4';
 const PUBLIC_ASSETS = new Set([
   '/',
   '/ciudadano.html',

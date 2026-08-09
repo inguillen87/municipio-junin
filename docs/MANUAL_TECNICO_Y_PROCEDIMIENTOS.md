@@ -1,6 +1,6 @@
 # Manual técnico y de procedimientos de MuniControl
 
-**Versión:** 1.7.0
+**Versión:** 1.8.0
 
 **Tipo:** documento vivo
 
@@ -8,10 +8,11 @@
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
 > Estado de verdad: el código y las pruebas descritos aquí existen en el checkout
-> local. No hay evidencia adjunta que certifique un deployment vigente, una base
-> remota migrada, la materialización remota de GRH, un backup restaurable ni un
-> smoke test de producción. Hasta reunir esa evidencia, el estado correcto es
-> **validado localmente** o **condicionado al entorno**, nunca “en producción”.
+> local. El preview protegido `fa5dcc5` tiene una verificación manual acotada de
+> routing, huellas estáticas y rechazos 401; no certifica un deployment productivo,
+> una base remota migrada, materialización GRH, cuentas reales, backup restaurable
+> ni smoke de producción. Hasta reunir esa evidencia, el estado correcto es
+> **validado** o **condicionado al entorno**, nunca “en producción”.
 
 ## 1. Propósito y regla de mantenimiento
 
@@ -65,9 +66,11 @@ Reglas de verdad:
 ### 2.1 Runtime primario: Serverless
 
 - `vercel.json` publica el frontend estático y las funciones `api/**/*.js`.
-- `/` se reescribe a `/login.html`; `/inicio`, a `/inicio.html`; y
-  `/dashboard`, a `/index.html`. El gate local E0.1 exige esa topología exacta;
-  no prueba que ya esté publicada.
+- `/` se reescribe al clean URL `/login`, respaldado por `login.html`; `/inicio`,
+  a `/inicio.html`; y
+  `cleanUrls` resuelve `/dashboard` desde `dashboard.html`, sin rewrite propio ni
+  `index.html`. El gate local E0.1 exige esa topología exacta; no prueba que ya
+  esté publicada.
 - El código Serverless usa `api/lib/db.js`, que importa el cliente Prisma raíz.
 - Las APIs protegidas verifican JWT y vuelven a consultar usuario, rol, tenant y
   estado actual en PostgreSQL. El frontend no autoriza operaciones.
@@ -115,7 +118,7 @@ la política del rol y las capabilities contextuales; siempre incluye
 `navigation.workspace`. `inicio.html` espera la respuesta autoritativa de
 `/api/auth/me`, falla cerrado ante versión, rol, capability o perfil desconocido
 y renderiza sólo prioridades permitidas. Esa portada no llama endpoints GRH ni
-otros datasets; el Panel ejecutivo GRH vive por separado en `index.html`.
+otros datasets; el Panel ejecutivo GRH vive por separado en `dashboard.html`.
 
 Para un `SUPER_ADMIN` sin tenant, `getSessionAccessForUser` reduce el resultado
 a `session.read`, `navigation.workspace` y `navigation.help`; su prioridad queda
@@ -126,6 +129,12 @@ Las siete variantes exactas son `platform-governance`,
 `municipal-operations`, `executive-leadership`, `financial-control`,
 `municipal-limited`, `territorial-unassigned` y `controlled-preview`. Definirlas
 no aprovisiona cuentas ni aplica la propuesta RBAC/ABAC persistida.
+
+UX-E2A añade `css/institutional-shell.css` como capa namespaced y compartida por
+las 29 páginas raíz que cargan navegación. La navegación desktop y el rail móvil
+se proyectan desde las capabilities válidas, restauran foco, respetan movimiento
+reducido y forced colors, y eliminan offsets al imprimir. Este shell es una
+frontera de presentación: no decide autorización ni amplía permisos de API.
 
 ### 2.4 Dos familias de tablas
 
@@ -523,6 +532,15 @@ al entorno revisado. Toda conexión remota debe declarar exactamente
 - El procedimiento completo, contrato del manifest, receipt, restore y rollback
   está en [`PRISMA_BASELINE_Y_DRIFT.md`](PRISMA_BASELINE_Y_DRIFT.md).
 
+WP0-L agrega `npm.cmd run db:baseline:inspect`. Su modo `--check-config` valida
+localmente argumentos, URL, target, output y estado Git sin conectarse. El modo
+`--connected` sólo puede ejecutarse sobre una copia restaurada descartable y
+autorizada con marcadores persistentes de DB; abre una transacción
+`REPEATABLE READ READ ONLY`, consulta catálogos y `_prisma_migrations`, y hace
+rollback ante cualquier inconsistencia. Al corte no se ejecutó conectado: no
+existe observación de una copia,
+baseline real, aprobación de drift ni autorización de migración.
+
 ### 7.2 Aprovisionamiento retirado
 
 El comando legado se conserva como gate negativo verificable:
@@ -545,6 +563,14 @@ revocables, MFA, doble aprobación y auditoría transaccional.
 PUT/PATCH de tenant responde `410 TENANT_LIFECYCLE_NOT_GOVERNED`. La fundación
 pura en [`ACCOUNT_LIFECYCLE_STATE_MACHINE.md`](ACCOUNT_LIFECYCLE_STATE_MACHINE.md)
 prueba transiciones e invariantes sin DB, pero no habilita cuentas ni tenants.
+
+IAM-MAP-01, documentado en
+[`ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md`](ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md),
+traduce únicamente el subconjunto reversible entre esa foundation y la propuesta
+Prisma. No importa Prisma Client, no abre una DB, no completa columnas de
+persistencia y no crea usuarios, invitaciones, sesiones o credenciales. Conectar
+el mapper requiere antes resolver drift de esquema, aprobar baseline/migración y
+construir un adaptador transaccional con auditoría.
 
 ## 8. Variables de entorno por grupo
 
@@ -768,6 +794,9 @@ inesperados o una suite parcial no satisfacen el gate.
 | verdad de preview/release | `node --test tests/deployment-truth-gate.test.mjs` y `npm run release:truth:check -- --base-url https://preview-approved.example` |
 | login institucional | `node --test tests/login-institutional.e2e.mjs tests/public-truth-boundaries.test.mjs tests/access-policy.test.mjs` |
 | inicio seguro por rol | `node --test tests/access-policy.test.mjs tests/login-institutional.e2e.mjs tests/navigation-layout.e2e.mjs tests/role-workspace.e2e.mjs` |
+| WP0-L read-only | `node --test tests/prisma-baseline-observation.test.mjs tests/database-url-policy.test.mjs tests/prisma-migration-gate.test.mjs` |
+| IAM-MAP-01 | `node --test tests/account-lifecycle-prisma-mapper.test.mjs tests/account-lifecycle-foundation.test.mjs tests/rbac-lifecycle-proposal.test.mjs` |
+| shell institucional UX-E2A | `node --test tests/institutional-shell.test.mjs tests/navigation-layout.e2e.mjs` |
 | bundle inmutable O2A.1 | `node --test tests/grh-pipeline-foundation.test.mjs tests/grh-pipeline-replay.test.mjs` |
 | Express | `node --test backend/tests/*.test.js` |
 
@@ -817,7 +846,7 @@ Antes de certificar el preview, ejecutar sin sesión, cookie ni token:
 npm.cmd run release:truth:check -- --base-url https://preview-approved.example
 ```
 
-El gate captura `login.html`, `index.html`, `inicio.html` y `manuales.html`
+El gate captura `login.html`, `dashboard.html`, `inicio.html` y `manuales.html`
 locales, valida la versión del manual y compara sus huellas SHA-256 canónicas con
 `/`, `/dashboard`, `/inicio` y `/manuales`. Para el workspace abre una sola vez
 el archivo regular, exige UTF-8 fatal, canonicaliza LF y fija
@@ -1273,14 +1302,14 @@ Diagnóstico recomendado:
 | Reportes SVG locales | Operativo local | `grh-executive-report-v2` portable k=10 y consumidor alineado; falta certificación remota |
 | Frontera HTTP raw GRH | Cerrada localmente | `/api/grh-data` autentica/valida tenant y responde 410 sin leer artefactos; cinco UIs con cero referencias |
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
-| Login institucional | Operativo local | sobrio, autocontenido, accesible, responsive y sin demos/claims; 10/10 focal, no desplegado |
+| Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
 | Techo de autorización `recurso:acción` | Operativo local | 26 recursos, 12 acciones, 46 permisos y 78 firmas exactas: 36 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
 | Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
-| Preview/producción Vercel | Bloqueado hasta gate verde | el dominio público observado el 9-08-2026 sigue legacy y no certificado; requiere candidato exacto con `release:truth:check` exit 0 y smokes externos |
+| Preview/producción Vercel | Preview protegido verificado parcialmente; producción bloqueada | `fa5dcc5`: `/dashboard`, `/inicio` y `/manuales` con huella exacta, `/` con una única inyección Vercel Live y cinco APIs 401 con contrato por ruta; faltan gate anónimo, `master`, producción y smokes con sesión |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |
 | Correo y cron | Retirado | responden `410` y no están programados; falta auditoría tenant-bound e idempotencia |
 | WhatsApp | Condicionado | requiere `PUBLIC_APP_URL` HTTPS aprobado, proveedor, secretos, plantillas y E2E externo |
@@ -1338,6 +1367,7 @@ Fuentes de contexto vigentes a consultar junto con este manual:
 - `docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md`: recorridos, SoD y gate de cuentas por perfil;
 - `docs/RBAC_ABAC_DATA_MODEL.md`: propuesta aislada de persistencia, lifecycle, scopes y rollout de autorización;
 - `docs/ACCOUNT_LIFECYCLE_STATE_MACHINE.md`: fundación pura y no conectada de cuenta, invitación y sesión;
+- `docs/ACCOUNT_LIFECYCLE_PRISMA_MAPPING.md`: mapper puro IAM-MAP-01, sin DB, persistencia ni identidades;
 - `docs/PRISMA_BASELINE_Y_DRIFT.md`: gate offline/release, evidencia conectada, restore y rollback antes de migrar;
 - `docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md`: recorridos, decisiones y respuesta a incidentes;
 - `NEON_SETUP.md`: Prisma/Neon y gates remotos;
@@ -1372,9 +1402,12 @@ El PR o entrega debe responder explícitamente:
 Si alguna respuesta es sí, actualizar este manual. La documentación desactualizada
 es un defecto de la feature y bloquea su Definition of Done.
 
-Cambio 1.7.0: incorpora `inicio.html` como workspace seguro de los siete roles,
-capabilities y `homeProfile` calculados en servidor, fail-closed del cliente y
-separación del Panel ejecutivo GRH. Conserva `grh-close-v1`, O2A.1 y la verdad
-de release. El público sigue legacy y no certificado. No declara cuentas,
-RBAC/ABAC persistido, extracción diaria, DB, API remota, backup, restore, ACL,
-deployment ni autenticidad de un host comprometido.
+Cambio 1.8.0: registra WP0-L, IAM-MAP-01 y UX-E2A y la verificación manual del
+preview protegido `fa5dcc5`: `/dashboard`, `/inicio` y `/manuales` con huella
+canónica exacta; `/` con una única inyección conocida de Vercel Live; cinco
+fronteras API en 401 con identidad contractual específica. WP0-L no se ejecutó
+conectado; IAM-MAP-01 no persiste ni crea usuarios; el shell no concede
+autorización. El público sigue legacy y no certificado. No declara DB conectada,
+baseline, migración, cuentas reales, datos GRH remotos, merge a `master` ni
+certificación productiva. Producción sigue bloqueada hasta que
+`release:truth:check` termine con exit `0` y existan smokes externos registrados.

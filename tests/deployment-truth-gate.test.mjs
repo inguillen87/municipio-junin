@@ -51,8 +51,7 @@ const CURRENT_MANUAL = `<!doctype html>
 const VALID_VERCEL_CONFIG = JSON.stringify({
   cleanUrls: true,
   rewrites: [
-    { source: '/', destination: '/login.html' },
-    { source: '/dashboard', destination: '/index.html' },
+    { source: '/', destination: '/login' },
     { source: '/inicio', destination: '/inicio.html' },
   ],
 }, null, 2);
@@ -219,6 +218,7 @@ function createTemporaryRepo(t, manualContents, {
   writeManual = true,
   writeEntry = true,
   writeRoot = true,
+  writeIndex = false,
   writeWorkspace = true,
   writeVercel = true,
   entryContents = CURRENT_ENTRY,
@@ -230,7 +230,8 @@ function createTemporaryRepo(t, manualContents, {
   t.after(() => fs.rmSync(repoRoot, { recursive: true, force: true }));
   if (writeVercel) fs.writeFileSync(path.join(repoRoot, 'vercel.json'), vercelContents);
   if (writeEntry) fs.writeFileSync(path.join(repoRoot, 'login.html'), entryContents);
-  if (writeRoot) fs.writeFileSync(path.join(repoRoot, 'index.html'), rootContents);
+  if (writeRoot) fs.writeFileSync(path.join(repoRoot, 'dashboard.html'), rootContents);
+  if (writeIndex) fs.writeFileSync(path.join(repoRoot, 'index.html'), rootContents);
   if (writeWorkspace) fs.writeFileSync(path.join(repoRoot, 'inicio.html'), workspaceContents);
   if (writeManual) fs.writeFileSync(path.join(repoRoot, 'manuales.html'), manualContents);
   return repoRoot;
@@ -467,10 +468,11 @@ test('local release contract accepts one future manual SemVer and records all ex
   assert.equal(cliConfiguration.expectedManualDigest, currentLocalContract.expectedManualDigest);
 });
 
-test('local release contract rejects missing, non-regular, duplicated, malformed, non-UTF-8 or oversized sources', (t) => {
+test('local release contract rejects stale index or missing, non-regular, duplicated, malformed, non-UTF-8 or oversized sources', (t) => {
   const missingRoot = createTemporaryRepo(t, '', { writeManual: false });
   const missingEntryRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeEntry: false });
-  const missingIndexRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeRoot: false });
+  const missingDashboardRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeRoot: false });
+  const staleIndexRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeIndex: true });
   const missingWorkspaceRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeWorkspace: false });
   const missingVercelRoot = createTemporaryRepo(t, CURRENT_MANUAL, { writeVercel: false });
   const nonRegularRoot = createTemporaryRepo(t, '', { writeManual: false });
@@ -485,7 +487,7 @@ test('local release contract rejects missing, non-regular, duplicated, malformed
   );
   const invalidRoot = createTemporaryRepo(t, '<body data-doc-version="01.5.0"></body>');
   const invalidUtf8Root = createTemporaryRepo(t, Buffer.from([0xc3, 0x28]));
-  const invalidIndexRoot = createTemporaryRepo(t, CURRENT_MANUAL, {
+  const invalidDashboardRoot = createTemporaryRepo(t, CURRENT_MANUAL, {
     rootContents: Buffer.from([0xc3, 0x28]),
   });
   const emptyWorkspaceRoot = createTemporaryRepo(t, CURRENT_MANUAL, { workspaceContents: '' });
@@ -509,7 +511,8 @@ test('local release contract rejects missing, non-regular, duplicated, malformed
   for (const repoRoot of [
     missingRoot,
     missingEntryRoot,
-    missingIndexRoot,
+    missingDashboardRoot,
+    staleIndexRoot,
     missingWorkspaceRoot,
     missingVercelRoot,
     nonRegularRoot,
@@ -518,7 +521,7 @@ test('local release contract rejects missing, non-regular, duplicated, malformed
     duplicateRoot,
     invalidRoot,
     invalidUtf8Root,
-    invalidIndexRoot,
+    invalidDashboardRoot,
     emptyWorkspaceRoot,
     invalidWorkspaceRoot,
     invalidVercelRoot,
@@ -533,28 +536,18 @@ test('local release contract rejects missing, non-regular, duplicated, malformed
   }
 });
 
-test('local Vercel contract rejects clean URL or exact entry/dashboard/workspace rewrite drift', (t) => {
+test('local Vercel contract rejects clean URL, entry/workspace drift or a dashboard rewrite', (t) => {
   const invalidConfigurations = [
     JSON.stringify({
       cleanUrls: false,
       rewrites: [
-        { source: '/', destination: '/login.html' },
-        { source: '/dashboard', destination: '/index.html' },
+        { source: '/', destination: '/login' },
         { source: '/inicio', destination: '/inicio.html' },
       ],
     }),
     JSON.stringify({
       cleanUrls: true,
       rewrites: [
-        { source: '/dashboard', destination: '/index.html' },
-        { source: '/inicio', destination: '/inicio.html' },
-      ],
-    }),
-    JSON.stringify({
-      cleanUrls: true,
-      rewrites: [
-        { source: '/', destination: '/login.html' },
-        { source: '/dashboard', destination: '/legacy.html' },
         { source: '/inicio', destination: '/inicio.html' },
       ],
     }),
@@ -562,7 +555,13 @@ test('local Vercel contract rejects clean URL or exact entry/dashboard/workspace
       cleanUrls: true,
       rewrites: [
         { source: '/', destination: '/login.html' },
-        { source: '/dashboard', destination: '/index.html' },
+        { source: '/inicio', destination: '/inicio.html' },
+      ],
+    }),
+    JSON.stringify({
+      cleanUrls: true,
+      rewrites: [
+        { source: '/', destination: '/login' },
         { source: '/dashboard', destination: '/index.html' },
         { source: '/inicio', destination: '/inicio.html' },
       ],
@@ -570,23 +569,28 @@ test('local Vercel contract rejects clean URL or exact entry/dashboard/workspace
     JSON.stringify({
       cleanUrls: true,
       rewrites: [
-        { source: '/', destination: '/login.html', statusCode: 200 },
-        { source: '/dashboard', destination: '/index.html' },
+        { source: '/', destination: '/login' },
+        { source: '/dashboard', destination: '/dashboard.html' },
         { source: '/inicio', destination: '/inicio.html' },
       ],
     }),
     JSON.stringify({
       cleanUrls: true,
       rewrites: [
-        { source: '/', destination: '/login.html' },
-        { source: '/dashboard', destination: '/index.html' },
+        { source: '/', destination: '/login', statusCode: 200 },
+        { source: '/inicio', destination: '/inicio.html' },
       ],
     }),
     JSON.stringify({
       cleanUrls: true,
       rewrites: [
-        { source: '/', destination: '/login.html' },
-        { source: '/dashboard', destination: '/index.html' },
+        { source: '/', destination: '/login' },
+      ],
+    }),
+    JSON.stringify({
+      cleanUrls: true,
+      rewrites: [
+        { source: '/', destination: '/login' },
         { source: '/inicio', destination: '/index.html' },
       ],
     }),

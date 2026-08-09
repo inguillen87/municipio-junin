@@ -198,6 +198,23 @@ function readCanonicalLocalDocument(repoRoot, fileName) {
   }
 }
 
+function assertCanonicalLocalDocumentAbsent(repoRoot, fileName) {
+  try {
+    if (typeof repoRoot !== 'string' || !path.isAbsolute(repoRoot)) {
+      throw localReleaseContractError();
+    }
+    fs.lstatSync(path.resolve(repoRoot, fileName));
+    throw localReleaseContractError();
+  } catch (error) {
+    if (error?.code === 'ENOENT') return;
+    if (error instanceof DeploymentTruthError
+      && error.code === 'LOCAL_RELEASE_CONTRACT_INVALID') {
+      throw error;
+    }
+    throw localReleaseContractError();
+  }
+}
+
 export function readLocalManualVersion({ repoRoot = defaultRepoRoot } = {}) {
   const manualSource = readCanonicalLocalDocument(repoRoot, 'manuales.html');
   return requireValidManualVersion(extractUniqueManualVersion(manualSource));
@@ -223,8 +240,7 @@ function assertCanonicalVercelRouting(source) {
     throw localReleaseContractError();
   }
   for (const [sourcePath, destination] of [
-    ['/', '/login.html'],
-    ['/dashboard', '/index.html'],
+    ['/', '/login'],
     ['/inicio', '/inicio.html'],
   ]) {
     const matches = config.rewrites.filter((rewrite) => rewrite?.source === sourcePath);
@@ -234,13 +250,17 @@ function assertCanonicalVercelRouting(source) {
       throw localReleaseContractError();
     }
   }
+  if (config.rewrites.some((rewrite) => rewrite?.source === '/dashboard')) {
+    throw localReleaseContractError();
+  }
 }
 
 export function readLocalReleaseContract({ repoRoot = defaultRepoRoot } = {}) {
   const vercelSource = readCanonicalLocalDocument(repoRoot, 'vercel.json');
   assertCanonicalVercelRouting(vercelSource);
+  assertCanonicalLocalDocumentAbsent(repoRoot, 'index.html');
   const entrySource = readCanonicalLocalDocument(repoRoot, 'login.html');
-  const rootSource = readCanonicalLocalDocument(repoRoot, 'index.html');
+  const rootSource = readCanonicalLocalDocument(repoRoot, 'dashboard.html');
   const workspaceSource = readCanonicalLocalDocument(repoRoot, 'inicio.html');
   const manualSource = readCanonicalLocalDocument(repoRoot, 'manuales.html');
   return {

@@ -181,7 +181,7 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       if (/\/api\/(?:grh-data|.*profile|.*semantic)/i.test(pathname)) rawContractRequests.push(pathname);
     });
 
-    await page.goto(`${baseUrl}/index.html`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
     await page.waitForSelector('#executiveDashboard[aria-busy="false"]');
     const result = await page.evaluate(() => ({
       snapshot: document.querySelector('#snapshotChip')?.textContent.trim(),
@@ -311,7 +311,7 @@ test('main executive dashboard performs zero GRH requests for a role without das
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   await seedSession(context);
   const page = await context.newPage();
-  await page.goto(`${baseUrl}/index.html`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForURL(`${baseUrl}/inicio.html`);
   await page.waitForSelector('#workspaceMain[aria-busy="false"]');
 
@@ -335,7 +335,7 @@ test('main executive dashboard revalidates dashboard capability before every ret
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     await seedSession(context);
     const page = await context.newPage();
-    await page.goto(`${baseUrl}/index.html`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
     await page.waitForSelector('#executiveDashboard[aria-busy="false"]');
     const requestsBeforeRetry = requestLog.length;
     await page.evaluate(mode => {
@@ -370,7 +370,7 @@ test('main executive dashboard fails closed and retries when the monthly close r
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   await seedSession(context);
   const page = await context.newPage();
-  await page.goto(`${baseUrl}/index.html`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#loadError:not([hidden])');
   const result = await page.evaluate(() => ({
     dataHidden: document.querySelector('#dataViews')?.hidden,
@@ -408,7 +408,7 @@ test('main executive dashboard fails closed when close provenance mismatches the
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   await seedSession(context);
   const page = await context.newPage();
-  await page.goto(`${baseUrl}/index.html`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#loadError:not([hidden])');
   const result = await page.evaluate(() => ({
     dataHidden: document.querySelector('#dataViews')?.hidden,

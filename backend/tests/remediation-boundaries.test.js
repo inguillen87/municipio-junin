@@ -98,9 +98,43 @@ test('Express production DB configuration requires DATABASE_URL with certificate
     'postgresql://u:p@db.example/x?sslmode=verify-full',
   );
   assert.equal(
-    validateDatabaseConfiguration({ NODE_ENV: 'development', DATABASE_URL: 'postgresql://localhost/dev' }),
-    'postgresql://localhost/dev',
+    validateDatabaseConfiguration({ NODE_ENV: 'development', DATABASE_URL: 'postgresql://local@localhost/dev' }),
+    'postgresql://local@localhost/dev',
   );
+  assert.throws(
+    () => validateDatabaseConfiguration({
+      NODE_ENV: 'development',
+      DATABASE_URL: 'postgresql://local@127.0.0.1/dev?host=remote.example.test',
+    }),
+    /override/i,
+  );
+  assert.throws(
+    () => validateDatabaseConfiguration({
+      NODE_ENV: 'production',
+      NODE_TLS_REJECT_UNAUTHORIZED: '0',
+      DATABASE_URL: 'postgresql://u:p@db.example/x?sslmode=verify-full',
+    }),
+    /DATABASE_TLS_ENV_FORBIDDEN/,
+  );
+});
+
+test('Express preserves the raw DATABASE_URL for the shared canonicalization boundary', () => {
+  const { validateDatabaseConfiguration } = require('../db/connection');
+  const { inspectDatabaseUrl } = require('../../shared/database-url-policy.cjs');
+  const canonical = 'postgresql://u:p@db.example/x?sslmode=verify-full';
+
+  for (const connectionString of [` ${canonical}`, `${canonical} `, `${canonical}\r\n`]) {
+    assert.throws(
+      () => inspectDatabaseUrl(connectionString, { nodeEnv: 'production', environment: {} }),
+      error => error.code === 'DATABASE_URL_NOT_CANONICAL',
+    );
+    assert.throws(
+      () => validateDatabaseConfiguration({ NODE_ENV: 'production', DATABASE_URL: connectionString }),
+      /DATABASE_URL_NOT_CANONICAL/,
+    );
+  }
+
+  assert.equal(validateDatabaseConfiguration({ NODE_ENV: 'production', DATABASE_URL: canonical }), canonical);
 });
 
 test('external connector rejects a missing JSON body after authoritative auth', async t => {

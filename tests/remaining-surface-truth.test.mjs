@@ -58,6 +58,13 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   assert.match(source, /data-primary-source="grh"/);
   assert.match(source, /data-secondary-source-policy="personas-excluded"/);
   assert.match(source, /data-realtime="false"/);
+  assert.match(source, /b82c0b3[\s\S]{0,100}master[\s\S]{0,80}tag[\s\S]{0,40}v1\.8\.1/i);
+  assert.match(source, /dpl_A19n7grSSyuum3zuSQcdcaVKmt8F[\s\S]{0,80}Ready/i);
+  assert.match(source, /release:truth:check[\s\S]{0,100}10\/10[\s\S]{0,80}exit\s*<code>0<\/code>/i);
+  assert.match(source, /390(?:\s*px)?[\s\S]{0,100}1440(?:\s*px)?[\s\S]{0,180}sin overflow/i);
+  assert.match(source, /GitHub Release[\s\S]{0,80}live/i);
+  assert.match(source, /sólo registra evidencia documental post-release[\s\S]{0,100}no mueve el tag/i);
+  assert.doesNotMatch(source, /v1\.8\.1[\s\S]{0,180}(?:pendiente de push|requiere push|permanece local)/i);
   assert.match(source, /backup de Personas.*fuera del contrato analítico/is);
   assert.match(source, /Control de cálculo, no pago bancario/i);
   assert.match(source, /la moneda no está declarada/i);

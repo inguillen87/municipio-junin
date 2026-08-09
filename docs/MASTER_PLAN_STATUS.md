@@ -12,27 +12,29 @@ implementada, conectada o validada.
 
 ## Gate de verdad del release
 
-El release `v1.8.0` está integrado en `master` y su superficie pública productiva
-cerró el gate de verdad con 9/9 controles y código de salida `0`. Esa evidencia
-certifica las rutas y fronteras públicas cubiertas por el gate; no demuestra DB
-conectada, cuentas reales, autorización positiva ni datos municipales remotos.
+El artefacto `b82c0b3` está integrado en `master` y fijado por el tag `v1.8.1`;
+la GitHub Release `v1.8.1` está live. El deployment
+`dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready` y el
+`release:truth:check` productivo cerró 10/10 controles con exit `0`. La
+verificación de navegador en producción cerró a 390 px y 1440 px sin overflow
+horizontal, errores de consola, requests externos ni requests privados.
 
-El sprint `v1.8.1` incorpora localmente el recorrido visual público `/roles` y
-su QA de producto cerró 53/53.
-No puede declararse productivo hasta hacer push del commit exacto y repetir el
-gate con `/roles` incluido. El tour no inicia sesión, no emite JWT, no autoriza
-acciones y no consulta APIs, DB, storage, PII ni datos municipales.
+La evidencia certifica las superficies públicas cubiertas, incluido `/roles`;
+no demuestra DB conectada, cuentas reales, autorización positiva ni datos
+municipales remotos. El tour no inicia sesión, no emite JWT, no autoriza acciones
+y no consulta APIs, DB, storage, PII ni datos municipales. Este commit sólo
+registra la evidencia documental post-release y no mueve el tag `v1.8.1`.
 
 Como antecedente, el preview protegido del commit `fa5dcc5` verificó manualmente
 `/dashboard`, `/inicio` y `/manuales` con huella canónica; `/` conservó una única
 inyección conocida de Vercel Live y cinco fronteras API rechazaron la ausencia de
-sesión con 401. La certificación productiva posterior proviene del gate 9/9 de
-`v1.8.0`, no de aquel preview.
+sesión con 401. La certificación productiva vigente proviene del gate 10/10 de
+`v1.8.1` sobre `b82c0b3`, no de aquel preview.
 
 `scripts/check-deployment-truth.mjs` convierte la diferencia en un gate GET-only
 y fail-closed. Compara las huellas canónicas de portada de acceso, panel
-`/dashboard`, workspace `/inicio` y manual `/manuales`, y cruza esas rutas con
-`vercel.json`. La captura local de `inicio.html` se abre una sola vez, exige
+`/dashboard`, workspace `/inicio`, manual `/manuales` y tour `/roles`, y cruza
+esas rutas con `vercel.json`. La captura local de `inicio.html` se abre una sola vez, exige
 UTF-8 válido, normaliza LF y fija `expectedWorkspaceDigest`; el probe anónimo
 requiere HTML 200, cero redirects y el digest exacto. Exige una
 identidad contractual distinta por API, prohíbe sus redirecciones, limita
@@ -215,10 +217,10 @@ fail-closed. Cuentas Claras y Portal Ciudadano fueron reconstruidos
 como fronteras públicas sin recolección ni cifras ficticias. La ruta IA
 experimental y sus assets demo también fueron retirados.
 
-El login institucional local es sobrio, autocontenido, responsive, accesible por
+El login institucional público es sobrio, autocontenido, responsive, accesible por
 teclado y compatible con movimiento reducido. No publica usuarios demo, accesos
-rápidos, KPIs ni capacidades ficticias. Su suite focal cerró 10/10; no está
-desplegado ni certificado.
+rápidos, KPIs ni capacidades ficticias. Está cubierto por el release público
+`v1.8.1`; eso no demuestra cuentas reales ni autenticación positiva.
 Importar sólo confirma archivos que el servidor interpretó y persistió dentro
 de una transacción. El canal WhatsApp no crea tickets, turnos, noticias ni
 encuestas sin una integración verificable, y no repite coordenadas recibidas.
@@ -350,8 +352,8 @@ smokes remotos siguen separados.
 
 ### S11 — Inicio seguro por rol
 
-Estado: **cerrado en código y pruebas locales; rutas canónicas verificadas en
-preview protegido, sin cuentas ni certificación productiva**.
+Estado: **superficie pública incluida en `v1.8.1`; journeys autenticados, cuentas
+y datos privados no certificados**.
 
 - `inicio.html` es el destino seguro después del login y exige
   `navigation.workspace`;
@@ -377,16 +379,15 @@ preview protegido, sin cuentas ni certificación productiva**.
   31/31 y el consolidado workspace + release truth, 45/45 local.
 
 Este sprint no crea cuentas, no aplica la propuesta RBAC/ABAC y no migra una DB.
-El preview protegido posterior sólo demuestra routing, contenido estático y
-rechazo API sin sesión; no demuestra identidades por rol, datos conectados ni
-producción. Las asignaciones finas, invitaciones, MFA, revocación, SoD y auditoría
+El release público posterior demuestra routing y contenido estático cubiertos,
+no identidades por rol, autorización positiva ni datos conectados. Las
+asignaciones finas, invitaciones, MFA, revocación, SoD y auditoría
 persistida continúan como propuesta/roadmap.
 
 ### S12 — Preintegración segura y shell institucional
 
-Estado: **cerrado localmente y verificado en preview protegido sólo para routing,
-contenido estático y rechazo API sin sesión; integración de datos y producción
-pendientes**.
+Estado: **shell público incluido en `v1.8.1`; integración de datos, DB y sesiones
+positivas pendientes**.
 
 - **WP0-L** agrega un recolector fail-closed y read-only para observar catálogos
   y `_prisma_migrations` en una futura copia restaurada descartable. Valida
@@ -405,11 +406,10 @@ pendientes**.
   conserva la autorización server-side definida por el contrato de su ruta.
 
 Este cierre no demuestra una plataforma completa ni datos privados productivos.
-No se conectó, migró o escribió una DB y no se crearon identidades. `v1.8.0` sí
-está integrado en `master` y su superficie pública productiva cerró 9/9 con
-código de salida `0`; ese gate no verificó cuentas, autorización positiva o datos
-municipales remotos. El tour `v1.8.1` permanece local y requiere push más un gate
-que incluya `/roles` antes de declararse productivo.
+No se conectó, migró o escribió una DB y no se crearon identidades. El artefacto
+`b82c0b3` de `v1.8.1` sí está en `master`/tag, su deployment figura `Ready` y la
+superficie pública productiva cerró 10/10 con exit `0`; ese gate no verificó
+cuentas, autorización positiva o datos municipales remotos.
 
 ## Funciones que no deben “completarse” todavía
 
@@ -473,6 +473,10 @@ rol, RBAC/ABAC persistido, extracción diaria, DB, backup ni datos remotos.
 
 Cambio documental 1.8.1: incorpora `/roles` como tour visual público
 `public-role-tour-v1`, sin login, JWT, autorización, APIs, DB, storage, PII o
-datos municipales. Está validado en el checkout local con QA 53/53 y requiere
-push del commit exacto más un `release:truth:check` que pruebe `/roles` antes de
-cualquier claim productivo de `v1.8.1`.
+datos municipales. El artefacto `b82c0b3` quedó fijado en `master`/tag `v1.8.1`,
+la GitHub Release está live y el deployment
+`dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` está `Ready`; el gate productivo cerró 10/10
+exit `0` y el navegador 390/1440 px no mostró overflow, errores de consola,
+requests externos ni privados. Es evidencia pública acotada, no DB, cuentas,
+autorización positiva o datos remotos. Este commit sólo registra el cierre
+post-release y no mueve el tag.

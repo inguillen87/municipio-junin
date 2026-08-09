@@ -7,12 +7,14 @@
 **Última verificación contra el checkout local:** 2026-08-09
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
-> Estado de verdad: `v1.8.0` está integrado en `master` y su superficie pública
-> productiva cerró 9/9 controles con código de salida `0`. Esto no certifica una
-> base remota migrada, materialización GRH, cuentas reales, autorización positiva
-> ni backup restaurable. `v1.8.1` y su tour `/roles` existen en el checkout local;
-> requieren push del commit exacto y un nuevo gate que incluya `/roles` antes de
-> declararse productivos.
+> Estado de verdad: el artefacto `b82c0b3` está integrado en `master` y fijado por
+> el tag `v1.8.1`; la GitHub Release está live. El deployment
+> `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, el gate productivo cerró
+> 10/10 con exit `0` y el browser 390/1440 px no mostró overflow, errores de
+> consola, requests externos ni privados. Esto no certifica DB conectada,
+> materialización GRH, cuentas reales, autorización positiva ni datos
+> municipales remotos. Este commit sólo registra evidencia documental
+> post-release y no mueve el tag `v1.8.1`.
 
 ### Tour público `v1.8.1`
 
@@ -858,9 +860,10 @@ Antes de certificar el preview, ejecutar sin sesión, cookie ni token:
 npm.cmd run release:truth:check -- --base-url https://preview-approved.example
 ```
 
-El gate captura `login.html`, `dashboard.html`, `inicio.html` y `manuales.html`
+El gate captura `login.html`, `dashboard.html`, `inicio.html`, `manuales.html` y
+`roles.html`
 locales, valida la versión del manual y compara sus huellas SHA-256 canónicas con
-`/`, `/dashboard`, `/inicio` y `/manuales`. Para el workspace abre una sola vez
+`/`, `/dashboard`, `/inicio`, `/manuales` y `/roles`. Para el workspace abre una sola vez
 el archivo regular, exige UTF-8 fatal, canonicaliza LF y fija
 `expectedWorkspaceDigest`; `/inicio` debe responder HTML 200 sin redirect y con
 digest exacto. También exige que el rewrite sea exactamente `/inicio` →
@@ -887,7 +890,8 @@ autorizado. No reconstruir un artefacto distinto sin repetir gates. Después de 
 promoción, repetir smokes de autenticación, GRH, reportes, importaciones y
 webhooks que estén habilitados. No probar como operativas rutas retiradas `410`.
 
-Este manual no afirma que tal promoción haya ocurrido.
+Este manual registra la promoción de la superficie pública exacta de `b82c0b3`.
+No afirma promoción de DB, cuentas, autorización positiva o datos privados.
 
 ### 13.4 Rollback
 
@@ -1321,7 +1325,7 @@ Diagnóstico recomendado:
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
 | Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
-| Preview/producción Vercel | Preview protegido verificado parcialmente; producción bloqueada | `fa5dcc5`: `/dashboard`, `/inicio` y `/manuales` con huella exacta, `/` con una única inyección Vercel Live y cinco APIs 401 con contrato por ruta; faltan gate anónimo, `master`, producción y smokes con sesión |
+| Preview/producción Vercel | Superficie pública `v1.8.1` desplegada; sesiones y datos privados no certificados | `b82c0b3` en `master`/tag, deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate 10/10 exit `0` y browser 390/1440 px limpio; faltan smokes positivos con sesión, DB y datos remotos |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |
 | Correo y cron | Retirado | responden `410` y no están programados; falta auditoría tenant-bound e idempotencia |
 | WhatsApp | Condicionado | requiere `PUBLIC_APP_URL` HTTPS aprobado, proveedor, secretos, plantillas y E2E externo |
@@ -1421,8 +1425,12 @@ conectado; IAM-MAP-01 no persiste ni crea usuarios; el shell no concede
 autorización. No declara DB conectada, baseline, migración, cuentas reales ni
 datos GRH remotos.
 
-Cambio 1.8.1: incorpora localmente `/roles`, su contrato visual
+Cambio 1.8.1: incorpora `/roles`, su contrato visual
 `public-role-tour-v1` y la inclusión network-first en el cache público v5, que
-continúa excluyendo `/api`. El tour requiere push y un gate productivo sobre
-`/roles`; no autentica, no usa JWT/storage y no demuestra autorización, DB,
-cuentas o datos municipales.
+continúa excluyendo `/api`. El artefacto `b82c0b3` está en `master`/tag `v1.8.1`,
+el deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, el gate
+productivo cerró 10/10 exit `0`, la verificación 390/1440 px quedó sin overflow,
+consola ni requests externos/privados y la GitHub Release está live. El tour no
+autentica, no usa JWT/storage y no demuestra autorización, DB, cuentas o datos
+municipales. Este commit sólo registra el cierre post-release; el tag no se
+mueve.

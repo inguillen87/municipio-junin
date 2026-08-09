@@ -2,7 +2,7 @@
 
 Versión documental: 1.8.1
 Fecha de corte: 9 de agosto de 2026  
-Estado: `v1.8.0` en `master` con gate público productivo 9/9 exit `0`; `v1.8.1` y su tour `/roles` permanecen locales hasta push + nuevo gate
+Estado: artefacto `b82c0b3` en `master`/tag `v1.8.1`, deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate productivo 10/10 exit `0` y GitHub Release live
 
 ## Cómo usar este paquete
 
@@ -127,9 +127,8 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   protegido sólo observó rutas públicas y rechazos 401 sin cuentas.
 - `/roles` agrega en `v1.8.1` un recorrido visual público para los siete perfiles.
   Su contrato `public-role-tour-v1` no inicia sesión, no emite JWT, no autoriza,
-  no crea cuentas y no consulta APIs, DB, storage, PII o datos municipales. El
-  checkout está preparado localmente y su QA cerró 53/53; requiere push y gate productivo de
-  `/roles` antes de anunciar el tour como desplegado.
+  no crea cuentas y no consulta APIs, DB, storage, PII o datos municipales. Está
+  incluido en el gate productivo 10/10 exit `0` del artefacto `b82c0b3`.
 - WP0-L y IAM-MAP-01 están cerrados como herramientas puras del checkout local.
   WP0-L todavía no fue ejecutado conectado contra una copia restaurada autorizada;
   el mapper IAM no importa Prisma Client, no persiste y no crea usuarios.
@@ -139,12 +138,14 @@ licitaciones, capacitación y futuras entregas a otros municipios.
 - La conexión continua, los backups propios, los mapas operativos y los ámbitos
   RBAC/ABAC persistidos por área todavía están planificados; no están
   certificados en producción.
-- `v1.8.0` está integrado en `master` y su superficie pública productiva cerró
-  `release:truth:check` con 9/9 controles y código de salida `0`. Esa evidencia no
+- `v1.8.1` corresponde al artefacto `b82c0b3` en `master` y en su tag; el
+  deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, la GitHub Release
+  está live y `release:truth:check` productivo cerró 10/10 con exit `0`.
+- El navegador productivo cerró a 390 px y 1440 px sin overflow horizontal,
+  errores de consola, requests externos ni requests privados. Esta evidencia no
   demuestra DB, cuentas, autorización positiva ni datos municipales remotos.
-- `v1.8.1` describe el checkout local con `/roles`; no reemplaza al release
-  productivo vigente hasta hacer push del commit exacto y repetir el gate con esa
-  ruta incluida.
+- Este commit sólo registra evidencia documental post-release y no mueve el tag
+  `v1.8.1`.
 - E0.1 incorpora localmente `/inicio` al gate: exige el rewrite exacto a
   `/inicio.html`, una captura UTF-8/LF con SHA-256, HTML 200 sin redirects y
   digest remoto idéntico. El focal cerró 31/31 y el consolidado con workspace,
@@ -292,7 +293,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
-| 1.8.1 | 2026-08-09 | Agrega localmente `/roles` como tour visual público `public-role-tour-v1`, QA 53/53, sin autenticación, JWT, autorización, cuentas, APIs, DB, storage, PII o datos municipales; requiere push y gate productivo de `/roles` |
+| 1.8.1 | 2026-08-09 | Publica `/roles` como tour visual `public-role-tour-v1`; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate productivo 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; no acredita DB, cuentas, autorización positiva ni datos remotos |
 | 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, con superficie pública productiva certificada 9/9 exit `0`. No acredita DB, cuentas reales, autorización positiva ni datos remotos |
 | 1.7.0 | 2026-08-09 | Incorpora el inicio seguro por siete roles con capabilities calculadas en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; 42/42 local, sin cuentas, DB ni deployment |
 | 1.6.0 | 2026-08-09 | Incorpora `grh-close-v1` en Hacienda y el Bot “Cierre explicado”, retira la atribución mensual falsa de una conciliación global, registra el bundle inmutable O2A.1 y el login institucional local; el público sigue legacy/no certificado |

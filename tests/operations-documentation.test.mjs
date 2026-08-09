@@ -40,8 +40,9 @@ test('the living documentation package exists and distinguishes local, condition
 
   const integral = read('docs/MANUAL_INTEGRAL.md');
   assert.match(integral, /Versión documental: 1\.8\.1/i);
-  assert.match(integral, /v1\.8\.0.*master.*9\/9.*exit `0`/i);
-  assert.match(integral, /v1\.8\.1.*\/roles.*local.*push.*gate/i);
+  assert.match(integral, /b82c0b3.*master.*tag `v1\.8\.1`/i);
+  assert.match(integral, /dpl_A19n7grSSyuum3zuSQcdcaVKmt8F.*Ready/i);
+  assert.match(integral, /10\/10.*exit `0`/i);
   assert.match(integral, /db:seed[\s\S]*retirado[\s\S]*código `1`/i);
   assert.match(integral, /máquina pura de lifecycle[\s\S]*no persiste ni\s+habilita identidades/i);
   assert.match(integral, /no existe.*entorno de demo por\s+rol certificado/is);
@@ -275,13 +276,13 @@ test('documentation 1.8.1 preserves the governed close, Bot, immutable replay an
   for (const source of [integral, user, technical, master, enterprise]) {
     assert.match(source, /login institucional|acceso institucional/i);
     assert.match(source, /sin\s+(?:usuarios\s+)?demo|no\s+publica\s+(?:identidades|usuarios)\s+demo/i);
-    assert.match(source, /v1\.8\.0[\s\S]{0,180}master/i);
-    assert.match(source, /9\/9[\s\S]{0,120}(?:exit|código de salida)\s*`?0`?/i);
+    assert.match(source, /b82c0b3[\s\S]{0,180}master/i);
+    assert.match(source, /10\/10[\s\S]{0,120}(?:exit|código de salida)\s*`?0`?/i);
   }
   assert.match(inApp, /acceso institucional/i);
   assert.match(inApp, /no publica usuarios demo/i);
-  assert.match(inApp, /v1\.8\.0[\s\S]{0,100}master/i);
-  assert.match(inApp, /release:truth:check[\s\S]{0,100}9\/9[\s\S]{0,100}código de salida\s*<code>0<\/code>/i);
+  assert.match(inApp, /b82c0b3[\s\S]{0,100}master/i);
+  assert.match(inApp, /release:truth:check[\s\S]{0,100}10\/10[\s\S]{0,100}exit\s*<code>0<\/code>/i);
 
   const routePolicy = require('../shared/route-policy.cjs');
   const runtimeCounts = routePolicy.PROTECTED_ROUTES.reduce((counts, route) => {
@@ -353,11 +354,11 @@ test('documentation 1.8.1 records the exact role workspace without claiming acco
     assert.match(source, /(?:digest|SHA-256)/i);
   }
 
-  assert.match(inApp, /53\/53/);
+  assert.match(inApp, /10\/10/);
   assert.match(inApp, /\/roles/);
 });
 
-test('candidate 1.8.1 preserves 1.8.0 production truth without promoting the local tour', () => {
+test('post-release 1.8.1 records the exact public evidence without moving the tag', () => {
   const rootManifest = JSON.parse(read('package.json'));
   const rootLock = JSON.parse(read('package-lock.json'));
   const backendManifest = JSON.parse(read('backend/package.json'));
@@ -412,23 +413,24 @@ test('candidate 1.8.1 preserves 1.8.0 production truth without promoting the loc
     assert.match(source, /contr(?:ato|actual)[\s\S]{0,120}(?:específic[oa][\s\S]{0,40}ruta|por ruta)/i);
   }
 
-  for (const source of [
-    read('CHANGELOG.md'),
-    read('docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md'),
-    read('manuales.html'),
-  ]) {
-    assert.match(source, /v1\.8\.0[\s\S]{0,140}master/i,
-      'the public release truth must identify the version integrated into master');
-    assert.match(source, /(?:gate|release:truth:check)[\s\S]{0,160}9\/9[\s\S]{0,120}(?:código de salida|exit)\s*`?(?:<code>)?0/i,
-      'the public release truth must preserve the exact productive 9/9 exit-0 evidence');
-    assert.match(source, /no (?:demuestra|declara|acredita)[\s\S]{0,180}DB[\s\S]{0,180}cuentas[\s\S]{0,180}(?:datos municipales remotos|datos GRH remotos|materialización GRH remota)/i,
-      'production routing evidence must not be promoted to DB, account or remote-data evidence');
-    assert.match(source, /v1\.8\.1/i);
-    assert.match(source, /\/roles/i);
-    assert.match(source, /(?:local|checkout)/i);
-    assert.match(source, /push/i);
-    assert.match(source, /(?:gate|release:truth:check)/i,
-      'the role tour must remain a local candidate until push and a gate covering /roles');
+  for (const source of sources) {
+    assert.match(source, /b82c0b3/i);
+    assert.match(source, /master/i);
+    assert.match(source, /tag[\s\S]{0,40}v1\.8\.1|v1\.8\.1[\s\S]{0,40}tag/i);
+    assert.match(source, /dpl_A19n7grSSyuum3zuSQcdcaVKmt8F[\s\S]{0,80}Ready/i);
+    assert.match(source, /(?:gate|release:truth:check)[\s\S]{0,160}10\/10[\s\S]{0,100}exit\s*`?(?:<code>)?0/i);
+    assert.match(source, /390(?:\s*px)?[\s\S]{0,120}1440(?:\s*px)?/i);
+    assert.match(source, /overflow/i);
+    assert.match(source, /(?:consola|console)/i);
+    assert.match(source, /(?:requests? externos?|external)/i);
+    assert.match(source, /(?:requests?\s+privados?|destinos\s+privados|links?\s+privados|externos\s*(?:\/|ni)\s*privados)/i);
+    assert.match(source, /GitHub Release[\s\S]{0,80}live/i);
+    assert.match(source, /no\s+(?:demuestra|declara|acredita|certifica|infiere)[\s\S]{0,180}DB[\s\S]{0,180}cuentas[\s\S]{0,180}autorización\s+positiva[\s\S]{0,180}datos[\s\S]{0,40}remotos/i,
+      'public release evidence must not be promoted to DB, account, authorization or remote-data evidence');
+    assert.match(source, /(?:sólo\s+registra|registro)[\s\S]{0,100}(?:evidencia documental\s+)?post-release/i);
+    assert.match(source, /no mueve[\s\S]{0,60}(?:el )?tag/i);
+    assert.doesNotMatch(source, /v1\.8\.1[\s\S]{0,180}(?:pendiente de push|requiere push|permanece local)/i,
+      'released v1.8.1 must not be described as a local candidate');
   }
 
   const prismaRunbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
@@ -515,8 +517,8 @@ test('the documented test commands use the cross-platform suite runner', () => {
     assert.match(source, /header contractual[\s\S]{0,40}(?:endpoint|propio)/i);
     assert.match(source, /no (?:demuestra|prueba)[\s\S]{0,30}propiedad institucional del dominio/i);
   }
-  assert.match(read('docs/MASTER_PLAN_STATUS.md'), /Gate de verdad del release[\s\S]*v1\.8\.0[\s\S]{0,160}9\/9[\s\S]{0,120}código de salida `0`/i);
-  assert.match(read('docs/MASTER_PLAN_STATUS.md'), /v1\.8\.1[\s\S]{0,220}push[\s\S]{0,180}\/roles/i);
+  assert.match(read('docs/MASTER_PLAN_STATUS.md'), /Gate de verdad del release[\s\S]*b82c0b3[\s\S]{0,180}v1\.8\.1[\s\S]{0,180}10\/10[\s\S]{0,120}exit `0`/i);
+  assert.match(read('docs/MASTER_PLAN_STATUS.md'), /(?:incluido|cubiert)[\s\S]{0,80}\/roles|\/roles[\s\S]{0,180}(?:incluido|cubiert)/i);
 });
 
 test('runtime baselines are pinned and the current engineering environment passes preflight', () => {

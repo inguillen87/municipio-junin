@@ -6,7 +6,7 @@
 |---|---|
 | Versión | 1.8.1 |
 | Fecha de corte documental | 9 de agosto de 2026 |
-| Estado | `v1.8.0` en `master` con gate público productivo 9/9 exit `0`; tour `v1.8.1` local pendiente de push + gate `/roles` |
+| Estado | Artefacto `b82c0b3` en `master`/tag `v1.8.1`; deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate productivo 10/10 exit `0` y GitHub Release live |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -124,9 +124,9 @@ DB remota ni deployment.
 El cierre `1.8.0` agregó WP0-L e IAM-MAP-01 como fundaciones técnicas y el shell
 UX-E2A como mejora transversal. WP0-L aún no se ejecutó conectado contra una
 copia restaurada; IAM-MAP-01 no persiste ni crea usuarios; UX-E2A no concede
-autorización. El release está en `master` y su superficie pública productiva
-cerró 9/9 con código de salida `0`; esto no convierte esas capacidades privadas
-en DB, cuentas o datos remotos certificados.
+autorización. El artefacto `b82c0b3` está en `master`/tag `v1.8.1`; su superficie
+pública productiva cerró 10/10 con exit `0`. Esto no convierte esas capacidades
+privadas en DB, cuentas, autorización positiva o datos remotos certificados.
 
 El preview protegido del commit `fa5dcc5` fue el antecedente manual:
 `/dashboard`, `/inicio` y `/manuales` devolvieron HTML 200 con huella canónica
@@ -136,11 +136,13 @@ específico por ruta. La certificación productiva posterior de `v1.8.0` provien
 del gate público 9/9, no de aquel preview; no prueba cuentas, datos municipales,
 DB conectada ni autorización positiva.
 
-`v1.8.1` agrega localmente `/roles`, un recorrido visual público de los siete
+`v1.8.1` agrega `/roles`, un recorrido visual público de los siete
 perfiles. No inicia sesión, no emite JWT, no autoriza, no crea cuentas y no
 consulta APIs, DB, storage, PII o datos municipales. Sólo cambia la explicación
-visible y deriva al acceso institucional; su QA local cerró 53/53. Requiere push del commit exacto y un
-nuevo gate productivo que incluya `/roles` antes de anunciarse como desplegado.
+visible y deriva al acceso institucional. El deployment
+`dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, el gate productivo cerró 10/10
+exit `0`, la prueba de navegador a 390 px y 1440 px cerró sin overflow, errores
+de consola, requests externos ni privados y la GitHub Release está live.
 
 La prueba real O2A terminó primero `promoted/PUBLISHED` en 105,5 s y luego
 `duplicate/DUPLICATE` en 294 ms. Quedaron una versión, una activación, un receipt
@@ -156,10 +158,10 @@ reduce la ventana de cambio entre verificación y uso; no protege frente a un
 host completamente comprometido. La evidencia O2A.1 es focal y con fixtures: no
 hubo nuevo replay real del archivo de 44 MB, DB ni deployment.
 
-El release público vigente es `v1.8.0`: está en `master` y
-`release:truth:check` cerró 9/9 con código de salida `0`. El checkout `v1.8.1`
-todavía no sustituye esa evidencia; el tour necesita push y gate de `/roles`.
-Ninguno de esos gates acredita DB, cuentas o datos municipales remotos.
+El release público vigente es `v1.8.1`: el artefacto `b82c0b3` está en
+`master`/tag y `release:truth:check` cerró 10/10 con exit `0`. Esta evidencia no
+acredita DB, cuentas, autorización positiva ni datos municipales remotos. Este
+commit sólo registra evidencia documental post-release y no mueve el tag.
 
 Los enlaces Calidad y Linaje y Reportes se ofrecen actualmente a `SUPER_ADMIN`,
 `TENANT_ADMIN`, `INTENDENTE` y `CONTADOR`. Esa visibilidad no concede acceso: la
@@ -991,7 +993,7 @@ exitoso. Si falta evidencia, el estado correcto sigue siendo **Condicionado**.
 
 | Versión | Fecha | Cambio | Responsable |
 |---|---|---|---|
-| 1.8.1 | 2026-08-09 | Agrega localmente `/roles` como recorrido visual público, QA 53/53, sin login, JWT, autorización, cuentas, APIs, DB, storage, PII o datos municipales; requiere push y gate productivo de `/roles` | Mantenedor del cambio; aprobación institucional pendiente del release |
+| 1.8.1 | 2026-08-09 | Publica `/roles` como recorrido visual; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; sin acreditar DB, cuentas, autorización positiva o datos remotos | Mantenedor del cambio; registro post-release sin mover el tag |
 | 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, superficie pública productiva 9/9 exit `0`, sin acreditar DB, cuentas reales, autorización positiva ni datos remotos | Mantenedor del cambio; aprobación institucional registrada por separado |
 | 1.7.0 | 2026-08-09 | Agrega Inicio seguro para los siete roles vigentes, capabilities y perfil calculados en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; corrige Reportes como operativo local, sin cuentas, DB ni deployment | Mantenedor del cambio; aprobación institucional pendiente del release |
 | 1.6.0 | 2026-08-09 | Agrega `grh-close-v1` en Hacienda y el Bot “Cierre explicado”, aclara conciliación por período y comparación consecutiva k≥10, registra O2A.1 y el acceso institucional local, y mantiene el público como legacy/no certificado | Mantenedor del cambio; aprobación institucional pendiente del release |

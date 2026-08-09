@@ -10,6 +10,11 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Documentado
+
+- Registro post-release de la evidencia pública de `v1.8.1`. Este commit sólo
+  actualiza documentación y pruebas documentales; no mueve el tag `v1.8.1`.
+
 ### Pendiente
 
 - Ejecutar WP0 conectado sobre una copia restaurada descartable y autorizada.
@@ -34,14 +39,16 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Estado verificable
 
-- `v1.8.0` está integrado en `master` y la superficie pública productiva cerró
-  `release:truth:check` con 9/9 controles y código de salida `0`.
-- Ese gate certifica las rutas y fronteras públicas incluidas; no demuestra DB
-  conectada, cuentas reales, autorización positiva ni datos municipales remotos.
-- El código y la documentación de `v1.8.1` están preparados localmente. El tour
-  cerró su QA local 53/53, pero no puede declararse productivo hasta hacer push
-  del commit exacto y obtener un nuevo `release:truth:check` verde que incluya
-  `/roles`.
+- El artefacto `b82c0b3` está integrado en `master` y fijado por el tag
+  `v1.8.1`; la GitHub Release `v1.8.1` está live.
+- El deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready` y el
+  `release:truth:check` productivo cerró 10/10 controles con exit `0`.
+- La verificación de navegador en producción cerró a 390 px y 1440 px sin
+  overflow horizontal, errores de consola, requests externos ni requests
+  privados.
+- Esta evidencia certifica únicamente las superficies públicas cubiertas; no
+  demuestra DB conectada, cuentas reales, autorización positiva ni datos
+  municipales remotos.
 
 ## [1.8.0] - 2026-08-09
 

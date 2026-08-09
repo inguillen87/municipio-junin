@@ -82,13 +82,15 @@ La comparación usa como fuente de verdad interna el
 | GIS y mapas operativos | Roadmap | Un mapa base no convierte un dato histórico en tiempo real |
 | CDC, micro-lotes y backups propios | Diseñados, no activados | RPO/RTO sólo pueden publicarse después de restaurar y medir |
 | Replay O2A/O2A.1 | Replay real local preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` probadas con fixtures | No es operación conectada, backup, firma del host ni deployment |
-| Producción remota | No certificada ni verificada desde este paquete | Registrar URL, deployment ID, commit y smokes antes de describir su estado |
-| Verdad del release | Gate GET-only local compara cuatro superficies canónicas y contratos API; `/inicio` exige rewrite, cero redirects y digest exactos | Sólo `release:truth:check` exit 0 más evidencia externa permite presentar el release |
+| Producción remota | Artefacto `b82c0b3` en `master`/tag `v1.8.1`; deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, GitHub Release live | Evidencia limitada a superficies públicas; no DB, cuentas, autorización positiva ni datos remotos |
+| Verdad del release | `release:truth:check` productivo 10/10 exit `0`; browser 390/1440 px sin overflow, consola, requests externos ni destinos privados | Mantener commit/deployment/tag exactos; el registro post-release no mueve el tag |
 
 El focal E0.1 de verdad de `/inicio` cerró 31/31 y el consolidado workspace +
 release truth, 45/45 local. Fija una captura UTF-8/LF y SHA-256, y rechaza
-rewrite antiguo, redirects y comment spoof. Es evidencia del gate, no del
-deployment remoto: no demuestra deployment remoto ni producción.
+rewrite antiguo, redirects y comment spoof. El cierre remoto posterior del
+artefacto `b82c0b3` aporta por separado deployment `Ready`, gate productivo 10/10
+exit `0` y browser 390/1440 px limpio; no demuestra DB, cuentas, autorización
+positiva ni datos remotos.
 
 ## 2. Qué demuestran los referentes
 
@@ -615,7 +617,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 
 | Fase | Resultado que debe enamorar al usuario | Patrón incorporado del benchmark | Gate no negociable | Estado actual |
 |---|---|---|---|---|
-| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Preview protegido `fa5dcc5` verificado sólo en routing/huellas y rechazos 401; producción, datos y cuentas pendientes |
+| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Superficie pública `v1.8.1` productiva: `b82c0b3`, deployment `Ready`, gate 10/10 y browser limpio; datos, cuentas y sesiones positivas pendientes |
 | **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A + UX-E2A: siete inicios, capabilities server-computed y shell institucional; IAM-MAP-01 es puro, sin persistencia, cuentas o evidencia por rol |
 | **E2 — Ingesta gobernada** | Administrativos cargan fuentes con preview, errores comprensibles y linaje | Tyler data platform, SAP API governance, Granicus forms | Original privado, antivirus, parser aislado, schema, cuarentena y persistencia comprobada | CSV/XLSX/Sheets endurecidos localmente; resto parcial |
 | **E3 — Cerebro GRH** | Intendente recibe señales explicadas y acciones con seguimiento | OpenGov planning, Tyler Insights, SAP Analytics | Insight reproducible, calidad/frescura visibles, sin PII ni causalidad falsa | Base semántica y asistente determinista locales |
@@ -626,7 +628,8 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 
 ### 9.1 Prioridad inmediata
 
-1. Cerrar E0 y retirar/corregir la producción antigua antes de mostrarla.
+1. Continuar E0 sobre integración privada: DB, datos materializados y smokes
+   autenticados por rol/tenant; la superficie pública `v1.8.1` ya está cerrada.
 2. Completar la certificación de UX-E1A/UX-E2A y continuar E1 con persistencia,
    lifecycle y una demo auténtica para cada rol formalmente aprovisionado; hoy
    existen siete políticas de inicio, no siete cuentas.
@@ -789,6 +792,9 @@ datos remotos.
 
 Cambio 1.8.1: suma `/roles` como tour visual público para explicar siete perfiles
 sin credenciales, JWT, autorización, APIs, DB, storage, PII o datos municipales.
-La experiencia local reduce fricción de demostración frente a un login ficticio,
-pero no acredita seguridad por roles. Requiere push y gate productivo de `/roles`
-antes de presentarla como desplegada.
+La experiencia reduce fricción de demostración frente a un login ficticio, pero
+no acredita seguridad por roles. El artefacto `b82c0b3` está en `master`/tag
+`v1.8.1`, el deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, el
+gate productivo cerró 10/10 exit `0`, el browser 390/1440 px quedó sin overflow,
+consola, requests externos o destinos privados y la GitHub Release está live.
+Este commit sólo registra evidencia documental post-release y no mueve el tag.

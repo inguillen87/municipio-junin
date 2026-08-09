@@ -91,10 +91,10 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Frontera HTTP raw | Cerrada localmente: `/api/grh-data` responde 410 después de auth/tenant, sin leer artefactos | Verificar 401/403/410 y cero referencias UI en preview |
 | Autenticación DB-autoritativa | Implementada localmente | Configurar secretos, migrar y certificar producción |
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política `2026-08-09.1`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
-| Tour visual público de roles | `/roles` y `public-role-tour-v1` implementados localmente para siete perfiles, QA 53/53; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Hacer push del commit `v1.8.1` y obtener gate productivo que incluya `/roles`; no confundirlo con RBAC |
+| Tour visual público de roles | `/roles` y `public-role-tour-v1` publicados en `v1.8.1` para siete perfiles; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Mantener el gate público y no confundir el recorrido con RBAC ni autorización positiva |
 | WP0-L: observación de copia restaurada | Recolector read-only y fail-closed implementado y validado localmente; todavía no se ejecutó conectado | Autorizar y restaurar una copia descartable, ejecutar la observación y revisar evidencia externa; no es baseline ni migración |
 | IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Resolver drift de esquema, aprobar baseline/migración y construir el adaptador transaccional antes de aprovisionar identidades |
-| UX-E2A: shell institucional | Shell compartido en `v1.8.0`; la superficie pública productiva cerró 9/9 con código de salida `0` | Mantener pruebas por rol; la UI no concede autorización ni prueba datos privados |
+| UX-E2A: shell institucional | Shell compartido en `v1.8.1`; la superficie pública productiva cerró 10/10 con exit `0` | Mantener pruebas por rol; la UI no concede autorización ni prueba datos privados |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Storage privado, antivirus y auditoría persistente |
 | PDF/TXT/JSON y bases externas | Parcial o planificado | Contratos de parser/conector, cuotas y sandbox |
 | Mapas operativos en tiempo real | No conectado | Fuente geográfica autorizada, PostGIS y SLA |
@@ -104,8 +104,8 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Backups propios | Diseñado, no certificado | Storage, retención y restore ensayado |
 | Techo exacto `recurso:acción` | Implementado localmente: 26 recursos, 12 acciones, 46 permisos y 78 firmas de ruta (36 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; gate baseline/release y expiración TRIAL implementados, sin migración | Baseline conectado, migración, policy engine, lifecycle de cuentas y matriz aprobada |
-| Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/` forma parte del gate productivo 9/9 de `v1.8.0` | No implica cuentas reales ni autoriza datos privados |
-| Producción remota | `v1.8.0` en `master`, superficie pública certificada 9/9 con exit `0` | `v1.8.1` permanece local: push + gate con `/roles` antes de promoverlo; no inferir DB, cuentas o datos remotos |
+| Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/` forma parte del gate productivo 10/10 de `v1.8.1` | No implica cuentas reales ni autoriza datos privados |
+| Producción remota | Artefacto `b82c0b3` en `master`/tag `v1.8.1`; deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate 10/10 exit `0`, GitHub Release live | Browser productivo 390/1440 px sin overflow, consola, requests externos ni privados; no inferir DB, cuentas, autorización positiva o datos remotos |
 
 El gate E0.1 del workspace también está cerrado localmente: `/inicio` debe
 reescribirse exactamente a `/inicio.html`, responder sin redirects y coincidir
@@ -113,8 +113,10 @@ con el SHA-256 canónico de una única captura UTF-8/LF de `inicio.html`. Rechaz
 topología anterior hacia `index.html`, archivos ambiguos y comment spoof antes
 de promover. El focal fue 31/31 y el consolidado workspace + release truth,
 45/45. El preview protegido aporta el antecedente manual. La evidencia
-productiva vigente de `v1.8.0` es el gate público 9/9 con salida `0`. El cambio
-`v1.8.1` todavía requiere push y un nuevo gate que incluya `/roles`.
+productiva vigente de `v1.8.1` es el gate público 10/10 con exit `0` sobre el
+artefacto `b82c0b3`, incluido `/roles`. La prueba de navegador en producción a
+390 px y 1440 px cerró sin overflow, errores de consola, requests externos ni
+privados; la GitHub Release está live.
 
 ## Arquitectura de roles objetivo
 
@@ -469,6 +471,10 @@ mapper IAM no persiste ni crea usuarios; el shell no concede autorización. No
 declara DB conectada, baseline, migración, cuentas ni datos remotos.
 
 Cambio 1.8.1: agrega el tour visual público `/roles` para los siete perfiles. El
-contrato local no inicia sesión, no usa JWT/storage, no autoriza y no consulta
-APIs, DB, PII o datos municipales. El QA cerró 53/53; requiere push y gate
-productivo sobre `/roles` antes de describir `v1.8.1` como desplegado.
+contrato no inicia sesión, no usa JWT/storage, no autoriza y no consulta APIs,
+DB, PII o datos municipales. El artefacto `b82c0b3` está en `master` y tag
+`v1.8.1`; el deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, el
+gate productivo cerró 10/10 exit `0`, el browser 390/1440 px no mostró overflow,
+consola ni requests externos/privados y la GitHub Release está live. Esto no
+demuestra DB, cuentas, autorización positiva ni datos remotos. Este commit sólo
+registra evidencia documental post-release y no mueve el tag `v1.8.1`.

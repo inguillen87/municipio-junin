@@ -2,7 +2,7 @@
 
 **Versión:** 1.8.1
 **Fecha de corte:** 9 de agosto de 2026  
-**Estado:** `v1.8.0` integrado en `master` y superficie pública certificada por el gate productivo 9/9 con código de salida `0`; tour `v1.8.1` validado localmente y pendiente de push + gate `/roles`; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
+**Estado:** artefacto `b82c0b3` integrado en `master`/tag `v1.8.1`, deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, gate productivo 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
 
 ## 1. Propósito
 
@@ -23,10 +23,13 @@ puede ayudar a comprender el permiso, pero nunca reemplaza esa frontera.
 | Condicionado | Existe el flujo, pero requiere DB, tenant, proveedor o artefacto privado configurado | Se prueba sólo en un preview preparado; sin configuración debe fallar cerrado |
 | Roadmap | Falta política, migración, fuente o evidencia remota | Se muestra como diseño futuro, nunca como operación simulada |
 
-El release `v1.8.0` está integrado en `master` y su superficie pública pasó el
-gate productivo completo: 9/9 controles, código de salida `0`. Esa evidencia
-certifica las rutas y fronteras públicas incluidas por el gate; no demuestra DB
-conectada, cuentas reales, autorización positiva ni datos municipales remotos.
+El artefacto `b82c0b3` está integrado en `master` y fijado por el tag `v1.8.1`;
+la GitHub Release está live. El deployment
+`dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` figura `Ready`, el gate productivo cerró 10/10
+con exit `0` y el browser de producción a 390 px y 1440 px quedó sin overflow,
+errores de consola, requests externos ni destinos privados. Esa evidencia
+certifica las rutas y fronteras públicas cubiertas; no demuestra DB conectada,
+cuentas reales, autorización positiva ni datos municipales remotos.
 Cada capacidad privada conserva sus propios gates de tenant, fuente, rol y
 rollback.
 
@@ -370,6 +373,8 @@ positiva ni datos municipales remotos.
 
 Cambio 1.8.1: documenta `/roles` como recorrido visual público y no autenticado.
 No solicita login, no emite ni acepta JWT, no autoriza acciones, no crea cuentas
-y no consulta APIs, DB, storage, PII ni datos municipales. El checkout local
-requiere push del commit exacto y un gate productivo que incluya `/roles` antes
-de describir `v1.8.1` como desplegado.
+y no consulta APIs, DB, storage, PII ni datos municipales. El artefacto `b82c0b3`
+está en `master`/tag `v1.8.1`, el deployment figura `Ready`, el gate productivo
+cerró 10/10 exit `0`, el browser 390/1440 px quedó sin overflow, consola,
+requests externos o destinos privados y la GitHub Release está live. Este commit
+sólo registra evidencia documental post-release y no mueve el tag `v1.8.1`.

@@ -41,6 +41,15 @@ function enableInstitutionalShellInteractivity() {
 
 ensureInstitutionalShellStylesheet();
 
+var MUNI_NAV_ASSET_BASE = (function() {
+  try {
+    var source = document.currentScript && document.currentScript.src;
+    return source ? new URL('.', source).href : new URL('/js/', window.location.origin).href;
+  } catch (error) {
+    return '/js/';
+  }
+})();
+
 var CLIENT_ACCESS_POLICY_VERSION = '2026-08-09.1';
 var ACCESS_NOTICE_KEY = 'mjunin_access_notice';
 var KNOWN_ROLES = ['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO'];
@@ -68,6 +77,7 @@ var ROLE_HOME_VARIANTS = {
   INSPECTOR: 'territorial-unassigned',
   DEMO: 'controlled-preview'
 };
+var authoritativeAccessProjection = null;
 
 // SESSION GUARD. Query strings never create or elevate a session.
 (function checkAuth() {
@@ -114,13 +124,16 @@ var ROLE_HOME_VARIANTS = {
     return response.json();
   }).then(function(result) {
     if (!result || !result.user || !result.user.role) throw new Error('invalid-session');
-    if (!validatedSessionProjection(result.user)) throw new Error('invalid-access-projection');
+    var projection = validatedSessionProjection(result.user);
+    if (!projection) throw new Error('invalid-access-projection');
+    authoritativeAccessProjection = snapshotAccessProjection(projection);
     sessionStorage.setItem('mjunin_user', JSON.stringify(result.user));
     window.__muniAuthValidated = true;
     document.documentElement.classList.remove('muni-auth-pending');
     authStyle.remove();
     return true;
   }).catch(function() {
+    authoritativeAccessProjection = null;
     sessionStorage.removeItem('mjunin_user');
     sessionStorage.removeItem('mjunin_token');
     document.documentElement.classList.remove('muni-auth-pending');
@@ -131,6 +144,7 @@ var ROLE_HOME_VARIANTS = {
 })();
 
 function currentSessionUser() {
+  if (authoritativeAccessProjection) return authoritativeAccessProjection.user;
   try { return JSON.parse(sessionStorage.getItem('mjunin_user')); } catch (error) { return null; }
 }
 
@@ -178,6 +192,48 @@ function validatedSessionProjection(user) {
   return { user: user, capabilities: capabilities, homeProfile: homeProfile };
 }
 
+function snapshotAccessProjection(projection) {
+  if (!projection || !projection.user || !projection.homeProfile) return null;
+  var source = projection.user;
+  var tenant = source.tenant && typeof source.tenant === 'object'
+    ? {
+        name: typeof source.tenant.name === 'string' ? source.tenant.name : '',
+        shortName: typeof source.tenant.shortName === 'string' ? source.tenant.shortName : ''
+      }
+    : null;
+  var capabilities = projection.capabilities.slice();
+  var homeProfile = {
+    variant: projection.homeProfile.variant,
+    defaultPath: projection.homeProfile.defaultPath,
+    priorityCapabilities: projection.homeProfile.priorityCapabilities.slice()
+  };
+  return {
+    user: {
+      id: typeof source.id === 'string' ? source.id : '',
+      name: typeof source.name === 'string' ? source.name : '',
+      email: typeof source.email === 'string' ? source.email : '',
+      role: source.role,
+      tenantId: typeof source.tenantId === 'string' ? source.tenantId : null,
+      tenant: tenant,
+      capabilities: capabilities.slice(),
+      accessPolicyVersion: source.accessPolicyVersion,
+      homeProfile: {
+        variant: homeProfile.variant,
+        defaultPath: homeProfile.defaultPath,
+        priorityCapabilities: homeProfile.priorityCapabilities.slice()
+      }
+    },
+    capabilities: capabilities,
+    homeProfile: homeProfile
+  };
+}
+
+function currentAccessProjection() {
+  return authoritativeAccessProjection
+    ? snapshotAccessProjection(authoritativeAccessProjection)
+    : null;
+}
+
 function storeAccessNotice() {
   try {
     sessionStorage.setItem(ACCESS_NOTICE_KEY, 'El perfil actual no tiene habilitada la superficie solicitada.');
@@ -188,7 +244,7 @@ function storeAccessNotice() {
 // deciding visibility; APIs still perform every authorization server-side.
 window.requireCapability = async function(capability) {
   var authenticated = await Promise.resolve(window.MuniAuthReady);
-  var projection = authenticated ? validatedSessionProjection(currentSessionUser()) : null;
+  var projection = authenticated ? currentAccessProjection() : null;
   var allowed = Boolean(projection && typeof capability === 'string' &&
     KNOWN_CAPABILITIES.indexOf(capability) !== -1 &&
     projection.capabilities.indexOf(capability) !== -1);
@@ -201,7 +257,7 @@ window.requireCapability = async function(capability) {
 
 window.MuniAccess = Object.freeze({
   policyVersion: CLIENT_ACCESS_POLICY_VERSION,
-  getValidatedSession: function() { return validatedSessionProjection(currentSessionUser()); },
+  getValidatedSession: currentAccessProjection,
   requireCapability: window.requireCapability
 });
 
@@ -565,6 +621,9 @@ function initMobileToggle(sidebarEl) {
 
   function openMobile() {
     if (window.innerWidth > 900 || sidebarEl.classList.contains('mobile-open')) return;
+    if (window.MuniGuia && typeof window.MuniGuia.closeForNavigation === 'function') {
+      window.MuniGuia.closeForNavigation();
+    }
     var ov = getOrCreateOverlay();
     previouslyFocusedElement = document.activeElement && typeof document.activeElement.focus === 'function'
       ? document.activeElement
@@ -789,20 +848,25 @@ window.MuniTheme && window.MuniTheme.apply(window.MuniTheme.get());
   });
 })();
 
-window.doLogout = async function() {
+window.doLogout = function() {
+  authoritativeAccessProjection = null;
+  window.__muniAuthValidated = false;
   sessionStorage.removeItem('mjunin_user');
   sessionStorage.removeItem('mjunin_token');
   if ('caches' in window) {
     try {
-      var names = await caches.keys();
-      await Promise.all(names.filter(function(name) {
-        return name.indexOf('municontrol-') === 0;
-      }).map(function(name) { return caches.delete(name); }));
+      Promise.resolve(caches.keys()).then(function(names) {
+        return Promise.all(names.filter(function(name) {
+          return name.indexOf('municontrol-') === 0;
+        }).map(function(name) { return caches.delete(name); }));
+      }).catch(function() {
+        // CacheStorage es best-effort y nunca demora la salida de la sesión.
+      });
     } catch (error) {
       // El cierre de sesión no depende de que CacheStorage esté disponible.
     }
   }
-  window.location.href = 'login.html';
+  window.location.replace('login.html');
 };
 
 function ensureMenuButton(sidebarEl) {
@@ -837,6 +901,58 @@ function ensureInstitutionalBottomNavigation() {
   document.body.appendChild(script);
 }
 
+var MUNIGUIA_PRIVATE_PATHS = [
+  '/inicio', '/inicio.html',
+  '/dashboard', '/dashboard.html',
+  '/reportes', '/reportes.html',
+  '/hacienda', '/hacienda.html',
+  '/grh-ejecutivo', '/grh-ejecutivo.html',
+  '/control', '/control.html',
+  '/rrhh', '/rrhh.html',
+  '/ia', '/ia.html',
+  '/auditoria', '/auditoria.html',
+  '/exportar', '/exportar.html',
+  '/importar', '/importar.html',
+  '/manuales', '/manuales.html'
+];
+var muniguiaScheduled = false;
+
+function ensureMuniGuia() {
+  if (muniguiaScheduled) return;
+  muniguiaScheduled = true;
+  Promise.resolve(window.MuniAuthReady).then(function(authenticated) {
+    if (!authenticated || MUNIGUIA_PRIVATE_PATHS.indexOf(window.location.pathname) === -1) return;
+    var projection = window.MuniAccess && typeof window.MuniAccess.getValidatedSession === 'function'
+      ? window.MuniAccess.getValidatedSession()
+      : null;
+    if (!projection || projection.capabilities.indexOf('navigation.help') === -1) return;
+    var sidebar = document.getElementById('sidebar') || document.getElementById('sidebar-container');
+    if (!sidebar) return;
+    var moduleUrl = new URL('contextual-help.js', MUNI_NAV_ASSET_BASE).href;
+    return import(moduleUrl).then(function(module) {
+      if (!module || typeof module.mountMuniGuia !== 'function') return false;
+      return module.mountMuniGuia({
+        role: projection.user.role,
+        capabilities: projection.capabilities.slice(),
+        variant: projection.homeProfile.variant,
+        policyVersion: CLIENT_ACCESS_POLICY_VERSION,
+        pathname: window.location.pathname
+      });
+    });
+  }).catch(function() {
+    // Help is an enhancement. A missing local asset must not weaken auth or
+    // replace the direct Manual link already exposed by the shell.
+  });
+}
+
+function scheduleMuniGuia() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureMuniGuia, { once: true });
+  } else {
+    ensureMuniGuia();
+  }
+}
+
 function scheduleInstitutionalBottomNavigation() {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ensureInstitutionalBottomNavigation, { once: true });
@@ -847,6 +963,7 @@ function scheduleInstitutionalBottomNavigation() {
 }
 
 scheduleInstitutionalBottomNavigation();
+scheduleMuniGuia();
 
 
 // Toast fallback

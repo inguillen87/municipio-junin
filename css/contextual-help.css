@@ -1,0 +1,371 @@
+:root {
+  --muni-guide-surface: #0d1d30;
+  --muni-guide-surface-raised: #132840;
+  --muni-guide-border: #38516d;
+  --muni-guide-text: #f6f8fb;
+  --muni-guide-muted: #bdc8d6;
+  --muni-guide-accent: #8dc2ff;
+  --muni-guide-accent-strong: #b8d9ff;
+  --muni-guide-primary-text: #06121f;
+  --muni-guide-control: #18314d;
+  --muni-guide-control-hover: #21415f;
+  --muni-guide-focus: #9ccaff;
+  --muni-guide-motion: 200ms;
+  --muni-guide-ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+[data-theme="light"] {
+  --muni-guide-surface: #ffffff;
+  --muni-guide-surface-raised: #f3f6fa;
+  --muni-guide-border: #9aaabd;
+  --muni-guide-text: #172536;
+  --muni-guide-muted: #4e6074;
+  --muni-guide-accent: #145ca8;
+  --muni-guide-accent-strong: #0d4c8d;
+  --muni-guide-primary-text: #ffffff;
+  --muni-guide-control: #edf2f7;
+  --muni-guide-control-hover: #e2e9f1;
+  --muni-guide-focus: #0d5fb7;
+}
+
+html.muni-guide-open,
+html.muni-guide-open body {
+  overflow: hidden !important;
+}
+
+.muni-guide-trigger,
+[data-muniguia-open] {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--muni-guide-border);
+  border-radius: 8px;
+  color: var(--muni-guide-text);
+  background: var(--muni-guide-surface);
+  font: 750 13px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+
+.muni-guide-trigger {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 1350;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 13px 7px 8px;
+  box-shadow: 0 8px 22px rgba(1, 12, 24, .24);
+}
+
+.muni-guide-trigger:hover,
+[data-muniguia-open]:hover {
+  color: var(--muni-guide-accent-strong);
+  background: var(--muni-guide-control-hover);
+}
+
+body.muni-drawer-open .muni-guide-trigger {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.muni-guide-trigger-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--muni-guide-border);
+  border-radius: 6px;
+  color: var(--muni-guide-accent-strong);
+  background: var(--muni-guide-control);
+  font-size: 16px;
+}
+
+.muni-guide-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(3, 11, 20, .68);
+  opacity: 0;
+  transition: opacity var(--muni-guide-motion) linear;
+}
+
+.muni-guide-overlay.is-open {
+  opacity: 1;
+}
+
+.muni-guide-dialog {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 2010;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, 100vw);
+  height: 100vh;
+  height: 100dvh;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  color: var(--muni-guide-text);
+  background: var(--muni-guide-surface);
+  border-left: 1px solid var(--muni-guide-border);
+  box-shadow: -14px 0 30px rgba(1, 12, 24, .26);
+  transform: translateX(100%);
+  transition: transform var(--muni-guide-motion) var(--muni-guide-ease);
+}
+
+.muni-guide-dialog.is-open {
+  transform: translateX(0);
+}
+
+.muni-guide-dialog[hidden],
+.muni-guide-overlay[hidden] {
+  display: none !important;
+}
+
+.muni-guide-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid var(--muni-guide-border);
+}
+
+.muni-guide-heading {
+  min-width: 0;
+}
+
+.muni-guide-eyebrow,
+.muni-guide-progress,
+.muni-guide-trust {
+  margin: 0;
+  color: var(--muni-guide-muted);
+  font: 720 11px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.muni-guide-title {
+  margin: 5px 0 0;
+  color: var(--muni-guide-text);
+  font: 780 clamp(21px, 4vw, 27px)/1.16 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: -.02em;
+}
+
+.muni-guide-close,
+.muni-guide-locate,
+.muni-guide-button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--muni-guide-border);
+  border-radius: 7px;
+  color: var(--muni-guide-text);
+  background: var(--muni-guide-control);
+  font: 740 13px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+
+.muni-guide-close {
+  flex: 0 0 auto;
+  padding: 0 12px;
+}
+
+.muni-guide-objective {
+  margin: 20px 0 0;
+  color: var(--muni-guide-text);
+  font: 700 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.muni-guide-role-intent {
+  margin: 10px 0 0;
+  padding: 13px 14px;
+  color: var(--muni-guide-muted);
+  background: var(--muni-guide-surface-raised);
+  border-left: 3px solid var(--muni-guide-accent);
+  font: 560 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.muni-guide-progress {
+  margin-top: 24px;
+  color: var(--muni-guide-accent-strong);
+}
+
+.muni-guide-step {
+  margin-top: 10px;
+  padding: 20px;
+  background: var(--muni-guide-surface-raised);
+  border: 1px solid var(--muni-guide-border);
+  border-radius: 9px;
+}
+
+.muni-guide-step-title {
+  margin: 0;
+  color: var(--muni-guide-text);
+  font: 770 19px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.muni-guide-step-copy {
+  margin: 10px 0 0;
+  color: var(--muni-guide-muted);
+  font: 530 14px/1.58 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.muni-guide-locate {
+  width: 100%;
+  margin-top: 17px;
+  padding: 0 14px;
+  color: var(--muni-guide-accent-strong);
+}
+
+.muni-guide-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.muni-guide-button {
+  padding: 0 15px;
+}
+
+.muni-guide-button.primary {
+  color: var(--muni-guide-primary-text);
+  background: var(--muni-guide-accent-strong);
+  border-color: var(--muni-guide-accent-strong);
+}
+
+.muni-guide-button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.muni-guide-links {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--muni-guide-border);
+}
+
+.muni-guide-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--muni-guide-border);
+  border-radius: 7px;
+  color: var(--muni-guide-accent-strong);
+  background: transparent;
+  font: 720 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-decoration: none;
+}
+
+.muni-guide-link:hover {
+  background: var(--muni-guide-control-hover);
+  text-decoration: none;
+}
+
+.muni-guide-trust {
+  margin-top: auto;
+  padding-top: 22px;
+  text-align: center;
+}
+
+.muni-guide-close:hover,
+.muni-guide-locate:hover,
+.muni-guide-button:not(:disabled):hover {
+  background: var(--muni-guide-control-hover);
+}
+
+.muni-guide-trigger:focus-visible,
+[data-muniguia-open]:focus-visible,
+.muni-guide-dialog :focus-visible {
+  outline: 3px solid var(--muni-guide-focus) !important;
+  outline-offset: 3px !important;
+}
+
+.muni-guide-target {
+  outline: 4px solid var(--muni-guide-focus) !important;
+  outline-offset: 6px !important;
+  animation: muni-guide-target-pulse 700ms ease-out 2;
+}
+
+@keyframes muni-guide-target-pulse {
+  0%, 100% { outline-offset: 6px; }
+  50% { outline-offset: 11px; }
+}
+
+@media (max-width: 900px) {
+  .muni-guide-trigger {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(var(--muni-shell-bottom-height, 72px) + 12px + env(safe-area-inset-bottom));
+  }
+
+  .muni-guide-dialog {
+    width: min(420px, 100vw);
+    padding-left: max(16px, env(safe-area-inset-left));
+  }
+}
+
+@media (max-width: 480px) {
+  .muni-guide-trigger {
+    padding-right: 9px;
+  }
+
+  .muni-guide-dialog {
+    width: 100vw;
+    border-left: 0;
+  }
+
+  .muni-guide-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .muni-guide-overlay,
+  .muni-guide-dialog,
+  .muni-guide-trigger,
+  .muni-guide-dialog *,
+  .muni-guide-target {
+    scroll-behavior: auto !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .muni-guide-trigger,
+  [data-muniguia-open],
+  .muni-guide-dialog,
+  .muni-guide-step,
+  .muni-guide-close,
+  .muni-guide-locate,
+  .muni-guide-button,
+  .muni-guide-link {
+    border: 1px solid CanvasText !important;
+    color: CanvasText !important;
+    background: Canvas !important;
+    forced-color-adjust: auto;
+  }
+
+  .muni-guide-button.primary {
+    color: HighlightText !important;
+    background: Highlight !important;
+  }
+
+  .muni-guide-target {
+    outline-color: Highlight !important;
+  }
+}
+
+@media print {
+  .muni-guide-trigger,
+  .muni-guide-overlay,
+  .muni-guide-dialog,
+  [data-muniguia-open] {
+    display: none !important;
+  }
+}

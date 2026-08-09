@@ -360,8 +360,8 @@ test('documentation 1.10.0 records the exact role workspace without claiming acc
   assert.match(inApp, /\/roles/);
 });
 
-test('S13 1.10.0 is a truthful local decision-brief candidate', () => {
-  const candidatePaths = [
+test('S13 1.10.0 records the exact public release while private evidence stays local', () => {
+  const releasePaths = [
     'CHANGELOG.md',
     'docs/MASTER_PLAN_STATUS.md',
     'docs/ENTERPRISE_PRODUCT_ROADMAP.md',
@@ -390,13 +390,13 @@ test('S13 1.10.0 is a truthful local decision-brief candidate', () => {
   assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 6);
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
 
-  for (const relativePath of candidatePaths) {
+  for (const relativePath of releasePaths) {
     const source = read(relativePath);
     assert.match(source, /1\.10\.0(?![-+0-9A-Za-z.])/, relativePath);
-    assert.match(source, /candidato local/i, relativePath);
+    assert.match(source, /release público[\s\S]{0,100}(?:v1\.10\.0[\s\S]{0,50}verificad|verificad[\s\S]{0,50}v1\.10\.0)/i, relativePath);
     assert.match(source, /GET \/api\/grh-decision-brief/i, relativePath);
     assert.match(source, /grh-decision-brief-v1/i, relativePath);
-    assert.match(source, /agregados del snapshot\s+aprobado[\s\S]{0,80}validación local/i, relativePath);
+    assert.match(source, /agregados del snapshot\s+aprobado[\s\S]{0,180}validación local/i, relativePath);
     assert.match(source, /se(?:para|paración)[\s\S]{0,100}global[\s\S]{0,100}mensual/i, relativePath);
     assert.match(source, /temporalQuarantineRows/, relativePath);
     assert.match(source, /k=10/, relativePath);
@@ -408,17 +408,39 @@ test('S13 1.10.0 is a truthful local decision-brief candidate', () => {
     assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);
     assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos[\s\S]{0,80}79\s+(?:rutas|firmas)/i, relativePath);
     assert.match(source, /37 Serverless[\s\S]{0,60}42 Express/i, relativePath);
-    assert.match(source, /seis APIs[\s\S]{0,80}11 checks/i, relativePath);
+    assert.match(source, /(?:seis APIs[\s\S]{0,80}11 checks|11\/11)/i, relativePath);
     assert.match(source, /135\/135[\s\S]{0,120}104\/104[\s\S]{0,80}0 P1\/P2/i, relativePath);
     assert.match(source, /591\s+(?:pruebas|totales)[\s\S]{0,100}590\s+aprobadas[\s\S]{0,80}0\s+fallidas[\s\S]{0,100}1\s+smoke\s+opt-in\s+omitido/i, relativePath);
     assert.match(source, /backend[\s\S]{0,40}20\/20/i, relativePath);
-    assert.match(source, /producto S13[\s\S]{0,40}commit[\s\S]{0,30}d11fd39[\s\S]{0,80}validación[\s>]+local[\s\S]{0,40}(?:en|de)[\s>]+este[\s>]+corte/i, relativePath);
-    assert.match(source, /estos documentos no acreditan[\s\S]{0,40}Preview\/Producción/i, relativePath);
-    assert.match(source, /última[\s>]+evidencia[\s>]+remota[\s\S]{0,80}verificada[\s\S]{0,50}(?:al|en el) corte[\s\S]{0,40}v1\.9\.0/i, relativePath);
-    assert.match(source, /no (?:se )?afirma[\s\S]{0,120}(?:tag|deployment)/i, relativePath);
-    assert.doesNotMatch(source, /sin\s+commit/i, relativePath);
-    assert.match(source, /última[\s>]+evidencia[\s>]+remota[\s\S]{0,100}v1\.9\.0/i, relativePath);
-    assert.match(source, /Backend[\s\S]{0,40}1\.0\.0[\s\S]{0,100}Prisma[\s\S]{0,40}1\.1\.0/i, relativePath);
+    assert.match(source, /producto S13[\s\S]{0,60}(?:commit|está[\s>]+en)[\s\S]{0,30}d11fd39/i, relativePath);
+    assert.match(source, /4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7/, relativePath);
+    assert.match(source, /07ac9eacf8bd89f27f5c437b99e713e8497b8934/, relativePath);
+    assert.match(source, /https:\/\/github\.com\/inguillen87\/municipio-junin\/releases\/tag\/v1\.10\.0/, relativePath);
+    assert.match(source, /live[\s\S]{0,40}no draft[\s\S]{0,40}no prerelease/i, relativePath);
+    assert.match(source, /dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL/, relativePath);
+    assert.match(source, /READY/i, relativePath);
+    assert.match(source, /Production/i, relativePath);
+    assert.match(source, /https:\/\/municipio-junin\.vercel\.app/, relativePath);
+    assert.match(source, /gitSource[\s\S]{0,30}master\/4108ca0/i, relativePath);
+    assert.match(source, /11\/11[\s\S]{0,60}exit[\s`<code>]*0/i, relativePath);
+    assert.match(source, /checkedAt 2026-08-09T16:33:56\.200Z/, relativePath);
+    assert.match(source, /10\/10 estados[\s\S]{0,100}390\/1440 px/i, relativePath);
+    assert.match(source, /\/[^\r\n]{0,80}\/roles[\s\S]{0,80}visibles/i, relativePath);
+    for (const pathname of ['/dashboard', '/inicio', '/manuales']) assert.match(source, new RegExp(pathname));
+    assert.match(source, /anónimos[\s\S]{0,100}redirigen al login/i, relativePath);
+    assert.match(source, /0 overflow/i, relativePath);
+    assert.match(source, /(?:warnings\/errores de consola|console)/i, relativePath);
+    assert.match(source, /overlays/i, relativePath);
+    assert.match(source, /requests externos/i, relativePath);
+    assert.match(source, /fallas\s+de\s+red/i, relativePath);
+    assert.match(source, /logs[\s\S]{0,80}0 errores[\s\S]{0,80}0 (?:respuestas )?500/i, relativePath);
+    assert.match(source, /sesión privada positiva[\s\S]{0,100}S13 privado[\s\S]{0,120}validación local[\s\S]{0,80}snapshot aprobado/i, relativePath);
+    assert.match(source, /no certifica/i, relativePath);
+    assert.match(source, /DB\/baseline/i, relativePath);
+    assert.match(source, /cuentas/i, relativePath);
+    assert.match(source, /MFA\/lifecycle/i, relativePath);
+    assert.match(source, /datos GRH[\s>]+remotos/i, relativePath);
+    assert.match(source, /commit documental[\s>]+post-release[\s\S]{0,80}no mueve[\s\S]{0,60}tag[\s\S]{0,40}v1\.10\.0[\s\S]{0,40}4108ca0/i, relativePath);
   }
 
   const backendManifest = JSON.parse(read('backend/package.json'));
@@ -503,7 +525,7 @@ test('the public 1.9.0 release is exact while private MuniGuia remains local-onl
   }
 });
 
-test('candidate 1.10.0 preserves the exact public 1.9.0 and 1.8.1 evidence', () => {
+test('release 1.10.0 preserves the exact public 1.9.0 and 1.8.1 evidence', () => {
   const rootManifest = JSON.parse(read('package.json'));
   const rootLock = JSON.parse(read('package-lock.json'));
   const backendManifest = JSON.parse(read('backend/package.json'));

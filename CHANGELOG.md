@@ -41,16 +41,26 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Estado verificable
 
-- **Candidato local, todavía no release verificado.** Producto S13 en commit
-  `d11fd39`; validación local en este corte. Estos documentos no acreditan
-  Preview/Producción; última evidencia remota verificada al corte: `v1.9.0`,
-  fijada en `f9d1f88`. Este bloque no afirma tag ni deployment de `v1.10.0`.
+- **Release público `v1.10.0` verificado.** El producto S13 está en `d11fd39`;
+  el commit/tag release apunta a `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`
+  y el objeto del tag anotado es `07ac9eacf8bd89f27f5c437b99e713e8497b8934`.
+  La GitHub Release
+  `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
+  no draft y no prerelease.
+- El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`
+  con alias `https://municipio-junin.vercel.app` y `gitSource`
+  `master/4108ca0`. El gate productivo cerró 11/11 con exit `0` y
+  `checkedAt 2026-08-09T16:33:56.200Z`.
+- El browser público verificó 10/10 estados a 390/1440 px: `/` y `/roles`
+  visibles; `/dashboard`, `/inicio` y `/manuales` anónimos redirigen al login;
+  0 overflow, warnings/errores de consola, overlays, requests externos y fallas
+  de red. Los logs del corte registraron 0 errores y 0 respuestas 500.
 - El focal raíz S13 cerró 135/135 y el QA adversarial 104/104, con 0 P1/P2. La
   suite raíz final revalidó 591 pruebas: 590 aprobadas, 0 fallidas y 1 smoke
-  opt-in omitido; backend cerró 20/20. Backend permanece en `1.0.0` y el
-  documento Prisma en `1.1.0`.
-- El gate queda preparado para seis APIs y 11 checks cuando exista un candidato
-  desplegado; esos checks no se ejecutaron para `1.10.0`.
+  opt-in omitido; backend cerró 20/20. La sesión privada positiva y S13 privado
+  conservan validación local sobre el snapshot aprobado: este cierre no certifica
+  DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos.
+- Este commit documental post-release no mueve el tag `v1.10.0` de `4108ca0`.
 
 ## [1.9.0] - 2026-08-09
 
@@ -162,7 +172,8 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
   Acredita las rutas y fronteras públicas cubiertas; no DB conectada,
   materialización GRH remota, cuentas reales ni autorización positiva.
 
-[Unreleased]: https://github.com/inguillen87/municipio-junin/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/inguillen87/municipio-junin/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/inguillen87/municipio-junin/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/inguillen87/municipio-junin/compare/v1.8.1...v1.9.0
 [1.8.1]: https://github.com/inguillen87/municipio-junin/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/inguillen87/municipio-junin/compare/3ae026e7a2774d57856ac71f8ee52a15e9e6f5cb...v1.8.0

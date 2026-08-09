@@ -7,10 +7,9 @@
 **Última verificación contra el checkout local:** 2026-08-09
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
-> Candidato local `1.10.0`, S13: producto S13 en commit `d11fd39`; validación
-> local en este corte. Estos documentos no acreditan Preview/Producción; última
-> evidencia remota verificada al corte: `v1.9.0`. No se afirma aquí tag ni
-> deployment verificados de `v1.10.0`.
+> Release público `v1.10.0` verificado; producto S13 en commit `d11fd39`. La
+> sesión privada positiva y S13 privado conservan validación local sobre el
+> snapshot aprobado.
 > `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`, un brief único
 > desde agregados del snapshot aprobado, con validación local. Separa la señal global cross-source de
 > la mensual, expone `temporalQuarantineRows`, aplica k=10 y excluye PII,
@@ -20,13 +19,29 @@
 > MuniGuía incorpora el anchor real `#decisionBrief`.
 >
 > Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-> acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El gate queda
-> preparado para seis APIs y 11 checks al desplegar. Focal raíz S13 135/135; QA
-> adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
-> aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
-> `1.0.0` y Prisma `1.1.0` permanecen independientes.
+> acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El commit/tag
+> release `v1.10.0` apunta a
+> `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
+> `07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
+> `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
+> no draft y no prerelease.
+>
+> El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
+> alias `https://municipio-junin.vercel.app`, con `gitSource master/4108ca0`. El
+> gate productivo cerró 11/11 exit `0` con
+> `checkedAt 2026-08-09T16:33:56.200Z`. El browser público cerró 10/10 estados a
+> 390/1440 px: `/` y `/roles` visibles; `/dashboard`, `/inicio` y `/manuales`
+> anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays,
+> requests externos y fallas de red. Los logs del corte registraron 0 errores y
+> 0 respuestas 500.
+>
+> Focal raíz S13 135/135; QA adversarial 104/104 con 0 P1/P2; suite raíz final de
+> 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20.
+> Este cierre no certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH
+> remotos. Este commit documental post-release no mueve el tag `v1.10.0` de
+> `4108ca0`.
 
-> Estado post-release `v1.9.0`: commit/tag `f9d1f88`, product commit `ed76347`,
+> Como antecedente, estado post-release `v1.9.0`: commit/tag `f9d1f88`, product commit `ed76347`,
 > deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production` y alias
 > `https://municipio-junin.vercel.app`. `release:truth:check` cerró 10/10 exit `0`
 > con `checkedAt 2026-08-09T14:42:10Z`. El browser público verificó `/login` y
@@ -38,8 +53,8 @@
 > MuniGuía privada `muniguia-contextual-v1` mantiene evidencia sólo local con proyección autoritativa
 > simulada: focal 10/10, suite raíz 533 totales —532 aprobadas y 1 smoke opt-in
 > omitido— y backend 20/20. No certifica autorización positiva, cuentas reales,
-> DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Este commit
-> documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
+> DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Ese cierre
+> documental post-release no movió el tag `v1.9.0` de `f9d1f88`.
 
 ### Tour público `v1.8.1`
 
@@ -897,8 +912,9 @@ No prueba cuentas aprovisionadas, DB remota, preview ni producción.
 
 Evidencia S13 local: focal raíz 135/135, QA adversarial 104/104 con 0 P1/P2,
 suite raíz final de 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in
-omitido— y backend 20/20. Este candidato no habilita commit, push, tag, Preview
-o Production.
+omitido— y backend 20/20. Por sí sola, esa evidencia focal no habilitaba commit,
+push, tag, Preview o Production; el release público externo verificado se registra
+en el bloque post-release anterior.
 
 ## 13. Release, preview, producción y rollback
 
@@ -944,7 +960,8 @@ HTTPS exacto y DNS público estable, rechaza proxies ambientales, prohíbe
 redirecciones de API y requiere un header contractual distinto por endpoint.
 El contrato actual enumera seis APIs y produce 11 checks totales —cinco
 documentos más seis fronteras API— cuando se ejecuta contra un candidato
-desplegado. Para `1.10.0` esa ejecución remota sigue pendiente.
+desplegado. Para `v1.10.0` la ejecución productiva cerró 11/11 exit `0` con
+`checkedAt 2026-08-09T16:33:56.200Z`.
 Limita tiempo/cuerpo y devuelve un receipt JSON saneado. Código `1` significa
 que el candidato es legacy o incompleto; código `2`, que la configuración o el
 propio contrato local son inválidos. Ninguno de los dos puede promoverse.
@@ -1400,7 +1417,7 @@ Diagnóstico recomendado:
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
 | Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
-| Preview/producción Vercel | Superficie pública `v1.9.0` desplegada; sesiones positivas, MuniGuía privada y datos privados no certificados | commit/tag `f9d1f88`, product commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, gate 10/10 exit `0` y browser público 390/1440 px limpio; faltan smokes positivos con sesión, DB y datos remotos |
+| Preview/producción Vercel | Superficie pública `v1.10.0` desplegada; sesiones positivas, S13 privado y datos privados no certificados | commit/tag `4108ca0`, product commit `d11fd39`, deployment `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY` en `Production`, gate 11/11 exit `0`, browser público 10/10 a 390/1440 px y logs 0 errores/0 respuestas 500; faltan smokes positivos con sesión, DB y datos remotos |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |
 | Correo y cron | Retirado | responden `410` y no están programados; falta auditoría tenant-bound e idempotencia |
 | WhatsApp | Condicionado | requiere `PUBLIC_APP_URL` HTTPS aprobado, proveedor, secretos, plantillas y E2E externo |

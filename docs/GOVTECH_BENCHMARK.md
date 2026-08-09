@@ -5,9 +5,9 @@
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
 
-El corte vigente es el candidato local `1.10.0`, S13. Producto S13 en commit
-`d11fd39`; validación local en este corte. Estos documentos no acreditan
-Preview/Producción; última evidencia remota verificada al corte: `v1.9.0`.
+El corte vigente es el release público verificado `v1.10.0`. El producto S13 está
+en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
+sobre el snapshot aprobado.
 `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`: un brief ejecutivo
 único desde agregados del snapshot aprobado, con validación local. Separa la señal
 global cross-source de la evidencia mensual, expone `temporalQuarantineRows`,
@@ -17,14 +17,29 @@ reintento manual y una celda actual `<10` hace fallar cerrado el Panel integral.
 MuniGuía usa el nuevo anchor real `#decisionBrief`.
 
 Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-acciones, 46 permisos y 79 rutas exactas —37 Serverless + 42 Express—. El gate
-queda preparado para seis APIs y 11 checks al desplegar. La evidencia local es
-135/135 en el focal raíz S13 y 104/104 en QA adversarial con 0 P1/P2; la suite
-raíz final revalidó 591 pruebas: 590 aprobadas, 0 fallidas y 1 smoke opt-in
-omitido; backend cerró 20/20. Backend permanece `1.0.0` y Prisma
-`1.1.0`. No se afirma aquí tag ni deployment verificados de `v1.10.0`.
+acciones, 46 permisos y 79 rutas exactas —37 Serverless + 42 Express—. El
+commit/tag release `v1.10.0` apunta a
+`4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
+`07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
+`https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
+no draft y no prerelease.
 
-El release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
+El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
+alias `https://municipio-junin.vercel.app`, con `gitSource master/4108ca0`. El
+gate productivo cerró 11/11 exit `0` con
+`checkedAt 2026-08-09T16:33:56.200Z`. El browser público cerró 10/10 estados a
+390/1440 px: `/` y `/roles` visibles; `/dashboard`, `/inicio` y `/manuales`
+anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays,
+requests externos y fallas de red. Los logs del corte registraron 0 errores y
+0 respuestas 500.
+
+La evidencia local es 135/135 en el focal raíz S13 y 104/104 en QA adversarial
+con 0 P1/P2; la suite raíz final revalidó 591 pruebas: 590 aprobadas, 0 fallidas
+y 1 smoke opt-in omitido; backend cerró 20/20. Este cierre no certifica
+DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. Este commit documental
+post-release no mueve el tag `v1.10.0` de `4108ca0`.
+
+Como antecedente, el release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
 commit es `ed76347`. El deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura
 `Ready` en `Production` con alias `https://municipio-junin.vercel.app`; el gate
 cerró 10/10 exit `0` con `checkedAt 2026-08-09T14:42:10Z`. El browser público
@@ -37,8 +52,8 @@ MuniGuía privada `muniguia-contextual-v1` sigue sólo local con proyección aut
 10/10, suite raíz 533 totales —532 aprobadas y 1 smoke opt-in omitido— y backend
 20/20. Selectors y anchors siguen verificados por CI; si el target no está
 visible, se omite sólo «Ubicar». La evidencia remota no certifica autorización positiva, cuentas reales,
-DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Este commit
-documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
+DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Ese cierre
+documental post-release no movió el tag `v1.9.0` de `f9d1f88`.
 
 ## Executive Summary
 
@@ -109,7 +124,7 @@ La comparación usa como fuente de verdad interna el
 | Perfil y semántica GRH | Validados localmente | Agregados; no habilitan PII individual ni prueban pago bancario |
 | Centro Ejecutivo, RRHH, Hacienda, Reportes y Bot | Validados localmente; fronteras del preview protegido observadas en 401 sin sesión | Falta materialización privada, sesión real y smoke por tenant/rol |
 | Cierre mensual `grh-close-v1` | Validado localmente por período y k≥10 | Control de cálculo y conciliación; no moneda, pago, causalidad ni contabilidad |
-| Brief ejecutivo `grh-decision-brief-v1` | S13 local en commit `d11fd39`: situación única, separación global/mensual, cuarentena temporal, prioridades y CTA por capability | Validación local de este corte; estos documentos no acreditan Preview/Producción ni incluyen PII, importes, responsables, plazos o action ledger |
+| Brief ejecutivo `grh-decision-brief-v1` | S13 en producto `d11fd39`: situación única, separación global/mensual, cuarentena temporal, prioridades y CTA por capability | La superficie pública está verificada en `v1.10.0`; sesión positiva y datos privados siguen en validación local, sin PII, importes, responsables, plazos o action ledger |
 | Inicio seguro por rol | Siete variantes, capabilities server-computed y 42/42 focal local | Es UX fail-closed; no crea cuentas, asignaciones finas ni prueba producción |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Falta storage privado, antivirus y operación remota certificada |
 | PDF/TXT/JSON y bases externas | Parcial o roadmap | No aceptar “cualquier archivo” sin parser, esquema, cuota y cuarentena |
@@ -118,7 +133,7 @@ La comparación usa como fuente de verdad interna el
 | GIS y mapas operativos | Roadmap | Un mapa base no convierte un dato histórico en tiempo real |
 | CDC, micro-lotes y backups propios | Diseñados, no activados | RPO/RTO sólo pueden publicarse después de restaurar y medir |
 | Replay O2A/O2A.1 | Replay real local preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` probadas con fixtures | No es operación conectada, backup, firma del host ni deployment |
-| Producción remota | Commit/tag `v1.9.0` `f9d1f88`, product commit `ed76347`; deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, alias productivo y GitHub Release live | Evidencia limitada a superficies públicas; no DB, cuentas, autorización positiva ni datos remotos |
+| Producción remota | Commit/tag `v1.10.0` `4108ca0`, product commit `d11fd39`; deployment `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY` en `Production`, alias productivo y GitHub Release live | Gate 11/11, browser 10/10 y logs 0 errores/0 respuestas 500; no DB, cuentas, autorización positiva ni datos remotos |
 | Verdad del release | `release:truth:check` productivo 10/10 exit `0`, `checkedAt 2026-08-09T14:42:10Z`; browser público 390/1440 px sobre `/login` y `/roles` sin overflow, consola ni requests externos; rutas privadas anónimas redirigen al login | Mantener commit/deployment/tag exactos; el registro post-release no mueve el tag |
 
 El focal E0.1 de verdad de `/inicio` cerró 31/31 y el consolidado workspace +
@@ -661,7 +676,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 
 | Fase | Resultado que debe enamorar al usuario | Patrón incorporado del benchmark | Gate no negociable | Estado actual |
 |---|---|---|---|---|
-| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Preview privado, migración revisada, contratos materializados, smokes por rol/tenant/falla | Superficie pública vigente `v1.9.0`: commit/tag `f9d1f88`, deployment `Ready`, gate 10/10 y browser limpio; datos, cuentas y sesiones positivas pendientes |
+| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Sesión privada positiva, migración revisada, contratos materializados, smokes por rol/tenant/falla | Superficie pública vigente `v1.10.0`: commit/tag `4108ca0`, deployment `READY`, gate 11/11 y browser 10/10 limpio; datos, cuentas y sesiones positivas pendientes |
 | **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A + UX-E2A: siete inicios, capabilities server-computed y shell institucional; IAM-MAP-01 es puro, sin persistencia, cuentas o evidencia por rol |
 | **E2 — Ingesta gobernada** | Administrativos cargan fuentes con preview, errores comprensibles y linaje | Tyler data platform, SAP API governance, Granicus forms | Original privado, antivirus, parser aislado, schema, cuarentena y persistencia comprobada | CSV/XLSX/Sheets endurecidos localmente; resto parcial |
 | **E3 — Cerebro GRH** | Intendente recibe señales explicadas y acciones con seguimiento | OpenGov planning, Tyler Insights, SAP Analytics | Insight reproducible, calidad/frescura visibles, sin PII ni causalidad falsa | S13 entrega localmente el brief agregado `grh-decision-brief-v1`; seguimiento/action ledger siguen pendientes |
@@ -673,7 +688,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 ### 9.1 Prioridad inmediata
 
 1. Continuar E0 sobre integración privada: DB, datos materializados y smokes
-   autenticados por rol/tenant; la superficie pública vigente `v1.9.0` ya está cerrada.
+   autenticados por rol/tenant; la superficie pública vigente `v1.10.0` ya está cerrada.
 2. Completar la certificación de UX-E1A/UX-E2A y continuar E1 con persistencia,
    lifecycle y una demo auténtica para cada rol formalmente aprovisionado; hoy
    existen siete políticas de inicio, no siete cuentas.

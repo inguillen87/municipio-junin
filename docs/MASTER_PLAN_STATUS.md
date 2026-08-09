@@ -10,9 +10,9 @@ el checkout actual (`css/components.css`, `css/animations.css`,
 `api/payroll-receipt.js`). Las casillas de un plan no prueban que una función esté
 implementada, conectada o validada.
 
-El corte actual es el candidato local `1.10.0`, S13. Producto S13 en commit
-`d11fd39`; validación local en este corte. Estos documentos no acreditan
-Preview/Producción; última evidencia remota verificada al corte: `v1.9.0`.
+El corte actual es el release público verificado `v1.10.0`. El producto S13 está
+en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
+sobre el snapshot aprobado.
 `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`, un brief ejecutivo
 único desde agregados del snapshot aprobado, con validación local: separa señal
 global cross-source de evidencia mensual, expone `temporalQuarantineRows`, aplica
@@ -22,14 +22,29 @@ manual y una celda actual `<10` hace fallar cerrado el Panel. MuniGuía apunta a
 `#decisionBrief`.
 
 Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El gate queda
-preparado para seis APIs y 11 checks al desplegar. Focal raíz S13 135/135; QA
-adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
-aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
-`1.0.0` y Prisma `1.1.0` permanecen independientes. No se afirma aquí tag ni
-deployment verificados de `v1.10.0`.
+acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El commit/tag
+release `v1.10.0` apunta a
+`4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
+`07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
+`https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
+no draft y no prerelease.
 
-El release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
+El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
+alias `https://municipio-junin.vercel.app`, con `gitSource master/4108ca0`. El
+gate productivo cerró 11/11 exit `0` con
+`checkedAt 2026-08-09T16:33:56.200Z`. El browser público cerró 10/10 estados a
+390/1440 px: `/` y `/roles` visibles; `/dashboard`, `/inicio` y `/manuales`
+anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays,
+requests externos y fallas de red. Los logs del corte registraron 0 errores y
+0 respuestas 500.
+
+Focal raíz S13 135/135; QA adversarial 104/104 con 0 P1/P2; suite raíz final de
+591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20.
+Este cierre no certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH
+remotos. Este commit documental post-release no mueve el tag `v1.10.0` de
+`4108ca0`.
+
+Como antecedente, el release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
 commit es `ed76347`. El deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura
 `Ready` en `Production` con alias `https://municipio-junin.vercel.app`. El gate
 cerró 10/10 exit `0` con `checkedAt 2026-08-09T14:42:10Z`; el browser público
@@ -42,13 +57,14 @@ MuniGuía privada `muniguia-contextual-v1` conserva evidencia sólo local con pr
 simulada: focal 10/10, suite raíz 533 totales —532 aprobadas y 1 smoke opt-in
 omitido— y backend 20/20. La evidencia remota no certifica autorización positiva,
 cuentas reales, DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto.
-Este commit documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
+Ese cierre documental post-release no movió el tag `v1.9.0` de `f9d1f88`.
 
 ## Gate de verdad del release
 
-El gate de `v1.9.0` certifica exclusivamente las superficies públicas indicadas.
-No demuestra una sesión positiva, MuniGuía privada ni datos conectados. El tag
-permanece en `f9d1f88`; este cambio sólo registra la evidencia post-release.
+El gate de `v1.10.0` certifica exclusivamente las superficies públicas indicadas.
+No demuestra una sesión positiva, S13 privado ni datos conectados. El tag apunta
+a `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; este cambio sólo registra la
+evidencia post-release y no lo mueve.
 
 Como antecedente preservado, `v1.8.1` corresponde al artefacto `b82c0b3`, al
 deployment `dpl_A19n7grSSyuum3zuSQcdcaVKmt8F` `Ready`, al gate 10/10 exit `0`
@@ -446,9 +462,9 @@ cuentas, autorización positiva o datos municipales remotos.
 
 ### S13 — Brief ejecutivo GRH gobernado
 
-Estado: **cerrado localmente como candidato `1.10.0`; producto S13 en commit
-`d11fd39`, con validación local en este corte. Estos documentos no acreditan
-Preview/Producción**.
+Estado: **release público `v1.10.0` verificado; producto S13 en commit `d11fd39`.
+La sesión privada positiva y S13 privado conservan validación local sobre el
+snapshot aprobado**.
 
 - `GET /api/grh-decision-brief` es GET-only, revalida `grh.contract:read`, usuario,
   tenant, pin y contratos fuente; publica `grh-decision-brief-v1` con `no-store`;
@@ -468,13 +484,14 @@ Preview/Producción**.
 - MuniGuía reemplaza la antigua lectura de alertas del Panel por el anchor real
   `#decisionBrief`, sin agregar requests GRH ni ampliar permisos;
 - route policy `2026-08-09.2`: 79 rutas exactas, 37 Serverless + 42 Express; la
-  access policy permanece `2026-08-09.1`. El gate preparado suma seis APIs y 11
-  checks cuando exista un deployment candidato.
+  access policy permanece `2026-08-09.1`. El gate productivo verificó seis APIs y
+  11 checks con exit `0` sobre el deployment release.
 
 La evidencia local disponible es focal raíz S13 135/135, QA adversarial 104/104
 con 0 P1/P2, suite raíz final de 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke
-opt-in omitido— y backend 20/20. Backend permanece `1.0.0`; Prisma, `1.1.0`. La
-última evidencia remota continúa siendo `v1.9.0`.
+opt-in omitido— y backend 20/20. Backend permanece `1.0.0`; Prisma, `1.1.0`. El
+cierre remoto vigente es `v1.10.0`; no certifica sesión positiva, DB/baseline,
+cuentas, MFA/lifecycle ni datos GRH remotos.
 
 ## Funciones que no deben “completarse” todavía
 

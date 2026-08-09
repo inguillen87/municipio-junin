@@ -4,9 +4,9 @@ Versión: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 
-El corte actual es el candidato local `1.10.0`, S13. Producto S13 en commit
-`d11fd39`; validación local en este corte. Estos documentos no acreditan
-Preview/Producción; última evidencia remota verificada al corte: `v1.9.0`.
+El corte actual es el release público verificado `v1.10.0`. El producto S13 está
+en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
+sobre el snapshot aprobado.
 `GET /api/grh-decision-brief` entrega `grh-decision-brief-v1`: un brief ejecutivo
 único derivado de agregados del snapshot aprobado, con validación local, que separa
 la señal global cross-source de la evidencia mensual, expone
@@ -15,16 +15,30 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-La route policy local es `2026-08-09.2`; la access policy permanece en
+La route policy es `2026-08-09.2`; la access policy permanece en
 `2026-08-09.1`. El techo exacto contiene 26 recursos, 12 acciones, 46 permisos y
-79 rutas: 37 Serverless + 42 Express. El gate queda preparado para seis APIs y
-11 checks cuando se despliegue. El focal raíz S13 cerró 135/135 y el QA
-adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
-aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
-sigue en `1.0.0` y Prisma en `1.1.0`.
-No se afirma aquí que `v1.10.0` tenga tag o deployment verificados.
+79 rutas: 37 Serverless + 42 Express. El commit/tag release `v1.10.0` apunta a
+`4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
+`07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
+`https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
+no draft y no prerelease.
 
-El release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
+El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
+alias `https://municipio-junin.vercel.app`, con `gitSource master/4108ca0`. El
+gate productivo cerró 11/11 exit `0` con
+`checkedAt 2026-08-09T16:33:56.200Z`. El browser público cerró 10/10 estados a
+390/1440 px: `/` y `/roles` visibles; `/dashboard`, `/inicio` y `/manuales`
+anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays,
+requests externos y fallas de red. Los logs del corte registraron 0 errores y
+0 respuestas 500.
+
+El focal raíz S13 cerró 135/135 y el QA adversarial 104/104 con 0 P1/P2. La suite
+raíz final revalidó 591 pruebas: 590 aprobadas, 0 fallidas y 1 smoke opt-in
+omitido; backend cerró 20/20. Este cierre no certifica DB/baseline, cuentas,
+MFA/lifecycle ni datos GRH remotos. Este commit documental post-release no mueve
+el tag `v1.10.0` de `4108ca0`.
+
+Como antecedente, el release público `v1.9.0` quedó fijado en el commit/tag `f9d1f88`; el product
 commit es `ed76347`. El deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura
 `Ready` en `Production` con alias `https://municipio-junin.vercel.app`; el gate
 cerró 10/10 exit `0` con `checkedAt 2026-08-09T14:42:10Z`. El browser público
@@ -37,8 +51,8 @@ MuniGuía privada sigue sólo local con proyección autoritativa simulada: focal
 10/10, suite raíz 533 totales —532 aprobadas y 1 smoke opt-in omitido— y backend
 20/20. Selectors y anchors siguen verificados por CI; si el target no está
 visible, se omite sólo «Ubicar». La evidencia remota no certifica autorización positiva, cuentas reales,
-DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Este commit
-documental post-release no mueve el tag `v1.9.0` de `f9d1f88`.
+DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Ese cierre
+documental post-release no movió el tag `v1.9.0` de `f9d1f88`.
 
 ## Propósito
 
@@ -122,7 +136,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | `grh-close-v1` | Cierre mensual explicado local: componentes/control, conciliación por período y comparación consecutiva k≥10, sin PII/labels/codes | Materializar bundle y hacer smokes de Hacienda por rol/tenant en preview |
 | Centro de Calidad y Linaje GRH | Consumidor migrado localmente a `grh-quality-v1`; frontera remota observada en 401 sin sesión | Captura de red autenticada y smoke por tenant/rol con artefactos privados |
 | Panel y Centro Ejecutivo GRH | Consumidores locales de `grh-executive-v2` + `grh-quality-v1`; el Panel suma el brief único `grh-decision-brief-v1` y reemplaza alertas sueltas por prioridades gobernadas | Prueba por tenant/rol, datos materializados y certificación remota |
-| Brief ejecutivo S13 | `GET /api/grh-decision-brief`, agregado del snapshot aprobado, separación global/mensual, `temporalQuarantineRows`, k=10, CTA por capability, 503/retry manual y small-cell actual fail-closed; focal 135/135, QA 104/104 con 0 P1/P2 y raíz 591 totales —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20 | Desplegar el candidato y ejecutar el gate de seis APIs/11 checks |
+| Brief ejecutivo S13 | `GET /api/grh-decision-brief`, agregado del snapshot aprobado, separación global/mensual, `temporalQuarantineRows`, k=10, CTA por capability, 503/retry manual y small-cell actual fail-closed; focal 135/135, QA 104/104 con 0 P1/P2 y raíz 591 totales —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20 | Completar sesión privada positiva y certificación sobre datos GRH remotos; el gate público 11/11 ya cerró |
 | RRHH y Hacienda | Consumidores locales sobre proyecciones seguras; Hacienda retiró el P1 global-como-mensual | Repetir smokes por rol/tenant y certificar ambos en preview |
 | Bot, Reportes y PDF | Consumidores server-side; Bot suma “Cierre explicado” sobre `grh-close-v1` y Reportes mantiene proyección portable k=10 | Materializar el par y hacer smokes por tenant/rol |
 | Frontera HTTP raw | Cerrada localmente: `/api/grh-data` responde 410 después de auth/tenant, sin leer artefactos | Verificar 401/403/410 y cero referencias UI en preview |
@@ -143,7 +157,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Techo exacto `recurso:acción` | Implementado localmente: 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta (37 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; gate baseline/release y expiración TRIAL implementados, sin migración | Baseline conectado, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
-| Producción remota | Commit/tag `v1.9.0` `f9d1f88`, product commit `ed76347`; deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, alias productivo y GitHub Release live | Browser público 390/1440 px sobre `/login` y `/roles` sin overflow, consola ni requests externos; rutas privadas anónimas redirigen al login; no inferir DB, cuentas, autorización positiva o datos remotos |
+| Producción remota | Commit/tag `v1.10.0` `4108ca0`, product commit `d11fd39`; deployment `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY` en `Production`, alias productivo y GitHub Release live | Gate 11/11, browser público 10/10 a 390/1440 px y logs 0 errores/0 respuestas 500; no inferir DB, cuentas, autorización positiva o datos GRH remotos |
 
 El gate E0.1 del workspace también está cerrado localmente: `/inicio` debe
 reescribirse exactamente a `/inicio.html`, responder sin redirects y coincidir
@@ -151,7 +165,7 @@ con el SHA-256 canónico de una única captura UTF-8/LF de `inicio.html`. Rechaz
 topología anterior hacia `index.html`, archivos ambiguos y comment spoof antes
 de promover. El focal fue 31/31 y el consolidado workspace + release truth,
 45/45. El preview protegido aporta el antecedente manual. La evidencia
-productiva vigente de `v1.9.0` es el gate público 10/10 con exit `0` sobre el
+productiva vigente de `v1.10.0` es el gate público 11/11 con exit `0` sobre el
 product commit `ed76347`, incluido `/roles`. La prueba de navegador en producción
 a 390 px y 1440 px cerró sin overflow, errores de consola ni requests externos;
 la GitHub Release está live.

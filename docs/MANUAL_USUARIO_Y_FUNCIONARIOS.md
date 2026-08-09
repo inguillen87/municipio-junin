@@ -6,7 +6,7 @@
 |---|---|
 | Versión | 1.10.0 |
 | Fecha de corte documental | 9 de agosto de 2026 |
-| Estado | Candidato local S13 `1.10.0`; producto S13 en commit `d11fd39`, validación local en este corte |
+| Estado | Release público `v1.10.0` verificado; producto S13 en commit `d11fd39` |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -16,9 +16,8 @@ Este manual está dirigido a Intendencia, secretarías, Hacienda, RRHH y persona
 operadoras autorizadas. Explica lo que la plataforma puede hacer hoy, qué depende
 de configuración y qué todavía es hoja de ruta.
 
-Estos documentos no acreditan Preview/Producción; última evidencia remota
-verificada al corte: `v1.9.0`. No se afirma aquí tag ni deployment verificados de
-`v1.10.0`. S13 incorpora `GET /api/grh-decision-brief` con
+La sesión privada positiva y S13 privado conservan validación local sobre el
+snapshot aprobado. S13 incorpora `GET /api/grh-decision-brief` con
 `grh-decision-brief-v1`: un brief ejecutivo único desde agregados del snapshot
 aprobado, con validación local. Separa la señal global cross-source de la evidencia
 mensual, muestra `temporalQuarantineRows`, aplica k=10 y excluye PII, importes, códigos de fuente/celda y etiquetas/labels. Las CTA aparecen sólo
@@ -27,11 +26,29 @@ con su capability; un 503 habilita únicamente reintento manual y una celda actu
 `#decisionBrief`.
 
 Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El gate queda
-preparado para seis APIs y 11 checks al desplegar. Focal raíz S13 135/135 y QA
-adversarial 104/104 con 0 P1/P2. La suite raíz final revalidó 591 pruebas: 590
-aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Backend
-sigue `1.0.0` y Prisma `1.1.0`.
+acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El commit/tag
+release `v1.10.0` apunta a
+`4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
+`07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
+`https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
+no draft y no prerelease.
+
+El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
+alias `https://municipio-junin.vercel.app`, con `gitSource master/4108ca0`. El
+gate productivo cerró 11/11 exit `0` con
+`checkedAt 2026-08-09T16:33:56.200Z`. El browser público cerró 10/10 estados a
+390/1440 px: `/` y `/roles` visibles; `/dashboard`, `/inicio` y `/manuales`
+anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays,
+requests externos y fallas de red. Los logs del corte registraron 0 errores y
+0 respuestas 500.
+
+Focal raíz S13 135/135; QA adversarial 104/104 con 0 P1/P2; suite raíz final de
+591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20.
+Este cierre no certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH
+remotos. Este commit documental post-release no mueve el tag `v1.10.0` de
+`4108ca0`.
+
+Como antecedente, `v1.9.0` conserva esta evidencia:
 
 El commit/tag `v1.9.0` es `f9d1f88` y el product commit es `ed76347`. El
 deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` figura `Ready` en `Production`
@@ -46,8 +63,8 @@ MuniGuía privada (`muniguia-contextual-v1`) sigue probada sólo localmente con 
 proyección autoritativa simulada: focal 10/10, suite raíz 533 totales —532
 aprobadas y 1 smoke opt-in omitido— y backend 20/20. La evidencia remota no
 certifica autorización positiva, cuentas reales, DB o baseline restaurado,
-MFA/lifecycle persistido ni GRH remoto. Este commit documental post-release no
-mueve el tag `v1.9.0` de `f9d1f88`.
+MFA/lifecycle persistido ni GRH remoto. Ese cierre documental post-release no
+movió el tag `v1.9.0` de `f9d1f88`.
 
 No reemplaza normas municipales, controles contables, procedimientos de RRHH ni
 dictámenes legales. Tampoco constituye evidencia de que el checkout local esté
@@ -191,10 +208,10 @@ reduce la ventana de cambio entre verificación y uso; no protege frente a un
 host completamente comprometido. La evidencia O2A.1 es focal y con fixtures: no
 hubo nuevo replay real del archivo de 44 MB, DB ni deployment.
 
-El release público vigente es `v1.9.0`: commit/tag `f9d1f88`, product commit
-`ed76347` y deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en
-`Production`. Esta evidencia pública no acredita DB, cuentas, autorización
-positiva ni datos municipales remotos; el commit documental no mueve el tag.
+El release público vigente es `v1.10.0`: commit/tag `4108ca0`, product commit
+`d11fd39` y deployment `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY` en
+`Production`. Esta evidencia pública no acredita sesión positiva, DB, cuentas ni
+datos GRH remotos; el commit documental post-release no mueve el tag.
 
 Los enlaces Calidad y Linaje y Reportes se ofrecen actualmente a `SUPER_ADMIN`,
 `TENANT_ADMIN`, `INTENDENTE` y `CONTADOR`. Esa visibilidad no concede acceso: la
@@ -1030,7 +1047,7 @@ exitoso. Si falta evidencia, el estado correcto sigue siendo **Condicionado**.
 
 | Versión | Fecha | Cambio | Responsable |
 |---|---|---|---|
-| 1.10.0 | 2026-08-09 | Candidato local S13: producto en commit `d11fd39`, validación local de este corte; brief `grh-decision-brief-v1`, k=10, separación global/mensual, CTA por capability, 503/retry manual y small-cell actual fail-closed; focal 135/135, QA 104/104 con 0 P1/P2, raíz 591 totales —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido— y backend 20/20; estos documentos no acreditan Preview/Producción y `v1.9.0` es la última evidencia remota verificada al corte | Mantenedor del cambio; release todavía no promovido |
+| 1.10.0 | 2026-08-09 | Release público: producto `d11fd39`, commit/tag `4108ca0`, deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY`, gate 11/11, browser 10/10 y GitHub Release live; focal 135/135, QA 104/104, raíz 590 aprobadas + 1 opt-in omitido y backend 20/20; sesión positiva y datos GRH privados siguen en validación local | Mantenedor del cambio; registro post-release sin mover el tag |
 | 1.9.0 | 2026-08-09 | Release público: commit/tag `f9d1f88`, product commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, gate 10/10 exit `0`, browser público 390/1440 px y GitHub Release live; MuniGuía privada sólo local; raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Mantenedor del cambio; registro post-release sin mover el tag |
 | 1.8.1 | 2026-08-09 | Publica `/roles` como recorrido visual; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; sin acreditar DB, cuentas, autorización positiva o datos remotos | Mantenedor del cambio; registro post-release sin mover el tag |
 | 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, superficie pública productiva 9/9 exit `0`, sin acreditar DB, cuentas reales, autorización positiva ni datos remotos | Mantenedor del cambio; aprobación institucional registrada por separado |

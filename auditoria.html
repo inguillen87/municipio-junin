@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoría y Conectividad - MuniControl</title>
+    <title>Inventario de cargas - MuniControl</title>
     <link rel="stylesheet" href="css/dashboard.css">
     <style>
         :root {
@@ -17,22 +17,23 @@
             --yellow: #f59e0b;
             --border: rgba(255,255,255,0.1);
         }
+        * { box-sizing: border-box; }
+        html, body { max-width: 100%; overflow-x: clip; }
         body {
             background-color: var(--bg-dark);
             color: var(--text-main);
             font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
-            display: flex;
+            display: block;
         }
-        #sidebar-container {
-            width: 250px;
-            flex-shrink: 0;
-        }
-        main {
+        main.main-content {
             flex-grow: 1;
+            min-width: 0;
             padding: 2rem;
             max-width: 1200px;
-            margin: 0 auto;
+            margin-top: 0;
+            margin-right: auto;
+            margin-bottom: 0;
         }
         h1, h2, h3 { margin-top: 0; }
         
@@ -71,6 +72,7 @@
             margin-bottom: 2rem;
             backdrop-filter: blur(10px);
         }
+        #datasets-table { min-width: 720px; }
         
         table {
             width: 100%;
@@ -141,41 +143,66 @@
         }
         .timeline-item:last-child::after { display: none; }
         .timeline-date { font-size: 0.75rem; color: var(--text-muted); }
+        .audit-status {
+            margin: 0 0 1.5rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid rgba(245, 158, 11, 0.32);
+            border-radius: 10px;
+            background: rgba(245, 158, 11, 0.07);
+            color: #fde68a;
+            font-size: 0.82rem;
+            line-height: 1.55;
+        }
+        .audit-status.ok { border-color: rgba(16, 185, 129, 0.32); background: rgba(16, 185, 129, 0.07); color: #a7f3d0; }
+        .btn:disabled { cursor: not-allowed; opacity: 0.48; }
+        @media (max-width: 900px) {
+            body { display: block; }
+            main.main-content { width: 100%; max-width: none; padding: 72px 16px 92px; }
+            .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+            .kpi-card { min-width: 0; padding: 1rem; }
+            .kpi-value { overflow-wrap: anywhere; font-size: 1.55rem; }
+            .panel { min-width: 0; overflow-x: auto; padding: 1rem; }
+            .panel[style*="grid-template-columns"] { display: grid !important; grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+        }
         
     </style>
 </head>
 <body>
     <div id="sidebar-container"></div>
     
-    <main>
-        <h1>Auditoría y Conectividad Avanzada</h1>
+    <main id="mainContent" class="main-content">
+        <h1>Inventario de cargas analíticas</h1>
+        <div id="audit-status" class="audit-status" role="status">Consultando inventario autenticado. Esta vista no es una auditoría institucional y no certifica completitud.</div>
         
         <div class="kpi-grid">
             <div class="kpi-card">
                 <div class="kpi-label">Datasets Subidos</div>
-                <div class="kpi-value" id="kpi-datasets">0</div>
+                <div class="kpi-value" id="kpi-datasets">—</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Filas Procesadas</div>
-                <div class="kpi-value" id="kpi-rows">0</div>
+                <div class="kpi-value" id="kpi-rows">—</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Última Subida</div>
-                <div class="kpi-value" style="font-size: 1.25rem; margin-top: 1rem;" id="kpi-last">-</div>
+                <div class="kpi-value" style="font-size: 1.25rem; margin-top: 1rem;" id="kpi-last">—</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Módulos Activos</div>
-                <div class="kpi-value" style="font-size: 1.25rem; margin-top: 1rem;" id="kpi-modules">-</div>
+                <div class="kpi-label">Módulos con datasets</div>
+                <div class="kpi-value" style="font-size: 1.25rem; margin-top: 1rem;" id="kpi-modules">—</div>
             </div>
         </div>
 
         <div class="panel">
-            <h2>Historial de Subidas de Datos</h2>
+            <h2>Datasets registrados</h2>
             <table id="datasets-table">
                 <thead>
                     <tr>
                         <th>Módulo</th>
-                        <th>Archivo</th>
+                        <th>Identificador</th>
                         <th>Período</th>
                         <th>Filas</th>
                         <th>Fecha</th>
@@ -192,12 +219,12 @@
             <div>
                 <h2>Conexiones Externas (Bases de Datos)</h2>
                 <div id="connections-list">
-                    <p style="color: var(--text-muted)">Cargando conexiones...</p>
+                    <p style="color: var(--text-muted)">La consulta legacy de conexiones fue retirada hasta contar con un contrato auditable y por municipio.</p>
                 </div>
-                <button class="btn" style="margin-top: 1rem;" onclick="alert('Funcionalidad de nueva conexión en desarrollo')">+ Nueva Conexión</button>
+                <button class="btn" style="margin-top: 1rem;" type="button" disabled title="No existe un contrato auditado para crear conexiones">Nueva conexión no habilitada</button>
             </div>
             <div>
-                <h2>Actividad Reciente</h2>
+                <h2>Actividad derivada del inventario</h2>
                 <div class="timeline" id="timeline-list">
                     <p style="color: var(--text-muted)">Cargando actividad...</p>
                 </div>
@@ -206,104 +233,145 @@
     </main>
 
     <script src="js/nav.js"></script>
+    <script src="js/auth-fetch.js"></script>
     <script>
         if (typeof buildSidebar === 'function') {
             buildSidebar('auditoria');
         }
 
+        function makeElement(tag, className, text) {
+            const element = document.createElement(tag);
+            if (className) element.className = className;
+            if (text !== undefined && text !== null) element.textContent = String(text);
+            return element;
+        }
+
+        function formatCount(value) {
+            const number = Number(value);
+            return Number.isFinite(number) && number >= 0 ? number.toLocaleString('es-AR') : '0';
+        }
+
+        function formatAuditDate(value, includeTime) {
+            const date = new Date(value);
+            if (!value || Number.isNaN(date.getTime())) return 'N/A';
+            return includeTime ? date.toLocaleString('es-AR') : date.toLocaleDateString('es-AR');
+        }
+
+        function renderEmptyTable(tbody, message) {
+            const row = document.createElement('tr');
+            const cell = makeElement('td', '', message);
+            cell.colSpan = 6;
+            cell.style.textAlign = 'center';
+            cell.style.color = 'var(--text-muted)';
+            row.appendChild(cell);
+            tbody.replaceChildren(row);
+        }
+
+        function renderDatasets(records) {
+            const tbody = document.querySelector('#datasets-table tbody');
+            if (!Array.isArray(records) || records.length === 0) {
+                renderEmptyTable(tbody, 'No hay datasets registrados');
+                return;
+            }
+
+            const rows = records.map(function(dataset) {
+                const row = document.createElement('tr');
+                const moduleCell = document.createElement('td');
+                moduleCell.appendChild(makeElement('span', 'badge', dataset.module || 'N/A'));
+                row.appendChild(moduleCell);
+                row.appendChild(makeElement('td', '', 'Dataset #' + String(dataset.id || 'N/A')));
+                row.appendChild(makeElement('td', '', dataset.period || 'N/A'));
+                row.appendChild(makeElement('td', '', formatCount(dataset.row_count)));
+                row.appendChild(makeElement('td', '', formatAuditDate(dataset.created_at, false)));
+
+                const actions = document.createElement('td');
+                const exportButton = makeElement('button', 'btn btn-sm', 'Exportación retirada');
+                exportButton.type = 'button';
+                exportButton.disabled = true;
+                exportButton.title = 'La exportación cruda requiere clasificación y permisos por finalidad';
+                const deleteButton = makeElement('button', 'btn btn-sm btn-danger', 'Borrado no habilitado');
+                deleteButton.type = 'button';
+                deleteButton.disabled = true;
+                deleteButton.title = 'El borrado legacy fue retirado hasta contar con auditoría atómica y por municipio';
+                actions.append(exportButton, deleteButton);
+                row.appendChild(actions);
+                return row;
+            });
+            tbody.replaceChildren(...rows);
+        }
+
+        function renderConnectionsRetired() {
+            const container = document.getElementById('connections-list');
+            const retired = makeElement('p', '', 'Consulta no habilitada: la superficie legacy fue retirada hasta contar con un contrato auditable y por municipio.');
+            retired.style.color = 'var(--text-muted)';
+            container.replaceChildren(retired);
+        }
+
+        function renderTimeline(records) {
+            const container = document.getElementById('timeline-list');
+            if (!Array.isArray(records) || records.length === 0) {
+                const empty = makeElement('p', '', 'No hay actividad reciente.');
+                empty.style.color = 'var(--text-muted)';
+                container.replaceChildren(empty);
+                return;
+            }
+
+            const items = records.slice(0, 10).map(function(entry) {
+                const item = makeElement('div', 'timeline-item');
+                const titleRow = document.createElement('div');
+                titleRow.appendChild(makeElement('strong', '', entry.type === 'upload' ? 'Subida de Datos' : 'Reporte Generado'));
+                const description = makeElement('div', '', entry.description || 'Sin descripción');
+                description.style.cssText = 'color:var(--text-muted);font-size:0.875rem';
+                const date = makeElement('div', 'timeline-date', formatAuditDate(entry.created_at, true));
+                item.append(titleRow, description, date);
+                return item;
+            });
+            container.replaceChildren(...items);
+        }
+
+        function setAuditUnavailable(message) {
+            const status = document.getElementById('audit-status');
+            status.className = 'audit-status';
+            status.textContent = message;
+            ['kpi-datasets', 'kpi-rows', 'kpi-last', 'kpi-modules'].forEach(function(id) {
+                document.getElementById(id).textContent = '—';
+            });
+            renderEmptyTable(document.querySelector('#datasets-table tbody'), 'Inventario no disponible');
+            renderConnectionsRetired();
+            renderTimeline([]);
+        }
+
         async function loadAuditData() {
             try {
-                // Overview
-                const resOverview = await fetch('/api/audit?action=overview');
-                if (resOverview.ok) {
-                    const stats = await resOverview.json();
-                    document.getElementById('kpi-datasets').textContent = stats.totalDatasets || 0;
-                    document.getElementById('kpi-rows').textContent = stats.totalRows ? stats.totalRows.toLocaleString('es-AR') : 0;
-                    document.getElementById('kpi-last').textContent = stats.lastUpload ? new Date(stats.lastUpload).toLocaleDateString('es-AR') : 'N/A';
-                    document.getElementById('kpi-modules').textContent = (stats.activeModules || []).join(', ') || 'Ninguno';
+                const responses = await Promise.all([
+                    MuniAuth.fetch('/api/audit?action=overview'),
+                    MuniAuth.fetch('/api/audit?action=datasets'),
+                    MuniAuth.fetch('/api/audit?action=timeline')
+                ]);
+                if (responses.some(function(response) { return !response.ok; })) {
+                    throw new Error('El inventario respondió con un estado no exitoso');
                 }
 
-                // Datasets
-                const resDatasets = await fetch('/api/audit?action=datasets');
-                if (resDatasets.ok) {
-                    const { data } = await resDatasets.json();
-                    const tbody = document.querySelector('#datasets-table tbody');
-                    if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No hay datasets registrados</td></tr>';
-                    } else {
-                        tbody.innerHTML = data.map(d => `
-                            <tr>
-                                <td><span class="badge">${d.module}</span></td>
-                                <td>${d.filename || 'N/A'}</td>
-                                <td>${d.period || 'N/A'}</td>
-                                <td>${d.row_count || 0}</td>
-                                <td>${new Date(d.created_at).toLocaleDateString('es-AR')}</td>
-                                <td>
-                                    <button class="btn btn-sm" onclick="exportData('${d.module}', '${d.period}')">Exportar</button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteDataset(${d.id})">Borrar</button>
-                                </td>
-                            </tr>
-                        `).join('');
-                    }
-                }
+                const payloads = await Promise.all(responses.map(function(response) { return response.json(); }));
+                const stats = payloads[0] || {};
+                document.getElementById('kpi-datasets').textContent = formatCount(stats.totalDatasets);
+                document.getElementById('kpi-rows').textContent = formatCount(stats.totalRows);
+                document.getElementById('kpi-last').textContent = formatAuditDate(stats.lastUpload, false);
+                document.getElementById('kpi-modules').textContent = Array.isArray(stats.activeModules) && stats.activeModules.length
+                    ? stats.activeModules.map(String).join(', ')
+                    : 'Ninguno registrado';
+                renderDatasets(payloads[1]?.data);
+                renderConnectionsRetired();
+                renderTimeline(payloads[2]?.data);
 
-                // Connections
-                const resConnections = await fetch('/api/audit?action=connections');
-                if (resConnections.ok) {
-                    const { data } = await resConnections.json();
-                    const connList = document.getElementById('connections-list');
-                    if (!data || data.length === 0) {
-                        connList.innerHTML = '<p style="color: var(--text-muted)">No hay conexiones configuradas.</p>';
-                    } else {
-                        connList.innerHTML = data.map(c => `
-                            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--border);">
-                                <strong>${c.name}</strong> <span class="badge" style="float:right">${c.type}</span>
-                                <div style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">${c.host}:${c.port} - ${c.database}</div>
-                            </div>
-                        `).join('');
-                    }
-                }
-
-                // Timeline
-                const resTimeline = await fetch('/api/audit?action=timeline');
-                if (resTimeline.ok) {
-                    const { data } = await resTimeline.json();
-                    const tlList = document.getElementById('timeline-list');
-                    if (!data || data.length === 0) {
-                        tlList.innerHTML = '<p style="color: var(--text-muted)">No hay actividad reciente.</p>';
-                    } else {
-                        tlList.innerHTML = data.slice(0, 10).map(t => `
-                            <div class="timeline-item">
-                                <div><strong>${t.type === 'upload' ? 'Subida de Datos' : 'Reporte Generado'}</strong></div>
-                                <div style="color: var(--text-muted); font-size: 0.875rem;">${t.description}</div>
-                                <div class="timeline-date">${new Date(t.created_at).toLocaleString('es-AR')}</div>
-                            </div>
-                        `).join('');
-                    }
-                }
+                const status = document.getElementById('audit-status');
+                status.className = 'audit-status ok';
+                status.textContent = 'Inventario autenticado consultado. No registra actor ni acción y no constituye auditoría institucional.';
             } catch (error) {
+                if (MuniAuth.isAuthError(error)) return;
                 console.error('Error loading audit data:', error);
+                setAuditUnavailable('No se pudo verificar el inventario de datos. No se interpretan valores vacíos como cero.');
             }
-        }
-
-        async function deleteDataset(id) {
-            if (confirm('¿Está seguro de eliminar este dataset y todos sus datos?')) {
-                try {
-                    const res = await fetch(`/api/audit?action=delete-dataset&id=${id}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        alert('Dataset eliminado');
-                        loadAuditData();
-                    } else {
-                        alert('Error al eliminar');
-                    }
-                } catch(e) {
-                    alert('Error de conexión');
-                }
-            }
-        }
-
-        function exportData(module, period) {
-            window.location.href = `/api/export-data?module=${module}&period=${period}&format=csv`;
         }
 
         document.addEventListener('DOMContentLoaded', loadAuditData);

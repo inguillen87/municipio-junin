@@ -1,22 +1,35 @@
 {
   "type": "module",
+  "engines": {
+    "node": ">=22.3.0 <25"
+  },
   "scripts": {
-    "postinstall": "prisma generate"
+    "test": "node scripts/run-test-suite.mjs root",
+    "test:backend": "node scripts/run-test-suite.mjs backend",
+    "test:all": "npm run test && npm run test:backend",
+    "preflight:runtimes": "node scripts/runtime-preflight.mjs",
+    "release:truth:check": "node scripts/check-deployment-truth.mjs",
+    "postinstall": "prisma generate --schema prisma/schema.prisma --generator client",
+    "db:validate": "prisma validate --schema prisma/schema.prisma",
+    "db:generate": "prisma generate --schema prisma/schema.prisma --generator client",
+    "db:baseline:status": "node scripts/assert-prisma-migrations.mjs --offline --json",
+    "db:migrate:deploy": "node scripts/assert-prisma-migrations.mjs --release && prisma migrate deploy --schema prisma/schema.prisma",
+    "db:migrate:status": "prisma migrate status --schema prisma/schema.prisma",
+    "db:studio": "prisma studio --schema prisma/schema.prisma",
+    "db:seed": "npm --prefix backend run db:seed"
   },
   "devDependencies": {
     "playwright": "^1.62.1",
     "prisma": "^5.22.0"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
-    "dotenv": "^17.4.2",
     "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.2",
     "papaparse": "^5.5.4",
     "pdf-parse": "^2.4.5",
     "pg": "^8.22.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }

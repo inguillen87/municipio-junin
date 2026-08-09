@@ -1,43 +1,68 @@
-import { sendAlertaEjecutivaTemplate, sendReclamoConfirmacionTemplate, sendTurnoConfirmacionTemplate } from './lib/whatsapp-templates.js';
+import {
+  WebhookAuthError,
+  beginMessage,
+  completeMessage,
+  isAllowedPhoneId,
+  parseVerifiedWebhook,
+  releaseMessage,
+  verifyWebhookChallenge,
+} from './lib/whatsapp-webhook-auth.js';
+import publicAppUrl from '../shared/public-app-url.cjs';
 
-const BASE = 'https://municipio-junin.vercel.app';
+const { PublicAppUrlError, buildPublicAppUrl } = publicAppUrl;
+
+function loginUrl() {
+  return buildPublicAppUrl('/login.html');
+}
+
+export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
-    if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    if (verifyWebhookChallenge(mode, token)) {
       return res.status(200).send(challenge);
     }
     return res.status(403).json({ error: 'Forbidden' });
   }
   if (req.method !== 'POST') return res.status(405).end();
 
+  let body;
   try {
-    let body = req.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e) {}
-    }
-    console.log('[WA-WEBHOOK-RECV]', JSON.stringify(body));
+    body = await parseVerifiedWebhook(req);
+  } catch (err) {
+    const status = err instanceof WebhookAuthError ? err.status : 400;
+    return res.status(status).json({ error: 'Webhook rechazado' });
+  }
 
-    if (body) {
-      const entries = body.entry || [];
-      for (const entry of entries) {
-        const changes = entry.changes || [];
-        for (const change of changes) {
-          const v = change.value || {};
-          const messages = v.messages || [];
-          for (const msg of messages) {
-            await route(msg, v.metadata || {});
+  let processed = 0;
+  try {
+    for (const entry of body.entry.slice(0, 20)) {
+      for (const change of (entry.changes || []).slice(0, 20)) {
+        if (change.field !== 'messages') continue;
+        const value = change.value || {};
+        if (!isAllowedPhoneId(value.metadata?.phone_number_id, ['WHATSAPP_PHONE_ID'])) continue;
+        for (const msg of (value.messages || []).slice(0, 50)) {
+          if (!beginMessage(msg.id)) continue;
+          try {
+            await route(msg, value.metadata || {});
+            completeMessage(msg.id);
+            processed += 1;
+          } catch (error) {
+            releaseMessage(msg.id);
+            throw error;
           }
         }
       }
     }
   } catch (err) {
     console.error('[WA-WEBHOOK-ERROR]', err.message);
+    const status = err instanceof PublicAppUrlError ? 503 : 500;
+    return res.status(status).json({ ok: false });
   }
-  return res.status(200).json({ ok: true });
+  return res.status(200).json({ ok: true, processed });
 }
 
 // ================================================================
@@ -45,9 +70,7 @@ export default async function handler(req, res) {
 // ================================================================
 async function route(msg, meta) {
   const from = msg.from;
-  const pid = (meta.phone_number_id && meta.phone_number_id !== '123456123') 
-    ? meta.phone_number_id 
-    : (process.env.WHATSAPP_PHONE_ID || '1250694471458832');
+  const pid = meta.phone_number_id;
 
   let txt = '';
   let payloadId = '';
@@ -65,18 +88,15 @@ async function route(msg, meta) {
       txt = payloadId;
     }
   } else if (msg.type === 'location') {
-    return await cmdReclamoUbicacion(from, pid, msg.location);
+    return await cmdReclamoUbicacion(from, pid);
   } else if (msg.type === 'image') {
     return await cmdReclamoFoto(from, pid);
   } else if (msg.type === 'audio' || msg.type === 'voice') {
-    // MuniVoice: soporte unificado de notas de voz
+    // No se declara transcripción ni alta de trámite hasta contar con ese flujo auditado.
     await send(from, pid, 'text',
       `\uD83C\uDFA4 *ATENCI\u00D3N POR VOZ (MuniVoice)*\n\n` +
-      `Recibimos tu consulta por voz. El sistema proces\u00F3 la solicitud:\n\n` +
-      `\u2022 *Estado:* Procesada exitosamente\n` +
-      `\u2022 *Resumen enviado:* S\u00ED\n\n` +
-      `Si realizaste un reclamo o consulta de presupuesto, pod\u00E9s consultar el estado en vivo desde el portal ciudadano:\n` +
-      `\uD83D\uDCF1 ${BASE}/ciudadano.html`
+      `Recibimos una nota de voz, pero este canal no la transcribe, no la persiste como expediente y no genera un tr\u00E1mite autom\u00E1tico.\n\n` +
+      `No env\u00EDes datos personales adicionales. Consult\u00E1 los canales institucionales vigentes de la Municipalidad.`
     );
     return;
   } else {
@@ -124,7 +144,7 @@ async function cmdMenuDual(to, pid) {
     `_Bienvenido al sistema inteligente municipal._\n\n` +
     `Escrib\u00ED el n\u00FAmero de opci\u00F3n:\n` +
     `1\uFE0F\u20E3 *Gobernantes* (Hacienda, Obras, RRHH)\n` +
-    `2\uFE0F\u20E3 *Portal Vecino 311* (Reclamos, Turnos)\n\n` +
+    `2\uFE0F\u20E3 *Informaci\u00F3n vecinal* (estado de integraciones)\n\n` +
     `\uD83D\uDCF1 _O escrib\u00ED directamente: obras, hacienda, rrhh, reclamos o pdf_`;
 
   await send(to, pid, 'text', textMenu);
@@ -135,71 +155,54 @@ async function cmdMenuGobernantes(to, pid) {
     `\uD83C\uDFDB\uFE0F *PANEL DE GOBERNANTES*\n` +
     `_Municipalidad de Jun\u00EDn \u00B7 Mendoza_\n\n` +
     `Escrib\u00ED el n\u00FAmero o comando:\n` +
-    `\u2022 *3* - Obras P\u00FAblicas ($142.5M)\n` +
-    `\u2022 *4* - Hacienda y Finanzas (+$14.9M)\n` +
-    `\u2022 *5* - Recursos Humanos (1,247 empl.)\n` +
-    `\u2022 *6* - Licitaciones P\u00FAblicas (5 activas)\n` +
-    `\u2022 *7* - Descargar Informe PDF Oficial\n\n` +
-    `\uD83D\uDCBB *Acceso Directo al Dashboard:* \n${BASE}/inteligencia.html?auth=governante`;
+    `\u2022 *3* - Obras P\u00FAblicas\n` +
+    `\u2022 *4* - Hacienda y Finanzas\n` +
+    `\u2022 *5* - Centro Ejecutivo GRH\n` +
+    `\u2022 *6* - Licitaciones P\u00FAblicas\n` +
+    `\u2022 *7* - Centro de Reportes\n\n` +
+    `\uD83D\uDD10 *Acceso seguro al Dashboard:* \n${loginUrl()}`;
 
   await send(to, pid, 'text', textMenu);
 }
 
 async function cmdMenuVecinos(to, pid) {
   const textMenu = 
-    `\uD83C\uDFE0 *PORTAL VECINO JUN\u00CDN 311*\n\n` +
-    `\u2022 Escrib\u00ED *reclamos* para registrar un reporte.\n` +
-    `\u2022 Escrib\u00ED *turnos* para pedir un turno web.\n` +
-    `\u2022 O envi\u00E1 tu *ubicaci\u00F3n GPS* / *foto*.\n\n` +
-    `\uD83D\uDCBB *Portal Web Ciudadano:*\n${BASE}/ciudadano.html`;
+    `\uD83C\uDFE0 *INFORMACI\u00D3N VECINAL*\n\n` +
+    `MuniControl todav\u00EDa no registra reclamos, turnos, fotos ni ubicaciones como expedientes oficiales.\n\n` +
+    `No env\u00EDes datos personales por este canal. Consult\u00E1 los canales institucionales vigentes de la Municipalidad.`;
 
   await send(to, pid, 'text', textMenu);
 }
 
 async function cmdHacienda(to, pid) {
   await send(to, pid, 'text', 
-    `\uD83D\uDCB0 *HACIENDA Y FINANZAS*\n_Jun\u00EDn, Mendoza \u00B7 Ago 2026_\n\n` +
-    `*Balance Mensual*\n` +
-    `\u2022 Ingresos: *$180.2M* (+8%)\n` +
-    `\u2022 Gastos: *$165.3M*\n` +
-    `\u2022 Super\u00E1vit: *+$14.9M*\n\n` +
-    `\u2593\u2593\u2593\u2593\u2593\u2593\u2593\u2591\u2591\u2591 *67%* Ejecuci\u00F3n Presupuestaria\n\n` +
-    `\uD83D\uDCC4 *Descargar Informe PDF:* \n${BASE}/api/pdf-report?type=presupuesto\n\n` +
-    `\uD83D\uDCBB *Abrir M\u00F3dulo Web:* \n${BASE}/hacienda.html?auth=governante`
+    `\uD83D\uDCB0 *HACIENDA Y FINANZAS*\n\n` +
+    `Las cifras ejecutivas se muestran \u00FAnicamente dentro de la plataforma y con fuente validada.\n\n` +
+    `\uD83D\uDD10 *Ingresar al m\u00F3dulo:* \n${loginUrl()}`
   );
 }
 
 async function cmdObras(to, pid) {
   await send(to, pid, 'text', 
-    `\uD83C\uDFD7\uFE0F *OBRAS P\u00DABLICAS*\n_Jun\u00EDn, Mendoza \u00B7 Ago 2026_\n\n` +
-    `*Proyectos Activos (8)*\n` +
-    `1. Pavimentaci\u00F3n Av. San Mart\u00EDn (45% avance)\n` +
-    `2. Luminarias LED Centro (90% avance)\n` +
-    `3. Renovaci\u00F3n Red Cloacal (30% avance)\n\n` +
-    `Inversi\u00F3n Total: *$142.5M*\n\n` +
-    `\uD83D\uDCC4 *Descargar Reporte Obras PDF:* \n${BASE}/api/pdf-report?type=obras\n\n` +
-    `\uD83D\uDCBB *Abrir M\u00F3dulo Web:* \n${BASE}/obras.html?auth=governante`
+    `\uD83C\uDFD7\uFE0F *OBRAS P\u00DABLICAS*\n\n` +
+    `Los avances e inversiones requieren una fuente municipal vigente; no informamos valores de demostraci\u00F3n.\n\n` +
+    `\uD83D\uDD10 *Ingresar al m\u00F3dulo:* \n${loginUrl()}`
   );
 }
 
 async function cmdRRHH(to, pid) {
   await send(to, pid, 'text',
-    `\uD83D\uDC65 *RECURSOS HUMANOS*\n_Jun\u00EDn, Mendoza \u00B7 Ago 2026_\n\n` +
-    `\u2022 Empleados Activos: *1,247*\n` +
-    `\u2022 Masa Salarial: *$485.0M*\n` +
-    `\u2022 Ausentismo: *3.2%* (Normal)\n\n` +
-    `\uD83D\uDCC4 *Descargar Reporte RRHH PDF:* \n${BASE}/api/pdf-report?type=rrhh\n\n` +
-    `\uD83D\uDCBB *Abrir M\u00F3dulo Web:* \n${BASE}/rrhh.html?auth=governante`
+    `\uD83D\uDC65 *CENTRO EJECUTIVO GRH*\n\n` +
+    `El m\u00F3dulo protegido muestra el \u00FAltimo contrato GRH privado que haya sido publicado y validado para tu municipio, con su corte y sus l\u00EDmites visibles. WhatsApp no consulta ese contrato ni confirma que est\u00E9 disponible. No difundimos m\u00E9tricas, legajos ni datos personales por este canal.\n\n` +
+    `\uD83D\uDD10 *Ingresar con credenciales institucionales:* \n${loginUrl()}`
   );
 }
 
 async function cmdLicitaciones(to, pid) {
   await send(to, pid, 'text',
-    `\uD83D\uDCC4 *LICITACIONES P\u00DABLICAS*\n_Jun\u00EDn, Mendoza \u00B7 Ago 2026_\n\n` +
-    `\u2022 Licitaciones Activas: *5*\n` +
-    `\u2022 Monto Licitado: *$85.4M*\n` +
-    `\u2022 Cumplimiento SLA: *100%*\n\n` +
-    `\uD83D\uDCBB *Abrir M\u00F3dulo Web:* \n${BASE}/licitaciones.html?auth=governante`
+    `\uD83D\uDCC4 *LICITACIONES P\u00DABLICAS*\n\n` +
+    `Las cifras se publican solamente cuando el m\u00F3dulo cuenta con una fuente validada y fecha de corte visible.\n\n` +
+    `\uD83D\uDD10 *Ingresar al m\u00F3dulo:* \n${loginUrl()}`
   );
 }
 
@@ -208,99 +211,69 @@ async function cmdLicitaciones(to, pid) {
 // ================================================================
 async function cmdReclamosInicio(to, pid) {
   await send(to, pid, 'text',
-    `\uD83D\uDCE2 *SISTEMA 311 RECLAMOS VECINALES*\n\n` +
-    `Pod\u00E9s registrar tu reclamo envi\u00E1ndome:\n` +
-    `\u2022 Un mensaje de texto explicando el problema\n` +
-    `\u2022 Una foto del lugar\n` +
-    `\u2022 Tu ubicaci\u00F3n GPS exacta por WhatsApp\n\n` +
-    `*Categor\u00EDas disponibles:*\n` +
-    `\u2022 Escrib\u00ED *bache* para Bacheo\n` +
-    `\u2022 Escrib\u00ED *luminaria* para Alumbrado\n` +
-    `\u2022 Escrib\u00ED *agua* para Red de Agua\n\n` +
-    `SLA promedio de resoluci\u00F3n: *3.2 d\u00EDas*`
+    `\uD83D\uDCE2 *RECLAMOS VECINALES*\n\n` +
+    `La integraci\u00F3n de expedientes 311 no est\u00E1 habilitada en MuniControl. Este chat no asigna n\u00FAmero, estado ni seguimiento.\n\n` +
+    `No env\u00EDes nombre, documento, domicilio, fotos ni ubicaci\u00F3n. Consult\u00E1 los canales institucionales vigentes de la Municipalidad.`
   );
 }
 
 async function cmdReclamoCategoria(to, pid, categoria) {
-  const ticket = 'REC-' + Math.floor(1000 + Math.random() * 9000);
   await send(to, pid, 'text',
-    `\u2705 *Reclamo registrado*\n\n` +
-    `\u2022 Ticket: *${ticket}*\n` +
-    `\u2022 Categor\u00EDa: *${categoria}*\n` +
-    `\u2022 Estado: *Pendiente*\n\n` +
-    `Envi\u00E1 tu *ubicaci\u00F3n GPS* para georeferenciarlo.\n` +
-    `O envi\u00E1 una *foto* del problema.`
+    `\u2139\uFE0F La categor\u00EDa *${categoria}* no fue registrada. La integraci\u00F3n 311 est\u00E1 deshabilitada y este chat no crea expedientes.`
   );
-  // Intentar enviar template de confirmacion
-  try {
-    await sendReclamoConfirmacionTemplate({ to, nombre: 'Vecino/a', ticketId: ticket, categoria, estado: 'Pendiente', link: `${BASE}/ciudadano.html` });
-  } catch(e) { console.warn('[WA-TEMPLATE-SKIP]', e.message); }
 }
 
-async function cmdReclamoUbicacion(to, pid, location) {
-  const lat = location.latitude;
-  const lng = location.longitude;
-  const ticket = 'REC-' + Math.floor(1000 + Math.random() * 9000);
+async function cmdReclamoUbicacion(to, pid) {
   await send(to, pid, 'text',
-    `\uD83D\uDCCD *Ubicaci\u00F3n registrada para reclamo*\n\n` +
-    `\u2022 Ticket: *${ticket}*\n` +
-    `\u2022 GPS: ${lat}, ${lng}\n` +
-    `\u2022 Estado: *En revisi\u00F3n*\n\n` +
-    `Un inspector ser\u00E1 asignado en las pr\u00F3ximas 24hs.`
+    `\uD83D\uDCCD La ubicaci\u00F3n no se incorpora a ning\u00FAn expediente. Por privacidad, no la repetimos ni solicitamos m\u00E1s datos por este canal.`
   );
 }
 
 async function cmdReclamoFoto(to, pid) {
   await send(to, pid, 'text',
     `\uD83D\uDCF8 *Foto recibida*\n\n` +
-    `Tu imagen fue adjuntada al reclamo activo.\n` +
-    `Si no ten\u00E9s un reclamo abierto, escrib\u00ED *reclamos* para crear uno.`
+    `La imagen no se incorpora a ning\u00FAn expediente. No env\u00EDes datos personales adicionales por este canal.`
   );
 }
 
 async function cmdRecFin(to, pid) {
   await send(to, pid, 'text',
-    `\u2705 *Reclamo finalizado*\n\nTu reporte fue registrado exitosamente. Pod\u00E9s consultar el estado en:\n${BASE}/ciudadano.html`
+    `\u2139\uFE0F No se cre\u00F3 un pre-registro ni un expediente. La integraci\u00F3n 311 est\u00E1 deshabilitada.`
   );
 }
 
 async function cmdTurnos(to, pid) {
   await send(to, pid, 'text',
-    `\uD83D\uDCC5 *Turnos Municipales Web*\n\n` +
-    `Pod\u00E9s reservar tu turno para Licencia de Conducir, Salud o Comercio desde nuestro portal:\n` +
-    `${BASE}/ciudadano.html`
+    `\uD83D\uDCC5 *TURNOS MUNICIPALES*\n\n` +
+    `MuniControl no tiene una agenda de turnos conectada. Este chat no reserva ni confirma turnos. Consult\u00E1 los canales institucionales vigentes de la Municipalidad.`
   );
 }
 
 async function cmdNoticias(to, pid) {
   await send(to, pid, 'text',
-    `\uD83D\uDCF0 *Noticias Municipales*\n\n` +
-    `\u2022 Inauguraci\u00F3n Luminarias LED en el centro\n` +
-    `\u2022 Operativo de salud en Barrio Norte\n` +
-    `\u2022 Nuevo sistema de turnos online\n\n` +
-    `M\u00E1s info en: ${BASE}/landing.html`
+    `\uD83D\uDCF0 *NOTICIAS MUNICIPALES*\n\n` +
+    `Este canal no est\u00E1 conectado a una fuente editorial verificada, por lo que no publica titulares ni novedades. Consult\u00E1 los canales institucionales vigentes de la Municipalidad.`
   );
 }
 
 async function cmdEncuestas(to, pid) {
   await send(to, pid, 'text',
-    `\uD83D\uDCCA *Encuestas Activas*\n\n` +
-    `Actualmente no hay encuestas activas.\n` +
-    `Te notificaremos cuando haya una disponible.`
+    `\uD83D\uDCCA *ENCUESTAS MUNICIPALES*\n\n` +
+    `MuniControl no tiene una fuente de encuestas conectada. Este chat no registra votos ni programa notificaciones.`
   );
 }
 
 async function cmdVoto(to, pid, cmd) {
   await send(to, pid, 'text',
-    `\u2705 *Voto registrado*\n\nGracias por participar en la encuesta ciudadana.`
+    `\u2139\uFE0F Tu selecci\u00F3n fue recibida en esta conversaci\u00F3n, pero no se registr\u00F3 como voto oficial.`
   );
 }
 
 async function cmdReporte(to, pid) {
   await send(to, pid, 'text',
-    `\uD83D\uDCCA *INFORME EJECUTIVO DE GESTI\u00D3N*\n_Generado autom\u00E1ticamente \u00B7 Ago 2026_\n\n` +
-    `El municipio mantiene un balance financiero saludable con super\u00E1vit de *+$14.9M* y ejecuci\u00F3n presupuestaria del *67%*.\n\n` +
-    `\uD83D\uDCE5 *Descargar Informe PDF Oficial:*\n${BASE}/api/pdf-report?type=resumen`
+    `\uD83D\uDCCA *CENTRO DE REPORTES*\n\n` +
+    `Los informes ejecutivos requieren autenticaci\u00F3n y conservan la fecha de corte y la fuente de cada indicador.\n\n` +
+    `\uD83D\uDD10 ${loginUrl()}`
   );
 }
 
@@ -308,47 +281,15 @@ async function cmdReporte(to, pid) {
 // FALLBACK INTELIGENTE CON IA
 // ================================================================
 async function cmdLibre(to, pid, txt) {
-  try {
-    // Llamar al endpoint de IA para obtener respuesta inteligente
-    const aiResponse = await fetch(`${BASE}/api/ai-analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: txt })
-    });
-    const data = await aiResponse.json();
-    let reply = data.response || data.reply || '';
-
-    if (reply && reply.length > 10) {
-      // Convertir markdown ** a WhatsApp bold *
-      reply = reply.replace(/\*\*(.*?)\*\*/g, '*$1*');
-      // Limpiar caracteres innecesarios para WhatsApp
-      reply = reply.replace(/#{1,6}\s?/g, '');
-      reply = reply.replace(/---+/g, '');
-      // Limitar largo para WhatsApp (max ~1500 chars)
-      if (reply.length > 1500) {
-        reply = reply.substring(0, 1450) + '\n\n_Respuesta resumida. Consult\u00E1 completa en el dashboard._';
-      }
-      await send(to, pid, 'text', reply);
-    } else {
-      // Si la IA no devolvio respuesta util, mostrar menu
-      await send(to, pid, 'text',
-        `\uD83E\uDD16 *MUNIBOT GOVTECH*\n\n` +
-        `Recib\u00ED: _"${txt.substring(0, 60)}"_\n\n` +
-        `Escrib\u00ED *menu* o consult\u00E1 directamente: *obras*, *hacienda*, *rrhh*, *reclamos* o *pdf*.`
-      );
-    }
-  } catch (err) {
-    console.error('[WA-AI-FALLBACK-ERROR]', err.message);
-    await send(to, pid, 'text',
-      `\uD83E\uDD16 *MUNIBOT GOVTECH*\n\n` +
-      `Recib\u00ED: _"${txt.substring(0, 60)}"_\n\n` +
-      `Escrib\u00ED *menu* o consult\u00E1 directamente: *obras*, *hacienda*, *rrhh*, *reclamos* o *pdf*.`
-    );
-  }
+  await send(to, pid, 'text',
+    `\uD83E\uDD16 *MUNIBOT JUN\u00CDN*\n\n` +
+    `Para proteger informaci\u00F3n ejecutiva, las respuestas con datos requieren una sesi\u00F3n institucional en la plataforma.\n\n` +
+    `Escrib\u00ED *menu* o ingres\u00E1 en ${loginUrl()}.`
+  );
 }
 
 // ================================================================
-// SEND ENGINE (Envia directamente a 549 y 54 con 100% garantia)
+// SEND ENGINE
 // ================================================================
 async function send(to, pid, type, content) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
@@ -381,22 +322,11 @@ async function send(to, pid, type, content) {
       },
       body: JSON.stringify(payload)
     });
-    const text = await resp.text();
-    return { ok: resp.ok, text };
+    return { ok: resp.ok, status: resp.status };
   };
 
-  // Direct Dual Send to both 549 and 54 formats so Meta never rejects either
-  let numsToTry = [to];
-  if (to.startsWith('549')) numsToTry.push('54' + to.substring(3));
-  else if (to.startsWith('54') && !to.startsWith('549')) numsToTry.push('549' + to.substring(2));
-
-  for (const num of numsToTry) {
-    const res = await doSend(num);
-    if (res.ok) {
-      console.log(`[WA-SEND-SUCCESS] Sent to ${num}`);
-      return;
-    } else {
-      console.warn(`[WA-SEND-TRY-FAIL] Target ${num} -> ${res.text}`);
-    }
+  const result = await doSend(to);
+  if (!result.ok) {
+    console.warn(`[WA-SEND-FAIL] Provider status ${result.status}`);
   }
 }

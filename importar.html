@@ -7,7 +7,6 @@
   <title>Hub de Datos | MuniControl</title>
   <link rel="icon" href="favicon.ico">
   <link rel="manifest" href="manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
   <style>
     /* ── HUB LAYOUT ── */
@@ -34,7 +33,7 @@
     .hub-panel-header {
       padding: 18px 20px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
-      font-family: 'Outfit', sans-serif;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
       font-size: 15px;
       font-weight: 800;
       color: #f0f4ff;
@@ -55,7 +54,7 @@
       cursor: pointer;
       font-size: 13px;
       font-weight: 600;
-      font-family: 'Inter', sans-serif;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
       transition: all 0.2s;
       margin-bottom: 6px;
       text-align: left;
@@ -98,7 +97,7 @@
       cursor: pointer;
       font-size: 12px;
       font-weight: 600;
-      font-family: 'Inter', sans-serif;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
       transition: all 0.2s;
     }
     .source-tab:hover { border-color: rgba(255,255,255,0.12); color: #f0f4ff; }
@@ -108,6 +107,26 @@
       color: #60a5fa;
     }
     .source-tab .src-icon { font-size: 16px; }
+
+    .import-context {
+      display: grid;
+      grid-template-columns: minmax(180px, 240px) 1fr;
+      gap: 14px;
+      align-items: end;
+      padding: 14px 16px;
+      border: 1px solid rgba(96,165,250,0.24);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(37,99,235,0.09), rgba(15,23,42,0.72));
+    }
+    .import-context label { display:block; margin-bottom:6px; color:#dbeafe; font-size:12px; font-weight:800; }
+    .import-context input {
+      width:100%; box-sizing:border-box; padding:10px 12px; border-radius:8px;
+      border:1px solid rgba(148,163,184,0.26); background:rgba(15,23,42,0.86);
+      color:#f8fafc; color-scheme:dark; font:600 13px system-ui,-apple-system,'Segoe UI',sans-serif;
+    }
+    .import-context input:focus { outline:2px solid rgba(96,165,250,0.4); outline-offset:2px; }
+    .import-context p { margin:0; color:rgba(203,213,225,0.72); font-size:11px; line-height:1.55; }
+    @media (max-width: 620px) { .import-context { grid-template-columns:1fr; align-items:start; } }
 
     /* ── DROP ZONE ── */
     .drop-zone {
@@ -128,7 +147,7 @@
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
     .drop-icon { font-size: 48px; margin-bottom: 14px; }
-    .drop-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: #f0f4ff; margin-bottom: 8px; }
+    .drop-title { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 18px; font-weight: 800; color: #f0f4ff; margin-bottom: 8px; }
     .drop-sub { font-size: 12px; color: rgba(148,163,184,0.5); margin-bottom: 20px; }
     .drop-formats { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
     .format-pill {
@@ -149,17 +168,32 @@
     .url-input-row input {
       flex: 1; padding: 10px 14px;
       background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px; color: #f0f4ff; font-size: 13px; font-family: 'Inter', sans-serif; outline: none;
+      border-radius: 8px; color: #f0f4ff; font-size: 13px; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; outline: none;
     }
     .url-input-row input:focus { border-color: rgba(59,130,246,0.5); }
     .url-input-row input::placeholder { color: rgba(148,163,184,0.4); }
     .btn-connect {
       padding: 10px 18px; background: linear-gradient(135deg,#3b82f6,#8b5cf6);
       border: none; border-radius: 8px; color: white; font-weight: 700;
-      font-size: 12px; cursor: pointer; white-space: nowrap; font-family: 'Inter', sans-serif;
+      font-size: 12px; cursor: pointer; white-space: nowrap; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
       transition: opacity 0.2s;
     }
     .btn-connect:hover { opacity: 0.85; }
+    .btn-connect:disabled { opacity: 0.55; cursor: wait; }
+    .import-outcome {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(148,163,184,0.18);
+      border-radius: 8px;
+      background: rgba(15,23,42,0.55);
+      color: rgba(148,163,184,0.85);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .import-outcome[data-state="success"] { border-color: rgba(16,185,129,0.38); color: #a7f3d0; }
+    .import-outcome[data-state="partial"] { border-color: rgba(245,158,11,0.4); color: #fde68a; }
+    .import-outcome[data-state="truncated"] { border-color: rgba(249,115,22,0.45); color: #fed7aa; }
+    .import-outcome[data-state="rejected"] { border-color: rgba(239,68,68,0.42); color: #fecaca; }
 
     /* ── QUICK CONNECTORS ── */
     .quick-connectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 10px; }
@@ -283,7 +317,6 @@
                 <span class="mod-name">RRHH</span>
                 <span class="mod-count">Empleados, sueldos, legajos, ausencias</span>
               </span>
-              <span class="mod-badge">3</span>
             </button>
             <button class="module-btn" onclick="selectModule(this,'hacienda')" id="mod-hacienda">
               <span class="mod-icon">💰</span>
@@ -291,7 +324,6 @@
                 <span class="mod-name">Hacienda</span>
                 <span class="mod-count">Presupuesto, pagos, balances</span>
               </span>
-              <span class="mod-badge">5</span>
             </button>
             <button class="module-btn" onclick="selectModule(this,'licitaciones')" id="mod-licitaciones">
               <span class="mod-icon">📋</span>
@@ -299,7 +331,6 @@
                 <span class="mod-name">Licitaciones</span>
                 <span class="mod-count">Pliegos, ofertas, contratos</span>
               </span>
-              <span class="mod-badge">2</span>
             </button>
             <button class="module-btn" onclick="selectModule(this,'obras')" id="mod-obras">
               <span class="mod-icon">🏗️</span>
@@ -308,14 +339,6 @@
                 <span class="mod-count">Proyectos, avances, certificaciones</span>
               </span>
             </button>
-            <button class="module-btn" onclick="selectModule(this,'presupuesto')" id="mod-presupuesto">
-              <span class="mod-icon">📊</span>
-              <span class="mod-info">
-                <span class="mod-name">Presupuesto</span>
-                <span class="mod-count">Partidas, ejecución, proyecciones</span>
-              </span>
-            </button>
-
             <div class="hub-section-label" style="margin-top:16px">Ciudadanía</div>
             <button class="module-btn" onclick="selectModule(this,'vecinos')" id="mod-vecinos">
               <span class="mod-icon">🏘️</span>
@@ -323,30 +346,6 @@
                 <span class="mod-name">Vecinos / Reclamos</span>
                 <span class="mod-count">Padrón, reclamos 311, turnos</span>
               </span>
-            </button>
-            <button class="module-btn" onclick="selectModule(this,'proveedores')" id="mod-proveedores">
-              <span class="mod-icon">🏢</span>
-              <span class="mod-info">
-                <span class="mod-name">Proveedores</span>
-                <span class="mod-count">Registro, facturas, contratos</span>
-              </span>
-            </button>
-            <button class="module-btn" onclick="selectModule(this,'control')" id="mod-control">
-              <span class="mod-icon">🛡️</span>
-              <span class="mod-info">
-                <span class="mod-name">Control Interno</span>
-                <span class="mod-count">Auditorías, logs, cumplimiento</span>
-              </span>
-            </button>
-
-            <div class="hub-section-label" style="margin-top:16px">Datos Cruzados</div>
-            <button class="module-btn" onclick="selectModule(this,'analytics')" id="mod-analytics" style="border-color:rgba(139,92,246,0.2);background:rgba(139,92,246,0.05)">
-              <span class="mod-icon">🔀</span>
-              <span class="mod-info">
-                <span class="mod-name">Cruzamiento IA</span>
-                <span class="mod-count">Análisis cross-módulo con IA</span>
-              </span>
-              <span class="mod-badge" style="background:rgba(139,92,246,0.2);color:#a78bfa">IA</span>
             </button>
           </div>
         </div>
@@ -362,19 +361,27 @@
                 <span class="src-icon">📂</span> Archivo local
               </button>
               <button class="source-tab" onclick="setSource(this,'url')" id="src-url">
-                <span class="src-icon">🔗</span> URL / API
+                <span class="src-icon">🔗</span> Google Sheets URL
               </button>
               <button class="source-tab" onclick="setSource(this,'gdrive')" id="src-gdrive">
-                <span class="src-icon">📁</span> Google Drive
+                <span class="src-icon">📊</span> Google Sheets
               </button>
               <button class="source-tab" onclick="setSource(this,'db')" id="src-db">
                 <span class="src-icon">🗄️</span> Base de datos
               </button>
               <button class="source-tab" onclick="setSource(this,'schedule')" id="src-schedule">
-                <span class="src-icon">⏰</span> Programado
+                <span class="src-icon">⏰</span> Programado · no habilitado
               </button>
             </div>
           </div>
+
+          <section class="import-context" aria-labelledby="importPeriodLabel">
+            <div>
+              <label id="importPeriodLabel" for="importPeriod">Período del dato · obligatorio</label>
+              <input type="month" id="importPeriod" name="period" required aria-describedby="importPeriodHelp">
+            </div>
+            <p id="importPeriodHelp">Elegí el mes que representa la fuente. MuniControl no lo infiere del nombre, la fecha de carga ni el contenido; se enviará y mostrará exactamente este valor.</p>
+          </section>
 
           <!-- Drop zone (file upload) -->
           <div id="panel-file">
@@ -382,18 +389,16 @@
               ondragover="event.preventDefault();this.classList.add('drag-over')"
               ondragleave="this.classList.remove('drag-over')"
               ondrop="handleDrop(event)">
-              <input type="file" id="fileInput" multiple accept=".pdf,.csv,.xlsx,.xls,.json,.txt,.xml" onchange="handleFiles(this.files)">
+              <input type="file" id="fileInput" accept=".pdf,.csv,.xlsx,.xls,.json" onchange="handleFiles(this.files)">
               <div class="drop-icon">📥</div>
-              <div class="drop-title">Arrastrá tus archivos aquí</div>
-              <div class="drop-sub">o hacé clic para seleccionarlos</div>
+              <div class="drop-title">Arrastrá un archivo aquí</div>
+              <div class="drop-sub">Carga segura de un archivo por vez; también podés hacer clic para seleccionarlo</div>
               <div class="drop-formats">
                 <span class="format-pill">PDF</span>
                 <span class="format-pill">CSV</span>
                 <span class="format-pill">XLSX</span>
                 <span class="format-pill">XLS</span>
                 <span class="format-pill">JSON</span>
-                <span class="format-pill">XML</span>
-                <span class="format-pill">TXT</span>
               </div>
             </div>
             <div class="upload-progress" id="uploadProgress">
@@ -408,28 +413,30 @@
           <!-- URL connector -->
           <div id="panel-url" style="display:none">
             <div class="url-connector">
-              <h4>🔗 Conectar URL o API externa</h4>
+              <h4>🔗 Importar desde Google Sheets</h4>
               <div class="url-input-row">
-                <input type="url" id="urlInput" placeholder="https://api.ejemplo.com/datos.json o https://docs.google.com/...">
-                <button class="btn-connect" onclick="connectURL()">Conectar</button>
+                <input type="url" id="urlInput" placeholder="https://docs.google.com/spreadsheets/d/…">
+                <button class="btn-connect" data-google-import-button onclick="connectURL()">Conectar</button>
               </div>
               <div style="margin-top:12px;font-size:11px;color:rgba(100,116,139,0.6)">
-                Soporta: APIs REST (JSON), Google Sheets públicas, archivos CSV en servidores municipales
+                Soporta únicamente hojas de Google Sheets accesibles mediante enlace compartido.
               </div>
+              <div class="import-outcome" data-google-import-status data-state="idle" role="status" aria-live="polite">Todavía no se inició una importación.</div>
             </div>
           </div>
 
-          <!-- Google Drive -->
+          <!-- Google Sheets -->
           <div id="panel-gdrive" style="display:none">
             <div class="url-connector">
-              <h4>📁 Google Drive / Google Sheets</h4>
+              <h4>📊 Google Sheets</h4>
               <div class="url-input-row">
-                <input type="url" id="gdriveInput" placeholder="Pegá el link de Google Drive o Google Sheets">
-                <button class="btn-connect" onclick="connectGDrive()">Importar</button>
+                <input type="url" id="gdriveInput" placeholder="Pegá el enlace de Google Sheets">
+                <button class="btn-connect" data-google-import-button onclick="connectGDrive()">Importar</button>
               </div>
               <div style="margin-top:10px;font-size:11px;color:rgba(100,116,139,0.6)">
                 ⚠️ El archivo debe estar compartido como "Cualquiera con el link puede ver"
               </div>
+              <div class="import-outcome" data-google-import-status data-state="idle" role="status" aria-live="polite">Todavía no se inició una importación.</div>
             </div>
           </div>
 
@@ -440,25 +447,21 @@
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                 <div>
                   <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Tipo</label>
-                  <select id="dbType" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:'Inter',sans-serif;outline:none">
+                  <select id="dbType" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;outline:none">
                     <option>PostgreSQL</option>
-                    <option>MySQL</option>
-                    <option>SQL Server</option>
-                    <option>MongoDB</option>
-                    <option>SQLite</option>
                   </select>
                 </div>
                 <div>
                   <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Puerto</label>
-                  <input type="text" placeholder="5432" id="dbPort" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box">
+                  <input type="text" placeholder="5432" id="dbPort" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;outline:none;box-sizing:border-box">
                 </div>
               </div>
               <div class="url-input-row">
-                <input type="text" id="dbConnStr" placeholder="postgresql://usuario:contraseña@servidor:5432/nombre_db">
+                <input type="password" id="dbConnStr" autocomplete="off" spellcheck="false" placeholder="postgresql://usuario:contraseña@servidor:5432/nombre_db?sslmode=verify-full">
                 <button class="btn-connect" onclick="connectDB()">Conectar</button>
               </div>
               <div style="margin-top:8px;font-size:11px;color:rgba(100,116,139,0.5)">
-                🔒 La conexión se cifra y nunca se almacena la contraseña en texto plano
+                🔒 La credencial se usa sólo en esta prueba autenticada y no se persiste. Usá HTTPS en la plataforma y TLS en PostgreSQL.
               </div>
             </div>
           </div>
@@ -466,28 +469,28 @@
           <!-- Scheduled import -->
           <div id="panel-schedule" style="display:none">
             <div class="url-connector">
-              <h4>⏰ Importación programada diaria</h4>
+              <h4>⏰ Importación programada · no habilitada</h4>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
                 <div>
                   <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Frecuencia</label>
-                  <select id="schedFreq" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:'Inter',sans-serif;outline:none">
+                  <select id="schedFreq" disabled style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;outline:none">
                     <option>Diaria</option><option>Semanal</option><option>Mensual</option>
                   </select>
                 </div>
                 <div>
                   <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Hora</label>
-                  <input type="time" id="schedTime" value="06:00" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;outline:none;box-sizing:border-box">
+                  <input type="time" id="schedTime" value="06:00" disabled style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;outline:none;box-sizing:border-box">
                 </div>
                 <div>
                   <label style="font-size:11px;color:rgba(148,163,184,0.6);display:block;margin-bottom:4px">Módulo</label>
-                  <select id="schedModule" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:'Inter',sans-serif;outline:none">
+                  <select id="schedModule" disabled style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f0f4ff;font-size:13px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;outline:none">
                     <option>RRHH</option><option>Hacienda</option><option>Licitaciones</option><option>Obras</option>
                   </select>
                 </div>
               </div>
               <div class="url-input-row">
-                <input type="url" id="schedUrl" placeholder="URL fuente de datos (API, CSV, Sheets...)">
-                <button class="btn-connect" onclick="addSchedule()">Programar</button>
+                <input type="url" id="schedUrl" disabled placeholder="La programación automática todavía no está habilitada">
+                <button class="btn-connect" type="button" disabled>Programar</button>
               </div>
             </div>
           </div>
@@ -496,45 +499,40 @@
           <div>
             <div class="hub-section-label">Conectores rápidos</div>
             <div class="quick-connectors" id="connectorsGrid">
-              <div class="connector-card" onclick="showToast('Google Sheets: pegá el link arriba','info')">
+              <div class="connector-card" onclick="showMsg('Google Sheets: pegá el link arriba','info')">
                 <div class="connector-icon">📊</div>
                 <div class="connector-name">Google Sheets</div>
                 <div class="connector-status">Sin conectar</div>
               </div>
-              <div class="connector-card" onclick="showToast('Google Drive: pegá el link arriba','info')">
-                <div class="connector-icon">📁</div>
-                <div class="connector-name">Google Drive</div>
-                <div class="connector-status">Sin conectar</div>
-              </div>
-              <div class="connector-card connected" onclick="showToast('✅ Neon DB conectada','success')">
+              <div class="connector-card" onclick="showMsg('La persistencia se verifica en cada carga autenticada; esta tarjeta no declara una conexión activa.','info')">
                 <div class="connector-icon">🗄️</div>
-                <div class="connector-name">Neon DB</div>
-                <div class="connector-status">✅ Conectado</div>
+                <div class="connector-name">Base analítica legacy</div>
+                <div class="connector-status">Estado por verificar</div>
               </div>
-              <div class="connector-card" onclick="showToast('Dropbox: próximamente','info')">
+              <div class="connector-card" onclick="showMsg('Dropbox: próximamente','info')">
                 <div class="connector-icon">📦</div>
                 <div class="connector-name">Dropbox</div>
                 <div class="connector-status">Próximamente</div>
               </div>
-              <div class="connector-card" onclick="showToast('OneDrive: próximamente','info')">
+              <div class="connector-card" onclick="showMsg('OneDrive: próximamente','info')">
                 <div class="connector-icon">☁️</div>
                 <div class="connector-name">OneDrive</div>
                 <div class="connector-status">Próximamente</div>
               </div>
-              <div class="connector-card" onclick="showToast('API REST: usá el conector de URL','info')">
+              <div class="connector-card" onclick="showMsg('La importación por URL está restringida actualmente a Google Sheets.','info')">
                 <div class="connector-icon">🔌</div>
                 <div class="connector-name">API REST</div>
-                <div class="connector-status">Via URL</div>
+                <div class="connector-status">No habilitado</div>
               </div>
-              <div class="connector-card" onclick="showToast('Email: próximamente','info')">
+              <div class="connector-card" onclick="showMsg('Email: próximamente','info')">
                 <div class="connector-icon">📧</div>
                 <div class="connector-name">Email / SMTP</div>
                 <div class="connector-status">Próximamente</div>
               </div>
-              <div class="connector-card" onclick="showToast('FTP: próximamente','info')">
+              <div class="connector-card" onclick="showMsg('FTP / SFTP no está habilitado.','info')">
                 <div class="connector-icon">🖥️</div>
                 <div class="connector-name">FTP / SFTP</div>
-                <div class="connector-status">Servidor local</div>
+                <div class="connector-status">No habilitado</div>
               </div>
             </div>
           </div>
@@ -543,44 +541,10 @@
           <div>
             <div class="hub-section-label">Archivos cargados en este módulo</div>
             <div class="file-list" id="fileList">
-              <!-- Demo files -->
-              <div class="file-item">
-                <div class="file-ext ext-xlsx">XLSX</div>
+              <div class="file-item" id="fileListLoading">
                 <div class="file-info">
-                  <div class="file-name">nomina_empleados_julio2026.xlsx</div>
-                  <div class="file-meta">1.2 MB · Subido hace 2 días · 1.247 filas · 18 columnas</div>
-                </div>
-                <span class="file-module" style="background:rgba(59,130,246,0.15);color:#60a5fa">RRHH</span>
-                <div class="file-actions">
-                  <div class="file-action-btn" onclick="showToast('Analizando con IA...','info')" title="Analizar con IA">🤖</div>
-                  <div class="file-action-btn" onclick="showToast('Descargando...','info')" title="Descargar">⬇️</div>
-                  <div class="file-action-btn" onclick="this.closest('.file-item').remove();showToast('Archivo eliminado','info')" title="Eliminar">🗑️</div>
-                </div>
-              </div>
-              <div class="file-item">
-                <div class="file-ext ext-pdf">PDF</div>
-                <div class="file-info">
-                  <div class="file-name">balance_hacienda_2T2026.pdf</div>
-                  <div class="file-meta">4.8 MB · Subido hace 5 días · 34 páginas</div>
-                </div>
-                <span class="file-module" style="background:rgba(245,158,11,0.15);color:#fbbf24">Hacienda</span>
-                <div class="file-actions">
-                  <div class="file-action-btn" onclick="showToast('Analizando PDF con IA...','info')" title="Analizar con IA">🤖</div>
-                  <div class="file-action-btn" title="Descargar">⬇️</div>
-                  <div class="file-action-btn" onclick="this.closest('.file-item').remove()">🗑️</div>
-                </div>
-              </div>
-              <div class="file-item">
-                <div class="file-ext ext-csv">CSV</div>
-                <div class="file-info">
-                  <div class="file-name">licitaciones_activas_2026.csv</div>
-                  <div class="file-meta">284 KB · Subido hoy · 47 registros</div>
-                </div>
-                <span class="file-module" style="background:rgba(16,185,129,0.15);color:#34d399">Licitaciones</span>
-                <div class="file-actions">
-                  <div class="file-action-btn" onclick="showToast('Analizando CSV...','info')">🤖</div>
-                  <div class="file-action-btn">⬇️</div>
-                  <div class="file-action-btn" onclick="this.closest('.file-item').remove()">🗑️</div>
+                  <div class="file-name">Consultando datasets registrados…</div>
+                  <div class="file-meta">Solo se mostrarán archivos confirmados por el servidor</div>
                 </div>
               </div>
             </div>
@@ -602,6 +566,7 @@
 
   <script src="js/theme-switcher.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/auth-fetch.js"></script>
   <script>
     if (typeof buildSidebar === 'function') buildSidebar('importar');
 
@@ -619,6 +584,58 @@
       control:      { bg:'rgba(16,185,129,0.15)',  color:'#34d399',  name:'Control' },
       analytics:    { bg:'rgba(139,92,246,0.15)',  color:'#a78bfa',  name:'Analytics' },
     };
+
+    function makeElement(tag, className, text) {
+      var element = document.createElement(tag);
+      if (className) element.className = className;
+      if (text !== undefined && text !== null) element.textContent = String(text);
+      return element;
+    }
+
+    function safeRecordCount(value) {
+      var count = Number(value);
+      return Number.isFinite(count) && count >= 0 ? Math.trunc(count).toLocaleString('es-AR') : '0';
+    }
+
+    function buildFileItem(options) {
+      var moduleConfig = MODULE_COLORS[options.moduleId] || MODULE_COLORS.rrhh;
+      var moduleName = MODULE_COLORS[options.moduleId]
+        ? moduleConfig.name
+        : String(options.moduleId || 'Sin módulo');
+      var item = makeElement('div', 'file-item');
+      item.appendChild(makeElement('div', 'file-ext ' + options.extClass, options.extension));
+
+      var info = makeElement('div', 'file-info');
+      info.append(
+        makeElement('div', 'file-name', options.filename || 'Sin nombre'),
+        makeElement('div', 'file-meta', options.meta || 'Sin metadatos')
+      );
+      item.appendChild(info);
+
+      var moduleBadge = makeElement('span', 'file-module', moduleName);
+      moduleBadge.style.background = moduleConfig.bg;
+      moduleBadge.style.color = moduleConfig.color;
+      item.appendChild(moduleBadge);
+
+      var actions = makeElement('div', 'file-actions');
+      var state = makeElement('span', 'file-meta', 'Inventario de solo lectura');
+      state.title = 'Análisis, exportación y borrado requieren contratos gobernados independientes';
+      actions.appendChild(state);
+      item.appendChild(actions);
+      return item;
+    }
+
+    function renderFileListState(title, detail) {
+      var list = document.getElementById('fileList');
+      var state = makeElement('div', 'file-item');
+      var info = makeElement('div', 'file-info');
+      info.append(
+        makeElement('div', 'file-name', title),
+        makeElement('div', 'file-meta', detail)
+      );
+      state.appendChild(info);
+      list.replaceChildren(state);
+    }
 
     // ── Module & source selection ──────────────────────────────
     function selectModule(btn, moduleId) {
@@ -653,6 +670,12 @@
 
     async function uploadFiles(files) {
       if (!files || files.length === 0) return;
+      if (files.length > 1) {
+        showMsg('La carga admite un archivo por vez. No se envió ningún archivo; seleccioná uno solo.', 'error');
+        return;
+      }
+      var selectedPeriod = getSelectedImportPeriod();
+      if (!selectedPeriod) return;
 
       var progress = document.getElementById('uploadProgress');
       var fill     = document.getElementById('progressFill');
@@ -661,60 +684,60 @@
 
       progress.classList.add('active');
       fill.style.width = '0%';
-      label.textContent = 'Subiendo ' + files.length + ' archivo(s)...';
+      label.textContent = 'Preparando el archivo para validación...';
       pct.textContent = '0%';
+      var completedRequests = 0;
 
       for (var i = 0; i < files.length; i++) {
         var file = files[i];
-        label.textContent = 'Procesando: ' + file.name;
-
-        // Fake progress to 80% while uploading
-        var fakeP = 10;
-        var fakeInterval = setInterval(function() {
-          fakeP = Math.min(fakeP + Math.random() * 8, 80);
-          fill.style.width = fakeP + '%';
-          pct.textContent = Math.round(fakeP) + '%';
-        }, 200);
+        label.textContent = 'Esperando confirmación del servidor: ' + file.name;
 
         try {
           var formData = new FormData();
           formData.append('file', file);
           formData.append('module', currentModule);
-          formData.append('period', getCurrentPeriod());
+          formData.append('period', selectedPeriod);
 
-          var sess = sessionStorage.getItem('mjunin_user') || '';
-          var resp = await fetch('/api/upload-handler', {
+          var resp = await MuniAuth.fetch('/api/upload-handler', {
             method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + sess },
             body: formData,
           });
 
-          clearInterval(fakeInterval);
-          fill.style.width = '100%';
-          pct.textContent = '100%';
+          var result = await resp.json().catch(function() { return {}; });
+          var fileData = (Array.isArray(result.files) && result.files[0]) || {};
+          var persistenceConfirmed = fileData.parsed === true &&
+            fileData.persisted === true &&
+            fileData.id !== undefined &&
+            fileData.id !== null &&
+            Number(fileData.insertedRows) > 0;
 
-          var result = await resp.json();
-
-          if (resp.ok && result.success) {
-            var fileData = (result.files && result.files[0]) || {};
+          if (resp.ok && persistenceConfirmed) {
             addFileToList(file, fileData);
             showDataPreview(fileData);
-            showMsg('✅ ' + file.name + ' procesado — ' + (fileData.rowCount || 0) + ' registros en ' + (MODULE_COLORS[currentModule] || {}).name || currentModule, 'success');
+            var moduleName = MODULE_COLORS[currentModule] ? MODULE_COLORS[currentModule].name : currentModule;
+            var detail = '✅ ' + file.name + ' persistido — ' + safeRecordCount(fileData.insertedRows) + ' registros en ' + moduleName + ' · período ' + fileData.period;
+            if (fileData.truncated === true) detail += ' (fuente recortada al límite seguro)';
+            showMsg(detail, 'success');
           } else {
-            showMsg('⚠️ ' + (result.error || 'Error al procesar ' + file.name), 'error');
-            addFileToListLocal(file);
+            showMsg('⚠️ ' + (fileData.error || result.error || 'El servidor no confirmó parseo y persistencia de ' + file.name), 'error');
           }
         } catch (err) {
-          clearInterval(fakeInterval);
-          console.warn('Upload API error:', err.message, '- adding locally');
-          addFileToListLocal(file);
-          showMsg('⚠️ API no disponible, archivo registrado localmente', 'warning');
+          if (MuniAuth.isAuthError(err)) {
+            progress.classList.remove('active');
+            return;
+          }
+          console.warn('Upload API error:', err.message);
+          showMsg('⚠️ API no disponible; ' + file.name + ' no fue registrado ni persistido', 'warning');
+        } finally {
+          completedRequests += 1;
+          var completedPct = Math.round(completedRequests / files.length * 100);
+          fill.style.width = completedPct + '%';
+          pct.textContent = completedPct + '%';
+          label.textContent = 'Solicitud de carga completada';
         }
-
-        fill.style.width = '0%';
       }
 
-      setTimeout(function() { progress.classList.remove('active'); }, 600);
+      setTimeout(function() { progress.classList.remove('active'); }, 900);
     }
 
     // ── Data preview after upload ──────────────────────────────
@@ -722,172 +745,277 @@
       var existing = document.getElementById('dataPreviewSection');
       if (existing) existing.remove();
 
-      if (!fileData.rowCount || fileData.rowCount === 0) return;
+      if (fileData.parsed !== true || fileData.persisted !== true || Number(fileData.insertedRows) <= 0) return;
 
       var previewEl = document.createElement('div');
       previewEl.id = 'dataPreviewSection';
       previewEl.style.cssText = 'background:rgba(13,21,38,0.9);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;margin-top:16px';
-      previewEl.innerHTML = '<div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between">' +
-        '<div style="font-size:13px;font-weight:700;color:#f0f4ff">📊 Vista previa · ' + fileData.filename + '</div>' +
-        '<div style="display:flex;gap:8px">' +
-        '<span style="font-size:11px;background:rgba(16,185,129,0.15);color:#34d399;padding:3px 10px;border-radius:99px;font-weight:700">' + fileData.rowCount + ' registros</span>' +
-        '<button onclick="this.closest(\'#dataPreviewSection\').remove()" style="background:none;border:none;color:rgba(148,163,184,0.5);cursor:pointer;font-size:16px">×</button>' +
-        '</div></div>' +
-        '<div style="padding:12px 16px;font-size:12px;color:rgba(148,163,184,0.6)">' +
-        '✅ Datos guardados en la base de datos. <a href="/inteligencia" style="color:#60a5fa;text-decoration:none;font-weight:600">Ver en Dashboard Ejecutivo →</a>' +
-        '</div>' +
-        '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">' +
-        '<a href="/api/export-data?module=' + currentModule + '&period=' + getCurrentPeriod() + '&format=csv" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f4ff;font-size:11px;font-weight:600;text-decoration:none">⬇️ Exportar CSV</a>' +
-        '<a href="/api/export-data?module=' + currentModule + '&period=' + getCurrentPeriod() + '&format=xlsx" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f0f4ff;font-size:11px;font-weight:600;text-decoration:none">⬇️ Exportar Excel</a>' +
-        '<button onclick="analyzeWithAI(\'' + currentModule + '\')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.2);border-radius:8px;color:#60a5fa;font-size:11px;font-weight:600;cursor:pointer">🤖 Analizar con IA</button>' +
-        '</div>';
-      document.getElementById('panel-file').appendChild(previewEl);
-    }
 
-    async function analyzeWithAI(module) {
-      showMsg('🤖 Analizando ' + module + ' con IA...', 'info');
-      try {
-        var resp = await fetch('/api/ai-analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'Dame un resumen del módulo ' + module + ' para el período actual', period: getCurrentPeriod() })
-        });
-        var data = await resp.json();
-        if (data.response) {
-          showAnalysisResult(data.response, module);
-        }
-      } catch(e) {
-        showMsg('Error al analizar: ' + e.message, 'error');
+      var header = makeElement('div');
+      header.style.cssText = 'padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between';
+      var title = makeElement('div', '', '📊 Vista previa · ' + (fileData.filename || 'Archivo procesado'));
+      title.style.cssText = 'font-size:13px;font-weight:700;color:#f0f4ff';
+      var headerActions = makeElement('div');
+      headerActions.style.cssText = 'display:flex;gap:8px';
+      var count = makeElement('span', '', safeRecordCount(fileData.insertedRows) + ' registros persistidos');
+      count.style.cssText = 'font-size:11px;background:rgba(16,185,129,0.15);color:#34d399;padding:3px 10px;border-radius:99px;font-weight:700';
+      var closeButton = makeElement('button', '', '×');
+      closeButton.type = 'button';
+      closeButton.setAttribute('aria-label', 'Cerrar vista previa');
+      closeButton.style.cssText = 'background:none;border:none;color:rgba(148,163,184,0.5);cursor:pointer;font-size:16px';
+      closeButton.addEventListener('click', function() { previewEl.remove(); });
+      headerActions.append(count, closeButton);
+      header.append(title, headerActions);
+
+      var confirmation = makeElement('div');
+      confirmation.style.cssText = 'padding:12px 16px;font-size:12px;color:rgba(148,163,184,0.6)';
+      confirmation.appendChild(document.createTextNode('✅ Persistencia confirmada por el servidor para el período ' + fileData.period + '. '));
+      if (fileData.truncated === true) {
+        confirmation.appendChild(document.createTextNode(
+          'Se almacenaron ' + safeRecordCount(fileData.insertedRows) + ' de ' + safeRecordCount(fileData.sourceRowCount) + ' filas por el límite seguro. '
+        ));
       }
-    }
+      var dashboardLink = makeElement('a', '', 'Revisar en Reportes →');
+      dashboardLink.href = 'reportes.html';
+      dashboardLink.style.cssText = 'color:#60a5fa;text-decoration:none;font-weight:600';
+      confirmation.appendChild(dashboardLink);
 
-    function showAnalysisResult(text, module) {
-      var el = document.createElement('div');
-      el.style.cssText = 'background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.08));border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:16px;margin-top:12px';
-      el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
-        '<span style="font-size:18px">🤖</span>' +
-        '<span style="font-size:13px;font-weight:700;color:#60a5fa">MuniBot — Análisis de ' + (MODULE_COLORS[module]||{}).name + '</span>' +
-        '</div>' +
-        '<div style="font-size:13px;line-height:1.6;color:rgba(240,244,255,0.85)">' + text + '</div>';
-      document.getElementById('panel-file').appendChild(el);
+      var limitation = makeElement('div', '', 'Acciones posteriores retiradas: esta carga no alimenta al Asistente GRH y no habilita exportación o borrado crudos.');
+      limitation.style.cssText = 'padding:0 16px 12px;font-size:11px;color:rgba(148,163,184,0.72)';
+      previewEl.append(header, confirmation, limitation);
+      document.getElementById('panel-file').appendChild(previewEl);
     }
 
     // ── Load existing files for module ─────────────────────────
     async function loadModuleFiles(moduleId) {
+      renderFileListState('Consultando datasets registrados…', 'Solo se mostrarán archivos confirmados por el servidor');
       try {
-        var resp = await fetch('/api/audit?action=datasets&module=' + moduleId + '&limit=10');
-        if (!resp.ok) return;
-        var data = await resp.json();
-        if (data.datasets && data.datasets.length > 0) {
-          renderExistingFiles(data.datasets);
+        var resp = await MuniAuth.fetch('/api/audit?action=datasets&module=' + encodeURIComponent(moduleId) + '&limit=10');
+        if (!resp.ok) {
+          renderFileListState('No se pudo consultar este módulo', 'El servidor no confirmó el estado de sus datasets');
+          return;
         }
-      } catch(e) { /* API not ready yet */ }
+        var data = await resp.json();
+        var datasets = Array.isArray(data.datasets) ? data.datasets : (Array.isArray(data.data) ? data.data : []);
+        renderExistingFiles(datasets);
+      } catch(e) {
+        if (MuniAuth.isAuthError(e)) return;
+        renderFileListState('No se pudo consultar este módulo', 'Reintentá cuando el servicio de auditoría esté disponible');
+      }
     }
 
     function renderExistingFiles(datasets) {
       var list = document.getElementById('fileList');
-      list.innerHTML = '';
+      if (!Array.isArray(datasets) || datasets.length === 0) {
+        renderFileListState('No hay datasets registrados en este módulo', 'Los archivos aparecerán aquí después de una carga confirmada');
+        return;
+      }
+
+      var items = [];
       datasets.forEach(function(ds) {
         var ext = (ds.filename || '').split('.').pop().toUpperCase() || 'DB';
         var extClass = { PDF:'ext-pdf', XLSX:'ext-xlsx', XLS:'ext-xlsx', CSV:'ext-csv' }[ext] || 'ext-db';
-        var mc = MODULE_COLORS[ds.module] || MODULE_COLORS.rrhh;
-        var when = ds.created_at ? new Date(ds.created_at).toLocaleDateString('es-AR', {day:'2-digit',month:'short',year:'numeric'}) : '';
-        var item = document.createElement('div');
-        item.className = 'file-item';
-        item.innerHTML = '<div class="file-ext ' + extClass + '">' + ext + '</div>' +
-          '<div class="file-info">' +
-          '<div class="file-name">' + (ds.filename || 'Sin nombre') + '</div>' +
-          '<div class="file-meta">' + (ds.row_count || 0).toLocaleString('es-AR') + ' registros · ' + when + '</div>' +
-          '</div>' +
-          '<span class="file-module" style="background:' + mc.bg + ';color:' + mc.color + '">' + (mc.name || ds.module) + '</span>' +
-          '<div class="file-actions">' +
-          '<div class="file-action-btn" onclick="analyzeWithAI(\'' + ds.module + '\')" title="Analizar con IA">🤖</div>' +
-          '<a class="file-action-btn" href="/api/export-data?module=' + ds.module + '&period=' + ds.period + '&format=csv" title="Exportar CSV" style="text-decoration:none">⬇️</a>' +
-          '<div class="file-action-btn" onclick="deleteDataset(' + ds.id + ',this)" title="Eliminar">🗑️</div>' +
-          '</div>';
-        list.appendChild(item);
+        var createdAt = new Date(ds.created_at);
+        var when = ds.created_at && !Number.isNaN(createdAt.getTime())
+          ? createdAt.toLocaleDateString('es-AR', {day:'2-digit',month:'short',year:'numeric'})
+          : 'fecha no informada';
+        var item = buildFileItem({
+          extension: ext,
+          extClass: extClass,
+          filename: ds.filename || 'Sin nombre',
+          meta: safeRecordCount(ds.row_count) + ' registros · ' + when,
+          moduleId: ds.module,
+          datasetId: ds.id
+        });
+        items.push(item);
       });
-    }
-
-    async function deleteDataset(id, btn) {
-      if (!confirm('¿Eliminar este dataset y todos sus datos?')) return;
-      try {
-        await fetch('/api/audit?action=delete-dataset&id=' + id, { method: 'DELETE' });
-        btn.closest('.file-item').remove();
-        showMsg('Dataset eliminado', 'info');
-      } catch(e) { showMsg('Error al eliminar', 'error'); }
+      list.replaceChildren.apply(list, items);
     }
 
     // ── URL / Google Sheets connectors ─────────────────────────
     async function connectURL() {
       var url = document.getElementById('urlInput').value.trim();
       if (!url) { showMsg('Ingresá una URL válida', 'error'); return; }
-      showMsg('🔗 Conectando a ' + url.substring(0,50) + '...', 'info');
-
-      try {
-        var resp = await fetch('/api/upload-handler', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + (sessionStorage.getItem('mjunin_user') || '')
-          },
-          body: JSON.stringify({ sourceUrl: url, module: currentModule, period: getCurrentPeriod(), sourceType: 'api' })
-        });
-        var result = await resp.json();
-        if (result.success) {
-          showMsg('✅ Fuente conectada. ' + (result.rowCount || 0) + ' registros importados', 'success');
-        } else {
-          showMsg('⚠️ ' + (result.error || 'Error al conectar'), 'error');
-        }
-      } catch(e) {
-        showMsg('Error de red: ' + e.message, 'error');
+      if (/docs\.google\.com\/spreadsheets\/d\//i.test(url)) {
+        document.getElementById('gdriveInput').value = url;
+        await connectGDrive();
+        return;
       }
+      showMsg('Por seguridad, la importación remota admite Google Sheets. Para otras fuentes usá carga de archivo o un conector PostgreSQL autorizado.', 'info');
+    }
+
+    function importCount(value) {
+      return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
+    }
+
+    function classifyGoogleSheetsImport(httpOk, result) {
+      var payload = result && typeof result === 'object' && !Array.isArray(result) ? result : {};
+      if (!httpOk) {
+        return { state: 'rejected', message: payload.error || 'El servidor rechazó la importación.' };
+      }
+
+      var source = importCount(payload.sourceRowCount);
+      var parsed = importCount(payload.parsedRows);
+      var inserted = importCount(payload.insertedRows);
+      var persisted = importCount(payload.persistedRows);
+      var rowCount = importCount(payload.rowCount);
+      var rejected = importCount(payload.rejectedRows);
+      var limit = importCount(payload.limit);
+      var datasetConfirmed = payload.datasetId !== undefined && payload.datasetId !== null &&
+        payload.id !== undefined && payload.id !== null && String(payload.datasetId) === String(payload.id);
+      var countsConfirmed = source !== null && parsed !== null && inserted !== null &&
+        persisted !== null && rowCount !== null && rejected !== null &&
+        parsed === source && persisted === inserted && rowCount === inserted &&
+        source === inserted + rejected;
+      var persistenceConfirmed = payload.success === true && payload.parsed === true &&
+        payload.persisted === true && datasetConfirmed && countsConfirmed && inserted > 0;
+
+      if (!persistenceConfirmed) {
+        return {
+          state: 'rejected',
+          message: 'El servidor no confirmó un contrato coherente de parseo y persistencia. No se declaró éxito.'
+        };
+      }
+
+      if (payload.truncated === true) {
+        if (payload.partial !== true || payload.status !== 'partial' || rejected <= 0 ||
+            limit === null || limit <= 0 || inserted !== limit || source <= limit) {
+          return {
+            state: 'rejected',
+            message: 'La respuesta de truncamiento tiene conteos incoherentes. No se declaró éxito.'
+          };
+        }
+        return { state: 'truncated', source: source, inserted: inserted, rejected: rejected, limit: limit };
+      }
+
+      if (payload.partial === true || rejected > 0) {
+        if (payload.partial !== true || payload.status !== 'partial' || payload.truncated !== false || rejected <= 0) {
+          return {
+            state: 'rejected',
+            message: 'La respuesta parcial tiene conteos o estados incoherentes. No se declaró éxito.'
+          };
+        }
+        return { state: 'partial', source: source, inserted: inserted, rejected: rejected };
+      }
+
+      if (payload.partial !== false || payload.truncated !== false || payload.status !== 'success' || rejected !== 0) {
+        return {
+          state: 'rejected',
+          message: 'La respuesta de éxito no confirmó un estado final coherente. No se declaró éxito.'
+        };
+      }
+      return { state: 'success', source: source, inserted: inserted, rejected: 0 };
+    }
+
+    function setGoogleImportBusy(isBusy) {
+      document.querySelectorAll('[data-google-import-button]').forEach(function(button) {
+        button.disabled = isBusy;
+        button.setAttribute('aria-busy', String(isBusy));
+      });
+    }
+
+    function announceGoogleImport(outcome) {
+      var state = outcome.state;
+      var message;
+      var toastType;
+      if (state === 'success') {
+        message = 'Importación confirmada: ' + safeRecordCount(outcome.inserted) + ' de ' + safeRecordCount(outcome.source) + ' filas persistidas.';
+        toastType = 'success';
+      } else if (state === 'truncated') {
+        message = 'Importación truncada en el límite seguro de ' + safeRecordCount(outcome.limit) + ': ' +
+          safeRecordCount(outcome.inserted) + ' de ' + safeRecordCount(outcome.source) + ' filas persistidas; ' +
+          safeRecordCount(outcome.rejected) + ' no se guardaron.';
+        toastType = 'warning';
+      } else if (state === 'partial') {
+        message = 'Importación parcial: ' + safeRecordCount(outcome.inserted) + ' de ' +
+          safeRecordCount(outcome.source) + ' filas persistidas; ' + safeRecordCount(outcome.rejected) + ' rechazadas.';
+        toastType = 'warning';
+      } else {
+        message = 'Importación rechazada: ' + (outcome.message || 'el servidor no confirmó persistencia.');
+        toastType = 'error';
+      }
+
+      document.querySelectorAll('[data-google-import-status]').forEach(function(status) {
+        status.dataset.state = state;
+        status.textContent = message;
+      });
+      showMsg(message, toastType);
     }
 
     async function connectGDrive() {
       var url = document.getElementById('gdriveInput').value.trim();
-      if (!url) { showMsg('Pegá el link de Google Drive', 'error'); return; }
-
-      // Convert Google Sheets to CSV export URL
-      var csvUrl = url;
-      var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if (match) {
-        csvUrl = 'https://docs.google.com/spreadsheets/d/' + match[1] + '/export?format=csv';
-        showMsg('📊 Importando Google Sheet como CSV...', 'info');
+      if (!url) {
+        announceGoogleImport({ state: 'rejected', message: 'ingresá un enlace de Google Sheets.' });
+        return;
+      }
+      var selectedPeriod = getSelectedImportPeriod();
+      if (!selectedPeriod) {
+        announceGoogleImport({ state: 'rejected', message: 'seleccioná el período del dato antes de importar.' });
+        return;
       }
 
+      var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (!match) {
+        announceGoogleImport({ state: 'rejected', message: 'el enlace no corresponde a un Google Sheet válido.' });
+        return;
+      }
+      document.querySelectorAll('[data-google-import-status]').forEach(function(status) {
+        status.dataset.state = 'pending';
+        status.textContent = 'Importación en curso; todavía no hay persistencia confirmada.';
+      });
+      setGoogleImportBusy(true);
+      showMsg('📊 Importando Google Sheet como CSV...', 'info');
+
       try {
-        // Fetch CSV via our API to avoid CORS
-        var resp = await fetch('/api/upload-handler', {
+        var resp = await MuniAuth.fetch('/api/google-sheets', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + (sessionStorage.getItem('mjunin_user') || '')
-          },
-          body: JSON.stringify({ sourceUrl: csvUrl, module: currentModule, period: getCurrentPeriod(), sourceType: 'gdrive', filename: 'google-sheet.csv' })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sheetUrl: url, module: currentModule, period: selectedPeriod })
         });
-        var result = await resp.json();
-        if (result.success) {
-          showMsg('✅ Google Sheets importado — ' + (result.rowCount || 0) + ' filas', 'success');
-        } else {
-          showMsg('⚠️ ' + (result.error || 'No se pudo importar. Verificá que el archivo sea público.'), 'error');
+        var result = await resp.json().catch(function() { return {}; });
+        var outcome = classifyGoogleSheetsImport(resp.ok, result);
+        announceGoogleImport(outcome);
+        if (outcome.state === 'success' || outcome.state === 'partial' || outcome.state === 'truncated') {
+          await loadModuleFiles(currentModule);
         }
       } catch(e) {
-        showMsg('Error al importar: ' + e.message, 'error');
+        if (MuniAuth.isAuthError(e)) {
+          announceGoogleImport({ state: 'rejected', message: 'la sesión no autorizó la importación.' });
+          return;
+        }
+        announceGoogleImport({ state: 'rejected', message: 'no se pudo verificar la respuesta del servidor.' });
+      } finally {
+        setGoogleImportBusy(false);
       }
     }
 
     async function connectDB() {
-      var conn = document.getElementById('dbConnStr').value.trim();
+      var connectionInput = document.getElementById('dbConnStr');
+      var conn = connectionInput.value.trim();
       var dbType = document.getElementById('dbType').value;
       if (!conn) { showMsg('Ingresá la cadena de conexión', 'error'); return; }
+      if (dbType.toLowerCase() !== 'postgresql') { showMsg('El conector seguro disponible actualmente es PostgreSQL', 'info'); return; }
       showMsg('🗄️ Probando conexión a ' + dbType + '...', 'info');
 
       try {
-        var resp = await fetch('/api/external-connector', {
+        var parsed = new URL(conn);
+        if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) throw new Error('La URL debe usar postgresql://');
+        var sslMode = String(parsed.searchParams.get('sslmode') || 'verify-full').toLowerCase();
+        if (['disable', 'allow', 'prefer'].includes(sslMode)) throw new Error('El conector exige TLS verificable');
+        var config = {
+          type: 'postgresql',
+          host: parsed.hostname,
+          port: Number(parsed.port || 5432),
+          database: decodeURIComponent(parsed.pathname.replace(/^\//, '')),
+          user: decodeURIComponent(parsed.username),
+          password: decodeURIComponent(parsed.password),
+          ssl: true
+        };
+        if (!config.host || !config.database || !config.user || !config.password) throw new Error('La URL debe incluir host, base, usuario y contraseña');
+        var resp = await MuniAuth.fetch('/api/external-connector', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'test', config: { type: dbType.toLowerCase(), connectionString: conn } })
+          body: JSON.stringify({ action: 'test', config: config })
         });
         var result = await resp.json();
         if (result.success) {
@@ -896,7 +1024,10 @@
           showMsg('❌ ' + (result.message || 'No se pudo conectar'), 'error');
         }
       } catch(e) {
+        if (MuniAuth.isAuthError(e)) return;
         showMsg('Error: ' + e.message, 'error');
+      } finally {
+        connectionInput.value = '';
       }
     }
 
@@ -907,55 +1038,41 @@
       var module  = document.getElementById('schedModule').value.toLowerCase();
       if (!url) { showMsg('Ingresá la URL de la fuente', 'error'); return; }
 
-      try {
-        var resp = await fetch('/api/external-connector', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'save',
-            config: { conn_type: 'gdrive', conn_name: 'Import ' + freq + ' · ' + module, schedule: freq + ' at ' + time, sourceUrl: url, module }
-          })
-        });
-        var result = await resp.json();
-        if (result.success) {
-          showMsg('✅ Importación programada: ' + freq + ' a las ' + time + ' · ' + module, 'success');
-        } else {
-          showMsg('⚠️ ' + (result.error || 'Error al programar'), 'error');
-        }
-      } catch(e) {
-        showMsg('Programación guardada localmente (' + freq + ' · ' + time + ')', 'success');
-      }
+      showMsg('La programación automática todavía no está habilitada. La fuente no fue guardada ni ejecutada.', 'info');
     }
 
     // ── File list helpers ──────────────────────────────────────
     function addFileToList(file, apiResult) {
+      if (!apiResult || apiResult.parsed !== true || apiResult.persisted !== true || apiResult.id === undefined || apiResult.id === null) {
+        return;
+      }
       var ext = file.name.split('.').pop().toUpperCase();
       var extClass = { PDF:'ext-pdf', XLSX:'ext-xlsx', XLS:'ext-xlsx', CSV:'ext-csv' }[ext] || 'ext-db';
       var size = file.size > 1048576 ? (file.size/1048576).toFixed(1)+' MB' : Math.round(file.size/1024)+' KB';
-      var mc = MODULE_COLORS[currentModule] || MODULE_COLORS.rrhh;
-      var rowCount = (apiResult && apiResult.rowCount) ? apiResult.rowCount.toLocaleString('es-AR') + ' registros' : size;
-      var item = document.createElement('div');
-      item.className = 'file-item';
-      item.innerHTML = '<div class="file-ext ' + extClass + '">' + ext + '</div>' +
-        '<div class="file-info"><div class="file-name">' + file.name + '</div>' +
-        '<div class="file-meta">' + rowCount + ' · Subido ahora</div></div>' +
-        '<span class="file-module" style="background:' + mc.bg + ';color:' + mc.color + '">' + mc.name + '</span>' +
-        '<div class="file-actions">' +
-        '<div class="file-action-btn" onclick="analyzeWithAI(\'' + currentModule + '\')" title="Analizar con IA">🤖</div>' +
-        '<a class="file-action-btn" href="/api/export-data?module=' + currentModule + '&period=' + getCurrentPeriod() + '&format=csv" style="text-decoration:none" title="Exportar">⬇️</a>' +
-        '<div class="file-action-btn" onclick="this.closest(\'.file-item\').remove()">🗑️</div>' +
-        '</div>';
+      var rowCount = Number(apiResult.insertedRows) > 0
+        ? safeRecordCount(apiResult.insertedRows) + ' registros persistidos'
+        : size;
+      var item = buildFileItem({
+        extension: ext,
+        extClass: extClass,
+        filename: file.name,
+        meta: rowCount + ' · período ' + apiResult.period,
+        moduleId: currentModule,
+        datasetId: apiResult.id
+      });
       document.getElementById('fileList').prepend(item);
     }
 
-    function addFileToListLocal(file) {
-      addFileToList(file, null);
-    }
-
     // ── Helpers ────────────────────────────────────────────────
-    function getCurrentPeriod() {
-      var d = new Date();
-      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    function getSelectedImportPeriod() {
+      var input = document.getElementById('importPeriod');
+      var value = input ? input.value.trim() : '';
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) {
+        showMsg('Seleccioná el período YYYY-MM que representa la fuente. No se infiere automáticamente.', 'error');
+        if (input) input.focus();
+        return null;
+      }
+      return value;
     }
 
     function showMsg(msg, type) {
@@ -964,7 +1081,7 @@
       } else {
         var t = document.createElement('div');
         var colors = { success:'#10b981', error:'#ef4444', info:'#3b82f6', warning:'#f59e0b' };
-        t.style.cssText = 'position:fixed;bottom:80px;right:20px;background:#1e293b;border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;color:#f0f4ff;font-size:13px;z-index:9999;max-width:340px;border-left:3px solid '+(colors[type]||colors.info)+';font-family:Inter,sans-serif;line-height:1.4';
+        t.style.cssText = 'position:fixed;bottom:80px;right:20px;background:#1e293b;border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;color:#f0f4ff;font-size:13px;z-index:9999;max-width:340px;border-left:3px solid '+(colors[type]||colors.info)+';font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.4';
         t.textContent = msg;
         document.body.appendChild(t);
         setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(function(){ t.remove(); }, 300); }, 4000);

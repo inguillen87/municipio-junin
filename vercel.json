@@ -7,7 +7,7 @@
   "rewrites": [
     { "source": "/", "destination": "/login.html" },
     { "source": "/dashboard", "destination": "/index.html" },
-    { "source": "/inicio", "destination": "/index.html" },
+    { "source": "/inicio", "destination": "/inicio.html" },
     { "source": "/api/whatsapp/webhook", "destination": "/api/whatsapp-webhook" }
   ],
   "headers": [
@@ -18,12 +18,6 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
       ]
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron-daily-report",
-      "schedule": "0 11 * * 1"
     }
   ]
 }

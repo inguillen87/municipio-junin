@@ -1,184 +1,1940 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html lang="es" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hacienda | MuniControl</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07101f">
+  <meta name="description" content="Centro ejecutivo de Hacienda y Nómina de MuniControl, respaldado por proyecciones GRH gobernadas y protegidas.">
+  <title>Centro Ejecutivo de Hacienda y Nómina | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
+  <script>
+    (function applyStoredTheme() {
+      try {
+        var saved = localStorage.getItem('govtech_theme') || 'dark';
+        var resolved = saved === 'auto'
+          ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+          : saved;
+        document.documentElement.setAttribute('data-theme', resolved === 'light' ? 'light' : 'dark');
+      } catch (error) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }());
+  </script>
   <style>
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .kpi-card { background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); }
-    .kpi-value { font-size: 2rem; font-weight: 700; margin: 0.5rem 0; font-family: 'Outfit', sans-serif; }
-    .kpi-label { color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-    .kpi-trend.positive { color: #10b981; }
-    .kpi-trend.negative { color: #ef4444; }
-    
-    .data-table { width: 100%; border-collapse: collapse; }
-    .data-table th, .data-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
-    .data-table th { background: rgba(0,0,0,0.2); font-weight: 600; font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; }
-    .badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
-    .badge-pagado { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-    .badge-pendiente { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-    
-    .mini-stats { display: flex; gap: 2rem; margin-bottom: 2rem; background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); flex-wrap: wrap; }
-    .mini-stat-item { flex: 1; text-align: center; border-right: 1px solid var(--border-color); min-width: 150px; }
-    .mini-stat-item:last-child { border-right: none; }
-    .mini-stat-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
-    .mini-stat-label { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem; }
+    :root {
+      --hac-bg: #07101f;
+      --hac-surface: #0d192c;
+      --hac-surface-raised: #112139;
+      --hac-soft: rgba(255,255,255,.035);
+      --hac-border: rgba(170,193,226,.13);
+      --hac-border-strong: rgba(113,175,255,.3);
+      --hac-text: #f5f8ff;
+      --hac-text-soft: #b6c4d9;
+      --hac-muted: #8191aa;
+      --hac-blue: #62a8ff;
+      --hac-blue-rgb: 98,168,255;
+      --hac-teal: #4fd7c6;
+      --hac-teal-rgb: 79,215,198;
+      --hac-violet: #aa98ff;
+      --hac-violet-rgb: 170,152,255;
+      --hac-amber: #f4bd69;
+      --hac-amber-rgb: 244,189,105;
+      --hac-red: #ff858e;
+      --hac-red-rgb: 255,133,142;
+      --hac-green: #65d8ad;
+      --hac-shadow: 0 20px 50px rgba(0,0,0,.24);
+      --hac-radius-lg: 20px;
+      --hac-radius-md: 14px;
+      --hac-ease: cubic-bezier(.2,.7,.2,1);
+    }
+
+    [data-theme="light"] {
+      --hac-bg: #eef3fb;
+      --hac-surface: #fff;
+      --hac-surface-raised: #f8faff;
+      --hac-soft: rgba(28,63,111,.045);
+      --hac-border: rgba(31,65,112,.12);
+      --hac-border-strong: rgba(41,113,206,.3);
+      --hac-text: #12223b;
+      --hac-text-soft: #425775;
+      --hac-muted: #6d7f99;
+      --hac-blue: #2777dc;
+      --hac-blue-rgb: 39,119,220;
+      --hac-teal: #0b8f83;
+      --hac-teal-rgb: 11,143,131;
+      --hac-violet: #6654d9;
+      --hac-violet-rgb: 102,84,217;
+      --hac-amber: #a96305;
+      --hac-amber-rgb: 169,99,5;
+      --hac-red: #c33f50;
+      --hac-red-rgb: 195,63,80;
+      --hac-green: #137c5c;
+      --hac-shadow: 0 18px 46px rgba(28,55,92,.1);
+    }
+
+    html { color-scheme: dark; scroll-behavior: smooth; }
+    html[data-theme="light"] { color-scheme: light; }
+    body {
+      min-width: 320px;
+      background: var(--hac-bg);
+      color: var(--hac-text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .hac-skip {
+      position: fixed;
+      top: 10px;
+      left: 12px;
+      z-index: 2500;
+      transform: translateY(-160%);
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--hac-text);
+      color: var(--hac-bg);
+      font-size: 13px;
+      font-weight: 800;
+      transition: transform .18s ease;
+    }
+    .hac-skip:focus { transform: translateY(0); }
+
+    .hac-topbar {
+      min-height: 64px;
+      padding: 0 24px;
+      background: rgba(7,16,31,.93);
+      border-bottom: 1px solid var(--hac-border);
+      backdrop-filter: blur(18px);
+    }
+    [data-theme="light"] .hac-topbar { background: rgba(255,255,255,.92); }
+    .hac-topbar-left,
+    .hac-topbar-right,
+    .hac-page-title,
+    .hac-source-state,
+    .hac-controls,
+    .hac-control,
+    .hac-panel-head,
+    .hac-legend,
+    .hac-alert,
+    .hac-composition-meta,
+    .hac-equation,
+    .hac-sim-results,
+    .hac-footer {
+      display: flex;
+      align-items: center;
+    }
+    .hac-topbar-left { gap: 12px; min-width: 0; }
+    .hac-topbar-right { gap: 8px; }
+    .hac-page-title { align-items: flex-start; flex-direction: column; min-width: 0; }
+    .hac-page-title h1 {
+      margin: 0;
+      color: var(--hac-text);
+      font-size: 16px;
+      font-weight: 790;
+      letter-spacing: -.015em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hac-breadcrumb { color: var(--hac-muted); font-size: 11px; }
+    .hac-menu-btn,
+    .hac-icon-btn,
+    .hac-retry-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      min-height: 40px;
+      border: 1px solid var(--hac-border);
+      border-radius: 11px;
+      background: var(--hac-soft);
+      color: var(--hac-text-soft);
+      cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease, color .18s ease;
+    }
+    .hac-menu-btn:hover,
+    .hac-icon-btn:hover,
+    .hac-retry-btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--hac-border-strong);
+      background: rgba(var(--hac-blue-rgb),.1);
+      color: var(--hac-text);
+    }
+    .hac-source-state {
+      gap: 8px;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid rgba(var(--hac-teal-rgb),.22);
+      border-radius: 999px;
+      background: rgba(var(--hac-teal-rgb),.075);
+      color: var(--hac-teal);
+      font-size: 11px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+    .hac-source-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 5px rgba(var(--hac-teal-rgb),.1);
+    }
+    .hac-source-state[data-state="warn"] { border-color: rgba(var(--hac-amber-rgb),.28); background: rgba(var(--hac-amber-rgb),.09); color: var(--hac-amber); }
+    .hac-source-state[data-state="warn"] .hac-source-dot { box-shadow: 0 0 0 5px rgba(var(--hac-amber-rgb),.1); }
+    .hac-source-state[data-state="error"] { border-color: rgba(var(--hac-red-rgb),.28); background: rgba(var(--hac-red-rgb),.09); color: var(--hac-red); }
+    .hac-source-state[data-state="error"] .hac-source-dot { box-shadow: 0 0 0 5px rgba(var(--hac-red-rgb),.1); }
+
+    .hac-shell {
+      width: min(100%,1640px);
+      margin: 0 auto;
+      padding: 28px clamp(16px,2.3vw,34px) 64px;
+    }
+    .hac-hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      padding: clamp(24px,3vw,38px);
+      border: 1px solid rgba(var(--hac-blue-rgb),.2);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 87% 7%,rgba(var(--hac-violet-rgb),.18),transparent 34%),
+        linear-gradient(135deg,rgba(var(--hac-blue-rgb),.15),rgba(var(--hac-teal-rgb),.04) 55%,transparent),
+        var(--hac-surface);
+      box-shadow: var(--hac-shadow);
+      animation: hac-rise .52s var(--hac-ease) both;
+    }
+    .hac-hero::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      width: 360px;
+      height: 360px;
+      right: -165px;
+      bottom: -250px;
+      border: 1px solid rgba(var(--hac-blue-rgb),.18);
+      border-radius: 50%;
+      box-shadow: 0 0 0 42px rgba(var(--hac-blue-rgb),.035),0 0 0 92px rgba(var(--hac-blue-rgb),.018);
+      animation: hac-orbit 14s ease-in-out infinite alternate;
+    }
+    .hac-eyebrow {
+      margin-bottom: 9px;
+      color: var(--hac-blue);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .hac-hero h2 {
+      max-width: 920px;
+      margin: 0;
+      color: var(--hac-text);
+      font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif;
+      font-size: clamp(30px,4.2vw,55px);
+      font-weight: 840;
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+    .hac-hero-copy {
+      max-width: 835px;
+      margin: 14px 0 0;
+      color: var(--hac-text-soft);
+      font-size: clamp(13px,1.2vw,15px);
+      line-height: 1.65;
+    }
+    .hac-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .hac-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--hac-border);
+      border-radius: 999px;
+      background: var(--hac-soft);
+      color: var(--hac-text-soft);
+      font-size: 11px;
+      font-weight: 680;
+    }
+    .hac-chip strong { margin-right: 5px; color: var(--hac-text); font-weight: 820; }
+    .hac-controls {
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--hac-border);
+    }
+    .hac-control { flex-wrap: wrap; gap: 9px; }
+    .hac-control label { color: var(--hac-muted); font-size: 11px; font-weight: 750; }
+    .hac-select {
+      min-height: 38px;
+      padding: 0 34px 0 12px;
+      border: 1px solid var(--hac-border);
+      border-radius: 10px;
+      background: var(--hac-surface-raised);
+      color: var(--hac-text);
+      font: 650 12px/1 Inter,ui-sans-serif,system-ui,sans-serif;
+      cursor: pointer;
+    }
+    .hac-view-status { color: var(--hac-muted); font-size: 11px; }
+
+    .hac-error {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid rgba(255,133,142,.28);
+      border-radius: var(--hac-radius-md);
+      background: rgba(255,133,142,.075);
+    }
+    .hac-error[hidden] { display: none; }
+    .hac-data-views[hidden] { display: none !important; }
+    .hac-error-icon {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(255,133,142,.12);
+      color: var(--hac-red);
+      font-weight: 900;
+    }
+    .hac-error strong { display: block; margin-bottom: 3px; color: var(--hac-text); font-size: 13px; }
+    .hac-error p { margin: 0; color: var(--hac-text-soft); font-size: 12px; line-height: 1.5; }
+    .hac-retry-btn { min-width: auto; padding: 0 14px; font-size: 12px; font-weight: 760; }
+
+    .hac-kpis {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .hac-stat,
+    .hac-panel {
+      border: 1px solid var(--hac-border);
+      background: var(--hac-surface);
+      box-shadow: var(--hac-shadow);
+    }
+    .hac-stat {
+      --stat-rgb: var(--hac-blue-rgb);
+      position: relative;
+      overflow: hidden;
+      min-height: 156px;
+      padding: 18px;
+      border-radius: 17px;
+      animation: hac-rise .48s var(--hac-ease) both;
+      transition: transform .2s var(--hac-ease),border-color .2s ease;
+    }
+    .hac-stat:nth-child(2) { --stat-rgb: var(--hac-amber-rgb); animation-delay: 50ms; }
+    .hac-stat:nth-child(3) { --stat-rgb: var(--hac-teal-rgb); animation-delay: 100ms; }
+    .hac-stat:nth-child(4) { --stat-rgb: var(--hac-violet-rgb); animation-delay: 150ms; }
+    .hac-stat.hac-stat-risk { --stat-rgb: var(--hac-red-rgb); }
+    .hac-stat::after {
+      content: "";
+      position: absolute;
+      width: 105px;
+      height: 105px;
+      top: -58px;
+      right: -48px;
+      border-radius: 50%;
+      background: rgba(var(--stat-rgb),.12);
+    }
+    .hac-stat:hover { transform: translateY(-3px); border-color: rgba(var(--stat-rgb),.32); }
+    .hac-stat-label {
+      max-width: 85%;
+      color: var(--hac-muted);
+      font-size: 10px;
+      font-weight: 830;
+      letter-spacing: .095em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+    .hac-stat-value {
+      min-height: 39px;
+      margin-top: 13px;
+      color: var(--hac-text);
+      font-family: Outfit,Inter,ui-sans-serif,system-ui,sans-serif;
+      font-size: clamp(25px,2.45vw,36px);
+      font-weight: 850;
+      line-height: 1.05;
+      letter-spacing: -.035em;
+    }
+    .hac-stat-note { margin: 8px 0 0; color: var(--hac-muted); font-size: 11px; line-height: 1.45; }
+    .hac-skeleton {
+      color: transparent !important;
+      border-radius: 7px;
+      background: linear-gradient(90deg,rgba(255,255,255,.035) 20%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.035) 80%);
+      background-size: 220% 100%;
+      animation: hac-shimmer 1.25s linear infinite;
+    }
+
+    .hac-layout {
+      display: grid;
+      grid-template-columns: minmax(0,1.55fr) minmax(310px,.75fr);
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .hac-layout-balanced { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .hac-panel {
+      min-width: 0;
+      padding: clamp(17px,2vw,22px);
+      border-radius: var(--hac-radius-lg);
+      contain: layout paint;
+    }
+    .hac-panel-head {
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .hac-panel h3 {
+      margin: 0;
+      color: var(--hac-text);
+      font-family: Outfit,Inter,ui-sans-serif,system-ui,sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -.015em;
+    }
+    .hac-panel-subtitle { max-width: 760px; margin: 5px 0 0; color: var(--hac-muted); font-size: 11px; line-height: 1.55; }
+    .hac-panel-badge {
+      flex: 0 0 auto;
+      padding: 5px 8px;
+      border: 1px solid var(--hac-border);
+      border-radius: 999px;
+      background: var(--hac-soft);
+      color: var(--hac-text-soft);
+      font-size: 10px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+    .hac-chart {
+      min-height: 320px;
+      overflow: hidden;
+      border-radius: 13px;
+      background: linear-gradient(180deg,rgba(var(--hac-blue-rgb),.025),transparent 60%);
+    }
+    .hac-chart svg { display: block; width: 100%; height: auto; min-height: 320px; }
+    .hac-chart text { fill: var(--hac-muted); font: 10px Inter,ui-sans-serif,system-ui,sans-serif; }
+    .hac-chart .hac-grid-line { stroke: var(--hac-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .hac-chart-summary { margin: 10px 0 0; color: var(--hac-text-soft); font-size: 11px; line-height: 1.5; }
+    .hac-legend { flex-wrap: wrap; gap: 12px; margin-top: 11px; color: var(--hac-muted); font-size: 10px; }
+    .hac-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .hac-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--legend); }
+
+    .hac-close { margin-top: 14px; }
+    .hac-close-toolbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .hac-close-control { display: grid; min-width: min(100%,260px); gap: 7px; }
+    .hac-close-control label {
+      color: var(--hac-muted);
+      font-size: 9px;
+      font-weight: 820;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .hac-close-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1.35fr) minmax(310px,.65fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+    .hac-close-figure {
+      min-width: 0;
+      margin: 0;
+      padding: 14px;
+      border: 1px solid var(--hac-border);
+      border-radius: 14px;
+      background: var(--hac-soft);
+    }
+    .hac-close-chart { min-height: 270px; overflow: hidden; }
+    .hac-close-chart svg { display: block; width: 100%; height: auto; min-height: 270px; }
+    .hac-close-chart text { fill: var(--hac-muted); font: 10px Inter,ui-sans-serif,system-ui,sans-serif; }
+    .hac-close-side { display: grid; align-content: start; gap: 12px; }
+    .hac-close-metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+    .hac-close-metric {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--hac-border);
+      border-radius: 12px;
+      background: var(--hac-soft);
+    }
+    .hac-close-metric span {
+      display: block;
+      color: var(--hac-muted);
+      font-size: 8px;
+      font-weight: 820;
+      letter-spacing: .07em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+    .hac-close-metric strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--hac-text);
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.25;
+    }
+    .hac-close-note {
+      margin: 0;
+      padding: 12px;
+      border-left: 3px solid var(--hac-teal);
+      border-radius: 0 10px 10px 0;
+      background: rgba(var(--hac-teal-rgb),.055);
+      color: var(--hac-text-soft);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+    .hac-close-reconciliation { margin-top: 16px; }
+    .hac-close-reconciliation h4,.hac-close-comparison h4 {
+      margin: 0;
+      color: var(--hac-text);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .hac-close-reconciliation > p,.hac-close-comparison > p {
+      margin: 5px 0 11px;
+      color: var(--hac-muted);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+    .hac-close-reconciliation-grid {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 9px;
+    }
+    .hac-close-comparison {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--hac-border);
+      border-radius: 14px;
+      background: var(--hac-soft);
+    }
+    .hac-close-comparison-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .hac-close-deltas {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 9px;
+      margin-top: 12px;
+    }
+    .hac-close-delta {
+      min-width: 0;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--hac-surface-raised);
+    }
+    .hac-close-delta span { display: block; color: var(--hac-muted); font-size: 8px; line-height: 1.35; }
+    .hac-close-delta strong { display: block; margin-top: 5px; color: var(--hac-text); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+    .hac-alerts { display: grid; gap: 9px; }
+    .hac-alert {
+      align-items: flex-start;
+      gap: 11px;
+      padding: 12px;
+      border: 1px solid var(--hac-border);
+      border-radius: 13px;
+      background: var(--hac-soft);
+    }
+    .hac-alert-icon {
+      display: grid;
+      flex: 0 0 auto;
+      width: 29px;
+      height: 29px;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(var(--hac-blue-rgb),.11);
+      color: var(--hac-blue);
+      font-size: 10px;
+      font-weight: 850;
+    }
+    .hac-alert[data-tone="warn"] .hac-alert-icon { background: rgba(var(--hac-amber-rgb),.12); color: var(--hac-amber); }
+    .hac-alert[data-tone="critical"] { border-color: rgba(var(--hac-red-rgb),.25); background: rgba(var(--hac-red-rgb),.055); }
+    .hac-alert[data-tone="critical"] .hac-alert-icon { background: rgba(var(--hac-red-rgb),.12); color: var(--hac-red); }
+    .hac-alert[data-tone="ok"] .hac-alert-icon { background: rgba(var(--hac-teal-rgb),.11); color: var(--hac-teal); }
+    .hac-alert strong { display: block; color: var(--hac-text); font-size: 12px; line-height: 1.4; }
+    .hac-alert p { margin: 3px 0 0; color: var(--hac-muted); font-size: 11px; line-height: 1.48; }
+
+    .hac-equation {
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .hac-equation-card {
+      flex: 1;
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid var(--hac-border);
+      border-radius: 13px;
+      background: var(--hac-soft);
+    }
+    .hac-equation-card span { display: block; color: var(--hac-muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .hac-equation-card strong { display: block; margin-top: 7px; color: var(--hac-text); font-size: 16px; font-variant-numeric: tabular-nums; }
+    .hac-equation-symbol { color: var(--hac-muted); font-size: 18px; font-weight: 800; }
+    .hac-composition { display: grid; gap: 14px; }
+    .hac-composition-item { display: grid; gap: 7px; }
+    .hac-composition-meta { justify-content: space-between; gap: 12px; color: var(--hac-text-soft); font-size: 11px; }
+    .hac-composition-meta strong { color: var(--hac-text); font-weight: 760; }
+    .hac-track { height: 9px; overflow: hidden; border-radius: 999px; background: var(--hac-soft); }
+    .hac-track span {
+      display: block;
+      width: var(--bar-width,0%);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--bar-color,var(--hac-blue));
+      transform-origin: left;
+      animation: hac-grow .65s var(--hac-ease) both;
+    }
+
+    .hac-scenario-banner {
+      margin-bottom: 16px;
+      padding: 11px 12px;
+      border: 1px solid rgba(var(--hac-amber-rgb),.25);
+      border-radius: 12px;
+      background: rgba(var(--hac-amber-rgb),.075);
+      color: var(--hac-amber);
+      font-size: 11px;
+      font-weight: 740;
+      line-height: 1.5;
+    }
+    .hac-sim-control { display: grid; gap: 9px; }
+    .hac-sim-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--hac-text-soft); font-size: 11px; font-weight: 720; }
+    .hac-sim-value {
+      min-width: 70px;
+      padding: 5px 8px;
+      border: 1px solid var(--hac-border);
+      border-radius: 9px;
+      background: var(--hac-surface-raised);
+      color: var(--hac-blue);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 820;
+    }
+    .hac-range { width: 100%; accent-color: var(--hac-blue); cursor: pointer; }
+    .hac-sim-results { gap: 10px; margin-top: 17px; }
+    .hac-sim-result {
+      flex: 1;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--hac-border);
+      border-radius: 12px;
+      background: var(--hac-soft);
+    }
+    .hac-sim-result span { display: block; color: var(--hac-muted); font-size: 9px; font-weight: 780; text-transform: uppercase; }
+    .hac-sim-result strong { display: block; margin-top: 6px; color: var(--hac-text); font-size: 16px; }
+    .hac-sim-note { margin: 13px 0 0; color: var(--hac-muted); font-size: 10px; line-height: 1.55; }
+
+    .hac-table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--hac-border); border-radius: 13px; }
+    .hac-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 11px; }
+    .hac-table th {
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--hac-border);
+      background: var(--hac-soft);
+      color: var(--hac-muted);
+      font-size: 9px;
+      font-weight: 830;
+      letter-spacing: .085em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    .hac-table td { padding: 12px 13px; border-bottom: 1px solid var(--hac-border); color: var(--hac-text-soft); }
+    .hac-table tbody tr:last-child td { border-bottom: 0; }
+    .hac-table tbody tr:hover td { background: rgba(var(--hac-blue-rgb),.035); }
+    .hac-table td:nth-child(n+2):nth-child(-n+5),
+    .hac-table th:nth-child(n+2):nth-child(-n+5) { text-align: right; }
+    .hac-mono { font-family: "SFMono-Regular",Consolas,"Liberation Mono",monospace; font-variant-numeric: tabular-nums; }
+    .hac-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(var(--hac-teal-rgb),.09);
+      color: var(--hac-teal);
+      font-size: 9px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+    .hac-tag[data-tone="warn"] { background: rgba(var(--hac-amber-rgb),.1); color: var(--hac-amber); }
+
+    .hac-methodology { margin-top: 14px; border: 1px solid var(--hac-border); border-radius: var(--hac-radius-md); background: var(--hac-soft); }
+    .hac-methodology summary { padding: 13px 14px; color: var(--hac-text-soft); font-size: 11px; font-weight: 760; cursor: pointer; }
+    .hac-methodology-content {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 14px;
+      padding: 0 14px 14px;
+      color: var(--hac-muted);
+      font-size: 10px;
+      line-height: 1.6;
+    }
+    .hac-methodology-content strong { display: block; margin-bottom: 3px; color: var(--hac-text-soft); }
+    .hac-footer { flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 16px; color: var(--hac-muted); font-size: 10px; line-height: 1.5; }
+    .hac-footer code { color: var(--hac-text-soft); font-size: 10px; word-break: break-all; }
+    .hac-visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0,0,0,0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+    .hac-noscript { margin: 20px; padding: 18px; border: 1px solid rgba(var(--hac-amber-rgb),.28); border-radius: 14px; background: rgba(var(--hac-amber-rgb),.08); color: var(--hac-text); font-size: 13px; }
+
+    @keyframes hac-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes hac-orbit { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(-14px,-10px,0) scale(1.03); } }
+    @keyframes hac-shimmer { to { background-position: -220% 0; } }
+    @keyframes hac-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    @media (max-width: 1100px) {
+      .hac-layout,.hac-layout-balanced,.hac-close-grid { grid-template-columns: 1fr; }
+      .hac-close-reconciliation-grid,.hac-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width: 900px) {
+      .main-content { width: 100% !important; margin-left: 0 !important; transform: none !important; transition: none !important; }
+    }
+    @media (min-width: 901px) {
+      body > .main-content { width: calc(100% - var(--sidebar-w,260px)) !important; margin-left: var(--sidebar-w,260px) !important; }
+    }
+    @media (max-width: 760px) {
+      .hac-topbar { padding: 0 12px; }
+      .hac-source-state { display: none; }
+      .hac-shell { padding: 16px 12px 84px; }
+      .hac-hero { padding: 22px 18px; border-radius: 19px; }
+      .hac-controls,.hac-control { align-items: stretch; flex-direction: column; }
+      .hac-select { width: 100%; }
+      .hac-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+      .hac-stat { min-height: 146px; padding: 15px; }
+      .hac-panel { padding: 16px; border-radius: 17px; }
+      .hac-panel-head { flex-direction: column; }
+      .hac-panel-badge { align-self: flex-start; }
+      .hac-chart,.hac-chart svg { min-height: 270px; }
+      .hac-equation { align-items: stretch; flex-direction: column; }
+      .hac-equation-symbol { align-self: center; transform: none; }
+      .hac-sim-results { align-items: stretch; flex-direction: column; }
+      .hac-methodology-content { grid-template-columns: 1fr; }
+      .hac-close-toolbar { align-items: stretch; flex-direction: column; }
+      .hac-close-control { width: 100%; }
+      .hac-close-chart,.hac-close-chart svg { min-height: 240px; }
+      .hac-error { grid-template-columns: auto 1fr; }
+      .hac-error .hac-retry-btn { grid-column: 1/-1; width: 100%; }
+    }
+    @media (max-width: 420px) {
+      .hac-kpis { grid-template-columns: 1fr; }
+      .hac-stat { min-height: 128px; }
+      .hac-stat-value { font-size: 28px; }
+      .hac-close-metrics,.hac-close-reconciliation-grid,.hac-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .hac-close-metric strong { font-size: 13px; }
+      .hac-close-delta strong { font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *,*::before,*::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+    @media print {
+      .sidebar,.hac-topbar,.hac-controls,.hac-error,.hac-simulator,.hac-methodology summary { display: none !important; }
+      html body > main#mainContent.main-content { width: 100vw !important; max-width: none !important; margin: 0 !important; margin-left: 0 !important; transform: none !important; transition: none !important; animation: none !important; }
+      .hac-shell { max-width: none; padding: 0; }
+      .hac-hero,.hac-stat,.hac-panel { box-shadow: none; break-inside: avoid; }
+      .hac-panel { contain: none; }
+    }
   </style>
 </head>
 <body>
-  <aside class="sidebar" id="sidebar"></aside>
+  <a class="hac-skip" href="#haciendaDashboard">Saltar al tablero</a>
+  <aside class="sidebar" id="sidebar" aria-label="Navegación principal"></aside>
+
   <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn" aria-label="Menu">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <header class="topbar hac-topbar">
+      <div class="hac-topbar-left">
+        <button class="menu-btn hac-menu-btn" id="menuBtn" type="button" aria-label="Abrir o cerrar navegación">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
-        <div class="page-title">
-          <h1>Hacienda Municipal</h1>
-          <span class="breadcrumb">Gestion financiera</span>
+        <div class="hac-page-title">
+          <h1>Centro Ejecutivo de Hacienda y Nómina</h1>
+          <span class="hac-breadcrumb">Control de cálculo · calidad · privacidad</span>
         </div>
       </div>
-      <div class="topbar-right">
-        <div class="topbar-avatar" id="topbarAvatar">SA</div>
+      <div class="hac-topbar-right">
+        <div class="hac-source-state" id="topbarSourceState" aria-live="polite">
+          <span class="hac-source-dot" aria-hidden="true"></span>
+          <span id="topbarSourceText">Validando snapshot GRH</span>
+        </div>
+        <button class="hac-icon-btn" id="hacThemeToggle" type="button" aria-label="Cambiar tema" aria-pressed="false">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
+        </button>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuario actual">MC</div>
       </div>
     </header>
-    
-    <div class="content-wrapper">
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label">Ingresos del mes</div>
-          <div class="kpi-value">$180M</div>
-          <div class="kpi-trend positive">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            +8% vs mes anterior
+
+    <div class="hac-shell" id="haciendaDashboard" aria-busy="true">
+      <section class="hac-hero" aria-labelledby="haciendaTitle">
+        <div class="hac-eyebrow">Hacienda · proyecciones gobernadas GRH</div>
+        <h2 id="haciendaTitle">La nómina de cálculo, sin confundirla con dinero pagado.</h2>
+        <p class="hac-hero-copy">Lectura ejecutiva de la proyección protegida de compensación GRH. Es una medición de control de cálculo salarial, no un pago bancario ni un asiento contable. La reconciliación global presenta diferencias materiales; la moneda no está declarada y la vista no recibe filas crudas, etiquetas sensibles ni PII.</p>
+        <div class="hac-chips" aria-label="Contexto del snapshot">
+          <span class="hac-chip"><strong id="snapshotChip">—</strong> corte GRH</span>
+          <span class="hac-chip"><strong id="periodCountChip">—</strong> períodos publicados</span>
+          <span class="hac-chip"><strong id="protectedPeriodChip">—</strong> períodos protegidos</span>
+          <span class="hac-chip"><strong>Moneda</strong> no declarada</span>
+          <span class="hac-chip"><strong>PII</strong> no exportada</span>
+          <span class="hac-chip"><strong>Fuente</strong> conceptos de cálculo</span>
+          <span class="hac-chip"><strong>Estado</strong> no es pago bancario</span>
+          <span class="hac-chip"><strong id="crossScoreChip">—</strong> score cross-source global</span>
+        </div>
+        <div class="hac-controls" aria-label="Controles de liquidación">
+          <div class="hac-control">
+            <label for="periodRange">Horizonte de la serie</label>
+            <select class="hac-select" id="periodRange">
+              <option value="12">Últimos 12 períodos</option>
+              <option value="24">Últimos 24 períodos</option>
+              <option value="36">Últimos 36 períodos</option>
+              <option value="all">Histórico válido</option>
+            </select>
           </div>
+          <span class="hac-view-status" id="viewStatus" role="status" aria-live="polite">Preparando vista…</span>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Gastos del mes</div>
-          <div class="kpi-value" id="gastosKpi">$165M</div>
-          <div class="kpi-trend negative">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-            +3% vs mes anterior
-          </div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Balance</div>
-          <div class="kpi-value" style="color: #10b981;">+$15M</div>
-          <div class="kpi-trend">Superavit mensual</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Recaudacion anual</div>
-          <div class="kpi-value" style="color: #8b5cf6;">73%</div>
-          <div style="width: 100%; height: 6px; background: rgba(139, 92, 246, 0.2); border-radius: 3px; margin-top: 8px;">
-            <div style="width: 73%; height: 100%; background: #8b5cf6; border-radius: 3px;"></div>
-          </div>
-        </div>
+      </section>
+
+      <div class="hac-error" id="loadError" role="alert" hidden>
+        <span class="hac-error-icon" aria-hidden="true">!</span>
+        <div><strong>Las proyecciones de Hacienda no están disponibles</strong><p id="loadErrorMessage">No se pudieron validar las proyecciones gobernadas GRH.</p></div>
+        <button class="hac-retry-btn" id="retryLoad" type="button">Reintentar</button>
       </div>
 
-      <div class="mini-stats">
-        <div class="mini-stat-item">
-          <div class="mini-stat-value">47</div>
-          <div class="mini-stat-label">Proveedores activos</div>
-        </div>
-        <div class="mini-stat-item">
-          <div class="mini-stat-value">12</div>
-          <div class="mini-stat-label">Ordenes de pago pendientes</div>
-        </div>
-        <div class="mini-stat-item">
-          <div class="mini-stat-value">67%</div>
-          <div class="mini-stat-label">Presupuesto ejecutado</div>
-        </div>
-      </div>
+      <div class="hac-data-views" id="haciendaDataViews" hidden>
+      <section class="hac-kpis" aria-label="Indicadores de nómina del último período válido">
+        <article class="hac-stat">
+          <div class="hac-stat-label">Bruto de control de cálculo</div>
+          <div class="hac-stat-value hac-skeleton" id="kpiGross">Cargando</div>
+          <p class="hac-stat-note" id="kpiGrossNote">Proyección protegida · no pago bancario.</p>
+        </article>
+        <article class="hac-stat">
+          <div class="hac-stat-label">Retenciones de control</div>
+          <div class="hac-stat-value hac-skeleton" id="kpiWithholdings">Cargando</div>
+          <p class="hac-stat-note" id="kpiWithholdingsNote">Proyección protegida · moneda no declarada.</p>
+        </article>
+        <article class="hac-stat">
+          <div class="hac-stat-label">Neto de control de cálculo</div>
+          <div class="hac-stat-value hac-skeleton" id="kpiNet">Cargando</div>
+          <p class="hac-stat-note" id="kpiNetNote">Proyección protegida · moneda no declarada.</p>
+        </article>
+        <article class="hac-stat hac-stat-risk">
+          <div class="hac-stat-label">Score cross-source global</div>
+          <div class="hac-stat-value hac-skeleton" id="kpiReconciliation">Cargando</div>
+          <p class="hac-stat-note" id="kpiReconciliationNote">Cálculo frente a totpago · no certifica pago.</p>
+        </article>
+      </section>
 
-      <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 2rem;">
-        <h2 style="margin-top:0; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Ultimos Pagos</h2>
-        <div style="overflow-x: auto;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Proveedor</th>
-                <th>Concepto</th>
-                <th>Secretaria</th>
-                <th>Monto</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody id="pagosTableBody">
-            </tbody>
+      <section class="hac-panel hac-close" aria-labelledby="closeTitle">
+        <div class="hac-panel-head">
+          <div>
+            <h3 id="closeTitle">Cierre GRH explicado</h3>
+            <p class="hac-panel-subtitle">Descomposición aritmética mensual del control de cálculo y conciliación real del mismo período. Explica cómo se compone el neto observado; no atribuye causas, no certifica pago y no infiere moneda.</p>
+          </div>
+          <span class="hac-panel-badge">grh-close-v1 · k=10</span>
+        </div>
+        <div class="hac-close-toolbar">
+          <div class="hac-close-control">
+            <label for="closePeriodSelect">Período mensual liberado</label>
+            <select class="hac-select" id="closePeriodSelect" aria-describedby="closePrivacyNote"></select>
+          </div>
+          <span class="hac-view-status" id="closePrivacyNote" role="status" aria-live="polite">Validando períodos k=10…</span>
+        </div>
+        <div class="hac-close-grid">
+          <figure class="hac-close-figure" aria-labelledby="closeBridgeTitle closeBridgeCaption">
+            <h4 class="hac-visually-hidden" id="closeBridgeTitle">Puente aritmético del neto de control</h4>
+            <div class="hac-close-chart" id="closeBridge"></div>
+            <figcaption class="hac-chart-summary" id="closeBridgeCaption">Cargando descomposición mensual…</figcaption>
+          </figure>
+          <div class="hac-close-side">
+            <div class="hac-close-metrics" aria-label="Componentes principales del período">
+              <div class="hac-close-metric"><span>Participantes</span><strong id="closeParticipants">—</strong></div>
+              <div class="hac-close-metric"><span>Bruto con asignaciones</span><strong id="closeGross">—</strong></div>
+              <div class="hac-close-metric"><span>Retenciones</span><strong id="closeWithholdings">—</strong></div>
+              <div class="hac-close-metric"><span>Neto de control</span><strong id="closeNet">—</strong></div>
+              <div class="hac-close-metric"><span>Neto a pagar de cálculo</span><strong id="closeNetToPay">—</strong></div>
+              <div class="hac-close-metric"><span>Aportes empleador</span><strong id="closeEmployer">—</strong></div>
+            </div>
+            <p class="hac-close-note" id="closeControlNote">Validando identidad y tolerancia del período…</p>
+          </div>
+        </div>
+        <div class="hac-close-reconciliation" aria-labelledby="closeReconciliationTitle">
+          <h4 id="closeReconciliationTitle">Conciliación mensual calculo ↔ totpago</h4>
+          <p id="closeReconciliationCopy">Estas métricas pertenecen exclusivamente al período seleccionado; no reutilizan el score global.</p>
+          <div class="hac-close-reconciliation-grid">
+            <div class="hac-close-metric"><span>Cobertura de corridas</span><strong id="closeCoverage">—</strong></div>
+            <div class="hac-close-metric"><span>Exactitud de métricas</span><strong id="closeExactRate">—</strong></div>
+            <div class="hac-close-metric"><span>Acuerdo de valores</span><strong id="closeValueAgreement">—</strong></div>
+            <div class="hac-close-metric"><span>Varianza absoluta</span><strong id="closeVariance">—</strong></div>
+          </div>
+        </div>
+        <div class="hac-close-comparison" aria-labelledby="closeComparisonTitle">
+          <div class="hac-close-comparison-head">
+            <div><h4 id="closeComparisonTitle">Último cierre frente al mes anterior</h4><p id="closeComparisonCopy">Comparación aritmética protegida; una diferencia no demuestra su causa.</p></div>
+            <span class="hac-panel-badge" id="closeComparisonBadge">—</span>
+          </div>
+          <p id="closeComparisonReconciliation">Preparando comparación mensual…</p>
+          <div class="hac-close-deltas" id="closeDeltaList" aria-label="Deltas aritméticos del último cierre"></div>
+        </div>
+      </section>
+
+      <section class="hac-layout" aria-label="Serie y alertas de gestión">
+        <article class="hac-panel">
+          <div class="hac-panel-head">
+            <div><h3>Evolución del control de cálculo</h3><p class="hac-panel-subtitle">Bruto con asignaciones, neto y retenciones por período. Son importes de cálculo, no transferencias bancarias.</p></div>
+            <span class="hac-panel-badge" id="chartWindowBadge">—</span>
+          </div>
+          <figure aria-labelledby="payrollFigureCaption">
+            <div class="hac-chart" id="payrollChart" role="img" aria-label="Serie temporal del control de cálculo: bruto con asignaciones, neto y retenciones"></div>
+            <figcaption class="hac-chart-summary" id="payrollFigureCaption">Cargando serie…</figcaption>
+          </figure>
+          <div class="hac-legend" aria-label="Leyenda de la serie">
+            <span><i style="--legend:var(--hac-blue)"></i>bruto con asignaciones</span>
+            <span><i style="--legend:var(--hac-teal)"></i>neto de cálculo</span>
+            <span><i style="--legend:var(--hac-amber)"></i>retenciones</span>
+          </div>
+        </article>
+
+        <article class="hac-panel">
+          <div class="hac-panel-head"><div><h3>Alertas descriptivas</h3><p class="hac-panel-subtitle">Condiciones del dato que deben acompañar cualquier lectura financiera.</p></div></div>
+          <div class="hac-alerts" id="alertsList" aria-live="polite">
+            <div class="hac-alert"><span class="hac-alert-icon">01</span><div><strong>Validando contexto</strong><p>Comprobando snapshot, conciliación y cuarentenas.</p></div></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="hac-layout hac-layout-balanced" aria-label="Calidad y escenario">
+        <article class="hac-panel">
+          <div class="hac-panel-head"><div><h3>Confianza del extracto gobernado</h3><p class="hac-panel-subtitle" id="compositionSubtitle">Calidad, cobertura y acuerdo global; no es una composición salarial.</p></div><span class="hac-panel-badge" id="compositionPeriod">—</span></div>
+          <div class="hac-equation" aria-label="Controles globales de confianza">
+            <div class="hac-equation-card"><span>Calidad gobernada</span><strong id="equationGross">—</strong></div>
+            <span class="hac-equation-symbol" aria-hidden="true">·</span>
+            <div class="hac-equation-card"><span>Cobertura de corridas</span><strong id="equationWithholdings">—</strong></div>
+            <span class="hac-equation-symbol" aria-hidden="true">·</span>
+            <div class="hac-equation-card"><span>Acuerdo de valores</span><strong id="equationNet">—</strong></div>
+          </div>
+          <div class="hac-composition" id="compositionBars"></div>
+          <p class="hac-chart-summary" id="compositionSummary">Cargando controles de confianza…</p>
+        </article>
+
+        <article class="hac-panel hac-simulator">
+          <div class="hac-panel-head"><div><h3>Escenario de paritaria</h3><p class="hac-panel-subtitle">Sensibilidad simple sobre el bruto del control de cálculo; no modela un desembolso.</p></div><span class="hac-panel-badge">solo escenario</span></div>
+          <div class="hac-scenario-banner">Escenario no contable · no es presupuesto, liquidación, proyección certificada ni asiento.</div>
+          <div class="hac-sim-control">
+            <div class="hac-sim-label"><label for="parityRange">Incremento bruto hipotético</label><output class="hac-sim-value" id="parityOutput" for="parityRange">10,0%</output></div>
+            <input class="hac-range" id="parityRange" type="range" min="0" max="40" step="0.5" value="10" aria-describedby="simulatorNote">
+          </div>
+          <div class="hac-sim-results" aria-live="polite">
+            <div class="hac-sim-result"><span>Incremento bruto</span><strong id="simIncrement">—</strong></div>
+            <div class="hac-sim-result"><span>Bruto del escenario</span><strong id="simProjectedGross">—</strong></div>
+          </div>
+          <p class="hac-sim-note" id="simulatorNote">Aplica el porcentaje únicamente al bruto de cálculo observado. No resuelve la reconciliación global, no recalcula retenciones, aportes, neto ni pago bancario; no persiste ni envía información.</p>
+        </article>
+      </section>
+
+      <section class="hac-panel" style="margin-top:14px" aria-labelledby="periodTableTitle">
+        <div class="hac-panel-head"><div><h3 id="periodTableTitle">Períodos publicados del control de cálculo</h3><p class="hac-panel-subtitle" id="protectedPeriodsNote">Sólo se muestran períodos liberados por la política de privacidad. No contiene legajos, nombres ni identificadores de empleados.</p></div><span class="hac-panel-badge">k=10 · sin PII</span></div>
+        <div class="hac-table-wrap">
+          <table class="hac-table">
+            <caption class="hac-visually-hidden">Períodos liberados del control de cálculo con participantes, bruto, retenciones, neto y aportes patronales de control</caption>
+            <thead><tr><th scope="col">Período</th><th scope="col">Participantes</th><th scope="col">Bruto control</th><th scope="col">Retenciones</th><th scope="col">Neto control</th><th scope="col">Aportes patronales</th></tr></thead>
+            <tbody id="periodRows"><tr><td colspan="6">Cargando períodos…</td></tr></tbody>
           </table>
         </div>
-      </div>
-      
-      <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-        <h2 style="margin-top:0; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Evolucion Ingresos vs Gastos</h2>
-        <canvas id="chartIngresosGastos" style="width: 100%; height: 300px;"></canvas>
+
+        <details class="hac-methodology">
+          <summary>Definiciones, fuente y límites de interpretación</summary>
+          <div class="hac-methodology-content">
+            <div><strong>Importes publicados</strong>La proyección ejecutiva entrega bruto con asignaciones, retenciones, neto y aportes patronales en centavos de la unidad monetaria de origen. La vista divide por 100 y no infiere moneda ni símbolo.</div>
+            <div><strong>Control de cálculo</strong>Los importes sirven para analizar el cálculo salarial. No prueban una transferencia bancaria, un asiento contable, un saldo de tesorería ni la efectiva percepción por una persona.</div>
+            <div><strong>Conciliación global</strong>La proyección de calidad publica cobertura, exactitud y acuerdo de valores globales. No se atribuye ni se inventa una conciliación para cada período.</div>
+            <div><strong>Totpago</strong>Permanece como diagnóstico cross-source global. No alimenta los importes mensuales ni se presenta como evidencia de pago.</div>
+            <div><strong>Snapshot</strong>La fuente es histórica y no representa operación en tiempo real. El corte visible controla el horizonte válido.</div>
+            <div><strong>Privacidad</strong>La serie monetaria aplica umbral k=10: todo período suprimido se omite por completo y nunca se reemplaza por cero. La proyección de calidad no contiene PII, filas crudas, códigos de celda ni etiquetas categóricas.</div>
+            <div><strong>Escenario de paritaria</strong>Multiplicación lineal del bruto de cálculo observado. No modela reglas salariales, retenciones, inflación, vigencias, pago bancario ni efecto presupuestario.</div>
+          </div>
+        </details>
+        <div class="hac-footer"><span>Fuente: <code id="sourceFile">—</code> · SHA-256 <code id="sourceHash">—</code></span><span>Artefacto generado: <time id="generatedAt">—</time></span></div>
+      </section>
       </div>
     </div>
   </main>
-  
-  <script src="js/nav.js"></script>
-  <script>buildSidebar('hacienda');</script>
-  <script src="js/db.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="js/charts-premium.js"></script>
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.MuniDB) {
-      const pagos = MuniDB.sort(MuniDB.getAll('pagos'), 'fecha', 'desc').slice(0,10);
-      const tbody = document.getElementById('pagosTableBody');
-      let gastosTotales = 0;
-      
-      pagos.forEach(pago => {
-        gastosTotales += pago.monto;
-        const tr = document.createElement('tr');
-        const estadoClass = pago.estado === 'Pagado' ? 'badge-pagado' : 'badge-pendiente';
-        const formattedMonto = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(pago.monto);
-        tr.innerHTML = `
-          <td>${pago.fecha}</td>
-          <td>${pago.proveedor}</td>
-          <td>${pago.concepto}</td>
-          <td>${pago.secretaria}</td>
-          <td style="font-family: 'Outfit', sans-serif; font-weight: 600;">${formattedMonto}</td>
-          <td><span class="badge ${estadoClass}">${pago.estado}</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
-      
-      if(pagos.length > 0) {
-          document.getElementById('gastosKpi').textContent = '$' + (gastosTotales / 1000000).toFixed(1) + 'M';
-      }
-    }
 
-    const ctx = document.getElementById('chartIngresosGastos');
-    if (ctx && window.Chart) {
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-          datasets: [
-            { label: 'Ingresos', data: [150, 160, 140, 170, 165, 180], backgroundColor: '#10b981', borderRadius: 4 },
-            { label: 'Gastos', data: [140, 150, 145, 155, 160, 165], backgroundColor: '#ef4444', borderRadius: 4 }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { labels: { color: '#e2e8f0' } } },
-          scales: {
-            y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } },
-            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-          }
-        }
+  <noscript><div class="hac-noscript">Este tablero necesita JavaScript para consultar las proyecciones autenticadas. No se muestran valores de respaldo ni datos simulados.</div></noscript>
+  <script src="js/nav.js"></script>
+  <script src="js/auth-fetch.js"></script>
+  <script src="js/grh-secure-data.js"></script>
+  <script src="js/grh-close-data.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var SVG_NS = 'http://www.w3.org/2000/svg';
+      var numberFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+      var compactFormatter = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 });
+      var amountFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+      var amountCompactFormatter = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 });
+      var signedAmountCompactFormatter = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1, signDisplay: 'always' });
+      var percentFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
+      var signedPercentFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1, signDisplay: 'always' });
+      var qualityFormatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var dateFormatter = new Intl.DateTimeFormat('es-AR', {
+        dateStyle: 'medium',
+        timeZone: 'America/Argentina/Buenos_Aires'
       });
-    }
-  });
+      var dateTimeFormatter = new Intl.DateTimeFormat('es-AR', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'America/Argentina/Buenos_Aires'
+      });
+      var monthFormatter = new Intl.DateTimeFormat('es-AR', {
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC'
+      });
+
+      var state = {
+        experience: null,
+        close: null,
+        closePeriod: null,
+        series: [],
+        latest: null,
+        protectedPeriods: 0,
+        range: '12',
+        loadSequence: 0
+      };
+      var elements = {};
+
+      function byId(id) { return document.getElementById(id); }
+
+      function cacheElements() {
+        [
+          'haciendaDashboard', 'haciendaDataViews', 'topbarSourceState', 'topbarSourceText',
+          'hacThemeToggle', 'snapshotChip', 'periodCountChip', 'protectedPeriodChip',
+          'crossScoreChip', 'periodRange', 'viewStatus', 'loadError', 'loadErrorMessage',
+          'retryLoad', 'kpiGross', 'kpiGrossNote', 'kpiWithholdings',
+          'kpiWithholdingsNote', 'kpiNet', 'kpiNetNote', 'kpiReconciliation',
+          'kpiReconciliationNote', 'chartWindowBadge', 'payrollChart',
+          'payrollFigureCaption', 'alertsList', 'compositionSubtitle',
+          'compositionPeriod', 'equationGross', 'equationWithholdings', 'equationNet',
+          'compositionBars', 'compositionSummary', 'parityRange', 'parityOutput',
+          'simIncrement', 'simProjectedGross', 'periodRows', 'protectedPeriodsNote',
+          'sourceFile', 'sourceHash', 'generatedAt', 'closePeriodSelect',
+          'closePrivacyNote', 'closeBridge', 'closeBridgeCaption', 'closeParticipants',
+          'closeGross', 'closeWithholdings', 'closeNet', 'closeNetToPay', 'closeEmployer',
+          'closeControlNote', 'closeReconciliationCopy', 'closeCoverage', 'closeExactRate',
+          'closeValueAgreement', 'closeVariance', 'closeComparisonCopy',
+          'closeComparisonBadge', 'closeComparisonReconciliation', 'closeDeltaList'
+        ].forEach(function (id) { elements[id] = byId(id); });
+      }
+
+      function setText(element, value) {
+        if (element) element.textContent = String(value);
+      }
+
+      function finiteNonNegativeInteger(value) {
+        return Number.isSafeInteger(value) && value >= 0;
+      }
+
+      function formatAmount(value) {
+        return amountFormatter.format(value) + ' u.m.';
+      }
+
+      function formatAmountCompact(value) {
+        return amountCompactFormatter.format(value) + ' u.m.';
+      }
+
+      function formatCents(value) {
+        return formatAmount(value / 100);
+      }
+
+      function formatCentsCompact(value) {
+        return formatAmountCompact(value / 100);
+      }
+
+      function formatSignedCentsCompact(value) {
+        return signedAmountCompactFormatter.format(value / 100) + ' u.m.';
+      }
+
+      function formatSignedPercentage(value) {
+        return signedPercentFormatter.format(value) + ' pp';
+      }
+
+      function monthLabel(period) {
+        var parts = period.split('-').map(Number);
+        return monthFormatter
+          .format(new Date(Date.UTC(parts[0], parts[1] - 1, 1)))
+          .replace('.', '');
+      }
+
+      function parseSnapshot(value) {
+        var parsed = new Date(value + 'T12:00:00-03:00');
+        if (Number.isNaN(parsed.getTime())) throw new Error('GRH_SOURCE_DATE_INVALID');
+        return parsed;
+      }
+
+      function normalizeCompensation(experience) {
+        var sourceRows = experience.executive.compensation.series;
+        var snapshotMonth = experience.executive.source.snapshotAsOf.slice(0, 7);
+        var seen = new Set();
+        var released = [];
+        var protectedPeriods = 0;
+
+        sourceRows.forEach(function (row) {
+          if (row.privacyStatus !== 'released') {
+            protectedPeriods += 1;
+            return;
+          }
+
+          var amounts = row.amounts;
+          var amountKeys = [
+            'grossWithFamilyAllowancesCents',
+            'employeeWithholdingsCents',
+            'netPayrollCents',
+            'employerContributionsCents'
+          ];
+          if (!amounts ||
+              !/^\d{4}-(0[1-9]|1[0-2])$/.test(row.period) ||
+              row.period > snapshotMonth ||
+              seen.has(row.period) ||
+              !finiteNonNegativeInteger(row.participantCount) ||
+              !amountKeys.every(function (key) {
+                return finiteNonNegativeInteger(amounts[key]);
+              })) {
+            throw new Error('GRH_COMPENSATION_RELEASE_INVALID');
+          }
+
+          seen.add(row.period);
+          released.push({
+            period: row.period,
+            participants: row.participantCount,
+            gross: amounts.grossWithFamilyAllowancesCents / 100,
+            withholdings: amounts.employeeWithholdingsCents / 100,
+            net: amounts.netPayrollCents / 100,
+            employerContributions: amounts.employerContributionsCents / 100
+          });
+        });
+
+        released.sort(function (left, right) {
+          return left.period.localeCompare(right.period);
+        });
+        if (!released.length) throw new Error('GRH_COMPENSATION_RELEASE_EMPTY');
+        return { released: released, protectedPeriods: protectedPeriods };
+      }
+
+      function clearSkeletons() {
+        document.querySelectorAll('.hac-skeleton').forEach(function (element) {
+          element.classList.remove('hac-skeleton');
+        });
+      }
+
+      function visibleSeries() {
+        return state.range === 'all'
+          ? state.series
+          : state.series.slice(-Number(state.range));
+      }
+
+      function createSvg(name, attributes, textValue) {
+        var element = document.createElementNS(SVG_NS, name);
+        Object.entries(attributes || {}).forEach(function (entry) {
+          element.setAttribute(entry[0], String(entry[1]));
+        });
+        if (textValue !== undefined) element.textContent = String(textValue);
+        return element;
+      }
+
+      function addSvgTitle(parent, textValue) {
+        parent.appendChild(createSvg('title', {}, textValue));
+      }
+
+      function renderCloseBridge(row) {
+        elements.closeBridge.replaceChildren();
+        var components = row.components;
+        var contributory = components.contributoryEarningsCents / 100;
+        var nonContributory = components.nonContributoryEarningsCents / 100;
+        var family = components.familyAllowancesCents / 100;
+        var withholdings = components.employeeWithholdingsCents / 100;
+        var net = components.netPayrollCents / 100;
+        var gross = components.grossWithFamilyAllowancesCents / 100;
+        var afterWithholdings = gross - withholdings;
+        var steps = [
+          { label: 'Contributivo', shortLabel: 'Contrib.', start: 0, end: contributory, color: 'var(--hac-blue)' },
+          { label: 'No contributivo', shortLabel: 'No contrib.', start: contributory, end: contributory + nonContributory, color: 'var(--hac-violet)' },
+          { label: 'Asignaciones', shortLabel: 'Asign.', start: contributory + nonContributory, end: gross, color: 'var(--hac-teal)' },
+          { label: 'Retenciones', shortLabel: 'Retenc.', start: gross, end: afterWithholdings, color: 'var(--hac-amber)' },
+          { label: 'Neto', shortLabel: 'Neto', start: 0, end: net, color: 'var(--hac-teal)' }
+        ];
+        var width = Math.max(320, Math.min(760, window.innerWidth - 56));
+        var height = 280;
+        var padding = { top: 28, right: 18, bottom: 48, left: 66 };
+        var plotWidth = width - padding.left - padding.right;
+        var plotHeight = height - padding.top - padding.bottom;
+        var maximum = Math.max(gross, net, 1) * 1.08;
+        var barWidth = Math.min(92, plotWidth / (steps.length * 1.55));
+        var xAt = function (index) {
+          return padding.left + (index + .5) * plotWidth / steps.length;
+        };
+        var yAt = function (value) {
+          return padding.top + (maximum - value) * plotHeight / maximum;
+        };
+        var titleId = 'closeBridgeSvgTitle';
+        var descriptionId = 'closeBridgeSvgDescription';
+        var svg = createSvg('svg', {
+          viewBox: '0 0 ' + width + ' ' + height,
+          preserveAspectRatio: 'xMidYMid meet',
+          role: 'img',
+          'aria-labelledby': titleId + ' ' + descriptionId,
+          focusable: 'false'
+        });
+        svg.appendChild(createSvg('title', { id: titleId }, 'Puente aritmético del neto de control para ' + monthLabel(row.period)));
+        svg.appendChild(createSvg('desc', { id: descriptionId }, 'Ingresos contributivos, no contributivos y asignaciones forman el bruto; las retenciones se restan para llegar al neto observado. No es una explicación causal ni un pago bancario.'));
+
+        for (var tick = 0; tick <= 4; tick += 1) {
+          var tickValue = maximum * tick / 4;
+          var tickY = yAt(tickValue);
+          svg.appendChild(createSvg('line', {
+            x1: padding.left,
+            x2: width - padding.right,
+            y1: tickY,
+            y2: tickY,
+            class: 'hac-grid-line',
+            stroke: 'var(--hac-border)',
+            'stroke-width': '1',
+            'vector-effect': 'non-scaling-stroke'
+          }));
+          svg.appendChild(createSvg('text', {
+            x: padding.left - 9,
+            y: tickY + 3,
+            'text-anchor': 'end'
+          }, compactFormatter.format(tickValue)));
+        }
+
+        steps.forEach(function (step, index) {
+          var top = Math.min(yAt(step.start), yAt(step.end));
+          var bottom = Math.max(yAt(step.start), yAt(step.end));
+          var rect = createSvg('rect', {
+            x: xAt(index) - barWidth / 2,
+            y: top,
+            width: barWidth,
+            height: Math.max(bottom - top, 2),
+            rx: 7,
+            fill: step.color
+          });
+          addSvgTitle(rect, step.label + ': ' + formatAmount(Math.abs(step.end - step.start)));
+          svg.appendChild(rect);
+          if (width >= 500) {
+            svg.appendChild(createSvg('text', {
+              x: xAt(index),
+              y: Math.max(top - 8, 12),
+              'text-anchor': 'middle'
+            }, signedAmountCompactFormatter.format(step.end - step.start)));
+          }
+          svg.appendChild(createSvg('text', {
+            x: xAt(index),
+            y: height - 18,
+            'text-anchor': 'middle'
+          }, width < 500 ? step.shortLabel : step.label));
+          if (index < 3) {
+            svg.appendChild(createSvg('line', {
+              x1: xAt(index) + barWidth / 2,
+              x2: xAt(index + 1) - barWidth / 2,
+              y1: yAt(step.end),
+              y2: yAt(step.end),
+              stroke: 'var(--hac-muted)',
+              'stroke-width': '1',
+              'stroke-dasharray': '3 3',
+              'vector-effect': 'non-scaling-stroke'
+            }));
+          }
+        });
+
+        elements.closeBridge.appendChild(svg);
+        elements.closeBridge.setAttribute(
+          'aria-label',
+          'Puente aritmético del cierre de ' + monthLabel(row.period) + ', sin moneda declarada.'
+        );
+        setText(
+          elements.closeBridgeCaption,
+          monthLabel(row.period) + ': contributivo + no contributivo + asignaciones - retenciones = neto de control. La diferencia residual se informa contra la tolerancia; no se interpreta como causa.'
+        );
+      }
+
+      function addCloseDelta(label, value) {
+        var item = document.createElement('div');
+        var labelNode = document.createElement('span');
+        var valueNode = document.createElement('strong');
+        item.className = 'hac-close-delta';
+        labelNode.textContent = label;
+        valueNode.textContent = value;
+        item.append(labelNode, valueNode);
+        elements.closeDeltaList.appendChild(item);
+      }
+
+      function renderCloseComparison() {
+        var comparison = state.close.comparison;
+        elements.closeDeltaList.replaceChildren();
+        if (comparison.status !== 'released') {
+          setText(elements.closeComparisonBadge, 'comparación protegida');
+          setText(
+            elements.closeComparisonCopy,
+            comparison.reason === 'period_missing'
+              ? 'No existe el mes calendario anterior dentro del contrato gobernado.'
+              : 'Uno de los dos meses no supera el umbral k=10; no se calculan ni se imputan deltas.'
+          );
+          setText(elements.closeComparisonReconciliation, 'Sin comparación liberada.');
+          return;
+        }
+
+        setText(
+          elements.closeComparisonBadge,
+          monthLabel(comparison.previousPeriod) + ' → ' + monthLabel(comparison.currentPeriod)
+        );
+        setText(
+          elements.closeComparisonCopy,
+          'Diferencias entre dos meses consecutivos liberados. Son una descomposición aritmética y no demuestran la causa del cambio.'
+        );
+        setText(
+          elements.closeComparisonReconciliation,
+          'Conciliación mensual: cobertura ' + formatSignedPercentage(comparison.reconciliationDeltas.runCoveragePct) +
+            '; exactitud ' + formatSignedPercentage(comparison.reconciliationDeltas.metricExactRatePct) +
+            '; acuerdo de valores ' + formatSignedPercentage(comparison.reconciliationDeltas.valueAgreementPct) +
+            '; varianza absoluta ' + formatSignedCentsCompact(comparison.reconciliationDeltas.absoluteVarianceCents) + '.'
+        );
+        addCloseDelta('Participantes', (comparison.participantDelta >= 0 ? '+' : '') + numberFormatter.format(comparison.participantDelta));
+        [
+          ['Bruto con asignaciones', 'grossWithFamilyAllowancesCents'],
+          ['Contributivo', 'contributoryEarningsCents'],
+          ['No contributivo', 'nonContributoryEarningsCents'],
+          ['Asignaciones', 'familyAllowancesCents'],
+          ['Retenciones', 'employeeWithholdingsCents'],
+          ['Neto', 'netPayrollCents'],
+          ['Neto a pagar', 'netToPayCents'],
+          ['Aportes empleador', 'employerContributionsCents']
+        ].forEach(function (entry) {
+          addCloseDelta(entry[0], formatSignedCentsCompact(comparison.componentDeltas[entry[1]]));
+        });
+      }
+
+      function renderClosePeriod() {
+        var row = state.close.series.find(function (item) {
+          return item.period === state.closePeriod && item.privacyStatus === 'released';
+        });
+        if (!row) throw new Error('GRH_CLOSE_PERIOD_NOT_RELEASED');
+        var components = row.components;
+        var control = row.control;
+        var reconciliation = row.reconciliation;
+        renderCloseBridge(row);
+        setText(elements.closeParticipants, numberFormatter.format(row.participantCount));
+        setText(elements.closeGross, formatCentsCompact(components.grossWithFamilyAllowancesCents));
+        setText(elements.closeWithholdings, formatCentsCompact(components.employeeWithholdingsCents));
+        setText(elements.closeNet, formatCentsCompact(components.netPayrollCents));
+        setText(elements.closeNetToPay, formatCentsCompact(components.netToPayCents));
+        setText(elements.closeEmployer, formatCentsCompact(components.employerContributionsCents));
+        setText(
+          elements.closeControlNote,
+          (control.identityWithinRoundingTolerance
+            ? 'Identidad dentro de la tolerancia mensual'
+            : 'Identidad fuera de la tolerancia mensual') +
+            ': variación neta ' + numberFormatter.format(control.netIdentityVarianceCents) +
+            ' centavos de unidad fuente; tolerancia ' + numberFormatter.format(control.roundingToleranceCents) +
+            '. Control de cálculo, no acreditación bancaria.'
+        );
+        setText(
+          elements.closeReconciliationCopy,
+          monthLabel(row.period) + ' · ' + numberFormatter.format(reconciliation.matchedRuns) +
+            ' corridas conciliadas de un universo combinado del período. No reutiliza el score global.'
+        );
+        setText(elements.closeCoverage, percentFormatter.format(reconciliation.runCoveragePct) + '%');
+        setText(elements.closeExactRate, percentFormatter.format(reconciliation.metricExactRatePct) + '%');
+        setText(elements.closeValueAgreement, percentFormatter.format(reconciliation.valueAgreementPct) + '%');
+        setText(elements.closeVariance, formatCentsCompact(reconciliation.absoluteVarianceCents));
+      }
+
+      function renderClose() {
+        var released = state.close.series.filter(function (row) {
+          return row.privacyStatus === 'released';
+        });
+        var protectedCount = state.close.series.length - released.length;
+        if (!released.length) throw new Error('GRH_CLOSE_RELEASE_EMPTY');
+        elements.closePeriodSelect.replaceChildren();
+        var yearGroups = new Map();
+        released.slice().reverse().forEach(function (row) {
+          var year = row.period.slice(0, 4);
+          var group = yearGroups.get(year);
+          if (!group) {
+            group = document.createElement('optgroup');
+            group.label = year;
+            yearGroups.set(year, group);
+            elements.closePeriodSelect.appendChild(group);
+          }
+          var option = document.createElement('option');
+          option.value = row.period;
+          option.textContent = monthLabel(row.period);
+          group.appendChild(option);
+        });
+        state.closePeriod = released[released.length - 1].period;
+        elements.closePeriodSelect.value = state.closePeriod;
+        setText(
+          elements.closePrivacyNote,
+          numberFormatter.format(released.length) + ' meses liberados · ' +
+            numberFormatter.format(protectedCount) + ' protegidos · sin PII'
+        );
+        renderClosePeriod();
+        renderCloseComparison();
+      }
+
+      function renderChart() {
+        var points = visibleSeries();
+        elements.payrollChart.replaceChildren();
+        if (!points.length) return;
+
+        var width = 920;
+        var height = 320;
+        var padding = { top: 22, right: 24, bottom: 42, left: 68 };
+        var plotWidth = width - padding.left - padding.right;
+        var plotHeight = height - padding.top - padding.bottom;
+        var maximum = Math.max.apply(null, points.map(function (point) {
+          return point.gross;
+        })) || 1;
+        var yMaximum = maximum * 1.08;
+        var xAt = function (index) {
+          return padding.left + (points.length === 1
+            ? plotWidth / 2
+            : index * plotWidth / (points.length - 1));
+        };
+        var yAt = function (value) {
+          return padding.top + (yMaximum - value) * plotHeight / yMaximum;
+        };
+        var svg = createSvg('svg', {
+          viewBox: '0 0 ' + width + ' ' + height,
+          preserveAspectRatio: 'xMidYMid meet',
+          'aria-hidden': 'true',
+          focusable: 'false'
+        });
+
+        for (var tick = 0; tick <= 4; tick += 1) {
+          var value = yMaximum * tick / 4;
+          var y = padding.top + plotHeight - plotHeight * tick / 4;
+          svg.appendChild(createSvg('line', {
+            x1: padding.left,
+            x2: width - padding.right,
+            y1: y,
+            y2: y,
+            class: 'hac-grid-line'
+          }));
+          svg.appendChild(createSvg('text', {
+            x: padding.left - 10,
+            y: y + 3,
+            'text-anchor': 'end'
+          }, compactFormatter.format(value)));
+        }
+
+        var labelEvery = Math.max(1, Math.ceil(points.length / 7));
+        points.forEach(function (point, index) {
+          if (index % labelEvery === 0 || index === points.length - 1) {
+            svg.appendChild(createSvg('text', {
+              x: xAt(index),
+              y: height - 14,
+              'text-anchor': index === 0
+                ? 'start'
+                : (index === points.length - 1 ? 'end' : 'middle')
+            }, monthLabel(point.period)));
+          }
+        });
+
+        [
+          { key: 'gross', color: 'var(--hac-blue)', label: 'Bruto de control de cálculo' },
+          { key: 'net', color: 'var(--hac-teal)', label: 'Neto de control de cálculo' },
+          { key: 'withholdings', color: 'var(--hac-amber)', label: 'Retenciones de control' }
+        ].forEach(function (series) {
+          var path = points.map(function (point, index) {
+            return (index ? 'L' : 'M') +
+              xAt(index).toFixed(2) + ',' + yAt(point[series.key]).toFixed(2);
+          }).join(' ');
+          svg.appendChild(createSvg('path', {
+            d: path,
+            fill: 'none',
+            stroke: series.color,
+            'stroke-width': series.key === 'withholdings' ? '2' : '2.5',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round',
+            'vector-effect': 'non-scaling-stroke'
+          }));
+          points.forEach(function (point, index) {
+            var circle = createSvg('circle', {
+              cx: xAt(index),
+              cy: yAt(point[series.key]),
+              r: points.length > 48 ? '1.7' : '2.8',
+              fill: series.color,
+              stroke: 'var(--hac-surface)',
+              'stroke-width': '1.3',
+              'vector-effect': 'non-scaling-stroke'
+            });
+            addSvgTitle(
+              circle,
+              monthLabel(point.period) + ' · ' + series.label + ': ' +
+                formatAmount(point[series.key])
+            );
+            svg.appendChild(circle);
+          });
+        });
+
+        elements.payrollChart.appendChild(svg);
+        var first = points[0];
+        var last = points[points.length - 1];
+        setText(elements.chartWindowBadge, monthLabel(first.period) + ' — ' + monthLabel(last.period));
+        setText(
+          elements.payrollFigureCaption,
+          numberFormatter.format(points.length) +
+            ' períodos publicados. Último neto: ' + formatAmount(last.net) +
+            '; retenciones: ' + formatAmount(last.withholdings) +
+            '. Importes de control de cálculo; no representan pago bancario.'
+        );
+        setText(
+          elements.viewStatus,
+          'Vista actualizada · ' + numberFormatter.format(points.length) +
+            ' publicados · ' + numberFormatter.format(state.protectedPeriods) + ' protegidos'
+        );
+      }
+
+      function renderKpis() {
+        var latest = state.latest;
+        var reconciliation = state.experience.quality.reconciliation;
+        var ratio = latest.gross > 0
+          ? percentFormatter.format(latest.withholdings / latest.gross * 100) + '% del bruto'
+          : 'proporción no calculable';
+
+        setText(elements.kpiGross, formatAmountCompact(latest.gross));
+        setText(
+          elements.kpiGrossNote,
+          monthLabel(latest.period) + ' · ' +
+            numberFormatter.format(latest.participants) +
+            ' participantes · no pago bancario.'
+        );
+        setText(elements.kpiWithholdings, formatAmountCompact(latest.withholdings));
+        setText(
+          elements.kpiWithholdingsNote,
+          monthLabel(latest.period) + ' · ' + ratio + ' · moneda no declarada.'
+        );
+        setText(elements.kpiNet, formatAmountCompact(latest.net));
+        setText(
+          elements.kpiNetNote,
+          monthLabel(latest.period) + ' · proyección protegida · moneda no declarada.'
+        );
+        setText(
+          elements.kpiReconciliation,
+          percentFormatter.format(reconciliation.scorePct) + '%'
+        );
+        setText(
+          elements.kpiReconciliationNote,
+          'Global · acuerdo de valores ' +
+            percentFormatter.format(reconciliation.valueAgreementPct) +
+            '% · no certifica pago.'
+        );
+        clearSkeletons();
+      }
+
+      function addAlert(index, tone, title, copy) {
+        var item = document.createElement('div');
+        var icon = document.createElement('span');
+        var body = document.createElement('div');
+        var heading = document.createElement('strong');
+        var paragraph = document.createElement('p');
+        item.className = 'hac-alert';
+        item.dataset.tone = tone;
+        icon.className = 'hac-alert-icon';
+        icon.textContent = String(index).padStart(2, '0');
+        heading.textContent = title;
+        paragraph.textContent = copy;
+        body.append(heading, paragraph);
+        item.append(icon, body);
+        elements.alertsList.appendChild(item);
+      }
+
+      function renderAlerts() {
+        var executive = state.experience.executive;
+        var quality = state.experience.quality;
+        var reconciliation = quality.reconciliation;
+        var risk = quality.quality.risks;
+        var snapshot = parseSnapshot(executive.source.snapshotAsOf);
+        elements.alertsList.replaceChildren();
+
+        addAlert(
+          1,
+          reconciliation.status === 'material_differences_detected' ? 'critical' : 'ok',
+          'Reconciliación global ' + percentFormatter.format(reconciliation.scorePct) + '%',
+          'El acuerdo de valores es ' +
+            percentFormatter.format(reconciliation.valueAgreementPct) +
+            '% y la varianza absoluta global asciende a ' +
+            formatAmount(reconciliation.absoluteVarianceCents / 100) +
+            '. No se atribuye este resultado a períodos individuales.'
+        );
+        addAlert(
+          2,
+          'warn',
+          'Control de cálculo, no pago bancario',
+          'Los importes publicados sirven para control salarial; no prueban acreditación, tesorería ni asiento contable.'
+        );
+        addAlert(
+          3,
+          'warn',
+          'Cobertura global de corridas ' +
+            percentFormatter.format(reconciliation.runCoveragePct) + '%',
+          numberFormatter.format(reconciliation.matchedRuns) + ' de ' +
+            numberFormatter.format(reconciliation.unionRuns) +
+            ' corridas del universo combinado tuvieron contraparte; ' +
+            numberFormatter.format(reconciliation.fullyReconciledRuns) +
+            ' conciliaron completamente.'
+        );
+        addAlert(
+          4,
+          'warn',
+          'Snapshot, no operación en vivo',
+          'Corte ' + dateFormatter.format(snapshot) +
+            '. No usar esta vista como saldo ni ejecución en tiempo real.'
+        );
+        addAlert(
+          5,
+          'warn',
+          'Moneda no declarada',
+          'Los importes conservan la unidad monetaria de la fuente. No se infiere símbolo, moneda ni tipo de cambio.'
+        );
+        addAlert(
+          6,
+          'warn',
+          'Calidad gobernada ' + qualityFormatter.format(quality.quality.score) + '/100',
+          numberFormatter.format(quality.temporal.quarantineRows) +
+            ' filas temporales quedaron en cuarentena. El alcance es el extracto agregado gobernado, no cada tabla cruda.'
+        );
+        if (state.protectedPeriods > 0) {
+          addAlert(
+            7,
+            'ok',
+            'Privacidad aplicada a ' +
+              numberFormatter.format(state.protectedPeriods) + ' períodos',
+            'Los períodos por debajo del umbral k=10 se omiten por completo; sus participantes e importes no se muestran ni se imputan como cero.'
+          );
+        } else if (risk.rawSourceContainsSensitivePii) {
+          addAlert(
+            7,
+            'ok',
+            'Frontera de privacidad activa',
+            'La fuente contiene PII, pero esta vista recibe sólo proyecciones agregadas sin filas crudas ni identificadores.'
+          );
+        }
+      }
+
+      function addQualityBar(label, score, weight, color) {
+        var item = document.createElement('div');
+        var meta = document.createElement('div');
+        var labelNode = document.createElement('span');
+        var valueNode = document.createElement('strong');
+        var track = document.createElement('div');
+        var bar = document.createElement('span');
+
+        item.className = 'hac-composition-item';
+        meta.className = 'hac-composition-meta';
+        labelNode.textContent = label + ' · peso ' + percentFormatter.format(weight) + '%';
+        valueNode.textContent = qualityFormatter.format(score) + '/100';
+        track.className = 'hac-track';
+        track.setAttribute('role', 'progressbar');
+        track.setAttribute('aria-label', label);
+        track.setAttribute('aria-valuemin', '0');
+        track.setAttribute('aria-valuemax', '100');
+        track.setAttribute('aria-valuenow', String(score));
+        bar.style.setProperty('--bar-width', Math.max(Math.min(score, 100), 0).toFixed(2) + '%');
+        bar.style.setProperty('--bar-color', color);
+        meta.append(labelNode, valueNode);
+        track.appendChild(bar);
+        item.append(meta, track);
+        elements.compositionBars.appendChild(item);
+      }
+
+      function renderQuality() {
+        var projection = state.experience.quality;
+        var quality = projection.quality;
+        var reconciliation = projection.reconciliation;
+        setText(elements.compositionPeriod, 'global');
+        setText(
+          elements.compositionSubtitle,
+          'Extracto agregado gobernado · ' +
+            numberFormatter.format(projection.temporal.validRows) +
+            ' filas temporales válidas · sin desglose salarial sensible.'
+        );
+        setText(elements.equationGross, qualityFormatter.format(quality.score) + '/100');
+        setText(
+          elements.equationWithholdings,
+          percentFormatter.format(reconciliation.runCoveragePct) + '%'
+        );
+        setText(
+          elements.equationNet,
+          percentFormatter.format(reconciliation.valueAgreementPct) + '%'
+        );
+
+        elements.compositionBars.replaceChildren();
+        [
+          ['Validez temporal', quality.components.temporalValidity, 'var(--hac-blue)'],
+          ['Integridad referencial', quality.components.referentialIntegrity, 'var(--hac-teal)'],
+          ['Reconciliación de nómina', quality.components.payrollReconciliation, 'var(--hac-amber)'],
+          ['Unicidad de clave de legajo', quality.components.legajoKeyUniqueness, 'var(--hac-violet)']
+        ].forEach(function (entry) {
+          addQualityBar(entry[0], entry[1].score, entry[1].weightPct, entry[2]);
+        });
+
+        setText(
+          elements.compositionSummary,
+          'El score ' + qualityFormatter.format(quality.score) +
+            '/100 describe el extracto gobernado. ' +
+            numberFormatter.format(projection.temporal.quarantineRows) +
+            ' filas temporales permanecen en cuarentena. La reconciliación es global y no se presenta como composición salarial ni como prueba de pago.'
+        );
+      }
+
+      function renderSimulator() {
+        if (!state.latest) return;
+        var percent = Number(elements.parityRange.value);
+        if (!Number.isFinite(percent)) percent = 0;
+        var increment = state.latest.gross * percent / 100;
+        setText(elements.parityOutput, percentFormatter.format(percent) + '%');
+        setText(elements.simIncrement, formatAmountCompact(increment));
+        setText(elements.simProjectedGross, formatAmountCompact(state.latest.gross + increment));
+      }
+
+      function renderTable() {
+        elements.periodRows.replaceChildren();
+        state.series.slice(-10).reverse().forEach(function (point) {
+          var row = document.createElement('tr');
+          [
+            monthLabel(point.period),
+            numberFormatter.format(point.participants),
+            formatAmount(point.gross),
+            formatAmount(point.withholdings),
+            formatAmount(point.net),
+            formatAmount(point.employerContributions)
+          ].forEach(function (value) {
+            var cell = document.createElement('td');
+            cell.className = 'hac-mono';
+            cell.textContent = value;
+            row.appendChild(cell);
+          });
+          elements.periodRows.appendChild(row);
+        });
+      }
+
+      function renderSource() {
+        var executive = state.experience.executive;
+        var quality = state.experience.quality;
+        var snapshot = parseSnapshot(executive.source.snapshotAsOf);
+        var generated = new Date(quality.lineage.semanticGeneratedAt);
+
+        setText(elements.snapshotChip, dateFormatter.format(snapshot));
+        setText(elements.periodCountChip, numberFormatter.format(state.series.length));
+        setText(
+          elements.protectedPeriodChip,
+          numberFormatter.format(state.protectedPeriods)
+        );
+        setText(
+          elements.crossScoreChip,
+          percentFormatter.format(quality.reconciliation.scorePct) + '%'
+        );
+        setText(
+          elements.topbarSourceText,
+          'GRH · proyecciones conciliadas · calidad ' +
+            qualityFormatter.format(quality.quality.score) + '/100'
+        );
+        elements.topbarSourceState.dataset.state =
+          quality.reconciliation.status === 'material_differences_detected' ? 'warn' : 'ok';
+        setText(elements.sourceFile, executive.source.sourceFile);
+        setText(elements.sourceHash, executive.source.sourceSha256);
+        setText(
+          elements.generatedAt,
+          Number.isNaN(generated.getTime())
+            ? 'no informado'
+            : dateTimeFormatter.format(generated)
+        );
+        if (!Number.isNaN(generated.getTime())) {
+          elements.generatedAt.dateTime = generated.toISOString();
+        }
+        setText(
+          elements.protectedPeriodsNote,
+          state.protectedPeriods > 0
+            ? numberFormatter.format(state.protectedPeriods) +
+                ' períodos fueron protegidos por el umbral k=10 y se omiten por completo. La tabla muestra únicamente períodos liberados, sin PII.'
+            : 'Todos los períodos recibidos superan el umbral k=10. La tabla muestra únicamente datos agregados liberados, sin PII.'
+        );
+      }
+
+      function renderAll() {
+        renderSource();
+        renderKpis();
+        renderClose();
+        renderChart();
+        renderAlerts();
+        renderQuality();
+        renderSimulator();
+        renderTable();
+        elements.haciendaDataViews.hidden = false;
+        elements.haciendaDashboard.setAttribute('aria-busy', 'false');
+      }
+
+      function showError() {
+        setText(
+          elements.loadErrorMessage,
+          'No se pudo obtener un conjunto compatible de proyecciones ejecutiva, calidad y cierre mensual. No se muestran datos parciales, antiguos ni simulados.'
+        );
+        elements.loadError.hidden = false;
+        elements.haciendaDataViews.hidden = true;
+        elements.haciendaDashboard.setAttribute('aria-busy', 'false');
+        setText(elements.topbarSourceText, 'Proyecciones GRH no disponibles');
+        elements.topbarSourceState.dataset.state = 'error';
+        setText(elements.viewStatus, 'Carga interrumpida');
+      }
+
+      function redirectToSafeWorkspace() {
+        try {
+          if (!window.sessionStorage.getItem('mjunin_access_notice')) {
+            window.sessionStorage.setItem('mjunin_access_notice', 'El perfil actual no tiene habilitada la superficie solicitada.');
+          }
+        } catch (error) {}
+        var currentPage = window.location.pathname.split('/').pop() || '';
+        if (currentPage !== 'inicio.html') window.location.replace('inicio.html');
+      }
+
+      async function requirePageCapability() {
+        if (typeof window.requireCapability !== 'function') {
+          redirectToSafeWorkspace();
+          return false;
+        }
+        try {
+          var allowed = await window.requireCapability('navigation.hacienda');
+          if (allowed !== true) {
+            if (allowed !== false) redirectToSafeWorkspace();
+            return false;
+          }
+          return true;
+        } catch (error) {
+          redirectToSafeWorkspace();
+          return false;
+        }
+      }
+
+      function sameCloseSource(experience, close) {
+        return close.source.sourceSha256 === experience.executive.source.sourceSha256 &&
+          close.source.snapshotAsOf === experience.executive.source.snapshotAsOf &&
+          close.source.canonicalSystem === experience.executive.source.canonicalSystem;
+      }
+
+      async function loadExperience() {
+        var sequence = state.loadSequence + 1;
+        state.loadSequence = sequence;
+        elements.loadError.hidden = true;
+        elements.haciendaDataViews.hidden = true;
+        elements.haciendaDashboard.setAttribute('aria-busy', 'true');
+        delete elements.topbarSourceState.dataset.state;
+        setText(elements.topbarSourceText, 'Validando proyecciones GRH');
+        setText(elements.viewStatus, 'Leyendo contratos autenticados…');
+
+        try {
+          if (!window.MuniGrhData ||
+              typeof window.MuniGrhData.loadExperience !== 'function' ||
+              !window.MuniGrhClose || typeof window.MuniGrhClose.load !== 'function') {
+            throw new Error('GRH_SECURE_CLIENT_UNAVAILABLE');
+          }
+          var projections = await Promise.all([
+            window.MuniGrhData.loadExperience({ timeoutMs: 10000 }),
+            window.MuniGrhClose.load({ timeoutMs: 10000 })
+          ]);
+          if (sequence !== state.loadSequence) return;
+          var experience = projections[0];
+          var close = projections[1];
+          if (!sameCloseSource(experience, close)) throw new Error('GRH_CLOSE_SOURCE_MISMATCH');
+          var normalized = normalizeCompensation(experience);
+          state.experience = experience;
+          state.close = close;
+          state.series = normalized.released;
+          state.latest = normalized.released[normalized.released.length - 1];
+          state.protectedPeriods = normalized.protectedPeriods;
+          renderAll();
+        } catch (error) {
+          if (sequence !== state.loadSequence) return;
+          showError();
+        }
+      }
+
+      async function loadAuthorizedExperience() {
+        if (!await requirePageCapability()) return;
+        await loadExperience();
+      }
+
+      function toggleTheme() {
+        var current = document.documentElement.getAttribute('data-theme') === 'light'
+          ? 'light'
+          : 'dark';
+        var next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        elements.hacThemeToggle.setAttribute(
+          'aria-pressed',
+          next === 'light' ? 'true' : 'false'
+        );
+        elements.hacThemeToggle.setAttribute(
+          'aria-label',
+          next === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'
+        );
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.content = next === 'light' ? '#eef3fb' : '#07101f';
+        try {
+          localStorage.setItem('govtech_theme', next);
+        } catch (error) {
+          /* Preferencia no persistible. */
+        }
+      }
+
+      function bindEvents() {
+        elements.periodRange.addEventListener('change', function (event) {
+          state.range = event.target.value;
+          if (state.experience) renderChart();
+        });
+        elements.closePeriodSelect.addEventListener('change', function (event) {
+          state.closePeriod = event.target.value;
+          if (state.close) renderClosePeriod();
+        });
+        elements.parityRange.addEventListener('input', renderSimulator);
+        elements.retryLoad.addEventListener('click', loadAuthorizedExperience);
+        elements.hacThemeToggle.addEventListener('click', toggleTheme);
+        var light = document.documentElement.getAttribute('data-theme') === 'light';
+        elements.hacThemeToggle.setAttribute('aria-pressed', light ? 'true' : 'false');
+        elements.hacThemeToggle.setAttribute(
+          'aria-label',
+          light ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'
+        );
+      }
+
+      async function init() {
+        cacheElements();
+        bindEvents();
+        if (typeof window.buildSidebar === 'function') window.buildSidebar('hacienda');
+        if (!await requirePageCapability()) return;
+        await loadExperience();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+      } else {
+        init();
+      }
+    }());
   </script>
-  <script src="js/theme-switcher.js"></script>
-  <script src='js/bottom-nav.js'></script>
 </body>
 </html>

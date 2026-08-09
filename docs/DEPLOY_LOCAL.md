@@ -1,89 +1,41 @@
-# 🐳 Deploy Local — Rack Municipal
-## Municipalidad de Junín · Jefatura de Tecnología
+# Despliegue on-premise — estado y gate de certificación
 
-## Requisitos previos
+Estado: **roadmap; no existe un paquete on-premise ejecutable o certificado**.
 
-- Docker Engine 24+ y Docker Compose v2
-- 8 GB RAM mínimo (16 GB recomendado para Ollama)
-- 50 GB disco libre
-- Puerto 80 y 443 disponibles
+La receta Docker heredada fue retirada porque montaba rutas inexistentes,
+publicaba el checkout completo, iniciaba servicios no integrados y afirmaba
+backup/IA local sin pruebas. No usar versiones históricas de esa receta para un
+servidor municipal.
 
-## Instalación en un comando
+## Cuándo se puede reconstruir
 
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/inguillen87/municipio-junin.git
-cd municipio-junin/infra
+El paquete on-premise se implementará como un sprint propio después de cerrar:
 
-# 2. Configurar variables de entorno
-cp .env.example .env
-nano .env   # Editar passwords
+- imagen de frontend que contenga sólo assets públicos necesarios;
+- imagen Serverless equivalente o API Express con paridad funcional explícita;
+- migraciones Prisma revisadas y cliente generado dentro de cada imagen;
+- secretos mediante Docker secrets/Vault equivalente, nunca `.env` con valores
+  copiables;
+- PostgreSQL privado, TLS, roles mínimos, aislamiento de red y readiness;
+- storage privado para archivos originales y artefactos, con antivirus;
+- jobs de ingesta, correo, WhatsApp o IA habilitados sólo si tienen contrato y
+  credenciales propias;
+- observabilidad, retención de logs sin PII y alertas;
+- backup cifrado en dominio separado y restore ensayado;
+- actualización firmada, inventario SBOM, rollback y runbook de incidente;
+- QA de red, navegador, permisos, tenant y performance en hardware objetivo.
 
-# 3. Levantar todo
-docker compose up -d
+## Entregables obligatorios del futuro sprint
 
-# 4. Ver logs
-docker compose logs -f
+1. `compose.yaml` o manifests versionados con imágenes fijadas por digest.
+2. `.env.example` sin secretos ni valores operativos predeterminados.
+3. health/readiness por servicio y smoke automatizado.
+4. modelo de amenazas de la topología municipal.
+5. procedimiento de instalación, actualización, rollback y desinstalación.
+6. matriz de puertos/orígenes y firewall de mínimo privilegio.
+7. prueba de restore con RPO/RTO medidos.
+8. evidencia de que el checkout, dumps y artefactos privados no son contenido
+   estático.
 
-# 5. Abrir en el navegador
-open http://localhost
-```
-
-## Servicios disponibles
-
-| Servicio | Puerto | URL |
-|----------|--------|-----|
-| Sistema web | 80/443 | http://localhost |
-| API REST | 3001 | http://localhost/api |
-| PostgreSQL | 5432 | psql -h localhost |
-| PgAdmin | 5050 | http://localhost:5050 |
-| MinIO | 9001 | http://localhost:9001 |
-| Ollama | 11434 | http://localhost:11434 |
-
-## Comandos útiles
-
-```bash
-# Ver estado de todos los servicios
-docker compose ps
-
-# Reiniciar un servicio
-docker compose restart api
-
-# Ver logs de PostgreSQL
-docker compose logs postgres -f
-
-# Backup de la base de datos
-docker compose exec postgres pg_dump -U junin_user junin_db > backup_$(date +%Y%m%d).sql
-
-# Restaurar backup
-docker compose exec -T postgres psql -U junin_user junin_db < backup.sql
-
-# Actualizar el sistema
-git pull
-docker compose up -d --build
-
-# Descargar modelo de IA (Llama 3.1)
-docker compose exec ollama ollama pull llama3.1:8b
-
-# Detener todo
-docker compose down
-```
-
-## Certificados SSL
-
-```bash
-# Generar certificado autofirmado (desarrollo)
-mkdir -p nginx/ssl
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout nginx/ssl/key.pem \
-  -out nginx/ssl/cert.pem \
-  -subj "/C=AR/ST=Mendoza/L=Junin/O=Municipalidad/CN=gestion.municipiojunin.gob.ar"
-
-# Para producción: usar Let's Encrypt con Certbot
-# certbot certonly --nginx -d gestion.municipiojunin.gob.ar
-```
-
-## Soberanía de datos
-
-Todos los datos residen exclusivamente en el servidor del municipio.
-Ningún dato sale a la nube. La IA (Ollama) corre 100% localmente.
+Hasta completar esos puntos, el runtime soportado para el piloto es el descrito
+en [`../DEPLOYMENT.md`](../DEPLOYMENT.md). Este documento no autoriza un deploy.

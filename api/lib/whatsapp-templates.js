@@ -1,7 +1,10 @@
 // api/lib/whatsapp-templates.js
 // MuniControl — Programación y Disparo de Plantillas Oficiales de WhatsApp Cloud API
 
+import publicAppUrl from '../../shared/public-app-url.cjs';
+
 const META_GRAPH_URL = 'https://graph.facebook.com/v21.0';
+const { buildPublicAppUrl } = publicAppUrl;
 
 /**
  * Función genérica para enviar plantillas de Meta
@@ -53,7 +56,8 @@ export async function sendMetaTemplate({ to, templateName, languageCode = 'es', 
 /**
  * 1. Plantilla Oficial: municontrol_alerta
  */
-export async function sendMuniControlAlertaTemplate({ to, nombre = 'Gobernante', reporte = 'Hacienda y Finanzas', link = 'https://municipio-junin.vercel.app/inteligencia.html?auth=governante' }) {
+export async function sendMuniControlAlertaTemplate({ to, nombre = 'Gobernante', reporte = 'Hacienda y Finanzas' }) {
+  const link = buildPublicAppUrl('/login.html');
   return await sendMetaTemplate({
     to,
     templateName: 'municontrol_alerta',
@@ -94,7 +98,8 @@ export async function sendMuniControlMenuTemplate({ to, nombre = 'Gobernante', o
 /**
  * 3. Confirmación de Reclamo 311
  */
-export async function sendReclamoConfirmacionTemplate({ to, nombre, ticketId, categoria, estado, link }) {
+export async function sendReclamoConfirmacionTemplate({ to, nombre, ticketId, categoria, estado }) {
+  const link = buildPublicAppUrl('/ciudadano.html');
   return await sendMetaTemplate({
     to,
     templateName: 'confirmacion_reclamo_311',
@@ -106,7 +111,7 @@ export async function sendReclamoConfirmacionTemplate({ to, nombre, ticketId, ca
           { type: 'text', text: ticketId || '2026-001' },
           { type: 'text', text: categoria || 'Servicios Públicos' },
           { type: 'text', text: estado || 'En Proceso' },
-          { type: 'text', text: link || 'https://municipio-junin.vercel.app/ciudadano.html' }
+          { type: 'text', text: link }
         ]
       }
     ]
@@ -159,7 +164,8 @@ export async function sendTurnoConfirmacionTemplate({ to, nombre, tramite, fecha
 /**
  * 6. Alerta Ejecutiva para Gobernantes
  */
-export async function sendAlertaEjecutivaTemplate({ to, area, indicador, nivel, porcentaje, link }) {
+export async function sendAlertaEjecutivaTemplate({ to, area, indicador, nivel, porcentaje }) {
+  const link = buildPublicAppUrl('/login.html');
   return await sendMetaTemplate({
     to,
     templateName: 'alerta_ejecutiva_gobernantes',
@@ -172,7 +178,7 @@ export async function sendAlertaEjecutivaTemplate({ to, area, indicador, nivel, 
           { type: 'text', text: indicador || 'Ejecución Presupuestaria' },
           { type: 'text', text: nivel || 'ALERTA CRÍTICA' },
           { type: 'text', text: String(porcentaje || '118') },
-          { type: 'text', text: link || 'https://municipio-junin.vercel.app/inteligencia.html?auth=governante' }
+          { type: 'text', text: link }
         ]
       }
     ]

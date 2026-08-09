@@ -1,149 +1,297 @@
-import pg from 'pg';
-const { Pool } = pg;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+import { noStore, requireCapability, requireDatasetTenant } from './lib/auth.js';
+import { readGrhArtifactBundle } from './lib/grh-artifacts.js';
+import { buildPortableGrhViews } from './lib/grh-portable-bundle.js';
+import routePolicy from '../shared/route-policy.cjs';
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+const { ACTIONS, RESOURCES } = routePolicy;
+const REPORT_SCHEMA_VERSION = 'grh-executive-report-v2';
+const PERIOD_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+const TREND_PERIODS = 12;
 
-  const period = (req.method === 'POST' ? req.body.period : req.query.period) || getCurrentPeriod();
+const QUALITY_COMPONENTS = Object.freeze([
+  Object.freeze({ key: 'temporalValidity', label: 'Validez temporal' }),
+  Object.freeze({ key: 'referentialIntegrity', label: 'Integridad referencial' }),
+  Object.freeze({ key: 'payrollReconciliation', label: 'Conciliación de controles' }),
+  Object.freeze({ key: 'legajoKeyUniqueness', label: 'Unicidad de legajos' }),
+]);
 
-  try {
-    // We will do similar calculations to intelligence.js or we can call our own functions
-    // Let's implement all in one go using Promise.all on db queries
+const CALCULATION_COMPONENTS = Object.freeze([
+  Object.freeze({ key: 'grossWithFamilyAllowancesCents', label: 'Bruto con asignaciones' }),
+  Object.freeze({ key: 'employeeWithholdingsCents', label: 'Retenciones del agente' }),
+  Object.freeze({ key: 'netPayrollCents', label: 'Neto de control' }),
+  Object.freeze({ key: 'employerContributionsCents', label: 'Contribuciones patronales' }),
+]);
 
-    const queries = await Promise.all([
-      pool.query("SELECT data FROM data_points WHERE module='rrhh' AND period=$1", [period]),
-      pool.query("SELECT data FROM data_points WHERE module='hacienda' AND period=$1", [period]),
-      pool.query("SELECT data FROM data_points WHERE module='obras' AND period=$1", [period]),
-      pool.query("SELECT data FROM data_points WHERE module='licitaciones' AND period=$1", [period]),
-      pool.query("SELECT data FROM data_points WHERE module='vecinos' AND period=$1", [period]),
-      pool.query("SELECT module, COUNT(*) as files, SUM(row_count) as rows FROM datasets WHERE period=$1 GROUP BY module", [period]),
-    ]);
-
-    const [rrhhRes, haciendaRes, obrasRes, licsRes, vecinosRes, datasetsRes] = queries;
-    
-    const rrhhData = rrhhRes.rows.map(r => r.data);
-    const haciendaData = haciendaRes.rows.map(r => r.data);
-    const obrasData = obrasRes.rows.map(r => r.data);
-    const licsData = licsRes.rows.map(r => r.data);
-    const vecinosData = vecinosRes.rows.map(r => r.data);
-    const modules = datasetsRes.rows.map(r => r.module);
-
-    // 1. salary_vs_budget & rrhh_ausentismo
-    const totalSalary = rrhhData.reduce((sum, emp) => sum + Number(emp.sueldo || emp.salario || emp.remuneracion || emp.total || 0), 0);
-    const personalBudget = haciendaData.find(b => String(b.partida || b.area || '').toLowerCase().includes('personal'));
-    const budgetAmount = Number(personalBudget?.monto || personalBudget?.presupuesto || 0);
-    const executionPct = budgetAmount > 0 ? (totalSalary / budgetAmount * 100).toFixed(1) : 0;
-    
-    const ausentes = rrhhData.filter(d => String(d.estado || '').toLowerCase() === 'ausente').length;
-    const ausentismoPct = rrhhData.length ? (ausentes / rrhhData.length * 100).toFixed(1) : 0;
-
-    // 2. obra_efficiency
-    const avgProgress = obrasData.length > 0 ? obrasData.reduce((s, o) => s + Number(o.avance || o.progreso || o.progress || 0), 0) / obrasData.length : 0;
-    const delayedObras = obrasData.filter(o => new Date(o.fecha_fin || o.fechaFin || o.end_date || '') < new Date() && Number(o.avance || 0) < 100);
-
-    // 3. licitacion_concentration
-    let totalMontoLics = 0;
-    const byProvider = {};
-    licsData.forEach(l => {
-      const prov = l.proveedor || l.adjudicatario || l.empresa || 'Desconocido';
-      const monto = Number(l.monto || l.importe || l.valor || 0);
-      byProvider[prov] = (byProvider[prov] || 0) + monto;
-      totalMontoLics += monto;
-    });
-    const sortedProv = Object.entries(byProvider).sort((a, b) => b[1] - a[1]).slice(0, 3);
-    const top3Pct = totalMontoLics > 0 ? sortedProv.reduce((s, [, m]) => s + m, 0) / totalMontoLics * 100 : 0;
-
-    // 4. reclamos_vs_obras
-    const recByBarrio = {};
-    vecinosData.forEach(r => {
-      const barrio = r.barrio || r.zona || r.sector || 'Sin clasificar';
-      recByBarrio[barrio] = (recByBarrio[barrio] || 0) + 1;
-    });
-    const bariosConObras = new Set(obrasData.map(o => o.barrio || o.zona || ''));
-    const hotspots = Object.entries(recByBarrio)
-      .sort((a, b) => b[1] - a[1])
-      .map(([barrio, count]) => ({ barrio, reclamos: count, tieneObra: bariosConObras.has(barrio) }));
-
-    // 5. cashflow_projection
-    const ingresos = haciendaData.filter(d => String(d.tipo || '').toLowerCase() === 'ingreso').reduce((s, d) => s + Number(d.monto || 0), 0);
-    const egresos = haciendaData.filter(d => String(d.tipo || '').toLowerCase() === 'egreso').reduce((s, d) => s + Number(d.monto || 0), 0);
-    
-    // Cross Analysis 
-    const crossAnalysis = [
-      {
-        name: 'Ejecución Salarial',
-        insight: budgetAmount ? \`Ejecución del \${executionPct}% sobre presupuesto.\` : 'Faltan datos de presupuesto.'
-      },
-      {
-        name: 'Zonas Críticas',
-        insight: \`\${hotspots.filter(h => !h.tieneObra && h.reclamos > 5).length} zonas con alta demanda sin obra planificada.\`
-      }
-    ];
-
-    const alerts = [];
-    if (executionPct > 90) alerts.push({ type: 'warning', message: 'Ejecución salarial excede 90%' });
-    if (delayedObras.length > 3) alerts.push({ type: 'critical', message: 'Más de 3 obras demoradas' });
-    if (top3Pct > 70) alerts.push({ type: 'critical', message: 'Alta concentración de licitaciones en pocos proveedores' });
-    if (ausentismoPct > 10) alerts.push({ type: 'warning', message: 'Ausentismo superior al 10%' });
-    if (ingresos < egresos) alerts.push({ type: 'warning', message: 'Déficit proyectado en flujo de caja' });
-
-    // AI Narrative
-    let aiNarrative = "Resumen automático generado por reglas heurísticas.";
-    const token = process.env.MUNI_HF_TOKEN;
-    if (token) {
-      try {
-        const ctx = \`Período: \${period}. RRHH: \${rrhhData.length} emp, \${ausentismoPct}% ausentismo. Hacienda: Ingresos \${ingresos}, Egresos \${egresos}. Obras: \${obrasData.length} activas. Licitaciones: \${top3Pct}% conc en top 3.\`;
-        const resp = await fetch('https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions', {
-          method: 'POST', headers: { 'Authorization': \`Bearer \${token}\`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'Qwen/Qwen2.5-72B-Instruct', messages: [{ role: 'system', content: 'Sos analista del Municipio de Junín. Escribí un resumen ejecutivo de 4 oraciones.' }, { role: 'user', content: ctx }], max_tokens: 300, temperature: 0.5 })
-        });
-        const data = await resp.json();
-        if (data?.choices?.[0]?.message?.content) {
-          aiNarrative = data.choices[0].message.content.trim();
-        }
-      } catch (e) {
-        console.warn('AI Narrative failed', e);
-      }
-    }
-
-    const report = {
-      period,
-      generatedAt: new Date().toISOString(),
-      modules,
-      kpis: {
-        totalEmpleados: rrhhData.length,
-        ausentismoPct,
-        ingresos,
-        egresos,
-        obrasActivas: obrasData.length,
-        avancePromedioObras: avgProgress.toFixed(1)
-      },
-      alerts,
-      aiNarrative,
-      crossAnalysis
-    };
-
-    try {
-      await pool.query(
-        "INSERT INTO intelligence_reports (type, period, result, ai_summary, alert_level) VALUES ($1, $2, $3, $4, $5)",
-        ['full_report', period, JSON.stringify(report), aiNarrative, alerts.some(a => a.type === 'critical') ? 'critical' : alerts.length ? 'warning' : 'normal']
-      );
-    } catch (e) {
-      console.warn('Could not insert report', e.message);
-    }
-
-    return res.status(200).json(report);
-  } catch (err) {
-    console.error('Reports error:', err);
-    return res.status(500).json({ error: 'Error generando reporte: ' + err.message });
+class ReportPeriodUnavailableError extends Error {
+  constructor(period, availablePeriods) {
+    super('Período GRH no disponible');
+    this.code = 'GRH_REPORT_PERIOD_UNAVAILABLE';
+    this.period = period;
+    this.availablePeriods = availablePeriods;
   }
 }
 
-function getCurrentPeriod() {
-  const d = new Date();
-  return \`\${d.getFullYear()}-\${String(d.getMonth() + 1).padStart(2, '0')}\`;
+function rounded(value, digits = 2) {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
 }
+
+function releasedCompensationSeries(executive) {
+  return executive.compensation.series
+    .filter(row => row.privacyStatus === 'released')
+    .slice()
+    .sort((left, right) => left.period.localeCompare(right.period));
+}
+
+function sectorDistribution(executive, period) {
+  const workforce = executive.workforce;
+  if (workforce.referencePeriod !== period) {
+    return {
+      available: false,
+      reason: 'distribution_only_available_for_workforce_reference_period',
+      referencePeriod: workforce.referencePeriod,
+      participants: [],
+    };
+  }
+
+  return {
+    available: true,
+    reason: null,
+    referencePeriod: workforce.referencePeriod,
+    privacyStatus: workforce.bySector.privacyStatus,
+    threshold: workforce.bySector.threshold,
+    participants: workforce.bySector.rows.map(row => ({
+      label: row.label,
+      participants: row.participants,
+      sharePct: rounded(row.sharePct, 2),
+      privacyStatus: row.privacyStatus,
+    })),
+  };
+}
+
+function calculationControl(selected, quality, latestReleasedPeriod) {
+  return {
+    period: selected.period,
+    privacyStatus: selected.privacyStatus,
+    distinctPayrollParticipants: selected.participantCount,
+    participantDisplay: selected.participantDisplay,
+    amountUnit: 'source_currency_cents',
+    currency: 'not_declared_in_source',
+    metricStatus: 'calculation_control_not_bank_disbursement',
+    components: CALCULATION_COMPONENTS.map(component => ({
+      key: component.key,
+      label: component.label,
+      valueCents: selected.amounts[component.key],
+    })),
+    identityWithinRoundingTolerance: selected.period === latestReleasedPeriod
+      ? quality.quality.risks.latestCalculationControlWithinRoundingTolerance
+      : null,
+  };
+}
+
+function qualityEvidence(quality) {
+  return {
+    scorePct: rounded(quality.quality.score, 2),
+    scope: quality.quality.scope,
+    components: QUALITY_COMPONENTS.map(component => {
+      const source = quality.quality.components[component.key];
+      return {
+        key: component.key,
+        label: component.label,
+        scorePct: rounded(source.score, 2),
+        weightPct: source.weightPct,
+      };
+    }),
+    riskFlags: {
+      historicalSnapshotNotRealtime: quality.quality.risks.historicalSnapshotNotRealtime,
+      currencyNotDeclared: quality.quality.risks.currencyNotDeclaredInSource,
+      totpagoCrossSourceMismatch: quality.quality.risks.totpagoCrossSourceMismatch,
+      quarantinedTemporalRows: quality.quality.risks.quarantinedTemporalRows,
+      calculationControlAnomalousPeriods: quality.quality.risks.calculationControlAnomalousPeriods,
+    },
+  };
+}
+
+function executiveSummary(selected, quality, latestReleasedPeriod) {
+  const tolerance = selected.period === latestReleasedPeriod
+    ? (quality.quality.risks.latestCalculationControlWithinRoundingTolerance
+      ? 'queda dentro de la tolerancia de redondeo declarada'
+      : 'queda fuera de la tolerancia de redondeo declarada')
+    : 'no publica un estado histórico de tolerancia en la proyección portable';
+  return [
+    `${selected.participantCount.toLocaleString('es-AR')} participantes distintos aparecen en cálculos válidos del período ${selected.period}; no equivalen a una dotación contractual activa.`,
+    `El control de cálculo ${tolerance}; es un control de liquidación y no evidencia un pago bancario.`,
+    `La calidad del extracto agregado es ${rounded(quality.quality.score, 2).toLocaleString('es-AR')}%, con alcance limitado al contrato gobernado y al snapshot histórico.`,
+  ];
+}
+
+export function buildGrhExecutiveReport(bundle, requestedPeriod = null, generatedAt = new Date().toISOString()) {
+  const { executive, quality, provenance } = buildPortableGrhViews(bundle);
+  const series = releasedCompensationSeries(executive);
+  const availablePeriods = series.map(row => row.period);
+  const latestReleasedPeriod = availablePeriods.at(-1) || null;
+  const period = requestedPeriod || latestReleasedPeriod;
+  const selectedIndex = availablePeriods.indexOf(period);
+  if (selectedIndex === -1) throw new ReportPeriodUnavailableError(period, availablePeriods);
+
+  const selected = series[selectedIndex];
+  const trendStart = Math.max(0, selectedIndex - TREND_PERIODS + 1);
+  const participantTrend = series.slice(trendStart, selectedIndex + 1).map(row => ({
+    period: row.period,
+    participants: row.participantCount,
+  }));
+
+  return {
+    schemaVersion: REPORT_SCHEMA_VERSION,
+    period,
+    generatedAt,
+    availablePeriods,
+    availablePeriodRange: {
+      first: availablePeriods[0] || null,
+      last: latestReleasedPeriod,
+      count: availablePeriods.length,
+    },
+    source: {
+      canonicalSystem: executive.source.canonicalSystem,
+      approvedSha256: provenance.approvedSourceSha256,
+      profileSchemaVersion: provenance.profileSchemaVersion,
+      semanticSchemaVersion: provenance.semanticSchemaVersion,
+      executiveSchemaVersion: executive.schemaVersion,
+      qualitySchemaVersion: quality.schemaVersion,
+      privacyPolicyVersion: executive.policyVersion,
+      portableThreshold: executive.privacy.portableThreshold,
+      snapshotAsOf: executive.source.snapshotAsOf,
+      realtime: false,
+      aggregateOnly: quality.privacy.aggregateOnly,
+      containsPii: quality.privacy.containsPii,
+      excludedSources: [...quality.source.excludedSources],
+    },
+    dataStatus: {
+      available: true,
+      source: 'grh-executive-portable',
+      freshness: 'historical_snapshot',
+      period,
+      snapshotAsOf: executive.source.snapshotAsOf,
+      realtime: false,
+      warning: 'Snapshot histórico GRH: no es una conexión en tiempo real.',
+    },
+    definitions: {
+      workforce: executive.workforce.definition,
+      calculationControl: 'Agregados de conceptos de cálculo; no acreditan pago bancario.',
+      amountUnit: executive.compensation.amountUnit,
+      currency: executive.compensation.currency,
+      metricStatus: executive.compensation.metricStatus,
+      totpagoStatus: quality.reconciliation.totpagoDiagnosticStatus,
+    },
+    executiveSummary: executiveSummary(selected, quality, latestReleasedPeriod),
+    participantTrend,
+    workforce: {
+      referencePeriod: executive.workforce.referencePeriod,
+      payrollParticipants: selected.participantCount,
+      distributionBySector: sectorDistribution(executive, period),
+    },
+    calculationControl: calculationControl(selected, quality, latestReleasedPeriod),
+    quality: qualityEvidence(quality),
+    recommendedNextSteps: [
+      'Validar formalmente moneda y unidad antes de interpretar importes o tomar decisiones financieras.',
+      'Revisar los períodos de control anómalos y la diferencia diagnóstica con totpago antes de certificar una liquidación.',
+      'Usar el maestro autorizado de personal para determinar dotación activa; este informe mide participación en cálculos.',
+    ],
+    furtherQuestions: [
+      '¿Qué maestro institucional definirá el estado contractual activo de cada agente?',
+      '¿Qué moneda y escala deben declararse formalmente para los importes históricos?',
+      '¿Cuándo se habilitará una ingesta GRH incremental auditada para reemplazar el snapshot?',
+    ],
+    caveats: [
+      `La fuente es un snapshot GRH al ${executive.source.snapshotAsOf}; realtime=false.`,
+      `La salida portable aplica supresión de celdas pequeñas k=${executive.privacy.portableThreshold}.`,
+      'La respuesta contiene sólo agregados y no exporta identificadores personales.',
+      'personas_junin está excluida y no se cruza, integra ni usa como fallback.',
+      'Los participantes de cálculo no son una dotación contractual activa.',
+      'Los importes son controles de cálculo en source_currency_cents; la moneda no está declarada.',
+      'El control de cálculo no acredita pago bancario y totpago se conserva sólo como diagnóstico.',
+    ],
+  };
+}
+
+function unavailableStatus(reason, warning, period = null) {
+  return {
+    available: false,
+    source: 'grh-executive-portable',
+    freshness: 'unavailable',
+    period,
+    realtime: false,
+    reason,
+    warning,
+  };
+}
+
+export function createReportsHandler({
+  requireCapabilityImpl = requireCapability,
+  requireDatasetTenantImpl = requireDatasetTenant,
+  readArtifactBundleImpl = readGrhArtifactBundle,
+} = {}) {
+  return async function handler(req, res) {
+    noStore(res);
+
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Método no permitido', code: 'METHOD_NOT_ALLOWED' });
+    }
+
+    const caller = await requireCapabilityImpl(
+      req,
+      res,
+      RESOURCES.GRH_REPORT,
+      ACTIONS.READ,
+    );
+    if (!caller || !requireDatasetTenantImpl(res, caller, 'GRH_TENANT_ID')) return;
+
+    const requestedPeriod = req.query?.period === undefined
+      ? null
+      : String(req.query.period).trim();
+    if (requestedPeriod !== null && !PERIOD_PATTERN.test(requestedPeriod)) {
+      return res.status(400).json({
+        error: 'Período inválido. Use YYYY-MM.',
+        code: 'INVALID_REPORT_PERIOD',
+        dataStatus: unavailableStatus('invalid_period', 'El período solicitado no cumple el formato YYYY-MM.', requestedPeriod),
+      });
+    }
+
+    try {
+      const bundle = await readArtifactBundleImpl(process.env.GRH_TENANT_ID);
+      const report = buildGrhExecutiveReport(bundle, requestedPeriod);
+      return res.status(200).json(report);
+    } catch (error) {
+      if (error instanceof ReportPeriodUnavailableError) {
+        return res.status(404).json({
+          error: 'El período solicitado no existe en la serie GRH portable gobernada.',
+          code: error.code,
+          availablePeriodRange: {
+            first: error.availablePeriods[0] || null,
+            last: error.availablePeriods.at(-1) || null,
+            count: error.availablePeriods.length,
+          },
+          dataStatus: unavailableStatus(
+            'period_not_available',
+            'No se sustituyó el período solicitado por otro período ni se publicó una celda protegida.',
+            error.period,
+          ),
+        });
+      }
+
+      console.error('[GRH-REPORTS] Proyección portable no disponible');
+      return res.status(503).json({
+        error: 'El contrato agregado GRH no está disponible.',
+        code: 'GRH_REPORT_CONTRACT_UNAVAILABLE',
+        dataStatus: unavailableStatus(
+          'contract_unavailable',
+          'No hay evidencia GRH agregada, validada y segura disponible para este informe.',
+          requestedPeriod,
+        ),
+      });
+    }
+  };
+}
+
+export default createReportsHandler();

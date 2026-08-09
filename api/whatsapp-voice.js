@@ -1,74 +1,87 @@
-// api/whatsapp-voice.js
-// MuniControl — Asistente de Voz Inteligente & IVR (MuniVoice)
-// Permite procesar llamadas de voz entrantes, responder en formato hablado
-// y enviar automáticamente el reporte en texto por WhatsApp al finalizar.
+import {
+  WebhookAuthError,
+  beginMessage,
+  completeMessage,
+  isAllowedPhoneId,
+  parseVerifiedWebhook,
+  releaseMessage,
+  verifyWebhookChallenge,
+} from './lib/whatsapp-webhook-auth.js';
+import publicAppUrl from '../shared/public-app-url.cjs';
+
+const { PublicAppUrlError, buildPublicAppUrl } = publicAppUrl;
+
+export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
-    if (mode === 'subscribe' && token === (process.env.WHATSAPP_VERIFY_TOKEN || 'municontrol_webhook_2026')) {
-      return res.status(200).send(challenge);
-    }
+    if (verifyWebhookChallenge(mode, token)) return res.status(200).send(challenge);
     return res.status(403).json({ error: 'Forbidden' });
   }
-
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  let body;
   try {
-    const body = req.body;
+    body = await parseVerifiedWebhook(req);
+  } catch (error) {
+    const status = error instanceof WebhookAuthError ? error.status : 400;
+    return res.status(status).json({ error: 'Webhook rechazado' });
+  }
 
-    // Eventos de llamada entrante de Meta WhatsApp Calls API
-    if (body && body.entry) {
-      for (const entry of body.entry) {
-        for (const change of (entry.changes || [])) {
-          if (change.field === 'calls' || change.field === 'messages') {
-            const val = change.value || {};
-            
-            // Procesar llamadas u audios de voz (Voice Notes)
-            for (const msg of (val.messages || [])) {
-              if (msg.type === 'audio' || msg.type === 'voice') {
-                await processVoiceInput(msg, val.metadata || {});
-              }
-            }
+  let processed = 0;
+  try {
+    for (const entry of body.entry.slice(0, 20)) {
+      for (const change of (entry.changes || []).slice(0, 20)) {
+        if (change.field !== 'messages') continue;
+        const value = change.value || {};
+        const phoneId = value.metadata?.phone_number_id;
+        if (!isAllowedPhoneId(phoneId, ['WHATSAPP_PHONE_ID'])) continue;
+
+        for (const message of (value.messages || []).slice(0, 50)) {
+          if (!['audio', 'voice'].includes(message.type) || !beginMessage(message.id)) continue;
+          try {
+            await acknowledgeVoice(message.from, phoneId);
+            completeMessage(message.id);
+            processed += 1;
+          } catch (error) {
+            releaseMessage(message.id);
+            throw error;
           }
         }
       }
     }
-
-    return res.status(200).json({ ok: true });
-  } catch (err) {
-    console.error('[MUNI-VOICE]', err.message);
-    return res.status(500).json({ error: err.message });
+  } catch (error) {
+    console.error('[MUNI-VOICE-ERROR]', error.message);
+    const status = error instanceof PublicAppUrlError ? 503 : 502;
+    return res.status(status).json({ ok: false });
   }
+
+  return res.status(200).json({ ok: true, processed });
 }
 
-async function processVoiceInput(msg, meta) {
-  const from = msg.from;
-  const pid = meta.phone_number_id || process.env.WHATSAPP_PHONE_ID;
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+async function acknowledgeVoice(to, phoneId) {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  if (!accessToken) throw new Error('Canal de salida no configurado');
+  const citizenUrl = buildPublicAppUrl('/ciudadano.html');
 
-  if (!token || !pid) return;
-
-  console.log(`[MUNI-VOICE] Procesando nota de voz/llamada de ${from}...`);
-
-  // 1. Mensaje de confirmación oral/texto inmediato
-  const textSummary = `🎙️ *ATENCIÓN POR VOZ (MuniVoice)*\n\nRecibimos tu consulta por voz. El sistema procesó la solicitud:\n\n• *Estado:* Procesada exitosamente\n• *Resumen enviado:* Sí\n\nSi realizaste un reclamo o consulta de presupuesto, podés consultar el estado en vivo desde el portal ciudadano:\n👉 https://municipio-junin.vercel.app/ciudadano.html`;
-
-  // 2. Enviar respuesta por texto de WhatsApp
-  const url = `https://graph.facebook.com/v21.0/${pid}/messages`;
-  await fetch(url, {
+  const response = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       messaging_product: 'whatsapp',
-      to: from,
+      to,
       type: 'text',
-      text: { body: textSummary }
-    })
+      text: {
+        body: `🎤 Recibimos una nota de voz, pero MuniControl no la transcribe ni genera un trámite. No envíes datos personales por este canal. Consultá la información pública disponible en ${citizenUrl}`,
+      },
+    }),
   });
+
+  if (!response.ok) throw new Error(`Meta rechazó el mensaje (${response.status})`);
 }

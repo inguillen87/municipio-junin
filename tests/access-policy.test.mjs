@@ -1,0 +1,321 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import test from 'node:test';
+
+import esmPolicy from '../shared/access-policy.cjs';
+
+const require = createRequire(import.meta.url);
+const cjsPolicy = require('../shared/access-policy.cjs');
+
+const EXPECTED_ROLES = [
+  'SUPER_ADMIN',
+  'INTENDENTE',
+  'TENANT_ADMIN',
+  'TENANT_USER',
+  'CONTADOR',
+  'INSPECTOR',
+  'DEMO',
+];
+
+const EXPECTED_NAV_CAPABILITIES = [
+  'navigation.workspace',
+  'navigation.dashboard',
+  'navigation.reports',
+  'navigation.hacienda',
+  'navigation.grh-executive',
+  'navigation.data-quality',
+  'navigation.rrhh',
+  'navigation.ai-assistant',
+  'navigation.audit',
+  'navigation.export',
+  'navigation.import',
+  'navigation.help',
+];
+
+const EXECUTIVE_BASE = [
+  'session.read',
+  'navigation.workspace',
+  'navigation.dashboard',
+  'navigation.reports',
+  'navigation.hacienda',
+  'navigation.grh-executive',
+  'navigation.data-quality',
+  'navigation.rrhh',
+  'navigation.ai-assistant',
+];
+
+const EXPECTED_ROLE_CAPABILITIES = {
+  SUPER_ADMIN: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
+  INTENDENTE: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.help'],
+  TENANT_ADMIN: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
+  TENANT_USER: ['session.read', 'navigation.workspace', 'navigation.help'],
+  CONTADOR: [...EXECUTIVE_BASE, 'navigation.export', 'navigation.help'],
+  INSPECTOR: ['session.read', 'navigation.workspace', 'navigation.help'],
+  DEMO: ['session.read', 'navigation.workspace', 'navigation.help'],
+};
+
+const EXPECTED_HOME_VARIANTS = {
+  SUPER_ADMIN: 'platform-governance',
+  INTENDENTE: 'executive-leadership',
+  TENANT_ADMIN: 'municipal-operations',
+  TENANT_USER: 'municipal-limited',
+  CONTADOR: 'financial-control',
+  INSPECTOR: 'territorial-unassigned',
+  DEMO: 'controlled-preview',
+};
+
+const EXPECTED_NAV_HREFS = [
+  'inicio.html',
+  'index.html',
+  'reportes.html',
+  'hacienda.html',
+  'grh-ejecutivo.html',
+  'control.html',
+  'rrhh.html',
+  'ia.html',
+  'auditoria.html',
+  'exportar.html',
+  'importar.html',
+  'cuentas-claras.html',
+  'ciudadano.html',
+  'manuales.html',
+];
+
+const HIDDEN_UNGOVERNED_HREFS = [
+  'analytics.html',
+  'inteligencia.html',
+  'presupuesto.html',
+  'licitaciones.html',
+  'obras.html',
+  'mapa.html',
+  'vecinos.html',
+  'forms.html',
+  'whatsapp.html',
+  'admin.html',
+  'configuracion.html',
+];
+
+function extractSidebarItems(source) {
+  const block = source.match(/var NAV_ITEMS = \[([\s\S]*?)\n\];/);
+  assert.ok(block, 'js/nav.js must expose one literal NAV_ITEMS catalog');
+  return [...block[1].matchAll(/\{\s*id:'([^']+)',\s*href:'([^']+)',\s*icon:'[^']+',\s*label:'([^']+)',\s*section:'[^']+',\s*(?:capability:'([^']+)'|public:true)\s*\}/g)]
+    .map(match => ({ id: match[1], href: match[2], label: match[3], capability: match[4] || null }));
+}
+
+function extractRoleArray(source, constantName) {
+  const match = source.match(new RegExp(`const ${constantName} = \\[([^\\]]+)\\]`));
+  assert.ok(match, `${constantName} must remain explicit`);
+  return [...match[1].matchAll(/'([^']+)'/g)].map(role => role[1]);
+}
+
+test('Serverless ESM and Express CJS consume the same bumped policy', () => {
+  assert.strictEqual(esmPolicy, cjsPolicy);
+  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-09.1');
+  assert.deepEqual(Object.values(esmPolicy.ROLES), EXPECTED_ROLES);
+
+  for (const role of EXPECTED_ROLES) {
+    assert.deepEqual(esmPolicy.getCapabilitiesForRole(role), cjsPolicy.getCapabilitiesForRole(role));
+  }
+});
+
+test('all login and me responses use the contextual session projection', async () => {
+  const [serverlessLogin, serverlessMe, expressAuth] = await Promise.all([
+    readFile(new URL('../api/auth/login.js', import.meta.url), 'utf8'),
+    readFile(new URL('../api/auth/me.js', import.meta.url), 'utf8'),
+    readFile(new URL('../backend/routes/auth.js', import.meta.url), 'utf8'),
+  ]);
+
+  for (const [name, source] of [
+    ['serverless login', serverlessLogin],
+    ['serverless me', serverlessMe],
+    ['Express login/me', expressAuth],
+  ]) {
+    assert.match(source, /getSessionAccessForUser\(/, `${name} must project the current user context`);
+    assert.match(source, /capabilities:\s*sessionAccess\.capabilities/);
+    assert.match(source, /accessPolicyVersion:\s*ACCESS_POLICY_VERSION/);
+    assert.match(source, /homeProfile:\s*sessionAccess\.homeProfile/);
+    assert.doesNotMatch(source, /getCapabilitiesForRole\(/, `${name} must not emit the static ceiling directly`);
+  }
+  assert.equal((expressAuth.match(/getSessionAccessForUser\(/g) || []).length, 2,
+    'Express login and /me must each derive a fresh contextual projection');
+});
+
+test('the capability catalog contains only live navigation boundaries', () => {
+  assert.deepEqual(Object.keys(esmPolicy.ROLE_CAPABILITIES), EXPECTED_ROLES);
+  assert.deepEqual(
+    Object.values(esmPolicy.CAPABILITIES),
+    ['session.read', ...EXPECTED_NAV_CAPABILITIES],
+  );
+
+  for (const futureRole of ['TESORERIA', 'COMPRAS', 'RRHH', 'AUDITOR', 'SECRETARIA', 'EMPLEADO']) {
+    assert.equal(esmPolicy.isKnownRole(futureRole), false);
+    assert.deepEqual(esmPolicy.getCapabilitiesForRole(futureRole), []);
+  }
+});
+
+test('role grants exactly match governed APIs and low roles receive no executive module', () => {
+  for (const role of EXPECTED_ROLES) {
+    const capabilities = esmPolicy.getCapabilitiesForRole(role);
+    assert.deepEqual(capabilities, EXPECTED_ROLE_CAPABILITIES[role], role);
+    assert.equal(new Set(capabilities).size, capabilities.length, `${role} contains duplicate capabilities`);
+    assert.ok(capabilities.every(capability => esmPolicy.isKnownCapability(capability)));
+    assert.equal(esmPolicy.hasCapability(role, 'navigation.workspace'), true, `${role} must receive a safe workspace`);
+    assert.equal(esmPolicy.hasCapability(role, 'navigation.help'), true, `${role} must discover the manual`);
+  }
+
+  for (const lowRole of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    for (const executiveCapability of EXPECTED_NAV_CAPABILITIES.filter(capability =>
+      capability !== 'navigation.workspace' && capability !== 'navigation.help'
+    )) {
+      assert.equal(esmPolicy.hasCapability(lowRole, executiveCapability), false, `${lowRole}:${executiveCapability}`);
+    }
+  }
+
+  for (const importer of ['SUPER_ADMIN', 'TENANT_ADMIN']) {
+    assert.equal(esmPolicy.hasCapability(importer, 'navigation.import'), true);
+  }
+  for (const nonImporter of ['INTENDENTE', 'CONTADOR', 'TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    assert.equal(esmPolicy.hasCapability(nonImporter, 'navigation.import'), false);
+  }
+
+  for (const auditor of ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE']) {
+    assert.equal(esmPolicy.hasCapability(auditor, 'navigation.audit'), true);
+  }
+  assert.equal(esmPolicy.hasCapability('CONTADOR', 'navigation.audit'), false);
+});
+
+test('role home profiles are immutable, minimal and never expand grants', () => {
+  assert.deepEqual(Object.keys(esmPolicy.ROLE_HOME_PROFILE), EXPECTED_ROLES);
+  for (const role of EXPECTED_ROLES) {
+    const canonical = esmPolicy.ROLE_HOME_PROFILE[role];
+    const projected = esmPolicy.getHomeProfileForRole(role);
+    assert.deepEqual(Object.keys(canonical).sort(), ['defaultPath', 'priorityCapabilities', 'variant']);
+    assert.equal(canonical.variant, EXPECTED_HOME_VARIANTS[role]);
+    assert.equal(canonical.defaultPath, 'inicio.html');
+    assert.equal(Object.isFrozen(canonical), true);
+    assert.equal(Object.isFrozen(canonical.priorityCapabilities), true);
+    assert.equal(Object.isFrozen(projected), true);
+    assert.equal(Object.isFrozen(projected.priorityCapabilities), true);
+    assert.ok(projected.priorityCapabilities.includes('navigation.workspace'));
+    assert.ok(projected.priorityCapabilities.every(capability => esmPolicy.hasCapability(role, capability)));
+  }
+  assert.equal(esmPolicy.getHomeProfileForRole('UNKNOWN_ROLE'), null);
+});
+
+test('tenantless SUPER_ADMIN receives a contextual workspace without ambient municipal links', () => {
+  const tenantless = esmPolicy.getSessionAccessForUser({ role: 'SUPER_ADMIN', tenantId: null });
+  assert.deepEqual(tenantless.capabilities, ['session.read', 'navigation.workspace', 'navigation.help']);
+  assert.deepEqual(tenantless.homeProfile.priorityCapabilities, ['navigation.workspace']);
+  assert.equal(tenantless.homeProfile.defaultPath, 'inicio.html');
+  assert.equal(Object.isFrozen(tenantless.capabilities), true);
+  assert.equal(Object.isFrozen(tenantless.homeProfile), true);
+
+  const tenantBound = esmPolicy.getSessionAccessForUser({ role: 'SUPER_ADMIN', tenantId: 'tenant-junin' });
+  assert.deepEqual(tenantBound.capabilities, EXPECTED_ROLE_CAPABILITIES.SUPER_ADMIN);
+  assert.equal(esmPolicy.getSessionAccessForUser({ role: 'UNKNOWN_ROLE', tenantId: null }), null);
+  assert.equal(esmPolicy.getSessionAccessForUser(null), null);
+});
+
+test('navigation grants stay aligned with the current GRH, audit, export and import APIs', async () => {
+  const [rawGrhSource, aiSource, auditSource, exportSource, uploadSource, sheetsSource] = await Promise.all([
+    readFile(new URL('../api/grh-data.js', import.meta.url), 'utf8'),
+    readFile(new URL('../api/ai-analyze.js', import.meta.url), 'utf8'),
+    readFile(new URL('../api/audit.js', import.meta.url), 'utf8'),
+    readFile(new URL('../api/export-data.js', import.meta.url), 'utf8'),
+    readFile(new URL('../api/upload-handler.js', import.meta.url), 'utf8'),
+    readFile(new URL('../api/google-sheets.js', import.meta.url), 'utf8'),
+  ]);
+
+  const grhRoles = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
+  const auditRoles = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE'];
+  const importRoles = ['SUPER_ADMIN', 'TENANT_ADMIN'];
+  assert.match(rawGrhSource, /RESOURCES\.GRH_CONTRACT/);
+  assert.match(rawGrhSource, /ACTIONS\.READ/);
+  assert.match(rawGrhSource, /GRH_RAW_CONTRACT_RETIRED/);
+  assert.doesNotMatch(rawGrhSource, /readGrhArtifact|grh-artifacts|req\.query/);
+  assert.deepEqual(extractRoleArray(aiSource, 'EXECUTIVE_ROLES'), grhRoles);
+  assert.deepEqual(extractRoleArray(exportSource, 'EXPORT_ROLES'), grhRoles);
+  assert.deepEqual(extractRoleArray(auditSource, 'AUDIT_READ_ROLES'), auditRoles);
+  assert.deepEqual(extractRoleArray(uploadSource, 'IMPORT_ROLES'), importRoles);
+  assert.deepEqual(extractRoleArray(sheetsSource, 'IMPORT_ROLES'), importRoles);
+
+  for (const capability of [
+    'navigation.dashboard',
+    'navigation.reports',
+    'navigation.hacienda',
+    'navigation.grh-executive',
+    'navigation.data-quality',
+    'navigation.rrhh',
+    'navigation.ai-assistant',
+    'navigation.export',
+  ]) {
+    assert.deepEqual(
+      EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, capability)).sort(),
+      [...grhRoles].sort(),
+    );
+  }
+  assert.deepEqual(
+    EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.workspace')).sort(),
+    [...EXPECTED_ROLES].sort(),
+  );
+  assert.deepEqual(
+    EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.audit')).sort(),
+    [...auditRoles].sort(),
+  );
+  assert.deepEqual(
+    EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.import')).sort(),
+    [...importRoles].sort(),
+  );
+});
+
+test('unknown and inherited authorization attempts fail closed', () => {
+  assert.deepEqual(esmPolicy.getCapabilitiesForRole('UNKNOWN_ROLE'), []);
+  assert.deepEqual(esmPolicy.getCapabilitiesForRole('super_admin'), []);
+  assert.equal(esmPolicy.hasCapability('SUPER_ADMIN', 'navigation.future-feature'), false);
+  assert.equal(esmPolicy.hasCapability('UNKNOWN_ROLE', 'navigation.dashboard'), false);
+  assert.equal(esmPolicy.hasExactRole('SUPER_ADMIN', 'TENANT_ADMIN'), false);
+  assert.equal(esmPolicy.hasExactRole('INTENDENTE', 'TENANT_USER'), false);
+  assert.equal(esmPolicy.hasExactRole('CONTADOR', 'TENANT_USER'), false);
+  assert.equal(esmPolicy.hasExactRole('UNKNOWN_ROLE', 'UNKNOWN_ROLE'), false);
+  assert.equal(esmPolicy.hasAnyRole('TENANT_ADMIN', ['INTENDENTE', 'CONTADOR']), false);
+  assert.equal(esmPolicy.hasAnyRole('TENANT_ADMIN', ['UNKNOWN_ROLE']), false);
+  assert.equal(esmPolicy.hasAnyRole('TENANT_ADMIN', 'TENANT_ADMIN'), false);
+});
+
+test('capability snapshots cannot mutate the canonical policy', () => {
+  const first = esmPolicy.getCapabilitiesForRole('TENANT_USER');
+  first.push('navigation.dashboard');
+  const second = esmPolicy.getCapabilitiesForRole('TENANT_USER');
+
+  assert.deepEqual(second, ['session.read', 'navigation.workspace', 'navigation.help']);
+  assert.equal(Object.isFrozen(esmPolicy.ROLE_CAPABILITIES.TENANT_USER), true);
+});
+
+test('desktop and mobile catalogs expose one honest mapping without duplicates', async () => {
+  const source = await readFile(new URL('../js/nav.js', import.meta.url), 'utf8');
+  const bottomSource = await readFile(new URL('../js/bottom-nav.js', import.meta.url), 'utf8');
+  const items = extractSidebarItems(source);
+  const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
+  const bottomCapabilities = [...bottomSource.matchAll(/^\s*'([^']+)':\s*\{/gm)].map(match => match[1]);
+
+  assert.deepEqual(items.map(item => item.href), EXPECTED_NAV_HREFS);
+  assert.equal(new Set(items.map(item => item.href)).size, items.length, 'sidebar hrefs must be unique');
+  assert.equal(new Set(items.map(item => item.label)).size, items.length, 'sidebar labels must be unique');
+  assert.deepEqual(declaredCapabilities, [...EXPECTED_NAV_CAPABILITIES].sort());
+  assert.ok(bottomCapabilities.length > 0);
+  assert.ok(bottomCapabilities.every(capability => EXPECTED_NAV_CAPABILITIES.includes(capability)));
+  assert.equal(new Set(bottomCapabilities).size, bottomCapabilities.length, 'bottom capabilities must be unique');
+
+  assert.match(source, /href:'control\.html'[\s\S]*label:'Calidad y Linaje'[\s\S]*capability:'navigation\.data-quality'/);
+  assert.match(source, /href:'auditoria\.html'[\s\S]*label:'Inventario de cargas'[\s\S]*capability:'navigation\.audit'/);
+  assert.match(source, /href:'exportar\.html'[\s\S]*label:'Salidas gobernadas'[\s\S]*capability:'navigation\.export'/);
+  assert.match(source, /href:'manuales\.html'[\s\S]*capability:'navigation\.help'/);
+  assert.equal(items.filter(item => item.href === 'reportes.html').length, 1);
+  assert.doesNotMatch(source, /access:\s*(?:'all'|\[)/);
+
+  for (const hiddenHref of HIDDEN_UNGOVERNED_HREFS) {
+    assert.equal(items.some(item => item.href === hiddenHref), false, hiddenHref);
+    assert.doesNotMatch(bottomSource, new RegExp(hiddenHref.replace('.', '\\.')));
+  }
+});

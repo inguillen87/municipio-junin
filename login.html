@@ -1,664 +1,643 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html lang="es-AR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#060b18">
-  <title>Acceso al Sistema | MuniControl</title>
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="Acceso institucional a MuniControl de la Municipalidad de Junín.">
+  <title>Acceso institucional | MuniControl Junín</title>
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      color-scheme: dark;
+      --page: #07111f;
+      --surface: #0d1a2c;
+      --surface-raised: #122139;
+      --border: #263b58;
+      --border-strong: #41658f;
+      --text: #f5f8ff;
+      --text-soft: #c2cee0;
+      --muted: #91a3bc;
+      --accent: #77b5ff;
+      --accent-strong: #b9d8ff;
+      --danger: #ffadb4;
+      --danger-surface: #2b1822;
+      --focus: #9ac8ff;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --content: 1240px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      min-width: 320px;
+      background: var(--page);
+    }
 
     body {
       min-height: 100vh;
-      display: flex;
-      font-family: 'Inter', sans-serif;
-      background: #060b18;
-      color: #f0f4ff;
-      overflow: hidden;
+      margin: 0;
+      overflow-x: hidden;
+      background: var(--page);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
 
-    /* LEFT PANEL — animated background */
-    .left-panel {
-      flex: 1;
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 60px 56px;
-      position: relative;
-      overflow: hidden;
-    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    [hidden] { display: none !important; }
 
-    .left-panel::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(59,130,246,0.15) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 60% at 80% 80%, rgba(139,92,246,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(16,185,129,0.08) 0%, transparent 60%);
-      pointer-events: none;
-    }
-
-    .left-panel::after {
-      content: '';
-      position: absolute;
-      width: 600px; height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
-      top: -100px; right: -100px;
-      animation: float 8s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-30px) scale(1.05); }
-    }
-
-    .brand-logo {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 56px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .brand-logo img {
-      width: 48px; height: 48px;
-      border-radius: 12px;
-      object-fit: cover;
-    }
-
-    .brand-logo .brand-name {
-      font-family: 'Outfit', sans-serif;
-      font-size: 24px;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-    }
-
-    .hero-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: clamp(32px, 4vw, 52px);
-      font-weight: 900;
-      line-height: 1.1;
-      margin-bottom: 20px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-title span {
-      background: linear-gradient(135deg, #60a5fa, #a78bfa, #34d399);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero-sub {
-      font-size: 16px;
-      color: rgba(148,163,184,0.8);
-      line-height: 1.7;
-      max-width: 400px;
-      margin-bottom: 48px;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Feature pills */
-    .features {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .feature-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 12px;
-      backdrop-filter: blur(10px);
-      transition: all 0.2s;
-    }
-
-    .feature-item:hover {
-      background: rgba(255,255,255,0.07);
-      border-color: rgba(255,255,255,0.12);
-    }
-
-    .feature-icon {
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    .feature-text { font-size: 13px; font-weight: 600; }
-    .feature-sub { font-size: 11px; color: rgba(148,163,184,0.6); margin-top: 1px; }
-
-    /* KPI FLOATING CARDS */
-    .kpi-cards {
-      position: absolute;
-      right: -20px;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      z-index: 2;
-    }
-
-    .kpi-card {
-      background: rgba(13,21,38,0.85);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px;
-      padding: 14px 18px;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      min-width: 160px;
-      animation: slideIn 0.6s ease forwards;
-    }
-
-    .kpi-card:nth-child(1) { animation-delay: 0.1s; }
-    .kpi-card:nth-child(2) { animation-delay: 0.2s; }
-    .kpi-card:nth-child(3) { animation-delay: 0.3s; }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(30px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-
-    .kpi-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: rgba(148,163,184,0.6);
-      margin-bottom: 4px;
-    }
-
-    .kpi-value {
-      font-family: 'Outfit', sans-serif;
-      font-size: 24px;
-      font-weight: 900;
-    }
-
-    .kpi-trend {
-      font-size: 10px;
-      margin-top: 2px;
-      font-weight: 700;
-    }
-
-    /* RIGHT PANEL */
-    .right-panel {
-      width: 480px;
-      flex-shrink: 0;
-      background: #060b18;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 48px 48px;
-      border-left: 1px solid rgba(255,255,255,0.06);
-      overflow-y: auto;
-    }
-
-    .login-header {
-      margin-bottom: 32px;
-    }
-
-    .login-header h2 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 28px;
-      font-weight: 900;
-      margin-bottom: 6px;
-    }
-
-    .login-header p {
+    .skip-link {
+      position: fixed;
+      z-index: 20;
+      top: 12px;
+      left: 12px;
+      min-height: 44px;
+      padding: 11px 15px;
+      transform: translateY(-160%);
+      border: 2px solid var(--focus);
+      border-radius: 9px;
+      background: #f8fbff;
+      color: #07111f;
       font-size: 14px;
-      color: rgba(148,163,184,0.7);
+      font-weight: 800;
+      text-decoration: none;
     }
 
-    /* FORM */
-    .form-group {
-      margin-bottom: 18px;
+    .skip-link:focus { transform: translateY(0); }
+
+    :focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
     }
+
+    .login-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(420px, 520px);
+      width: min(var(--content), calc(100% - 48px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    .institutional-context {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(28px, 5vw, 70px) clamp(32px, 7vw, 96px) clamp(28px, 5vw, 58px) 0;
+      border-right: 1px solid var(--border);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      width: fit-content;
+      color: var(--text);
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 44px;
+      height: 44px;
+      place-items: center;
+      border: 1px solid var(--border-strong);
+      border-radius: 11px;
+      background: var(--surface-raised);
+      color: var(--accent-strong);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .06em;
+    }
+
+    .brand-copy strong,
+    .brand-copy span { display: block; }
+    .brand-copy strong { font-size: 16px; letter-spacing: -.01em; }
+    .brand-copy span { margin-top: 2px; color: var(--muted); font-size: 11px; }
+
+    .context-body {
+      max-width: 680px;
+      margin: clamp(54px, 9vh, 110px) 0;
+    }
+
+    .eyebrow,
+    .access-kicker {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 720px;
+      margin: 0;
+      font-size: clamp(38px, 5.3vw, 68px);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+
+    .context-lead {
+      max-width: 630px;
+      margin: 22px 0 0;
+      color: var(--text-soft);
+      font-size: clamp(16px, 1.6vw, 19px);
+      line-height: 1.65;
+    }
+
+    .source-brief {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin: 34px 0 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .source-brief div {
+      min-width: 0;
+      padding: 18px 18px 18px 0;
+    }
+
+    .source-brief div + div {
+      padding-left: 18px;
+      border-left: 1px solid var(--border);
+    }
+
+    .source-brief dt {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .source-brief dd {
+      margin: 8px 0 0;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .context-note {
+      max-width: 670px;
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .context-footer {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .access-region {
+      display: grid;
+      min-width: 0;
+      place-items: center;
+      padding: clamp(24px, 5vw, 62px) 0 clamp(24px, 5vw, 62px) clamp(32px, 6vw, 78px);
+    }
+
+    .access-region:focus { outline: none; }
+
+    .access-card {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .mobile-wordmark { display: none; }
+
+    .access-header h2 {
+      margin: 0;
+      font-size: clamp(28px, 3.4vw, 36px);
+      line-height: 1.12;
+      letter-spacing: -.03em;
+    }
+
+    .access-intro {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .login-form {
+      margin-top: 30px;
+    }
+
+    .form-field + .form-field { margin-top: 20px; }
 
     .form-label {
       display: block;
+      margin-bottom: 8px;
+      color: var(--text-soft);
       font-size: 12px;
-      font-weight: 700;
-      color: rgba(148,163,184,0.8);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-weight: 800;
     }
 
     .form-input {
       width: 100%;
-      padding: 13px 16px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      color: #f0f4ff;
-      font-size: 14px;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      transition: all 0.2s;
-    }
-
-    .form-input:focus {
-      border-color: rgba(59,130,246,0.5);
-      background: rgba(59,130,246,0.05);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-    }
-
-    .form-input::placeholder { color: rgba(148,163,184,0.35); }
-
-    .input-wrapper {
-      position: relative;
-    }
-
-    .toggle-pass {
-      position: absolute;
-      right: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: rgba(148,163,184,0.5);
-      cursor: pointer;
+      min-height: 48px;
+      padding: 11px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
       font-size: 16px;
-      padding: 4px;
+      line-height: 1.4;
+      caret-color: var(--accent);
     }
 
-    .toggle-pass:hover { color: rgba(148,163,184,0.9); }
+    .form-input::placeholder { color: #788ba5; opacity: 1; }
 
-    .forgot-link {
-      text-align: right;
-      margin-top: 6px;
-    }
+    .form-input:hover { border-color: #557ca8; }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input[aria-invalid="true"] { border-color: var(--danger); }
 
-    .forgot-link a {
-      font-size: 12px;
-      color: rgba(96,165,250,0.8);
-      text-decoration: none;
-      font-weight: 600;
-    }
+    .password-wrap { position: relative; }
+    .password-wrap .form-input { padding-right: 58px; }
 
-    .forgot-link a:hover { color: #60a5fa; }
-
-    .btn-login {
-      width: 100%;
-      padding: 14px;
-      position: relative; overflow: hidden;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      border: none;
-      border-radius: 12px;
-      color: white;
-      font-size: 15px;
-      font-weight: 800;
-      font-family: 'Outfit', sans-serif;
-      cursor: pointer;
-      transition: all 0.25s;
-      margin-top: 6px;
-      letter-spacing: 0.3px;
-    }
-
-    .btn-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(59,130,246,0.4);
-    }
-
-    .btn-login:active { transform: translateY(0); }
-
-    .btn-login.loading {
-      opacity: 0.92;
-      pointer-events: none;
-    }
-    .btn-login.loading::after {
-      content: '';
+    .password-toggle {
       position: absolute;
-      right: 14px; top: 50%; transform: translateY(-50%);
-      width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.4);
-      border-top-color: #fff; border-radius: 50%;
-      animation: spinLogin 0.7s linear infinite;
-    }
-    @keyframes spinLogin { to { transform: translateY(-50%) rotate(360deg); } }
-
-    /* ERROR */
-    .error-msg {
-      display: none;
-      background: rgba(239,68,68,0.1);
-      border: 1px solid rgba(239,68,68,0.25);
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 13px;
-      color: #f87171;
-      margin-bottom: 16px;
-      font-weight: 600;
-    }
-
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 24px 0 20px;
-    }
-
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(255,255,255,0.07);
-    }
-
-    .divider span {
-      font-size: 11px;
-      color: rgba(148,163,184,0.5);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-    }
-
-    /* DEMO USERS */
-    .demo-title {
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: rgba(148,163,184,0.5);
-      margin-bottom: 10px;
-    }
-
-    .demo-grid {
+      top: 2px;
+      right: 2px;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .demo-card {
-      padding: 10px 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 10px;
+      width: 44px;
+      height: 44px;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
       cursor: pointer;
-      transition: all 0.2s;
-      text-align: left;
-      font-family: 'Inter', sans-serif;
-      color: #f0f4ff;
     }
 
-    .demo-card:hover {
-      background: rgba(255,255,255,0.07);
-      border-color: rgba(255,255,255,0.14);
-      transform: translateY(-1px);
+    .password-toggle:hover { background: var(--surface-raised); color: var(--text); }
+    .password-toggle svg { width: 21px; height: 21px; }
+    .password-toggle .eye-off { display: none; }
+    .password-toggle[aria-pressed="true"] .eye-on { display: none; }
+    .password-toggle[aria-pressed="true"] .eye-off { display: block; }
+
+    .field-help {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
     }
 
-    .demo-card-role {
-      font-size: 11px;
-      font-weight: 800;
-      margin-bottom: 2px;
+    .error-message {
+      margin: 0 0 20px;
+      padding: 13px 14px;
+      border: 1px solid #81404e;
+      border-radius: 10px;
+      background: var(--danger-surface);
+      color: #ffd6da;
+      font-size: 13px;
+      font-weight: 680;
+      line-height: 1.5;
     }
 
-    .demo-card-email {
-      font-size: 10px;
-      color: rgba(148,163,184,0.55);
-      font-weight: 500;
-    }
+    .error-message:focus { outline: 3px solid var(--focus); outline-offset: 3px; }
 
-    /* SECURITY BADGES */
-    .security-row {
-      display: flex;
-      gap: 8px;
+    .submit-button {
+      width: 100%;
+      min-height: 48px;
       margin-top: 24px;
-      flex-wrap: wrap;
+      padding: 11px 18px;
+      border: 1px solid #8abcf5;
+      border-radius: 10px;
+      background: #d9eaff;
+      color: #07172a;
+      font-size: 14px;
+      font-weight: 850;
+      cursor: pointer;
     }
 
-    .sec-badge {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 99px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: rgba(148,163,184,0.6);
+    .submit-button:hover { background: #eef6ff; }
+    .submit-button:active { background: #c6ddf8; }
+    .submit-button:disabled { cursor: wait; opacity: .72; }
+
+    .access-policy {
+      margin-top: 30px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
     }
 
-    /* RESPONSIVE */
-    @media (max-width: 900px) {
-      body { overflow: auto; flex-direction: column; }
-      .left-panel { display: none; }
-      .right-panel { width: 100%; padding: 40px 24px; min-height: 100vh; }
-      .kpi-cards { display: none; }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- LEFT PANEL -->
-  <div class="left-panel">
-    <div class="brand-logo">
-      <img src="img/municontrol-icon.jpg" alt="MuniControl" onerror="this.style.display='none'">
-      <span class="brand-name">MuniControl</span>
-    </div>
-
-    <h1 class="hero-title">
-      Gestion municipal<br>
-      <span>de clase mundial</span>
-    </h1>
-
-    <p class="hero-sub">
-      Sistema integral para municipios modernos. Presupuesto, RRHH, obras, reclamos y transparencia en una sola plataforma.
-    </p>
-
-       <div class="features">
-      <div class="feature-item" data-reveal>
-        <div class="feature-icon" style="background:rgba(59,130,246,0.15)">&#128200;</div>
-        <div>
-          <div class="feature-text">Analytics en tiempo real</div>
-          <div class="feature-sub">Metricas, KPIs y graficos ejecutivos</div>
-        </div>
-      </div>
-      <div class="feature-item" data-reveal>
-        <div class="feature-icon" style="background:rgba(16,185,129,0.15)">&#129504;</div>
-        <div>
-          <div class="feature-text">Asistente IA Municipal</div>
-          <div class="feature-sub">Consultas, resumenes y predicciones</div>
-        </div>
-      </div>
-      <div class="feature-item" data-reveal>
-        <div class="feature-icon" style="background:rgba(139,92,246,0.15)">&#128274;</div>
-        <div>
-          <div class="feature-text">Roles y permisos granulares</div>
-          <div class="feature-sub">Control total sobre quién ve qué</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Floating KPI cards -->
-    <div class="kpi-cards">
-      <div class="kpi-card">
-        <div class="kpi-label">Empleados activos</div>
-        <div class="kpi-value" data-count="1204" data-currency="false" style="color:#60a5fa">1,204</div>
-        <div class="kpi-trend" style="color:#10b981">+12 este mes</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Reclamos resueltos</div>
-        <div class="kpi-value" data-count="94" data-suffix="%" data-currency="false" style="color:#34d399">94%</div>
-        <div class="kpi-trend" style="color:#10b981">SLA cumplido</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Presupuesto ejecutado</div>
-        <div class="kpi-value" data-count="67" data-suffix="%" data-currency="false" style="color:#a78bfa">67%</div>
-        <div class="kpi-trend" style="color:#f59e0b">Normal</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RIGHT PANEL -->
-  <div class="right-panel">
-    <div class="login-header">
-      <h2>Bienvenido al sistema</h2>
-      <p>Ingresa tus credenciales para acceder</p>
-    </div>
-
-    <div class="error-msg" id="errorMsg" role="alert" aria-live="polite">Credenciales incorrectas. Verificá el email y la contraseña.</div>
-
-    <form id="loginForm" onsubmit="doLogin(event)" autocomplete="on">
-      <div class="form-group">
-        <label class="form-label" for="emailInput">Correo institucional</label>
-        <input
-          class="form-input"
-          id="emailInput"
-          type="email"
-          placeholder="usuario@junin.gob.ar"
-          autocomplete="username"
-          required
-        >
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="passInput">Contrasena</label>
-        <div class="input-wrapper">
-          <input
-            class="form-input"
-            id="passInput"
-            type="password"
-            placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;"
-            autocomplete="current-password"
-            required
-            style="padding-right: 44px"
-          >
-          <button type="button" class="toggle-pass" onclick="togglePass()" id="togglePassBtn">&#128065;</button>
-        </div>
-        <div class="forgot-link"><a href="#" onclick="return false">Olvide mi contrasena</a></div>
-      </div>
-
-      <button type="submit" class="btn-login" id="btnLogin">
-        Ingresar al sistema
-      </button>
-    </form>
-
-    <div class="divider"><span>Acceso rapido por rol</span></div>
-
-    <div class="demo-title">Usuarios de demostración — Municipio de Junín</div>
-    <div class="demo-grid">
-      <!-- ADMIN MUNICIPAL — el usuario principal de cada municipio -->
-      <button class="demo-card" onclick="fillUser('admin@junin.gov.ar','Junin2026!')" style="border-color:rgba(59,130,246,0.4);background:rgba(59,130,246,0.08);grid-column:span 2">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏛️</div>
-          <div style="text-align:left">
-            <div class="demo-card-role" style="color:#60a5fa;font-size:13px">👑 Admin Municipal <span style="font-size:10px;background:rgba(59,130,246,0.15);padding:2px 8px;border-radius:99px;margin-left:4px">Acceso total</span></div>
-            <div class="demo-card-email" style="font-size:12px">admin@junin.gov.ar — Junin2026!</div>
-          </div>
-        </div>
-      </button>
-      <button class="demo-card" onclick="fillUser('intendente@junin.gov.ar','Junin2026!')">
-        <div class="demo-card-role" style="color:#3b82f6">🏠 Intendente</div>
-        <div class="demo-card-email">intendente@junin.gov.ar</div>
-      </button>
-      <button class="demo-card" onclick="fillUser('contador@junin.gov.ar','Junin2026!')">
-        <div class="demo-card-role" style="color:#10b981">🏦 Contador</div>
-        <div class="demo-card-email">contador@junin.gov.ar</div>
-      </button>
-      <button class="demo-card" onclick="fillUser('demo@junin.gov.ar','Junin2026!')">
-        <div class="demo-card-role" style="color:#64748b">👁️ Solo lectura</div>
-        <div class="demo-card-email">demo@junin.gov.ar</div>
-      </button>
-    </div>
-    <div style="text-align:center;font-size:11px;color:rgba(100,116,139,0.5);margin-top:8px">Todos los usuarios demo usan la contraseña <strong style="color:rgba(148,163,184,0.6)">Junin2026!</strong></div>
-
-    <div class="security-row">
-      <span class="sec-badge">AES-256</span>
-      <span class="sec-badge">JWT</span>
-      <span class="sec-badge">Datos soberanos</span>
-      <span class="sec-badge">HTTPS</span>
-    </div>
-  </div>
-
-  <script>
-    const USERS = [
-      { email:'admin@junin.gov.ar',       pass:'Junin2026!',  name:'Admin Municipal',     role:'TENANT_ADMIN', secretaria:'Sistema',     tenantId:'cmscpl5zl0000uhybzimnz2wx' },
-      { email:'intendente@junin.gov.ar',  pass:'Junin2026!',  name:'Sr. Intendente',       role:'INTENDENTE',   secretaria:'Intendencia', tenantId:'cmscpl5zl0000uhybzimnz2wx' },
-      { email:'contador@junin.gov.ar',    pass:'Junin2026!',  name:'Cont. General',        role:'CONTADOR',     secretaria:'Hacienda',    tenantId:'cmscpl5zl0000uhybzimnz2wx' },
-      { email:'demo@junin.gov.ar',        pass:'Junin2026!',  name:'Usuario Demo',         role:'DEMO',         secretaria:'Demo',        tenantId:'cmscpl5zl0000uhybzimnz2wx' },
-    ];
-
-    function fillUser(email, pass) {
-      document.getElementById('emailInput').value = email;
-      document.getElementById('passInput').value = pass;
-      var fakeEvent = { preventDefault: function(){} };
-      doLogin(fakeEvent);
+    .access-policy h3 {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 13px;
     }
 
-    function togglePass() {
-      var inp = document.getElementById('passInput');
-      var btn = document.getElementById('togglePassBtn');
-      if (inp.type === 'password') {
-        inp.type = 'text';
-        btn.innerHTML = '&#128683;';
-      } else {
-        inp.type = 'password';
-        btn.innerHTML = '&#128065;';
+    .access-policy p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .access-footer {
+      margin-top: 22px;
+      color: #7f93ae;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 960px) {
+      .login-shell {
+        grid-template-columns: 1fr;
+        width: min(680px, calc(100% - 40px));
+        padding: 28px 0 48px;
+      }
+
+      .access-region {
+        order: -1;
+        padding: 28px 0 38px;
+      }
+
+      .mobile-wordmark {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 38px;
+        color: var(--text-soft);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .mobile-wordmark::before {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border: 1px solid var(--border-strong);
+        border-radius: 9px;
+        background: var(--surface-raised);
+        color: var(--accent-strong);
+        content: "MC";
+        font-size: 10px;
+        letter-spacing: .05em;
+      }
+
+      .institutional-context {
+        padding: 38px 0 0;
+        border-top: 1px solid var(--border);
+        border-right: 0;
+      }
+
+      .institutional-context > .brand { display: none; }
+      .context-body { margin: 0; }
+      h1 { font-size: clamp(34px, 7vw, 52px); }
+      .context-footer { margin-top: 32px; }
+    }
+
+    @media (max-width: 560px) {
+      .login-shell {
+        width: min(100% - 28px, 440px);
+        padding-top: 16px;
+      }
+
+      .access-region { padding-top: 12px; }
+      .mobile-wordmark { margin-bottom: 30px; }
+      .access-header h2 { font-size: 29px; }
+      .login-form { margin-top: 26px; }
+      .source-brief { grid-template-columns: 1fr; }
+      .source-brief div { padding: 15px 0; }
+      .source-brief div + div { padding-left: 0; border-top: 1px solid var(--border); border-left: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
       }
     }
 
-    function doLogin(e) {
-      e.preventDefault();
-      var email = document.getElementById('emailInput').value.trim().toLowerCase();
-      var pass  = document.getElementById('passInput').value;
-      var errEl = document.getElementById('errorMsg');
-      var btn   = document.getElementById('btnLogin');
+    @media (forced-colors: active) {
+      .brand-mark,
+      .mobile-wordmark::before,
+      .form-input,
+      .submit-button,
+      .error-message { border: 1px solid CanvasText; }
+      .submit-button { background: ButtonFace; color: ButtonText; }
+    }
+  </style>
+</head>
+<body data-login-contract="institutional-auth-v1">
+  <a class="skip-link" href="#accessPanel">Ir al formulario de acceso</a>
 
-      errEl.style.display = 'none';
-      btn.textContent = 'Verificando...';
-      btn.classList.add('loading');
+  <main class="login-shell" id="mainContent">
+    <section class="institutional-context" aria-labelledby="platformTitle">
+      <div class="brand" aria-label="MuniControl Junín">
+        <span class="brand-mark" aria-hidden="true">MC</span>
+        <span class="brand-copy"><strong>MuniControl</strong><span>Municipalidad de Junín</span></span>
+      </div>
 
-      setTimeout(function() {
-        var user = USERS.find(function(u) {
-          return u.email.toLowerCase() === email && u.pass === pass;
-        });
+      <div class="context-body">
+        <p class="eyebrow">Gobierno municipal · acceso restringido</p>
+        <h1 id="platformTitle">Gestión municipal con evidencia verificable.</h1>
+        <p class="context-lead">MuniControl organiza el acceso a las capacidades habilitadas para cada perfil. La información disponible depende de la fuente, el corte y los permisos confirmados por el servidor.</p>
 
-        if (!user) {
-          errEl.style.display = 'block';
-          btn.textContent = 'Ingresar al sistema';
-          btn.classList.remove('loading');
-          document.getElementById('passInput').value = '';
-          document.getElementById('passInput').focus();
+        <dl class="source-brief" aria-label="Alcance actual de la plataforma">
+          <div><dt>Fuente actual</dt><dd>Snapshot GRH gobernado</dd></div>
+          <div><dt>Temporalidad</dt><dd>No es tiempo real</dd></div>
+          <div><dt>Acceso público</dt><dd>Sin PII</dd></div>
+        </dl>
+        <p class="context-note">Esta pantalla no expone información municipal ni completa capacidades ausentes con datos de demostración.</p>
+      </div>
+
+      <footer class="context-footer">MuniControl · Entorno institucional de la Municipalidad de Junín</footer>
+    </section>
+
+    <section class="access-region" id="accessPanel" tabindex="-1" aria-labelledby="accessTitle">
+      <div class="access-card">
+        <div class="mobile-wordmark" aria-hidden="true">MuniControl · Junín</div>
+
+        <header class="access-header">
+          <p class="access-kicker">Acceso institucional</p>
+          <h2 id="accessTitle">Ingresá a tu espacio de trabajo</h2>
+          <p class="access-intro">Usá las credenciales asignadas por la administración municipal.</p>
+        </header>
+
+        <form class="login-form" id="loginForm" autocomplete="on" novalidate>
+          <div class="error-message" id="errorMsg" role="alert" aria-live="assertive" tabindex="-1" hidden>No pudimos completar el acceso.</div>
+
+          <div class="form-field">
+            <label class="form-label" for="emailInput">Correo institucional</label>
+            <input
+              class="form-input"
+              id="emailInput"
+              name="email"
+              type="email"
+              inputmode="email"
+              placeholder="usuario@junin.gob.ar"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+            >
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="passInput">Contraseña</label>
+            <div class="password-wrap">
+              <input
+                class="form-input"
+                id="passInput"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                aria-describedby="passwordHelp"
+                required
+              >
+              <button
+                class="password-toggle"
+                id="togglePassBtn"
+                type="button"
+                aria-controls="passInput"
+                aria-label="Mostrar contraseña"
+                aria-pressed="false"
+              >
+                <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.8"/></svg>
+                <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.5 10.5 0 0 1 12 6c6.4 0 10 6 10 6a17 17 0 0 1-2.1 2.7M6.5 6.5C3.6 8.3 2 12 2 12s3.6 6 10 6a10.2 10.2 0 0 0 4.1-.8M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+              </button>
+            </div>
+            <p class="field-help" id="passwordHelp">La recuperación de acceso se gestiona con el administrador institucional.</p>
+          </div>
+
+          <button class="submit-button" id="btnLogin" type="submit">Ingresar al sistema</button>
+        </form>
+
+        <section class="access-policy" aria-labelledby="accessPolicyTitle">
+          <h3 id="accessPolicyTitle">Identidad emitida por la Municipalidad</h3>
+          <p>No se publican usuarios de prueba ni accesos rápidos. Cada sesión obtiene únicamente las capacidades habilitadas para su perfil.</p>
+        </section>
+
+        <footer class="access-footer">Si no reconocés este acceso o necesitás asistencia, contactá al responsable institucional por el canal interno autorizado.</footer>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var form = document.getElementById('loginForm');
+      var emailInput = document.getElementById('emailInput');
+      var passInput = document.getElementById('passInput');
+      var toggleButton = document.getElementById('togglePassBtn');
+      var errorMessage = document.getElementById('errorMsg');
+      var submitButton = document.getElementById('btnLogin');
+      var SAFE_DEFAULT_PATHS = Object.freeze(['inicio.html']);
+
+      function togglePass() {
+        var visible = passInput.type === 'password';
+        passInput.type = visible ? 'text' : 'password';
+        toggleButton.setAttribute('aria-pressed', visible ? 'true' : 'false');
+        toggleButton.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      }
+
+      function resetError() {
+        errorMessage.hidden = true;
+        errorMessage.textContent = '';
+        emailInput.removeAttribute('aria-invalid');
+        passInput.removeAttribute('aria-invalid');
+      }
+
+      function showError(message, focusTarget) {
+        errorMessage.textContent = message;
+        errorMessage.hidden = false;
+        (focusTarget || errorMessage).focus({ preventScroll: true });
+      }
+
+      function setSubmitting(submitting) {
+        form.setAttribute('aria-busy', submitting ? 'true' : 'false');
+        submitButton.disabled = submitting;
+        submitButton.textContent = submitting ? 'Verificando acceso…' : 'Ingresar al sistema';
+      }
+
+      function failureForStatus(status) {
+        if (status === 400) return { message: 'Completá el correo institucional y la contraseña.', target: emailInput, invalid: 'both' };
+        if (status === 401) return { message: 'No pudimos validar las credenciales. Revisá el correo y la contraseña.', target: passInput, invalid: 'credentials' };
+        if (status === 403) return { message: 'Tu cuenta no tiene acceso institucional habilitado. Contactá al administrador municipal.', target: errorMessage };
+        if (status === 429) return { message: 'Se alcanzó el límite de intentos. Esperá antes de volver a ingresar.', target: errorMessage };
+        if (status === 503) return { message: 'El servicio de acceso no está disponible en este momento. Intentá nuevamente más tarde.', target: errorMessage };
+        return { message: 'No pudimos completar el acceso. Intentá nuevamente.', target: errorMessage };
+      }
+
+      function validatedDefaultPath(user) {
+        var profile = user && user.homeProfile;
+        var capabilities = user && Array.isArray(user.capabilities) ? user.capabilities : [];
+        var candidate = profile && typeof profile.defaultPath === 'string'
+          ? profile.defaultPath
+          : '';
+        if (SAFE_DEFAULT_PATHS.indexOf(candidate) === -1) return 'inicio.html';
+        if (capabilities.indexOf('navigation.workspace') === -1) return 'inicio.html';
+        return candidate;
+      }
+
+      async function doLogin(event) {
+        event.preventDefault();
+        resetError();
+
+        var email = emailInput.value.trim().toLowerCase();
+        var password = passInput.value;
+        if (!email || !password) {
+          var missing = failureForStatus(400);
+          emailInput.setAttribute('aria-invalid', 'true');
+          passInput.setAttribute('aria-invalid', 'true');
+          showError(missing.message, !email ? emailInput : passInput);
           return;
         }
 
-        var session = {
-          name:      user.name,
-          email:     user.email,
-          role:      user.role,
-          secretaria:user.secretaria,
-          tenant:    'municipio-junin',
-          loginAt:   new Date().toISOString()
-        };
-        sessionStorage.setItem('mjunin_user', JSON.stringify(session));
+        setSubmitting(true);
+        try {
+          var response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password })
+          });
+          var payload = await response.json().catch(function () { return {}; });
 
-        btn.textContent = 'Accediendo...';
-        setTimeout(function() {
-          window.location.href = 'index.html';
-        }, 400);
-      }, 600);
-    }
+          if (!response.ok || !payload.token || !payload.user) {
+            var failure = failureForStatus(response.status);
+            if (failure.invalid === 'both') {
+              emailInput.setAttribute('aria-invalid', 'true');
+              passInput.setAttribute('aria-invalid', 'true');
+            } else if (failure.invalid === 'credentials') {
+              passInput.value = '';
+              passInput.setAttribute('aria-invalid', 'true');
+            }
+            setSubmitting(false);
+            showError(failure.message, failure.target);
+            return;
+          }
+
+          var session = Object.assign({}, payload.user, { loginAt: new Date().toISOString() });
+          sessionStorage.setItem('mjunin_user', JSON.stringify(session));
+          sessionStorage.setItem('mjunin_token', payload.token);
+          submitButton.textContent = 'Accediendo…';
+          window.location.href = validatedDefaultPath(session);
+        } catch (error) {
+          setSubmitting(false);
+          showError('El servicio de acceso no está disponible en este momento. Intentá nuevamente más tarde.', errorMessage);
+        }
+      }
+
+      toggleButton.addEventListener('click', togglePass);
+      form.addEventListener('submit', doLogin);
+      window.togglePass = togglePass;
+      window.doLogin = doLogin;
+    })();
   </script>
-  <script src="js/theme-switcher.js"></script>
-  <script src="js/nav.js"></script>
-  <script src='js/bottom-nav.js'></script>
-<script src='js/motion-kit.js'></script>
-  </body>
+</body>
 </html>

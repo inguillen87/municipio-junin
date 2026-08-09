@@ -1,66 +1,19 @@
-import { prisma } from '../lib/db.js';
-import { requireAuth, cors } from '../lib/auth.js';
+import { cors, noStore, requireRole, tenantForRequest } from '../lib/auth.js';
+
+const GOVERNANCE_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
 
 export default async function handler(req, res) {
-  cors(res);
+  cors(req, res);
+  noStore(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
-  
-  const user = requireAuth(req, res);
+  if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) return res.status(405).end();
+
+  const user = await requireRole(req, res, GOVERNANCE_ROLES);
   if (!user) return;
-  
-  const tenantId = user.tenantId;
+  if (!tenantForRequest(req, res, user)) return;
 
-  try {
-    if (req.method === 'GET') {
-      const { secretaria, estado, search, limit = 100, offset = 0 } = req.query;
-      const where = { tenantId };
-      if (secretaria) where.secretaria = secretaria;
-      if (estado) where.estado = estado;
-      if (search) where.OR = [
-        { nombre: { contains: search, mode: 'insensitive' } },
-        { apellido: { contains: search, mode: 'insensitive' } },
-        { legajo: { contains: search } },
-        { cargo: { contains: search, mode: 'insensitive' } }
-      ];
-
-      const [empleados, total] = await Promise.all([
-        prisma.empleado.findMany({ where, orderBy: { apellido: 'asc' }, take: parseInt(limit), skip: parseInt(offset) }),
-        prisma.empleado.count({ where })
-      ]);
-
-      // Aggregate stats
-      const stats = await prisma.empleado.aggregate({
-        where: { tenantId, estado: 'Activo' },
-        _count: { id: true },
-        _sum: { salarioBruto: true },
-        _avg: { salarioBruto: true }
-      });
-
-      return res.status(200).json({ empleados, total, stats: {
-        totalActivos: stats._count.id,
-        masaNominal: stats._sum.salarioBruto || 0,
-        promedioSalario: stats._avg.salarioBruto || 0
-      }});
-    }
-
-    if (req.method === 'POST') {
-      const emp = await prisma.empleado.create({ data: { ...req.body, tenantId } });
-      return res.status(201).json(emp);
-    }
-
-    if (req.method === 'PUT') {
-      const { id, ...data } = req.body;
-      const emp = await prisma.empleado.update({ where: { id }, data });
-      return res.status(200).json(emp);
-    }
-
-    if (req.method === 'DELETE') {
-      const { id } = req.query;
-      await prisma.empleado.delete({ where: { id } });
-      return res.status(204).end();
-    }
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Error de base de datos', details: err.message });
-  }
+  return res.status(410).json({
+    error: 'El acceso individual a legajos está retirado hasta activar permisos RRHH por finalidad y campo',
+    code: 'EMPLOYEE_PERSON_ACCESS_NOT_GOVERNED',
+  });
 }

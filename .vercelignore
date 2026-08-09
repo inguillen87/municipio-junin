@@ -1,0 +1,18 @@
+# Los artefactos GRH locales no se empaquetan como assets del deployment.
+# Producción debe leerlos desde la tabla privada grh_artifacts.
+api/_data/*.json
+docs/data/*.json
+
+# Componentes y evidencia que no forman parte del runtime Serverless.
+# prisma/ se conserva: el postinstall raíz lo necesita para generar el cliente.
+backend/**
+database/**
+migrations/**
+docs/**
+tests/**
+scripts/**
+config/**
+*.md
+*.sql
+*.sql.gz
+*.py

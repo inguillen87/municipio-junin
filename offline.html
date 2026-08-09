@@ -7,7 +7,6 @@
   <title>Sin conexión — MuniControl</title>
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="icon" href="favicon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -47,36 +46,34 @@
     .feature-label { font-size: 11px; font-weight: 700; color: rgba(148,163,184,0.7); }
     .feature-val { font-size: 12px; color: rgba(148,163,184,0.5); margin-top: 2px; }
   </style>
-  <link rel='preconnect' href='https://fonts.googleapis.com'>
-  <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
 </head>
 <body>
   <div class="container">
     <div class="icon">📡</div>
     <div class="badge"><div class="dot"></div> Sin conexión a internet</div>
-    <h1>MuniControl funciona sin red</h1>
-    <p>Los datos guardados localmente siguen disponibles. Cuando recuperes la conexión, todo se sincronizará automáticamente.</p>
+    <h1>Se necesita conexión segura</h1>
+    <p>MuniControl no muestra datos operativos ni acepta cambios sin conexión. Las fuentes protegidas deben volver a validarse contra el servidor.</p>
     <button class="btn" onclick="window.location.reload()">🔄 Reintentar conexión</button>
     <div class="features">
       <div class="feature">
         <div class="feature-icon">📊</div>
-        <div class="feature-label">Disponible offline</div>
-        <div class="feature-val">Dashboard con datos guardados</div>
+        <div class="feature-label">KPIs protegidos</div>
+        <div class="feature-val">No se sirven desde caché</div>
       </div>
       <div class="feature">
         <div class="feature-icon">👥</div>
-        <div class="feature-label">RRHH offline</div>
-        <div class="feature-val">Consulta empleados en caché</div>
+        <div class="feature-label">GRH y RRHH</div>
+        <div class="feature-val">Requieren fuente autenticada</div>
       </div>
       <div class="feature">
         <div class="feature-icon">🏘️</div>
-        <div class="feature-label">Reclamos offline</div>
-        <div class="feature-val">Se envían al reconectar</div>
+        <div class="feature-label">Cambios locales</div>
+        <div class="feature-val">No se ponen en cola</div>
       </div>
       <div class="feature">
         <div class="feature-icon">🔒</div>
-        <div class="feature-label">Datos seguros</div>
-        <div class="feature-val">Cifrado local AES-256</div>
+        <div class="feature-label">Al reconectar</div>
+        <div class="feature-val">La sesión se valida otra vez</div>
       </div>
     </div>
   </div>
@@ -86,8 +83,5 @@
       window.location.href = '/index.html';
     });
   </script>
-  <script src="js/theme-switcher.js"></script>
-  <script src="js/nav.js"></script>
-  <script src='js/bottom-nav.js'></script>
 </body>
 </html>

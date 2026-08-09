@@ -1,149 +1,136 @@
-# 🐘 Configuración Neon PostgreSQL + Prisma
-## GovTech Platform — Base de Datos en la Nube
+# Neon PostgreSQL + Prisma — procedimiento reproducible
 
----
+Este documento describe la preparación técnica. No certifica que una base
+remota, un preview ni producción estén actualizados: esa evidencia se obtiene
+con migraciones revisadas y smokes contra el deployment concreto.
 
-## ¿Qué es Neon?
+## Fuentes canónicas
 
-Neon es PostgreSQL serverless gratuito, perfecto para Vercel.
-- **Gratis** hasta 512 MB de datos
-- **Serverless**: se apaga automáticamente y escala según demanda
-- **Compatible** 100% con Prisma, Drizzle, y cualquier cliente PostgreSQL
+- Esquema Prisma: `prisma/schema.prisma`.
+- Cliente Serverless: `node_modules/@prisma/client`, generado desde la raíz.
+- Cliente Express: `backend/generated/prisma`, generado dentro de `backend`.
+- `DATABASE_URL`: conexión de runtime, normalmente mediante pooler.
+- `DIRECT_URL`: conexión directa obligatoria para inspección y migraciones.
 
----
+El backend no debe resolver por accidente el cliente generado en el
+`node_modules` raíz. Sus scripts indican siempre el esquema y generador exactos.
 
-## Paso 1: Crear proyecto en Neon
+## 1. Crear las conexiones
 
-1. Ir a https://neon.tech
-2. Registrarse con GitHub o Google
-3. Crear nuevo proyecto:
-   - **Name**: `govtech-municipal`
-   - **Region**: `South America (São Paulo)` → más cercano a Argentina
-   - **PostgreSQL version**: 16
-4. Clic en **Create project**
+En Neon, crear una base PostgreSQL y obtener dos cadenas TLS:
 
----
-
-## Paso 2: Obtener la Connection String
-
-1. En el dashboard de Neon → **Connection Details**
-2. Seleccionar **Prisma** en el dropdown
-3. Copiar las dos URLs:
-
-```
-DATABASE_URL="postgresql://user:password@ep-xxx.us-east-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true"
-DIRECT_URL="postgresql://user:password@ep-xxx.us-east-1.aws.neon.tech/neondb?sslmode=require"
+```text
+DATABASE_URL=postgresql://...pooler.../db?sslmode=verify-full
+DIRECT_URL=postgresql://...direct.../db?sslmode=verify-full
 ```
 
-> ⚠️ **DATABASE_URL** usa el connection pooler (para Vercel serverless)
-> ⚠️ **DIRECT_URL** se usa para las migraciones de Prisma
+No guardar cadenas reales en Git, capturas, tickets ni manuales. Para desarrollo
+local, copiar `backend/.env.example` a `backend/.env` y completar secretos fuera
+del repositorio. Los comandos ejecutados desde la raíz deben recibir las mismas
+variables desde el entorno o desde un `.env` local ignorado por Git.
 
----
+## 2. Instalación y generación
 
-## Paso 3: Configurar en el proyecto local
+Desde la raíz del repositorio:
 
 ```bash
-# Copiar el .env.example
-cd backend
-cp .env.example .env
-
-# Editar .env con tus URLs de Neon
-nano .env
-# Pegar DATABASE_URL y DIRECT_URL
-```
-
----
-
-## Paso 4: Ejecutar migraciones
-
-```bash
-cd backend
-
-# Instalar dependencias
-npm install
-
-# Generar el cliente Prisma
+npm ci
+npm --prefix backend ci
 npm run db:generate
-
-# Crear las tablas en Neon (primera vez)
-npm run db:migrate
-# → Te pedirá un nombre para la migración: init
-
-# Cargar datos iniciales
-npm run db:seed
+npm --prefix backend run db:generate
 ```
 
----
-
-## Paso 5: Configurar en Vercel
-
-1. Ir a https://vercel.com → tu proyecto → **Settings** → **Environment Variables**
-2. Agregar **exactamente** estas variables:
-
-| Variable | Valor |
-|----------|-------|
-| `DATABASE_URL` | (con pgbouncer=true, para serverless) |
-| `DIRECT_URL` | (sin pgbouncer, para migraciones) |
-| `JWT_SECRET` | (string de 64+ caracteres aleatorios) |
-
-3. Hacer redeploy:
-```bash
-vercel deploy --prod --yes
-```
-
----
-
-## Verificar que funciona
+Verificaciones esperadas:
 
 ```bash
-# Test de conexión
-curl https://municipio-junin.vercel.app/api/data/db-status
-
-# Debería responder:
-# { "ok": true, "connected": true, "type": "postgresql" }
+npx prisma validate --schema prisma/schema.prisma
+npm --prefix backend run db:status
 ```
 
----
+`db:generate` funciona desde ambos directorios y produce clientes independientes.
+El estado de migraciones sí requiere `DIRECT_URL` accesible.
 
-## Credenciales iniciales del sistema
+## 3. Migraciones: gate obligatorio
 
-Después del seed, estos usuarios estarán disponibles:
+No ejecutar `prisma db push`, `migrate reset` ni SQL copiado manualmente en
+producción. Este checkout todavía requiere comparar el esquema Prisma y las
+migraciones SQL gobernadas con la base real antes de aplicar cambios.
 
-| Usuario | Email | Contraseña | Rol |
-|---------|-------|-----------|-----|
-| Super Admin | `superadmin@govtech.ar` | `SuperAdmin2026!` | SUPER_ADMIN |
-| Intendente | `intendente@junin.gob.ar` | `Junin2026!` | TENANT_ADMIN |
-| Hacienda | `hacienda@junin.gob.ar` | `Hacienda2026!` | TENANT_USER |
-| IT | `it@junin.gob.ar` | `IT2026!` | TENANT_ADMIN |
-| Demo | `demo@demo.com` | `demo123` | DEMO |
+- `migrations/001_data_intelligence.sql` contiene tablas analíticas legacy sin
+  `tenant_id`; sólo es admisible en un deployment dedicado y vinculado mediante
+  `LEGACY_ANALYTICS_TENANT_ID`.
+- `migrations/002_grh_artifacts.sql` crea la materialización GRH privada y
+  tenant-bound.
+- Una base existente debe auditar drift y datos antes de establecer un baseline.
+- Una base nueva necesita una historia Prisma revisada; no se debe improvisar
+  durante el deploy.
+- El contrato offline, receipt conectado, freeze de DDL, restore y rollback están
+  definidos en [`docs/PRISMA_BASELINE_Y_DRIFT.md`](docs/PRISMA_BASELINE_Y_DRIFT.md).
 
-> ⚠️ **Cambiar todas las contraseñas antes de ir a producción real**
-
----
-
-## Estructura de la base de datos
-
-Ver `prisma/schema.prisma` para el schema completo.
-
-Tablas principales:
-- `tenants` → Municipios registrados en la plataforma
-- `users` → Usuarios con roles por tenant
-- `tenant_modules` → Módulos habilitados por municipio
-- `audit_logs` → Log de todas las acciones
-- `invitations` → Invitaciones pendientes
-
----
-
-## Comandos útiles
+Después de preparar la revisión y disponer de backup/restauración probada sólo
+pueden ejecutarse los controles no mutantes:
 
 ```bash
-# Ver datos en interfaz visual
-npm run db:studio
-# → Abre http://localhost:5555
-
-# Reset completo (cuidado en producción)
-npx prisma migrate reset
-
-# Ver status de migraciones
-npx prisma migrate status
+npm --prefix backend run db:baseline:status
+npm --prefix backend run db:status
 ```
+
+`db:baseline:status` permanece rojo en este checkout hasta construir el baseline
+desde una copia restaurada de la DB real. No crear un manifest para silenciarlo.
+Aunque el baseline y un receipt sintácticamente válido existan, `db:migrate`
+permanece bloqueado con `RELEASE_ATTESTATION_NOT_GOVERNED`. El receipt sólo es
+evidencia estructural de preflight; no autoriza DDL. La habilitación futura exige
+una atestación institucional firmada por CI/KMS/OIDC, identidad de workload,
+protección contra replay y vínculo exacto con target, commit y migration set.
+
+## 4. Aprovisionamiento retirado
+
+El antiguo bootstrap con contraseñas está retirado. El comando se conserva como
+un gate fail-closed verificable:
+
+```bash
+npm --prefix backend run db:seed
+```
+
+El resultado esperado es código `1` con
+`ACCOUNT_LIFECYCLE_NOT_GOVERNED`. El gate no acepta secretos, no inspecciona
+variables de aprovisionamiento, no conecta a Neon/PostgreSQL y no crea ni
+modifica filas. Un resultado `0` o cualquier escritura bloquea el release.
+
+No se crean cuentas por rol hasta que una migración revisada y sus E2E prueben
+invitación de un solo uso, MFA, sesiones revocables, vigencia, doble
+aprobación/SoD y auditoría transaccional. Las altas Express de tenants y usuarios
+con contraseña administrativa también responden `410` con el mismo código; las
+mutaciones de lifecycle de tenant responden `410 TENANT_LIFECYCLE_NOT_GOVERNED`.
+
+## 5. Materialización GRH privada
+
+1. Generar los contratos agregados desde el backup GRH canónico.
+2. Validar `api/lib/grh-contract.js` y las pruebas Python/Node.
+3. Aplicar la migración `grh_artifacts` revisada.
+4. Configurar `GRH_SOURCE_SHA256` con el hash exacto del manifiesto aprobado.
+   Toda lectura DB exige este pin y el bundle activo completo `profile + semantic`.
+5. Publicar mediante `scripts/publish_grh_artifacts.mjs` con el CUID real del
+   tenant en `GRH_TENANT_ID`.
+6. Confirmar que metadatos DB y payload coinciden, que los conteos focales del
+   perfil reconcilian con el diccionario semántico y que ningún JSON real se
+   incluyó en Git o el bundle Vercel.
+
+`personas_junin` está expresamente fuera de alcance y no debe cruzarse con GRH.
+
+## 6. Verificación remota
+
+En preview, antes de producción:
+
+- `/api/auth/me` anónimo: `401`.
+- `/api/grh-executive` y `/api/grh-quality` anónimos: `401`.
+- `/api/grh-data` anónimo: `401`; rol/tenant denegado: `403`; sesión autorizada
+  del tenant GRH: `410 GRH_RAW_CONTRACT_RETIRED`, sin leer artefactos.
+- Usuario de otro tenant contra GRH/importaciones: `403`.
+- Usuario autorizado con el par privado materializado: `200` en las proyecciones
+  ejecutiva y de calidad; ningún navegador recibe `profile` ni `semantic`.
+- DB, pin SHA o uno de los dos contratos ausente/incoherente: `503`, sin datos demo.
+- Express opcional: `/api/health` para liveness y `/api/readiness` para readiness.
+
+Registrar URL, deployment ID, fecha y resultado. Una suite local no reemplaza
+esta certificación.

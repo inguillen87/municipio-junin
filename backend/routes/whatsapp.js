@@ -1,161 +1,121 @@
 'use strict';
+
+const crypto = require('crypto');
 const express = require('express');
+const { isTenantAdmin } = require('../middleware/authMiddleware');
+const { PublicAppUrlError, buildPublicAppUrl } = require('../../shared/public-app-url.cjs');
+
 const router = express.Router();
+const completedMessages = new Set();
 
-// ── KNOWLEDGE BASE ─────────────────────────────────────────────
-const KB = [
-  { patterns: ['hola','buenas','buenos','saludos'], response: '👋 ¡Hola! Soy el Asistente IA de la *Municipalidad de Junín* 🏛️\n\nPuedo ayudarte con:\n📊 *Presupuesto y gastos*\n📄 *Contratos y proveedores*\n👥 *Personal municipal*\n🏘️ *Reclamos vecinales*\n🗺️ *Obras en ejecución*\n\nEscribí tu consulta o usá estos comandos:\n*/gastos* */contratos* */personal* */reclamos* */obras* */alerta* */informe*' },
-  { patterns: ['presupuesto','gasto','gastamos','ejecutado','plata','dinero'], response: '💰 *Resumen Presupuestario 2026*\n\n📊 Presupuesto total: *$372.000.000*\n✅ Ejecutado (jul): *$193.400.000 (52%)*\n💵 Disponible: *$178.600.000*\n\n⚠️ *Partidas en alerta:*\n• Personal: 103% \n• Cargas sociales: 104%\n\n🤖 _Proyección IA al cierre: ahorro de $31M_\n\nVer detalle: https://municipio-junin.vercel.app/presupuesto.html' },
-  { patterns: ['contrato','contratos','proveedor','proveedores','vence','vencen'], response: '📄 *Contratos Activos*\n\n📋 Total activos: *47 contratos*\n💰 Valor mensual: *$28.300.000*\n\n⚠️ *URGENTE — Vencen próximamente:*\n🔴 Limpieza Zona Norte → 12 días\n🟡 Mantenimiento Flota → 18 días\n🟡 Seguridad Edificios → 25 días\n\nVer todos: https://municipio-junin.vercel.app/licitaciones.html' },
-  { patterns: ['personal','empleado','empleados','nomina','nómina','sueldo'], response: '👥 *Personal Municipal*\n\n📊 Empleados activos: *1.247*\n💰 Costo mensual: *$152.000.000*\n\n📋 Por área:\n• Obras y Servicios: 380\n• Salud: 210\n• Educación: 185\n• Administración: 290\n• Seguridad: 182\n\n⚠️ Costo personal: 41% del presupuesto total\n\nVer RRHH: https://municipio-junin.vercel.app/rrhh.html' },
-  { patterns: ['reclamo','reclamos','vecino','vecinos','queja','quejas'], response: '🏘️ *Reclamos Vecinales*\n\n🔴 Urgentes: *12*\n🟡 Pendientes: *47*\n🟢 Resueltos esta semana: *23*\n\n📍 Zonas con más reclamos:\n1. Centro (28%)\n2. Norte (22%)\n3. Sur (18%)\n\n🔨 Tipo más frecuente: Baches (34%)\n\nVer mapa: https://municipio-junin.vercel.app/vecinos.html' },
-  { patterns: ['obra','obras','construc','infraestruc'], response: '🏗️ *Obras en Ejecución*\n\n📊 Obras activas: *8*\n💰 Inversión total: *$53.800.000*\n\n✅ Iluminación LED Centro: 100%\n🟢 Parque Recreativo Norte: 80%\n🟡 Pavimentación San Martín: 65%\n🟡 Red Cloacal Sur: 45%\n🔴 Hospital Municipal: 30%\n🔴 CIC Medrano: 20%\n\nVer mapa: https://municipio-junin.vercel.app/mapa.html' },
-  { patterns: ['alerta','alertas','critico','crítico','urgente'], response: '🚨 *Alertas Críticas del Sistema*\n\n🔴 *CRÍTICO:*\n• Partida Personal: 103% del presupuesto\n• Cargas Sociales: 104%\n• Contrato Limpieza vence en 12 días\n\n🟡 *ATENCIÓN:*\n• 47 reclamos pendientes sin resolver\n• 3 contratos vencen en 30 días\n• Asistencia Social: 84% ejecutado\n\nVer dashboard: https://municipio-junin.vercel.app/control.html' },
-  { patterns: ['informe','reporte','resumen','ejecutivo'], response: '📊 *Informe Ejecutivo — Julio 2026*\n\n🏛️ *Municipalidad de Junín*\n\n💰 Presupuesto: $372M | Ejecutado: 52%\n👥 Personal: 1.247 empleados\n📄 Contratos: 47 activos\n🏘️ Reclamos: 59 pendientes\n🏗️ Obras: 8 activas\n\n🤖 _IA recomienda: revisar urgente contratos próximos a vencer y partida de personal_\n\nVer plataforma completa:\nhttps://municipio-junin.vercel.app' },
-  { patterns: ['/gastos','gastos'], response: null, action: 'gastos' },
-  { patterns: ['/contratos'], response: null, action: 'contratos' },
-  { patterns: ['/personal'], response: null, action: 'personal' },
-  { patterns: ['/reclamos'], response: null, action: 'reclamos' },
-  { patterns: ['/obras'], response: null, action: 'obras' },
-  { patterns: ['/alerta','/alertas'], response: null, action: 'alerta' },
-  { patterns: ['/informe'], response: null, action: 'informe' },
-];
-
-const ACTIONS = {
-  gastos: KB.find(k => k.patterns.includes('presupuesto')).response,
-  contratos: KB.find(k => k.patterns.includes('contrato')).response,
-  personal: KB.find(k => k.patterns.includes('personal')).response,
-  reclamos: KB.find(k => k.patterns.includes('reclamo')).response,
-  obras: KB.find(k => k.patterns.includes('obra')).response,
-  alerta: KB.find(k => k.patterns.includes('alerta')).response,
-  informe: KB.find(k => k.patterns.includes('informe')).response,
-};
-
-const DEFAULT = '🤔 No encontré información sobre eso.\n\nComandos disponibles:\n*/gastos* — Presupuesto y ejecución\n*/contratos* — Contratos y vencimientos\n*/personal* — Empleados y RRHH\n*/reclamos* — Reclamos vecinales\n*/obras* — Obras en ejecución\n*/alerta* — Alertas críticas\n*/informe* — Resumen ejecutivo';
-
-function findResponse(text) {
-  if (!text) return DEFAULT;
-  const t = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  for (const entry of KB) {
-    if (entry.patterns.some(p => t.includes(p.normalize('NFD').replace(/[\u0300-\u036f]/g, '')))) {
-      if (entry.action) return ACTIONS[entry.action] || DEFAULT;
-      return entry.response || DEFAULT;
-    }
+function verifyMetaSignature(req) {
+  const secret = process.env.WHATSAPP_APP_SECRET;
+  const signature = req.headers['x-hub-signature-256'];
+  if (!secret || !req.rawBody || typeof signature !== 'string' || !signature.startsWith('sha256=')) {
+    return false;
   }
-  return DEFAULT;
+  const receivedHex = signature.slice(7);
+  if (!/^[a-f0-9]{64}$/i.test(receivedHex)) return false;
+  const expected = crypto.createHmac('sha256', secret).update(req.rawBody).digest();
+  const received = Buffer.from(receivedHex, 'hex');
+  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
 }
 
-// ── SEND MESSAGE VIA META API ──────────────────────────────────
+function rememberMessage(id) {
+  if (!id || completedMessages.has(id)) return false;
+  completedMessages.add(id);
+  if (completedMessages.size > 2000) {
+    completedMessages.delete(completedMessages.values().next().value);
+  }
+  return true;
+}
+
+function answerFor(text) {
+  const normalized = String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/personal|emplead|rrhh|nomina|sueldo/.test(normalized)) {
+    return `👥 El Centro Ejecutivo GRH contiene el snapshot auditado de RRHH al 06/08/2026. Para proteger los datos, ingresá con tus credenciales institucionales:\n${buildPublicAppUrl('/login.html')}`;
+  }
+  if (/hola|buenas|menu|inicio/.test(normalized)) {
+    return '👋 Soy MuniBot Junín. Puedo orientarte hacia RRHH, Hacienda, Obras, Reclamos y reportes. Las métricas ejecutivas requieren acceso institucional.';
+  }
+  return `ℹ️ No voy a informar cifras sin una fuente municipal validada. Ingresá a la plataforma para consultar los tableros disponibles:\n${buildPublicAppUrl('/login.html')}`;
+}
+
 async function sendWhatsAppMessage(to, message) {
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const token   = process.env.WHATSAPP_ACCESS_TOKEN;
-  
-  if (!phoneId || !token) {
-    console.log('[WhatsApp] Credenciales no configuradas. Simulando envío a:', to);
-    console.log('[WhatsApp] Mensaje:', message.substring(0, 100) + '...');
-    return { simulated: true };
-  }
+  const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  if (!phoneId || !token) return { ok: false, error: 'not_configured' };
 
-  const url = `https://graph.facebook.com/v18.0/${phoneId}/messages`;
-  const body = {
-    messaging_product: 'whatsapp',
-    to,
-    type: 'text',
-    text: { body: message, preview_url: true },
-  };
-
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return await resp.json();
-  } catch (err) {
-    console.error('[WhatsApp] Error enviando mensaje:', err.message);
-    return { error: err.message };
-  }
+  const response = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'text',
+      text: { body: message, preview_url: true },
+    }),
+  });
+  return { ok: response.ok, status: response.status };
 }
 
-// ── WEBHOOK VERIFICATION (GET) ────────────────────────────────
 router.get('/webhook', (req, res) => {
-  const mode      = req.query['hub.mode'];
-  const token     = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-  const myToken   = process.env.WHATSAPP_VERIFY_TOKEN || 'govtech-verify-2026';
-
-  if (mode === 'subscribe' && token === myToken) {
-    console.log('[WhatsApp] Webhook verificado ✅');
-    return res.status(200).send(challenge);
+  const configuredToken = process.env.WHATSAPP_VERIFY_TOKEN;
+  if (
+    configuredToken &&
+    req.query['hub.mode'] === 'subscribe' &&
+    req.query['hub.verify_token'] === configuredToken
+  ) {
+    return res.status(200).send(req.query['hub.challenge']);
   }
-  console.warn('[WhatsApp] Token de verificación inválido');
   return res.sendStatus(403);
 });
 
-// ── RECEIVE MESSAGES (POST) ───────────────────────────────────
 router.post('/webhook', async (req, res) => {
-  // Meta requiere respuesta 200 inmediata
-  res.sendStatus(200);
+  if (!verifyMetaSignature(req)) return res.sendStatus(401);
+  if (req.body?.object !== 'whatsapp_business_account') return res.sendStatus(400);
+
+  const expectedPhoneId = process.env.WHATSAPP_PHONE_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!expectedPhoneId) return res.sendStatus(503);
 
   try {
-    const body = req.body;
-    if (!body?.object || body.object !== 'whatsapp_business_account') return;
-
-    const entry = body.entry?.[0];
-    const changes = entry?.changes?.[0];
-    const value = changes?.value;
-    const messages = value?.messages;
-
-    if (!messages?.length) return;
-
-    for (const msg of messages) {
-      const from = msg.from;
-      let text = '';
-
-      if (msg.type === 'text') {
-        text = msg.text?.body || '';
-      } else if (msg.type === 'audio') {
-        text = '[Mensaje de voz recibido — transcripción no disponible en esta versión]';
-      } else if (msg.type === 'image') {
-        text = '[Imagen recibida — OCR no disponible en esta versión. Enviá tu consulta por texto]';
-      } else if (msg.type === 'document') {
-        text = '[Documento recibido. Para análisis de documentos usá la plataforma web]';
-      } else {
-        text = '';
+    for (const entry of (req.body.entry || []).slice(0, 20)) {
+      for (const change of (entry.changes || []).slice(0, 20)) {
+        if (change.field !== 'messages') continue;
+        const value = change.value || {};
+        if (String(value.metadata?.phone_number_id || '') !== String(expectedPhoneId)) continue;
+        for (const message of (value.messages || []).slice(0, 50)) {
+          if (!rememberMessage(message.id) || message.type !== 'text') continue;
+          await sendWhatsAppMessage(message.from, answerFor(message.text?.body));
+        }
       }
-
-      console.log(`[WhatsApp] Mensaje de ${from}: ${text.substring(0, 80)}`);
-
-      const response = findResponse(text);
-      await sendWhatsAppMessage(from, response);
-      console.log(`[WhatsApp] Respuesta enviada a ${from}`);
     }
-  } catch (err) {
-    console.error('[WhatsApp] Error procesando webhook:', err.message);
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error('[WhatsApp] Error procesando webhook:', error.message);
+    if (error instanceof PublicAppUrlError) {
+      return res.status(503).json({ ok: false, error: 'Canal no configurado' });
+    }
+    return res.status(500).json({ ok: false });
   }
 });
 
-// ── SEND ALERT (para uso interno del sistema) ─────────────────
-router.post('/send-alert', async (req, res) => {
-  const { to, message, type } = req.body;
-  if (!to || !message) return res.status(400).json({ error: 'to y message requeridos' });
-
-  const prefix = type === 'critical' ? '🚨 *ALERTA CRÍTICA*\n' : type === 'warning' ? '⚠️ *ATENCIÓN*\n' : '📢 *Notificación*\n';
-  const result = await sendWhatsAppMessage(to, prefix + message);
-  res.json({ ok: true, result });
+router.post('/send-alert', ...isTenantAdmin, (req, res) => {
+  return res.status(410).json({
+    ok: false,
+    code: 'WHATSAPP_ALERT_TENANT_SCOPE_NOT_GOVERNED',
+    error: 'Las alertas salientes requieren destinatario por municipio, auditoría e idempotencia.',
+  });
 });
 
-// ── STATUS ────────────────────────────────────────────────────
-router.get('/status', (req, res) => {
-  const configured = !!(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
-  res.json({
-    status: configured ? 'configured' : 'demo-mode',
-    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || 'not-set',
-    webhookUrl: 'https://municipio-junin.vercel.app/api/whatsapp/webhook',
-    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || 'govtech-verify-2026',
-    commands: ['/gastos','/contratos','/personal','/reclamos','/obras','/alerta','/informe'],
-    version: '2.0',
-  });
+router.get('/status', ...isTenantAdmin, (req, res) => {
+  const configured = Boolean(
+    process.env.WHATSAPP_APP_SECRET &&
+    (process.env.WHATSAPP_PHONE_ID || process.env.WHATSAPP_PHONE_NUMBER_ID) &&
+    process.env.WHATSAPP_ACCESS_TOKEN
+  );
+  return res.json({ status: configured ? 'configured' : 'not_configured', version: '3.0' });
 });
 
 module.exports = router;

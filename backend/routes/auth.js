@@ -12,9 +12,17 @@ const router  = express.Router();
 const jwt     = require('jsonwebtoken');
 const bcrypt  = require('bcryptjs');
 const { authenticate } = require('../middleware/authMiddleware');
+const {
+  ACCESS_POLICY_VERSION,
+  getSessionAccessForUser,
+  isKnownRole,
+} = require('../../shared/access-policy.cjs');
+const { evaluateTenantAccess } = require('../../shared/tenant-lifecycle.cjs');
+const { inspectLoginCredentials } = require('../../shared/auth-input-policy.cjs');
 
-const JWT_SECRET  = process.env.JWT_SECRET  || 'govtech-jwt-secret-change-in-production';
+const JWT_SECRET  = process.env.JWT_SECRET;
 const JWT_EXPIRES = process.env.JWT_EXPIRES || '8h';
+const MIN_JWT_SECRET_LENGTH = 32;
 
 let prisma;
 try {
@@ -23,57 +31,10 @@ try {
   prisma = null;
 }
 
-// ── USUARIOS DEMO (sin DB) ────────────────────────────────────
-const DEMO_USERS = [
-  {
-    id: 'u_sa',
-    email: 'superadmin@govtech.ar',
-    passwordHash: '$2a$12$demo_hash_superadmin',
-    password: 'SuperAdmin2026!',
-    name: 'Super Administrador',
-    role: 'SUPER_ADMIN',
-    tenantId: null,
-    tenant: null,
-  },
-  {
-    id: 'u_int',
-    email: 'intendente@junin.gob.ar',
-    password: 'Junin2026!',
-    name: 'Intendente Municipal',
-    role: 'TENANT_ADMIN',
-    tenantId: 't_junin',
-    tenant: { id: 't_junin', slug: 'junin-mendoza', name: 'Municipalidad de Junín', shortName: 'Junín', themePrimary: '#3b82f6', themeAccent: '#6366f1', logoEmoji: '🏛️' },
-  },
-  {
-    id: 'u_hac',
-    email: 'hacienda@junin.gob.ar',
-    password: 'Hacienda2026!',
-    name: 'Director de Hacienda',
-    role: 'TENANT_USER',
-    tenantId: 't_junin',
-    tenant: { id: 't_junin', slug: 'junin-mendoza', name: 'Municipalidad de Junín', shortName: 'Junín', themePrimary: '#3b82f6', themeAccent: '#6366f1', logoEmoji: '🏛️' },
-  },
-  {
-    id: 'u_it',
-    email: 'it@junin.gob.ar',
-    password: 'IT2026!',
-    name: 'Jefe de Tecnología',
-    role: 'TENANT_ADMIN',
-    tenantId: 't_junin',
-    tenant: { id: 't_junin', slug: 'junin-mendoza', name: 'Municipalidad de Junín', shortName: 'Junín', themePrimary: '#3b82f6', themeAccent: '#6366f1', logoEmoji: '🏛️' },
-  },
-  {
-    id: 'u_demo',
-    email: 'demo@demo.com',
-    password: 'demo123',
-    name: 'Usuario Demo',
-    role: 'DEMO',
-    tenantId: 't_junin',
-    tenant: { id: 't_junin', slug: 'junin-mendoza', name: 'Municipalidad de Junín', shortName: 'Junín', themePrimary: '#3b82f6', themeAccent: '#6366f1', logoEmoji: '🏛️' },
-  },
-];
-
 function signToken(user) {
+  if (typeof JWT_SECRET !== 'string' || JWT_SECRET.length < MIN_JWT_SECRET_LENGTH) {
+    throw new Error('JWT_SECRET no configurado');
+  }
   return jwt.sign(
     {
       id:       user.id,
@@ -90,35 +51,50 @@ function signToken(user) {
 
 // ── LOGIN ─────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email y contraseña requeridos' });
+  const credentials = inspectLoginCredentials(req.body);
+  if (!credentials.ok) return res.status(400).json({ error: 'Email y contraseña requeridos' });
+  const { email, password } = credentials;
+  if (typeof JWT_SECRET !== 'string' || JWT_SECRET.length < MIN_JWT_SECRET_LENGTH || !prisma) {
+    return res.status(503).json({ error: 'Autenticación no configurada' });
+  }
 
   try {
     let user = null;
 
-    if (prisma) {
-      // Buscar en DB real
-      const dbUser = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
-        include: { tenant: { select: { id: true, slug: true, name: true, shortName: true, themePrimary: true, themeAccent: true, logoEmoji: true, status: true, modules: { where: { active: true } } } } },
+    // Buscar en DB real
+    const dbUser = await prisma.user.findUnique({
+        where: { email },
+        include: {
+          tenant: {
+            select: {
+              id: true, slug: true, name: true, shortName: true, status: true, plan: true,
+              themePrimary: true, themeAccent: true, themeBackground: true, logoUrl: true, trialEndsAt: true,
+            },
+          },
+        },
       });
       if (!dbUser || !dbUser.active) {
         return res.status(401).json({ error: 'Credenciales incorrectas' });
       }
       const valid = await bcrypt.compare(password, dbUser.passwordHash);
       if (!valid) return res.status(401).json({ error: 'Credenciales incorrectas' });
-      // Verificar tenant activo
-      if (dbUser.tenant && !['ACTIVE', 'TRIAL'].includes(dbUser.tenant.status)) {
+      // Verificar identidad y tenant actuales antes de emitir una sesión.
+      if (!isKnownRole(dbUser.role)) {
+        return res.status(403).json({ error: 'Rol no habilitado.' });
+      }
+      if (!dbUser.tenantId && dbUser.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Usuario sin municipio habilitado.' });
+      }
+      if (dbUser.tenantId && !evaluateTenantAccess(dbUser.tenant).allowed) {
         return res.status(403).json({ error: 'Municipio suspendido. Contactar soporte.' });
+      }
+      const sessionAccess = getSessionAccessForUser(dbUser);
+      if (!sessionAccess) {
+        return res.status(403).json({ error: 'Perfil de inicio no habilitado.' });
       }
       // Actualizar last login
       await prisma.user.update({ where: { id: dbUser.id }, data: { lastLogin: new Date(), loginCount: { increment: 1 } } });
-      user = dbUser;
-    } else {
-      // Modo demo: comparar en texto plano
-      user = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-      if (!user) return res.status(401).json({ error: 'Credenciales incorrectas' });
-    }
+    user = dbUser;
 
     const token = signToken(user);
     const userData = {
@@ -128,6 +104,9 @@ router.post('/login', async (req, res) => {
       role:     user.role,
       tenantId: user.tenantId,
       tenant:   user.tenant,
+      capabilities: sessionAccess.capabilities,
+      accessPolicyVersion: ACCESS_POLICY_VERSION,
+      homeProfile: sessionAccess.homeProfile,
       loginAt:  new Date().toISOString(),
     };
 
@@ -140,25 +119,32 @@ router.post('/login', async (req, res) => {
 
 // ── ME (verificar token vigente) ──────────────────────────────
 router.get('/me', authenticate, async (req, res) => {
-  try {
-    if (prisma) {
-      const user = await prisma.user.findUnique({
-        where: { id: req.user.id },
-        include: { tenant: { select: { id: true, slug: true, name: true, shortName: true, themePrimary: true, themeAccent: true, logoEmoji: true, modules: { where: { active: true } } } } },
-      });
-      if (!user) return res.status(401).json({ error: 'Usuario no encontrado' });
-      return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
-    }
-    res.json({ ok: true, user: req.user });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const sessionAccess = getSessionAccessForUser(req.user);
+  if (!sessionAccess) return res.status(403).json({ error: 'Perfil de inicio no habilitado.' });
+  return res.json({
+    ok: true,
+    user: {
+      id: req.user.id,
+      email: req.user.email,
+      name: req.user.name,
+      role: req.user.role,
+      tenantId: req.user.tenantId,
+      tenant: req.user.tenant,
+      capabilities: sessionAccess.capabilities,
+      accessPolicyVersion: ACCESS_POLICY_VERSION,
+      homeProfile: sessionAccess.homeProfile,
+    },
+  });
 });
 
 // ── REFRESH TOKEN ─────────────────────────────────────────────
-router.post('/refresh', authenticate, (req, res) => {
-  const token = signToken(req.user);
-  res.json({ ok: true, token });
+// Retired until sessions are persisted and refresh tokens are rotated with
+// reuse detection. Re-signing an access token is not a governed refresh flow.
+router.post('/refresh', authenticate, (_req, res) => {
+  return res.status(410).json({
+    error: 'La renovacion de sesion no esta habilitada.',
+    code: 'SESSION_REFRESH_NOT_GOVERNED',
+  });
 });
 
 module.exports = router;

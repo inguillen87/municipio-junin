@@ -1,55 +1,67 @@
-// ============================================================
-// BOTTOM-NAV.JS - Mobile bottom navigation bar
-// MuniControl v2
-// ============================================================
-(function() {
-  if (window.innerWidth > 900) return; // Desktop: skip
+// Mobile quick navigation projected from the authoritative role home profile.
+(function initBottomNavigation() {
+  'use strict';
 
-  var CURRENT_PAGE = location.pathname.split('/').pop() || 'index.html';
+  if (window.innerWidth > 900) return;
+  if (!window.__muniAuthValidated && window.MuniAuthReady) {
+    window.MuniAuthReady.then(function(valid) {
+      if (valid) initBottomNavigation();
+    });
+    return;
+  }
+  if (document.querySelector('.bottom-nav')) return;
 
-  var NAV_ITEMS = [
-    { icon: '🏠', label: 'Inicio',    href: 'index.html' },
-    { icon: '💰', label: 'Presup.',   href: 'presupuesto.html' },
-    { icon: '🤖', label: 'IA',        href: 'ia.html' },
-    { icon: '👥', label: 'Vecinos',   href: 'vecinos.html' },
-    { icon: '☰',  label: 'Más',       href: '#more' },
-  ];
+  var CURRENT_PAGE = location.pathname.split('/').pop() || 'inicio.html';
+  var CATALOG = Object.freeze({
+    'navigation.workspace': { icon: '⌂', label: 'Inicio', href: 'inicio.html' },
+    'navigation.dashboard': { icon: '▥', label: 'Panel', href: 'index.html' },
+    'navigation.reports': { icon: '▤', label: 'Reportes', href: 'reportes.html' },
+    'navigation.hacienda': { icon: 'H', label: 'Hacienda', href: 'hacienda.html' },
+    'navigation.grh-executive': { icon: 'GRH', label: 'GRH', href: 'grh-ejecutivo.html' },
+    'navigation.data-quality': { icon: 'Q', label: 'Calidad', href: 'control.html' },
+    'navigation.rrhh': { icon: 'RH', label: 'RRHH', href: 'rrhh.html' },
+    'navigation.ai-assistant': { icon: '✦', label: 'Asistente', href: 'ia.html' },
+    'navigation.audit': { icon: 'A', label: 'Inventario', href: 'auditoria.html' },
+    'navigation.export': { icon: '⇩', label: 'Salidas', href: 'exportar.html' },
+    'navigation.import': { icon: '⇧', label: 'Importar', href: 'importar.html' },
+    'navigation.help': { icon: '?', label: 'Manual', href: 'manuales.html' }
+  });
+
+  var projection = window.MuniAccess && typeof window.MuniAccess.getValidatedSession === 'function'
+    ? window.MuniAccess.getValidatedSession()
+    : null;
+  var priorities = projection ? projection.homeProfile.priorityCapabilities : [];
+  var capabilities = projection ? projection.capabilities : [];
+  var items = [];
+
+  priorities.forEach(function(capability) {
+    var item = CATALOG[capability];
+    if (!item || capabilities.indexOf(capability) === -1 || items.length >= 4) return;
+    items.push(item);
+  });
+  items.push({ icon: '☰', label: 'Más', href: '#more' });
 
   var nav = document.createElement('nav');
   nav.className = 'bottom-nav';
-  nav.setAttribute('role', 'navigation');
-  nav.setAttribute('aria-label', 'Navegación principal');
-
-  nav.innerHTML = NAV_ITEMS.map(function(item) {
-    var isActive = CURRENT_PAGE === item.href || 
-                   (item.href === 'index.html' && CURRENT_PAGE === '');
-    return '<a class="bottom-nav-item' + (isActive ? ' active' : '') + '" ' +
-           'href="' + item.href + '" aria-label="' + item.label + '">' +
-           '<span class="nav-icon">' + item.icon + '</span>' +
-           '<span>' + item.label + '</span>' +
-           '</a>';
+  nav.setAttribute('aria-label', 'Accesos prioritarios del perfil');
+  nav.innerHTML = items.map(function(item) {
+    var active = CURRENT_PAGE === item.href;
+    return '<a class="bottom-nav-item' + (active ? ' active' : '') + '" ' +
+      'href="' + item.href + '" aria-label="' + item.label + '"' +
+      (active ? ' aria-current="page"' : '') + '>' +
+      '<span class="nav-icon" aria-hidden="true">' + item.icon + '</span>' +
+      '<span>' + item.label + '</span></a>';
   }).join('');
 
-  // 'Más' button opens sidebar
-  nav.querySelector('[href="#more"]')?.addEventListener('click', function(e) {
-    e.preventDefault();
-    var sidebar = document.getElementById('sidebar');
-    var menuBtn = document.getElementById('menuBtn');
-    if (sidebar) sidebar.classList.toggle('mobile-open');
-    if (menuBtn) menuBtn.click();
-  });
+  var more = nav.querySelector('[href="#more"]');
+  if (more) {
+    more.addEventListener('click', function(event) {
+      event.preventDefault();
+      var menuButton = document.getElementById('menuBtn');
+      if (typeof window.openMobileSidebar === 'function') window.openMobileSidebar();
+      else if (menuButton) menuButton.click();
+    });
+  }
 
   document.body.appendChild(nav);
-
-  // Hide on scroll down, show on scroll up (mobile UX)
-  var lastScroll = 0;
-  window.addEventListener('scroll', function() {
-    var current = window.pageYOffset;
-    if (current > lastScroll + 10 && current > 100) {
-      nav.style.transform = 'translateY(100%)';
-    } else if (current < lastScroll - 5) {
-      nav.style.transform = 'translateY(0)';
-    }
-    lastScroll = current;
-  }, { passive: true });
-})();
+}());

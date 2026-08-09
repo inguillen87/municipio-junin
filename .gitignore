@@ -16,6 +16,8 @@ Desktop.ini
 .idea/
 *.swp
 *.swo
+__pycache__/
+*.py[cod]
 
 # Backups
 *.bak
@@ -27,3 +29,11 @@ Desktop.ini
 
 .vercel
 .env*
+
+# Salidas analíticas reales GRH: contienen agregados institucionales y nunca
+# deben publicarse en el repositorio. Se materializan en storage/DB privado.
+api/_data/*.json
+docs/data/*.json
+
+# Cliente Prisma reproducible del backend Express (generado en postinstall).
+backend/generated/prisma/

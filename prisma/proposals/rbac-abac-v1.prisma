@@ -1,0 +1,1106 @@
+// ============================================================================
+// PROPUESTA NO ACTIVA Y NO APLICABLE: RBAC/ABAC enterprise v1 para MuniControl
+// ============================================================================
+// Este archivo no es consumido por postinstall, Prisma Client ni migrate.
+// Es un datamodel aislado y validable para revision de arquitectura. Las
+// referencias a users/tenants se expresan como IDs escalares para no duplicar
+// los modelos activos. La migracion definitiva DEBE agregar FKs, CHECKs,
+// indices parciales, triggers de SoD y proteccion append-only indicados en
+// docs/RBAC_ABAC_DATA_MODEL.md.
+//
+// Prohibido aplicar con db push o migrate dev sobre una base municipal.
+//
+// CONTRATO PENDIENTE PARA LA MIGRACION SQL REAL (NO LO RESUELVE PRISMA):
+// - FKs: todos los IDs escalares de user, tenant, session, authenticator y
+//   family deben enlazarse con ON DELETE/UPDATE revisado y tenant consistente.
+// - CHECKs: contadores/versiones no negativos, orden temporal, coherencia entre
+//   status y timestamps, digests hex de 64 caracteres y expiraciones futuras.
+// - TRIGGERS: rotacion refresh atomica, reuse de cualquier secuencia previa que
+//   revoque la familia, subtipo MFA coherente y auditoria append-only.
+// - PRIVILEGIOS: solo el servicio de identidad puede escribir; runtime municipal
+//   sin DML directo, ledger refresh sin DELETE, mutaciones solo por funciones
+//   revisadas, auditor de seguridad read-only y resolver KMS separado.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountLifecycleStatus {
+  INVITED
+  FIRST_LOGIN_REQUIRED
+  ACTIVE
+  SUSPENDED
+  LOCKED
+  EXPIRED
+  REVOKED
+  TERMINATED
+}
+
+enum AuthenticationStrength {
+  PASSWORD
+  MFA
+  PHISHING_RESISTANT
+}
+
+enum SessionStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum MfaAuthenticatorKind {
+  WEBAUTHN
+  TOTP
+}
+
+enum MfaAuthenticatorStatus {
+  ISSUED
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  EXPIRED
+}
+
+enum MfaChallengePurpose {
+  WEBAUTHN_REGISTRATION
+  WEBAUTHN_AUTHENTICATION
+  TOTP_ENROLLMENT_CONFIRMATION
+  MFA_STEP_UP
+}
+
+enum MfaChallengeStatus {
+  ISSUED
+  USED
+  REVOKED
+  EXPIRED
+  LOCKED
+}
+
+enum TotpAlgorithm {
+  SHA1
+  SHA256
+  SHA512
+}
+
+enum RecoveryCodeStatus {
+  ISSUED
+  USED
+  REVOKED
+  EXPIRED
+}
+
+enum RefreshTokenFamilyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum RefreshTokenCredentialStatus {
+  ISSUED
+  USED
+  REVOKED
+  EXPIRED
+}
+
+enum OneTimeCredentialPurpose {
+  ACCOUNT_ACTIVATION
+  INITIAL_PASSWORD_SETUP
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  MFA_ENROLLMENT
+  DEMO_ACTIVATION
+}
+
+enum OneTimeCredentialStatus {
+  ISSUED
+  CONSUMED
+  REVOKED
+  EXPIRED
+  LOCKED
+}
+
+enum OrgUnitKind {
+  MUNICIPALITY
+  SECRETARIAT
+  DIRECTORATE
+  DEPARTMENT
+  OFFICE
+  PROGRAM
+  PROJECT
+  TERRITORIAL_ZONE
+}
+
+enum OrgUnitStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum OrgMembershipKind {
+  MEMBER
+  MANAGER
+  DELEGATE
+  DATA_STEWARD
+}
+
+enum PolicyBundleStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+  REJECTED
+}
+
+enum RoleDefinitionStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+enum PermissionEffect {
+  ALLOW
+  DENY
+}
+
+enum ScopeKind {
+  PLATFORM
+  TENANT
+  ORG_UNIT
+  ORG_SUBTREE
+  SELF
+  ASSIGNED_RESOURCE
+  RESOURCE
+  DATASET
+  GEOGRAPHIC_BOUNDARY
+}
+
+enum ScopeStatus {
+  ACTIVE
+  RETIRED
+}
+
+enum RoleAssignmentStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  REVOKED
+  REJECTED
+}
+
+enum AssignmentSource {
+  BOOTSTRAP
+  INVITATION
+  ADMIN_REQUEST
+  ACCESS_REVIEW
+  IDENTITY_PROVIDER
+  MIGRATION
+}
+
+enum AttributeValueType {
+  STRING
+  STRING_SET
+  BOOLEAN
+  INTEGER
+  DATE
+  JSON
+}
+
+enum AttributeAssurance {
+  SELF_ASSERTED
+  HR_AUTHORITY
+  MUNICIPAL_AUTHORITY
+  IDENTITY_PROVIDER
+  SYSTEM_DERIVED
+}
+
+enum IdentityBindingStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+  EXECUTED
+  EXECUTION_FAILED
+}
+
+enum ApprovalStepStatus {
+  PENDING
+  SATISFIED
+  REJECTED
+  SKIPPED
+  EXPIRED
+}
+
+enum ApprovalDecisionValue {
+  APPROVE
+  REJECT
+  ABSTAIN
+}
+
+enum SodRuleMode {
+  PREVENTIVE
+  DETECTIVE
+}
+
+enum SodRuleEffect {
+  DENY
+  REQUIRE_DUAL_APPROVAL
+  FLAG_FOR_REVIEW
+}
+
+enum SodScopeStrategy {
+  ANY_SCOPE
+  SAME_SCOPE
+  OVERLAPPING_SCOPE
+}
+
+enum SodTermSide {
+  LEFT
+  RIGHT
+}
+
+enum SodSelectorKind {
+  ROLE
+  CAPABILITY
+}
+
+enum SodConflictStatus {
+  OPEN
+  BLOCKED
+  EXCEPTED
+  RESOLVED
+  FALSE_POSITIVE
+}
+
+enum SodExceptionStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  REVOKED
+  EXPIRED
+  REJECTED
+}
+
+enum BreakGlassRequestStatus {
+  PENDING_APPROVAL
+  APPROVED
+  ACTIVE
+  REJECTED
+  EXPIRED
+  REVOKED
+  CLOSED
+}
+
+enum AuditOutcome {
+  ALLOWED
+  DENIED
+  FAILED
+  SUCCEEDED
+  PENDING
+}
+
+enum AccessReviewStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum AccessReviewDecisionValue {
+  KEEP
+  REVOKE
+  REDUCE_SCOPE
+  ESCALATE
+}
+
+model UserSecurityState {
+  userId                String                 @id @map("user_id")
+  tenantId              String?                @map("tenant_id")
+  lifecycleStatus       AccountLifecycleStatus @default(INVITED) @map("lifecycle_status")
+  tokenVersion          Int                    @default(1) @map("token_version")
+  authorizationVersion  Int                    @default(1) @map("authorization_version")
+  mustChangePassword    Boolean                @default(true) @map("must_change_password")
+  mfaRequired           Boolean                @default(false) @map("mfa_required")
+  failedLoginCount      Int                    @default(0) @map("failed_login_count")
+  lockedUntil           DateTime?              @map("locked_until") @db.Timestamptz(6)
+  accountExpiresAt      DateTime?              @map("account_expires_at") @db.Timestamptz(6)
+  activationCompletedAt DateTime?              @map("activation_completed_at") @db.Timestamptz(6)
+  passwordChangedAt     DateTime?              @map("password_changed_at") @db.Timestamptz(6)
+  suspendedAt           DateTime?              @map("suspended_at") @db.Timestamptz(6)
+  suspendedByUserId     String?                @map("suspended_by_user_id")
+  suspensionReasonCode  String?                @map("suspension_reason_code") @db.VarChar(80)
+  revokedAt             DateTime?              @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId       String?                @map("revoked_by_user_id")
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, lifecycleStatus])
+  @@index([accountExpiresAt])
+  @@map("auth_user_security_states")
+}
+
+model AuthenticationSession {
+  id                     String                 @id @default(cuid())
+  tenantId               String?                @map("tenant_id")
+  userId                 String                 @map("user_id")
+  status                 SessionStatus          @default(ACTIVE)
+  authenticationStrength AuthenticationStrength @default(PASSWORD) @map("authentication_strength")
+  sessionVersion         Int                    @default(1) @map("session_version")
+  tokenVersion           Int                    @map("token_version")
+  authorizationVersion   Int                    @map("authorization_version")
+  policyVersion          String                 @map("policy_version") @db.VarChar(80)
+  mfaAuthenticatorId     String?                @map("mfa_authenticator_id")
+  mfaVerifiedAt          DateTime?              @map("mfa_verified_at") @db.Timestamptz(6)
+  ipAddressDigest        String?                @map("ip_address_digest") @db.Char(64)
+  userAgentDigest        String?                @map("user_agent_digest") @db.Char(64)
+  issuedAt               DateTime               @default(now()) @map("issued_at") @db.Timestamptz(6)
+  lastSeenAt             DateTime               @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  idleExpiresAt          DateTime               @map("idle_expires_at") @db.Timestamptz(6)
+  absoluteExpiresAt      DateTime               @map("absolute_expires_at") @db.Timestamptz(6)
+  expiredAt              DateTime?              @map("expired_at") @db.Timestamptz(6)
+  revokedAt              DateTime?              @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId        String?                @map("revoked_by_user_id")
+  revocationReasonCode   String?                @map("revocation_reason_code") @db.VarChar(80)
+  createdAt              DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, status])
+  @@index([tenantId, status])
+  @@index([absoluteExpiresAt])
+  @@index([mfaAuthenticatorId, status])
+  @@map("auth_sessions")
+}
+
+// Registro comun de MFA. No contiene secretos ni claves publicas/privadas.
+// WebAuthn y TOTP guardan material exclusivamente mediante referencias
+// cifradas/KMS y digests en sus modelos especializados.
+model MfaAuthenticator {
+  id                          String                 @id @default(cuid())
+  tenantId                    String                 @map("tenant_id")
+  userId                      String                 @map("user_id")
+  kind                        MfaAuthenticatorKind
+  status                      MfaAuthenticatorStatus @default(ISSUED)
+  authenticationStrength      AuthenticationStrength @map("authentication_strength")
+  authenticatorVersion        Int                    @default(1) @map("authenticator_version")
+  tokenVersionAtIssue         Int                    @map("token_version_at_issue")
+  authorizationVersionAtIssue Int                    @map("authorization_version_at_issue")
+  policyVersion               String                 @map("policy_version") @db.VarChar(80)
+  issuedByUserId              String?                @map("issued_by_user_id")
+  issuedAt                    DateTime               @default(now()) @map("issued_at") @db.Timestamptz(6)
+  enrolledAt                  DateTime?              @map("enrolled_at") @db.Timestamptz(6)
+  firstUsedAt                 DateTime?              @map("first_used_at") @db.Timestamptz(6)
+  lastUsedAt                  DateTime?              @map("last_used_at") @db.Timestamptz(6)
+  expiresAt                   DateTime?              @map("expires_at") @db.Timestamptz(6)
+  expiredAt                   DateTime?              @map("expired_at") @db.Timestamptz(6)
+  suspendedAt                 DateTime?              @map("suspended_at") @db.Timestamptz(6)
+  revokedAt                   DateTime?              @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId             String?                @map("revoked_by_user_id")
+  revocationReasonCode        String?                @map("revocation_reason_code") @db.VarChar(80)
+  createdAt                   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, userId, status])
+  @@index([userId, kind, status])
+  @@index([status, expiresAt])
+  @@map("auth_mfa_authenticators")
+}
+
+// Los challenges WebAuthn/TOTP son de un uso y se conservan solo por digest.
+// bindingDigest fija RP/origin/options/session canonicalizados sin guardarlos
+// como un payload libre susceptible de contener material sensible.
+model MfaChallenge {
+  id                          String              @id @default(cuid())
+  tenantId                    String              @map("tenant_id")
+  userId                      String              @map("user_id")
+  sessionId                   String?             @map("session_id")
+  authenticatorId             String?             @map("authenticator_id")
+  purpose                     MfaChallengePurpose
+  status                      MfaChallengeStatus  @default(ISSUED)
+  challengeDigest             String              @unique @map("challenge_digest") @db.Char(64)
+  bindingDigest               String              @map("binding_digest") @db.Char(64)
+  pepperKeyId                 String              @map("pepper_key_id") @db.VarChar(120)
+  sessionVersionAtIssue       Int?                @map("session_version_at_issue")
+  tokenVersionAtIssue         Int                 @map("token_version_at_issue")
+  authorizationVersionAtIssue Int                 @map("authorization_version_at_issue")
+  policyVersion               String              @map("policy_version") @db.VarChar(80)
+  maxAttempts                 Int                 @default(5) @map("max_attempts")
+  failedAttempts              Int                 @default(0) @map("failed_attempts")
+  issuedAt                    DateTime            @default(now()) @map("issued_at") @db.Timestamptz(6)
+  usedAt                      DateTime?           @map("used_at") @db.Timestamptz(6)
+  expiresAt                   DateTime            @map("expires_at") @db.Timestamptz(6)
+  expiredAt                   DateTime?           @map("expired_at") @db.Timestamptz(6)
+  revokedAt                   DateTime?           @map("revoked_at") @db.Timestamptz(6)
+  revocationReasonCode        String?             @map("revocation_reason_code") @db.VarChar(80)
+  createdAt                   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([tenantId, userId, purpose, status])
+  @@index([sessionId, status])
+  @@index([authenticatorId, status])
+  @@index([status, expiresAt])
+  @@map("auth_mfa_challenges")
+}
+
+model WebAuthnCredential {
+  id                       String    @id @default(cuid())
+  tenantId                 String    @map("tenant_id")
+  userId                   String    @map("user_id")
+  authenticatorId          String    @unique @map("authenticator_id")
+  credentialIdDigest       String    @unique @map("credential_id_digest") @db.Char(64)
+  encryptedKeyRef          String    @unique @map("encrypted_key_ref") @db.VarChar(500)
+  keyId                    String    @map("key_id") @db.VarChar(120)
+  encryptedMaterialDigest  String    @map("encrypted_material_digest") @db.Char(64)
+  rpIdDigest               String    @map("rp_id_digest") @db.Char(64)
+  originPolicyVersion      String    @map("origin_policy_version") @db.VarChar(80)
+  signCount                BigInt    @default(0) @map("sign_count")
+  backupEligible           Boolean   @default(false) @map("backup_eligible")
+  backupState              Boolean   @default(false) @map("backup_state")
+  discoverable             Boolean   @default(false)
+  userVerificationRequired Boolean   @default(true) @map("user_verification_required")
+  lastSignCountAt          DateTime? @map("last_sign_count_at") @db.Timestamptz(6)
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, userId])
+  @@index([rpIdDigest])
+  @@index([keyId])
+  @@map("auth_webauthn_credentials")
+}
+
+model TotpAuthenticator {
+  id                      String        @id @default(cuid())
+  tenantId                String        @map("tenant_id")
+  userId                  String        @map("user_id")
+  authenticatorId         String        @unique @map("authenticator_id")
+  encryptedKeyRef         String        @unique @map("encrypted_key_ref") @db.VarChar(500)
+  keyId                   String        @map("key_id") @db.VarChar(120)
+  encryptedMaterialDigest String        @map("encrypted_material_digest") @db.Char(64)
+  algorithm               TotpAlgorithm
+  digits                  Int
+  periodSeconds           Int           @map("period_seconds")
+  acceptedSkewWindows     Int           @default(1) @map("accepted_skew_windows")
+  lastAcceptedCounter     BigInt?       @map("last_accepted_counter")
+  keyVersion              Int           @default(1) @map("key_version")
+  createdAt               DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, userId])
+  @@index([keyId])
+  @@map("auth_totp_authenticators")
+}
+
+// Cada codigo conserva solo su digest. El valor de recuperacion crudo se
+// entrega una vez y nunca se persiste en esta propuesta.
+model MfaRecoveryCode {
+  id                          String             @id @default(cuid())
+  tenantId                    String             @map("tenant_id")
+  userId                      String             @map("user_id")
+  batchId                     String             @map("batch_id")
+  sequence                    Int
+  status                      RecoveryCodeStatus @default(ISSUED)
+  codeDigest                  String             @unique @map("code_digest") @db.Char(64)
+  pepperKeyId                 String             @map("pepper_key_id") @db.VarChar(120)
+  tokenVersionAtIssue         Int                @map("token_version_at_issue")
+  authorizationVersionAtIssue Int                @map("authorization_version_at_issue")
+  policyVersion               String             @map("policy_version") @db.VarChar(80)
+  issuedAt                    DateTime           @default(now()) @map("issued_at") @db.Timestamptz(6)
+  usedAt                      DateTime?          @map("used_at") @db.Timestamptz(6)
+  usedSessionId               String?            @map("used_session_id")
+  expiresAt                   DateTime           @map("expires_at") @db.Timestamptz(6)
+  expiredAt                   DateTime?          @map("expired_at") @db.Timestamptz(6)
+  revokedAt                   DateTime?          @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId             String?            @map("revoked_by_user_id")
+  revocationReasonCode        String?            @map("revocation_reason_code") @db.VarChar(80)
+  createdAt                   DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([batchId, sequence])
+  @@index([tenantId, userId, status])
+  @@index([batchId, status])
+  @@index([status, expiresAt])
+  @@map("auth_mfa_recovery_codes")
+}
+
+// La sesion no guarda un digest refresh mutable. La familia y cada credencial
+// rotada se conservan por separado para reconocer reuse de cualquier secuencia.
+model RefreshTokenFamily {
+  id                          String                   @id @default(cuid())
+  tenantId                    String                   @map("tenant_id")
+  userId                      String                   @map("user_id")
+  sessionId                   String                   @unique @map("session_id")
+  status                      RefreshTokenFamilyStatus @default(ACTIVE)
+  familyVersion               Int                      @default(1) @map("family_version")
+  currentSequence             Int                      @default(0) @map("current_sequence")
+  sessionVersionAtIssue       Int                      @map("session_version_at_issue")
+  tokenVersionAtIssue         Int                      @map("token_version_at_issue")
+  authorizationVersionAtIssue Int                      @map("authorization_version_at_issue")
+  policyVersion               String                   @map("policy_version") @db.VarChar(80)
+  issuedAt                    DateTime                 @default(now()) @map("issued_at") @db.Timestamptz(6)
+  lastUsedAt                  DateTime?                @map("last_used_at") @db.Timestamptz(6)
+  expiresAt                   DateTime                 @map("expires_at") @db.Timestamptz(6)
+  expiredAt                   DateTime?                @map("expired_at") @db.Timestamptz(6)
+  reuseDetectedAt             DateTime?                @map("reuse_detected_at") @db.Timestamptz(6)
+  revokedAt                   DateTime?                @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId             String?                  @map("revoked_by_user_id")
+  revocationReasonCode        String?                  @map("revocation_reason_code") @db.VarChar(80)
+  createdAt                   DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, userId, status])
+  @@index([status, expiresAt])
+  @@index([reuseDetectedAt])
+  @@map("auth_refresh_token_families")
+}
+
+model RefreshTokenCredential {
+  id                          String                       @id @default(cuid())
+  tenantId                    String                       @map("tenant_id")
+  userId                      String                       @map("user_id")
+  familyId                    String                       @map("family_id")
+  sequence                    Int
+  status                      RefreshTokenCredentialStatus @default(ISSUED)
+  tokenDigest                 String                       @unique @map("token_digest") @db.Char(64)
+  pepperKeyId                 String                       @map("pepper_key_id") @db.VarChar(120)
+  familyVersionAtIssue        Int                          @map("family_version_at_issue")
+  sessionVersionAtIssue       Int                          @map("session_version_at_issue")
+  tokenVersionAtIssue         Int                          @map("token_version_at_issue")
+  authorizationVersionAtIssue Int                          @map("authorization_version_at_issue")
+  policyVersion               String                       @map("policy_version") @db.VarChar(80)
+  issuedAt                    DateTime                     @default(now()) @map("issued_at") @db.Timestamptz(6)
+  usedAt                      DateTime?                    @map("used_at") @db.Timestamptz(6)
+  expiresAt                   DateTime                     @map("expires_at") @db.Timestamptz(6)
+  expiredAt                   DateTime?                    @map("expired_at") @db.Timestamptz(6)
+  reuseDetectedAt             DateTime?                    @map("reuse_detected_at") @db.Timestamptz(6)
+  revokedAt                   DateTime?                    @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId             String?                      @map("revoked_by_user_id")
+  revocationReasonCode        String?                      @map("revocation_reason_code") @db.VarChar(80)
+  createdAt                   DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([familyId, sequence])
+  @@index([familyId, status, expiresAt])
+  @@index([tenantId, userId, status])
+  @@index([reuseDetectedAt])
+  @@map("auth_refresh_token_credentials")
+}
+
+model OneTimeCredential {
+  id                  String                   @id @default(cuid())
+  tenantId            String?                  @map("tenant_id")
+  userId              String                   @map("user_id")
+  purpose             OneTimeCredentialPurpose
+  status              OneTimeCredentialStatus  @default(ISSUED)
+  tokenDigest         String                   @unique @map("token_digest") @db.Char(64)
+  pepperKeyId         String                   @map("pepper_key_id") @db.VarChar(80)
+  tokenVersionAtIssue Int                      @map("token_version_at_issue")
+  maxAttempts         Int                      @default(5) @map("max_attempts")
+  failedAttempts      Int                      @default(0) @map("failed_attempts")
+  issuedByUserId      String?                  @map("issued_by_user_id")
+  expiresAt           DateTime                 @map("expires_at") @db.Timestamptz(6)
+  consumedAt          DateTime?                @map("consumed_at") @db.Timestamptz(6)
+  consumedSessionId   String?                  @map("consumed_session_id")
+  revokedAt           DateTime?                @map("revoked_at") @db.Timestamptz(6)
+  createdAt           DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, purpose, status])
+  @@index([expiresAt])
+  @@map("auth_one_time_credentials")
+}
+
+model OrgUnit {
+  id              String        @id @default(cuid())
+  tenantId        String        @map("tenant_id")
+  code            String        @db.VarChar(80)
+  name            String        @db.VarChar(180)
+  kind            OrgUnitKind
+  status          OrgUnitStatus @default(ACTIVE)
+  parentId        String?       @map("parent_id")
+  hierarchyPath   String        @map("hierarchy_path") @db.VarChar(1200)
+  validFrom       DateTime      @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validUntil      DateTime?     @map("valid_until") @db.Timestamptz(6)
+  createdByUserId String?       @map("created_by_user_id")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, hierarchyPath])
+  @@index([tenantId, parentId, status])
+  @@map("auth_org_units")
+}
+
+model OrgUnitClosure {
+  id           String @id @default(cuid())
+  tenantId     String @map("tenant_id")
+  ancestorId   String @map("ancestor_id")
+  descendantId String @map("descendant_id")
+  depth        Int
+
+  @@unique([tenantId, ancestorId, descendantId])
+  @@index([tenantId, descendantId, depth])
+  @@map("auth_org_unit_closure")
+}
+
+model OrgUnitMembership {
+  id         String            @id @default(cuid())
+  tenantId   String            @map("tenant_id")
+  orgUnitId  String            @map("org_unit_id")
+  userId     String            @map("user_id")
+  kind       OrgMembershipKind @default(MEMBER)
+  isPrimary  Boolean           @default(false) @map("is_primary")
+  validFrom  DateTime          @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validUntil DateTime?         @map("valid_until") @db.Timestamptz(6)
+  sourceRef  String?           @map("source_ref") @db.VarChar(200)
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([tenantId, userId, validUntil])
+  @@index([tenantId, orgUnitId, kind])
+  @@map("auth_org_unit_memberships")
+}
+
+model PolicyBundle {
+  id                 String             @id @default(cuid())
+  namespace          String             @db.VarChar(120)
+  tenantId           String?            @map("tenant_id")
+  version            String             @db.VarChar(80)
+  status             PolicyBundleStatus @default(DRAFT)
+  schemaVersion      String             @map("schema_version") @db.VarChar(40)
+  routePolicyVersion String             @map("route_policy_version") @db.VarChar(80)
+  policyDigest       String             @unique @map("policy_digest") @db.Char(64)
+  description        String?
+  createdByUserId    String?            @map("created_by_user_id")
+  approvedRequestId  String?            @map("approved_request_id")
+  activatedAt        DateTime?          @map("activated_at") @db.Timestamptz(6)
+  retiredAt          DateTime?          @map("retired_at") @db.Timestamptz(6)
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([namespace, version])
+  @@index([tenantId, status])
+  @@index([status, activatedAt])
+  @@map("auth_policy_bundles")
+}
+
+model CapabilityDefinition {
+  // Debe ser exactamente `${resourceType}:${action}` y coincidir con
+  // shared/route-policy.cjs; el CHECK se agrega en la migracion SQL revisada.
+  key                String   @id @db.VarChar(160)
+  resourceType       String   @map("resource_type") @db.VarChar(100)
+  action             String   @db.VarChar(80)
+  description        String
+  dataClassification String   @map("data_classification") @db.VarChar(40)
+  privileged         Boolean  @default(false)
+  requiresMfa        Boolean  @default(false) @map("requires_mfa")
+  requiresReauth     Boolean  @default(false) @map("requires_reauth")
+  enabled            Boolean  @default(true)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([resourceType, action])
+  @@map("auth_capabilities")
+}
+
+model RoleDefinition {
+  id               String               @id @default(cuid())
+  namespace        String               @db.VarChar(120)
+  tenantId         String?              @map("tenant_id")
+  roleKey          String               @map("role_key") @db.VarChar(100)
+  version          Int                  @default(1)
+  displayName      String               @map("display_name") @db.VarChar(160)
+  description      String
+  status           RoleDefinitionStatus @default(DRAFT)
+  privileged       Boolean              @default(false)
+  requiresApproval Boolean              @default(true) @map("requires_approval")
+  policyBundleId   String               @map("policy_bundle_id")
+  validFrom        DateTime?            @map("valid_from") @db.Timestamptz(6)
+  validUntil       DateTime?            @map("valid_until") @db.Timestamptz(6)
+  createdByUserId  String?              @map("created_by_user_id")
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([namespace, roleKey, version])
+  @@index([tenantId, status])
+  @@index([policyBundleId])
+  @@map("auth_role_definitions")
+}
+
+model RoleCapability {
+  id                      String           @id @default(cuid())
+  roleDefinitionId        String           @map("role_definition_id")
+  capabilityKey           String           @map("capability_key") @db.VarChar(160)
+  effect                  PermissionEffect @default(ALLOW)
+  constraintSchemaVersion String?          @map("constraint_schema_version") @db.VarChar(40)
+  constraints             Json?
+  createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([roleDefinitionId, capabilityKey])
+  @@index([capabilityKey, effect])
+  @@map("auth_role_capabilities")
+}
+
+model AuthorizationScope {
+  id                      String      @id @default(cuid())
+  tenantId                String?     @map("tenant_id")
+  kind                    ScopeKind
+  status                  ScopeStatus @default(ACTIVE)
+  orgUnitId               String?     @map("org_unit_id")
+  resourceType            String?     @map("resource_type") @db.VarChar(100)
+  resourceId              String?     @map("resource_id") @db.VarChar(200)
+  datasetKey              String?     @map("dataset_key") @db.VarChar(160)
+  geographicBoundaryId    String?     @map("geographic_boundary_id") @db.VarChar(200)
+  constraintSchemaVersion String?     @map("constraint_schema_version") @db.VarChar(40)
+  constraints             Json?
+  normalizedDigest        String      @map("normalized_digest") @db.Char(64)
+  createdByUserId         String?     @map("created_by_user_id")
+  createdAt               DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  retiredAt               DateTime?   @map("retired_at") @db.Timestamptz(6)
+
+  @@unique([tenantId, normalizedDigest])
+  @@index([tenantId, kind, status])
+  @@index([orgUnitId])
+  @@index([resourceType, resourceId])
+  @@map("auth_scopes")
+}
+
+model RoleAssignment {
+  id                     String               @id @default(cuid())
+  tenantId               String?              @map("tenant_id")
+  subjectUserId          String               @map("subject_user_id")
+  roleDefinitionId       String               @map("role_definition_id")
+  scopeId                String               @map("scope_id")
+  status                 RoleAssignmentStatus @default(PENDING_APPROVAL)
+  source                 AssignmentSource
+  validFrom              DateTime             @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validUntil             DateTime?            @map("valid_until") @db.Timestamptz(6)
+  reasonCode             String               @map("reason_code") @db.VarChar(80)
+  reasonDetail           String?              @map("reason_detail")
+  requestedByUserId      String               @map("requested_by_user_id")
+  approvalRequestId      String?              @map("approval_request_id")
+  activatedAt            DateTime?            @map("activated_at") @db.Timestamptz(6)
+  suspendedAt            DateTime?            @map("suspended_at") @db.Timestamptz(6)
+  revokedAt              DateTime?            @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId        String?              @map("revoked_by_user_id")
+  supersedesAssignmentId String?              @map("supersedes_assignment_id")
+  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([subjectUserId, status, validUntil])
+  @@index([tenantId, roleDefinitionId, status])
+  @@index([scopeId, status])
+  @@index([approvalRequestId])
+  @@map("auth_role_assignments")
+}
+
+model AttributeDefinition {
+  id               String             @id @default(cuid())
+  namespace        String             @db.VarChar(120)
+  tenantId         String?            @map("tenant_id")
+  attributeKey     String             @map("attribute_key") @db.VarChar(120)
+  valueType        AttributeValueType @map("value_type")
+  allowedAssurance Json               @map("allowed_assurance")
+  description      String
+  enabled          Boolean            @default(true)
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([namespace, attributeKey])
+  @@index([tenantId, enabled])
+  @@map("auth_attribute_definitions")
+}
+
+model SubjectAttributeValue {
+  id                    String             @id @default(cuid())
+  tenantId              String?            @map("tenant_id")
+  userId                String             @map("user_id")
+  attributeDefinitionId String             @map("attribute_definition_id")
+  value                 Json
+  assurance             AttributeAssurance
+  sourceRef             String             @map("source_ref") @db.VarChar(240)
+  validFrom             DateTime           @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validUntil            DateTime?          @map("valid_until") @db.Timestamptz(6)
+  verifiedAt            DateTime?          @map("verified_at") @db.Timestamptz(6)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([tenantId, userId, validUntil])
+  @@index([attributeDefinitionId, assurance])
+  @@map("auth_subject_attribute_values")
+}
+
+model IdentityResourceBinding {
+  id               String                @id @default(cuid())
+  tenantId         String                @map("tenant_id")
+  userId           String                @map("user_id")
+  resourceType     String                @map("resource_type") @db.VarChar(100)
+  resourceId       String                @map("resource_id") @db.VarChar(200)
+  status           IdentityBindingStatus @default(ACTIVE)
+  assurance        AttributeAssurance
+  sourceRef        String                @map("source_ref") @db.VarChar(240)
+  validFrom        DateTime              @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validUntil       DateTime?             @map("valid_until") @db.Timestamptz(6)
+  verifiedAt       DateTime?             @map("verified_at") @db.Timestamptz(6)
+  verifiedByUserId String?               @map("verified_by_user_id")
+  revokedAt        DateTime?             @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId  String?               @map("revoked_by_user_id")
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([tenantId, userId, resourceType, status])
+  @@index([tenantId, resourceType, resourceId, status])
+  @@map("auth_identity_resource_bindings")
+}
+
+model ApprovalRequest {
+  id                     String                @id @default(cuid())
+  tenantId               String?               @map("tenant_id")
+  actionKey              String                @map("action_key") @db.VarChar(160)
+  targetType             String                @map("target_type") @db.VarChar(100)
+  targetId               String?               @map("target_id") @db.VarChar(200)
+  requestedScopeId       String?               @map("requested_scope_id")
+  requestedByUserId      String                @map("requested_by_user_id")
+  requestedBySessionId   String                @map("requested_by_session_id")
+  status                 ApprovalRequestStatus @default(PENDING)
+  riskTier               String                @map("risk_tier") @db.VarChar(40)
+  policyVersion          String                @map("policy_version") @db.VarChar(80)
+  payloadDigest          String                @map("payload_digest") @db.Char(64)
+  payloadReference       String?               @map("payload_reference") @db.VarChar(300)
+  idempotencyKey         String                @unique @map("idempotency_key") @db.VarChar(160)
+  expiresAt              DateTime              @map("expires_at") @db.Timestamptz(6)
+  decidedAt              DateTime?             @map("decided_at") @db.Timestamptz(6)
+  executedAt             DateTime?             @map("executed_at") @db.Timestamptz(6)
+  executionReceiptDigest String?               @map("execution_receipt_digest") @db.Char(64)
+  createdAt              DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, status, expiresAt])
+  @@index([requestedByUserId, status])
+  @@index([targetType, targetId])
+  @@map("auth_approval_requests")
+}
+
+model ApprovalStep {
+  id                    String             @id @default(cuid())
+  approvalRequestId     String             @map("approval_request_id")
+  sequence              Int
+  status                ApprovalStepStatus @default(PENDING)
+  requiredCapabilityKey String             @map("required_capability_key") @db.VarChar(160)
+  requiredApprovals     Int                @default(1) @map("required_approvals")
+  prohibitRequester     Boolean            @default(true) @map("prohibit_requester")
+  prohibitPriorActors   Boolean            @default(true) @map("prohibit_prior_actors")
+  expiresAt             DateTime           @map("expires_at") @db.Timestamptz(6)
+  satisfiedAt           DateTime?          @map("satisfied_at") @db.Timestamptz(6)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([approvalRequestId, sequence])
+  @@index([status, expiresAt])
+  @@map("auth_approval_steps")
+}
+
+model ApprovalDecision {
+  id                String                @id @default(cuid())
+  approvalRequestId String                @map("approval_request_id")
+  approvalStepId    String                @map("approval_step_id")
+  reviewerUserId    String                @map("reviewer_user_id")
+  reviewerSessionId String                @map("reviewer_session_id")
+  decision          ApprovalDecisionValue
+  reasonCode        String                @map("reason_code") @db.VarChar(80)
+  reasonDetail      String?               @map("reason_detail")
+  evidenceDigest    String?               @map("evidence_digest") @db.Char(64)
+  policyVersion     String                @map("policy_version") @db.VarChar(80)
+  decidedAt         DateTime              @default(now()) @map("decided_at") @db.Timestamptz(6)
+
+  @@unique([approvalStepId, reviewerUserId])
+  @@index([approvalRequestId, decision])
+  @@map("auth_approval_decisions")
+}
+
+model SodRule {
+  id              String           @id @default(cuid())
+  namespace       String           @db.VarChar(120)
+  tenantId        String?          @map("tenant_id")
+  ruleKey         String           @map("rule_key") @db.VarChar(120)
+  name            String           @db.VarChar(180)
+  description     String
+  mode            SodRuleMode
+  effect          SodRuleEffect
+  scopeStrategy   SodScopeStrategy @map("scope_strategy")
+  enabled         Boolean          @default(true)
+  policyBundleId  String           @map("policy_bundle_id")
+  createdByUserId String?          @map("created_by_user_id")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([namespace, ruleKey])
+  @@index([tenantId, enabled])
+  @@index([policyBundleId])
+  @@map("auth_sod_rules")
+}
+
+model SodRuleTerm {
+  id           String          @id @default(cuid())
+  sodRuleId    String          @map("sod_rule_id")
+  side         SodTermSide
+  selectorKind SodSelectorKind @map("selector_kind")
+  selectorKey  String          @map("selector_key") @db.VarChar(180)
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([sodRuleId, side, selectorKind, selectorKey])
+  @@index([selectorKind, selectorKey])
+  @@map("auth_sod_rule_terms")
+}
+
+model SodConflict {
+  id                   String            @id @default(cuid())
+  tenantId             String?           @map("tenant_id")
+  sodRuleId            String            @map("sod_rule_id")
+  subjectUserId        String            @map("subject_user_id")
+  leftAssignmentId     String?           @map("left_assignment_id")
+  rightAssignmentId    String?           @map("right_assignment_id")
+  status               SodConflictStatus @default(OPEN)
+  detectedAt           DateTime          @default(now()) @map("detected_at") @db.Timestamptz(6)
+  resolvedAt           DateTime?         @map("resolved_at") @db.Timestamptz(6)
+  resolvedByUserId     String?           @map("resolved_by_user_id")
+  resolutionReasonCode String?           @map("resolution_reason_code") @db.VarChar(80)
+
+  @@index([tenantId, status, detectedAt])
+  @@index([subjectUserId, status])
+  @@index([sodRuleId])
+  @@map("auth_sod_conflicts")
+}
+
+model SodException {
+  id                    String             @id @default(cuid())
+  tenantId              String?            @map("tenant_id")
+  sodRuleId             String             @map("sod_rule_id")
+  subjectUserId         String             @map("subject_user_id")
+  scopeId               String?            @map("scope_id")
+  status                SodExceptionStatus @default(PENDING_APPROVAL)
+  businessJustification String             @map("business_justification")
+  approvalRequestId     String             @unique @map("approval_request_id")
+  validFrom             DateTime           @map("valid_from") @db.Timestamptz(6)
+  validUntil            DateTime           @map("valid_until") @db.Timestamptz(6)
+  revokedAt             DateTime?          @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId       String?            @map("revoked_by_user_id")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([tenantId, subjectUserId, status])
+  @@index([sodRuleId, status])
+  @@index([validUntil])
+  @@map("auth_sod_exceptions")
+}
+
+model BreakGlassRequest {
+  id                       String                  @id @default(cuid())
+  tenantId                 String?                 @map("tenant_id")
+  requestedByUserId        String                  @map("requested_by_user_id")
+  requestedBySessionId     String                  @map("requested_by_session_id")
+  requestedScopeId         String                  @map("requested_scope_id")
+  approvalRequestId        String                  @unique @map("approval_request_id")
+  status                   BreakGlassRequestStatus @default(PENDING_APPROVAL)
+  reasonCode               String                  @map("reason_code") @db.VarChar(80)
+  incidentReference        String                  @map("incident_reference") @db.VarChar(200)
+  businessJustification    String                  @map("business_justification")
+  requestedDurationMinutes Int                     @map("requested_duration_minutes")
+  requestedAt              DateTime                @default(now()) @map("requested_at") @db.Timestamptz(6)
+  expiresIfNotActivatedAt  DateTime                @map("expires_if_not_activated_at") @db.Timestamptz(6)
+  closedAt                 DateTime?               @map("closed_at") @db.Timestamptz(6)
+  postReviewCompletedAt    DateTime?               @map("post_review_completed_at") @db.Timestamptz(6)
+  postReviewedByUserId     String?                 @map("post_reviewed_by_user_id")
+
+  @@index([tenantId, status, requestedAt])
+  @@index([requestedByUserId, status])
+  @@map("auth_break_glass_requests")
+}
+
+model BreakGlassCapability {
+  id                  String   @id @default(cuid())
+  breakGlassRequestId String   @map("break_glass_request_id")
+  capabilityKey       String   @map("capability_key") @db.VarChar(160)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([breakGlassRequestId, capabilityKey])
+  @@index([capabilityKey])
+  @@map("auth_break_glass_capabilities")
+}
+
+model BreakGlassGrant {
+  id                   String    @id @default(cuid())
+  breakGlassRequestId  String    @unique @map("break_glass_request_id")
+  tenantId             String?   @map("tenant_id")
+  userId               String    @map("user_id")
+  activatedSessionId   String    @map("activated_session_id")
+  issuedTokenVersion   Int       @map("issued_token_version")
+  issuedAt             DateTime  @default(now()) @map("issued_at") @db.Timestamptz(6)
+  expiresAt            DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt           DateTime? @map("last_used_at") @db.Timestamptz(6)
+  revokedAt            DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId      String?   @map("revoked_by_user_id")
+  revocationReasonCode String?   @map("revocation_reason_code") @db.VarChar(80)
+
+  @@index([userId, expiresAt])
+  @@index([tenantId, expiresAt])
+  @@map("auth_break_glass_grants")
+}
+
+model SecurityAuditEvent {
+  sequence          BigInt       @id @default(autoincrement())
+  eventId           String       @unique @default(cuid()) @map("event_id")
+  chainPartition    String       @map("chain_partition") @db.VarChar(120)
+  tenantId          String?      @map("tenant_id")
+  actorUserId       String?      @map("actor_user_id")
+  actorSessionId    String?      @map("actor_session_id")
+  actorType         String       @map("actor_type") @db.VarChar(40)
+  eventType         String       @map("event_type") @db.VarChar(120)
+  actionKey         String?      @map("action_key") @db.VarChar(160)
+  outcome           AuditOutcome
+  reasonCode        String?      @map("reason_code") @db.VarChar(80)
+  targetType        String?      @map("target_type") @db.VarChar(100)
+  targetId          String?      @map("target_id") @db.VarChar(200)
+  scopeId           String?      @map("scope_id")
+  approvalRequestId String?      @map("approval_request_id")
+  correlationId     String       @map("correlation_id") @db.VarChar(160)
+  requestDigest     String?      @map("request_digest") @db.Char(64)
+  metadata          Json?
+  occurredAt        DateTime     @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  previousEventHash String?      @map("previous_event_hash") @db.Char(64)
+  eventHash         String       @unique @map("event_hash") @db.Char(64)
+  signerKeyId       String       @map("signer_key_id") @db.VarChar(80)
+
+  @@index([tenantId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@index([targetType, targetId, occurredAt])
+  @@index([correlationId])
+  @@index([chainPartition, sequence])
+  @@map("security_audit_events")
+}
+
+model AccessReviewCampaign {
+  id                    String             @id @default(cuid())
+  tenantId              String?            @map("tenant_id")
+  name                  String             @db.VarChar(180)
+  status                AccessReviewStatus @default(DRAFT)
+  scopeFilter           Json               @map("scope_filter")
+  openedByUserId        String             @map("opened_by_user_id")
+  reviewerCapabilityKey String             @map("reviewer_capability_key") @db.VarChar(160)
+  openedAt              DateTime?          @map("opened_at") @db.Timestamptz(6)
+  dueAt                 DateTime           @map("due_at") @db.Timestamptz(6)
+  closedAt              DateTime?          @map("closed_at") @db.Timestamptz(6)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([tenantId, status, dueAt])
+  @@map("auth_access_review_campaigns")
+}
+
+model AccessReviewItem {
+  id                     String                     @id @default(cuid())
+  campaignId             String                     @map("campaign_id")
+  roleAssignmentId       String                     @map("role_assignment_id")
+  subjectUserId          String                     @map("subject_user_id")
+  reviewerUserId         String?                    @map("reviewer_user_id")
+  decision               AccessReviewDecisionValue?
+  decisionReason         String?                    @map("decision_reason")
+  decidedAt              DateTime?                  @map("decided_at") @db.Timestamptz(6)
+  remediationCompletedAt DateTime?                  @map("remediation_completed_at") @db.Timestamptz(6)
+  createdAt              DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([campaignId, roleAssignmentId])
+  @@index([reviewerUserId, decidedAt])
+  @@index([subjectUserId])
+  @@map("auth_access_review_items")
+}

@@ -1,624 +1,241 @@
-# 🏛️ GovTech Platform — Sistema Municipal
-## Municipalidad de Junín, Mendoza · Argentina
+# MuniControl Junín
 
-[![Deploy](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://municipio-junin.vercel.app)
-[![GitHub](https://img.shields.io/badge/Repo-GitHub-blue?logo=github)](https://github.com/inguillen87/municipio-junin)
-[![Version](https://img.shields.io/badge/Version-2.0-green)](#)
-[![License](https://img.shields.io/badge/License-Privado-red)](#)
+Plataforma municipal de información ejecutiva y operación gobernada. El objetivo
+actual es convertir el último backup de **GRH Junín** en indicadores trazables para
+Intendencia, Hacienda y RRHH, sin publicar PII ni presentar datos simulados como
+si fueran reales.
 
-> **Torre de Control Municipal**: Sistema de gestión y control administrativo para municipios. Desarrollado para la Municipalidad de Junín, Mendoza. Diseñado para escalar a cualquier gobierno del mundo.
+> Estado de esta documentación: snapshot local validado el 9 de agosto de 2026.
+> No constituye certificación de despliegue productivo, conexión en tiempo real ni
+> pago bancario conciliado.
 
----
+## Decisiones de datos
 
-## 📋 Índice
+- La única fuente canónica del dominio de personal es
+  `grh_junin.backup_2026080615_plataforma.sql.gz`.
+- `personas_junin` fue recibido como ejemplo y está **excluido** del perfilado,
+  cruces y migraciones de GRH.
+- El corte del backup es 6 de agosto de 2026. Los cambios posteriores no están
+  representados.
+- Los artefactos servidos al frontend son agregados sin nombres, documentos,
+  domicilios, teléfonos ni identificadores de empleado.
+- La moneda no está declarada en la fuente. La interfaz usa `u.m.` y nunca asume
+  ARS o `$`.
+- `totpago` tiene diferencias materiales contra `calculo`; por eso no se usa como
+  nómina pagada. La lectura ejecutiva usa conceptos de **control de cálculo** y
+  conserva `totpago` sólo como diagnóstico de conciliación.
 
-1. [Visión General](#-visión-general)
-2. [Acceso al Sistema](#-acceso-al-sistema)
-3. [Arquitectura](#-arquitectura)
-4. [Módulos](#-módulos)
-5. [Backend API](#-backend-api)
-6. [Base de Datos](#-base-de-datos)
-7. [WhatsApp Bot](#-whatsapp-bot)
-8. [Email Automático](#-email-automático)
-9. [PWA / Mobile](#-pwa--mobile)
-10. [Deploy](#-deploy)
-11. [Variables de Entorno](#-variables-de-entorno)
-12. [Roadmap](#-roadmap)
-13. [Multi-Tenant](#-multi-tenant)
-14. [Contribución](#-contribución)
+El contrato y sus definiciones están documentados en
+[`docs/data/grh-semantic.md`](docs/data/grh-semantic.md).
+La evolución desde snapshot hacia ingesta diaria, CDC y backups recuperables se
+define en [`docs/GRH_OPERATIONS_ROADMAP.md`](docs/GRH_OPERATIONS_ROADMAP.md).
+La reconciliación entre el plan heredado y lo realmente comprobado en el repo se
+mantiene en [`docs/MASTER_PLAN_STATUS.md`](docs/MASTER_PLAN_STATUS.md).
+Los recorridos y procedimientos se mantienen en
+[`docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md`](docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md)
+y [`docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md`](docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md).
+El índice de entrega y capacitación es
+[`docs/MANUAL_INTEGRAL.md`](docs/MANUAL_INTEGRAL.md).
+La arquitectura objetivo por fases está en
+[`docs/ENTERPRISE_PRODUCT_ROADMAP.md`](docs/ENTERPRISE_PRODUCT_ROADMAP.md).
+El gate de migraciones, baseline conectado, restore y rollback se define en
+[`docs/PRISMA_BASELINE_Y_DRIFT.md`](docs/PRISMA_BASELINE_Y_DRIFT.md).
+La autoridad, sensibilidad, frescura y uso permitido de cada archivo observado
+se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 
----
+## Estado funcional
 
-## 🎯 Visión General
+| Superficie | Estado local | Fuente y límite |
+|---|---|---|
+| Centro Ejecutivo GRH | Implementado | Contratos privados `profile` + `semantic`; snapshot histórico |
+| Centro Ejecutivo RRHH | Implementado | Dotación registrada, ausencias, movimientos, calidad y cuarentena agregadas |
+| Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
+| Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
+| Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
+| Cargas analíticas y conectores | Condicionado | Upload/Sheets escriben tablas legacy ligadas por entorno; no hay ingesta unificada ni sincronización |
+| Reportes ejecutivos GRH | Implementado local | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto y períodos gobernados; falta materialización y smoke remoto |
+| WhatsApp | Condicionado | Webhooks informativos endurecidos; faltan proveedor, credenciales y E2E externo certificado |
+| Correo, cron y exportación cruda | Retirado | Responden 410 o no se programan hasta tener finalidad, auditoría e idempotencia |
+| Presupuesto, obras, compras y trámites | Sin fuente gobernada | No deben exhibir bases sintéticas como datos municipales |
+| Roles finos y permisos por acción | Roadmap | Se mantiene RBAC grueso mientras se prioriza la evidencia ejecutiva |
+| CDC, backups propios y actualización diaria | Roadmap | El sistema actual no es tiempo real |
 
-Sistema de gestión municipal con IA integrada que permite a intendentes, contadores y administradores:
+## Snapshot GRH analizado
 
-- **Controlar gastos** en tiempo real vs presupuesto anual
-- **Gestionar RRHH**: empleados, horas extra, ausentismo
-- **Seguir licitaciones**: desde la necesidad hasta el cierre del contrato
-- **Atender vecinos**: reclamos georeferenciados con mapa de calor
-- **Consultar al Asistente IA**: respuestas con datos reales en lenguaje natural
-- **Recibir alertas**: WhatsApp + Email automático ante situaciones críticas
-- **Exportar informes**: PDF y Excel profesionales con un click
+- 257 tablas y 6.573.057 filas perfiladas.
+- 2.450 registros de legajo; no equivalen automáticamente a planta activa.
+- 856 participantes distintos en el control de cálculo de julio de 2026.
+- 31.559 ausencias y 489.455 movimientos temporalmente válidos.
+- 20.534 filas temporales en cuarentena.
+- Calidad gobernada: 88,99/100.
+- Conciliación cruzada `calculo`/`totpago`: 63,88/100, con diferencias
+  materiales que permanecen visibles.
 
-### Stack Tecnológico
+Las cifras se regeneran desde el backup; no deben copiarse a mano en la UI.
 
-| Capa | Tecnología |
-|------|------------|
-| Frontend | HTML5 + CSS3 + Vanilla JS (sin framework) |
-| Gráficos | Chart.js 4.4 |
-| Mapas | Leaflet.js 1.9 + OpenStreetMap |
-| Backend | Node.js + Express.js |
-| Base de Datos | PostgreSQL (prod) / In-memory demo |
-| Auth | JWT (jsonwebtoken) |
-| Documentos | PDF.js · SheetJS · Tesseract.js · jsPDF |
-| Deploy | Vercel (frontend + serverless) |
-| WhatsApp | Meta Cloud API v18 |
-| Email | Nodemailer (SMTP) |
-| PWA | Service Worker + Web App Manifest |
-| Fuentes | Google Fonts: Inter + Outfit |
+## Arquitectura local y arquitectura objetivo
 
----
+El checkout local ya genera, valida y consume contratos agregados GRH. La
+materialización en PostgreSQL que aparece abajo es la **arquitectura objetivo
+condicionada**: no debe interpretarse como una base remota aplicada, migrada o
+certificada. Sin `grh_artifacts` materializado para un tenant real, los tests y
+smokes locales usan únicamente los artefactos privados permitidos por el
+entorno de desarrollo.
 
-## 🔐 Acceso al Sistema
-
-**URL Producción:** https://municipio-junin.vercel.app
-
-### Credenciales Demo
-| Usuario | Contraseña | Rol |
-|---------|------------|-----|
-| `demo@demo.com` | `demo123` | Intendente (acceso completo) |
-| `admin@junin.gob.ar` | `admin2026` | Administrador IT |
-| `hacienda@junin.gob.ar` | `hacienda2026` | Hacienda (solo finanzas) |
-
-> ⚠️ **Cambiar contraseñas antes de conectar datos reales**. Ver [`backend/routes/auth.js`](backend/routes/auth.js).
-
-### Protección de Rutas
-Todas las páginas están protegidas por `nav.js` → si no hay sesión activa en `sessionStorage`, redirige a `login.html`.
-
-```javascript
-// Ejemplo: cómo está implementado en nav.js
-(function checkAuth() {
-  if (!sessionStorage.getItem('mjunin_user')) {
-    window.location.href = 'login.html';
-  }
-})();
+```text
+Backup GRH privado
+        │
+        ▼
+scripts/profile_grh.py + scripts/build_grh_semantic.py
+        │
+        ├── profile agregado, sin PII
+        └── semantic agregado, con calidad y cuarentena
+                 │
+                 ▼
+        PostgreSQL / grh_artifacts (objetivo privado y tenant-bound)
+                 │
+                 ├── /api/grh-executive + /api/grh-quality
+                 │       └── Panel / GRH / RRHH / Hacienda / Calidad
+                 ├── proyección portable server-side k=10
+                 │       └── Reportes / PDF / Asistente
+                 └── /api/grh-data → 410 tras auth + tenant, sin leer artefactos
 ```
 
----
+El repositorio contiene dos superficies backend:
 
-## 🧱 Arquitectura
+- `api/`: funciones Serverless utilizadas por `vercel.json`.
+- `backend/`: API Express independiente para entornos que la desplieguen. No
+  sirve el checkout ni uploads como contenido estático. Los módulos legacy sin
+  contrato multi-tenant (`contratos`, `empleados`, `reclamos`, `archivos`)
+  responden `410` después de autenticar.
 
-```
-municipio-junin/
-├── 📄 *.html                    # Módulos del frontend
-├── css/
-│   ├── dashboard.css            # Estilos principales + Mobile responsive
-│   ├── shared.css               # Botones, modales, formularios globales
-│   ├── login.css                # Pantalla de login
-│   └── [modulo].css             # Estilos específicos por módulo
-├── js/
-│   ├── nav.js                   # Sidebar + Auth guard (incluir en TODAS las páginas)
-│   ├── data.js                  # MUNICIPAL_DATA: datos demo centralizados
-│   ├── ia.js                    # Motor IA: procesa consultas en lenguaje natural
-│   ├── ia2.js                   # Chat IA: UI + OCR + Voz + Export
-│   ├── pwa.js                   # PWA: SW registration + mobile nav + install prompt
-│   ├── toast.js                 # Sistema de notificaciones toast
-│   └── [modulo].js              # Lógica específica por módulo
-├── backend/
-│   ├── server.js                # Express server (puerto 3001)
-│   ├── .env.example             # Variables de entorno requeridas
-│   ├── package.json             # Dependencias Node.js
-│   ├── db/
-│   │   ├── connection.js        # Conector PostgreSQL / fallback in-memory
-│   │   └── schema.sql           # Schema de la base de datos
-│   └── routes/
-│       ├── auth.js              # POST /api/auth/login
-│       ├── contratos.js         # CRUD contratos IT
-│       ├── empleados.js         # CRUD empleados
-│       ├── reclamos.js          # CRUD reclamos vecinales
-│       ├── archivos.js          # Upload + parsing de archivos
-│       ├── whatsapp.js          # Meta WhatsApp webhook + bot
-│       └── notifications.js     # Email automático (Nodemailer)
-├── manifest.json                # PWA manifest
-├── sw.js                        # Service Worker PWA
-└── vercel.json                  # Config de deploy Vercel
+Ambas revalidan en base de datos el usuario, su estado, rol, municipio y estado
+del tenant. El frontend no es una frontera de autorización.
+
+## Privacidad de los artefactos
+
+`api/_data/*.json` y `docs/data/*.json` se usan sólo para validación local y
+están ignorados por Git y Vercel. Este repositorio es público: esos archivos
+**no se deben commitear**.
+
+Producción debe aplicar la migración privada y materializar los contratos:
+
+```powershell
+$env:DATABASE_URL='<secreto>'
+$env:GRH_SOURCE_SHA256='<SHA-256 aprobado en config/grh-source-manifest.json>'
+
+# Aplicar con el mecanismo de migración aprobado para el entorno:
+# migrations/002_grh_artifacts.sql
+
+node scripts/publish_grh_artifacts.mjs --tenant-id '<tenants.id CUID real>'
 ```
 
-### Flujo de datos
+`GRH_TENANT_ID` y `LEGACY_ANALYTICS_TENANT_ID` requieren el `tenants.id` real
+incluido en el JWT. No aceptan el slug `junin`. `GRH_SOURCE_SHA256` fija el hash
+del backup institucional aprobado: toda lectura desde PostgreSQL exige el par
+activo `profile + semantic`, reconcilia sus metadatos y rechaza un SHA distinto.
+Si falta cualquiera de estos vínculos, las rutas fallan cerradas.
 
-```
-Usuario (browser/celular)
-       ↓
-  Páginas HTML (frontend)
-       ↓
-  js/data.js (MUNICIPAL_DATA) ←── Demo mode (sin backend)
-       ↓ (si backend disponible)
-  backend/server.js :3001
-       ↓
-  PostgreSQL (datos reales)
-```
+## Regeneración reproducible
 
----
+```powershell
+python -B scripts/profile_grh.py `
+  '<ruta-privada-al-backup-grh>.sql.gz' `
+  --out api/_data/grh-profile.json
 
-## 📦 Módulos
-
-### 1. Dashboard Ejecutivo `/index.html`
-- KPIs principales del municipio en tiempo real
-- Gráficos de gasto vs presupuesto por secretaría
-- Alertas críticas con semáforo visual
-- Mapa de calor de áreas por porcentaje de ejecución
-- **Datos**: `MUNICIPAL_DATA.presupuesto`, `.gastos`, `.alertas`
-
-### 2. Junín Control `/control.html`
-- Torre de control del Plan de Choque 30 días
-- Estado de cada iniciativa de ahorro
-- Tracking de ahorros proyectados vs realizados
-- **Objetivo Sprint 1**: detectar $15.8M de ahorro anual
-
-### 3. Asistente IA `/ia.html`
-- Chat con IA municipal (responde en lenguaje natural)
-- OCR de imágenes con Tesseract.js
-- Reconocimiento de voz (Web Speech API)
-- Upload y análisis de Excel, PDF, Word, CSV
-- Export de conversación a PDF/Excel
-- **Motor**: `js/ia.js` → `INTENTS` pattern → respuestas HTML estructuradas
-
-#### Intenciones reconocidas por el motor IA:
-| Palabras clave | Respuesta |
-|----------------|----------|
-| saldo, dinero libre, disponible | KPI de saldo disponible |
-| gasto, ejecutado, erogación | Tabla de gastos por secretaría |
-| empleados, plantel, personal | Distribución por área |
-| horas extra | Ranking por área con costo |
-| alertas, crítico, urgente | Lista de alertas activas |
-| ahorro, reducir, oportunidad | Tabla de oportunidades |
-| reclamos, vecinos | Estadísticas de reclamos |
-| flota, combustible | Estado de vehículos |
-| IT, tecnología, contratos | Contratos con riesgo |
-| presupuesto, secretaría | Ejecución por área |
-| informe, resumen, ejecutivo | Reporte completo |
-
-### 4. RRHH `/rrhh.html`
-- Plantel de 1.247 empleados
-- Horas extra por área (4.312 hs = $18.4M)
-- Tabla de licencias activas
-- Ausentismo y análisis de costos
-
-### 5. Licitaciones `/licitaciones.html`
-- Flujo completo: Necesidad → Pliego → Publicación → Evaluación → Adjudicación → Contrato
-- Evaluación comparativa de ofertas con puntaje ponderado por IA
-- Timeline de vencimientos con alertas automáticas
-- Registro de proveedores con rating y CUIT
-
-### 6. Atención Vecinal `/vecinos.html`
-- Registro y gestión de 318 reclamos
-- Filtros por tipo, área y estado
-- KPIs: pendientes (89), resueltos (229), tiempo promedio (3.2 días)
-- Satisfacción vecinal: 84%
-
-### 7. Mapa de Reclamos `/mapa.html`
-- Leaflet.js + OpenStreetMap (tema oscuro)
-- Marcadores por tipo con colores diferenciados
-- Filtros en tiempo real por tipo y estado
-- Popups con acciones (escalar / resolver)
-- Sidebar con estadísticas dinámicas
-
-### 8. Proveedores `/proveedores.html`
-- Auditoría de contratos IT activos
-- Alertas de contratos por vencer
-- Análisis de duplicados y sobrecostos
-- $15.8M de ahorro potencial identificado
-
-### 9. Exportar Reportes `/exportar.html`
-- PDF ejecutivo con jsPDF + AutoTable
-- Excel con múltiples hojas (SheetJS)
-- Plantillas profesionales por módulo
-
----
-
-## 🔌 Backend API
-
-### Iniciar el backend local
-```bash
-cd backend
-cp .env.example .env
-# Editar .env con tus credenciales
-npm install
-npm run dev
-# API disponible en http://localhost:3001
+python -B scripts/build_grh_semantic.py `
+  '<ruta-privada-al-backup-grh>.sql.gz' `
+  --out api/_data/grh-semantic.json
 ```
 
-### Endpoints disponibles
+No agregue `personas_junin` a esos comandos.
 
-#### Auth
-```
-POST /api/auth/login
-Body: { email, password }
-Response: { token, user }
-```
+## Desarrollo local
 
-#### Contratos IT
-```
-GET    /api/contratos         # Listar todos
-POST   /api/contratos         # Crear contrato
-PUT    /api/contratos/:id     # Actualizar
-DELETE /api/contratos/:id     # Eliminar
-```
+Requisitos: Node.js, Python y PostgreSQL sólo para los flujos que consultan DB.
 
-#### Empleados
-```
-GET  /api/empleados           # Listar (con filtros: ?area=&cargo=)
-POST /api/empleados           # Crear
-GET  /api/empleados/:id       # Detalle
+```powershell
+npm.cmd install
+
+# Servir archivos estáticos y funciones con el runtime elegido.
+# El backend Express alternativo se inicia por separado:
+Set-Location backend
+npm.cmd install
+npm.cmd run dev
 ```
 
-#### Reclamos
-```
-GET  /api/reclamos            # Listar (con filtros: ?tipo=&estado=)
-POST /api/reclamos            # Crear reclamo
-PUT  /api/reclamos/:id/estado # Cambiar estado
-```
+No hay credenciales predeterminadas. El aprovisionamiento por seed está
+retirado: `npm run db:seed` termina de forma fail-closed, no acepta variables
+`SEED_*`, no importa Prisma y no conecta a la base. Las cuentas futuras deben
+nacer del lifecycle gobernado de invitación, MFA, vigencia, revocación y
+auditoría descrito en `docs/ACCOUNT_LIFECYCLE_STATE_MACHINE.md`.
 
-#### Archivos
-```
-POST /api/archivos/upload     # Upload multipart (max 50MB)
-# Soporta: xlsx, xls, csv, pdf, doc, docx, txt, png, jpg
-# Response: { text, data, columns, rows, summary }
-```
+## Planes y estado verificable
 
-#### WhatsApp Bot
-```
-GET  /api/whatsapp/webhook    # Verificación Meta (hub.challenge)
-POST /api/whatsapp/webhook    # Recepción de mensajes
-POST /api/whatsapp/send-alert # Enviar alerta proactiva
-POST /api/whatsapp/send-weekly # Informe semanal masivo
-```
+El texto histórico “Plan Maestro v4.0” no es evidencia de implementación. Sus
+referencias a `rrhh-data/`, fichas personales, `organigrama.html`, motores de
+haberes y bibliotecas CSS no corresponden al checkout actual. El estado
+controlante es `docs/MASTER_PLAN_STATUS.md`; las capacidades futuras se evalúan
+contra `docs/ENTERPRISE_PRODUCT_ROADMAP.md` y sus gates de datos, seguridad y
+operación.
 
-#### Notificaciones Email
-```
-POST /api/notifications/check          # Verificar y disparar todas las alertas
-POST /api/notifications/send/:alertaId # Enviar alerta específica
-POST /api/notifications/weekly-report  # Informe semanal
-POST /api/notifications/custom         # Email personalizado
-GET  /api/notifications/alertas        # Listar alertas configuradas
-```
+## Verificación
 
-#### Health Check
-```
-GET /api/health
-# Response: { ok, version, db, mode, ts }
+```powershell
+# Semántica y artefactos GRH
+python -B -m unittest discover -s tests -v
+
+# Suite Node completa (contratos, seguridad, importación y navegador real)
+npm test
+
+# Backend Express de compatibilidad
+npm run test:backend
+
+# Verdad de un preview/deployment candidato (GET anónimo, sin secretos)
+npm run release:truth:check -- --base-url https://preview-approved.example
+
+# Higiene del diff
+git diff --check
 ```
 
----
-
-## 🗄️ Base de Datos
-
-### Modo Demo (sin configuración)
-El sistema arranca automáticamente en modo demo con datos en memoria. No requiere PostgreSQL. Ideal para desarrollo y presentaciones.
-
-### Modo Producción (PostgreSQL)
-
-```bash
-# En .env:
-DATABASE_URL=postgresql://usuario:password@host:5432/municipio_junin
-```
-
-### Conectar a DB remota de la Municipalidad
-
-```bash
-# Opción 1: PostgreSQL directo
-DATABASE_URL=postgresql://readonly_user:pass@192.168.1.100:5432/muni_db
-
-# Opción 2: SSL obligatorio
-DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
-
-# Opción 3: Tunnel SSH (más seguro para piloto)
-ssh -L 5433:localhost:5432 usuario@servidor-muni.junin.gob.ar
-DATABASE_URL=postgresql://user:pass@localhost:5433/db
-```
-
-### Schema principal
-Ver [`backend/db/schema.sql`](backend/db/schema.sql)
-
-### Importar datos desde Excel/CSV
-```
-1. Ir a /upload.html
-2. Arrastrar el archivo Excel/CSV
-3. El sistema procesa automáticamente y muestra preview
-4. Confirmar importación
-5. Los datos quedan disponibles en el dashboard
-```
-
----
-
-## 📱 WhatsApp Bot
-
-### Configuración paso a paso
-
-1. **Crear App en Meta Developers**
-   - Ir a https://developers.facebook.com
-   - Crear nueva App → tipo "Business"
-   - Agregar producto: WhatsApp
-
-2. **Obtener credenciales**
-   ```
-   WHATSAPP_PHONE_NUMBER_ID = (Panel Meta → WhatsApp → API Setup)
-   WHATSAPP_ACCESS_TOKEN    = (Token permanente de sistema)
-   WHATSAPP_VERIFY_TOKEN    = junin-muni-2026  (o el que prefieras)
-   ```
-
-3. **Registrar webhook en Meta**
-   ```
-   URL: https://municipio-junin.vercel.app/api/whatsapp/webhook
-   Verify Token: junin-muni-2026
-   Campos a suscribir: messages
-   ```
-
-4. **Agregar variables en Vercel**
-   - Ir a vercel.com → proyecto → Settings → Environment Variables
-   - Agregar las 3 variables
-   - Re-deploy
-
-### Comandos del Bot
-| Mensaje | Respuesta |
-|---------|----------|
-| `hola` | Menú de ayuda |
-| `saldo` | Dinero disponible |
-| `gasto` | Gastos del mes |
-| `empleados` | Datos de RRHH |
-| `reclamos` | Estado de reclamos |
-| `alertas` | Situaciones críticas |
-| `informe` | Resumen ejecutivo |
-
----
-
-## 📧 Email Automático
-
-### Configuración SMTP
-```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=sistema@municipio-junin.gob.ar
-SMTP_PASS=app-password-aqui
-EMAIL_INTENDENTE=intendente@junin.gob.ar
-EMAIL_HACIENDA=hacienda@junin.gob.ar
-EMAIL_IT=tecnologia@junin.gob.ar
-```
-
-### Para Gmail: crear App Password
-1. Cuenta Google → Seguridad → Verificación en 2 pasos (activar)
-2. Seguridad → Contraseñas de aplicaciones
-3. Generar para "Otra aplicación" → copiar la contraseña
-
-### Alertas automáticas configuradas
-- `contratos_vencidos` → cuando un contrato vence en ≤ 30 días
-- `presupuesto_excedido` → cuando un área supera su presupuesto
-- `informe_semanal` → todos los lunes 8am
-
-### Llamar manualmente (testing)
-```bash
-curl -X POST https://municipio-junin.vercel.app/api/notifications/check
-```
-
----
-
-## 📱 PWA / Mobile
-
-### Instalación como App
-- En **Android Chrome**: banner "Instalar" aparece automáticamente después de 3 segundos
-- En **iPhone Safari**: Compartir → Agregar a pantalla de inicio
-
-### Features mobile
-- Sidebar deslizable (swipe desde borde izquierdo)
-- Bottom navigation bar (5 módulos clave)
-- Pull-to-refresh
-- Funciona offline (datos cacheados)
-- Safe areas para iPhone notch
-
-### Service Worker
-El archivo `sw.js` implementa:
-- **Cache First** para assets y CDNs externas
-- **Network First** para endpoints `/api/`
-- **Stale-While-Revalidate** para páginas HTML
-- **Offline fallback** con página de error elegante
-
----
-
-## 🚀 Deploy
-
-### Frontend en Vercel (automático)
-```bash
-git add .
-git commit -m "feat: descripción"
-git push  # Vercel despliega automáticamente
-```
-
-### Backend en Vercel (serverless)
-El `vercel.json` configura las rutas para que el backend Express funcione como serverless functions.
-
-### Deploy manual
-```bash
-vercel deploy --prod --yes
-```
-
-### Entornos
-| Entorno | URL | Branch |
-|---------|-----|--------|
-| Producción | https://municipio-junin.vercel.app | main/master |
-| Preview | https://municipio-junin-*.vercel.app | feature/* |
-
----
-
-## ⚙️ Variables de Entorno
-
-Copiar `backend/.env.example` → `backend/.env`
-
-```env
-# ── SERVIDOR ────────────────────────────────────
-NODE_ENV=production
-PORT=3001
-FRONTEND_URL=https://municipio-junin.vercel.app
-
-# ── AUTENTICACIÓN ────────────────────────────────
-JWT_SECRET=cambiar-por-secreto-seguro-de-64-caracteres
-
-# ── BASE DE DATOS ────────────────────────────────
-DATABASE_URL=postgresql://user:pass@host:5432/municipio_junin
-# Dejar vacío para modo demo (sin DB)
-
-# ── WHATSAPP META API ────────────────────────────
-WHATSAPP_PHONE_NUMBER_ID=
-WHATSAPP_ACCESS_TOKEN=
-WHATSAPP_VERIFY_TOKEN=junin-muni-2026
-
-# ── EMAIL (SMTP) ────────────────────────────────
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-EMAIL_INTENDENTE=intendente@junin.gob.ar
-EMAIL_HACIENDA=hacienda@junin.gob.ar
-EMAIL_IT=tecnologia@junin.gob.ar
-
-# ── VERCEL (automático) ──────────────────────────
-VERCEL_URL=
-```
-
----
-
-## 🗺️ Roadmap
-
-### ✅ Sprint 1 (Semana 1) — COMPLETADO
-- [x] Dashboard ejecutivo con KPIs reales
-- [x] Login con JWT
-- [x] Módulo RRHH completo
-- [x] Atención Vecinal + Reclamos
-- [x] Asistente IA con 12 intenciones
-- [x] OCR de imágenes
-- [x] Reconocimiento de voz
-- [x] Mapa georreferenciado (Leaflet.js)
-- [x] Módulo Licitaciones completo
-- [x] WhatsApp Bot (estructura)
-- [x] Email automático (Nodemailer)
-- [x] PWA (install + offline + mobile nav)
-- [x] Responsive mobile completo
-
-### 🔨 Sprint 2 (Semana 2) — EN DESARROLLO
-- [ ] Conector PostgreSQL remoto
-- [ ] Importador masivo Excel/CSV con IA
-- [ ] WhatsApp Bot con datos reales
-- [ ] Multi-tenant: nuevo gobierno en 5 min
-- [ ] Módulo de Presupuesto detallado
-
-### 📋 Sprint 3 (Semana 3)
-- [ ] Mapa financiero (capas: obras, costos, infraestructura)
-- [ ] Predicciones de gasto con IA
-- [ ] Generador automático de pliegos
-- [ ] Auditoría automática de contratos
-
-### 🌍 Sprint 4 (Semana 4)
-- [ ] Landing page comercial
-- [ ] Onboarding automático (Excel → sistema listo)
-- [ ] Sistema de pricing y subscripción
-- [ ] Documentación técnica para IT municipales
-
----
-
-## 🏛️ Multi-Tenant
-
-Para agregar un nuevo municipio:
-
-1. Crear `tenants/[nombre-ciudad]/config.json`
-2. Configurar datos locales en `js/data.js` (o conectar su DB)
-3. Cambiar logo y colores en `css/dashboard.css` (variables CSS)
-4. Deploy en Vercel con su propio dominio
-
-```json
-// tenants/ejemplo-ciudad/config.json
-{
-  "id": "ejemplo-ciudad",
-  "name": "Municipalidad de Ejemplo",
-  "province": "Mendoza",
-  "country": "Argentina",
-  "population": 85000,
-  "employees": 650,
-  "budget_annual": 2800000000,
-  "theme": {
-    "primary": "#3b82f6",
-    "accent": "#6366f1",
-    "logo": "🏛️"
-  },
-  "modules": ["dashboard","rrhh","vecinos","control","ia"],
-  "db": {
-    "type": "postgresql",
-    "url": "${DATABASE_URL_EJEMPLO}"
-  }
-}
-```
-
----
-
-## 🤝 Contribución
-
-### Para desarrolladores / IA que continúen el proyecto:
-
-1. **Leer este README completo** antes de hacer cambios
-2. **Entender la arquitectura**: todo el frontend es HTML + Vanilla JS, sin frameworks
-3. **Agregar shared.css** a cualquier página nueva
-4. **Agregar pwa.js** a cualquier página nueva (antes de `</body>`)
-5. **Agregar el módulo a nav.js** en el array `NAV_ITEMS`
-6. **Usar `buildSidebar('id-del-modulo')`** al inicio del JS de cada página
-7. **Usar `MUNICIPAL_DATA`** de `data.js` para datos demo
-8. **Estilos**: NO inline styles. Usar clases de `shared.css` o `dashboard.css`
-9. **Botones**: usar clases `.btn-primary`, `.btn-save`, `.btn-cancel`, `.btn-danger`
-10. **Commit convention**: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`
-
-### Estructura de una página nueva
-```html
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nuevo Módulo — Municipio de Junín</title>
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/shared.css" />
-</head>
-<body>
-  <aside class="sidebar" id="sidebar"></aside>
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <!-- topbar content -->
-    </header>
-    <div class="content-wrapper">
-      <!-- page content -->
-    </div>
-  </main>
-  <script src="js/nav.js"></script>
-  <script src="js/toast.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/pwa.js"></script>
-  <script>
-    buildSidebar('id-del-modulo');
-    // tu código aquí
-  </script>
-</body>
-</html>
-```
-
----
-
-## 📞 Contacto y Soporte
-
-- **Municipalidad de Junín**: municipio-junin.vercel.app
-- **GitHub**: github.com/inguillen87/municipio-junin
-- **Stack**: HTML + JS + Node.js + PostgreSQL + Vercel
-
----
-
-*Desarrollado con ❤️ para la Municipalidad de Junín, Mendoza, Argentina.*  
-*GovTech Platform v2.0 — 2026*
+Los tests dependientes de artefactos privados hacen `skip` explícito cuando no
+están provisionados; un `skip` no equivale a certificación de datos.
+
+## Variables mínimas sensibles
+
+Consulte [`backend/.env.example`](backend/.env.example) para el inventario. Las
+variables críticas incluyen:
+
+- `DATABASE_URL` remota con `sslmode=verify-full`
+- `JWT_SECRET`
+- `GRH_TENANT_ID`
+- `GRH_SOURCE_SHA256` con el hash exacto aprobado; nunca un valor de ejemplo
+- `LEGACY_ANALYTICS_TENANT_ID`
+- `PUBLIC_APP_URL` y `PUBLIC_APP_ORIGINS` cuando se habilitan enlaces públicos o
+  tráfico de navegador en un deployment aprobado
+- lifecycle gobernado de invitación, MFA, vigencia, revocación y auditoría;
+  `db:seed` no es un mecanismo de aprovisionamiento autorizado
+- credenciales externas de WhatsApp, correo o IA únicamente en el entorno que
+  realmente opere cada integración
+
+Nunca publique secretos, dumps, artefactos GRH ni tokens en HTML, documentación,
+commits o logs.
+
+## Próximos sprints
+
+1. Provisionar `grh_artifacts` en un entorno privado y ejecutar smoke tests
+   autenticados por rol y tenant.
+2. Integrar nuevos dominios únicamente con contratos gobernados y sustituir los
+   estados no operativos a medida que existan fuentes reales.
+3. Diseñar ingesta incremental: staging inmutable, validación, cuarentena,
+   versionado de contratos, idempotencia y linaje.
+4. Incorporar CDC o extracción programada, backups cifrados, pruebas de restore,
+   RPO/RTO y monitoreo antes de declarar actualización diaria o tiempo real.
+5. Diseñar permisos finos por acción y dato, auditoría inmutable, doble control
+   para operaciones financieras y segregación de funciones.
+
+## Criterio de producto
+
+MuniControl debe ser útil para decidir sin esconder incertidumbre. Toda métrica
+ejecutiva debe responder cuatro preguntas: **de qué fuente proviene, a qué fecha,
+con qué calidad y qué no permite concluir**.

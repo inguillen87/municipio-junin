@@ -1,121 +1,167 @@
 import pkg from 'pg';
+import { lookup } from 'node:dns/promises';
+import { noStore, requireDatasetTenant, requireRole } from './lib/auth.js';
 const { Pool } = pkg;
 
-// Use the local DB for saving connections
-const localPool = new Pool({
-  connectionString: process.env.DATABASE_URL
-});
+const CONNECTOR_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN'];
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+function allowedConnectorHosts() {
+  return new Set(
+    String(process.env.DATA_CONNECTOR_ALLOWED_HOSTS || '')
+      .split(',')
+      .map(value => value.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+function connectorHostAllowed(host) {
+  return allowedConnectorHosts().has(String(host || '').trim().toLowerCase());
+}
+
+function isPrivateAddress(address) {
+  const value = String(address || '').toLowerCase();
+  if (value === '::1' || value === '::' || value.startsWith('fc') || value.startsWith('fd') || value.startsWith('fe8') || value.startsWith('fe9') || value.startsWith('fea') || value.startsWith('feb')) return true;
+  const ipv4 = value.startsWith('::ffff:') ? value.slice(7) : value;
+  const parts = ipv4.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(part => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  const [a, b] = parts;
+  return a === 0 || a === 10 || a === 127 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    a >= 224;
+}
+
+async function validateResolvedHost(host, lookupImpl = lookup) {
+  const addresses = await lookupImpl(host, { all: true, verbatim: true });
+  if (!addresses.length) throw new Error('El destino no resuelve');
+  if (process.env.DATA_CONNECTOR_ALLOW_PRIVATE !== 'true' && addresses.some(item => isPrivateAddress(item.address))) {
+    throw new Error('El destino resuelve a una red no permitida');
   }
+  return addresses[0];
+}
 
-  const { action, config } = req.body;
+export async function probePostgresConnection(config, PoolClass = Pool) {
+  const testPool = new PoolClass(config);
+  let client;
 
   try {
-    if (action === 'test') {
-      const { type, host, port, database, user, password, ssl } = config;
-      
-      const start = Date.now();
-      
-      if (type === 'postgresql') {
-        const testPool = new Pool({
-          host, port, database, user, password, ssl: ssl ? { rejectUnauthorized: false } : false
-        });
-        
-        try {
-          const client = await testPool.connect();
-          const result = await client.query('SELECT 1 as test');
-          const tablesResult = await client.query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema'");
-          client.release();
-          await testPool.end();
-          
-          return res.status(200).json({
-            success: true,
-            message: 'Conexión exitosa a PostgreSQL',
-            responseTime: Date.now() - start,
-            tables: tablesResult.rows.map(r => r.tablename)
-          });
-        } catch (error) {
-          return res.status(500).json({ success: false, message: 'Error de conexión: ' + error.message });
-        }
-      } else {
-        return res.status(200).json({
-          success: false,
-          message: `El tipo de base de datos '${type}' requiere dependencias adicionales (ej. mysql2, mssql). Por ahora, soportamos nativamente PostgreSQL.`
-        });
+    client = await testPool.connect();
+    await client.query('SELECT 1 as test');
+    const tablesResult = await client.query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema'");
+    return tablesResult.rows.map(row => row.tablename);
+  } finally {
+    let cleanupFailed = false;
+    if (client) {
+      try {
+        client.release();
+      } catch {
+        cleanupFailed = true;
+        console.error('[EXTERNAL_CONNECTOR] No se pudo liberar el cliente PostgreSQL');
       }
-    } 
-    
-    else if (action === 'save') {
-      const { name, type, host, port, database, user, ssl } = config;
-      // Do not store the password
-      
-      const query = `
-        INSERT INTO data_connections (name, type, host, port, database, username, ssl, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-        RETURNING id
-      `;
-      // Create table if it doesn't exist
-      await localPool.query(`
-        CREATE TABLE IF NOT EXISTS data_connections (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(255),
-          type VARCHAR(50),
-          host VARCHAR(255),
-          port INT,
-          database VARCHAR(255),
-          username VARCHAR(255),
-          ssl BOOLEAN,
-          created_at TIMESTAMP DEFAULT NOW()
-        )
-      `);
-      
-      const result = await localPool.query(query, [name, type, host, port, database, user, ssl]);
-      return res.status(200).json({ success: true, id: result.rows[0].id });
     }
-    
-    else if (action === 'list') {
-      // Create table if it doesn't exist
-      await localPool.query(`
-        CREATE TABLE IF NOT EXISTS data_connections (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(255),
-          type VARCHAR(50),
-          host VARCHAR(255),
-          port INT,
-          database VARCHAR(255),
-          username VARCHAR(255),
-          ssl BOOLEAN,
-          created_at TIMESTAMP DEFAULT NOW()
-        )
-      `);
-      const result = await localPool.query('SELECT * FROM data_connections ORDER BY created_at DESC');
-      return res.status(200).json({ success: true, connections: result.rows });
+    try {
+      await testPool.end();
+    } catch {
+      cleanupFailed = true;
+      console.error('[EXTERNAL_CONNECTOR] No se pudo cerrar el pool PostgreSQL');
     }
-    
-    else if (action === 'query') {
-      const { connectionId, query } = req.body;
-      
-      // We don't have passwords stored in `data_connections`, 
-      // in a real scenario we'd need a secure vault for credentials or ask for it
-      // Let's just return a mock response for now or error about credentials.
-      
-      if (!query.trim().toUpperCase().startsWith('SELECT')) {
-        return res.status(403).json({ success: false, error: 'Sólo se permiten consultas SELECT.' });
-      }
-      
-      return res.status(200).json({ 
-        success: false, 
-        error: 'Las credenciales no están almacenadas por seguridad. Use la funcionalidad de test para consultas temporales.' 
-      });
-    }
-
-    return res.status(400).json({ error: 'Acción no válida' });
-
-  } catch (error) {
-    console.error('External connector error:', error);
-    return res.status(500).json({ error: 'Error en el servidor', details: error.message });
+    if (cleanupFailed) throw new Error('CONNECTOR_CLEANUP_FAILED');
   }
 }
+
+export function createExternalConnectorHandler({
+  PoolClass = Pool,
+  lookupImpl = lookup,
+  requireRoleImpl = requireRole,
+  requireDatasetTenantImpl = requireDatasetTenant,
+} = {}) {
+  return async function handler(req, res) {
+    noStore(res);
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Método no permitido' });
+    }
+
+    const caller = await requireRoleImpl(req, res, CONNECTOR_ROLES);
+    if (!caller || !requireDatasetTenantImpl(res, caller, 'LEGACY_ANALYTICS_TENANT_ID')) return;
+
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return res.status(400).json({ error: 'Cuerpo JSON requerido' });
+    }
+    const { action, config } = body;
+
+    if (['save', 'list', 'query'].includes(action)) {
+      return res.status(410).json({
+        success: false,
+        code: 'CONNECTOR_ACTION_RETIRED',
+        error: 'La persistencia y consulta de conectores está retirada hasta contar con aislamiento tenant y un vault de credenciales.'
+      });
+    }
+    if (action !== 'test') {
+      return res.status(400).json({ error: 'Acción no válida' });
+    }
+    if (!config || typeof config !== 'object' || Array.isArray(config)) {
+      return res.status(400).json({ error: 'Configuración requerida' });
+    }
+
+    try {
+      const { type, host, port, database, user, password, ssl } = config;
+      if (type !== 'postgresql') {
+        return res.status(400).json({ success: false, message: 'Tipo de conector no permitido' });
+      }
+      if (!allowedConnectorHosts().size) {
+        return res.status(503).json({ success: false, message: 'Conectores externos no configurados' });
+      }
+      if (!connectorHostAllowed(host)) {
+        return res.status(403).json({ success: false, message: 'Destino no autorizado' });
+      }
+      const numericPort = Number(port);
+      if (!Number.isInteger(numericPort) || numericPort < 1 || numericPort > 65535) {
+        return res.status(400).json({ success: false, message: 'Puerto inválido' });
+      }
+      if (ssl !== true) {
+        return res.status(400).json({ success: false, message: 'TLS verificable es obligatorio' });
+      }
+      let resolvedDestination;
+      try {
+        resolvedDestination = await validateResolvedHost(host, lookupImpl);
+      } catch {
+        return res.status(403).json({ success: false, message: 'Destino de red no permitido' });
+      }
+
+      const start = Date.now();
+      try {
+        const tables = await probePostgresConnection({
+          host: resolvedDestination.address,
+          port: numericPort,
+          database,
+          user,
+          password,
+          ssl: { rejectUnauthorized: true, servername: host },
+          connectionTimeoutMillis: 5000,
+          query_timeout: 5000,
+          statement_timeout: 5000,
+        }, PoolClass);
+
+        return res.status(200).json({
+          success: true,
+          message: 'Conexión exitosa a PostgreSQL',
+          responseTime: Date.now() - start,
+          tables
+        });
+      } catch {
+        return res.status(502).json({
+          success: false,
+          message: 'No se pudo validar la conexión PostgreSQL'
+        });
+      }
+    } catch {
+      console.error('[EXTERNAL_CONNECTOR] Fallo interno durante la operación');
+      return res.status(500).json({ error: 'Error en el servidor' });
+    }
+  };
+}
+
+export default createExternalConnectorHandler();

@@ -1,4 +1,17 @@
-import { sendReclamoConfirmacionTemplate, sendTurnoConfirmacionTemplate } from './lib/whatsapp-templates.js';
+import {
+  WebhookAuthError,
+  beginMessage,
+  completeMessage,
+  isAllowedPhoneId,
+  parseVerifiedWebhook,
+  releaseMessage,
+  verifyWebhookChallenge,
+} from './lib/whatsapp-webhook-auth.js';
+import publicAppUrl from '../shared/public-app-url.cjs';
+
+const { PublicAppUrlError, buildPublicAppUrl } = publicAppUrl;
+
+export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -6,35 +19,52 @@ export default async function handler(req, res) {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
     // Compartimos el mismo verify token por simplicidad en este MVP
-    if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    if (verifyWebhookChallenge(mode, token)) {
       return res.status(200).send(challenge);
     }
     return res.status(403).json({ error: 'Forbidden' });
   }
   if (req.method !== 'POST') return res.status(405).end();
 
+  let body;
   try {
-    const body = req.body;
-    if (body && body.object === 'whatsapp_business_account') {
-      for (const entry of (body.entry || [])) {
-        for (const change of (entry.changes || [])) {
-          if (change.field !== 'messages') continue;
-          const v = change.value || {};
-          for (const msg of (v.messages || [])) {
-            await route(msg, v.metadata || {});
+    body = await parseVerifiedWebhook(req);
+  } catch (err) {
+    const status = err instanceof WebhookAuthError ? err.status : 400;
+    return res.status(status).json({ error: 'Webhook rechazado' });
+  }
+
+  let processed = 0;
+  try {
+    for (const entry of body.entry.slice(0, 20)) {
+      for (const change of (entry.changes || []).slice(0, 20)) {
+        if (change.field !== 'messages') continue;
+        const value = change.value || {};
+        if (!isAllowedPhoneId(value.metadata?.phone_number_id, ['WHATSAPP_PHONE_ID_VECINOS', 'WHATSAPP_PHONE_ID'])) continue;
+        for (const msg of (value.messages || []).slice(0, 50)) {
+          if (!beginMessage(msg.id)) continue;
+          try {
+            await route(msg, value.metadata || {});
+            completeMessage(msg.id);
+            processed += 1;
+          } catch (error) {
+            releaseMessage(msg.id);
+            throw error;
           }
         }
       }
     }
   } catch (err) {
     console.error('[WA-VECINOS]', err.message);
+    const status = err instanceof PublicAppUrlError ? 503 : 500;
+    return res.status(status).json({ ok: false });
   }
-  return res.status(200).json({ ok: true });
+  return res.status(200).json({ ok: true, processed });
 }
 
 async function route(msg, meta) {
   const from = msg.from;
-  const pid = meta.phone_number_id || process.env.WHATSAPP_PHONE_ID_VECINOS || process.env.WHATSAPP_PHONE_ID;
+  const pid = meta.phone_number_id;
   let txt = '';
   let payloadId = '';
 
@@ -86,190 +116,74 @@ async function route(msg, meta) {
 }
 
 // ================================================================
-// MENÚ PRINCIPAL VECINO
+// CANAL VECINAL INFORMATIVO — SIN ALTA DE TRÁMITES
 // ================================================================
+function citizenInformationUrl() {
+  return buildPublicAppUrl('/ciudadano.html');
+}
+
+function claimsUnavailableText() {
+  return `📢 *RECLAMOS 311 NO DISPONIBLE*\n\n` +
+    `Este canal no crea expedientes, no asigna números de seguimiento y no deriva solicitudes a cuadrillas.\n\n` +
+    `No envíes nombre, documento, domicilio, ubicación ni imágenes. Consultá únicamente la información pública disponible en:\n${citizenInformationUrl()}`;
+}
+
 async function cmdMenuVecino(to, pid) {
-  await send(to, pid, 'interactive', {
-    type: 'list',
-    header: { type: 'text', text: 'MUNICIPIO DE JUNÍN' },
-    body: { text: '¡Hola! 👋 Soy MuniBot, tu asistente virtual ciudadano.\n\n¿En qué te puedo ayudar hoy?' },
-    footer: { text: 'Atención 24/7' },
-    action: {
-      button: 'Ver Opciones',
-      sections: [
-        {
-          title: 'Servicios',
-          rows: [
-            { id: 'cmd_reclamos', title: 'Hacer un Reclamo 311', description: 'Baches, luminaria, limpieza' },
-            { id: 'cmd_turnos', title: 'Sacar un Turno', description: 'Licencia, salud, trámites' }
-          ]
-        },
-        {
-          title: 'Información',
-          rows: [
-            { id: 'cmd_noticias', title: 'Últimas Noticias', description: 'Novedades del municipio' },
-            { id: 'cmd_encuestas', title: 'Participación', description: 'Votá y opiná' }
-          ]
-        }
-      ]
-    }
-  });
+  await send(to, pid, 'text',
+    `🏠 *INFORMACIÓN VECINAL*\n\n` +
+    `Este canal es informativo y no crea reclamos, turnos, votos ni otros trámites. No envíes datos personales, ubicaciones o imágenes.\n\n` +
+    `Información pública disponible:\n${citizenInformationUrl()}`
+  );
 }
 
-// ================================================================
-// RECLAMOS 311 - PASO 1: CATEGORÍA
-// ================================================================
 async function cmdReclamosInicio(to, pid) {
-  await send(to, pid, 'interactive', {
-    type: 'list',
-    body: { text: '📢 *NUEVO RECLAMO*\n\nPor favor, seleccioná la categoría del problema:' },
-    action: {
-      button: 'Categorías',
-      sections: [
-        {
-          title: 'Vía Pública',
-          rows: [
-            { id: 'cmd_rec_cat_alumbrado', title: 'Alumbrado Público' },
-            { id: 'cmd_rec_cat_bache', title: 'Bacheo / Asfalto' },
-            { id: 'cmd_rec_cat_limpieza', title: 'Limpieza / Basura' },
-            { id: 'cmd_rec_cat_arbol', title: 'Arbolado' }
-          ]
-        }
-      ]
-    }
-  });
+  await send(to, pid, 'text', claimsUnavailableText());
 }
 
-// ================================================================
-// RECLAMOS 311 - PASO 2: UBICACIÓN
-// ================================================================
-async function cmdReclamoCategoria(to, pid, cat) {
-  await send(to, pid, 'text', '📍 Perfecto. Ahora, por favor *enviame la ubicación* del problema.\n\n_(Tocá el ícono de 📎 o ➕ y seleccioná "Ubicación")_');
+async function cmdReclamoCategoria(to, pid) {
+  await send(to, pid, 'text', claimsUnavailableText());
 }
 
-// ================================================================
-// RECLAMOS 311 - PASO 3: FOTO (Opcional)
-// ================================================================
-async function cmdReclamoUbicacion(to, pid, loc) {
-  await send(to, pid, 'interactive', {
-    type: 'button',
-    body: { text: '✅ Ubicación recibida.\n\n¿Querés enviar una *foto* del problema? (Es opcional, pero ayuda mucho).' },
-    action: {
-      buttons: [
-        { type: 'reply', reply: { id: 'cmd_rec_fin', title: 'Omitir foto' } }
-      ]
-    }
-  });
+async function cmdReclamoUbicacion(to, pid) {
+  await send(to, pid, 'text',
+    `📍 MuniControl no usa ni guarda la ubicación enviada y no la incorpora a ningún expediente. El proveedor de mensajería aplica sus propias condiciones de tratamiento. No envíes información adicional por este canal.\n\n` +
+    `Información pública disponible:\n${citizenInformationUrl()}`
+  );
 }
 
-// ================================================================
-// RECLAMOS 311 - FINALIZAR
-// ================================================================
 async function cmdReclamoFoto(to, pid) {
-  const num = Math.floor(1000 + Math.random() * 9000);
-  await send(to, pid, 'interactive', {
-    type: 'button',
-    body: { text: `✅ *RECLAMO GENERADO*\n\nTu número de seguimiento es el *#2026-${num}*.\n\nLas cuadrillas ya fueron notificadas. Podés ver el estado de todos tus reclamos desde el Portal Ciudadano:` },
-    action: {
-      buttons: [
-        { type: 'reply', reply: { id: 'cmd_inicio', title: 'Volver al Inicio' } }
-      ]
-    }
-  });
+  await send(to, pid, 'text',
+    `🖼️ MuniControl no procesa ni guarda la imagen enviada y no la incorpora a ningún expediente. El proveedor de mensajería aplica sus propias condiciones de tratamiento. No envíes información adicional por este canal.\n\n` +
+    `Información pública disponible:\n${citizenInformationUrl()}`
+  );
 }
 
-// ================================================================
-// TURNOS
-// ================================================================
 async function cmdTurnos(to, pid) {
-  await send(to, pid, 'text', '📅 *GESTIÓN DE TURNOS*\n\nPara sacar o cancelar turnos, por favor ingresá a nuestra nueva App Ciudadana:\n\n👉 https://municipio-junin.vercel.app/ciudadano.html');
+  await send(to, pid, 'text',
+    `📅 *TURNOS MUNICIPALES NO DISPONIBLES*\n\n` +
+    `MuniControl no tiene una agenda conectada. Este chat no reserva, cancela ni confirma turnos.\n\n` +
+    `Información pública disponible:\n${citizenInformationUrl()}`
+  );
 }
 
-// ================================================================
-// NOTICIAS
-// ================================================================
 async function cmdNoticias(to, pid) {
-  await send(to, pid, 'interactive', {
-    type: 'button',
-    body: { text: '📰 *ÚLTIMAS NOTICIAS*\n\n*1. Avanza la repavimentación*\nYa completamos el 82% de la obra en Av. San Martín.\n\n*2. Campaña de Vacunación*\nEste fin de semana en la plaza central.\n\n*3. Pago Anual de Tasas*\nAprovechá el 20% de descuento.' },
-    action: {
-      buttons: [
-        { type: 'reply', reply: { id: 'cmd_inicio', title: 'Menú Principal' } }
-      ]
-    }
-  });
+  await send(to, pid, 'text',
+    `📰 Este canal no está conectado a una fuente editorial verificada y no publica titulares.\n\n` +
+    `Información pública disponible:\n${citizenInformationUrl()}`
+  );
 }
 
-// ================================================================
-// ENCUESTAS
-// ================================================================
 async function cmdEncuestas(to, pid) {
-  await send(to, pid, 'interactive', {
-    type: 'button',
-    body: { text: '🗳️ *PARTICIPACIÓN CIUDADANA*\n\n¿Qué obra considerás más prioritaria para el próximo trimestre?' },
-    action: {
-      buttons: [
-        { type: 'reply', reply: { id: 'cmd_voto_1', title: 'Más iluminación' } },
-        { type: 'reply', reply: { id: 'cmd_voto_2', title: 'Arreglo de calles' } },
-        { type: 'reply', reply: { id: 'cmd_voto_3', title: 'Plazas y Parques' } }
-      ]
-    }
-  });
+  await send(to, pid, 'text',
+    `🗳️ MuniControl no tiene una fuente de encuestas conectada. Este canal no solicita ni registra votos.\n\n` +
+    `Información pública disponible:\n${citizenInformationUrl()}`
+  );
 }
 
-// ================================================================
-// LIBRE
-// ================================================================
 async function cmdLibreVecino(to, pid, txt) {
-  if (txt.startsWith('cmd_voto_')) {
-    await send(to, pid, 'interactive', {
-      type: 'button',
-      body: { text: '✅ ¡Gracias por participar! Tu voto ha sido registrado.' },
-      action: {
-        buttons: [
-          { type: 'reply', reply: { id: 'cmd_inicio', title: 'Volver al Menú' } }
-        ]
-      }
-    });
-    return;
-  }
-  if (txt === 'cmd_rec_fin') {
-    const num = Math.floor(1000 + Math.random() * 9000);
-    const ticketId = `2026-${num}`;
-    
-    // Disparar plantilla oficial de Meta WhatsApp Cloud API
-    try {
-      await sendReclamoConfirmacionTemplate({
-        to: to,
-        nombre: 'Vecino/a',
-        ticketId: ticketId,
-        categoria: 'Reclamo 311',
-        estado: 'Pendiente de asignación',
-        link: 'https://municipio-junin.vercel.app/ciudadano.html'
-      });
-    } catch(e) { console.error('Template err:', e); }
-
-    await send(to, pid, 'interactive', {
-      type: 'button',
-      body: { text: `✅ *RECLAMO GENERADO*\n\nTu número de seguimiento es el *#${ticketId}*.\n\nLas cuadrillas ya fueron notificadas.` },
-      action: {
-        buttons: [
-          { type: 'reply', reply: { id: 'cmd_inicio', title: 'Inicio' } }
-        ]
-      }
-    });
-    return;
-  }
-  
-  await send(to, pid, 'interactive', {
-    type: 'button',
-    body: { text: '🤔 No entiendo ese comando.\n\nSoy MuniBot, tu asistente virtual. Elegí una opción del menú para comenzar:' },
-    action: {
-      buttons: [
-        { type: 'reply', reply: { id: 'cmd_inicio', title: 'Ver Menú' } }
-      ]
-    }
-  });
+  if (txt.startsWith('cmd_voto_')) return await cmdEncuestas(to, pid);
+  if (txt === 'cmd_rec_fin') return await cmdReclamosInicio(to, pid);
+  await cmdMenuVecino(to, pid);
 }
 
 // ================================================================
@@ -295,15 +209,9 @@ async function send(to, pid, type, content) {
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: b
     });
-    return { ok: resp.ok, t: await resp.text() };
+    return { ok: resp.ok, status: resp.status };
   };
 
   var res = await doSend(to);
-  if (!res.ok && res.t.includes('131030')) {
-    var alt = null;
-    if (to.startsWith('549') && to.length >= 13) alt = '54' + to.substring(3);
-    else if (to.startsWith('54') && !to.startsWith('549')) alt = '549' + to.substring(2);
-    if (alt) res = await doSend(alt);
-  }
-  if (!res.ok) console.error('[WA-VECINOS]', res.t.substring(0, 200));
+  if (!res.ok) console.error('[WA-VECINOS] Provider status', res.status);
 }

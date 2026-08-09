@@ -1,0 +1,1687 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07101f">
+  <meta name="description" content="Centro ejecutivo de Recursos Humanos de MuniControl, construido sobre agregados canónicos de GRH Junín.">
+  <title>Centro Ejecutivo GRH | MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <script>
+    (function applySavedTheme() {
+      try {
+        var saved = localStorage.getItem('govtech_theme') || 'dark';
+        var resolved = saved === 'auto'
+          ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+          : saved;
+        document.documentElement.setAttribute('data-theme', resolved === 'light' ? 'light' : 'dark');
+      } catch (error) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }());
+  </script>
+  <style>
+    :root {
+      --grh-bg: #07101f;
+      --grh-surface: #0d192c;
+      --grh-surface-raised: #112139;
+      --grh-surface-soft: rgba(255, 255, 255, 0.035);
+      --grh-border: rgba(170, 193, 226, 0.13);
+      --grh-border-strong: rgba(113, 175, 255, 0.28);
+      --grh-text: #f5f8ff;
+      --grh-text-soft: #b5c2d7;
+      --grh-muted: #8090aa;
+      --grh-blue: #62a8ff;
+      --grh-blue-rgb: 98, 168, 255;
+      --grh-cyan: #4fd7c6;
+      --grh-cyan-rgb: 79, 215, 198;
+      --grh-violet: #a796ff;
+      --grh-violet-rgb: 167, 150, 255;
+      --grh-amber: #f4bd69;
+      --grh-red: #ff858e;
+      --grh-green: #64d7ad;
+      --grh-shadow: 0 20px 50px rgba(0, 0, 0, 0.24);
+      --grh-radius-lg: 20px;
+      --grh-radius-md: 14px;
+      --grh-ease: cubic-bezier(.2, .7, .2, 1);
+    }
+
+    [data-theme="light"] {
+      --grh-bg: #eef3fb;
+      --grh-surface: #ffffff;
+      --grh-surface-raised: #f8faff;
+      --grh-surface-soft: rgba(28, 63, 111, 0.045);
+      --grh-border: rgba(31, 65, 112, 0.12);
+      --grh-border-strong: rgba(41, 113, 206, 0.28);
+      --grh-text: #12223b;
+      --grh-text-soft: #425775;
+      --grh-muted: #6c7f99;
+      --grh-blue: #2777dc;
+      --grh-blue-rgb: 39, 119, 220;
+      --grh-cyan: #0a8f83;
+      --grh-cyan-rgb: 10, 143, 131;
+      --grh-violet: #6654d9;
+      --grh-violet-rgb: 102, 84, 217;
+      --grh-amber: #a96305;
+      --grh-red: #c33f50;
+      --grh-green: #137c5c;
+      --grh-shadow: 0 18px 46px rgba(28, 55, 92, 0.1);
+    }
+
+    html { color-scheme: dark; scroll-behavior: smooth; }
+    html[data-theme="light"] { color-scheme: light; }
+    body {
+      min-width: 320px;
+      background: var(--grh-bg);
+      color: var(--grh-text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .grh-skip-link {
+      position: fixed;
+      top: 10px;
+      left: 12px;
+      z-index: 2000;
+      transform: translateY(-160%);
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--grh-text);
+      color: var(--grh-bg);
+      font-size: 13px;
+      font-weight: 800;
+      transition: transform .18s ease;
+    }
+    .grh-skip-link:focus { transform: translateY(0); }
+
+    .grh-topbar {
+      min-height: 64px;
+      padding: 0 24px;
+      background: color-mix(in srgb, var(--grh-bg) 92%, transparent);
+      border-bottom: 1px solid var(--grh-border);
+      backdrop-filter: blur(18px);
+    }
+    .grh-topbar-left,
+    .grh-topbar-right,
+    .grh-page-title,
+    .grh-source-state,
+    .grh-controls,
+    .grh-control,
+    .grh-segmented,
+    .grh-panel-heading,
+    .grh-panel-title-row,
+    .grh-legend,
+    .grh-quality-row,
+    .grh-footer-line {
+      display: flex;
+      align-items: center;
+    }
+    .grh-topbar-left { gap: 12px; min-width: 0; }
+    .grh-topbar-right { gap: 8px; }
+    .grh-page-title { align-items: flex-start; flex-direction: column; gap: 1px; min-width: 0; }
+    .grh-page-title h1 {
+      margin: 0;
+      color: var(--grh-text);
+      font-size: 16px;
+      font-weight: 780;
+      letter-spacing: -.015em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .grh-breadcrumb { color: var(--grh-muted); font-size: 11px; }
+    .grh-menu-btn,
+    .grh-icon-btn,
+    .grh-retry-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      min-height: 40px;
+      border: 1px solid var(--grh-border);
+      border-radius: 11px;
+      background: var(--grh-surface-soft);
+      color: var(--grh-text-soft);
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease;
+    }
+    .grh-menu-btn:hover,
+    .grh-icon-btn:hover,
+    .grh-retry-btn:hover {
+      border-color: var(--grh-border-strong);
+      background: rgba(var(--grh-blue-rgb), .1);
+      color: var(--grh-text);
+      transform: translateY(-1px);
+    }
+    .grh-icon-btn svg,
+    .grh-menu-btn svg { pointer-events: none; }
+    .grh-source-state {
+      gap: 8px;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid rgba(var(--grh-cyan-rgb), .2);
+      border-radius: 999px;
+      background: rgba(var(--grh-cyan-rgb), .07);
+      color: var(--grh-cyan);
+      font-size: 11px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+    .grh-source-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 5px rgba(var(--grh-cyan-rgb), .1);
+    }
+
+    .grh-shell {
+      width: min(100%, 1640px);
+      margin: 0 auto;
+      padding: 28px clamp(16px, 2.3vw, 34px) 64px;
+    }
+    .grh-hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      padding: clamp(24px, 3vw, 38px);
+      border: 1px solid rgba(var(--grh-blue-rgb), .2);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 84% 5%, rgba(var(--grh-violet-rgb), .18), transparent 34%),
+        linear-gradient(135deg, rgba(var(--grh-blue-rgb), .15), rgba(var(--grh-cyan-rgb), .04) 54%, transparent),
+        var(--grh-surface);
+      box-shadow: var(--grh-shadow);
+      animation: grh-rise .55s var(--grh-ease) both;
+    }
+    .grh-hero::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      width: 360px;
+      height: 360px;
+      right: -170px;
+      bottom: -250px;
+      border: 1px solid rgba(var(--grh-blue-rgb), .18);
+      border-radius: 50%;
+      box-shadow: 0 0 0 42px rgba(var(--grh-blue-rgb), .035), 0 0 0 92px rgba(var(--grh-blue-rgb), .018);
+      animation: grh-orbit 14s ease-in-out infinite alternate;
+    }
+    .grh-eyebrow {
+      margin-bottom: 9px;
+      color: var(--grh-blue);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .grh-hero h2 {
+      max-width: 900px;
+      margin: 0;
+      color: var(--grh-text);
+      font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif;
+      font-size: clamp(30px, 4.3vw, 56px);
+      font-weight: 820;
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+    .grh-hero-copy {
+      max-width: 820px;
+      margin: 14px 0 0;
+      color: var(--grh-text-soft);
+      font-size: clamp(13px, 1.2vw, 15px);
+      line-height: 1.65;
+    }
+    .grh-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .grh-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--grh-border);
+      border-radius: 999px;
+      background: var(--grh-surface-soft);
+      color: var(--grh-text-soft);
+      font-size: 11px;
+      font-weight: 680;
+    }
+    .grh-chip strong { margin-right: 5px; color: var(--grh-text); font-weight: 820; }
+    .grh-controls {
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--grh-border);
+    }
+    .grh-control { flex-wrap: wrap; gap: 9px; }
+    .grh-control label,
+    .grh-control-label {
+      color: var(--grh-muted);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .03em;
+    }
+    .grh-select {
+      min-height: 38px;
+      padding: 0 34px 0 12px;
+      border: 1px solid var(--grh-border);
+      border-radius: 10px;
+      background: var(--grh-surface-raised);
+      color: var(--grh-text);
+      font: 650 12px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .grh-segmented {
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid var(--grh-border);
+      border-radius: 11px;
+      background: var(--grh-surface-raised);
+    }
+    .grh-segmented button {
+      min-height: 31px;
+      padding: 0 11px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--grh-muted);
+      font: 720 11px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+      transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+    }
+    .grh-segmented button[aria-pressed="true"] {
+      background: rgba(var(--grh-blue-rgb), .14);
+      color: var(--grh-blue);
+      box-shadow: inset 0 0 0 1px rgba(var(--grh-blue-rgb), .16);
+    }
+    .grh-view-status { color: var(--grh-muted); font-size: 11px; }
+
+    .grh-error {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid rgba(255, 133, 142, .28);
+      border-radius: var(--grh-radius-md);
+      background: rgba(255, 133, 142, .075);
+      color: var(--grh-text-soft);
+    }
+    .grh-error[hidden] { display: none; }
+    .grh-data-views[hidden] { display: none !important; }
+    .grh-error-icon {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(255, 133, 142, .12);
+      color: var(--grh-red);
+      font-weight: 900;
+    }
+    .grh-error strong { display: block; margin-bottom: 3px; color: var(--grh-text); font-size: 13px; }
+    .grh-error p { margin: 0; color: var(--grh-text-soft); font-size: 12px; line-height: 1.5; }
+    .grh-retry-btn { min-width: auto; padding: 0 14px; font-size: 12px; font-weight: 760; }
+
+    .grh-kpis {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .grh-stat,
+    .grh-panel {
+      border: 1px solid var(--grh-border);
+      background: var(--grh-surface);
+      box-shadow: var(--grh-shadow);
+    }
+    .grh-stat {
+      position: relative;
+      overflow: hidden;
+      min-height: 154px;
+      padding: 18px;
+      border-radius: 17px;
+      animation: grh-rise .5s var(--grh-ease) both;
+      transition: transform .22s var(--grh-ease), border-color .22s ease, box-shadow .22s ease;
+    }
+    .grh-stat:nth-child(2) { animation-delay: 45ms; }
+    .grh-stat:nth-child(3) { animation-delay: 90ms; }
+    .grh-stat:nth-child(4) { animation-delay: 135ms; }
+    .grh-stat:nth-child(5) { animation-delay: 180ms; }
+    .grh-stat:nth-child(6) { animation-delay: 225ms; }
+    .grh-stat::after {
+      content: "";
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      top: -55px;
+      right: -45px;
+      border-radius: 50%;
+      background: rgba(var(--stat-rgb, var(--grh-blue-rgb)), .12);
+      pointer-events: none;
+    }
+    .grh-stat:hover {
+      transform: translateY(-3px);
+      border-color: rgba(var(--stat-rgb, var(--grh-blue-rgb)), .3);
+      box-shadow: 0 24px 52px rgba(0, 0, 0, .28);
+    }
+    .grh-stat[data-tone="cyan"] { --stat-rgb: var(--grh-cyan-rgb); }
+    .grh-stat[data-tone="violet"] { --stat-rgb: var(--grh-violet-rgb); }
+    .grh-stat[data-tone="amber"] { --stat-rgb: 244, 189, 105; }
+    .grh-stat[data-tone="green"] { --stat-rgb: 100, 215, 173; }
+    .grh-stat-label {
+      max-width: 85%;
+      color: var(--grh-muted);
+      font-size: 10px;
+      font-weight: 830;
+      letter-spacing: .095em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+    .grh-stat-value {
+      min-height: 39px;
+      margin-top: 13px;
+      color: var(--grh-text);
+      font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif;
+      font-size: clamp(25px, 2.3vw, 34px);
+      font-weight: 840;
+      line-height: 1.05;
+      letter-spacing: -.035em;
+    }
+    .grh-stat-note { margin-top: 8px; color: var(--grh-muted); font-size: 11px; line-height: 1.45; }
+    .grh-skeleton {
+      color: transparent !important;
+      border-radius: 7px;
+      background: linear-gradient(90deg, rgba(255,255,255,.035) 20%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.035) 80%);
+      background-size: 220% 100%;
+      animation: grh-shimmer 1.25s linear infinite;
+    }
+
+    .grh-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(300px, .75fr);
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .grh-layout-balanced { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grh-panel {
+      min-width: 0;
+      padding: clamp(17px, 2vw, 22px);
+      border-radius: var(--grh-radius-lg);
+      contain: layout paint;
+    }
+    .grh-deferred {
+      content-visibility: visible;
+    }
+    .grh-panel-heading {
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .grh-panel-title-row { gap: 8px; }
+    .grh-panel h3 {
+      margin: 0;
+      color: var(--grh-text);
+      font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif;
+      font-size: 17px;
+      font-weight: 790;
+      letter-spacing: -.015em;
+    }
+    .grh-panel-subtitle {
+      max-width: 760px;
+      margin: 5px 0 0;
+      color: var(--grh-muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+    .grh-panel-badge {
+      flex: 0 0 auto;
+      padding: 5px 8px;
+      border: 1px solid var(--grh-border);
+      border-radius: 999px;
+      background: var(--grh-surface-soft);
+      color: var(--grh-text-soft);
+      font-size: 10px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+    .grh-chart {
+      position: relative;
+      min-height: 310px;
+      border-radius: 13px;
+      background: linear-gradient(180deg, rgba(var(--grh-blue-rgb), .025), transparent 60%);
+      overflow: hidden;
+    }
+    .grh-chart svg { display: block; width: 100%; height: auto; min-height: 310px; }
+    .grh-chart text { fill: var(--grh-muted); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 10px; }
+    .grh-chart .grh-grid-line { stroke: var(--grh-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .grh-chart-summary {
+      margin: 10px 0 0;
+      color: var(--grh-text-soft);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .grh-legend { flex-wrap: wrap; gap: 12px; margin-top: 11px; color: var(--grh-muted); font-size: 10px; }
+    .grh-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .grh-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--legend-color); }
+
+    .grh-insights { display: grid; gap: 9px; }
+    .grh-insight {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 11px;
+      padding: 13px;
+      border: 1px solid var(--grh-border);
+      border-radius: 13px;
+      background: var(--grh-surface-soft);
+    }
+    .grh-insight-index {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(var(--grh-blue-rgb), .11);
+      color: var(--grh-blue);
+      font-size: 10px;
+      font-weight: 850;
+    }
+    .grh-insight strong { display: block; color: var(--grh-text); font-size: 12px; line-height: 1.4; }
+    .grh-insight p { margin: 3px 0 0; color: var(--grh-muted); font-size: 11px; line-height: 1.48; }
+
+    .grh-sector-list { display: grid; gap: 11px; }
+    .grh-sector-item { display: grid; gap: 6px; }
+    .grh-sector-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--grh-text-soft); font-size: 11px; }
+    .grh-sector-meta strong { color: var(--grh-text); font-weight: 760; }
+    .grh-track { height: 7px; overflow: hidden; border-radius: 999px; background: var(--grh-surface-soft); }
+    .grh-track span {
+      display: block;
+      width: var(--bar-width, 0%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--grh-blue), var(--grh-violet));
+      transform-origin: left;
+      animation: grh-grow .65s var(--grh-ease) both;
+    }
+    .grh-sector-item[data-privacy-status="protected_aggregate"] .grh-sector-meta { color: var(--grh-amber); }
+    .grh-sector-item[data-privacy-status="protected_aggregate"] .grh-track span { background: var(--grh-amber); }
+
+    .grh-heatmap {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(54px, 1fr));
+      gap: 7px;
+    }
+    .grh-heat-cell {
+      position: relative;
+      min-height: 62px;
+      padding: 8px;
+      border: 1px solid rgba(255,255,255,.045);
+      border-radius: 11px;
+      background: rgba(var(--grh-violet-rgb), var(--heat-alpha, .1));
+      color: var(--grh-text);
+      text-align: left;
+      cursor: default;
+      transition: transform .18s var(--grh-ease), filter .18s ease, border-color .18s ease;
+    }
+    [data-theme="light"] .grh-heat-cell { border-color: rgba(26, 59, 101, .08); }
+    .grh-heat-cell:hover,
+    .grh-heat-cell:focus-visible { z-index: 1; transform: translateY(-2px); filter: saturate(1.1) brightness(1.08); border-color: var(--grh-border-strong); }
+    .grh-heat-year { display: block; color: var(--grh-text); font-size: 11px; font-weight: 780; }
+    .grh-heat-value { display: block; margin-top: 10px; color: var(--grh-text-soft); font-size: 10px; }
+
+    .grh-quality { display: grid; gap: 8px; }
+    .grh-quality-row {
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 43px;
+      padding: 9px 11px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      background: var(--grh-surface-soft);
+      color: var(--grh-text-soft);
+      font-size: 11px;
+    }
+    .grh-quality-row strong { color: var(--grh-text); font-size: 11px; text-align: right; }
+    .grh-quality-row[data-status="ok"] strong { color: var(--grh-green); }
+    .grh-quality-row[data-status="warn"] strong { color: var(--grh-amber); }
+    .grh-quality-note { margin: 12px 0 0; color: var(--grh-muted); font-size: 10px; line-height: 1.55; }
+
+    .grh-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--grh-border);
+      border-radius: 13px;
+    }
+    .grh-table { width: 100%; min-width: 690px; border-collapse: collapse; font-size: 11px; }
+    .grh-table th {
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--grh-border);
+      background: var(--grh-surface-soft);
+      color: var(--grh-muted);
+      font-size: 9px;
+      font-weight: 830;
+      letter-spacing: .085em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    .grh-table td {
+      padding: 12px 13px;
+      border-bottom: 1px solid var(--grh-border);
+      color: var(--grh-text-soft);
+      vertical-align: middle;
+    }
+    .grh-table tbody tr:last-child td { border-bottom: 0; }
+    .grh-table tbody tr:hover td { background: rgba(var(--grh-blue-rgb), .035); }
+    .grh-table td:nth-child(2),
+    .grh-table th:nth-child(2),
+    .grh-table td:nth-child(3),
+    .grh-table th:nth-child(3),
+    .grh-table td:nth-child(4),
+    .grh-table th:nth-child(4) { text-align: right; }
+    .grh-mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-variant-numeric: tabular-nums; }
+    .grh-status-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(var(--grh-cyan-rgb), .09);
+      color: var(--grh-cyan);
+      font-size: 9px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+    .grh-status-tag[data-status="warn"] { background: rgba(244, 189, 105, .1); color: var(--grh-amber); }
+
+    .grh-methodology {
+      margin-top: 14px;
+      border: 1px solid var(--grh-border);
+      border-radius: var(--grh-radius-md);
+      background: var(--grh-surface-soft);
+    }
+    .grh-methodology summary {
+      padding: 13px 14px;
+      color: var(--grh-text-soft);
+      font-size: 11px;
+      font-weight: 760;
+      cursor: pointer;
+    }
+    .grh-methodology-content {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      padding: 0 14px 14px;
+      color: var(--grh-muted);
+      font-size: 10px;
+      line-height: 1.6;
+    }
+    .grh-methodology-content strong { display: block; margin-bottom: 3px; color: var(--grh-text-soft); font-size: 10px; }
+    .grh-footer-line {
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 16px;
+      color: var(--grh-muted);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+    .grh-footer-line code { color: var(--grh-text-soft); font-size: 10px; word-break: break-all; }
+
+    .grh-noscript {
+      margin: 20px;
+      padding: 18px;
+      border: 1px solid rgba(244, 189, 105, .28);
+      border-radius: 14px;
+      background: rgba(244, 189, 105, .08);
+      color: var(--grh-text);
+      font-size: 13px;
+    }
+    .grh-visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    @keyframes grh-rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes grh-orbit {
+      from { transform: translate3d(0, 0, 0) scale(1); }
+      to { transform: translate3d(-14px, -10px, 0) scale(1.03); }
+    }
+    @keyframes grh-shimmer {
+      to { background-position: -220% 0; }
+    }
+    @keyframes grh-grow {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+
+    @media (max-width: 1260px) {
+      .grh-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grh-stat:nth-child(4), .grh-stat:nth-child(5), .grh-stat:nth-child(6) { min-height: 136px; }
+      .grh-heatmap { grid-template-columns: repeat(6, minmax(54px, 1fr)); }
+    }
+    @media (max-width: 1040px) {
+      .grh-layout, .grh-layout-balanced { grid-template-columns: 1fr; }
+      .grh-heatmap { grid-template-columns: repeat(8, minmax(54px, 1fr)); }
+    }
+    @media (max-width: 900px) {
+      .main-content {
+        width: 100% !important;
+        margin-left: 0 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+    }
+    @media (min-width: 901px) {
+      body > .main-content {
+        width: calc(100% - var(--sidebar-w, 260px)) !important;
+        margin-left: var(--sidebar-w, 260px) !important;
+      }
+    }
+    @media (max-width: 760px) {
+      .grh-topbar { padding: 0 12px; }
+      .grh-source-state { display: none; }
+      .grh-shell { padding: 16px 12px 84px; }
+      .grh-hero { padding: 22px 18px; border-radius: 19px; }
+      .grh-controls { align-items: stretch; flex-direction: column; }
+      .grh-control { align-items: flex-start; flex-direction: column; }
+      .grh-select, .grh-segmented { width: 100%; }
+      .grh-segmented button { flex: 1; }
+      .grh-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .grh-stat { min-height: 145px; padding: 15px; }
+      .grh-panel { padding: 16px; border-radius: 17px; }
+      .grh-panel-heading { flex-direction: column; }
+      .grh-panel-badge { align-self: flex-start; }
+      .grh-chart, .grh-chart svg { min-height: 260px; }
+      .grh-heatmap { grid-template-columns: repeat(4, minmax(54px, 1fr)); }
+      .grh-methodology-content { grid-template-columns: 1fr; }
+      .grh-error { grid-template-columns: auto 1fr; }
+      .grh-error .grh-retry-btn { grid-column: 1 / -1; width: 100%; }
+    }
+    @media (max-width: 420px) {
+      .grh-kpis { grid-template-columns: 1fr; }
+      .grh-stat { min-height: 128px; }
+      .grh-stat-value { font-size: 28px; }
+      .grh-heatmap { grid-template-columns: repeat(3, minmax(54px, 1fr)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+    @media print {
+      .sidebar, .grh-topbar, .grh-controls, .grh-error, .grh-methodology summary { display: none !important; }
+      .main-content { width: 100% !important; margin: 0 !important; }
+      .grh-shell { max-width: none; padding: 0; }
+      .grh-hero, .grh-stat, .grh-panel { box-shadow: none; break-inside: avoid; }
+      .grh-deferred { content-visibility: visible; }
+    }
+  </style>
+</head>
+<body>
+  <a class="grh-skip-link" href="#grhDashboard">Saltar al tablero</a>
+  <aside class="sidebar" id="sidebar" aria-label="Navegación principal"></aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar grh-topbar">
+      <div class="grh-topbar-left">
+        <button class="menu-btn grh-menu-btn" id="menuBtn" type="button" aria-label="Abrir o cerrar navegación">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="grh-page-title">
+          <h1>Centro Ejecutivo GRH</h1>
+          <span class="grh-breadcrumb">Personas · nómina · operación</span>
+        </div>
+      </div>
+      <div class="grh-topbar-right">
+        <div class="grh-source-state" id="topbarSourceState" aria-live="polite">
+          <span class="grh-source-dot" aria-hidden="true"></span>
+          <span id="topbarSourceText">Validando proyecciones GRH</span>
+        </div>
+        <button class="grh-icon-btn" id="grhThemeToggle" type="button" aria-label="Cambiar tema" aria-pressed="false">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
+        </button>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuario actual">MC</div>
+      </div>
+    </header>
+
+    <div class="grh-shell" id="grhDashboard" aria-busy="true">
+      <section class="grh-hero" aria-labelledby="grhTitle">
+        <div class="grh-eyebrow">Gobierno de Junín · fuente canónica GRH</div>
+        <h2 id="grhTitle">Personas y operación, con evidencia para decidir.</h2>
+        <p class="grh-hero-copy">Lectura ejecutiva de legajos, estructura, liquidaciones, movimientos y ausencias. La vista usa proyecciones gobernadas del corte GRH; <code>personas_junin</code> permanece excluida y las celdas pequeñas se protegen antes de llegar al navegador.</p>
+        <div class="grh-hero-meta" aria-label="Contexto de datos">
+          <span class="grh-chip"><strong id="sourceCutChip">—</strong> corte declarado</span>
+          <span class="grh-chip"><strong id="profileTablesChip">—</strong> tablas inventariadas</span>
+          <span class="grh-chip"><strong id="quarantineChip">—</strong> filas en cuarentena</span>
+          <span class="grh-chip"><strong>k≥5 / k≥10</strong> privacidad por dominio</span>
+          <span class="grh-chip"><strong>PII</strong> excluida</span>
+        </div>
+        <div class="grh-controls" aria-label="Controles del tablero">
+          <div class="grh-control">
+            <label for="periodRange">Horizonte del cálculo</label>
+            <select class="grh-select" id="periodRange">
+              <option value="12">Últimos 12 meses</option>
+              <option value="24">Últimos 24 meses</option>
+              <option value="36">Últimos 36 meses</option>
+              <option value="all">Histórico válido</option>
+            </select>
+          </div>
+          <div class="grh-control">
+            <span class="grh-control-label" id="salaryViewLabel">Lectura del cálculo</span>
+            <div class="grh-segmented" role="group" aria-labelledby="salaryViewLabel">
+              <button type="button" data-salary-view="nominal" aria-pressed="true">Valor nominal fuente</button>
+              <button type="button" data-salary-view="change" aria-pressed="false">Variación mensual</button>
+            </div>
+          </div>
+          <span class="grh-view-status" id="viewStatus" role="status" aria-live="polite">Preparando vista…</span>
+        </div>
+      </section>
+
+      <div class="grh-error" id="loadError" role="alert" hidden>
+        <span class="grh-error-icon" aria-hidden="true">!</span>
+        <div>
+          <strong>No se pudo abrir la experiencia GRH</strong>
+          <p id="loadErrorMessage">Verificá la disponibilidad de ambas proyecciones gobernadas.</p>
+        </div>
+        <button class="grh-retry-btn" id="retryLoad" type="button">Reintentar</button>
+      </div>
+
+      <div class="grh-data-views" id="grhDataViews" hidden>
+      <section class="grh-kpis" aria-label="Indicadores ejecutivos">
+        <article class="grh-stat">
+          <div class="grh-stat-label">Legajos registrados</div>
+          <div class="grh-stat-value grh-skeleton" id="kpiLegajos">Cargando</div>
+          <p class="grh-stat-note">Padrón GRH; no implica dotación activa.</p>
+        </article>
+        <article class="grh-stat" data-tone="cyan">
+          <div class="grh-stat-label">Detalle sectorial publicado</div>
+          <div class="grh-stat-value grh-skeleton" id="kpiCoverage">Cargando</div>
+          <p class="grh-stat-note" id="kpiCoverageNote">Legajos con sector informado.</p>
+        </article>
+        <article class="grh-stat" data-tone="violet">
+          <div class="grh-stat-label">Neto de cálculo · último período</div>
+          <div class="grh-stat-value grh-skeleton" id="kpiPayroll">Cargando</div>
+          <p class="grh-stat-note" id="kpiPayrollNote">Moneda no declarada por la fuente.</p>
+        </article>
+        <article class="grh-stat" data-tone="amber">
+          <div class="grh-stat-label">Ausencias · último año completo</div>
+          <div class="grh-stat-value grh-skeleton" id="kpiAbsence">Cargando</div>
+          <p class="grh-stat-note" id="kpiAbsenceNote">Eventos; no es tasa por persona.</p>
+        </article>
+        <article class="grh-stat" data-tone="green">
+          <div class="grh-stat-label">Movimientos históricos</div>
+          <div class="grh-stat-value grh-skeleton" id="kpiMovements">Cargando</div>
+          <p class="grh-stat-note">Registros válidos en <code>legamov</code>.</p>
+        </article>
+        <article class="grh-stat" data-tone="cyan">
+          <div class="grh-stat-label">Calidad gobernada</div>
+          <div class="grh-stat-value grh-skeleton" id="kpiQuality">Cargando</div>
+          <p class="grh-stat-note" id="kpiQualityNote">Alcance: extracto agregado.</p>
+        </article>
+      </section>
+
+      <section class="grh-layout" aria-label="Liquidaciones e insights">
+        <article class="grh-panel">
+          <div class="grh-panel-heading">
+            <div>
+              <div class="grh-panel-title-row"><h3>Control agregado de liquidación</h3></div>
+              <p class="grh-panel-subtitle" id="payrollSubtitle">Neto de control por período desde conceptos de <code>calculo</code>. No equivale a pago bancario.</p>
+            </div>
+            <span class="grh-panel-badge" id="payrollWindowBadge">—</span>
+          </div>
+          <figure aria-labelledby="payrollFigureCaption">
+            <div class="grh-chart" id="payrollChart" role="img" aria-label="Serie temporal del control de liquidación calculado"></div>
+            <figcaption class="grh-chart-summary" id="payrollFigureCaption">Cargando serie…</figcaption>
+          </figure>
+          <div class="grh-legend" aria-label="Leyenda del control de liquidación">
+            <span><i style="--legend-color:var(--grh-blue)"></i>observado</span>
+            <span><i style="--legend-color:var(--grh-amber)"></i>señal heurística</span>
+            <span>Solo se grafican períodos admitidos por la política temporal.</span>
+          </div>
+        </article>
+
+        <article class="grh-panel">
+          <div class="grh-panel-heading">
+            <div>
+              <h3>Lectura ejecutiva</h3>
+              <p class="grh-panel-subtitle">Señales calculadas sobre agregados para orientar la revisión, no para reemplazarla.</p>
+            </div>
+          </div>
+          <div class="grh-insights" id="executiveInsights" aria-live="polite">
+            <div class="grh-insight"><span class="grh-insight-index">01</span><div><strong>Cargando contexto</strong><p>Validando cobertura y consistencia.</p></div></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="grh-layout grh-layout-balanced grh-deferred" aria-label="Ausentismo y estructura">
+        <article class="grh-panel">
+          <div class="grh-panel-heading">
+            <div>
+              <h3>Eventos de ausencia</h3>
+              <p class="grh-panel-subtitle">Volumen anual de registros con al menos 10 participantes. Las celdas suprimidas no se muestran ni se convierten en cero.</p>
+            </div>
+            <span class="grh-panel-badge">12 años</span>
+          </div>
+          <figure aria-labelledby="absenceFigureCaption">
+            <div class="grh-chart" id="absenceChart" role="img" aria-label="Eventos históricos de ausencia por año"></div>
+            <figcaption class="grh-chart-summary" id="absenceFigureCaption">Cargando serie…</figcaption>
+          </figure>
+          <div class="grh-legend">
+            <span><i style="--legend-color:var(--grh-violet)"></i>año completo</span>
+            <span><i style="--legend-color:rgba(var(--grh-violet-rgb),.35)"></i>año en curso</span>
+          </div>
+        </article>
+
+        <article class="grh-panel">
+          <div class="grh-panel-heading">
+            <div>
+              <h3>Distribución por sector</h3>
+              <p class="grh-panel-subtitle">Participantes de liquidación por denominación. Las categorías pequeñas se consolidan en un bucket protegido bajo k≥5.</p>
+            </div>
+            <span class="grh-panel-badge" id="sectorCountBadge">—</span>
+          </div>
+          <div class="grh-sector-list" id="sectorList" aria-label="Legajos por sector"></div>
+          <p class="grh-chart-summary" id="sectorSummary">Cargando distribución…</p>
+        </article>
+      </section>
+
+      <section class="grh-layout grh-layout-balanced grh-deferred" aria-label="Movimientos y calidad">
+        <article class="grh-panel">
+          <div class="grh-panel-heading">
+            <div>
+              <h3>Ritmo de movimientos de legajo</h3>
+              <p class="grh-panel-subtitle">Mapa temporal de intensidad relativa sobre años liberados por k≥10. No representa geografía ni estructura organizacional.</p>
+            </div>
+            <span class="grh-panel-badge">últimos 16 años</span>
+          </div>
+          <div class="grh-heatmap" id="movementHeatmap" aria-label="Movimientos de legajo por año"></div>
+          <div class="grh-legend">
+            <span><i style="--legend-color:rgba(var(--grh-violet-rgb),.18)"></i>menor volumen</span>
+            <span><i style="--legend-color:rgba(var(--grh-violet-rgb),.82)"></i>mayor volumen</span>
+          </div>
+        </article>
+
+        <article class="grh-panel">
+          <div class="grh-panel-heading">
+            <div>
+              <h3>Contrato de confianza</h3>
+              <p class="grh-panel-subtitle">Condiciones que acompañan la lectura para evitar conclusiones que el extracto no puede sostener.</p>
+            </div>
+          </div>
+          <div class="grh-quality">
+            <div class="grh-quality-row" data-status="ok"><span>Score gobernado</span><strong id="qualityScore">—</strong></div>
+            <div class="grh-quality-row" data-status="ok"><span>Integridad referencial</span><strong id="qualityReferential">—</strong></div>
+            <div class="grh-quality-row" data-status="warn"><span>Conciliación de liquidación</span><strong id="qualityReconciliation">—</strong></div>
+            <div class="grh-quality-row" data-status="ok"><span>Base personas_junin</span><strong>Excluida</strong></div>
+            <div class="grh-quality-row" data-status="ok"><span>PII en este extracto</span><strong id="qualityPii">No exportada</strong></div>
+            <div class="grh-quality-row" data-status="warn"><span>Cuarentena temporal</span><strong id="qualityPeriods">Revisando…</strong></div>
+            <div class="grh-quality-row" data-status="warn"><span>Moneda</span><strong id="qualityCurrency">No declarada</strong></div>
+            <div class="grh-quality-row" data-status="warn"><span>Actualización</span><strong>Snapshot · no live</strong></div>
+          </div>
+          <p class="grh-quality-note" id="qualityNote">La lectura en tiempo real requiere una ingesta incremental validada. Este tablero no simula frescura inexistente.</p>
+        </article>
+      </section>
+
+      <section class="grh-panel grh-deferred" style="margin-top:14px" aria-labelledby="periodTableTitle">
+        <div class="grh-panel-heading">
+          <div>
+            <h3 id="periodTableTitle">Períodos recientes observados</h3>
+            <p class="grh-panel-subtitle">Detalle agregado para reconciliar la curva. Las señales se basan en una comparación robusta con los seis períodos anteriores.</p>
+          </div>
+          <span class="grh-panel-badge">sin datos personales</span>
+        </div>
+        <div class="grh-table-wrap">
+          <table class="grh-table">
+            <caption class="grh-visually-hidden">Últimos períodos de neto de cálculo, variación mensual y lectura operativa</caption>
+            <thead>
+              <tr><th scope="col">Período</th><th scope="col">Neto (moneda fuente)</th><th scope="col">Variación mensual</th><th scope="col">Lectura</th></tr>
+            </thead>
+            <tbody id="periodRows">
+              <tr><td colspan="4">Cargando períodos…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <details class="grh-methodology">
+          <summary>Definiciones, alcance y límites de interpretación</summary>
+          <div class="grh-methodology-content">
+            <div><strong>Legajos registrados</strong>Conteo agregado de filas en <code>legajo</code> desde la proyección de calidad. No se presenta como personal activo.</div>
+            <div><strong>Control de liquidación</strong>Concepto 998 agregado por período válido en <code>calculo</code>. Es cálculo de nómina, no acreditación bancaria; la moneda no está declarada.</div>
+            <div><strong>Ausencias</strong>Conteo de eventos por año. Sin días expuestos ni denominador de dotación, no corresponde convertirlo en tasa de ausentismo.</div>
+            <div><strong>Privacidad sectorial</strong>Participantes cuyas categorías se publican individualmente sobre el total de liquidación. El remanente aparece sólo como <em>Otros (celdas protegidas)</em>.</div>
+            <div><strong>Conciliación global</strong>El control de cálculo usa <code>998 = 993 + 994 + 995 - 996</code>. El acuerdo compara el snapshot completo de <code>calculo</code> con campos equivalentes de <code>totpago</code>; esta vista no lo atribuye a meses individuales.</div>
+            <div><strong>Protección de celdas</strong>Categorías usan k≥5 y series sensibles k≥10. Los valores suprimidos se omiten por completo y nunca se reemplazan por cero.</div>
+          </div>
+        </details>
+
+        <div class="grh-footer-line">
+          <span>Fuente: <code id="sourceFile">—</code> · SHA-256 <code id="sourceHash">—</code></span>
+          <span>Proyección de calidad generada desde perfil: <time id="generatedAt">—</time></span>
+        </div>
+      </section>
+      </div>
+    </div>
+  </main>
+
+  <noscript><div class="grh-noscript">Este tablero necesita JavaScript para leer las proyecciones gobernadas y dibujar las visualizaciones. No se cargó ningún dato personal.</div></noscript>
+  <script src="js/nav.js"></script>
+  <script src="js/auth-fetch.js"></script>
+  <script src="js/grh-secure-data.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var SVG_NS = 'http://www.w3.org/2000/svg';
+      var numberFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+      var compactFormatter = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 });
+      var amountCompactFormatter = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 });
+      var amountFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+      var percentFormatter = new Intl.NumberFormat('es-AR', {
+        style: 'percent',
+        maximumFractionDigits: 1,
+        signDisplay: 'exceptZero'
+      });
+      var dateTimeFormatter = new Intl.DateTimeFormat('es-AR', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'America/Argentina/Buenos_Aires'
+      });
+      var dateFormatter = new Intl.DateTimeFormat('es-AR', {
+        dateStyle: 'medium',
+        timeZone: 'America/Argentina/Buenos_Aires'
+      });
+      var monthFormatter = new Intl.DateTimeFormat('es-AR', {
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC'
+      });
+
+      var state = {
+        executive: null,
+        quality: null,
+        sourceCut: null,
+        payroll: [],
+        absence: [],
+        movements: [],
+        salaryView: 'nominal',
+        range: '12',
+        loadSequence: 0
+      };
+
+      var elements = {};
+
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+      function cacheElements() {
+        [
+          'grhDashboard', 'grhDataViews', 'topbarSourceState', 'topbarSourceText', 'sourceCutChip', 'profileTablesChip', 'quarantineChip',
+          'periodRange', 'viewStatus', 'loadError', 'loadErrorMessage', 'retryLoad', 'grhThemeToggle',
+          'kpiLegajos', 'kpiCoverage', 'kpiCoverageNote', 'kpiPayroll', 'kpiPayrollNote',
+          'kpiAbsence', 'kpiAbsenceNote', 'kpiMovements', 'kpiQuality', 'kpiQualityNote', 'payrollSubtitle', 'payrollWindowBadge',
+          'payrollChart', 'payrollFigureCaption', 'executiveInsights', 'absenceChart',
+          'absenceFigureCaption', 'sectorCountBadge', 'sectorList', 'sectorSummary', 'movementHeatmap',
+          'qualityScore', 'qualityReferential', 'qualityReconciliation', 'qualityPii', 'qualityPeriods', 'qualityCurrency',
+          'qualityNote', 'periodRows', 'sourceFile', 'sourceHash', 'generatedAt'
+        ].forEach(function (id) { elements[id] = byId(id); });
+      }
+
+      function finiteNumber(value) {
+        var numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric : null;
+      }
+
+      function comparePeriod(left, right) {
+        return left.period.localeCompare(right.period);
+      }
+
+      function normalizeExperience(experience) {
+        if (!experience || !experience.executive || !experience.quality) {
+          throw new Error('Las proyecciones GRH no están disponibles.');
+        }
+        var executive = experience.executive;
+        var quality = experience.quality;
+        var sourceCut = new Date(String(quality.source.snapshotAsOf) + 'T12:00:00-03:00');
+        if (Number.isNaN(sourceCut.getTime())) throw new Error('La fecha de corte GRH es inválida.');
+
+        var payroll = executive.compensation.series.filter(function (point) {
+          return point.privacyStatus === 'released';
+        }).map(function (point) {
+          return {
+            period: point.period,
+            value: point.amounts.netPayrollCents / 100,
+            participants: point.participantCount
+          };
+        }).sort(comparePeriod);
+        if (!payroll.length) throw new Error('No hay períodos de compensación liberados por privacidad.');
+
+        function releasedAnnual(domain) {
+          return domain.series.filter(function (point) {
+            return point.privacyStatus === 'released';
+          }).map(function (point) {
+            return { year: point.period, value: point.value, participants: point.participantCount };
+          }).sort(function (a, b) { return Number(a.year) - Number(b.year); });
+        }
+
+        return {
+          executive: executive,
+          quality: quality,
+          sourceCut: sourceCut,
+          payroll: payroll,
+          absence: releasedAnnual(executive.absence),
+          movements: releasedAnnual(executive.movements)
+        };
+      }
+
+      function median(values) {
+        if (!values.length) return 0;
+        var sorted = values.slice().sort(function (a, b) { return a - b; });
+        var middle = Math.floor(sorted.length / 2);
+        return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+      }
+
+      function markPayrollSignals(series) {
+        return series.map(function (item, index) {
+          if (index < 6) return Object.assign({}, item, { signal: false, ratioToMedian: null });
+          var baseline = median(series.slice(index - 6, index).map(function (point) { return point.value; }).filter(function (value) { return value > 0; }));
+          var ratio = baseline > 0 ? item.value / baseline : null;
+          return Object.assign({}, item, {
+            signal: ratio !== null && (ratio < .25 || ratio > 3.5),
+            ratioToMedian: ratio
+          });
+        });
+      }
+
+      function getVisiblePayroll() {
+        var marked = markPayrollSignals(state.payroll);
+        if (state.range === 'all') return marked;
+        return marked.slice(-Number(state.range));
+      }
+
+      function monthLabel(period) {
+        var parts = period.split('-').map(Number);
+        var label = monthFormatter.format(new Date(Date.UTC(parts[0], parts[1] - 1, 1)));
+        return label.replace('.', '');
+      }
+
+      function setText(element, value) {
+        if (element) element.textContent = value;
+      }
+
+      function clearSkeletons() {
+        document.querySelectorAll('.grh-skeleton').forEach(function (element) {
+          element.classList.remove('grh-skeleton');
+        });
+      }
+
+      function createSvgElement(name, attributes, textValue) {
+        var element = document.createElementNS(SVG_NS, name);
+        Object.entries(attributes || {}).forEach(function (entry) {
+          element.setAttribute(entry[0], String(entry[1]));
+        });
+        if (textValue !== undefined) element.textContent = String(textValue);
+        return element;
+      }
+
+      function appendSvgTitle(parent, value) {
+        parent.appendChild(createSvgElement('title', {}, value));
+      }
+
+      function niceBounds(values, includeZero) {
+        var min = Math.min.apply(null, values);
+        var max = Math.max.apply(null, values);
+        if (includeZero) min = Math.min(0, min);
+        if (min === max) {
+          min -= Math.abs(min || 1) * .1;
+          max += Math.abs(max || 1) * .1;
+        }
+        var padding = (max - min) * .1;
+        return { min: includeZero ? Math.min(0, min - padding) : min - padding, max: max + padding };
+      }
+
+      function formatAxis(value, view) {
+        if (view === 'change') return compactFormatter.format(value) + '%';
+        return compactFormatter.format(value);
+      }
+
+      function renderLineChart(container, points, options) {
+        container.replaceChildren();
+        if (!points.length) {
+          var empty = document.createElement('p');
+          empty.className = 'grh-chart-summary';
+          empty.textContent = 'No hay períodos válidos para este horizonte.';
+          container.appendChild(empty);
+          return;
+        }
+
+        var width = 920;
+        var height = 310;
+        var padding = { top: 22, right: 24, bottom: 42, left: 68 };
+        var plotWidth = width - padding.left - padding.right;
+        var plotHeight = height - padding.top - padding.bottom;
+        var values = points.map(function (point) { return point.chartValue; });
+        var bounds = niceBounds(values, options.includeZero);
+        var span = bounds.max - bounds.min || 1;
+        var xAt = function (index) { return padding.left + (points.length === 1 ? plotWidth / 2 : index * plotWidth / (points.length - 1)); };
+        var yAt = function (value) { return padding.top + (bounds.max - value) * plotHeight / span; };
+        var svg = createSvgElement('svg', { viewBox: '0 0 ' + width + ' ' + height, preserveAspectRatio: 'xMidYMid meet', 'aria-hidden': 'true', focusable: 'false' });
+        var defs = createSvgElement('defs');
+        var gradient = createSvgElement('linearGradient', { id: 'grhPayrollFill', x1: '0', x2: '0', y1: '0', y2: '1' });
+        gradient.appendChild(createSvgElement('stop', { offset: '0%', 'stop-color': 'var(--grh-blue)', 'stop-opacity': '.28' }));
+        gradient.appendChild(createSvgElement('stop', { offset: '100%', 'stop-color': 'var(--grh-blue)', 'stop-opacity': '0' }));
+        defs.appendChild(gradient);
+        svg.appendChild(defs);
+
+        for (var tick = 0; tick <= 4; tick += 1) {
+          var value = bounds.min + span * tick / 4;
+          var y = yAt(value);
+          svg.appendChild(createSvgElement('line', { x1: padding.left, x2: width - padding.right, y1: y, y2: y, class: 'grh-grid-line' }));
+          svg.appendChild(createSvgElement('text', { x: padding.left - 10, y: y + 3, 'text-anchor': 'end' }, formatAxis(value, options.view)));
+        }
+
+        if (bounds.min < 0 && bounds.max > 0) {
+          var zeroY = yAt(0);
+          svg.appendChild(createSvgElement('line', { x1: padding.left, x2: width - padding.right, y1: zeroY, y2: zeroY, stroke: 'var(--grh-text-soft)', 'stroke-opacity': '.35', 'stroke-width': '1.2' }));
+        }
+
+        var labelEvery = Math.max(1, Math.ceil(points.length / 7));
+        points.forEach(function (point, index) {
+          if (index % labelEvery === 0 || index === points.length - 1) {
+            svg.appendChild(createSvgElement('text', { x: xAt(index), y: height - 14, 'text-anchor': index === 0 ? 'start' : (index === points.length - 1 ? 'end' : 'middle') }, monthLabel(point.period)));
+          }
+        });
+
+        var linePath = points.map(function (point, index) {
+          return (index === 0 ? 'M' : 'L') + xAt(index).toFixed(2) + ',' + yAt(point.chartValue).toFixed(2);
+        }).join(' ');
+        var baselineY = yAt(Math.max(bounds.min, Math.min(0, bounds.max)));
+        var areaPath = linePath + ' L' + xAt(points.length - 1).toFixed(2) + ',' + baselineY.toFixed(2) + ' L' + xAt(0).toFixed(2) + ',' + baselineY.toFixed(2) + ' Z';
+        svg.appendChild(createSvgElement('path', { d: areaPath, fill: 'url(#grhPayrollFill)' }));
+        svg.appendChild(createSvgElement('path', { d: linePath, fill: 'none', stroke: 'var(--grh-blue)', 'stroke-width': '2.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke' }));
+
+        points.forEach(function (point, index) {
+          var circle = createSvgElement('circle', {
+            cx: xAt(index),
+            cy: yAt(point.chartValue),
+            r: point.signal ? 4.5 : (points.length > 48 ? 1.8 : 3),
+            fill: point.signal ? 'var(--grh-amber)' : 'var(--grh-blue)',
+            stroke: 'var(--grh-surface)',
+            'stroke-width': point.signal ? 2.5 : 1.5,
+            'vector-effect': 'non-scaling-stroke'
+          });
+          var tooltip = monthLabel(point.period) + ': ' + (options.view === 'change' ? formatSignedPercent(point.chartValue / 100) : formatAmount(point.value));
+          if (point.signal) tooltip += '. Señal heurística para revisar.';
+          appendSvgTitle(circle, tooltip);
+          svg.appendChild(circle);
+        });
+        container.appendChild(svg);
+      }
+
+      function renderBarChart(container, points, sourceYear) {
+        container.replaceChildren();
+        if (!points.length) return;
+        var width = 740;
+        var height = 310;
+        var padding = { top: 18, right: 18, bottom: 40, left: 54 };
+        var plotWidth = width - padding.left - padding.right;
+        var plotHeight = height - padding.top - padding.bottom;
+        var max = Math.max.apply(null, points.map(function (point) { return point.value; })) || 1;
+        var svg = createSvgElement('svg', { viewBox: '0 0 ' + width + ' ' + height, preserveAspectRatio: 'xMidYMid meet', 'aria-hidden': 'true', focusable: 'false' });
+        for (var tick = 0; tick <= 4; tick += 1) {
+          var value = max * tick / 4;
+          var y = padding.top + plotHeight - plotHeight * tick / 4;
+          svg.appendChild(createSvgElement('line', { x1: padding.left, x2: width - padding.right, y1: y, y2: y, class: 'grh-grid-line' }));
+          svg.appendChild(createSvgElement('text', { x: padding.left - 9, y: y + 3, 'text-anchor': 'end' }, compactFormatter.format(value)));
+        }
+        var step = plotWidth / points.length;
+        var barWidth = Math.min(36, step * .62);
+        points.forEach(function (point, index) {
+          var barHeight = point.value / max * plotHeight;
+          var x = padding.left + index * step + (step - barWidth) / 2;
+          var y = padding.top + plotHeight - barHeight;
+          var partial = Number(point.year) === sourceYear;
+          var rect = createSvgElement('rect', {
+            x: x,
+            y: y,
+            width: barWidth,
+            height: Math.max(1, barHeight),
+            rx: Math.min(6, barWidth / 3),
+            fill: 'var(--grh-violet)',
+            'fill-opacity': partial ? '.34' : '.78'
+          });
+          appendSvgTitle(rect, point.year + ': ' + numberFormatter.format(point.value) + ' eventos' + (partial ? ' (año parcial)' : ''));
+          svg.appendChild(rect);
+          svg.appendChild(createSvgElement('text', { x: x + barWidth / 2, y: height - 14, 'text-anchor': 'middle' }, point.year.slice(2)));
+        });
+        container.appendChild(svg);
+      }
+
+      function formatSignedPercent(value) {
+        return Number.isFinite(value) ? percentFormatter.format(value) : '—';
+      }
+
+      function formatAmount(value) {
+        return amountFormatter.format(value) + ' u. fuente';
+      }
+
+      function formatAmountCompact(value) {
+        return amountCompactFormatter.format(value) + ' u. fuente';
+      }
+
+      function formatMonthOverMonth(series, index) {
+        if (index <= 0 || series[index - 1].value === 0) return null;
+        var previous = series[index - 1].period.split('-').map(Number);
+        var current = series[index].period.split('-').map(Number);
+        if ((current[0] * 12 + current[1]) - (previous[0] * 12 + previous[1]) !== 1) return null;
+        return series[index].value / series[index - 1].value - 1;
+      }
+
+      function renderKpis(executive, quality) {
+        var sectorRows = executive.workforce.bySector.rows;
+        var releasedParticipants = sectorRows.filter(function (row) {
+          return row.privacyStatus === 'released';
+        }).reduce(function (sum, row) { return sum + row.participants; }, 0);
+        var protectedBucket = sectorRows.find(function (row) { return row.privacyStatus === 'protected_aggregate'; });
+        var publicationCoverage = executive.workforce.payrollParticipants > 0
+          ? releasedParticipants / executive.workforce.payrollParticipants
+          : 0;
+        var totalLegajos = quality.referential.legajo.rows;
+        var latestPayroll = state.payroll[state.payroll.length - 1];
+        var completeAbsence = state.absence.filter(function (item) { return Number(item.year) < state.sourceCut.getFullYear(); }).slice(-1)[0];
+
+        setText(elements.kpiLegajos, numberFormatter.format(totalLegajos));
+        setText(elements.kpiCoverage, new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(publicationCoverage));
+        setText(elements.kpiCoverageNote, protectedBucket
+          ? protectedBucket.participantDisplay + ' participantes consolidados en el bucket k≥5.'
+          : 'Todas las categorías superan el umbral k≥5.');
+        setText(elements.kpiPayroll, latestPayroll ? formatAmountCompact(latestPayroll.value) : 'No publicable');
+        setText(elements.kpiPayrollNote, latestPayroll ? monthLabel(latestPayroll.period) + ' · período liberado k≥10; moneda no declarada.' : 'No hay período liberado por privacidad.');
+        setText(elements.kpiAbsence, completeAbsence ? numberFormatter.format(completeAbsence.value) : 'No publicable');
+        setText(elements.kpiAbsenceNote, completeAbsence ? completeAbsence.year + ' · eventos liberados k≥10, no tasa.' : 'No hay año completo liberado por privacidad.');
+        setText(elements.kpiMovements, compactFormatter.format(quality.temporal.domains.legamov.validRows));
+        setText(elements.kpiQuality, new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(quality.quality.score) + '/100');
+        setText(elements.kpiQualityNote, 'Extracto agregado · conciliación cross-source ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(quality.reconciliation.scorePct) + '%.');
+        clearSkeletons();
+      }
+
+      function renderPayroll() {
+        var visible = getVisiblePayroll();
+        var chartPoints;
+        if (state.salaryView === 'change') {
+          chartPoints = visible.map(function (point, index) {
+            var delta = formatMonthOverMonth(visible, index);
+            return Object.assign({}, point, { chartValue: delta === null ? 0 : delta * 100, missingDelta: delta === null });
+          }).slice(1);
+          setText(elements.payrollSubtitle, 'Variación frente al mes publicado inmediato. Si existe un período protegido intermedio, no se calcula ni se imputa una variación.');
+        } else {
+          chartPoints = visible.map(function (point) { return Object.assign({}, point, { chartValue: point.value }); });
+          setText(elements.payrollSubtitle, 'Neto agregado del control de cálculo por período liberado k≥10. No es pago bancario; moneda no declarada y sin ajuste por inflación.');
+        }
+        renderLineChart(elements.payrollChart, chartPoints, { view: state.salaryView, includeZero: state.salaryView === 'change' });
+
+        var signalCount = visible.filter(function (point) { return point.signal; }).length;
+        var first = visible[0];
+        var last = visible[visible.length - 1];
+        var latestDelta = visible.length > 1 ? formatMonthOverMonth(visible, visible.length - 1) : null;
+        setText(elements.payrollWindowBadge, first && last ? monthLabel(first.period) + ' — ' + monthLabel(last.period) : 'sin ventana');
+        setText(elements.payrollFigureCaption, first && last
+          ? numberFormatter.format(visible.length) + ' períodos válidos. Último control: ' + formatAmount(last.value) + (latestDelta === null ? '' : ' (' + formatSignedPercent(latestDelta) + ' mensual)') + '. ' + signalCount + ' señales heurísticas en la ventana. La conciliación disponible es global para el snapshot y se informa fuera de esta serie.'
+          : 'No hay períodos utilizables para esta vista.');
+        setText(elements.viewStatus, 'Vista actualizada · ' + numberFormatter.format(visible.length) + ' períodos');
+        renderPeriodTable(visible);
+      }
+
+      function renderPeriodTable(visible) {
+        elements.periodRows.replaceChildren();
+        if (!visible.length) {
+          var emptyRow = document.createElement('tr');
+          var emptyCell = document.createElement('td');
+          emptyCell.colSpan = 4;
+          emptyCell.textContent = 'No hay períodos válidos para mostrar.';
+          emptyRow.appendChild(emptyCell);
+          elements.periodRows.appendChild(emptyRow);
+          return;
+        }
+
+        visible.slice(-10).reverse().forEach(function (point) {
+          var globalIndex = state.payroll.findIndex(function (item) { return item.period === point.period; });
+          var delta = formatMonthOverMonth(state.payroll, globalIndex);
+          var row = document.createElement('tr');
+          var periodCell = document.createElement('td');
+          var amountCell = document.createElement('td');
+          var deltaCell = document.createElement('td');
+          var statusCell = document.createElement('td');
+          var status = document.createElement('span');
+          periodCell.className = 'grh-mono';
+          amountCell.className = 'grh-mono';
+          deltaCell.className = 'grh-mono';
+          periodCell.textContent = monthLabel(point.period);
+          amountCell.textContent = formatAmount(point.value);
+          deltaCell.textContent = delta === null ? '—' : formatSignedPercent(delta);
+          status.className = 'grh-status-tag';
+          status.dataset.status = point.signal ? 'warn' : 'ok';
+          status.textContent = point.signal ? 'Variación atípica' : 'Período válido';
+          statusCell.appendChild(status);
+          row.append(periodCell, amountCell, deltaCell, statusCell);
+          elements.periodRows.appendChild(row);
+        });
+      }
+
+      function renderAbsence() {
+        var visible = state.absence.slice(-12);
+        renderBarChart(elements.absenceChart, visible, state.sourceCut.getFullYear());
+        var complete = state.absence.filter(function (point) { return Number(point.year) < state.sourceCut.getFullYear(); });
+        var latest = complete[complete.length - 1];
+        var previous = complete[complete.length - 2];
+        var delta = latest && previous && previous.value ? latest.value / previous.value - 1 : null;
+        setText(elements.absenceFigureCaption, latest
+          ? 'Último año completo: ' + latest.year + ' con ' + numberFormatter.format(latest.value) + ' eventos' + (delta === null ? '.' : ', ' + formatSignedPercent(delta) + ' frente a ' + previous.year + '.')
+          : 'No hay un año completo para comparar.');
+      }
+
+      function renderSectors(executive) {
+        var ranking = executive.workforce.bySector;
+        var total = ranking.totalParticipants;
+        var released = ranking.rows.filter(function (row) { return row.privacyStatus === 'released'; });
+        var protectedBucket = ranking.rows.find(function (row) { return row.privacyStatus === 'protected_aggregate'; });
+        var visible = released.slice(0, protectedBucket ? 5 : 6);
+        if (protectedBucket) visible.push(protectedBucket);
+        elements.sectorList.replaceChildren();
+
+        visible.forEach(function (item) {
+          var percentage = item.sharePct / 100;
+          var wrapper = document.createElement('div');
+          var meta = document.createElement('div');
+          var label = document.createElement('span');
+          var value = document.createElement('strong');
+          var track = document.createElement('div');
+          var bar = document.createElement('span');
+          wrapper.className = 'grh-sector-item';
+          wrapper.dataset.privacyStatus = item.privacyStatus;
+          meta.className = 'grh-sector-meta';
+          label.textContent = item.label;
+          value.textContent = item.participantDisplay + ' · ' + new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(percentage);
+          track.className = 'grh-track';
+          track.setAttribute('role', 'progressbar');
+          track.setAttribute('aria-label', label.textContent);
+          track.setAttribute('aria-valuemin', '0');
+          track.setAttribute('aria-valuemax', String(total));
+          track.setAttribute('aria-valuenow', String(item.participants));
+          bar.style.setProperty('--bar-width', Math.max(percentage * 100, .7).toFixed(2) + '%');
+          meta.append(label, value);
+          track.appendChild(bar);
+          wrapper.append(meta, track);
+          elements.sectorList.appendChild(wrapper);
+        });
+
+        var topShare = total > 0 ? released.slice(0, 3).reduce(function (sum, item) { return sum + item.participants; }, 0) / total : 0;
+        setText(elements.sectorCountBadge, 'k≥5 · ' + numberFormatter.format(total) + ' participantes');
+        setText(elements.sectorSummary, 'Los tres sectores publicados con mayor volumen concentran ' + new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(topShare) + ' de los participantes.' + (protectedBucket ? ' El resto permanece consolidado en “' + protectedBucket.label + '”.' : ' No hay celdas protegidas en esta distribución.'));
+      }
+
+      function renderMovementHeatmap() {
+        var visible = state.movements.slice(-16);
+        var max = Math.max.apply(null, visible.map(function (point) { return point.value; })) || 1;
+        var min = Math.min.apply(null, visible.map(function (point) { return point.value; })) || 0;
+        var span = max - min || 1;
+        elements.movementHeatmap.replaceChildren();
+        visible.forEach(function (point) {
+          var intensity = (point.value - min) / span;
+          var cell = document.createElement('button');
+          var year = document.createElement('span');
+          var value = document.createElement('span');
+          cell.type = 'button';
+          cell.className = 'grh-heat-cell';
+          cell.style.setProperty('--heat-alpha', (.12 + intensity * .68).toFixed(3));
+          cell.setAttribute('aria-label', point.year + ': ' + numberFormatter.format(point.value) + ' movimientos de legajo');
+          year.className = 'grh-heat-year';
+          value.className = 'grh-heat-value';
+          year.textContent = point.year;
+          value.textContent = compactFormatter.format(point.value);
+          cell.append(year, value);
+          elements.movementHeatmap.appendChild(cell);
+        });
+      }
+
+      function addInsight(container, index, title, description) {
+        var insight = document.createElement('div');
+        var badge = document.createElement('span');
+        var content = document.createElement('div');
+        var heading = document.createElement('strong');
+        var copy = document.createElement('p');
+        insight.className = 'grh-insight';
+        badge.className = 'grh-insight-index';
+        badge.textContent = String(index).padStart(2, '0');
+        heading.textContent = title;
+        copy.textContent = description;
+        content.append(heading, copy);
+        insight.append(badge, content);
+        container.appendChild(insight);
+      }
+
+      function renderInsights(executive, quality) {
+        var sectorRows = executive.workforce.bySector.rows;
+        var total = executive.workforce.payrollParticipants;
+        var released = sectorRows.filter(function (row) { return row.privacyStatus === 'released'; });
+        var protectedBucket = sectorRows.find(function (row) { return row.privacyStatus === 'protected_aggregate'; });
+        var releasedTotal = released.reduce(function (sum, row) { return sum + row.participants; }, 0);
+        var coverage = total ? releasedTotal / total : 0;
+        var topShare = total ? released.slice(0, 3).reduce(function (sum, row) { return sum + row.participants; }, 0) / total : 0;
+        var completeAbsence = state.absence.filter(function (point) { return Number(point.year) < state.sourceCut.getFullYear(); });
+        var absenceLatest = completeAbsence[completeAbsence.length - 1];
+        var absencePrevious = completeAbsence[completeAbsence.length - 2];
+        var absenceDelta = absenceLatest && absencePrevious && absencePrevious.value ? absenceLatest.value / absencePrevious.value - 1 : null;
+        var marked = markPayrollSignals(state.payroll);
+        var recentSignals = marked.slice(-12).filter(function (point) { return point.signal; });
+
+        elements.executiveInsights.replaceChildren();
+        addInsight(elements.executiveInsights, 1,
+          protectedBucket ? 'Privacidad sectorial aplicada' : 'Detalle sectorial completamente publicado',
+          new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(coverage) + ' de los participantes aparece en categorías individuales; ' + (protectedBucket ? protectedBucket.participantDisplay + ' se consolidan sin revelar celdas pequeñas.' : 'no se requirió bucket protegido.'));
+        addInsight(elements.executiveInsights, 2,
+          'Concentración a monitorear',
+          'Los tres sectores publicados principales reúnen ' + new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(topShare) + ' de los participantes de liquidación.');
+        addInsight(elements.executiveInsights, 3,
+          'Conciliación cross-source con brecha explícita',
+          'calculo y totpago alcanzan ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(quality.reconciliation.valueAgreementPct) + '% de acuerdo de valor; el componente de calidad puntúa ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 }).format(quality.quality.components.payrollReconciliation.score) + '/100. No equivale a acreditación bancaria.');
+        addInsight(elements.executiveInsights, 4,
+          'Cuarentena separada de los indicadores',
+          numberFormatter.format(quality.temporal.quarantineRows) + ' filas temporales quedaron fuera de las series válidas: ' + numberFormatter.format(quality.temporal.domains.calculo.quarantineRows) + ' de cálculo y ' + numberFormatter.format(quality.temporal.domains.legamov.quarantineRows) + ' de movimientos, entre otras.');
+        addInsight(elements.executiveInsights, 5,
+          absenceDelta === null ? 'Ausencias sin base comparable' : (absenceDelta > 0 ? 'Eventos de ausencia en aumento' : 'Eventos de ausencia en descenso'),
+          absenceDelta === null ? 'No hay dos años completos consecutivos para calcular el cambio.' : absenceLatest.year + ' cerró con ' + formatSignedPercent(absenceDelta) + ' frente a ' + absencePrevious.year + '; sigue siendo volumen, no tasa.');
+        if (recentSignals.length) {
+          addInsight(elements.executiveInsights, 6,
+            'Variación del cálculo para revisar',
+            numberFormatter.format(recentSignals.length) + ' de los últimos 12 períodos válidos se aleja fuertemente de su mediana móvil. La señal no invalida el período ni explica su causa.');
+        }
+      }
+
+      function renderQuality(quality) {
+        var piiExcluded = quality.privacy.aggregateOnly && quality.privacy.containsPii === false && quality.privacy.employeeIdentifiersExported === false;
+        setText(elements.qualityScore, new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(quality.quality.score) + '/100');
+        setText(elements.qualityReferential, new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(quality.quality.components.referentialIntegrity.score) + '/100');
+        setText(elements.qualityReconciliation, new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(quality.quality.components.payrollReconciliation.score) + '/100');
+        setText(elements.qualityPii, piiExcluded ? 'No exportada' : 'No verificada');
+        elements.qualityPii.parentElement.dataset.status = piiExcluded ? 'ok' : 'warn';
+        setText(elements.qualityPeriods, numberFormatter.format(quality.temporal.quarantineRows) + ' filas');
+        setText(elements.qualityCurrency, quality.reconciliation.currencyStatus === 'not_declared_in_source' ? 'No declarada' : 'En revisión');
+        setText(elements.quarantineChip, numberFormatter.format(quality.temporal.quarantineRows));
+        setText(elements.qualityNote,
+          'Cuarentena por dominio: cálculo ' + numberFormatter.format(quality.temporal.domains.calculo.quarantineRows) + ', totpago ' + numberFormatter.format(quality.temporal.domains.totpago.quarantineRows) + ', ausencias ' + numberFormatter.format(quality.temporal.domains.ausencia.quarantineRows) + ', licencias ' + numberFormatter.format(quality.temporal.domains.licencia.quarantineRows) + ' y movimientos ' + numberFormatter.format(quality.temporal.domains.legamov.quarantineRows) + '. El backup crudo contiene PII sensible; esta vista no la carga. La conciliación contra calculo permanece en ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(quality.reconciliation.scorePct) + '/100.');
+      }
+
+      function renderSourceContext(quality) {
+        var sourceCutText = dateFormatter.format(state.sourceCut);
+        setText(elements.sourceCutChip, sourceCutText);
+        setText(elements.profileTablesChip, numberFormatter.format(quality.inventory.all.totalTables));
+        setText(elements.sourceFile, quality.source.sourceFile);
+        setText(elements.sourceHash, quality.source.sourceSha256);
+        var generatedDate = new Date(quality.lineage.profileGeneratedAt);
+        setText(elements.generatedAt, Number.isNaN(generatedDate.getTime()) ? 'no informado' : dateTimeFormatter.format(generatedDate));
+        if (!Number.isNaN(generatedDate.getTime())) elements.generatedAt.dateTime = generatedDate.toISOString();
+        setText(elements.topbarSourceText, 'GRH · corte ' + sourceCutText + ' · proyecciones conciliadas');
+        elements.topbarSourceState.style.color = 'var(--grh-cyan)';
+      }
+
+      function renderAll() {
+        renderSourceContext(state.quality);
+        renderKpis(state.executive, state.quality);
+        renderPayroll();
+        renderAbsence();
+        renderSectors(state.executive);
+        renderMovementHeatmap();
+        renderInsights(state.executive, state.quality);
+        renderQuality(state.quality);
+        elements.grhDataViews.hidden = false;
+        elements.grhDashboard.setAttribute('aria-busy', 'false');
+      }
+
+      function showLoadError(error) {
+        var isFileProtocol = window.location.protocol === 'file:';
+        var baseMessage = isFileProtocol
+          ? 'El navegador bloqueó la lectura local. Abrí MuniControl desde su servidor HTTP para validar ambas proyecciones GRH.'
+          : 'No se pudieron validar juntas las proyecciones ejecutiva y de calidad. ' + (error && error.message ? error.message : 'Respuesta inesperada.');
+        setText(elements.loadErrorMessage, baseMessage);
+        elements.loadError.hidden = false;
+        elements.grhDataViews.hidden = true;
+        elements.grhDashboard.setAttribute('aria-busy', 'false');
+        setText(elements.topbarSourceText, 'Proyecciones GRH no disponibles');
+        elements.topbarSourceState.style.color = 'var(--grh-red)';
+        setText(elements.viewStatus, 'Carga interrumpida');
+      }
+
+      function redirectToSafeWorkspace() {
+        try {
+          if (!window.sessionStorage.getItem('mjunin_access_notice')) {
+            window.sessionStorage.setItem('mjunin_access_notice', 'El perfil actual no tiene habilitada la superficie solicitada.');
+          }
+        } catch (error) {}
+        var currentPage = window.location.pathname.split('/').pop() || '';
+        if (currentPage !== 'inicio.html') window.location.replace('inicio.html');
+      }
+
+      async function requirePageCapability() {
+        if (typeof window.requireCapability !== 'function') {
+          redirectToSafeWorkspace();
+          return false;
+        }
+        try {
+          var allowed = await window.requireCapability('navigation.grh-executive');
+          if (allowed !== true) {
+            redirectToSafeWorkspace();
+            return false;
+          }
+          return true;
+        } catch (error) {
+          redirectToSafeWorkspace();
+          return false;
+        }
+      }
+
+      async function loadContracts() {
+        var sequence = state.loadSequence + 1;
+        state.loadSequence = sequence;
+        elements.loadError.hidden = true;
+        elements.grhDataViews.hidden = true;
+        elements.grhDashboard.setAttribute('aria-busy', 'true');
+        setText(elements.topbarSourceText, 'Validando proyecciones GRH');
+        elements.topbarSourceState.style.color = 'var(--grh-cyan)';
+        setText(elements.viewStatus, 'Leyendo agregados protegidos…');
+
+        try {
+          if (!window.MuniGrhData || typeof window.MuniGrhData.loadExperience !== 'function') {
+            throw new Error('El cliente seguro GRH no está disponible.');
+          }
+          var experience = await window.MuniGrhData.loadExperience({ timeoutMs: 10000 });
+          if (sequence !== state.loadSequence) return;
+          var normalized = normalizeExperience(experience);
+          state.executive = normalized.executive;
+          state.quality = normalized.quality;
+          state.sourceCut = normalized.sourceCut;
+          state.payroll = normalized.payroll;
+          state.absence = normalized.absence;
+          state.movements = normalized.movements;
+          renderAll();
+        } catch (error) {
+          if (sequence !== state.loadSequence) return;
+          showLoadError(error);
+          console.error('[GRH dashboard] No se pudieron cargar las proyecciones gobernadas:', error);
+        }
+      }
+
+      async function loadAuthorizedContracts() {
+        if (!await requirePageCapability()) return;
+        await loadContracts();
+      }
+
+      function updateSalaryView(view) {
+        if (view !== 'nominal' && view !== 'change') return;
+        state.salaryView = view;
+        document.querySelectorAll('[data-salary-view]').forEach(function (button) {
+          button.setAttribute('aria-pressed', button.dataset.salaryView === view ? 'true' : 'false');
+        });
+        if (state.executive) renderPayroll();
+      }
+
+      function toggleTheme() {
+        var current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        var next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        elements.grhThemeToggle.setAttribute('aria-pressed', next === 'light' ? 'true' : 'false');
+        elements.grhThemeToggle.setAttribute('aria-label', next === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro');
+        var themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) themeMeta.content = next === 'light' ? '#eef3fb' : '#07101f';
+        try { localStorage.setItem('govtech_theme', next); } catch (error) { /* Preferencia no persistible. */ }
+      }
+
+      function bindEvents() {
+        elements.periodRange.addEventListener('change', function (event) {
+          state.range = event.target.value;
+          if (state.executive) renderPayroll();
+        });
+        document.querySelectorAll('[data-salary-view]').forEach(function (button) {
+          button.addEventListener('click', function () { updateSalaryView(button.dataset.salaryView); });
+        });
+        elements.retryLoad.addEventListener('click', loadAuthorizedContracts);
+        elements.grhThemeToggle.addEventListener('click', toggleTheme);
+        var light = document.documentElement.getAttribute('data-theme') === 'light';
+        elements.grhThemeToggle.setAttribute('aria-pressed', light ? 'true' : 'false');
+        elements.grhThemeToggle.setAttribute('aria-label', light ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro');
+      }
+
+      async function init() {
+        cacheElements();
+        bindEvents();
+        if (typeof window.buildSidebar === 'function') window.buildSidebar('grh-ejecutivo');
+        if (!await requirePageCapability()) return;
+        await loadContracts();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+      } else {
+        init();
+      }
+    }());
+  </script>
+</body>
+</html>

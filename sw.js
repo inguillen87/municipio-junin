@@ -1,57 +1,53 @@
-// Service Worker for MuniControl Junín PWA
-const CACHE_NAME = 'municontrol-junin-v2';
-const ASSETS_TO_CACHE = [
+// Public-shell-only service worker. Authenticated/API responses are never cached.
+const CACHE_NAME = 'municontrol-public-v3';
+const PUBLIC_ASSETS = new Set([
   '/',
   '/ciudadano.html',
   '/mapa.html',
   '/vecinos.html',
   '/css/dashboard.css',
-  '/js/nav.js',
-  '/manifest.json'
-];
+  '/manifest.json',
+]);
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch(() => {});
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll([...PUBLIC_ASSETS])).catch(() => {})
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
+    caches.keys().then(keys => Promise.all(
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+    ))
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  // Ignore non-http(s) requests (e.g. chrome-extension://...)
-  if (!event.request.url.startsWith('http://') && !event.request.url.startsWith('https://')) return;
+function cacheableResponse(response) {
+  if (!response || !response.ok || response.type !== 'basic') return false;
+  const policy = String(response.headers.get('cache-control') || '').toLowerCase();
+  return !policy.includes('no-store') && !policy.includes('private');
+}
 
-  // Network first, fallback to cache for GET requests
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET' || request.headers.has('authorization')) return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (!PUBLIC_ASSETS.has(url.pathname)) return;
+
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.status === 200 && event.request.method === 'GET') {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone).catch(() => {});
-          });
+    fetch(request)
+      .then(response => {
+        if (cacheableResponse(response)) {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, copy)));
         }
         return response;
       })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+      .catch(async () => (await caches.match(request)) || Response.error())
   );
 });

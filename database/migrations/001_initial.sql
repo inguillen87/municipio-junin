@@ -169,10 +169,8 @@ CREATE TABLE audit_log (
 CREATE INDEX idx_audit_usuario ON audit_log(usuario_id);
 CREATE INDEX idx_audit_fecha ON audit_log(creado_en);
 
--- ── DATOS INICIALES (DEMO) ───────────────────────────
-INSERT INTO usuarios (nombre, email, password, rol) VALUES
-  ('Administrador Demo', 'demo@demo.com', '$2b$10$placeholder_bcrypt_hash', 'admin'),
-  ('Mario Abed', 'intendente@junin.gob.ar', '$2b$10$placeholder_bcrypt_hash', 'intendente'),
-  ('Jefe de Tecnologia', 'tecnologia@junin.gob.ar', '$2b$10$placeholder_bcrypt_hash', 'admin');
-
-SELECT 'Base de datos Municipalidad de Junin inicializada correctamente' AS resultado;
+-- ── APROVISIONAMIENTO DE IDENTIDADES ──────────────────
+-- Este esquema SQL legacy nunca aprovisiona identidades. Las cuentas vigentes
+-- se crean exclusivamente con backend/seed.js, variables SEED_* obligatorias y
+-- el modelo Prisma autoritativo de la plataforma.
+SELECT 'Esquema legacy creado sin usuarios ni credenciales' AS resultado;

@@ -1,1005 +1,1426 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html lang="es" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#060b18">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="MuniControl">
-  <title>Dashboard Ejecutivo | MuniControl</title>
-  <meta name="description" content="Panel de control ejecutivo del Municipio de Junin.">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="Panel ejecutivo agregado de MuniControl, respaldado por el snapshot gobernado de GRH Junín.">
+  <title>Panel ejecutivo GRH | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
-  <link rel="manifest" href="/manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="css/dashboard.css">
+  <script>
+    (function applyStoredTheme() {
+      try {
+        var saved = localStorage.getItem('govtech_theme') || 'dark';
+        var resolved = saved === 'auto'
+          ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+          : saved;
+        document.documentElement.setAttribute('data-theme', resolved === 'light' ? 'light' : 'dark');
+      } catch (error) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }());
+  </script>
   <style>
-    /* ── PAGE TOKENS ───────────────────────────────────────── */
     :root {
-      --bg:       #060b18;
-      --surface:  rgba(13,21,38,0.9);
-      --border:   rgba(255,255,255,0.07);
-      --text:     #f0f4ff;
-      --muted:    rgba(148,163,184,0.7);
-      --blue:     #3b82f6;
-      --green:    #10b981;
-      --amber:    #f59e0b;
-      --red:      #ef4444;
-      --violet:   #8b5cf6;
-      --teal:     #14b8a6;
+      --exec-bg: #07111f;
+      --exec-surface: #0d1a2c;
+      --exec-surface-raised: #122139;
+      --exec-soft: rgba(255,255,255,.038);
+      --exec-border: rgba(167,190,222,.14);
+      --exec-border-strong: rgba(103,168,255,.34);
+      --exec-text: #f5f8ff;
+      --exec-text-soft: #b8c6da;
+      --exec-muted: #8394ad;
+      --exec-blue: #64a8ff;
+      --exec-blue-rgb: 100,168,255;
+      --exec-teal: #50d3c4;
+      --exec-teal-rgb: 80,211,196;
+      --exec-violet: #aa98ff;
+      --exec-violet-rgb: 170,152,255;
+      --exec-amber: #f2bb65;
+      --exec-amber-rgb: 242,187,101;
+      --exec-red: #ff858f;
+      --exec-red-rgb: 255,133,143;
+      --exec-green: #66d8aa;
+      --exec-green-rgb: 102,216,170;
+      --exec-shadow: 0 22px 56px rgba(0,0,0,.24);
+      --exec-radius-lg: 20px;
+      --exec-radius-md: 14px;
+      --exec-ease: cubic-bezier(.2,.7,.2,1);
     }
 
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; }
-
-    /* ── TOPBAR ─────────────────────────────────────────────── */
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px; height: 60px;
-      background: rgba(6,11,24,0.97);
-      border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(20px);
-      position: sticky; top: 0; z-index: 100;
-    }
-    .topbar-left { display: flex; align-items: center; gap: 14px; }
-    .topbar-right { display: flex; align-items: center; gap: 8px; }
-    .menu-btn {
-      display: none; width: 38px; height: 38px;
-      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
-      border-radius: 10px; color: var(--text); cursor: pointer;
-      align-items: center; justify-content: center; flex-shrink: 0;
-      transition: background 0.2s;
-    }
-    .menu-btn svg { pointer-events: none; }
-    .menu-btn:hover { background: rgba(255,255,255,0.1); }
-    .page-title h1 { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 900; margin: 0; color: var(--text); }
-    .breadcrumb { font-size: 11px; color: var(--muted); font-weight: 500; }
-    .live-clock { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; padding: 0 12px; border-right: 1px solid var(--border); }
-
-    .icon-btn {
-      width: 36px; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-      border-radius: 9px; color: var(--muted); cursor: pointer; display: flex;
-      align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
-    }
-    .icon-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); }
-
-    .search-box {
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-      border-radius: 10px; padding: 0 12px; height: 36px; width: 220px;
-      transition: border-color 0.2s;
-    }
-    .search-box:focus-within { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.04); }
-    .search-box input { background: none; border: none; color: var(--text); font-size: 13px; outline: none; width: 100%; font-family: 'Inter', sans-serif; }
-    .search-box input::placeholder { color: rgba(148,163,184,0.35); }
-    .search-box svg { flex-shrink: 0; color: var(--muted); }
-
-    .btn-export {
-      display: flex; align-items: center; gap: 6px;
-      background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
-      color: #60a5fa; padding: 0 14px; height: 36px; border-radius: 9px;
-      font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
-      white-space: nowrap; font-family: 'Inter', sans-serif;
-    }
-    .btn-export:hover { background: rgba(59,130,246,0.18); transform: translateY(-1px); }
-
-    .notif-btn {
-      width: 36px; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-      border-radius: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      position: relative; color: var(--muted); transition: all 0.2s;
-    }
-    .notif-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); }
-    .notif-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background: #ef4444; border-radius: 50%; border: 1.5px solid var(--bg); }
-    .topbar-avatar {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 800; color: white; cursor: pointer; flex-shrink: 0;
+    [data-theme="light"] {
+      --exec-bg: #edf3fb;
+      --exec-surface: #fff;
+      --exec-surface-raised: #f7faff;
+      --exec-soft: rgba(27,65,116,.045);
+      --exec-border: rgba(31,65,112,.13);
+      --exec-border-strong: rgba(40,112,205,.34);
+      --exec-text: #12223b;
+      --exec-text-soft: #405573;
+      --exec-muted: #586981;
+      --exec-blue: #2878db;
+      --exec-blue-rgb: 40,120,219;
+      --exec-teal: #07766c;
+      --exec-teal-rgb: 7,118,108;
+      --exec-violet: #6654d9;
+      --exec-violet-rgb: 102,84,217;
+      --exec-amber: #a86104;
+      --exec-amber-rgb: 168,97,4;
+      --exec-red: #c43d50;
+      --exec-red-rgb: 196,61,80;
+      --exec-green: #137b59;
+      --exec-green-rgb: 19,123,89;
+      --exec-shadow: 0 18px 48px rgba(28,55,92,.1);
     }
 
-    /* ── ALERT BANNER ───────────────────────────────────────── */
-    .alert-banner {
-      display: flex; align-items: center; gap: 12px;
-      background: rgba(245,158,11,0.08); border-bottom: 1px solid rgba(245,158,11,0.2);
-      padding: 10px 24px; font-size: 13px; font-weight: 600; color: #fbbf24;
+    html { color-scheme: dark; scroll-behavior: smooth; }
+    html[data-theme="light"] { color-scheme: light; }
+    body {
+      min-width: 320px;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 78% -10%, rgba(var(--exec-blue-rgb),.1), transparent 30rem),
+        var(--exec-bg);
+      color: var(--exec-text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    .alert-banner span { flex: 1; }
-    .alert-close { background: none; border: none; color: rgba(251,191,36,0.6); cursor: pointer; font-size: 16px; padding: 0 4px; }
-    .alert-close:hover { color: #fbbf24; }
-
-    /* ── CONTENT ────────────────────────────────────────────── */
-    .content-wrapper { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-
-    /* ── WELCOME BANNER ─────────────────────────────────────── */
-    .welcome-banner {
-      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 60%, #1e3a8a 100%);
-      background-size: 200% 200%;
-      border: 1px solid rgba(59,130,246,0.3);
-      border-radius: 16px; padding: 24px 28px;
-      display: flex; align-items: center; justify-content: space-between; gap: 20px;
-      box-shadow: 0 8px 32px rgba(29,78,216,0.2);
+    button, select { font: inherit; }
+    a { color: inherit; }
+    [hidden] { display: none !important; }
+    .exec-skip {
+      position: fixed;
+      top: 10px;
+      left: 12px;
+      z-index: 2500;
+      transform: translateY(-160%);
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--exec-text);
+      color: var(--exec-bg);
+      font-size: 13px;
+      font-weight: 800;
+      transition: transform .18s ease;
     }
-    .welcome-content h2 { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 900; margin: 0 0 8px; color: white; }
-    .welcome-meta { display: flex; align-items: center; gap: 14px; }
-    .role-badge { background: rgba(255,255,255,0.15); padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; color: white; }
-    .last-login { font-size: 12px; color: rgba(255,255,255,0.6); }
-    .welcome-actions { display: flex; gap: 10px; flex-shrink: 0; }
-    .welcome-actions .btn-w-primary {
-      background: white; color: #1e40af; border: none;
-      padding: 10px 18px; border-radius: 10px; font-weight: 700;
-      font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+    .exec-skip:focus { transform: translateY(0); }
+    :focus-visible { outline: 3px solid rgba(var(--exec-blue-rgb),.55); outline-offset: 3px; }
+
+    .exec-topbar {
+      min-height: 64px;
+      padding: 0 24px;
+      background: rgba(7,17,31,.92);
+      border-bottom: 1px solid var(--exec-border);
+      backdrop-filter: blur(18px);
     }
-    .welcome-actions .btn-w-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
-    .welcome-actions .btn-w-secondary {
-      background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2);
-      padding: 10px 18px; border-radius: 10px; font-weight: 600;
-      font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+    [data-theme="light"] .exec-topbar { background: rgba(255,255,255,.92); }
+    .exec-topbar-left,
+    .exec-topbar-right,
+    .exec-page-title,
+    .exec-source-state,
+    .exec-panel-head,
+    .exec-legend,
+    .exec-alert,
+    .exec-rank-meta,
+    .exec-source-row,
+    .exec-roadmap-item,
+    .exec-footer,
+    .exec-access-head {
+      display: flex;
+      align-items: center;
     }
-    .welcome-actions .btn-w-secondary:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
-
-    /* ── QUICK ACCESS ───────────────────────────────────────── */
-    .quick-access-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
-    .qa-link {
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-      padding: 14px 8px; background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; text-decoration: none; color: var(--muted); font-size: 12px;
-      font-weight: 600; transition: all 0.2s; text-align: center;
+    .exec-topbar-left { gap: 12px; min-width: 0; }
+    .exec-topbar-right { gap: 8px; }
+    .exec-page-title { align-items: flex-start; flex-direction: column; min-width: 0; }
+    .exec-page-title h1 {
+      margin: 0;
+      color: var(--exec-text);
+      font-size: 16px;
+      font-weight: 790;
+      letter-spacing: -.015em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .qa-link svg { color: var(--muted); transition: color 0.2s; }
-    .qa-link:hover { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3); color: #60a5fa; transform: translateY(-2px); }
-    .qa-link:hover svg { color: #60a5fa; }
-
-    /* ── KPI GRID ───────────────────────────────────────────── */
-    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .kpi-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-      padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;
-      transition: all 0.25s; position: relative; overflow: hidden;
+    .exec-breadcrumb { color: var(--exec-muted); font-size: 11px; }
+    .exec-menu-btn,
+    .exec-icon-btn,
+    .exec-retry-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      min-height: 40px;
+      border: 1px solid var(--exec-border);
+      border-radius: 11px;
+      background: var(--exec-soft);
+      color: var(--exec-text-soft);
+      cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease, color .18s ease;
     }
-    .kpi-card::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.25s; }
-    .kpi-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.12); box-shadow: 0 12px 30px rgba(0,0,0,0.3); }
-    .kpi-card:nth-child(1) { border-top: 2px solid var(--blue); }
-    .kpi-card:nth-child(2) { border-top: 2px solid var(--amber); }
-    .kpi-card:nth-child(3) { border-top: 2px solid var(--red); }
-    .kpi-card:nth-child(4) { border-top: 2px solid var(--violet); }
-    .kpi-card:nth-child(5) { border-top: 2px solid var(--green); }
-    .kpi-card:nth-child(6) { border-top: 2px solid var(--teal); }
-    .kpi-header { display: flex; align-items: center; justify-content: space-between; }
-    .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
-    .kpi-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-    .kpi-icon.blue   { background: rgba(59,130,246,0.12); color: #60a5fa; }
-    .kpi-icon.amber  { background: rgba(245,158,11,0.12);  color: #fbbf24; }
-    .kpi-icon.red    { background: rgba(239,68,68,0.12);   color: #f87171; }
-    .kpi-icon.violet { background: rgba(139,92,246,0.12);  color: #a78bfa; }
-    .kpi-icon.green  { background: rgba(16,185,129,0.12);  color: #34d399; }
-    .kpi-icon.teal   { background: rgba(20,184,166,0.12);  color: #2dd4bf; }
-    .kpi-value { font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 900; line-height: 1; color: var(--text); }
-    .kpi-footer { display: flex; flex-direction: column; gap: 6px; }
-    .kpi-trend { font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
-    .kpi-trend.up   { color: var(--green); }
-    .kpi-trend.down { color: var(--red); }
-    .kpi-sub { font-size: 11px; color: var(--muted); }
-    .sparkline { height: 3px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
-    .sparkline-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
-
-    /* ── ALERTS ROW ─────────────────────────────────────────── */
-    .alerts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .alert-badge {
-      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    .exec-menu-btn:hover,
+    .exec-icon-btn:hover,
+    .exec-retry-btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--exec-border-strong);
+      background: rgba(var(--exec-blue-rgb),.1);
+      color: var(--exec-text);
     }
-    .alert-badge-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; flex-shrink: 0; }
-    .alert-badge-label { font-size: 13px; font-weight: 700; }
-    .alert-badge-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .exec-source-state {
+      gap: 8px;
+      min-height: 36px;
+      max-width: 330px;
+      padding: 0 11px;
+      border: 1px solid var(--exec-border);
+      border-radius: 999px;
+      background: var(--exec-soft);
+      color: var(--exec-text-soft);
+      font-size: 11px;
+      font-weight: 720;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .exec-source-dot {
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--exec-muted);
+      box-shadow: 0 0 0 4px rgba(131,148,173,.1);
+    }
+    .exec-source-state[data-state="warn"] .exec-source-dot { background: var(--exec-amber); box-shadow: 0 0 0 4px rgba(var(--exec-amber-rgb),.12); }
+    .exec-source-state[data-state="error"] .exec-source-dot { background: var(--exec-red); box-shadow: 0 0 0 4px rgba(var(--exec-red-rgb),.12); }
 
-    /* ── CHARTS ─────────────────────────────────────────────── */
-    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
-    .chart-header { margin-bottom: 16px; }
-    .chart-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 800; margin: 0 0 2px; color: var(--text); }
-    .chart-sub { font-size: 11px; color: var(--muted); font-weight: 500; }
-    canvas { display: block; width: 100% !important; }
+    .exec-shell {
+      width: min(100%, 1680px);
+      margin: 0 auto;
+      padding: 24px clamp(16px,2.2vw,34px) 42px;
+    }
+    .exec-hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      padding: clamp(24px,4vw,44px);
+      border: 1px solid var(--exec-border);
+      border-radius: 24px;
+      background:
+        linear-gradient(122deg, rgba(var(--exec-blue-rgb),.13), transparent 47%),
+        linear-gradient(160deg, var(--exec-surface-raised), var(--exec-surface));
+      box-shadow: var(--exec-shadow);
+    }
+    .exec-hero::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      top: -160px;
+      right: -90px;
+      width: 390px;
+      height: 390px;
+      border: 1px solid rgba(var(--exec-blue-rgb),.16);
+      border-radius: 50%;
+      box-shadow: 0 0 0 58px rgba(var(--exec-blue-rgb),.035), 0 0 0 116px rgba(var(--exec-blue-rgb),.02);
+    }
+    .exec-eyebrow {
+      margin-bottom: 14px;
+      color: var(--exec-blue);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .exec-hero h2 {
+      max-width: 900px;
+      margin: 0;
+      color: var(--exec-text);
+      font-size: clamp(31px,4.8vw,64px);
+      line-height: .99;
+      letter-spacing: -.052em;
+      text-wrap: balance;
+    }
+    .exec-hero-copy {
+      max-width: 880px;
+      margin: 20px 0 0;
+      color: var(--exec-text-soft);
+      font-size: clamp(14px,1.25vw,17px);
+      line-height: 1.65;
+    }
+    .exec-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .exec-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+      padding: 0 11px;
+      border: 1px solid var(--exec-border);
+      border-radius: 999px;
+      background: rgba(0,0,0,.08);
+      color: var(--exec-text-soft);
+      font-size: 11px;
+    }
+    .exec-chip strong { color: var(--exec-text); font-weight: 790; }
 
-    /* ── BOTTOM ROW ─────────────────────────────────────────── */
-    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .exec-loading,
+    .exec-error {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+      margin-top: 16px;
+      padding: 15px 17px;
+      border: 1px solid var(--exec-border);
+      border-radius: var(--exec-radius-md);
+      background: var(--exec-surface);
+      color: var(--exec-text-soft);
+      font-size: 13px;
+    }
+    .exec-error { border-color: rgba(var(--exec-red-rgb),.3); background: rgba(var(--exec-red-rgb),.075); }
+    .exec-loading strong,
+    .exec-error strong { display: block; margin-bottom: 3px; color: var(--exec-text); }
+    .exec-loading p,
+    .exec-error p { margin: 0; line-height: 1.48; }
+    .exec-spinner {
+      width: 21px;
+      height: 21px;
+      border: 2px solid rgba(var(--exec-blue-rgb),.18);
+      border-top-color: var(--exec-blue);
+      border-radius: 50%;
+      animation: exec-spin .8s linear infinite;
+    }
+    @keyframes exec-spin { to { transform: rotate(360deg); } }
+    .exec-error-icon {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(var(--exec-red-rgb),.14);
+      color: var(--exec-red);
+      font-weight: 900;
+    }
+    .exec-retry-btn { min-width: 104px; padding: 0 14px; color: var(--exec-text); font-size: 12px; font-weight: 800; }
 
-    /* TABLE */
-    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .data-table th { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
-    .data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .data-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+    .exec-data { margin-top: 16px; }
+    .exec-kpis {
+      display: grid;
+      grid-template-columns: repeat(6,minmax(0,1fr));
+      gap: 12px;
+    }
+    .exec-stat,
+    .exec-panel,
+    .exec-access-card {
+      border: 1px solid var(--exec-border);
+      background: var(--exec-surface);
+      box-shadow: 0 14px 36px rgba(0,0,0,.08);
+    }
+    .exec-stat {
+      position: relative;
+      overflow: hidden;
+      min-height: 176px;
+      padding: 18px;
+      border-radius: var(--exec-radius-md);
+      animation: exec-rise .48s var(--exec-ease) both;
+    }
+    .exec-stat:nth-child(2) { animation-delay: 40ms; }
+    .exec-stat:nth-child(3) { animation-delay: 80ms; }
+    .exec-stat:nth-child(4) { animation-delay: 120ms; }
+    .exec-stat:nth-child(5) { animation-delay: 160ms; }
+    .exec-stat:nth-child(6) { animation-delay: 200ms; }
+    @keyframes exec-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .exec-stat::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: var(--stat-color,var(--exec-blue));
+    }
+    .exec-stat[data-tone="teal"] { --stat-color: var(--exec-teal); }
+    .exec-stat[data-tone="violet"] { --stat-color: var(--exec-violet); }
+    .exec-stat[data-tone="amber"] { --stat-color: var(--exec-amber); }
+    .exec-stat-label {
+      min-height: 32px;
+      color: var(--exec-muted);
+      font-size: 10px;
+      font-weight: 820;
+      letter-spacing: .075em;
+      line-height: 1.42;
+      text-transform: uppercase;
+    }
+    .exec-stat-value {
+      margin-top: 14px;
+      color: var(--exec-text);
+      font-size: clamp(27px,2.3vw,38px);
+      font-weight: 830;
+      line-height: 1;
+      letter-spacing: -.045em;
+      font-variant-numeric: tabular-nums;
+    }
+    .exec-stat-note { margin: 12px 0 0; color: var(--exec-text-soft); font-size: 11px; line-height: 1.48; }
+    .exec-stat-context {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+      color: var(--stat-color,var(--exec-blue));
+      font-size: 10px;
+      font-weight: 780;
+    }
 
-    /* ACTIVITY */
-    .activity-feed { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-    .activity-item { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
-    .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
-    .activity-text { font-size: 13px; color: var(--text); line-height: 1.4; }
-    .activity-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .exec-close-brief {
+      position: relative;
+      overflow: hidden;
+      margin-top: 14px;
+      padding: 22px;
+      border: 1px solid rgba(var(--exec-teal-rgb),.24);
+      border-radius: var(--exec-radius-lg);
+      background:
+        linear-gradient(118deg,rgba(var(--exec-teal-rgb),.085),transparent 48%),
+        var(--exec-surface);
+      box-shadow: 0 14px 36px rgba(0,0,0,.08);
+    }
+    .exec-close-brief::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: var(--exec-teal);
+    }
+    .exec-close-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .exec-close-eyebrow {
+      margin: 0 0 7px;
+      color: var(--exec-teal);
+      font-size: 9.5px;
+      font-weight: 850;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .exec-close-head h3 { margin: 0; color: var(--exec-text); font-size: 19px; letter-spacing: -.025em; }
+    .exec-close-summary { max-width: 760px; margin: 7px 0 0; color: var(--exec-muted); font-size: 11px; line-height: 1.55; }
+    .exec-close-period {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border: 1px solid rgba(var(--exec-teal-rgb),.28);
+      border-radius: 999px;
+      background: rgba(var(--exec-teal-rgb),.08);
+      color: var(--exec-teal);
+      font-size: 10px;
+      font-weight: 820;
+      white-space: nowrap;
+    }
+    .exec-close-grid {
+      display: grid;
+      grid-template-columns: repeat(5,minmax(0,1fr));
+      gap: 9px;
+      margin-top: 18px;
+    }
+    .exec-close-metric {
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid var(--exec-border);
+      border-radius: 12px;
+      background: rgba(0,0,0,.075);
+    }
+    [data-theme="light"] .exec-close-metric { background: rgba(var(--exec-blue-rgb),.025); }
+    .exec-close-metric span { display: block; color: var(--exec-muted); font-size: 9px; font-weight: 820; letter-spacing: .055em; line-height: 1.4; text-transform: uppercase; }
+    .exec-close-metric strong {
+      display: block;
+      margin-top: 8px;
+      overflow-wrap: anywhere;
+      color: var(--exec-text);
+      font-size: clamp(18px,1.7vw,25px);
+      font-weight: 820;
+      letter-spacing: -.035em;
+      line-height: 1.08;
+      font-variant-numeric: tabular-nums;
+    }
+    .exec-close-metric[data-state="ok"] strong { color: var(--exec-green); }
+    .exec-close-metric[data-state="warn"] strong { color: var(--exec-amber); }
+    .exec-close-metric small { display: block; margin-top: 7px; color: var(--exec-muted); font-size: 9.5px; line-height: 1.45; }
+    .exec-close-comparison {
+      display: grid;
+      grid-template-columns: minmax(190px,.9fr) minmax(0,2.1fr);
+      gap: 14px;
+      align-items: center;
+      margin-top: 10px;
+      padding: 13px;
+      border: 1px solid var(--exec-border);
+      border-radius: 12px;
+      background: var(--exec-soft);
+    }
+    .exec-close-comparison-title strong { display: block; color: var(--exec-text); font-size: 11.5px; }
+    .exec-close-comparison-title span { display: block; margin-top: 4px; color: var(--exec-muted); font-size: 9.5px; line-height: 1.45; }
+    .exec-close-deltas { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+    .exec-close-delta { min-width: 0; padding-left: 9px; border-left: 1px solid var(--exec-border); }
+    .exec-close-delta span { display: block; color: var(--exec-muted); font-size: 8.5px; font-weight: 780; line-height: 1.35; }
+    .exec-close-delta strong { display: block; margin-top: 4px; color: var(--exec-text-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .exec-close-limit { margin: 11px 0 0; color: var(--exec-muted); font-size: 9.5px; line-height: 1.5; }
 
-    /* ── ANIMATIONS ─────────────────────────────────────────── */
-    .chart-skeleton { background: linear-gradient(90deg, var(--bg-card, var(--surface)) 25%, var(--bg-hover, rgba(255,255,255,0.05)) 50%, var(--bg-card, var(--surface)) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; height: 250px; }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    @keyframes pulseAlert { 0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 70% { box-shadow: 0 0 0 10px rgba(245,158,11,0); } 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } }
-    .alert-banner { animation: pulseAlert 2.5s infinite cubic-bezier(0.66, 0, 0, 1); }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .kpi-card { animation: fadeInUp 0.5s ease-out backwards; }
-    .kpi-card:nth-child(1) { animation-delay: 0.1s; }
-    .kpi-card:nth-child(2) { animation-delay: 0.15s; }
-    .kpi-card:nth-child(3) { animation-delay: 0.2s; }
-    .kpi-card:nth-child(4) { animation-delay: 0.25s; }
-    .kpi-card:nth-child(5) { animation-delay: 0.3s; }
-    .kpi-card:nth-child(6) { animation-delay: 0.35s; }
+    .exec-layout {
+      display: grid;
+      grid-template-columns: minmax(0,1.7fr) minmax(310px,.78fr);
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .exec-layout-balanced { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .exec-panel {
+      min-width: 0;
+      padding: 20px;
+      border-radius: var(--exec-radius-lg);
+    }
+    .exec-panel-head { justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .exec-panel-head h3 { margin: 0; color: var(--exec-text); font-size: 16px; letter-spacing: -.02em; }
+    .exec-panel-subtitle { max-width: 760px; margin: 6px 0 0; color: var(--exec-muted); font-size: 11px; line-height: 1.5; }
+    .exec-panel-badge {
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      border: 1px solid var(--exec-border);
+      border-radius: 999px;
+      background: var(--exec-soft);
+      color: var(--exec-text-soft);
+      font-size: 10px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+    .exec-chart-controls { display: flex; align-items: center; gap: 8px; }
+    .exec-select {
+      min-height: 34px;
+      padding: 0 32px 0 10px;
+      border: 1px solid var(--exec-border);
+      border-radius: 10px;
+      background: var(--exec-surface-raised);
+      color: var(--exec-text);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .exec-chart {
+      width: 100%;
+      min-height: 320px;
+      overflow: hidden;
+      border: 1px solid var(--exec-border);
+      border-radius: 13px;
+      background: linear-gradient(180deg,rgba(var(--exec-blue-rgb),.035),transparent);
+    }
+    .exec-chart svg { display: block; width: 100%; height: auto; min-height: 320px; }
+    .exec-chart text { fill: var(--exec-muted); font-family: inherit; font-size: 10px; }
+    .exec-grid-line { stroke: var(--exec-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .exec-chart-summary { margin: 10px 0 0; color: var(--exec-muted); font-size: 11px; line-height: 1.55; }
+    .exec-legend { flex-wrap: wrap; gap: 14px; margin-top: 12px; color: var(--exec-text-soft); font-size: 10px; }
+    .exec-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .exec-legend i { width: 18px; height: 2px; border-radius: 99px; background: var(--legend); }
 
-    /* ── MOBILE ─────────────────────────────────────────────── */
+    .exec-alerts { display: grid; gap: 9px; }
+    .exec-alert {
+      align-items: flex-start;
+      gap: 11px;
+      padding: 13px;
+      border: 1px solid var(--exec-border);
+      border-radius: 12px;
+      background: var(--exec-soft);
+    }
+    .exec-alert[data-tone="critical"] { border-color: rgba(var(--exec-red-rgb),.25); background: rgba(var(--exec-red-rgb),.055); }
+    .exec-alert[data-tone="warn"] { border-color: rgba(var(--exec-amber-rgb),.24); }
+    .exec-alert-index {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(var(--exec-blue-rgb),.11);
+      color: var(--exec-blue);
+      font-size: 10px;
+      font-weight: 850;
+    }
+    .exec-alert[data-tone="critical"] .exec-alert-index { background: rgba(var(--exec-red-rgb),.13); color: var(--exec-red); }
+    .exec-alert[data-tone="warn"] .exec-alert-index { background: rgba(var(--exec-amber-rgb),.12); color: var(--exec-amber); }
+    .exec-alert strong { display: block; color: var(--exec-text); font-size: 12px; }
+    .exec-alert p { margin: 4px 0 0; color: var(--exec-text-soft); font-size: 10.5px; line-height: 1.48; }
+    .exec-alert a { display: inline-block; margin-top: 7px; color: var(--exec-blue); font-size: 10.5px; font-weight: 780; text-decoration: none; }
+    .exec-alert a:hover { text-decoration: underline; }
+
+    .exec-ranks { display: grid; gap: 13px; }
+    .exec-rank-item { min-width: 0; }
+    .exec-rank-item[data-privacy-status="protected_aggregate"] { padding-top: 2px; }
+    .exec-rank-item[data-privacy-status="protected_aggregate"] .exec-rank-label { color: var(--exec-amber); }
+    .exec-rank-meta { justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .exec-rank-label { min-width: 0; overflow: hidden; color: var(--exec-text-soft); font-size: 11px; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; }
+    .exec-rank-value { flex: 0 0 auto; color: var(--exec-text); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+    .exec-track { height: 7px; overflow: hidden; border-radius: 99px; background: rgba(var(--exec-blue-rgb),.09); }
+    .exec-track span { display: block; width: var(--bar-width); height: 100%; border-radius: inherit; background: var(--bar-color,var(--exec-blue)); transform-origin: left; animation: exec-grow .62s var(--exec-ease) both; }
+    @keyframes exec-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .exec-drill-note { margin: 16px 0 0; padding-top: 13px; border-top: 1px solid var(--exec-border); color: var(--exec-muted); font-size: 10.5px; line-height: 1.5; }
+    .exec-drill-note a { color: var(--exec-blue); font-weight: 760; text-decoration: none; }
+
+    .exec-section-title { margin: 26px 0 12px; }
+    .exec-section-title h3 { margin: 0; color: var(--exec-text); font-size: 18px; letter-spacing: -.025em; }
+    .exec-section-title p { margin: 6px 0 0; color: var(--exec-muted); font-size: 11px; line-height: 1.5; }
+    .exec-access-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+    .exec-access-card {
+      display: flex;
+      min-height: 215px;
+      padding: 20px;
+      border-radius: var(--exec-radius-md);
+      flex-direction: column;
+      text-decoration: none;
+      transition: transform .2s var(--exec-ease), border-color .2s ease, background .2s ease;
+    }
+    a.exec-access-card:hover { transform: translateY(-3px); border-color: var(--exec-border-strong); background: var(--exec-surface-raised); }
+    .exec-access-head { justify-content: space-between; gap: 12px; }
+    .exec-access-icon {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 11px;
+      background: rgba(var(--exec-blue-rgb),.11);
+      color: var(--exec-blue);
+    }
+    .exec-access-icon svg { width: 19px; height: 19px; }
+    .exec-capability {
+      padding: 5px 8px;
+      border: 1px solid rgba(var(--exec-green-rgb),.22);
+      border-radius: 999px;
+      background: rgba(var(--exec-green-rgb),.07);
+      color: var(--exec-green);
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .exec-capability[data-state="review"] { border-color: rgba(var(--exec-amber-rgb),.24); background: rgba(var(--exec-amber-rgb),.07); color: var(--exec-amber); }
+    .exec-access-card h4 { margin: 18px 0 0; color: var(--exec-text); font-size: 16px; }
+    .exec-access-card p { margin: 8px 0 0; color: var(--exec-text-soft); font-size: 11px; line-height: 1.55; }
+    .exec-access-action { margin-top: auto; padding-top: 18px; color: var(--exec-blue); font-size: 11px; font-weight: 790; }
+
+    .exec-source-list,
+    .exec-roadmap { display: grid; gap: 9px; }
+    .exec-source-row,
+    .exec-roadmap-item {
+      align-items: flex-start;
+      gap: 11px;
+      padding: 12px;
+      border: 1px solid var(--exec-border);
+      border-radius: 11px;
+      background: var(--exec-soft);
+    }
+    .exec-state-dot {
+      width: 8px;
+      height: 8px;
+      margin-top: 4px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--exec-green);
+      box-shadow: 0 0 0 4px rgba(var(--exec-green-rgb),.09);
+    }
+    .exec-state-dot[data-tone="warn"] { background: var(--exec-amber); box-shadow: 0 0 0 4px rgba(var(--exec-amber-rgb),.09); }
+    .exec-state-dot[data-tone="planned"] { background: var(--exec-muted); box-shadow: 0 0 0 4px rgba(131,148,173,.09); }
+    .exec-source-row strong,
+    .exec-roadmap-item strong { display: block; color: var(--exec-text); font-size: 11.5px; }
+    .exec-source-row p,
+    .exec-roadmap-item p { margin: 4px 0 0; color: var(--exec-muted); font-size: 10.5px; line-height: 1.48; }
+    .exec-roadmap-step {
+      min-width: 70px;
+      padding: 4px 7px;
+      border: 1px solid var(--exec-border);
+      border-radius: 999px;
+      color: var(--exec-text-soft);
+      font-size: 9px;
+      font-weight: 820;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .exec-methodology { margin-top: 14px; border: 1px solid var(--exec-border); border-radius: var(--exec-radius-md); background: var(--exec-surface); }
+    .exec-methodology summary { padding: 15px 18px; color: var(--exec-text); cursor: pointer; font-size: 12px; font-weight: 790; }
+    .exec-methodology-content { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; padding: 0 18px 18px; }
+    .exec-methodology-content div { padding: 12px; border-radius: 10px; background: var(--exec-soft); color: var(--exec-muted); font-size: 10.5px; line-height: 1.52; }
+    .exec-methodology-content strong { display: block; margin-bottom: 5px; color: var(--exec-text-soft); }
+    .exec-footer { justify-content: space-between; gap: 16px; margin-top: 14px; padding: 13px 2px; color: var(--exec-muted); font-size: 9.5px; line-height: 1.5; }
+    .exec-footer span { min-width: 0; overflow-wrap: anywhere; }
+    .exec-footer code { color: var(--exec-text-soft); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .exec-visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
+    .exec-noscript { margin: 20px; padding: 16px; border: 1px solid var(--exec-border); border-radius: 12px; background: var(--exec-surface); color: var(--exec-text); }
+
+    @media (max-width: 1320px) {
+      .exec-kpis { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .exec-stat { min-height: 158px; }
+    }
+    @media (max-width: 1080px) {
+      .exec-layout { grid-template-columns: 1fr; }
+      .exec-layout-balanced { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .exec-methodology-content { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .exec-close-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .exec-close-comparison { grid-template-columns: 1fr; }
+    }
     @media (max-width: 900px) {
-      .menu-btn { display: flex !important; }
-      .live-clock { display: none; }
-      .search-box { display: none; }
-      .btn-export { display: none; }
-      .quick-access-grid { grid-template-columns: repeat(3, 1fr); }
-      .kpi-grid { grid-template-columns: 1fr 1fr; }
-      .charts-grid, .bottom-grid, .alerts-row { grid-template-columns: 1fr; }
-      .welcome-banner { flex-direction: column; align-items: flex-start; }
-      .welcome-actions { width: 100%; }
-      .welcome-actions button { flex: 1; }
-      .content-wrapper { padding: 14px; }
+      .main-content { width: 100% !important; margin-left: 0 !important; transform: none !important; transition: none !important; }
+      body > .main-content { width: 100% !important; margin-left: 0 !important; }
+      .exec-topbar { padding: 0 14px; }
+      .exec-source-state { max-width: 210px; }
+      .exec-shell { padding-top: 16px; }
+      .exec-access-grid { grid-template-columns: 1fr; }
+      .exec-access-card { min-height: 180px; }
     }
-    @media (max-width: 480px) {
-      .quick-access-grid { grid-template-columns: repeat(3, 1fr); }
-      .kpi-grid { grid-template-columns: 1fr 1fr; }
-      .kpi-value { font-size: 24px; }
+    @media (max-width: 680px) {
+      .exec-topbar-right .topbar-avatar { display: none; }
+      .exec-source-state { max-width: 42px; padding: 0 12px; }
+      .exec-source-state span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+      .exec-hero { padding: 24px 20px; border-radius: 18px; }
+      .exec-hero h2 { font-size: clamp(30px,11vw,45px); }
+      .exec-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .exec-stat { min-height: 170px; padding: 16px; }
+      .exec-stat-value { font-size: clamp(26px,8vw,34px); }
+      .exec-close-brief { padding: 18px 17px; border-radius: 16px; }
+      .exec-close-head { flex-direction: column; gap: 11px; }
+      .exec-close-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .exec-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .exec-panel { padding: 17px; border-radius: 16px; }
+      .exec-panel-head { align-items: flex-start; flex-direction: column; }
+      .exec-chart-controls { width: 100%; justify-content: space-between; }
+      .exec-select { max-width: 180px; }
+      .exec-layout-balanced { grid-template-columns: 1fr; }
+      .exec-loading,.exec-error { grid-template-columns: auto 1fr; }
+      .exec-loading .exec-retry-btn,.exec-error .exec-retry-btn { grid-column: 1 / -1; width: 100%; }
+      .exec-methodology-content { grid-template-columns: 1fr; }
+      .exec-footer { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 430px) {
+      .exec-shell { padding-inline: 12px; }
+      .exec-kpis { grid-template-columns: 1fr; }
+      .exec-stat { min-height: 145px; }
+      .exec-stat-label { min-height: 0; }
+      .exec-chart { min-height: 270px; }
+      .exec-chart svg { min-height: 270px; }
+      .exec-roadmap-item { flex-wrap: wrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *,*::before,*::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      html,body { background: #fff !important; color: #111 !important; }
+      .sidebar,.exec-topbar,.exec-loading,.exec-error,.exec-chart-controls,.exec-methodology summary { display: none !important; }
+      html body > main#mainContent.main-content { width: 100vw !important; max-width: none !important; margin: 0 !important; margin-left: 0 !important; transform: none !important; transition: none !important; animation: none !important; }
+      .exec-shell { width: 100%; max-width: none; padding: 0; }
+      .exec-hero,.exec-stat,.exec-panel,.exec-access-card,.exec-methodology { box-shadow: none; break-inside: avoid; }
+      .exec-panel { contain: none; content-visibility: visible; }
+      .exec-access-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .exec-methodology[open] summary { display: block !important; }
+      .exec-methodology-content { display: grid !important; }
     }
   </style>
 </head>
 <body>
+  <a class="exec-skip" href="#executiveDashboard">Saltar al panorama ejecutivo</a>
+  <aside class="sidebar" id="sidebar" aria-label="Navegación principal"></aside>
 
-  <!-- SIDEBAR built by nav.js -->
-  <aside class="sidebar" id="sidebar"></aside>
-  <!-- Backdrop: tap to close sidebar on mobile -->
-  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
-
-  <!-- MAIN -->
   <main class="main-content" id="mainContent">
-
-    <!-- TOPBAR -->
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn" aria-label="Menu">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <header class="topbar exec-topbar">
+      <div class="exec-topbar-left">
+        <button class="menu-btn exec-menu-btn" id="menuBtn" type="button" aria-label="Abrir o cerrar navegación">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
-        <div class="page-title">
-          <h1>Dashboard Ejecutivo</h1>
-          <span class="breadcrumb">Municipio de Junin &mdash; <span id="currentDate"></span></span>
+        <div class="exec-page-title">
+          <h1>Panel ejecutivo GRH</h1>
+          <span class="exec-breadcrumb">Lectura agregada · snapshot gobernado</span>
         </div>
       </div>
-      <div class="topbar-right">
-        <div class="live-clock" id="liveClock"></div>
-        <div class="search-box">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Buscar..." id="globalSearch" autocomplete="off">
+      <div class="exec-topbar-right">
+        <div class="exec-source-state" id="topbarSourceState" aria-live="polite">
+          <span class="exec-source-dot" aria-hidden="true"></span>
+          <span id="topbarSourceText">Validando fuentes GRH</span>
         </div>
-        <button class="btn-export" onclick="exportDashboardPDF()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Exportar PDF
+        <button class="exec-icon-btn" id="execThemeToggle" type="button" aria-label="Cambiar tema" aria-pressed="false">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
         </button>
-        <button class="notif-btn" id="themeToggleBtn" onclick="if(window.MuniTheme)MuniTheme.cycle()" title="Cambiar tema (oscuro/claro/auto)" style="font-size:16px;">
-          🌙
-        </button>
-        <button class="notif-btn" title="Notificaciones">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span class="notif-dot"></span>
-        </button>
-        <!-- LIVE WIDGETS in topbar-right, before the avatar -->
-        <div id="weatherWidget" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;cursor:default" title="Clima en Junin">
-          <div id="weatherIcon" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center"></div>
-          <div style="display:flex;flex-direction:column">
-            <span id="weatherTemp" style="font-size:13px;font-weight:800;color:#f0f4ff;line-height:1.1">--</span>
-            <span id="weatherDesc" style="font-size:9px;color:rgba(148,163,184,0.5);line-height:1">Junin</span>
-          </div>
-        </div>
-
-        <div id="dolarWidget" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;cursor:default" title="Tipos de cambio">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <div style="display:flex;flex-direction:column">
-            <span id="dolarOficial" style="font-size:11px;font-weight:800;color:#10b981;line-height:1.1">$--</span>
-            <span id="dolarBlue" style="font-size:9px;color:rgba(148,163,184,0.5);line-height:1">Blue $--</span>
-          </div>
-        </div>
-        <div class="topbar-avatar" id="topbarAvatar" title="Perfil">SA</div>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuario actual">MC</div>
       </div>
     </header>
 
-    <!-- ALERT BANNER -->
-    <div class="alert-banner" id="alertBanner">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span>Obras Publicas supera el presupuesto mensual en un <strong>18%</strong>. Se recomienda revision inmediata.</span>
-      <button class="alert-close" onclick="document.getElementById('alertBanner').style.display='none'">&times;</button>
-    </div>
-
-    <div class="content-wrapper">
-
-      <!-- WELCOME -->
-      <div class="welcome-banner gradient-animate" id="welcomeBanner" data-reveal="zoom">
-        <div class="welcome-content">
-          <h2 id="welcomeGreeting">Bienvenido</h2>
-          <div class="welcome-meta">
-            <span class="role-badge" id="welcomeRole">Ejecutivo</span>
-            <span class="last-login">Ultimo acceso: <span id="lastLoginTime"></span></span>
-          </div>
+    <div class="exec-shell" id="executiveDashboard" aria-busy="true">
+      <section class="exec-hero" aria-labelledby="executiveTitle">
+        <div class="exec-eyebrow">Lectura ejecutiva · GRH Junín · decisión con trazabilidad</div>
+        <h2 id="executiveTitle">Una sola lectura para decidir qué revisar primero.</h2>
+        <p class="exec-hero-copy">Panorama ejecutivo del snapshot gobernado de GRH. Integra calidad, participación en liquidación y controles cross-source sin convertirlos en padrón activo, pago bancario ni dato en tiempo real. Los accesos inferiores abren el detalle operativo disponible.</p>
+        <div class="exec-chips" aria-label="Contexto de los datos">
+          <span class="exec-chip"><strong id="snapshotChip">—</strong> corte GRH</span>
+          <span class="exec-chip"><strong id="referencePeriodChip">—</strong> período de referencia</span>
+          <span class="exec-chip"><strong>Histórico</strong> no tiempo real</span>
+          <span class="exec-chip"><strong>Privacidad k≥5</strong> celdas pequeñas agrupadas</span>
+          <span class="exec-chip"><strong>Moneda</strong> no declarada</span>
+          <span class="exec-chip"><strong id="sourceCountChip">—/3</strong> contratos requeridos</span>
         </div>
-        <div class="welcome-actions">
-          <button class="btn-w-primary" onclick="window.location.href='ia.html'">Consultar IA</button>
-          <button class="btn-w-secondary" onclick="window.location.href='analytics.html'">Ver Reportes</button>
-        </div>
-      </div>
-
-      <!-- QUICK ACCESS -->
-      <div class="quick-access-grid">
-        <a href="ia.html" class="qa-link">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-          Asistente IA
-        </a>
-        <a href="rrhh.html" class="qa-link">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          RRHH
-        </a>
-        <a href="licitaciones.html" class="qa-link">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          Licitaciones
-        </a>
-        <a href="vecinos.html" class="qa-link">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          Reclamos
-        </a>
-        <a href="analytics.html" class="qa-link">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Analytics
-        </a>
-        <a href="exportar.html" class="qa-link">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Exportar
-        </a>
-      </div>
-
-      <!-- KPI CARDS -->
-      <section class="kpi-grid" id="kpiGrid">
-
-        <div class="kpi-card card-lift" data-reveal>
-          <div class="kpi-header">
-            <span class="kpi-label">Total Empleados</span>
-            <div class="kpi-icon blue">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="kpi-empleados-val" data-count="1247" data-currency="false">1,247</div>
-          <div class="kpi-footer">
-            <span class="kpi-trend up">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-              12 este mes
-            </span>
-            <span class="kpi-sub">vs 1,235 julio</span>
-            <div class="sparkline"><div class="sparkline-fill" style="width:65%;background:#10b981"></div></div>
-          </div>
-        </div>
-
-        <div class="kpi-card card-lift" data-reveal>
-          <div class="kpi-header">
-            <span class="kpi-label">Gasto Mensual</span>
-            <div class="kpi-icon amber">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="kpi-gastos-val" data-count="284" data-prefix="$" data-suffix="M" data-currency="false">$284M</div>
-          <div class="kpi-footer">
-            <span class="kpi-trend down">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              4.2% vs julio
-            </span>
-            <span class="kpi-sub">Presupuesto: $310M</span>
-            <div class="sparkline"><div class="sparkline-fill" style="width:80%;background:#f59e0b"></div></div>
-          </div>
-        </div>
-
-        <div class="kpi-card card-lift" data-reveal>
-          <div class="kpi-header">
-            <span class="kpi-label">Horas Extra (mes)</span>
-            <div class="kpi-icon red">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="kpi-horas-val" data-count="4312" data-currency="false">4,312</div>
-          <div class="kpi-footer">
-            <span class="kpi-trend down">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              8% vs julio
-            </span>
-            <span class="kpi-sub">Costo: $18.4M</span>
-            <div class="sparkline"><div class="sparkline-fill" style="width:45%;background:#ef4444"></div></div>
-          </div>
-        </div>
-
-        <div class="kpi-card card-lift" data-reveal>
-          <div class="kpi-header">
-            <span class="kpi-label">Presupuesto Ejecutado</span>
-            <div class="kpi-icon violet">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="17" y="13" width="4" height="8"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="kpi-presupuesto-val" data-count="67" data-suffix="%" data-currency="false">67%</div>
-          <div class="kpi-footer">
-            <div class="sparkline"><div class="sparkline-fill" id="presupProgressBar" style="width:67%;background:#8b5cf6"></div></div>
-            <span class="kpi-sub">8 meses del ano</span>
-          </div>
-        </div>
-
-        <div class="kpi-card card-lift" data-reveal>
-          <div class="kpi-header">
-            <span class="kpi-label">Reclamos Vecinos</span>
-            <div class="kpi-icon green">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="kpi-reclamos-val" data-count="318" data-currency="false">318</div>
-          <div class="kpi-footer">
-            <span class="kpi-trend up" style="color:#f59e0b">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              23 sin resolver
-            </span>
-            <span class="kpi-sub">Tiempo promedio: 3.2 dias</span>
-            <div class="sparkline"><div class="sparkline-fill" style="width:30%;background:#10b981"></div></div>
-          </div>
-        </div>
-
-        <div class="kpi-card card-lift" data-reveal>
-          <div class="kpi-header">
-            <span class="kpi-label">Obras en Ejecucion</span>
-            <div class="kpi-icon teal">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="kpi-obras-val" data-count="8" data-currency="false">8</div>
-          <div class="kpi-footer">
-            <span class="kpi-trend up">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-              2 nuevas este mes
-            </span>
-            <span class="kpi-sub">Inversion: $142M</span>
-            <div class="sparkline"><div class="sparkline-fill" style="width:55%;background:#14b8a6"></div></div>
-          </div>
-        </div>
-
       </section>
 
-      <!-- LIVE DATA ROW -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <!-- Weather Card -->
-        <div class="card" style="background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(13,21,38,0.9));border:1px solid var(--border);border-radius:16px;padding:20px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div class="exec-loading" id="loadStatus" role="status" aria-live="polite">
+        <span class="exec-spinner" aria-hidden="true"></span>
+        <div><strong>Construyendo el panorama</strong><p>Validando las proyecciones ejecutiva, de calidad y de cierre mensual del mismo corte GRH.</p></div>
+      </div>
+
+      <div class="exec-error" id="loadError" role="alert" hidden>
+        <span class="exec-error-icon" aria-hidden="true">!</span>
+        <div><strong>El panorama ejecutivo no está disponible</strong><p id="loadErrorMessage">No se pudieron validar los contratos privados de GRH.</p></div>
+        <button class="exec-retry-btn" id="retryLoad" type="button">Reintentar</button>
+      </div>
+
+      <div class="exec-data" id="dataViews" hidden>
+        <section class="exec-kpis" aria-label="Indicadores ejecutivos del snapshot GRH">
+          <article class="exec-stat">
+            <div class="exec-stat-label">Participantes en liquidación</div>
+            <div class="exec-stat-value" id="kpiParticipants">—</div>
+            <p class="exec-stat-note" id="kpiParticipantsNote">—</p>
+            <span class="exec-stat-context">No equivale a dotación activa</span>
+          </article>
+          <article class="exec-stat" data-tone="teal">
+            <div class="exec-stat-label">Calidad gobernada</div>
+            <div class="exec-stat-value" id="kpiQuality">—</div>
+            <p class="exec-stat-note" id="kpiQualityNote">—</p>
+            <span class="exec-stat-context">Alcance: extracto agregado</span>
+          </article>
+          <article class="exec-stat" data-tone="amber">
+            <div class="exec-stat-label">Score cross-source global</div>
+            <div class="exec-stat-value" id="kpiCrossScore">—</div>
+            <p class="exec-stat-note" id="kpiCrossScoreNote">—</p>
+            <span class="exec-stat-context">Todo el snapshot · requiere remediación</span>
+          </article>
+          <article class="exec-stat" data-tone="amber">
+            <div class="exec-stat-label">Acuerdo de valores global</div>
+            <div class="exec-stat-value" id="kpiAgreement">—</div>
+            <p class="exec-stat-note" id="kpiAgreementNote">—</p>
+            <span class="exec-stat-context">Todo el snapshot · cálculo frente a totpago</span>
+          </article>
+          <article class="exec-stat" data-tone="violet">
+            <div class="exec-stat-label">Cobertura global de corridas</div>
+            <div class="exec-stat-value" id="kpiCoverage">—</div>
+            <p class="exec-stat-note" id="kpiCoverageNote">—</p>
+            <span class="exec-stat-context">Cobertura no es conciliación</span>
+          </article>
+          <article class="exec-stat" data-tone="teal">
+            <div class="exec-stat-label">Base de datos perfilada</div>
+            <div class="exec-stat-value" id="kpiRows">—</div>
+            <p class="exec-stat-note" id="kpiRowsNote">—</p>
+            <span class="exec-stat-context">Snapshot GRH gobernado</span>
+          </article>
+        </section>
+
+        <section class="exec-close-brief" id="monthlyCloseBrief" aria-labelledby="monthlyCloseTitle" data-privacy-threshold="10">
+          <div class="exec-close-head">
             <div>
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.45);margin-bottom:4px">Clima en tiempo real</div>
-              <div style="font-size:11px;color:rgba(148,163,184,0.4)">Junin, Mendoza</div>
+              <p class="exec-close-eyebrow">Brief mensual · agregado k≥10</p>
+              <h3 id="monthlyCloseTitle">Cierre del último mes</h3>
+              <p class="exec-close-summary">Control del período más reciente publicado por el contrato mensual gobernado. Sus porcentajes pertenecen sólo a ese mes y permanecen separados de la conciliación global del snapshot.</p>
             </div>
-            <div id="weatherCardIcon" style="width:40px;height:40px"></div>
+            <span class="exec-close-period" id="closePeriodBadge">—</span>
           </div>
-          <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:12px">
-            <div id="weatherCardTemp" style="font-family:Outfit,sans-serif;font-size:40px;font-weight:900;color:#f0f4ff;line-height:1">--</div>
-            <div style="padding-bottom:6px">
-              <div id="weatherCardDesc" style="font-size:12px;color:rgba(148,163,184,0.7)">Cargando...</div>
-              <div style="font-size:10px;color:rgba(148,163,184,0.4)">Actualizado ahora</div>
+          <div class="exec-close-grid" aria-label="Indicadores del último período mensual">
+            <article class="exec-close-metric">
+              <span>Participantes</span>
+              <strong id="closeParticipants">—</strong>
+              <small>Presencia agregada en cálculo.</small>
+            </article>
+            <article class="exec-close-metric" id="closeControlMetric">
+              <span>Control aritmético</span>
+              <strong id="closeControlStatus">—</strong>
+              <small id="closeControlNote">—</small>
+            </article>
+            <article class="exec-close-metric">
+              <span>Cobertura de corridas</span>
+              <strong id="closeCoverage">—</strong>
+              <small>Sólo el período indicado.</small>
+            </article>
+            <article class="exec-close-metric">
+              <span>Exactitud de métricas</span>
+              <strong id="closeExactness">—</strong>
+              <small>Sólo el período indicado.</small>
+            </article>
+            <article class="exec-close-metric">
+              <span>Acuerdo de valores</span>
+              <strong id="closeAgreement">—</strong>
+              <small>Sólo el período indicado.</small>
+            </article>
+          </div>
+          <div class="exec-close-comparison" id="closeComparison">
+            <div class="exec-close-comparison-title">
+              <strong id="closeComparisonTitle">Comparación mensual</strong>
+              <span id="closeComparisonNote">Se comparan únicamente meses calendario consecutivos publicados.</span>
+            </div>
+            <div class="exec-close-deltas" aria-label="Deltas mensuales descriptivos">
+              <div class="exec-close-delta"><span>Participantes</span><strong id="closeParticipantDelta">—</strong></div>
+              <div class="exec-close-delta"><span>Cobertura</span><strong id="closeCoverageDelta">—</strong></div>
+              <div class="exec-close-delta"><span>Exactitud</span><strong id="closeExactnessDelta">—</strong></div>
+              <div class="exec-close-delta"><span>Acuerdo de valores</span><strong id="closeAgreementDelta">—</strong></div>
             </div>
           </div>
-          <div id="weatherFull"></div>
-        </div>
-        
-        <!-- Dolar Card -->
-        <div class="card" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(13,21,38,0.9));border:1px solid var(--border);border-radius:16px;padding:20px;">
-          <div style="margin-bottom:12px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(148,163,184,0.45);margin-bottom:2px">Tipo de cambio USD/ARS</div>
-            <div style="font-size:10px;color:rgba(148,163,184,0.4)">Datos en tiempo real</div>
+          <p class="exec-close-limit">Deltas aritméticos descriptivos: no atribuyen motivos ni certifican una operación externa. Este brief no expone componentes cuantitativos, categorías ni identificadores.</p>
+        </section>
+
+        <section class="exec-layout" aria-label="Tendencia y prioridades">
+          <article class="exec-panel">
+            <div class="exec-panel-head">
+              <div>
+                <h3>Tendencia del control de cálculo</h3>
+                <p class="exec-panel-subtitle">Bruto, neto y retenciones agregados desde conceptos de <code>calculo</code>. Son unidades de fuente con moneda no declarada; no representan pago bancario, tesorería ni asiento contable.</p>
+              </div>
+              <div class="exec-chart-controls">
+                <label class="exec-visually-hidden" for="trendRange">Horizonte de la tendencia</label>
+                <select class="exec-select" id="trendRange">
+                  <option value="6">Últimos 6 períodos</option>
+                  <option value="12" selected>Últimos 12 períodos</option>
+                  <option value="24">Últimos 24 períodos</option>
+                  <option value="all">Histórico válido</option>
+                </select>
+                <span class="exec-panel-badge" id="trendBadge">—</span>
+              </div>
+            </div>
+            <figure>
+              <div class="exec-chart" id="calculationChart" role="img" aria-label="Tendencia temporal del control de cálculo"></div>
+              <figcaption class="exec-chart-summary" id="chartSummary">—</figcaption>
+            </figure>
+            <div class="exec-legend" aria-label="Leyenda de la tendencia">
+              <span><i style="--legend:var(--exec-blue)"></i>bruto con asignaciones</span>
+              <span><i style="--legend:var(--exec-teal)"></i>neto de cálculo</span>
+              <span><i style="--legend:var(--exec-amber)"></i>retenciones</span>
+            </div>
+          </article>
+
+          <article class="exec-panel">
+            <div class="exec-panel-head">
+              <div><h3>Prioridades para conducción</h3><p class="exec-panel-subtitle">Alertas descriptivas con destino de revisión. No son notificaciones en vivo ni tareas asignadas.</p></div>
+              <span class="exec-panel-badge">4 focos</span>
+            </div>
+            <div class="exec-alerts" id="alertsList" aria-live="polite"></div>
+          </article>
+        </section>
+
+        <section class="exec-layout exec-layout-balanced" aria-label="Distribución de participantes">
+          <article class="exec-panel">
+            <div class="exec-panel-head">
+              <div><h3>Centros de costo con mayor participación</h3><p class="exec-panel-subtitle">Participantes distintos en liquidación. Las celdas pequeñas se consolidan bajo la política k≥5; no representa presupuesto ejecutado.</p></div>
+              <span class="exec-panel-badge" id="costCenterBadge">—</span>
+            </div>
+            <div class="exec-ranks" id="costCenterRanks"></div>
+            <p class="exec-drill-note">La distribución completa y su metodología están en <a href="grh-ejecutivo.html">GRH Ejecutivo →</a></p>
+          </article>
+          <article class="exec-panel">
+            <div class="exec-panel-head">
+              <div><h3>Sectores con mayor participación</h3><p class="exec-panel-subtitle">Clasificación agregada del último período válido. El bucket protegido evita exponer categorías pequeñas.</p></div>
+              <span class="exec-panel-badge" id="sectorBadge">—</span>
+            </div>
+            <div class="exec-ranks" id="sectorRanks"></div>
+            <p class="exec-drill-note">Abrir el análisis institucional en <a href="rrhh.html">Recursos Humanos →</a></p>
+          </article>
+        </section>
+
+        <section aria-labelledby="accessTitle">
+          <div class="exec-section-title">
+            <h3 id="accessTitle">Accesos con contexto</h3>
+            <p>Cada módulo conserva la definición y el límite de uso del dato antes de permitir el drill-through.</p>
           </div>
-          <div id="dolarFull">
-            <div style="text-align:center;padding:20px;color:rgba(148,163,184,0.4);font-size:13px">Cargando...</div>
+          <div class="exec-access-grid">
+            <a class="exec-access-card" href="grh-ejecutivo.html">
+              <div class="exec-access-head">
+                <span class="exec-access-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9m8 10V5m8 14V2M2 19h20"/></svg></span>
+                <span class="exec-capability">Fuente operativa</span>
+              </div>
+              <h4>GRH Ejecutivo</h4>
+              <p>Calidad, cobertura, estructura y trazabilidad del snapshot canónico. Trabaja con agregados gobernados y sin PII exportada.</p>
+              <span class="exec-access-action">Abrir panorama GRH →</span>
+            </a>
+            <a class="exec-access-card" href="hacienda.html">
+              <div class="exec-access-head">
+                <span class="exec-access-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M5 7V4h14v3M5 11v8m5-8v8m4-8v8m5-8v8M3 21h18"/></svg></span>
+                <span class="exec-capability">Control disponible</span>
+              </div>
+              <h4>Hacienda y Nómina</h4>
+              <p>Control de conceptos de cálculo, composición y conciliación cross-source. No acredita pago bancario ni ejecución contable.</p>
+              <span class="exec-access-action">Revisar control de cálculo →</span>
+            </a>
+            <a class="exec-access-card" href="rrhh.html">
+              <div class="exec-access-head">
+                <span class="exec-access-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8m13 18v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                <span class="exec-capability" data-state="review">Cobertura en revisión</span>
+              </div>
+              <h4>Recursos Humanos</h4>
+              <p>Consulta operativa del módulo existente. La participación de este panel no debe interpretarse como padrón contractual de agentes activos.</p>
+              <span class="exec-access-action">Abrir Recursos Humanos →</span>
+            </a>
           </div>
-        </div>
+        </section>
+
+        <section class="exec-layout exec-layout-balanced" aria-label="Fuentes y hoja de ruta">
+          <article class="exec-panel">
+            <div class="exec-panel-head">
+              <div><h3>Estado de las fuentes</h3><p class="exec-panel-subtitle">Contratos autenticados que deben cargar y conciliar antes de mostrar el panorama.</p></div>
+              <span class="exec-panel-badge">fail-closed</span>
+            </div>
+            <div class="exec-source-list" id="sourceList"></div>
+          </article>
+          <article class="exec-panel">
+            <div class="exec-panel-head">
+              <div><h3>Hoja de ruta de capacidad</h3><p class="exec-panel-subtitle">Diferencia explícita entre lo utilizable hoy y lo que aún no está operativo.</p></div>
+              <span class="exec-panel-badge">sin promesas ficticias</span>
+            </div>
+            <div class="exec-roadmap" id="roadmapList"></div>
+          </article>
+        </section>
+
+        <details class="exec-methodology">
+          <summary>Definiciones, alcance y límites de interpretación</summary>
+          <div class="exec-methodology-content">
+            <div><strong>Participantes en liquidación</strong>Legajos distintos presentes en al menos una fila válida de <code>calculo</code> del período de referencia. No es un maestro contractual de altas, bajas o dotación activa.</div>
+            <div><strong>Calidad gobernada</strong>Score del extracto agregado gobernado. No certifica cada una de las tablas crudas ni elimina los riesgos declarados por el contrato.</div>
+            <div><strong>Control cross-source global</strong>Compara conceptos de <code>calculo</code> frente a campos de <code>totpago</code> en todo el snapshot. El score, acuerdo de valores y cobertura globales no se atribuyen a un mes.</div>
+            <div><strong>Cierre mensual k≥10</strong>El brief usa la conciliación del período exacto y sólo compara meses calendario consecutivos publicados. Sus deltas son aritméticos y descriptivos.</div>
+            <div><strong>Tendencia de cálculo</strong>Usa la serie <code>calculation_control_series</code>. Los importes se expresan en unidades de fuente; la moneda no está declarada y no se infiere ningún símbolo.</div>
+            <div><strong>Totpago</strong>Su serie histórica es sólo diagnóstica. No alimenta la curva ejecutiva ni se presenta como masa salarial o pago bancario confiable.</div>
+            <div><strong>Privacidad y procedencia</strong>La vista consume proyecciones gobernadas, excluye <code>personas_junin</code> y aplica k≥5 a categorías y k≥10 a métricas sensibles. Las celdas protegidas nunca se convierten en cero.</div>
+            <div><strong>Actualización</strong>El panel muestra un snapshot histórico. La ingesta incremental y la operación en tiempo real siguen pendientes y se rotulan como no operativas.</div>
+            <div><strong>Alcance institucional</strong>Este panorama cubre GRH. Presupuesto, obras, reclamos y otros dominios no se agregan hasta contar con contratos gobernados equivalentes.</div>
+            <div><strong>Comportamiento ante fallas</strong>Las proyecciones ejecutiva, de calidad y de cierre mensual son obligatorias y deben compartir sistema, archivo, SHA y corte. Ante cualquier falla el panel oculta todas las métricas y permite reintentar.</div>
+          </div>
+        </details>
+
+        <footer class="exec-footer">
+          <span>Fuente: <code id="sourceFile">—</code> · SHA-256 <code id="sourceHash">—</code></span>
+          <span>Perfil generado: <time id="profileGeneratedAt">—</time> · Semántica generada: <time id="semanticGeneratedAt">—</time></span>
+        </footer>
       </div>
+    </div>
+  </main>
 
-      <!-- ALERTS ROW -->
-      <div class="alerts-row">
-        <div class="alert-badge">
-          <div class="alert-badge-dot" style="background:#ef4444;color:white">!</div>
-          <div><div class="alert-badge-label" style="color:#ef4444">Obras Publicas</div><div class="alert-badge-sub">118% ejecutado</div></div>
-        </div>
-        <div class="alert-badge">
-          <div class="alert-badge-dot" style="background:#f59e0b;color:white">!</div>
-          <div><div class="alert-badge-label" style="color:#f59e0b">Personal</div><div class="alert-badge-sub">103% ejecutado</div></div>
-        </div>
-        <div class="alert-badge">
-          <div class="alert-badge-dot" style="background:#8b5cf6;color:white">!</div>
-          <div><div class="alert-badge-label" style="color:#8b5cf6">Reclamos</div><div class="alert-badge-sub">5 reclamos urgentes</div></div>
-        </div>
-      </div>
-
-      <!-- CHARTS -->
-      <div class="charts-grid">
-        <div class="chart-card card-lift" data-reveal>
-          <div class="chart-header">
-            <div class="chart-title">Gasto Mensual</div>
-            <div class="chart-sub">Evolucion 2025-2026</div>
-          </div>
-          <div id="skelGastoMensual" class="chart-skeleton"></div>
-          <canvas id="chartGastoMensual" height="180" style="display:none;"></canvas>
-        </div>
-        <div class="chart-card card-lift" data-reveal>
-          <div class="chart-header">
-            <div class="chart-title">Presupuesto por Secretaria</div>
-            <div class="chart-sub">Distribucion actual</div>
-          </div>
-          <div id="skelPresupuesto" class="chart-skeleton"></div>
-          <canvas id="chartPresupuestoDoughnut" height="180" style="display:none;"></canvas>
-        </div>
-      </div>
-
-      <!-- BOTTOM: Pagos + Actividad -->
-      <div class="bottom-grid">
-        <div class="chart-card card-lift" data-reveal>
-          <div class="chart-header">
-            <div class="chart-title">Ultimos Pagos</div>
-            <div class="chart-sub">Checkbook municipal</div>
-          </div>
-          <div style="overflow-x: auto">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Proveedor</th>
-                  <th>Secretaria</th>
-                  <th>Monto</th>
-                </tr>
-              </thead>
-              <tbody id="checkbookBody">
-                <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Cargando...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="chart-card card-lift" data-reveal>
-          <div class="chart-header">
-            <div class="chart-title">Actividad Reciente</div>
-            <div class="chart-sub">Ultimas acciones del sistema</div>
-          </div>
-          <div class="activity-feed" id="activityFeed">
-            <div class="activity-item"><div class="activity-dot" style="background:#10b981"></div><div><div class="activity-text">Pago aprobado a Constructora Sur S.A.</div><div class="activity-time">hace 12 min</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:#3b82f6"></div><div><div class="activity-text">Nuevo reclamo en Barrio Norte</div><div class="activity-time">hace 28 min</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:#f59e0b"></div><div><div class="activity-text">Alerta: presupuesto Obras al 118%</div><div class="activity-time">hace 1 hora</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:#8b5cf6"></div><div><div class="activity-text">Empleado incorporado: RRHH</div><div class="activity-time">hace 2 horas</div></div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:#14b8a6"></div><div><div class="activity-text">Informe mensual generado</div><div class="activity-time">hoy 09:00</div></div></div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- end content-wrapper -->
-  </main><!-- end main -->
-
-  <!-- SCRIPTS — orden correcto, sin duplicados -->
+  <noscript><div class="exec-noscript">Este panel necesita JavaScript para consultar los contratos privados autenticados. No se muestran cifras de respaldo ni datos simulados.</div></noscript>
   <script src="js/nav.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/permissions.js"></script>
-  <script src="js/charts-premium.js"></script>
-
+  <script src="js/auth-fetch.js"></script>
+  <script src="js/grh-secure-data.js"></script>
+  <script src="js/grh-close-data.js"></script>
   <script>
-  (function init() {
-    // Apply theme
-    try { var t=localStorage.getItem('govtech_theme'); if(t) document.documentElement.setAttribute('data-theme',t); } catch(e){}
+    (function () {
+      'use strict';
 
-    // Build sidebar
-    if (typeof buildSidebar === 'function') buildSidebar('dashboard');
+      var SVG_NS = 'http://www.w3.org/2000/svg';
+      var numberFormatter = new Intl.NumberFormat('es-AR',{maximumFractionDigits:0});
+      var compactFormatter = new Intl.NumberFormat('es-AR',{notation:'compact',maximumFractionDigits:2});
+      var percentFormatter = new Intl.NumberFormat('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1});
+      var qualityFormatter = new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      var sourceUnitFormatter = new Intl.NumberFormat('es-AR',{notation:'compact',maximumFractionDigits:1});
+      var civilDateFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeZone:'UTC'});
+      var dateTimeFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Argentina/Buenos_Aires'});
+      var monthFormatter = new Intl.DateTimeFormat('es-AR',{month:'short',year:'numeric',timeZone:'UTC'});
+      var state = { executive:null, quality:null, monthlyClose:null, series:[], range:'12', loadSequence:0 };
+      var elements = {};
 
-    // Show access denied toast
-    if (sessionStorage.getItem('access_denied')) {
-      sessionStorage.removeItem('access_denied');
-      setTimeout(function(){ if(typeof showToast!=='undefined') showToast('Acceso restringido para tu rol','error'); },500);
-    }
+      function byId(id) { return document.getElementById(id); }
+      function cacheElements() {
+        [
+          'executiveDashboard','topbarSourceState','topbarSourceText','execThemeToggle','snapshotChip','referencePeriodChip','sourceCountChip',
+          'loadStatus','loadError','loadErrorMessage','retryLoad','dataViews','kpiParticipants','kpiParticipantsNote','kpiQuality',
+          'kpiQualityNote','kpiCrossScore','kpiCrossScoreNote','kpiAgreement','kpiAgreementNote','kpiCoverage','kpiCoverageNote',
+          'kpiRows','kpiRowsNote','trendRange','trendBadge','calculationChart','chartSummary','alertsList','costCenterBadge',
+          'costCenterRanks','sectorBadge','sectorRanks','sourceList','roadmapList','sourceFile','sourceHash','profileGeneratedAt','semanticGeneratedAt',
+          'monthlyCloseBrief','closePeriodBadge','closeParticipants','closeControlMetric','closeControlStatus','closeControlNote',
+          'closeCoverage','closeExactness','closeAgreement','closeComparison','closeComparisonTitle','closeComparisonNote',
+          'closeParticipantDelta','closeCoverageDelta','closeExactnessDelta','closeAgreementDelta'
+        ].forEach(function (id) { elements[id] = byId(id); });
+      }
+      function setText(element,value) { element.textContent = value === null || value === undefined ? '—' : String(value); }
+      function fail(message) { throw new Error(message); }
+      function formatMonth(period) {
+        var parts = period.split('-');
+        return monthFormatter.format(new Date(Date.UTC(Number(parts[0]),Number(parts[1])-1,1))).replace('.','');
+      }
+      function formatSignedInteger(value) {
+        if(!Number.isSafeInteger(value)) return '—';
+        return (value > 0 ? '+' : '')+numberFormatter.format(value);
+      }
+      function formatSignedPoints(value) {
+        if(!Number.isFinite(value)) return '—';
+        return (value > 0 ? '+' : '')+percentFormatter.format(value)+' pp';
+      }
+      function formatSourceUnits(value) { return sourceUnitFormatter.format(value)+' u. fuente'; }
+      function createSvg(name,attributes,textValue) {
+        var element = document.createElementNS(SVG_NS,name);
+        Object.entries(attributes || {}).forEach(function (entry) { element.setAttribute(entry[0],String(entry[1])); });
+        if(textValue !== undefined) element.textContent = String(textValue);
+        return element;
+      }
+      function addSvgTitle(parent,textValue) { parent.appendChild(createSvg('title',{},textValue)); }
 
-    document.addEventListener('DOMContentLoaded', function() {
-
-      // User info
-      try {
-        var raw = sessionStorage.getItem('mjunin_user');
-        var user = raw ? JSON.parse(raw) : null;
-        if (user) {
-          var av = document.getElementById('topbarAvatar');
-          if (av) av.textContent = (user.name||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-          var hour = new Date().getHours();
-          var gr = hour<12?'Buenos dias':hour<19?'Buenas tardes':'Buenas noches';
-          var wg = document.getElementById('welcomeGreeting');
-          if(wg) wg.textContent = gr + ', ' + (user.name||'Usuario');
-          var wr = document.getElementById('welcomeRole');
-          var rmap = {SUPER_ADMIN:'Super Admin',INTENDENTE:'Intendente',TENANT_ADMIN:'Administrador',TENANT_USER:'Usuario',DEMO:'Demo'};
-          if(wr) wr.textContent = rmap[user.role]||user.role||'Usuario';
-          var ll = document.getElementById('lastLoginTime');
-          if(ll) ll.textContent = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      function normalizeExperience(experience,close) {
+        if(!experience || !experience.executive || !experience.quality || !close) fail('Las tres proyecciones GRH no están disponibles.');
+        var executive = experience.executive;
+        var quality = experience.quality;
+        var sources = [executive.source,quality.source,close.source];
+        var identityKeys = ['canonicalSystem','sourceFile','sourceSha256','snapshotAsOf'];
+        if(!sources.every(function (source) {
+          return source && identityKeys.every(function (key) { return source[key] === sources[0][key]; });
+        })) fail('Las proyecciones GRH no pertenecen a la misma fuente y corte.');
+        if(close.privacy.threshold !== 10 || close.privacy.containsPii !== false ||
+            close.source.latestValidCalculationPeriod !== executive.workforce.referencePeriod) {
+          fail('El cierre mensual no supera la frontera ejecutiva de privacidad y período.');
         }
-      } catch(e){}
-
-      // Date
-      var cd = document.getElementById('currentDate');
-      if(cd) cd.textContent = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
-
-      // Live clock
-      function tick() {
-        var el = document.getElementById('liveClock');
-        if(el) el.textContent = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        var latestClose = close.series.find(function (row) {
+          return row.period === close.source.latestValidCalculationPeriod;
+        });
+        if(!latestClose || latestClose.privacyStatus !== 'released') {
+          fail('El último período mensual no está publicado bajo k≥10.');
+        }
+        var series = executive.compensation.series.filter(function (row) {
+          return row.privacyStatus === 'released';
+        }).map(function (row) {
+          return {
+            period:row.period,
+            participants:row.participantCount,
+            gross:row.amounts.grossWithFamilyAllowancesCents/100,
+            withholdings:row.amounts.employeeWithholdingsCents/100,
+            net:row.amounts.netPayrollCents/100
+          };
+        });
+        if(!series.length) fail('No hay períodos liberados por la política de privacidad.');
+        return {
+          executive:executive,
+          quality:quality,
+          monthlyClose:{
+            period:latestClose.period,
+            participantCount:latestClose.participantCount,
+            identityExactlyReconciled:latestClose.control.identityExactlyReconciled,
+            identityWithinRoundingTolerance:latestClose.control.identityWithinRoundingTolerance,
+            runCoveragePct:latestClose.reconciliation.runCoveragePct,
+            metricExactRatePct:latestClose.reconciliation.metricExactRatePct,
+            valueAgreementPct:latestClose.reconciliation.valueAgreementPct,
+            comparison:close.comparison.status === 'released' ? {
+              status:'released',
+              previousPeriod:close.comparison.previousPeriod,
+              currentPeriod:close.comparison.currentPeriod,
+              participantDelta:close.comparison.participantDelta,
+              runCoveragePct:close.comparison.reconciliationDeltas.runCoveragePct,
+              metricExactRatePct:close.comparison.reconciliationDeltas.metricExactRatePct,
+              valueAgreementPct:close.comparison.reconciliationDeltas.valueAgreementPct
+            } : {
+              status:'unavailable',
+              previousPeriod:close.comparison.previousPeriod,
+              currentPeriod:close.comparison.currentPeriod
+            }
+          },
+          snapshot:quality.source.snapshotAsOf,
+          participants:executive.workforce.payrollParticipants,
+          sectors:executive.workforce.bySector.rows,
+          costCenters:executive.workforce.byCostCenter.rows,
+          series:series,
+          totalTables:quality.inventory.all.totalTables,
+          totalRows:quality.inventory.all.totalRows
+        };
       }
-      tick(); setInterval(tick,1000);
 
-      // Charts
-      function initCharts() {
-        if(!window.Chart||!window.MuniCharts) { setTimeout(initCharts,200); return; }
-        try { 
-          MuniCharts.gastoMensual('chartGastoMensual'); 
-          var s1 = document.getElementById('skelGastoMensual'); if(s1) s1.style.display = 'none';
-          var c1 = document.getElementById('chartGastoMensual'); if(c1) c1.style.display = 'block';
-        } catch(e){}
-        try { 
-          MuniCharts.presupuesto('chartPresupuestoDoughnut'); 
-          var s2 = document.getElementById('skelPresupuesto'); if(s2) s2.style.display = 'none';
-          var c2 = document.getElementById('chartPresupuestoDoughnut'); if(c2) c2.style.display = 'block';
-        } catch(e){}
+      function visibleSeries() { return state.range === 'all' ? state.series : state.series.slice(-Number(state.range)); }
+      function renderChart() {
+        var points = visibleSeries();
+        elements.calculationChart.replaceChildren();
+        if(!points.length) return;
+        var width = 930;
+        var height = 330;
+        var padding = { top:22,right:26,bottom:46,left:72 };
+        var plotWidth = width-padding.left-padding.right;
+        var plotHeight = height-padding.top-padding.bottom;
+        var max = Math.max.apply(null,points.map(function (point) { return point.gross; })) || 1;
+        var yMax = max*1.08;
+        var xAt = function (index) { return padding.left+(points.length === 1 ? plotWidth/2 : index*plotWidth/(points.length-1)); };
+        var yAt = function (value) { return padding.top+(yMax-value)*plotHeight/yMax; };
+        var svg = createSvg('svg',{viewBox:'0 0 '+width+' '+height,preserveAspectRatio:'xMidYMid meet','aria-hidden':'true',focusable:'false'});
+        for(var tick=0;tick<=4;tick+=1) {
+          var value = yMax*tick/4;
+          var y = padding.top+plotHeight-plotHeight*tick/4;
+          svg.appendChild(createSvg('line',{x1:padding.left,x2:width-padding.right,y1:y,y2:y,class:'exec-grid-line'}));
+          svg.appendChild(createSvg('text',{x:padding.left-10,y:y+3,'text-anchor':'end'},sourceUnitFormatter.format(value)));
+        }
+        var labelEvery = Math.max(1,Math.ceil(points.length/7));
+        points.forEach(function (point,index) {
+          if(index%labelEvery === 0 || index === points.length-1) svg.appendChild(createSvg('text',{x:xAt(index),y:height-15,'text-anchor':index === 0?'start':(index === points.length-1?'end':'middle')},formatMonth(point.period)));
+        });
+        [
+          {key:'gross',color:'var(--exec-blue)',label:'Bruto con asignaciones'},
+          {key:'net',color:'var(--exec-teal)',label:'Neto de cálculo'},
+          {key:'withholdings',color:'var(--exec-amber)',label:'Retenciones'}
+        ].forEach(function (series) {
+          var path = points.map(function (point,index) { return (index?'L':'M')+xAt(index).toFixed(2)+','+yAt(point[series.key]).toFixed(2); }).join(' ');
+          svg.appendChild(createSvg('path',{d:path,fill:'none',stroke:series.color,'stroke-width':series.key === 'withholdings'?'2':'2.6','stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}));
+          points.forEach(function (point,index) {
+            var circle = createSvg('circle',{cx:xAt(index),cy:yAt(point[series.key]),r:points.length>40?'1.8':'2.9',fill:series.color,stroke:'var(--exec-surface)','stroke-width':'1.3','vector-effect':'non-scaling-stroke'});
+            addSvgTitle(circle,formatMonth(point.period)+' · '+series.label+': '+formatSourceUnits(point[series.key]));
+            svg.appendChild(circle);
+          });
+        });
+        elements.calculationChart.appendChild(svg);
+        var first = points[0];
+        var last = points[points.length-1];
+        setText(elements.trendBadge,formatMonth(first.period)+' — '+formatMonth(last.period));
+        setText(elements.chartSummary,numberFormatter.format(points.length)+' períodos liberados por k≥10. Último neto: '+formatSourceUnits(last.net)+'; retenciones: '+formatSourceUnits(last.withholdings)+'. Los intervalos protegidos no se imputan. Moneda no declarada; no es pago bancario.');
       }
-      setTimeout(initCharts,400);
 
-      // Checkbook from MuniDB
-      if(window.MuniDB) {
+      function appendAlert(index,tone,title,copy,href,action) {
+        var item = document.createElement('div');
+        var marker = document.createElement('span');
+        var body = document.createElement('div');
+        var heading = document.createElement('strong');
+        var paragraph = document.createElement('p');
+        item.className = 'exec-alert'; item.dataset.tone = tone;
+        marker.className = 'exec-alert-index'; marker.textContent = String(index).padStart(2,'0');
+        heading.textContent = title; paragraph.textContent = copy;
+        body.append(heading,paragraph);
+        if(href) { var link = document.createElement('a'); link.href = href; link.textContent = action; body.appendChild(link); }
+        item.append(marker,body); elements.alertsList.appendChild(item);
+      }
+      function renderAlerts() {
+        var quality = state.quality;
+        var cross = quality.reconciliation;
+        var quarantined = quality.temporal.quarantineRows;
+        elements.alertsList.replaceChildren();
+        appendAlert(1,'critical','Conciliación global materialmente incompleta','Agregado del snapshot: score '+percentFormatter.format(cross.scorePct)+'% y acuerdo de valores '+percentFormatter.format(cross.valueAgreementPct)+'%. No corresponde al último mes ni la cobertura global compensa esta diferencia.','hacienda.html','Revisar en Hacienda →');
+        appendAlert(2,'warn',numberFormatter.format(quarantined)+' filas temporales en cuarentena','Quedaron fuera del universo válido por reglas temporales. Deben revisarse antes de ampliar el corte.','grh-ejecutivo.html','Abrir calidad GRH →');
+        appendAlert(3,'warn','Snapshot histórico, no operación en vivo','El corte es '+civilDateFormatter.format(new Date(quality.source.snapshotAsOf+'T00:00:00Z'))+'. La ingesta incremental todavía no está operativa.',null,null);
+        appendAlert(4,'warn','Alcance institucional limitado a GRH','Presupuesto, obras, reclamos y otros dominios no se muestran hasta disponer de contratos gobernados equivalentes.',null,null);
+      }
+
+      function renderRanking(container,rows,color) {
+        container.replaceChildren();
+        var released = rows.filter(function (row) { return row.privacyStatus === 'released'; });
+        var protectedBucket = rows.find(function (row) { return row.privacyStatus === 'protected_aggregate'; });
+        var top = released.slice(0,protectedBucket ? 5 : 6);
+        if(protectedBucket) top.push(protectedBucket);
+        if(!top.length) return;
+        var max = top[0].participants;
+        top.forEach(function (row) {
+          var item = document.createElement('div');
+          var meta = document.createElement('div');
+          var label = document.createElement('span');
+          var value = document.createElement('strong');
+          var track = document.createElement('div');
+          var bar = document.createElement('span');
+          item.className = 'exec-rank-item'; item.dataset.privacyStatus = row.privacyStatus;
+          meta.className = 'exec-rank-meta'; label.className = 'exec-rank-label'; value.className = 'exec-rank-value'; track.className = 'exec-track';
+          label.textContent = row.label; value.textContent = row.participantDisplay+' · '+percentFormatter.format(row.sharePct)+'%';
+          track.setAttribute('role','progressbar'); track.setAttribute('aria-label',row.label); track.setAttribute('aria-valuemin','0'); track.setAttribute('aria-valuemax',String(max)); track.setAttribute('aria-valuenow',String(row.participants));
+          bar.style.setProperty('--bar-width',Math.max(row.participants/max*100,1).toFixed(2)+'%'); bar.style.setProperty('--bar-color',row.privacyStatus === 'protected_aggregate' ? 'var(--exec-amber)' : color);
+          meta.append(label,value); track.appendChild(bar); item.append(meta,track); container.appendChild(item);
+        });
+      }
+
+      function appendSource(tone,title,copy) {
+        var row = document.createElement('div');
+        var dot = document.createElement('span');
+        var body = document.createElement('div');
+        var heading = document.createElement('strong');
+        var paragraph = document.createElement('p');
+        row.className = 'exec-source-row'; dot.className = 'exec-state-dot'; if(tone) dot.dataset.tone = tone;
+        heading.textContent = title; paragraph.textContent = copy; body.append(heading,paragraph); row.append(dot,body); elements.sourceList.appendChild(row);
+      }
+      function renderSources() {
+        elements.sourceList.replaceChildren();
+        appendSource('', 'Tres proyecciones conciliadas', 'Ejecutiva v2, calidad v1 y cierre v1 comparten sistema, archivo, SHA-256 y fecha de corte.');
+        appendSource('', 'Privacidad aplicada', 'Categorías k≥5; métricas sensibles k≥10; sin PII, identificadores, filas crudas ni valores suprimidos.');
+        appendSource('warn', 'Snapshot histórico', 'Corte '+civilDateFormatter.format(new Date(state.quality.source.snapshotAsOf+'T00:00:00Z'))+' · realtime=false.');
+        appendSource('warn', 'Control cross-source global con diferencias', 'Estado '+state.quality.reconciliation.status+' · score global '+percentFormatter.format(state.quality.reconciliation.scorePct)+'%.');
+      }
+
+      function appendRoadmap(step,tone,title,copy) {
+        var item = document.createElement('div');
+        var status = document.createElement('span');
+        var body = document.createElement('div');
+        var heading = document.createElement('strong');
+        var paragraph = document.createElement('p');
+        item.className = 'exec-roadmap-item'; status.className = 'exec-roadmap-step'; status.textContent = step;
+        if(tone === 'available') { status.style.color = 'var(--exec-green)'; status.style.borderColor = 'rgba(var(--exec-green-rgb),.24)'; }
+        else if(tone === 'remediation') { status.style.color = 'var(--exec-amber)'; status.style.borderColor = 'rgba(var(--exec-amber-rgb),.25)'; }
+        heading.textContent = title; paragraph.textContent = copy; body.append(heading,paragraph); item.append(status,body); elements.roadmapList.appendChild(item);
+      }
+      function renderRoadmap() {
+        elements.roadmapList.replaceChildren();
+        appendRoadmap('Disponible','available','Panorama GRH y control de cálculo','Drill-through agregado hacia GRH Ejecutivo y Hacienda con contrato autenticado.');
+        appendRoadmap('Remediar','remediation','Conciliación cálculo–totpago','Investigar diferencias por corrida y sostener totpago sólo como diagnóstico hasta su cierre.');
+        appendRoadmap('No operativo','planned','Ingesta incremental y tiempo real','El perfil exige una canalización incremental antes de presentar frescura operativa.');
+        appendRoadmap('No operativo','planned','Integración de otros dominios','Presupuesto, obras y atención ciudadana necesitan contratos, controles y procedencia equivalentes.');
+      }
+
+      function renderMonthlyClose(brief) {
+        setText(elements.closePeriodBadge,formatMonth(brief.period)+' · k≥10');
+        setText(elements.closeParticipants,numberFormatter.format(brief.participantCount));
+        var withinTolerance = brief.identityWithinRoundingTolerance === true;
+        elements.closeControlMetric.dataset.state = withinTolerance ? 'ok' : 'warn';
+        setText(elements.closeControlStatus,withinTolerance ? 'Dentro de tolerancia' : 'Fuera de tolerancia');
+        setText(elements.closeControlNote,brief.identityExactlyReconciled
+          ? 'Identidad exacta en el período.'
+          : (withinTolerance ? 'No exacta; permanece dentro del umbral.' : 'Requiere revisión del control.'));
+        setText(elements.closeCoverage,percentFormatter.format(brief.runCoveragePct)+'%');
+        setText(elements.closeExactness,percentFormatter.format(brief.metricExactRatePct)+'%');
+        setText(elements.closeAgreement,percentFormatter.format(brief.valueAgreementPct)+'%');
+
+        var comparison = brief.comparison;
+        if(comparison.status === 'released') {
+          elements.closeComparison.dataset.state = 'released';
+          setText(elements.closeComparisonTitle,formatMonth(comparison.previousPeriod)+' → '+formatMonth(comparison.currentPeriod));
+          setText(elements.closeComparisonNote,'Deltas frente al mes calendario anterior; el signo indica dirección, no evaluación.');
+          setText(elements.closeParticipantDelta,formatSignedInteger(comparison.participantDelta));
+          setText(elements.closeCoverageDelta,formatSignedPoints(comparison.runCoveragePct));
+          setText(elements.closeExactnessDelta,formatSignedPoints(comparison.metricExactRatePct));
+          setText(elements.closeAgreementDelta,formatSignedPoints(comparison.valueAgreementPct));
+          return;
+        }
+        elements.closeComparison.dataset.state = 'unavailable';
+        setText(elements.closeComparisonTitle,'Comparación no publicable');
+        setText(elements.closeComparisonNote,'El mes calendario anterior no está disponible bajo la misma protección k≥10.');
+        [elements.closeParticipantDelta,elements.closeCoverageDelta,elements.closeExactnessDelta,elements.closeAgreementDelta]
+          .forEach(function (element) { setText(element,'Protegido'); });
+      }
+
+      function setTime(element,date) {
+        setText(element,dateTimeFormatter.format(date));
+        element.dateTime = date.toISOString();
+      }
+      function renderAll(contract) {
+        state.executive = contract.executive;
+        state.quality = contract.quality;
+        state.monthlyClose = contract.monthlyClose;
+        state.series = contract.series;
+        var workforce = contract.executive.workforce;
+        var quality = contract.quality.quality;
+        var cross = contract.quality.reconciliation;
+        var quarantined = contract.quality.temporal.quarantineRows;
+        setText(elements.snapshotChip,civilDateFormatter.format(new Date(contract.snapshot+'T00:00:00Z')));
+        setText(elements.referencePeriodChip,formatMonth(workforce.referencePeriod));
+        setText(elements.sourceCountChip,'3/3');
+        setText(elements.kpiParticipants,numberFormatter.format(contract.participants));
+        setText(elements.kpiParticipantsNote,formatMonth(workforce.referencePeriod)+' · participación en cálculo, no dotación activa.');
+        setText(elements.kpiQuality,qualityFormatter.format(quality.score)+'/100');
+        setText(elements.kpiQualityNote,numberFormatter.format(quarantined)+' filas temporales en cuarentena.');
+        setText(elements.kpiCrossScore,percentFormatter.format(cross.scorePct)+'%');
+        setText(elements.kpiCrossScoreNote,'Global del snapshot · '+numberFormatter.format(cross.fullyReconciledRuns)+' de '+numberFormatter.format(cross.matchedRuns)+' corridas emparejadas cerraron.');
+        setText(elements.kpiAgreement,percentFormatter.format(cross.valueAgreementPct)+'%');
+        setText(elements.kpiAgreementNote,'Global del snapshot · acuerdo por valor entre conceptos comparados.');
+        setText(elements.kpiCoverage,percentFormatter.format(cross.runCoveragePct)+'%');
+        setText(elements.kpiCoverageNote,'Global del snapshot · '+numberFormatter.format(cross.matchedRuns)+' de '+numberFormatter.format(cross.calculationRuns)+' corridas de cálculo emparejadas.');
+        setText(elements.kpiRows,compactFormatter.format(contract.totalRows));
+        setText(elements.kpiRowsNote,numberFormatter.format(contract.totalRows)+' filas · '+numberFormatter.format(contract.totalTables)+' tablas.');
+        setText(elements.costCenterBadge,'k≥5 · '+numberFormatter.format(contract.participants));
+        setText(elements.sectorBadge,'k≥5 · '+formatMonth(workforce.referencePeriod));
+        renderMonthlyClose(contract.monthlyClose);
+        renderChart(); renderAlerts();
+        renderRanking(elements.costCenterRanks,contract.costCenters,'var(--exec-blue)');
+        renderRanking(elements.sectorRanks,contract.sectors,'var(--exec-violet)');
+        renderSources(); renderRoadmap();
+        setText(elements.sourceFile,contract.quality.source.sourceFile);
+        setText(elements.sourceHash,contract.quality.source.sourceSha256);
+        setTime(elements.profileGeneratedAt,new Date(contract.quality.lineage.profileGeneratedAt));
+        setTime(elements.semanticGeneratedAt,new Date(contract.quality.lineage.semanticGeneratedAt));
+        setText(elements.topbarSourceText,'GRH · corte '+formatMonth(workforce.referencePeriod)+' · privacidad '+contract.executive.policyVersion);
+        elements.topbarSourceState.dataset.state = 'warn';
+        elements.loadStatus.hidden = true;
+        elements.loadError.hidden = true;
+        elements.dataViews.hidden = false;
+        elements.executiveDashboard.setAttribute('aria-busy','false');
+      }
+
+      function resetView() {
+        state.executive = null; state.quality = null; state.monthlyClose = null; state.series = [];
+        elements.dataViews.hidden = true;
+        elements.loadError.hidden = true;
+        elements.loadStatus.hidden = false;
+        elements.executiveDashboard.setAttribute('aria-busy','true');
+        elements.topbarSourceState.removeAttribute('data-state');
+        setText(elements.topbarSourceText,'Validando fuentes GRH');
+        setText(elements.sourceCountChip,'—/3');
+      }
+      function showError(error) {
+        var authError = window.MuniAuth && window.MuniAuth.isAuthError && window.MuniAuth.isAuthError(error);
+        setText(elements.loadErrorMessage,authError
+          ? 'La sesión no es válida; se redirigirá al acceso seguro.'
+          : 'Las proyecciones ejecutiva, de calidad y de cierre mensual son obligatorias. No se muestran métricas ni valores de respaldo. '+(error && error.message ? error.message : 'Error sin detalle.'));
+        elements.loadStatus.hidden = true;
+        elements.dataViews.hidden = true;
+        elements.loadError.hidden = false;
+        elements.executiveDashboard.setAttribute('aria-busy','false');
+        elements.topbarSourceState.dataset.state = 'error';
+        setText(elements.topbarSourceText,'Fuentes GRH no disponibles');
+      }
+      function redirectToSafeWorkspace() {
         try {
-          var pagos = MuniDB.sort(MuniDB.getAll('pagos'),'fecha','desc').slice(0,5);
-          var tbody = document.getElementById('checkbookBody');
-          if(tbody&&pagos.length) {
-            tbody.innerHTML = pagos.map(function(p){
-              return '<tr><td style="font-size:12px;color:var(--muted)">'+new Date(p.fecha).toLocaleDateString('es-AR')+'</td>'
-                +'<td style="font-weight:700">'+p.proveedor+'</td>'
-                +'<td><span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(59,130,246,0.1);color:#60a5fa">'+p.secretaria+'</span></td>'
-                +'<td style="font-weight:800;color:#10b981">$'+(p.monto/1000000).toFixed(2)+'M</td></tr>';
-            }).join('');
+          if(!window.sessionStorage.getItem('mjunin_access_notice')) {
+            window.sessionStorage.setItem('mjunin_access_notice','El perfil actual no tiene habilitada la superficie solicitada.');
           }
-        } catch(e){}
-
-        // Live KPIs from MuniDB
-        try {
-          var emp = MuniDB.getAll('empleados');
-          var activos = emp.filter(function(e){return e.estado==='activo';}).length;
-          var kpe = document.getElementById('kpi-empleados-val');
-          if(kpe) { if(window.motionKit) window.motionKit.countUp(kpe, activos, {currency:false}); else kpe.textContent = activos.toLocaleString('es-AR'); }
-        } catch(e){}
-        try {
-          var rec = MuniDB.getAll('reclamos');
-          var pend = rec.filter(function(r){return r.estado!=='resuelto';}).length;
-          var kpr = document.getElementById('kpi-reclamos-val');
-          if(kpr) { if(window.motionKit) window.motionKit.countUp(kpr, pend, {currency:false}); else kpr.textContent = pend; }
-        } catch(e){}
-        try {
-          var pag = MuniDB.getAll('pagos');
-          var total = pag.reduce(function(s,p){return s+(p.monto||0);},0);
-          var kpg = document.getElementById('kpi-gastos-val');
-          if(kpg) { if(window.motionKit) window.motionKit.countUp(kpg, total/1000000, {prefix:'$', suffix:'M', currency:false}); else kpg.textContent = '$'+(total/1000000).toFixed(0)+'M'; }
-        } catch(e){}
-        try {
-          var obr = MuniDB.getAll('obras');
-          var enEjec = obr.filter(function(o){return o.estado==='en_ejecucion';}).length;
-          var kpo = document.getElementById('kpi-obras-val');
-          if(kpo) { if(window.motionKit) window.motionKit.countUp(kpo, enEjec, {currency:false}); else kpo.textContent = enEjec; }
-        } catch(e){}
+        } catch(error) {}
+        var currentPage = window.location.pathname.split('/').pop() || '';
+        if(currentPage !== 'inicio.html') window.location.replace('inicio.html');
       }
-    });
-  })();
+      async function requirePageCapability() {
+        if(typeof window.requireCapability !== 'function') {
+          redirectToSafeWorkspace();
+          return false;
+        }
+        try {
+          var allowed = await window.requireCapability('navigation.dashboard');
+          if(allowed !== true) {
+            redirectToSafeWorkspace();
+            return false;
+          }
+          return true;
+        } catch(error) {
+          redirectToSafeWorkspace();
+          return false;
+        }
+      }
+      async function loadDashboard() {
+        var sequence = state.loadSequence+1;
+        state.loadSequence = sequence;
+        resetView();
+        try {
+          if(!window.MuniGrhData || typeof window.MuniGrhData.loadExperience !== 'function') fail('El cliente seguro GRH no está disponible.');
+          if(!window.MuniGrhClose || typeof window.MuniGrhClose.load !== 'function') fail('El cliente seguro de cierre mensual no está disponible.');
+          var projections = await Promise.all([
+            window.MuniGrhData.loadExperience({ timeoutMs:10000 }),
+            window.MuniGrhClose.load({ timeoutMs:10000 })
+          ]);
+          if(sequence !== state.loadSequence) return;
+          renderAll(normalizeExperience(projections[0],projections[1]));
+        } catch(error) {
+          if(sequence !== state.loadSequence) return;
+          showError(error);
+          if(!(window.MuniAuth && window.MuniAuth.isAuthError && window.MuniAuth.isAuthError(error))) console.error('[Panel ejecutivo GRH] Fuentes no disponibles:',error);
+        }
+      }
+      async function loadAuthorizedDashboard() {
+        if(!(await requirePageCapability())) return;
+        await loadDashboard();
+      }
+
+      function toggleTheme() {
+        var current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        var next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme',next);
+        elements.execThemeToggle.setAttribute('aria-pressed',next === 'light' ? 'true' : 'false');
+        elements.execThemeToggle.setAttribute('aria-label',next === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro');
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if(meta) meta.content = next === 'light' ? '#edf3fb' : '#07111f';
+        try { localStorage.setItem('govtech_theme',next); } catch(error) { /* Preferencia no persistible. */ }
+      }
+      function bindEvents() {
+        elements.trendRange.addEventListener('change',function (event) { state.range = event.target.value; if(state.executive) renderChart(); });
+        elements.retryLoad.addEventListener('click',loadAuthorizedDashboard);
+        elements.execThemeToggle.addEventListener('click',toggleTheme);
+        var light = document.documentElement.getAttribute('data-theme') === 'light';
+        elements.execThemeToggle.setAttribute('aria-pressed',light ? 'true' : 'false');
+        elements.execThemeToggle.setAttribute('aria-label',light ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro');
+      }
+      async function init() {
+        cacheElements(); bindEvents();
+        if(typeof window.buildSidebar === 'function') window.buildSidebar('dashboard');
+        await loadAuthorizedDashboard();
+      }
+      if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded',init,{once:true});
+      else init();
+    }());
   </script>
-
-  <script src="js/notifications.js"></script>
-  <script src="js/search-global.js"></script>
-  <script src="js/chat-widget.js"></script>
-  <script src="js/analytics-live.js"></script>
-  <script src="js/theme-switcher.js"></script>
-  <script src="js/onboarding.js"></script>
-  <script src="js/api-live.js"></script>
-  <script>
-    // LIVE API WIDGETS
-    function initLiveWidgets() {
-      if (!window.MuniAPI) return;
-
-      // Skeleton state mientras cargan las APIs
-      var skelEls = ['weatherTemp','weatherDesc','weatherCardTemp','weatherCardDesc','weatherFull','dolarFull'];
-      skelEls.forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el && window.motionKit) window.motionKit.skeleton(el, true);
-      });
-      // Weather
-      MuniAPI.getWeather()
-        .then(function(w) {
-          var icon = document.getElementById('weatherIcon');
-          var temp = document.getElementById('weatherTemp');
-          var desc = document.getElementById('weatherDesc');
-          if (icon) icon.innerHTML = MuniAPI.getWeatherSVG(w.code);
-          if (temp) { if (window.motionKit) window.motionKit.skeleton(temp, false); temp.textContent = w.temp + 'C'; }
-          if (desc) { if (window.motionKit) window.motionKit.skeleton(desc, false); desc.textContent = w.desc; }
-          // Also update any weatherFull div if exists
-          var full = document.getElementById('weatherFull');
-          if (full) {
-            full.innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
-              '<div><span style="color:rgba(148,163,184,0.6);font-size:11px">Humedad</span><br><strong style="font-size:16px">' + w.humidity + '%</strong></div>' +
-              '<div><span style="color:rgba(148,163,184,0.6);font-size:11px">Viento</span><br><strong style="font-size:16px">' + w.wind + 'km/h</strong></div>' +
-              '<div><span style="color:rgba(148,163,184,0.6);font-size:11px">Sensacion</span><br><strong style="font-size:16px">' + w.feelsLike + 'C</strong></div>' +
-              '<div><span style="color:rgba(148,163,184,0.6);font-size:11px">UV</span><br><strong style="font-size:16px">' + w.uv + '</strong></div>' +
-            '</div>';
-          }
-          var cardIcon = document.getElementById('weatherCardIcon');
-          if (cardIcon) cardIcon.innerHTML = MuniAPI.getWeatherSVG(w.code);
-          var cardTemp = document.getElementById('weatherCardTemp');
-          if (cardTemp) { if (window.motionKit) window.motionKit.skeleton(cardTemp, false); cardTemp.textContent = w.temp + 'C'; }
-          var cardDesc = document.getElementById('weatherCardDesc');
-          if (cardDesc) { if (window.motionKit) window.motionKit.skeleton(cardDesc, false); cardDesc.textContent = w.desc; }
-        })
-        .catch(function() { /* silent fail */ });
-      
-      // Dolar
-      MuniAPI.getDolar()
-        .then(function(d) {
-          var dFull = document.getElementById('dolarFull');
-          if (dFull && window.motionKit) window.motionKit.skeleton(dFull, false);
-          var of = document.getElementById('dolarOficial');
-          var bl = document.getElementById('dolarBlue');
-          if (of && d.oficial) of.textContent = '$' + d.oficial.venta.toLocaleString('es-AR');
-          if (bl && d.blue) bl.textContent = 'Blue $' + d.blue.venta.toLocaleString('es-AR');
-          // Update full dolar card if exists
-          var full = document.getElementById('dolarFull');
-          if (full && d.oficial && d.blue) {
-            var brechaNum = Math.round((d.blue.venta - d.oficial.venta) / d.oficial.venta * 100);
-            full.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">' +
-              dolarCell('Oficial', d.oficial.venta, '#10b981') +
-              dolarCell('Blue', d.blue.venta, '#f59e0b') +
-              dolarCell('Tarjeta', d.tarjeta ? d.tarjeta.venta : '---', '#8b5cf6') +
-            '</div>' +
-            '<div style="margin-top:12px;font-size:11px;color:rgba(148,163,184,0.5)">Brecha: ' + brechaNum + '% | Actualizado: ' + new Date().toLocaleTimeString('es-AR') + '</div>';
-          }
-        })
-        .catch(function() { /* silent fail */ });
-    }
-
-    function dolarCell(label, val, color) {
-      var display = typeof val === 'number' ? '$' + val.toLocaleString('es-AR') : val;
-      return '<div style="text-align:center;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">' +
-        '<div style="font-size:18px;font-weight:900;font-family:Outfit,sans-serif;color:' + color + '">' + display + '</div>' +
-        '<div style="font-size:10px;color:rgba(148,163,184,0.5);margin-top:2px;font-weight:700;text-transform:uppercase">' + label + '</div>' +
-      '</div>';
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      // Load api-live.js dynamically if not loaded
-      if (!window.MuniAPI) {
-        var s = document.createElement('script'); s.src = 'js/api-live.js';
-        s.onload = function() { initLiveWidgets(); };
-        document.head.appendChild(s);
-      } else {
-        initLiveWidgets();
-      }
-    });
-  </script>
-
-<!-- BOTTOM NAV (mobile) -->
-<nav class="bottom-nav-bar" id="bottomNav">
-  <a href="index.html" class="bnav-item active">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    Inicio
-  </a>
-  <a href="vecinos.html" class="bnav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    Reclamos
-  </a>
-  <a href="mapa.html" class="bnav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
-    Mapa
-  </a>
-  <a href="analytics.html" class="bnav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Datos
-  </a>
-  <a href="ia.html" class="bnav-item">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-    IA
-  </a>
-</nav>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-function exportDashboardPDF() {
-  if (!window.jspdf) {
-    if (typeof showToast !== 'undefined') showToast('⏳ Preparando PDF...', 'info');
-    setTimeout(exportDashboardPDF, 800);
-    return;
-  }
-  var jsPDF = window.jspdf.jsPDF;
-  var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  var W = 210, now = new Date();
-  var fecha = now.toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-  var hora  = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
-
-  // ── HEADER STRIP ──
-  doc.setFillColor(6, 11, 24);
-  doc.rect(0, 0, W, 40, 'F');
-  doc.setFillColor(59, 130, 246);
-  doc.rect(0, 40, W, 2, 'F');
-
-  // Escudo / sello circular (simulado con círculos)
-  doc.setFillColor(30, 50, 100);
-  doc.circle(22, 20, 13, 'F');
-  doc.setFillColor(59, 130, 246);
-  doc.circle(22, 20, 10, 'F');
-  doc.setFillColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(255, 255, 255);
-  doc.text('M', 22, 24, { align: 'center' });
-
-  // Nombre municipio
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(240, 244, 255);
-  doc.text('MUNICIPALIDAD DE JUNÍN', 40, 16);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(142, 163, 195);
-  doc.text('Provincia de Mendoza — República Argentina', 40, 22);
-  doc.setFontSize(8);
-  doc.text('Sistema de Gestión Municipal Integrado — MuniControl®', 40, 27);
-
-  // Fecha y hora en header
-  doc.setFontSize(8);
-  doc.setTextColor(96, 165, 250);
-  doc.text('Generado: ' + fecha + ' a las ' + hora, W - 14, 16, { align: 'right' });
-
-  // ── TITULO DEL REPORTE ──
-  doc.setFillColor(17, 29, 53);
-  doc.rect(0, 42, W, 18, 'F');
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(240, 244, 255);
-  doc.text('INFORME EJECUTIVO MUNICIPAL', W/2, 53, { align: 'center' });
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(142, 163, 195);
-  doc.text('Resumen de Indicadores de Gestión — ' + now.toLocaleDateString('es-AR', { month:'long', year:'numeric' }).toUpperCase(), W/2, 57, { align: 'center' });
-
-  // ── KPI SECTION ──
-  var y = 70;
-  function sectionTitle(title, yy) {
-    doc.setFillColor(59, 130, 246);
-    doc.rect(14, yy, 3, 6, 'F');
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(240, 244, 255);
-    doc.text(title, 20, yy + 5);
-    return yy + 12;
-  }
-  function kpiRow(label, value, note, yy) {
-    doc.setFillColor(17, 29, 53);
-    doc.roundedRect(14, yy, W - 28, 14, 2, 2, 'F');
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(142, 163, 195);
-    doc.text(label, 19, yy + 9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(240, 244, 255);
-    doc.text(value, W - 19, yy + 6, { align: 'right' });
-    if (note) {
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(96, 165, 250);
-      doc.text(note, W - 19, yy + 11, { align: 'right' });
-    }
-    return yy + 17;
-  }
-
-  // Leer KPIs del DOM
-  var kpis = [
-    { l:'Total Empleados', v: (document.getElementById('kpiEmpleados')||{}).textContent || '48', n:'Planta municipal activa' },
-    { l:'Gasto Mensual', v: (document.getElementById('kpiGasto')||{}).textContent || '$284M', n:'Ejecutado en el mes corriente' },
-    { l:'Horas Extra (mes)', v: (document.getElementById('kpiHorasExtra')||{}).textContent || '4,312', n:'Costo estimado $18.4M' },
-    { l:'Presupuesto Ejecutado', v: (document.getElementById('kpiPresupuesto')||{}).textContent || '67%', n:'8 meses del año transcurridos' },
-    { l:'Reclamos Vecinos', v: (document.getElementById('kpiReclamos')||{}).textContent || '318', n:'23 sin resolver — SLA 94%' },
-    { l:'Obras en Ejecución', v: (document.getElementById('kpiObras')||{}).textContent || '8', n:'Inversión total $142M' },
-  ];
-
-  y = sectionTitle('INDICADORES DE GESTIÓN', y);
-  kpis.forEach(function(k) { y = kpiRow(k.l, k.v, k.n, y); });
-
-  y += 8;
-  y = sectionTitle('ESTADO FINANCIERO', y);
-  y = kpiRow('Presupuesto Anual 2026', '$4.200.000.000', 'Aprobado por HCD — Ordenanza 4521/2025', y);
-  y = kpiRow('Ejecución Acumulada (Ago)', '$2.820.000.000', '67% del total anual', y);
-  y = kpiRow('Disponible Restante', '$1.380.000.000', 'Proyección para cierre de ejercicio', y);
-  y = kpiRow('Deuda Flotante', '$142.000.000', 'Proveedores pendientes de pago', y);
-
-  // ── FIRMA Y CERTIFICACION ──
-  y += 12;
-  doc.setFillColor(17, 29, 53);
-  doc.rect(14, y, W - 28, 50, 'F');
-  doc.setDrawColor(59, 130, 246);
-  doc.setLineWidth(0.5);
-  doc.rect(14, y, W - 28, 50);
-
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(96, 165, 250);
-  doc.text('CERTIFICACIÓN DIGITAL', W/2, y + 8, { align: 'center' });
-
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(142, 163, 195);
-  var certText = 'El presente informe fue generado automáticamente por el Sistema de Gestión Municipal MuniControl®\nen la fecha y hora indicadas. Los datos provienen de la base de datos oficial del municipio.\nEste documento tiene carácter informativo y puede ser verificado en:\nhttps://municipio-junin.vercel.app/cuentas-claras.html';
-  doc.text(certText, W/2, y + 16, { align: 'center', maxWidth: W - 40 });
-
-  // Líneas de firma
-  var fy = y + 35;
-  doc.setDrawColor(96, 165, 250);
-  doc.setLineWidth(0.3);
-  doc.line(25, fy, 90, fy);
-  doc.line(120, fy, 185, fy);
-  doc.setFontSize(7);
-  doc.setTextColor(96, 165, 250);
-  doc.text('Intendente Municipal', 57, fy + 4, { align: 'center' });
-  doc.text('Contador / Tesorero Municipal', 152, fy + 4, { align: 'center' });
-  doc.setTextColor(142, 163, 195);
-  doc.text('Municipalidad de Junín', 57, fy + 8, { align: 'center' });
-  doc.text('Municipalidad de Junín', 152, fy + 8, { align: 'center' });
-
-  // ── FOOTER ──
-  doc.setFillColor(6, 11, 24);
-  doc.rect(0, 282, W, 15, 'F');
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(74, 96, 128);
-  doc.text('MuniControl® Sistema de Gestión Municipal — Confidencial — Municipalidad de Junín, Mendoza, Argentina', W/2, 289, { align: 'center' });
-  doc.text('Página 1 de 1  |  Generado: ' + now.toISOString(), W/2, 294, { align: 'center' });
-
-  // Guardar
-  var filename = 'Informe_Ejecutivo_Junin_' + now.toLocaleDateString('es-AR').replace(/\//g, '-') + '.pdf';
-  doc.save(filename);
-  if (typeof showToast !== 'undefined') showToast('✅ PDF descargado: ' + filename, 'success');
-}
-</script>
-<script>
-// Ctrl+K focuses the global search
-document.addEventListener('keydown', function(e) {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    var s = document.getElementById('globalSearch');
-    if (s) { s.focus(); s.select(); }
-  }
-});
-</script>
-  <!-- Mobile bottom nav (PWA tab bar) -->
-  <nav class="mobile-bottom-nav" aria-label="Navegación principal">
-    <a href="index.html" class="active">
-      <span class="nav-icon">🏠</span>
-      <span>Inicio</span>
-    </a>
-    <a href="ia.html">
-      <span class="nav-icon">🤖</span>
-      <span>MuniBot</span>
-    </a>
-    <a href="rrhh.html">
-      <span class="nav-icon">👥</span>
-      <span>RRHH</span>
-    </a>
-    <a href="hacienda.html">
-      <span class="nav-icon">💰</span>
-      <span>Hacienda</span>
-    </a>
-    <a href="mapa.html">
-      <span class="nav-icon">🗺️</span>
-      <span>Mapa</span>
-    </a>
-  </nav>
-
-   <script src='js/bottom-nav.js'></script>
-<script src='js/motion-kit.js'></script>
-<script src='js/ai-widget.js'></script>
-   </body>
+</body>
 </html>

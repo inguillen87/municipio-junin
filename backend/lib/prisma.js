@@ -3,7 +3,9 @@
 // Optimizado para Vercel Serverless (evita conexiones extra)
 // ============================================================
 
-const { PrismaClient } = require('@prisma/client');
+// Este cliente se genera con `npm run db:generate` dentro de backend. No debe
+// resolverse desde el node_modules del checkout raíz.
+const { PrismaClient } = require('../generated/prisma');
 
 const globalForPrisma = global;
 

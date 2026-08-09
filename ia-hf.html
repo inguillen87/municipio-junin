@@ -1,431 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>IA Lab ? IA Municipal ? Municipio de Junín</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/ia-hf.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Asistente consolidado | MuniControl Junín</title>
+  <meta name="description" content="La experiencia experimental de IA fue retirada y consolidada en el Asistente Ejecutivo GRH.">
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at 82% 4%, rgba(87, 154, 255, .13), transparent 34%), #07111f; color: #edf5ff; font-family: Inter, system-ui, sans-serif; }
+    .retired-ai { min-height: 100vh; margin-left: var(--sidebar-width, 260px); display: grid; place-items: center; padding: 36px; }
+    .retired-ai-card { width: min(760px, 100%); padding: clamp(28px, 5vw, 54px); border: 1px solid rgba(151, 183, 221, .18); border-radius: 28px; background: linear-gradient(145deg, rgba(17, 34, 58, .97), rgba(8, 20, 36, .97)); box-shadow: 0 32px 90px rgba(0, 0, 0, .32); }
+    .retired-ai-kicker { display: inline-flex; padding: 7px 11px; border: 1px solid rgba(80, 211, 196, .3); border-radius: 999px; color: #68ded0; font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    h1 { max-width: 650px; margin: 22px 0 14px; font-size: clamp(36px, 6vw, 62px); line-height: 1.02; letter-spacing: -.045em; }
+    p { max-width: 650px; margin: 0; color: #a6b7cc; font-size: clamp(15px, 2vw, 18px); line-height: 1.7; }
+    ul { display: grid; gap: 10px; margin: 26px 0 0; padding: 0; list-style: none; }
+    li { color: #8fa3ba; font-size: 13px; line-height: 1.55; }
+    li::before { content: "✓"; margin-right: 10px; color: #50d3c4; font-weight: 800; }
+    .retired-ai-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .retired-ai-link { min-height: 46px; display: inline-flex; align-items: center; padding: 0 19px; border-radius: 12px; background: #64a8ff; color: #061426; font-size: 13px; font-weight: 800; text-decoration: none; }
+    .retired-ai-link.secondary { border: 1px solid rgba(151, 183, 221, .2); background: rgba(255, 255, 255, .03); color: #b8c8dc; }
+    @media (max-width: 900px) { .retired-ai { margin-left: 0; padding: 84px 16px 40px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
 </head>
 <body>
-  <aside class="sidebar" id="sidebar"></aside>
-
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">?</button>
-        <div class="page-title">
-          <h1>• IA Lab ? IA Municipal</h1>
-          <span class="breadcrumb">Modelos open source corriendo en el browser ? Sin servidor ? Sin internet</span>
-        </div>
+  <aside class="sidebar" id="sidebar" aria-label="Navegación principal"></aside>
+  <main class="retired-ai">
+    <section class="retired-ai-card" aria-labelledby="retiredAiTitle">
+      <span class="retired-ai-kicker">Ruta experimental retirada</span>
+      <h1 id="retiredAiTitle">Un único asistente, una única fuente gobernada.</h1>
+      <p>La prueba anterior con modelos externos y datos de demostración ya no forma parte de MuniControl. Las consultas ejecutivas se concentran en el Asistente GRH determinista, autenticado y vinculado al contrato privado de Junín.</p>
+      <ul>
+        <li>Sin base sintética, cifras demo ni persistencia de conversaciones en el navegador.</li>
+        <li>Sin proveedor generativo ni envío de datos a terceros en este sprint.</li>
+        <li>Con fuente, fecha de corte, calidad y límites en cada respuesta.</li>
+      </ul>
+      <div class="retired-ai-actions">
+        <a class="retired-ai-link" href="ia.html">Abrir Asistente Ejecutivo GRH</a>
+        <a class="retired-ai-link secondary" href="index.html">Volver al Panel Principal</a>
       </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <div class="hf-badge">• Transformers.js</div>
-        <div class="hf-badge green">PyTorch/ONNX</div>
-        <div class="hf-badge violet">Whisper</div>
-        <div class="topbar-avatar">MA</div>
-      </div>
-    </header>
-
-    <div class="content-wrapper">
-
-      <!-- ESTADO DE MODELOS -->
-      <div class="models-status-bar" id="modelsStatusBar">
-        <div class="models-status-title">? Modelos Disponibles</div>
-        <div class="model-pills" id="modelPills">
-          <div class="model-pill" id="pill-sentiment">• Sentimientos <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-classifier">•? Clasificador <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-ner">• NER <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-qa">? Q&A <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-whisper">• Whisper <span class="pill-status idle">No cargado</span></div>
-          <div class="model-pill" id="pill-embeddings">• Embeddings <span class="pill-status idle">No cargado</span></div>
-        </div>
-        <div class="models-cache-info">• Los modelos se cachean en el browser ? primera carga requiere descarga</div>
-      </div>
-
-      <!-- TABS PRINCIPALES -->
-      <div class="tabs-bar hf-tabs">
-        <button class="tab-btn active" data-tab="clasificador">•? Clasificador</button>
-        <button class="tab-btn" data-tab="sentimientos">• Sentimientos</button>
-        <button class="tab-btn" data-tab="ner">• Entidades</button>
-        <button class="tab-btn" data-tab="qa">? Q&amp;A Docs</button>
-        <button class="tab-btn" data-tab="whisper">• Whisper STT</button>
-        <button class="tab-btn" data-tab="embeddings">• Búsqueda IA</button>
-        <button class="tab-btn" data-tab="batch">? Proceso Masivo</button>
-      </div>
-
-      <!-- TAB: CLASIFICADOR DE RECLAMOS -->
-      <div class="tab-content active" id="tab-clasificador">
-        <div class="hf-panel">
-          <div class="hf-panel-header">
-            <div>
-              <h2 class="hf-panel-title">•? Clasificador Automítico de Reclamos</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/nli-deberta-v3-small</code> ? Zero-shot classification ? <a href="https://municontrol.ar/cross-encoder/nli-deberta-v3-small" target="_blank" class="hf-link">• IA Municipal</a></p>
-            </div>
-            <button class="btn-load-model" id="loadClassifier">• Cargar Modelo</button>
-          </div>
-
-          <div class="model-progress" id="progressClassifier" style="display:none">
-            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillClassifier"></div></div>
-            <span class="progress-text" id="textClassifier">Descargando modelo...</span>
-          </div>
-
-          <div class="hf-input-section">
-            <label class="hf-label">Descripción del reclamo (en lenguaje natural):</label>
-            <textarea class="hf-textarea" id="classifierInput" rows="3" placeholder="Ej: Hay un pozo enorme en la esquina de Rivadavia y Mitre que rompi? tres vehículos esta semana. Es urgente..."></textarea>
-            <div class="hf-examples">
-              <span class="example-label">Ejemplos rápidos:</span>
-              <button class="example-btn" data-text="El pozo de la calle es enorme y peligroso, romp? el auto">•? Bache</button>
-              <button class="example-btn" data-text="No funciona el farol de la esquina hace dos semanas, es peligroso de noche">• Alumbrado</button>
-              <button class="example-btn" data-text="No pasí el cami?n de basura hace 5 días y hay bolsas en la vereda">•? Basura</button>
-              <button class="example-btn" data-text="El árbol de enfrente tiene ramas secas que van a caer sobre las casas">• Poda</button>
-              <button class="example-btn" data-text="No tenemos agua desde ayer en todo el barrio">• Agua</button>
-              <button class="example-btn" data-text="Los vecinos de arriba hacen ruidos toda la noche y no me dejan dormir">• Ruidos</button>
-            </div>
-            <button class="btn-run-model" id="runClassifier" disabled>•? Clasificar Reclamo</button>
-          </div>
-
-          <div class="hf-result" id="resultClassifier" style="display:none">
-            <h3 class="result-title">• Resultado de Clasificación</h3>
-            <div class="result-main-label" id="classifierMainLabel"></div>
-            <div class="confidence-bars" id="classifierBars"></div>
-            <div class="result-actions">
-              <button class="result-action-btn" id="btnCreateReclamo">? Registrar como Reclamo</button>
-              <button class="result-action-btn" id="btnCopyResult">• Copiar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: SENTIMIENTOS -->
-      <div class="tab-content" id="tab-sentimientos">
-        <div class="hf-panel">
-          <div class="hf-panel-header">
-            <div>
-              <h2 class="hf-panel-title">• Análisis de Sentimientos</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/distilbert-base-uncased-finetuned-sst-2-english</code> ? <a href="https://municontrol.ar/distilbert-base-uncased-finetuned-sst-2-english" target="_blank" class="hf-link">• IA Municipal</a></p>
-            </div>
-            <button class="btn-load-model" id="loadSentiment">• Cargar Modelo</button>
-          </div>
-          <div class="model-progress" id="progressSentiment" style="display:none">
-            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillSentiment"></div></div>
-            <span class="progress-text" id="textSentiment">Descargando...</span>
-          </div>
-
-          <div class="hf-input-section">
-            <label class="hf-label">Texto del vecino / empleado / encuesta:</label>
-            <textarea class="hf-textarea" id="sentimentInput" rows="3" placeholder="Ej: El municipio atendi? muy bien mi reclamo, estoy muy satisfecho con la respuesta..."></textarea>
-            <div class="hf-examples">
-              <span class="example-label">Ejemplos:</span>
-              <button class="example-btn" data-text="Excelente atención, solucionaron el problema en 2 días, muy conforme" data-target="sentimentInput">• Positivo</button>
-              <button class="example-btn" data-text="Horrible servicio, nunca vienen, llevan 3 semanas sin resolver nada" data-target="sentimentInput">• Negativo</button>
-              <button class="example-btn" data-text="El servicio es regular, a veces bien a veces mal" data-target="sentimentInput">• Neutro</button>
-            </div>
-            <button class="btn-run-model" id="runSentiment" disabled>• Analizar Sentimiento</button>
-          </div>
-
-          <!-- BATCH SENTIMIENTOS -->
-          <div class="hf-batch-section">
-            <h3 class="hf-sub-title">? Análisis Masivo ? Últimos Reclamos</h3>
-            <p class="hf-desc-text">Analiza automíticamente el sentimiento de los Últimos reclamos del sistema</p>
-            <button class="btn-run-model secondary" id="runSentimentBatch" disabled>• Analizar 20 reclamos</button>
-            <div class="sentiment-batch-results" id="sentimentBatchResults"></div>
-          </div>
-
-          <div class="hf-result" id="resultSentiment" style="display:none">
-            <div class="sentiment-display" id="sentimentDisplay"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: NER -->
-      <div class="tab-content" id="tab-ner">
-        <div class="hf-panel">
-          <div class="hf-panel-header">
-            <div>
-              <h2 class="hf-panel-title">• Extracción de Entidades (NER)</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/bert-base-NER</code> ? Personas, Organizaciones, Lugares ? <a href="https://municontrol.ar/dslim/bert-base-NER" target="_blank" class="hf-link">• IA Municipal</a></p>
-            </div>
-            <button class="btn-load-model" id="loadNER">• Cargar Modelo</button>
-          </div>
-          <div class="model-progress" id="progressNER" style="display:none">
-            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillNER"></div></div>
-            <span class="progress-text" id="textNER">Descargando...</span>
-          </div>
-
-          <div class="hf-input-section">
-            <label class="hf-label">Texto de contrato, resolución o expediente:</label>
-            <textarea class="hf-textarea" id="nerInput" rows="5" placeholder="Peg? aquí texto de un contrato, resolución o cualquier documento oficial...&#10;&#10;Ej: The Municipality of Junin contracted with Carlos Fernandez from Mendoza to provide maintenance services..."></textarea>
-            <div class="hf-examples">
-              <span class="example-label">Ejemplo:</span>
-              <button class="example-btn" data-text="The Municipality of Junin signed a contract with Carlos Fernandez from Mendoza for public works. Maria Rodriguez from the Public Works department will oversee the project at Rivadavia Avenue." data-target="nerInput">• Contrato ejemplo</button>
-            </div>
-            <button class="btn-run-model" id="runNER" disabled>• Extraer Entidades</button>
-          </div>
-
-          <div class="hf-result" id="resultNER" style="display:none">
-            <h3 class="result-title">• Entidades Detectadas</h3>
-            <div class="ner-highlighted" id="nerHighlighted"></div>
-            <div class="ner-summary" id="nerSummary"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: Q&A -->
-      <div class="tab-content" id="tab-qa">
-        <div class="hf-panel">
-          <div class="hf-panel-header">
-            <div>
-              <h2 class="hf-panel-title">? Q&amp;A sobre Documentos</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/distilbert-base-uncased-distilled-squad</code> ? <a href="https://municontrol.ar/distilbert-base-cased-distilled-squad" target="_blank" class="hf-link">• IA Municipal</a></p>
-            </div>
-            <button class="btn-load-model" id="loadQA">• Cargar Modelo</button>
-          </div>
-          <div class="model-progress" id="progressQA" style="display:none">
-            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillQA"></div></div>
-            <span class="progress-text" id="textQA">Descargando...</span>
-          </div>
-
-          <div class="qa-layout">
-            <div class="hf-input-section">
-              <label class="hf-label">• Contexto (texto del documento):</label>
-              <textarea class="hf-textarea" id="qaContext" rows="7" placeholder="Peg? aquí el texto del contrato, resolución, o cualquier documento...">The Municipality of Junin has 1247 employees distributed across 7 secretariats. The total monthly payroll is 186 million pesos. The Public Works department has 214 employees and spent 44.8 million pesos in August 2026, which is 18% over budget. The Education department has 302 employees and spent 54.9 million pesos, which is 10% under budget. The municipality manages a fleet of 43 vehicles including trucks, vans, and motorcycles. The fuel station has 4820 liters of premium gasoline and 7340 liters of diesel. There are 318 citizen complaints registered, with 229 resolved and 89 pending.</textarea>
-            </div>
-            <div class="qa-questions-section">
-              <label class="hf-label">? Tu pregunta:</label>
-              <input type="text" class="hf-input" id="qaQuestion" placeholder="?Cuántos empleados tiene el municipio?" />
-              <div class="hf-examples">
-                <span class="example-label">Preguntas r?pidas:</span>
-                <button class="qa-quick-btn" data-q="How many employees does the municipality have?">• Empleados</button>
-                <button class="qa-quick-btn" data-q="Which department is over budgetú">• Presupuesto</button>
-                <button class="qa-quick-btn" data-q="How many liters of fuel are in the station?">? Combustible</button>
-                <button class="qa-quick-btn" data-q="How many citizen complaints are pending?">•? Reclamos</button>
-              </div>
-              <button class="btn-run-model" id="runQA" disabled>? Responder Pregunta</button>
-
-              <div class="hf-result" id="resultQA" style="display:none">
-                <div class="qa-answer-card">
-                  <div class="qa-answer-label">• Respuesta:</div>
-                  <div class="qa-answer-text" id="qaAnswerText"></div>
-                  <div class="qa-confidence" id="qaConfidence"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: WHISPER STT -->
-      <div class="tab-content" id="tab-whisper">
-        <div class="hf-panel">
-          <div class="hf-panel-header">
-            <div>
-              <h2 class="hf-panel-title">• Whisper ? Transcripci?n de Voz</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/whisper-tiny</code> ? OpenAI Whisper en el browser ? <a href="https://municontrol.ar/openai/whisper-tiny" target="_blank" class="hf-link">• IA Municipal</a></p>
-            </div>
-            <button class="btn-load-model" id="loadWhisper">• Cargar Whisper</button>
-          </div>
-          <div class="model-progress" id="progressWhisper" style="display:none">
-            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillWhisper"></div></div>
-            <span class="progress-text" id="textWhisper">Descargando Whisper (~40MB)...</span>
-          </div>
-
-          <div class="whisper-layout">
-            <div class="whisper-recorder">
-              <div class="whisper-mic-area" id="whisperMicArea">
-                <button class="whisper-mic-btn" id="whisperRecordBtn" disabled>
-                  <span class="mic-icon">•</span>
-                  <span class="mic-label">Grabar Audio</span>
-                </button>
-                <div class="whisper-timer" id="whisperTimer" style="display:none">• <span id="whisperSeconds">0</span>s</div>
-                <div class="whisper-wave" id="whisperWave" style="display:none">
-                  <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                </div>
-              </div>
-
-              <div class="whisper-upload">
-                <label class="whisper-upload-label" for="audioUpload">
-                  • O sub? un archivo de audio (MP3, WAV, OGG)
-                </label>
-                <input type="file" id="audioUpload" accept="audio/*" hidden />
-              </div>
-
-              <div class="whisper-lang-select">
-                <label class="hf-label">Idioma de origen:</label>
-                <select class="hf-select" id="whisperLang">
-                  <option value="es">•• Español (Argentina)</option>
-                  <option value="en">•• English</option>
-                  <option value="pt">•• Portugu?s</option>
-                  <option value="null" selected>• Auto-detectar</option>
-                </select>
-              </div>
-
-              <button class="btn-run-model" id="runWhisper" disabled>• Transcribir</button>
-            </div>
-
-            <div class="whisper-results">
-              <div class="hf-result" id="resultWhisper" style="display:none">
-                <h3 class="result-title">• Transcripci?n Whisper</h3>
-                <div class="whisper-transcript" id="whisperTranscript"></div>
-                <div class="whisper-actions">
-                  <button class="result-action-btn" id="btnSendToIA">• Enviar al Asistente IA</button>
-                  <button class="result-action-btn" id="btnSendToReclamo">• Crear Reclamo</button>
-                  <button class="result-action-btn" id="btnCopyTranscript">• Copiar</button>
-                </div>
-              </div>
-              <div class="whisper-placeholder" id="whisperPlaceholder">
-                <div class="placeholder-icon">•?</div>
-                <div class="placeholder-text">Carg? el modelo y grab? tu voz o sub? un audio</div>
-                <div class="placeholder-sub">Whisper es el modelo de reconocimiento de voz de OpenAI ? funciona en el browser sin enviar datos a ning?n servidor</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: EMBEDDINGS / B?SQUEDA SEMíNTICA -->
-      <div class="tab-content" id="tab-embeddings">
-        <div class="hf-panel">
-          <div class="hf-panel-header">
-            <div>
-              <h2 class="hf-panel-title">• Búsqueda Semíntica con Embeddings</h2>
-              <p class="hf-panel-desc">Modelo: <code>Xenova/all-MiniLM-L6-v2</code> ? Sentence Transformers ? <a href="https://municontrol.ar/sentence-transformers/all-MiniLM-L6-v2" target="_blank" class="hf-link">• IA Municipal</a></p>
-            </div>
-            <button class="btn-load-model" id="loadEmbeddings">• Cargar Modelo</button>
-          </div>
-          <div class="model-progress" id="progressEmbeddings" style="display:none">
-            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fillEmbeddings"></div></div>
-            <span class="progress-text" id="textEmbeddings">Descargando...</span>
-          </div>
-
-          <div class="hf-input-section">
-            <label class="hf-label">• Busc? reclamos similares con lenguaje natural:</label>
-            <input type="text" class="hf-input large" id="embeddingsQuery" placeholder="Ej: problemas con el agua en el barrio norte..." />
-            <button class="btn-run-model" id="runEmbeddings" disabled>• Buscar Similares</button>
-          </div>
-
-          <div class="hf-result" id="resultEmbeddings" style="display:none">
-            <h3 class="result-title">• Reclamos Similares Encontrados</h3>
-            <div class="embeddings-results" id="embeddingsResults"></div>
-          </div>
-
-          <div class="similarity-matrix-section">
-            <h3 class="hf-sub-title">• Matriz de Similitud entre Secretarías</h3>
-            <p class="hf-desc-text">Calcula similitud semíntica entre las Áreas municipales basado en sus descripciones</p>
-            <button class="btn-run-model secondary" id="runSimilarityMatrix" disabled>• Calcular Matriz</button>
-            <div class="similarity-matrix" id="similarityMatrix"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: PROCESO MASIVO -->
-      <div class="tab-content" id="tab-batch">
-        <div class="hf-panel">
-          <div class="hf-panel-header">
-            <div>
-              <h2 class="hf-panel-title">? Procesamiento Masivo con IA</h2>
-              <p class="hf-panel-desc">Clasific?, analiz? y enriquec? todos los reclamos automíticamente</p>
-            </div>
-          </div>
-
-          <div class="batch-pipeline">
-            <h3 class="hf-sub-title">• Pipeline de Enriquecimiento</h3>
-            <div class="pipeline-steps">
-              <div class="pipeline-step" id="step1">
-                <div class="step-num">1</div>
-                <div class="step-info"><span class="step-title">Clasificar reclamos</span><span class="step-desc">Zero-shot ? categoría automítica</span></div>
-                <div class="step-status idle" id="step1status">Pendiente</div>
-              </div>
-              <div class="pipeline-arrow">?</div>
-              <div class="pipeline-step" id="step2">
-                <div class="step-num">2</div>
-                <div class="step-info"><span class="step-title">Analizar sentimiento</span><span class="step-desc">Medir urgencia percibida</span></div>
-                <div class="step-status idle" id="step2status">Pendiente</div>
-              </div>
-              <div class="pipeline-arrow">?</div>
-              <div class="pipeline-step" id="step3">
-                <div class="step-num">3</div>
-                <div class="step-info"><span class="step-title">Priorizar por IA</span><span class="step-desc">Score de urgencia 0-100</span></div>
-                <div class="step-status idle" id="step3status">Pendiente</div>
-              </div>
-              <div class="pipeline-arrow">?</div>
-              <div class="pipeline-step" id="step4">
-                <div class="step-num">4</div>
-                <div class="step-info"><span class="step-title">Generar informe</span><span class="step-desc">PDF con resultados</span></div>
-                <div class="step-status idle" id="step4status">Pendiente</div>
-              </div>
-            </div>
-            <button class="btn-run-model full" id="runPipeline">? Ejecutar Pipeline Completo</button>
-          </div>
-
-          <div class="batch-results" id="batchResults" style="display:none">
-            <h3 class="hf-sub-title">• Resultados del Pipeline</h3>
-            <div class="batch-stats" id="batchStats"></div>
-            <div class="batch-table-wrap">
-              <table class="data-table" id="batchTable">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Descripción</th>
-                    <th>Categoría IA</th>
-                    <th>Confianza</th>
-                    <th>Sentimiento</th>
-                    <th>Score Urgencia</th>
-                    <th>Prioridad</th>
-                  </tr>
-                </thead>
-                <tbody id="batchBody"></tbody>
-              </table>
-            </div>
-            <button class="btn-run-model secondary" id="exportBatchPDF">• Exportar Informe PDF</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    </section>
   </main>
-
-  <!-- XLSX + jsPDF para exportar -->
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-  <script src='js/db.js'></script>
   <script src="js/nav.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/data.js"></script>
-
-  <!-- Transformers.js v3 de IA Municipal ? corre modelos en el browser -->
-  <script type="module" src="js/ia-hf.js"></script>
-  <script src='js/db.js'></script>
-  <script src='js/motion-kit.js'></script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/db.js'></script>
-  <script src='js/bottom-nav.js'></script>
-  <script src='js/notifications.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
-  <script>if(typeof buildSidebar === 'function') buildSidebar('ia-hf');</script>
+  <script>
+    window.MuniAuthReady.then(function (ready) {
+      if (ready && typeof window.buildSidebar === 'function') window.buildSidebar('ia');
+    });
+  </script>
 </body>
 </html>
-
-
-
-
-
-
-

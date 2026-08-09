@@ -4,257 +4,887 @@
   <meta charset="UTF-8" />
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Centro de Reportes | MuniControl</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Informe Ejecutivo GRH | MuniControl</title>
   <link rel="stylesheet" href="css/dashboard.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --bg-dark: #0f172a;
       --card-bg: #1e293b;
+      --card-soft: rgba(30, 41, 59, .72);
       --accent: #3b82f6;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --border-color: rgba(255,255,255,0.1);
+      --border-color: rgba(255, 255, 255, .1);
+      --gold: #f59e0b;
+      --olive: #84cc16;
+      --pink: #ec4899;
     }
-    body { margin: 0; padding: 0; background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
-    .layout-wrapper { display: flex; width: 100%; height: 100%; }
-    .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 30px; }
-    
-    .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
-    .page-title { font-family: 'Outfit', sans-serif; font-size: 28px; margin: 0 0 5px 0; }
-    .page-subtitle { color: var(--text-muted); font-size: 15px; margin: 0; }
-    
-    .period-selector { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; }
-    
-    .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
-    .tab-btn { background: transparent; border: none; color: var(--text-muted); font-size: 15px; font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; }
-    .tab-btn.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
-    .tab-btn:hover:not(.active) { color: var(--text-main); background: rgba(255,255,255,0.05); }
-    
-    .report-panel { display: none; flex-direction: column; gap: 20px; }
-    .report-panel.active { display: flex; }
-    
-    .report-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; display: flex; flex-direction: column; gap: 20px; }
-    .report-card-header { display: flex; justify-content: space-between; align-items: center; }
-    .report-title { margin: 0; font-size: 18px; font-family: 'Outfit', sans-serif; }
-    
-    .btn-export { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-    .btn-export:hover { background: rgba(255,255,255,0.1); }
-    
-    .chart-container { width: 100%; height: 300px; position: relative; }
-    
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
-    th { color: var(--text-muted); font-weight: 500; font-size: 13px; }
-    
-    .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg-dark); color: var(--text-main); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; overflow-x: hidden; }
+    button, select { font: inherit; }
+    button:focus-visible, select:focus-visible, [tabindex="0"]:focus-visible { outline: 2px solid #60a5fa; outline-offset: 3px; }
+    .skip-link { position: fixed; z-index: 1000; top: 10px; left: 10px; transform: translateY(-160%); border-radius: 8px; background: #f8fafc; color: #0f172a; padding: 10px 14px; font-weight: 800; transition: transform .16s ease; }
+    .skip-link:focus { transform: translateY(0); transition: none; }
+    .layout-wrapper { display: flex; width: 100%; min-height: 100vh; }
+    .main-content { flex: 1; min-width: 0; overflow-y: auto; padding: 30px; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 22px; }
+    .page-title { margin: 0 0 6px; font-family: Outfit, Inter, sans-serif; font-size: clamp(26px, 3vw, 34px); letter-spacing: -.025em; }
+    .page-subtitle { max-width: 720px; margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.55; }
+    .period-field { display: grid; gap: 6px; min-width: 245px; }
+    .period-field label { color: var(--text-muted); font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .period-field small { max-width: 310px; color: var(--text-muted); font-size: 11px; line-height: 1.4; }
+    .period-selector { width: 100%; border: 1px solid var(--border-color); border-radius: 9px; background: var(--card-bg); color: var(--text-main); padding: 9px 12px; }
+    .period-selector:disabled { opacity: .6; cursor: wait; }
+
+    .executive-summary { margin-bottom: 18px; border: 1px solid rgba(59, 130, 246, .28); border-radius: 14px; background: linear-gradient(135deg, rgba(30, 64, 175, .16), rgba(30, 41, 59, .82)); padding: 22px 24px; }
+    .executive-summary h2 { margin: 0 0 13px; font-family: Outfit, Inter, sans-serif; font-size: 19px; }
+    .executive-summary h2 span { color: var(--text-muted); font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; }
+    .summary-list { display: grid; gap: 9px; margin: 0; padding-left: 20px; color: #dbeafe; font-size: 14px; line-height: 1.55; }
+
+    .status-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .data-status { flex: 1; min-width: 0; margin: 0; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 10px; background: rgba(15, 23, 42, .55); color: var(--text-muted); font-size: 13px; line-height: 1.45; }
+    .data-status.ok { border-color: rgba(16, 185, 129, .35); color: #a7f3d0; }
+    .data-status.warn { border-color: rgba(245, 158, 11, .4); color: #fde68a; }
+    .retry-btn { display: none; flex: 0 0 auto; border: 1px solid rgba(96, 165, 250, .45); border-radius: 9px; background: rgba(59, 130, 246, .12); color: #bfdbfe; padding: 10px 14px; cursor: pointer; }
+    .retry-btn.visible { display: inline-flex; }
+
+    .kpi-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+    .kpi-card { min-width: 0; border: 1px solid var(--border-color); border-radius: 12px; background: var(--card-soft); padding: 16px; }
+    .kpi-label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 11px; font-weight: 800; letter-spacing: .055em; text-transform: uppercase; }
+    .kpi-value { display: block; color: var(--text-main); font-size: clamp(20px, 2.2vw, 27px); font-weight: 750; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .kpi-context { display: block; margin-top: 6px; color: var(--text-muted); font-size: 11px; line-height: 1.4; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 13px; overflow-x: auto; scrollbar-width: thin; }
+    .tab-btn { flex: 0 0 auto; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); padding: 9px 14px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .18s ease, color .18s ease; }
+    .tab-btn:hover { background: rgba(255, 255, 255, .05); color: var(--text-main); }
+    .tab-btn.active { background: rgba(59, 130, 246, .15); color: #93c5fd; }
+    .report-panel { display: none; gap: 18px; }
+    .report-panel.active { display: grid; }
+    .report-panel-heading { margin: 0; font-family: Outfit, Inter, sans-serif; font-size: 22px; letter-spacing: -.015em; }
+    .section-intro { max-width: 880px; margin: -8px 0 0; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+
+    .report-card { min-width: 0; border: 1px solid var(--border-color); border-radius: 13px; background: var(--card-bg); padding: 22px; }
+    .report-card-header { margin-bottom: 14px; }
+    .report-title { margin: 0 0 5px; font-family: Outfit, Inter, sans-serif; font-size: 17px; }
+    .report-subtitle { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+    .evidence-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr); gap: 18px; align-items: start; }
+
+    .chart-container { width: 100%; min-height: 280px; position: relative; overflow: hidden; }
+    .chart-container[data-chart-state="loading"], .chart-container[data-chart-state="empty"] { display: grid; place-items: center; }
+    .chart-container svg { display: block; width: 100%; height: auto; max-width: 100%; overflow: visible; font-family: inherit; }
+    .chart-empty { max-width: 480px; margin: auto; padding: 24px; color: var(--text-muted); text-align: center; font-size: 13px; line-height: 1.6; }
+    .chart-meta { margin: 12px 0 0; color: var(--text-muted); font-size: 11px; line-height: 1.55; }
+    .chart-label { fill: #cbd5e1; font-size: 12px; font-weight: 650; }
+    .chart-value { fill: #f8fafc; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .chart-axis-label { fill: #94a3b8; font-size: 10px; }
+
+    .table-scroll { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; }
+    table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 11px 13px; border-bottom: 1px solid var(--border-color); text-align: left; vertical-align: top; }
+    th { color: var(--text-muted); font-size: 11px; font-weight: 750; letter-spacing: .035em; text-transform: uppercase; }
+    td { color: #e2e8f0; font-variant-numeric: tabular-nums; }
+    .empty-row td { padding: 28px 14px; color: var(--text-muted); text-align: center; }
+
+    .decision-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
+    .decision-card { min-width: 0; border: 1px solid var(--border-color); border-radius: 12px; background: var(--card-soft); padding: 18px; }
+    .decision-card h2 { margin: 0 0 12px; font-family: Outfit, Inter, sans-serif; font-size: 16px; }
+    .decision-card ul { display: grid; gap: 8px; margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 12px; line-height: 1.55; }
+
+    @media (max-width: 1100px) {
+      .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .evidence-grid { grid-template-columns: minmax(0, 1fr); }
+      .decision-grid { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .main-content { padding: 68px 20px 88px; }
+      .page-header { align-items: flex-start; flex-direction: column; }
+      .period-field { width: 100%; min-width: 0; }
+      .status-row { align-items: stretch; flex-direction: column; }
+      .retry-btn.visible { align-self: flex-start; }
+    }
+    @media (max-width: 600px) {
+      .main-content { padding-inline: 14px; }
+      .executive-summary, .report-card { padding: 18px; }
+      .kpi-strip { grid-template-columns: minmax(0, 1fr); }
+      .tabs { gap: 3px; }
+      .tab-btn { padding-inline: 11px; }
+      .chart-label { font-size: 11px; }
+      .chart-value { font-size: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
-<body>
+<body data-source-contract="grh-executive-report-v2" data-canonical-source="grh">
+  <a class="skip-link" href="#main-content">Saltar al informe</a>
   <div class="layout-wrapper">
     <aside class="sidebar" id="sidebar"></aside>
-    
-    <main class="main-content">
-      <div class="page-header">
+
+    <main class="main-content" id="main-content" tabindex="-1">
+      <header class="page-header">
         <div>
-          <h1 class="page-title">Centro de Reportes</h1>
-          <p class="page-subtitle">Analisis detallado de la gestion municipal</p>
+          <h1 class="page-title">Informe Ejecutivo GRH</h1>
+          <p class="page-subtitle">Evidencia agregada del backup canónico GRH. La lectura distingue controles de cálculo, participación en liquidaciones y calidad de datos; no certifica pagos ni dotación contractual activa.</p>
         </div>
-        <select class="period-selector">
-          <option>Agosto 2026</option>
-          <option>Julio 2026</option>
-          <option>Q3 2026</option>
-          <option>Anual 2026</option>
-        </select>
-      </div>
-      
-      <div class="tabs">
-        <button class="tab-btn active" onclick="showTab('mensual')">Mensual</button>
-        <button class="tab-btn" onclick="showTab('rrhh')">RRHH</button>
-        <button class="tab-btn" onclick="showTab('financiero')">Financiero</button>
-        <button class="tab-btn" onclick="showTab('operacional')">Operacional</button>
-      </div>
-      
-      <!-- Mensual Tab -->
-      <div id="tab-mensual" class="report-panel active">
-        <div class="report-card">
-          <div class="report-card-header">
-            <h3 class="report-title">Gasto Mensual Evolutivo</h3>
-            <button class="btn-export">Exportar PDF</button>
-          </div>
-          <div class="chart-container">
-            <canvas id="chart-gasto-lineal"></canvas>
-          </div>
+        <div class="period-field">
+          <label for="period-selector">Período disponible en GRH</label>
+          <select class="period-selector" id="period-selector" disabled aria-describedby="period-help">
+            <option value="">Consultando períodos…</option>
+          </select>
+          <small id="period-help">La lista se construye únicamente con períodos presentes en la serie validada; nunca se sustituye un período ausente.</small>
         </div>
+      </header>
+
+      <section class="executive-summary" aria-labelledby="executive-summary-title">
+        <h2 id="executive-summary-title">Executive Summary <span>· Resumen ejecutivo</span></h2>
+        <ul class="summary-list" id="executive-summary-list">
+          <li>Consultando evidencia agregada y validada de GRH…</li>
+        </ul>
+      </section>
+
+      <div class="status-row">
+        <p class="data-status warn" id="data-status" role="status" aria-live="polite">Consultando el contrato privado GRH…</p>
+        <button class="retry-btn" id="retry-report" type="button">Reintentar</button>
       </div>
-      
-      <!-- RRHH Tab -->
-      <div id="tab-rrhh" class="report-panel">
-        <div class="report-card">
-          <div class="report-card-header">
-            <h3 class="report-title">Ausentismo por Mes</h3>
-            <button class="btn-export">Exportar Excel</button>
-          </div>
-          <div class="chart-container">
-            <canvas id="chart-ausentismo"></canvas>
-          </div>
-          <table>
-            <thead>
-              <tr><th>Mes</th><th>Total Empleados</th><th>Dias Ausencia</th><th>Indice Ausentismo</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Mayo 2026</td><td>1235</td><td>420</td><td>1.6%</td></tr>
-              <tr><td>Junio 2026</td><td>1235</td><td>510</td><td>1.9%</td></tr>
-              <tr><td>Julio 2026</td><td>1240</td><td>850</td><td>3.1% (Pico invernal)</td></tr>
-              <tr><td>Agosto 2026</td><td>1247</td><td>310</td><td>1.1%</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <!-- Financiero Tab -->
-      <div id="tab-financiero" class="report-panel">
-        <div class="grid-2col">
-          <div class="report-card">
-            <div class="report-card-header">
-              <h3 class="report-title">Distribucion por Secretaria</h3>
-              <button class="btn-export">Exportar PDF</button>
+
+      <section class="kpi-strip" aria-label="Indicadores principales del informe">
+        <article class="kpi-card">
+          <span class="kpi-label">Participantes en cálculo</span>
+          <strong class="kpi-value" id="kpi-participants">—</strong>
+          <span class="kpi-context" id="kpi-participants-context">No equivale a dotación activa.</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Estado del control</span>
+          <strong class="kpi-value" id="kpi-control">—</strong>
+          <span class="kpi-context">Control de cálculo; no pago bancario.</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Calidad del extracto</span>
+          <strong class="kpi-value" id="kpi-quality">—</strong>
+          <span class="kpi-context">Alcance: agregado gobernado.</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Corte de fuente</span>
+          <strong class="kpi-value" id="kpi-snapshot">—</strong>
+          <span class="kpi-context" id="kpi-snapshot-context">Snapshot histórico, no tiempo real.</span>
+        </article>
+      </section>
+
+      <nav class="tabs" aria-label="Secciones del informe" role="tablist">
+        <button class="tab-btn active" id="tab-btn-resumen" type="button" role="tab" aria-selected="true" aria-controls="tab-resumen" data-tab="resumen" tabindex="0">Evolución</button>
+        <button class="tab-btn" id="tab-btn-dotacion" type="button" role="tab" aria-selected="false" aria-controls="tab-dotacion" data-tab="dotacion" tabindex="-1">Sectores</button>
+        <button class="tab-btn" id="tab-btn-control" type="button" role="tab" aria-selected="false" aria-controls="tab-control" data-tab="control" tabindex="-1">Control</button>
+        <button class="tab-btn" id="tab-btn-calidad" type="button" role="tab" aria-selected="false" aria-controls="tab-calidad" data-tab="calidad" tabindex="-1">Calidad</button>
+      </nav>
+
+      <section id="tab-resumen" class="report-panel active" role="tabpanel" aria-labelledby="tab-btn-resumen">
+        <h2 class="report-panel-heading" id="trend-heading">Participación por período de cálculo</h2>
+        <p class="section-intro" id="trend-insight">La serie muestra participantes distintos en cálculos válidos. Es una medida operativa de liquidación, no un padrón contractual de personal activo.</p>
+        <div class="evidence-grid">
+          <article class="report-card">
+            <header class="report-card-header">
+              <h3 class="report-title">Participantes por período</h3>
+              <p class="report-subtitle">Hasta 12 períodos observados, con escala desde cero.</p>
+            </header>
+            <div class="chart-container" id="chart-participantes" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
+              <p class="chart-empty">Esperando la serie GRH validada.</p>
             </div>
-            <div class="chart-container" style="height: 250px;">
-              <canvas id="chart-distribucion"></canvas>
+          </article>
+          <article class="report-card">
+            <header class="report-card-header">
+              <h3 class="report-title">Detalle del período seleccionado</h3>
+              <p class="report-subtitle">Participación publicada bajo el umbral portable de privacidad.</p>
+            </header>
+            <div class="table-scroll" role="region" aria-label="Detalle del período GRH" tabindex="0">
+              <table>
+                <thead><tr><th>Período</th><th>Participantes</th><th>Publicación</th></tr></thead>
+                <tbody id="period-table-body"><tr class="empty-row"><td colspan="3">Sin evidencia GRH disponible.</td></tr></tbody>
+              </table>
             </div>
-          </div>
-          <div class="report-card">
-            <div class="report-card-header">
-              <h3 class="report-title">Detalle de Ejecucion</h3>
-              <button class="btn-export">Exportar Excel</button>
+          </article>
+        </div>
+      </section>
+
+      <section id="tab-dotacion" class="report-panel" role="tabpanel" aria-labelledby="tab-btn-dotacion" hidden>
+        <h2 class="report-panel-heading" id="sector-heading">Distribución sectorial de participantes</h2>
+        <p class="section-intro" id="sector-insight">La distribución sólo existe para el período de referencia de la capa semántica y no se extrapola a períodos históricos.</p>
+        <div class="evidence-grid">
+          <article class="report-card">
+            <header class="report-card-header">
+              <h3 class="report-title">Participantes por sector</h3>
+              <p class="report-subtitle">Principales sectores y resto agrupado sobre el total del período de referencia.</p>
+            </header>
+            <div class="chart-container" id="chart-sectores" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
+              <p class="chart-empty">Esperando la distribución GRH validada.</p>
             </div>
-            <table>
-              <thead>
-                <tr><th>Secretaria</th><th>Asignado</th><th>Ejecutado</th><th>%</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Obras Publicas</td><td>$120.5M</td><td>$48.2M</td><td>40%</td></tr>
-                <tr><td>Salud</td><td>$85.0M</td><td>$52.1M</td><td>61%</td></tr>
-                <tr><td>Seguridad</td><td>$65.3M</td><td>$30.0M</td><td>46%</td></tr>
-                <tr><td>Educacion</td><td>$45.0M</td><td>$18.5M</td><td>41%</td></tr>
-                <tr><td>Otros</td><td>$84.2M</td><td>$16.5M</td><td>20%</td></tr>
-              </tbody>
-            </table>
-          </div>
+          </article>
+          <article class="report-card">
+            <header class="report-card-header">
+              <h3 class="report-title">Detalle sectorial</h3>
+              <p class="report-subtitle">Conteos agregados y participación sobre el total de cálculo.</p>
+            </header>
+            <div class="table-scroll" role="region" aria-label="Distribución sectorial agregada" tabindex="0">
+              <table>
+                <thead><tr><th>Sector</th><th>Participantes</th><th>Participación</th></tr></thead>
+                <tbody id="sector-table-body"><tr class="empty-row"><td colspan="3">Sin distribución aplicable.</td></tr></tbody>
+              </table>
+            </div>
+          </article>
         </div>
-      </div>
-      
-      <!-- Operacional Tab -->
-      <div id="tab-operacional" class="report-panel">
-        <div class="report-card">
-          <div class="report-card-header">
-            <h3 class="report-title">Reclamos por Categoria</h3>
-            <button class="btn-export">Exportar PDF</button>
-          </div>
-          <div class="chart-container">
-            <canvas id="chart-reclamos"></canvas>
-          </div>
+      </section>
+
+      <section id="tab-control" class="report-panel" role="tabpanel" aria-labelledby="tab-btn-control" hidden>
+        <h2 class="report-panel-heading" id="control-heading">Control de cálculo del período</h2>
+        <p class="section-intro" id="control-insight">Los importes provienen de conceptos de control de la liquidación. La moneda no está declarada y ningún valor acredita una transferencia o pago bancario.</p>
+        <div class="evidence-grid">
+          <article class="report-card">
+            <header class="report-card-header">
+              <h3 class="report-title">Componentes del control</h3>
+              <p class="report-subtitle">Valores en centavos de unidad monetaria no declarada por la fuente.</p>
+            </header>
+            <div class="chart-container" id="chart-control" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
+              <p class="chart-empty">Esperando los componentes de cálculo validados.</p>
+            </div>
+          </article>
+          <article class="report-card">
+            <header class="report-card-header">
+              <h3 class="report-title">Estado del control portable</h3>
+              <p class="report-subtitle">Alcance, privacidad y tolerancia disponible sin publicar diferencias protegidas.</p>
+            </header>
+            <div class="table-scroll" role="region" aria-label="Control de identidad de cálculo" tabindex="0">
+              <table>
+                <thead><tr><th>Control</th><th>Valor</th></tr></thead>
+                <tbody id="control-table-body"><tr class="empty-row"><td colspan="2">Sin control GRH disponible.</td></tr></tbody>
+              </table>
+            </div>
+          </article>
         </div>
-      </div>
-      
+      </section>
+
+      <section id="tab-calidad" class="report-panel" role="tabpanel" aria-labelledby="tab-btn-calidad" hidden>
+        <h2 class="report-panel-heading" id="quality-heading">Calidad del extracto agregado</h2>
+        <p class="section-intro" id="quality-insight">El puntaje evalúa el extracto gobernado; no certifica la aptitud de cada tabla cruda ni elimina las diferencias diagnósticas entre fuentes de cálculo.</p>
+        <div class="evidence-grid">
+          <article class="report-card">
+            <header class="report-card-header">
+              <h3 class="report-title">Componentes de calidad</h3>
+              <p class="report-subtitle">Puntajes porcentuales y pesos definidos por el contrato GRH.</p>
+            </header>
+            <div class="chart-container" id="chart-calidad" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
+              <p class="chart-empty">Esperando evidencia de calidad validada.</p>
+            </div>
+          </article>
+          <article class="report-card">
+            <header class="report-card-header">
+              <h3 class="report-title">Detalle de calidad</h3>
+              <p class="report-subtitle">Puntaje observado y peso en el score compuesto.</p>
+            </header>
+            <div class="table-scroll" role="region" aria-label="Componentes de calidad GRH" tabindex="0">
+              <table>
+                <thead><tr><th>Componente</th><th>Puntaje</th><th>Peso</th></tr></thead>
+                <tbody id="quality-table-body"><tr class="empty-row"><td colspan="3">Sin evidencia de calidad disponible.</td></tr></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="decision-grid" aria-label="Decisiones, preguntas y límites del informe">
+        <article class="decision-card">
+          <h2>Próximos pasos recomendados</h2>
+          <ul id="next-steps-list"><li>Esperando evidencia validada.</li></ul>
+        </article>
+        <article class="decision-card">
+          <h2>Preguntas abiertas</h2>
+          <ul id="further-questions-list"><li>Esperando evidencia validada.</li></ul>
+        </article>
+        <article class="decision-card">
+          <h2>Supuestos y límites</h2>
+          <ul id="caveats-list"><li>Esperando evidencia validada.</li></ul>
+        </article>
+      </section>
     </main>
   </div>
 
+  <script src="js/auth-fetch.js"></script>
   <script src="js/nav.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (typeof buildSidebar === 'function') buildSidebar('reportes');
-      initCharts();
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const REPORT_SCHEMA_VERSION = 'grh-executive-report-v2';
+    const CHART_IDS = ['chart-participantes', 'chart-sectores', 'chart-control', 'chart-calidad'];
+    const TABLES = Object.freeze({
+      'period-table-body': 3,
+      'sector-table-body': 3,
+      'control-table-body': 2,
+      'quality-table-body': 3
     });
+    const CONTROL_COLORS = ['#3b82f6', '#f59e0b', '#84cc16', '#ec4899'];
+    const BLUE_SHADES = ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#93c5fd', '#64748b', '#475569', '#334155'];
+    let lastAvailableReport = null;
+    let resizeFrame = null;
+    let requestSequence = 0;
 
-    function showTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.report-panel').forEach(p => p.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('tab-' + tabId).classList.add('active');
+    document.addEventListener('DOMContentLoaded', initReportes, { once: true });
+
+    function redirectToSafeWorkspace() {
+      try {
+        if (!window.sessionStorage.getItem('mjunin_access_notice')) {
+          window.sessionStorage.setItem('mjunin_access_notice', 'El perfil actual no tiene habilitada la superficie solicitada.');
+        }
+      } catch (error) {}
+      const currentPage = window.location.pathname.split('/').pop() || '';
+      if (currentPage !== 'inicio.html') window.location.replace('inicio.html');
     }
 
-    function initCharts() {
-      Chart.defaults.color = '#94a3b8';
-      Chart.defaults.font.family = 'Inter';
-      
-      // Gasto Lineal
-      new Chart(document.getElementById('chart-gasto-lineal'), {
-        type: 'line',
-        data: {
-          labels: ['Sep', 'Oct', 'Nov', 'Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago'],
-          datasets: [{
-            label: 'Gasto Real (Millones $)',
-            data: [142, 145, 148, 165, 150, 152, 155, 154, 158, 160, 162, 165.3],
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.1)',
-            fill: true,
-            tension: 0.4
-          }, {
-            label: 'Presupuestado',
-            data: [140, 140, 140, 155, 155, 155, 155, 155, 160, 160, 160, 160],
-            borderColor: '#94a3b8',
-            borderDash: [5, 5],
-            fill: false,
-            tension: 0
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
+    async function requirePageCapability() {
+      if (typeof window.requireCapability !== 'function') {
+        redirectToSafeWorkspace();
+        return false;
+      }
+      try {
+        const allowed = await window.requireCapability('navigation.reports');
+        if (allowed !== true) {
+          if (allowed !== false) redirectToSafeWorkspace();
+          return false;
+        }
+        return true;
+      } catch (error) {
+        redirectToSafeWorkspace();
+        return false;
+      }
+    }
+
+    async function initReportes() {
+      if (typeof buildSidebar === 'function') buildSidebar('reportes');
+      bindTabs();
+      document.getElementById('period-selector').addEventListener('change', async () => {
+        await loadAuthorizedReport(true);
       });
-      
-      // Distribucion Donut
-      new Chart(document.getElementById('chart-distribucion'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Obras Publicas', 'Salud', 'Seguridad', 'Educacion', 'Otros'],
-          datasets: [{
-            data: [48.2, 52.1, 30.0, 18.5, 16.5],
-            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'],
-            borderWidth: 0
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+      document.getElementById('retry-report').addEventListener('click', async () => {
+        await loadAuthorizedReport(Boolean(document.getElementById('period-selector').value));
       });
-      
-      // Reclamos Bar
-      new Chart(document.getElementById('chart-reclamos'), {
-        type: 'bar',
-        data: {
-          labels: ['Bacheo', 'Luminarias', 'Recoleccion', 'Arbolado', 'Cloacas', 'Transito'],
-          datasets: [{
-            label: 'Reclamos Abiertos',
-            data: [85, 120, 45, 30, 25, 40],
-            backgroundColor: '#3b82f6'
-          }, {
-            label: 'Resueltos (Mes)',
-            data: [70, 140, 60, 25, 30, 50],
-            backgroundColor: '#10b981'
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
-      });
-      
-      // Ausentismo Line
-      new Chart(document.getElementById('chart-ausentismo'), {
-        type: 'line',
-        data: {
-          labels: ['Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago'],
-          datasets: [{
-            label: 'Indice de Ausentismo (%)',
-            data: [1.2, 1.4, 1.6, 1.9, 3.1, 1.1],
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239,68,68,0.1)',
-            fill: true,
-            tension: 0.3
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
+      if (!await requirePageCapability()) return;
+      await loadReport(false);
+    }
+
+    function bindTabs() {
+      const tabs = [...document.querySelectorAll('.tab-btn')];
+      tabs.forEach(button => {
+        button.addEventListener('click', () => showTab(button.dataset.tab, button));
+        button.addEventListener('keydown', event => {
+          const currentIndex = tabs.indexOf(button);
+          let nextIndex = null;
+          if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+          if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+          if (event.key === 'Home') nextIndex = 0;
+          if (event.key === 'End') nextIndex = tabs.length - 1;
+          if (nextIndex === null) return;
+          event.preventDefault();
+          const nextTab = tabs[nextIndex];
+          showTab(nextTab.dataset.tab, nextTab, true);
+        });
       });
     }
+
+    function showTab(tabId, button, focusTab = false) {
+      document.querySelectorAll('.tab-btn').forEach(candidate => {
+        const active = candidate === button;
+        candidate.classList.toggle('active', active);
+        candidate.setAttribute('aria-selected', String(active));
+        candidate.tabIndex = active ? 0 : -1;
+      });
+      document.querySelectorAll('.report-panel').forEach(panel => {
+        const active = panel.id === 'tab-' + tabId;
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
+      });
+      if (focusTab) button.focus();
+      if (lastAvailableReport) renderReportPanel(lastAvailableReport, tabId);
+    }
+
+    async function loadReport(useSelectedPeriod) {
+      const currentRequest = ++requestSequence;
+      setLoading();
+      try {
+        const selector = document.getElementById('period-selector');
+        const period = useSelectedPeriod ? selector.value : '';
+        if (useSelectedPeriod && !isPeriod(period)) {
+          setUnavailable('El período seleccionado no pertenece a la serie GRH disponible.');
+          return;
+        }
+        const endpoint = period
+          ? '/api/reports?period=' + encodeURIComponent(period)
+          : '/api/reports';
+        const response = await MuniAuth.fetch(endpoint);
+        const data = await response.json().catch(() => ({}));
+        if (currentRequest !== requestSequence) return;
+        if (response.status === 403) {
+          setUnavailable('Tu perfil no tiene el permiso exacto para consultar el informe ejecutivo GRH.');
+          return;
+        }
+        if (!response.ok) {
+          setUnavailable(data?.dataStatus?.warning || 'El contrato agregado GRH no está disponible.');
+          return;
+        }
+        if (!isGovernedReport(data)) {
+          setUnavailable('La respuesta fue rechazada porque no cumple el contrato ejecutivo GRH.');
+          return;
+        }
+        renderReport(data);
+      } catch (error) {
+        if (currentRequest !== requestSequence) return;
+        if (MuniAuth.isAuthError(error)) return;
+        setUnavailable('No se pudo consultar una fuente GRH agregada y validada.');
+      }
+    }
+
+    async function loadAuthorizedReport(useSelectedPeriod) {
+      if (!await requirePageCapability()) return;
+      await loadReport(useSelectedPeriod);
+    }
+
+    function setLoading() {
+      const status = document.getElementById('data-status');
+      status.className = 'data-status warn';
+      status.textContent = 'Consultando el contrato privado GRH…';
+      document.getElementById('retry-report').classList.remove('visible');
+      CHART_IDS.forEach(id => renderChartLoading(document.getElementById(id)));
+    }
+
+    function isGovernedReport(report) {
+      const source = report?.source;
+      const control = report?.calculationControl;
+      const distribution = report?.workforce?.distributionBySector;
+      const trend = report?.participantTrend;
+      const qualityComponents = report?.quality?.components;
+      return report?.schemaVersion === REPORT_SCHEMA_VERSION &&
+        isPeriod(report?.period) &&
+        report?.dataStatus?.available === true &&
+        report?.dataStatus?.source === 'grh-executive-portable' &&
+        report?.dataStatus?.freshness === 'historical_snapshot' &&
+        report?.dataStatus?.realtime === false &&
+        typeof source?.canonicalSystem === 'string' && /grh/i.test(source.canonicalSystem) &&
+        source?.file === undefined &&
+        /^[0-9a-f]{64}$/.test(source?.approvedSha256 || '') &&
+        source?.profileSchemaVersion === 'grh-profile-v1' && source?.semanticSchemaVersion === 'grh-semantic-v2' &&
+        source?.executiveSchemaVersion === 'grh-executive-v2' && source?.qualitySchemaVersion === 'grh-quality-v1' &&
+        source?.privacyPolicyVersion === 'grh-small-cell-v1' && source?.portableThreshold === 10 &&
+        isIsoDate(source?.snapshotAsOf) && source?.realtime === false &&
+        source?.aggregateOnly === true && source?.containsPii === false &&
+        Array.isArray(source?.excludedSources) && source.excludedSources.length === 1 && source.excludedSources[0] === 'personas_junin' &&
+        Array.isArray(report?.availablePeriods) && report.availablePeriods.length > 0 &&
+        report.availablePeriods.every(isPeriod) && report.availablePeriods.includes(report.period) &&
+        Array.isArray(report?.executiveSummary) && report.executiveSummary.length >= 2 && report.executiveSummary.every(isBoundedText) &&
+        Array.isArray(trend) && trend.length > 0 && trend.length <= 12 && trend.at(-1)?.period === report.period &&
+        trend.every(row => isPeriod(row?.period) && isNonNegativeNumber(row?.participants)) &&
+        control?.period === report.period && control?.amountUnit === 'source_currency_cents' &&
+        control?.currency === 'not_declared_in_source' && control?.metricStatus === 'calculation_control_not_bank_disbursement' &&
+        control?.privacyStatus === 'released' && control?.distinctPayrollParticipants >= source.portableThreshold &&
+        control?.participantDisplay === String(control.distinctPayrollParticipants) &&
+        Array.isArray(control?.components) && control.components.length === 4 &&
+        control.components.every(row => isBoundedText(row?.label) && isNonNegativeNumber(row?.valueCents)) &&
+        (typeof control?.identityWithinRoundingTolerance === 'boolean' || control?.identityWithinRoundingTolerance === null) &&
+        distribution && typeof distribution.available === 'boolean' && Array.isArray(distribution.participants) &&
+        distribution.participants.every(row => isBoundedText(row?.label) && isNonNegativeNumber(row?.participants) && isPercent(row?.sharePct)) &&
+        isPercent(report?.quality?.scorePct) && Array.isArray(qualityComponents) && qualityComponents.length === 4 &&
+        qualityComponents.every(row => isBoundedText(row?.label) && isPercent(row?.scorePct) && isPercent(row?.weightPct)) &&
+        Array.isArray(report?.recommendedNextSteps) && report.recommendedNextSteps.every(isBoundedText) &&
+        Array.isArray(report?.furtherQuestions) && report.furtherQuestions.every(isBoundedText) &&
+        Array.isArray(report?.caveats) && report.caveats.every(isBoundedText);
+    }
+
+    function renderReport(report) {
+      lastAvailableReport = report;
+      syncPeriodSelector(report.availablePeriods, report.period);
+      setTextList('executive-summary-list', report.executiveSummary);
+
+      const source = report.source;
+      const control = report.calculationControl;
+      const quality = report.quality;
+      const status = document.getElementById('data-status');
+      status.className = 'data-status ok';
+      status.textContent = 'GRH canónico · corte ' + dateLabel(source.snapshotAsOf) + ' · período ' + periodLabel(report.period) + ' · linaje ' + shortSha(source.approvedSha256) + ' · agregado sin PII · no tiempo real · personas_junin excluida.';
+      document.getElementById('retry-report').classList.remove('visible');
+
+      setText('kpi-participants', formatNumber(control.distinctPayrollParticipants, 0));
+      setText('kpi-participants-context', 'Período ' + periodLabel(report.period) + ' · participación en cálculo.');
+      setText('kpi-control', control.identityWithinRoundingTolerance === null
+        ? 'No publicado'
+        : (control.identityWithinRoundingTolerance ? 'En tolerancia' : 'Fuera de tolerancia'));
+      setText('kpi-quality', formatNumber(quality.scorePct, 2) + '%');
+      setText('kpi-snapshot', dateLabel(source.snapshotAsOf));
+      setText('kpi-snapshot-context', 'Linaje ' + shortSha(source.approvedSha256) + ' · snapshot, no tiempo real.');
+
+      const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'resumen';
+      renderReportPanel(report, activeTab);
+      setTextList('next-steps-list', report.recommendedNextSteps);
+      setTextList('further-questions-list', report.furtherQuestions);
+      setTextList('caveats-list', report.caveats);
+    }
+
+    function renderReportPanel(report, tabId) {
+      const source = report.source;
+      const control = report.calculationControl;
+      if (tabId === 'dotacion') {
+        renderSectorEvidence(report.workforce.distributionBySector, report.period, source);
+        return;
+      }
+      if (tabId === 'control') {
+        renderControlEvidence(control, source);
+        return;
+      }
+      if (tabId === 'calidad') {
+        renderQualityEvidence(report.quality, source);
+        return;
+      }
+
+      setText('trend-heading', 'El período ' + periodLabel(report.period) + ' registra ' + formatNumber(control.distinctPayrollParticipants, 0) + ' participantes en cálculo');
+      setText('trend-insight', 'La visual compara hasta 12 períodos válidos terminados en el período elegido. Describe participación en cálculos de liquidación y no una dotación contractual activa.');
+      renderVerticalBars(document.getElementById('chart-participantes'), {
+        title: 'Participantes por período de cálculo',
+        description: 'Participantes distintos presentes en cálculos válidos de GRH.',
+        points: report.participantTrend.map(row => ({ label: row.period, value: row.participants })),
+        period: report.period,
+        source,
+        unit: 'participantes',
+        minimumPoints: 4,
+        emptyMessage: 'La serie no reúne cuatro períodos previos para una comparación temporal honesta.'
+      });
+      renderPeriodTable(control);
+    }
+
+    function syncPeriodSelector(periods, selectedPeriod) {
+      const selector = document.getElementById('period-selector');
+      const fragment = document.createDocumentFragment();
+      [...periods].sort().reverse().forEach(period => {
+        const option = document.createElement('option');
+        option.value = period;
+        option.textContent = periodLabel(period);
+        fragment.appendChild(option);
+      });
+      selector.replaceChildren(fragment);
+      selector.value = selectedPeriod;
+      selector.disabled = false;
+    }
+
+    function renderPeriodTable(control) {
+      const body = document.getElementById('period-table-body');
+      body.replaceChildren();
+      const row = document.createElement('tr');
+      appendCells(row, [
+        periodLabel(control.period),
+        formatNumber(control.distinctPayrollParticipants, 0),
+        'Liberado · k=' + lastAvailableReport.source.portableThreshold
+      ]);
+      body.appendChild(row);
+    }
+
+    function renderSectorEvidence(distribution, period, source) {
+      const container = document.getElementById('chart-sectores');
+      if (!distribution.available) {
+        setText('sector-heading', 'La distribución sectorial no se extrapola al período seleccionado');
+        setText('sector-insight', 'El contrato sólo publica esta distribución para ' + periodLabel(distribution.referencePeriod) + '; el período ' + periodLabel(period) + ' conserva sus otros controles sin inventar una composición histórica.');
+        renderChartEmpty(container, 'Distribución disponible únicamente para ' + periodLabel(distribution.referencePeriod) + '.');
+        setEmptyRow('sector-table-body', 3, 'Sin distribución sectorial aplicable a este período.');
+        return;
+      }
+
+      setText('sector-heading', 'La distribución sectorial corresponde al período de referencia ' + periodLabel(distribution.referencePeriod));
+      setText('sector-insight', 'Los principales sectores se muestran con conteos agregados; el resto se agrupa para conservar el denominador total sin exponer personas.');
+      renderHorizontalBars(container, {
+        title: 'Participantes por sector',
+        description: 'Distribución agregada de participantes en cálculo por sector GRH.',
+        points: distribution.participants.map((row, index) => ({
+          label: row.label,
+          value: row.participants,
+          displayValue: formatNumber(row.participants, 0) + ' · ' + formatNumber(row.sharePct, 1) + '%',
+          color: BLUE_SHADES[index % BLUE_SHADES.length]
+        })),
+        period: distribution.referencePeriod,
+        source,
+        unit: 'participantes',
+        emptyMessage: 'No hay una distribución sectorial agregada disponible.'
+      });
+
+      const body = document.getElementById('sector-table-body');
+      body.replaceChildren();
+      distribution.participants.forEach(item => {
+        const row = document.createElement('tr');
+        appendCells(row, [item.label, formatNumber(item.participants, 0), formatNumber(item.sharePct, 2) + '%']);
+        body.appendChild(row);
+      });
+    }
+
+    function renderControlEvidence(control, source) {
+      const tolerance = control.identityWithinRoundingTolerance;
+      setText('control-heading', tolerance === null
+        ? 'El estado histórico de tolerancia no se publica para este período'
+        : (tolerance
+          ? 'El control más reciente queda dentro de la tolerancia declarada'
+          : 'El control más reciente queda fuera de la tolerancia declarada'));
+      setText('control-insight', 'Los componentes son importes de cálculo en centavos de una moneda no declarada. El neto es una identidad de control y no acredita un pago bancario.');
+      renderHorizontalBars(document.getElementById('chart-control'), {
+        title: 'Componentes del control de cálculo',
+        description: 'Comparación de componentes agregados del control de liquidación.',
+        points: control.components.map((row, index) => ({
+          label: row.label,
+          value: row.valueCents,
+          displayValue: formatCompact(row.valueCents) + ' centavos fuente',
+          accessibleValue: formatNumber(row.valueCents, 0) + ' centavos de unidad monetaria no declarada',
+          color: CONTROL_COLORS[index]
+        })),
+        period: control.period,
+        source,
+        unit: 'centavos fuente; moneda no declarada',
+        emptyMessage: 'No hay componentes de control agregados para este período.'
+      });
+
+      const body = document.getElementById('control-table-body');
+      body.replaceChildren();
+      const rows = [
+        ['Período', periodLabel(control.period)],
+        ['Participantes', formatNumber(control.distinctPayrollParticipants, 0)],
+        ['Privacidad', 'Liberado · k=' + lastAvailableReport.source.portableThreshold],
+        ['Dentro de tolerancia', tolerance === null ? 'No publicado para este período' : (tolerance ? 'Sí' : 'No')],
+        ['Interpretación', 'Control de cálculo; no pago bancario']
+      ];
+      rows.forEach(values => {
+        const row = document.createElement('tr');
+        appendCells(row, values);
+        body.appendChild(row);
+      });
+    }
+
+    function renderQualityEvidence(quality, source) {
+      setText('quality-heading', 'La calidad del extracto agregado alcanza ' + formatNumber(quality.scorePct, 2) + '%');
+      setText('quality-insight', 'El score combina validez temporal, integridad referencial, conciliación de controles y unicidad. Su alcance es el extracto gobernado, no cada tabla cruda de GRH.');
+      renderHorizontalBars(document.getElementById('chart-calidad'), {
+        title: 'Componentes de calidad',
+        description: 'Puntajes porcentuales de los componentes del contrato semántico GRH.',
+        points: quality.components.map((row, index) => ({
+          label: row.label,
+          value: row.scorePct,
+          displayValue: formatNumber(row.scorePct, 2) + '% · peso ' + formatNumber(row.weightPct, 0) + '%',
+          color: BLUE_SHADES[index]
+        })),
+        period: lastAvailableReport.period,
+        source,
+        unit: 'puntaje porcentual',
+        maximum: 100,
+        emptyMessage: 'No hay componentes de calidad validados.'
+      });
+
+      const body = document.getElementById('quality-table-body');
+      body.replaceChildren();
+      quality.components.forEach(item => {
+        const row = document.createElement('tr');
+        appendCells(row, [item.label, formatNumber(item.scorePct, 2) + '%', formatNumber(item.weightPct, 0) + '%']);
+        body.appendChild(row);
+      });
+    }
+
+    function renderVerticalBars(container, config) {
+      const points = (config.points || []).filter(point => isNonNegativeNumber(point?.value));
+      if (!container || points.length < (config.minimumPoints || 1) || !points.some(point => point.value > 0)) {
+        renderChartEmpty(container, config.emptyMessage);
+        return;
+      }
+      const width = Math.max(320, Math.round(container.getBoundingClientRect().width || 760));
+      const height = width < 520 ? 310 : 330;
+      const left = 52;
+      const right = 16;
+      const top = 42;
+      const bottom = 52;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const maximum = Math.max(...points.map(point => point.value), 1);
+      const slot = plotWidth / points.length;
+      const barWidth = Math.max(8, Math.min(34, slot * .62));
+      const y = value => top + plotHeight - (value / maximum) * plotHeight;
+      const titleId = container.id + '-svg-title';
+      const descriptionId = container.id + '-svg-description';
+      const svg = svgElement('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-labelledby': titleId + ' ' + descriptionId, focusable: 'false' });
+      svg.appendChild(svgElement('title', { id: titleId }, config.title));
+      svg.appendChild(svgElement('desc', { id: descriptionId }, config.description + ' ' + points.map(point => point.label + ': ' + formatNumber(point.value, 0)).join('; ') + '.'));
+      svg.appendChild(svgElement('text', { x: left, y: 18, class: 'chart-axis-label' }, 'Escala desde cero · ' + config.unit));
+      svg.appendChild(svgElement('text', { x: left - 8, y: top + 4, class: 'chart-axis-label', 'text-anchor': 'end' }, formatCompact(maximum)));
+      svg.appendChild(svgElement('text', { x: left - 8, y: top + plotHeight + 4, class: 'chart-axis-label', 'text-anchor': 'end' }, '0'));
+      svg.appendChild(svgElement('line', { x1: left, y1: top + plotHeight, x2: width - right, y2: top + plotHeight, stroke: '#64748b', 'stroke-width': '1' }));
+
+      points.forEach((point, index) => {
+        const centerX = left + slot * index + slot / 2;
+        const barTop = y(point.value);
+        svg.appendChild(svgElement('rect', { x: centerX - barWidth / 2, y: barTop, width: barWidth, height: top + plotHeight - barTop, rx: 4, fill: '#3b82f6', stroke: '#0f172a', 'stroke-width': '1' }));
+        if (index === points.length - 1 || point.value === maximum) {
+          svg.appendChild(svgElement('text', { x: centerX, y: Math.max(top - 5, barTop - 7), class: 'chart-value', 'text-anchor': 'middle' }, formatNumber(point.value, 0)));
+        }
+        if (width >= 520 || index % 2 === 0 || index === points.length - 1) {
+          svg.appendChild(svgElement('text', { x: centerX, y: top + plotHeight + 20, class: 'chart-axis-label', 'text-anchor': 'middle' }, compactPeriod(point.label)));
+        }
+      });
+      appendChart(container, svg, config, 'Serie observada; participantes de cálculo, no dotación contractual activa.');
+    }
+
+    function renderHorizontalBars(container, config) {
+      const points = (config.points || []).filter(point => isNonNegativeNumber(point?.value));
+      if (!container || !points.length || !points.some(point => point.value > 0)) {
+        renderChartEmpty(container, config.emptyMessage);
+        return;
+      }
+      const width = Math.max(320, Math.round(container.getBoundingClientRect().width || 760));
+      const rowHeight = 54;
+      const top = 48;
+      const bottom = 26;
+      const height = top + points.length * rowHeight + bottom;
+      const left = Math.min(225, Math.max(122, width * .34));
+      const right = Math.min(205, Math.max(112, width * .30));
+      const plotStart = left;
+      const plotEnd = Math.max(plotStart + 55, width - right);
+      const plotWidth = plotEnd - plotStart;
+      const maximum = config.maximum || Math.max(...points.map(point => point.value), 1);
+      const titleId = container.id + '-svg-title';
+      const descriptionId = container.id + '-svg-description';
+      const svg = svgElement('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-labelledby': titleId + ' ' + descriptionId, focusable: 'false' });
+      svg.appendChild(svgElement('title', { id: titleId }, config.title));
+      svg.appendChild(svgElement('desc', { id: descriptionId }, config.description + ' ' + points.map(point => point.label + ': ' + (point.accessibleValue || point.displayValue)).join('; ') + '.'));
+      svg.appendChild(svgElement('text', { x: plotStart, y: 18, class: 'chart-axis-label' }, 'Escala desde cero · ' + config.unit));
+      svg.appendChild(svgElement('text', { x: plotStart, y: 37, class: 'chart-axis-label' }, '0'));
+      svg.appendChild(svgElement('text', { x: plotEnd, y: 37, class: 'chart-axis-label', 'text-anchor': 'end' }, formatCompact(maximum)));
+      svg.appendChild(svgElement('line', { x1: plotStart, y1: top - 7, x2: plotStart, y2: height - bottom + 2, stroke: '#64748b', 'stroke-width': '1' }));
+
+      points.forEach((point, index) => {
+        const centerY = top + index * rowHeight + 20;
+        const barWidth = Math.max(0, Math.min(plotWidth, (point.value / maximum) * plotWidth));
+        svg.appendChild(svgElement('text', { x: 8, y: centerY + 5, class: 'chart-label' }, point.label));
+        svg.appendChild(svgElement('line', { x1: plotStart, y1: centerY, x2: plotEnd, y2: centerY, stroke: '#334155', 'stroke-width': '10', 'stroke-linecap': 'round' }));
+        if (barWidth > 0) svg.appendChild(svgElement('rect', { x: plotStart, y: centerY - 8, width: barWidth, height: 16, rx: 4, fill: point.color || '#3b82f6', stroke: '#0f172a', 'stroke-width': '1' }));
+        svg.appendChild(svgElement('text', { x: width - 8, y: centerY + 5, class: 'chart-value', 'text-anchor': 'end' }, point.displayValue || formatNumber(point.value, 0)));
+      });
+      appendChart(container, svg, config, 'Valores agregados del contrato semántico GRH.');
+    }
+
+    function appendChart(container, svg, config, interpretation) {
+      const meta = document.createElement('p');
+      meta.className = 'chart-meta';
+      meta.textContent = 'Período ' + periodLabel(config.period) + ' · ' + sourceLabel(config.source) + '. ' + interpretation;
+      container.dataset.chartState = 'ready';
+      container.replaceChildren(svg, meta);
+    }
+
+    function sourceLabel(source) {
+      return source.canonicalSystem + ', corte ' + dateLabel(source.snapshotAsOf) + ', linaje ' + shortSha(source.approvedSha256) + ', snapshot histórico no realtime';
+    }
+
+    function setUnavailable(message) {
+      lastAvailableReport = null;
+      const status = document.getElementById('data-status');
+      status.className = 'data-status warn';
+      status.textContent = message;
+      document.getElementById('retry-report').classList.add('visible');
+      setTextList('executive-summary-list', ['No hay evidencia agregada GRH validada disponible para responder este informe.']);
+      ['kpi-participants', 'kpi-control', 'kpi-quality', 'kpi-snapshot'].forEach(id => setText(id, '—'));
+      setText('kpi-participants-context', 'No equivale a dotación activa.');
+      setText('kpi-snapshot-context', 'Sin linaje GRH validado.');
+      CHART_IDS.forEach(id => renderChartEmpty(document.getElementById(id), 'Sin evidencia GRH agregada y validada para esta visualización.'));
+      Object.entries(TABLES).forEach(([id, columns]) => setEmptyRow(id, columns, 'Sin evidencia GRH validada para mostrar.'));
+      setTextList('next-steps-list', ['Restablecer y validar el contrato privado GRH antes de tomar decisiones.']);
+      setTextList('further-questions-list', ['¿Qué condición impide publicar el contrato agregado GRH?']);
+      setTextList('caveats-list', ['No se muestran cifras, tendencias ni comparaciones cuando la fuente falla.']);
+    }
+
+    function renderChartLoading(container) {
+      if (!container) return;
+      const note = document.createElement('p');
+      note.className = 'chart-empty';
+      note.textContent = 'Consultando evidencia GRH validada…';
+      container.dataset.chartState = 'loading';
+      container.replaceChildren(note);
+    }
+
+    function renderChartEmpty(container, message) {
+      if (!container) return;
+      const note = document.createElement('p');
+      note.className = 'chart-empty';
+      note.setAttribute('role', 'status');
+      note.textContent = message || 'Sin evidencia GRH agregada y validada para esta visualización.';
+      container.dataset.chartState = 'empty';
+      container.replaceChildren(note);
+    }
+
+    function svgElement(name, attributes, text) {
+      const element = document.createElementNS(SVG_NS, name);
+      Object.entries(attributes || {}).forEach(([key, value]) => element.setAttribute(key, String(value)));
+      if (text !== undefined) element.textContent = text;
+      return element;
+    }
+
+    function setEmptyRow(id, columns, message) {
+      const body = document.getElementById(id);
+      if (!body) return;
+      const row = document.createElement('tr');
+      row.className = 'empty-row';
+      const cell = document.createElement('td');
+      cell.colSpan = columns;
+      cell.textContent = message;
+      row.appendChild(cell);
+      body.replaceChildren(row);
+    }
+
+    function appendCells(row, values) {
+      values.forEach(value => {
+        const cell = document.createElement('td');
+        cell.textContent = String(value);
+        row.appendChild(cell);
+      });
+    }
+
+    function setText(id, value) {
+      const node = document.getElementById(id);
+      if (node) node.textContent = String(value);
+    }
+
+    function setTextList(id, values) {
+      const list = document.getElementById(id);
+      const fragment = document.createDocumentFragment();
+      values.forEach(value => {
+        const item = document.createElement('li');
+        item.textContent = value;
+        fragment.appendChild(item);
+      });
+      list.replaceChildren(fragment);
+    }
+
+    function isPeriod(value) { return typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value); }
+    function isIsoDate(value) { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value + 'T00:00:00Z')); }
+    function isNonNegativeNumber(value) { return typeof value === 'number' && Number.isFinite(value) && value >= 0; }
+    function isPercent(value) { return isNonNegativeNumber(value) && value <= 100; }
+    function isBoundedText(value) { return typeof value === 'string' && value.trim().length > 0 && value.length <= 600; }
+    function formatNumber(value, digits) { return Number(value).toLocaleString('es-AR', { maximumFractionDigits: digits }); }
+    function formatCompact(value) { return Number(value).toLocaleString('es-AR', { notation: 'compact', maximumFractionDigits: 1 }); }
+    function shortSha(value) { return value.slice(0, 12) + '…' + value.slice(-8); }
+    function compactPeriod(period) { return period.slice(5) + '/' + period.slice(2, 4); }
+    function periodLabel(period) {
+      if (!isPeriod(period)) return 'período no declarado';
+      return new Intl.DateTimeFormat('es-AR', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(period + '-01T00:00:00Z'));
+    }
+    function dateLabel(date) {
+      if (!isIsoDate(date)) return 'fecha no declarada';
+      return new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(date + 'T00:00:00Z'));
+    }
+
+    window.addEventListener('resize', () => {
+      if (!lastAvailableReport) return;
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(() => {
+        const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'resumen';
+        renderReportPanel(lastAvailableReport, activeTab);
+      });
+    });
   </script>
   <script src="js/theme-switcher.js"></script>
-  <script src='js/bottom-nav.js'></script>
+  <script src="js/bottom-nav.js"></script>
 </body>
 </html>

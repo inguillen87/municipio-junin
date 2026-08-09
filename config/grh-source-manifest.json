@@ -1,0 +1,12 @@
+{
+  "schema_version": "grh-source-manifest-v1",
+  "canonical_system": "GRH Junín",
+  "source_file": "grh_junin.backup_2026080615_plataforma.sql.gz",
+  "sha256": "e7403da1d036c8d60eab26bcb3f97e6e7c3a70629090deac8cc4e5438250b3d9",
+  "compressed_size_bytes": 44537741,
+  "snapshot_as_of": "2026-08-06",
+  "excluded_sources": [
+    "personas_junin"
+  ],
+  "approval_basis": "Backup GRH designado por el usuario como snapshot municipal canónico el 2026-08-08."
+}

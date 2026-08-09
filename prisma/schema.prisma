@@ -8,9 +8,17 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// El backend Express se instala de forma independiente. Generar un cliente
+// propio evita que dependa accidentalmente del node_modules del proyecto raíz.
+generator backendClient {
+  provider = "prisma-client-js"
+  output   = "../backend/generated/prisma"
+}
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {

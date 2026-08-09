@@ -1,8 +1,8 @@
 # Procedimiento de baseline y drift Prisma
 
-**Versi\u00f3n:** 1.0.0  
-**Fecha de corte:** 8 de agosto de 2026  
-**Estado:** preflight implementado; baseline conectado y atestación de release pendientes  
+**Versi\u00f3n:** 1.1.0
+**Fecha de corte:** 9 de agosto de 2026
+**Estado:** WP0-L implementado y validado localmente; ejecución conectada, baseline real y atestación de release pendientes
 **Alcance:** esquema core Prisma y futura migraci\u00f3n RBAC/ABAC
 
 ## 1. Decisi\u00f3n operativa
@@ -101,6 +101,74 @@ distinto del rol de aplicaci\u00f3n.
 
 Este procedimiento requiere autorizaci\u00f3n para una DB de restauraci\u00f3n. Nunca se
 ejecuta primero sobre producci\u00f3n.
+
+### WP0-L: observaci\u00f3n m\u00ednima fail-closed
+
+`db:baseline:inspect` es un recolector local y exclusivamente read-only para la
+copia restaurada. La URL s\u00f3lo se acepta desde `WP0_DATABASE_URL`; no existe flag
+para pasarla por argumentos. En un host remoto exige `sslmode=verify-full`. La
+\u00fanica excepci\u00f3n es loopback con `NODE_ENV=development` y nunca acredita un
+entorno institucional.
+
+Antes de usarlo, el operador de restore debe declarar fuera de esta herramienta,
+mediante `ALTER DATABASE` sobre la copia restaurada y no mediante `ALTER ROLE` o
+`ALTER SYSTEM`, los marcadores PostgreSQL persistentes
+`municontrol.wp0_target_class=RESTORED_DISPOSABLE` y
+`municontrol.wp0_target_id=target:<id-no-secreto>`. No se admite inyectarlos con
+`options` en la URL ni con variables ambientales `PG*`; la URL debe contener la
+credencial y no delega autenticaci\u00f3n a `pgpass` o `PGPASSWORD`. El adaptador
+fija adem\u00e1s `default_transaction_read_only=on`, `row_security=off` y
+`search_path=pg_catalog` al abrir la sesi\u00f3n. Antes de consultar identidad o
+inventario exige esos valores exactos junto con la transacci\u00f3n read-only; si
+`_prisma_migrations` tiene RLS, la observaci\u00f3n se rechaza
+en lugar de aceptar una historia filtrada. El
+inspector rechaza `NODE_TLS_REJECT_UNAUTHORIZED=0`, por lo que
+`sslmode=verify-full` no puede quedar anulado globalmente desde Node. Tambi\u00e9n exige
+que ambos valores existan en `pg_db_role_setting` para
+`current_database()` y `setrole=0`; un valor heredado del rol o del sistema no
+acredita la copia. La confirmaci\u00f3n CLI debe ser exactamente
+`RESTORED_DISPOSABLE`, el target CLI debe coincidir con el target persistente y
+el checkout debe estar limpio y sin flags `assume-unchanged` o `skip-worktree`.
+Estas comprobaciones son obligatorias y no
+convierten una DB productiva en una copia segura.
+
+Primero validar configuraci\u00f3n, sin conexi\u00f3n ni escritura:
+
+```powershell
+# WP0_DATABASE_URL se inyecta por el mecanismo local de secretos; no se pega en Git ni logs.
+npm.cmd run db:baseline:inspect -- --check-config `
+  --confirmation RESTORED_DISPOSABLE `
+  --target-id target:<id-no-secreto> `
+  --output <RUTA-ABSOLUTA-PRIVADA-FUERA-DEL-REPO.json> `
+  --backup-ref backup:<id-externo> `
+  --restore-ref restore:<id-externo> `
+  --reviewer reviewer:<id-1> `
+  --reviewer reviewer:<id-2>
+```
+
+S\u00f3lo despu\u00e9s, y sobre la copia autorizada, repetir los mismos argumentos con
+`--connected`. Ese modo abre una transacci\u00f3n `REPEATABLE READ READ ONLY`, verifica
+`transaction_read_only=on` y consulta \u00fanicamente cat\u00e1logos PostgreSQL y
+`_prisma_migrations`. No lee filas de negocio, no ejecuta DDL/DML, no sobrescribe
+el output y hace rollback ante cualquier inconsistencia.
+
+```powershell
+npm.cmd run db:baseline:inspect -- --connected `
+  --confirmation RESTORED_DISPOSABLE `
+  --target-id target:<id-no-secreto> `
+  --output <RUTA-ABSOLUTA-PRIVADA-FUERA-DEL-REPO.json> `
+  --backup-ref backup:<id-externo> `
+  --restore-ref restore:<id-externo> `
+  --reviewer reviewer:<id-1> `
+  --reviewer reviewer:<id-2>
+```
+
+El output contiene inventario can\u00f3nico, digests, commit y referencias opacas de
+backup/restore y de exactamente dos revisores. Es una **observaci\u00f3n**, nunca un
+approval, manifest, migraci\u00f3n, autorizaci\u00f3n DDL ni receipt de release. Debe quedar
+fuera del checkout, en una ruta absoluta privada, nueva y sin symlinks/junctions.
+El directorio `scripts/` ya est\u00e1 excluido del bundle Vercel; este flujo tampoco
+debe ejecutarse como Function o job de producci\u00f3n.
 
 1. Congelar commit, digest del schema, target l\u00f3gico y ventana.
 2. Crear backup privado y registrar identificador, RPO, tama\u00f1o y custodio.

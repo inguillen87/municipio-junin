@@ -47,6 +47,86 @@ test('only explicit development loopback may omit transport verification', () =>
   );
 });
 
+test('remote connections cannot inherit credentials or disable Node certificate verification', () => {
+  assert.throws(
+    () => inspectDatabaseUrl(
+      'postgresql://user@db.example.test/municipio?sslmode=verify-full',
+      { nodeEnv: 'production', environment: { PGPASSWORD: 'ambient-secret' } },
+    ),
+    error => error instanceof DatabaseUrlPolicyError && error.code === 'DATABASE_CREDENTIAL_REQUIRED',
+  );
+  assert.throws(
+    () => inspectDatabaseUrl(
+      'postgresql://user:secret@db.example.test/municipio?sslmode=verify-full',
+      { nodeEnv: 'production', environment: { NODE_TLS_REJECT_UNAUTHORIZED: '0' } },
+    ),
+    error => error instanceof DatabaseUrlPolicyError && error.code === 'DATABASE_TLS_ENV_FORBIDDEN',
+  );
+});
+
+test('encoded socket hosts cannot cross the canonical URL boundary', () => {
+  for (const connectionString of [
+    'postgresql://user:secret@%2Fvar%2Frun%2Fpostgresql/municipio?sslmode=verify-full',
+    'postgresql://user:secret@%5C%5Cpipe%5Cpostgres/municipio?sslmode=verify-full',
+  ]) {
+    assert.throws(
+      () => inspectDatabaseUrl(connectionString, { nodeEnv: 'production', environment: {} }),
+      error => error instanceof DatabaseUrlPolicyError && error.code === 'DATABASE_HOST_CANONICAL_REQUIRED',
+    );
+  }
+});
+
+test('WHATWG and node-postgres cannot receive different strings through whitespace or bad escapes', () => {
+  const canonical = 'postgresql://user:secret@db.example.test/municipio?sslmode=verify-full';
+  for (const connectionString of [
+    ` ${canonical}`,
+    `${canonical} `,
+    `\t${canonical}`,
+    `${canonical}\r\n`,
+    canonical.replace('secret', 'sec ret'),
+    canonical.replace('secret', 'sec%ZZret'),
+  ]) {
+    assert.throws(
+      () => inspectDatabaseUrl(connectionString, { nodeEnv: 'production', environment: {} }),
+      error => error instanceof DatabaseUrlPolicyError && error.code === 'DATABASE_URL_NOT_CANONICAL',
+    );
+  }
+  assert.equal(
+    inspectDatabaseUrl(canonical, { nodeEnv: 'production', environment: {} }).connectionString,
+    canonical,
+  );
+});
+
+test('query parameters cannot replace the validated PostgreSQL authority or session', () => {
+  for (const parameter of [
+    'host=remote.example.test',
+    'port=6543',
+    'user=forged',
+    'password=forged',
+    'database=forged',
+    'options=-c%20municontrol.wp0_target_class%3DRESTORED_DISPOSABLE',
+  ]) {
+    assert.throws(
+      () => inspectDatabaseUrl(
+        `postgresql://local:local@127.0.0.1:5432/municipio?sslmode=disable&${parameter}`,
+        { nodeEnv: 'development' },
+      ),
+      error => error instanceof DatabaseUrlPolicyError && error.code === 'DATABASE_URL_OVERRIDE_FORBIDDEN',
+      parameter,
+    );
+  }
+
+  for (const connectionString of [
+    'postgresql://127.0.0.1:5432/municipio?sslmode=disable',
+    'postgresql://local:local@127.0.0.1:5432/?sslmode=disable',
+  ]) {
+    assert.throws(
+      () => inspectDatabaseUrl(connectionString, { nodeEnv: 'development' }),
+      error => error instanceof DatabaseUrlPolicyError && error.code === 'DATABASE_URL_IDENTITY_REQUIRED',
+    );
+  }
+});
+
 test('all database entry points invoke the shared policy before creating or using pools', () => {
   const entryPoints = [
     'api/lib/db.js',

@@ -14,6 +14,11 @@ const OBSERVATION_ARTIFACT_TYPE = 'wp0_restored_copy_observation';
 const OBSERVATION_CONTRACT_VERSION = 2;
 const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
 const MIN_POSTGRES_VERSION_NUM = 120000;
+const TLS_CIPHER_BITS = Object.freeze({
+  TLS_AES_128_GCM_SHA256: 128,
+  TLS_AES_256_GCM_SHA384: 256,
+  TLS_CHACHA20_POLY1305_SHA256: 256,
+});
 const MAX_CATALOG_ROWS = 20_000;
 const MAX_CATALOG_NAME_BYTES = 1024;
 const MAX_CATALOG_DEFINITION_BYTES = 256 * 1024;
@@ -83,7 +88,6 @@ const QUERY_IDS = Object.freeze({
   BEGIN: 'transaction.begin',
   TRANSACTION_STATE: 'transaction.state',
   CLOCK_STATE: 'transaction.clock',
-  TRANSPORT_SECURITY: 'transport.security',
   DATABASE_IDENTITY: 'database.identity',
   OBSERVER_SECURITY: 'observer.security',
   CATALOG_INVENTORY: 'catalog.inventory',
@@ -113,18 +117,6 @@ const FIXED_QUERIES = Object.freeze({
       'SELECT',
       '  pg_catalog.clock_timestamp() AS database_clock,',
       '  pg_catalog.transaction_timestamp() AS transaction_started_at',
-    ].join('\n'),
-    values: Object.freeze([]),
-  }),
-  [QUERY_IDS.TRANSPORT_SECURITY]: Object.freeze({
-    text: [
-      'SELECT',
-      '  ssl::text AS ssl,',
-      '  version::text AS protocol,',
-      '  cipher::text AS cipher,',
-      '  bits::text AS bits',
-      'FROM pg_catalog.pg_stat_ssl',
-      'WHERE pid = pg_catalog.pg_backend_pid()',
     ].join('\n'),
     values: Object.freeze([]),
   }),
@@ -227,7 +219,7 @@ const FIXED_QUERIES = Object.freeze({
       '  FROM governed_namespaces AS n',
       '  UNION ALL',
       "  SELECT 'relation', n.nspname, c.relname, NULL::text,",
-      "    ('kind=' || c.relkind || ';owner=' || pg_catalog.pg_get_userbyid(c.relowner) ||",
+      "    ('kind=' || c.relkind::text || ';owner=' || pg_catalog.pg_get_userbyid(c.relowner) ||",
       "     ';rls=' || c.relrowsecurity::text || ';force_rls=' || c.relforcerowsecurity::text)::text",
       '  FROM pg_catalog.pg_class AS c',
       '  JOIN governed_namespaces AS n ON n.oid = c.relnamespace',
@@ -235,8 +227,8 @@ const FIXED_QUERIES = Object.freeze({
       '  UNION ALL',
       "  SELECT 'column', n.nspname, a.attname, c.relname,",
       "    ('type=' || pg_catalog.format_type(a.atttypid, a.atttypmod) ||",
-      "     ';not_null=' || a.attnotnull::text || ';identity=' || a.attidentity ||",
-      "     ';generated=' || a.attgenerated || ';default=' ||",
+      "     ';not_null=' || a.attnotnull::text || ';identity=' || a.attidentity::text ||",
+      "     ';generated=' || a.attgenerated::text || ';default=' ||",
       "     coalesce(pg_catalog.pg_get_expr(d.adbin, d.adrelid, true), '<none>'))::text",
       '  FROM pg_catalog.pg_attribute AS a',
       '  JOIN pg_catalog.pg_class AS c ON c.oid = a.attrelid',
@@ -253,7 +245,7 @@ const FIXED_QUERIES = Object.freeze({
       '  WHERE NOT a.attisdropped',
       '  UNION ALL',
       "  SELECT 'type', n.nspname, t.typname, NULL::text,",
-      "    ('kind=' || t.typtype || ';category=' || t.typcategory ||",
+      "    ('kind=' || t.typtype::text || ';category=' || t.typcategory::text ||",
       "     ';owner=' || pg_catalog.pg_get_userbyid(t.typowner) || ';not_null=' || t.typnotnull::text ||",
       "     ';base=' || CASE WHEN t.typbasetype = 0 THEN '<none>' ELSE pg_catalog.format_type(t.typbasetype, t.typtypmod) END ||",
       "     ';default=' || coalesce(t.typdefault, '<none>'))::text",
@@ -288,14 +280,14 @@ const FIXED_QUERIES = Object.freeze({
       '  JOIN governed_namespaces AS n ON n.oid = c.relnamespace',
       '  UNION ALL',
       "  SELECT 'view', n.nspname, c.relname, NULL::text,",
-      "    ('kind=' || c.relkind || ';definition=' || pg_catalog.pg_get_viewdef(c.oid, true))::text",
+      "    ('kind=' || c.relkind::text || ';definition=' || pg_catalog.pg_get_viewdef(c.oid, true))::text",
       '  FROM pg_catalog.pg_class AS c',
       '  JOIN governed_namespaces AS n ON n.oid = c.relnamespace',
       "  WHERE c.relkind IN ('v', 'm')",
       '  UNION ALL',
       "  SELECT 'routine', n.nspname,",
       "    (p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || ')')::text, NULL::text,",
-      "    ('kind=' || p.prokind || ';owner=' || pg_catalog.pg_get_userbyid(p.proowner) ||",
+      "    ('kind=' || p.prokind::text || ';owner=' || pg_catalog.pg_get_userbyid(p.proowner) ||",
       "     ';language=' || l.lanname || ';returns=' || coalesce(pg_catalog.pg_get_function_result(p.oid), '<procedure>') ||",
       "     ';definition=' || pg_catalog.pg_get_functiondef(p.oid))::text",
       '  FROM pg_catalog.pg_proc AS p',
@@ -353,7 +345,7 @@ const FIXED_QUERIES = Object.freeze({
       "  CROSS JOIN LATERAL pg_catalog.aclexplode(coalesce(p.proacl, pg_catalog.acldefault('f', p.proowner))) AS acl",
       '  UNION ALL',
       "  SELECT 'default_acl', coalesce(n.nspname, '*'), pg_catalog.pg_get_userbyid(d.defaclrole), NULL::text,",
-      "    ('object_type=' || d.defaclobjtype || ';grantor=' || pg_catalog.pg_get_userbyid(acl.grantor) ||",
+      "    ('object_type=' || d.defaclobjtype::text || ';grantor=' || pg_catalog.pg_get_userbyid(acl.grantor) ||",
       "     ';grantee=' || CASE WHEN acl.grantee = 0 THEN 'PUBLIC' ELSE pg_catalog.pg_get_userbyid(acl.grantee) END ||",
       "     ';privilege=' || acl.privilege_type || ';grantable=' || acl.is_grantable::text)::text",
       '  FROM pg_catalog.pg_default_acl AS d',
@@ -361,7 +353,7 @@ const FIXED_QUERIES = Object.freeze({
       '  CROSS JOIN LATERAL pg_catalog.aclexplode(d.defaclacl) AS acl',
       '  UNION ALL',
       "  SELECT 'policy', n.nspname, p.polname, c.relname,",
-      "    ('permissive=' || p.polpermissive::text || ';command=' || p.polcmd || ';roles=' ||",
+      "    ('permissive=' || p.polpermissive::text || ';command=' || p.polcmd::text || ';roles=' ||",
       "     pg_catalog.array_to_string(ARRAY(SELECT CASE WHEN role_oid = 0 THEN 'PUBLIC' ELSE pg_catalog.pg_get_userbyid(role_oid) END FROM pg_catalog.unnest(p.polroles) AS role_entry(role_oid) ORDER BY role_oid), ',') ||",
       "     ';using=' || coalesce(pg_catalog.pg_get_expr(p.polqual, p.polrelid, true), '<none>') ||",
       "     ';check=' || coalesce(pg_catalog.pg_get_expr(p.polwithcheck, p.polrelid, true), '<none>'))::text",
@@ -384,7 +376,7 @@ const FIXED_QUERIES = Object.freeze({
       '  JOIN governed_namespaces AS n ON n.oid = c.relnamespace',
       '  UNION ALL',
       "  SELECT 'partitioned_table', n.nspname, c.relname, NULL::text,",
-      "    ('strategy=' || p.partstrat || ';key=' || pg_catalog.pg_get_partkeydef(c.oid))::text",
+      "    ('strategy=' || p.partstrat::text || ';key=' || pg_catalog.pg_get_partkeydef(c.oid))::text",
       '  FROM pg_catalog.pg_partitioned_table AS p',
       '  JOIN pg_catalog.pg_class AS c ON c.oid = p.partrelid',
       '  JOIN governed_namespaces AS n ON n.oid = c.relnamespace',
@@ -475,7 +467,7 @@ const FIXED_QUERIES = Object.freeze({
       '    JOIN ordinary_table AS target ON target.oid = a.attrelid',
       "    WHERE a.attnum > 0 AND NOT a.attisdropped), '') AS column_names,",
       "  coalesce((SELECT pg_catalog.string_agg(a.attname || '|' || pg_catalog.format_type(a.atttypid, a.atttypmod) ||",
-      "    '|not_null=' || a.attnotnull::text || '|identity=' || a.attidentity || '|generated=' || a.attgenerated ||",
+      "    '|not_null=' || a.attnotnull::text || '|identity=' || a.attidentity::text || '|generated=' || a.attgenerated::text ||",
       "    '|default=' || coalesce(pg_catalog.pg_get_expr(d.adbin, d.adrelid, true), '<none>'), E'\\n' ORDER BY a.attname)",
       '    FROM pg_catalog.pg_attribute AS a',
       '    JOIN ordinary_table AS target ON target.oid = a.attrelid',
@@ -504,7 +496,6 @@ const ROW_FIELDS = Object.freeze({
     'transaction_read_only', 'transaction_isolation', 'row_security', 'search_path',
   ]),
   [QUERY_IDS.CLOCK_STATE]: Object.freeze(['database_clock', 'transaction_started_at']),
-  [QUERY_IDS.TRANSPORT_SECURITY]: Object.freeze(['ssl', 'protocol', 'cipher', 'bits']),
   [QUERY_IDS.DATABASE_IDENTITY]: Object.freeze([
     'database_name', 'server_version_num', 'wp0_marker',
   ]),
@@ -1422,23 +1413,10 @@ function validateObservationShape(observation) {
     fail('OBSERVATION_SEMANTICS_INVALID', 'La atestación de transporte no puede autoafirmarse.');
   }
   assertBoolean(observation.target.transport.negotiated);
-  if (observation.target.transport.urlPolicy === 'verify-full' && !observation.target.transport.negotiated) {
-    fail('OBSERVATION_SCHEMA_INVALID', 'verify-full exige TLS negociado.');
-  }
-  if (observation.target.transport.negotiated) {
-    if (typeof observation.target.transport.protocol !== 'string'
-      || !/^[A-Za-z0-9_.+-]{1,32}$/u.test(observation.target.transport.protocol)
-      || typeof observation.target.transport.cipher !== 'string'
-      || !/^[A-Za-z0-9_.:+-]{1,128}$/u.test(observation.target.transport.cipher)
-      || !Number.isSafeInteger(observation.target.transport.bits)
-      || observation.target.transport.bits < 40 || observation.target.transport.bits > 4096) {
-      fail('OBSERVATION_SCHEMA_INVALID', 'La metadata TLS persistida es inválida.');
-    }
-  } else if (observation.target.transport.urlPolicy !== 'development_loopback'
-    || observation.target.transport.protocol !== null
-    || observation.target.transport.cipher !== null
-    || observation.target.transport.bits !== null) {
-    fail('OBSERVATION_SCHEMA_INVALID', 'La metadata sin TLS es contradictoria.');
+  const policyNegotiated = observation.target.transport.urlPolicy === 'verify-full';
+  if (observation.target.transport.negotiated !== policyNegotiated
+    || !transportMetadataCoherent(observation.target.transport)) {
+    fail('OBSERVATION_SCHEMA_INVALID', 'La metadata de transporte persistida es contradictoria.');
   }
 
   assertRecordKeys(observation.evidence, [
@@ -1584,27 +1562,41 @@ function validateClock(clock, observed) {
   });
 }
 
+function transportMetadataCoherent({ negotiated, protocol, cipher, bits }) {
+  if (negotiated === false) return protocol === null && cipher === null && bits === null;
+  return negotiated === true
+    && protocol === 'TLSv1.3'
+    && typeof cipher === 'string'
+    && Object.hasOwn(TLS_CIPHER_BITS, cipher)
+    && bits === TLS_CIPHER_BITS[cipher];
+}
+
 function validateTransportSecurity(transport, config) {
-  const negotiated = booleanField(transport, 'ssl', 'TRANSPORT_SECURITY_INVALID');
-  if (!negotiated && !(config.developmentLoopback && !config.tlsVerified)) {
-    fail('TLS_NOT_NEGOTIATED', 'PostgreSQL no confirmó TLS para el target remoto WP0-L.');
+  if (!transport || typeof transport !== 'object' || Array.isArray(transport)
+    || !exactKeys(transport, ['authorized', 'bits', 'cipher', 'encrypted', 'protocol', 'source'])
+    || !Object.isFrozen(transport)
+    || transport.source !== 'node_pg_client_stream'
+    || typeof transport.encrypted !== 'boolean'
+    || typeof transport.authorized !== 'boolean') {
+    fail('TRANSPORT_SECURITY_INVALID', 'El adaptador no expuso un snapshot TLS inmutable y exacto.');
   }
-  if (negotiated) {
-    if (typeof transport.protocol !== 'string' || !/^[A-Za-z0-9_.+-]{1,32}$/u.test(transport.protocol)
-      || typeof transport.cipher !== 'string' || !/^[A-Za-z0-9_.:+-]{1,128}$/u.test(transport.cipher)
-      || !/^\d{2,4}$/u.test(String(transport.bits))
-      || Number(transport.bits) < 40 || Number(transport.bits) > 4096) {
-      fail('TRANSPORT_SECURITY_INVALID', 'PostgreSQL devolvió metadata TLS inválida.');
-    }
-  } else if (transport.protocol !== null || transport.cipher !== null || transport.bits !== null) {
-    fail('TRANSPORT_SECURITY_INVALID', 'PostgreSQL devolvió metadata TLS contradictoria.');
+  const loopbackPlain = config.developmentLoopback && !config.tlsVerified;
+  if (transport.encrypted !== !loopbackPlain) {
+    fail(
+      transport.encrypted ? 'TRANSPORT_SECURITY_INVALID' : 'TLS_NOT_NEGOTIATED',
+      'El transporte observado no coincide con la política de conexión WP0-L.',
+    );
+  }
+  if (transport.authorized !== transport.encrypted
+    || !transportMetadataCoherent({ negotiated: transport.encrypted, ...transport })) {
+    fail('TRANSPORT_SECURITY_INVALID', 'El snapshot TLS del adaptador es internamente contradictorio.');
   }
   return Object.freeze({
-    urlPolicy: config.developmentLoopback && !config.tlsVerified ? 'development_loopback' : 'verify-full',
-    negotiated,
-    protocol: negotiated ? transport.protocol : null,
-    cipher: negotiated ? transport.cipher : null,
-    bits: negotiated ? Number(transport.bits) : null,
+    urlPolicy: loopbackPlain ? 'development_loopback' : 'verify-full',
+    negotiated: transport.encrypted,
+    protocol: transport.protocol,
+    cipher: transport.cipher,
+    bits: transport.bits,
     certificateChainAttested: false,
     directEndpointAttested: false,
   });
@@ -1752,6 +1744,7 @@ async function runRestoredCopyObservation({ adapter, config, commit, schemaSha25
   }
   let transactionStarted = false;
   try {
+    const transport = validateTransportSecurity(adapter?.transportSecurity, config);
     await executeAllowlistedQuery(adapter, QUERY_IDS.BEGIN, { prismaSchema: config.prismaSchema });
     transactionStarted = true;
     const transaction = requireSingleRow(
@@ -1786,11 +1779,6 @@ async function runRestoredCopyObservation({ adapter, config, commit, schemaSha25
       QUERY_IDS.CLOCK_STATE,
       await executeAllowlistedQuery(adapter, QUERY_IDS.CLOCK_STATE, { prismaSchema: config.prismaSchema }),
     ), observed);
-    const transport = validateTransportSecurity(requireSingleRow(
-      QUERY_IDS.TRANSPORT_SECURITY,
-      await executeAllowlistedQuery(adapter, QUERY_IDS.TRANSPORT_SECURITY, { prismaSchema: config.prismaSchema }),
-    ), config);
-
     const observer = validateObserverSecurity(requireSingleRow(
       QUERY_IDS.OBSERVER_SECURITY,
       await executeAllowlistedQuery(adapter, QUERY_IDS.OBSERVER_SECURITY, { prismaSchema: config.prismaSchema }),
@@ -1940,6 +1928,7 @@ module.exports = Object.freeze({
   WP0_CONFIRMATION,
   OBSERVATION_ARTIFACT_TYPE,
   OBSERVATION_CONTRACT_VERSION,
+  TLS_CIPHER_BITS,
   QUERY_IDS,
   Wp0ObservationError,
   canonicalJson,

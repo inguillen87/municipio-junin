@@ -11,6 +11,7 @@ import pg from 'pg';
 import observationModule from '../shared/prisma-baseline-observation.cjs';
 
 const {
+  TLS_CIPHER_BITS,
   Wp0ObservationError,
   runRestoredCopyObservation,
   validateObservationConfig,
@@ -78,6 +79,82 @@ La salida es solo una observacion; no aprueba baseline, migracion ni release.
 
 function cliError(code, message, cause) {
   return new Wp0ObservationError(code, message, cause);
+}
+
+function deriveTransportSecuritySnapshot(socket) {
+  if (!socket || typeof socket !== 'object') {
+    throw cliError('TRANSPORT_SOCKET_UNAVAILABLE', 'No se pudo inspeccionar el socket PostgreSQL conectado.');
+  }
+  if (socket.encrypted !== true) {
+    if (socket.authorized === true
+      || (socket.authorizationError !== undefined
+        && socket.authorizationError !== null
+        && socket.authorizationError !== '')
+      || typeof socket.getProtocol === 'function'
+      || typeof socket.getCipher === 'function') {
+      throw cliError(
+        'TLS_SOCKET_METADATA_CONTRADICTORY',
+        'Un socket PostgreSQL no cifrado expuso metadata propia de TLS.',
+      );
+    }
+    return Object.freeze({
+      source: 'node_pg_client_stream',
+      encrypted: false,
+      authorized: false,
+      protocol: null,
+      cipher: null,
+      bits: null,
+    });
+  }
+  if (socket.authorized !== true
+    || (socket.authorizationError !== undefined
+      && socket.authorizationError !== null
+      && socket.authorizationError !== '')) {
+    throw cliError('TLS_SOCKET_UNAUTHORIZED', 'El TLSSocket PostgreSQL no confirmó una conexión autorizada.');
+  }
+  if (typeof socket.getProtocol !== 'function' || typeof socket.getCipher !== 'function') {
+    throw cliError('TLS_SOCKET_METADATA_UNAVAILABLE', 'El TLSSocket PostgreSQL no expuso sus métodos de metadata.');
+  }
+
+  let protocol;
+  let cipherMetadata;
+  try {
+    protocol = socket.getProtocol();
+    cipherMetadata = socket.getCipher();
+  } catch (error) {
+    throw cliError('TLS_SOCKET_METADATA_UNAVAILABLE', 'No se pudo leer la metadata TLS negociada.', error);
+  }
+  if (protocol !== 'TLSv1.3') {
+    throw cliError('TLS_PROTOCOL_UNSUPPORTED', 'WP0-L exige que el TLSSocket PostgreSQL negocie TLSv1.3.');
+  }
+  if (!cipherMetadata || typeof cipherMetadata !== 'object' || Array.isArray(cipherMetadata)) {
+    throw cliError('TLS_SOCKET_METADATA_UNAVAILABLE', 'El TLSSocket PostgreSQL no devolvió metadata de cipher.');
+  }
+  const standardName = typeof cipherMetadata.standardName === 'string' && cipherMetadata.standardName !== ''
+    ? cipherMetadata.standardName
+    : null;
+  const implementationName = typeof cipherMetadata.name === 'string' && cipherMetadata.name !== ''
+    ? cipherMetadata.name
+    : null;
+  if ((standardName && implementationName && standardName !== implementationName)
+    || (cipherMetadata.version !== undefined && cipherMetadata.version !== protocol)) {
+    throw cliError(
+      'TLS_SOCKET_METADATA_CONTRADICTORY',
+      'El TLSSocket PostgreSQL devolvió metadata TLS internamente contradictoria.',
+    );
+  }
+  const cipher = standardName || implementationName;
+  if (typeof cipher !== 'string' || !Object.hasOwn(TLS_CIPHER_BITS, cipher)) {
+    throw cliError('TLS_CIPHER_UNSUPPORTED', 'El TLSSocket PostgreSQL negoció un cipher no permitido por WP0-L.');
+  }
+  return Object.freeze({
+    source: 'node_pg_client_stream',
+    encrypted: true,
+    authorized: true,
+    protocol,
+    cipher,
+    bits: TLS_CIPHER_BITS[cipher],
+  });
 }
 
 function parseArguments(argv) {
@@ -220,13 +297,16 @@ async function createPgAdapter(databaseUrl) {
     query_timeout: 30_000,
     statement_timeout: 30_000,
   });
+  let transportSecurity;
   try {
     await client.connect();
+    transportSecurity = deriveTransportSecuritySnapshot(client.connection?.stream);
   } catch (error) {
     try { await client.end(); } catch { /* best-effort cleanup; original failure remains authoritative */ }
     throw error;
   }
   return Object.freeze({
+    transportSecurity,
     query: query => client.query({ text: query.text, values: [...query.values] }),
     close: () => client.end(),
   });
@@ -364,6 +444,7 @@ export {
   WP0_FORBIDDEN_AMBIENT_POSTGRES_ENV,
   WP0_SAFE_PG_OPTIONS,
   createPgAdapter,
+  deriveTransportSecuritySnapshot,
   formatFailure,
   parseArguments,
   resolveCommit,

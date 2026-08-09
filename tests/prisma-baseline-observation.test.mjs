@@ -9,6 +9,7 @@ import observationModule from '../shared/prisma-baseline-observation.cjs';
 import {
   WP0_FORBIDDEN_AMBIENT_POSTGRES_ENV,
   WP0_SAFE_PG_OPTIONS,
+  deriveTransportSecuritySnapshot,
   formatFailure,
   parseArguments,
   resolveCommit,
@@ -45,6 +46,127 @@ const MIGRATION_ID = '123e4567-e89b-42d3-a456-426614174000';
 const OBSERVATION_BYTE_LIMIT = 10 * 1024 * 1024;
 const REMOTE_URL = 'postgresql://wp0_observer:dummy-test-secret@db.example.invalid/wp0?sslmode=verify-full&schema=public';
 const FIXED_NOW = new Date('2026-08-09T12:00:00.000Z');
+const TLS_TRANSPORT_SNAPSHOT = Object.freeze({
+  source: 'node_pg_client_stream',
+  encrypted: true,
+  authorized: true,
+  protocol: 'TLSv1.3',
+  cipher: 'TLS_AES_256_GCM_SHA384',
+  bits: 256,
+});
+const PLAIN_TRANSPORT_SNAPSHOT = Object.freeze({
+  source: 'node_pg_client_stream',
+  encrypted: false,
+  authorized: false,
+  protocol: null,
+  cipher: null,
+  bits: null,
+});
+
+test('TLSSocket autorizado produce un snapshot de transporte inmutable', () => {
+  for (const [cipher, bits] of [
+    ['TLS_AES_128_GCM_SHA256', '128'],
+    ['TLS_AES_256_GCM_SHA384', '256'],
+    ['TLS_CHACHA20_POLY1305_SHA256', '256'],
+  ]) {
+    const snapshot = deriveTransportSecuritySnapshot({
+      encrypted: true,
+      authorized: true,
+      authorizationError: null,
+      getProtocol: () => 'TLSv1.3',
+      getCipher: () => ({ name: cipher, standardName: cipher, version: 'TLSv1.3' }),
+    });
+    assert.deepEqual(snapshot, {
+      source: 'node_pg_client_stream',
+      encrypted: true,
+      authorized: true,
+      protocol: 'TLSv1.3',
+      cipher,
+      bits: Number(bits),
+    });
+    assert.equal(Object.isFrozen(snapshot), true);
+  }
+});
+
+test('socket plano produce exclusivamente metadata de loopback sin TLS', () => {
+  const snapshot = deriveTransportSecuritySnapshot({ encrypted: false });
+  assert.deepEqual(snapshot, PLAIN_TRANSPORT_SNAPSHOT);
+  assert.equal(Object.isFrozen(snapshot), true);
+});
+
+test('TLSSocket cifrado pero no autorizado falla cerrado', () => {
+  for (const socket of [
+    { encrypted: true, authorized: false, authorizationError: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' },
+    { encrypted: true, authorized: true, authorizationError: 'HOSTNAME_MISMATCH' },
+  ]) {
+    assert.throws(
+      () => deriveTransportSecuritySnapshot(socket),
+      error => error?.code === 'TLS_SOCKET_UNAUTHORIZED',
+    );
+  }
+});
+
+test('cipher TLS desconocido falla cerrado sin inferir bits', () => {
+  assert.throws(
+    () => deriveTransportSecuritySnapshot({
+      encrypted: true,
+      authorized: true,
+      getProtocol: () => 'TLSv1.3',
+      getCipher: () => ({ name: 'ECDHE-RSA-AES256-GCM-SHA384' }),
+    }),
+    error => error?.code === 'TLS_CIPHER_UNSUPPORTED',
+  );
+});
+
+test('helper TLS rechaza métodos ausentes y metadata contradictoria', () => {
+  assert.throws(
+    () => deriveTransportSecuritySnapshot({ encrypted: true, authorized: true }),
+    error => error?.code === 'TLS_SOCKET_METADATA_UNAVAILABLE',
+  );
+  assert.throws(
+    () => deriveTransportSecuritySnapshot({
+      encrypted: true,
+      authorized: true,
+      getProtocol: () => 'TLSv1.2',
+      getCipher: () => ({
+        name: 'TLS_AES_256_GCM_SHA384',
+        standardName: 'TLS_AES_256_GCM_SHA384',
+        version: 'TLSv1.3',
+      }),
+    }),
+    error => error?.code === 'TLS_PROTOCOL_UNSUPPORTED',
+  );
+  for (const cipherMetadata of [
+    {
+      name: 'TLS_AES_256_GCM_SHA384',
+      standardName: 'TLS_AES_128_GCM_SHA256',
+      version: 'TLSv1.3',
+    },
+    {
+      name: 'TLS_AES_256_GCM_SHA384',
+      standardName: 'TLS_AES_256_GCM_SHA384',
+      version: 'TLSv1.2',
+    },
+  ]) {
+    assert.throws(
+      () => deriveTransportSecuritySnapshot({
+        encrypted: true,
+        authorized: true,
+        getProtocol: () => 'TLSv1.3',
+        getCipher: () => cipherMetadata,
+      }),
+      error => error?.code === 'TLS_SOCKET_METADATA_CONTRADICTORY',
+    );
+  }
+  assert.throws(
+    () => deriveTransportSecuritySnapshot({
+      encrypted: false,
+      authorized: true,
+      getProtocol: () => 'TLSv1.3',
+    }),
+    error => error?.code === 'TLS_SOCKET_METADATA_CONTRADICTORY',
+  );
+});
 
 function canonicalSha256(value) {
   return crypto.createHash('sha256').update(canonicalJson(value)).digest('hex');
@@ -124,12 +246,6 @@ function validRows() {
     [QUERY_IDS.CLOCK_STATE]: [{
       database_clock: new Date('2026-08-09T12:00:00.000Z'),
       transaction_started_at: new Date('2026-08-09T11:59:59.000Z'),
-    }],
-    [QUERY_IDS.TRANSPORT_SECURITY]: [{
-      ssl: 'true',
-      protocol: 'TLSv1.3',
-      cipher: 'TLS_AES_256_GCM_SHA384',
-      bits: '256',
     }],
     [QUERY_IDS.DATABASE_IDENTITY]: [{
       database_name: 'wp0_restored_copy',
@@ -281,12 +397,13 @@ function validRows() {
   };
 }
 
-function fakeAdapter(overrides = {}) {
+function fakeAdapter(overrides = {}, transportSecurity = TLS_TRANSPORT_SNAPSHOT) {
   const rows = validRows();
   const calls = [];
   const adapter = {
     calls,
     closed: false,
+    transportSecurity,
     async query(query) {
       calls.push(query);
       const override = overrides[query.id];
@@ -320,6 +437,40 @@ async function rejectsCode(promise, code) {
   });
 }
 
+test('snapshot interno exige source, authorized y coherencia TLS exacta antes de BEGIN', async t => {
+  const paths = await sandbox(t);
+  const config = await validated(paths);
+  for (const [label, snapshot] of [
+    ['legacy', Object.freeze({
+      ssl: 'true', protocol: 'TLSv1.3', cipher: 'TLS_AES_256_GCM_SHA384', bits: '256',
+    })],
+    ['source ausente', Object.freeze({
+      encrypted: true, authorized: true, protocol: 'TLSv1.3', cipher: 'TLS_AES_256_GCM_SHA384', bits: 256,
+    })],
+    ['authorized ausente', Object.freeze({
+      source: 'node_pg_client_stream', encrypted: true,
+      protocol: 'TLSv1.3', cipher: 'TLS_AES_256_GCM_SHA384', bits: 256,
+    })],
+    ['TLS 1.2', Object.freeze({
+      ...TLS_TRANSPORT_SNAPSHOT, protocol: 'TLSv1.2',
+    })],
+    ['bits incorrectos', Object.freeze({
+      ...TLS_TRANSPORT_SNAPSHOT, bits: 128,
+    })],
+    ['cipher desconocido', Object.freeze({
+      ...TLS_TRANSPORT_SNAPSHOT, cipher: 'TLS_AES_512_GCM_SHA512', bits: 512,
+    })],
+    ['snapshot mutable', { ...TLS_TRANSPORT_SNAPSHOT }],
+  ]) {
+    const adapter = fakeAdapter({}, snapshot);
+    await rejectsCode(
+      runRestoredCopyObservation({ adapter, config, commit: COMMIT, schemaSha256: SCHEMA_SHA, now: FIXED_NOW }),
+      'TRANSPORT_SECURITY_INVALID',
+    );
+    assert.equal(adapter.calls.length, 0, label);
+  }
+});
+
 test('vertical feliz: transaccion read-only, inventario canonico y output exclusivo', async t => {
   const paths = await sandbox(t);
   const config = await validated(paths);
@@ -338,6 +489,12 @@ test('vertical feliz: transaccion read-only, inventario canonico y output exclus
   assert.equal(observation.limitations.some(value => value.includes('DACL efectiva')), true);
   assert.equal(observation.observer.leastPrivilegeVerified, true);
   assert.equal(observation.target.transport.negotiated, true);
+  assert.equal(observation.target.transport.certificateChainAttested, false);
+  assert.equal(observation.target.transport.directEndpointAttested, false);
+  assert.deepEqual(Object.keys(observation.target.transport).sort(), [
+    'bits', 'certificateChainAttested', 'cipher', 'directEndpointAttested',
+    'negotiated', 'protocol', 'urlPolicy',
+  ]);
   assert.equal(observation.transaction.clock.absoluteSkewMs, 0);
   assert.equal(observation.evidence.externalReferencesVerified, false);
   assert.equal(Object.isFrozen(observation), true);
@@ -399,6 +556,29 @@ test('sink v2 rechaza artefactos forjados aunque recomputen observationId', asyn
   const arbitrary = JSON.parse(JSON.stringify(observation));
   arbitrary.releaseReceipt = { verified: true };
   assert.throws(() => assertObservationSafe(arbitrary), error => error?.code === 'OBSERVATION_SCHEMA_INVALID');
+});
+
+test('sink v2 reaplica la coherencia exacta TLS sin ampliar el shape persistido', async t => {
+  const paths = await sandbox(t);
+  const config = await validated(paths);
+  const observation = await runRestoredCopyObservation({
+    adapter: fakeAdapter(), config, commit: COMMIT, schemaSha256: SCHEMA_SHA, now: FIXED_NOW,
+  });
+  for (const transportOverride of [
+    { protocol: 'TLSv1.2' },
+    { cipher: 'TLS_AES_512_GCM_SHA512', bits: 512 },
+    { bits: 128 },
+    { negotiated: false, protocol: null, cipher: null, bits: null },
+  ]) {
+    const forged = JSON.parse(JSON.stringify(observation));
+    Object.assign(forged.target.transport, transportOverride);
+    delete forged.observationId;
+    forged.observationId = `wp0-observation-${crypto.createHash('sha256').update(canonicalJson(forged)).digest('hex')}`;
+    assert.throws(
+      () => assertObservationSafe(forged),
+      error => error?.code === 'OBSERVATION_SCHEMA_INVALID',
+    );
+  }
 });
 
 test('canonicalizador rechaza __proto__ en la raiz antes de devolver o crear output', async t => {
@@ -639,6 +819,24 @@ test('TLS debil remoto falla; loopback sin TLS solo existe en development', asyn
   });
   assert.equal(local.developmentLoopback, true);
   assert.equal(local.tlsVerified, false);
+  const adapter = fakeAdapter({}, PLAIN_TRANSPORT_SNAPSHOT);
+  const observation = await runRestoredCopyObservation({
+    adapter,
+    config: local,
+    commit: COMMIT,
+    schemaSha256: SCHEMA_SHA,
+    now: FIXED_NOW,
+  });
+  assert.deepEqual(observation.target.transport, {
+    urlPolicy: 'development_loopback',
+    negotiated: false,
+    protocol: null,
+    cipher: null,
+    bits: null,
+    certificateChainAttested: false,
+    directEndpointAttested: false,
+  });
+  assert.equal(adapter.calls[0].id, QUERY_IDS.BEGIN);
 });
 
 test('opciones de sesion en URL no pueden falsificar el marcador de restore', async t => {
@@ -762,14 +960,12 @@ test('rol observador privilegiado, TLS no negociado o reloj fuera de tolerancia 
   );
   assert.equal(memberAdapter.calls.at(-1).id, QUERY_IDS.ROLLBACK);
 
-  const noTls = fakeAdapter({
-    [QUERY_IDS.TRANSPORT_SECURITY]: [{ ssl: 'false', protocol: null, cipher: null, bits: null }],
-  });
+  const noTls = fakeAdapter({}, PLAIN_TRANSPORT_SNAPSHOT);
   await rejectsCode(
     runRestoredCopyObservation({ adapter: noTls, config, commit: COMMIT, schemaSha256: SCHEMA_SHA, now: FIXED_NOW }),
     'TLS_NOT_NEGOTIATED',
   );
-  assert.equal(noTls.calls.at(-1).id, QUERY_IDS.ROLLBACK);
+  assert.equal(noTls.calls.length, 0);
 
   const staleClock = fakeAdapter({
     [QUERY_IDS.CLOCK_STATE]: [{
@@ -816,6 +1012,8 @@ test('una query fuera de allowlist nunca llega al adapter', async () => {
 test('allowlist no contiene DDL/DML ni lecturas de tablas de negocio', () => {
   const queries = listAllowlistedQueries('public');
   assert.deepEqual(queries.map(query => query.id).sort(), Object.values(QUERY_IDS).sort());
+  assert.equal(Object.hasOwn(QUERY_IDS, 'TRANSPORT_SECURITY'), false);
+  assert.doesNotMatch(queries.map(query => query.text).join('\n'), /pg_stat_ssl/iu);
   for (const query of queries) {
     const sqlWithoutStringLiterals = query.text.replace(/'(?:''|[^'])*'/gu, "''");
     assert.doesNotMatch(sqlWithoutStringLiterals, /\b(?:INSERT|UPDATE|DELETE|MERGE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|COPY|VACUUM)\b/iu);
@@ -887,6 +1085,20 @@ test('allowlist no contiene DDL/DML ni lecturas de tablas de negocio', () => {
   assert.match(migrationLocator, /AS column_signature/u);
   assert.match(migrationLocator, /AS primary_key_count/u);
   assert.match(migrationLocator, /AS primary_key_columns/u);
+
+  for (const field of [
+    'c.relkind', 'a.attidentity', 'a.attgenerated', 't.typtype', 't.typcategory',
+    'p.prokind', 'd.defaclobjtype', 'p.polcmd', 'p.partstrat',
+  ]) {
+    const escaped = field.replace('.', '\\.');
+    assert.match(catalog, new RegExp(`\\|\\|\\s*${escaped}::text`, 'u'), field);
+    assert.doesNotMatch(catalog, new RegExp(`\\|\\|\\s*${escaped}(?!::text)`, 'u'), field);
+  }
+  for (const field of ['a.attidentity', 'a.attgenerated']) {
+    const escaped = field.replace('.', '\\.');
+    assert.match(migrationLocator, new RegExp(`\\|\\|\\s*${escaped}::text`, 'u'), field);
+    assert.doesNotMatch(migrationLocator, new RegExp(`\\|\\|\\s*${escaped}(?!::text)`, 'u'), field);
+  }
 
   const migrationHistory = queries.find(query => query.id === QUERY_IDS.MIGRATION_HISTORY)?.text || '';
   assert.doesNotMatch(migrationHistory, /pg_catalog\.to_jsonb/u);

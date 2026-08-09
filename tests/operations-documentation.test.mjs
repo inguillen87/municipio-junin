@@ -512,6 +512,16 @@ test('S14A closes WP0-L v2 locally and records the DB configuration NO-GO withou
     'WP0 must not claim that role settings prove the restored target');
   assert.doesNotMatch(runbook, /ALTER DATABASE[\s\S]{0,100}\bSET\b[\s\S]{0,120}(?:marcador|municontrol\.wp0|RESTORED_DISPOSABLE)/i,
     'ALTER DATABASE ... SET must not be documented as the WP0 marker mechanism');
+  assert.match(
+    runbook,
+    /`TLSSocket`[\s\S]{0,180}exige cifrado, autorizaci\\u00f3n del[\s\S]{0,180}antes de iniciar el\s+inventario/i,
+    'WP0 must bind runtime TLS evidence to the authorized client socket before inventory'
+  );
+  assert.match(
+    runbook,
+    /No se usa `pg_stat_ssl` como autoridad/i,
+    'the backend-side proxy hop must not become the WP0 TLS authority'
+  );
   assert.match(runbook, /20\.000 filas[\s\S]{0,100}1 KiB[\s\S]{0,100}256 KiB[\s\S]{0,100}4 MiB/i);
   assert.match(runbook, /no se inspeccion(?:ó|\\u00f3) ni modific(?:ó|\\u00f3) ninguna base remota/i);
 

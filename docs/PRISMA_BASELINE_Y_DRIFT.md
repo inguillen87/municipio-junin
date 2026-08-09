@@ -157,10 +157,14 @@ predefinido `pg_*` u otro rol otorgado, por lo que `role_membership_count` debe
 ser exactamente cero. Un rol m\u00e1s poderoso bloquea la observaci\u00f3n.
 
 Tambi\u00e9n compara el reloj PostgreSQL con el reloj del observador, con un skew
-m\u00e1ximo de cinco minutos, y consulta `pg_stat_ssl` para registrar protocolo,
-cipher y bits negociados. Esa metadata no prueba la cadena de certificados ni
-que el hostname sea un endpoint directo del proveedor; ambos siguen pendientes
-de atestaci\u00f3n externa.
+m\u00e1ximo de cinco minutos. La evidencia de transporte se toma del `TLSSocket` que
+`node-postgres` negoci\u00f3 con el endpoint: exige cifrado, autorizaci\u00f3n del
+certificado, protocolo, cipher y bits reconocibles antes de iniciar el
+inventario. No se usa `pg_stat_ssl` como autoridad porque un proxy PostgreSQL
+administrado puede terminar TLS antes del backend y devolver `ssl=false` aunque
+el socket cliente est\u00e9 cifrado y autorizado. Esa comprobaci\u00f3n runtime no prueba
+por s\u00ed sola que el hostname pertenezca al branch/restore declarado; el mapping
+del proveedor y la relaci\u00f3n backup→restore siguen pendientes de atestaci\u00f3n externa.
 
 Primero validar configuraci\u00f3n, sin conexi\u00f3n ni escritura:
 

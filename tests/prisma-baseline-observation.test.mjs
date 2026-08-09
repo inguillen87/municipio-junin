@@ -134,10 +134,7 @@ function validRows() {
     [QUERY_IDS.DATABASE_IDENTITY]: [{
       database_name: 'wp0_restored_copy',
       server_version_num: '160004',
-      target_class: 'RESTORED_DISPOSABLE',
-      target_id: 'target:wp0-copy-01',
-      database_target_class_setting: 'municontrol.wp0_target_class=RESTORED_DISPOSABLE',
-      database_target_id_setting: 'municontrol.wp0_target_id=target:wp0-copy-01',
+      wp0_marker: 'municontrol.wp0.v1|target_class=RESTORED_DISPOSABLE|target_id=target:wp0-copy-01',
     }],
     [QUERY_IDS.OBSERVER_SECURITY]: [{
       session_user_name: 'wp0_observer',
@@ -494,17 +491,19 @@ test('marcador de base productiva se rechaza y ejecuta rollback', async t => {
     [QUERY_IDS.DATABASE_IDENTITY]: [{
       database_name: 'production',
       server_version_num: '160004',
-      target_class: 'PRODUCTION',
-      target_id: 'target:wp0-copy-01',
-      database_target_class_setting: 'municontrol.wp0_target_class=PRODUCTION',
-      database_target_id_setting: 'municontrol.wp0_target_id=target:wp0-copy-01',
+      wp0_marker: 'municontrol.wp0.v1|target_class=PRODUCTION|target_id=target:wp0-copy-01',
     }],
   });
   await rejectsCode(
     runRestoredCopyObservation({ adapter, config, commit: COMMIT, schemaSha256: SCHEMA_SHA, now: FIXED_NOW }),
     'TARGET_NOT_RESTORED_DISPOSABLE',
   );
-  assert.equal(adapter.calls.at(-1).id, QUERY_IDS.ROLLBACK);
+  assert.deepEqual(adapter.calls.map(call => call.id), [
+    QUERY_IDS.BEGIN,
+    QUERY_IDS.TRANSACTION_STATE,
+    QUERY_IDS.DATABASE_IDENTITY,
+    QUERY_IDS.ROLLBACK,
+  ]);
 });
 
 test('target CLI no puede etiquetar una copia con otro target persistente', async t => {
@@ -514,10 +513,7 @@ test('target CLI no puede etiquetar una copia con otro target persistente', asyn
     [QUERY_IDS.DATABASE_IDENTITY]: [{
       database_name: 'wp0_restored_copy',
       server_version_num: '160004',
-      target_class: 'RESTORED_DISPOSABLE',
-      target_id: 'target:different-copy',
-      database_target_class_setting: 'municontrol.wp0_target_class=RESTORED_DISPOSABLE',
-      database_target_id_setting: 'municontrol.wp0_target_id=target:different-copy',
+      wp0_marker: 'municontrol.wp0.v1|target_class=RESTORED_DISPOSABLE|target_id=target:different-copy',
     }],
   });
   await rejectsCode(
@@ -553,23 +549,53 @@ test('PostgreSQL anterior a 12 se rechaza antes de observer y catalogo', async t
   ]);
 });
 
-test('marcadores heredados de rol o sistema no sustituyen ALTER DATABASE', async t => {
+test('comentario WP0 ausente, extendido, versionado o no canonico falla cerrado antes de reloj y catalogo', async t => {
   const paths = await sandbox(t);
   const config = await validated(paths);
   const identity = validRows()[QUERY_IDS.DATABASE_IDENTITY][0];
-  for (const override of [
-    { database_target_class_setting: null },
-    { database_target_id_setting: null },
-    { database_target_class_setting: 'municontrol.wp0_target_class=RESTORED_DISPOSABLE\nmunicontrol.wp0_target_class=RESTORED_DISPOSABLE' },
+  for (const wp0Marker of [
+    null,
+    'municontrol.wp0.v1|target_class=RESTORED_DISPOSABLE|target_id=target:wp0-copy-01|extra=true',
+    'municontrol.wp0.v2|target_class=RESTORED_DISPOSABLE|target_id=target:wp0-copy-01',
+    'municontrol.wp0.v1|target_class=restored_disposable|target_id=target:wp0-copy-01',
+    ' municontrol.wp0.v1|target_class=RESTORED_DISPOSABLE|target_id=target:wp0-copy-01',
+    'municontrol.wp0.v1|target_class=RESTORED_DISPOSABLE|target_id=target:wp0-copy-01 ',
+    'municontrol.wp0.v1|target_class=RESTORED_DISPOSABLE|target_id=target:wp0-copy-01\n',
+    'municontrol.wp0.v1|target_id=target:wp0-copy-01|target_class=RESTORED_DISPOSABLE',
+    'RESTORED_DISPOSABLE:target:wp0-copy-01',
   ]) {
     const adapter = fakeAdapter({
-      [QUERY_IDS.DATABASE_IDENTITY]: [{ ...identity, ...override }],
+      [QUERY_IDS.DATABASE_IDENTITY]: [{ ...identity, wp0_marker: wp0Marker }],
     });
     await rejectsCode(
       runRestoredCopyObservation({ adapter, config, commit: COMMIT, schemaSha256: SCHEMA_SHA, now: FIXED_NOW }),
-      'TARGET_DATABASE_SETTING_MISSING',
+      'TARGET_DATABASE_MARKER_INVALID',
     );
-    assert.equal(adapter.calls.at(-1).id, QUERY_IDS.ROLLBACK);
+    assert.deepEqual(adapter.calls.map(call => call.id), [
+      QUERY_IDS.BEGIN,
+      QUERY_IDS.TRANSACTION_STATE,
+      QUERY_IDS.DATABASE_IDENTITY,
+      QUERY_IDS.ROLLBACK,
+    ]);
+  }
+});
+
+test('identidad WP0 exige cardinalidad exacta y revierte antes de reloj y catalogo', async t => {
+  const paths = await sandbox(t);
+  const config = await validated(paths);
+  const identity = validRows()[QUERY_IDS.DATABASE_IDENTITY][0];
+  for (const rows of [[], [identity, { ...identity }]]) {
+    const adapter = fakeAdapter({ [QUERY_IDS.DATABASE_IDENTITY]: rows });
+    await rejectsCode(
+      runRestoredCopyObservation({ adapter, config, commit: COMMIT, schemaSha256: SCHEMA_SHA, now: FIXED_NOW }),
+      'QUERY_CARDINALITY_INVALID',
+    );
+    assert.deepEqual(adapter.calls.map(call => call.id), [
+      QUERY_IDS.BEGIN,
+      QUERY_IDS.TRANSACTION_STATE,
+      QUERY_IDS.DATABASE_IDENTITY,
+      QUERY_IDS.ROLLBACK,
+    ]);
   }
 });
 
@@ -808,6 +834,18 @@ test('allowlist no contiene DDL/DML ni lecturas de tablas de negocio', () => {
   );
 
   const databaseIdentity = queries.find(query => query.id === QUERY_IDS.DATABASE_IDENTITY)?.text || '';
+  assert.match(databaseIdentity, /FROM pg_catalog\.pg_database AS database/u);
+  assert.match(
+    databaseIdentity,
+    /pg_catalog\.shobj_description\(database\.oid, 'pg_database'\)::text AS wp0_marker/u,
+  );
+  assert.doesNotMatch(databaseIdentity, /pg_catalog\.pg_db_role_setting/iu);
+  assert.doesNotMatch(databaseIdentity, /\bJOIN\b/iu);
+  assert.doesNotMatch(databaseIdentity, /current_setting\(\s*'municontrol\./iu);
+  assert.doesNotMatch(
+    databaseIdentity,
+    /\b(?:users|tenants|ciudadanos|empleados|obras|licitaciones|pagos|presupuestos|reclamos|grh_artifacts)\b/iu,
+  );
   assert.equal(
     (databaseIdentity.match(/current_database/gu) || []).length,
     (databaseIdentity.match(/pg_catalog\.current_database/gu) || []).length,

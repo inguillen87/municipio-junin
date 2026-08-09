@@ -114,11 +114,15 @@ para pasarla por argumentos. En un host remoto exige `sslmode=verify-full`. La
 entorno institucional.
 
 Antes de usarlo, el operador de restore debe declarar fuera de esta herramienta,
-mediante `ALTER DATABASE` sobre la copia restaurada y no mediante `ALTER ROLE` o
-`ALTER SYSTEM`, los marcadores PostgreSQL persistentes
-`municontrol.wp0_target_class=RESTORED_DISPOSABLE` y
-`municontrol.wp0_target_id=target:<id-no-secreto>`. No se admite inyectarlos con
-`options` en la URL ni con variables ambientales `PG*`; la URL debe contener la
+y s\u00f3lo sobre la copia restaurada, el comentario can\u00f3nico de base
+`municontrol.wp0.v1|target_class=RESTORED_DISPOSABLE|target_id=target:<id-no-secreto>`
+mediante `COMMENT ON DATABASE`. El inspector lo lee exclusivamente desde
+`pg_catalog.pg_database` con `pg_catalog.shobj_description`; comentario ausente,
+versi\u00f3n, may\u00fasculas, espacios, saltos, texto extra, clase o target distintos
+producen rollback antes de reloj e inventario. El comentario es espec\u00edfico de la
+base y no puede heredarse desde `ALTER ROLE`, `ALTER SYSTEM`, la URL o variables
+ambientales, pero tampoco demuestra por s\u00ed solo que el proveedor haya creado la
+copia: esa relaci\u00f3n sigue requiriendo evidencia externa. La URL debe contener la
 credencial y no delega autenticaci\u00f3n a `pgpass` o `PGPASSWORD`. El adaptador
 fija adem\u00e1s `default_transaction_read_only=on`, `row_security=off` y
 `search_path=pg_catalog` al abrir la sesi\u00f3n. Antes de consultar identidad o
@@ -127,9 +131,9 @@ inventario exige esos valores exactos junto con la transacci\u00f3n read-only; s
 en lugar de aceptar una historia filtrada. El
 inspector rechaza `NODE_TLS_REJECT_UNAUTHORIZED=0`, por lo que
 `sslmode=verify-full` no puede quedar anulado globalmente desde Node. Tambi\u00e9n exige
-que ambos valores existan en `pg_db_role_setting` para
-`current_database()` y `setrole=0`; un valor heredado del rol o del sistema no
-acredita la copia. La confirmaci\u00f3n CLI debe ser exactamente
+que el comentario pertenezca exactamente a `current_database()`; una GUC, tabla o
+valor heredado del rol o del sistema no acredita la copia. La confirmaci\u00f3n CLI
+debe ser exactamente
 `RESTORED_DISPOSABLE`, el target CLI debe coincidir con el target persistente y
 el checkout debe estar limpio y sin flags `assume-unchanged` o `skip-worktree`.
 Estas comprobaciones son obligatorias y no

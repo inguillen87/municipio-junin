@@ -26,6 +26,7 @@ const SHA256_HEX = /^[a-f0-9]{64}$/u;
 const COMMIT_SHA = /^[a-f0-9]{40}$/u;
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_$]{0,62}$/u;
 const REFERENCE_BODY = /^[A-Za-z0-9][A-Za-z0-9._-]{1,126}$/u;
+const WP0_DATABASE_MARKER = /^municontrol\.wp0\.v1\|target_class=([A-Z][A-Z_]*)\|target_id=(target:[A-Za-z0-9][A-Za-z0-9._-]{1,126})$/u;
 const MIGRATION_NAME = /^\d{14}_[a-z0-9][a-z0-9_]*$/u;
 const PRISMA_MIGRATION_COLUMNS = Object.freeze([
   'applied_steps_count', 'checksum', 'finished_at', 'id', 'logs',
@@ -129,23 +130,12 @@ const FIXED_QUERIES = Object.freeze({
   }),
   [QUERY_IDS.DATABASE_IDENTITY]: Object.freeze({
     text: [
-      'WITH database_settings AS (',
-      '  SELECT',
-      "    pg_catalog.string_agg(setting, E'\\n' ORDER BY setting) FILTER (WHERE setting LIKE 'municontrol.wp0_target_class=%') AS target_class_setting,",
-      "    pg_catalog.string_agg(setting, E'\\n' ORDER BY setting) FILTER (WHERE setting LIKE 'municontrol.wp0_target_id=%') AS target_id_setting",
-      '  FROM pg_catalog.pg_db_role_setting AS configured',
-      '  JOIN pg_catalog.pg_database AS database ON database.oid = configured.setdatabase',
-      '  CROSS JOIN LATERAL pg_catalog.unnest(configured.setconfig) AS expanded(setting)',
-      '  WHERE database.datname = pg_catalog.current_database() AND configured.setrole = 0',
-      ')',
       'SELECT',
-      '  pg_catalog.current_database() AS database_name,',
+      '  database.datname::text AS database_name,',
       "  pg_catalog.current_setting('server_version_num') AS server_version_num,",
-      "  pg_catalog.current_setting('municontrol.wp0_target_class', true) AS target_class,",
-      "  pg_catalog.current_setting('municontrol.wp0_target_id', true) AS target_id,",
-      '  target_class_setting AS database_target_class_setting,',
-      '  target_id_setting AS database_target_id_setting',
-      'FROM database_settings',
+      "  pg_catalog.shobj_description(database.oid, 'pg_database')::text AS wp0_marker",
+      'FROM pg_catalog.pg_database AS database',
+      'WHERE database.datname = pg_catalog.current_database()',
     ].join('\n'),
     values: Object.freeze([]),
   }),
@@ -516,8 +506,7 @@ const ROW_FIELDS = Object.freeze({
   [QUERY_IDS.CLOCK_STATE]: Object.freeze(['database_clock', 'transaction_started_at']),
   [QUERY_IDS.TRANSPORT_SECURITY]: Object.freeze(['ssl', 'protocol', 'cipher', 'bits']),
   [QUERY_IDS.DATABASE_IDENTITY]: Object.freeze([
-    'database_name', 'server_version_num', 'target_class', 'target_id',
-    'database_target_class_setting', 'database_target_id_setting',
+    'database_name', 'server_version_num', 'wp0_marker',
   ]),
   [QUERY_IDS.OBSERVER_SECURITY]: Object.freeze([
     'session_user_name', 'current_user_name', 'role_superuser', 'role_inherit',
@@ -767,6 +756,23 @@ function normalizeReviewers(values) {
 function isInside(parent, candidate) {
   const relative = path.relative(parent, candidate);
   return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
+}
+
+function validateWp0DatabaseMarker(marker, targetId) {
+  const expected = `municontrol.wp0.v1|target_class=${WP0_CONFIRMATION}|target_id=${targetId}`;
+  if (marker === expected) return;
+
+  const parsed = typeof marker === 'string' ? WP0_DATABASE_MARKER.exec(marker) : null;
+  if (!parsed || parsed[0] !== marker) {
+    fail('TARGET_DATABASE_MARKER_INVALID', 'La DB no contiene el comentario WP0-L canónico exacto.');
+  }
+  if (parsed[1] !== WP0_CONFIRMATION) {
+    fail('TARGET_NOT_RESTORED_DISPOSABLE', 'La DB no declara el marcador de copia restaurada descartable.');
+  }
+  if (parsed[2] !== targetId) {
+    fail('TARGET_ID_MISMATCH', 'La identidad persistente de la DB no coincide con el target solicitado.');
+  }
+  fail('TARGET_DATABASE_MARKER_INVALID', 'La DB no contiene el comentario WP0-L canónico exacto.');
 }
 
 function sameFileIdentity(stat, identity) {
@@ -1767,16 +1773,7 @@ async function runRestoredCopyObservation({ adapter, config, commit, schemaSha25
       QUERY_IDS.DATABASE_IDENTITY,
       await executeAllowlistedQuery(adapter, QUERY_IDS.DATABASE_IDENTITY, { prismaSchema: config.prismaSchema }),
     );
-    if (identity.target_class !== WP0_CONFIRMATION) {
-      fail('TARGET_NOT_RESTORED_DISPOSABLE', 'La DB no declara el marcador de copia restaurada descartable.');
-    }
-    if (identity.target_id !== config.targetId) {
-      fail('TARGET_ID_MISMATCH', 'La identidad persistente de la DB no coincide con el target solicitado.');
-    }
-    if (identity.database_target_class_setting !== `municontrol.wp0_target_class=${WP0_CONFIRMATION}`
-      || identity.database_target_id_setting !== `municontrol.wp0_target_id=${config.targetId}`) {
-      fail('TARGET_DATABASE_SETTING_MISSING', 'Los marcadores WP0-L no pertenecen exclusivamente a la base restaurada.');
-    }
+    validateWp0DatabaseMarker(identity.wp0_marker, config.targetId);
     if (typeof identity.database_name !== 'string' || !identity.database_name.trim()
       || !/^\d{5,8}$/u.test(String(identity.server_version_num))) {
       fail('DATABASE_IDENTITY_INVALID', 'La identidad PostgreSQL observada es inválida.');

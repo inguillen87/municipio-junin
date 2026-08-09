@@ -489,6 +489,29 @@ test('S14A closes WP0-L v2 locally and records the DB configuration NO-GO withou
   assert.match(runbook, /discovery_non_approvable/);
   assert.match(runbook, /approvalEligible:false/);
   assert.match(runbook, /definitionSha256/);
+  assert.equal(
+    runbook.includes('municontrol.wp0.v1|target_class=RESTORED_DISPOSABLE|target_id=target:<id-no-secreto>'),
+    true,
+    'WP0 must pin the canonical non-secret database-comment marker'
+  );
+  assert.match(runbook, /`COMMENT ON DATABASE`/i,
+    'WP0 must persist the marker as a database comment');
+  assert.match(
+    runbook,
+    /(?:solo|s\\u00f3lo|exclusivamente)[\s\S]{0,100}`pg_catalog\.pg_database`[\s\S]{0,100}`pg_catalog\.shobj_description`/i,
+    'WP0 must read the marker only from the two catalog sources'
+  );
+  assert.match(
+    runbook,
+    /tampoco demuestra[\s\S]{0,120}(?:proveedor[\s\S]{0,80}(?:creado|creara)[\s\S]{0,60}copia|restore externo)[\s\S]{0,120}evidencia externa/i,
+    'the database comment alone must not be presented as proof of the external restore'
+  );
+  assert.doesNotMatch(runbook, /municontrol\.wp0_target_class=/i,
+    'the retired GUC target-class marker must not return');
+  assert.doesNotMatch(runbook, /\bpg_db_role_setting\b/i,
+    'WP0 must not claim that role settings prove the restored target');
+  assert.doesNotMatch(runbook, /ALTER DATABASE[\s\S]{0,100}\bSET\b[\s\S]{0,120}(?:marcador|municontrol\.wp0|RESTORED_DISPOSABLE)/i,
+    'ALTER DATABASE ... SET must not be documented as the WP0 marker mechanism');
   assert.match(runbook, /20\.000 filas[\s\S]{0,100}1 KiB[\s\S]{0,100}256 KiB[\s\S]{0,100}4 MiB/i);
   assert.match(runbook, /no se inspeccion(?:ó|\\u00f3) ni modific(?:ó|\\u00f3) ninguna base remota/i);
 

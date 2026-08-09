@@ -14,8 +14,34 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 - Ejecutar WP0 conectado sobre una copia restaurada descartable y autorizada.
 - Diseñar, migrar y probar la persistencia IAM antes de crear identidades.
-- Integrar el commit promovido en `master`, certificar producción con el gate
-  anónimo y registrar deployment ID, commit y smokes externos.
+- Implementar y probar el lifecycle gobernado antes de entregar cuentas por rol.
+
+## [1.8.1] - 2026-08-09
+
+### Agregado
+
+- **Tour público de roles:** `/roles` presenta los siete roles técnicos vigentes
+  como un recorrido visual comparativo y deriva únicamente al acceso
+  institucional. No es un selector de identidad ni una demo autenticada.
+- **PWA pública:** el cache network-first v5 incluye `/roles` y conserva la
+  exclusión total de `/api`; no almacena respuestas privadas o autenticadas.
+
+### Seguridad
+
+- El contrato `public-role-tour-v1` no solicita credenciales, no emite ni acepta
+  JWT, no autoriza acciones, no crea cuentas y no consulta APIs, DB, storage,
+  PII ni datos municipales. Elegir un perfil sólo cambia la explicación visible.
+
+### Estado verificable
+
+- `v1.8.0` está integrado en `master` y la superficie pública productiva cerró
+  `release:truth:check` con 9/9 controles y código de salida `0`.
+- Ese gate certifica las rutas y fronteras públicas incluidas; no demuestra DB
+  conectada, cuentas reales, autorización positiva ni datos municipales remotos.
+- El código y la documentación de `v1.8.1` están preparados localmente. El tour
+  cerró su QA local 53/53, pero no puede declararse productivo hasta hacer push
+  del commit exacto y obtener un nuevo `release:truth:check` verde que incluya
+  `/roles`.
 
 ## [1.8.0] - 2026-08-09
 
@@ -51,9 +77,11 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
   invitaciones o credenciales.
 - UX-E2A organiza la experiencia visual; un enlace visible no concede acceso y
   toda autorización continúa siendo server-side.
-- La verificación protegida acredita routing, contenido estático y rechazo sin
-  sesión; no acredita `release:truth:check` anónimo verde, merge a `master`,
-  producción, DB conectada, materialización GRH ni cuentas reales.
+- El release está integrado en `master` y la verificación pública productiva
+  posterior cerró `release:truth:check` con 9/9 controles y código de salida `0`.
+  Acredita las rutas y fronteras públicas cubiertas; no DB conectada,
+  materialización GRH remota, cuentas reales ni autorización positiva.
 
-[Unreleased]: https://github.com/inguillen87/municipio-junin/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/inguillen87/municipio-junin/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/inguillen87/municipio-junin/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/inguillen87/municipio-junin/compare/3ae026e7a2774d57856ac71f8ee52a15e9e6f5cb...v1.8.0

@@ -53,7 +53,7 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   const source = read('manuales.html');
   const docVersion = extractUniqueDocVersion(source);
   assert.match(docVersion, DOC_SEMVER_PATTERN);
-  assert.equal(docVersion, '1.8.0');
+  assert.equal(docVersion, '1.8.1');
   assert.match(source, /data-doc-contract="operational-truth-v1"/);
   assert.match(source, /data-primary-source="grh"/);
   assert.match(source, /data-secondary-source-policy="personas-excluded"/);
@@ -70,6 +70,7 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
 test('the in-app document version accepts SemVer prereleases but rejects arbitrary and build values', () => {
   for (const value of [
     '0.0.0',
+    '1.8.1',
     '1.8.0',
     '1.8.0-rc.1',
     '10.20.30-alpha.beta-2',

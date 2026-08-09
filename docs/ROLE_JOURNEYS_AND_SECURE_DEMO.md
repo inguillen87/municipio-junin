@@ -1,8 +1,8 @@
 # Recorridos por rol y demostración segura — MuniControl
 
-**Versión:** 1.8.0
+**Versión:** 1.8.1
 **Fecha de corte:** 9 de agosto de 2026  
-**Estado:** workspace y shell institucional por siete roles validados localmente; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
+**Estado:** `v1.8.0` integrado en `master` y superficie pública certificada por el gate productivo 9/9 con código de salida `0`; tour `v1.8.1` validado localmente y pendiente de push + gate `/roles`; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
 
 ## 1. Propósito
 
@@ -23,9 +23,12 @@ puede ayudar a comprender el permiso, pero nunca reemplaza esa frontera.
 | Condicionado | Existe el flujo, pero requiere DB, tenant, proveedor o artefacto privado configurado | Se prueba sólo en un preview preparado; sin configuración debe fallar cerrado |
 | Roadmap | Falta política, migración, fuente o evidencia remota | Se muestra como diseño futuro, nunca como operación simulada |
 
-La producción remota no está certificada por este paquete. Un preview o release
-sólo cambia de estado cuando registra commit, deployment, migraciones, smokes por
-rol y evidencia de rollback.
+El release `v1.8.0` está integrado en `master` y su superficie pública pasó el
+gate productivo completo: 9/9 controles, código de salida `0`. Esa evidencia
+certifica las rutas y fronteras públicas incluidas por el gate; no demuestra DB
+conectada, cuentas reales, autorización positiva ni datos municipales remotos.
+Cada capacidad privada conserva sus propios gates de tenant, fuente, rol y
+rollback.
 
 ## 3. Roles técnicos que existen hoy
 
@@ -130,7 +133,28 @@ Estas reglas son requisitos de aceptación, no recomendaciones opcionales:
 - roles futuros creados sólo para que aparezcan en una presentación;
 - bypass por query string, `localStorage`, token fabricado o modo “demo”.
 
-### 7.2 Entorno de preview
+### 7.2 Recorrido visual público `/roles`
+
+`/roles` es un recorrido visual no autenticado para comparar los siete perfiles
+vigentes y entender qué experiencia se busca construir para cada uno. Es una
+superficie pedagógica: no solicita autenticación, no emite ni acepta JWT, no
+autoriza acciones, no crea cuentas y no consulta APIs, DB, storage, PII ni datos
+municipales.
+
+El recorrido puede mostrar nombres funcionales, prioridades, límites y pantallas
+de referencia porque ese contenido ya es documental y no contiene información
+de personas o del municipio. Su única salida operativa navega hacia el acceso
+institucional `/login`; no enlaza superficies privadas. Elegir una tarjeta nunca
+cambia el rol de una sesión, no crea una sesión y no demuestra que el perfil esté
+aprovisionado. El contrato visible se identifica como
+`public-role-tour-v1`.
+
+Por eso `/roles` debe presentarse como **tour visual**, no como demo de seguridad.
+La seguridad por roles sólo se acredita con identidades temporales gobernadas,
+respuestas permitidas y denegadas del servidor, aislamiento cross-tenant y
+revocación verificable.
+
+### 7.3 Entorno de preview
 
 Cada demostración debe usar un tenant aislado, datos sintéticos explícitamente
 rotulados y una URL aprobada. El snapshot real GRH sólo se presenta en un entorno
@@ -155,15 +179,17 @@ evidencia_cross_tenant:
 revocacion_final:
 ```
 
-La verificación manual disponible de `fa5dcc5` es más estrecha que ese registro:
+La verificación manual histórica de `fa5dcc5` fue más estrecha que ese registro:
 en el preview protegido, `/dashboard`, `/inicio` y `/manuales` coincidieron con
 su huella canónica; `/` mostró el acceso con una única inyección conocida de
 Vercel Live; y las cinco fronteras API rechazaron la ausencia de sesión con 401
 y contrato específico por ruta. No hubo identidades, tenant demo, autorización
 positiva, datos GRH ni prueba cross-tenant; por eso no se presenta como demo por
-rol ni como certificación de producción.
+rol. La certificación productiva posterior de `v1.8.0` proviene del gate público
+9/9 con código de salida `0`, no de aquel preview, y tampoco acredita DB, cuentas
+o datos municipales remotos.
 
-### 7.3 Ciclo de cuenta objetivo
+### 7.4 Ciclo de cuenta objetivo
 
 El ciclo enterprise requerido es:
 
@@ -186,7 +212,7 @@ Antes de habilitarlo deben existir en DB y servidor:
 El schema vigente no implementa todavía todo este lifecycle. Por eso no se deben
 publicar “usuarios de cada rol” hasta que la migración y los E2E lo demuestren.
 
-### 7.4 Aprovisionamiento actual retirado
+### 7.5 Aprovisionamiento actual retirado
 
 `db:seed` es un gate fail-closed: siempre termina con código `1` y
 `ACCOUNT_LIFECYCLE_NOT_GOVERNED`. No recibe secretos, no conecta a la DB y no
@@ -204,14 +230,16 @@ IAM-MAP-01 agrega un mapper puro entre esa foundation y el subconjunto reversibl
 de la propuesta Prisma. No importa Prisma Client, no persiste y no crea usuarios,
 invitaciones, sesiones o credenciales. UX-E2A agrega un shell institucional
 compartido y accesible; organiza enlaces ya autorizados, pero no concede acceso.
-Ambos incrementos están cerrados sólo en el checkout local.
+Ambos incrementos forman parte de `v1.8.0` en `master`; WP0-L continúa sin una
+ejecución conectada contra una copia restaurada autorizada.
 
 ## 8. Guion de presentación por rol
 
-Toda demostración comienza en [`inicio.html`](../inicio.html), confirma rol,
-tenant y versión de política, y explica que la portada no carga GRH. Los accesos
-prioritarios siguientes provienen del servidor y no conceden por sí mismos el
-permiso del endpoint:
+La presentación pública puede comenzar en `/roles` para explicar visualmente las
+responsabilidades sin login ni datos. Una demostración autenticada comienza en
+[`inicio.html`](../inicio.html), confirma rol, tenant y versión de política, y
+explica que la portada no carga GRH. Los accesos prioritarios siguientes provienen
+del servidor y no conceden por sí mismos el permiso del endpoint:
 
 | Rol vigente | Primera comprobación | Siguiente paso permitido | Denegación que debe verse |
 |---|---|---|---|
@@ -223,9 +251,10 @@ permiso del endpoint:
 | `INSPECTOR` | Ausencia de asignación territorial gobernada | Manual y procedimiento institucional | Sin agenda, casos, domicilios o PII |
 | `DEMO` | Estado operativo/condicionado/roadmap | Manual y superficies públicas | Sin datos municipales ni acceso ejecutivo |
 
-La matriz 7 roles × 390/1440 px y los casos de sesión obsoleta o perfil
-malformado cerraron dentro del focal UX-E1A 42/42 local. No se crearon cuentas,
-no se usó DB y no se desplegó.
+La matriz autenticada 7 roles × 390/1440 px y los casos de sesión obsoleta o
+perfil malformado cerraron dentro del focal UX-E1A 42/42 local. Esa prueba no
+creó cuentas ni usó DB. El tour `/roles` permanece separado: es visual,
+no autenticado y no constituye evidencia RBAC.
 
 ### Intendencia — 12 minutos
 
@@ -333,8 +362,14 @@ su mapper puro en
 Este manual no puede declarar implementado algo que esas fuentes y sus pruebas
 no demuestren.
 
-Cambio 1.8.0: registra IAM-MAP-01 y UX-E2A y la evidencia acotada del preview
-protegido `fa5dcc5`. Mantiene explícito que WP0-L no fue conectado, no existen
-usuarios persistidos ni cuentas reales, la inyección conocida de Vercel Live
-impidió igualdad byte a byte de `/`, y no hubo merge a `master`, demo por rol ni
-certificación productiva.
+Cambio 1.8.0: registra IAM-MAP-01, UX-E2A y la evidencia acotada del preview
+protegido `fa5dcc5`. El release está integrado en `master` y el gate productivo
+público cerró 9/9 con código de salida `0`. Mantiene explícito que WP0-L no fue
+conectado y que esa certificación no demuestra DB, cuentas reales, autorización
+positiva ni datos municipales remotos.
+
+Cambio 1.8.1: documenta `/roles` como recorrido visual público y no autenticado.
+No solicita login, no emite ni acepta JWT, no autoriza acciones, no crea cuentas
+y no consulta APIs, DB, storage, PII ni datos municipales. El checkout local
+requiere push del commit exacto y un gate productivo que incluya `/roles` antes
+de describir `v1.8.1` como desplegado.

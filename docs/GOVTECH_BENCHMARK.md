@@ -1,6 +1,6 @@
 # Benchmark GovTech para MuniControl
 
-- Versión: 1.8.0
+- Versión: 1.8.1
 - Fecha de consulta: 8 de agosto de 2026
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
@@ -780,10 +780,15 @@ Cada actualización debe conservar la fecha de consulta, distinguir fuente de
 inferencia y evitar convertir marketing competitivo en requisito técnico sin una
 decisión explícita.
 
-Cambio 1.8.0: actualiza la línea base con WP0-L, IAM-MAP-01, UX-E2A y la
-verificación manual del preview protegido `fa5dcc5`: `/dashboard`, `/inicio` y
-`/manuales` con huella canónica exacta; `/` con una única inyección conocida de
-Vercel Live; cinco fronteras API en 401 con contrato específico por ruta. WP0-L
-no fue ejecutado conectado; el mapper IAM no persiste ni crea usuarios; el shell
-no concede autorización. No declara DB, cuentas reales, RBAC/ABAC persistido,
-datos remotos, merge a `master` ni producción.
+Cambio 1.8.0: actualiza la línea base con WP0-L, IAM-MAP-01, UX-E2A y el
+antecedente del preview protegido `fa5dcc5`. El release quedó en `master` y su
+superficie pública productiva cerró 9/9 con código de salida `0`. WP0-L no fue
+ejecutado conectado; el mapper IAM no persiste ni crea usuarios; el shell no
+concede autorización. No declara DB, cuentas reales, RBAC/ABAC persistido ni
+datos remotos.
+
+Cambio 1.8.1: suma `/roles` como tour visual público para explicar siete perfiles
+sin credenciales, JWT, autorización, APIs, DB, storage, PII o datos municipales.
+La experiencia local reduce fricción de demostración frente a un login ficticio,
+pero no acredita seguridad por roles. Requiere push y gate productivo de `/roles`
+antes de presentarla como desplegada.

@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.8.0 |
+| Versión | 1.8.1 |
 | Fecha de corte documental | 9 de agosto de 2026 |
-| Estado | Manual vivo basado en checkout validado y preview protegido verificado de forma acotada; no certifica producción |
+| Estado | `v1.8.0` en `master` con gate público productivo 9/9 exit `0`; tour `v1.8.1` local pendiente de push + gate `/roles` |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -121,18 +121,26 @@ tenant recibe sólo sesión, Inicio y Ayuda, sin GRH. La matriz local 7 roles ×
 viewports cerró dentro del focal consolidado 42/42; no prueba cuentas existentes,
 DB remota ni deployment.
 
-El cierre `1.8.0` agrega WP0-L e IAM-MAP-01 como fundaciones técnicas y el
-shell UX-E2A como mejora transversal. WP0-L aún no se ejecutó conectado contra
-una copia restaurada; IAM-MAP-01 no persiste ni crea usuarios; UX-E2A no concede
-autorización. Son capacidades del checkout local, no una plataforma productiva
-certificada.
+El cierre `1.8.0` agregó WP0-L e IAM-MAP-01 como fundaciones técnicas y el shell
+UX-E2A como mejora transversal. WP0-L aún no se ejecutó conectado contra una
+copia restaurada; IAM-MAP-01 no persiste ni crea usuarios; UX-E2A no concede
+autorización. El release está en `master` y su superficie pública productiva
+cerró 9/9 con código de salida `0`; esto no convierte esas capacidades privadas
+en DB, cuentas o datos remotos certificados.
 
-El preview protegido del commit `fa5dcc5` fue verificado manualmente:
+El preview protegido del commit `fa5dcc5` fue el antecedente manual:
 `/dashboard`, `/inicio` y `/manuales` devolvieron HTML 200 con huella canónica
 exacta; `/` mostró el acceso esperado con una única inyección conocida de Vercel
 Live; las cinco fronteras API respondieron 401 sin sesión y con contrato
-específico por ruta. Esto prueba routing y falla cerrada sin sesión, no cuentas,
-datos municipales, DB conectada, merge a `master` ni producción.
+específico por ruta. La certificación productiva posterior de `v1.8.0` proviene
+del gate público 9/9, no de aquel preview; no prueba cuentas, datos municipales,
+DB conectada ni autorización positiva.
+
+`v1.8.1` agrega localmente `/roles`, un recorrido visual público de los siete
+perfiles. No inicia sesión, no emite JWT, no autoriza, no crea cuentas y no
+consulta APIs, DB, storage, PII o datos municipales. Sólo cambia la explicación
+visible y deriva al acceso institucional; su QA local cerró 53/53. Requiere push del commit exacto y un
+nuevo gate productivo que incluya `/roles` antes de anunciarse como desplegado.
 
 La prueba real O2A terminó primero `promoted/PUBLISHED` en 105,5 s y luego
 `duplicate/DUPLICATE` en 294 ms. Quedaron una versión, una activación, un receipt
@@ -148,10 +156,10 @@ reduce la ventana de cambio entre verificación y uso; no protege frente a un
 host completamente comprometido. La evidencia O2A.1 es focal y con fixtures: no
 hubo nuevo replay real del archivo de 44 MB, DB ni deployment.
 
-El dominio público observado al corte sigue siendo un release legacy y no está
-certificado como esta versión. No debe usarse en presentaciones hasta que el
-gate `release:truth:check` finalice con código `0` sobre el candidato exacto y
-se registren los smokes externos.
+El release público vigente es `v1.8.0`: está en `master` y
+`release:truth:check` cerró 9/9 con código de salida `0`. El checkout `v1.8.1`
+todavía no sustituye esa evidencia; el tour necesita push y gate de `/roles`.
+Ninguno de esos gates acredita DB, cuentas o datos municipales remotos.
 
 Los enlaces Calidad y Linaje y Reportes se ofrecen actualmente a `SUPER_ADMIN`,
 `TENANT_ADMIN`, `INTENDENTE` y `CONTADOR`. Esa visibilidad no concede acceso: la
@@ -983,7 +991,8 @@ exitoso. Si falta evidencia, el estado correcto sigue siendo **Condicionado**.
 
 | Versión | Fecha | Cambio | Responsable |
 |---|---|---|---|
-| 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; preview protegido `fa5dcc5` verificado manualmente en rutas canónicas y cinco rechazos API 401. La diferencia conocida de `/` fue una única inyección de Vercel Live; sin DB, cuentas reales, `master` ni certificación productiva | Mantenedor del cambio; aprobación institucional pendiente del release |
+| 1.8.1 | 2026-08-09 | Agrega localmente `/roles` como recorrido visual público, QA 53/53, sin login, JWT, autorización, cuentas, APIs, DB, storage, PII o datos municipales; requiere push y gate productivo de `/roles` | Mantenedor del cambio; aprobación institucional pendiente del release |
+| 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; integrado en `master`, superficie pública productiva 9/9 exit `0`, sin acreditar DB, cuentas reales, autorización positiva ni datos remotos | Mantenedor del cambio; aprobación institucional registrada por separado |
 | 1.7.0 | 2026-08-09 | Agrega Inicio seguro para los siete roles vigentes, capabilities y perfil calculados en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; corrige Reportes como operativo local, sin cuentas, DB ni deployment | Mantenedor del cambio; aprobación institucional pendiente del release |
 | 1.6.0 | 2026-08-09 | Agrega `grh-close-v1` en Hacienda y el Bot “Cierre explicado”, aclara conciliación por período y comparación consecutiva k≥10, registra O2A.1 y el acceso institucional local, y mantiene el público como legacy/no certificado | Mantenedor del cambio; aprobación institucional pendiente del release |
 | 1.5.0 | 2026-08-09 | Explica el replay real local O2A, cómo interpretar promoción/duplicado y qué evidencia sigue pendiente para O2B conectado/programado | Mantenedor del cambio; aprobación institucional pendiente del release |

@@ -1,18 +1,30 @@
 # Manual técnico y de procedimientos de MuniControl
 
-**Versión:** 1.8.0
+**Versión:** 1.8.1
 
 **Tipo:** documento vivo
 
 **Última verificación contra el checkout local:** 2026-08-09
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
-> Estado de verdad: el código y las pruebas descritos aquí existen en el checkout
-> local. El preview protegido `fa5dcc5` tiene una verificación manual acotada de
-> routing, huellas estáticas y rechazos 401; no certifica un deployment productivo,
-> una base remota migrada, materialización GRH, cuentas reales, backup restaurable
-> ni smoke de producción. Hasta reunir esa evidencia, el estado correcto es
-> **validado** o **condicionado al entorno**, nunca “en producción”.
+> Estado de verdad: `v1.8.0` está integrado en `master` y su superficie pública
+> productiva cerró 9/9 controles con código de salida `0`. Esto no certifica una
+> base remota migrada, materialización GRH, cuentas reales, autorización positiva
+> ni backup restaurable. `v1.8.1` y su tour `/roles` existen en el checkout local;
+> requieren push del commit exacto y un nuevo gate que incluya `/roles` antes de
+> declararse productivos.
+
+### Tour público `v1.8.1`
+
+`roles.html` implementa la ruta canónica `/roles` con el contrato visible
+`public-role-tour-v1`. Es contenido estático y no autenticado para los siete roles
+del enum vigente: no ejecuta fetch, no inicia sesión, no emite ni acepta JWT, no
+lee o escribe storage, no autoriza acciones y no procesa credenciales, PII, APIs,
+DB o datos municipales. Su única navegación operativa apunta a `/login`.
+
+La ruta es demostración visual, no evidencia RBAC. El service worker público v5
+puede cachearla con estrategia network-first y continúa excluyendo `/api`; esa
+disponibilidad no modifica el contrato de seguridad ni acredita el deployment.
 
 ## 1. Propósito y regla de mantenimiento
 
@@ -1402,12 +1414,15 @@ El PR o entrega debe responder explícitamente:
 Si alguna respuesta es sí, actualizar este manual. La documentación desactualizada
 es un defecto de la feature y bloquea su Definition of Done.
 
-Cambio 1.8.0: registra WP0-L, IAM-MAP-01 y UX-E2A y la verificación manual del
-preview protegido `fa5dcc5`: `/dashboard`, `/inicio` y `/manuales` con huella
-canónica exacta; `/` con una única inyección conocida de Vercel Live; cinco
-fronteras API en 401 con identidad contractual específica. WP0-L no se ejecutó
+Cambio 1.8.0: registra WP0-L, IAM-MAP-01, UX-E2A y el antecedente del preview
+protegido `fa5dcc5`. El release quedó integrado en `master` y su superficie
+pública productiva cerró 9/9 con código de salida `0`. WP0-L no se ejecutó
 conectado; IAM-MAP-01 no persiste ni crea usuarios; el shell no concede
-autorización. El público sigue legacy y no certificado. No declara DB conectada,
-baseline, migración, cuentas reales, datos GRH remotos, merge a `master` ni
-certificación productiva. Producción sigue bloqueada hasta que
-`release:truth:check` termine con exit `0` y existan smokes externos registrados.
+autorización. No declara DB conectada, baseline, migración, cuentas reales ni
+datos GRH remotos.
+
+Cambio 1.8.1: incorpora localmente `/roles`, su contrato visual
+`public-role-tour-v1` y la inclusión network-first en el cache público v5, que
+continúa excluyendo `/api`. El tour requiere push y un gate productivo sobre
+`/roles`; no autentica, no usa JWT/storage y no demuestra autorización, DB,
+cuentas o datos municipales.

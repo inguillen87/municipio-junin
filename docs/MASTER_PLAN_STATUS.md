@@ -1,6 +1,6 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.8.0.
+Versión documental: 1.8.1.
 Fecha de corte: 9 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
@@ -12,18 +12,22 @@ implementada, conectada o validada.
 
 ## Gate de verdad del release
 
-El deployment público observado el 9 de agosto de 2026 no corresponde al
-checkout actual: conserva `MuniDB`, claims de tiempo real/origen oficial, un
-manual anterior y no expone correctamente las cinco fronteras GRH vigentes. Por
-eso E0 está bloqueado y esa URL no debe mostrarse como producto actual.
+El release `v1.8.0` está integrado en `master` y su superficie pública productiva
+cerró el gate de verdad con 9/9 controles y código de salida `0`. Esa evidencia
+certifica las rutas y fronteras públicas cubiertas por el gate; no demuestra DB
+conectada, cuentas reales, autorización positiva ni datos municipales remotos.
 
-Separado de ese destino público, el preview protegido del commit `fa5dcc5` fue
-verificado manualmente. `/dashboard`, `/inicio` y `/manuales` devolvieron HTML
-200 con huella canónica exacta; `/` mostró el acceso institucional esperado con
-una única inyección conocida de Vercel Live, por lo que no tuvo igualdad byte a
-byte. Las cinco fronteras API devolvieron 401 sin sesión y conservaron su
-identidad contractual específica por ruta. Esta evidencia no equivale a un gate
-anónimo verde ni a producción.
+El sprint `v1.8.1` incorpora localmente el recorrido visual público `/roles` y
+su QA de producto cerró 53/53.
+No puede declararse productivo hasta hacer push del commit exacto y repetir el
+gate con `/roles` incluido. El tour no inicia sesión, no emite JWT, no autoriza
+acciones y no consulta APIs, DB, storage, PII ni datos municipales.
+
+Como antecedente, el preview protegido del commit `fa5dcc5` verificó manualmente
+`/dashboard`, `/inicio` y `/manuales` con huella canónica; `/` conservó una única
+inyección conocida de Vercel Live y cinco fronteras API rechazaron la ausencia de
+sesión con 401. La certificación productiva posterior proviene del gate 9/9 de
+`v1.8.0`, no de aquel preview.
 
 `scripts/check-deployment-truth.mjs` convierte la diferencia en un gate GET-only
 y fail-closed. Compara las huellas canónicas de portada de acceso, panel
@@ -400,12 +404,12 @@ pendientes**.
   recibidas, pero un enlace visible no concede autorización: toda API protegida
   conserva la autorización server-side definida por el contrato de su ruta.
 
-Este cierre no demuestra una plataforma completa ni productiva. No se conectó,
-migró o escribió una DB y no se crearon identidades. El preview protegido del
-commit `fa5dcc5` verificó manualmente `/dashboard`, `/inicio` y `/manuales` con
-huella exacta, `/` con una única inyección conocida de Vercel Live y las cinco
-fronteras API en 401 con contrato específico por ruta; no verificó cuentas,
-datos municipales, merge a `master` ni producción de `1.8.0`.
+Este cierre no demuestra una plataforma completa ni datos privados productivos.
+No se conectó, migró o escribió una DB y no se crearon identidades. `v1.8.0` sí
+está integrado en `master` y su superficie pública productiva cerró 9/9 con
+código de salida `0`; ese gate no verificó cuentas, autorización positiva o datos
+municipales remotos. El tour `v1.8.1` permanece local y requiere push más un gate
+que incluya `/roles` antes de declararse productivo.
 
 ## Funciones que no deben “completarse” todavía
 
@@ -462,10 +466,13 @@ Una función sólo pasa a “completa” cuando cumple simultáneamente:
 Hasta cumplir los puntos 7 y 8, el estado correcto es **validado localmente**, no
 “en producción”.
 
-Cambio documental 1.8.0: registra WP0-L, IAM-MAP-01 y UX-E2A, más la evidencia
-manual del preview protegido `fa5dcc5`. Esa evidencia verifica routing, huellas
-de `/dashboard`, `/inicio` y `/manuales`, el acceso `/` con una única inyección
-conocida de Vercel Live y cinco rechazos API 401 contractuales. El destino
-público sigue legacy/no certificado hasta `release:truth:check` exit 0. No
-declara cuentas por rol, RBAC/ABAC persistido, extracción diaria, DB, backup,
-datos remotos, merge a `master` ni certificación productiva.
+Cambio documental 1.8.0: registra WP0-L, IAM-MAP-01, UX-E2A y el antecedente del
+preview protegido `fa5dcc5`. El release quedó integrado en `master` y su gate
+público productivo terminó 9/9 con código de salida `0`; no declara cuentas por
+rol, RBAC/ABAC persistido, extracción diaria, DB, backup ni datos remotos.
+
+Cambio documental 1.8.1: incorpora `/roles` como tour visual público
+`public-role-tour-v1`, sin login, JWT, autorización, APIs, DB, storage, PII o
+datos municipales. Está validado en el checkout local con QA 53/53 y requiere
+push del commit exacto más un `release:truth:check` que pruebe `/roles` antes de
+cualquier claim productivo de `v1.8.1`.

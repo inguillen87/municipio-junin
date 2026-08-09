@@ -1,6 +1,6 @@
 # Manual técnico y de procedimientos de MuniControl
 
-**Versión:** 1.8.0-rc.1
+**Versión:** 1.8.0
 
 **Tipo:** documento vivo
 
@@ -8,10 +8,11 @@
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
 > Estado de verdad: el código y las pruebas descritos aquí existen en el checkout
-> local. No hay evidencia adjunta que certifique un deployment vigente, una base
-> remota migrada, la materialización remota de GRH, un backup restaurable ni un
-> smoke test de producción. Hasta reunir esa evidencia, el estado correcto es
-> **validado localmente** o **condicionado al entorno**, nunca “en producción”.
+> local. El preview protegido `fa5dcc5` tiene una verificación manual acotada de
+> routing, huellas estáticas y rechazos 401; no certifica un deployment productivo,
+> una base remota migrada, materialización GRH, cuentas reales, backup restaurable
+> ni smoke de producción. Hasta reunir esa evidencia, el estado correcto es
+> **validado** o **condicionado al entorno**, nunca “en producción”.
 
 ## 1. Propósito y regla de mantenimiento
 
@@ -1301,14 +1302,14 @@ Diagnóstico recomendado:
 | Reportes SVG locales | Operativo local | `grh-executive-report-v2` portable k=10 y consumidor alineado; falta certificación remota |
 | Frontera HTTP raw GRH | Cerrada localmente | `/api/grh-data` autentica/valida tenant y responde 410 sin leer artefactos; cinco UIs con cero referencias |
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
-| Login institucional | Operativo local | sobrio, autocontenido, accesible, responsive y sin demos/claims; 10/10 focal, no desplegado |
+| Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
 | Techo de autorización `recurso:acción` | Operativo local | 26 recursos, 12 acciones, 46 permisos y 78 firmas exactas: 36 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
 | Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
-| Preview/producción Vercel | Bloqueado hasta gate verde | el dominio público observado el 9-08-2026 sigue legacy y no certificado; requiere candidato exacto con `release:truth:check` exit 0 y smokes externos |
+| Preview/producción Vercel | Preview protegido verificado parcialmente; producción bloqueada | `fa5dcc5`: `/dashboard`, `/inicio` y `/manuales` con huella exacta, `/` con una única inyección Vercel Live y cinco APIs 401 con contrato por ruta; faltan gate anónimo, `master`, producción y smokes con sesión |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |
 | Correo y cron | Retirado | responden `410` y no están programados; falta auditoría tenant-bound e idempotencia |
 | WhatsApp | Condicionado | requiere `PUBLIC_APP_URL` HTTPS aprobado, proveedor, secretos, plantillas y E2E externo |
@@ -1401,9 +1402,12 @@ El PR o entrega debe responder explícitamente:
 Si alguna respuesta es sí, actualizar este manual. La documentación desactualizada
 es un defecto de la feature y bloquea su Definition of Done.
 
-Cambio 1.8.0-rc.1: registra WP0-L, IAM-MAP-01 y UX-E2A validados sólo en el
-checkout local. WP0-L no se ejecutó conectado; IAM-MAP-01 no persiste ni crea
-usuarios; el shell institucional no concede autorización. Conserva UX-E1A,
-`grh-close-v1`, O2A.1 y la verdad de release. El público sigue legacy y no
-certificado. No declara DB conectada, baseline, migración, cuentas, preview,
-deployment ni certificación productiva.
+Cambio 1.8.0: registra WP0-L, IAM-MAP-01 y UX-E2A y la verificación manual del
+preview protegido `fa5dcc5`: `/dashboard`, `/inicio` y `/manuales` con huella
+canónica exacta; `/` con una única inyección conocida de Vercel Live; cinco
+fronteras API en 401 con identidad contractual específica. WP0-L no se ejecutó
+conectado; IAM-MAP-01 no persiste ni crea usuarios; el shell no concede
+autorización. El público sigue legacy y no certificado. No declara DB conectada,
+baseline, migración, cuentas reales, datos GRH remotos, merge a `master` ni
+certificación productiva. Producción sigue bloqueada hasta que
+`release:truth:check` termine con exit `0` y existan smokes externos registrados.

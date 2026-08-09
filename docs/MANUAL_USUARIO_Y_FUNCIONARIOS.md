@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 1.8.0-rc.1 |
+| Versión | 1.8.0 |
 | Fecha de corte documental | 9 de agosto de 2026 |
-| Estado | Manual vivo basado en el checkout local validado; no certifica producción |
+| Estado | Manual vivo basado en checkout validado y preview protegido verificado de forma acotada; no certifica producción |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -94,8 +94,8 @@ municipio y los contratos privados publicados.
 | Autenticación y autorización server-side | Revalida usuario, rol, municipio y estado del tenant | El menú del navegador no concede permisos |
 | Estados de fuente ausente | Ocultan indicadores ante contrato inválido o indisponible | No existe reemplazo con datos demo |
 | Replay de ingeniería O2A/O2A.1 | Reprocesa el snapshot aprobado en estado local, conserva el último bundle válido y entrega a los procesadores copias privadas capturadas por descriptor | O2A.1 se validó con fixtures, sin repetir el replay real de 44 MB; no es actualización diaria, publicación DB, backup ni función de usuario |
-| Acceso institucional | Login sobrio y default seguro `inicio.html`; la sesión incluye capabilities, versión de política y perfil de inicio calculados en servidor | Mejora local sin usuarios demo ni claims; no está desplegada ni certificada remotamente |
-| Shell institucional UX-E2A | Navegación coherente desktop/móvil, foco visible, targets táctiles, movimiento reducido e impresión en las páginas que cargan el menú | Validado sólo en local; un enlace visible no concede permisos y no certifica preview o deployment |
+| Acceso institucional | Login sobrio y default seguro `inicio.html`; la sesión incluye capabilities, versión de política y perfil de inicio calculados en servidor | `/` fue observado en preview protegido con una única inyección conocida de Vercel Live; sin usuarios demo, cuentas reales ni certificación productiva |
+| Shell institucional UX-E2A | Navegación coherente desktop/móvil, foco visible, targets táctiles, movimiento reducido e impresión en las páginas que cargan el menú | Validado localmente y en rutas canónicas del preview protegido; un enlace visible no concede permisos |
 
 Los endpoints seguros `GET /api/grh-executive` (`grh-executive-v2`),
 `GET /api/grh-quality` (`grh-quality-v1`) y `GET /api/grh-close`
@@ -121,11 +121,18 @@ tenant recibe sólo sesión, Inicio y Ayuda, sin GRH. La matriz local 7 roles ×
 viewports cerró dentro del focal consolidado 42/42; no prueba cuentas existentes,
 DB remota ni deployment.
 
-El cierre `1.8.0-rc.1` agrega WP0-L e IAM-MAP-01 como fundaciones técnicas y el
+El cierre `1.8.0` agrega WP0-L e IAM-MAP-01 como fundaciones técnicas y el
 shell UX-E2A como mejora transversal. WP0-L aún no se ejecutó conectado contra
 una copia restaurada; IAM-MAP-01 no persiste ni crea usuarios; UX-E2A no concede
 autorización. Son capacidades del checkout local, no una plataforma productiva
 certificada.
+
+El preview protegido del commit `fa5dcc5` fue verificado manualmente:
+`/dashboard`, `/inicio` y `/manuales` devolvieron HTML 200 con huella canónica
+exacta; `/` mostró el acceso esperado con una única inyección conocida de Vercel
+Live; las cinco fronteras API respondieron 401 sin sesión y con contrato
+específico por ruta. Esto prueba routing y falla cerrada sin sesión, no cuentas,
+datos municipales, DB conectada, merge a `master` ni producción.
 
 La prueba real O2A terminó primero `promoted/PUBLISHED` en 105,5 s y luego
 `duplicate/DUPLICATE` en 294 ms. Quedaron una versión, una activación, un receipt
@@ -976,7 +983,7 @@ exitoso. Si falta evidencia, el estado correcto sigue siendo **Condicionado**.
 
 | Versión | Fecha | Cambio | Responsable |
 |---|---|---|---|
-| 1.8.0-rc.1 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A cerrados sólo en local: observador DB aún no conectado, mapper puro sin persistencia/usuarios y shell institucional sin autoridad propia; sin preview, deployment ni certificación productiva | Mantenedor del cambio; aprobación institucional pendiente del release |
+| 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; preview protegido `fa5dcc5` verificado manualmente en rutas canónicas y cinco rechazos API 401. La diferencia conocida de `/` fue una única inyección de Vercel Live; sin DB, cuentas reales, `master` ni certificación productiva | Mantenedor del cambio; aprobación institucional pendiente del release |
 | 1.7.0 | 2026-08-09 | Agrega Inicio seguro para los siete roles vigentes, capabilities y perfil calculados en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; corrige Reportes como operativo local, sin cuentas, DB ni deployment | Mantenedor del cambio; aprobación institucional pendiente del release |
 | 1.6.0 | 2026-08-09 | Agrega `grh-close-v1` en Hacienda y el Bot “Cierre explicado”, aclara conciliación por período y comparación consecutiva k≥10, registra O2A.1 y el acceso institucional local, y mantiene el público como legacy/no certificado | Mantenedor del cambio; aprobación institucional pendiente del release |
 | 1.5.0 | 2026-08-09 | Explica el replay real local O2A, cómo interpretar promoción/duplicado y qué evidencia sigue pendiente para O2B conectado/programado | Mantenedor del cambio; aprobación institucional pendiente del release |

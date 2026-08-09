@@ -39,7 +39,7 @@ test('the living documentation package exists and distinguishes local, condition
   }
 
   const integral = read('docs/MANUAL_INTEGRAL.md');
-  assert.match(integral, /Versión documental: 1\.8\.0-rc\.1/i);
+  assert.match(integral, /Versión documental: 1\.8\.0/i);
   assert.match(integral, /no certifica producción/i);
   assert.match(integral, /db:seed[\s\S]*retirado[\s\S]*código `1`/i);
   assert.match(integral, /máquina pura de lifecycle[\s\S]*no persiste ni\s+habilita identidades/i);
@@ -52,7 +52,7 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(integral, /\/api\/grh-data[\s\S]{0,180}410 GRH_RAW_CONTRACT_RETIRED[\s\S]{0,120}sin leer artefactos/i);
 
   const user = read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md');
-  assert.match(user, /\| Versión \| 1\.8\.0-rc\.1 \|/);
+  assert.match(user, /\| Versión \| 1\.8\.0 \|/);
   for (const state of ['Operativo', 'Condicionado', 'Roadmap']) assert.match(user, new RegExp(state, 'i'));
   assert.match(user, /Tesorería/);
   assert.match(user, /Compras/);
@@ -67,7 +67,7 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(user, /close_explanation[\s\S]{0,420}422/i);
 
   const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
-  assert.match(technical, /\*\*Versión:\*\* 1\.8\.0-rc\.1/);
+  assert.match(technical, /\*\*Versión:\*\* 1\.8\.0/);
   assert.match(technical, /shared\/route-policy\.cjs/);
   assert.match(technical, /recurso:acción/);
   assert.match(technical, /desconocid[oa]s fallan cerrados/i);
@@ -82,7 +82,7 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(technical, /profile[\s\S]{0,100}semantic[\s\S]{0,120}exclusivamente en backend/i);
 
   const roadmap = read('docs/ENTERPRISE_PRODUCT_ROADMAP.md');
-  assert.match(roadmap, /Versión: 1\.8\.0-rc\.1/i);
+  assert.match(roadmap, /Versión: 1\.8\.0/i);
   for (const capability of ['Apache ECharts', 'MapLibre GL JS', 'PostGIS', 'deck.gl', 'OpenTelemetry', 'CDC']) {
     assert.match(roadmap, new RegExp(capability.replace('.', '\\.'), 'i'));
   }
@@ -158,7 +158,7 @@ test('the living documentation package exists and distinguishes local, condition
   }
 
   const roleJourneys = read('docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md');
-  assert.match(roleJourneys, /\*\*Versión:\*\* 1\.8\.0-rc\.1/);
+  assert.match(roleJourneys, /\*\*Versión:\*\* 1\.8\.0/);
   assert.match(roleJourneys, /Operativo local[\s\S]*Condicionado[\s\S]*Roadmap/i);
   assert.match(roleJourneys, /maker[\s\S]*checker/i);
   assert.match(roleJourneys, /FIRST_LOGIN_REQUIRED/);
@@ -169,7 +169,7 @@ test('the living documentation package exists and distinguishes local, condition
   assert.doesNotMatch(roleJourneys, /^\| \[`reportes\.html`\]\([^)]*\) \| `data_points`/im);
 
   const benchmark = read('docs/GOVTECH_BENCHMARK.md');
-  assert.match(benchmark, /- Versión: 1\.8\.0-rc\.1/);
+  assert.match(benchmark, /- Versión: 1\.8\.0/);
   assert.match(benchmark, /seed \*\*no prepara ningún rol\*\*/i);
   assert.doesNotMatch(benchmark, /seed prepara `SUPER_ADMIN`/i);
 
@@ -227,7 +227,7 @@ test('O2A real-local evidence is documented without promoting O2B or production 
   }
 });
 
-test('documentation 1.8.0-rc.1 preserves the governed close, Bot, immutable replay and release truths', () => {
+test('documentation 1.8.0 preserves the governed close, Bot, immutable replay and release truths', () => {
   const integral = read('docs/MANUAL_INTEGRAL.md');
   const user = read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md');
   const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
@@ -241,7 +241,7 @@ test('documentation 1.8.0-rc.1 preserves the governed close, Bot, immutable repl
   const benchmark = read('docs/GOVTECH_BENCHMARK.md');
 
   for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark, inApp]) {
-    assert.match(source, /1\.8\.0-rc\.1/, 'every living manual must expose candidate version 1.8.0-rc.1');
+    assert.match(source, /1\.8\.0(?![-+0-9A-Za-z.])/, 'every living manual must expose stable version 1.8.0');
   }
 
   for (const source of [integral, user, technical, master, enterprise, operations, pipeline, privacy, inApp]) {
@@ -295,7 +295,7 @@ test('documentation 1.8.0-rc.1 preserves the governed close, Bot, immutable repl
   }
 });
 
-test('documentation 1.8.0-rc.1 records the exact role workspace and local E0.1 truth without claiming accounts or deployment', () => {
+test('documentation 1.8.0 records the exact role workspace and protected-preview truth without claiming accounts or production', () => {
   const accessPolicy = require('../shared/access-policy.cjs');
   const expectedRoles = [
     'SUPER_ADMIN',
@@ -320,7 +320,7 @@ test('documentation 1.8.0-rc.1 records the exact role workspace and local E0.1 t
   const inApp = read('manuales.html');
 
   for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark, inApp]) {
-    assert.match(source, /1\.8\.0-rc\.1/);
+    assert.match(source, /1\.8\.0(?![-+0-9A-Za-z.])/);
     assert.match(source, /inicio\.html/);
     assert.match(source, /siete roles|siete variantes|siete inicios/i);
     assert.match(source, /(?:sin cuentas|no (?:se )?crea(?:ron)? (?:una )?(?:cuenta|cuentas|usuarios|identidades)|no aprovisiona cuentas|no prueba cuentas|no declara cuentas)/i);
@@ -350,12 +350,12 @@ test('documentation 1.8.0-rc.1 records the exact role workspace and local E0.1 t
   }
 });
 
-test('release candidate 1.8.0-rc.1 records WP0-L, IAM-MAP-01 and UX-E2A as local-only closures', () => {
+test('stable release 1.8.0 records bounded preview evidence without claiming DB, accounts or production', () => {
   const rootManifest = JSON.parse(read('package.json'));
   const rootLock = JSON.parse(read('package-lock.json'));
   const backendManifest = JSON.parse(read('backend/package.json'));
   assert.equal(rootManifest.name, 'municipio-junin');
-  assert.equal(rootManifest.version, '1.8.0-rc.1');
+  assert.equal(rootManifest.version, '1.8.0');
   assert.equal(rootManifest.private, true);
   assert.equal(rootLock.name, rootManifest.name);
   assert.equal(rootLock.version, rootManifest.version);
@@ -376,20 +376,31 @@ test('release candidate 1.8.0-rc.1 records WP0-L, IAM-MAP-01 and UX-E2A as local
   ].map(read);
 
   for (const source of sources) {
-    assert.match(source, /1\.8\.0-rc\.1/);
+    assert.match(source, /1\.8\.0(?![-+0-9A-Za-z.])/);
     assert.match(source, /WP0-L/);
     assert.match(source, /IAM-MAP-01/);
     assert.match(source, /UX-E2A/);
+    assert.match(source, /fa5dcc5/);
+    assert.match(source, /\/dashboard/);
+    assert.match(source, /\/inicio/);
+    assert.match(source, /\/manuales/);
+    assert.match(source, /única[\s\S]{0,100}inyección[\s\S]{0,100}Vercel Live/i,
+      'the known root-page injection must remain explicit');
+    assert.match(source, /cinco[\s\S]{0,180}401/i,
+      'the five unauthenticated API boundaries must remain explicit');
+    assert.match(source, /contr(?:ato|actual)[\s\S]{0,120}(?:específic[oa][\s\S]{0,40}ruta|por ruta)/i,
+      'route-specific contract identity must remain explicit');
     assert.match(source, /(?:no|todav[ií]a no|a[uú]n no)[^\r\n]{0,160}conectad/i,
       'WP0-L must not be represented as a connected observation');
     assert.match(source, /(?:no persiste|sin persistencia)/i,
       'IAM-MAP-01 must not imply persisted users');
     assert.match(source, /(?:no crea|sin)[^\r\n]{0,120}(?:usuarios|identidades|cuentas)/i,
-      'the candidate must not claim user creation');
+      'the release must not claim user creation');
     assert.match(source, /(?:no concede|sin autoridad)/i,
       'UX-E2A must not imply client-side authorization');
-    assert.match(source, /(?:sin|no hubo|no certifica|no demuestra)[\s\S]{0,100}(?:preview|deployment|producci[oó]n)/i,
-      'the candidate must remain local-only');
+    assert.match(source, /master/);
+    assert.match(source, /(?:no certifica|no acredita|no demuestra|certificación)[\s\S]{0,120}producci[oó]n|certificación productiva/i,
+      'the protected preview must not be promoted as production certification');
   }
 
   const prismaRunbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
@@ -590,7 +601,7 @@ test('unsafe legacy on-prem executables stay retired behind an explicit document
 
 test('the in-app manual exposes a semantic version and its truth contract separately', () => {
   const source = read('manuales.html');
-  assert.match(source, /data-doc-version="1\.8\.0-rc\.1"/);
+  assert.match(source, /data-doc-version="1\.8\.0"/);
   assert.match(source, /data-doc-contract="operational-truth-v1"/);
   assert.match(source, /data-primary-source="grh"/);
   assert.match(source, /data-secondary-source-policy="personas-excluded"/);

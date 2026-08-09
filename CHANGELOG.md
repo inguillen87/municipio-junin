@@ -14,9 +14,10 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 - Ejecutar WP0 conectado sobre una copia restaurada descartable y autorizada.
 - Diseñar, migrar y probar la persistencia IAM antes de crear identidades.
-- Construir y certificar un preview del commit exacto antes de promoverlo.
+- Integrar el commit promovido en `master`, certificar producción con el gate
+  anónimo y registrar deployment ID, commit y smokes externos.
 
-## [1.8.0-rc.1] - 2026-08-09
+## [1.8.0] - 2026-08-09
 
 ### Agregado
 
@@ -38,16 +39,21 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Estado verificable
 
-- Este candidato está cerrado y validado únicamente en el checkout local.
+- El preview protegido del commit `fa5dcc5` fue verificado manualmente: las
+  rutas `/dashboard`, `/inicio` y `/manuales` devolvieron HTML 200 con su huella
+  canónica exacta. `/` mostró el acceso institucional esperado, con una única
+  inyección conocida de Vercel Live que impidió igualdad byte a byte.
+- Las cinco fronteras API respondieron 401 sin sesión y conservaron su identidad
+  contractual específica por ruta.
 - WP0-L **no se ejecutó conectado** contra una copia restaurada autorizada y no
   constituye baseline, migración, approval ni autorización de DDL.
 - IAM-MAP-01 no importa Prisma Client, no persiste y no crea usuarios, sesiones,
   invitaciones o credenciales.
 - UX-E2A organiza la experiencia visual; un enlace visible no concede acceso y
   toda autorización continúa siendo server-side.
-- No hubo preview, deployment ni certificación productiva de este candidato. El
-  destino público observado continúa fuera del alcance de esta versión hasta que
-  `release:truth:check` termine con código `0` y existan smokes externos.
+- La verificación protegida acredita routing, contenido estático y rechazo sin
+  sesión; no acredita `release:truth:check` anónimo verde, merge a `master`,
+  producción, DB conectada, materialización GRH ni cuentas reales.
 
-[Unreleased]: https://github.com/inguillen87/municipio-junin/compare/v1.8.0-rc.1...HEAD
-[1.8.0-rc.1]: https://github.com/inguillen87/municipio-junin/compare/3ae026e7a2774d57856ac71f8ee52a15e9e6f5cb...v1.8.0-rc.1
+[Unreleased]: https://github.com/inguillen87/municipio-junin/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/inguillen87/municipio-junin/compare/3ae026e7a2774d57856ac71f8ee52a15e9e6f5cb...v1.8.0

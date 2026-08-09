@@ -1,6 +1,6 @@
 # Recorridos por rol y demostración segura — MuniControl
 
-**Versión:** 1.8.0-rc.1
+**Versión:** 1.8.0
 **Fecha de corte:** 9 de agosto de 2026  
 **Estado:** workspace y shell institucional por siete roles validados localmente; RBAC/ABAC fino, DB conectada y ciclo de invitaciones permanecen como propuesta/roadmap sin migración
 
@@ -154,6 +154,14 @@ smokes_denegados:
 evidencia_cross_tenant:
 revocacion_final:
 ```
+
+La verificación manual disponible de `fa5dcc5` es más estrecha que ese registro:
+en el preview protegido, `/dashboard`, `/inicio` y `/manuales` coincidieron con
+su huella canónica; `/` mostró el acceso con una única inyección conocida de
+Vercel Live; y las cinco fronteras API rechazaron la ausencia de sesión con 401
+y contrato específico por ruta. No hubo identidades, tenant demo, autorización
+positiva, datos GRH ni prueba cross-tenant; por eso no se presenta como demo por
+rol ni como certificación de producción.
 
 ### 7.3 Ciclo de cuenta objetivo
 
@@ -325,6 +333,8 @@ su mapper puro en
 Este manual no puede declarar implementado algo que esas fuentes y sus pruebas
 no demuestren.
 
-Cambio 1.8.0-rc.1: registra IAM-MAP-01 y UX-E2A sólo como capacidades locales y
-mantiene explícito que WP0-L no fue conectado, no existen usuarios persistidos y
-no hubo preview, deployment ni certificación productiva.
+Cambio 1.8.0: registra IAM-MAP-01 y UX-E2A y la evidencia acotada del preview
+protegido `fa5dcc5`. Mantiene explícito que WP0-L no fue conectado, no existen
+usuarios persistidos ni cuentas reales, la inyección conocida de Vercel Live
+impidió igualdad byte a byte de `/`, y no hubo merge a `master`, demo por rol ni
+certificación productiva.

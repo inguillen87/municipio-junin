@@ -1,6 +1,6 @@
 # Roadmap de producto enterprise — MuniControl
 
-Versión: 1.8.0-rc.1
+Versión: 1.8.0
 Fecha de corte: 9 de agosto de 2026  
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 
@@ -84,8 +84,8 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | `profile` + `grh-semantic-v2` | Validado localmente como fuente backend; v2 agrega participantes distintos por año sin exportar claves | Materializar en DB privada y hacer smoke remoto |
 | `grh-executive-v2` y `grh-quality-v1` | Endpoints exactos y cinco UIs migrados localmente | Repetir captura de red y privacidad adversarial en preview |
 | `grh-close-v1` | Cierre mensual explicado local: componentes/control, conciliación por período y comparación consecutiva k≥10, sin PII/labels/codes | Materializar bundle y hacer smokes de Hacienda por rol/tenant en preview |
-| Centro de Calidad y Linaje GRH | Consumidor migrado localmente a `grh-quality-v1` | Preview autenticado, captura de red y smoke por tenant/rol |
-| Panel y Centro Ejecutivo GRH | Consumidores migrados localmente a `grh-executive-v2` + `grh-quality-v1` | Preview autenticado, prueba por tenant/rol y certificación remota |
+| Centro de Calidad y Linaje GRH | Consumidor migrado localmente a `grh-quality-v1`; frontera remota observada en 401 sin sesión | Captura de red autenticada y smoke por tenant/rol con artefactos privados |
+| Panel y Centro Ejecutivo GRH | Consumidores migrados localmente a `grh-executive-v2` + `grh-quality-v1`; frontera remota observada en 401 sin sesión | Prueba por tenant/rol, datos materializados y certificación remota |
 | RRHH y Hacienda | Consumidores locales sobre proyecciones seguras; Hacienda retiró el P1 global-como-mensual | Repetir smokes por rol/tenant y certificar ambos en preview |
 | Bot, Reportes y PDF | Consumidores server-side; Bot suma “Cierre explicado” sobre `grh-close-v1` y Reportes mantiene proyección portable k=10 | Materializar el par y hacer smokes por tenant/rol |
 | Frontera HTTP raw | Cerrada localmente: `/api/grh-data` responde 410 después de auth/tenant, sin leer artefactos | Verificar 401/403/410 y cero referencias UI en preview |
@@ -93,7 +93,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política `2026-08-09.1`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
 | WP0-L: observación de copia restaurada | Recolector read-only y fail-closed implementado y validado localmente; todavía no se ejecutó conectado | Autorizar y restaurar una copia descartable, ejecutar la observación y revisar evidencia externa; no es baseline ni migración |
 | IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Resolver drift de esquema, aprobar baseline/migración y construir el adaptador transaccional antes de aprovisionar identidades |
-| UX-E2A: shell institucional | Shell compartido validado localmente en las 29 páginas raíz con navegación; accesibilidad desktop/móvil/impresión y proyección visual por capabilities | Certificar el candidato exacto en preview; la UI no concede autorización |
+| UX-E2A: shell institucional | Shell compartido validado localmente; el preview protegido `fa5dcc5` verificó manualmente las rutas canónicas | Completar gate anónimo y pruebas por rol; la UI no concede autorización |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Storage privado, antivirus y auditoría persistente |
 | PDF/TXT/JSON y bases externas | Parcial o planificado | Contratos de parser/conector, cuotas y sandbox |
 | Mapas operativos en tiempo real | No conectado | Fuente geográfica autorizada, PostGIS y SLA |
@@ -103,7 +103,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Backups propios | Diseñado, no certificado | Storage, retención y restore ensayado |
 | Techo exacto `recurso:acción` | Implementado localmente: 26 recursos, 12 acciones, 46 permisos y 78 firmas de ruta (36 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; gate baseline/release y expiración TRIAL implementados, sin migración | Baseline conectado, migración, policy engine, lifecycle de cuentas y matriz aprobada |
-| Login institucional | Sobrio, autocontenido y accesible localmente; 10/10 focal, sin demos ni claims | Desplegar sólo dentro del candidato certificado |
+| Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/` se verificó en preview protegido con una única inyección conocida de Vercel Live | Obtener huella anónima exacta y certificar producción; no implica cuentas reales |
 | Producción remota | Destino observado legacy y no certificado | Exigir `release:truth:check` exit 0, URL, deployment ID, commit y smokes antes de describir su estado |
 
 El gate E0.1 del workspace también está cerrado localmente: `/inicio` debe
@@ -111,7 +111,8 @@ reescribirse exactamente a `/inicio.html`, responder sin redirects y coincidir
 con el SHA-256 canónico de una única captura UTF-8/LF de `inicio.html`. Rechaza la
 topología anterior hacia `index.html`, archivos ambiguos y comment spoof antes
 de promover. El focal fue 31/31 y el consolidado workspace + release truth,
-45/45; no demuestra que el candidato exista en remoto.
+45/45. El preview protegido posterior aporta evidencia manual remota acotada,
+pero no sustituye el gate anónimo ni demuestra producción.
 
 ## Arquitectura de roles objetivo
 
@@ -459,9 +460,11 @@ Cada sprint que cambie una capacidad debe actualizar, en la misma revisión:
 Una función sin documentación operativa, responsable y procedimiento de falla no
 está terminada, aunque su interfaz se vea completa.
 
-Cambio 1.8.0-rc.1: registra el cierre local de WP0-L, IAM-MAP-01 y UX-E2A. WP0-L
+Cambio 1.8.0: registra el cierre local de WP0-L, IAM-MAP-01 y UX-E2A, más la
+verificación manual del preview protegido `fa5dcc5`: `/dashboard`, `/inicio` y
+`/manuales` con huella canónica exacta; `/` con una única inyección conocida de
+Vercel Live; cinco fronteras API en 401 con contrato específico por ruta. WP0-L
 no se ejecutó conectado; el mapper IAM no persiste ni crea usuarios; el shell no
-concede autorización. Conserva UX-E1A, `grh-close-v1`, O2A.1 y la verdad de
-release. El público sigue legacy/no certificado hasta `release:truth:check` exit
-0. No declara DB conectada, baseline, migración, cuentas, preview, deployment ni
-certificación productiva.
+concede autorización. El público sigue legacy/no certificado hasta
+`release:truth:check` exit 0. No declara DB conectada, baseline, migración,
+cuentas, datos remotos, merge a `master` ni certificación productiva.

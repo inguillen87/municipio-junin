@@ -1,8 +1,8 @@
 # Manual integral y gobierno documental — MuniControl
 
-Versión documental: 1.8.0-rc.1
+Versión documental: 1.8.0
 Fecha de corte: 9 de agosto de 2026  
-Estado: validado sobre el checkout local; no certifica producción
+Estado: checkout validado y preview protegido verificado de forma acotada; no certifica producción
 
 ## Cómo usar este paquete
 
@@ -123,7 +123,8 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   Roles o perfiles desconocidos, capabilities ausentes y versiones obsoletas
   fallan cerrados. La matriz local de siete roles en 390/1440 px cerró 42/42.
 - Este inicio por rol es UX y proyección de política; no crea identidades, no
-  habilita el modelo RBAC/ABAC propuesto y no prueba DB, preview ni producción.
+  habilita el modelo RBAC/ABAC propuesto y no prueba DB ni producción. El preview
+  protegido sólo observó rutas públicas y rechazos 401 sin cuentas.
 - WP0-L y IAM-MAP-01 están cerrados como herramientas puras del checkout local.
   WP0-L todavía no fue ejecutado conectado contra una copia restaurada autorizada;
   el mapper IAM no importa Prisma Client, no persiste y no crea usuarios.
@@ -140,12 +141,18 @@ licitaciones, capacitación y futuras entregas a otros municipios.
 - E0.1 incorpora localmente `/inicio` al gate: exige el rewrite exacto a
   `/inicio.html`, una captura UTF-8/LF con SHA-256, HTML 200 sin redirects y
   digest remoto idéntico. El focal cerró 31/31 y el consolidado con workspace,
-  45/45. Esto detecta drift y spoof; no demuestra que el destino ya fue
-  desplegado.
+  45/45. El preview protegido `fa5dcc5` verificó manualmente `/dashboard`,
+  `/inicio` y `/manuales` con huella exacta; `/` mostró el acceso esperado con
+  una única inyección conocida de Vercel Live. Esto no sustituye el gate anónimo
+  ni demuestra producción.
+- Las cinco fronteras API del mismo preview respondieron 401 sin sesión con su
+  contrato específico por ruta. No se probaron cuentas, tenant, artefactos GRH,
+  DB conectada ni autorización positiva.
 - El acceso local usa una portada institucional sobria, autocontenida,
   responsive, navegable por teclado y compatible con movimiento reducido. No
   publica identidades demo, accesos rápidos ni claims de capacidades ausentes.
-  Esta mejora de login tampoco está desplegada ni certificada remotamente.
+  Esta portada fue observada en preview protegido, pero no está certificada en
+  producción y no demuestra identidades reales.
 
 ## Paquete de capacitación por audiencia
 
@@ -278,7 +285,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
-| 1.8.0-rc.1 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A cerrados sólo en local: observador DB aún no conectado, mapper puro sin persistencia/usuarios y shell institucional sin autoridad propia; sin preview, deployment ni certificación productiva |
+| 1.8.0 | 2026-08-09 | Registra WP0-L, IAM-MAP-01 y UX-E2A; preview protegido `fa5dcc5` verificado manualmente en rutas canónicas y cinco rechazos API 401. La única diferencia conocida de `/` fue una inyección de Vercel Live; sin DB, cuentas reales, merge a `master` ni certificación productiva |
 | 1.7.0 | 2026-08-09 | Incorpora el inicio seguro por siete roles con capabilities calculadas en servidor, default `inicio.html`, `SUPER_ADMIN` sin tenant sin GRH y Panel ejecutivo separado; 42/42 local, sin cuentas, DB ni deployment |
 | 1.6.0 | 2026-08-09 | Incorpora `grh-close-v1` en Hacienda y el Bot “Cierre explicado”, retira la atribución mensual falsa de una conciliación global, registra el bundle inmutable O2A.1 y el login institucional local; el público sigue legacy/no certificado |
 | 1.5.0 | 2026-08-09 | Registra el replay real local O2A del snapshot canónico, promoción + duplicado idempotente y LKG estable; separa O2B conectado/programado sin declarar DB, cron, backup o deployment |

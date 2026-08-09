@@ -270,7 +270,7 @@
   </style>
 </head>
 <body
-  data-doc-version="1.8.0-rc.1"
+  data-doc-version="1.8.0"
   data-doc-contract="operational-truth-v1"
   data-primary-source="grh"
   data-secondary-source-policy="personas-excluded"
@@ -456,7 +456,7 @@
           <p class="section-intro">El acceso se realiza con credenciales institucionales emitidas por el administrador. Esta documentación no publica usuarios ni contraseñas de ejemplo.</p>
 
           <div class="steps">
-            <article class="step"><div><h3>Iniciar sesión</h3><p>Usá <code>login.html</code>. El destino seguro es <code>inicio.html</code>: valida <code>/api/auth/me</code>, muestra el recorrido del rol y no consulta GRH ni otro dataset. La portada local no publica usuarios demo ni claims y todavía no está desplegada ni certificada.</p></div></article>
+            <article class="step"><div><h3>Iniciar sesión</h3><p>Usá <code>login.html</code>. El destino seguro es <code>inicio.html</code>: valida <code>/api/auth/me</code>, muestra el recorrido del rol y no consulta GRH ni otro dataset. La portada no publica usuarios demo ni claims; el preview protegido sólo verificó el rechazo sin sesión y no certifica cuentas ni producción.</p></div></article>
             <article class="step"><div><h3>Entrar sólo a lo autorizado</h3><p>Las priorities de Inicio son una intersección de las capabilities calculadas en servidor. Si no aparece un módulo, no fuerces su URL ni modifiques el storage; un enlace visible tampoco reemplaza la autorización del endpoint.</p></div></article>
             <article class="step"><div><h3>Interpretar la respuesta</h3><p><code>401</code> indica que la identidad no es válida o dejó de estar activa; <code>403</code>, que el rol o tenant no autoriza la acción; <code>503</code>, que falta una fuente o configuración necesaria.</p></div></article>
             <article class="step"><div><h3>No eludir el cierre</h3><p>Si una pantalla queda sin datos, no cargues cifras manuales en el navegador ni uses una copia demo. Corregí el contrato, el tenant o la materialización server-side.</p></div></article>
@@ -529,7 +529,7 @@
             <article class="card"><span class="tag blocked">Gate</span><h3>Baseline y drift</h3><p>Identificar la DB, restaurar una copia, conciliar schema e historia, pinear el receipt externo y probar rollback antes de ejecutar cualquier migración o crear cuentas por rol.</p></article>
             <article class="card"><span class="tag">Datos</span><h3>Materialización privada</h3><p>Publicar el snapshot para el tenant real y repetir el cierre local: cinco UIs sin referencias raw, consumidores server-side portables y <code>/api/grh-data</code> en 401/403/410 sin lectura.</p></article>
             <article class="card"><span class="tag">Pipeline O2A</span><h3>Evidencia local, no servicio conectado</h3><p>Conservar promoción, duplicado, last-known-good y receipts sin PII. El ledger local no está firmado y no acredita autenticidad del host, corte de energía, ACL, backup, cron ni deployment.</p></article>
-            <article class="card"><span class="tag blocked">Release</span><h3>Público legacy, no certificado</h3><p>El destino público observado no representa este checkout. No mostrarlo como producto actual hasta que el candidato exacto obtenga <code>release:truth:check</code> exit 0 y smokes externos registrados.</p></article>
+            <article class="card"><span class="tag blocked">Release</span><h3>Preview acotado; público legacy no certificado</h3><p>El preview protegido <code>fa5dcc5</code> verificó manualmente routing, huellas estáticas y cinco rechazos API 401. El destino público observado sigue sin representar esta versión; requiere <code>release:truth:check</code> exit 0 y smokes externos.</p></article>
             <article class="card"><span class="tag">Aislamiento</span><h3>Tenant real</h3><p>Configurar los identificadores de tenant de GRH y analítica legacy con IDs existentes, nunca con slugs inventados ni valores compartidos.</p></article>
             <article class="card"><span class="tag">Prueba</span><h3>Validación proporcional</h3><p>Ejecutar pruebas de contrato, autorización, escritorio, móvil, impresión y estados 401/403/503 antes de declarar una superficie operativa.</p></article>
             <article class="card"><span class="tag blocked">Pendiente</span><h3>Conexión continua y recuperación</h3><p>Definir CDC o lotes, cifrado, observabilidad, retención, backups propios y restauraciones ensayadas antes de prometer tiempo real.</p></article>
@@ -547,7 +547,7 @@
         <section id="documentacion">
           <p class="section-kicker">12 · Gobierno documental</p>
           <h2>Un manual que crece con el producto</h2>
-          <p class="section-intro">Versión 1.8.0-rc.1 · 9 de agosto de 2026. Registra como cierre exclusivamente local WP0-L, IAM-MAP-01 y UX-E2A: el observador read-only todavía no fue ejecutado conectado contra una copia restaurada autorizada; el mapper IAM es puro, no persiste y no crea usuarios; el shell institucional organiza la navegación pero no concede autorización. Conserva el acceso institucional con Inicio seguro, <code>grh-close-v1</code>, O2A.1 y el gate de verdad. El gate local E0.1 valida el rewrite y digest exactos de <code>/inicio</code>; 31/31 focal y 45/45 consolidado. O2B continúa pendiente y el público sigue legacy/no certificado. No declara DB conectada, baseline, migración, cuentas, preview, deployment ni certificación productiva. La documentación técnica completa se entrega dentro de <code>docs/</code> en el repositorio y no forma parte del bundle público de producción.</p>
+          <p class="section-intro">Versión 1.8.0 · 9 de agosto de 2026. Registra WP0-L, IAM-MAP-01, UX-E2A y el acceso institucional: el observador read-only todavía no fue ejecutado conectado contra una copia restaurada autorizada; el mapper IAM es puro, no persiste y no crea usuarios; el shell institucional organiza la navegación pero no concede autorización. El gate local E0.1 conserva 31/31 focal y 45/45 consolidado. El preview protegido del commit <code>fa5dcc5</code> fue verificado manualmente: <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> devolvieron HTML 200 con huella canónica exacta; <code>/</code> mostró el acceso esperado con una única inyección conocida de Vercel Live; las cinco fronteras API respondieron 401 sin sesión y con contrato específico por ruta. Esto no declara DB conectada, baseline, migración, cuentas reales, datos GRH remotos, merge a <code>master</code> ni certificación productiva. La documentación técnica completa se entrega dentro de <code>docs/</code> en el repositorio y no forma parte del bundle público de producción.</p>
           <ul class="truth-list">
             <li>Cada feature debe actualizar comportamiento, procedimiento, seguridad, estado de capacidad y pruebas documentales en el mismo cambio.</li>
             <li>Las funciones se clasifican como operativas, condicionadas al entorno o roadmap. No se promociona una capacidad por existir sólo en código local.</li>
@@ -556,7 +556,7 @@
           </ul>
         </section>
 
-        <p class="footer-note">Manual vivo v1.8.0-rc.1. Es un candidato validado sólo en local, no una certificación de preview o producción. Debe actualizarse cuando cambien una feature, el contrato semántico, la política de privacidad, la fuente autoritativa, los procedimientos o las capacidades realmente desplegadas.</p>
+        <p class="footer-note">Manual vivo v1.8.0. Incluye evidencia manual acotada de un preview protegido; no certifica el gate anónimo, cuentas reales, datos conectados ni producción. Debe actualizarse cuando cambien una feature, el contrato semántico, la política de privacidad, la fuente autoritativa, los procedimientos o las capacidades realmente desplegadas.</p>
       </div>
     </div>
   </main>

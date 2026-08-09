@@ -1,6 +1,6 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.8.0-rc.1.
+Versión documental: 1.8.0.
 Fecha de corte: 9 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
@@ -16,6 +16,14 @@ El deployment público observado el 9 de agosto de 2026 no corresponde al
 checkout actual: conserva `MuniDB`, claims de tiempo real/origen oficial, un
 manual anterior y no expone correctamente las cinco fronteras GRH vigentes. Por
 eso E0 está bloqueado y esa URL no debe mostrarse como producto actual.
+
+Separado de ese destino público, el preview protegido del commit `fa5dcc5` fue
+verificado manualmente. `/dashboard`, `/inicio` y `/manuales` devolvieron HTML
+200 con huella canónica exacta; `/` mostró el acceso institucional esperado con
+una única inyección conocida de Vercel Live, por lo que no tuvo igualdad byte a
+byte. Las cinco fronteras API devolvieron 401 sin sesión y conservaron su
+identidad contractual específica por ruta. Esta evidencia no equivale a un gate
+anónimo verde ni a producción.
 
 `scripts/check-deployment-truth.mjs` convierte la diferencia en un gate GET-only
 y fail-closed. Compara las huellas canónicas de portada de acceso, panel
@@ -297,7 +305,8 @@ El procedimiento de DB está en
 
 ### S9 — Privacidad de agregados y proyecciones seguras
 
-Estado: **cerrado localmente; no desplegado ni certificado**.
+Estado: **cerrado localmente; frontera 401 observada en preview protegido, sin
+datos ni certificación productiva**.
 
 - `grh-semantic-v2` incorpora cardinalidad anual distinta sin exportar claves;
 - `grh-executive-v2` aplica k=5 a rankings laborales interactivos y k=10 a
@@ -312,12 +321,14 @@ Estado: **cerrado localmente; no desplegado ni certificado**.
 - `/api/grh-data` autentica, verifica tenant y devuelve
   `410 GRH_RAW_CONTRACT_RETIRED` sin leer artefactos.
 
-Este sprint está cerrado en el checkout local, incluido el E2E de Hacienda. No
-certifica preview, staging ni producción.
+Este sprint está cerrado en el checkout local, incluido el E2E de Hacienda. El
+preview protegido sólo confirmó rechazo 401 sin sesión; no certifica datos,
+staging ni producción.
 
 ### S10 — Cierre mensual explicado y verdad de conciliación
 
-Estado: **cerrado localmente; no desplegado ni certificado**.
+Estado: **cerrado localmente; frontera 401 observada en preview protegido, sin
+sesión real, datos ni certificación productiva**.
 
 - `grh-close-v1` une control de cálculo y conciliación por el mismo período;
 - compara sólo meses calendario consecutivos cuando ambos alcanzan k≥10;
@@ -335,7 +346,8 @@ smokes remotos siguen separados.
 
 ### S11 — Inicio seguro por rol
 
-Estado: **cerrado en código y pruebas locales; no desplegado ni certificado**.
+Estado: **cerrado en código y pruebas locales; rutas canónicas verificadas en
+preview protegido, sin cuentas ni certificación productiva**.
 
 - `inicio.html` es el destino seguro después del login y exige
   `navigation.workspace`;
@@ -360,14 +372,17 @@ Estado: **cerrado en código y pruebas locales; no desplegado ni certificado**.
   topología vieja hacia `index.html`, redirects y comment spoof; su focal cerró
   31/31 y el consolidado workspace + release truth, 45/45 local.
 
-Este sprint no crea cuentas, no aplica la propuesta RBAC/ABAC, no migra una DB y
-no demuestra un preview o producción. Las asignaciones finas, invitaciones, MFA,
-revocación, SoD y auditoría persistida continúan como propuesta/roadmap.
+Este sprint no crea cuentas, no aplica la propuesta RBAC/ABAC y no migra una DB.
+El preview protegido posterior sólo demuestra routing, contenido estático y
+rechazo API sin sesión; no demuestra identidades por rol, datos conectados ni
+producción. Las asignaciones finas, invitaciones, MFA, revocación, SoD y auditoría
+persistida continúan como propuesta/roadmap.
 
 ### S12 — Preintegración segura y shell institucional
 
-Estado: **cerrado y validado únicamente en el checkout local; integración y
-evidencia remota pendientes**.
+Estado: **cerrado localmente y verificado en preview protegido sólo para routing,
+contenido estático y rechazo API sin sesión; integración de datos y producción
+pendientes**.
 
 - **WP0-L** agrega un recolector fail-closed y read-only para observar catálogos
   y `_prisma_migrations` en una futura copia restaurada descartable. Valida
@@ -385,9 +400,12 @@ evidencia remota pendientes**.
   recibidas, pero un enlace visible no concede autorización: toda API protegida
   conserva la autorización server-side definida por el contrato de su ruta.
 
-Este cierre local no demuestra una plataforma completa ni productiva. No se
-conectó, migró o escribió una DB, no se crearon identidades, y no hubo preview,
-deployment ni certificación remota de `1.8.0-rc.1`.
+Este cierre no demuestra una plataforma completa ni productiva. No se conectó,
+migró o escribió una DB y no se crearon identidades. El preview protegido del
+commit `fa5dcc5` verificó manualmente `/dashboard`, `/inicio` y `/manuales` con
+huella exacta, `/` con una única inyección conocida de Vercel Live y las cinco
+fronteras API en 401 con contrato específico por ruta; no verificó cuentas,
+datos municipales, merge a `master` ni producción de `1.8.0`.
 
 ## Funciones que no deben “completarse” todavía
 
@@ -444,9 +462,10 @@ Una función sólo pasa a “completa” cuando cumple simultáneamente:
 Hasta cumplir los puntos 7 y 8, el estado correcto es **validado localmente**, no
 “en producción”.
 
-Cambio documental 1.7.0: registra el inicio seguro por siete roles, capabilities
-calculadas en servidor, destino local fail-closed y separación del Panel
-ejecutivo GRH. Conserva `grh-close-v1`, O2A.1 y el gate de verdad del release.
-El destino público sigue legacy/no certificado hasta `release:truth:check` exit
-0. No declara cuentas por rol, RBAC/ABAC persistido, extracción diaria, DB,
-backup, API remota, deployment ni certificación productiva.
+Cambio documental 1.8.0: registra WP0-L, IAM-MAP-01 y UX-E2A, más la evidencia
+manual del preview protegido `fa5dcc5`. Esa evidencia verifica routing, huellas
+de `/dashboard`, `/inicio` y `/manuales`, el acceso `/` con una única inyección
+conocida de Vercel Live y cinco rechazos API 401 contractuales. El destino
+público sigue legacy/no certificado hasta `release:truth:check` exit 0. No
+declara cuentas por rol, RBAC/ABAC persistido, extracción diaria, DB, backup,
+datos remotos, merge a `master` ni certificación productiva.

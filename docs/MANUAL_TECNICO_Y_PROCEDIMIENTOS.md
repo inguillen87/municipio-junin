@@ -65,7 +65,8 @@ Reglas de verdad:
 ### 2.1 Runtime primario: Serverless
 
 - `vercel.json` publica el frontend estático y las funciones `api/**/*.js`.
-- `/` se reescribe a `/login.html`; `/inicio`, a `/inicio.html`; y
+- `/` se reescribe al clean URL `/login`, respaldado por `login.html`; `/inicio`,
+  a `/inicio.html`; y
   `cleanUrls` resuelve `/dashboard` desde `dashboard.html`, sin rewrite propio ni
   `index.html`. El gate local E0.1 exige esa topología exacta; no prueba que ya
   esté publicada.

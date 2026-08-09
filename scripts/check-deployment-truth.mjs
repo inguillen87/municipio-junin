@@ -240,7 +240,7 @@ function assertCanonicalVercelRouting(source) {
     throw localReleaseContractError();
   }
   for (const [sourcePath, destination] of [
-    ['/', '/login.html'],
+    ['/', '/login'],
     ['/inicio', '/inicio.html'],
   ]) {
     const matches = config.rewrites.filter((rewrite) => rewrite?.source === sourcePath);

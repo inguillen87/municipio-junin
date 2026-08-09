@@ -51,7 +51,7 @@ const CURRENT_MANUAL = `<!doctype html>
 const VALID_VERCEL_CONFIG = JSON.stringify({
   cleanUrls: true,
   rewrites: [
-    { source: '/', destination: '/login.html' },
+    { source: '/', destination: '/login' },
     { source: '/inicio', destination: '/inicio.html' },
   ],
 }, null, 2);
@@ -541,7 +541,7 @@ test('local Vercel contract rejects clean URL, entry/workspace drift or a dashbo
     JSON.stringify({
       cleanUrls: false,
       rewrites: [
-        { source: '/', destination: '/login.html' },
+        { source: '/', destination: '/login' },
         { source: '/inicio', destination: '/inicio.html' },
       ],
     }),
@@ -555,6 +555,13 @@ test('local Vercel contract rejects clean URL, entry/workspace drift or a dashbo
       cleanUrls: true,
       rewrites: [
         { source: '/', destination: '/login.html' },
+        { source: '/inicio', destination: '/inicio.html' },
+      ],
+    }),
+    JSON.stringify({
+      cleanUrls: true,
+      rewrites: [
+        { source: '/', destination: '/login' },
         { source: '/dashboard', destination: '/index.html' },
         { source: '/inicio', destination: '/inicio.html' },
       ],
@@ -562,7 +569,7 @@ test('local Vercel contract rejects clean URL, entry/workspace drift or a dashbo
     JSON.stringify({
       cleanUrls: true,
       rewrites: [
-        { source: '/', destination: '/login.html' },
+        { source: '/', destination: '/login' },
         { source: '/dashboard', destination: '/dashboard.html' },
         { source: '/inicio', destination: '/inicio.html' },
       ],
@@ -570,20 +577,20 @@ test('local Vercel contract rejects clean URL, entry/workspace drift or a dashbo
     JSON.stringify({
       cleanUrls: true,
       rewrites: [
-        { source: '/', destination: '/login.html', statusCode: 200 },
+        { source: '/', destination: '/login', statusCode: 200 },
         { source: '/inicio', destination: '/inicio.html' },
       ],
     }),
     JSON.stringify({
       cleanUrls: true,
       rewrites: [
-        { source: '/', destination: '/login.html' },
+        { source: '/', destination: '/login' },
       ],
     }),
     JSON.stringify({
       cleanUrls: true,
       rewrites: [
-        { source: '/', destination: '/login.html' },
+        { source: '/', destination: '/login' },
         { source: '/inicio', destination: '/index.html' },
       ],
     }),

@@ -144,7 +144,7 @@ test('the living documentation package exists and distinguishes local, condition
   }
 
   for (const relativePath of [
-    'index.html',
+    'dashboard.html',
     'grh-ejecutivo.html',
     'control.html',
     'rrhh.html',

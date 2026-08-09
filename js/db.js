@@ -187,7 +187,7 @@
     disabled.disabled = true;
     disabled.setAttribute('aria-disabled', 'true');
     const link = appendText(actions, 'a', 'retired-module-link', config.destinationLabel || 'Volver al tablero ejecutivo');
-    link.href = config.destination || 'index.html';
+    link.href = config.destination || 'dashboard.html';
     sourceCard.appendChild(actions);
     grid.appendChild(sourceCard);
 

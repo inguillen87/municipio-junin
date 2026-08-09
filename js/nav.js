@@ -221,7 +221,7 @@ window.requireRole = function(allowedRoles) {
 // NAV ITEMS
 var NAV_ITEMS = [
   { id:'workspace',     href:'inicio.html',         icon:'home',   label:'Inicio',                section:'PRINCIPAL',     capability:'navigation.workspace' },
-  { id:'dashboard',     href:'index.html',          icon:'chart',  label:'Panel ejecutivo',       section:'PRINCIPAL',     capability:'navigation.dashboard' },
+  { id:'dashboard',     href:'dashboard.html',      icon:'chart',  label:'Panel ejecutivo',       section:'PRINCIPAL',     capability:'navigation.dashboard' },
   { id:'reportes',      href:'reportes.html',       icon:'doc',    label:'Reportes ejecutivos',   section:'PRINCIPAL',     capability:'navigation.reports' },
   { id:'hacienda',      href:'hacienda.html',       icon:'bank',   label:'Hacienda',              section:'GESTIÓN',       capability:'navigation.hacienda' },
   { id:'grh-ejecutivo', href:'grh-ejecutivo.html', icon:'people', label:'Centro Ejecutivo GRH', section:'GESTIÓN',       capability:'navigation.grh-executive' },

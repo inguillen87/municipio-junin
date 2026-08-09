@@ -28,7 +28,7 @@ const pages = [
 ];
 const privateNavCatalog = [
   ['inicio.html', 'navigation.workspace'],
-  ['index.html', 'navigation.dashboard'],
+  ['dashboard.html', 'navigation.dashboard'],
   ['reportes.html', 'navigation.reports'],
   ['hacienda.html', 'navigation.hacienda'],
   ['grh-ejecutivo.html', 'navigation.grh-executive'],
@@ -56,7 +56,7 @@ const retiredNavHrefs = [
 ];
 const bottomCatalog = [
   ['inicio.html', 'navigation.workspace'],
-  ['index.html', 'navigation.dashboard'],
+  ['dashboard.html', 'navigation.dashboard'],
   ['reportes.html', 'navigation.reports'],
   ['hacienda.html', 'navigation.hacienda'],
   ['grh-ejecutivo.html', 'navigation.grh-executive'],
@@ -140,7 +140,9 @@ async function createServer(options = {}) {
       return;
     }
 
-    const relative = decodeURIComponent(url.pathname.slice(1) || 'manuales.html');
+    const relative = decodeURIComponent(
+      url.pathname === '/dashboard' ? 'dashboard.html' : (url.pathname.slice(1) || 'manuales.html'),
+    );
     const target = path.resolve(root, relative);
     if (!target.startsWith(`${root}${path.sep}`)) {
       response.writeHead(403).end();
@@ -480,6 +482,31 @@ test('public 404 never mounts an authenticated bottom bar or inert Más control'
   t.after(async () => context.close());
   await page.goto(`${baseUrl}/404.html`, { waitUntil: 'load' });
   assert.equal(await page.locator('[data-muni-shell="primary-nav"], .bottom-nav, #menuBtn').count(), 0);
+  const dashboardHref = await page.getByRole('link', { name: /Ir al Dashboard/i }).getAttribute('href');
+  assert.equal(dashboardHref, '/dashboard');
+  assert.equal(new URL(dashboardHref, `${baseUrl}/foo/bar`).pathname, '/dashboard');
+  assert.equal(new URL(await page.locator('link[rel="stylesheet"]').getAttribute('href'), `${baseUrl}/foo/bar`).pathname, '/css/dashboard.css');
+  assert.equal(new URL(await page.locator('link[rel="icon"]').getAttribute('href'), `${baseUrl}/foo/bar`).pathname, '/favicon.ico');
+  assert.equal(new URL(await page.locator('script[src]').getAttribute('src'), `${baseUrl}/foo/bar`).pathname, '/js/theme-switcher.js');
+});
+
+test('clean dashboard URL keeps the physical bottom-nav link active', async t => {
+  const server = await createServer({ authRole: 'INTENDENTE' });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const { context, page } = await newPage(browser, { width: 390, height: 844 });
+  t.after(async () => context.close());
+  await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => window.MuniAuthReady);
+  const dashboardItem = page.locator('.bottom-nav a[href="dashboard.html"]');
+  await dashboardItem.waitFor();
+  assert.equal(await dashboardItem.getAttribute('aria-current'), 'page');
+  assert.equal(await dashboardItem.evaluate(element => element.classList.contains('active')), true);
 });
 
 test('institutional shell is local, AA-readable and motion-safe at focal viewports', async t => {

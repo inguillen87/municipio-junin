@@ -67,7 +67,7 @@ const EXPECTED_HOME_VARIANTS = {
 
 const EXPECTED_NAV_HREFS = [
   'inicio.html',
-  'index.html',
+  'dashboard.html',
   'reportes.html',
   'hacienda.html',
   'grh-ejecutivo.html',

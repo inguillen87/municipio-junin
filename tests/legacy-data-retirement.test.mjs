@@ -101,7 +101,7 @@ test('Control graduated from the legacy gate to the governed GRH quality surface
 
 test('every migrated GRH browser experience avoids the retired raw HTTP contract', () => {
   const governedExperienceFiles = [
-    'index.html',
+    'dashboard.html',
     'grh-ejecutivo.html',
     'control.html',
     'rrhh.html',
@@ -115,7 +115,7 @@ test('every migrated GRH browser experience avoids the retired raw HTTP contract
 });
 
 test('every remaining db.js HTML load is either a migrated gate or an explicitly owned exclusion', () => {
-  const exclusionsOwnedByOtherSprints = new Set(['index.html', 'ia-hf.html']);
+  const exclusionsOwnedByOtherSprints = new Set(['dashboard.html', 'ia-hf.html']);
   const htmlFiles = fs.readdirSync(root).filter((name) => name.endsWith('.html'));
 
   for (const page of htmlFiles) {

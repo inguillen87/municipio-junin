@@ -22,10 +22,16 @@
     }
     if (document.querySelector('.bottom-nav')) return;
 
-  var CURRENT_PAGE = location.pathname.split('/').pop() || 'inicio.html';
+  function pageKey(value) {
+    var parts = String(value || '').split('/');
+    var page = parts[parts.length - 1] || 'inicio.html';
+    return page.toLowerCase().replace(/\.html$/, '');
+  }
+
+  var CURRENT_PAGE = pageKey(location.pathname);
   var CATALOG = Object.freeze({
     'navigation.workspace': { icon: 'home', label: 'Inicio', href: 'inicio.html' },
-    'navigation.dashboard': { icon: 'chart', label: 'Panel', href: 'index.html' },
+    'navigation.dashboard': { icon: 'chart', label: 'Panel', href: 'dashboard.html' },
     'navigation.reports': { icon: 'doc', label: 'Reportes', href: 'reportes.html' },
     'navigation.hacienda': { icon: 'bank', label: 'Hacienda', href: 'hacienda.html' },
     'navigation.grh-executive': { icon: 'people', label: 'GRH', href: 'grh-ejecutivo.html' },
@@ -68,7 +74,7 @@
   nav.setAttribute('data-muni-shell', 'bottom-nav');
   nav.setAttribute('aria-label', 'Accesos prioritarios del perfil');
   nav.innerHTML = items.map(function(item) {
-    var active = CURRENT_PAGE === item.href;
+    var active = CURRENT_PAGE === pageKey(item.href);
     return '<a class="bottom-nav-item' + (active ? ' active' : '') + '" ' +
       'href="' + item.href + '" aria-label="' + item.label + '"' +
       (active ? ' aria-current="page"' : '') + '>' +

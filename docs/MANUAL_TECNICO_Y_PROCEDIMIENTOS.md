@@ -66,8 +66,9 @@ Reglas de verdad:
 
 - `vercel.json` publica el frontend estático y las funciones `api/**/*.js`.
 - `/` se reescribe a `/login.html`; `/inicio`, a `/inicio.html`; y
-  `/dashboard`, a `/index.html`. El gate local E0.1 exige esa topología exacta;
-  no prueba que ya esté publicada.
+  `cleanUrls` resuelve `/dashboard` desde `dashboard.html`, sin rewrite propio ni
+  `index.html`. El gate local E0.1 exige esa topología exacta; no prueba que ya
+  esté publicada.
 - El código Serverless usa `api/lib/db.js`, que importa el cliente Prisma raíz.
 - Las APIs protegidas verifican JWT y vuelven a consultar usuario, rol, tenant y
   estado actual en PostgreSQL. El frontend no autoriza operaciones.
@@ -115,7 +116,7 @@ la política del rol y las capabilities contextuales; siempre incluye
 `navigation.workspace`. `inicio.html` espera la respuesta autoritativa de
 `/api/auth/me`, falla cerrado ante versión, rol, capability o perfil desconocido
 y renderiza sólo prioridades permitidas. Esa portada no llama endpoints GRH ni
-otros datasets; el Panel ejecutivo GRH vive por separado en `index.html`.
+otros datasets; el Panel ejecutivo GRH vive por separado en `dashboard.html`.
 
 Para un `SUPER_ADMIN` sin tenant, `getSessionAccessForUser` reduce el resultado
 a `session.read`, `navigation.workspace` y `navigation.help`; su prioridad queda
@@ -843,7 +844,7 @@ Antes de certificar el preview, ejecutar sin sesión, cookie ni token:
 npm.cmd run release:truth:check -- --base-url https://preview-approved.example
 ```
 
-El gate captura `login.html`, `index.html`, `inicio.html` y `manuales.html`
+El gate captura `login.html`, `dashboard.html`, `inicio.html` y `manuales.html`
 locales, valida la versión del manual y compara sus huellas SHA-256 canónicas con
 `/`, `/dashboard`, `/inicio` y `/manuales`. Para el workspace abre una sola vez
 el archivo regular, exige UTF-8 fatal, canonicaliza LF y fija

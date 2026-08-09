@@ -84,7 +84,7 @@ municipio y los contratos privados publicados.
 | Capacidad | Uso actual | Límite obligatorio |
 |---|---|---|
 | [Inicio seguro](../inicio.html) | Orienta el recorrido de los siete roles técnicos vigentes con capabilities calculadas en servidor | Consulta sólo `/api/auth/me`; no carga GRH, no crea permisos/cuentas y no certifica despliegue |
-| [Panel Ejecutivo GRH](../index.html) | Panorama transversal desde `grh-executive-v2` + `grh-quality-v1`; incorpora lectura de `grh-close-v1` | Superficie privada separada; no certifica despliegue, pago ni tiempo real |
+| [Panel Ejecutivo GRH](../dashboard.html) | Panorama transversal desde `grh-executive-v2` + `grh-quality-v1`; incorpora lectura de `grh-close-v1` | Superficie privada separada; no certifica despliegue, pago ni tiempo real |
 | [Centro Ejecutivo GRH](../grh-ejecutivo.html) | Estructura, control de cálculo y eventos desde proyecciones seguras | Consumidor migrado localmente; sin fichas individuales ni PII |
 | [Centro Ejecutivo RRHH](../rrhh.html) | Participación y eventos anuales desde proyecciones seguras | Consumidor migrado localmente; un evento no equivale a una persona ni a una tasa |
 | [Hacienda y Nómina](../hacienda.html) | Cierre mensual explicado: componentes de cálculo, controles y conciliación real por período desde importes protegidos | `grh-close-v1` local; sólo compara meses calendario consecutivos si ambos alcanzan k≥10; no certifica pago, presupuesto, causalidad, contabilidad ni deployment |
@@ -273,7 +273,7 @@ reutilizando permisos más amplios.
 
 ### 6.1 Lectura diaria responsable
 
-1. Desde [Inicio seguro](../inicio.html), abra el [Panel Ejecutivo GRH](../index.html).
+1. Desde [Inicio seguro](../inicio.html), abra el [Panel Ejecutivo GRH](../dashboard.html).
 2. Lea primero el estado de fuente, la fecha de corte y el período de referencia.
 3. Verifique que la pantalla declare `grh-executive-v2` o `grh-quality-v1`, según
    corresponda. Ninguna de las cinco vistas ejecutivas debe solicitar

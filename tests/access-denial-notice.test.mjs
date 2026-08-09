@@ -8,7 +8,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NOTICE_KEY = 'mjunin_access_notice';
 const NOTICE_TEXT = 'El perfil actual no tiene habilitada la superficie solicitada.';
 const CONSUMERS = [
-  'index.html',
+  'dashboard.html',
   'grh-ejecutivo.html',
   'js/rrhh.js',
   'js/grh-control.js',

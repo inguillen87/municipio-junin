@@ -88,7 +88,7 @@ explícita con un rol vigente, están en **Roadmap** y no deben aprovisionarse t
 | Superficie | Fuente o estado actual | Lectura/acción que puede demostrarse | Frontera vigente |
 |---|---|---|---|
 | [`inicio.html`](../inicio.html) | Sesión autoritativa, sin dataset | Portada, recorrido y prioridades para los siete roles vigentes | Requiere `navigation.workspace`; hace una lectura de `/api/auth/me`, cero requests GRH y falla cerrado |
-| [`index.html`](../index.html) | GRH privado, snapshot | Panel Ejecutivo GRH, resumen agregado, cierre del último mes sobre `grh-close-v1` y alertas de calidad | Superficie separada; requiere sesión, `navigation.dashboard`, tenant y contratos GRH válidos |
+| [`dashboard.html`](../dashboard.html) | GRH privado, snapshot | Panel Ejecutivo GRH, resumen agregado, cierre del último mes sobre `grh-close-v1` y alertas de calidad | Superficie separada; requiere sesión, `navigation.dashboard`, tenant y contratos GRH válidos |
 | [`grh-ejecutivo.html`](../grh-ejecutivo.html) | GRH privado, snapshot | Serie de control, conciliación y sectores | No moneda declarada; cálculo no equivale a pago |
 | [`rrhh.html`](../rrhh.html) | GRH privado, snapshot | Dotación participante, ausencias, movimientos y calidad | Sin fichas individuales ni PII cruda |
 | [`hacienda.html`](../hacienda.html) | Control de cálculo GRH | Bruto, retenciones, neto y conciliación interna | No acredita banco, presupuesto o asiento |

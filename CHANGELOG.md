@@ -10,9 +10,50 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Agregado
+
+- **S14A — contrato local WP0-L v2:**
+  `wp0_restored_copy_observation` distingue `absent`, `empty`, `inconsistent` y
+  `valid`. Los tres primeros estados producen `discovery_non_approvable`; `valid`
+  produce `strict`; todos conservan `approvalEligible:false` y no habilitan un
+  baseline, una migración o una cuenta.
+- El catálogo ampliado se ordena de forma canónica y persiste
+  `definitionSha256`, no definiciones SQL crudas. Aplica límites fail-closed, sin
+  truncado, de 20.000 filas, 1 KiB por campo distinto de la definición, 256 KiB
+  por definición y 4 MiB acumulados.
+
+### Seguridad
+
+- La auditoría runtime de configuración utilizó fingerprints no reversibles y no
+  expuso URLs ni credenciales. Preview y Production resolvieron al mismo destino
+  lógico: `DB_CONFIG_ISOLATION=FAIL`. La configuración observada dio
+  `DB_CONFIG_SSLMODE_VERIFY_FULL=false`; fue parseo de configuración, no una
+  conexión PostgreSQL ni un handshake TLS.
+- El inventario accesible no permitió vincular inequívocamente ese destino con un
+  proyecto y branch Neon: `NEON_MAPPING=UNKNOWN`. No se ejecutó WP0-L conectado,
+  no se inspeccionó una copia restaurada real y no existe autorización DDL.
+
+### Estado verificable
+
+- S14A cierra únicamente el contrato v2 local con fixtures y adapters inyectados.
+  No declara PostgreSQL conectado, DB municipal observada, backup, restore,
+  baseline, drift aprobado, aislamiento de entornos ni TLS verificado.
+- La revalidación local S14A con `npm.cmd run test:all` cerró 611 pruebas raíz:
+  610 aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Estos
+  conteos pertenecen al incremento `Unreleased` y no reemplazan la evidencia
+  histórica 591/590 de `v1.10.0`.
+- S14A no modifica ni recertifica el release público `v1.10.0`: se conserva su
+  evidencia vigente de 11/11 dentro del alcance público ya registrado. Este
+  incremento permanece `Unreleased`, sin bump de paquete, tag ni GitHub Release.
+  `v1.11.0` queda reservado para S14B conectado, sujeto a aislamiento real entre
+  Preview y Production, `sslmode=verify-full`, mapping inequívoco de proveedor,
+  proyecto y branch, y WP0 sobre un restore descartable autorizado.
+
 ### Pendiente
 
-- Ejecutar WP0 conectado sobre una copia restaurada descartable y autorizada.
+- Ejecutar S14B/WP0 conectado sobre una copia restaurada descartable y autorizada
+  sólo después de corregir y volver a verificar el aislamiento, TLS y mapping del
+  destino.
 - Diseñar, migrar y probar la persistencia IAM antes de crear identidades.
 - Implementar y probar el lifecycle gobernado antes de entregar cuentas por rol.
 

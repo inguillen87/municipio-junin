@@ -1,8 +1,8 @@
 # Procedimiento de baseline y drift Prisma
 
-**Versi\u00f3n:** 1.1.0
+**Versi\u00f3n:** 1.2.0
 **Fecha de corte:** 9 de agosto de 2026
-**Estado:** WP0-L implementado y validado localmente; ejecución conectada, baseline real y atestación de release pendientes
+**Estado:** WP0-L implementado y validado localmente (contrato v2 con fixtures); ejecución conectada pendiente; baseline real y atestación de release pendientes
 **Alcance:** esquema core Prisma y futura migraci\u00f3n RBAC/ABAC
 
 ## 1. Decisi\u00f3n operativa
@@ -37,6 +37,9 @@ la base siga sin drift ni autoriza DDL. Por eso `--release` termina siempre con
 - Los SQL de `database/migrations/` y `migrations/` no forman una historia Prisma
   compatible. Hay nombres de tablas que colisionan con estructuras diferentes.
 - No se inspeccion\u00f3 ni modific\u00f3 ninguna base remota en este sprint.
+- El contrato de observaci\u00f3n v2 y sus consultas allowlisted s\u00f3lo se probaron con
+  adapters sint\u00e9ticos. Todav\u00eda no existe evidencia de compatibilidad din\u00e1mica
+  contra una versi\u00f3n PostgreSQL restaurada real.
 - `npm.cmd run db:baseline:status` debe finalizar con c\u00f3digo 1 y
   `MIGRATIONS_MISSING`. Ese rojo es intencional.
 
@@ -132,6 +135,29 @@ el checkout debe estar limpio y sin flags `assume-unchanged` o `skip-worktree`.
 Estas comprobaciones son obligatorias y no
 convierten una DB productiva en una copia segura.
 
+El contrato v2 exige PostgreSQL 12 o posterior. Verifica primero la identidad y
+`server_version_num`; si la versi\u00f3n es menor, hace rollback antes de consultar
+reloj, transporte, rol, inventario o historia. Este orden s\u00f3lo est\u00e1 cubierto por
+fixtures en este sprint: todav\u00eda falta la prueba din\u00e1mica sobre un PostgreSQL
+restaurado real.
+
+El contrato v2 fija `prisma/schema.prisma` leyendo sus bytes directamente desde
+el blob del commit verificado y registra `schemaSha256`; no hashea el archivo
+mutable del working tree. La sesi\u00f3n debe usar una identidad dedicada sin
+`SUPERUSER`, `CREATEDB`, `CREATEROLE`, `REPLICATION`, `BYPASSRLS`, membres\u00edas
+de ning\u00fan tipo, permisos de creaci\u00f3n o `TEMP`, DML de tabla o columna, secuencias,
+ejecuci\u00f3n de rutinas ni lectura total o parcial de relaciones de negocio. Si
+existe `_prisma_migrations`, s\u00f3lo admite `SELECT` sobre esa tabla. `NOINHERIT` no
+convierte una membres\u00eda en segura: `SET ROLE` puede volver alcanzable un rol
+predefinido `pg_*` u otro rol otorgado, por lo que `role_membership_count` debe
+ser exactamente cero. Un rol m\u00e1s poderoso bloquea la observaci\u00f3n.
+
+Tambi\u00e9n compara el reloj PostgreSQL con el reloj del observador, con un skew
+m\u00e1ximo de cinco minutos, y consulta `pg_stat_ssl` para registrar protocolo,
+cipher y bits negociados. Esa metadata no prueba la cadena de certificados ni
+que el hostname sea un endpoint directo del proveedor; ambos siguen pendientes
+de atestaci\u00f3n externa.
+
 Primero validar configuraci\u00f3n, sin conexi\u00f3n ni escritura:
 
 ```powershell
@@ -150,7 +176,26 @@ S\u00f3lo despu\u00e9s, y sobre la copia autorizada, repetir los mismos argument
 `--connected`. Ese modo abre una transacci\u00f3n `REPEATABLE READ READ ONLY`, verifica
 `transaction_read_only=on` y consulta \u00fanicamente cat\u00e1logos PostgreSQL y
 `_prisma_migrations`. No lee filas de negocio, no ejecuta DDL/DML, no sobrescribe
-el output y hace rollback ante cualquier inconsistencia.
+el output y hace rollback ante fallos de consulta, identidad, transporte,
+privilegios o seguridad de sesi\u00f3n. Los estados sem\u00e1nticos `absent`, `empty` e
+`inconsistent` de la historia Prisma se conservan en un artefacto de
+descubrimiento `discovery_non_approvable`; no se disfrazan como error de
+conectividad ni pueden habilitar el baseline. S\u00f3lo `valid` produce colecci\u00f3n
+`strict`, que aun as\u00ed sigue siendo observaci\u00f3n y no aprobaci\u00f3n.
+
+Para que la historia sea `valid`, `_prisma_migrations` debe ser exactamente una
+tabla ordinaria permanente con las ocho columnas Prisma esperadas, incluyendo
+tipos, nulabilidad, identidad/generaci\u00f3n y defaults can\u00f3nicos (`0` y `now()`), y
+una \u00fanica primary key sobre `id`. Cada `id` debe ser UUID can\u00f3nico y no puede
+repetirse; tampoco pueden repetirse nombres de migraci\u00f3n. Una firma, default,
+PK, UUID o fila incompatible degrada el estado a `inconsistent` y lo mantiene no
+aprobable; una relaci\u00f3n cuya firma no coincide ni siquiera se consulta como
+historia Prisma.
+La consulta de filas usa columnas tipadas, no una proyecci\u00f3n `to_jsonb`, y
+normaliza timestamps PostgreSQL equivalentes (por ejemplo `+00:00`) a ISO `Z`.
+Aplica `LIMIT 10001` para detectar overflow y admite como m\u00e1ximo 10.000 filas,
+1 KiB por campo y 4 MiB acumulados antes de ordenar. Los mismos l\u00edmites se
+reaplican al snapshot can\u00f3nico que llega al sink.
 
 ```powershell
 npm.cmd run db:baseline:inspect -- --connected `
@@ -163,18 +208,56 @@ npm.cmd run db:baseline:inspect -- --connected `
   --reviewer reviewer:<id-2>
 ```
 
-El output contiene inventario can\u00f3nico, digests, commit y referencias opacas de
-backup/restore y de exactamente dos revisores. Es una **observaci\u00f3n**, nunca un
+El output contiene inventario can\u00f3nico, digests, commit, `schemaSha256`, estado
+de historia, seguridad del rol, reloj y metadata TLS. El inventario incluye
+schemas, relaciones, columnas y defaults, tipos y enums, constraints, \u00edndices,
+vistas, rutinas, extensiones, ACL/grants de schema/relaci\u00f3n/columna/tipo/rutina,
+default ACL, policies, triggers, secuencias y particiones.
+
+Las definiciones SQL, defaults, vistas, funciones y triggers se usan en memoria
+s\u00f3lo para calcular `definitionSha256`; nunca se persiste el texto crudo en las
+filas del artefacto. Antes de ordenar o serializar se aplican l\u00edmites cerrados:
+20.000 filas de cat\u00e1logo, 1 KiB por nombre, 256 KiB por definici\u00f3n cruda y 4 MiB
+acumulados. La rama `partition` incluye s\u00f3lo particiones declarativas con
+`child.relispartition`; la herencia cl\u00e1sica de `pg_inherits` se registra por
+separado como `ordinary_inheritance` y nunca se presenta como particionado.
+PostgreSQL calcula primero ese budget con `octet_length`; si cualquier l\u00edmite
+falla, devuelve un \u00fanico sentinel acotado y no transporta definitions crudas.
+La salida normal queda adem\u00e1s acotada por `LIMIT 20001`; el orden can\u00f3nico se
+aplica en memoria s\u00f3lo despu\u00e9s de validar el budget.
+
+El sink acepta exclusivamente el schema v2 exacto, vuelve a calcular los
+digests de cat\u00e1logo, historia e inventario y el `observationId`, exige todos los
+flags de evidencia y aprobaci\u00f3n en `false`, y congela recursivamente el snapshot
+validado. Un objeto arbitrario o un artefacto que autoafirme receipt, firma o
+aprobaci\u00f3n no se escribe aunque recalcule su ID. El presupuesto total del JSON
+de observaci\u00f3n es 10 MiB y se controla antes y despu\u00e9s de canonicalizar.
+El sink vuelve a medir la serializaci\u00f3n pretty exacta, incluido el newline final,
+antes de validar o abrir la ruta; un payload compacto que se expanda sobre el
+l\u00edmite tampoco crea archivo.
+
+Las referencias opacas de backup/restore y los dos IDs de revisores son entradas
+del operador **no verificadas**. No existe todav\u00eda firma del proveedor, hash de
+backup, v\u00ednculo criptogr\u00e1fico backup->restore ni prueba real de separaci\u00f3n de
+funciones. El artefacto marca esas limitaciones y siempre mantiene
+`approvalEligible:false`. Es una **observaci\u00f3n**, nunca un
 approval, manifest, migraci\u00f3n, autorizaci\u00f3n DDL ni receipt de release. Debe quedar
 fuera del checkout, en una ruta absoluta privada, nueva y sin symlinks/junctions.
+La ruta se canonicaliza y se revalidan `realpath` e identidad `dev/ino` del
+directorio padre, adem\u00e1s de archivo y handle, durante la
+apertura exclusiva y despu\u00e9s de escribir; en POSIX el modo exigido es `0600`.
+En Windows este recolector no atesta la DACL efectiva: esa limitaci\u00f3n y
+`WINDOWS_DACL_NOT_ATTESTED` permanecen en toda observaci\u00f3n y deben cerrarse con
+evidencia externa antes de cualquier uso institucional.
 El directorio `scripts/` ya est\u00e1 excluido del bundle Vercel; este flujo tampoco
 debe ejecutarse como Function o job de producci\u00f3n.
 
 1. Congelar commit, digest del schema, target l\u00f3gico y ventana.
 2. Crear backup privado y registrar identificador, RPO, tama\u00f1o y custodio.
 3. Restaurar el backup en un branch o PostgreSQL descartable.
-4. Inventariar schemas, tablas, columnas, enums, constraints, \u00edndices, vistas,
-   funciones, extensiones, owners y grants.
+4. Inventariar schemas, relaciones, columnas/defaults, tipos/enums, constraints,
+   \u00edndices, vistas, rutinas, extensiones, ACL/grants, policies, triggers,
+   secuencias, particiones y owners.
 5. Inventariar `_prisma_migrations` y calcular un digest can\u00f3nico.
 6. Ejecutar introspecci\u00f3n a stdout o a un artefacto privado, sin sobrescribir el
    schema activo:
@@ -321,6 +404,19 @@ cubren:
 - receipt vencido;
 - revisores duplicados;
 - modo expl\u00edcito obligatorio.
+
+Las pruebas de
+[`../tests/prisma-baseline-observation.test.mjs`](../tests/prisma-baseline-observation.test.mjs)
+cubren el contrato v2: allowlist read-only, hash del schema desde el blob Git,
+checkout limpio, identidad persistente del restore, rol least-privilege,
+rechazo de membres\u00edas incluso con `NOINHERIT`, gate PostgreSQL 12+, reloj/skew,
+TLS negociado, inventario ampliado con definitions hasheadas y l\u00edmites duplicados,
+firma f\u00edsica/PK/UUID Prisma, RLS fail-closed, particiones declarativas, sink v2
+contra artefactos forjados y Proxy din\u00e1mico, timestamps con offset, herencia
+ordinaria separada, caps de historia/artefacto, budget/sentinel SQL, frontera
+pretty, output exclusivo y estados `valid`, `absent`, `empty` e `inconsistent`.
+Son fixtures con adapter inyectado; no certifican PostgreSQL,
+proveedor, DACL Windows, backup, restore ni drift reales.
 
 Los fixtures prueban la l\u00f3gica del gate. No son evidencia de una DB municipal,
 un backup real ni un restore real.

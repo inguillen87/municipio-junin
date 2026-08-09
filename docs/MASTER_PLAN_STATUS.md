@@ -489,9 +489,41 @@ snapshot aprobado**.
 
 La evidencia local disponible es focal raíz S13 135/135, QA adversarial 104/104
 con 0 P1/P2, suite raíz final de 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke
-opt-in omitido— y backend 20/20. Backend permanece `1.0.0`; Prisma, `1.1.0`. El
+opt-in omitido— y backend 20/20. Backend permanece `1.0.0`; el runbook Prisma,
+`1.2.0`. El
 cierre remoto vigente es `v1.10.0`; no certifica sesión positiva, DB/baseline,
 cuentas, MFA/lifecycle ni datos GRH remotos.
+
+### S14A — WP0-L v2 y aislamiento de configuración
+
+Estado: **contrato local cerrado; ejecución conectada pendiente y aislamiento de
+configuración en NO-GO**.
+
+- `wp0_restored_copy_observation` v2 conserva los estados `absent`, `empty`,
+  `inconsistent` y `valid`. Los tres primeros usan
+  `discovery_non_approvable`; `valid` usa `strict`; ninguno cambia
+  `approvalEligible:false` ni autoriza baseline, DDL o aprovisionamiento.
+- El catálogo ampliado se ordena canónicamente y guarda `definitionSha256` en
+  lugar de SQL crudo. Sus límites fail-closed —sin truncado— son 20.000 filas,
+  1 KiB por campo distinto de la definición, 256 KiB por definición y 4 MiB
+  acumulados.
+- La evidencia de S14A proviene de fixtures y adapters locales. No se abrió una
+  conexión PostgreSQL, no se observó una copia restaurada real y no se probó la
+  compatibilidad dinámica con PostgreSQL o Neon.
+- La revalidación local S14A mediante `npm.cmd run test:all` cerró 611 pruebas
+  raíz —610 aprobadas, 0 fallidas y 1 smoke opt-in omitido— y backend 20/20.
+  Este conteo corresponde al incremento `Unreleased`; no sustituye la evidencia
+  histórica 591/590 del release público `v1.10.0`.
+- La auditoría runtime de configuración usó fingerprints no reversibles, sin
+  exponer URLs ni credenciales. Preview y Production resolvieron al mismo destino
+  lógico: `DB_CONFIG_ISOLATION=FAIL`. La configuración observada resultó
+  `DB_CONFIG_SSLMODE_VERIFY_FULL=false`; no hubo conexión ni handshake TLS. El
+  vínculo con un proyecto y branch Neon permanece `NEON_MAPPING=UNKNOWN`.
+- La evidencia pública vigente de `v1.10.0` permanece 11/11 en su alcance
+  público; S14A no la modifica ni la recertifica. El incremento queda
+  `Unreleased`, sin bump de paquete o tag. `v1.11.0` se reserva para S14B
+  conectado después de corregir aislamiento/TLS, resolver el mapping y ejecutar
+  WP0 sobre un restore descartable autorizado.
 
 ## Funciones que no deben “completarse” todavía
 

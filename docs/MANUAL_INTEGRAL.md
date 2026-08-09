@@ -185,8 +185,24 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   no crea cuentas y no consulta APIs, DB, storage, PII o datos municipales. Está
   incluido en el gate productivo 10/10 exit `0` del artefacto `b82c0b3`.
 - WP0-L y IAM-MAP-01 están cerrados como herramientas puras del checkout local.
-  WP0-L todavía no fue ejecutado conectado contra una copia restaurada autorizada;
-  el mapper IAM no importa Prisma Client, no persiste y no crea usuarios.
+  S14A lleva `wp0_restored_copy_observation` a v2: `absent`, `empty` e
+  `inconsistent` son `discovery_non_approvable`; `valid` es `strict`; todos
+  mantienen `approvalEligible:false`. El catálogo canónico guarda
+  `definitionSha256` y aplica caps fail-closed de 20.000 filas, 1 KiB por campo
+  no-definition, 256 KiB por definición y 4 MiB acumulados. Sólo se validó con
+  fixtures/adapters; WP0-L todavía no fue ejecutado conectado contra una copia
+  restaurada autorizada. El mapper IAM no importa Prisma Client, no persiste y no
+  crea usuarios.
+- La auditoría runtime de configuración no expuso URLs ni credenciales y registró
+  el mismo destino lógico para Preview y Production:
+  `DB_CONFIG_ISOLATION=FAIL`. La configuración observada dio
+  `DB_CONFIG_SSLMODE_VERIFY_FULL=false` y el proyecto/branch Neon permanece
+  `NEON_MAPPING=UNKNOWN`. No hubo conexión PostgreSQL, handshake TLS ni
+  observación de una DB restaurada real.
+- S14A queda `Unreleased`: no modifica ni recertifica `v1.10.0`, cuya evidencia
+  pública vigente permanece 11/11 dentro de su alcance; no cambia paquete, tag o
+  GitHub Release. `v1.11.0` queda reservado para S14B conectado después de
+  corregir aislamiento/TLS, resolver el mapping y ejecutar un restore autorizado.
 - UX-E2A unifica el shell institucional en las 29 páginas raíz que cargan
   navegación. Sus estados desktop, móvil, accesible e imprimible son experiencia
   local; la visibilidad de un enlace no concede permisos ni certifica deployment.
@@ -348,6 +364,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| Unreleased · S14A | 2026-08-09 | Contrato local WP0-L v2 con estados de historia explícitos, catálogo hasheado/acotado y `approvalEligible:false`; auditoría de configuración `DB_CONFIG_ISOLATION=FAIL`, `DB_CONFIG_SSLMODE_VERIFY_FULL=false`, `NEON_MAPPING=UNKNOWN`; sin conexión PostgreSQL, DB restaurada, bump, tag o release; `v1.11.0` reservado para S14B conectado; la evidencia pública 11/11 de `v1.10.0` no se modifica ni recertifica |
 | 1.10.0 | 2026-08-09 | Release público: producto `d11fd39`, commit/tag `4108ca0`, deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY`, gate 11/11, browser 10/10 y GitHub Release live; focal 135/135, QA 104/104, raíz 590 aprobadas + 1 opt-in omitido y backend 20/20; sesión positiva y datos GRH privados siguen en validación local; registro post-release sin mover el tag |
 | 1.9.0 | 2026-08-09 | Release público: commit/tag `f9d1f88`, product commit `ed76347`, deployment `dpl_Euk4csdfWw5rayohoW3xXo1vXayY` `Ready` en `Production`, gate 10/10 exit `0`, browser público 390/1440 px y GitHub Release live; MuniGuía privada sólo local; raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20; registro post-release sin mover el tag |
 | 1.8.1 | 2026-08-09 | Publica `/roles` como tour visual `public-role-tour-v1`; artefacto `b82c0b3` en `master`/tag, deployment `Ready`, gate productivo 10/10 exit `0`, browser 390/1440 px limpio y GitHub Release live; no acredita DB, cuentas, autorización positiva ni datos remotos |

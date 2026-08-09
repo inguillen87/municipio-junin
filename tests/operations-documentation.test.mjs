@@ -447,7 +447,86 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(backendManifest.version, '1.0.0');
   assert.match(
     read('docs/PRISMA_BASELINE_Y_DRIFT.md'),
-    /\*\*Vers(?:ión|i\\u00f3n):\*\* 1\.1\.0/
+    /\*\*Vers(?:ión|i\\u00f3n):\*\* 1\.2\.0/
+  );
+});
+
+test('S14A closes WP0-L v2 locally and records the DB configuration NO-GO without releasing 1.11.0', () => {
+  const closurePaths = [
+    'CHANGELOG.md',
+    'docs/MASTER_PLAN_STATUS.md',
+    'docs/ENTERPRISE_PRODUCT_ROADMAP.md',
+    'docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md',
+    'docs/MANUAL_INTEGRAL.md',
+  ];
+
+  for (const relativePath of closurePaths) {
+    const source = read(relativePath);
+    assert.match(source, /S14A/, `${relativePath} must identify the local sprint`);
+    assert.match(source, /(?:contrato[^\r\n]{0,80}v2|wp0_restored_copy_observation[^\r\n]{0,40}v2)/i,
+      `${relativePath} must identify observation contract v2`);
+    for (const state of ['absent', 'empty', 'inconsistent', 'valid']) {
+      assert.match(source, new RegExp(`\\b${state}\\b`), `${relativePath} must preserve ${state}`);
+    }
+    assert.match(source, /discovery_non_approvable/);
+    assert.match(source, /approvalEligible:false/);
+    assert.match(source, /DB_CONFIG_ISOLATION=FAIL/);
+    assert.match(source, /DB_CONFIG_SSLMODE_VERIFY_FULL=false/);
+    assert.match(source, /NEON_MAPPING=UNKNOWN/);
+    assert.match(source, /\b(?:no|sin)[\s\S]{0,120}conexi[oó]n PostgreSQL/i,
+      `${relativePath} must not promote configuration inspection to a DB connection`);
+    assert.match(source, /v1\.10\.0/);
+    assert.match(source, /11\/11/);
+    assert.match(source, /v1\.11\.0/);
+    assert.match(source, /S14B/);
+  }
+
+  const runbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
+  assert.match(runbook, /\*\*Versi\\u00f3n:\*\* 1\.2\.0/);
+  for (const state of ['absent', 'empty', 'inconsistent', 'valid']) {
+    assert.match(runbook, new RegExp(`\\b${state}\\b`));
+  }
+  assert.match(runbook, /discovery_non_approvable/);
+  assert.match(runbook, /approvalEligible:false/);
+  assert.match(runbook, /definitionSha256/);
+  assert.match(runbook, /20\.000 filas[\s\S]{0,100}1 KiB[\s\S]{0,100}256 KiB[\s\S]{0,100}4 MiB/i);
+  assert.match(runbook, /no se inspeccion(?:ó|\\u00f3) ni modific(?:ó|\\u00f3) ninguna base remota/i);
+
+  const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
+  assert.doesNotMatch(technical, /rollback ante cualquier inconsistencia/i);
+  assert.match(
+    technical,
+    /`valid`[\s\S]{0,80}`absent`[\s\S]{0,40}`empty`[\s\S]{0,40}`inconsistent`[\s\S]{0,80}`COMMIT`/
+  );
+  assert.match(
+    technical,
+    /`ROLLBACK` s[oó]lo ante un fallo o una violaci[oó]n[\s\S]{0,100}no por el estado sem[aá]ntico no aprobable/i
+  );
+
+  for (const relativePath of ['CHANGELOG.md', 'docs/MASTER_PLAN_STATUS.md']) {
+    const source = read(relativePath);
+    assert.match(
+      source,
+      /revalidaci[oó]n local S14A[\s\S]{0,160}611 pruebas[\s\S]{0,80}610 aprobadas[\s\S]{0,60}0 fallidas[\s\S]{0,100}1 smoke opt-in omitido[\s\S]{0,100}backend(?: cerr[oó])? 20\/20/i,
+      `${relativePath} must pin the final S14A QA evidence`
+    );
+    assert.match(source, /no (?:reemplaz(?:a|an)|sustituye)[\s\S]{0,80}hist[oó]rica 591\/590[\s\S]{0,80}v1\.10\.0/i,
+      `${relativePath} must preserve the historical v1.10.0 counts`);
+  }
+
+  const rootManifest = JSON.parse(read('package.json'));
+  const rootLock = JSON.parse(read('package-lock.json'));
+  const backendManifest = JSON.parse(read('backend/package.json'));
+  assert.equal(rootManifest.version, '1.10.0');
+  assert.equal(rootLock.version, '1.10.0');
+  assert.equal(rootLock.packages[''].version, '1.10.0');
+  assert.equal(backendManifest.version, '1.0.0');
+  assert.doesNotMatch(read('CHANGELOG.md'), /^## \[1\.11\.0\]/m);
+
+  const roadmap = read('docs/ENTERPRISE_PRODUCT_ROADMAP.md');
+  assert.match(
+    roadmap,
+    /evidencia\s+productiva vigente de `v1\.10\.0`[\s\S]{0,200}commit\/tag `4108ca0`[\s\S]{0,100}producto `d11fd39`/i
   );
 });
 
@@ -604,7 +683,7 @@ test('release 1.10.0 preserves the exact public 1.9.0 and 1.8.1 evidence', () =>
   }
 
   const prismaRunbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
-  assert.match(prismaRunbook, /\*\*Versi\\u00f3n:\*\* 1\.1\.0/);
+  assert.match(prismaRunbook, /\*\*Versi\\u00f3n:\*\* 1\.2\.0/);
   assert.match(prismaRunbook, /WP0-L implementado y validado localmente/);
   assert.match(prismaRunbook, /ejecución conectada[\s\S]{0,100}pendiente/i);
 });

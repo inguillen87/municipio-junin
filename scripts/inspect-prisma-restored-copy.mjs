@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { execFile as execFileCallback } from 'node:child_process';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -70,6 +71,8 @@ const HELP = `Uso local y read-only:
 
 WP0_DATABASE_URL es la unica fuente permitida para la URL PostgreSQL.
 --check-config no abre conexiones ni escribe. --connected debe ser explicito.
+El schema se hashea desde el blob del commit Git fijado, no desde el working tree.
+Absent, empty e inconsistent se persisten como discovery no aprobable.
 La salida es solo una observacion; no aprueba baseline, migracion ni release.
 `;
 
@@ -171,6 +174,41 @@ async function resolveCommit(repoRoot, runExecFile = execFile) {
   return commit;
 }
 
+async function resolveSchemaSha256(repoRoot, commit, runExecFile = execFile) {
+  if (!/^[a-f0-9]{40}$/u.test(String(commit || ''))) {
+    throw cliError('COMMIT_INVALID', 'No se puede fijar el schema sin un commit Git SHA-1 exacto.');
+  }
+  let treeStdout;
+  try {
+    ({ stdout: treeStdout } = await runExecFile(
+      'git',
+      ['ls-tree', commit, '--', 'prisma/schema.prisma'],
+      { cwd: repoRoot, encoding: 'utf8', windowsHide: true },
+    ));
+  } catch (error) {
+    throw cliError('SCHEMA_BLOB_UNAVAILABLE', 'No se pudo fijar la entrada Git de prisma/schema.prisma.', error);
+  }
+  const treeEntry = String(treeStdout || '').trim();
+  const match = /^100644 blob ([a-f0-9]{40})\tprisma\/schema\.prisma$/u.exec(treeEntry);
+  if (!match) {
+    throw cliError('SCHEMA_BLOB_ENTRY_INVALID', 'prisma/schema.prisma debe ser un blob Git regular 100644 único.');
+  }
+
+  let stdout;
+  try {
+    ({ stdout } = await runExecFile(
+      'git',
+      ['cat-file', 'blob', match[1]],
+      { cwd: repoRoot, encoding: null, windowsHide: true, maxBuffer: 2 * 1024 * 1024 },
+    ));
+  } catch (error) {
+    throw cliError('SCHEMA_BLOB_UNAVAILABLE', 'No se pudo leer prisma/schema.prisma desde el commit fijado.', error);
+  }
+  const schema = Buffer.isBuffer(stdout) ? stdout : Buffer.from(String(stdout || ''), 'utf8');
+  if (schema.length === 0) throw cliError('SCHEMA_BLOB_EMPTY', 'El schema fijado por Git está vacío.');
+  return crypto.createHash('sha256').update(schema).digest('hex');
+}
+
 async function createPgAdapter(databaseUrl) {
   const client = new pg.Client({
     connectionString: databaseUrl,
@@ -204,6 +242,7 @@ async function runCli(argv, {
   stdout = process.stdout,
   adapterFactory = createPgAdapter,
   commitResolver = resolveCommit,
+  schemaResolver = resolveSchemaSha256,
   clock = () => new Date(),
 } = {}) {
   const args = parseArguments(argv);
@@ -249,12 +288,14 @@ async function runCli(argv, {
   };
   const config = await validateObservationConfig(rawConfig);
   const commit = await commitResolver(repoRoot);
+  const schemaSha256 = await schemaResolver(repoRoot, commit);
 
   if (args.mode === 'check-config') {
     const result = Object.freeze({
       mode: 'check-config',
       status: 'valid',
       commit,
+      schemaSha256,
       targetId: config.targetId,
       outputPath: config.outputPath,
       connected: false,
@@ -275,6 +316,7 @@ async function runCli(argv, {
       adapter,
       config,
       commit,
+      schemaSha256,
       now: clock(),
     });
   } finally {
@@ -291,6 +333,8 @@ async function runCli(argv, {
     targetId: config.targetId,
     outputPath: output.outputPath,
     observationSha256: output.sha256,
+    collectionMode: observation.quality.collectionMode,
+    migrationHistoryState: observation.inventory.prismaMigrations.state,
     bytes: output.bytes,
     connected: true,
     written: true,
@@ -323,5 +367,6 @@ export {
   formatFailure,
   parseArguments,
   resolveCommit,
+  resolveSchemaSha256,
   runCli,
 };

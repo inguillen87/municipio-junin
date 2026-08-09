@@ -144,7 +144,8 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política `2026-08-09.1`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
 | Tour visual público de roles | `/roles` y `public-role-tour-v1` publicados en `v1.8.1` para siete perfiles; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Mantener el gate público y no confundir el recorrido con RBAC ni autorización positiva |
 | MuniGuía contextual | Evidencia privada sólo local para `muniguia-contextual-v1`: tres pasos deterministas para doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Proyección autoritativa simulada; mantener autorización server-side y Manual como fallback; no confundir con el smoke público |
-| WP0-L: observación de copia restaurada | Recolector read-only y fail-closed implementado y validado localmente; todavía no se ejecutó conectado | Autorizar y restaurar una copia descartable, ejecutar la observación y revisar evidencia externa; no es baseline ni migración |
+| WP0-L: observación de copia restaurada | S14A cierra localmente `wp0_restored_copy_observation` v2 con `absent`/`empty`/`inconsistent` como `discovery_non_approvable`, `valid` como `strict` y `approvalEligible:false` en todos los estados; catálogo canónico con `definitionSha256` y límites fail-closed de 20.000 filas, 1 KiB por campo no-definition, 256 KiB por definición y 4 MiB acumulados; sólo fixtures/adapters, sin conexión PostgreSQL | S14B: autorizar y restaurar una copia descartable, ejecutar la observación conectada y revisar evidencia externa; no es baseline ni migración |
+| Aislamiento DB Preview/Production | Auditoría de configuración con fingerprints no reversibles y sin secretos: mismo destino lógico, `DB_CONFIG_ISOLATION=FAIL`; configuración observada `DB_CONFIG_SSLMODE_VERIFY_FULL=false`; mapping de proyecto/branch Neon `NEON_MAPPING=UNKNOWN`; no hubo conexión ni handshake TLS | Separar destinos, exigir `sslmode=verify-full`, resolver proveedor/proyecto/branch y repetir la auditoría antes de cualquier WP0 conectado o cuenta |
 | IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Resolver drift de esquema, aprobar baseline/migración y construir el adaptador transaccional antes de aprovisionar identidades |
 | UX-E2A: shell institucional | Shell compartido en `v1.8.1`; la superficie pública productiva cerró 10/10 con exit `0` | Mantener pruebas por rol; la UI no concede autorización ni prueba datos privados |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Storage privado, antivirus y auditoría persistente |
@@ -166,7 +167,8 @@ topología anterior hacia `index.html`, archivos ambiguos y comment spoof antes
 de promover. El focal fue 31/31 y el consolidado workspace + release truth,
 45/45. El preview protegido aporta el antecedente manual. La evidencia
 productiva vigente de `v1.10.0` es el gate público 11/11 con exit `0` sobre el
-product commit `ed76347`, incluido `/roles`. La prueba de navegador en producción
+deployment del commit/tag `4108ca0`, que incorpora el producto `d11fd39`, incluido
+`/roles`. La prueba de navegador en producción
 a 390 px y 1440 px cerró sin overflow, errores de consola ni requests externos;
 la GitHub Release está live.
 
@@ -520,6 +522,14 @@ Cada sprint que cambie una capacidad debe actualizar, en la misma revisión:
 
 Una función sin documentación operativa, responsable y procedimiento de falla no
 está terminada, aunque su interfaz se vea completa.
+
+Incremento `Unreleased` S14A: cierra exclusivamente el contrato local WP0-L v2 y
+registra `DB_CONFIG_ISOLATION=FAIL`, `DB_CONFIG_SSLMODE_VERIFY_FULL=false` y
+`NEON_MAPPING=UNKNOWN`. No declara conexión PostgreSQL, copia restaurada, baseline
+o drift aprobado; tampoco modifica ni recertifica la evidencia pública 11/11 de
+`v1.10.0`. No hay bump de paquete, tag o GitHub Release. `v1.11.0` queda reservado
+para S14B conectado después de cerrar aislamiento, TLS, mapping y restore
+autorizado.
 
 Cambio 1.8.0: registra WP0-L, IAM-MAP-01, UX-E2A y el antecedente del preview
 protegido `fa5dcc5`. El release quedó en `master` y la superficie pública

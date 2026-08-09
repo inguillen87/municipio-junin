@@ -631,10 +631,39 @@ WP0-L agrega `npm.cmd run db:baseline:inspect`. Su modo `--check-config` valida
 localmente argumentos, URL, target, output y estado Git sin conectarse. El modo
 `--connected` sólo puede ejecutarse sobre una copia restaurada descartable y
 autorizada con marcadores persistentes de DB; abre una transacción
-`REPEATABLE READ READ ONLY`, consulta catálogos y `_prisma_migrations`, y hace
-rollback ante cualquier inconsistencia. Al corte no se ejecutó conectado: no
-existe observación de una copia,
+`REPEATABLE READ READ ONLY` y consulta catálogos y `_prisma_migrations`. Si la
+observación completa los controles, persiste tanto `valid` como `absent`, `empty`
+o `inconsistent` y ejecuta `COMMIT`; los tres últimos estados quedan
+`discovery_non_approvable`. Ejecuta `ROLLBACK` sólo ante un fallo o una violación
+del contrato, no por el estado semántico no aprobable de la historia. Al corte no
+se ejecutó conectado: no existe observación de una copia,
 baseline real, aprobación de drift ni autorización de migración.
+
+#### Evidencia S14A — contrato local y configuración
+
+S14A cierra sólo `wp0_restored_copy_observation` v2 con fixtures y adapters
+inyectados. La historia distingue `absent`, `empty`, `inconsistent` y `valid`:
+los tres primeros estados se persisten como `discovery_non_approvable`; `valid`
+usa `strict`; todos mantienen `approvalEligible:false`. El catálogo se ordena
+canónicamente y persiste `definitionSha256`, no SQL crudo. Aplica límites
+fail-closed, sin truncado, de 20.000 filas, 1 KiB por campo distinto de la
+definición, 256 KiB por definición y 4 MiB acumulados. El contrato detallado y
+sus límites adicionales están en el runbook Prisma `1.2.0`.
+
+La auditoría runtime de configuración usó fingerprints no reversibles y no
+expuso URLs ni credenciales. Preview y Production resolvieron al mismo destino
+lógico: `DB_CONFIG_ISOLATION=FAIL`; la configuración observada dio
+`DB_CONFIG_SSLMODE_VERIFY_FULL=false`. El proyecto y branch Neon no pudieron
+mapearse inequívocamente: `NEON_MAPPING=UNKNOWN`. Fue una inspección de
+configuración: no abrió una conexión PostgreSQL, no realizó handshake TLS y no
+observó una copia restaurada real.
+
+Este NO-GO bloquea S14B conectado y cualquier cuenta. S14A no modifica ni
+recertifica el release público `v1.10.0`; su evidencia vigente permanece 11/11
+dentro del alcance público registrado. No hay bump de paquete, tag o GitHub
+Release. `v1.11.0` se reserva para S14B únicamente después de separar Preview y
+Production, exigir `sslmode=verify-full`, resolver proveedor/proyecto/branch y
+ejecutar WP0 sobre un restore descartable autorizado.
 
 ### 7.2 Aprovisionamiento retirado
 

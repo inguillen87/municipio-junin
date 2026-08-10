@@ -913,11 +913,13 @@ function protectedVerificationRunner({
   calls = [],
   deploymentUrl = 'https://municipio-junin-private-123.vercel.app',
   stableInspection = null,
+  productionList = null,
 }) {
   return (_command, args, options = {}) => {
     if (args[0] === 'inspect' && args[1] === STABLE_PRODUCTION_URL) {
       return jsonResult(stableInspection || { id: 'dpl_stable', status: 'READY', target: 'production' });
     }
+    if (args[0] === 'ls') return jsonResult(productionList || { deployments: [] });
     if (args[0] === 'inspect') {
       return jsonResult({ id: 'dpl_temp_unique', status: 'READY', target: 'production' });
     }
@@ -1213,9 +1215,16 @@ test('verify-production certifies the new stable deployment and finalize only se
     }), error => error.code === 'BOOTSTRAP_FINALIZE_REQUIRES_PRODUCTION_VERIFICATION');
 
     const calls = [];
-    const release = {
+    const releaseUrl = 'https://municipio-junin-release-new.vercel.app';
+    const inspectedRelease = {
       id: 'dpl_release_new',
+      url: releaseUrl,
       status: 'READY',
+      target: 'production',
+    };
+    const listedRelease = {
+      url: releaseUrl,
+      state: 'READY',
       target: 'production',
       meta: { githubCommitSha: expectedGitSha },
     };
@@ -1226,7 +1235,8 @@ test('verify-production certifies the new stable deployment and finalize only se
         token: 'p'.repeat(64),
         calls,
         deploymentUrl: STABLE_PRODUCTION_URL,
-        stableInspection: release,
+        stableInspection: inspectedRelease,
+        productionList: { deployments: [listedRelease] },
       }),
       securePathImpl: async () => {},
     });
@@ -1255,18 +1265,44 @@ test('verify-production certifies the new stable deployment and finalize only se
 });
 
 test('verify-production rejects the baseline, NOT_READY, and wrong-SHA deployments before smokes', async () => {
+  const releaseUrl = 'https://municipio-junin-release-new.vercel.app';
+  const validInspection = {
+    id: 'dpl_release_new', url: releaseUrl, status: 'READY', target: 'production',
+  };
+  const validListEntry = {
+    url: releaseUrl, state: 'READY', target: 'production',
+    meta: { githubCommitSha: expectedGitSha },
+  };
   const invalidReleases = [
     {
       name: 'baseline deployment',
-      value: { id: 'dpl_stable', status: 'READY', target: 'production', meta: { githubCommitSha: expectedGitSha } },
+      inspection: { ...validInspection, id: 'dpl_stable' },
+      deployments: [validListEntry],
     },
     {
       name: 'not ready',
-      value: { id: 'dpl_release_new', status: 'BUILDING', target: 'production', meta: { githubCommitSha: expectedGitSha } },
+      inspection: { ...validInspection, status: 'BUILDING' },
+      deployments: [validListEntry],
     },
     {
       name: 'wrong SHA',
-      value: { id: 'dpl_release_new', status: 'READY', target: 'production', meta: { githubCommitSha: 'e'.repeat(40) } },
+      inspection: validInspection,
+      deployments: [{ ...validListEntry, meta: { githubCommitSha: 'e'.repeat(40) } }],
+    },
+    {
+      name: 'conflicting optional list ID',
+      inspection: validInspection,
+      deployments: [{ ...validListEntry, id: 'dpl_other_release' }],
+    },
+    {
+      name: 'missing list entry',
+      inspection: validInspection,
+      deployments: [],
+    },
+    {
+      name: 'duplicate exact URL',
+      inspection: validInspection,
+      deployments: [validListEntry, { ...validListEntry }],
     },
   ];
   for (const scenario of invalidReleases) {
@@ -1274,7 +1310,8 @@ test('verify-production rejects the baseline, NOT_READY, and wrong-SHA deploymen
     try {
       let curlCalls = 0;
       const runner = (_command, args) => {
-        if (args[0] === 'inspect') return jsonResult(scenario.value);
+        if (args[0] === 'inspect') return jsonResult(scenario.inspection);
+        if (args[0] === 'ls') return jsonResult({ deployments: scenario.deployments });
         if (args[0] === 'curl') curlCalls += 1;
         assert.fail(`unexpected ${scenario.name} command`);
       };
@@ -1288,6 +1325,55 @@ test('verify-production rejects the baseline, NOT_READY, and wrong-SHA deploymen
     } finally {
       await fixture.cleanup();
     }
+  }
+});
+
+test('verify-production fails closed when the stable deployment changes during smokes', async () => {
+  const fixture = await cleanedFixture();
+  try {
+    const state = await readState(fixture.prepared.statePath);
+    const credential = await readState(state.credentialPath);
+    const releases = [
+      {
+        id: 'dpl_release_before',
+        url: 'https://municipio-junin-release-before.vercel.app',
+        status: 'READY',
+        target: 'production',
+      },
+      {
+        id: 'dpl_release_after',
+        url: 'https://municipio-junin-release-after.vercel.app',
+        status: 'READY',
+        target: 'production',
+      },
+    ];
+    let inspectIndex = 0;
+    let listIndex = 0;
+    const smokeRunner = protectedVerificationRunner({
+      credential,
+      token: 'q'.repeat(64),
+      deploymentUrl: STABLE_PRODUCTION_URL,
+    });
+    const runner = (command, args, options) => {
+      if (args[0] === 'inspect') return jsonResult(releases[inspectIndex++]);
+      if (args[0] === 'ls') {
+        const release = releases[listIndex++];
+        return jsonResult({
+          deployments: [{ ...release, meta: { githubCommitSha: expectedGitSha } }],
+        });
+      }
+      return smokeRunner(command, args, options);
+    };
+    await assert.rejects(() => verifyProductionBootstrap({
+      statePath: fixture.prepared.statePath,
+      runner,
+      securePathImpl: async () => {},
+    }), error => error.code === 'BOOTSTRAP_PRODUCTION_ALIAS_CHANGED');
+    assert.equal(inspectIndex, 2);
+    assert.equal(listIndex, 2);
+    assert.equal((await readState(fixture.prepared.statePath)).status, 'cleaned');
+  } finally {
+    await fixture.cleanup();
   }
 });
 

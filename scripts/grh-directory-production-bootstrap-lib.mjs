@@ -508,16 +508,58 @@ function productionDeploymentGitSha(value) {
   return unique.length === 1 ? unique[0] : null;
 }
 
-function inspectProductionRelease(value, state) {
+function canonicalDeploymentOrigin(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('.vercel.app') ||
+        parsed.pathname !== '/' || parsed.search || parsed.hash) return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+function inspectProductionAlias(value, state) {
   const deployment = deploymentIdentity(value);
   const target = String(value?.target || value?.environment || '').toLowerCase();
-  const gitSha = productionDeploymentGitSha(value);
-  if (!deployment.id || !readyDeployment(value, deployment.id) || target !== 'production' ||
+  const url = canonicalDeploymentOrigin(deployment.url);
+  if (!deployment.id || !url || url === STABLE_PRODUCTION_URL ||
+      !readyDeployment(value, deployment.id) || target !== 'production' ||
       deployment.id === state.deployment?.baselineAliasDeploymentId ||
-      deployment.id === state.deployment?.id || gitSha !== state.expectedGitSha) {
+      deployment.id === state.deployment?.id) {
     fail('BOOTSTRAP_PRODUCTION_RELEASE_INVALID');
   }
-  return Object.freeze({ id: deployment.id, gitSha });
+  return Object.freeze({ id: deployment.id, url });
+}
+
+function productionListEntries(value) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object' && Array.isArray(value.deployments)) {
+    return value.deployments;
+  }
+  fail('BOOTSTRAP_PRODUCTION_LIST_INVALID');
+}
+
+function matchProductionListRelease(value, inspected, state) {
+  const matches = productionListEntries(value).filter(entry => {
+    const identity = deploymentIdentity(entry);
+    return canonicalDeploymentOrigin(identity.url) === inspected.url;
+  });
+  if (matches.length !== 1) fail('BOOTSTRAP_PRODUCTION_RELEASE_INVALID');
+  const release = matches[0];
+  const identity = deploymentIdentity(release);
+  const status = String(release?.readyState || release?.status || release?.state || '').toUpperCase();
+  const target = String(release?.target || release?.environment || '').toLowerCase();
+  const gitSha = productionDeploymentGitSha(release);
+  // `vercel ls --json` currently omits deployment IDs. The alias inspection is
+  // authoritative for the ID; the list entry supplies Git provenance by exact
+  // immutable deployment URL. Reject a conflicting ID when the CLI does emit one.
+  if ((identity.id !== null && identity.id !== inspected.id) ||
+      !['READY', 'READY_STATE_READY'].includes(status) || target !== 'production' ||
+      gitSha !== state.expectedGitSha) {
+    fail('BOOTSTRAP_PRODUCTION_RELEASE_INVALID');
+  }
+  return Object.freeze({ id: inspected.id, url: inspected.url, gitSha });
 }
 
 function assertUniqueDeploymentUrl(url) {
@@ -1194,6 +1236,25 @@ export async function cleanupVerifiedBootstrap({
   });
 }
 
+function readProductionRelease(runner, state, { wait = false } = {}) {
+  const inspectArgs = ['inspect', STABLE_PRODUCTION_URL, '--json'];
+  if (wait) inspectArgs.push('--wait', '--timeout', '3m');
+  const inspection = parseJsonOutput(run(
+    runner,
+    'vercel',
+    inspectArgs,
+    { cwd: state.repositoryRoot },
+  ), 'BOOTSTRAP_PRODUCTION_INSPECTION_INVALID');
+  const inspected = inspectProductionAlias(inspection, state);
+  const deployments = parseJsonOutput(run(
+    runner,
+    'vercel',
+    ['ls', VERCEL_PROJECT, '--json'],
+    { cwd: state.repositoryRoot },
+  ), 'BOOTSTRAP_PRODUCTION_LIST_INVALID');
+  return matchProductionListRelease(deployments, inspected, state);
+}
+
 export async function verifyProductionBootstrap({
   statePath,
   runner = defaultCommandRunner,
@@ -1207,13 +1268,7 @@ export async function verifyProductionBootstrap({
   }
   await assertSnapshotRecoveryMaterial(state);
   const credential = await readJson(state.credentialPath, 'BOOTSTRAP_CREDENTIAL_UNREADABLE');
-  const beforeInspection = parseJsonOutput(run(
-    runner,
-    'vercel',
-    ['inspect', STABLE_PRODUCTION_URL, '--json', '--wait', '--timeout', '3m'],
-    { cwd: state.repositoryRoot },
-  ), 'BOOTSTRAP_PRODUCTION_INSPECTION_INVALID');
-  const before = inspectProductionRelease(beforeInspection, state);
+  const before = readProductionRelease(runner, state, { wait: true });
   const verified = verifyBootstrapBehavior({
     runner,
     state,
@@ -1221,14 +1276,8 @@ export async function verifyProductionBootstrap({
     deploymentUrl: STABLE_PRODUCTION_URL,
     stable: true,
   });
-  const afterInspection = parseJsonOutput(run(
-    runner,
-    'vercel',
-    ['inspect', STABLE_PRODUCTION_URL, '--json'],
-    { cwd: state.repositoryRoot },
-  ), 'BOOTSTRAP_PRODUCTION_INSPECTION_INVALID');
-  const after = inspectProductionRelease(afterInspection, state);
-  if (after.id !== before.id || after.gitSha !== before.gitSha) {
+  const after = readProductionRelease(runner, state);
+  if (after.id !== before.id || after.url !== before.url || after.gitSha !== before.gitSha) {
     fail('BOOTSTRAP_PRODUCTION_ALIAS_CHANGED');
   }
   const verifiedAt = new Date().toISOString();

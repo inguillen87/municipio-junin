@@ -6,6 +6,7 @@ import accessPolicy from '../../shared/access-policy.cjs';
 import corsOriginPolicy from '../../shared/cors-origin-policy.cjs';
 import routePolicy from '../../shared/route-policy.cjs';
 import tenantLifecycle from '../../shared/tenant-lifecycle.cjs';
+import publishedDemoPolicy from '../../shared/published-demo-policy.cjs';
 
 const { hasAnyRole, isKnownRole } = accessPolicy;
 const { buildCorsOriginPolicy, isCorsOriginAllowed } = corsOriginPolicy;
@@ -17,6 +18,10 @@ const {
   resolveProtectedRoute,
 } = routePolicy;
 const { evaluateTenantAccess } = tenantLifecycle;
+const {
+  PUBLISHED_DEMO_DECISION_CODES,
+  evaluatePublishedDemoRoute,
+} = publishedDemoPolicy;
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const MIN_JWT_SECRET_LENGTH = 32;
@@ -51,18 +56,36 @@ function denyRoutePermission(res) {
   return false;
 }
 
+function denyPublishedDemoRoute(res) {
+  res.status(403).json({
+    error: 'La cuenta publicada esta limitada a superficies gobernadas de solo lectura',
+    code: PUBLISHED_DEMO_DECISION_CODES.DENIED,
+  });
+  return false;
+}
+
+function enforcePublishedDemoRoute(res, user, routeId) {
+  const decision = evaluatePublishedDemoRoute({
+    email: user?.email,
+    role: user?.role,
+    tenantSlug: user?.tenant?.slug,
+    routeId,
+  });
+  return decision.allowed ? true : denyPublishedDemoRoute(res);
+}
+
 // Runtime requests always carry a URL. Direct helper/unit invocations without
-// routing metadata retain the narrow explicit check requested by the caller.
-// This keeps the central route manifest as the live authorization ceiling
-// without coupling pure authentication tests to a fabricated URL.
+// routing metadata retain the narrow explicit check for ordinary identities;
+// published evaluation identities fail closed because their ceiling is an
+// exact route-id allowlist.
 function enforceCurrentRoutePermission(req, res, user) {
   const pathname = requestRoutePath(req);
-  if (!pathname) return true;
+  if (!pathname) return enforcePublishedDemoRoute(res, user, null);
   const route = resolveProtectedRoute(RUNTIMES.SERVERLESS, req?.method, pathname);
   if (!route || !authorizeRoute(user?.role, RUNTIMES.SERVERLESS, req?.method, pathname)) {
     return denyRoutePermission(res);
   }
-  return true;
+  return enforcePublishedDemoRoute(res, user, route.id);
 }
 
 export async function requireRole(req, res, allowedRoles) {

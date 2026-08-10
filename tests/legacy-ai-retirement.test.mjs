@@ -83,10 +83,12 @@ test('no HTML file references the retired demo assets', () => {
   }
 });
 
-test('institutional login exposes no demo identities or fake access shortcuts', () => {
+test('institutional login exposes only the controlled read-only evaluation identities', () => {
   const source = fs.readFileSync(path.join(root, 'login.html'), 'utf8');
   assert.match(source, /Identidad emitida por la Municipalidad/);
-  assert.doesNotMatch(source, /Usuarios de demostraci[oó]n|Acceso r[aá]pido por rol|fillUser\s*\(/i);
-  assert.doesNotMatch(source, /(?:admin|intendente|contador|demo)@junin\.gov\.ar/i);
+  assert.match(source, /data-demo-contract="published-evaluation-readonly-v1"/);
+  assert.equal((source.match(/data-evaluation-email=/g) || []).length, 6);
+  assert.match(source, /escrituras bloqueadas por el servidor/i);
+  assert.doesNotMatch(source, /\/api\/auth\/seed-demo|ensureSeeded|fillUser\s*\(/i);
   assert.doesNotMatch(source, /href=["']#["'][^>]*Olvid/i);
 });

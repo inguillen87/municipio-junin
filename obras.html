@@ -1,175 +1,40 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html class="muni-shell-v1" lang="es">
 <head>
-  <meta charset="UTF-8">
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
-  <meta name="theme-color" content="#060b18">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Obras - MuniControl</title>
-  
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/dashboard.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Obras públicas | MuniControl Junín</title>
+  <meta name="description" content="Estado de integración de Obras públicas en MuniControl Junín.">
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="css/dashboard.css">
   <style>
-    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-    .kpi-card { background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-    .kpi-title { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
-    .kpi-val { font-size: 24px; font-weight: bold; color: var(--text-primary); }
-
-    .filter-bar { display: flex; gap: 12px; margin-bottom: 24px; background: var(--bg-card); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
-    .filter-input { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 6px; }
-
-    .obras-table-container { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
-    .obras-table { width: 100%; border-collapse: collapse; }
-    .obras-table th { background: rgba(255,255,255,0.05); padding: 12px 16px; text-align: left; font-size: 13px; color: var(--text-secondary); }
-    .obras-table td { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 14px; cursor: pointer; }
-    .obras-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-    .badge { padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: bold; }
-    .badge-amber { background: rgba(245,158,11,0.2); color: #f59e0b; }
-    .badge-green { background: rgba(16,185,129,0.2); color: #10b981; }
-    .badge-blue { background: rgba(59,130,246,0.2); color: #3b82f6; }
-    .badge-red { background: rgba(239,68,68,0.2); color: #ef4444; }
-
-    .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; margin-top: 4px; }
-    .progress-fill { height: 100%; border-radius: 99px; }
-
-    /* Modal */
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; }
-    .modal.active { display: flex; }
-    .modal-content { background: var(--bg-card); padding: 24px; border-radius: 12px; width: 500px; max-width: 90%; border: 1px solid var(--border); }
-    .modal-close { float: right; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+    html { color-scheme: dark; }
+    body { margin: 0; min-width: 320px; background: var(--bg, #07111f); }
+    .skip-link { position: fixed; left: 16px; top: -60px; z-index: 10000; padding: 10px 14px; border-radius: 9px; background: #e0f2fe; color: #082f49; font: 700 13px/1 system-ui, sans-serif; }
+    .skip-link:focus { top: 16px; }
+    .retired-menu { position: fixed; top: 14px; left: 14px; z-index: 999; display: none; min-width: 44px; min-height: 44px; border: 1px solid #334155; border-radius: 11px; background: #0f1f34; color: #e2e8f0; font: 700 12px/1 system-ui, sans-serif; }
+    @media (max-width: 900px) { .retired-menu { display: inline-flex; align-items: center; justify-content: center; } }
+    .source-noscript { max-width: 720px; margin: 80px auto; padding: 24px; border: 1px solid #334155; border-radius: 16px; color: #e2e8f0; font-family: system-ui, sans-serif; }
   </style>
 </head>
-<body>
-  <aside class="sidebar" id="sidebar"></aside>
-  <div class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
-        <div class="page-title">
-          <h1>Gestor de Obras</h1>
-        </div>
-      </div>
-    </header>
-
-    <div style="padding: 24px;">
-      <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-title">Obras en ejecucion</div><div class="kpi-val" id="kpiEjecucion">0</div></div>
-        <div class="kpi-card"><div class="kpi-title">Finalizadas este mes</div><div class="kpi-val" id="kpiFinalizadas">0</div></div>
-        <div class="kpi-card"><div class="kpi-title">Inversion total (M)</div><div class="kpi-val" id="kpiInversion">$0</div></div>
-        <div class="kpi-card"><div class="kpi-title">Obras demoradas</div><div class="kpi-val" id="kpiDemoradas" style="color:#ef4444">0</div></div>
-      </div>
-
-      <div class="filter-bar">
-        <select class="filter-input"><option>Todas las Secretarias</option></select>
-        <select class="filter-input"><option>Todos los Estados</option></select>
-        <select class="filter-input"><option>Periodo Actual</option></select>
-        <input type="text" class="filter-input" placeholder="Buscar obra...">
-      </div>
-
-      <div class="obras-table-container">
-        <table class="obras-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Secretaria</th>
-              <th>Contratista</th>
-              <th>Monto</th>
-              <th>Avance</th>
-              <th>Estado</th>
-              <th>Vencimiento</th>
-            </tr>
-          </thead>
-          <tbody id="obrasTbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="obraModal">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeModal()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-      <h2 id="modalTitle" style="margin-top:0">Detalle</h2>
-      <div id="modalBody"></div>
-    </div>
-  </div>
-
+<body data-retired-module="obras" data-source-state="not-connected">
+  <a class="skip-link" href="#retired-module-root">Saltar al estado del módulo</a>
+  <button class="retired-menu" id="menuBtn" type="button" aria-label="Abrir navegación">Menú</button>
+  <aside id="sidebar" class="sidebar" aria-label="Navegación principal"></aside>
+  <main id="retired-module-root" tabindex="-1"></main>
+  <noscript><p class="source-noscript"><strong>Sin fuente conectada · no operativo.</strong> Este módulo requiere JavaScript únicamente para presentar su estado de integración; no hay datos municipales embebidos en la página.</p></noscript>
   <script src="js/nav.js"></script>
   <script src="js/db.js"></script>
   <script>
-    buildSidebar('obras');
-
-    const obras = MuniDB.getAll('obras') || [];
-    
-    // Fallback data if empty
-    if(obras.length === 0) {
-      obras.push({id:1, nombre: 'Bacheo Centro', secretaria: 'Obras Publicas', contratista: 'Vial Junin', monto: 1500000, avance: 45, estado: 'en_ejecucion', vencimiento: '2026-12-01'});
-      obras.push({id:2, nombre: 'Plaza San Martin', secretaria: 'Espacios Verdes', contratista: 'Verdes SRL', monto: 3200000, avance: 100, estado: 'finalizada', vencimiento: '2026-06-15'});
-      obras.push({id:3, nombre: 'Cloacas Sur', secretaria: 'Obras Publicas', contratista: 'Saneamientos SA', monto: 8500000, avance: 10, estado: 'demorada', vencimiento: '2026-10-10'});
-      obras.push({id:4, nombre: 'Hospital Anexo', secretaria: 'Salud', contratista: 'Constructora Beta', monto: 25000000, avance: 0, estado: 'planificada', vencimiento: '2027-12-01'});
-    }
-
-    let kEj = 0, kFin = 0, kInv = 0, kDem = 0;
-    const tbody = document.getElementById('obrasTbody');
-
-    obras.forEach(o => {
-      // KPIs
-      if(o.estado === 'en_ejecucion') kEj++;
-      if(o.estado === 'finalizada') kFin++;
-      if(o.estado === 'demorada') kDem++;
-      kInv += (o.monto || 0);
-
-      // Badge
-      let badgeClass = 'badge-blue';
-      let estadoTxt = 'Planificada';
-      let pColor = '#3b82f6';
-      if(o.estado === 'en_ejecucion') { badgeClass = 'badge-amber'; estadoTxt = 'En Ejecucion'; pColor = '#f59e0b'; }
-      if(o.estado === 'finalizada') { badgeClass = 'badge-green'; estadoTxt = 'Finalizada'; pColor = '#10b981'; }
-      if(o.estado === 'demorada') { badgeClass = 'badge-red'; estadoTxt = 'Demorada'; pColor = '#ef4444'; }
-
-      const tr = document.createElement('tr');
-      tr.onclick = () => openModal(o);
-      tr.innerHTML = `
-        <td><strong>${o.nombre}</strong></td>
-        <td>${o.secretaria || 'Obras'}</td>
-        <td>${o.contratista || '-'}</td>
-        <td>$${(o.monto/1000000).toFixed(1)}M</td>
-        <td>
-          ${o.avance||0}%
-          <div class="progress-bar"><div class="progress-fill" style="width:${o.avance||0}%;background:${pColor}"></div></div>
-        </td>
-        <td><span class="badge ${badgeClass}">${estadoTxt}</span></td>
-        <td>${o.vencimiento || '-'}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById('kpiEjecucion').innerText = kEj;
-    document.getElementById('kpiFinalizadas').innerText = kFin;
-    document.getElementById('kpiInversion').innerText = '$' + (kInv/1000000).toFixed(1) + 'M';
-    document.getElementById('kpiDemoradas').innerText = kDem;
-
-    function openModal(o) {
-      document.getElementById('modalTitle').innerText = o.nombre;
-      document.getElementById('modalBody').innerHTML = `
-        <p><strong>Secretaria:</strong> ${o.secretaria}</p>
-        <p><strong>Contratista:</strong> ${o.contratista}</p>
-        <p><strong>Monto:</strong> $${o.monto}</p>
-        <p><strong>Avance:</strong> ${o.avance}%</p>
-        <p><strong>Estado:</strong> ${o.estado}</p>
-        <p><strong>Vencimiento:</strong> ${o.vencimiento}</p>
-      `;
-      document.getElementById('obraModal').classList.add('active');
-    }
-    function closeModal() {
-      document.getElementById('obraModal').classList.remove('active');
-    }
+    (function initialiseRetiredModule() {
+      if (!window.MuniDB || typeof window.MuniDB.mountRetiredModule !== 'function') {
+        document.getElementById('retired-module-root').textContent = 'Sin fuente conectada. Módulo no operativo.';
+        return;
+      }
+      window.MuniDB.mountRetiredModule({ module: 'obras' });
+      if (typeof window.buildSidebar === 'function') window.buildSidebar('obras');
+    })();
   </script>
-  <script src="js/theme-switcher.js"></script>
-  <script src='js/bottom-nav.js'></script>
 </body>
 </html>

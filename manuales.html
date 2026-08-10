@@ -1,1154 +1,586 @@
-﻿<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
-  <meta name='theme-color' content='#060b18'>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manual de Uso  MuniControl</title>
-  <meta name="description" content="Manual túcnico y de usuario completo de la plataforma GovTech Municipal" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <style>
-    /* ===== PRINT STYLES ===== */
-    @media print {
-      .sidebar, .topbar, .no-print, .ai-widget-btn, #aiWidget { display: none !important; }
-      .main-content { margin-left: 0 !important; padding: 0 !important; }
-      .manual-layout { grid-template-columns: 1fr !important; }
-      .manual-index { display: none !important; }
-      .manual-content { gap: 0 !important; }
-      .manual-section { break-inside: avoid; border: 1px solid #ccc !important; margin-bottom: 24px; box-shadow: none !important; }
-      .section-header { background: #111d35 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      body { background: white !important; color: #111 !important; font-size: 12px !important; }
-      .kpi-grid, .stats-grid { break-inside: avoid; }
-      .manual-text { color: #333 !important; }
-      .section-header h2 { color: white !important; }
-      .print-header { display: block !important; }
-      @page { margin: 2cm; size: A4; }
-      h1, h2, h3 { page-break-after: avoid; }
-      .page-break { page-break-before: always; }
-    }
-    .print-header {
-      display: none;
-      text-align: center;
-      padding: 20px;
-      border-bottom: 3px solid #111d35;
-      margin-bottom: 24px;
-    }
-    .print-header-title { font-size: 24px; font-weight: 900; color: #111d35; }
-    .print-header-sub { font-size: 14px; color: #555; margin-top: 4px; }
-
-    /* ===== LAYOUT ===== */
-    .manual-layout {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 24px;
-      align-items: start;
-    }
-    .manual-index {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      position: sticky;
-      top: 80px;
-      max-height: calc(100vh - 100px);
-      overflow-y: auto;
-    }
-    .manual-index::-webkit-scrollbar { width: 3px; }
-    .manual-index::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
-    .idx-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
-    .idx-section { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(100,116,139,0.5); padding: 10px 0 4px; border-top: 1px solid var(--border); margin-top: 4px; }
-    .idx-link {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 10px; border-radius: 7px;
-      font-size: 12px; color: var(--text-secondary); text-decoration: none;
-      transition: all 0.15s; margin-bottom: 2px; cursor: pointer;
-    }
-    .idx-link:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
-    .idx-link.active { background: rgba(59,130,246,0.1); color: #60a5fa; font-weight: 600; }
-    .idx-emoji { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
-    .idx-version-box { margin-top: 16px; padding: 12px; background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.15); border-radius: 9px; font-size: 11px; }
-    .idx-version-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-    .idx-version-row span { color: var(--text-muted); }
-    .idx-version-row strong { color: var(--text-primary); }
-
-    /* ===== CONTENT ===== */
-    .manual-content { display: flex; flex-direction: column; gap: 20px; }
-    .manual-section {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden;
-    }
-    .section-header {
-      display: flex; align-items: center; gap: 14px;
-      padding: 18px 24px; border-bottom: 1px solid var(--border);
-    }
-    .section-header.blue   { background: rgba(59,130,246,0.06); }
-    .section-header.violet { background: rgba(139,92,246,0.06); }
-    .section-header.green  { background: rgba(16,185,129,0.06); }
-    .section-header.amber  { background: rgba(245,158,11,0.06); }
-    .section-header.red    { background: rgba(239,68,68,0.06); }
-    .section-header.teal   { background: rgba(6,182,212,0.06); }
-    .section-header.orange { background: rgba(255,107,0,0.06); }
-    .section-header.pink   { background: rgba(236,72,153,0.06); }
-    .section-icon { font-size: 26px; flex-shrink: 0; }
-    .section-header h2 { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; margin: 0 0 2px; }
-    .section-header p { font-size: 12px; color: var(--text-muted); margin: 0; }
-    .section-badge { margin-left: auto; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 99px; flex-shrink: 0; }
-    .badge-user   { background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
-    .badge-tech   { background: rgba(139,92,246,0.1); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
-    .badge-admin  { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
-
-    .section-body { padding: 20px 24px; }
-    .sub-h { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-    .sub-h:first-child { margin-top: 0; }
-    .manual-p { font-size: 13px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 10px; }
-    .manual-p strong { color: var(--text-primary); }
-    .manual-p code { font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; color: #60a5fa; font-size: 11px; }
-
-    /* Steps */
-    .steps-list { display: flex; flex-direction: column; gap: 10px; }
-    .step-item { display: flex; gap: 14px; align-items: flex-start; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-    .step-num { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: white; flex-shrink: 0; }
-    .step-body h3 { font-size: 13px; font-weight: 700; margin: 0 0 4px; }
-    .step-body p { font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.5; }
-    .step-note { margin-top: 6px; padding: 6px 10px; border-radius: 7px; font-size: 11px; }
-    .note-info { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15); color: var(--text-muted); }
-    .note-warn { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); color: #d97706; }
-    .note-tip  { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); color: #059669; }
-
-    /* Code block */
-    .code-block { background: #050c18; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; margin: 10px 0; }
-    .code-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: var(--text-muted); }
-    .copy-btn { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); color: #60a5fa; padding: 2px 8px; border-radius: 5px; cursor: pointer; font-size: 10px; font-weight: 600; transition: 0.15s; }
-    .copy-btn:hover { background: rgba(59,130,246,0.2); }
-    .code-block pre { padding: 14px; margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; color: #93c5fd; overflow-x: auto; white-space: pre; }
-
-    /* Feature table */
-    .feat-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
-    .feat-table th { text-align: left; padding: 8px 12px; background: rgba(255,255,255,0.03); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid var(--border); }
-    .feat-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-secondary); vertical-align: top; }
-    .feat-table tr:last-child td { border-bottom: none; }
-    .feat-table tr:hover td { background: rgba(255,255,255,0.01); }
-    .feat-table code { font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 3px; color: #60a5fa; font-size: 11px; }
-    .ft-check { color: #10b981; font-weight: 700; }
-    .ft-no { color: rgba(100,116,139,0.4); }
-
-    /* Arch diagram */
-    .arch-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
-    .arch-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
-    .arch-card-icon { font-size: 24px; margin-bottom: 6px; }
-    .arch-card-title { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-    .arch-card-sub { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
-
-    /* DB table */
-    .db-table-wrap { overflow-x: auto; }
-    .db-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .db-table th { text-align: left; padding: 7px 10px; background: rgba(139,92,246,0.08); color: #8b5cf6; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    .db-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-secondary); vertical-align: top; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-    .db-table tr:last-child td { border-bottom: none; }
-    .col-type { color: #f59e0b; }
-    .col-pk { color: #10b981; font-weight: 700; }
-    .col-fk { color: #8b5cf6; }
-
-    /* Alert banners */
-    .alert-box { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; border-radius: 9px; margin: 10px 0; font-size: 12px; line-height: 1.5; }
-    .alert-info  { background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.2); }
-    .alert-warn  { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); color: #d97706; }
-    .alert-tip   { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2); color: #059669; }
-    .alert-icon { font-size: 18px; flex-shrink: 0; }
-
-    /* Toolbar */
-    .manual-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-    .tb-btn { display: flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); }
-    .tb-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
-    .tb-btn.primary { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15)); border-color: rgba(59,130,246,0.3); color: #60a5fa; }
-    .tb-btn.primary:hover { background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(139,92,246,0.25)); }
-    .tb-btn.red { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); color: #ef4444; }
-    .tb-btn.red:hover { background: rgba(239,68,68,0.15); }
-
-    /* Tag pills */
-    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-    .tag { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
-    .tag-blue   { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
-    .tag-green  { background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
-    .tag-violet { background: rgba(139,92,246,0.1); color: #a78bfa; border: 1px solid rgba(139,92,246,0.2); }
-    .tag-amber  { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
-    .tag-red    { background: rgba(239,68,68,0.1);  color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
-
-    /* Module cards */
-    .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
-    .module-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-    .module-card-icon { font-size: 22px; margin-bottom: 6px; }
-    .module-card-name { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
-    .module-card-file { font-size: 10px; color: #60a5fa; font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
-    .module-card-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
-
-    @media (max-width: 900px) {
-      .manual-layout { grid-template-columns: 1fr; }
-      .manual-index { display: none; }
-      .arch-box, .module-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 480px) {
-      .arch-box, .module-grid { grid-template-columns: 1fr; }
-      .manual-toolbar { flex-direction: column; }
-    }
-  </style>
-</head>
-<body>
-  <aside class="sidebar" id="sidebar"></aside>
-  <div class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">?</button>
-        <div class="page-title">
-          <h1>• Manual GovTech Platform</h1>
-          <div class="breadcrumb">Sistema / Documentación Completa v2.0</div>
-        </div>
-      </div>
-      <div class="topbar-right no-print">
-        <button class="btn btn-secondary" onclick="window.print()" style="padding:8px 14px;font-size:12px;display:flex;align-items:center;gap:6px">•? Imprimir / PDF</button>
-        <div class="topbar-avatar" id="userAvatar">JT</div>
-      </div>
-    </header>
-
-    <div class="content-wrapper">
-      <!-- PRINT HEADER -->
-      <div class="print-header">
-        <div class="print-header-title">•? GovTech Platform v2.0  Manual Completo</div>
-        <div class="print-header-sub">Municipalidad de Junín  Documento túcnico y de usuario  Julio 2026</div>
-      </div>
-
-      <!-- TOOLBAR -->
-      <div class="manual-toolbar no-print">
-        <button class="tb-btn primary" onclick="window.print()">
-          •? Imprimir / Guardar PDF
-        </button>
-        <button class="tb-btn" onclick="document.getElementById('s-intro').scrollIntoView({behavior:'smooth'})">
-          • ndice
-        </button>
-        <button class="tb-btn" onclick="document.getElementById('s-arch').scrollIntoView({behavior:'smooth'})">
-          •? Arquitectura
-        </button>
-        <button class="tb-btn" onclick="document.getElementById('s-db').scrollIntoView({behavior:'smooth'})">
-          • Base de Datos
-        </button>
-        <button class="tb-btn red" onclick="document.getElementById('s-deploy').scrollIntoView({behavior:'smooth'})">
-          • Deploy
-        </button>
-      </div>
-
-      <div class="manual-layout">
-        <!-- NDICE LATERAL -->
-        <nav class="manual-index no-print">
-          <div class="idx-title">• Contenido</div>
-
-          <div class="idx-section">Introducción</div>
-          <a class="idx-link" onclick="scrollTo('s-intro')"><span class="idx-emoji">•?</span>Qué es GovTech?</a>
-          <a class="idx-link" onclick="scrollTo('s-audience')"><span class="idx-emoji">•</span>Para quién es</a>
-          <a class="idx-link" onclick="scrollTo('s-modules')"><span class="idx-emoji">•</span>Mídulos del sistema</a>
-
-          <div class="idx-section">Gua de Usuario</div>
-          <a class="idx-link" onclick="scrollTo('s-login')"><span class="idx-emoji">•</span>Login y roles</a>
-          <a class="idx-link" onclick="scrollTo('s-dashboard')"><span class="idx-emoji">•</span>Dashboard ejecutivo</a>
-          <a class="idx-link" onclick="scrollTo('s-ia')"><span class="idx-emoji">•</span>Asistente IA</a>
-          <a class="idx-link" onclick="scrollTo('s-contratos')"><span class="idx-emoji">•</span>Contratos y gastos</a>
-          <a class="idx-link" onclick="scrollTo('s-rrhh')"><span class="idx-emoji">•</span>RRHH</a>
-          <a class="idx-link" onclick="scrollTo('s-presupuesto')"><span class="idx-emoji">•</span>Presupuesto</a>
-          <a class="idx-link" onclick="scrollTo('s-mapa')"><span class="idx-emoji">•?</span>Mapa Financiero</a>
-          <a class="idx-link" onclick="scrollTo('s-licitaciones')"><span class="idx-emoji">•</span>Licitaciones</a>
-          <a class="idx-link" onclick="scrollTo('s-vecinos')"><span class="idx-emoji">•?</span>Atención Vecinal</a>
-          <a class="idx-link" onclick="scrollTo('s-export')"><span class="idx-emoji">•</span>Exportar reportes</a>
-
-          <div class="idx-section">Para Ingenieros</div>
-          <a class="idx-link" onclick="scrollTo('s-arch')"><span class="idx-emoji">•?</span>Arquitectura</a>
-          <a class="idx-link" onclick="scrollTo('s-tech')"><span class="idx-emoji">•</span>Stack tecnolgico</a>
-          <a class="idx-link" onclick="scrollTo('s-db')"><span class="idx-emoji">•</span>Base de datos</a>
-          <a class="idx-link" onclick="scrollTo('s-api')"><span class="idx-emoji">•</span>API Reference</a>
-          <a class="idx-link" onclick="scrollTo('s-auth')"><span class="idx-emoji">•?</span>Autenticación</a>
-          <a class="idx-link" onclick="scrollTo('s-deploy')"><span class="idx-emoji">•</span>Deploy</a>
-          <a class="idx-link" onclick="scrollTo('s-customizar')"><span class="idx-emoji">•</span>Customización</a>
-          <a class="idx-link" onclick="scrollTo('s-multitenant')"><span class="idx-emoji">•</span>Multi-tenant</a>
-
-          <div class="idx-version-box">
-            <div class="idx-version-row"><span>Versión:</span><strong>2.0.0</strong></div>
-            <div class="idx-version-row"><span>Actualizado:</span><strong>Jul 2026</strong></div>
-            <div class="idx-version-row"><span>Páginas:</span><strong>11 mídulos</strong></div>
-            <div class="idx-version-row"><span>Stack:</span><strong>Node + Prisma</strong></div>
-          </div>
-        </nav>
-
-        <!-- CONTENIDO PRINCIPAL -->
-        <div class="manual-content">
-
-          <!-- 1. INTRODUCCIN -->
-          <div class="manual-section" id="s-intro">
-            <div class="section-header blue">
-              <div class="section-icon">•?</div>
-              <div><h2>Qué es GovTech Platformí</h2><p>Introducción al sistema de gestión municipal</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p"><strong>GovTech Platform</strong> es un sistema de gestión integral para municipios, gobiernos y organizaciones públicas o privadas de escala similar. Fue desarrollado inicialmente para la <strong>Municipalidad de Junín, Mendoza</strong>, y diseado desde el primer día como una plataforma <strong>multi-tenant SaaS</strong> vendible a cualquier gobierno del mundo.</p>
-              <p class="manual-p">El sistema permite controlar en tiempo real: gastos, contratos, proveedores, personal, reclamos vecinales, obras públicas, presupuesto anual y mucho más. Incluye un <strong>Asistente IA</strong> que responde preguntas en lenguaje natural, un <strong>WhatsApp Bot</strong> para alertas automíticas, y exportación profesional a PDF y Excel.</p>
-              <div class="alert-box alert-tip">
-                <span class="alert-icon">•</span>
-                <span>Un municipio no es más que una empresa pública con miles de Áreas. Esta plataforma es igualmente aplicable a <strong>empresas privadas, cmaras de comercio, bolsas, universidades, hospitales, consorcios</strong> y cualquier organización con necesidad de control financiero y gestión de personal.</span>
-              </div>
-              <div class="tag-row">
-                <span class="tag tag-blue">SaaS Multi-tenant</span>
-                <span class="tag tag-green">IA Integrada</span>
-                <span class="tag tag-violet">PWA Mobile</span>
-                <span class="tag tag-amber">WhatsApp Bot</span>
-                <span class="tag tag-red">Open Architecture</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. PARA QUIN -->
-          <div class="manual-section" id="s-audience">
-            <div class="section-header violet">
-              <div class="section-icon">•</div>
-              <div><h2>Para quién es este sistema?</h2><p>Audiencias y perfiles de usuario</p></div>
-            </div>
-            <div class="section-body">
-              <div class="arch-box">
-                <div class="arch-card">
-                  <div class="arch-card-icon">•?</div>
-                  <div class="arch-card-title">Intendentes / Directores</div>
-                  <div class="arch-card-sub">Dashboard ejecutivo, KPIs en tiempo real, alertas crticas. Toma de decisiones con datos.</div>
-                </div>
-                <div class="arch-card">
-                  <div class="arch-card-icon">•</div>
-                  <div class="arch-card-title">Hacienda / Contadores</div>
-                  <div class="arch-card-sub">Presupuesto anual, partidas, ejecución por Área. Exportar a Excel y PDF para auditora.</div>
-                </div>
-                <div class="arch-card">
-                  <div class="arch-card-icon">•</div>
-                  <div class="arch-card-title">Compras / Licitaciones</div>
-                  <div class="arch-card-sub">Contratos, proveedores, pliegos automíticos con IA, auditora de clusulas.</div>
-                </div>
-                <div class="arch-card">
-                  <div class="arch-card-icon">•</div>
-                  <div class="arch-card-title">RRHH / Administración</div>
-                  <div class="arch-card-sub">Empleados, sueldos, licencias, presentismo. Importación masiva desde Excel.</div>
-                </div>
-                <div class="arch-card">
-                  <div class="arch-card-icon">•?</div>
-                  <div class="arch-card-title">Atención Ciudadana</div>
-                  <div class="arch-card-sub">Reclamos vecinales, seguimiento, mapas de calor georreferenciados.</div>
-                </div>
-                <div class="arch-card">
-                  <div class="arch-card-icon">•</div>
-                  <div class="arch-card-title">Ingenieros / IT</div>
-                  <div class="arch-card-sub">Arquitectura modular, API REST, Prisma + PostgreSQL. Sección túcnica completa.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 3. MíDULOS -->
-          <div class="manual-section" id="s-modules">
-            <div class="section-header green">
-              <div class="section-icon">•</div>
-              <div><h2>Mídulos del Sistema</h2><p>11 mídulos completos + Super Admin</p></div>
-            </div>
-            <div class="section-body">
-              <div class="module-grid">
-                <div class="module-card">
-                  <div class="module-card-icon">•</div>
-                  <div class="module-card-name">Dashboard Ejecutivo</div>
-                  <div class="module-card-file">index.html</div>
-                  <div class="module-card-desc">KPIs animados, grficos en tiempo real, actividad reciente, alertas crticas.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•?</div>
-                  <div class="module-card-name">Control Ejecutivo</div>
-                  <div class="module-card-file">control.html</div>
-                  <div class="module-card-desc">Vista panormica para el intendente: gastos, contratos, personal, reclamos.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•</div>
-                  <div class="module-card-name">Asistente IA</div>
-                  <div class="module-card-file">ia.html</div>
-                  <div class="module-card-desc">Chatbot de voz y texto. Responde preguntas sobre el sistema en lenguaje natural.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•</div>
-                  <div class="module-card-name">RRHH</div>
-                  <div class="module-card-file">rrhh.html</div>
-                  <div class="module-card-desc">Empleados, sueldos, licencias, presentismo, horas extra. Export Excel/PDF.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•</div>
-                  <div class="module-card-name">Contratos</div>
-                  <div class="module-card-file">contratos.html</div>
-                  <div class="module-card-desc">Contratos activos, vencimientos, proveedores, alertas de renovación.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•</div>
-                  <div class="module-card-name">Licitaciones</div>
-                  <div class="module-card-file">licitaciones.html</div>
-                  <div class="module-card-desc">Flujo completo: pliego IA, evaluación ofertas, auditor de contratos IA.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•</div>
-                  <div class="module-card-name">Presupuesto</div>
-                  <div class="module-card-file">presupuesto.html</div>
-                  <div class="module-card-desc">14 partidas, predictor IA, alertas de desvo, grficos de ejecución mensual.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•?</div>
-                  <div class="module-card-name">Mapa Financiero</div>
-                  <div class="module-card-file">mapa.html</div>
-                  <div class="module-card-desc">Costos por zona, obras públicas, heatmap de gasto. Leaflet.js.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•?</div>
-                  <div class="module-card-name">Atención Vecinal</div>
-                  <div class="module-card-file">vecinos.html</div>
-                  <div class="module-card-desc">Reclamos, seguimiento, clasificación, mapa de calor, estadísticas.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•</div>
-                  <div class="module-card-name">Exportar</div>
-                  <div class="module-card-file">exportar.html</div>
-                  <div class="module-card-desc">PDF, Excel, Word. Plantillas profesionales para informes ejecutivos.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">?</div>
-                  <div class="module-card-name">Super Admin</div>
-                  <div class="module-card-file">admin.html</div>
-                  <div class="module-card-desc">Panel plataforma: tenants, usuarios, revenue MRR/ARR, auditora global.</div>
-                </div>
-                <div class="module-card">
-                  <div class="module-card-icon">•</div>
-                  <div class="module-card-name">Landing SaaS</div>
-                  <div class="module-card-file">landing.html</div>
-                  <div class="module-card-desc">Página comercial. Pricing, features, demo modal, contacto.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 4. LOGIN Y ROLES -->
-          <div class="manual-section" id="s-login">
-            <div class="section-header amber">
-              <div class="section-icon">•</div>
-              <div><h2>Login y Sistema de Roles</h2><p>Acceso seguro con JWT multi-tenant</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p">El sistema tiene <strong>4 niveles de acceso</strong> con redirección automítica según el rol:</p>
-              <table class="feat-table">
-                <thead>
-                  <tr><th>Rol</th><th>Email de ejemplo</th><th>Contrasea</th><th>Redirige a</th><th>Permisos</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>? SUPER_ADMIN</td><td><code>superadmin@govtech.ar</code></td><td><code>SuperAdmin2026!</code></td><td>admin.html</td><td>Todo + todos los municipios</td></tr>
-                  <tr><td>•? TENANT_ADMIN</td><td><code>intendente@junin.gob.ar</code></td><td><code>Junin2026!</code></td><td>control.html</td><td>Su municipio completo</td></tr>
-                  <tr><td>• TENANT_USER</td><td><code>hacienda@junin.gob.ar</code></td><td><code>Hacienda2026!</code></td><td>control.html</td><td>Su municipio, sin gestión</td></tr>
-                  <tr><td>• DEMO</td><td><code>demo@demo.com</code></td><td><code>demo123</code></td><td>index.html</td><td>Solo lectura, datos demo</td></tr>
-                </tbody>
-              </table>
-              <div class="sub-h">Pasos para iniciar sesión</div>
-              <div class="steps-list">
-                <div class="step-item">
-                  <div class="step-num">1</div>
-                  <div class="step-body"><h3>Abrir login.html</h3><p>Ir a la URL del sistema. El login se abre automíticamente si no hay sesión activa.</p></div>
-                </div>
-                <div class="step-item">
-                  <div class="step-num">2</div>
-                  <div class="step-body"><h3>Ingresar credenciales</h3><p>Email institucional + contrasea. O hacer clic en cualquier credencial del panel de demo para autocompletar.</p></div>
-                </div>
-                <div class="step-item">
-                  <div class="step-num">3</div>
-                  <div class="step-body"><h3>Redirección automítica</h3><p>El sistema detecta el rol y redirige al mídulo correcto automíticamente.</p><div class="step-note note-tip">• El token JWT se guarda en sessionStorage y expira al cerrar el navegador.</div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 5. DASHBOARD -->
-          <div class="manual-section" id="s-dashboard">
-            <div class="section-header blue">
-              <div class="section-icon">•</div>
-              <div><h2>Dashboard Ejecutivo</h2><p>Vista principal del sistema  index.html</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p">El dashboard muestra en tiempo real los indicadores más importantes del municipio. Está diseado para que el intendente o director pueda ver todo el estado del municipio en 30 segundos.</p>
-              <div class="sub-h">KPIs principales</div>
-              <table class="feat-table">
-                <thead><tr><th>Indicador</th><th>Descripción</th><th>Fuente</th></tr></thead>
-                <tbody>
-                  <tr><td>• Presupuesto Total</td><td>Presupuesto anual del municipio</td><td>API /api/data/metrics</td></tr>
-                  <tr><td>? Ejecutado</td><td>% del presupuesto gastado</td><td>Base de datos local</td></tr>
-                  <tr><td>• Empleados Activos</td><td>Total de empleados en nmina</td><td>RRHH module</td></tr>
-                  <tr><td>• Contratos Activos</td><td>Contratos vigentes con proveedores</td><td>Contratos module</td></tr>
-                  <tr><td>•? Reclamos Pendientes</td><td>Reclamos vecinales sin resolver</td><td>Vecinos module</td></tr>
-                  <tr><td>• Ahorro IA</td><td>Ahorro detectado por análisis IA</td><td>IA Analytics</td></tr>
-                </tbody>
-              </table>
-              <div class="sub-h">Grficos incluidos</div>
-              <div class="steps-list">
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Grfico de barras mensual</h3><p>Ingresos vs. Gastos por mes. Chart.js con animación de entrada.</p></div></div>
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Distribución por Área</h3><p>Torta con % de gasto por departamento (Personal, Obras, Servicios, Social).</p></div></div>
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Actividad reciente</h3><p>Últimos 5 movimientos: contratos firmados, reclamos nuevos, pagos realizados.</p></div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 6. ASISTENTE IA -->
-          <div class="manual-section" id="s-ia">
-            <div class="section-header violet">
-              <div class="section-icon">•</div>
-              <div><h2>Asistente IA Municipal</h2><p>Consultas en lenguaje natural  ia.html + Widget flotante</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p">El asistente IA permite hacer preguntas sobre el municipio en lenguaje natural, usando <strong>texto o voz</strong>. Está disponible como página completa (<code>ia.html</code>) y como <strong>widget flotante</strong> accesible desde cualquier mídulo del sistema.</p>
-              <div class="sub-h">Preguntas que puede responder</div>
-              <div class="steps-list">
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Gastos y presupuesto</h3><p>"Cuánto gastamos en combustible este mesí"  "Qué Área gasta másí"  "Cuánto nos queda de presupuesto?"</p></div></div>
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Contratos y proveedores</h3><p>"Cuántos contratos vencen este mesí"  "Cuál es el proveedor más caro?"  "Resumí el contrato de obras."</p></div></div>
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Personal</h3><p>"Cuántos empleados tenemosí"  "Quién faltú esta semana?"  "Cuánto pagamos en sueldosí"</p></div></div>
-                <div class="step-item"><div class="step-num">•?</div><div class="step-body"><h3>Reclamos vecinales</h3><p>"Cuántos reclamos hay pendientesí"  "Qué barrio reclama másí"  "Cuál es el reclamo más urgente?"</p></div></div>
-              </div>
-              <div class="sub-h">Cómo usar el asistente</div>
-              <div class="steps-list">
-                <div class="step-item"><div class="step-num">1</div><div class="step-body"><h3>Acceder al mídulo IA</h3><p>Ir a Mídulos ? • Asistente IA, o hacer clic en el <strong>widget flotante •</strong> en la esquina inferior derecha de cualquier página.</p></div></div>
-                <div class="step-item"><div class="step-num">2</div><div class="step-body"><h3>Escribir o hablar</h3><p>Escribir la pregunta en el campo de texto, o hacer clic en el •? micrfono para hablar. El sistema convierte voz a texto automíticamente.</p></div></div>
-                <div class="step-item"><div class="step-num">3</div><div class="step-body"><h3>Recibir respuesta</h3><p>La IA responde con texto, números y grficos según corresponda. Si necesita datos reales, los obtiene del backend vía <code>/api/data/metrics</code>.</p></div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 7. CONTRATOS -->
-          <div class="manual-section" id="s-contratos">
-            <div class="section-header green">
-              <div class="section-icon">•</div>
-              <div><h2>Contratos y Control de Gastos</h2><p>Seguimiento de contratos, proveedores y alertas</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <div class="sub-h">Funciones disponibles</div>
-              <table class="feat-table">
-                <thead><tr><th>Función</th><th>Descripción</th><th>Rol requerido</th></tr></thead>
-                <tbody>
-                  <tr><td>• Listar contratos</td><td>Ver todos los contratos activos con proveedor, monto y vencimiento</td><td>Cualquier usuario</td></tr>
-                  <tr><td>? Nuevo contrato</td><td>Crear contrato con todos los campos legales</td><td>TENANT_ADMIN</td></tr>
-                  <tr><td>• Alertas vencimiento</td><td>Notificación 30/15/7 días antes del vencimiento</td><td>Automítico</td></tr>
-                  <tr><td>• Análisis IA</td><td>Detectar contratos caros vs. mercado, riesgo de colusión</td><td>Cualquier usuario</td></tr>
-                  <tr><td>• Exportar</td><td>PDF con detalle completo del contrato o Excel resumen</td><td>Cualquier usuario</td></tr>
-                </tbody>
-              </table>
-              <div class="alert-box alert-warn">
-                <span class="alert-icon">•</span>
-                <span>Los contratos con <strong>vencimiento en menos de 30 días</strong> se marcan automíticamente en rojo y envían una alerta por WhatsApp al equipo.</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 8. RRHH -->
-          <div class="manual-section" id="s-rrhh">
-            <div class="section-header teal">
-              <div class="section-icon">•</div>
-              <div><h2>Mídulo RRHH</h2><p>Gestión de personal municipal  rrhh.html</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <table class="feat-table">
-                <thead><tr><th>Función</th><th>Descripción</th></tr></thead>
-                <tbody>
-                  <tr><td>• Nmina completa</td><td>Lista de empleados con cargo, Área, categoría y estado</td></tr>
-                  <tr><td>• Liquidación</td><td>Sueldo básico + adicionales + descuentos. Export a liquidación oficial</td></tr>
-                  <tr><td>• Licencias</td><td>Vacaciones, enfermedad, estudio. Control de días disponibles</td></tr>
-                  <tr><td>? Presentismo</td><td>Control de asistencia diaria. Alertas de ausentismo</td></tr>
-                  <tr><td>• Horas extra</td><td>Registro y aprobación de horas extras por Área</td></tr>
-                  <tr><td>• Exportar</td><td>Excel con nmina completa  PDF con recibos individuales</td></tr>
-                  <tr><td>• Importar</td><td>Carga masiva desde Excel/CSV existente</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 9. PRESUPUESTO -->
-          <div class="manual-section" id="s-presupuesto">
-            <div class="section-header amber">
-              <div class="section-icon">•</div>
-              <div><h2>Presupuesto Anual</h2><p>Control por partida con predictor IA  presupuesto.html</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p">El mídulo de presupuesto permite controlar las <strong>14 partidas presupuestarias</strong> del municipio en tiempo real, con alertas cuando alguna se acerca al lmite y predicciones IA sobre el cierre de año.</p>
-              <div class="sub-h">Partidas disponibles</div>
-              <div class="tag-row">
-                <span class="tag tag-red">1.1 Personal y Sueldos</span>
-                <span class="tag tag-red">1.2 Cargas Sociales</span>
-                <span class="tag tag-blue">2.1 Servicios Bsicos</span>
-                <span class="tag tag-blue">2.2 Mantenimiento Flota</span>
-                <span class="tag tag-blue">2.3 Mantenimiento Edificios</span>
-                <span class="tag tag-green">3.1 Obras de Infraestructura</span>
-                <span class="tag tag-green">3.2 Espacios Verdes</span>
-                <span class="tag tag-green">3.3 Sealización</span>
-                <span class="tag tag-violet">4.1 Salud Municipal</span>
-                <span class="tag tag-violet">4.2 Educación y Cultura</span>
-                <span class="tag tag-violet">4.3 Asistencia Social</span>
-                <span class="tag tag-amber">5.1 Tecnologa e IT</span>
-                <span class="tag tag-amber">5.2 Comunicación</span>
-                <span class="tag tag-blue">6.1 Deuda y Financiamiento</span>
-              </div>
-              <div class="sub-h">Predictor IA</div>
-              <p class="manual-p">El predictor calcula automíticamente el <strong>gasto proyectado al cierre del año</strong> usando regresión lineal ponderada sobre los Últimos 7 meses. Genera alertas cuando detecta partidas en riesgo de superar el presupuesto.</p>
-            </div>
-          </div>
-
-          <!-- 10. MAPA -->
-          <div class="manual-section" id="s-mapa">
-            <div class="section-header green">
-              <div class="section-icon">•?</div>
-              <div><h2>Mapa Financiero Georreferenciado</h2><p>Costos por zona, obras y heatmap  mapa.html</p></div>
-              <span class="section-badge badge-admin">•? Admin</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p">El mapa financiero muestra el gasto municipal sobre un mapa real usando <strong>Leaflet.js + OpenStreetMap</strong>. Tiene 3 capas intercambiables:</p>
-              <div class="steps-list">
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Capa: Costos por Zona</h3><p>12 zonas coloreadas según nivel de gasto. Verde = bajo, Amarillo = medio, Rojo = alto. Click para ver detalle de presupuesto.</p></div></div>
-                <div class="step-item"><div class="step-num">•?</div><div class="step-body"><h3>Capa: Obras Públicas</h3><p>8 obras activas con marcadores animados. Click para ver progreso, presupuesto, categoría y fecha estimada.</p></div></div>
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Capa: Heatmap de Gasto</h3><p>Visualización de calor que muestra densidad de gasto por Área geogrfica.</p></div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 11. LICITACIONES -->
-          <div class="manual-section" id="s-licitaciones">
-            <div class="section-header orange">
-              <div class="section-icon">•</div>
-              <div><h2>Mídulo Licitaciones</h2><p>Flujo completo con IA Pliego Generator y Auditor  licitaciones.html</p></div>
-              <span class="section-badge badge-admin">•? Admin</span>
-            </div>
-            <div class="section-body">
-              <div class="sub-h">Pestaas del mídulo</div>
-              <table class="feat-table">
-                <thead><tr><th>Pestaa</th><th>Función</th></tr></thead>
-                <tbody>
-                  <tr><td>• Licitaciones</td><td>Lista de todas las licitaciones: estado, proveedor, monto, fechas</td></tr>
-                  <tr><td>• Análisis</td><td>Estadísticas y grficos de licitaciones por año/tipo</td></tr>
-                  <tr><td>• AI Pliegos</td><td>Generador automítico de pliegos legales con IA. Completa el formulario y genera un pliego completo en formato argentino</td></tr>
-                  <tr><td>• AI Auditor</td><td>Pega el texto de un contrato y la IA analiza: precio de mercado, clusulas irregulares, riesgo de colusión, score de riesgo</td></tr>
-                </tbody>
-              </table>
-              <div class="alert-box alert-tip">
-                <span class="alert-icon">•</span>
-                <span>El <strong>AI Pliego Generator</strong> genera automíticamente: objeto de la licitación, condiciones de participación, criterios de evaluación, penalidades y garantúas. Todo en formato legal argentino listo para imprimir.</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 12. VECINOS -->
-          <div class="manual-section" id="s-vecinos">
-            <div class="section-header blue">
-              <div class="section-icon">•?</div>
-              <div><h2>Atención Vecinal</h2><p>Reclamos, seguimiento y estadísticas  vecinos.html</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <table class="feat-table">
-                <thead><tr><th>Función</th><th>Descripción</th></tr></thead>
-                <tbody>
-                  <tr><td>• Lista reclamos</td><td>Todos los reclamos con estado, prioridad, vecino y fecha</td></tr>
-                  <tr><td>? Nuevo reclamo</td><td>Cargar nuevo reclamo con descripción, ubicación, foto</td></tr>
-                  <tr><td>•? Mapa de calor</td><td>Ver qué zonas tienen más reclamos en el mapa</td></tr>
-                  <tr><td>• Estadísticas</td><td>Reclamos por tipo, barrio, mes. Para priorización de recursos</td></tr>
-                  <tr><td>• Clasificación IA</td><td>La IA clasifica automíticamente el tipo y prioridad del reclamo</td></tr>
-                  <tr><td>• WhatsApp</td><td>Notificación automítica al vecino cuando su reclamo cambia de estado</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 13. EXPORTAR -->
-          <div class="manual-section" id="s-export">
-            <div class="section-header red">
-              <div class="section-icon">•</div>
-              <div><h2>Centro de Exportación</h2><p>PDF, Excel y Word profesionales  exportar.html</p></div>
-              <span class="section-badge badge-user">• Usuario</span>
-            </div>
-            <div class="section-body">
-              <div class="steps-list">
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>PDF Ejecutivo</h3><p>Informe mensual completo con KPIs, grficos y firma digital. Listo para el concejo deliberante.</p></div></div>
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Excel Detallado</h3><p>Datos crudos de cualquier mídulo: contratos, empleados, presupuesto. Formato XLSX para análisis.</p></div></div>
-                <div class="step-item"><div class="step-num">•</div><div class="step-body"><h3>Word / Informes</h3><p>Plantillas Word para informes narrativos. Incluye tablas y grficos embebidos.</p></div></div>
-                <div class="step-item"><div class="step-num">•?</div><div class="step-body"><h3>Imprimir directo</h3><p>Cada mídulo tiene botún de impresión optimizado. Oculta sidebar y menus automíticamente.</p></div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- === PARA INGENIEROS === -->
-          <div class="page-break"></div>
-
-          <!-- 14. ARQUITECTURA -->
-          <div class="manual-section" id="s-arch">
-            <div class="section-header violet">
-              <div class="section-icon">•?</div>
-              <div><h2>Arquitectura del Sistema</h2><p>Diseo túcnico completo para ingenieros</p></div>
-              <span class="section-badge badge-tech">• Túcnico</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p">GovTech Platform es una aplicación <strong>monorepo</strong> con frontend en HTML/CSS/JS puro (sin framework) y backend en <strong>Node.js + Express</strong>. Desplegada en <strong>Vercel</strong> como funciones serverless.</p>
-              <div class="sub-h">Diagrama de capas</div>
-              <div class="code-block">
-                <div class="code-head"><span>Arquitectura simplificada</span></div>
-                <pre>+----------------------------------------------------------+
-                    CLIENTE (Browser / Mobile)             
-   HTML + Vanilla JS + CSS (glassmorphism dark theme)      
-   PWA ? manifest.json + service-worker.js                 
-+----------------------------------------------------------+
-                       HTTPS / API calls
-+---------------------?------------------------------------+
-                 VERCEL (Edge Network)                     
-   Static files: HTML, CSS, JS, images                     
-   Serverless Functions: /api/* ? Express.js               
-+--------------------------------------------------------+
-                                
-+------?------+          +------?----------------------+
-  Neon DB                    External APIs           
-  PostgreSQL             Meta/WhatsApp, SMTP, etc.   
-  (Prisma)             +------------------------------+
-+-------------+</pre>
-              </div>
-              <div class="sub-h">Estructura de archivos</div>
-              <div class="code-block">
-                <div class="code-head"><span>municipio-junin/  Estructura de carpetas</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
-                <pre>municipio-junin/
-+-- index.html              ? Dashboard ejecutivo
-+-- login.html              ? Autenticación multi-rol
-+-- control.html            ? Control ejecutivo (admin)
-+-- ia.html                 ? Asistente IA + voz
-+-- rrhh.html               ? Mídulo RRHH
-+-- contratos.html          ? Gestión contratos
-+-- licitaciones.html       ? Licitaciones + AI
-+-- presupuesto.html        ? Presupuesto anual
-+-- mapa.html               ? Mapa financiero
-+-- vecinos.html            ? Atención vecinal
-+-- exportar.html           ? Centro de exportación
-+-- manuales.html           ? Este manual
-+-- admin.html              ? Super Admin panel
-+-- landing.html            ? Landing SaaS comercial
-
-+-- css/
-   +-- shared.css          ? Variables globales + base
-   +-- dashboard.css       ? Componentes dashboard
-
-+-- js/
-   +-- nav.js              ? Sidebar + navegación dinmica
-   +-- pwa.js              ? PWA + mobile bottom nav
-   +-- toast.js            ? Sistema de notificaciones
-   +-- ai-widget.js        ? Widget IA flotante (voz+texto)
-
-+-- backend/
-   +-- server.js           ? Express + rutas
-   +-- lib/
-      +-- prisma.js       ? Singleton Prisma client
-   +-- middleware/
-      +-- authMiddleware.js ? JWT + roles
-   +-- routes/
-      +-- auth.js         ? Login + JWT
-      +-- contratos.js    ? CRUD contratos
-      +-- empleados.js    ? CRUD empleados
-      +-- reclamos.js     ? CRUD reclamos
-      +-- admin.js        ? Super Admin endpoints
-      +-- whatsapp.js     ? Meta WhatsApp API
-      +-- notifications.jsí Alertas automíticas
-   +-- seed.js             ? Datos iniciales DB
-
-+-- prisma/
-   +-- schema.prisma       ? Esquema PostgreSQL
-
-+-- tenants/
-    +-- junin-mendoza/
-       +-- config.json     ? Configuración Junín
-    +-- template/
-        +-- config.json     ? Plantilla nuevos tenants</pre>
-              </div>
-            </div>
-          </div>
-
-          <!-- 15. STACK TECNOLGICO -->
-          <div class="manual-section" id="s-tech">
-            <div class="section-header teal">
-              <div class="section-icon">•</div>
-              <div><h2>Stack Tecnolgico</h2><p>Tecnologas y libreras utilizadas</p></div>
-              <span class="section-badge badge-tech">• Túcnico</span>
-            </div>
-            <div class="section-body">
-              <table class="feat-table">
-                <thead><tr><th>Categoría</th><th>Tecnologa</th><th>Versión</th><th>Uso</th></tr></thead>
-                <tbody>
-                  <tr><td>•? Frontend</td><td>HTML5 + CSS3 + Vanilla JS</td><td>ES2022+</td><td>Todos los mídulos. Sin framework pesado.</td></tr>
-                  <tr><td>• Diseo</td><td>CSS Variables + Glassmorphism</td><td></td><td>shared.css + dashboard.css</td></tr>
-                  <tr><td>• Grficos</td><td>Chart.js</td><td>4.4.x</td><td>Barras, lneas, tortas en todos los mídulos</td></tr>
-                  <tr><td>•? Mapas</td><td>Leaflet.js</td><td>1.9.4</td><td>Mapa financiero + mapa de reclamos</td></tr>
-                  <tr><td>• OCR</td><td>Tesseract.js</td><td>5.x</td><td>Lectura de documentos/imígenes</td></tr>
-                  <tr><td>•? Voz</td><td>Web Speech API</td><td>nativa</td><td>Reconocimiento de voz en IA y widget</td></tr>
-                  <tr><td>• PWA</td><td>Service Worker + manifest</td><td></td><td>Instalable en mívil como app nativa</td></tr>
-                  <tr><td>• Backend</td><td>Node.js + Express</td><td>18+ / 4.x</td><td>API REST, middleware, autenticación</td></tr>
-                  <tr><td>•? ORM</td><td>Prisma</td><td>5.x</td><td>Abstracción de PostgreSQL, migraciones</td></tr>
-                  <tr><td>• Base de datos</td><td>PostgreSQL (Neon)</td><td>17</td><td>DB principal. Neon para serverless.</td></tr>
-                  <tr><td>• Autenticación</td><td>JWT + bcrypt</td><td></td><td>Tokens con expiración + hash de contraseas</td></tr>
-                  <tr><td>• WhatsApp</td><td>Meta Cloud API</td><td>v18+</td><td>Notificaciones y bot de consultas</td></tr>
-                  <tr><td>• Email</td><td>Nodemailer</td><td>6.x</td><td>Alertas y reportes automíticos</td></tr>
-                  <tr><td>• Deploy</td><td>Vercel</td><td></td><td>Hosting + serverless functions + CDN</td></tr>
-                  <tr><td>• CI/CD</td><td>GitHub Actions</td><td></td><td>Deploy automítico al hacer push</td></tr>
-                  <tr><td>? Rate Limiting</td><td>express-rate-limit</td><td>7.x</td><td>Protección contra abuso de API</td></tr>
-                  <tr><td>•? CORS</td><td>cors (npm)</td><td>2.x</td><td>Control de acceso cross-origin</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 16. BASE DE DATOS -->
-          <div class="manual-section" id="s-db">
-            <div class="section-header pink">
-              <div class="section-icon">•</div>
-              <div><h2>Base de Datos  Schema Prisma</h2><p>PostgreSQL  Neon  5 tablas principales</p></div>
-              <span class="section-badge badge-tech">• Túcnico</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p">El sistema usa <strong>PostgreSQL</strong> manejado via <strong>Prisma ORM</strong>. En producción, la DB se hostea en <strong>Neon</strong> (serverless PostgreSQL). Para desarrollo local, puede usarse cualquier PostgreSQL o el modo en-memoria.</p>
-              <div class="sub-h">Tabla: Tenant</div>
-              <div class="db-table-wrap">
-                <table class="db-table">
-                  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
-                  <tbody>
-                    <tr><td class="col-pk">id</td><td class="col-type">String (cuid)</td><td>Identificador Único del municipio</td></tr>
-                    <tr><td>name</td><td class="col-type">String</td><td>"Municipalidad de Junín"</td></tr>
-                    <tr><td>slug</td><td class="col-type">String (unique)</td><td>"junin-mendoza"  usado en URLs</td></tr>
-                    <tr><td>plan</td><td class="col-type">Enum</td><td>STARTER | PROFESSIONAL | ENTERPRISE</td></tr>
-                    <tr><td>status</td><td class="col-type">Enum</td><td>ACTIVE | TRIAL | SUSPENDED | CANCELLED</td></tr>
-                    <tr><td>contactEmail</td><td class="col-type">String</td><td>Email del administrador</td></tr>
-                    <tr><td>whatsappPhone</td><td class="col-type">String?</td><td>Número para bot WhatsApp</td></tr>
-                    <tr><td>monthlyFee</td><td class="col-type">Float</td><td>Precio mensual en USD</td></tr>
-                    <tr><td>trialEndsAt</td><td class="col-type">DateTime?</td><td>Fecha fin del período de prueba</td></tr>
-                    <tr><td>createdAt</td><td class="col-type">DateTime</td><td>Fecha de alta en la plataforma</td></tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="sub-h">Tabla: User</div>
-              <div class="db-table-wrap">
-                <table class="db-table">
-                  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
-                  <tbody>
-                    <tr><td class="col-pk">id</td><td class="col-type">String (cuid)</td><td>ID Único del usuario</td></tr>
-                    <tr><td class="col-fk">tenantId</td><td class="col-type">String?</td><td>FK ? Tenant.id (null para SUPER_ADMIN)</td></tr>
-                    <tr><td>email</td><td class="col-type">String (unique)</td><td>Email de acceso</td></tr>
-                    <tr><td>passwordHash</td><td class="col-type">String</td><td>bcrypt hash, nunca se guarda en texto plano</td></tr>
-                    <tr><td>name</td><td class="col-type">String</td><td>Nombre completo</td></tr>
-                    <tr><td>role</td><td class="col-type">Enum</td><td>SUPER_ADMIN | TENANT_ADMIN | TENANT_USER | DEMO</td></tr>
-                    <tr><td>isActive</td><td class="col-type">Boolean</td><td>Si puede iniciar sesión</td></tr>
-                    <tr><td>lastLoginAt</td><td class="col-type">DateTime?</td><td>Último acceso registrado</td></tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="sub-h">Otras tablas</div>
-              <table class="feat-table">
-                <thead><tr><th>Tabla</th><th>Propsito</th></tr></thead>
-                <tbody>
-                  <tr><td><code>TenantModule</code></td><td>Mídulos habilitados por tenant. Ej: Junín tiene Mapa, Demo no.</td></tr>
-                  <tr><td><code>AuditLog</code></td><td>Log de cada acción: quién, qué, cuándo, desde qué IP.</td></tr>
-                  <tr><td><code>Invitation</code></td><td>Invitaciones pendientes por email + token temporario.</td></tr>
-                </tbody>
-              </table>
-              <div class="sub-h">Comandos Prisma esenciales</div>
-              <div class="code-block">
-                <div class="code-head"><span>bash  Comandos de base de datos</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
-                <pre># Generar cliente Prisma
-npx prisma generate
-
-# Crear y aplicar migraciones
-npx prisma migrate dev --name init
-
-# Cargar datos iniciales
-node backend/seed.js
-
-# Explorar la base de datos
-npx prisma studio
-
-# Ver estado de migraciones
-npx prisma migrate status</pre>
-              </div>
-            </div>
-          </div>
-
-          <!-- 17. API REFERENCE -->
-          <div class="manual-section" id="s-api">
-            <div class="section-header blue">
-              <div class="section-icon">•</div>
-              <div><h2>API Reference</h2><p>Endpoints disponibles del backend</p></div>
-              <span class="section-badge badge-tech">• Túcnico</span>
-            </div>
-            <div class="section-body">
-              <table class="feat-table">
-                <thead><tr><th>Mítodo</th><th>Endpoint</th><th>Descripción</th><th>Auth</th></tr></thead>
-                <tbody>
-                  <tr><td>POST</td><td><code>/api/auth/login</code></td><td>Login con email+password ? devuelve JWT</td><td>? Público</td></tr>
-                  <tr><td>GET</td><td><code>/api/health</code></td><td>Estado del sistema y versión</td><td>? Público</td></tr>
-                  <tr><td>GET</td><td><code>/api/data/metrics</code></td><td>Mítricas del municipio (KPIs para IA)</td><td>? Token</td></tr>
-                  <tr><td>GET</td><td><code>/api/contratos</code></td><td>Lista de contratos activos</td><td>? Token</td></tr>
-                  <tr><td>POST</td><td><code>/api/contratos</code></td><td>Crear nuevo contrato</td><td>• Admin</td></tr>
-                  <tr><td>GET</td><td><code>/api/empleados</code></td><td>Lista de empleados</td><td>? Token</td></tr>
-                  <tr><td>GET</td><td><code>/api/reclamos</code></td><td>Lista de reclamos vecinales</td><td>? Token</td></tr>
-                  <tr><td>GET</td><td><code>/api/admin/tenants</code></td><td>Todos los municipios (Super Admin)</td><td>? SUPER</td></tr>
-                  <tr><td>POST</td><td><code>/api/admin/tenants</code></td><td>Crear nuevo municipio</td><td>? SUPER</td></tr>
-                  <tr><td>POST</td><td><code>/api/whatsapp/webhook</code></td><td>Webhook de Meta para recibir mensajes</td><td>• Firma Meta</td></tr>
-                  <tr><td>POST</td><td><code>/api/notifications/send</code></td><td>Enviar notificación email/WhatsApp</td><td>• Admin</td></tr>
-                  <tr><td>POST</td><td><code>/api/archivos/upload</code></td><td>Subir archivo (PDF/Excel/CSV)</td><td>? Token</td></tr>
-                </tbody>
-              </table>
-              <div class="sub-h">Ejemplo de autenticación</div>
-              <div class="code-block">
-                <div class="code-head"><span>JavaScript  Login y uso del token</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
-                <pre>// 1. Login
-const resp = await fetch('/api/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'user@junin.gob.ar', password: 'pass' })
-});
-const { token, user } = await resp.json();
-
-// 2. Guardar token
-sessionStorage.setItem('govtech_token', token);
-
-// 3. Usar en cada request
-const data = await fetch('/api/contratos', {
-  headers: { 'Authorization': `Bearer ${token}` }
-});</pre>
-              </div>
-            </div>
-          </div>
-
-          <!-- 18. AUTH -->
-          <div class="manual-section" id="s-auth">
-            <div class="section-header amber">
-              <div class="section-icon">•?</div>
-              <div><h2>Sistema de Autenticación</h2><p>JWT + bcrypt + roles jerrquicos</p></div>
-              <span class="section-badge badge-tech">• Túcnico</span>
-            </div>
-            <div class="section-body">
-              <div class="code-block">
-                <div class="code-head"><span>JWT Payload  Estructura del token</span></div>
-                <pre>{
-  "sub": "user_id_cuid",
-  "email": "intendente@junin.gob.ar",
-  "name": "Intendente Municipal",
-  "role": "TENANT_ADMIN",
-  "tenantId": "t_junin_cuid",
-  "tenantSlug": "junin-mendoza",
-  "iat": 1753900000,
-  "exp": 1753986400   // 24 horas
-}</pre>
-              </div>
-              <div class="sub-h">Middleware de roles</div>
-              <div class="code-block">
-                <div class="code-head"><span>authMiddleware.js  Proteger rutas</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
-                <pre>const { authenticate, requireRole } = require('./middleware/authMiddleware');
-
-// Solo usuarios autenticados
-router.get('/data', authenticate, handler);
-
-// Solo admins del tenant
-router.post('/contratos', authenticate, requireRole('TENANT_ADMIN'), handler);
-
-// Solo Super Admin
-router.get('/admin/tenants', authenticate, requireRole('SUPER_ADMIN'), handler);</pre>
-              </div>
-            </div>
-          </div>
-
-          <!-- 19. DEPLOY -->
-          <div class="manual-section" id="s-deploy">
-            <div class="section-header red">
-              <div class="section-icon">•</div>
-              <div><h2>Gua de Deploy</h2><p>Vercel + Neon + GitHub Actions</p></div>
-              <span class="section-badge badge-tech">• Túcnico</span>
-            </div>
-            <div class="section-body">
-              <div class="sub-h">Variables de entorno requeridas</div>
-              <div class="code-block">
-                <div class="code-head"><span>.env  Variables requeridas en Vercel</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
-                <pre># BASE DE DATOS (Neon PostgreSQL)
-DATABASE_URL="postgresql://user:pass@ep-xxx.neon.tech/neondb?pgbouncer=true"
-DIRECT_URL="postgresql://user:pass@ep-xxx.neon.tech/neondb"
-
-# AUTENTICACIN
-JWT_SECRET="tu-secreto-super-largo-aqui"
-
-# WHATSAPP (Meta Cloud API)
-WHATSAPP_PHONE_NUMBER_ID="tu-phone-id"
-WHATSAPP_ACCESS_TOKEN="tu-token"
-WHATSAPP_VERIFY_TOKEN="tu-verify-token"
-
-# EMAIL (Nodemailer)
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT=587
-SMTP_USER="alerts@tumunicipicio.gob.ar"
-SMTP_PASS="tu-contrasea"
-
-# SISTEMA
-NODE_ENV="production"
-SUPER_ADMIN_EMAIL="superadmin@govtech.ar"
-SUPER_ADMIN_PASSWORD="SuperAdmin2026!"</pre>
-              </div>
-              <div class="sub-h">Deploy en Vercel (desde cero)</div>
-              <div class="steps-list">
-                <div class="step-item"><div class="step-num">1</div><div class="step-body"><h3>Fork del repositorio</h3><p><code>git clone https://github.com/inguillen87/municipio-junin.git</code> en la carpeta del nuevo cliente.</p></div></div>
-                <div class="step-item"><div class="step-num">2</div><div class="step-body"><h3>Crear proyecto Neon</h3><p>Ir a neon.tech ? New Project ? Copiar DATABASE_URL y DIRECT_URL con framework Prisma.</p></div></div>
-                <div class="step-item"><div class="step-num">3</div><div class="step-body"><h3>Configurar Vercel</h3><p>Import project en vercel.com ? Agregar todas las env vars ? Deploy automítico.</p></div></div>
-                <div class="step-item"><div class="step-num">4</div><div class="step-body"><h3>Inicializar DB</h3><p><code>npx prisma migrate dev</code> y <code>node backend/seed.js</code> para crear tablas y datos iniciales.</p><div class="step-note note-tip">• El seed.js crea automíticamente: Super Admin + tenant del cliente + 5 usuarios con roles.</div></div></div>
-                <div class="step-item"><div class="step-num">5</div><div class="step-body"><h3>Personalizar tenant</h3><p>Editar <code>tenants/junin-mendoza/config.json</code> con el nombre, colores y datos del nuevo municipio.</p></div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 20. CUSTOMIZACIN -->
-          <div class="manual-section" id="s-customizar">
-            <div class="section-header green">
-              <div class="section-icon">•</div>
-              <div><h2>Gua de Customización</h2><p>Adaptar el sistema a un nuevo cliente</p></div>
-              <span class="section-badge badge-tech">• Túcnico</span>
-            </div>
-            <div class="section-body">
-              <div class="sub-h">1. Cambiar nombre y colores (5 minutos)</div>
-              <div class="code-block">
-                <div class="code-head"><span>css/shared.css  Variables de color</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
-                <pre>:root {
-  --blue:   #3b82f6;  /* Color primario ? cambiar al del cliente */
-  --violet: #8b5cf6;  /* Color secundario */
-  --green:  #10b981;  /* xito / positivo */
-  --red:    #ef4444;  /* Alertas / negativo */
-  --amber:  #f59e0b;  /* Advertencias */
-  --bg:     #060b18;  /* Fondo oscuro ? cambiar si el cliente quiere modo claro */
-}</pre>
-              </div>
-              <div class="sub-h">2. Configurar nuevo tenant (JSON)</div>
-              <div class="code-block">
-                <div class="code-head"><span>tenants/nuevo-municipio/config.json</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
-                <pre>{
-  "id": "t_nuevo",
-  "slug": "nuevo-municipio",
-  "name": "Municipalidad de Nuevo",
-  "province": "Mendoza",
-  "country": "Argentina",
-  "employees": 850,
-  "annualBudget": 280000000,
-  "currency": "ARS",
-  "timezone": "America/Argentina/Mendoza",
-  "primaryColor": "#3b82f6",
-  "logo": "/tenants/nuevo-municipio/logo.png",
-  "modules": ["dashboard","contratos","rrhh","presupuesto","vecinos"]
-}</pre>
-              </div>
-              <div class="sub-h">3. Mídulos activables por cliente</div>
-              <table class="feat-table">
-                <thead><tr><th>Mídulo</th><th>Starter</th><th>Professional</th><th>Enterprise</th></tr></thead>
-                <tbody>
-                  <tr><td>Dashboard + Control</td><td class="ft-check">?</td><td class="ft-check">?</td><td class="ft-check">?</td></tr>
-                  <tr><td>RRHH + Contratos</td><td class="ft-check">?</td><td class="ft-check">?</td><td class="ft-check">?</td></tr>
-                  <tr><td>Asistente IA + Exportar</td><td class="ft-check">?</td><td class="ft-check">?</td><td class="ft-check">?</td></tr>
-                  <tr><td>WhatsApp Bot</td><td class="ft-no"></td><td class="ft-check">?</td><td class="ft-check">?</td></tr>
-                  <tr><td>Mapa Financiero</td><td class="ft-no"></td><td class="ft-check">?</td><td class="ft-check">?</td></tr>
-                  <tr><td>Licitaciones + AI</td><td class="ft-no"></td><td class="ft-check">?</td><td class="ft-check">?</td></tr>
-                  <tr><td>Presupuesto Anual IA</td><td class="ft-no"></td><td class="ft-check">?</td><td class="ft-check">?</td></tr>
-                  <tr><td>Multi-tenant ilimitado</td><td class="ft-no"></td><td class="ft-no"></td><td class="ft-check">?</td></tr>
-                  <tr><td>Deploy en VPS propio</td><td class="ft-no"></td><td class="ft-no"></td><td class="ft-check">?</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 21. MULTI-TENANT -->
-          <div class="manual-section" id="s-multitenant">
-            <div class="section-header violet">
-              <div class="section-icon">•</div>
-              <div><h2>Arquitectura Multi-Tenant</h2><p>Cómo escalar a míltiples municipios</p></div>
-              <span class="section-badge badge-tech">• Túcnico</span>
-            </div>
-            <div class="section-body">
-              <p class="manual-p">El sistema está diseado como <strong>SaaS multi-tenant</strong> desde el primer día. Cada municipio (tenant) comparte la misma codebase pero tiene datos completamente aislados en la base de datos.</p>
-              <div class="sub-h">Aislamiento de datos</div>
-              <div class="code-block">
-                <div class="code-head"><span>Prisma  Cada query filtra por tenantId automíticamente</span></div>
-                <pre>// El middleware extrae tenantId del JWT
-const contratos = await prisma.contrato.findMany({
-  where: { tenantId: req.user.tenantId }  // • Siempre aislado
-});</pre>
-              </div>
-              <div class="sub-h">Onboarding de nuevo municipio</div>
-              <div class="steps-list">
-                <div class="step-item"><div class="step-num">1</div><div class="step-body"><h3>Super Admin crea el tenant</h3><p>En admin.html ? "+ Nuevo Municipio" ? Completa nombre, plan, email admin.</p></div></div>
-                <div class="step-item"><div class="step-num">2</div><div class="step-body"><h3>Sistema auto-configura</h3><p>Crea registro en DB con slug Único, habilita mídulos según plan, genera usuario admin.</p></div></div>
-                <div class="step-item"><div class="step-num">3</div><div class="step-body"><h3>Email de bienvenida</h3><p>Admin del nuevo municipio recibe email con credenciales y link al sistema. Puede cambiar contrasea.</p></div></div>
-              </div>
-              <div class="alert-box alert-info">
-                <span class="alert-icon">•</span>
-                <span>El sistema puede manejar <strong>cientos de tenants</strong> en la misma instancia de Vercel + Neon. Neon usa pooling automítico y escala sin configuración adicional.</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-  <script src="js/nav.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/toast.js"></script>
-  <script src="js/ai-widget.js"></script>
-  <script>
-    buildSidebar('manuales');
-
-    // Smooth scroll para ndice
-    function scrollTo(id) {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    // Active link en scroll
-    const sections = document.querySelectorAll('.manual-section[id]');
-    const links = document.querySelectorAll('.idx-link');
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          links.forEach(l => l.classList.remove('active'));
-          const active = document.querySelector(`.idx-link[onclick="scrollTo('${entry.target.id}')"]`);
-          if (active) active.classList.add('active');
-        }
-      });
-    }, { threshold: 0.3 });
-    sections.forEach(s => observer.observe(s));
-
-    // Copy code buttons
-    function copyCode(btn) {
-      const pre = btn.closest('.code-block').querySelector('pre');
-      navigator.clipboard.writeText(pre.textContent).then(() => {
-        btn.textContent = '? Copiado';
-        setTimeout(() => btn.textContent = 'Copiar', 2000);
-      });
-    }
-  </script>
-  <script src='js/motion-kit.js'></script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/bottom-nav.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
-</body>
-</html>
-
-
+<!doctype html>
+<html class="muni-shell-v1" lang="es-AR" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#06101d">
+  <meta name="description" content="Guía operativa y de interpretación de datos de MuniControl Junín.">
+  <title>Guía operativa | MuniControl Junín</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    :root {
+      --doc-bg: #06101d;
+      --doc-surface: rgba(13, 27, 47, .91);
+      --doc-surface-2: rgba(16, 35, 58, .75);
+      --doc-border: rgba(148, 163, 184, .16);
+      --doc-text: #edf5ff;
+      --doc-muted: #9aaabd;
+      --doc-blue: #38bdf8;
+      --doc-green: #34d399;
+      --doc-amber: #fbbf24;
+      --doc-red: #fb7185;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { max-width: 100%; overflow-x: clip; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(circle at 84% 1%, rgba(14, 165, 233, .11), transparent 32rem),
+        radial-gradient(circle at 9% 74%, rgba(52, 211, 153, .07), transparent 34rem),
+        var(--doc-bg);
+      color: var(--doc-text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .doc-shell {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: clamp(28px, 5vw, 70px);
+      width: min(1260px, calc(100% - 44px));
+      margin: 0 auto;
+      padding: clamp(42px, 7vw, 86px) 0 90px;
+    }
+
+    .toc {
+      position: sticky;
+      top: 28px;
+      align-self: start;
+      padding: 20px;
+      border: 1px solid var(--doc-border);
+      border-radius: 17px;
+      background: rgba(8, 20, 36, .82);
+      backdrop-filter: blur(18px);
+    }
+
+    .toc-label {
+      margin: 0 0 12px;
+      color: #6f8298;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .toc a {
+      display: block;
+      padding: 8px 9px;
+      border-radius: 8px;
+      color: #aebdce;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1.35;
+      text-decoration: none;
+    }
+
+    .toc a:hover { background: rgba(56, 189, 248, .08); color: #e4f6ff; }
+
+    .doc-content { min-width: 0; max-width: 100%; }
+
+    .eyebrow {
+      display: inline-flex;
+      min-height: 31px;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border: 1px solid rgba(52, 211, 153, .27);
+      border-radius: 999px;
+      background: rgba(52, 211, 153, .07);
+      color: #a7f3d0;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--doc-green);
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, .10);
+      content: "";
+    }
+
+    h1 {
+      max-width: 900px;
+      margin: 20px 0 16px;
+      font-size: clamp(42px, 7vw, 76px);
+      line-height: .97;
+      letter-spacing: -.06em;
+    }
+
+    .hero-lead {
+      max-width: 850px;
+      margin: 0;
+      color: var(--doc-muted);
+      font-size: clamp(17px, 2.2vw, 21px);
+      line-height: 1.65;
+    }
+
+    .snapshot-bar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      margin-top: 34px;
+      overflow: hidden;
+      border: 1px solid var(--doc-border);
+      border-radius: 17px;
+      background: var(--doc-border);
+    }
+
+    .snapshot-item { padding: 18px 20px; background: rgba(10, 24, 42, .97); }
+    .snapshot-item span { display: block; color: #71859c; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .snapshot-item strong { display: block; margin-top: 7px; color: #ddebfa; font-size: 14px; line-height: 1.35; }
+
+    section { scroll-margin-top: 28px; margin-top: 62px; }
+
+    .section-kicker {
+      margin: 0 0 8px;
+      color: var(--doc-blue);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    h2 { margin: 0 0 14px; font-size: clamp(27px, 4vw, 38px); letter-spacing: -.04em; }
+    h3 { margin: 0 0 9px; font-size: 18px; letter-spacing: -.025em; }
+
+    .section-intro {
+      max-width: 850px;
+      margin: 0 0 23px;
+      color: var(--doc-muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .callout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 13px;
+      margin: 22px 0;
+      padding: 17px 19px;
+      border: 1px solid rgba(251, 191, 36, .26);
+      border-radius: 14px;
+      background: rgba(251, 191, 36, .07);
+      color: #fde7a9;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .callout.info { border-color: rgba(56, 189, 248, .24); background: rgba(56, 189, 248, .07); color: #c7efff; }
+    .callout strong { color: #fff; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+    .card {
+      min-width: 0;
+      padding: 23px;
+      border: 1px solid var(--doc-border);
+      border-radius: 17px;
+      background: linear-gradient(145deg, var(--doc-surface-2), var(--doc-surface));
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .16);
+    }
+
+    .card p { margin: 0; color: var(--doc-muted); font-size: 13px; line-height: 1.65; }
+
+    .tag {
+      display: inline-flex;
+      margin-bottom: 13px;
+      padding: 5px 8px;
+      border-radius: 7px;
+      background: rgba(56, 189, 248, .09);
+      color: #8bdcff;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .tag.blocked { background: rgba(251, 191, 36, .09); color: #fcd66d; }
+    .tag.private { background: rgba(52, 211, 153, .09); color: #8ce8c4; }
+
+    .truth-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+
+    .truth-list li {
+      display: grid;
+      grid-template-columns: 23px 1fr;
+      gap: 10px;
+      color: #b8c5d5;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .truth-list li::before {
+      display: grid;
+      width: 20px;
+      height: 20px;
+      place-items: center;
+      margin-top: 1px;
+      border-radius: 6px;
+      background: rgba(52, 211, 153, .10);
+      color: var(--doc-green);
+      content: "✓";
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--doc-border); border-radius: 16px; }
+    table { width: 100%; min-width: 720px; border-collapse: collapse; background: rgba(9, 22, 39, .76); }
+    th, td { padding: 15px 16px; border-bottom: 1px solid var(--doc-border); text-align: left; vertical-align: top; }
+    th { color: #788ba1; font-size: 10px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    td { color: #b9c7d7; font-size: 13px; line-height: 1.55; }
+    tr:last-child td { border-bottom: 0; }
+    td strong { color: #eef6ff; }
+
+    code {
+      padding: 2px 6px;
+      border: 1px solid rgba(148, 163, 184, .13);
+      border-radius: 6px;
+      background: rgba(2, 8, 18, .55);
+      color: #bcecff;
+      font: 500 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+
+    .steps { counter-reset: step; display: grid; gap: 13px; }
+    .step { display: grid; grid-template-columns: 36px 1fr; gap: 13px; padding: 18px; border: 1px solid var(--doc-border); border-radius: 14px; background: rgba(11, 26, 45, .70); }
+    .step::before { counter-increment: step; content: counter(step); display: grid; width: 32px; height: 32px; place-items: center; border-radius: 10px; background: rgba(56, 189, 248, .12); color: var(--doc-blue); font-weight: 850; }
+    .step p { margin: 4px 0 0; color: var(--doc-muted); font-size: 13px; line-height: 1.6; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 26px; }
+    .action { display: inline-flex; min-height: 43px; align-items: center; justify-content: center; padding: 0 16px; border: 1px solid var(--doc-border); border-radius: 10px; color: #dceafa; font-size: 12px; font-weight: 760; text-align: center; text-decoration: none; overflow-wrap: anywhere; }
+    .action.primary { border-color: transparent; background: #0ea5e9; color: #031421; }
+    .action:hover { border-color: rgba(56, 189, 248, .45); background: rgba(56, 189, 248, .07); }
+    .action.primary:hover { background: #38bdf8; }
+
+    .footer-note { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--doc-border); color: #6f8298; font-size: 12px; line-height: 1.6; }
+
+    @media (max-width: 960px) {
+      .doc-shell { grid-template-columns: 1fr; width: min(100% - 28px, 780px); padding-top: 72px; }
+      .toc { position: static; display: flex; flex-wrap: wrap; gap: 3px; }
+      .toc-label { width: 100%; }
+      .snapshot-bar, .card-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body
+  data-doc-version="1.10.0"
+  data-doc-contract="operational-truth-v1"
+  data-primary-source="grh"
+  data-secondary-source-policy="personas-excluded"
+  data-realtime="false"
+>
+  <div id="sidebar"></div>
+  <main id="mainContent" class="main-content">
+    <div class="doc-shell">
+      <nav class="toc" aria-label="Contenido de la guía">
+        <p class="toc-label">Guía operativa</p>
+        <a href="#alcance">Alcance real</a>
+        <a href="#roles">Recorrido por rol</a>
+        <a href="#fuente">Fuente GRH</a>
+        <a href="#interpretacion">Cómo interpretar</a>
+        <a href="#superficies">Estado de superficies</a>
+        <a href="#acceso">Acceso y errores</a>
+        <a href="#rutinas">Rutinas de gestión</a>
+        <a href="#seguridad">Seguridad e incidentes</a>
+        <a href="#exportaciones">Exportaciones</a>
+        <a href="#municipios">Adopción municipal</a>
+        <a href="#produccion">Habilitación productiva</a>
+        <a href="#documentacion">Documento vivo</a>
+      </nav>
+
+      <div class="doc-content">
+        <header>
+          <span class="eyebrow">Documento operativo · sin datos de demostración</span>
+          <h1>Cómo usar MuniControl con evidencia municipal</h1>
+          <p class="hero-lead">
+            Manual vivo para funcionarios, equipos operativos y futuros ingenieros. Describe lo que la plataforma puede demostrar hoy, cómo decidir con el snapshot GRH y qué capacidades permanecen condicionadas o en hoja de ruta.
+          </p>
+
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Release público <code>v1.10.0</code> verificado.</strong> Producto S13 en commit <code>d11fd39</code>; el commit/tag release apunta a <code>4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7</code> y el objeto del tag anotado es <code>07ac9eacf8bd89f27f5c437b99e713e8497b8934</code>. La <a href="https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0">GitHub Release v1.10.0</a> está live, no draft y no prerelease. El deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> quedó <code>READY</code>, alias <code>https://municipio-junin.vercel.app</code>, con <code>gitSource master/4108ca0</code>; gate productivo 11/11 exit <code>0</code>, <code>checkedAt 2026-08-09T16:33:56.200Z</code>. Browser público: 10/10 estados a 390/1440 px, <code>/</code> y <code>/roles</code> visibles; <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays, requests externos y fallas de red. Logs del corte: 0 errores y 0 respuestas 500. <code>GET /api/grh-decision-brief</code> entrega <code>grh-decision-brief-v1</code> desde agregados del snapshot aprobado; aplica k=10 y no exporta PII, importes, códigos de fuente/celda ni etiquetas/labels. La sesión privada positiva y S13 privado conservan validación local. Focal raíz S13 135/135; QA adversarial 104/104 con 0 P1/P2; suite raíz 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20. No certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. Este commit documental post-release no mueve el tag <code>v1.10.0</code> de <code>4108ca0</code>.</div></div>
+
+          <p class="section-intro"><code>grh-decision-brief-v1</code> separa señal global de evidencia mensual, incluye <code>temporalQuarantineRows</code>, aplica k=10 y no exporta PII, importes, códigos de fuente/celda ni etiquetas/labels. Las CTA exigen su capability; un 503 admite sólo reintento manual y una celda actual <code>&lt;10</code> hace fallar cerrado el Panel integral. Route policy <code>2026-08-09.2</code>, access policy <code>2026-08-09.1</code>: 26 recursos, 12 acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—; el gate verificó seis APIs en 11 checks.</p>
+
+          <div class="snapshot-bar" aria-label="Resumen de gobierno de datos">
+            <div class="snapshot-item"><span>Fuente prioritaria</span><strong>Backup GRH de Junín</strong></div>
+            <div class="snapshot-item"><span>Temporalidad</span><strong>Snapshot fechado, no tiempo real</strong></div>
+            <div class="snapshot-item"><span>Privacidad</span><strong>Frontera raw cerrada localmente · k=5/k=10</strong></div>
+          </div>
+        </header>
+
+        <section id="alcance">
+          <p class="section-kicker">01 · Contrato de verdad</p>
+          <h2>Alcance real de la plataforma</h2>
+          <p class="section-intro">El objetivo actual es decisión ejecutiva sobre datos de RRHH y liquidación. La amplitud transaccional, la configuración y los permisos finos se incorporarán después de cerrar fuentes, contratos y auditoría.</p>
+
+          <div class="card-grid">
+            <article class="card">
+              <span class="tag private">Operativo local · sin dataset</span>
+              <h3>Inicio seguro por rol</h3>
+              <p><code>inicio.html</code> orienta los siete roles técnicos vigentes con capabilities calculadas en servidor. Consulta una sola vez <code>/api/auth/me</code>, no carga GRH y sólo ofrece prioridades autorizadas. El Panel ejecutivo GRH queda separado.</p>
+            </article>
+            <article class="card">
+              <span class="tag private">Disponible con fuente privada</span>
+              <h3>GRH ejecutivo, Calidad, RRHH y Hacienda</h3>
+              <p>Panel, GRH, Calidad y RRHH consumen localmente <code>grh-executive-v2</code> y <code>grh-quality-v1</code>. El Panel suma <code>grh-decision-brief-v1</code> como brief único y Hacienda usa <code>grh-close-v1</code> para el cierre mensual explicado. No tienen referencias HTTP al contrato fuente.</p>
+            </article>
+            <article class="card">
+              <span class="tag private">Disponible con fuente privada</span>
+              <h3>Informe ejecutivo GRH</h3>
+              <p>El backend portable aplica k=10 y consulta sólo períodos liberados. La interfaz valida localmente el contrato v2; no certifica un deployment ni un documento oficial.</p>
+            </article>
+            <article class="card">
+              <span class="tag blocked">Condicionado · autenticación + fuente/tenant</span>
+              <h3>Inventario de cargas</h3>
+              <p>Consume una API server-side minimizada y describe datasets registrados, pero todavía no registra actor/acción y no es una auditoría institucional.</p>
+            </article>
+            <article class="card">
+              <span class="tag blocked">Bloqueado</span>
+              <h3>Configuración y administración completa</h3>
+              <p>No existe todavía un contrato serverless versionado para guardar identidad, módulos, secretos o políticas. La interfaz no simula esas escrituras.</p>
+            </article>
+            <article class="card">
+              <span class="tag private">O2A · probado localmente</span>
+              <h3>Replay idempotente del snapshot GRH</h3>
+              <p>El snapshot canónico se promovió localmente en 105,5 s y su repetición exacta se detectó como duplicada en 294 ms. El last-known-good quedó byte-estable, con una sola versión y activación, sin locks, residuos ni workspaces activos al cierre. <code>PUBLISHED</code> no significa DB, API ni producción.</p>
+            </article>
+            <article class="card">
+              <span class="tag private">O2A.1 · hardening local</span>
+              <h3>Bundle inmutable de ejecución</h3>
+              <p>Fuente, manifiesto y procesadores se capturan por descriptor, se verifican con <code>fstat</code> y se copian de forma privada con <code>wx</code>/<code>0600</code>. Los procesadores reciben sólo esas copias. Se validó con fixtures, sin nuevo replay real de 44 MB, DB ni deployment; un host comprometido queda fuera de garantía.</p>
+            </article>
+            <article class="card">
+              <span class="tag blocked">Hoja de ruta</span>
+              <h3>O2B, tiempo real, CDC y backups operativos</h3>
+              <p>La conexión diaria o continua a sistemas municipales, el historial propio y la recuperación automatizada siguen pendientes: requieren infraestructura, monitoreo, identidad de workload y pruebas de restauración.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="roles">
+          <p class="section-kicker">02 · Inicio guiado</p>
+          <h2>Elegí el recorrido según tu responsabilidad</h2>
+          <p class="section-intro">El servidor proyecta una portada distinta para cada uno de los siete roles técnicos. La interfaz orienta; las APIs siguen autorizando y la plataforma no reemplaza la validación administrativa, contable o jurídica.</p>
+
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Tour visual público en <code>/roles</code>.</strong> Permite comparar los siete perfiles sin iniciar sesión. Es un recorrido visual no autenticado: no solicita credenciales, no emite ni acepta JWT, no autoriza acciones, no crea cuentas y no consulta APIs, DB, storage, PII ni datos municipales. Elegir un perfil sólo cambia la explicación visible; nunca cambia el rol de una sesión. <a href="/roles">Abrir recorrido visual</a>.</div></div>
+
+          <div class="callout"><span aria-hidden="true">?</span><div><strong>MuniGuía dentro de la sesión.</strong> El contrato <code>muniguia-contextual-v1</code> ofrece tres pasos para la pantalla y el rol confirmados. Reutiliza la proyección en memoria validada por <code>/api/auth/me</code> y se monta sólo con <code>navigation.help</code> y la capability de la superficie; no agrega requests de IA, GRH u otras APIs ni accesos a storage, no lee indicadores y no concede permisos. En el Panel, el nuevo anchor <code>#decisionBrief</code> guía la separación global/mensual. Si el rol, la política o la ruta no coinciden exactamente, la guía no aparece. Selectors y anchors están verificados por CI; si un target no está visible, se omite sólo «Ubicar». Su evidencia privada sigue siendo local con una proyección autoritativa simulada; el smoke público no certifica autorización positiva. El Manual directo permanece disponible.</div></div>
+
+          <div class="card-grid">
+            <article class="card">
+              <span class="tag"><code>INTENDENTE</code></span>
+              <h3>Situación, riesgo y prioridades</h3>
+              <p>Comenzá en el tablero ejecutivo. Revisá fecha de snapshot, el brief decisional, calidad y cobertura; distinguí la señal global de la mensual y abrí sólo la CTA autorizada para profundizar antes de decidir.</p>
+            </article>
+            <article class="card">
+              <span class="tag"><code>CONTADOR</code></span>
+              <h3>Control de cálculo y conciliación</h3>
+              <p>Usá Hacienda como control analítico mensual. Sólo compara meses calendario consecutivos liberados con k≥10. Los importes conservan la unidad de origen; la moneda no está declarada y el neto no demuestra acreditación bancaria, pago, causalidad ni asiento.</p>
+            </article>
+            <article class="card">
+              <span class="tag"><code>TENANT_ADMIN</code></span>
+              <h3>Operación municipal gobernada</h3>
+              <p>Comenzá por ingesta, inventario y calidad cuando la capability esté asignada. Administrar una fuente no equivale a aprobar una decisión institucional ni habilita lifecycle de cuentas.</p>
+            </article>
+            <article class="card">
+              <span class="tag"><code>SUPER_ADMIN</code></span>
+              <h3>Gobierno de plataforma</h3>
+              <p>Verificá tenant, política y gates técnicos. Sin tenant, el perfil queda sólo en Inicio y Ayuda: no recibe GRH ni otro dato privado.</p>
+            </article>
+            <article class="card">
+              <span class="tag"><code>TENANT_USER</code> · <code>INSPECTOR</code> · <code>DEMO</code></span>
+              <h3>Acceso acotado y honesto</h3>
+              <p>La portada explica el límite y ofrece Manual o superficies públicas. No inventa módulos, indicadores, casos territoriales ni datos municipales para completar una demo.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="fuente">
+          <p class="section-kicker">03 · Linaje</p>
+          <h2>GRH es la fuente municipal prioritaria</h2>
+          <p class="section-intro">El snapshot de trabajo proviene del backup GRH fechado el 6 de agosto de 2026. El backup de Personas queda fuera del contrato analítico. <code>personas_junin</code>, recibida sólo como ejemplo, queda excluida de forma absoluta: no se analiza, perfila, cruza, migra, publica ni usa como fallback.</p>
+
+          <div class="callout"><span aria-hidden="true">!</span><div><strong>No compatibilizar bases por aproximación.</strong> Si en el futuro se incorpora otra fuente, debe existir una clave de enlace aprobada, reglas de reconciliación, tasas de cobertura y tratamiento explícito de conflictos.</div></div>
+
+          <ul class="truth-list">
+            <li><code>grh-semantic-v2</code> agrega participantes distintos por año en ausencias, licencias y movimientos; las claves se usan sólo para contar y nunca se exportan.</li>
+            <li>Los archivos de perfil y semántica contienen información sensible o derivada y deben quedar exclusivamente en backend.</li>
+            <li>Un deployment certificado deberá obtener el contrato privado desde almacenamiento server-side ligado al tenant configurado.</li>
+            <li>Fechas imposibles, futuras o corruptas se aíslan; no se corrigen silenciosamente para mejorar una métrica.</li>
+            <li>La calidad informa aptitud y límites del snapshot; no certifica por sí sola exactitud contable o jurídica.</li>
+          </ul>
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Cierre local, no productivo:</strong> <code>/api/grh-data</code> autentica, verifica tenant y responde <code>410 GRH_RAW_CONTRACT_RETIRED</code> sin leer artefactos. Los cinco UIs tienen cero referencias a esa ruta; preview y producción requieren sus propios smokes.</div></div>
+        </section>
+
+        <section id="interpretacion">
+          <p class="section-kicker">04 · Semántica ejecutiva</p>
+          <h2>Cómo interpretar los indicadores</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Indicador</th><th>Significa</th><th>No significa</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Legajos registrados</strong></td><td>Filas identificadas en el maestro GRH.</td><td>Planta activa ni personas actualmente vinculadas.</td></tr>
+                <tr><td><strong>Participantes de liquidación</strong></td><td>Legajos presentes en el cálculo del período válido.</td><td>Dotación contractual activa.</td></tr>
+                <tr><td><strong>Neto de control</strong></td><td>Resultado del concepto de control en <code>calculo</code>.</td><td>Transferencia bancaria ni pago efectivamente acreditado.</td></tr>
+                <tr><td><strong>Importes</strong></td><td>Valores en la unidad de origen del backup.</td><td>Pesos argentinos: la moneda no está declarada en la fuente.</td></tr>
+                <tr><td><strong>Período más reciente</strong></td><td>Último período válido encontrado en el snapshot.</td><td>Actualización en tiempo real.</td></tr>
+                <tr><td><strong>Reconciliación mensual</strong></td><td>Acuerdo medido entre controles de <code>calculo</code> y <code>totpago</code> para el mismo período en <code>grh-close-v1</code>.</td><td>Tasa global repetida por mes, certificación de pago o explicación causal.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Control de cálculo, no pago bancario.</strong> Antes de tomar una decisión vinculante, verificá en cada pantalla la fuente, la fecha, la definición del KPI, la cobertura y las alertas de calidad.</div></div>
+        </section>
+
+        <section id="superficies">
+          <p class="section-kicker">05 · Mapa de producto</p>
+          <h2>Estado de las superficies</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Superficie</th><th>Fuente</th><th>Comportamiento esperado</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Tablero ejecutivo / GRH</strong></td><td><code>grh-executive-v2</code> + <code>grh-quality-v1</code></td><td>Consumidores migrados localmente; 503 o estado no disponible si falla una proyección. No certifica despliegue.</td></tr>
+                <tr><td><strong>RRHH / Hacienda</strong></td><td><code>grh-executive-v2</code> + <code>grh-quality-v1</code> + <code>grh-close-v1</code> en Hacienda</td><td>Cierre mensual explicado local; comparación sólo de meses consecutivos k≥10. El P1 global-como-mensual fue retirado. No certifica pago, causalidad, contabilidad ni producción.</td></tr>
+                <tr><td><strong>Calidad y Linaje</strong></td><td><code>grh-quality-v1</code></td><td>Consumidor migrado localmente; expone inventario, score, cuarentena, conciliación y riesgos sin categorías, códigos ni importes.</td></tr>
+                <tr><td><strong>MuniBot</strong></td><td>Bundle privado sólo server-side</td><td>“Cierre explicado” construye <code>grh-close-v1</code> para un único <code>YYYY-MM</code> liberado k≥10. Año solo, período protegido o ausente responde 422 sin sustitución; no usa score global ni afirma moneda, causa, pago o PII. Focal local 13/13, sin deployment.</td></tr>
+                <tr><td><strong>Informe ejecutivo GRH</strong></td><td>Proyección portable k=10</td><td>Backend, interfaz y regresiones locales aprobados, sin fallback demo ni sustitución; falta certificación remota.</td></tr>
+                <tr><td><strong>Inteligencia legacy</strong></td><td>Endpoint retirado</td><td>Estado 410 y enlaces a MuniBot/GRH; no conserva KPIs ni proyecciones heredadas.</td></tr>
+                <tr><td><strong>Inventario de cargas</strong></td><td>API autenticada y salida minimizada</td><td>Muestra conteos y metadatos permitidos; no es auditoría institucional.</td></tr>
+                <tr><td><strong>Recorrido visual de roles</strong></td><td>Contenido documental público, sin fuente municipal</td><td><code>/roles</code> compara responsabilidades y límites sin autenticación, JWT, autorización, cuentas, APIs, DB, storage, PII ni datos municipales. No demuestra seguridad RBAC.</td></tr>
+                <tr><td><strong>Exportación cruda</strong></td><td>Endpoint retirado</td><td>Responde 410 hasta clasificar datasets, campos y finalidad.</td></tr>
+                <tr><td><strong>Configuración</strong></td><td>Sin contrato de escritura</td><td>Informativa y bloqueada; no recibe secretos ni simula guardado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="acceso">
+          <p class="section-kicker">06 · Acceso seguro</p>
+          <h2>Sesión, permisos y estados de error</h2>
+          <p class="section-intro">El acceso se realiza con credenciales institucionales emitidas por el administrador. Esta documentación no publica usuarios ni contraseñas de ejemplo.</p>
+
+          <div class="steps">
+            <article class="step"><div><h3>Explorar sin credenciales</h3><p>Usá <code>/roles</code> únicamente para conocer el recorrido visual de cada perfil. No es un selector de identidad, no inicia una sesión y no prueba permisos. Para operar, continuá por el acceso institucional.</p></div></article>
+            <article class="step"><div><h3>Iniciar sesión</h3><p>Usá <code>login.html</code>. El destino seguro es <code>inicio.html</code>: valida <code>/api/auth/me</code>, muestra el recorrido del rol y no consulta GRH ni otro dataset. La portada no publica usuarios demo ni claims; el preview protegido sólo verificó el rechazo sin sesión y no certifica cuentas ni producción.</p></div></article>
+            <article class="step"><div><h3>Entrar sólo a lo autorizado</h3><p>Las priorities de Inicio son una intersección de las capabilities calculadas en servidor. Si no aparece un módulo, no fuerces su URL ni modifiques el storage; un enlace visible tampoco reemplaza la autorización del endpoint.</p></div></article>
+            <article class="step"><div><h3>Interpretar la respuesta</h3><p><code>401</code> indica que la identidad no es válida o dejó de estar activa; <code>403</code>, que el rol o tenant no autoriza la acción; <code>503</code>, que falta una fuente o configuración necesaria.</p></div></article>
+            <article class="step"><div><h3>No eludir el cierre</h3><p>Si una pantalla queda sin datos, no cargues cifras manuales en el navegador ni uses una copia demo. Corregí el contrato, el tenant o la materialización server-side.</p></div></article>
+          </div>
+        </section>
+
+        <section id="rutinas">
+          <p class="section-kicker">07 · Procedimiento de gestión</p>
+          <h2>Rutinas recomendadas</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Frecuencia</th><th>Revisión</th><th>Salida esperada</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Al ingresar</strong></td><td>Sesión, tenant, fecha de snapshot, estado de fuentes y alertas críticas.</td><td>Confirmar que la vista corresponde al municipio y período correctos.</td></tr>
+                <tr><td><strong>Semanal</strong></td><td>Cambios de calidad, cuarentena, cobertura, movimientos y alertas accionables.</td><td>Lista breve de responsables, evidencia y fecha de seguimiento.</td></tr>
+                <tr><td><strong>Mensual</strong></td><td>Cierre del período, identidades de cálculo, conciliación y excepciones.</td><td>Informe revisado; no marcarlo oficial hasta aprobación institucional.</td></tr>
+                <tr><td><strong>Ante una falla</strong></td><td>Código 401/403/503, fuente afectada, alcance por tenant y última operación.</td><td>Incidente registrado y función cerrada; nunca reconstruir datos a mano.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="seguridad">
+          <p class="section-kicker">08 · Seguridad aplicada</p>
+          <h2>Controles que protegen la decisión</h2>
+          <p class="section-intro">La seguridad no es un módulo separado: evita que una cifra correcta termine en el municipio, usuario o informe equivocado.</p>
+          <ul class="truth-list">
+            <li>Las APIs revalidan usuario, rol, tenant y estado actual en la base; un token antiguo no conserva privilegios revocados.</li>
+            <li>Las fuentes municipales no admiten excepción global de tenant, ni siquiera para <code>SUPER_ADMIN</code>; GRH exige además el SHA-256 institucional aprobado y el par privado completo.</li>
+            <li>Los contratos fuente GRH son privados y quedan sólo en backend. El navegador recibe <code>grh-executive-v2</code>, <code>grh-quality-v1</code> o <code>grh-close-v1</code>; los consumidores de servidor proyectan antes de responder.</li>
+            <li>La protección usa k=5 para rankings laborales interactivos y k=10 para compensación, eventos sensibles, geografía y salidas portables. Se aplica antes del top-N y usa supresión complementaria.</li>
+            <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
+            <li>El techo local contiene 26 recursos, 12 acciones, 46 permisos y 79 firmas exactas: 37 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>La política de acceso <code>2026-08-09.1</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
+            <li>Excel, CSV y Google Sheets se tratan como contenido no confiable: formato, límites, encabezados y persistencia se validan antes de declarar éxito.</li>
+            <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>
+            <li>Un tenant <code>TRIAL</code> sólo accede con vencimiento futuro explícito. El alta con contraseña elegida por un administrador está retirada hasta implementar invitaciones, sesiones revocables, MFA y doble aprobación.</li>
+            <li>Un error técnico no debe revelar credenciales, consultas, hosts internos ni datos de otro tenant.</li>
+          </ul>
+          <div class="callout"><span aria-hidden="true">!</span><div><strong>Ante una sospecha de fuga o corrupción:</strong> dejá de usar la superficie afectada, preservá la evidencia, avisá por el canal institucional definido y no repitas una escritura cuyo resultado sea incierto.</div></div>
+        </section>
+
+        <section id="exportaciones">
+          <p class="section-kicker">09 · Salida de datos</p>
+          <h2>Exportaciones y uso oficial</h2>
+          <ul class="truth-list">
+            <li>El informe ejecutivo GRH se genera en el servidor desde el contrato privado y debe conservar sus avisos de fuente y temporalidad.</li>
+            <li>Las exportaciones XLSX/CSV crudas están retiradas; no existe hoy una descarga gobernada de datasets importados.</li>
+            <li>El informe imprimible GRH conserva fuente, período y límites. Aun así requiere revisión y aprobación institucional antes de circularlo.</li>
+            <li>El historial visual de una sesión no es un registro institucional persistente de exportaciones.</li>
+          </ul>
+        </section>
+
+        <section id="municipios">
+          <p class="section-kicker">10 · Producto replicable</p>
+          <h2>Cómo presentar la plataforma a otro municipio</h2>
+          <p class="section-intro">La propuesta comercial debe demostrar gobierno de datos y capacidad real, no una colección de pantallas. Cada municipio necesita su propio tenant, fuentes, responsables y validación.</p>
+          <div class="steps">
+            <article class="step"><div><h3>Descubrimiento</h3><p>Inventariar sistemas, backups, responsables, periodicidad, sensibilidad, claves de enlace y decisiones que necesitan soporte.</p></div></article>
+            <article class="step"><div><h3>Perfilado sin publicación</h3><p>Analizar una copia autorizada en entorno privado; documentar calidad, cobertura, PII, discrepancias y campos que no pueden interpretarse.</p></div></article>
+            <article class="step"><div><h3>Contrato semántico</h3><p>Aprobar definiciones de KPI, unidades, fechas, reconciliación, cuarentena y responsables antes de diseñar el tablero.</p></div></article>
+            <article class="step"><div><h3>Piloto y aceptación</h3><p>Configurar tenant y roles mínimos, probar fallas cerradas, capacitar usuarios y obtener aceptación escrita del alcance. Tiempo real y automatización se cotizan sólo con infraestructura validada.</p></div></article>
+          </div>
+        </section>
+
+        <section id="produccion">
+          <p class="section-kicker">11 · Runbook mínimo</p>
+          <h2>Condiciones para habilitar producción</h2>
+          <div class="card-grid">
+            <article class="card"><span class="tag private">Release público verificado</span><h3><code>v1.10.0</code> · S13</h3><p>Producto <code>d11fd39</code>, commit/tag <code>4108ca0</code>, deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> <code>READY</code>, gate 11/11 y browser público 10/10 limpio. S13 privado conserva validación local sobre el snapshot aprobado.</p></article>
+            <article class="card"><span class="tag blocked">Gate</span><h3>Baseline y drift</h3><p>Identificar la DB, restaurar una copia, conciliar schema e historia, pinear el receipt externo y probar rollback antes de ejecutar cualquier migración o crear cuentas por rol.</p></article>
+            <article class="card"><span class="tag">Datos</span><h3>Materialización privada</h3><p>Publicar el snapshot para el tenant real y repetir el cierre local: cinco UIs sin referencias raw, consumidores server-side portables y <code>/api/grh-data</code> en 401/403/410 sin lectura.</p></article>
+            <article class="card"><span class="tag">Pipeline O2A</span><h3>Evidencia local, no servicio conectado</h3><p>Conservar promoción, duplicado, last-known-good y receipts sin PII. El ledger local no está firmado y no acredita autenticidad del host, corte de energía, ACL, backup, cron ni deployment.</p></article>
+            <article class="card"><span class="tag private">Antecedente verificado</span><h3><code>v1.9.0</code> · cierre post-release</h3><p>Commit/tag <code>f9d1f88</code>, product commit <code>ed76347</code> y deployment <code>dpl_Euk4csdfWw5rayohoW3xXo1vXayY</code> <code>Ready</code> en <code>Production</code>, alias <code>https://municipio-junin.vercel.app</code>. Gate 10/10 exit <code>0</code>, <code>checkedAt 2026-08-09T14:42:10Z</code>. Browser público: <code>/login</code> y <code>/roles</code> —siete perfiles— a 390/1440 px sin overflow, errores de consola ni requests externos; <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> anónimos redirigieron al login. <a href="https://github.com/inguillen87/municipio-junin/releases/tag/v1.9.0">GitHub Release v1.9.0 live</a>. MuniGuía privada mantiene evidencia sólo local con proyección autoritativa simulada: raíz 533 totales —532 aprobadas y 1 smoke opt-in omitido— y backend 20/20. No certifica autorización positiva, cuentas reales, DB o baseline restaurado, MFA/lifecycle persistido ni GRH remoto. Este registro documental post-release no mueve el tag <code>v1.9.0</code>.</p></article>
+            <article class="card"><span class="tag">Release anterior verificado</span><h3><code>v1.8.1</code> · evidencia pública cerrada</h3><p>El artefacto <code>b82c0b3</code> está en <code>master</code>/tag <code>v1.8.1</code>; el deployment <code>dpl_A19n7grSSyuum3zuSQcdcaVKmt8F</code> figura <code>Ready</code>, <code>release:truth:check</code> productivo cerró 10/10 con exit <code>0</code> y la GitHub Release está live. Este cierre sólo registra evidencia documental post-release y no mueve el tag.</p></article>
+            <article class="card"><span class="tag private">Browser productivo</span><h3>390 px y 1440 px</h3><p>La verificación cerró sin overflow horizontal, errores de consola, requests externos ni requests privados. Incluye <code>/roles</code>, pero no demuestra DB conectada, cuentas reales, autorización positiva ni datos municipales remotos.</p></article>
+            <article class="card"><span class="tag">Aislamiento</span><h3>Tenant real</h3><p>Configurar los identificadores de tenant de GRH y analítica legacy con IDs existentes, nunca con slugs inventados ni valores compartidos.</p></article>
+            <article class="card"><span class="tag">Prueba</span><h3>Validación proporcional</h3><p>Ejecutar pruebas de contrato, autorización, escritorio, móvil, impresión y estados 401/403/503 antes de declarar una superficie operativa.</p></article>
+            <article class="card"><span class="tag blocked">Pendiente</span><h3>Conexión continua y recuperación</h3><p>Definir CDC o lotes, cifrado, observabilidad, retención, backups propios y restauraciones ensayadas antes de prometer tiempo real.</p></article>
+          </div>
+
+          <div class="actions">
+            <a class="action primary" href="dashboard.html">Abrir tablero ejecutivo</a>
+            <a class="action" href="grh-ejecutivo.html">Abrir GRH ejecutivo</a>
+            <a class="action" href="control.html">Abrir Calidad y Linaje</a>
+            <a class="action" href="auditoria.html">Revisar inventario</a>
+            <a class="action" href="configuracion.html">Estado de configuración</a>
+          </div>
+        </section>
+
+        <section id="documentacion">
+          <p class="section-kicker">12 · Gobierno documental</p>
+          <h2>Un manual que crece con el producto</h2>
+          <p class="section-intro">Versión 1.10.0 · 9 de agosto de 2026. Release público verificado: producto S13 <code>d11fd39</code>; commit/tag <code>4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7</code>; objeto de tag anotado <code>07ac9eacf8bd89f27f5c437b99e713e8497b8934</code>; <a href="https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0">GitHub Release v1.10.0</a> live, no draft y no prerelease. El deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> quedó <code>READY</code> con alias <code>https://municipio-junin.vercel.app</code> y <code>gitSource master/4108ca0</code>; gate 11/11 exit <code>0</code>, <code>checkedAt 2026-08-09T16:33:56.200Z</code>. Browser público 10/10 estados a 390/1440 px: <code>/</code> y <code>/roles</code> visibles; <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays, requests externos y fallas de red. Logs del corte: 0 errores y 0 respuestas 500. Suite raíz 591 —590 aprobadas y 1 smoke opt-in omitido—, backend 20/20, focal S13 135/135 y QA 104/104. La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado; no certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. Este commit documental post-release no mueve el tag <code>v1.10.0</code> de <code>4108ca0</code>. Como antecedente se preserva <code>v1.9.0</code>: commit/tag <code>f9d1f88</code>, product commit <code>ed76347</code>, deployment <code>dpl_Euk4csdfWw5rayohoW3xXo1vXayY</code> <code>Ready</code>, gate 10/10 y GitHub Release live; ese cierre documental no movió su tag. También se preserva <code>v1.8.1</code> con artefacto <code>b82c0b3</code>.</p>
+          <ul class="truth-list">
+            <li>Cada feature debe actualizar comportamiento, procedimiento, seguridad, estado de capacidad y pruebas documentales en el mismo cambio.</li>
+            <li>Las funciones se clasifican como operativas, condicionadas al entorno o roadmap. No se promociona una capacidad por existir sólo en código local.</li>
+            <li>Los cambios de fuente, KPI, tenant, permisos, migraciones o recuperación requieren revisión explícita de los manuales.</li>
+            <li>Las versiones entregadas deben registrar fecha, commit, deployment y responsables institucionales sin publicar secretos o PII.</li>
+            <li>WP0-L todavía no se ejecutó conectado contra una copia restaurada; IAM-MAP-01 no persiste ni crea usuarios; UX-E2A no concede autorización.</li>
+            <li>Como antecedente, el preview protegido <code>fa5dcc5</code> verificó <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code>; en <code>/</code> registró la única inyección conocida de Vercel Live y cinco fronteras API respondieron 401 con contrato específico por ruta.</li>
+          </ul>
+        </section>
+
+        <p class="footer-note">Manual vivo 1.10.0, release público verificado: producto S13 <code>d11fd39</code>, commit/tag <code>4108ca0</code>, deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> <code>READY</code>, gate 11/11, browser 10/10 y logs sin errores ni 500. Suite raíz 590 aprobadas más 1 smoke opt-in omitido; backend 20/20. Sesión positiva y S13 privado permanecen en validación local sobre snapshot aprobado; no acredita DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. Este registro post-release no mueve el tag <code>v1.10.0</code> de <code>4108ca0</code>; <code>v1.9.0</code> se conserva como antecedente.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/nav.js"></script>
+  <script src="js/theme-switcher.js"></script>
+  <script src="js/bottom-nav.js"></script>
+  <script>
+    if (typeof buildSidebar === 'function') buildSidebar('manuales');
+  </script>
+</body>
+</html>

@@ -4,9 +4,9 @@ const PUBLIC_ASSETS = new Set([
   '/',
   '/roles',
   '/ciudadano.html',
-  '/mapa.html',
-  '/vecinos.html',
+  '/offline.html',
   '/css/dashboard.css',
+  '/css/institutional-shell.css',
   '/manifest.json',
 ]);
 
@@ -49,6 +49,13 @@ self.addEventListener('fetch', event => {
         }
         return response;
       })
-      .catch(async () => (await caches.match(request)) || Response.error())
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        if (request.mode === 'navigate') {
+          return (await caches.match('/offline.html')) || Response.error();
+        }
+        return Response.error();
+      })
   );
 });

@@ -1,208 +1,40 @@
-﻿<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Municipal Junín" />
-  <title>Análisis Masivo de Archivos  Municipio de Junín</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/upload.css" />
-</head>
-<body>
-  <aside class="sidebar" id="sidebar"></aside>
-
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">?</button>
-        <div class="page-title">
-          <h1>• Análisis Masivo de Archivos</h1>
-          <span class="breadcrumb">Sub hasta 20 archivos  Excel, PDF, Word, CSV  Mítricas automíticas con IA</span>
-        </div>
-      </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <button class="btn-export" id="btnExportReport" style="display:none">• Informe PDF</button>
-        <button class="btn-export" id="btnExportExcel" style="display:none">• Exportar Excel</button>
-        <div class="topbar-avatar">MA</div>
-      </div>
-    </header>
-
-    <div class="content-wrapper">
-
-      <!-- ZONA DE CARGA -->
-      <div class="upload-zone" id="uploadZone">
-        <div class="upload-zone-inner" id="uploadDropArea">
-          <div class="upload-icon-wrap">
-            <div class="upload-icon">•</div>
-            <div class="upload-pulse"></div>
-          </div>
-          <h2 class="upload-title">Arrastr archivos aquí o hac click para seleccionar</h2>
-          <p class="upload-subtitle">Excel, PDF, Word, CSV, imígenes  Hasta 20 archivos  Sin lmite de tamaño</p>
-          <div class="upload-badges">
-            <span class="upload-badge xlsx">• .xlsx / .xls</span>
-            <span class="upload-badge pdf">• .pdf</span>
-            <span class="upload-badge docx">• .docx</span>
-            <span class="upload-badge csv">• .csv</span>
-            <span class="upload-badge img">•? Imígenes</span>
-          </div>
-          <button class="upload-btn" id="uploadSelectBtn">Seleccionar archivos</button>
-          <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.pdf,.docx,.doc,.csv,.txt,.jpg,.jpeg,.png,.webp" hidden />
-        </div>
-      </div>
-
-      <!-- ARCHIVOS CARGADOS -->
-      <div class="files-section" id="filesSection" style="display:none">
-        <div class="files-header">
-          <h2 class="section-title-h2">• Archivos cargados <span id="fileCount" class="file-count-badge">0</span></h2>
-          <div class="files-actions">
-            <button class="btn-analyze-all" id="btnAnalyzeAll">? Analizar todos</button>
-            <button class="btn-clear" id="btnClear">•? Limpiar todo</button>
-          </div>
-        </div>
-        <div class="files-grid" id="filesGrid"></div>
-      </div>
-
-      <!-- PANEL DE RESULTADOS GLOBALES -->
-      <div class="results-panel" id="resultsPanel" style="display:none">
-
-        <!-- KPIs globales -->
-        <div class="results-header">
-          <h2 class="section-title-h2">• Análisis consolidado</h2>
-          <div class="results-meta" id="resultsMeta"></div>
-        </div>
-
-        <div class="kpi-grid" id="globalKPIs"></div>
-
-        <!-- TABS de resultados -->
-        <div class="tabs-bar" style="margin-top:16px">
-          <button class="tab-btn active" data-tab="rtabla">• Datos</button>
-          <button class="tab-btn" data-tab="rgraficos">• Grficos</button>
-          <button class="tab-btn" data-tab="rtexto">• Texto extrado</button>
-          <button class="tab-btn" data-tab="rresumen">• Resumen IA</button>
-        </div>
-
-        <!-- TAB: DATOS -->
-        <div class="tab-content active" id="tab-rtabla">
-          <div class="rrhh-panel">
-            <div class="panel-header">
-              <h2 class="chart-title" id="tableTitle">Datos extrados</h2>
-              <div class="panel-filters">
-                <div class="search-box">
-                  <span class="search-icon">•</span>
-                  <input type="text" id="searchData" placeholder="Buscar en los datos..." />
-                </div>
-                <select class="select-filter" id="filterSheet">
-                  <option value="">Todos los archivos</option>
-                </select>
-              </div>
-            </div>
-            <div class="table-scroll-wrap" id="dataTableWrap">
-              <p class="empty-state">Procesí archivos para ver los datos aquí</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB: GRFICOS -->
-        <div class="tab-content" id="tab-rgraficos">
-          <div class="charts-row">
-            <div class="chart-card">
-              <div class="chart-header"><h2 class="chart-title">Distribución por tipo de archivo</h2></div>
-              <div class="chart-container"><canvas id="chartTipos"></canvas></div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-header"><h2 class="chart-title" id="chartNumTitle">Análisis numírico</h2></div>
-              <div class="chart-container"><canvas id="chartNumeros"></canvas></div>
-            </div>
-          </div>
-          <div class="charts-row" style="margin-top:16px">
-            <div class="chart-card full-width">
-              <div class="chart-header"><h2 class="chart-title" id="chartBarTitle">Comparativa de columnas</h2></div>
-              <div class="chart-container tall"><canvas id="chartBarras"></canvas></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB: TEXTO EXTRADO -->
-        <div class="tab-content" id="tab-rtexto">
-          <div class="rrhh-panel">
-            <div class="panel-header">
-              <h2 class="chart-title">Texto extrado de PDFs, Word e Imígenes</h2>
-            </div>
-            <div class="text-results" id="textResults">
-              <p class="empty-state">Procesí PDFs o imígenes para ver el texto extrado</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB: RESUMEN IA -->
-        <div class="tab-content" id="tab-rresumen">
-          <div class="rrhh-panel">
-            <div class="panel-header">
-              <h2 class="chart-title">• Resumen inteligente de los archivos</h2>
-              <button class="btn-primary" id="btnGenerateResumen">? Generar resumen</button>
-            </div>
-            <div class="ia-summary-area" id="iaSummaryArea">
-              <div class="ia-summary-placeholder">
-                <div style="font-size:48px">•</div>
-                <p>Procesí archivos primero, luego hac click en "Generar resumen" para que la IA analice el contenido y proponga mítricas y conclusiones.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  </main>
-
-  <!-- LIBRERAS -->
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-  <!-- PDF.js para leer PDFs -->
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-  <!-- Mammoth.js para Word -->
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-  <!-- Tesseract para OCR de imígenes -->
-  <script src='js/db.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
-
-  <script src='js/db.js'></script>
-  <script src="js/pwa.js"></script>
-  <script>try{var t=localStorage.getItem('govtech_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-  <script src='js/db.js'></script>
-  <script src="js/nav.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/upload.js"></script>
-  <script src='js/db.js'></script>
-  <script src='js/motion-kit.js'></script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/db.js'></script>
-  <script src='js/bottom-nav.js'></script>
-  <script src='js/notifications.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
-  <script>if(typeof buildSidebar === 'function') buildSidebar('upload');</script>
-</body>
-</html>
-
-
-
-
-
-
+<!doctype html>
+<html class="muni-shell-v1" lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Ingesta documental | MuniControl Junín</title>
+  <meta name="description" content="Estado de integración de Ingesta documental en MuniControl Junín.">
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    html { color-scheme: dark; }
+    body { margin: 0; min-width: 320px; background: var(--bg, #07111f); }
+    .skip-link { position: fixed; left: 16px; top: -60px; z-index: 10000; padding: 10px 14px; border-radius: 9px; background: #e0f2fe; color: #082f49; font: 700 13px/1 system-ui, sans-serif; }
+    .skip-link:focus { top: 16px; }
+    .retired-menu { position: fixed; top: 14px; left: 14px; z-index: 999; display: none; min-width: 44px; min-height: 44px; border: 1px solid #334155; border-radius: 11px; background: #0f1f34; color: #e2e8f0; font: 700 12px/1 system-ui, sans-serif; }
+    @media (max-width: 900px) { .retired-menu { display: inline-flex; align-items: center; justify-content: center; } }
+    .source-noscript { max-width: 720px; margin: 80px auto; padding: 24px; border: 1px solid #334155; border-radius: 16px; color: #e2e8f0; font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body data-retired-module="upload" data-source-state="not-connected">
+  <a class="skip-link" href="#retired-module-root">Saltar al estado del módulo</a>
+  <button class="retired-menu" id="menuBtn" type="button" aria-label="Abrir navegación">Menú</button>
+  <aside id="sidebar" class="sidebar" aria-label="Navegación principal"></aside>
+  <main id="retired-module-root" tabindex="-1"></main>
+  <noscript><p class="source-noscript"><strong>Sin fuente conectada · no operativo.</strong> Este módulo requiere JavaScript únicamente para presentar su estado de integración; no hay datos municipales embebidos en la página.</p></noscript>
+  <script src="js/nav.js"></script>
+  <script src="js/db.js"></script>
+  <script>
+    (function initialiseRetiredModule() {
+      if (!window.MuniDB || typeof window.MuniDB.mountRetiredModule !== 'function') {
+        document.getElementById('retired-module-root').textContent = 'Sin fuente conectada. Módulo no operativo.';
+        return;
+      }
+      window.MuniDB.mountRetiredModule({ module: 'upload' });
+      if (typeof window.buildSidebar === 'function') window.buildSidebar('upload');
+    })();
+  </script>
+</body>
+</html>

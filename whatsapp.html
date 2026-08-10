@@ -1,378 +1,40 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html class="muni-shell-v1" lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
-  <meta name='theme-color' content='#060b18'>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alertas WhatsApp — MuniControl</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/shared.css" />
-  <link rel="stylesheet" href="css/dashboard.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>WhatsApp institucional | MuniControl Junín</title>
+  <meta name="description" content="Estado de integración de WhatsApp institucional en MuniControl Junín.">
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="css/dashboard.css">
   <style>
-    .wa-hero { background:linear-gradient(135deg,rgba(37,211,102,0.08),rgba(18,140,126,0.08)); border:1px solid rgba(37,211,102,0.2); border-radius:var(--radius); padding:24px; margin-bottom:20px; display:flex; align-items:center; gap:20px; }
-    .wa-logo { font-size:48px; }
-    .wa-status-dot { width:12px; height:12px; border-radius:50%; background:#25d366; box-shadow:0 0 12px #25d366; animation:waPulse 2s infinite; display:inline-block; margin-right:6px; }
-    .wa-status-dot.offline { background:#ef4444; box-shadow:0 0 12px #ef4444; animation:none; }
-    @keyframes waPulse { 0%,100%{opacity:1;box-shadow:0 0 8px #25d366} 50%{opacity:0.6;box-shadow:0 0 20px #25d366} }
-    .wa-stats { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
-    .wa-stat { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:14px 20px; flex:1; min-width:120px; }
-    .wa-stat-val { font-size:24px; font-weight:900; font-family:'Outfit',sans-serif; }
-    .wa-stat-lbl { font-size:11px; color:var(--text-muted); }
-    .cmd-list { display:flex; flex-direction:column; gap:8px; }
-    .cmd-item { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; gap:14px; justify-content:space-between; }
-    .cmd-badge { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; padding:4px 10px; border-radius:7px; background:rgba(37,211,102,0.1); color:#25d366; border:1px solid rgba(37,211,102,0.25); white-space:nowrap; flex-shrink:0; }
-    .cmd-desc { font-size:12px; color:var(--text-secondary); line-height:1.5; }
-    .cmd-example { font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; margin-top:4px; }
-    .wa-chat-preview { background:#0b141a; border-radius:12px; padding:16px; min-height:200px; display:flex; flex-direction:column; gap:10px; }
-    .msg-bubble { max-width:78%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; }
-    .msg-in { background:#1f2c34; color:#e9edef; border-radius:12px 12px 12px 2px; align-self:flex-start; }
-    .msg-out { background:#005c4b; color:#e9edef; border-radius:12px 12px 2px 12px; align-self:flex-end; }
-    .msg-meta { font-size:10px; color:rgba(233,237,239,0.4); text-align:right; margin-top:3px; }
-    .alert-recipient { display:flex; align-items:center; gap:12px; padding:12px 14px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:9px; margin-bottom:8px; }
-    .rec-toggle { width:40px; height:22px; border-radius:99px; background:rgba(255,255,255,0.1); cursor:pointer; transition:0.25s; position:relative; flex-shrink:0; }
-    .rec-toggle.on { background:#25d366; }
-    .rec-toggle::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:white; top:3px; left:3px; transition:0.25s; }
-    .rec-toggle.on::after { left:21px; }
-    .config-form { display:flex; flex-direction:column; gap:14px; }
-    .config-form label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:5px; }
-    .config-form input { width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:9px; padding:10px 14px; color:var(--text-primary); font-size:13px; outline:none; transition:0.15s; box-sizing:border-box; font-family:'JetBrains Mono',monospace; }
-    .config-form input:focus { border-color:#25d366; box-shadow:0 0 0 3px rgba(37,211,102,0.1); }
-    .wa-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-    @media(max-width:768px){ .wa-grid{grid-template-columns:1fr;} }
+    html { color-scheme: dark; }
+    body { margin: 0; min-width: 320px; background: var(--bg, #07111f); }
+    .skip-link { position: fixed; left: 16px; top: -60px; z-index: 10000; padding: 10px 14px; border-radius: 9px; background: #e0f2fe; color: #082f49; font: 700 13px/1 system-ui, sans-serif; }
+    .skip-link:focus { top: 16px; }
+    .retired-menu { position: fixed; top: 14px; left: 14px; z-index: 999; display: none; min-width: 44px; min-height: 44px; border: 1px solid #334155; border-radius: 11px; background: #0f1f34; color: #e2e8f0; font: 700 12px/1 system-ui, sans-serif; }
+    @media (max-width: 900px) { .retired-menu { display: inline-flex; align-items: center; justify-content: center; } }
+    .source-noscript { max-width: 720px; margin: 80px auto; padding: 24px; border: 1px solid #334155; border-radius: 16px; color: #e2e8f0; font-family: system-ui, sans-serif; }
   </style>
 </head>
-<body>
-  <aside class="sidebar" id="sidebar"></aside>
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
-        <div class="page-title">
-          <h1>📱 WhatsApp Bot</h1>
-          <span class="breadcrumb">Comunicaciones · Bot IA Municipal · Meta Cloud API</span>
-        </div>
-      </div>
-      <div class="topbar-right">`n        <button class="icon-btn" id="helpBtn" onclick="if(window.showShortcutsHelp) showShortcutsHelp()" title="Atajos de teclado (?)">?</button>
-        <div class="topbar-avatar" id="userAvatar">MA</div>
-      </div>
-    </header>
-
-    <div class="content-wrapper">
-
-      <!-- HERO -->
-      <div class="wa-hero">
-        <div class="wa-logo">💬</div>
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <div style="font-size:20px;font-weight:900;font-family:'Outfit',sans-serif;">WhatsApp Bot Municipal</div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:12px;font-weight:600;">Activar Bot</span>
-              <div class="rec-toggle on" id="mainBotToggle" onclick="toggleMainBot()"></div>
-            </div>
-          </div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Bot inteligente con IA para intendente, hacienda y equipo municipal. Responde consultas 24/7.</div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px">
-            <span class="wa-status-dot" id="statusDot"></span>
-            <span id="statusText" style="font-weight:700">Bot Activo</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- STATS -->
-      <div class="wa-stats">
-        <div class="wa-stat"><div class="wa-stat-val" style="color:#25d366">24</div><div class="wa-stat-lbl">Mensajes recibidos hoy</div></div>
-        <div class="wa-stat"><div class="wa-stat-val" style="color:#3b82f6">12</div><div class="wa-stat-lbl">Alertas enviadas</div></div>
-        <div class="wa-stat"><div class="wa-stat-val" style="color:#f59e0b">3</div><div class="wa-stat-lbl">Destinatarios configurados</div></div>
-        <div class="wa-stat"><div class="wa-stat-val" style="color:#8b5cf6">24/7</div><div class="wa-stat-lbl">Disponibilidad</div></div>
-      </div>
-
-      <div class="wa-grid">
-
-        <!-- COMMANDS + PREVIEW -->
-        <div style="display:flex;flex-direction:column;gap:16px">
-          <!-- Commands -->
-          <div class="card">
-            <div class="card-header"><h3 style="font-size:14px;margin:0">🤖 Comandos del Bot</h3></div>
-            <div style="padding:16px">
-              <div class="cmd-list">
-                <div class="cmd-item">
-                  <div style="display:flex;gap:14px;">
-                    <span class="cmd-badge">/gastos</span><div><div class="cmd-desc">Resumen del presupuesto municipal</div><div class="cmd-example">Resp: "💰 Presupuesto total: $372M..."</div></div>
-                  </div>
-                  <div class="rec-toggle on" onclick="this.classList.toggle('on')"></div>
-                </div>
-                <div class="cmd-item">
-                  <div style="display:flex;gap:14px;">
-                    <span class="cmd-badge">/contratos</span><div><div class="cmd-desc">Contratos activos y próximos a vencer</div><div class="cmd-example">Resp: "📄 47 contratos activos..."</div></div>
-                  </div>
-                  <div class="rec-toggle on" onclick="this.classList.toggle('on')"></div>
-                </div>
-                <div class="cmd-item">
-                  <div style="display:flex;gap:14px;">
-                    <span class="cmd-badge">/personal</span><div><div class="cmd-desc">Empleados, costo de nómina, alertas</div><div class="cmd-example">Resp: "👥 1.247 empleados..."</div></div>
-                  </div>
-                  <div class="rec-toggle on" onclick="this.classList.toggle('on')"></div>
-                </div>
-                <div class="cmd-item">
-                  <div style="display:flex;gap:14px;">
-                    <span class="cmd-badge">/reclamos</span><div><div class="cmd-desc">Reclamos vecinales urgentes y pendientes</div><div class="cmd-example">Resp: "🏘️ 12 urgentes | 47 pendientes..."</div></div>
-                  </div>
-                  <div class="rec-toggle on" onclick="this.classList.toggle('on')"></div>
-                </div>
-                <div class="cmd-item">
-                  <div style="display:flex;gap:14px;">
-                    <span class="cmd-badge">/obras</span><div><div class="cmd-desc">Estado de obras públicas en ejecución</div><div class="cmd-example">Resp: "🏗️ 8 obras activas..."</div></div>
-                  </div>
-                  <div class="rec-toggle on" onclick="this.classList.toggle('on')"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Chat Preview -->
-          <div class="card">
-            <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-              <h3 style="font-size:14px;margin:0">💬 Simulador de Chat</h3>
-              <button onclick="runDemoFlow()" style="padding:10px 20px;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.3);color:#25d166;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">
-                ▶️ Demo conversación real
-              </button>
-            </div>
-            <div style="padding:16px">
-              <div class="wa-chat-preview bot-chat" id="chatPreview">
-                <div class="msg-bubble msg-in">Hola, soy el Asistente IA de la *Municipalidad de Junín* 🏛️
-
-Escribí tu consulta o usá los comandos habilitados.<div class="msg-meta">Ahora ✓✓</div></div>
-              </div>
-              <div style="display:flex;gap:8px;margin-top:10px">
-                <input id="chatInput" placeholder="Escribí un mensaje o comando..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;padding:10px 14px;color:var(--text-primary);font-size:13px;outline:none" />
-                <button onclick="simulateChat()" style="padding:10px 16px;background:#25d366;border:none;border-radius:9px;cursor:pointer;font-size:16px">➤</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONFIG + RECIPIENTS -->
-        <div style="display:flex;flex-direction:column;gap:16px">
-
-          <!-- Config form -->
-          <div class="card">
-            <div class="card-header"><h3 style="font-size:14px;margin:0">⚙️ Configuración Meta API</h3></div>
-            <div style="padding:16px">
-              <div class="config-form">
-                <div>
-                  <label>Phone Number ID</label>
-                  <input type="text" id="cfgPhoneId" placeholder="123456789012345" />
-                </div>
-                <div>
-                  <label>Access Token (permanente)</label>
-                  <input type="password" id="cfgToken" placeholder="EAABwzLixnjYBO..." />
-                </div>
-                <div>
-                  <label>Webhook URL</label>
-                  <div style="display:flex;gap:8px">
-                    <input type="text" id="webhookUrl" value="https://municipio-junin.vercel.app/api/whatsapp/webhook" readonly style="flex:1" />
-                    <button onclick="navigator.clipboard.writeText(document.getElementById('webhookUrl').value); showToast('Copiado al portapapeles', 'info')" style="padding:0 12px;border:none;background:rgba(255,255,255,0.1);color:var(--text-primary);border-radius:6px;cursor:pointer">Copiar</button>
-                  </div>
-                </div>
-                <div>
-                  <label>Verify Token</label>
-                  <div style="display:flex;gap:8px">
-                    <input type="text" id="cfgVerify" value="govtech-verify-2026" />
-                    <button onclick="document.getElementById('cfgVerify').value = 'token-' + Math.random().toString(36).substring(2, 10);" style="padding:0 12px;border:none;background:rgba(255,255,255,0.1);color:var(--text-primary);border-radius:6px;cursor:pointer;white-space:nowrap">Regenerar Token</button>
-                  </div>
-                </div>
-                
-                <div style="display:flex;gap:10px;flex-wrap:wrap">
-                  <button id="btnSaveConfig" style="flex:1;padding:10px;background:linear-gradient(135deg,#25d366,#128c7e);border:none;border-radius:9px;color:white;font-weight:800;font-size:13px;cursor:pointer">💾 Guardar Configuración</button>
-                  <button id="btnTestConfig" style="flex:1;padding:10px;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);color:#25d366;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer">🔍 Probar Conexión</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Alert recipients -->
-          <div class="card">
-            <div class="card-header"><h3 style="font-size:14px;margin:0">📤 Enviar Mensaje de Prueba</h3></div>
-            <div style="padding:16px">
-              <div class="config-form">
-                <div>
-                  <label>Número Destino (con código país, sin +)</label>
-                  <input type="text" id="testPhone" placeholder="5491122334455" />
-                </div>
-                <button id="btnSendTest" style="width:100%;padding:9px;background:rgba(37,211,102,0.08);border:1px dashed rgba(37,211,102,0.3);color:#25d366;border-radius:9px;cursor:pointer;font-weight:700;font-size:12px">Enviar Mensaje de Prueba</button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <script src="js/pwa.js"></script>
+<body data-retired-module="whatsapp" data-source-state="not-connected">
+  <a class="skip-link" href="#retired-module-root">Saltar al estado del módulo</a>
+  <button class="retired-menu" id="menuBtn" type="button" aria-label="Abrir navegación">Menú</button>
+  <aside id="sidebar" class="sidebar" aria-label="Navegación principal"></aside>
+  <main id="retired-module-root" tabindex="-1"></main>
+  <noscript><p class="source-noscript"><strong>Sin fuente conectada · no operativo.</strong> Este módulo requiere JavaScript únicamente para presentar su estado de integración; no hay datos municipales embebidos en la página.</p></noscript>
   <script src="js/nav.js"></script>
-  <script src='js/db.js'></script>
-  <script src="js/toast.js"></script>
+  <script src="js/db.js"></script>
   <script>
-    if (typeof buildSidebar !== 'undefined') buildSidebar('whatsapp');
-
-    // Estado del bot
-    let isBotActive = true;
-    
-    function toggleMainBot() {
-      const toggle = document.getElementById('mainBotToggle');
-      const dot = document.getElementById('statusDot');
-      const text = document.getElementById('statusText');
-      isBotActive = !isBotActive;
-      
-      if (isBotActive) {
-        toggle.classList.add('on');
-        dot.classList.remove('offline');
-        text.textContent = 'Bot Activo';
-        text.style.color = 'var(--text-primary)';
-      } else {
-        toggle.classList.remove('on');
-        dot.classList.add('offline');
-        text.textContent = 'Bot Inactivo';
-        text.style.color = '#ef4444';
-      }
-    }
-
-    // Config form logic
-    document.getElementById('btnSaveConfig').addEventListener('click', () => {
-      const phoneId = document.getElementById('cfgPhoneId').value;
-      const token = document.getElementById('cfgToken').value;
-      
-      if (!phoneId || !token) {
-        if (typeof showToast !== 'undefined') showToast('Completá Phone ID y Token', 'warning');
+    (function initialiseRetiredModule() {
+      if (!window.MuniDB || typeof window.MuniDB.mountRetiredModule !== 'function') {
+        document.getElementById('retired-module-root').textContent = 'Sin fuente conectada. Módulo no operativo.';
         return;
       }
-      
-      localStorage.setItem('wa_phone_id', phoneId);
-      localStorage.setItem('wa_token', token);
-      
-      if (typeof showToast !== 'undefined') showToast('✅ Configuración guardada', 'success');
-    });
-
-    document.getElementById('btnTestConfig').addEventListener('click', () => {
-      const btn = document.getElementById('btnTestConfig');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = 'Probando...';
-      btn.disabled = true;
-      
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        const phoneId = document.getElementById('cfgPhoneId').value;
-        const token = document.getElementById('cfgToken').value;
-        
-        if (!phoneId || !token) {
-          if (typeof showToast !== 'undefined') showToast('❌ Error: Faltan credenciales', 'error');
-        } else {
-          if (typeof showToast !== 'undefined') showToast('✅ Conexión exitosa', 'success');
-        }
-      }, 2000);
-    });
-
-    document.getElementById('btnSendTest').addEventListener('click', () => {
-      const phone = document.getElementById('testPhone').value;
-      if (!phone) {
-        if (typeof showToast !== 'undefined') showToast('❌ Ingresá un número', 'error');
-        return;
-      }
-      if (typeof showToast !== 'undefined') showToast('✅ Mensaje de prueba enviado a ' + phone, 'success');
-      document.getElementById('testPhone').value = '';
-    });
-
-    // Chat simulation
-    const RESPONSES = {
-      '/gastos':   '💰 *Resumen Presupuestario 2026*\n\n📊 Total: *$372.000.000*\n✅ Ejecutado: *$193.4M (52%)*\n💵 Disponible: *$178.6M*\n\n⚠️ Alerta: Personal al 103%\n\nVer detalle: municipio-junin.vercel.app/presupuesto.html',
-      '/contratos':'📄 *47 contratos activos*\n\n⚠️ Vencen pronto:\n🔴 Limpieza Norte → 12 días\n🟡 Mantenimiento Flota → 18 días',
-      '/personal': '👥 *1.247 empleados activos*\n\n💰 Costo mensual: $152M\n📊 Presentismo: 94.2%\n⚠️ Partida al 103%',
-      '/reclamos': '🏘️ *Estado de Reclamos*\n\n🔴 Urgentes: 12\n🟡 Pendientes: 47\n🟢 Resueltos: 23/sem\n\n📍 Zona Norte lidera con 28%',
-      '/obras':    '🏗️ *8 obras activas*\n\n✅ LED Centro: 100%\n🟢 Parque Norte: 80%\n🟡 San Martín: 65%\n🔴 Hospital: 30%\n\n💰 Total: $53.8M',
-    };
-
-    function simulateChat(cmd) {
-      if (!isBotActive) {
-        if (typeof showToast !== 'undefined') showToast('El bot está inactivo', 'warning');
-        return;
-      }
-      const input = document.getElementById('chatInput');
-      const text = cmd || input.value.trim();
-      if (!text) return;
-      input.value = '';
-      const chat = document.getElementById('chatPreview');
-      const now = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-      // User message
-      const userBubble = document.createElement('div');
-      userBubble.className = 'msg-bubble msg-out';
-      userBubble.innerHTML = `${text}<div class="msg-meta">${now} ✓✓</div>`;
-      chat.appendChild(userBubble);
-      chat.scrollTop = chat.scrollHeight;
-      // Bot response
-      setTimeout(() => {
-        const key = Object.keys(RESPONSES).find(k => text.includes(k));
-        const resp = key ? RESPONSES[key] : '🤔 No reconocí ese comando. Comandos disponibles: /gastos, /contratos, /personal, /reclamos, /obras';
-        const botBubble = document.createElement('div');
-        botBubble.className = 'msg-bubble msg-in';
-        botBubble.innerHTML = `${resp.replace(/\n/g,'<br>').replace(/\*(.*?)\*/g,'<strong>$1</strong>')}<div class="msg-meta">${now} ✓✓</div>`;
-        chat.appendChild(botBubble);
-        chat.scrollTop = chat.scrollHeight;
-      }, 800);
-    }
-
-    document.getElementById('chatInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') simulateChat();
-    });
-    
-    const BOT_DEMO_FLOW = [
-      { from: 'citizen', text: 'Hola, quiero reportar un bache en San Martín y Mitre' },
-      { from: 'bot', text: '👋 Hola! Soy MuniBot. Recibí tu reclamo.\n\n📍 Dirección: San Martín y Mitre, Junín\n📊 Tipo: Bache\n⏰ SLA: 72hs para resolución\n\n🔢 Número de seguimiento: JUN-2026-001252\n\nPodés consultar el estado en cualquier momento escribiendo el número.' },
-      { from: 'citizen', text: 'Gracias! ¿Cuándo lo van a arreglar?' },
-      { from: 'bot', text: 'El plazo máximo es *72 horas*. Te notificaremos por WhatsApp cuando el equipo esté en camino y cuando se resuelva.\n\n📞 Si es urgente (pérdida de agua, árbol caído), llamá al 147.' },
-      { from: 'citizen', text: 'Perfecto! ¿Y cómo pago mi tasa municipal?' },
-      { from: 'bot', text: '💳 Podés pagar tu tasa municipal por:\n\n1️⃣ *Mercado Pago* — escáneá el QR de la boleta\n2️⃣ *Banco Provincia* — cajía o homebanking\n3️⃣ *ATM municipales* — Mitre 548\n\n¿Querés que te envíe tu boleta en PDF? Respondé *BOLETA* y tu DNI.' },
-    ];
-
-    function runDemoFlow() {
-      const chat = document.getElementById('botChat') || document.querySelector('.bot-chat');
-      if (!chat) return;
-      chat.innerHTML = '';
-      let delay = 0;
-      BOT_DEMO_FLOW.forEach((msg, i) => {
-        delay += i === 0 ? 300 : 1200;
-        setTimeout(() => {
-          const div = document.createElement('div');
-          const isCitizen = msg.from === 'citizen';
-          div.style.cssText = `display:flex;justify-content:${isCitizen?'flex-end':'flex-start'};margin-bottom:12px;animation:fadeIn 0.3s ease both`;
-          div.innerHTML = `
-            <div style="max-width:75%;padding:12px 14px;border-radius:${isCitizen?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${isCitizen?'rgba(59,130,246,0.15)':'rgba(255,255,255,0.05)'};border:1px solid ${isCitizen?'rgba(59,130,246,0.3)':'rgba(255,255,255,0.08)'};font-size:13px;line-height:1.5;white-space:pre-line">
-              ${msg.text}
-              <div style="font-size:9px;color:rgba(148,163,184,0.5);text-align:right;margin-top:4px">${new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</div>
-            </div>`;
-          chat.appendChild(div);
-          chat.scrollTop = chat.scrollHeight;
-        }, delay);
-      });
-    }
-
-    // Load saved settings on startup
-    window.addEventListener('DOMContentLoaded', () => {
-      const phoneId = localStorage.getItem('wa_phone_id');
-      const token = localStorage.getItem('wa_token');
-      if (phoneId) document.getElementById('cfgPhoneId').value = phoneId;
-      if (token) document.getElementById('cfgToken').value = token;
-    });
+      window.MuniDB.mountRetiredModule({ module: 'whatsapp' });
+      if (typeof window.buildSidebar === 'function') window.buildSidebar('whatsapp');
+    })();
   </script>
-  <script src='js/motion-kit.js'></script>
-  <script src='js/ux-improvements.js'></script>
-  <script src='js/bottom-nav.js'></script>
-  <script src='js/notifications.js'></script>
-  <script src='js/chat-widget.js'></script>
-  <script src='js/theme-switcher.js'></script>
 </body>
 </html>
-

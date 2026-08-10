@@ -11,6 +11,15 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LOGIN_PATH = path.join(REPO, 'login.html');
 const SUCCESS_EMAIL = 'success@junin.gob.ar';
 const TEST_PASSWORD = 'Institutional-test-only';
+const EVALUATION_PASSWORD = 'Junin2026!';
+const PUBLISHED_EVALUATION_IDENTITIES = Object.freeze([
+  Object.freeze({ email: 'intendente@junin.gov.ar', role: 'INTENDENTE' }),
+  Object.freeze({ email: 'admin@junin.gov.ar', role: 'TENANT_ADMIN' }),
+  Object.freeze({ email: 'contador@junin.gov.ar', role: 'CONTADOR' }),
+  Object.freeze({ email: 'rrhh@junin.gov.ar', role: 'TENANT_USER' }),
+  Object.freeze({ email: 'inspector@junin.gov.ar', role: 'INSPECTOR' }),
+  Object.freeze({ email: 'demo@junin.gov.ar', role: 'DEMO' }),
+]);
 const SUCCESS_ACCESS = accessPolicy.getSessionAccessForUser({
   role: 'INTENDENTE',
   tenantId: 'tenant-junin-e2e',
@@ -50,6 +59,28 @@ async function createServer(requestLog) {
         contentType: request.headers['content-type'] || '',
         method: request.method,
       });
+
+      const evaluationIdentity = PUBLISHED_EVALUATION_IDENTITIES.find(identity => identity.email === body.email);
+      if (evaluationIdentity && body.password === EVALUATION_PASSWORD) {
+        const access = accessPolicy.getSessionAccessForUser({
+          role: evaluationIdentity.role,
+          tenantId: 'tenant-junin-e2e',
+        });
+        json(response, 200, {
+          token: `signed-evaluation-token-${evaluationIdentity.role.toLowerCase()}`,
+          user: {
+            email: evaluationIdentity.email,
+            id: `qa-evaluation-${evaluationIdentity.role.toLowerCase()}`,
+            name: `Evaluación ${evaluationIdentity.role}`,
+            role: evaluationIdentity.role,
+            tenantId: 'tenant-junin-e2e',
+            capabilities: access.capabilities,
+            accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+            homeProfile: access.homeProfile,
+          },
+        });
+        return;
+      }
 
       const statusByEmail = {
         'unauthorized@junin.gob.ar': 401,
@@ -135,8 +166,12 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.doesNotMatch(source, /window\.location\.href = 'index\.html'/);
 
   assert.doesNotMatch(source, /gradient|@keyframes|\bfloat\b|\bglow\b|kpi-card|data-count/i);
-  assert.doesNotMatch(source, /Usuarios de demostraci[oó]n|Acceso r[aá]pido por rol|fillUser\s*\(/i);
-  assert.doesNotMatch(source, /(?:admin|intendente|contador|demo)@junin\.gov\.ar/i);
+  assert.match(source, /data-demo-contract="published-evaluation-readonly-v1"/);
+  assert.match(source, /snapshot GRH hist[oó]rico y agregado/i);
+  assert.match(source, /escrituras bloqueadas por el servidor/i);
+  const publishedEmails = [...source.matchAll(/data-evaluation-email="([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(publishedEmails, PUBLISHED_EVALUATION_IDENTITIES.map(identity => identity.email));
+  assert.doesNotMatch(source, /\/api\/auth\/seed-demo|ensureSeeded|fillUser\s*\(/i);
   assert.doesNotMatch(source, /AES-256|JWT firmado|HTTPS requerido/i);
   assert.doesNotMatch(source, /<img\b|<canvas\b|<video\b|<link\b[^>]*rel=["']stylesheet|<script\b[^>]*src=/i);
   assert.doesNotMatch(source, /https?:\/\//i);
@@ -219,6 +254,40 @@ test('login is responsive, reduced-motion safe and has no external requests', as
   }
 
   assert.deepEqual(requestLog, [], 'rendering the login must not call authentication');
+});
+
+test('the six published evaluation buttons authenticate their exact role without seeding', async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  for (const identity of PUBLISHED_EVALUATION_IDENTITIES) {
+    await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
+    await Promise.all([
+      page.waitForURL(`${baseUrl}/inicio.html`),
+      page.click(`[data-evaluation-email="${identity.email}"]`),
+    ]);
+    const stored = await page.evaluate(() => ({
+      token: sessionStorage.getItem('mjunin_token'),
+      user: JSON.parse(sessionStorage.getItem('mjunin_user')),
+    }));
+    assert.equal(stored.user.email, identity.email);
+    assert.equal(stored.user.role, identity.role);
+    assert.match(stored.token, /^signed-evaluation-token-/);
+  }
+
+  assert.deepEqual(requestLog.map(entry => entry.body), PUBLISHED_EVALUATION_IDENTITIES.map(identity => ({
+    email: identity.email,
+    password: EVALUATION_PASSWORD,
+  })));
 });
 
 test('login keyboard flow, guarded errors and successful session remain accessible', async t => {

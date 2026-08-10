@@ -118,7 +118,8 @@ del tenant. El frontend no es una frontera de autorización.
 están ignorados por Git y Vercel. Este repositorio es público: esos archivos
 **no se deben commitear**.
 
-Producción debe aplicar la migración privada y materializar los contratos:
+El destino estable de Producción aplica la migración privada y materializa los
+contratos:
 
 ```powershell
 $env:DATABASE_URL='<secreto>'
@@ -129,6 +130,17 @@ $env:GRH_SOURCE_SHA256='<SHA-256 aprobado en config/grh-source-manifest.json>'
 
 node scripts/publish_grh_artifacts.mjs --tenant-id '<tenants.id CUID real>'
 ```
+
+Para una demostración histórica de solo lectura, si el rol operativo todavía no
+puede aplicar DDL, el runtime admite transitoriamente
+`GRH_ARTIFACT_SOURCE=sealed` y un bundle sensible de plataforma. Puede recibirse
+completo en `GRH_SEALED_BUNDLE_BASE64` o, si el canal operativo limita el tamaño
+por variable, en 2 a 16 partes declaradas por `GRH_SEALED_BUNDLE_PARTS` y
+nombradas `GRH_SEALED_BUNDLE_01`…`GRH_SEALED_BUNDLE_NN`. La variable completa,
+si existe, tiene precedencia; no debe configurarse vacía junto a las partes. El
+sobre gzip+base64 no se commitea ni se sirve al navegador: se valida contra el
+manifiesto, el pin SHA y el mismo contrato de runtime. No es un reemplazo de
+PostgreSQL; el cambio posterior a `database` no altera las APIs.
 
 `GRH_TENANT_ID` y `LEGACY_ANALYTICS_TENANT_ID` requieren el `tenants.id` real
 incluido en el JWT. No aceptan el slug `junin`. `GRH_SOURCE_SHA256` fija el hash
@@ -210,6 +222,10 @@ variables críticas incluyen:
 - `JWT_SECRET`
 - `GRH_TENANT_ID`
 - `GRH_SOURCE_SHA256` con el hash exacto aprobado; nunca un valor de ejemplo
+- `GRH_ARTIFACT_SOURCE`; `sealed` exige el secreto directo
+  `GRH_SEALED_BUNDLE_BASE64` o el conjunto fragmentado
+  `GRH_SEALED_BUNDLE_PARTS` + `GRH_SEALED_BUNDLE_01`…`NN`, y se reserva al
+  snapshot histórico de solo lectura
 - `LEGACY_ANALYTICS_TENANT_ID`
 - `PUBLIC_APP_URL` y `PUBLIC_APP_ORIGINS` cuando se habilitan enlaces públicos o
   tráfico de navegador en un deployment aprobado

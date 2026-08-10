@@ -9,6 +9,10 @@ const jwt = require('jsonwebtoken');
 const { hasExactRole, isKnownRole } = require('../../shared/access-policy.cjs');
 const routePolicy = require('../../shared/route-policy.cjs');
 const { evaluateTenantAccess } = require('../../shared/tenant-lifecycle.cjs');
+const {
+  PUBLISHED_DEMO_DECISION_CODES,
+  evaluatePublishedDemoRoute,
+} = require('../../shared/published-demo-policy.cjs');
 let prisma;
 try { prisma = require('../lib/prisma'); } catch { prisma = null; }
 
@@ -39,15 +43,34 @@ function denyRoutePermission(res) {
   });
 }
 
+function denyPublishedDemoRoute(res) {
+  return res.status(403).json({
+    error: 'La cuenta publicada esta limitada a superficies gobernadas de solo lectura',
+    code: PUBLISHED_DEMO_DECISION_CODES.DENIED,
+  });
+}
+
+function enforcePublishedDemoRoute(res, user, routeId) {
+  const decision = evaluatePublishedDemoRoute({
+    email: user?.email,
+    role: user?.role,
+    tenantSlug: user?.tenant?.slug,
+    routeId,
+  });
+  if (decision.allowed) return true;
+  denyPublishedDemoRoute(res);
+  return false;
+}
+
 function enforceCurrentRoutePermission(req, res, user) {
   const pathname = requestRoutePath(req);
-  if (!pathname) return true;
+  if (!pathname) return enforcePublishedDemoRoute(res, user, null);
   const route = resolveProtectedRoute(RUNTIMES.EXPRESS, req?.method, pathname);
   if (!route || !authorizeRoute(user?.role, RUNTIMES.EXPRESS, req?.method, pathname)) {
     denyRoutePermission(res);
     return false;
   }
-  return true;
+  return enforcePublishedDemoRoute(res, user, route.id);
 }
 
 function requireLegacyTenantBinding(req, res, next) {

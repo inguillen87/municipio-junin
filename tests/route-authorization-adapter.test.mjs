@@ -14,6 +14,7 @@ const {
   requireRole,
 } = await import('../api/lib/auth.js');
 const routePolicy = (await import('../shared/route-policy.cjs')).default;
+const publishedDemoPolicy = (await import('../shared/published-demo-policy.cjs')).default;
 
 const originalFindUnique = prisma.user.findUnique;
 const users = new Map();
@@ -25,17 +26,20 @@ after(async () => {
   await prisma.$disconnect();
 });
 
-function setUser(id, role, tenantId = 'tenant-current') {
+function setUser(id, role, tenantId = 'tenant-current', {
+  email = `${id}@example.test`,
+  tenantSlug = tenantId,
+} = {}) {
   users.set(id, {
     id,
-    email: `${id}@example.test`,
+    email,
     name: `Usuario ${id}`,
     role,
     tenantId,
     active: true,
     tenant: tenantId ? {
       id: tenantId,
-      slug: tenantId,
+      slug: tenantSlug,
       name: 'Municipio de prueba',
       shortName: 'Prueba',
       status: 'ACTIVE',
@@ -131,6 +135,80 @@ test('unknown routes, resource/actions and methods fail closed after DB-authorit
   );
   assert.equal(unknown, null);
   assert.equal(unknownResponse.payload.code, 'ROUTE_PERMISSION_DENIED');
+});
+
+test('Serverless published identities are constrained by identity, role, tenant and exact route', async () => {
+  const privilegedRoles = new Set(['INTENDENTE', 'TENANT_ADMIN', 'CONTADOR']);
+  const aggregateRoutes = [
+    ['GET', '/api/grh-executive'],
+    ['GET', '/api/grh-quality'],
+    ['GET', '/api/grh-close'],
+    ['GET', '/api/grh-decision-brief'],
+    ['GET', '/api/reports'],
+    ['GET', '/api/pdf-report'],
+    ['POST', '/api/ai-analyze'],
+  ];
+  const sensitiveRouteForRole = Object.freeze({
+    INTENDENTE: ['POST', '/api/data/reclamos'],
+    TENANT_ADMIN: ['POST', '/api/data/import'],
+    CONTADOR: ['GET', '/api/export-data'],
+    INSPECTOR: ['POST', '/api/data/reclamos'],
+    TENANT_USER: ['GET', '/api/grh-executive'],
+    DEMO: ['GET', '/api/grh-executive'],
+  });
+
+  for (const [index, profile] of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.entries()) {
+    const id = `published-${index}`;
+    setUser(id, profile.role, 'tenant-current', {
+      email: profile.email,
+      tenantSlug: profile.tenantSlug,
+    });
+
+    const meResponse = responseRecorder();
+    const me = await requireAuth(requestFor(id, 'GET', '/api/auth/me'), meResponse);
+    assert.equal(me?.email, profile.email, `${profile.email} auth/me`);
+
+    for (const [method, url] of aggregateRoutes) {
+      const response = responseRecorder();
+      const user = await requireAuth(requestFor(id, method, url), response);
+      if (privilegedRoles.has(profile.role)) {
+        assert.equal(user?.email, profile.email, `${profile.email} ${method} ${url}`);
+      } else {
+        assert.equal(user, null, `${profile.email} must not gain ${method} ${url}`);
+        assert.equal(response.payload.code, 'ROUTE_PERMISSION_DENIED');
+      }
+    }
+
+    const [sensitiveMethod, sensitiveUrl] = sensitiveRouteForRole[profile.role];
+    const sensitiveResponse = responseRecorder();
+    const sensitive = await requireAuth(
+      requestFor(id, sensitiveMethod, sensitiveUrl),
+      sensitiveResponse,
+    );
+    assert.equal(sensitive, null, `${profile.email} ${sensitiveMethod} ${sensitiveUrl}`);
+    if (privilegedRoles.has(profile.role) || profile.role === 'INSPECTOR') {
+      assert.equal(sensitiveResponse.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
+    }
+  }
+
+  setUser('published-drift', 'SUPER_ADMIN', 'tenant-current', {
+    email: 'admin@junin.gov.ar',
+    tenantSlug: 'junin',
+  });
+  const driftResponse = responseRecorder();
+  assert.equal(
+    await requireAuth(requestFor('published-drift', 'GET', '/api/auth/me'), driftResponse),
+    null,
+  );
+  assert.equal(driftResponse.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
+
+  setUser('ordinary-tenant-admin', 'TENANT_ADMIN');
+  const ordinaryResponse = responseRecorder();
+  const ordinary = await requireAuth(
+    requestFor('ordinary-tenant-admin', 'POST', '/api/data/import'),
+    ordinaryResponse,
+  );
+  assert.equal(ordinary?.email, 'ordinary-tenant-admin@example.test');
 });
 
 test('internal bearer access is bound to exact Serverless routes', () => {

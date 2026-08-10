@@ -1,11 +1,13 @@
 {
-  "name": "MuniControl Junín — Portal Ciudadano",
+  "name": "MuniControl Junín — Estado de servicios públicos",
   "short_name": "Muni Junín",
-  "description": "Portal de servicios digitales, reclamos 311 y turnos del Municipio de Junín, Mendoza",
+  "description": "Estado público de disponibilidad y contratos requeridos para habilitar servicios digitales del Municipio de Junín, Mendoza.",
   "start_url": "/ciudadano.html",
+  "scope": "/",
+  "lang": "es",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#3b82f6",
+  "background_color": "#f3f7f6",
+  "theme_color": "#0b5d4a",
   "icons": [
     {
       "src": "img/municontrol-logo-new.jpg",

@@ -1,4 +1,6 @@
 import { readFile } from 'node:fs/promises';
+import { gunzip as gunzipCallback } from 'node:zlib';
+import { promisify, TextDecoder } from 'node:util';
 import pg from 'pg';
 import {
   inspectGrhPublicationBundle,
@@ -9,6 +11,12 @@ import databaseUrlPolicy from '../../shared/database-url-policy.cjs';
 const { Pool } = pg;
 const { inspectDatabaseUrl } = databaseUrlPolicy;
 const ALLOWED_ARTIFACTS = new Set(['profile', 'semantic']);
+const ARTIFACT_SOURCES = new Set(['database', 'sealed']);
+const MAX_SEALED_COMPRESSED_BYTES = 1024 * 1024;
+const MAX_SEALED_EXPANDED_BYTES = 8 * 1024 * 1024;
+const MAX_SEALED_BASE64_LENGTH = Math.ceil(MAX_SEALED_COMPRESSED_BYTES / 3) * 4;
+const gunzip = promisify(gunzipCallback);
+const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
 
 const READ_ACTIVE_BUNDLE_SQL = `SELECT artifact,
        schema_version,
@@ -34,6 +42,18 @@ function artifactError(code, message) {
   const error = new Error(message);
   error.code = code;
   return error;
+}
+
+function configuredArtifactSource(environment) {
+  const configured = environment.GRH_ARTIFACT_SOURCE;
+  const source = configured === undefined || configured === '' ? 'database' : configured;
+  if (typeof source !== 'string' || !ARTIFACT_SOURCES.has(source)) {
+    throw artifactError(
+      'GRH_ARTIFACT_SOURCE_INVALID',
+      'La fuente de artefactos GRH no esta configurada con un modo permitido.',
+    );
+  }
+  return source;
 }
 
 function configuredSourceSha256(environment, required) {
@@ -85,6 +105,182 @@ function metadataRows(profile, semantic) {
   ];
 }
 
+function isPlainObject(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function sealedBase64Payload(environment) {
+  if (environment.GRH_SEALED_BUNDLE_BASE64 !== undefined) {
+    return environment.GRH_SEALED_BUNDLE_BASE64;
+  }
+
+  const configuredParts = environment.GRH_SEALED_BUNDLE_PARTS;
+  if (configuredParts === undefined || configuredParts === '') {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_PARTS_REQUIRED',
+      'La cantidad de fragmentos del bundle GRH sellado no esta configurada.',
+    );
+  }
+  if (typeof configuredParts !== 'string' || !/^(?:[2-9]|1[0-6])$/.test(configuredParts)) {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_PARTS_INVALID',
+      'La cantidad de fragmentos del bundle GRH sellado no es valida.',
+    );
+  }
+
+  const fragments = [];
+  let totalLength = 0;
+  const partCount = Number(configuredParts);
+  for (let index = 1; index <= partCount; index += 1) {
+    const name = `GRH_SEALED_BUNDLE_${String(index).padStart(2, '0')}`;
+    const fragment = environment[name];
+    if (fragment === undefined) {
+      throw artifactError(
+        'GRH_SEALED_BUNDLE_PART_REQUIRED',
+        'Falta un fragmento requerido del bundle GRH sellado.',
+      );
+    }
+    if (fragment === '') {
+      throw artifactError(
+        'GRH_SEALED_BUNDLE_PART_EMPTY',
+        'Un fragmento del bundle GRH sellado esta vacio.',
+      );
+    }
+    if (typeof fragment !== 'string') {
+      throw artifactError(
+        'GRH_SEALED_BUNDLE_PART_INVALID',
+        'Un fragmento del bundle GRH sellado no es valido.',
+      );
+    }
+    totalLength += fragment.length;
+    if (totalLength > MAX_SEALED_BASE64_LENGTH) {
+      throw artifactError(
+        'GRH_SEALED_BUNDLE_COMPRESSED_LIMIT',
+        'El bundle GRH sellado excede el limite comprimido permitido.',
+      );
+    }
+    fragments.push(fragment);
+  }
+  return fragments.join('');
+}
+
+function decodeBase64Payload(payload) {
+  if (payload === undefined || payload === '') {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_REQUIRED',
+      'El bundle GRH sellado no esta configurado.',
+    );
+  }
+  if (
+    typeof payload !== 'string' ||
+    payload.length > MAX_SEALED_BASE64_LENGTH ||
+    payload.length % 4 !== 0 ||
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(payload)
+  ) {
+    const code = typeof payload === 'string' && payload.length > MAX_SEALED_BASE64_LENGTH
+      ? 'GRH_SEALED_BUNDLE_COMPRESSED_LIMIT'
+      : 'GRH_SEALED_BUNDLE_ENCODING_INVALID';
+    throw artifactError(code, 'El bundle GRH sellado no tiene una codificacion valida.');
+  }
+
+  const paddingBytes = payload.endsWith('==') ? 2 : payload.endsWith('=') ? 1 : 0;
+  const decodedLength = (payload.length / 4) * 3 - paddingBytes;
+  if (decodedLength === 0 || decodedLength > MAX_SEALED_COMPRESSED_BYTES) {
+    throw artifactError(
+      decodedLength === 0 ? 'GRH_SEALED_BUNDLE_ENCODING_INVALID' : 'GRH_SEALED_BUNDLE_COMPRESSED_LIMIT',
+      'El bundle GRH sellado excede el limite comprimido permitido.',
+    );
+  }
+  const decoded = Buffer.from(payload, 'base64');
+  if (decoded.toString('base64') !== payload) {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_ENCODING_INVALID',
+      'El bundle GRH sellado no tiene una codificacion valida.',
+    );
+  }
+  return decoded;
+}
+
+async function readSealedBundle(environment) {
+  const compressed = decodeBase64Payload(sealedBase64Payload(environment));
+  if (compressed.length < 18 || compressed[0] !== 0x1f || compressed[1] !== 0x8b) {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_COMPRESSION_INVALID',
+      'El bundle GRH sellado no tiene un contenedor gzip valido.',
+    );
+  }
+
+  let expanded;
+  try {
+    expanded = await gunzip(compressed, { maxOutputLength: MAX_SEALED_EXPANDED_BYTES });
+  } catch (error) {
+    const expansionLimit = error?.code === 'ERR_BUFFER_TOO_LARGE';
+    throw artifactError(
+      expansionLimit
+        ? 'GRH_SEALED_BUNDLE_EXPANSION_LIMIT'
+        : 'GRH_SEALED_BUNDLE_COMPRESSION_INVALID',
+      expansionLimit
+        ? 'El bundle GRH sellado excede el limite de expansion permitido.'
+        : 'El bundle GRH sellado no tiene un contenedor gzip valido.',
+    );
+  }
+
+  let decoded;
+  try {
+    decoded = JSON.parse(utf8Decoder.decode(expanded));
+  } catch {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_JSON_INVALID',
+      'El bundle GRH sellado no contiene un documento JSON valido.',
+    );
+  }
+
+  const keys = isPlainObject(decoded) ? Object.keys(decoded).sort() : [];
+  if (
+    keys.length !== 3 ||
+    keys[0] !== 'manifest' ||
+    keys[1] !== 'profile' ||
+    keys[2] !== 'semantic' ||
+    !isPlainObject(decoded.profile) ||
+    !isPlainObject(decoded.semantic) ||
+    !isPlainObject(decoded.manifest)
+  ) {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_STRUCTURE_INVALID',
+      'El bundle GRH sellado no cumple la estructura requerida.',
+    );
+  }
+  return decoded;
+}
+
+async function loadSealedGrhArtifactBundle(environment) {
+  const configuredPin = configuredSourceSha256(environment, true);
+  const { profile, semantic, manifest } = await readSealedBundle(environment);
+  const publicationInspection = inspectGrhPublicationBundle(profile, semantic, manifest);
+  if (!publicationInspection.ok) {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_PUBLICATION_INVALID',
+      'El bundle GRH sellado no coincide con el manifiesto aprobado.',
+    );
+  }
+  if (configuredPin !== manifest.sha256) {
+    throw artifactError(
+      'GRH_SOURCE_SHA256_MISMATCH',
+      'El bundle GRH sellado no coincide con la fuente configurada.',
+    );
+  }
+  const inspection = inspectGrhRuntimeBundle(metadataRows(profile, semantic), configuredPin);
+  if (!inspection.ok || !inspection.bundle) {
+    throw artifactError(
+      'GRH_SEALED_BUNDLE_RUNTIME_INVALID',
+      'El bundle GRH sellado no supera la validacion de proveniencia.',
+    );
+  }
+  return inspection.bundle;
+}
+
 function assertRuntimeInspection(inspection) {
   if (!inspection.ok || !inspection.bundle) {
     throw artifactError('GRH_RUNTIME_BUNDLE_INVALID', 'El bundle privado GRH no supera la validacion de proveniencia.');
@@ -100,6 +296,11 @@ export async function loadGrhArtifactBundle({
 } = {}) {
   if (typeof tenantId !== 'string' || tenantId.length === 0) {
     throw artifactError('GRH_TENANT_REQUIRED', 'Tenant GRH requerido.');
+  }
+
+  const source = configuredArtifactSource(environment);
+  if (source === 'sealed') {
+    return loadSealedGrhArtifactBundle(environment);
   }
 
   const configuredPin = configuredSourceSha256(
@@ -136,6 +337,10 @@ export async function loadGrhArtifactBundle({
 }
 
 export async function readGrhArtifactBundle(tenantId) {
+  const source = configuredArtifactSource(process.env);
+  if (source === 'sealed') {
+    return loadGrhArtifactBundle({ tenantId, environment: process.env });
+  }
   const db = databasePool();
   const queryImpl = db ? (text, params) => db.query(text, params) : null;
   return loadGrhArtifactBundle({ tenantId, queryImpl });

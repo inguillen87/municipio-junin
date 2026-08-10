@@ -5,6 +5,7 @@
 
 /* Motion System global (animaciones UX de toda la plataforma) */
 @import url("motion-system.css");
+@import url("institutional-shell.css");
 
 /* ── RESET & BASE ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

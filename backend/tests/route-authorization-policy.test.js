@@ -9,6 +9,7 @@ process.env.JWT_SECRET = 'express-route-policy-secret-with-sufficient-length';
 
 const prisma = require('../lib/prisma');
 const routePolicy = require('../../shared/route-policy.cjs');
+const publishedDemoPolicy = require('../../shared/published-demo-policy.cjs');
 const { authenticate, requireCapability } = require('../middleware/authMiddleware');
 
 const originalFindUnique = prisma.user.findUnique;
@@ -16,17 +17,20 @@ const users = new Map();
 
 prisma.user.findUnique = async ({ where }) => users.get(where.id) || null;
 
-function setUser(id, role, tenantId = 'tenant-current') {
+function setUser(id, role, tenantId = 'tenant-current', {
+  email = `${id}@example.test`,
+  tenantSlug = tenantId,
+} = {}) {
   users.set(id, {
     id,
-    email: `${id}@example.test`,
+    email,
     name: `Usuario ${id}`,
     role,
     tenantId,
     active: true,
     tenant: tenantId ? {
       id: tenantId,
-      slug: tenantId,
+      slug: tenantSlug,
       name: 'Municipio de prueba',
       shortName: 'Prueba',
       status: 'ACTIVE',
@@ -50,6 +54,8 @@ async function startHarness() {
   const reached = (req, res) => res.json({ ok: true, role: req.user.role });
 
   app.get('/api/admin/stats', authenticate, reached);
+  app.get('/api/auth/me', authenticate, reached);
+  app.post('/api/auth/refresh', authenticate, reached);
   app.post('/api/data/import', authenticate, reached);
   app.get('/api/data/metrics', authenticate, reached);
   app.post('/api/whatsapp/send-alert', authenticate, reached);
@@ -100,6 +106,33 @@ test('Express authenticate enforces the exact route manifest using the current D
   assert.equal(tenantWhatsApp.status, 200);
   const platformWhatsApp = await request(baseUrl, '/api/whatsapp/send-alert', 'platform-admin', 'POST');
   assert.equal(platformWhatsApp.status, 403, 'platform administration is not ambient municipal access');
+
+  for (const [index, profile] of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.entries()) {
+    const id = `published-${index}`;
+    setUser(id, profile.role, 'tenant-current', {
+      email: profile.email,
+      tenantSlug: profile.tenantSlug,
+    });
+
+    const me = await request(baseUrl, '/api/auth/me', id);
+    assert.equal(me.status, 200, `${profile.email} must retain session introspection`);
+
+    const legacyRead = await request(baseUrl, '/api/data/metrics', id);
+    assert.equal(legacyRead.status, 403, `${profile.email} must not reach legacy data`);
+    assert.equal(legacyRead.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
+
+    const refresh = await request(baseUrl, '/api/auth/refresh', id, 'POST');
+    assert.equal(refresh.status, 403, `${profile.email} must not refresh an ungoverned session`);
+    assert.equal(refresh.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
+  }
+
+  setUser('published-drift', 'SUPER_ADMIN', 'tenant-current', {
+    email: 'admin@junin.gov.ar',
+    tenantSlug: 'junin',
+  });
+  const drift = await request(baseUrl, '/api/auth/me', 'published-drift');
+  assert.equal(drift.status, 403);
+  assert.equal(drift.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
 
   const unknown = await request(baseUrl, '/api/future-protected', 'platform-admin');
   assert.equal(unknown.status, 403);

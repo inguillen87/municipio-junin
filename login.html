@@ -457,6 +457,98 @@
       .error-message { border: 1px solid CanvasText; }
       .submit-button { background: ButtonFace; color: ButtonText; }
     }
+
+    .demo-access {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .demo-access h3 {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 6px;
+    }
+
+    .demo-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 16px;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .demo-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 14px 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+
+    .demo-btn:hover {
+      border-color: var(--accent);
+      background: var(--surface-raised);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(119,181,255,.12);
+    }
+
+    .demo-btn:active { transform: translateY(0); }
+
+    .demo-btn:disabled {
+      opacity: .5;
+      pointer-events: none;
+    }
+
+    .demo-icon { font-size: 22px; line-height: 1; }
+
+    .demo-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .demo-sublabel {
+      font-size: 10px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .demo-note {
+      font-size: 12px;
+      color: var(--accent);
+      margin: 12px 0 0;
+      min-height: 18px;
+      text-align: center;
+    }
+
+    .demo-note.error { color: var(--danger); }
+
+    .access-footer code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--surface-raised);
+      color: var(--accent);
+    }
+
+    @media (max-width: 560px) {
+      .demo-grid { grid-template-columns: repeat(2, 1fr); }
+    }
   </style>
 </head>
 <body data-login-contract="institutional-auth-v1">
@@ -544,16 +636,49 @@
           <button class="submit-button" id="btnLogin" type="submit">Ingresar al sistema</button>
         </form>
 
+        <section class="demo-access" id="demoSection" aria-labelledby="demoTitle">
+          <h3 id="demoTitle">Acceso de demostración</h3>
+          <p class="demo-desc">Seleccioná un perfil para ingresar con datos reales del municipio.</p>
+          <div class="demo-grid" id="demoGrid">
+            <button class="demo-btn" data-email="intendente@junin.gov.ar" data-role="INTENDENTE">
+              <span class="demo-icon">👔</span>
+              <span class="demo-label">Intendente</span>
+              <span class="demo-sublabel">Vista ejecutiva 360°</span>
+            </button>
+            <button class="demo-btn" data-email="admin@junin.gov.ar" data-role="TENANT_ADMIN">
+              <span class="demo-icon">⚙️</span>
+              <span class="demo-label">Administrador</span>
+              <span class="demo-sublabel">Gestión completa</span>
+            </button>
+            <button class="demo-btn" data-email="contador@junin.gov.ar" data-role="CONTADOR">
+              <span class="demo-icon">📊</span>
+              <span class="demo-label">Contador</span>
+              <span class="demo-sublabel">Hacienda y finanzas</span>
+            </button>
+            <button class="demo-btn" data-email="rrhh@junin.gov.ar" data-role="TENANT_USER">
+              <span class="demo-icon">👥</span>
+              <span class="demo-label">RRHH</span>
+              <span class="demo-sublabel">Personal y dotación</span>
+            </button>
+            <button class="demo-btn" data-email="inspector@junin.gov.ar" data-role="INSPECTOR">
+              <span class="demo-icon">🔍</span>
+              <span class="demo-label">Inspector</span>
+              <span class="demo-sublabel">Control territorial</span>
+            </button>
+            <button class="demo-btn" data-email="demo@junin.gov.ar" data-role="DEMO">
+              <span class="demo-icon">🎯</span>
+              <span class="demo-label">Demo</span>
+              <span class="demo-sublabel">Vista limitada</span>
+            </button>
+          </div>
+          <p class="demo-note" id="demoStatus"></p>
+        </section>
+
         <a class="tour-link" href="/roles">
           <span>Ver recorrido público por perfiles<span class="tour-link-note">No inicia sesión ni accede a datos</span></span>
         </a>
 
-        <section class="access-policy" aria-labelledby="accessPolicyTitle">
-          <h3 id="accessPolicyTitle">Identidad emitida por la Municipalidad</h3>
-          <p>No se publican usuarios de prueba ni accesos rápidos. Cada sesión obtiene únicamente las capacidades habilitadas para su perfil.</p>
-        </section>
-
-        <footer class="access-footer">Si no reconocés este acceso o necesitás asistencia, contactá al responsable institucional por el canal interno autorizado.</footer>
+        <footer class="access-footer">Entorno de evaluación con datos reales gobernados. Contraseña demo: <code>Junin2026!</code></footer>
       </div>
     </section>
   </main>
@@ -674,6 +799,73 @@
       form.addEventListener('submit', doLogin);
       window.togglePass = togglePass;
       window.doLogin = doLogin;
+
+      // Demo login buttons
+      var demoGrid = document.getElementById('demoGrid');
+      var demoStatus = document.getElementById('demoStatus');
+      var DEMO_PASSWORD = 'Junin2026!';
+      var seeded = false;
+
+      async function ensureSeeded() {
+        if (seeded) return true;
+        demoStatus.textContent = 'Preparando entorno de demostración…';
+        demoStatus.className = 'demo-note';
+        try {
+          var res = await fetch('/api/auth/seed-demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          var data = await res.json().catch(function () { return {}; });
+          if (res.ok && data.ok) {
+            seeded = true;
+            return true;
+          }
+          demoStatus.textContent = data.error || 'Error preparando demo. Intentá de nuevo.';
+          demoStatus.className = 'demo-note error';
+          return false;
+        } catch (e) {
+          demoStatus.textContent = 'Servicio no disponible. Intentá de nuevo.';
+          demoStatus.className = 'demo-note error';
+          return false;
+        }
+      }
+
+      async function demoLogin(email) {
+        var ready = await ensureSeeded();
+        if (!ready) return;
+        demoStatus.textContent = 'Ingresando…';
+        try {
+          var response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: DEMO_PASSWORD })
+          });
+          var payload = await response.json().catch(function () { return {}; });
+          if (response.ok && payload.token && payload.user) {
+            var session = Object.assign({}, payload.user, { loginAt: new Date().toISOString() });
+            sessionStorage.setItem('mjunin_user', JSON.stringify(session));
+            sessionStorage.setItem('mjunin_token', payload.token);
+            demoStatus.textContent = 'Accediendo como ' + payload.user.name + '…';
+            window.location.href = validatedDefaultPath(session);
+          } else {
+            demoStatus.textContent = payload.error || 'Error al ingresar. Intentá de nuevo.';
+            demoStatus.className = 'demo-note error';
+          }
+        } catch (e) {
+          demoStatus.textContent = 'Error de conexión. Intentá de nuevo.';
+          demoStatus.className = 'demo-note error';
+        }
+      }
+
+      demoGrid.addEventListener('click', function (e) {
+        var btn = e.target.closest('.demo-btn');
+        if (!btn) return;
+        var allBtns = demoGrid.querySelectorAll('.demo-btn');
+        allBtns.forEach(function (b) { b.disabled = true; });
+        demoLogin(btn.dataset.email).finally(function () {
+          allBtns.forEach(function (b) { b.disabled = false; });
+        });
+      });
     })();
   </script>
 </body>

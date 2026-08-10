@@ -211,7 +211,7 @@ a {
   text-decoration: none;
 }
 
-.topbar__nav a:first-child,
+.topbar__nav a[aria-current='page'],
 .topbar__nav a:hover {
   color: var(--text-strong);
   background: var(--surface-raised);
@@ -1031,14 +1031,13 @@ tbody tr:hover :is(th, td) {
 
   .topbar__nav a {
     flex: 1;
+    min-width: 0;
     justify-content: center;
+    padding-inline: 0.4rem;
+    text-align: center;
   }
 
   .brand__copy small {
-    display: none;
-  }
-
-  .identity {
     display: none;
   }
 

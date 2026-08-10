@@ -4,8 +4,15 @@ export interface TopbarIdentity {
   tenant: string;
 }
 
+export interface TopbarLink {
+  current?: boolean;
+  href: string;
+  label: string;
+}
+
 interface TopbarProps {
   identity: TopbarIdentity | null;
+  links: readonly TopbarLink[];
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
 }
@@ -23,7 +30,7 @@ function ThemeIcon({ theme }: Pick<TopbarProps, 'theme'>) {
   );
 }
 
-export function Topbar({ identity, theme, onToggleTheme }: TopbarProps) {
+export function Topbar({ identity, links, theme, onToggleTheme }: TopbarProps) {
   const nextTheme = theme === 'dark' ? 'claro' : 'oscuro';
 
   return (
@@ -38,8 +45,15 @@ export function Topbar({ identity, theme, onToggleTheme }: TopbarProps) {
         </a>
 
         <nav className="topbar__nav" aria-label="Navegación de la vista">
-          <a href="/inicio.html">Inicio</a>
-          <a href="/control.html">Versión estable</a>
+          {links.map(link => (
+            <a
+              aria-current={link.current ? 'page' : undefined}
+              href={link.href}
+              key={`${link.href}-${link.label}`}
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
 
         <div className="topbar__tools">

@@ -9,6 +9,7 @@ import {
   GOVERNED_HTML_FILES,
   PUBLIC_DIRECTORIES,
   PUBLIC_ROOT_FILES,
+  VITE_ENTRY_HTML_FILES,
 } from './public-web-contract.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
@@ -208,7 +209,7 @@ async function verifyArtifactBoundary(htmlNames) {
     ...htmlNames.map(name => name.toLowerCase()),
     ...PUBLIC_DIRECTORIES,
     ...PUBLIC_ROOT_FILES.map(name => name.toLowerCase()),
-    'calidad.html',
+    ...VITE_ENTRY_HTML_FILES.map(name => name.toLowerCase()),
     'assets',
     '.vite',
   ]);
@@ -335,7 +336,10 @@ function referencedManifestFiles(manifest) {
 }
 
 async function verifyViteOutput() {
-  await assertRegularFile(path.join(distRoot, 'calidad.html'), 'Entrada React calidad.html');
+  for (const fileName of VITE_ENTRY_HTML_FILES) {
+    await assertRegularFile(path.join(distRoot, fileName), `Entrada React ${fileName}`);
+  }
+
   const manifestPath = path.join(distRoot, '.vite', 'manifest.json');
   await assertRegularFile(manifestPath, 'Manifest de Vite');
 
@@ -349,12 +353,44 @@ async function verifyViteOutput() {
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     throw new Error('El manifest de Vite debe ser un objeto.');
   }
-  const hasQualityEntry = Object.entries(manifest).some(([key, entry]) => (
-    entry?.isEntry === true
-    && (key === 'calidad.html' || entry.src === 'calidad.html')
-  ));
-  if (!hasQualityEntry) {
-    throw new Error('El manifest de Vite no declara calidad.html como entrada web.');
+
+  const manifestEntries = Object.entries(manifest)
+    .filter(([, entry]) => entry?.isEntry === true);
+  const manifestEntrySources = manifestEntries
+    .map(([key, entry]) => typeof entry.src === 'string' ? entry.src : key)
+    .sort((left, right) => left.localeCompare(right));
+  const expectedEntrySources = [...VITE_ENTRY_HTML_FILES]
+    .sort((left, right) => left.localeCompare(right));
+  if (JSON.stringify(manifestEntrySources) !== JSON.stringify(expectedEntrySources)) {
+    throw new Error(
+      'El manifest de Vite debe declarar exactamente las entradas web '
+        + `${expectedEntrySources.join(', ')}; recibidas: ${manifestEntrySources.join(', ') || 'ninguna'}.`,
+    );
+  }
+
+  const entryOutputFiles = new Set();
+  for (const [key, entry] of manifestEntries) {
+    if (typeof entry.file !== 'string') {
+      throw new Error(`La entrada Vite ${key} no declara su asset JavaScript.`);
+    }
+    if (entryOutputFiles.has(entry.file)) {
+      throw new Error(`Dos entradas Vite comparten el mismo asset de entrada: ${entry.file}.`);
+    }
+    entryOutputFiles.add(entry.file);
+
+    const sourceName = typeof entry.src === 'string' ? entry.src : key;
+    const entryName = path.posix.basename(sourceName, '.html');
+    if (!/^[a-z0-9-]+$/u.test(entryName)) {
+      throw new Error(`La entrada Vite usa un nombre no canonico: ${sourceName}.`);
+    }
+    const normalizedOutput = entry.file.replaceAll('\\', '/');
+    const expectedPattern = new RegExp(
+      `^assets/${entryName}-[A-Za-z0-9_-]{6,}\\.js$`,
+      'u',
+    );
+    if (!expectedPattern.test(normalizedOutput)) {
+      throw new Error(`La entrada ${sourceName} no usa el nombre gobernado assets/${entryName}-[hash].js.`);
+    }
   }
 
   const outputFiles = referencedManifestFiles(manifest);
@@ -394,7 +430,7 @@ export async function verifyWebDist() {
   await verifyLocalReferences();
 
   return Object.freeze({
-    htmlFiles: htmlNames.length + 1,
+    htmlFiles: htmlNames.length + VITE_ENTRY_HTML_FILES.length,
     governedHtml: GOVERNED_HTML_FILES.length,
   });
 }

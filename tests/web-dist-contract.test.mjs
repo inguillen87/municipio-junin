@@ -12,6 +12,7 @@ import {
   PUBLIC_DIRECTORIES,
   PUBLIC_LEGACY_HTML_FILES,
   PUBLIC_ROOT_FILES,
+  VITE_ENTRY_HTML_FILES,
 } from '../build/public-web-contract.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -167,8 +168,35 @@ test('el artefacto web se ensambla, compila y verifica sin secretos', { timeout:
   runFrontendBuild();
   runNodeScript('build/verify-dist.mjs');
 
-  assert.equal(lstatSync(path.join(distRoot, 'calidad.html')).isFile(), true);
+  assert.throws(() => lstatSync(path.join(distRoot, 'index.html')), { code: 'ENOENT' });
+  for (const fileName of VITE_ENTRY_HTML_FILES) {
+    assert.equal(lstatSync(path.join(distRoot, fileName)).isFile(), true);
+  }
+
   const manifest = JSON.parse(readFileSync(path.join(distRoot, '.vite', 'manifest.json'), 'utf8'));
+  const manifestEntries = Object.entries(manifest)
+    .filter(([, entry]) => entry?.isEntry === true);
+  assert.deepEqual(
+    manifestEntries
+      .map(([key, entry]) => typeof entry.src === 'string' ? entry.src : key)
+      .sort((left, right) => left.localeCompare(right)),
+    [...VITE_ENTRY_HTML_FILES].sort((left, right) => left.localeCompare(right)),
+  );
+  assert.equal(
+    new Set(manifestEntries.map(([, entry]) => entry.file)).size,
+    VITE_ENTRY_HTML_FILES.length,
+    'Cada entrada MPA debe tener un asset JavaScript propio.',
+  );
+  for (const [key, entry] of manifestEntries) {
+    const sourceName = typeof entry.src === 'string' ? entry.src : key;
+    const entryName = path.posix.basename(sourceName, '.html');
+    assert.match(
+      entry.file,
+      new RegExp(`^assets/${entryName}-[A-Za-z0-9_-]{6,}\\.js$`, 'u'),
+      `${sourceName} debe conservar su nombre de entrada antes del hash.`,
+    );
+  }
+
   const generatedFiles = Object.values(manifest)
     .flatMap(entry => [entry?.file, ...(entry?.css ?? []), ...(entry?.assets ?? [])])
     .filter(fileName => typeof fileName === 'string');
@@ -201,6 +229,7 @@ test('el artefacto web se ensambla, compila y verifica sin secretos', { timeout:
 
 test('el contrato nominal rechaza HTML raiz no clasificado e index.html sin crear archivos', () => {
   assert.equal(PUBLIC_LEGACY_HTML_FILES.length, 41);
+  assert.deepEqual(VITE_ENTRY_HTML_FILES, ['calidad.html', 'ejecutivo.html']);
   assert.deepEqual(
     assertClassifiedRootHtmlNames([...PUBLIC_LEGACY_HTML_FILES]),
     PUBLIC_LEGACY_HTML_FILES,

@@ -250,10 +250,11 @@ function authorizedSession(overrides = {}) {
   };
 }
 
-function send(response, status, contentType, body = '') {
+function send(response, status, contentType, body = '', headers = {}) {
   response.statusCode = status;
   response.setHeader('Content-Type', contentType);
   response.setHeader('Cache-Control', 'no-store');
+  for (const [name, value] of Object.entries(headers)) response.setHeader(name, value);
   response.end(body);
 }
 
@@ -294,7 +295,9 @@ function testApiPlugin(scenario, apiLog) {
         if (url.pathname === '/api/auth/me') {
           apiLog.push({ path: url.pathname, method: request.method });
           const payload = scenario.authPayload ?? authorizedSession();
-          send(response, 200, 'application/json; charset=utf-8', JSON.stringify(payload));
+          send(response, 200, 'application/json; charset=utf-8', JSON.stringify(payload), {
+            'x-municontrol-contract': 'municontrol-auth-me-v1',
+          });
           return;
         }
 

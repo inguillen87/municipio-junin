@@ -50,6 +50,11 @@ export const GOVERNED_HTML_FILES = Object.freeze([
   'manuales.html',
 ]);
 
+export const VITE_ENTRY_HTML_FILES = Object.freeze([
+  'calidad.html',
+  'ejecutivo.html',
+]);
+
 export const PUBLIC_DIRECTORIES = Object.freeze(['css', 'js', 'img']);
 
 export const PUBLIC_ROOT_FILES = Object.freeze([

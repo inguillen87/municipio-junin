@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type ReactNode } from 'react';
 
-import { Topbar, type TopbarIdentity } from './Topbar';
+import { Topbar, type TopbarIdentity, type TopbarLink } from './Topbar';
 
 const THEME_STORAGE_KEY = 'municontrol-color-theme:v1';
 
@@ -18,10 +18,11 @@ function initialTheme(): 'light' | 'dark' {
 interface AppShellProps {
   children: ReactNode;
   identity: TopbarIdentity | null;
+  links: readonly TopbarLink[];
   busy: boolean;
 }
 
-export function AppShell({ children, identity, busy }: AppShellProps) {
+export function AppShell({ children, identity, links, busy }: AppShellProps) {
   const [theme, setTheme] = useState<'light' | 'dark'>(initialTheme);
 
   useLayoutEffect(() => {
@@ -39,6 +40,7 @@ export function AppShell({ children, identity, busy }: AppShellProps) {
       <a className="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
       <Topbar
         identity={identity}
+        links={links}
         theme={theme}
         onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
       />

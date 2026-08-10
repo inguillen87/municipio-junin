@@ -16,11 +16,14 @@ export default defineConfig({
     sourcemap: false,
     assetsInlineLimit: 4096,
     rollupOptions: {
-      input: fileURLToPath(new URL('./calidad.html', import.meta.url)),
+      input: {
+        calidad: fileURLToPath(new URL('./calidad.html', import.meta.url)),
+        ejecutivo: fileURLToPath(new URL('./ejecutivo.html', import.meta.url)),
+      },
       output: {
-        entryFileNames: 'assets/calidad-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/chunk-[hash].js',
-        assetFileNames: 'assets/calidad-[hash][extname]',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
   },

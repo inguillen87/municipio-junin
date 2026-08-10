@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
-
+import {
+  AUTH_TIMEOUT_MS,
+} from '../auth/session';
+import { useGovernedSurface } from '../auth/use-governed-surface';
 import { fetchQualityContract } from '../domain/quality-contract';
 import { buildQualityViewModel } from '../domain/quality-view-model';
 import type {
@@ -9,53 +11,26 @@ import type {
 } from '../domain/quality-types';
 import { ActionQueue } from '../components/ActionQueue';
 import { AppShell } from '../components/AppShell';
+import { GovernedBlocked, GovernedLoading } from '../components/GovernedStates';
 import { KpiCard } from '../components/KpiCard';
 import { MetricProgress } from '../components/MetricProgress';
 import { Panel } from '../components/Panel';
 import { ResponsiveTable, type TableColumn } from '../components/ResponsiveTable';
 import { RiskList } from '../components/RiskList';
 import { SourceStatus } from '../components/SourceStatus';
-import type { TopbarIdentity } from '../components/Topbar';
+import type { TopbarLink } from '../components/Topbar';
 
 const REQUIRED_CAPABILITY = 'navigation.data-quality';
-const AUTH_TIMEOUT_MS = 12_000;
-const SAFE_WORKSPACE = '/inicio.html';
-const DATA_QUALITY_ROLES = new Set([
-  'SUPER_ADMIN',
-  'TENANT_ADMIN',
-  'INTENDENTE',
-  'CONTADOR',
-]);
-const KNOWN_CAPABILITIES = new Set([
-  'session.read',
-  'navigation.workspace',
-  'navigation.dashboard',
-  'navigation.reports',
-  'navigation.hacienda',
-  'navigation.grh-executive',
-  'navigation.data-quality',
-  'navigation.rrhh',
-  'navigation.ai-assistant',
-  'navigation.audit',
-  'navigation.export',
-  'navigation.import',
-  'navigation.help',
+const QUALITY_NAVIGATION: readonly TopbarLink[] = Object.freeze([
+  { href: '/inicio.html', label: 'Inicio' },
+  { href: '/calidad', label: 'Calidad', current: true },
+  { href: '/control.html', label: 'Estable' },
 ]);
 
-interface AuthClient {
-  fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+async function loadQualityViewModel(signal: AbortSignal): Promise<QualityViewModel> {
+  const contract = await fetchQualityContract({ timeoutMs: AUTH_TIMEOUT_MS, signal });
+  return buildQualityViewModel(contract);
 }
-
-interface SessionIdentity extends TopbarIdentity {
-  id: string;
-  tenantId: string;
-  capabilities: readonly string[];
-}
-
-type PageState =
-  | { status: 'loading'; identity: SessionIdentity | null }
-  | { status: 'blocked'; identity: SessionIdentity | null }
-  | { status: 'ready'; identity: SessionIdentity; viewModel: QualityViewModel };
 
 const TEMPORAL_COLUMNS: readonly TableColumn<TemporalDomainViewModel>[] = [
   { key: 'domain', label: 'Dominio', render: row => row.label },
@@ -84,120 +59,6 @@ const COVERAGE_COLUMNS: readonly TableColumn<CoverageRowViewModel>[] = [
   },
   { key: 'coverage', label: 'Cobertura legajo', align: 'end', render: row => row.employeeCoverageLabel },
 ];
-
-function plainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function nonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
-}
-
-function authClient(): AuthClient | null {
-  const candidate = (window as Window & { MuniAuth?: unknown }).MuniAuth;
-  if (!plainObject(candidate) || typeof candidate.fetch !== 'function') return null;
-  return candidate;
-}
-
-function parseSession(payload: unknown): SessionIdentity | null {
-  if (!plainObject(payload) || !plainObject(payload.user)) return null;
-  const { user } = payload;
-  if (!nonEmptyString(user.id) || !nonEmptyString(user.name) || !nonEmptyString(user.role) ||
-      !nonEmptyString(user.tenantId) || !Array.isArray(user.capabilities)) {
-    return null;
-  }
-  if (!DATA_QUALITY_ROLES.has(user.role)) return null;
-
-  const capabilities = user.capabilities;
-  if (!capabilities.every((capability): capability is string =>
-    typeof capability === 'string' && KNOWN_CAPABILITIES.has(capability))) {
-    return null;
-  }
-  if (capabilities.length === 0 || new Set(capabilities).size !== capabilities.length) return null;
-  if (!capabilities.includes('session.read') || !capabilities.includes('navigation.workspace') ||
-      !capabilities.includes(REQUIRED_CAPABILITY)) {
-    return null;
-  }
-
-  let tenant = user.tenantId;
-  if (plainObject(user.tenant)) {
-    if (nonEmptyString(user.tenant.id) && user.tenant.id !== user.tenantId) return null;
-    if (nonEmptyString(user.tenant.shortName)) tenant = user.tenant.shortName;
-    else if (nonEmptyString(user.tenant.name)) tenant = user.tenant.name;
-  }
-
-  return {
-    id: user.id,
-    name: user.name,
-    role: user.role,
-    tenant,
-    tenantId: user.tenantId,
-    capabilities: [...capabilities],
-  };
-}
-
-function redirectToSafeWorkspace() {
-  try {
-    window.sessionStorage.setItem(
-      'mjunin_access_notice',
-      'El perfil actual no tiene habilitada la superficie solicitada.',
-    );
-  } catch {
-    // The redirect is the security behavior; the explanatory notice is optional.
-  }
-  window.location.replace(SAFE_WORKSPACE);
-}
-
-async function fetchAuthoritativeSession(signal: AbortSignal): Promise<SessionIdentity | null> {
-  const client = authClient();
-  if (!client) throw new Error('AUTH_CLIENT_UNAVAILABLE');
-
-  const response = await client.fetch('/api/auth/me', {
-    method: 'GET',
-    cache: 'no-store',
-    credentials: 'same-origin',
-    redirect: 'error',
-    headers: { Accept: 'application/json' },
-    signal,
-  });
-  if (!response.ok) throw new Error('SESSION_UNAVAILABLE');
-
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    return null;
-  }
-  return parseSession(payload);
-}
-
-function LoadingView() {
-  return (
-    <section className="loading-state" role="status" aria-live="polite" aria-label="Validando evidencia">
-      <div className="state-card">
-        <div className="loader" aria-hidden="true" />
-        <h1>Validando evidencia gobernada</h1>
-        <p>Confirmamos la sesión, el municipio, las capacidades y el contrato antes de presentar cualquier indicador.</p>
-      </div>
-    </section>
-  );
-}
-
-function BlockedView({ onRetry }: { onRetry: () => void }) {
-  return (
-    <section className="blocked-state" role="alert" aria-live="assertive">
-      <div className="state-card">
-        <div className="state-card__icon" aria-hidden="true">!</div>
-        <h1>Evidencia bloqueada</h1>
-        <p>La proyección privada no está disponible o no supera su contrato. No se muestra ninguna cifra.</p>
-        <div className="state-card__actions">
-          <button className="button button--primary" type="button" onClick={onRetry}>Reintentar validación</button>
-          <a className="button" href={SAFE_WORKSPACE}>Volver al inicio</a>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
   return (
@@ -349,48 +210,26 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
 }
 
 export function App() {
-  const [attempt, setAttempt] = useState(0);
-  const [state, setState] = useState<PageState>({ status: 'loading', identity: null });
-
-  useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
-    const authTimeout = window.setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
-
-    async function load() {
-      setState({ status: 'loading', identity: null });
-      try {
-        const identity = await fetchAuthoritativeSession(controller.signal);
-        window.clearTimeout(authTimeout);
-        if (!active) return;
-        if (!identity) {
-          redirectToSafeWorkspace();
-          return;
-        }
-
-        setState({ status: 'loading', identity });
-        const contract = await fetchQualityContract({ timeoutMs: AUTH_TIMEOUT_MS, signal: controller.signal });
-        const viewModel = buildQualityViewModel(contract);
-        if (!active) return;
-        setState({ status: 'ready', identity, viewModel });
-      } catch {
-        if (!active) return;
-        setState(current => ({ status: 'blocked', identity: current.identity }));
-      }
-    }
-
-    void load();
-    return () => {
-      active = false;
-      window.clearTimeout(authTimeout);
-      controller.abort();
-    };
-  }, [attempt]);
+  const { retry, state } = useGovernedSurface({
+    loadViewModel: loadQualityViewModel,
+    requiredCapability: REQUIRED_CAPABILITY,
+  });
 
   return (
-    <AppShell identity={state.identity} busy={state.status === 'loading'}>
-      {state.status === 'loading' ? <LoadingView /> : null}
-      {state.status === 'blocked' ? <BlockedView onRetry={() => setAttempt(value => value + 1)} /> : null}
+    <AppShell
+      identity={state.identity}
+      links={QUALITY_NAVIGATION}
+      busy={state.status === 'loading'}
+    >
+      {state.status === 'loading' ? (
+        <GovernedLoading description="Confirmamos la sesión, el municipio, las capacidades y el contrato antes de presentar cualquier indicador." />
+      ) : null}
+      {state.status === 'blocked' ? (
+        <GovernedBlocked
+          description="La proyección privada no está disponible o no supera su contrato. No se muestra ninguna cifra."
+          onRetry={retry}
+        />
+      ) : null}
       {state.status === 'ready' ? <ReadyDashboard viewModel={state.viewModel} /> : null}
     </AppShell>
   );

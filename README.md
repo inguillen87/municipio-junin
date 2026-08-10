@@ -35,6 +35,9 @@ mantiene en [`docs/MASTER_PLAN_STATUS.md`](docs/MASTER_PLAN_STATUS.md).
 Los recorridos y procedimientos se mantienen en
 [`docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md`](docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md)
 y [`docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md`](docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md).
+El recorrido ejecutivo para una reunión institucional está en
+[`docs/DEMO_INTENDENCIA_5_7_MIN.md`](docs/DEMO_INTENDENCIA_5_7_MIN.md); separa
+afirmaciones demostrables, límites y contingencia.
 El índice de entrega y capacitación es
 [`docs/MANUAL_INTEGRAL.md`](docs/MANUAL_INTEGRAL.md).
 La arquitectura objetivo por fases está en
@@ -57,6 +60,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Reportes ejecutivos GRH | Verificado en Production | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto, períodos gobernados y smoke autenticado |
 | Accesos demostrativos por rol | Verificado en Production | Seis perfiles gobernados para recorrer permisos y superficies; no habilitan datos inventados ni sustituyen identidades institucionales definitivas |
 | Calidad modular React + TypeScript | Canary `/calidad` | Primera vertical componible sobre el mismo contrato `grh-quality-v1`; `/control` permanece como reversión durante la adopción |
+| Centro Ejecutivo modular React + TypeScript | Canary `/ejecutivo` | Lectura summary-first de `grh-executive-v2`; `/grh-ejecutivo` permanece como reversión estable y no se reemplaza en este sprint |
 | WhatsApp | Condicionado | Webhooks informativos endurecidos; faltan proveedor, credenciales y E2E externo certificado |
 | Correo, cron y exportación cruda | Retirado | Responden 410 o no se programan hasta tener finalidad, auditoría e idempotencia |
 | Presupuesto, obras, compras y trámites | Sin fuente gobernada | No deben exhibir bases sintéticas como datos municipales |
@@ -119,9 +123,13 @@ del tenant. El frontend no es una frontera de autorización.
 La modernización evita una reescritura total. Las superficies heredadas
 continúan operativas mientras nuevas verticales entran como rutas canary:
 
-- `frontend/` contiene React + TypeScript estricto. La primera entrada es
-  `/calidad`, alimentada exclusivamente por `/api/auth/me` y
-  `/api/grh-quality`.
+- `frontend/` contiene React + TypeScript estricto. Las entradas canary son
+  `/calidad` y `/ejecutivo`; ambas validan primero `/api/auth/me`. Calidad
+  consume exclusivamente `/api/grh-quality` y Ejecutivo consume exclusivamente
+  `/api/grh-executive`.
+- La sesión, el catálogo cerrado de roles/capacidades, el retry y los estados
+  fail-closed se comparten. Los contratos brutos nunca se guardan en el estado
+  visual: cada pantalla recibe sólo un view-model validado e inmutable.
 - `build/assemble-dist.mjs` reconstruye `dist/` desde un allowlist explícito y
   conserva byte a byte las superficies heredadas publicables.
 - Vite compila solamente las entradas modulares y genera assets con hash.
@@ -130,9 +138,9 @@ continúan operativas mientras nuevas verticales entran como rutas canary:
 - `api/` conserva las funciones Serverless y sigue siendo la autoridad de
   autenticación, tenant, RBAC, procedencia y privacidad.
 
-La ruta estable `/control` se conserva durante el canary. Sólo se reemplazará
-cuando la nueva experiencia supere pruebas locales, Preview/Production y
-recorridos autenticados por rol.
+Las rutas estables `/control` y `/grh-ejecutivo` se conservan durante los
+canary. Sólo se reemplazarán cuando cada experiencia supere pruebas locales,
+Preview/Production y recorridos autenticados por rol.
 
 ## Privacidad de los artefactos
 

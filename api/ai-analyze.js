@@ -6,9 +6,22 @@ import { buildPortableGrhViews } from './lib/grh-portable-bundle.js';
 import { validateGrhQualityContract } from './lib/grh-quality-contract.js';
 import { validateGrhCloseContract } from './lib/grh-close-contract.js';
 import { buildGrhCloseProjection } from './lib/grh-close-projection.js';
+import {
+  GRH_DIRECTORY_SCHEMA_VERSION,
+  inspectGrhDirectoryResponse,
+} from './lib/grh-directory-contract.js';
+import { readGrhDirectory } from './lib/grh-directory-store.js';
+import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
+import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
+
+const { hasConfiguredCurrency, resolveTenantPresentation } = tenantPresentationPolicy;
+const { isPublishedDemoIdentity } = publishedDemoPolicy;
 
 const EXECUTIVE_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
 const MAX_MESSAGE_LENGTH = 1200;
+const MAX_DIRECTORY_OPTIONS = 6;
+const MAX_DIRECTORY_SEARCH_TOKENS = 6;
+const MAX_DIRECTORY_LEAVE_HISTORY = 24;
 const ENGINE_ID = 'grh-deterministic-v1';
 const SUPPORTED_INTENTS = Object.freeze([
   'executive_summary',
@@ -24,12 +37,15 @@ const SUPPORTED_INTENTS = Object.freeze([
   'reconciliation',
   'trend',
   'source',
+  'person_lookup',
 ]);
 
 export function createAiAnalyzeHandler({
   requireRoleImpl = requireRole,
   requireDatasetTenantImpl = requireDatasetTenant,
   readArtifactBundleImpl = readGrhArtifactBundle,
+  readDirectoryImpl = readGrhDirectory,
+  environment = process.env,
 } = {}) {
   return async function handler(req, res) {
     noStore(res);
@@ -70,47 +86,385 @@ export function createAiAnalyzeHandler({
       return res.status(413).json({ error: 'El historial supera el límite permitido', code: 'HISTORY_TOO_LONG' });
     }
 
+    const classification = classifyIntent(message);
+    if (classification.intent === 'person_lookup' && !canUsePrivateDirectory(caller, environment)) {
+      const answer = buildDirectoryRequiredResponse();
+      return res.status(answer.httpStatus).json(buildAssistantPayload(answer, null, {
+        available: false,
+        source: 'grh_directory_access_policy',
+        snapshotAsOf: null,
+      }));
+    }
+
     try {
-      const bundle = await readArtifactBundleImpl(process.env.GRH_TENANT_ID);
+      const bundle = await readArtifactBundleImpl(environment.GRH_TENANT_ID);
       const { executive, quality } = buildPortableGrhViews(bundle);
       const close = buildGrhCloseProjection(bundle.semantic);
-      const answer = buildDeterministicAnswer(message, executive, quality, close);
-      const provenance = buildProvenance(executive, quality, close);
-      const payload = {
-        status: answer.status,
-        engine: {
-          id: ENGINE_ID,
-          externalProvider: false,
-          generated: false,
-        },
-        intent: answer.intent,
-        response: answer.response,
-        answer: answer.answer,
-        period: answer.resolvedPeriod || provenance.latestValidCalculationPeriod,
-        periodResolution: answer.periodResolution,
-        provenance,
-        dataStatus: {
-          available: true,
-          source: answer.intent === 'close_explanation'
+      const presentation = resolveTenantPresentation(caller.tenant);
+      const provenance = buildProvenance(executive, quality, close, presentation);
+      const answer = classification.intent === 'person_lookup'
+        ? await buildPrivateDirectoryResponse({
+          message,
+          caller,
+          readDirectoryImpl,
+          expectedSource: executive.source,
+        })
+        : buildDeterministicAnswer(message, executive, quality, close, presentation);
+      const nominal = answer.intent === 'person_lookup';
+      const responseProvenance = nominal
+        ? {
+          ...provenance,
+          aggregateOnly: false,
+          containsPii: true,
+          directorySchemaVersion: GRH_DIRECTORY_SCHEMA_VERSION,
+        }
+        : provenance;
+      const payload = buildAssistantPayload(answer, responseProvenance, {
+        available: true,
+        source: nominal
+          ? 'grh_directory_private_contract'
+          : (answer.intent === 'close_explanation'
             ? 'grh_close_governed_contract'
-            : 'grh_executive_portable_contract',
-          snapshotAsOf: provenance.snapshotAsOf,
-          realtime: false,
-          historyUsed: false,
-        },
-        supportedIntents: SUPPORTED_INTENTS,
-      };
+            : 'grh_executive_portable_contract'),
+        snapshotAsOf: provenance.snapshotAsOf,
+        historyUsed: nominal && answer.answer?.directory?.status === 'matched',
+      });
 
       return res.status(answer.httpStatus).json(payload);
     } catch (error) {
-      console.error('[GRH-ASSISTANT] Proyección portable no disponible');
+      const directoryFailure = classification.intent === 'person_lookup';
+      console.error(directoryFailure
+        ? '[GRH-ASSISTANT] Directorio privado no disponible'
+        : '[GRH-ASSISTANT] Proyección portable no disponible');
       return res.status(503).json({
-        error: 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.',
-        code: 'GRH_CONTRACT_UNAVAILABLE',
+        error: directoryFailure
+          ? 'El directorio GRH privado no está disponible. No se generó una respuesta alternativa.'
+          : 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.',
+        code: directoryFailure ? 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE' : 'GRH_CONTRACT_UNAVAILABLE',
         engine: { id: ENGINE_ID, externalProvider: false, generated: false },
       });
     }
   };
+}
+
+function parsePrivateDirectoryAllowlist(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const ids = value.split(',').map(item => item.trim());
+  if (ids.some(id => !/^[A-Za-z0-9_-]{1,128}$/.test(id)) || new Set(ids).size !== ids.length) {
+    return null;
+  }
+  return new Set(ids);
+}
+
+function canUsePrivateDirectory(caller, environment) {
+  if (!caller || !EXECUTIVE_ROLES.includes(caller.role) || !caller.tenantId ||
+      typeof caller.email !== 'string' || !caller.email.trim()) return false;
+  if (isPublishedDemoIdentity(caller.email)) return false;
+  const allowlist = parsePrivateDirectoryAllowlist(environment?.GRH_DIRECTORY_ALLOWED_USER_IDS);
+  return Boolean(allowlist?.has(String(caller.id || '')));
+}
+
+function buildAssistantPayload(answer, provenance, dataStatus) {
+  return {
+    status: answer.status,
+    engine: {
+      id: ENGINE_ID,
+      externalProvider: false,
+      generated: false,
+    },
+    intent: answer.intent,
+    response: answer.response,
+    answer: answer.answer,
+    period: answer.resolvedPeriod || provenance?.latestValidCalculationPeriod || null,
+    periodResolution: answer.periodResolution,
+    provenance,
+    dataStatus: {
+      available: Boolean(dataStatus?.available),
+      source: dataStatus?.source || null,
+      snapshotAsOf: dataStatus?.snapshotAsOf || null,
+      realtime: false,
+      historyUsed: Boolean(dataStatus?.historyUsed),
+    },
+    supportedIntents: SUPPORTED_INTENTS,
+  };
+}
+
+function finalizeStandaloneAnswer(result, source) {
+  const answer = {
+    title: result.title,
+    summary: result.summary,
+    findings: result.findings || [],
+    evidence: result.evidence || [],
+    caveats: result.caveats || [],
+    source,
+    nextQuestions: result.nextQuestions || [],
+    code: result.code || null,
+  };
+  if (result.directory) answer.directory = result.directory;
+  if (result.actions) answer.actions = result.actions;
+  return {
+    httpStatus: result.httpStatus || 200,
+    status: result.status || 'answered',
+    intent: 'person_lookup',
+    resolvedPeriod: null,
+    periodResolution: { requested: null, resolved: null, substituted: false },
+    answer,
+    response: renderTextAnswer(answer),
+  };
+}
+
+function buildDirectoryRequiredResponse() {
+  return finalizeStandaloneAnswer({
+    title: 'Directorio individual requerido',
+    summary: 'El perfil actual no está habilitado para consultar fichas, legajos o licencias de una persona.',
+    findings: [],
+    evidence: [],
+    caveats: ['El acceso nominal requiere un rol ejecutivo y una identidad municipal incluida en la habilitación privada.'],
+    nextQuestions: ['¿Qué métricas agregadas GRH están disponibles?'],
+    actions: [{ id: 'open_rrhh', label: 'Abrir RRHH', href: '/rrhh' }],
+    directory: {
+      status: 'directory_required',
+      enabled: false,
+      route: '/rrhh',
+      publicAccess: 'aggregate_only',
+    },
+    status: 'limited',
+    httpStatus: 422,
+    code: 'DIRECTORY_REQUIRED',
+  }, 'Acceso nominal GRH · sujeto al perfil institucional · sin consulta al directorio privado.');
+}
+
+async function buildPrivateDirectoryResponse({ message, caller, readDirectoryImpl, expectedSource }) {
+  const lookup = parsePersonLookup(message);
+  if (!lookup) {
+    return finalizeStandaloneAnswer({
+      title: 'Indicá una persona',
+      summary: 'Escribí nombre y apellido o un número de legajo para consultar la ficha gobernada.',
+      findings: [],
+      evidence: [],
+      caveats: ['No se ejecutó una búsqueda amplia ni se infirió una identidad.'],
+      nextQuestions: ['Probá con “licencias de Nombre Apellido” o “legajo 123”.'],
+      directory: { status: 'query_required', enabled: true, route: '/rrhh', options: [] },
+      status: 'limited',
+      httpStatus: 422,
+      code: 'DIRECTORY_QUERY_REQUIRED',
+    }, privateDirectorySourceLine(expectedSource));
+  }
+
+  const listLimit = lookup.kind === 'legajo' ? 100 : MAX_DIRECTORY_OPTIONS + 1;
+  const list = await readDirectoryImpl({
+    tenantId: String(caller.tenantId),
+    query: { search: lookup.search, limit: listLimit },
+  });
+  assertPrivateDirectoryContract(list, expectedSource, 'list');
+
+  const matches = lookup.kind === 'legajo'
+    ? list.items.filter(item => item.legajo === lookup.legajo)
+    : list.items;
+  const matchCount = lookup.kind === 'legajo' ? matches.length : list.query.total;
+  if (lookup.kind === 'legajo' && list.query.hasNext && matches.length === 0) {
+    throw new Error('directory lookup incomplete');
+  }
+
+  if (matchCount === 0) return buildDirectoryNoMatch(expectedSource);
+  if (matchCount > 1) return buildDirectoryMultipleMatches(matches, matchCount, expectedSource);
+
+  const selected = matches[0];
+  if (!selected) throw new Error('directory list result missing');
+  const detail = await readDirectoryImpl({
+    tenantId: String(caller.tenantId),
+    query: { company: selected.companyCode, legajo: selected.legajo },
+  });
+  assertPrivateDirectoryContract(detail, expectedSource, 'detail');
+  if (detail.query.total !== 1 || detail.items.length !== 1) {
+    throw new Error('directory detail cardinality invalid');
+  }
+  if (detail.items[0].companyCode !== selected.companyCode || detail.items[0].legajo !== selected.legajo) {
+    throw new Error('directory detail identity mismatch');
+  }
+  const person = mapPrivateDirectoryPerson(detail.items[0]);
+  return buildDirectoryPersonAnswer(person, detail.source);
+}
+
+function parsePersonLookup(rawMessage) {
+  const message = normalize(rawMessage).replace(/[¿?¡!.,;:()[\]{}"“”]/gu, ' ').replace(/\s+/g, ' ').trim();
+  const legajo = message.match(/\blegajo\s*(?:n(?:ro)?\.?|numero|#|=|-)?\s*(\d{1,15})\b/);
+  if (legajo) {
+    const value = Number(legajo[1]);
+    return Number.isSafeInteger(value) && value > 0
+      ? { kind: 'legajo', legajo: value, search: String(value) }
+      : null;
+  }
+
+  let candidate = message
+    .replace(/^(?:mostra(?:me)?|busca(?:me)?|consulta(?:me)?|dame|ver)?\s*(?:el|la|las)?\s*/u, '')
+    .replace(/^(?:historial\s+de\s+licencias|licencias?|ficha(?:\s+personal|\s+laboral)?)\s+(?:de|del)\s+/u, '')
+    .replace(/^(?:un|una)\s+/u, '')
+    .replace(/^(?:empleado|empleada|agente|concejal)\s+(?:llamado|llamada)?\s*/u, '')
+    .replace(/\s+(?:empleado|empleada|agente|concejal)$/u, '')
+    .trim();
+  const tokens = candidate.split(' ').filter(Boolean);
+  if (tokens.length < 2 || tokens.length > MAX_DIRECTORY_SEARCH_TOKENS) return null;
+  if (tokens.some(token => !/^[a-z'-]{2,40}$/u.test(token))) return null;
+  return { kind: 'name', search: tokens.join(' ') };
+}
+
+function assertPrivateDirectoryContract(value, expectedSource, mode) {
+  if (!inspectGrhDirectoryResponse(value)?.ok || value?.query?.mode !== mode) {
+    throw new Error('directory contract invalid');
+  }
+  if (value.source.sourceSha256 !== expectedSource?.sourceSha256 ||
+      value.source.snapshotAsOf !== expectedSource?.snapshotAsOf) {
+    throw new Error('directory provenance mismatch');
+  }
+}
+
+function buildDirectoryNoMatch(expectedSource) {
+  return finalizeStandaloneAnswer({
+    title: 'Sin coincidencias verificables',
+    summary: 'El directorio gobernado no encontró una ficha que coincida con la consulta.',
+    findings: [],
+    evidence: [],
+    caveats: ['No se completó el resultado con datos demo ni se infirió una persona parecida.'],
+    nextQuestions: ['Revisá el orden del nombre y apellido o consultá por número de legajo.'],
+    directory: { status: 'no_match', enabled: true, route: '/rrhh', options: [] },
+    status: 'limited',
+    code: 'DIRECTORY_NO_MATCH',
+  }, privateDirectorySourceLine(expectedSource));
+}
+
+function buildDirectoryMultipleMatches(items, total, expectedSource) {
+  const options = items.slice(0, MAX_DIRECTORY_OPTIONS).map(mapPrivateDirectoryOption);
+  return finalizeStandaloneAnswer({
+    title: 'Elegí una coincidencia',
+    summary: `El directorio encontró ${formatInteger(total)} fichas posibles. Seleccioná por nombre, legajo y área.`,
+    findings: [],
+    evidence: [metric('Coincidencias', formatInteger(total), `Se muestran hasta ${MAX_DIRECTORY_OPTIONS} opciones gobernadas.`)],
+    caveats: ['No se eligió automáticamente una persona entre resultados ambiguos.'],
+    nextQuestions: ['Consultá nuevamente con el número de legajo de la opción correcta.'],
+    directory: { status: 'multiple_matches', enabled: true, route: '/rrhh', options },
+    status: 'limited',
+    code: 'DIRECTORY_MULTIPLE_MATCHES',
+  }, privateDirectorySourceLine(expectedSource));
+}
+
+function mapPrivateDirectoryOption(item) {
+  return {
+    companyCode: item.companyCode,
+    legajo: item.legajo,
+    displayName: item.displayName,
+    sector: mapPrivateDimension(item.sector),
+    organization: mapPrivateDimension(item.organization),
+    position: mapPrivatePosition(item.position),
+    positionObservation: mapPrivatePositionObservation(item.positionObservation),
+  };
+}
+
+function mapPrivateDirectoryPerson(item) {
+  const leaveItems = Array.isArray(item.leaveHistory?.items)
+    ? item.leaveHistory.items.slice(0, MAX_DIRECTORY_LEAVE_HISTORY).map(event => ({
+      startDate: event.startDate,
+      endDate: event.endDate,
+      days: event.days,
+    }))
+    : [];
+  return {
+    companyCode: item.companyCode,
+    legajo: item.legajo,
+    displayName: item.displayName,
+    sector: mapPrivateDimension(item.sector),
+    organization: mapPrivateDimension(item.organization),
+    position: mapPrivatePosition(item.position),
+    positionObservation: mapPrivatePositionObservation(item.positionObservation),
+    events: {
+      absenceCount: item.events.absenceCount,
+      latestAbsenceDate: item.events.latestAbsenceDate,
+      leaveCount: item.events.leaveCount,
+      latestLeaveStartDate: item.events.latestLeaveStartDate,
+      latestLeaveEndDate: item.events.latestLeaveEndDate,
+    },
+    leaveHistory: {
+      total: item.leaveHistory.total,
+      limit: Math.min(item.leaveHistory.limit, MAX_DIRECTORY_LEAVE_HISTORY),
+      items: leaveItems,
+    },
+  };
+}
+
+function mapPrivateDimension(value) {
+  return value ? { code: value.code, label: value.label } : null;
+}
+
+function mapPrivatePosition(value) {
+  return value ? {
+    code: value.code,
+    label: value.label,
+    parent: mapPrivateDimension(value.parent),
+    dependsOn: mapPrivateDimension(value.dependsOn),
+  } : null;
+}
+
+function mapPrivatePositionObservation(value) {
+  return value ? {
+    label: value.label,
+    observedDate: value.observedDate,
+    observedPeriod: value.observedPeriod,
+    status: value.status,
+    sourceTable: value.sourceTable,
+  } : null;
+}
+
+function buildDirectoryPersonAnswer(person, source) {
+  const identity = person.displayName || `Legajo ${formatInteger(person.legajo)}`;
+  const location = [person.sector?.label, person.organization?.label].filter(Boolean).join(' · ');
+  const leaveHistory = person.leaveHistory.items;
+  const latestLeave = leaveHistory[0] || null;
+  const positionFinding = person.position?.label
+    ? `Cargo informado: ${person.position.label}.`
+    : (person.positionObservation?.label
+      ? `Puesto observado en ${person.positionObservation.sourceTable}: ${person.positionObservation.label} (${person.positionObservation.observedDate}; ${positionObservationStatusLabel(person.positionObservation.status)}).`
+      : 'La fuente no informa un cargo actual ni una observación histórica de puesto para esta ficha.');
+  const observationCaveat = person.position ? [] : (person.positionObservation ? [
+    person.positionObservation.status === 'source_future_effective'
+      ? `La observación de puesto tiene fecha ${person.positionObservation.observedDate}, posterior al corte; no se presenta como cargo actual.`
+      : `La observación de puesto corresponde a ${person.positionObservation.observedDate}; no se presenta como cargo actual.`,
+  ] : []);
+  const href = `/rrhh?company=${encodeURIComponent(person.companyCode)}&legajo=${encodeURIComponent(person.legajo)}#peopleDirectory`;
+  return finalizeStandaloneAnswer({
+    title: identity,
+    summary: location || 'Ficha individual verificada en el directorio GRH privado.',
+    findings: [positionFinding],
+    evidence: [
+      metric('Legajo', formatInteger(person.legajo), `Empresa ${person.companyCode}`),
+      metric('Ausencias', formatInteger(person.events.absenceCount), person.events.latestAbsenceDate ? `Última: ${person.events.latestAbsenceDate}` : 'Sin fecha registrada'),
+      metric('Licencias históricas', formatInteger(person.leaveHistory.total), latestLeave ? `Última: ${latestLeave.startDate}${latestLeave.endDate ? ` a ${latestLeave.endDate}` : ''}` : 'Sin eventos asociados'),
+      metric('Puesto', person.position?.label || person.positionObservation?.label || 'Sin dato', person.position ? 'Cargo informado por GRH' : (person.positionObservation ? 'Observación histórica, no cargo actual' : 'No informado')),
+    ],
+    caveats: [
+      ...observationCaveat,
+      'Las licencias son históricas y se limitan a fechas y días; no describen una situación actual.',
+    ],
+    nextQuestions: [],
+    actions: [{ id: 'open_rrhh_person', label: 'Abrir ficha en RRHH', href }],
+    directory: {
+      status: 'matched',
+      enabled: true,
+      route: '/rrhh',
+      options: [],
+      person,
+    },
+    status: 'answered',
+  }, privateDirectorySourceLine(source));
+}
+
+function privateDirectorySourceLine(source) {
+  return `Fuente: ${source?.canonicalSystem || 'GRH Junín'} · directorio privado · snapshot ${source?.snapshotAsOf || 'no disponible'} · acceso según perfil · no tiempo real.`;
+}
+
+function positionObservationStatusLabel(status) {
+  return status === 'source_future_effective'
+    ? 'vigencia informada posterior al corte; no es cargo actual'
+    : 'observación histórica; no es cargo actual';
 }
 
 export default createAiAnalyzeHandler();
@@ -139,8 +493,11 @@ export function classifyIntent(rawMessage) {
   if (/(ignora|omite|saltea).{0,35}(instruccion|regla|politica)|prompt del sistema|system prompt|jailbreak|revela.{0,25}(token|clave|secreto|variable de entorno)|(?:dump|volcado).{0,20}(base|tabla|sql)/.test(message)) {
     return { intent: 'policy_attack', policy: 'refused' };
   }
-  if (/\b(dni|cuit|cuil|domicilio|direccion particular|telefono|correo personal|email personal)\b|nombre y apellido|lista de (?:todos los )?empleados|legajo\s*[#:=-]?\s*\d+|sueldo (?:de|individual)|datos personales/.test(message)) {
+  if (/\b(dni|cuit|cuil|domicilio|direccion particular|telefono|correo personal|email personal)\b|nombre y apellido|lista de (?:todos los )?empleados|sueldo (?:de|individual)|datos personales/.test(message)) {
     return { intent: 'pii_request', policy: 'refused' };
+  }
+  if (isPersonLookup(message, rawMessage)) {
+    return { intent: 'person_lookup', policy: 'limited' };
   }
   if (/pago bancario|transferid|depositad|acreditad|efectivamente pag|cuanto se pago|cuanto pagaron/.test(message)) {
     return { intent: 'bank_payment_limit', policy: 'limited' };
@@ -193,17 +550,37 @@ export function classifyIntent(rawMessage) {
   if (/fuente|origen|snapshot|corte|actualiza|tiempo real|personas_junin|grh/.test(message)) {
     return { intent: 'source', policy: 'allowed' };
   }
+  if (isBarePersonName(message, rawMessage)) {
+    return { intent: 'person_lookup', policy: 'limited' };
+  }
   return { intent: 'out_of_scope', policy: 'unsupported' };
 }
 
-export function buildDeterministicAnswer(message, executive, quality, close = null) {
+function isPersonLookup(message, rawMessage) {
+  const legajoLookup = /\blegajo\s*(?:n(?:ro)?\.?|numero|#|:|=|-)?\s*\d+\b/.test(message);
+  const fileLookup = /\b(?:ficha|historial(?:\s+de\s+licencias)?)\s+(?:personal\s+|laboral\s+)?(?:de|del)\s+(?!(?:licencias?|municipio|personal|organismo|area|sector|periodo|ano|historicas?)\b)(?:(?:empleado|agente|concejal)\b|(?:[a-z][a-z'-]{1,}\s+){1,3}[a-z][a-z'-]{1,}\b)/.test(message);
+  const leaveLookup = /\blicencias?\s+(?:de|del)\s+(?!(?:19|20)\d{2}\b)(?:un(?:a)?\s+)?(?:empleado|agente|concejal|[a-z][a-z'-]{1,}(?:\s+[a-z][a-z'-]{1,}){1,3})\b/.test(message);
+  const namedRoleLookup = /\b(?:empleado|agente|concejal)\s+(?:llamad[oa]\s+)?[a-z][a-z'-]{1,}(?:\s+[a-z][a-z'-]{1,}){1,3}\b/.test(message);
+  const roleAfterName = /^(?:[a-z][a-z'-]{1,}\s+){1,4}(?:concejal|empleado|agente)$/.test(message);
+  return legajoLookup || fileLookup || leaveLookup || namedRoleLookup || roleAfterName;
+}
+
+function isBarePersonName(message, rawMessage) {
+  const raw = String(rawMessage || '').trim();
+  if (!/^[\p{L}'-]+(?:\s+[\p{L}'-]+){1,5}$/u.test(raw)) return false;
+  const tokens = message.split(' ');
+  return tokens.length >= 2 && tokens.length <= MAX_DIRECTORY_SEARCH_TOKENS &&
+    tokens.every(token => /^[a-z'-]{2,40}$/u.test(token));
+}
+
+export function buildDeterministicAnswer(message, executive, quality, close = null, presentation = null) {
   if (!validateAssistantContracts(executive, quality, close)) {
     const error = new Error('Los contratos portables GRH no son válidos.');
     error.code = 'GRH_ASSISTANT_CONTRACT_INVALID';
     throw error;
   }
   const classification = classifyIntent(message);
-  const context = semanticContext(executive, quality, close);
+  const context = semanticContext(executive, quality, close, presentation);
   const periodRequest = parsePeriodRequest(message);
   let result;
 
@@ -223,6 +600,9 @@ export function buildDeterministicAnswer(message, executive, quality, close = nu
         ['No se exponen nombres, legajos individuales, documentos, domicilios, contactos ni remuneraciones personales.'],
         'AGGREGATE_ONLY'
       );
+      break;
+    case 'person_lookup':
+      result = directoryRequiredAnswer(context);
       break;
     case 'bank_payment_limit':
       result = limitedBankPayment(context);
@@ -287,6 +667,9 @@ export function buildDeterministicAnswer(message, executive, quality, close = nu
     nextQuestions: result.nextQuestions || [],
     code: result.code || null,
   };
+  if (result.availablePeriodRange) answer.availablePeriodRange = { ...result.availablePeriodRange };
+  if (result.directory) answer.directory = { ...result.directory };
+  if (result.actions) answer.actions = result.actions.map(action => ({ ...action }));
 
   return {
     httpStatus: result.httpStatus || 200,
@@ -323,7 +706,7 @@ export function parsePeriodRequest(rawMessage) {
   };
 }
 
-function semanticContext(executive, qualityProjection, closeProjection = null) {
+function semanticContext(executive, qualityProjection, closeProjection = null, presentation = null) {
   const series = executive.compensation.series
     .filter(row => row.privacyStatus === 'released')
     .slice()
@@ -357,12 +740,8 @@ function semanticContext(executive, qualityProjection, closeProjection = null) {
     sourceName: executive.source.canonicalSystem,
     privacyThreshold: executive.privacy.portableThreshold,
     privacyPolicyVersion: executive.policyVersion,
-    baseCaveats: [
-      'Es un snapshot histórico, no una conexión en tiempo real.',
-      'Las cifras de cálculo están expresadas en unidades de origen porque GRH no declara la moneda.',
-      `La salida portable aplica supresión de celdas pequeñas k=${executive.privacy.portableThreshold}.`,
-      'El contrato es agregado y no contiene PII ni identificadores de empleados.',
-    ],
+    presentation: hasConfiguredCurrency(presentation) ? presentation : null,
+    baseCaveats: [],
   };
 }
 
@@ -546,17 +925,18 @@ function executiveSummary(context) {
     summary: `El último período de cálculo liberado por la política portable registra ${formatInteger(context.workforce.payrollParticipants)} participantes. El control interno ${tolerance}, pero la conciliación con totpago presenta diferencias materiales.`,
     findings: [
       `${formatInteger(context.workforce.payrollParticipants)} claves de legajo participaron en al menos un cálculo válido; no equivalen a planta activa contractual.`,
-      `El neto de control es ${formatSourceAmount(context.latestControl.amounts.netPayrollCents)}; no prueba una transferencia bancaria.`,
+      `El neto de control es ${formatSourceAmount(context.latestControl.amounts.netPayrollCents, context.presentation)}; no prueba una transferencia bancaria.`,
       `Calidad del extracto gobernado: ${formatPercent(context.quality.score)}. Conciliación cross-source: ${formatPercent(context.reconciliation.scorePct)}.`,
       top ? `${titleCase(top.label)} reúne ${formatInteger(top.participants)} participantes (${formatPercent(top.sharePct)}).` : null,
     ].filter(Boolean),
     evidence: [
       metric('Participación de liquidación', formatInteger(context.workforce.payrollParticipants), 'Claves distintas presentes en cálculo válido; no equivale a planta activa.'),
-      metric('Neto de control', formatSourceAmount(context.latestControl.amounts.netPayrollCents), 'Control de liquidación; no desembolso acreditado.'),
+      metric('Neto de control', formatSourceAmount(context.latestControl.amounts.netPayrollCents, context.presentation), 'Control de liquidación; no desembolso acreditado.'),
       metric('Calidad gobernada', formatPercent(context.quality.score), 'Score del extracto agregado gobernado; no certifica cada tabla cruda.'),
       metric('Conciliación cross-source', formatPercent(context.reconciliation.scorePct), reconciliationLabel(context.reconciliation.status)),
     ],
     caveats: [
+      currencyDisclosure(context),
       `totpago se usa sólo como diagnóstico; su acuerdo de valores global es ${formatPercent(context.reconciliation.valueAgreementPct)}.`,
     ],
     nextQuestions: ['¿Cómo se distribuyen los participantes por centro de costo?', '¿Qué muestra el control de cálculo?', '¿Qué registros quedaron en cuarentena?'],
@@ -710,27 +1090,83 @@ function absenceAnswer(context, periodRequest) {
   };
 }
 
+function directoryRequiredAnswer(context) {
+  const releasedLeaveYears = context.leave.series
+    .filter(item => item.privacyStatus === 'released')
+    .map(item => item.period)
+    .sort((left, right) => left.localeCompare(right));
+  const firstYear = releasedLeaveYears[0] || null;
+  const latestYear = releasedLeaveYears.at(-1) || null;
+  const rangeLabel = firstYear && latestYear ? `${firstYear}–${latestYear}` : 'sin años liberados';
+
+  return {
+    title: 'Directorio individual requerido',
+    summary: 'Esta demostración pública no busca ni muestra fichas, legajos o licencias de una persona.',
+    findings: [
+      `La analítica agregada de licencias está disponible para ${rangeLabel}.`,
+    ],
+    evidence: [],
+    caveats: ['La consulta individual requiere identidad municipal, finalidad autorizada, campos mínimos y auditoría; ese directorio no está habilitado en los accesos públicos.'],
+    nextQuestions: latestYear ? [`¿Cuántas licencias hubo en ${latestYear}?`, '¿Cómo se distribuyen los participantes por sector?'] : ['¿Qué métricas agregadas GRH están disponibles?'],
+    actions: [
+      { id: 'open_rrhh', label: 'Abrir RRHH agregado', href: '/rrhh' },
+    ],
+    directory: {
+      status: 'directory_required',
+      enabled: false,
+      route: '/rrhh',
+      publicAccess: 'aggregate_only',
+    },
+    status: 'limited',
+    httpStatus: 422,
+    code: 'DIRECTORY_REQUIRED',
+  };
+}
+
 function leaveAnswer(context, periodRequest) {
   const requested = resolveAnnualRequest(periodRequest, 'licencias');
   if (requested.error) return requested.error;
-  const year = requested.year || context.latestPeriod.slice(0, 4);
+  const releasedRows = context.leave.series
+    .filter(item => item.privacyStatus === 'released')
+    .slice()
+    .sort((left, right) => left.period.localeCompare(right.period));
+  const firstAvailable = releasedRows[0] || null;
+  const latestAvailable = releasedRows.at(-1) || null;
+  if (!latestAvailable) {
+    return periodLimit(
+      'Licencias históricas no disponibles',
+      'El contrato portable no contiene un año de licencias liberado por privacidad.',
+      'LEAVE_SERIES_UNAVAILABLE',
+    );
+  }
+
+  const year = requested.year || latestAvailable.period;
   const row = context.leave.series.find(item => item.period === year);
   if (!row || row.privacyStatus !== 'released') {
     return protectedOrUnavailablePeriod('Licencias', year, context.privacyThreshold);
   }
+  const availablePeriodRange = {
+    from: firstAvailable.period,
+    to: latestAvailable.period,
+    latest: latestAvailable.period,
+  };
+  const defaultedToLatestAvailable = requested.year === null;
   return {
-    title: `Licencias GRH · ${year}`,
-    summary: `GRH registra ${formatInteger(row.value)} filas válidas de licencia en ${year}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. No equivale a personas actualmente de licencia.`,
+    title: `${defaultedToLatestAvailable ? 'Licencias históricas' : 'Licencias GRH'} · ${year}`,
+    summary: `En ${year}, GRH registra ${formatInteger(row.value)} filas válidas de licencia sobre ${formatInteger(row.participantCount)} participantes distintos. La serie liberada cubre ${availablePeriodRange.from}–${availablePeriodRange.to}.`,
     findings: [
-      `El período supera el umbral portable k=${context.privacyThreshold}.`,
-      'Para una lectura actual se necesita una fuente de licencias vigente y reconciliada con el maestro contractual.',
+      `${year} es ${defaultedToLatestAvailable ? 'el último año disponible' : 'el año solicitado'} dentro del snapshot; no describe licencias actuales.`,
     ],
     evidence: [
       metric(`Registros válidos ${year}`, formatInteger(row.value), 'Filas de licencia, no empleados únicos.'),
       metric('Participantes distintos', formatInteger(row.participantCount), 'Cardinalidad usada para liberar el agregado portable.'),
     ],
-    caveats: ['No se extrapola el agregado anual a un estado actual de licencias.'],
-    nextQuestions: ['¿Qué datos de ausencias sí están disponibles?', '¿Cuál es el corte de la fuente?'],
+    caveats: ['La fuente de licencias termina en 2009; no se extrapola a un estado actual.'],
+    nextQuestions: [`¿Cuántas licencias hubo en ${year === availablePeriodRange.from ? availablePeriodRange.to : availablePeriodRange.from}?`, '¿Qué datos de ausencias están disponibles?'],
+    actions: [
+      { id: 'open_rrhh', label: 'Abrir analítica RRHH', href: '/rrhh' },
+    ],
+    availablePeriodRange,
     resolvedPeriod: year,
   };
 }
@@ -809,20 +1245,20 @@ function calculationControlAnswer(context, periodRequest) {
     : 'La proyección portable no publica un estado histórico de tolerancia para este período.';
   return {
     title: `Control de cálculo · ${period}`,
-    summary: `El neto de control totaliza ${formatSourceAmount(amounts.netPayrollCents)}. Es un control de liquidación calculada y no acredita un desembolso.`,
+    summary: `El neto de control totaliza ${formatSourceAmount(amounts.netPayrollCents, context.presentation)}. Es un control de liquidación calculada y no acredita un desembolso.`,
     findings: [
-      `Bruto con asignaciones familiares: ${formatSourceAmount(amounts.grossWithFamilyAllowancesCents)}.`,
-      `Retenciones del personal: ${formatSourceAmount(amounts.employeeWithholdingsCents)}.`,
-      `Aportes patronales calculados: ${formatSourceAmount(amounts.employerContributionsCents)}.`,
+      `Bruto con asignaciones familiares: ${formatSourceAmount(amounts.grossWithFamilyAllowancesCents, context.presentation)}.`,
+      `Retenciones del personal: ${formatSourceAmount(amounts.employeeWithholdingsCents, context.presentation)}.`,
+      `Aportes patronales calculados: ${formatSourceAmount(amounts.employerContributionsCents, context.presentation)}.`,
       toleranceFinding,
     ],
     evidence: [
-      metric('Bruto de control', formatSourceAmount(amounts.grossWithFamilyAllowancesCents), 'Agregado de cálculo portable.'),
-      metric('Retenciones', formatSourceAmount(amounts.employeeWithholdingsCents), 'Agregado de cálculo portable.'),
-      metric('Neto de control', formatSourceAmount(amounts.netPayrollCents), 'No es una transferencia acreditada.'),
+      metric('Bruto de control', formatSourceAmount(amounts.grossWithFamilyAllowancesCents, context.presentation), 'Agregado de cálculo portable.'),
+      metric('Retenciones', formatSourceAmount(amounts.employeeWithholdingsCents, context.presentation), 'Agregado de cálculo portable.'),
+      metric('Neto de control', formatSourceAmount(amounts.netPayrollCents, context.presentation), 'No es una transferencia acreditada.'),
       metric('Participantes', formatInteger(control.participantCount), `Período liberado con umbral k=${context.privacyThreshold}.`),
     ],
-    caveats: ['La moneda no está declarada en GRH; por eso los importes se presentan como unidades de origen.'],
+    caveats: [currencyDisclosure(context)],
     nextQuestions: ['¿Cómo concilia con totpago?', '¿Cómo cambió frente al período anterior?'],
     resolvedPeriod: period,
   };
@@ -838,24 +1274,24 @@ function closeExplanationAnswer(context, periodRequest) {
   const unionRuns = reconciliation.calculationRuns + reconciliation.totpagoRuns - reconciliation.matchedRuns;
   return {
     title: `Cierre GRH explicado · ${row.period}`,
-    summary: `El neto de control de ${row.period} es ${formatSourceAmount(components.netPayrollCents)}. Surge aritméticamente del bruto con asignaciones menos las retenciones; no es una atribución causal ni evidencia de pago.`,
+    summary: `El neto de control de ${row.period} es ${formatSourceAmount(components.netPayrollCents, context.presentation)}. Surge aritméticamente del bruto con asignaciones menos las retenciones; no es una atribución causal ni evidencia de pago.`,
     findings: [
-      `Ingresos contributivos: ${formatSourceAmount(components.contributoryEarningsCents)}; no contributivos: ${formatSourceAmount(components.nonContributoryEarningsCents)}; asignaciones familiares: ${formatSourceAmount(components.familyAllowancesCents)}.`,
-      `Bruto con asignaciones: ${formatSourceAmount(components.grossWithFamilyAllowancesCents)}; retenciones: ${formatSourceAmount(components.employeeWithholdingsCents)}.`,
-      `Neto a pagar del control: ${formatSourceAmount(components.netToPayCents)}; aportes del empleador: ${formatSourceAmount(components.employerContributionsCents)}.`,
+      `Ingresos contributivos: ${formatSourceAmount(components.contributoryEarningsCents, context.presentation)}; no contributivos: ${formatSourceAmount(components.nonContributoryEarningsCents, context.presentation)}; asignaciones familiares: ${formatSourceAmount(components.familyAllowancesCents, context.presentation)}.`,
+      `Bruto con asignaciones: ${formatSourceAmount(components.grossWithFamilyAllowancesCents, context.presentation)}; retenciones: ${formatSourceAmount(components.employeeWithholdingsCents, context.presentation)}.`,
+      `Neto a pagar del control: ${formatSourceAmount(components.netToPayCents, context.presentation)}; aportes del empleador: ${formatSourceAmount(components.employerContributionsCents, context.presentation)}.`,
       `Identidad aritmética ${control.identityWithinRoundingTolerance ? 'dentro' : 'fuera'} de la tolerancia mensual de ${formatInteger(control.roundingToleranceCents)} centavos de unidad fuente.`,
       `Conciliación del mismo mes: cobertura ${formatPercent(reconciliation.runCoveragePct)}, exactitud de métricas ${formatPercent(reconciliation.metricExactRatePct)} y acuerdo de valores ${formatPercent(reconciliation.valueAgreementPct)}.`,
-      `Varianza absoluta mensual calculo/totpago: ${formatSourceAmount(reconciliation.absoluteVarianceCents)}.`,
+      `Varianza absoluta mensual calculo/totpago: ${formatSourceAmount(reconciliation.absoluteVarianceCents, context.presentation)}.`,
     ],
     evidence: [
       metric('Participantes', formatInteger(row.participantCount), `Agregado mensual liberado con k=${context.closeProjection.privacy.threshold}.`),
-      metric('Neto de control', formatSourceAmount(components.netPayrollCents), 'Cálculo salarial agregado; no desembolso.'),
+      metric('Neto de control', formatSourceAmount(components.netPayrollCents, context.presentation), 'Cálculo salarial agregado; no desembolso.'),
       metric('Cobertura mensual', formatPercent(reconciliation.runCoveragePct), `${formatInteger(reconciliation.matchedRuns)} de ${formatInteger(unionRuns)} corridas del universo combinado.`),
       metric('Acuerdo mensual de valores', formatPercent(reconciliation.valueAgreementPct), 'Proviene de period_series; no reutiliza el score global.'),
       metric('Identidad dentro de tolerancia', control.identityWithinRoundingTolerance ? 'Sí' : 'No', `Variación neta ${formatInteger(control.netIdentityVarianceCents)} centavos de unidad fuente.`),
     ],
     caveats: [
-      'La moneda no está declarada en GRH; los importes se expresan en unidades de origen.',
+      currencyDisclosure(context),
       'La descomposición es aritmética y no explica por qué cambió un componente.',
       'El control de cálculo no prueba transferencia, acreditación bancaria ni asiento contable.',
     ],
@@ -899,17 +1335,17 @@ function trendAnswer(context, periodRequest) {
     : null;
   return {
     title: `Variación de control · ${previous.period} a ${current.period}`,
-    summary: `Entre los dos últimos períodos válidos, la participación cambió ${formatSignedInteger(participantDelta)} y el neto de control cambió ${formatSourceAmountSigned(netDelta)}${netRate === null ? '' : ` (${formatSignedPercent(netRate)})`}.`,
+    summary: `Entre los dos últimos períodos válidos, la participación cambió ${formatSignedInteger(participantDelta)} y el neto de control cambió ${formatSourceAmountSigned(netDelta, context.presentation)}${netRate === null ? '' : ` (${formatSignedPercent(netRate)})`}.`,
     findings: [
-      `${previous.period}: ${formatInteger(previous.participantCount)} participantes y ${formatSourceAmount(previous.amounts.netPayrollCents)} de neto de control.`,
-      `${current.period}: ${formatInteger(current.participantCount)} participantes y ${formatSourceAmount(current.amounts.netPayrollCents)} de neto de control.`,
+      `${previous.period}: ${formatInteger(previous.participantCount)} participantes y ${formatSourceAmount(previous.amounts.netPayrollCents, context.presentation)} de neto de control.`,
+      `${current.period}: ${formatInteger(current.participantCount)} participantes y ${formatSourceAmount(current.amounts.netPayrollCents, context.presentation)} de neto de control.`,
       'La variación es aritmética; el contrato no atribuye causas.',
     ],
     evidence: [
       metric('Cambio de participantes', formatSignedInteger(participantDelta), `${previous.period} → ${current.period}.`),
-      metric('Cambio de neto de control', formatSourceAmountSigned(netDelta), netRate === null ? 'Sin tasa comparable.' : formatSignedPercent(netRate)),
+      metric('Cambio de neto de control', formatSourceAmountSigned(netDelta, context.presentation), netRate === null ? 'Sin tasa comparable.' : formatSignedPercent(netRate)),
     ],
-    caveats: ['No se proyectan períodos futuros ni se explican causas sin variables y metodología adicionales.'],
+    caveats: [currencyDisclosure(context), 'No se proyectan períodos futuros ni se explican causas sin variables y metodología adicionales.'],
     nextQuestions: ['¿Qué compone el control del último período?', '¿Cómo está la conciliación cross-source?'],
     resolvedPeriod: `${previous.period}→${current.period}`,
   };
@@ -938,14 +1374,14 @@ function sourceAnswer(context) {
 function limitedBankPayment(context) {
   return {
     title: 'El contrato no prueba un desembolso',
-    summary: `GRH permite informar un neto de control calculado de ${formatSourceAmount(context.latestControl.amounts.netPayrollCents)} para ${context.latestPeriod}, pero no confirma cuánto fue transferido, depositado o acreditado.`,
+    summary: `GRH permite informar un neto de control calculado de ${formatSourceAmount(context.latestControl.amounts.netPayrollCents, context.presentation)} para ${context.latestPeriod}, pero no confirma cuánto fue transferido, depositado o acreditado.`,
     findings: [
       'El neto publicado es control de cálculo, no evidencia de desembolso.',
       `totpago presenta diferencias materiales y sólo se usa como diagnóstico (${formatPercent(context.reconciliation.scorePct)} de score).`,
       'Para responder pago efectivo se necesita una fuente bancaria o de Tesorería reconciliada y autorizada.',
     ],
-    evidence: [metric('Neto de control', formatSourceAmount(context.latestControl.amounts.netPayrollCents), 'No equivale a una transferencia acreditada.')],
-    caveats: ['No se convierte el dato de cálculo en una afirmación de pago.'],
+    evidence: [metric('Neto de control', formatSourceAmount(context.latestControl.amounts.netPayrollCents, context.presentation), 'No equivale a una transferencia acreditada.')],
+    caveats: [currencyDisclosure(context), 'No se convierte el dato de cálculo en una afirmación de pago.'],
     nextQuestions: ['¿Qué muestra el control de cálculo?', '¿Cómo está la conciliación con totpago?'],
     status: 'limited',
   };
@@ -1011,13 +1447,15 @@ function refusal(title, summary, caveats, code) {
   };
 }
 
-function buildProvenance(executive, quality, close = null) {
+function buildProvenance(executive, quality, close = null, presentation = null) {
   const latestReleased = executive.compensation.series
     .filter(row => row.privacyStatus === 'released')
     .slice()
     .sort((left, right) => left.period.localeCompare(right.period))
     .at(-1);
   if (!latestReleased) throw new Error('No hay períodos de cálculo liberados.');
+  const sourceCurrencyStatus = presentation?.sourceCurrencyStatus || 'not_declared_in_source';
+  const configuredCurrency = hasConfiguredCurrency(presentation);
   return {
     source: executive.source.canonicalSystem,
     sourceFile: executive.source.sourceFile,
@@ -1037,7 +1475,11 @@ function buildProvenance(executive, quality, close = null) {
     excludedSources: [...quality.source.excludedSources],
     calculationAuthority: 'calculo control concepts',
     totpagoStatus: 'diagnostic_only',
-    currency: 'not_declared_in_source',
+    currency: sourceCurrencyStatus,
+    sourceCurrencyStatus,
+    displayCurrencyCode: configuredCurrency ? presentation.displayCurrencyCode : null,
+    displayCurrencyBasis: configuredCurrency ? presentation.displayCurrencyBasis : 'not_configured',
+    displayCurrencyEffectiveOn: configuredCurrency ? presentation.displayCurrencyEffectiveOn : null,
   };
 }
 
@@ -1105,8 +1547,24 @@ function formatSignedInteger(value) {
   return `${sign}${formatInteger(value)}`;
 }
 
-function formatSourceAmount(cents) {
+function currencyDisclosure(context) {
+  if (!hasConfiguredCurrency(context.presentation)) {
+    return 'La moneda no está declarada en GRH; los importes se presentan como unidades de origen.';
+  }
+  return `Importes presentados en ${context.presentation.displayCurrencyCode} por configuración municipal; GRH no declara moneda en la fuente.`;
+}
+
+function formatSourceAmount(cents, presentation = null) {
   const units = Number(cents) / 100;
+  if (hasConfiguredCurrency(presentation)) {
+    return new Intl.NumberFormat(presentation.locale, {
+      style: 'currency',
+      currency: presentation.displayCurrencyCode,
+      currencyDisplay: 'code',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(units);
+  }
   const absolute = Math.abs(units);
   if (absolute >= 1_000_000_000) return `${formatNumber(units / 1_000_000_000, 2)} mil millones de unidades de origen`;
   if (absolute >= 1_000_000) return `${formatNumber(units / 1_000_000, 2)} millones de unidades de origen`;
@@ -1114,9 +1572,9 @@ function formatSourceAmount(cents) {
   return `${formatNumber(units, 2)} unidades de origen`;
 }
 
-function formatSourceAmountSigned(cents) {
+function formatSourceAmountSigned(cents, presentation = null) {
   const prefix = Number(cents) > 0 ? '+' : '';
-  return `${prefix}${formatSourceAmount(cents)}`;
+  return `${prefix}${formatSourceAmount(cents, presentation)}`;
 }
 
 function titleCase(value) {

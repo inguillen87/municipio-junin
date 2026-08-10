@@ -277,13 +277,13 @@ window.requireRole = function(allowedRoles) {
 // NAV ITEMS
 var NAV_ITEMS = [
   { id:'workspace',     href:'inicio.html',         icon:'home',   label:'Inicio',                section:'PRINCIPAL',     capability:'navigation.workspace' },
-  { id:'dashboard',     href:'dashboard.html',      icon:'chart',  label:'Panel ejecutivo',       section:'PRINCIPAL',     capability:'navigation.dashboard' },
-  { id:'reportes',      href:'reportes.html',       icon:'doc',    label:'Reportes ejecutivos',   section:'PRINCIPAL',     capability:'navigation.reports' },
-  { id:'hacienda',      href:'hacienda.html',       icon:'bank',   label:'Hacienda',              section:'GESTIÓN',       capability:'navigation.hacienda' },
-  { id:'grh-ejecutivo', href:'grh-ejecutivo.html', icon:'people', label:'Centro Ejecutivo GRH', section:'GESTIÓN',       capability:'navigation.grh-executive' },
-  { id:'control',       href:'control.html',        icon:'gauge',  label:'Calidad y Linaje',      section:'GESTIÓN',       capability:'navigation.data-quality' },
-  { id:'rrhh',          href:'rrhh.html',           icon:'people', label:'RRHH',                  section:'GESTIÓN',       capability:'navigation.rrhh' },
-  { id:'ia',            href:'ia.html',             icon:'ai',     label:'Asistente IA',          section:'INTELIGENCIA',  capability:'navigation.ai-assistant' },
+  { id:'dashboard',     href:'dashboard.html',      icon:'chart',  label:'Panorama municipal',    section:'PRINCIPAL',     capability:'navigation.dashboard' },
+  { id:'reportes',      href:'reportes.html',       icon:'doc',    label:'Reportes',              section:'PRINCIPAL',     capability:'navigation.reports' },
+  { id:'hacienda',      href:'hacienda.html',       icon:'bank',   label:'Hacienda y nómina',     section:'GESTIÓN',       capability:'navigation.hacienda' },
+  { id:'grh-ejecutivo', href:'/ejecutivo',          icon:'people', label:'Resumen ejecutivo GRH', section:'GESTIÓN',       capability:'navigation.grh-executive' },
+  { id:'control',       href:'/calidad',            icon:'gauge',  label:'Calidad de datos',      section:'GESTIÓN',       capability:'navigation.data-quality' },
+  { id:'rrhh',          href:'rrhh.html',           icon:'people', label:'Gestión de personas',  section:'GESTIÓN',       capability:'navigation.rrhh' },
+  { id:'ia',            href:'ia.html',             icon:'ai',     label:'Asistente GRH',         section:'INTELIGENCIA',  capability:'navigation.ai-assistant' },
   { id:'auditoria',     href:'auditoria.html',      icon:'shield', label:'Inventario de cargas', section:'DATOS',         capability:'navigation.audit' },
   { id:'exportar',      href:'exportar.html',       icon:'export', label:'Salidas gobernadas',   section:'DATOS',         capability:'navigation.export' },
   { id:'importar',      href:'importar.html',       icon:'upload', label:'Importar datos',        section:'DATOS',         capability:'navigation.import' },
@@ -291,6 +291,17 @@ var NAV_ITEMS = [
   { id:'ciudadano',     href:'ciudadano.html',      icon:'home',   label:'Portal Ciudadano',      section:'TRANSPARENCIA', public:true },
   { id:'manuales',      href:'manuales.html',       icon:'doc',    label:'Manual y ayuda',        section:'AYUDA',         capability:'navigation.help' },
 ];
+
+window.MuniNavigationCatalog = Object.freeze(NAV_ITEMS.reduce(function(catalog, item) {
+  if (item.capability) {
+    catalog[item.capability] = Object.freeze({
+      href: item.href,
+      icon: item.icon,
+      label: item.label
+    });
+  }
+  return catalog;
+}, Object.create(null)));
 
 // SVG ICONS
 var ICONS = {

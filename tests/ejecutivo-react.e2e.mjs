@@ -471,7 +471,7 @@ test('React Ejecutivo validates the governed synthetic contract and fails closed
           assert.equal(result.sourceHashVisible, true);
           assert.equal(result.noRealtimeQualifier, true);
           assert.equal(result.positiveRealtimeClaim, false);
-          assert.equal(result.hasArsClaim, false);
+          assert.equal(result.hasArsClaim, true);
           assert.equal(result.noPaymentQualifier, true);
           assert.equal(result.noActiveQualifier, true);
           assert.equal(result.noRateQualifier, true);

@@ -69,6 +69,41 @@
   margin-top: 1.5rem;
 }
 
+.executive-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.35rem;
+}
+
+.executive-hero__actions a {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgb(255 255 255 / 34%);
+  border-radius: 0.75rem;
+  color: #04263d;
+  background: #f4fbff;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-decoration: none;
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.executive-hero__actions a:hover,
+.executive-hero__actions a:focus-visible {
+  color: #031f33;
+  background: #dff5ff;
+  transform: translateY(-1px);
+}
+
+.executive-hero__actions a:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
 .executive-hero__guardrails span {
   padding: 0.45rem 0.7rem;
   border: 1px solid rgb(255 255 255 / 24%);

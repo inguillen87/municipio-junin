@@ -9,6 +9,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-close': 'grh-close-v1',
   '/api/grh-decision-brief': 'grh-decision-brief-v1',
   '/api/grh-data': 'grh-raw-retired-v1',
+  '/api/grh-directory': 'grh-directory-v1',
 });
 
 module.exports = Object.freeze({

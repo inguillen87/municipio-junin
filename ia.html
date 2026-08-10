@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
   <meta name="description" content="Asistente ejecutivo gobernado por el contrato privado GRH de la Municipalidad de Junín.">
   <meta name="theme-color" content="#07111f">
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
@@ -13,16 +14,31 @@
       --assistant-bg: #07111f;
       --assistant-panel: rgba(12, 25, 43, 0.86);
       --assistant-panel-solid: #0c192b;
-      --assistant-line: rgba(148, 163, 184, 0.16);
-      --assistant-line-strong: rgba(148, 163, 184, 0.28);
+      --assistant-line: #516a83;
+      --assistant-line-strong: #6b849c;
       --assistant-text: #ecf4ff;
-      --assistant-muted: #92a3b8;
-      --assistant-blue: #65a7ff;
-      --assistant-cyan: #52d6c7;
-      --assistant-amber: #f7c66c;
+      --assistant-muted: #a9bdce;
+      --assistant-blue: #76b3ff;
+      --assistant-cyan: #5eead4;
+      --assistant-amber: #f8ce7a;
       --assistant-danger: #ff8b8b;
       --assistant-shadow: 0 26px 80px rgba(0, 0, 0, 0.3);
       --assistant-radius: 22px;
+    }
+
+    [data-theme="light"] {
+      --assistant-bg: #eef3f8;
+      --assistant-panel: rgba(255, 255, 255, 0.96);
+      --assistant-panel-solid: #ffffff;
+      --assistant-line: #7c8fa1;
+      --assistant-line-strong: #64788a;
+      --assistant-text: #102a43;
+      --assistant-muted: #526779;
+      --assistant-blue: #1d4ed8;
+      --assistant-cyan: #0f6f7c;
+      --assistant-amber: #92400e;
+      --assistant-danger: #b91c1c;
+      --assistant-shadow: 0 18px 50px rgba(15, 35, 55, 0.12);
     }
 
     * { box-sizing: border-box; }
@@ -65,8 +81,19 @@
 
     .assistant-title-group { display: flex; align-items: center; gap: 14px; min-width: 0; }
     .assistant-title-copy { min-width: 0; }
-    .assistant-title-copy p { margin: 0 0 4px; color: var(--assistant-cyan); font-size: 11px; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
+    .assistant-title-copy p { margin: 0 0 4px; color: var(--assistant-cyan); font-size: 12px; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
     .assistant-title-copy h1 { margin: 0; font-size: clamp(18px, 2vw, 24px); font-weight: 750; letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .assistant-topbar-actions { display: flex; align-items: center; gap: 10px; }
+    .assistant-theme {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--assistant-line);
+      border-radius: 12px;
+      color: var(--assistant-text);
+      background: var(--assistant-panel-solid);
+      cursor: pointer;
+    }
 
     .assistant-menu {
       width: 40px;
@@ -170,7 +197,7 @@
     }
 
     .welcome-mark svg { width: 28px; height: 28px; }
-    .welcome-card .eyebrow { margin: 0 0 10px; color: var(--assistant-cyan); font-size: 11px; font-weight: 850; letter-spacing: 0.16em; text-transform: uppercase; }
+    .welcome-card .eyebrow { margin: 0 0 10px; color: var(--assistant-cyan); font-size: 12px; font-weight: 850; letter-spacing: 0.16em; text-transform: uppercase; }
     .welcome-card h2 { margin: 0; font-size: clamp(27px, 4vw, 45px); line-height: 1.08; letter-spacing: -0.045em; font-weight: 760; }
     .welcome-card > p:not(.eyebrow) { max-width: 650px; margin: 18px auto 0; color: var(--assistant-muted); font-size: clamp(14px, 1.6vw, 16px); line-height: 1.7; }
 
@@ -188,7 +215,7 @@
       border-radius: 9px;
       color: #b9c8d9;
       background: rgba(255, 255, 255, 0.025);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 680;
     }
 
@@ -213,7 +240,7 @@
       border-radius: 11px;
       color: var(--assistant-blue);
       background: rgba(101, 167, 255, 0.09);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 850;
       letter-spacing: 0.04em;
     }
@@ -251,7 +278,7 @@
       border-radius: 7px;
       color: #baf4eb;
       background: rgba(82, 214, 199, 0.1);
-      font-size: 9px;
+      font-size: 12px;
       font-weight: 850;
       letter-spacing: 0.09em;
       text-transform: uppercase;
@@ -269,15 +296,29 @@
 
     .evidence-grid { margin-top: 17px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
     .evidence-item { padding: 12px; border: 1px solid var(--assistant-line); border-radius: 12px; background: rgba(255, 255, 255, 0.022); min-width: 0; }
-    .evidence-label { display: block; color: var(--assistant-muted); font-size: 10px; font-weight: 760; letter-spacing: 0.06em; text-transform: uppercase; }
+    .evidence-label { display: block; color: var(--assistant-muted); font-size: 12px; font-weight: 760; letter-spacing: 0.06em; text-transform: uppercase; }
     .evidence-value { display: block; margin-top: 6px; color: var(--assistant-text); font-size: 16px; font-weight: 760; line-height: 1.25; overflow-wrap: anywhere; }
-    .evidence-detail { display: block; margin-top: 5px; color: #8294aa; font-size: 10px; line-height: 1.45; }
+    .evidence-detail { display: block; margin-top: 5px; color: #8294aa; font-size: 12px; line-height: 1.45; }
+
+    .directory-history { margin-top: 17px; }
+    .directory-history h4 { margin: 0 0 9px; color: var(--assistant-text); font-size: 13px; font-weight: 780; }
+    .directory-history-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .directory-history-item { padding: 10px 11px; border: 1px solid var(--assistant-line); border-radius: 11px; background: rgba(82, 214, 199, 0.035); }
+    .directory-history-item strong { display: block; color: var(--assistant-text); font-size: 13px; }
+    .directory-history-item span { display: block; margin-top: 4px; color: var(--assistant-muted); font-size: 12px; }
+    .directory-options { margin-top: 17px; display: grid; gap: 8px; }
+    .directory-option { padding: 11px 12px; border: 1px solid var(--assistant-line); border-radius: 11px; color: var(--assistant-text); background: rgba(101, 167, 255, 0.04); text-decoration: none; }
+    .directory-option strong, .directory-option span { display: block; }
+    .directory-option span { margin-top: 4px; color: var(--assistant-muted); font-size: 12px; }
+    .answer-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
+    .answer-action { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; padding: 8px 12px; border: 1px solid rgba(101, 167, 255, 0.48); border-radius: 10px; color: #dcecff; background: rgba(101, 167, 255, 0.1); text-decoration: none; font-size: 12px; font-weight: 760; }
+    .answer-action:hover, .answer-action:focus-visible, .directory-option:hover, .directory-option:focus-visible { border-color: var(--assistant-blue); background: rgba(101, 167, 255, 0.14); outline: none; }
 
     .answer-limits { margin-top: 15px; padding: 12px 13px; border-left: 2px solid var(--assistant-amber); border-radius: 4px 10px 10px 4px; background: rgba(247, 198, 108, 0.055); }
-    .answer-limits strong { display: block; margin-bottom: 6px; color: #f8dca9; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
-    .answer-limits p { margin: 4px 0 0; color: #aab8c8; font-size: 11px; line-height: 1.5; }
+    .answer-limits strong { display: block; margin-bottom: 6px; color: #f8dca9; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .answer-limits p { margin: 4px 0 0; color: #aab8c8; font-size: 12px; line-height: 1.5; }
 
-    .answer-source { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--assistant-line); color: #7f93aa; font-size: 10px; line-height: 1.5; }
+    .answer-source { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--assistant-line); color: #8294aa; font-size: 12px; line-height: 1.5; }
 
     .typing-card { display: flex; gap: 6px; align-items: center; min-height: 44px; padding: 14px 17px; border: 1px solid var(--assistant-line); border-radius: 15px; background: rgba(6, 17, 31, 0.45); }
     .typing-card span { width: 6px; height: 6px; border-radius: 50%; background: var(--assistant-blue); animation: assistant-pulse 1s ease-in-out infinite; }
@@ -294,7 +335,7 @@
     }
 
     .query-suggestions::-webkit-scrollbar { display: none; }
-    .query-chip { flex: 0 0 auto; padding: 8px 11px; border: 1px solid var(--assistant-line); border-radius: 10px; color: #aebdd0; background: rgba(255, 255, 255, 0.025); cursor: pointer; font-size: 11px; font-weight: 650; transition: border-color 160ms ease, color 160ms ease, background 160ms ease; }
+    .query-chip { flex: 0 0 auto; min-height: 40px; padding: 8px 11px; border: 1px solid var(--assistant-line); border-radius: 10px; color: #c2d1de; background: rgba(255, 255, 255, 0.025); cursor: pointer; font-size: 12px; font-weight: 650; transition: border-color 160ms ease, color 160ms ease, background 160ms ease; }
     .query-chip:hover, .query-chip:focus-visible { border-color: rgba(101, 167, 255, 0.48); color: #dcecff; background: rgba(101, 167, 255, 0.07); outline: none; }
 
     .composer-wrap { padding: 0 clamp(16px, 2.5vw, 28px) 18px; }
@@ -315,7 +356,7 @@
 
     .composer:focus-within { border-color: rgba(101, 167, 255, 0.58); box-shadow: 0 15px 45px rgba(0, 0, 0, 0.18), 0 0 0 3px rgba(101, 167, 255, 0.08); }
     .composer textarea { width: 100%; max-height: 116px; min-height: 42px; resize: none; border: 0; outline: 0; padding: 10px 0 5px; color: var(--assistant-text); background: transparent; font-size: 14px; line-height: 1.45; }
-    .composer textarea::placeholder { color: #687c94; }
+    .composer textarea::placeholder { color: #8294aa; }
 
     .send-query {
       width: 42px;
@@ -336,28 +377,90 @@
     .send-query:disabled { cursor: wait; opacity: 0.55; transform: none; }
     .send-query svg { width: 18px; height: 18px; }
 
-    .composer-meta { width: min(900px, 100%); margin: 8px auto 0; display: flex; justify-content: space-between; gap: 12px; color: #687d95; font-size: 10px; }
+    .composer-meta { width: min(900px, 100%); margin: 8px auto 0; display: flex; justify-content: space-between; gap: 12px; color: #8294aa; font-size: 12px; }
 
-    .context-rail { overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.2) transparent; }
-    .rail-card { padding: 17px; border: 1px solid var(--assistant-line); border-radius: 17px; background: var(--assistant-panel); backdrop-filter: blur(16px); }
-    .rail-card h2 { margin: 0; color: #e3edf9; font-size: 12px; font-weight: 780; letter-spacing: 0.03em; }
-    .rail-card > p { margin: 8px 0 0; color: var(--assistant-muted); font-size: 11px; line-height: 1.55; }
+    .context-rail { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.2) transparent; }
+    .rail-card { padding: 15px; border: 1px solid var(--assistant-line); border-radius: 15px; background: var(--assistant-panel); backdrop-filter: blur(16px); }
+    .rail-card h2 { margin: 0; color: #e3edf9; font-size: 13px; font-weight: 780; letter-spacing: 0.03em; }
+    .rail-card > p { margin: 8px 0 0; color: var(--assistant-muted); font-size: 12px; line-height: 1.55; }
 
-    .trust-list { margin-top: 15px; display: grid; gap: 11px; }
+    .trust-list { margin-top: 12px; display: grid; gap: 9px; }
     .trust-row { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; align-items: start; }
     .trust-dot { width: 7px; height: 7px; margin-top: 5px; border-radius: 50%; background: var(--assistant-cyan); box-shadow: 0 0 0 4px rgba(82, 214, 199, 0.07); }
     .trust-dot.pending { background: var(--assistant-amber); box-shadow: 0 0 0 4px rgba(247, 198, 108, 0.07); }
-    .trust-row strong { display: block; color: #cdd9e7; font-size: 11px; font-weight: 720; }
-    .trust-row span { display: block; margin-top: 2px; color: #758aa2; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+    .trust-row strong { display: block; color: #cdd9e7; font-size: 12px; font-weight: 720; }
+    .trust-row span { display: block; margin-top: 2px; color: #8294aa; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
 
     .capability-list, .limit-list { margin: 13px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-    .capability-list li, .limit-list li { padding-left: 15px; position: relative; color: #98aabc; font-size: 10px; line-height: 1.5; }
+    .capability-list li, .limit-list li { padding-left: 15px; position: relative; color: #a9bdce; font-size: 12px; line-height: 1.5; }
     .capability-list li::before { content: ""; position: absolute; left: 1px; top: 0.62em; width: 4px; height: 4px; border-radius: 50%; background: var(--assistant-blue); }
     .limit-list li::before { content: "—"; position: absolute; left: 0; color: var(--assistant-amber); }
+    .rail-note { margin: 12px 0 0; padding: 10px 11px; border-radius: 10px; color: #c2d1de; background: rgba(247, 198, 108, 0.065); font-size: 12px; line-height: 1.45; }
+    .rail-note strong { color: #f1d7a7; }
 
-    .rail-links { display: grid; gap: 7px; margin-top: 13px; }
-    .rail-link { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--assistant-line); border-radius: 10px; color: #aabdd2; text-decoration: none; font-size: 10px; font-weight: 680; transition: border-color 160ms ease, color 160ms ease; }
-    .rail-link:hover, .rail-link:focus-visible { border-color: rgba(101, 167, 255, 0.45); color: #e2eeff; outline: none; }
+    .rail-links { display: grid; gap: 8px; margin-top: 12px; }
+    .rail-link { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px; border: 1px solid var(--assistant-line); border-radius: 11px; color: #aabdd2; text-decoration: none; transition: border-color 160ms ease, color 160ms ease, background 160ms ease; }
+    .rail-link:hover, .rail-link:focus-visible { border-color: rgba(101, 167, 255, 0.45); color: #e2eeff; background: rgba(101, 167, 255, 0.055); outline: none; }
+    .rail-link-mark { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; color: #dcecff; background: rgba(101, 167, 255, 0.12); font-size: 12px; font-weight: 850; letter-spacing: 0.04em; }
+    .rail-link-copy strong { display: block; color: currentColor; font-size: 12px; font-weight: 760; }
+    .rail-link-copy small { display: block; margin-top: 2px; color: #8294aa; font-size: 12px; line-height: 1.3; }
+
+    [data-theme="light"] body.assistant-page {
+      color: var(--assistant-text);
+      background:
+        radial-gradient(circle at 78% 8%, rgba(29, 78, 216, 0.09), transparent 28rem),
+        radial-gradient(circle at 38% 100%, rgba(15, 111, 124, 0.07), transparent 32rem),
+        var(--assistant-bg);
+    }
+    [data-theme="light"] .assistant-main { background: transparent; }
+    [data-theme="light"] .assistant-topbar { background: rgba(248, 250, 252, 0.96); }
+    [data-theme="light"] .assistant-menu,
+    [data-theme="light"] .assistant-theme { color: #102a43; background: #ffffff; }
+    [data-theme="light"] .engine-status { color: #0f5f59; border-color: #2f8f83; background: #e6fffb; }
+    [data-theme="light"] .conversation-panel { background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(241, 246, 251, 0.98)); }
+    [data-theme="light"] .welcome-mark { color: #1d4ed8; background: linear-gradient(145deg, #e7f0ff, #e6fffb); }
+    [data-theme="light"] .welcome-guardrails span { color: #334b60; background: #ffffff; }
+    [data-theme="light"] .message-avatar { color: #1d4ed8; background: #e7f0ff; }
+    [data-theme="light"] .message-row.user .message-avatar,
+    [data-theme="light"] .user-bubble { color: #102a43; background: #e4ebf3; }
+    [data-theme="light"] .answer-card,
+    [data-theme="light"] .typing-card { background: #ffffff; }
+    [data-theme="light"] .answer-state { color: #0f5f59; background: #dff8f3; }
+    [data-theme="light"] .answer-state.limited,
+    [data-theme="light"] .answer-state.unsupported { color: #78350f; background: #fff1d6; }
+    [data-theme="light"] .answer-state.refused { color: #991b1b; background: #fee2e2; }
+    [data-theme="light"] .answer-summary,
+    [data-theme="light"] .finding-list li { color: #334b60; }
+    [data-theme="light"] .evidence-item { background: #f7fafc; }
+    [data-theme="light"] .evidence-detail,
+    [data-theme="light"] .answer-source,
+    [data-theme="light"] .composer-meta,
+    [data-theme="light"] .trust-row span,
+    [data-theme="light"] .rail-link-copy small { color: #526779; }
+    [data-theme="light"] .directory-history-item,
+    [data-theme="light"] .directory-option { background: #f7fafc; }
+    [data-theme="light"] .answer-action { color: #123f82; background: #eaf2ff; }
+    [data-theme="light"] .answer-limits { background: #fff7ed; }
+    [data-theme="light"] .answer-limits strong { color: #78350f; }
+    [data-theme="light"] .answer-limits p,
+    [data-theme="light"] .capability-list li,
+    [data-theme="light"] .limit-list li,
+    [data-theme="light"] .rail-note { color: #40566a; }
+    [data-theme="light"] .query-chip,
+    [data-theme="light"] .composer,
+    [data-theme="light"] .rail-card,
+    [data-theme="light"] .rail-link { color: #334b60; background: #ffffff; }
+    [data-theme="light"] .query-chip:hover,
+    [data-theme="light"] .query-chip:focus-visible,
+    [data-theme="light"] .rail-link:hover,
+    [data-theme="light"] .rail-link:focus-visible { color: #102a43; background: #eaf2ff; }
+    [data-theme="light"] .composer textarea { color: #102a43; background: transparent; }
+    [data-theme="light"] .composer textarea::placeholder { color: #526779; }
+    [data-theme="light"] .rail-card h2,
+    [data-theme="light"] .trust-row strong { color: #102a43; }
+    [data-theme="light"] .rail-note { background: #fff7ed; }
+    [data-theme="light"] .rail-note strong { color: #78350f; }
+    [data-theme="light"] .rail-link-mark { color: #1d4ed8; background: #e7f0ff; }
 
     .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 
@@ -367,6 +470,7 @@
     @media (max-width: 1120px) {
       .assistant-workspace { grid-template-columns: minmax(0, 1fr) 280px; }
       .evidence-grid { grid-template-columns: 1fr; }
+      .directory-history-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 900px) {
@@ -375,8 +479,8 @@
       .assistant-menu { display: inline-flex; }
       .assistant-topbar { min-height: 68px; padding: 11px 14px; }
       .assistant-title-copy h1 { font-size: 17px; }
-      .assistant-title-copy p { font-size: 9px; }
-      .engine-status { padding: 8px 10px; font-size: 10px; }
+      .assistant-title-copy p { font-size: 12px; }
+      .engine-status { padding: 8px 10px; font-size: 12px; }
       .assistant-workspace { height: calc(100vh - 68px); min-height: 620px; padding: 10px; display: block; }
       .conversation-panel { height: 100%; border-radius: 17px; }
       .context-rail { display: none; }
@@ -425,8 +529,11 @@
           <h1>Asistente GRH</h1>
         </div>
       </div>
-      <div class="engine-status" title="Las respuestas se construyen con reglas auditables y sin proveedor externo">
-        <span>Motor determinista</span>
+      <div class="assistant-topbar-actions">
+        <div class="engine-status" title="Las respuestas usan el corte GRH verificado y conservan su fuente">
+          <span>Datos GRH verificados</span>
+        </div>
+        <button class="theme-toggle-btn assistant-theme" id="themeToggleBtn" type="button" aria-label="Cambiar tema">🌙</button>
       </div>
     </header>
 
@@ -442,16 +549,17 @@
             </div>
             <p class="eyebrow">Decisión con trazabilidad</p>
             <h2>Preguntá sobre el corte real de GRH</h2>
-            <p>Respuestas agregadas sobre participación de liquidación, ausencias, movimientos, calidad, cuarentena y control de cálculo. Cada resultado explicita fuente, período y límites.</p>
+            <p>Consultá métricas GRH verificadas y abrí el tablero adecuado para actuar.</p>
             <div class="welcome-guardrails" aria-label="Garantías del asistente">
               <span>Contrato privado</span>
-              <span>Sin datos personales</span>
+              <span>Acceso según perfil</span>
               <span>Sin cifras demo</span>
             </div>
           </section>
         </div>
 
         <div class="query-suggestions" id="querySuggestions" aria-label="Consultas sugeridas">
+          <button class="query-chip" type="button" data-person-lookup="true">Buscar licencias por persona</button>
           <button class="query-chip" type="button" data-question="Dame un resumen ejecutivo del último período">Resumen ejecutivo</button>
           <button class="query-chip" type="button" data-question="¿Cuántas personas participaron en la liquidación del último período?">Participación</button>
           <button class="query-chip" type="button" data-question="¿Cómo se distribuyen los participantes por centro de costo?">Centros de costo</button>
@@ -460,6 +568,7 @@
           <button class="query-chip" type="button" data-question="Explicame el cierre GRH del último período">Cierre explicado</button>
           <button class="query-chip" type="button" data-question="¿Cómo está la conciliación entre cálculo y totpago?">Conciliación</button>
           <button class="query-chip" type="button" data-question="¿Qué datos de ausencias están disponibles?">Ausencias</button>
+          <button class="query-chip" type="button" data-question="¿Qué licencias históricas están disponibles?">Licencias históricas</button>
           <button class="query-chip" type="button" data-question="¿Cuántos movimientos válidos hubo en 2026?">Movimientos</button>
           <button class="query-chip" type="button" data-question="¿Cuál es la calidad del contrato GRH?">Calidad</button>
         </div>
@@ -484,11 +593,10 @@
       <aside class="context-rail" aria-label="Alcance y trazabilidad del asistente">
         <section class="rail-card">
           <h2>Estado de confianza</h2>
-          <p>La procedencia se valida nuevamente en cada consulta.</p>
           <div class="trust-list">
             <div class="trust-row">
               <span class="trust-dot" aria-hidden="true"></span>
-              <div><strong>Fuente canónica</strong><span>GRH Junín · contrato agregado privado</span></div>
+              <div><strong>Fuente canónica</strong><span>GRH Junín · contratos según perfil</span></div>
             </div>
             <div class="trust-row">
               <span class="trust-dot pending" id="snapshotDot" aria-hidden="true"></span>
@@ -500,45 +608,35 @@
             </div>
             <div class="trust-row">
               <span class="trust-dot" aria-hidden="true"></span>
-              <div><strong>Privacidad</strong><span>Agregado · sin PII · personas_junin excluida</span></div>
+              <div><strong>Privacidad</strong><span>Campos mínimos y acceso nominal sólo para perfiles habilitados</span></div>
             </div>
           </div>
         </section>
 
         <section class="rail-card">
-          <h2>Preguntas habilitadas</h2>
+          <h2>Qué podés consultar</h2>
           <ul class="capability-list">
-            <li>Participación de liquidación y distribución organizativa.</li>
-            <li>Ausencias, licencias históricas y movimientos válidos.</li>
-            <li>Calidad, cobertura y cuarentena temporal.</li>
-            <li>Control de cálculo, cierre mensual explicado y conciliación entre fuentes.</li>
-            <li>Comparación aritmética entre períodos observados.</li>
+            <li>Participación y distribución organizativa.</li>
+            <li>Licencias, ausencias y movimientos históricos.</li>
+            <li>Fichas y licencias por persona para perfiles privados habilitados.</li>
+            <li>Cálculo, cierre, conciliación y calidad.</li>
           </ul>
+          <p class="rail-note"><strong>Sin fichas públicas.</strong> Los datos individuales requieren identidad, finalidad y auditoría municipal.</p>
         </section>
 
         <section class="rail-card">
-          <h2>Límites explícitos</h2>
-          <ul class="limit-list">
-            <li>No identifica personas ni expone legajos individuales.</li>
-            <li>No llama “planta activa” a la participación de liquidación.</li>
-            <li>No declara moneda ni confirma desembolsos o tiempo real.</li>
-            <li>No predice ni atribuye causas sin un modelo validado.</li>
-            <li>totpago se utiliza únicamente como diagnóstico.</li>
-          </ul>
-        </section>
-
-        <section class="rail-card">
-          <h2>Profundizar</h2>
+          <h2>Abrir tablero</h2>
           <div class="rail-links">
-            <a class="rail-link" href="grh-ejecutivo.html"><span>Centro Ejecutivo GRH</span><span aria-hidden="true">→</span></a>
-            <a class="rail-link" href="rrhh.html"><span>Analítica RRHH</span><span aria-hidden="true">→</span></a>
-            <a class="rail-link" href="hacienda.html"><span>Control de liquidación</span><span aria-hidden="true">→</span></a>
+            <a class="rail-link" href="/rrhh"><span class="rail-link-mark" aria-hidden="true">RH</span><span class="rail-link-copy"><strong>RRHH</strong><small>Cohortes y series</small></span><span aria-hidden="true">→</span></a>
+            <a class="rail-link" href="/hacienda"><span class="rail-link-mark" aria-hidden="true">ARS</span><span class="rail-link-copy"><strong>Hacienda</strong><small>Cálculo y cierre</small></span><span aria-hidden="true">→</span></a>
+            <a class="rail-link" href="/calidad"><span class="rail-link-mark" aria-hidden="true">QA</span><span class="rail-link-copy"><strong>Calidad</strong><small>Datos confiables y pendientes</small></span><span aria-hidden="true">→</span></a>
           </div>
         </section>
       </aside>
     </div>
   </main>
 
+  <script src="js/theme-switcher.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/auth-fetch.js"></script>
   <script src="js/ia-assistant.js"></script>

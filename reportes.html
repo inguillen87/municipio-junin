@@ -238,12 +238,12 @@
 
       <section id="tab-control" class="report-panel" role="tabpanel" aria-labelledby="tab-btn-control" hidden>
         <h2 class="report-panel-heading" id="control-heading">Control de cálculo del período</h2>
-        <p class="section-intro" id="control-insight">Los importes provienen de conceptos de control de la liquidación. La moneda no está declarada y ningún valor acredita una transferencia o pago bancario.</p>
+        <p class="section-intro" id="control-insight">Componentes mensuales del cálculo salarial presentados en pesos argentinos (ARS).</p>
         <div class="evidence-grid">
           <article class="report-card">
             <header class="report-card-header">
               <h3 class="report-title">Componentes del control</h3>
-              <p class="report-subtitle">Valores en centavos de unidad monetaria no declarada por la fuente.</p>
+              <p class="report-subtitle">Bruto, retenciones, neto y aportes en ARS.</p>
             </header>
             <div class="chart-container" id="chart-control" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
               <p class="chart-empty">Esperando los componentes de cálculo validados.</p>
@@ -311,6 +311,7 @@
 
   <script src="js/auth-fetch.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/tenant-presentation.js"></script>
   <script>
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const REPORT_SCHEMA_VERSION = 'grh-executive-report-v2';
@@ -324,6 +325,7 @@
     const CONTROL_COLORS = ['#3b82f6', '#f59e0b', '#84cc16', '#ec4899'];
     const BLUE_SHADES = ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#93c5fd', '#64748b', '#475569', '#334155'];
     let lastAvailableReport = null;
+    let tenantPresentation = null;
     let resizeFrame = null;
     let requestSequence = 0;
 
@@ -367,6 +369,12 @@
         await loadAuthorizedReport(Boolean(document.getElementById('period-selector').value));
       });
       if (!await requirePageCapability()) return;
+      try {
+        tenantPresentation = await window.MuniTenantPresentation.load();
+      } catch (error) {
+        setUnavailable('La moneda de presentación del municipio no está configurada.');
+        return;
+      }
       await loadReport(false);
     }
 
@@ -625,20 +633,20 @@
         : (tolerance
           ? 'El control más reciente queda dentro de la tolerancia declarada'
           : 'El control más reciente queda fuera de la tolerancia declarada'));
-      setText('control-insight', 'Los componentes son importes de cálculo en centavos de una moneda no declarada. El neto es una identidad de control y no acredita un pago bancario.');
+      setText('control-insight', 'Componentes del cálculo salarial en pesos argentinos (ARS). El neto es una identidad de control y no acredita un pago bancario.');
       renderHorizontalBars(document.getElementById('chart-control'), {
         title: 'Componentes del control de cálculo',
         description: 'Comparación de componentes agregados del control de liquidación.',
         points: control.components.map((row, index) => ({
           label: row.label,
           value: row.valueCents,
-          displayValue: formatCompact(row.valueCents) + ' centavos fuente',
-          accessibleValue: formatNumber(row.valueCents, 0) + ' centavos de unidad monetaria no declarada',
+          displayValue: formatCurrencyCents(row.valueCents, true),
+          accessibleValue: formatCurrencyCents(row.valueCents, false),
           color: CONTROL_COLORS[index]
         })),
         period: control.period,
         source,
-        unit: 'centavos fuente; moneda no declarada',
+        unit: 'pesos argentinos (ARS)',
         emptyMessage: 'No hay componentes de control agregados para este período.'
       });
 
@@ -864,6 +872,17 @@
     function isBoundedText(value) { return typeof value === 'string' && value.trim().length > 0 && value.length <= 600; }
     function formatNumber(value, digits) { return Number(value).toLocaleString('es-AR', { maximumFractionDigits: digits }); }
     function formatCompact(value) { return Number(value).toLocaleString('es-AR', { notation: 'compact', maximumFractionDigits: 1 }); }
+    function formatCurrencyCents(value, compact) {
+      if (!Number.isSafeInteger(value) || value < 0 || !tenantPresentation) return 'No publicado';
+      return window.MuniTenantPresentation.formatAmount(value / 100, tenantPresentation, compact ? {
+        notation: 'compact',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1
+      } : {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
     function shortSha(value) { return value.slice(0, 12) + '…' + value.slice(-8); }
     function compactPeriod(period) { return period.slice(5) + '/' + period.slice(2, 4); }
     function periodLabel(period) {

@@ -14,6 +14,7 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const EXPECTED_SERVERLESS = [
   'GET /auth/me',
   'GET /grh-data',
+  'GET /grh-directory',
   'GET /grh-executive',
   'GET /grh-quality',
   'GET /grh-close',
@@ -149,6 +150,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'external-connector.js',
     'google-sheets.js',
     'grh-data.js',
+    'grh-directory.js',
     'grh-close.js',
     'grh-decision-brief.js',
     'grh-executive.js',
@@ -183,6 +185,8 @@ test('resource/action grants preserve the current operational boundaries', () =>
   const { ACTIONS: action, RESOURCES: resource } = esmPolicy;
 
   assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_CONTRACT, action.READ), true);
+  assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_DIRECTORY, action.READ), true);
+  assert.equal(esmPolicy.hasResourceAction('TENANT_USER', resource.GRH_DIRECTORY, action.READ), false);
   assert.equal(esmPolicy.hasResourceAction('CONTADOR', resource.GRH_ANALYSIS, action.EXECUTE), true);
   assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_REPORT, action.READ), true);
   assert.equal(esmPolicy.hasResourceAction('CONTADOR', resource.GRH_REPORT, action.READ), true);
@@ -205,6 +209,9 @@ test('route authorization is exact by runtime, method and path', () => {
   const { RUNTIMES: runtime } = esmPolicy;
 
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-data?artifact=semantic'), true);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-directory?q=secretaria'), true);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-directory'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-directory'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-executive'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-executive'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-quality'), true);

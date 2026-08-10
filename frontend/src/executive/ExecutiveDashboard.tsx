@@ -24,15 +24,20 @@ export function ExecutiveDashboard({ viewModel }: ExecutiveDashboardProps) {
 
       <section className="executive-hero" aria-labelledby="page-title">
         <div className="executive-hero__intro">
-          <p className="executive-eyebrow">Intendencia · evidencia GRH gobernada</p>
-          <h1 id="page-title">Decisiones ejecutivas con el límite de la fuente a la vista</h1>
+          <p className="executive-eyebrow">Resumen ejecutivo GRH</p>
+          <h1 id="page-title">Personal, nómina y alertas en una sola vista</h1>
           <p>
-            Una síntesis para conducción que prioriza señales publicables, conserva los huecos protegidos y separa hechos de interpretaciones.
+            Seguimiento del último corte real de Junín con evolución mensual, sectores y eventos de personal.
           </p>
+          <nav className="executive-hero__actions" aria-label="Acciones ejecutivas">
+            <a href="/rrhh">Gestionar personas</a>
+            <a href="/hacienda">Abrir nómina</a>
+            <a href="/ia">Consultar GRH</a>
+          </nav>
           <div className="executive-hero__guardrails" aria-label="Alcance de la lectura">
-            <span>No es tiempo real</span>
-            <span>No equivale a pago bancario</span>
-            <span>No representa dotación activa</span>
+            <span>Corte {viewModel.truth.snapshotLabel}</span>
+            <span>Período {viewModel.truth.referencePeriod}</span>
+            <span>Moneda ARS</span>
           </div>
         </div>
 
@@ -94,7 +99,7 @@ export function ExecutiveDashboard({ viewModel }: ExecutiveDashboardProps) {
             <div>
               <p className="executive-eyebrow">Control temporal</p>
               <h2 id="payroll-title">Evolución del control de cálculo</h2>
-              <p>Importes agregados en unidades de la fuente, sin atribuir moneda ni acreditar pago.</p>
+              <p>Importes agregados en pesos argentinos (ARS), con comparación mensual y períodos protegidos visibles.</p>
             </div>
             <span>{payrollHeaderStatus}</span>
           </header>

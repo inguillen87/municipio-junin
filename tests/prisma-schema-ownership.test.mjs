@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createRequire } from 'node:module';
@@ -298,17 +299,49 @@ test('Prisma validates and both generated clients omit every ignored model deleg
   const validation = prisma('validate', '--schema', schemaPath);
   assert.equal(validation.status, 0, validation.stderr || validation.stdout);
 
-  const generation = prisma('generate', '--schema', schemaPath);
-  assert.equal(generation.status, 0, generation.stderr || generation.stdout);
-
-  const rootGenerated = require('@prisma/client');
-  const backendGenerated = require(path.join(repositoryRoot, 'backend', 'generated', 'prisma'));
-  const clients = [
-    new rootGenerated.PrismaClient({ datasourceUrl: validationUrl }),
-    new backendGenerated.PrismaClient({ datasourceUrl: validationUrl }),
-  ];
-
+  // A root-level generate races loaded Prisma DLLs when Node's test runner executes
+  // files concurrently on Windows. Generate the same two clients into an isolated
+  // directory so this gate still proves fresh generation without mutating node_modules.
+  const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'municontrol-prisma-ownership-'));
+  let clients = [];
   try {
+    const temporarySchemaPath = path.join(temporaryRoot, 'schema.prisma');
+    const temporaryRootClient = path.join(temporaryRoot, 'root-client');
+    const temporaryBackendClient = path.join(temporaryRoot, 'backend-client');
+    const prismaPath = (value) => value.replaceAll('\\', '/');
+    const isolatedSchema = schema
+      .replace(/generator client \{[\s\S]*?\r?\n\}/, [
+        'generator client {',
+        '  provider = "prisma-client-js"',
+        `  output   = "${prismaPath(temporaryRootClient)}"`,
+        '}',
+      ].join('\n'))
+      .replace(/generator backendClient \{[\s\S]*?\r?\n\}/, [
+        'generator backendClient {',
+        '  provider = "prisma-client-js"',
+        `  output   = "${prismaPath(temporaryBackendClient)}"`,
+        '}',
+      ].join('\n'));
+    writeFileSync(temporarySchemaPath, isolatedSchema, 'utf8');
+
+    const generation = prisma('generate', '--schema', temporarySchemaPath);
+    assert.equal(generation.status, 0, generation.stderr || generation.stdout);
+
+    const freshGeneratedClients = [require(temporaryRootClient), require(temporaryBackendClient)];
+    const rootGenerated = require('@prisma/client');
+    const backendGenerated = require(path.join(repositoryRoot, 'backend', 'generated', 'prisma'));
+    clients = [
+      new rootGenerated.PrismaClient({ datasourceUrl: validationUrl }),
+      new backendGenerated.PrismaClient({ datasourceUrl: validationUrl }),
+    ];
+
+    for (const generated of freshGeneratedClients) {
+      const generatedModels = generated.Prisma.dmmf.datamodel.models.map(model => model.name);
+      assert.ok(generatedModels.includes('Tenant'));
+      for (const model of Object.keys(MODEL_TABLES)) {
+        assert.equal(generatedModels.includes(model), false, `${model} leaked into fresh DMMF`);
+      }
+    }
     for (const [generated, client] of [[rootGenerated, clients[0]], [backendGenerated, clients[1]]]) {
       const generatedModels = generated.Prisma.dmmf.datamodel.models.map(model => model.name);
       assert.ok(generatedModels.includes('Tenant'));
@@ -322,5 +355,6 @@ test('Prisma validates and both generated clients omit every ignored model deleg
     }
   } finally {
     await Promise.all(clients.map(client => client.$disconnect()));
+    rmSync(temporaryRoot, { recursive: true, force: true });
   }
 });

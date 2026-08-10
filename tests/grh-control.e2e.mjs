@@ -186,7 +186,7 @@ test('Calidad y Linaje renders reconciled private GRH evidence on desktop and mo
         containsIndividualDirectory: /Directorio de empleados|Ficha individual|Nombre completo|DNI\s*\d/i.test(mainText),
         containsRealtimeClaim: /datos en tiempo real|actualizaci[oó]n en vivo/i.test(mainText),
         animationDuration: firstAnimated ? parseFloat(getComputedStyle(firstAnimated).animationDuration) : null,
-        navLabel: normalize(Array.from(document.querySelectorAll('.sidebar a')).find(link => link.getAttribute('href') === 'control.html')?.textContent),
+        navLabel: normalize(Array.from(document.querySelectorAll('.sidebar a')).find(link => link.getAttribute('href') === '/calidad')?.textContent),
       };
     });
 
@@ -217,7 +217,7 @@ test('Calidad y Linaje renders reconciled private GRH evidence on desktop and mo
     assert.equal(result.containsCurrencyLabel, false);
     assert.equal(result.containsIndividualDirectory, false);
     assert.equal(result.containsRealtimeClaim, false);
-    assert.match(result.navLabel, /Calidad y Linaje/);
+    assert.match(result.navLabel, /Calidad de datos/);
     if (viewport.reducedMotion === 'reduce') assert.ok(result.animationDuration <= 0.001);
     assert.deepEqual(consoleErrors, []);
     assert.deepEqual(externalRequests, []);

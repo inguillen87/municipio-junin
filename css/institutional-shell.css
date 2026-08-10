@@ -25,6 +25,7 @@
   --muni-shell-topbar-border: #22344a;
   --muni-shell-control: #12243a;
   --muni-shell-control-hover: #1a304b;
+  --muni-shell-control-border: #5f7890;
   --muni-shell-focus-inner: #f8fafc;
   --muni-shell-focus-outer: #2563eb;
   --muni-shell-motion-fast: 140ms;
@@ -38,6 +39,7 @@
   --muni-shell-topbar-border: #cbd5e1;
   --muni-shell-control: #ffffff;
   --muni-shell-control-hover: #eef2f7;
+  --muni-shell-control-border: #7c8fa1;
   --muni-shell-focus-inner: #ffffff;
   --muni-shell-focus-outer: #1d4ed8;
 }
@@ -125,7 +127,7 @@ html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-logo-name {
 html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-logo-sub {
   margin-top: 3px;
   color: var(--muni-shell-muted) !important;
-  font: 650 10px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 650 12px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif;
   letter-spacing: .025em;
 }
 
@@ -142,7 +144,7 @@ html.muni-shell-v1 .theme-toggle-btn {
   height: 44px !important;
   min-height: 44px !important;
   padding: 0 !important;
-  border: 1px solid var(--muni-shell-border) !important;
+  border: 1px solid var(--muni-shell-control-border) !important;
   border-radius: 8px !important;
   color: var(--muni-shell-muted) !important;
   background: var(--muni-shell-control) !important;
@@ -202,7 +204,7 @@ html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-section-label {
 html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-section-text {
   display: block;
   color: var(--muni-shell-subtle) !important;
-  font: 760 10px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 760 12px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
   letter-spacing: .105em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -353,7 +355,7 @@ html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-user-role {
   margin-top: 2px;
   overflow: hidden;
   color: var(--muni-shell-muted) !important;
-  font: 650 10px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 650 12px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -585,7 +587,7 @@ html.muni-shell-v1 [data-muni-shell="bottom-nav"] {
     color: var(--muni-shell-muted) !important;
     background: transparent !important;
     text-decoration: none;
-    font: 680 10px/1.15 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 680 12px/1.15 system-ui, -apple-system, "Segoe UI", sans-serif;
     letter-spacing: .01em;
     text-transform: none;
     transform: none !important;
@@ -619,11 +621,14 @@ html.muni-shell-v1 [data-muni-shell="bottom-nav"] {
   }
 
   html.muni-shell-v1 [data-muni-shell="bottom-nav"] .bottom-nav-label {
-    display: block;
+    display: -webkit-box;
     max-width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    text-align: center;
+    white-space: normal;
   }
 
   html.muni-shell-v1 body.muni-bottom-nav-ready .main-content {

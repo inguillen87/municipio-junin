@@ -41,10 +41,11 @@ test('Inicio descubre el canary ejecutivo y la navegación conserva el retorno e
 
   assert.match(
     workspace,
-    /'navigation\.grh-executive':\s*Object\.freeze\(\{\s*href:\s*'ejecutivo\.html'/,
+    /'navigation\.grh-executive':\s*Object\.freeze\(\{\s*href:\s*'\/ejecutivo'/,
   );
   assert.match(
     navigation,
-    /href:'grh-ejecutivo\.html'[\s\S]{0,120}capability:'navigation\.grh-executive'/,
+    /href:'\/ejecutivo'[\s\S]{0,160}capability:'navigation\.grh-executive'/,
   );
+  assert.doesNotMatch(navigation.match(/var NAV_ITEMS = \[[\s\S]*?\n\];/)?.[0] || '', /grh-ejecutivo\.html/);
 });

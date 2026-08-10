@@ -32,6 +32,15 @@ function authoritativeUser() {
     homeProfile: {
       ...access.homeProfile,
       priorityCapabilities: [...access.homeProfile.priorityCapabilities]
+    },
+    presentation: {
+      schemaVersion: 'tenant-presentation-v1',
+      locale: 'es-AR',
+      timeZone: 'America/Argentina/Buenos_Aires',
+      displayCurrencyCode: 'ARS',
+      displayCurrencyBasis: 'tenant_configuration',
+      displayCurrencyEffectiveOn: '2026-08-10',
+      sourceCurrencyStatus: 'not_declared_in_source'
     }
   };
 }

@@ -29,20 +29,8 @@
   }
 
   var CURRENT_PAGE = pageKey(location.pathname);
-  var CATALOG = Object.freeze({
-    'navigation.workspace': { icon: 'home', label: 'Inicio', href: 'inicio.html' },
-    'navigation.dashboard': { icon: 'chart', label: 'Panel', href: 'dashboard.html' },
-    'navigation.reports': { icon: 'doc', label: 'Reportes', href: 'reportes.html' },
-    'navigation.hacienda': { icon: 'bank', label: 'Hacienda', href: 'hacienda.html' },
-    'navigation.grh-executive': { icon: 'people', label: 'GRH', href: 'grh-ejecutivo.html' },
-    'navigation.data-quality': { icon: 'gauge', label: 'Calidad', href: 'control.html' },
-    'navigation.rrhh': { icon: 'people', label: 'RRHH', href: 'rrhh.html' },
-    'navigation.ai-assistant': { icon: 'ai', label: 'Asistente', href: 'ia.html' },
-    'navigation.audit': { icon: 'shield', label: 'Inventario', href: 'auditoria.html' },
-    'navigation.export': { icon: 'export', label: 'Salidas', href: 'exportar.html' },
-    'navigation.import': { icon: 'upload', label: 'Importar', href: 'importar.html' },
-    'navigation.help': { icon: 'help', label: 'Manual', href: 'manuales.html' }
-  });
+  var CATALOG = window.MuniNavigationCatalog;
+  if (!CATALOG) return;
 
   function renderIcon(name) {
     if (window.MuniIcons && typeof window.MuniIcons.get === 'function') {

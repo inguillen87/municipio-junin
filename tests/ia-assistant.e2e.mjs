@@ -11,11 +11,13 @@ import { buildDeterministicAnswer } from '../api/ai-analyze.js';
 import { buildPortableGrhViews } from '../api/lib/grh-portable-bundle.js';
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
 import accessPolicy from '../shared/access-policy.cjs';
+import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROFILE_PATH = path.join(REPO, 'api', '_data', 'grh-profile.json');
 const SEMANTIC_PATH = path.join(REPO, 'api', '_data', 'grh-semantic.json');
 const HAS_PRIVATE_GRH = existsSync(PROFILE_PATH) && existsSync(SEMANTIC_PATH);
+const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' });
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -44,6 +46,8 @@ function authoritativeUser(role = 'INTENDENTE', malformedProjection = false) {
     name: 'QA Ejecutivo',
     role,
     tenantId,
+    tenant: { slug: 'junin', name: 'Municipalidad de Junín', shortName: 'Junín' },
+    presentation: JUNIN_PRESENTATION,
     capabilities: access.capabilities,
     accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
     homeProfile: access.homeProfile,
@@ -76,6 +80,10 @@ function provenance(executive, quality) {
     calculationAuthority: 'calculo control concepts',
     totpagoStatus: 'diagnostic_only',
     currency: 'not_declared_in_source',
+    sourceCurrencyStatus: 'not_declared_in_source',
+    displayCurrencyCode: 'ARS',
+    displayCurrencyBasis: 'tenant_configuration',
+    displayCurrencyEffectiveOn: JUNIN_PRESENTATION.displayCurrencyEffectiveOn,
   };
 }
 
@@ -160,7 +168,16 @@ async function createServer(requestLog, options = {}) {
         return;
       }
 
-      const answer = buildDeterministicAnswer(body.message, views.executive, views.quality, views.close);
+      const customAnswer = typeof options.answerFor === 'function'
+        ? options.answerFor(body, views)
+        : null;
+      if (customAnswer) {
+        response.writeHead(customAnswer.httpStatus || 200, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
+        response.end(JSON.stringify(customAnswer.payload));
+        return;
+      }
+
+      const answer = buildDeterministicAnswer(body.message, views.executive, views.quality, views.close, JUNIN_PRESENTATION);
       response.writeHead(answer.httpStatus, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
       response.end(JSON.stringify({
         status: answer.status,
@@ -278,6 +295,76 @@ test('assistant revalidates capability at submit time before opening the private
   }
 });
 
+test('assistant theme control keeps operational copy readable on desktop and mobile', async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  for (const viewport of [
+    { name: 'desktop', width: 1440, height: 960 },
+    { name: 'mobile', width: 390, height: 844 },
+  ]) {
+    const context = await browser.newContext({ viewport });
+    await seedSession(context);
+    const page = await context.newPage();
+    const consoleErrors = [];
+    page.on('console', message => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+
+    await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+    const themeButton = page.locator('#themeToggleBtn');
+    await themeButton.waitFor();
+    assert.match(await themeButton.getAttribute('aria-label'), /Modo oscuro.*Cambiar tema/);
+
+    const dark = await page.evaluate(() => {
+      const selectors = [
+        '.assistant-title-copy p', '.welcome-card .eyebrow', '.welcome-guardrails span',
+        '.query-chip', '.composer-meta', '.rail-card > p', '.trust-row span',
+      ];
+      return {
+        theme: document.documentElement.getAttribute('data-theme'),
+        bodyColor: getComputedStyle(document.body).color,
+        minimumFontSize: Math.min(...selectors.map(selector => Number.parseFloat(getComputedStyle(document.querySelector(selector)).fontSize))),
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    assert.equal(dark.theme, 'dark', viewport.name);
+    assert.equal(dark.bodyColor, 'rgb(236, 244, 255)', viewport.name);
+    assert.ok(dark.minimumFontSize >= 12, viewport.name);
+    assert.equal(dark.overflow, 0, viewport.name);
+
+    await themeButton.click();
+    await page.waitForFunction(() => (
+      document.documentElement.getAttribute('data-theme') === 'light'
+      && getComputedStyle(document.body).color === 'rgb(16, 42, 67)'
+    ));
+    const light = await page.evaluate(() => ({
+      bodyColor: getComputedStyle(document.body).color,
+      preference: document.querySelector('#themeToggleBtn')?.getAttribute('data-theme-preference'),
+      legacyStored: localStorage.getItem('govtech_theme'),
+      versionedStored: localStorage.getItem('municontrol-color-theme:v1'),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    assert.equal(light.bodyColor, 'rgb(16, 42, 67)', viewport.name);
+    assert.equal(light.preference, 'light', viewport.name);
+    assert.equal(light.legacyStored, 'light', viewport.name);
+    assert.equal(light.versionedStored, 'light', viewport.name);
+    assert.equal(light.overflow, 0, viewport.name);
+    assert.match(await themeButton.getAttribute('aria-label'), /Modo claro.*Cambiar tema/);
+    assert.deepEqual(consoleErrors, [], viewport.name);
+    await context.close();
+  }
+
+  assert.deepEqual(requestLog, []);
+});
+
 test('executive GRH assistant renders deterministic evidence on desktop and mobile', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
   const server = await createServer(requestLog);
@@ -324,6 +411,10 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
         duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
         inlineHandlers: document.querySelectorAll('#mainContent [onclick],#mainContent [onkeypress],#mainContent [onsubmit]').length,
         railDisplay: getComputedStyle(document.querySelector('.context-rail')).display,
+        railLinks: Array.from(document.querySelectorAll('.context-rail .rail-link'), link => ({
+          label: link.querySelector('strong')?.textContent.trim(),
+          href: link.getAttribute('href'),
+        })),
         welcomePresent: Boolean(document.querySelector('#welcomeCard')),
       };
     });
@@ -336,13 +427,19 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.match(result.answerText, /856/);
     assert.match(result.answerText, /Fuente: GRH Junín/);
     assert.match(result.answerText, /totpago se usa sólo como diagnóstico/i);
-    assert.doesNotMatch(result.answerText, /\bARS\b|\$|pago bancario|planta activa:|empleados activos:/i);
+    assert.match(result.answerText, /\bARS\b/);
+    assert.doesNotMatch(result.answerText, /\$|pago bancario|planta activa:|empleados activos:|unidades de origen/i);
     assert.doesNotMatch(result.bodyText, /IA Demo|IA Avanzada|Predice el gasto|Ahorro estimado/i);
     assert.equal(result.overflow, 0, `${viewport.name} must not overflow horizontally`);
     assert.deepEqual(result.duplicateIds, []);
     assert.equal(result.inlineHandlers, 0);
     assert.equal(result.welcomePresent, false);
     assert.equal(result.railDisplay, viewport.name === 'mobile' ? 'none' : 'flex');
+    assert.deepEqual(result.railLinks, [
+      { label: 'RRHH', href: '/rrhh' },
+      { label: 'Hacienda', href: '/hacienda' },
+      { label: 'Calidad', href: '/calidad' },
+    ]);
 
     await page.getByRole('button', { name: 'Categorías de acuerdo' }).click();
     await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
@@ -370,8 +467,24 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.match(closeResult.text, /Conciliación del mismo mes/i);
     assert.match(closeResult.text, /no reutiliza el score global/i);
     assert.ok(closeResult.evidence >= 5);
-    assert.doesNotMatch(closeResult.text, /63[,.]88|\bARS\b|\$|DNI|CUIL/i);
+    assert.match(closeResult.text, /\bARS\b/);
+    assert.doesNotMatch(closeResult.text, /63[,.]88|\$|DNI|CUIL|unidades de origen/i);
     assert.equal(closeResult.overflow, 0, `${viewport.name} close answer must not overflow horizontally`);
+
+    await page.getByRole('button', { name: 'Licencias históricas' }).click();
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+      .some(title => title.textContent.includes('Licencias históricas · 2009')));
+    const leaveResult = await page.evaluate(() => ({
+      title: Array.from(document.querySelectorAll('.answer-heading-line h3')).at(-1)?.textContent.trim(),
+      text: Array.from(document.querySelectorAll('.answer-card')).at(-1)?.textContent || '',
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    assert.equal(leaveResult.title, 'Licencias históricas · 2009');
+    assert.match(leaveResult.text, /77 filas válidas/);
+    assert.match(leaveResult.text, /72 participantes/);
+    assert.match(leaveResult.text, /1997–2009/);
+    assert.match(leaveResult.text, /no describe licencias actuales/i);
+    assert.equal(leaveResult.overflow, 0, `${viewport.name} leave answer must not overflow horizontally`);
     assert.deepEqual(consoleErrors, []);
     assert.deepEqual(externalRequests, []);
     if (process.env.IA_CAPTURE === '1') {
@@ -380,16 +493,159 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     await context.close();
   }
 
-  assert.equal(requestLog.length, 6);
+  assert.equal(requestLog.length, 8);
   assert.equal(requestLog.every(item => item.method === 'POST'), true);
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
   assert.equal(requestLog.every(item => item.body.mode === 'deterministic'), true);
   assert.equal(requestLog.every(item => !Object.hasOwn(item.body, 'history')), true);
   assert.equal(requestLog.filter(item => item.body.message === '¿Cómo se distribuyen los participantes por categoría de acuerdo de origen?').length, 2);
   assert.equal(requestLog.filter(item => item.body.message === 'Explicame el cierre GRH del último período').length, 2);
+  assert.equal(requestLog.filter(item => item.body.message === '¿Qué licencias históricas están disponibles?').length, 2);
 });
 
-test('assistant renders adversarial rejection without echoing the sensitive request', { skip: !HAS_PRIVATE_GRH }, async t => {
+test('private person answers render leave cards, actions and bounded match options', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const answerFor = (body, views) => {
+    const baseProvenance = {
+      ...provenance(views.executive, views.quality),
+      aggregateOnly: false,
+      containsPii: true,
+      directorySchemaVersion: 'grh-directory-v1',
+    };
+    if (body.message === 'Licencias de Persona Prueba') {
+      return {
+        payload: {
+          status: 'answered',
+          intent: 'person_lookup',
+          response: 'Ficha privada verificada.',
+          provenance: baseProvenance,
+          answer: {
+            title: 'PERSONA PRUEBA',
+            summary: 'SECTOR PRUEBA · ORGANIZACIÓN PRUEBA',
+            findings: ['Puesto observado: vigencia posterior al corte; no es cargo actual.'],
+            evidence: [
+              { label: 'Legajo', value: '7.001', detail: 'Empresa 1' },
+              { label: 'Ausencias', value: '2', detail: 'Última: 2026-07-10' },
+              { label: 'Licencias históricas', value: '2', detail: 'Última: 2009-04-01' },
+            ],
+            caveats: [],
+            source: 'Fuente: GRH Junín · directorio privado · snapshot 2026-08-06.',
+            directory: {
+              status: 'matched',
+              enabled: true,
+              route: '/rrhh',
+              options: [],
+              person: {
+                companyCode: 1,
+                legajo: 7001,
+                displayName: 'PERSONA PRUEBA',
+                leaveHistory: {
+                  total: 2,
+                  limit: 24,
+                  items: [
+                    { startDate: '2009-04-01', endDate: '2009-04-05', days: 5 },
+                    { startDate: '2008-03-02', endDate: '2008-03-03', days: 2 },
+                  ],
+                },
+              },
+            },
+            actions: [{
+              id: 'open_rrhh_person',
+              label: 'Abrir ficha en RRHH',
+              href: '/rrhh?company=1&legajo=7001#peopleDirectory',
+            }],
+          },
+        },
+      };
+    }
+    if (body.message === 'Nombre Repetido') {
+      return {
+        payload: {
+          status: 'limited',
+          intent: 'person_lookup',
+          response: 'Elegí una coincidencia.',
+          provenance: baseProvenance,
+          answer: {
+            title: 'Elegí una coincidencia',
+            summary: 'Se encontraron dos fichas posibles.',
+            findings: [],
+            evidence: [],
+            caveats: [],
+            source: 'Fuente: GRH Junín · directorio privado · snapshot 2026-08-06.',
+            directory: {
+              status: 'multiple_matches',
+              enabled: true,
+              route: '/rrhh',
+              options: [
+                { companyCode: 1, legajo: 7001, displayName: 'PERSONA PRUEBA A', sector: { label: 'SECTOR A' }, organization: null },
+                { companyCode: 1, legajo: 7002, displayName: 'PERSONA PRUEBA B', sector: { label: 'SECTOR B' }, organization: null },
+              ],
+            },
+          },
+        },
+      };
+    }
+    return null;
+  };
+  const server = await createServer(requestLog, { answerFor });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1280, height: 820 } });
+  await seedSession(context);
+  const page = await context.newPage();
+  const consoleErrors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+
+  assert.equal(await page.getByText('Acceso según perfil', { exact: true }).isVisible(), true);
+  assert.equal(await page.locator('.rail-link[href="/calidad"] small').textContent(), 'Datos confiables y pendientes');
+  await page.getByRole('button', { name: 'Buscar licencias por persona' }).click();
+  assert.equal(await page.locator('#assistantInput').inputValue(), 'Licencias de ');
+  assert.equal(requestLog.length, 0, 'the person chip must prepare the query, not run a broad lookup');
+  await page.locator('#assistantInput').fill('Licencias de Persona Prueba');
+  await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+  await page.waitForSelector('.directory-history-item');
+  const matched = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      title: card?.querySelector('h3')?.textContent.trim(),
+      evidence: card?.querySelectorAll('.evidence-item').length,
+      histories: Array.from(card?.querySelectorAll('.directory-history-item') || [], item => item.textContent.trim()),
+      action: card?.querySelector('.answer-action')?.textContent.trim(),
+      actionHref: card?.querySelector('.answer-action')?.getAttribute('href'),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  assert.equal(matched.title, 'PERSONA PRUEBA');
+  assert.equal(matched.evidence, 3);
+  assert.deepEqual(matched.histories, ['2009-04-01 → 2009-04-055 días', '2008-03-02 → 2008-03-032 días']);
+  assert.equal(matched.action, 'Abrir ficha en RRHH');
+  assert.equal(matched.actionHref, '/rrhh?company=1&legajo=7001#peopleDirectory');
+  assert.equal(matched.overflow, 0);
+
+  await page.locator('#assistantInput').fill('Nombre Repetido');
+  await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+  await page.waitForFunction(() => document.querySelectorAll('.directory-option').length === 2);
+  const options = await page.evaluate(() => Array.from(document.querySelectorAll('.directory-option'), option => ({
+    text: option.textContent.trim(),
+    href: option.getAttribute('href'),
+  })));
+  assert.equal(options.length, 2);
+  assert.match(options[0].text, /PERSONA PRUEBA A.*Legajo 7001.*SECTOR A/s);
+  assert.equal(options[1].href, '/rrhh?company=1&legajo=7002#peopleDirectory');
+  assert.equal(requestLog.length, 2);
+  assert.deepEqual(consoleErrors, []);
+  await context.close();
+});
+
+test('assistant rejects attacks and routes person lookups without echoing the sensitive request', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
   const server = await createServer(requestLog);
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -412,7 +668,24 @@ test('assistant renders adversarial rejection without echoing the sensitive requ
   assert.match(answerText, /Consulta rechazada|Datos personales fuera de alcance/);
   assert.doesNotMatch(answerText, /12345678|legajo 42/i);
   assert.match(answerText, /snapshot 2026-08-06/);
-  assert.equal(requestLog.length, 1);
+
+  await page.locator('#assistantInput').fill('luciana prueba concejal');
+  await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+  await page.waitForFunction(() => {
+    const cards = Array.from(document.querySelectorAll('.answer-card'));
+    return cards.length >= 2 && cards.at(-1)?.querySelector('.answer-state.limited');
+  });
+  const directoryAnswer = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      title: card?.querySelector('.answer-heading-line h3')?.textContent.trim(),
+      text: card?.textContent || '',
+    };
+  });
+  assert.equal(directoryAnswer.title, 'Directorio individual requerido');
+  assert.match(directoryAnswer.text, /demostración pública no busca ni muestra fichas, legajos o licencias de una persona/i);
+  assert.doesNotMatch(directoryAnswer.text, /luciana|prueba/i);
+  assert.equal(requestLog.length, 2);
   await context.close();
 });
 

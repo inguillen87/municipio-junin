@@ -11,9 +11,8 @@ import { ExecutiveDashboard } from './ExecutiveDashboard';
 const REQUIRED_CAPABILITY = 'navigation.grh-executive';
 const EXECUTIVE_NAVIGATION: readonly TopbarLink[] = Object.freeze([
   { href: '/inicio.html', label: 'Inicio' },
-  { href: '/ejecutivo', label: 'Ejecutivo', current: true },
-  { href: '/calidad', label: 'Calidad' },
-  { href: '/grh-ejecutivo.html', label: 'Estable' },
+  { href: '/ejecutivo', label: 'Resumen ejecutivo GRH', current: true },
+  { href: '/calidad', label: 'Calidad de datos' },
 ]);
 
 async function loadExecutiveViewModel(signal: AbortSignal): Promise<ExecutiveViewModel> {

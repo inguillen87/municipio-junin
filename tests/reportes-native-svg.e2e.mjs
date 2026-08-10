@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { chromium } from 'playwright';
 import accessPolicy from '../shared/access-policy.cjs';
+import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const contentTypes = {
@@ -40,6 +41,7 @@ function authoritativeUser(role = 'INTENDENTE', malformedProjection = false) {
     capabilities: access.capabilities,
     accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
     homeProfile: access.homeProfile,
+    presentation: tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' }),
   };
   return malformedProjection ? { ...user, capabilities: 'navigation.reports' } : user;
 }
@@ -323,11 +325,11 @@ test('reportes renders accessible governed GRH SVG charts at their visible deskt
     assert.deepEqual([...result.periodOptions].sort(), [...availablePeriods].sort());
     assert.match(result.status, /GRH canónico.*linaje e7403da1d036…8250b3d9.*agregado sin PII.*no tiempo real.*personas_junin excluida/i);
     assert.equal(result.skipTarget, '#main-content');
-    assert.match(result.visibleText, /moneda no (?:está )?declarada/i);
+    assert.match(result.visibleText, /pesos argentinos|\bARS\b/i);
     assert.match(result.visibleText, /no evidencia un pago bancario|ningún valor acredita .*pago bancario/i);
     assert.match(result.visibleText, /e7403da1d036…8250b3d9/i);
     assert.doesNotMatch(result.visibleText, new RegExp(approvedSha256, 'i'));
-    assert.doesNotMatch(result.visibleText, /Visualización no habilitada|\bARS\b|\$\s*\d|data_points/i);
+    assert.doesNotMatch(result.visibleText, /Visualización no habilitada|\$\s*\d|data_points/i);
     assert.ok(result.overflow <= 1, `reportes horizontal overflow at ${viewport.width}px: ${result.overflow}px`);
 
     await page.locator('.skip-link').focus();

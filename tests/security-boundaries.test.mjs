@@ -211,7 +211,9 @@ test('GRH printable report uses portable k=10 controls without publishing sensit
   assert.match(response.payload, /Conciliación cross-source/);
   assert.match(response.payload, /Sólo diagnóstica · no ejecutiva/);
   assert.doesNotMatch(response.payload, /Ausencias\s*·\s*\d|Licencias\s*·\s*\d|Movimientos\s*·\s*\d/i);
-  assert.doesNotMatch(response.payload, /Neto observado|\bARS\b|\$/);
+  assert.match(response.payload, /Neto de control · ARS/);
+  assert.match(response.payload, /pesos argentinos \(ARS\)[\s\S]{0,120}dump original no declara/i);
+  assert.doesNotMatch(response.payload, /Neto observado|\$/);
 });
 
 test('DEMO tokens cannot mutate employees or run destructive imports', async () => {

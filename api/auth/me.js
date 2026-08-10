@@ -1,9 +1,11 @@
 import { cors, noStore, requireAuth } from '../lib/auth.js';
 import accessPolicy from '../../shared/access-policy.cjs';
 import releaseTruthContract from '../../shared/release-truth-contract.cjs';
+import tenantPresentationPolicy from '../../shared/tenant-presentation-policy.cjs';
 
 const { ACCESS_POLICY_VERSION, getSessionAccessForUser } = accessPolicy;
 const { API_CONTRACTS, HEADER_NAME } = releaseTruthContract;
+const { resolveTenantPresentation } = tenantPresentationPolicy;
 
 export default async function handler(req, res) {
   res.setHeader(HEADER_NAME, API_CONTRACTS['/api/auth/me']);
@@ -27,6 +29,7 @@ export default async function handler(req, res) {
       capabilities: sessionAccess.capabilities,
       accessPolicyVersion: ACCESS_POLICY_VERSION,
       homeProfile: sessionAccess.homeProfile,
+      presentation: resolveTenantPresentation(tokenUser.tenant),
     },
   });
 }

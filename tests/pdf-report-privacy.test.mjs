@@ -55,7 +55,8 @@ test('A4 printable output contains only released compensation and safe quality e
   assert.match(html, /@page\{size:A4/);
   assert.match(html, /Privacidad: grh-small-cell-v1 · k=10/);
   assert.match(html, /grh-semantic-v2/);
-  assert.match(html, /moneda no declarada/i);
+  assert.match(html, /Neto de control · ARS/i);
+  assert.match(html, /dump original no declara un código de moneda/i);
   assert.match(html, /no acreditan pago bancario/i);
   assert.match(html, /personas_junin: excluida/i);
   assert.doesNotMatch(html, /Ausencias\s*[·-]\s*\d|Licencias\s*[·-]\s*\d|Movimientos\s*[·-]\s*\d/i);

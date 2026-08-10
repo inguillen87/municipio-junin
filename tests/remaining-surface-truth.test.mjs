@@ -137,7 +137,10 @@ test('remaining operational surfaces use authenticated APIs and fail closed with
   assert.match(reports, /src="js\/auth-fetch\.js"/);
   assert.match(reports, /MuniAuth\.fetch\(endpoint\)/);
   assert.match(reports, /dataStatus\?\.available/);
-  assert.match(reports, /moneda no está declarada/i);
+  assert.match(reports, /src="js\/tenant-presentation\.js"/);
+  assert.match(reports, /MuniTenantPresentation\.load\(\)/);
+  assert.match(reports, /pesos argentinos \(ARS\)/i);
+  assert.match(reports, /currency === 'not_declared_in_source'/);
   assert.match(reports, /document\.createElementNS\(SVG_NS, name\)/);
   assert.match(reports, /data-source="grh-executive-portable"/);
   assert.match(reports, /data-source-contract="grh-executive-report-v2"/);

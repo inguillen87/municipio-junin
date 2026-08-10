@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "tenant-presentation-v1",
+  "default": {
+    "locale": "es-419",
+    "timeZone": "UTC",
+    "displayCurrencyCode": null,
+    "displayCurrencyBasis": "not_configured",
+    "displayCurrencyEffectiveOn": null,
+    "sourceCurrencyStatus": "not_declared_in_source"
+  },
+  "tenants": {
+    "junin": {
+      "locale": "es-AR",
+      "timeZone": "America/Argentina/Buenos_Aires",
+      "displayCurrencyCode": "ARS",
+      "displayCurrencyBasis": "tenant_configuration",
+      "displayCurrencyEffectiveOn": "2026-08-10",
+      "sourceCurrencyStatus": "not_declared_in_source"
+    }
+  }
+}

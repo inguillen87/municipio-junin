@@ -27,11 +27,11 @@
       --hac-surface: #0d192c;
       --hac-surface-raised: #112139;
       --hac-soft: rgba(255,255,255,.035);
-      --hac-border: rgba(170,193,226,.13);
-      --hac-border-strong: rgba(113,175,255,.3);
+      --hac-border: #60738d;
+      --hac-border-strong: #83b9f5;
       --hac-text: #f5f8ff;
       --hac-text-soft: #b6c4d9;
-      --hac-muted: #8191aa;
+      --hac-muted: #a9b9cf;
       --hac-blue: #62a8ff;
       --hac-blue-rgb: 98,168,255;
       --hac-teal: #4fd7c6;
@@ -54,11 +54,11 @@
       --hac-surface: #fff;
       --hac-surface-raised: #f8faff;
       --hac-soft: rgba(28,63,111,.045);
-      --hac-border: rgba(31,65,112,.12);
-      --hac-border-strong: rgba(41,113,206,.3);
+      --hac-border: #6f8199;
+      --hac-border-strong: #2f6ebc;
       --hac-text: #12223b;
       --hac-text-soft: #425775;
-      --hac-muted: #6d7f99;
+      --hac-muted: #536984;
       --hac-blue: #2777dc;
       --hac-blue-rgb: 39,119,220;
       --hac-teal: #0b8f83;
@@ -134,7 +134,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .hac-breadcrumb { color: var(--hac-muted); font-size: 11px; }
+    .hac-breadcrumb { color: var(--hac-muted); font-size: 12px; }
     .hac-menu-btn,
     .hac-icon-btn,
     .hac-retry-btn {
@@ -166,7 +166,7 @@
       border-radius: 999px;
       background: rgba(var(--hac-teal-rgb),.075);
       color: var(--hac-teal);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 760;
       white-space: nowrap;
     }
@@ -217,7 +217,7 @@
     .hac-eyebrow {
       margin-bottom: 9px;
       color: var(--hac-blue);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 850;
       letter-spacing: .15em;
       text-transform: uppercase;
@@ -249,7 +249,7 @@
       border-radius: 999px;
       background: var(--hac-soft);
       color: var(--hac-text-soft);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 680;
     }
     .hac-chip strong { margin-right: 5px; color: var(--hac-text); font-weight: 820; }
@@ -262,7 +262,7 @@
       border-top: 1px solid var(--hac-border);
     }
     .hac-control { flex-wrap: wrap; gap: 9px; }
-    .hac-control label { color: var(--hac-muted); font-size: 11px; font-weight: 750; }
+    .hac-control label { color: var(--hac-muted); font-size: 12px; font-weight: 750; }
     .hac-select {
       min-height: 38px;
       padding: 0 34px 0 12px;
@@ -273,7 +273,7 @@
       font: 650 12px/1 Inter,ui-sans-serif,system-ui,sans-serif;
       cursor: pointer;
     }
-    .hac-view-status { color: var(--hac-muted); font-size: 11px; }
+    .hac-view-status { color: var(--hac-muted); font-size: 12px; }
 
     .hac-error {
       display: grid;
@@ -342,7 +342,7 @@
     .hac-stat-label {
       max-width: 85%;
       color: var(--hac-muted);
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 830;
       letter-spacing: .095em;
       line-height: 1.35;
@@ -358,7 +358,7 @@
       line-height: 1.05;
       letter-spacing: -.035em;
     }
-    .hac-stat-note { margin: 8px 0 0; color: var(--hac-muted); font-size: 11px; line-height: 1.45; }
+    .hac-stat-note { margin: 8px 0 0; color: var(--hac-muted); font-size: 12px; line-height: 1.45; }
     .hac-skeleton {
       color: transparent !important;
       border-radius: 7px;
@@ -394,7 +394,7 @@
       font-weight: 800;
       letter-spacing: -.015em;
     }
-    .hac-panel-subtitle { max-width: 760px; margin: 5px 0 0; color: var(--hac-muted); font-size: 11px; line-height: 1.55; }
+    .hac-panel-subtitle { max-width: 760px; margin: 5px 0 0; color: var(--hac-muted); font-size: 12px; line-height: 1.55; }
     .hac-panel-badge {
       flex: 0 0 auto;
       padding: 5px 8px;
@@ -402,7 +402,7 @@
       border-radius: 999px;
       background: var(--hac-soft);
       color: var(--hac-text-soft);
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 760;
       white-space: nowrap;
     }
@@ -413,10 +413,10 @@
       background: linear-gradient(180deg,rgba(var(--hac-blue-rgb),.025),transparent 60%);
     }
     .hac-chart svg { display: block; width: 100%; height: auto; min-height: 320px; }
-    .hac-chart text { fill: var(--hac-muted); font: 10px Inter,ui-sans-serif,system-ui,sans-serif; }
+    .hac-chart text { fill: var(--hac-muted); font: 12px Inter,ui-sans-serif,system-ui,sans-serif; }
     .hac-chart .hac-grid-line { stroke: var(--hac-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
-    .hac-chart-summary { margin: 10px 0 0; color: var(--hac-text-soft); font-size: 11px; line-height: 1.5; }
-    .hac-legend { flex-wrap: wrap; gap: 12px; margin-top: 11px; color: var(--hac-muted); font-size: 10px; }
+    .hac-chart-summary { margin: 10px 0 0; color: var(--hac-text-soft); font-size: 12px; line-height: 1.5; }
+    .hac-legend { flex-wrap: wrap; gap: 12px; margin-top: 11px; color: var(--hac-muted); font-size: 12px; }
     .hac-legend span { display: inline-flex; align-items: center; gap: 5px; }
     .hac-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--legend); }
 
@@ -431,7 +431,7 @@
     .hac-close-control { display: grid; min-width: min(100%,260px); gap: 7px; }
     .hac-close-control label {
       color: var(--hac-muted);
-      font-size: 9px;
+      font-size: 12px;
       font-weight: 820;
       letter-spacing: .08em;
       text-transform: uppercase;
@@ -452,7 +452,7 @@
     }
     .hac-close-chart { min-height: 270px; overflow: hidden; }
     .hac-close-chart svg { display: block; width: 100%; height: auto; min-height: 270px; }
-    .hac-close-chart text { fill: var(--hac-muted); font: 10px Inter,ui-sans-serif,system-ui,sans-serif; }
+    .hac-close-chart text { fill: var(--hac-muted); font: 12px Inter,ui-sans-serif,system-ui,sans-serif; }
     .hac-close-side { display: grid; align-content: start; gap: 12px; }
     .hac-close-metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
     .hac-close-metric {
@@ -465,7 +465,7 @@
     .hac-close-metric span {
       display: block;
       color: var(--hac-muted);
-      font-size: 8px;
+      font-size: 12px;
       font-weight: 820;
       letter-spacing: .07em;
       line-height: 1.35;
@@ -486,7 +486,7 @@
       border-radius: 0 10px 10px 0;
       background: rgba(var(--hac-teal-rgb),.055);
       color: var(--hac-text-soft);
-      font-size: 10px;
+      font-size: 12px;
       line-height: 1.55;
     }
     .hac-close-reconciliation { margin-top: 16px; }
@@ -499,7 +499,7 @@
     .hac-close-reconciliation > p,.hac-close-comparison > p {
       margin: 5px 0 11px;
       color: var(--hac-muted);
-      font-size: 10px;
+      font-size: 12px;
       line-height: 1.5;
     }
     .hac-close-reconciliation-grid {
@@ -532,7 +532,7 @@
       border-radius: 10px;
       background: var(--hac-surface-raised);
     }
-    .hac-close-delta span { display: block; color: var(--hac-muted); font-size: 8px; line-height: 1.35; }
+    .hac-close-delta span { display: block; color: var(--hac-muted); font-size: 12px; line-height: 1.35; }
     .hac-close-delta strong { display: block; margin-top: 5px; color: var(--hac-text); font-size: 12px; font-variant-numeric: tabular-nums; }
 
     .hac-alerts { display: grid; gap: 9px; }
@@ -553,7 +553,7 @@
       border-radius: 9px;
       background: rgba(var(--hac-blue-rgb),.11);
       color: var(--hac-blue);
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 850;
     }
     .hac-alert[data-tone="warn"] .hac-alert-icon { background: rgba(var(--hac-amber-rgb),.12); color: var(--hac-amber); }
@@ -561,7 +561,7 @@
     .hac-alert[data-tone="critical"] .hac-alert-icon { background: rgba(var(--hac-red-rgb),.12); color: var(--hac-red); }
     .hac-alert[data-tone="ok"] .hac-alert-icon { background: rgba(var(--hac-teal-rgb),.11); color: var(--hac-teal); }
     .hac-alert strong { display: block; color: var(--hac-text); font-size: 12px; line-height: 1.4; }
-    .hac-alert p { margin: 3px 0 0; color: var(--hac-muted); font-size: 11px; line-height: 1.48; }
+    .hac-alert p { margin: 3px 0 0; color: var(--hac-muted); font-size: 12px; line-height: 1.48; }
 
     .hac-equation {
       justify-content: space-between;
@@ -576,12 +576,12 @@
       border-radius: 13px;
       background: var(--hac-soft);
     }
-    .hac-equation-card span { display: block; color: var(--hac-muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .hac-equation-card span { display: block; color: var(--hac-muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .hac-equation-card strong { display: block; margin-top: 7px; color: var(--hac-text); font-size: 16px; font-variant-numeric: tabular-nums; }
     .hac-equation-symbol { color: var(--hac-muted); font-size: 18px; font-weight: 800; }
     .hac-composition { display: grid; gap: 14px; }
     .hac-composition-item { display: grid; gap: 7px; }
-    .hac-composition-meta { justify-content: space-between; gap: 12px; color: var(--hac-text-soft); font-size: 11px; }
+    .hac-composition-meta { justify-content: space-between; gap: 12px; color: var(--hac-text-soft); font-size: 12px; }
     .hac-composition-meta strong { color: var(--hac-text); font-weight: 760; }
     .hac-track { height: 9px; overflow: hidden; border-radius: 999px; background: var(--hac-soft); }
     .hac-track span {
@@ -601,12 +601,12 @@
       border-radius: 12px;
       background: rgba(var(--hac-amber-rgb),.075);
       color: var(--hac-amber);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 740;
       line-height: 1.5;
     }
     .hac-sim-control { display: grid; gap: 9px; }
-    .hac-sim-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--hac-text-soft); font-size: 11px; font-weight: 720; }
+    .hac-sim-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--hac-text-soft); font-size: 12px; font-weight: 720; }
     .hac-sim-value {
       min-width: 70px;
       padding: 5px 8px;
@@ -628,18 +628,18 @@
       border-radius: 12px;
       background: var(--hac-soft);
     }
-    .hac-sim-result span { display: block; color: var(--hac-muted); font-size: 9px; font-weight: 780; text-transform: uppercase; }
+    .hac-sim-result span { display: block; color: var(--hac-muted); font-size: 12px; font-weight: 780; text-transform: uppercase; }
     .hac-sim-result strong { display: block; margin-top: 6px; color: var(--hac-text); font-size: 16px; }
-    .hac-sim-note { margin: 13px 0 0; color: var(--hac-muted); font-size: 10px; line-height: 1.55; }
+    .hac-sim-note { margin: 13px 0 0; color: var(--hac-muted); font-size: 12px; line-height: 1.55; }
 
     .hac-table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--hac-border); border-radius: 13px; }
-    .hac-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 11px; }
+    .hac-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 12px; }
     .hac-table th {
       padding: 11px 13px;
       border-bottom: 1px solid var(--hac-border);
       background: var(--hac-soft);
       color: var(--hac-muted);
-      font-size: 9px;
+      font-size: 12px;
       font-weight: 830;
       letter-spacing: .085em;
       text-align: left;
@@ -659,26 +659,26 @@
       border-radius: 999px;
       background: rgba(var(--hac-teal-rgb),.09);
       color: var(--hac-teal);
-      font-size: 9px;
+      font-size: 12px;
       font-weight: 780;
       white-space: nowrap;
     }
     .hac-tag[data-tone="warn"] { background: rgba(var(--hac-amber-rgb),.1); color: var(--hac-amber); }
 
     .hac-methodology { margin-top: 14px; border: 1px solid var(--hac-border); border-radius: var(--hac-radius-md); background: var(--hac-soft); }
-    .hac-methodology summary { padding: 13px 14px; color: var(--hac-text-soft); font-size: 11px; font-weight: 760; cursor: pointer; }
+    .hac-methodology summary { padding: 13px 14px; color: var(--hac-text-soft); font-size: 12px; font-weight: 760; cursor: pointer; }
     .hac-methodology-content {
       display: grid;
       grid-template-columns: repeat(3,minmax(0,1fr));
       gap: 14px;
       padding: 0 14px 14px;
       color: var(--hac-muted);
-      font-size: 10px;
+      font-size: 12px;
       line-height: 1.6;
     }
     .hac-methodology-content strong { display: block; margin-bottom: 3px; color: var(--hac-text-soft); }
-    .hac-footer { flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 16px; color: var(--hac-muted); font-size: 10px; line-height: 1.5; }
-    .hac-footer code { color: var(--hac-text-soft); font-size: 10px; word-break: break-all; }
+    .hac-footer { flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 16px; color: var(--hac-muted); font-size: 12px; line-height: 1.5; }
+    .hac-footer code { color: var(--hac-text-soft); font-size: 12px; word-break: break-all; }
     .hac-visually-hidden {
       position: absolute !important;
       width: 1px !important;
@@ -736,7 +736,7 @@
       .hac-stat-value { font-size: 28px; }
       .hac-close-metrics,.hac-close-reconciliation-grid,.hac-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .hac-close-metric strong { font-size: 13px; }
-      .hac-close-delta strong { font-size: 11px; }
+      .hac-close-delta strong { font-size: 12px; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -780,17 +780,14 @@
 
     <div class="hac-shell" id="haciendaDashboard" aria-busy="true">
       <section class="hac-hero" aria-labelledby="haciendaTitle">
-        <div class="hac-eyebrow">Hacienda · proyecciones gobernadas GRH</div>
-        <h2 id="haciendaTitle">La nómina de cálculo, sin confundirla con dinero pagado.</h2>
-        <p class="hac-hero-copy">Lectura ejecutiva de la proyección protegida de compensación GRH. Es una medición de control de cálculo salarial, no un pago bancario ni un asiento contable. La reconciliación global presenta diferencias materiales; la moneda no está declarada y la vista no recibe filas crudas, etiquetas sensibles ni PII.</p>
+        <div class="hac-eyebrow">Hacienda y nómina · GRH Junín</div>
+        <h2 id="haciendaTitle">Nómina, costos y conciliación en pesos.</h2>
+        <p class="hac-hero-copy">Evolución mensual del cálculo salarial real, componentes del cierre y diferencias entre fuentes. Presentación configurada en ARS para Junín.</p>
         <div class="hac-chips" aria-label="Contexto del snapshot">
           <span class="hac-chip"><strong id="snapshotChip">—</strong> corte GRH</span>
           <span class="hac-chip"><strong id="periodCountChip">—</strong> períodos publicados</span>
           <span class="hac-chip"><strong id="protectedPeriodChip">—</strong> períodos protegidos</span>
-          <span class="hac-chip"><strong>Moneda</strong> no declarada</span>
-          <span class="hac-chip"><strong>PII</strong> no exportada</span>
-          <span class="hac-chip"><strong>Fuente</strong> conceptos de cálculo</span>
-          <span class="hac-chip"><strong>Estado</strong> no es pago bancario</span>
+          <span class="hac-chip"><strong>Moneda</strong> ARS</span>
           <span class="hac-chip"><strong id="crossScoreChip">—</strong> score cross-source global</span>
         </div>
         <div class="hac-controls" aria-label="Controles de liquidación">
@@ -804,6 +801,8 @@
             </select>
           </div>
           <span class="hac-view-status" id="viewStatus" role="status" aria-live="polite">Preparando vista…</span>
+          <a class="hac-retry-btn" href="rrhh.html">Ver gestión de personas</a>
+          <a class="hac-retry-btn" href="ia.html">Consultar GRH</a>
         </div>
       </section>
 
@@ -823,12 +822,12 @@
         <article class="hac-stat">
           <div class="hac-stat-label">Retenciones de control</div>
           <div class="hac-stat-value hac-skeleton" id="kpiWithholdings">Cargando</div>
-          <p class="hac-stat-note" id="kpiWithholdingsNote">Proyección protegida · moneda no declarada.</p>
+          <p class="hac-stat-note" id="kpiWithholdingsNote">Pesos argentinos · período seleccionado.</p>
         </article>
         <article class="hac-stat">
           <div class="hac-stat-label">Neto de control de cálculo</div>
           <div class="hac-stat-value hac-skeleton" id="kpiNet">Cargando</div>
-          <p class="hac-stat-note" id="kpiNetNote">Proyección protegida · moneda no declarada.</p>
+          <p class="hac-stat-note" id="kpiNetNote">Pesos argentinos · período seleccionado.</p>
         </article>
         <article class="hac-stat hac-stat-risk">
           <div class="hac-stat-label">Score cross-source global</div>
@@ -841,7 +840,7 @@
         <div class="hac-panel-head">
           <div>
             <h3 id="closeTitle">Cierre GRH explicado</h3>
-            <p class="hac-panel-subtitle">Descomposición aritmética mensual del control de cálculo y conciliación real del mismo período. Explica cómo se compone el neto observado; no atribuye causas, no certifica pago y no infiere moneda.</p>
+            <p class="hac-panel-subtitle">Cómo se compone el neto y cuánto concilian cálculo y totpago en el período.</p>
           </div>
           <span class="hac-panel-badge">grh-close-v1 · k=10</span>
         </div>
@@ -908,7 +907,7 @@
         </article>
 
         <article class="hac-panel">
-          <div class="hac-panel-head"><div><h3>Alertas descriptivas</h3><p class="hac-panel-subtitle">Condiciones del dato que deben acompañar cualquier lectura financiera.</p></div></div>
+          <div class="hac-panel-head"><div><h3>Alertas para revisar</h3><p class="hac-panel-subtitle">Diferencias, huecos y controles que requieren atención.</p></div></div>
           <div class="hac-alerts" id="alertsList" aria-live="polite">
             <div class="hac-alert"><span class="hac-alert-icon">01</span><div><strong>Validando contexto</strong><p>Comprobando snapshot, conciliación y cuarentenas.</p></div></div>
           </div>
@@ -957,7 +956,7 @@
         <details class="hac-methodology">
           <summary>Definiciones, fuente y límites de interpretación</summary>
           <div class="hac-methodology-content">
-            <div><strong>Importes publicados</strong>La proyección ejecutiva entrega bruto con asignaciones, retenciones, neto y aportes patronales en centavos de la unidad monetaria de origen. La vista divide por 100 y no infiere moneda ni símbolo.</div>
+            <div><strong>Importes publicados</strong>La proyección entrega bruto, retenciones, neto y aportes en centavos. Junín configura su presentación en pesos argentinos (ARS); el dump original no incluía un código de moneda.</div>
             <div><strong>Control de cálculo</strong>Los importes sirven para analizar el cálculo salarial. No prueban una transferencia bancaria, un asiento contable, un saldo de tesorería ni la efectiva percepción por una persona.</div>
             <div><strong>Conciliación global</strong>La proyección de calidad publica cobertura, exactitud y acuerdo de valores globales. No se atribuye ni se inventa una conciliación para cada período.</div>
             <div><strong>Totpago</strong>Permanece como diagnóstico cross-source global. No alimenta los importes mensuales ni se presenta como evidencia de pago.</div>
@@ -975,6 +974,7 @@
   <noscript><div class="hac-noscript">Este tablero necesita JavaScript para consultar las proyecciones autenticadas. No se muestran valores de respaldo ni datos simulados.</div></noscript>
   <script src="js/nav.js"></script>
   <script src="js/auth-fetch.js"></script>
+  <script src="js/tenant-presentation.js"></script>
   <script src="js/grh-secure-data.js"></script>
   <script src="js/grh-close-data.js"></script>
   <script>
@@ -984,8 +984,6 @@
       var SVG_NS = 'http://www.w3.org/2000/svg';
       var numberFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
       var compactFormatter = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 });
-      var amountFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
-      var amountCompactFormatter = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 });
       var signedAmountCompactFormatter = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1, signDisplay: 'always' });
       var percentFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
       var signedPercentFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1, signDisplay: 'always' });
@@ -1008,6 +1006,7 @@
       var state = {
         experience: null,
         close: null,
+        presentation: null,
         closePeriod: null,
         series: [],
         latest: null,
@@ -1049,11 +1048,18 @@
       }
 
       function formatAmount(value) {
-        return amountFormatter.format(value) + ' u.m.';
+        return window.MuniTenantPresentation.formatAmount(value, state.presentation, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
       }
 
       function formatAmountCompact(value) {
-        return amountCompactFormatter.format(value) + ' u.m.';
+        return window.MuniTenantPresentation.formatAmount(value, state.presentation, {
+          notation: 'compact',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 1
+        });
       }
 
       function formatCents(value) {
@@ -1065,7 +1071,12 @@
       }
 
       function formatSignedCentsCompact(value) {
-        return signedAmountCompactFormatter.format(value / 100) + ' u.m.';
+        return window.MuniTenantPresentation.formatAmount(value / 100, state.presentation, {
+          notation: 'compact',
+          signDisplay: 'always',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 1
+        });
       }
 
       function formatSignedPercentage(value) {
@@ -1263,7 +1274,7 @@
         elements.closeBridge.appendChild(svg);
         elements.closeBridge.setAttribute(
           'aria-label',
-          'Puente aritmético del cierre de ' + monthLabel(row.period) + ', sin moneda declarada.'
+          'Puente aritmético del cierre de ' + monthLabel(row.period) + ', expresado en ARS.'
         );
         setText(
           elements.closeBridgeCaption,
@@ -1526,12 +1537,12 @@
         setText(elements.kpiWithholdings, formatAmountCompact(latest.withholdings));
         setText(
           elements.kpiWithholdingsNote,
-          monthLabel(latest.period) + ' · ' + ratio + ' · moneda no declarada.'
+          monthLabel(latest.period) + ' · ' + ratio + ' · ARS.'
         );
         setText(elements.kpiNet, formatAmountCompact(latest.net));
         setText(
           elements.kpiNetNote,
-          monthLabel(latest.period) + ' · proyección protegida · moneda no declarada.'
+          monthLabel(latest.period) + ' · ARS · proyección protegida.'
         );
         setText(
           elements.kpiReconciliation,
@@ -1608,8 +1619,8 @@
         addAlert(
           5,
           'warn',
-          'Moneda no declarada',
-          'Los importes conservan la unidad monetaria de la fuente. No se infiere símbolo, moneda ni tipo de cambio.'
+          'ARS configurado para Junín',
+          'Los importes se presentan en pesos argentinos. El backup original no incluía un código de moneda.'
         );
         addAlert(
           6,
@@ -1849,20 +1860,24 @@
         try {
           if (!window.MuniGrhData ||
               typeof window.MuniGrhData.loadExperience !== 'function' ||
-              !window.MuniGrhClose || typeof window.MuniGrhClose.load !== 'function') {
+              !window.MuniGrhClose || typeof window.MuniGrhClose.load !== 'function' ||
+              !window.MuniTenantPresentation || typeof window.MuniTenantPresentation.load !== 'function') {
             throw new Error('GRH_SECURE_CLIENT_UNAVAILABLE');
           }
           var projections = await Promise.all([
             window.MuniGrhData.loadExperience({ timeoutMs: 10000 }),
-            window.MuniGrhClose.load({ timeoutMs: 10000 })
+            window.MuniGrhClose.load({ timeoutMs: 10000 }),
+            window.MuniTenantPresentation.load()
           ]);
           if (sequence !== state.loadSequence) return;
           var experience = projections[0];
           var close = projections[1];
+          var presentation = projections[2];
           if (!sameCloseSource(experience, close)) throw new Error('GRH_CLOSE_SOURCE_MISMATCH');
           var normalized = normalizeCompensation(experience);
           state.experience = experience;
           state.close = close;
+          state.presentation = presentation;
           state.series = normalized.released;
           state.latest = normalized.released[normalized.released.length - 1];
           state.protectedPeriods = normalized.protectedPeriods;

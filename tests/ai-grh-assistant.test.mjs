@@ -12,6 +12,14 @@ import {
 } from '../api/ai-analyze.js';
 import { buildPortableGrhViews } from '../api/lib/grh-portable-bundle.js';
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
+import {
+  GRH_DIRECTORY_EXCLUDED_FIELDS,
+  GRH_DIRECTORY_SCHEMA_VERSION,
+} from '../api/lib/grh-directory-contract.js';
+import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
+import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
+
+const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' });
 
 const PROFILE_URL = new URL('../api/_data/grh-profile.json', import.meta.url);
 const SEMANTIC_URL = new URL('../api/_data/grh-semantic.json', import.meta.url);
@@ -42,8 +50,8 @@ function realViews() {
   };
 }
 
-function answer(question, views = realViews()) {
-  return buildDeterministicAnswer(question, views.executive, views.quality, views.close);
+function answer(question, views = realViews(), presentation = JUNIN_PRESENTATION) {
+  return buildDeterministicAnswer(question, views.executive, views.quality, views.close, presentation);
 }
 
 function responseRecorder() {
@@ -56,6 +64,110 @@ function responseRecorder() {
     json(payload) { this.payload = payload; return this; },
     end() { return this; },
   };
+}
+
+function fakeDirectorySource(views = realViews()) {
+  return {
+    canonicalSystem: views.executive.source.canonicalSystem,
+    sourceFile: views.executive.source.sourceFile,
+    sourceSha256: views.executive.source.sourceSha256,
+    snapshotAsOf: views.executive.source.snapshotAsOf,
+  };
+}
+
+function fakeDirectoryItem(overrides = {}) {
+  return {
+    companyCode: 1,
+    legajo: 7001,
+    displayName: 'PERSONA PRUEBA',
+    sector: { code: 10, label: 'SECTOR PRUEBA' },
+    organization: { code: 20, label: 'ORGANIZACION PRUEBA' },
+    position: null,
+    positionObservation: {
+      label: 'PUESTO OBSERVADO',
+      observedDate: '2026-08-31',
+      observedPeriod: '2026-08',
+      status: 'source_future_effective',
+      sourceTable: 'histolegajo',
+    },
+    category: { code: 30, label: 'CATEGORIA PRUEBA' },
+    agreement: { code: 40, label: 'ACUERDO PRUEBA' },
+    events: {
+      absenceCount: 2,
+      latestAbsenceDate: '2026-07-10',
+      leaveCount: 2,
+      latestLeaveStartDate: '2009-04-01',
+      latestLeaveEndDate: '2009-04-05',
+    },
+    ...overrides,
+  };
+}
+
+function fakeDirectoryResponse({ mode = 'list', items = [], total = items.length, source } = {}) {
+  const detail = mode === 'detail';
+  return {
+    schemaVersion: GRH_DIRECTORY_SCHEMA_VERSION,
+    source: source || fakeDirectorySource(),
+    privacy: {
+      containsPersonalData: true,
+      excludedFields: [...GRH_DIRECTORY_EXCLUDED_FIELDS],
+    },
+    query: {
+      mode,
+      page: 1,
+      limit: detail ? 1 : 7,
+      total,
+      hasNext: false,
+      cursor: null,
+      nextCursor: null,
+    },
+    facets: detail ? null : {
+      sectors: [],
+      organizations: [],
+      positions: [],
+      positionObservations: [],
+      categories: [],
+      agreements: [],
+    },
+    items,
+  };
+}
+
+function fakeDirectoryDetail(item = fakeDirectoryItem(), source = fakeDirectorySource()) {
+  return fakeDirectoryResponse({
+    mode: 'detail',
+    source,
+    items: [{
+      ...item,
+      leaveHistory: {
+        total: item.events.leaveCount,
+        limit: 24,
+        items: [
+          { startDate: '2009-04-01', endDate: '2009-04-05', days: 5 },
+          { startDate: '2008-03-02', endDate: '2008-03-03', days: 2 },
+        ].slice(0, item.events.leaveCount),
+      },
+    }],
+  });
+}
+
+function privateAssistantHandler({ readDirectoryImpl, environment, caller } = {}) {
+  return createAiAnalyzeHandler({
+    requireRoleImpl: async () => caller || ({
+      id: 'official-private',
+      email: 'official-private@junin.gov.ar',
+      role: 'CONTADOR',
+      tenantId: 'tenant-grh-test',
+      tenant: { slug: 'junin' },
+    }),
+    requireDatasetTenantImpl: () => true,
+    readArtifactBundleImpl: async () => realBundle(),
+    readDirectoryImpl,
+    environment: environment || {
+      GRH_TENANT_ID: 'tenant-grh-test',
+      GRH_DIRECTORY_ALLOWED_USER_IDS: 'official-private',
+    },
+  });
 }
 
 test('assistant consumes one semantic-v2 bundle through portable, quality and close projections', async () => {
@@ -97,7 +209,9 @@ test('executive answers use protected portable rankings without labels or codes 
   assert.match(summary.response, /88,99 %/);
   assert.match(summary.response, /63,88 %/);
   assert.match(summary.response, /privacidad k=10/i);
-  assert.doesNotMatch(summary.response, /\bARS\b|\$|pago bancario|sourceCode|companyCode/i);
+  assert.match(summary.response, /\bARS\b/);
+  assert.match(summary.response, /GRH no declara moneda en la fuente/i);
+  assert.doesNotMatch(summary.response, /\$|pago bancario|sourceCode|companyCode|unidades de origen/i);
 
   const distribution = answer('Distribución por centro de costo', views);
   assert.equal(distribution.intent, 'workforce_distribution');
@@ -141,6 +255,70 @@ test('absence, leave and movement values are returned only for released years', 
   assert.doesNotMatch(absent.response, /años disponibles|último año disponible/i);
 });
 
+test('generic leave overview resolves the latest released historical year and exposes its real range', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const result = answer('¿Qué licencias históricas están disponibles?', views);
+
+  assert.equal(result.intent, 'leave');
+  assert.equal(result.httpStatus, 200);
+  assert.equal(result.status, 'answered');
+  assert.equal(result.resolvedPeriod, '2009');
+  assert.deepEqual(result.periodResolution, {
+    requested: null,
+    resolved: '2009',
+    substituted: false,
+  });
+  assert.deepEqual(result.answer.availablePeriodRange, {
+    from: '1997',
+    to: '2009',
+    latest: '2009',
+  });
+  assert.match(result.answer.title, /Licencias históricas · 2009/);
+  assert.match(result.answer.summary, /77 filas válidas/);
+  assert.match(result.answer.summary, /72 participantes/);
+  assert.match(result.answer.summary, /1997–2009/);
+  assert.equal(result.answer.evidence[0].value, '77');
+  assert.equal(result.answer.evidence[1].value, '72');
+  assert.deepEqual(result.answer.actions, [
+    { id: 'open_rrhh', label: 'Abrir analítica RRHH', href: '/rrhh' },
+  ]);
+  assert.match(result.response, /no describe licencias actuales/i);
+  assert.match(result.response, /La fuente de licencias termina en 2009/i);
+
+  const explicit = answer('Licencias 2009', views);
+  assert.equal(explicit.resolvedPeriod, '2009');
+  assert.match(explicit.answer.summary, /77 filas válidas/);
+  assert.match(explicit.answer.summary, /72 participantes/);
+});
+
+test('person lookups require a governed directory without echoing names or legajos', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  for (const question of [
+    'Luciana Prueba',
+    'luciana prueba concejal',
+    'licencias de Prueba Luciana',
+    'ficha de un empleado',
+    'legajo 123',
+  ]) {
+    const result = answer(question, views);
+    assert.equal(result.intent, 'person_lookup', question);
+    assert.equal(result.httpStatus, 422, question);
+    assert.equal(result.status, 'limited', question);
+    assert.equal(result.answer.code, 'DIRECTORY_REQUIRED', question);
+    assert.deepEqual(result.answer.directory, {
+      status: 'directory_required',
+      enabled: false,
+      route: '/rrhh',
+      publicAccess: 'aggregate_only',
+    });
+    assert.deepEqual(result.answer.actions, [
+      { id: 'open_rrhh', label: 'Abrir RRHH agregado', href: '/rrhh' },
+    ]);
+    assert.doesNotMatch(JSON.stringify(result), /Luciana|Prueba|123/i, question);
+    assert.match(result.answer.summary, /no busca ni muestra fichas, legajos o licencias de una persona/i);
+  }
+});
+
 test('calculation and trend use released compensation only and never substitute protected periods', { skip: !HAS_PRIVATE_GRH }, () => {
   const views = realViews();
   const released = views.executive.compensation.series.filter(row => row.privacyStatus === 'released');
@@ -154,7 +332,24 @@ test('calculation and trend use released compensation only and never substitute 
   assert.equal(control.resolvedPeriod, current.period);
   assert.match(control.response, /control de liquidación calculada/i);
   assert.match(control.response, /no acredita un desembolso/i);
-  assert.doesNotMatch(control.response, /\bARS\b|\$|pesos|pagado/i);
+  assert.match(control.response, /\bARS\b/);
+  assert.equal(
+    control.answer.evidence.find(item => item.label === 'Neto de control')?.value,
+    new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      currencyDisplay: 'code',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(current.amounts.netPayrollCents) / 100),
+  );
+  assert.match(control.response, /configuración municipal; GRH no declara moneda en la fuente/i);
+  assert.doesNotMatch(control.response, /\$|pesos|pagado|unidades de origen/i);
+
+  const unknownTenantPresentation = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'otro-municipio' });
+  const unknownTenantControl = answer(`Control de cálculo ${current.period}`, views, unknownTenantPresentation);
+  assert.doesNotMatch(unknownTenantControl.response, /\bARS\b|\$/);
+  assert.match(unknownTenantControl.response, /unidades de origen/i);
 
   const trend = answer(`Compará ${previous.period} vs ${current.period}`, views);
   assert.equal(trend.httpStatus, 200);
@@ -183,7 +378,8 @@ test('the Bot explains a monthly close from grh-close-v1 without global fallback
     result.answer.evidence.some(item => /no reutiliza el score global/i.test(item.detail)),
     true,
   );
-  assert.doesNotMatch(result.response, /63[,.]88|\bARS\b|\$|sourceCode|companyCode/i);
+  assert.match(result.response, /\bARS\b/);
+  assert.doesNotMatch(result.response, /63[,.]88|\$|sourceCode|companyCode|unidades de origen/i);
   assert.doesNotMatch(JSON.stringify(result), /employeeName|dni|cuil|legajoId/i);
 
   const yearOnly = answer(`Explicame el cierre GRH ${current.period.slice(0, 4)}`, views);
@@ -228,7 +424,12 @@ test('assistant endpoint authorizes tenant then reads exactly one bundle', { ski
   const handler = createAiAnalyzeHandler({
     requireRoleImpl: async (_req, _res, roles) => {
       calls.push(['role', roles]);
-      return { id: 'official', role: 'INTENDENTE', tenantId: 'tenant-grh-test' };
+      return {
+        id: 'official',
+        role: 'INTENDENTE',
+        tenantId: 'tenant-grh-test',
+        tenant: { slug: 'junin' },
+      };
     },
     requireDatasetTenantImpl: (_res, caller, envName) => {
       calls.push(['tenant', caller.tenantId, envName]);
@@ -254,6 +455,10 @@ test('assistant endpoint authorizes tenant then reads exactly one bundle', { ski
     assert.equal(response.payload.provenance.semanticSchemaVersion, 'grh-semantic-v2');
     assert.equal(response.payload.provenance.privacyThreshold, 10);
     assert.equal(response.payload.provenance.currency, 'not_declared_in_source');
+    assert.equal(response.payload.provenance.sourceCurrencyStatus, 'not_declared_in_source');
+    assert.equal(response.payload.provenance.displayCurrencyCode, 'ARS');
+    assert.equal(response.payload.provenance.displayCurrencyBasis, 'tenant_configuration');
+    assert.match(response.payload.response, /\bARS\b/);
     assert.equal(response.payload.provenance.totpagoStatus, 'diagnostic_only');
     assert.equal(response.payload.dataStatus.historyUsed, false);
     assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
@@ -305,11 +510,204 @@ test('assistant endpoint rejects provider mode before reading and fails closed o
   assert.doesNotMatch(JSON.stringify(unavailable.payload), /stack|sha256|profile|semantic/i);
 });
 
+test('private allowlisted CONTADOR resolves a tenant-bound person and governed leave history', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const source = fakeDirectorySource();
+  const item = fakeDirectoryItem();
+  const calls = [];
+  const handler = privateAssistantHandler({
+    readDirectoryImpl: async input => {
+      calls.push(input);
+      return calls.length === 1
+        ? fakeDirectoryResponse({ source, items: [item] })
+        : fakeDirectoryDetail(item, source);
+    },
+  });
+  const response = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: { message: 'licencias de Prueba Persona', mode: 'deterministic' },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.payload.intent, 'person_lookup');
+  assert.equal(response.payload.dataStatus.source, 'grh_directory_private_contract');
+  assert.equal(response.payload.dataStatus.historyUsed, true);
+  assert.equal(response.payload.provenance.aggregateOnly, false);
+  assert.equal(response.payload.provenance.containsPii, true);
+  assert.equal(response.payload.provenance.directorySchemaVersion, 'grh-directory-v1');
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0], {
+    tenantId: 'tenant-grh-test',
+    query: { search: 'prueba persona', limit: 7 },
+  });
+  assert.deepEqual(calls[1], {
+    tenantId: 'tenant-grh-test',
+    query: { company: 1, legajo: 7001 },
+  });
+  const person = response.payload.answer.directory.person;
+  assert.equal(person.displayName, 'PERSONA PRUEBA');
+  assert.equal(person.sector.label, 'SECTOR PRUEBA');
+  assert.equal(person.organization.label, 'ORGANIZACION PRUEBA');
+  assert.equal(person.position, null);
+  assert.deepEqual(person.positionObservation, item.positionObservation);
+  assert.equal(person.events.absenceCount, 2);
+  assert.equal(person.events.latestAbsenceDate, '2026-07-10');
+  assert.equal(person.leaveHistory.total, 2);
+  assert.deepEqual(person.leaveHistory.items, [
+    { startDate: '2009-04-01', endDate: '2009-04-05', days: 5 },
+    { startDate: '2008-03-02', endDate: '2008-03-03', days: 2 },
+  ]);
+  assert.deepEqual(response.payload.answer.actions, [{
+    id: 'open_rrhh_person',
+    label: 'Abrir ficha en RRHH',
+    href: '/rrhh?company=1&legajo=7001#peopleDirectory',
+  }]);
+  assert.match(response.payload.response, /PERSONA PRUEBA/);
+  assert.match(response.payload.response, /no se presenta como cargo actual/i);
+  assert.doesNotMatch(JSON.stringify(response.payload), /\b(?:dni|cuil|contact|address|bank_account|salary|event_cause|sueldo|motivo)\b/i);
+  assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
+});
+
+test('published demo identities and missing allowlists stay DIRECTORY_REQUIRED without reading the store', { skip: !HAS_PRIVATE_GRH }, async () => {
+  let directoryReads = 0;
+  const readDirectoryImpl = async () => {
+    directoryReads += 1;
+    throw new Error('must not run');
+  };
+  const publishedPayloads = [];
+  for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
+    const published = privateAssistantHandler({
+      caller: {
+        id: 'official-private',
+        email: profile.email,
+        role: profile.role,
+        tenantId: 'tenant-grh-test',
+        tenant: { slug: profile.tenantSlug },
+      },
+      readDirectoryImpl,
+    });
+    const publishedResponse = responseRecorder();
+    await published({ method: 'POST', body: { message: 'legajo 7001' } }, publishedResponse);
+    assert.equal(publishedResponse.statusCode, 422, profile.email);
+    assert.equal(publishedResponse.payload.answer.code, 'DIRECTORY_REQUIRED', profile.email);
+    assert.equal(publishedResponse.payload.dataStatus.source, 'grh_directory_access_policy', profile.email);
+    publishedPayloads.push(publishedResponse.payload);
+  }
+
+  const notAllowlisted = privateAssistantHandler({
+    readDirectoryImpl,
+    environment: {
+      GRH_TENANT_ID: 'tenant-grh-test',
+      GRH_DIRECTORY_ALLOWED_USER_IDS: '',
+    },
+  });
+  const deniedResponse = responseRecorder();
+  await notAllowlisted({ method: 'POST', body: { message: 'licencias de Persona Prueba' } }, deniedResponse);
+  assert.equal(deniedResponse.statusCode, 422);
+  assert.equal(deniedResponse.payload.answer.code, 'DIRECTORY_REQUIRED');
+
+  const missingEmail = privateAssistantHandler({
+    caller: {
+      id: 'official-private',
+      role: 'CONTADOR',
+      tenantId: 'tenant-grh-test',
+      tenant: { slug: 'junin' },
+    },
+    readDirectoryImpl,
+  });
+  const missingEmailResponse = responseRecorder();
+  await missingEmail({ method: 'POST', body: { message: 'legajo 7001' } }, missingEmailResponse);
+  assert.equal(missingEmailResponse.statusCode, 422);
+  assert.equal(missingEmailResponse.payload.answer.code, 'DIRECTORY_REQUIRED');
+  assert.equal(directoryReads, 0);
+  assert.doesNotMatch(JSON.stringify([...publishedPayloads, deniedResponse.payload, missingEmailResponse.payload]), /PERSONA PRUEBA|7001/i);
+});
+
+test('private directory returns bounded structured choices and a useful zero-match state', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const first = fakeDirectoryItem({ legajo: 7001, displayName: 'PERSONA PRUEBA A' });
+  const second = fakeDirectoryItem({ legajo: 7002, displayName: 'PERSONA PRUEBA B' });
+  let reads = 0;
+  const multipleHandler = privateAssistantHandler({
+    readDirectoryImpl: async () => {
+      reads += 1;
+      return fakeDirectoryResponse({ items: [first, second] });
+    },
+  });
+  const multiple = responseRecorder();
+  await multipleHandler({ method: 'POST', body: { message: 'Persona Prueba' } }, multiple);
+  assert.equal(multiple.statusCode, 200);
+  assert.equal(multiple.payload.answer.code, 'DIRECTORY_MULTIPLE_MATCHES');
+  assert.equal(multiple.payload.answer.directory.status, 'multiple_matches');
+  assert.equal(multiple.payload.answer.directory.options.length, 2);
+  assert.equal(reads, 1, 'an ambiguous lookup must not fetch a detail record');
+
+  const zeroHandler = privateAssistantHandler({
+    readDirectoryImpl: async () => fakeDirectoryResponse({ items: [] }),
+  });
+  const zero = responseRecorder();
+  await zeroHandler({ method: 'POST', body: { message: 'Nombre Inexistente' } }, zero);
+  assert.equal(zero.statusCode, 200);
+  assert.equal(zero.payload.answer.code, 'DIRECTORY_NO_MATCH');
+  assert.equal(zero.payload.answer.directory.status, 'no_match');
+  assert.match(zero.payload.answer.summary, /no encontró una ficha/i);
+  assert.doesNotMatch(zero.payload.response, /Nombre Inexistente/i);
+});
+
+test('private directory provenance drift and database errors fail closed without sensitive logs', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const logs = [];
+  const originalConsoleError = console.error;
+  console.error = (...args) => logs.push(args.join(' '));
+  try {
+    const source = fakeDirectorySource();
+    const item = fakeDirectoryItem();
+    let calls = 0;
+    const mismatch = privateAssistantHandler({
+      readDirectoryImpl: async () => {
+        calls += 1;
+        return calls === 1
+          ? fakeDirectoryResponse({ source, items: [item] })
+          : fakeDirectoryDetail(item, { ...source, sourceSha256: 'b'.repeat(64) });
+      },
+    });
+    const mismatchResponse = responseRecorder();
+    await mismatch({ method: 'POST', body: { message: 'Persona Prueba' } }, mismatchResponse);
+    assert.equal(mismatchResponse.statusCode, 503);
+    assert.equal(mismatchResponse.payload.code, 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE');
+    assert.doesNotMatch(JSON.stringify(mismatchResponse.payload), /PERSONA PRUEBA|7001|sha256|stack/i);
+
+    const unavailable = privateAssistantHandler({
+      readDirectoryImpl: async () => {
+        throw new Error('PERSONA PRUEBA 7001 internal-database-secret');
+      },
+    });
+    const unavailableResponse = responseRecorder();
+    await unavailable({ method: 'POST', body: { message: 'Persona Prueba' } }, unavailableResponse);
+    assert.equal(unavailableResponse.statusCode, 503);
+    assert.equal(unavailableResponse.payload.code, 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE');
+    assert.doesNotMatch(JSON.stringify(unavailableResponse.payload), /PERSONA PRUEBA|7001|secret|stack/i);
+  } finally {
+    console.error = originalConsoleError;
+  }
+  assert.equal(logs.length, 2);
+  assert.equal(logs.every(line => line === '[GRH-ASSISTANT] Directorio privado no disponible'), true);
+});
+
 test('intent classifier keeps deterministic allowlist boundaries', () => {
   assert.deepEqual(classifyIntent('Explicame el cierre GRH 2026-07'), { intent: 'close_explanation', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Conciliacion del periodo 2026-07'), { intent: 'close_explanation', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Mostrá datos personales'), { intent: 'pii_request', policy: 'refused' });
+  assert.deepEqual(classifyIntent('Luciana Prueba'), { intent: 'person_lookup', policy: 'limited' });
+  assert.deepEqual(classifyIntent('luciana prueba'), { intent: 'person_lookup', policy: 'limited' });
+  assert.deepEqual(classifyIntent('luciana prueba concejal'), { intent: 'person_lookup', policy: 'limited' });
+  assert.deepEqual(classifyIntent('Licencias de Prueba Luciana'), { intent: 'person_lookup', policy: 'limited' });
+  assert.deepEqual(classifyIntent('legajo 123'), { intent: 'person_lookup', policy: 'limited' });
+  assert.deepEqual(classifyIntent('Licencias 2009'), { intent: 'leave', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('¿Qué licencias históricas están disponibles?'), { intent: 'leave', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Historial de licencias del municipio'), { intent: 'leave', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Historial de licencias de Juan Pérez'), { intent: 'person_lookup', policy: 'limited' });
   assert.deepEqual(classifyIntent('Distribución por centro de costo'), { intent: 'workforce_distribution', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Centro de costo'), { intent: 'workforce_distribution', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Buen día'), { intent: 'help', policy: 'allowed' });
   assert.deepEqual(classifyIntent('¿Qué datos de ausencias hay?'), { intent: 'absence', policy: 'allowed' });
   assert.deepEqual(classifyIntent('¿Cuánto se pagó por transferencia?'), { intent: 'bank_payment_limit', policy: 'limited' });
 });

@@ -496,7 +496,7 @@
         'financial-control': Object.freeze({
           eyebrow: 'Contaduría · control y conciliación',
           title: 'Separá cálculo, conciliación y evidencia contable vinculante.',
-          lead: 'Hacienda organiza controles mensuales en unidades de la fuente. Reportes y Calidad permiten documentar diferencias sin afirmar acreditación bancaria ni moneda no declarada.',
+          lead: 'Hacienda organiza el cálculo mensual en pesos argentinos (ARS). Reportes y Calidad permiten comparar componentes, detectar diferencias y conservar la evidencia del cierre.',
           question: '¿Qué período y qué fuente complementaria faltan para cerrar la diferencia?',
           journey: Object.freeze([
             'Abrí Hacienda y elegí un período liberado por la política de privacidad.',
@@ -559,13 +559,13 @@
         })
       });
       var ACTIONS = Object.freeze({
-        'navigation.dashboard': Object.freeze({ href: 'dashboard.html', label: 'Panel ejecutivo', copy: 'Panorama agregado, alertas y límites del snapshot GRH.', tag: 'Decisión' }),
-        'navigation.reports': Object.freeze({ href: 'reportes.html', label: 'Reportes ejecutivos', copy: 'Salidas agregadas con período, fuente y controles explícitos.', tag: 'Evidencia' }),
-        'navigation.hacienda': Object.freeze({ href: 'hacienda.html', label: 'Hacienda', copy: 'Control mensual de cálculo y conciliación, sin afirmar pago.', tag: 'Control' }),
-        'navigation.grh-executive': Object.freeze({ href: 'ejecutivo.html', label: 'Centro Ejecutivo GRH', copy: 'Nueva lectura ejecutiva del contrato gobernado, con retorno estable disponible.', tag: 'Decisión' }),
-        'navigation.data-quality': Object.freeze({ href: 'control.html', label: 'Calidad y Linaje', copy: 'Inventario, cuarentena, procedencia y riesgos del snapshot.', tag: 'Confianza' }),
-        'navigation.rrhh': Object.freeze({ href: 'rrhh.html', label: 'RRHH', copy: 'Lectura agregada de participación y eventos, sin fichas personales.', tag: 'Gestión' }),
-        'navigation.ai-assistant': Object.freeze({ href: 'ia.html', label: 'Asistente', copy: 'Consultas deterministas limitadas a la evidencia disponible.', tag: 'Consulta' }),
+        'navigation.dashboard': Object.freeze({ href: 'dashboard.html', label: 'Panorama municipal', copy: 'Panorama agregado, alertas y límites del snapshot GRH.', tag: 'Decisión' }),
+        'navigation.reports': Object.freeze({ href: 'reportes.html', label: 'Reportes', copy: 'Salidas agregadas con período, fuente y controles explícitos.', tag: 'Evidencia' }),
+        'navigation.hacienda': Object.freeze({ href: 'hacienda.html', label: 'Hacienda y nómina', copy: 'Evolución del cálculo, componentes y conciliación mensual en ARS.', tag: 'Control' }),
+        'navigation.grh-executive': Object.freeze({ href: '/ejecutivo', label: 'Resumen ejecutivo GRH', copy: 'Personal, nómina, sectores y alertas del último corte GRH.', tag: 'Decisión' }),
+        'navigation.data-quality': Object.freeze({ href: '/calidad', label: 'Calidad de datos', copy: 'Inventario, cuarentena, procedencia y riesgos del snapshot.', tag: 'Confianza' }),
+        'navigation.rrhh': Object.freeze({ href: 'rrhh.html', label: 'Gestión de personas', copy: 'Indicadores, buscador autorizado, cargos y licencias del GRH.', tag: 'Gestión' }),
+        'navigation.ai-assistant': Object.freeze({ href: 'ia.html', label: 'Asistente GRH', copy: 'Preguntas sobre nómina, personas, licencias, ausencias y calidad.', tag: 'Consulta' }),
         'navigation.audit': Object.freeze({ href: 'auditoria.html', label: 'Inventario de cargas', copy: 'Metadatos permitidos; todavía no es auditoría institucional.', tag: 'Datos' }),
         'navigation.export': Object.freeze({ href: 'exportar.html', label: 'Salidas gobernadas', copy: 'Informes protegidos, no exportación cruda ni publicación automática.', tag: 'Salida' }),
         'navigation.import': Object.freeze({ href: 'importar.html', label: 'Importar datos', copy: 'Carga condicionada con validación y período explícito.', tag: 'Ingesta' }),

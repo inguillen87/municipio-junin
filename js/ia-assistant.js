@@ -106,6 +106,8 @@
       body.appendChild(evidenceGrid);
     }
 
+    appendDirectoryContract(body, answer.directory);
+
     var caveats = safeArray(answer.caveats);
     if (caveats.length) {
       var limits = createElement('section', 'answer-limits');
@@ -113,6 +115,8 @@
       caveats.forEach(function(caveat) { limits.appendChild(createElement('p', '', caveat)); });
       body.appendChild(limits);
     }
+
+    appendAnswerActions(body, answer.actions);
 
     if (answer.source) body.appendChild(createElement('p', 'answer-source', answer.source));
     card.appendChild(body);
@@ -173,6 +177,86 @@
       : [];
   }
 
+  function appendDirectoryContract(body, directory) {
+    if (!directory || typeof directory !== 'object') return;
+    if (directory.status === 'matched' && directory.person && typeof directory.person === 'object') {
+      appendLeaveHistory(body, directory.person.leaveHistory);
+      return;
+    }
+    if (directory.status !== 'multiple_matches') return;
+    var options = safeArray(directory.options).slice(0, 6);
+    if (!options.length) return;
+    var list = createElement('div', 'directory-options');
+    options.forEach(function(option) {
+      if (!option || typeof option !== 'object' || !positiveInteger(option.companyCode) || !positiveInteger(option.legajo)) return;
+      var href = '/rrhh?company=' + encodeURIComponent(option.companyCode) + '&legajo=' + encodeURIComponent(option.legajo) + '#peopleDirectory';
+      var link = createElement('a', 'directory-option');
+      link.href = href;
+      link.appendChild(createElement('strong', '', option.displayName || ('Legajo ' + option.legajo)));
+      var context = ['Legajo ' + option.legajo, dimensionLabel(option.sector), dimensionLabel(option.organization)].filter(Boolean).join(' · ');
+      link.appendChild(createElement('span', '', context));
+      list.appendChild(link);
+    });
+    if (list.childElementCount) body.appendChild(list);
+  }
+
+  function appendLeaveHistory(body, leaveHistory) {
+    if (!leaveHistory || typeof leaveHistory !== 'object') return;
+    var events = safeArray(leaveHistory.items).slice(0, 24);
+    if (!events.length) return;
+    var section = createElement('section', 'directory-history');
+    section.appendChild(createElement('h4', '', 'Licencias históricas · ' + String(leaveHistory.total || events.length)));
+    var grid = createElement('div', 'directory-history-grid');
+    events.forEach(function(event) {
+      if (!event || typeof event !== 'object' || !dateValue(event.startDate)) return;
+      var item = createElement('div', 'directory-history-item');
+      var range = event.startDate + (dateValue(event.endDate) ? ' → ' + event.endDate : '');
+      item.appendChild(createElement('strong', '', range));
+      item.appendChild(createElement('span', '', Number.isSafeInteger(event.days) ? event.days + ' días' : 'Duración no informada'));
+      grid.appendChild(item);
+    });
+    if (!grid.childElementCount) return;
+    section.appendChild(grid);
+    body.appendChild(section);
+  }
+
+  function appendAnswerActions(body, actions) {
+    var validActions = safeArray(actions).slice(0, 4);
+    if (!validActions.length) return;
+    var row = createElement('div', 'answer-actions');
+    validActions.forEach(function(action) {
+      if (!action || typeof action !== 'object') return;
+      var href = safeInternalHref(action.href);
+      if (!href || typeof action.label !== 'string' || !action.label.trim()) return;
+      var link = createElement('a', 'answer-action', action.label.trim());
+      link.href = href;
+      row.appendChild(link);
+    });
+    if (row.childElementCount) body.appendChild(row);
+  }
+
+  function safeInternalHref(value) {
+    if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.length > 500) return null;
+    try {
+      var parsed = new URL(value, global.location.origin);
+      return parsed.origin === global.location.origin ? value : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function positiveInteger(value) {
+    return Number.isSafeInteger(value) && value > 0;
+  }
+
+  function dateValue(value) {
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
+  function dimensionLabel(value) {
+    return value && typeof value === 'object' && typeof value.label === 'string' ? value.label : '';
+  }
+
   function safeState(value) {
     return ['answered', 'limited', 'unsupported', 'refused'].indexOf(value) !== -1 ? value : 'answered';
   }
@@ -215,7 +299,7 @@
     if (input) input.setAttribute('aria-busy', nextBusy ? 'true' : 'false');
     if (suggestions) {
       suggestions.setAttribute('aria-busy', nextBusy ? 'true' : 'false');
-      suggestions.querySelectorAll('[data-question]').forEach(function(button) {
+      suggestions.querySelectorAll('[data-question], [data-person-lookup]').forEach(function(button) {
         button.disabled = nextBusy;
       });
     }
@@ -367,6 +451,15 @@
 
     if (suggestions) {
       suggestions.addEventListener('click', async function(event) {
+        var personLookup = event.target.closest('[data-person-lookup]');
+        if (personLookup && !busy) {
+          if (input) {
+            input.value = 'Licencias de ';
+            resizeInput(input);
+            input.focus();
+          }
+          return;
+        }
         var button = event.target.closest('[data-question]');
         if (!button || busy) return;
         await ask(button.getAttribute('data-question'));

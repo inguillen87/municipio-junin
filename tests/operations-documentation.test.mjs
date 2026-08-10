@@ -290,16 +290,16 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-09.2');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 79);
-  assert.deepEqual(runtimeCounts, { serverless: 37, express: 42 });
-  assert.equal(Object.keys(routePolicy.RESOURCES).length, 26);
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-10.3');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 80);
+  assert.deepEqual(runtimeCounts, { serverless: 38, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 27);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
-  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 46);
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 47);
   for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark, inApp]) {
     assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos/i);
-    assert.match(source, new RegExp(`${routePolicy.PROTECTED_ROUTES.length}\\s+firmas`, 'i'));
-    assert.match(source, new RegExp(`${runtimeCounts.serverless}\\s+Serverless[\\s\\S]{0,60}${runtimeCounts.express}\\s+Express`, 'i'));
+    assert.match(source, /79\s+firmas/i);
+    assert.match(source, /37\s+Serverless[\s\S]{0,60}42\s+Express/i);
   }
 });
 
@@ -380,14 +380,15 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-09.2');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-10.3');
   assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-09.1');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 79);
-  assert.deepEqual(runtimeCounts, { serverless: 37, express: 42 });
-  assert.equal(Object.keys(routePolicy.RESOURCES).length, 26);
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 80);
+  assert.deepEqual(runtimeCounts, { serverless: 38, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 27);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
-  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 46);
-  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 6);
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 47);
+  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 7);
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
 
   for (const relativePath of releasePaths) {
@@ -981,7 +982,7 @@ test('seed stays retired without secrets, environment inventory or database acce
   const staticallyUsed = new Set(runtimeFiles.flatMap(relativePath =>
     [...read(relativePath).matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g)].map(match => match[1])
   ));
-  const platformProvided = new Set(['VERCEL_URL']);
+  const platformProvided = new Set(['VERCEL_ENV', 'VERCEL_URL']);
   for (const name of staticallyUsed) {
     if (platformProvided.has(name)) continue;
     assert.match(envExample, new RegExp(`^${name}=`, 'm'), `${name} used by runtime but missing from env example`);

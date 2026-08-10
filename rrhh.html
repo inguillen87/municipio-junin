@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="Centro ejecutivo de Recursos Humanos basado en agregados privados del snapshot GRH Junín.">
-  <title>Centro ejecutivo RRHH | MuniControl</title>
+  <title>Gestión de personas | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="css/dashboard.css">
   <style>
     :root {
-      --rrhh-ink: var(--text-primary, #f0f4ff);
-      --rrhh-soft: var(--text-secondary, #9eb0cb);
-      --rrhh-muted: var(--text-muted, #6f83a3);
+      --rrhh-ink: #f7f9ff;
+      --rrhh-soft: #c6d2e4;
+      --rrhh-muted: #9cafc8;
       --rrhh-card: color-mix(in srgb, var(--bg-card, #111d35) 94%, #ffffff 6%);
       --rrhh-card-strong: color-mix(in srgb, var(--bg-card, #111d35) 88%, #2563eb 12%);
       --rrhh-border: color-mix(in srgb, var(--border, #223253) 86%, #7aa2ff 14%);
@@ -28,6 +28,9 @@
     }
 
     [data-theme="light"] {
+      --rrhh-ink: #13213a;
+      --rrhh-soft: #344966;
+      --rrhh-muted: #536984;
       --rrhh-card: #ffffff;
       --rrhh-card-strong: #f5f8ff;
       --rrhh-border: #dce4f1;
@@ -104,7 +107,7 @@
     .rrhh-eyebrow {
       margin: 0 0 10px;
       color: var(--rrhh-cyan);
-      font-size: 11px;
+      font-size: 12px;
       line-height: 1.4;
       font-weight: 800;
       letter-spacing: .14em;
@@ -139,11 +142,31 @@
       border-radius: 999px;
       color: var(--rrhh-soft);
       background: color-mix(in srgb, var(--rrhh-card) 82%, transparent);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 750;
     }
     .rrhh-chip--verified { color: var(--rrhh-green); border-color: color-mix(in srgb, var(--rrhh-green) 40%, var(--rrhh-border)); }
     .rrhh-chip--historic { color: var(--rrhh-amber); border-color: color-mix(in srgb, var(--rrhh-amber) 40%, var(--rrhh-border)); }
+
+    .rrhh-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+    .rrhh-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid color-mix(in srgb, var(--rrhh-blue) 54%, var(--rrhh-border));
+      border-radius: 11px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--rrhh-blue-deep), var(--rrhh-blue));
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .rrhh-action--secondary { color: var(--rrhh-ink); background: color-mix(in srgb, var(--rrhh-card) 88%, var(--rrhh-blue) 12%); }
+    .rrhh-action:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .rrhh-action:focus-visible { outline: 3px solid color-mix(in srgb, var(--rrhh-blue) 42%, transparent); outline-offset: 2px; }
 
     .rrhh-hero-aside {
       align-self: stretch;
@@ -158,10 +181,10 @@
       backdrop-filter: blur(10px);
     }
 
-    .rrhh-snapshot-label { color: var(--rrhh-muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .rrhh-snapshot-label { color: var(--rrhh-muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .rrhh-snapshot-date { display: block; margin-top: 7px; color: var(--rrhh-ink); font-size: clamp(20px, 2vw, 28px); line-height: 1.15; font-weight: 780; letter-spacing: -.025em; }
     .rrhh-snapshot-note { margin: 7px 0 0; color: var(--rrhh-soft); font-size: 12px; line-height: 1.5; }
-    .rrhh-privacy-line { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--rrhh-border); color: var(--rrhh-soft); font-size: 11px; line-height: 1.45; }
+    .rrhh-privacy-line { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--rrhh-border); color: var(--rrhh-soft); font-size: 12px; line-height: 1.45; }
     .rrhh-lock { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--rrhh-green); background: color-mix(in srgb, var(--rrhh-green) 13%, transparent); font-weight: 900; }
 
     .rrhh-state {
@@ -209,7 +232,7 @@
     .rrhh-button:focus-visible, .rrhh-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--rrhh-blue) 42%, transparent); outline-offset: 2px; }
 
     .rrhh-data { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-    .rrhh-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+    .rrhh-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(152px, 1fr)); gap: 12px; }
     .rrhh-kpi {
       position: relative;
       min-width: 0;
@@ -222,13 +245,14 @@
       box-shadow: 0 10px 28px rgba(2, 9, 25, .08);
     }
     .rrhh-kpi::after { content: ""; position: absolute; width: 68px; height: 68px; right: -28px; top: -28px; border-radius: 50%; background: color-mix(in srgb, var(--kpi-accent, var(--rrhh-blue)) 16%, transparent); }
-    .rrhh-kpi-label { display: block; min-height: 29px; color: var(--rrhh-soft); font-size: 10px; line-height: 1.4; font-weight: 780; letter-spacing: .055em; text-transform: uppercase; }
+    .rrhh-kpi-label { display: block; min-height: 34px; color: var(--rrhh-soft); font-size: 12px; line-height: 1.4; font-weight: 780; letter-spacing: .04em; text-transform: uppercase; }
     .rrhh-kpi-value { display: block; margin-top: 10px; color: var(--rrhh-ink); font-size: clamp(23px, 2vw, 32px); line-height: 1; font-weight: 820; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
-    .rrhh-kpi-context { display: block; margin-top: 11px; color: var(--rrhh-muted); font-size: 10px; line-height: 1.45; }
+    .rrhh-kpi-context { display: block; margin-top: 11px; color: var(--rrhh-muted); font-size: 12px; line-height: 1.45; }
 
     .rrhh-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; min-width: 0; }
     .rrhh-grid--quality { grid-template-columns: minmax(300px, .76fr) minmax(0, 1.24fr); }
     .rrhh-grid--source { grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); }
+    .rrhh-grid--trends { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .rrhh-card--wide { grid-column: 1 / -1; }
     .rrhh-card--wide .rrhh-bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px 28px; }
 
@@ -242,9 +266,9 @@
     }
     .rrhh-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 20px 14px; }
     .rrhh-card-title { margin: 0; color: var(--rrhh-ink); font-size: 15px; line-height: 1.3; font-weight: 780; letter-spacing: -.01em; }
-    .rrhh-card-subtitle { margin: 5px 0 0; color: var(--rrhh-muted); font-size: 11px; line-height: 1.5; }
+    .rrhh-card-subtitle { margin: 5px 0 0; color: var(--rrhh-muted); font-size: 12px; line-height: 1.5; }
     .rrhh-card-body { padding: 4px 20px 20px; min-width: 0; }
-    .rrhh-card-footer { padding: 13px 20px; border-top: 1px solid var(--rrhh-border); color: var(--rrhh-muted); background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); font-size: 10px; line-height: 1.55; }
+    .rrhh-card-footer { padding: 13px 20px; border-top: 1px solid var(--rrhh-border); color: var(--rrhh-muted); background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); font-size: 12px; line-height: 1.55; }
 
     .rrhh-toggle {
       flex: 0 0 auto;
@@ -255,50 +279,52 @@
       color: var(--rrhh-soft);
       background: transparent;
       cursor: pointer;
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 760;
     }
     .rrhh-toggle:hover { color: var(--rrhh-ink); background: color-mix(in srgb, var(--rrhh-blue) 8%, transparent); }
 
     .rrhh-bars { display: flex; flex-direction: column; gap: 11px; }
     .rrhh-bar-row { display: grid; grid-template-columns: minmax(148px, 1.08fr) minmax(96px, 1.4fr) auto; align-items: center; gap: 10px; }
-    .rrhh-bar-label { min-width: 0; overflow-wrap: anywhere; color: var(--rrhh-soft); font-size: 11px; line-height: 1.28; }
-    .rrhh-bar-code { color: var(--rrhh-muted); font-size: 9px; font-weight: 720; white-space: nowrap; }
+    .rrhh-bar-label { min-width: 0; overflow-wrap: anywhere; color: var(--rrhh-soft); font-size: 12px; line-height: 1.28; }
+    .rrhh-bar-code { color: var(--rrhh-muted); font-size: 12px; font-weight: 720; white-space: nowrap; }
     .rrhh-bar-track { height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--rrhh-border) 58%, transparent); }
     .rrhh-bar-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--rrhh-blue-deep), var(--rrhh-cyan)); transition: width .62s cubic-bezier(.2,.7,.2,1); }
     .rrhh-bar-row--unassigned .rrhh-bar-fill { background: linear-gradient(90deg, var(--rrhh-amber), color-mix(in srgb, var(--rrhh-amber) 64%, #fff)); }
     .rrhh-bar-row--protected .rrhh-bar-label { color: var(--rrhh-amber); font-weight: 760; }
     .rrhh-bar-row--protected .rrhh-bar-fill { background: repeating-linear-gradient(135deg, var(--rrhh-amber) 0 6px, color-mix(in srgb, var(--rrhh-amber) 55%, transparent) 6px 12px); }
-    .rrhh-bar-value { min-width: 72px; color: var(--rrhh-ink); font-size: 10px; font-weight: 760; font-variant-numeric: tabular-nums; text-align: right; }
+    .rrhh-bar-value { min-width: 72px; color: var(--rrhh-ink); font-size: 12px; font-weight: 760; font-variant-numeric: tabular-nums; text-align: right; }
 
     .rrhh-trend-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; margin-bottom: 8px; }
     .rrhh-trend-value { color: var(--rrhh-ink); font-size: 24px; font-weight: 820; letter-spacing: -.03em; }
-    .rrhh-trend-delta { padding: 4px 7px; border-radius: 999px; color: var(--rrhh-soft); background: color-mix(in srgb, var(--rrhh-border) 55%, transparent); font-size: 10px; font-weight: 760; }
+    .rrhh-trend-delta { padding: 4px 7px; border-radius: 999px; color: var(--rrhh-soft); background: color-mix(in srgb, var(--rrhh-border) 55%, transparent); font-size: 12px; font-weight: 760; }
     .rrhh-chart-wrap { min-height: 252px; width: 100%; }
     .rrhh-chart-wrap svg { display: block; width: 100%; height: auto; min-height: 230px; overflow: visible; }
     .rrhh-chart-grid { stroke: color-mix(in srgb, var(--rrhh-border) 68%, transparent); stroke-width: 1; }
-    .rrhh-chart-label { fill: var(--rrhh-muted); font-size: 10px; font-family: inherit; }
+    .rrhh-chart-label { fill: var(--rrhh-muted); font-size: 12px; font-family: inherit; }
     .rrhh-chart-area { opacity: .95; }
     .rrhh-chart-line { fill: none; stroke: var(--rrhh-blue); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
     .rrhh-chart-line--movement { stroke: var(--rrhh-cyan); }
+    .rrhh-chart-line--leave { stroke: var(--rrhh-violet); }
     .rrhh-chart-point { fill: var(--rrhh-card); stroke: var(--rrhh-blue); stroke-width: 2; }
     .rrhh-chart-point--movement { stroke: var(--rrhh-cyan); }
+    .rrhh-chart-point--leave { stroke: var(--rrhh-violet); }
     .rrhh-chart-point--partial { fill: var(--rrhh-amber); stroke: var(--rrhh-amber); }
-    .rrhh-partial-key { display: flex; align-items: center; gap: 7px; margin-top: 3px; color: var(--rrhh-muted); font-size: 10px; }
+    .rrhh-partial-key { display: flex; align-items: center; gap: 7px; margin-top: 3px; color: var(--rrhh-muted); font-size: 12px; }
     .rrhh-partial-key::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rrhh-amber); }
 
     .rrhh-quality-score { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 18px; }
     .rrhh-quality-score strong { color: var(--rrhh-ink); font-size: 40px; line-height: 1; letter-spacing: -.045em; }
-    .rrhh-quality-score span { padding-bottom: 4px; color: var(--rrhh-muted); font-size: 11px; }
+    .rrhh-quality-score span { padding-bottom: 4px; color: var(--rrhh-muted); font-size: 12px; }
     .rrhh-quality-components { display: flex; flex-direction: column; gap: 14px; }
-    .rrhh-quality-row-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; color: var(--rrhh-soft); font-size: 10px; }
+    .rrhh-quality-row-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; color: var(--rrhh-soft); font-size: 12px; }
     .rrhh-quality-row-head strong { color: var(--rrhh-ink); font-variant-numeric: tabular-nums; }
     .rrhh-quality-track { height: 7px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--rrhh-border) 58%, transparent); }
     .rrhh-quality-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--rrhh-green), var(--rrhh-cyan)); transition: width .62s cubic-bezier(.2,.7,.2,1); }
 
     .rrhh-table-wrap { width: 100%; overflow-x: auto; scrollbar-width: thin; }
     .rrhh-table { width: 100%; min-width: 620px; border-collapse: collapse; }
-    .rrhh-table th, .rrhh-table td { padding: 11px 12px; border-bottom: 1px solid var(--rrhh-border); text-align: right; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .rrhh-table th, .rrhh-table td { padding: 11px 12px; border-bottom: 1px solid var(--rrhh-border); text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
     .rrhh-table th { color: var(--rrhh-muted); font-weight: 780; letter-spacing: .055em; text-transform: uppercase; white-space: nowrap; }
     .rrhh-table td { color: var(--rrhh-soft); }
     .rrhh-table th:first-child, .rrhh-table td:first-child { padding-left: 0; text-align: left; }
@@ -307,16 +333,119 @@
     .rrhh-table-domain { color: var(--rrhh-ink) !important; font-weight: 720; }
     .rrhh-table-warning { color: var(--rrhh-amber) !important; font-weight: 760; }
 
+    .rrhh-directory { scroll-margin-top: 84px; }
+    .rrhh-directory .rrhh-card-head { align-items: center; }
+    .rrhh-directory-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 29px;
+      padding: 0 10px;
+      border: 1px solid var(--rrhh-border);
+      border-radius: 999px;
+      color: var(--rrhh-soft);
+      background: color-mix(in srgb, var(--rrhh-card) 90%, var(--rrhh-blue) 10%);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .rrhh-directory-status[data-state="ready"] { color: var(--rrhh-green); }
+    .rrhh-directory-status[data-state="denied"], .rrhh-directory-status[data-state="unavailable"] { color: var(--rrhh-amber); }
+    .rrhh-directory-tools {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(132px, .72fr)) auto auto;
+      gap: 10px;
+      align-items: end;
+      padding: 0 20px 17px;
+    }
+    .rrhh-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: var(--rrhh-soft); font-size: 12px; font-weight: 760; }
+    .rrhh-field input, .rrhh-field select {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 12px;
+      border: 1px solid var(--rrhh-border);
+      border-radius: 11px;
+      color: var(--rrhh-ink);
+      background: color-mix(in srgb, var(--rrhh-card) 92%, var(--rrhh-blue) 8%);
+    }
+    .rrhh-field input::placeholder { color: var(--rrhh-muted); opacity: 1; }
+    .rrhh-field input:focus, .rrhh-field select:focus { outline: 3px solid color-mix(in srgb, var(--rrhh-blue) 32%, transparent); border-color: var(--rrhh-blue); }
+    .rrhh-directory-button { min-height: 42px; margin: 0; white-space: nowrap; }
+    .rrhh-directory-button--ghost { color: var(--rrhh-ink); background: transparent; box-shadow: none; }
+    .rrhh-directory-state {
+      display: grid;
+      place-items: center;
+      min-height: 118px;
+      padding: 18px;
+      border-top: 1px solid var(--rrhh-border);
+      color: var(--rrhh-soft);
+      background: color-mix(in srgb, var(--rrhh-card) 96%, var(--rrhh-blue) 4%);
+      text-align: center;
+    }
+    .rrhh-directory-state[hidden], .rrhh-directory-results[hidden], .rrhh-directory-mobile[hidden] { display: none !important; }
+    .rrhh-directory-state strong { display: block; margin-bottom: 5px; color: var(--rrhh-ink); font-size: 14px; }
+    .rrhh-directory-state p { max-width: 650px; margin: 0; font-size: 12px; line-height: 1.5; }
+    .rrhh-directory-results-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 20px 11px; color: var(--rrhh-soft); font-size: 12px; }
+    .rrhh-directory-results-head strong { color: var(--rrhh-ink); }
+    .rrhh-directory-table { min-width: 820px; }
+    .rrhh-directory-table th, .rrhh-directory-table td { text-align: left; }
+    .rrhh-directory-table tbody tr { cursor: pointer; }
+    .rrhh-directory-table tbody tr:hover { background: color-mix(in srgb, var(--rrhh-card) 88%, var(--rrhh-blue) 12%); }
+    .rrhh-directory-table tbody tr:focus-within { outline: 2px solid var(--rrhh-blue); outline-offset: -2px; }
+    .rrhh-person-name { color: var(--rrhh-ink) !important; font-weight: 800; }
+    .rrhh-position-cell strong { display: block; color: var(--rrhh-ink); font-size: 12px; line-height: 1.35; }
+    .rrhh-position-cell span { display: block; margin-top: 4px; color: var(--rrhh-muted); font-size: 12px; line-height: 1.35; }
+    .rrhh-person-open { margin: 0; min-height: 32px; padding: 0 10px; box-shadow: none; }
+    .rrhh-directory-mobile { display: none; padding: 0 14px 14px; }
+    .rrhh-person-card { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--rrhh-border); border-radius: 13px; background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); }
+    .rrhh-person-card + .rrhh-person-card { margin-top: 9px; }
+    .rrhh-person-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .rrhh-person-card strong { color: var(--rrhh-ink); }
+    .rrhh-person-card span { color: var(--rrhh-soft); font-size: 12px; line-height: 1.4; }
+    .rrhh-directory-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 9px; padding: 13px 20px 18px; border-top: 1px solid var(--rrhh-border); }
+    .rrhh-page-label { min-width: 112px; color: var(--rrhh-soft); font-size: 12px; font-weight: 760; text-align: center; }
+    .rrhh-page-button { min-height: 34px; margin: 0; padding: 0 12px; color: var(--rrhh-ink); background: transparent; box-shadow: none; }
+    .rrhh-page-button:disabled { cursor: not-allowed; opacity: .45; }
+
+    .rrhh-person-dialog {
+      width: min(720px, calc(100vw - 28px));
+      max-height: min(760px, calc(100vh - 28px));
+      padding: 0;
+      overflow: auto;
+      border: 1px solid var(--rrhh-border);
+      border-radius: 20px;
+      color: var(--rrhh-ink);
+      background: var(--rrhh-card);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, .38);
+    }
+    .rrhh-person-dialog::backdrop { background: rgba(2, 8, 20, .72); backdrop-filter: blur(3px); }
+    .rrhh-person-dialog-head { position: sticky; z-index: 2; top: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px; border-bottom: 1px solid var(--rrhh-border); background: var(--rrhh-card); }
+    .rrhh-person-dialog-head h3 { margin: 0; font-size: 21px; }
+    .rrhh-person-dialog-head p { margin: 6px 0 0; color: var(--rrhh-soft); font-size: 12px; }
+    .rrhh-dialog-close { min-width: 38px; min-height: 38px; margin: 0; padding: 0; color: var(--rrhh-ink); background: transparent; box-shadow: none; }
+    .rrhh-person-dialog-body { display: grid; gap: 17px; padding: 20px; }
+    .rrhh-person-loading { display: grid; place-items: center; min-height: 180px; color: var(--rrhh-soft); }
+    .rrhh-person-loading[hidden], .rrhh-person-content[hidden] { display: none !important; }
+    .rrhh-person-dimensions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .rrhh-person-dimension, .rrhh-event-card { padding: 13px; border: 1px solid var(--rrhh-border); border-radius: 12px; background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); }
+    .rrhh-person-dimension span, .rrhh-event-card span { display: block; color: var(--rrhh-muted); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+    .rrhh-person-dimension strong, .rrhh-event-card strong { display: block; margin-top: 6px; color: var(--rrhh-ink); font-size: 13px; line-height: 1.4; }
+    .rrhh-person-events { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .rrhh-leave-history { padding: 14px; border: 1px solid var(--rrhh-border); border-radius: 12px; }
+    .rrhh-leave-history h4 { margin: 0 0 10px; color: var(--rrhh-ink); font-size: 14px; }
+    .rrhh-leave-history-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .rrhh-leave-history-list li { padding: 10px; border-radius: 9px; color: var(--rrhh-soft); background: color-mix(in srgb, var(--rrhh-card) 90%, var(--rrhh-violet) 10%); font-size: 12px; line-height: 1.45; }
+    .rrhh-person-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+
     .rrhh-source-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     .rrhh-source-item { min-width: 0; padding: 13px; border: 1px solid var(--rrhh-border); border-radius: 12px; background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); }
-    .rrhh-source-item dt { color: var(--rrhh-muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-    .rrhh-source-item dd { overflow-wrap: anywhere; margin: 7px 0 0; color: var(--rrhh-ink); font-size: 11px; line-height: 1.45; font-weight: 680; }
+    .rrhh-source-item dt { color: var(--rrhh-muted); font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .rrhh-source-item dd { overflow-wrap: anywhere; margin: 7px 0 0; color: var(--rrhh-ink); font-size: 12px; line-height: 1.45; font-weight: 680; }
 
     .rrhh-guardrail { height: 100%; padding: 20px; }
     .rrhh-guardrail h3 { margin: 0; color: var(--rrhh-ink); font-size: 15px; }
     .rrhh-guardrail-list { display: flex; flex-direction: column; gap: 13px; margin: 17px 0 0; padding: 0; list-style: none; }
-    .rrhh-guardrail-list li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; color: var(--rrhh-soft); font-size: 11px; line-height: 1.55; }
-    .rrhh-guardrail-list li::before { content: "✓"; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 7px; color: var(--rrhh-green); background: color-mix(in srgb, var(--rrhh-green) 13%, transparent); font-size: 10px; font-weight: 900; }
+    .rrhh-guardrail-list li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; color: var(--rrhh-soft); font-size: 12px; line-height: 1.55; }
+    .rrhh-guardrail-list li::before { content: "✓"; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 7px; color: var(--rrhh-green); background: color-mix(in srgb, var(--rrhh-green) 13%, transparent); font-size: 12px; font-weight: 900; }
     .rrhh-guardrail-list li.rrhh-caution::before { content: "!"; color: var(--rrhh-amber); background: color-mix(in srgb, var(--rrhh-amber) 13%, transparent); }
 
     .rrhh-methodology {
@@ -328,7 +457,7 @@
       border-radius: 14px;
       color: var(--rrhh-soft);
       background: color-mix(in srgb, var(--rrhh-card) 92%, var(--rrhh-blue) 8%);
-      font-size: 10px;
+      font-size: 12px;
       line-height: 1.6;
     }
     .rrhh-methodology strong { color: var(--rrhh-ink); }
@@ -343,12 +472,14 @@
     @keyframes rrhh-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
     @media (max-width: 1360px) {
-      .rrhh-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .rrhh-directory-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .rrhh-directory-tools .rrhh-field:first-child { grid-column: span 2; }
     }
     @media (max-width: 1080px) {
       .rrhh-hero { grid-template-columns: 1fr; }
       .rrhh-hero-aside { display: grid; grid-template-columns: 1fr 1fr; }
       .rrhh-grid, .rrhh-grid--quality, .rrhh-grid--source { grid-template-columns: 1fr; }
+      .rrhh-grid--trends { grid-template-columns: 1fr; }
       .rrhh-source-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 680px) {
@@ -369,6 +500,16 @@
       .rrhh-source-grid { grid-template-columns: 1fr; }
       .rrhh-methodology { grid-template-columns: 1fr; }
       .rrhh-card--wide .rrhh-bars { grid-template-columns: 1fr; }
+      .rrhh-actions .rrhh-action { flex: 1 1 148px; }
+      .rrhh-directory-tools { grid-template-columns: 1fr; padding-inline: 15px; }
+      .rrhh-directory-tools .rrhh-field:first-child { grid-column: auto; }
+      .rrhh-directory-table-wrap { display: none; }
+      .rrhh-directory-mobile { display: block; }
+      .rrhh-directory-results-head { align-items: flex-start; padding-inline: 15px; }
+      .rrhh-directory-pagination { justify-content: center; padding-inline: 15px; }
+      .rrhh-person-dimensions, .rrhh-person-events { grid-template-columns: 1fr; }
+      .rrhh-leave-history-list { grid-template-columns: 1fr; }
+      .rrhh-person-dialog-head, .rrhh-person-dialog-body { padding: 16px; }
     }
     @media (max-width: 390px) {
       .rrhh-kpis { grid-template-columns: 1fr; }
@@ -393,7 +534,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <div class="page-title">
-          <h1>Centro ejecutivo RRHH</h1>
+          <h1>Gestión de personas</h1>
           <span class="breadcrumb">GRH Junín · agregados protegidos</span>
         </div>
       </div>
@@ -409,25 +550,32 @@
     <div class="content-wrapper rrhh-shell">
       <section class="rrhh-hero" aria-labelledby="rrhhHeroTitle">
         <div>
-          <p class="rrhh-eyebrow">Inteligencia institucional · evidencia primero</p>
-          <h2 id="rrhhHeroTitle">Decisiones de personal sobre una fuente trazable</h2>
-          <p class="rrhh-hero-copy">Legajos registrados, participación en liquidación, ausencias, movimientos y calidad del dato en una lectura ejecutiva. La pantalla recibe dos proyecciones GRH gobernadas y conserva sus límites: no muestra personas ni celdas pequeñas, no equipara liquidación con planta activa y no presenta el snapshot como tiempo real.</p>
+          <p class="rrhh-eyebrow">Centro operativo GRH</p>
+          <h2 id="rrhhHeroTitle">Personas, cargos y licencias para decidir</h2>
+          <p class="rrhh-hero-copy">Indicadores reales del backup GRH Junín y, para perfiles habilitados, búsqueda nominal por legajo, organización y cargo.</p>
           <div class="rrhh-chips" aria-label="Garantías del tablero">
-            <span class="rrhh-chip rrhh-chip--verified">Sólo agregados</span>
-            <span class="rrhh-chip rrhh-chip--verified">Sin PII exportada</span>
+            <span class="rrhh-chip rrhh-chip--verified">Fuente GRH real</span>
+            <span class="rrhh-chip rrhh-chip--verified">Agregados verificados</span>
             <span class="rrhh-chip rrhh-chip--historic">Snapshot histórico</span>
             <span class="rrhh-chip" id="schemaChip">Contrato en verificación</span>
+          </div>
+          <div class="rrhh-actions" aria-label="Acciones de Recursos Humanos">
+            <button class="rrhh-action" id="openDirectoryAction" type="button">Buscar persona</button>
+            <button class="rrhh-action rrhh-action--secondary" id="compareGroupsAction" type="button">Comparar áreas</button>
+            <a class="rrhh-action rrhh-action--secondary" href="ia.html">Abrir Asistente GRH</a>
+            <a class="rrhh-action rrhh-action--secondary" href="hacienda.html">Ver Hacienda</a>
+            <a class="rrhh-action rrhh-action--secondary" href="/calidad">Calidad de datos</a>
           </div>
         </div>
         <aside class="rrhh-hero-aside" aria-label="Contexto del snapshot">
           <div>
             <span class="rrhh-snapshot-label">Corte de información</span>
             <strong class="rrhh-snapshot-date" id="snapshotDate">—</strong>
-            <p class="rrhh-snapshot-note" id="snapshotNote">La vista permanecerá cerrada hasta verificar el contrato privado.</p>
+            <p class="rrhh-snapshot-note" id="snapshotNote">Verificando el corte publicado.</p>
           </div>
           <div class="rrhh-privacy-line">
             <span class="rrhh-lock" aria-hidden="true">✓</span>
-            <span id="privacyLine">Acceso autenticado; ningún identificador individual ni celda pequeña se carga en esta pantalla.</span>
+            <span id="privacyLine">Los agregados se cargan para el rol; el directorio requiere autorización nominal adicional.</span>
           </div>
         </aside>
       </section>
@@ -450,7 +598,7 @@
           <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-blue)">
             <span class="rrhh-kpi-label">Legajos registrados</span>
             <strong class="rrhh-kpi-value" id="kpiLegajos">—</strong>
-            <span class="rrhh-kpi-context" id="kpiLegajosContext">Registro maestro del snapshot; no equivale a planta activa.</span>
+            <span class="rrhh-kpi-context" id="kpiLegajosContext">Registro maestro del snapshot.</span>
           </article>
           <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-cyan)">
             <span class="rrhh-kpi-label">Participantes de liquidación</span>
@@ -461,6 +609,11 @@
             <span class="rrhh-kpi-label">Ausencias · último año liberado</span>
             <strong class="rrhh-kpi-value" id="kpiAbsences">—</strong>
             <span class="rrhh-kpi-context" id="kpiAbsencesContext">Serie protegida; no es una tasa.</span>
+          </article>
+          <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-amber)">
+            <span class="rrhh-kpi-label">Licencias · último año liberado</span>
+            <strong class="rrhh-kpi-value" id="kpiLeaves">—</strong>
+            <span class="rrhh-kpi-context" id="kpiLeavesContext">Serie histórica en verificación.</span>
           </article>
           <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-green)">
             <span class="rrhh-kpi-label">Movimientos · último año liberado</span>
@@ -479,7 +632,67 @@
           </article>
         </section>
 
-        <section class="rrhh-grid" aria-label="Participación en la última liquidación válida">
+        <section class="rrhh-card rrhh-directory rrhh-reveal" id="peopleDirectory" aria-labelledby="directoryTitle">
+          <header class="rrhh-card-head">
+            <div>
+              <h3 class="rrhh-card-title" id="directoryTitle">Directorio GRH</h3>
+              <p class="rrhh-card-subtitle">Buscar por apellido, nombre o legajo. Filtros operativos del snapshot.</p>
+            </div>
+            <span class="rrhh-directory-status" id="directoryStatusBadge" data-state="loading">Verificando acceso</span>
+          </header>
+          <form class="rrhh-directory-tools" id="directoryForm" autocomplete="off">
+            <label class="rrhh-field" for="directorySearch">
+              Buscar persona o legajo
+              <input id="directorySearch" name="search" type="search" maxlength="80" placeholder="Ej.: apellido o número de legajo">
+            </label>
+            <label class="rrhh-field" for="directorySector">
+              Sector
+              <select id="directorySector" name="sector"><option value="">Todos</option></select>
+            </label>
+            <label class="rrhh-field" for="directoryOrganization">
+              Organización
+              <select id="directoryOrganization" name="organization"><option value="">Todas</option></select>
+            </label>
+            <label class="rrhh-field" for="directoryPosition">
+              Cargo informado
+              <select id="directoryPosition" name="positionObservation"><option value="">Todos</option></select>
+            </label>
+            <label class="rrhh-field" for="directoryEvent">
+              Eventos
+              <select id="directoryEvent" name="event">
+                <option value="">Todos</option>
+                <option value="leave">Con licencias</option>
+                <option value="absence">Con ausencias</option>
+                <option value="both">Licencias y ausencias</option>
+              </select>
+            </label>
+            <button class="rrhh-button rrhh-directory-button" id="directorySubmit" type="submit">Buscar</button>
+            <button class="rrhh-button rrhh-directory-button rrhh-directory-button--ghost" id="directoryReset" type="button">Limpiar</button>
+          </form>
+          <div class="rrhh-directory-state" id="directoryState" role="status" aria-live="polite">
+            <div><strong id="directoryStateTitle">Verificando acceso al directorio</strong><p id="directoryStateMessage">El tablero agregado ya está disponible. La búsqueda nominal se habilita sólo si el perfil está autorizado.</p></div>
+          </div>
+          <div class="rrhh-directory-results" id="directoryResults" hidden>
+            <div class="rrhh-directory-results-head">
+              <span><strong id="directoryResultCount">—</strong> <span id="directoryResultLabel">resultados</span></span>
+              <span id="directorySourceLabel">—</span>
+            </div>
+            <div class="rrhh-table-wrap rrhh-directory-table-wrap">
+              <table class="rrhh-table rrhh-directory-table">
+                <thead><tr><th>Persona</th><th>Legajo</th><th>Cargo informado</th><th>Organización</th><th>Licencias</th><th>Ausencias</th><th></th></tr></thead>
+                <tbody id="directoryTableBody"></tbody>
+              </table>
+            </div>
+            <div class="rrhh-directory-mobile" id="directoryMobileList"></div>
+            <div class="rrhh-directory-pagination">
+              <button class="rrhh-button rrhh-page-button" id="directoryPrevious" type="button">Anterior</button>
+              <span class="rrhh-page-label" id="directoryPageLabel">Página 1</span>
+              <button class="rrhh-button rrhh-page-button" id="directoryNext" type="button">Siguiente</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="rrhh-grid" id="workforceDistribution" aria-label="Participación en la última liquidación válida">
           <article class="rrhh-card rrhh-reveal">
             <header class="rrhh-card-head">
               <div>
@@ -517,7 +730,7 @@
           </article>
         </section>
 
-        <section class="rrhh-grid" aria-label="Evolución temporal válida">
+        <section class="rrhh-grid rrhh-grid--trends" id="historicalTrends" aria-label="Evolución temporal válida">
           <article class="rrhh-card rrhh-reveal">
             <header class="rrhh-card-head">
               <div>
@@ -529,6 +742,20 @@
               <div class="rrhh-trend-summary"><strong class="rrhh-trend-value" id="absenceCompleteValue">—</strong><span class="rrhh-trend-delta" id="absenceDelta">—</span></div>
               <div class="rrhh-chart-wrap" id="absenceChart"></div>
               <div class="rrhh-partial-key" id="absencePartialNote">El último año puede ser parcial al corte.</div>
+            </div>
+          </article>
+
+          <article class="rrhh-card rrhh-reveal">
+            <header class="rrhh-card-head">
+              <div>
+                <h3 class="rrhh-card-title">Licencias históricas por año</h3>
+                <p class="rrhh-card-subtitle">Rango real disponible en licencia; no representa licencias actuales.</p>
+              </div>
+            </header>
+            <div class="rrhh-card-body">
+              <div class="rrhh-trend-summary"><strong class="rrhh-trend-value" id="leaveCompleteValue">—</strong><span class="rrhh-trend-delta" id="leaveDelta">—</span></div>
+              <div class="rrhh-chart-wrap" id="leaveChart"></div>
+              <div class="rrhh-partial-key" id="leaveRangeNote">Verificando rango histórico.</div>
             </div>
           </article>
 
@@ -607,15 +834,11 @@
 
           <aside class="rrhh-card rrhh-reveal">
             <div class="rrhh-guardrail">
-              <h3>Guardrails de interpretación</h3>
+              <h3>Lectura correcta</h3>
               <ul class="rrhh-guardrail-list">
-                <li>La pantalla consume únicamente las proyecciones ejecutiva v2 y de calidad v1 mediante el cliente autenticado.</li>
-                <li>No se exportan nombres, documentos, domicilios ni identificadores de empleados.</li>
-                <li>Las categorías pequeñas se consolidan en «Otros (celdas protegidas)»; los años sensibles no liberados se omiten, nunca se imputan como cero.</li>
-                <li class="rrhh-caution">El corte es histórico y no refleja cambios posteriores al snapshot.</li>
-                <li class="rrhh-caution">Ausencias y movimientos son conteos de registros; no representan tasas ni personas únicas.</li>
-                <li class="rrhh-caution">Los legajos del backup no se clasifican como activos o inactivos porque el contrato no lo acredita.</li>
-                <li class="rrhh-caution">Participar en la liquidación de un período no equivale a integrar la planta activa contractual.</li>
+                <li>Los rankings agregan categorías pequeñas y las series omiten períodos bajo umbral.</li>
+                <li class="rrhh-caution">El corte es histórico; ausencias, licencias y movimientos son eventos, no tasas.</li>
+                <li class="rrhh-caution">«Participó en cálculo» describe el período; no acredita situación contractual.</li>
               </ul>
             </div>
           </aside>
@@ -623,11 +846,33 @@
 
         <aside class="rrhh-methodology" aria-label="Definición del tablero">
           <span class="rrhh-methodology-mark" aria-hidden="true">i</span>
-          <span><strong>Grano y alcance:</strong> cada bloque usa agregados protegidos del snapshot GRH Junín. El registro maestro cuenta legajos; workforce cuenta claves presentes en cálculo válido del período de referencia y no define planta activa; las series muestran exclusivamente filas anuales liberadas. Calidad, cobertura y reconciliación siguen <span id="methodSchema">—</span>. Si origen, privacidad o identidad de corte fallan, el tablero se cierra y no presenta valores parciales.</span>
+          <span><strong>Definición:</strong> legajos registrados y participación en cálculo son universos distintos. Series y calidad siguen <span id="methodSchema">—</span>.</span>
         </aside>
       </div>
     </div>
   </main>
+
+  <dialog class="rrhh-person-dialog" id="personDialog" aria-labelledby="personDialogTitle">
+    <header class="rrhh-person-dialog-head">
+      <div><h3 id="personDialogTitle">Ficha de persona</h3><p id="personDialogSubtitle">Consultando legajo…</p></div>
+      <button class="rrhh-button rrhh-dialog-close" id="personDialogClose" type="button" aria-label="Cerrar ficha">×</button>
+    </header>
+    <div class="rrhh-person-dialog-body">
+      <div class="rrhh-person-loading" id="personDialogLoading" role="status">Cargando ficha…</div>
+      <div class="rrhh-person-content" id="personDialogContent" hidden>
+        <div class="rrhh-person-dimensions" id="personDimensions"></div>
+        <div class="rrhh-person-events" id="personEvents"></div>
+        <section class="rrhh-leave-history" id="personLeaveHistory" aria-labelledby="personLeaveHistoryTitle">
+          <h4 id="personLeaveHistoryTitle">Historial de licencias publicado</h4>
+          <ul class="rrhh-leave-history-list" id="personLeaveHistoryList"></ul>
+        </section>
+        <div class="rrhh-person-actions">
+          <a class="rrhh-action" href="ia.html">Analizar en Asistente GRH</a>
+          <a class="rrhh-action rrhh-action--secondary" href="hacienda.html">Cruzar con Hacienda</a>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
   <script src="js/nav.js"></script>
   <script>buildSidebar('rrhh');</script>

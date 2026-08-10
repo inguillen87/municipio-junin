@@ -23,8 +23,8 @@ import type { TopbarLink } from '../components/Topbar';
 const REQUIRED_CAPABILITY = 'navigation.data-quality';
 const QUALITY_NAVIGATION: readonly TopbarLink[] = Object.freeze([
   { href: '/inicio.html', label: 'Inicio' },
-  { href: '/calidad', label: 'Calidad', current: true },
-  { href: '/control.html', label: 'Estable' },
+  { href: '/ejecutivo', label: 'Resumen ejecutivo GRH' },
+  { href: '/calidad', label: 'Calidad de datos', current: true },
 ]);
 
 async function loadQualityViewModel(signal: AbortSignal): Promise<QualityViewModel> {
@@ -66,9 +66,9 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
       <p className="sr-only" role="status" aria-live="polite">Proyección de calidad validada y disponible.</p>
       <section className="page-hero" aria-labelledby="page-title">
         <div className="page-hero__intro">
-          <p className="page-hero__eyebrow">Gobierno de datos · GRH</p>
-          <h1 id="page-title">Calidad y linaje con evidencia verificable</h1>
-          <p>Una lectura ejecutiva del respaldo histórico: procedencia, consistencia y límites visibles antes de tomar decisiones.</p>
+          <p className="page-hero__eyebrow">Control de datos · GRH</p>
+          <h1 id="page-title">Calidad de datos GRH</h1>
+          <p>Qué información es confiable, qué quedó fuera y qué conviene revisar antes de decidir.</p>
         </div>
         <SourceStatus source={viewModel.source} />
       </section>

@@ -15,12 +15,9 @@ import type {
   PayrollSeriesViewModel,
   SectorRankingViewModel,
 } from './executive-types';
+import { formatJuninCurrency } from './tenant-presentation';
 
 const numberFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
-const amountFormatter = new Intl.NumberFormat('es-AR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
 const percentageFormatter = new Intl.NumberFormat('es-AR', {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
@@ -65,10 +62,6 @@ function formatMonth(value: string): string {
 
 function formatNumber(value: number): string {
   return numberFormatter.format(value);
-}
-
-function formatSourceAmount(cents: number): string {
-  return `${amountFormatter.format(cents / 100)} u. fuente`;
 }
 
 function formatWorkforceDefinition(): string {
@@ -128,7 +121,7 @@ function buildPayroll(contract: ExecutiveContract): PayrollSeriesViewModel {
       privacyStatus: row.privacyStatus,
       valueSourceUnits: row.privacyStatus === 'released' ? row.amounts.netPayrollCents / 100 : null,
       valueLabel: row.privacyStatus === 'released'
-        ? formatSourceAmount(row.amounts.netPayrollCents)
+        ? formatJuninCurrency(row.amounts.netPayrollCents)
         : 'No publicable',
       participantDisplay: row.participantDisplay,
       ...change,
@@ -150,7 +143,7 @@ function buildPayroll(contract: ExecutiveContract): PayrollSeriesViewModel {
     latestPeriod: hasUnknownProtectedPeriod ? null : latestKnown?.period ?? null,
     latestStatus,
     points,
-    warning: 'Importes en unidades de la fuente: la moneda no está declarada y el control de cálculo no acredita pago bancario. Los huecos protegidos permanecen nulos y nunca se imputan como cero.',
+    warning: 'Importes presentados en pesos argentinos (ARS), según la configuración del tenant Junín. El control de cálculo no acredita pago bancario. Los huecos protegidos permanecen nulos y nunca se imputan como cero.',
   };
 }
 
@@ -253,8 +246,8 @@ function latestPayrollKpi(
   return {
     key: 'latestPayrollControl',
     label: 'Último control de cálculo',
-    value: formatSourceAmount(latest.amounts.netPayrollCents),
-    note: `${latest.period} · ${latest.participantDisplay} participantes; moneda no declarada y no equivale a pago bancario.`,
+    value: formatJuninCurrency(latest.amounts.netPayrollCents),
+    note: `${latest.period} · ${latest.participantDisplay} participantes · ARS; no equivale a pago bancario.`,
     status: 'released',
     tone: 'violet',
   };

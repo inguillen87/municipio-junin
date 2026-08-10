@@ -193,13 +193,13 @@ export function buildGrhExecutiveReport(bundle, requestedPeriod = null, generate
     calculationControl: calculationControl(selected, quality, latestReleasedPeriod),
     quality: qualityEvidence(quality),
     recommendedNextSteps: [
-      'Validar formalmente moneda y unidad antes de interpretar importes o tomar decisiones financieras.',
+      'Comparar la variación mensual y anual de nómina en ARS antes de definir medidas de gestión.',
       'Revisar los períodos de control anómalos y la diferencia diagnóstica con totpago antes de certificar una liquidación.',
       'Usar el maestro autorizado de personal para determinar dotación activa; este informe mide participación en cálculos.',
     ],
     furtherQuestions: [
       '¿Qué maestro institucional definirá el estado contractual activo de cada agente?',
-      '¿Qué moneda y escala deben declararse formalmente para los importes históricos?',
+      '¿Qué sectores y conceptos explican la mayor variación del período?',
       '¿Cuándo se habilitará una ingesta GRH incremental auditada para reemplazar el snapshot?',
     ],
     caveats: [
@@ -208,7 +208,7 @@ export function buildGrhExecutiveReport(bundle, requestedPeriod = null, generate
       'La respuesta contiene sólo agregados y no exporta identificadores personales.',
       'personas_junin está excluida y no se cruza, integra ni usa como fallback.',
       'Los participantes de cálculo no son una dotación contractual activa.',
-      'Los importes son controles de cálculo en source_currency_cents; la moneda no está declarada.',
+      'Los importes son controles de cálculo en centavos; Junín los presenta en ARS por configuración del tenant, aunque el dump original no incluía código de moneda.',
       'El control de cálculo no acredita pago bancario y totpago se conserva sólo como diagnóstico.',
     ],
   };

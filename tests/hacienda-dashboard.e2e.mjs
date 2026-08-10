@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 import accessPolicy from '../shared/access-policy.cjs';
+import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
 import { buildGrhExecutiveProjection } from '../api/lib/grh-executive-projection.js';
 import { buildGrhQualityProjection } from '../api/lib/grh-quality-projection.js';
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
@@ -47,6 +49,22 @@ const PRIVATE_DATA_PATHS = new Set([
   '/api/raw',
 ]);
 
+function relativeLuminance(hexColor) {
+  let normalized = String(hexColor).trim().replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(normalized)) normalized = normalized.split('').map(channel => channel + channel).join('');
+  assert.match(normalized, /^[0-9a-f]{6}$/i, `expected an opaque hex color, received ${hexColor}`);
+  const channels = [0, 2, 4].map(offset => Number.parseInt(normalized.slice(offset, offset + 2), 16) / 255);
+  return channels.map(channel => channel <= 0.04045
+    ? channel / 12.92
+    : ((channel + 0.055) / 1.055) ** 2.4
+  ).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+}
+
+function contrastRatio(first, second) {
+  const luminances = [relativeLuminance(first), relativeLuminance(second)].sort((a, b) => b - a);
+  return (luminances[0] + 0.05) / (luminances[1] + 0.05);
+}
+
 function authoritativeUser(role = 'INTENDENTE', malformedProjection = false) {
   const tenantId = 'tenant-junin-test';
   const access = accessPolicy.getSessionAccessForUser({ role, tenantId });
@@ -59,6 +77,7 @@ function authoritativeUser(role = 'INTENDENTE', malformedProjection = false) {
     capabilities: access.capabilities,
     accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
     homeProfile: access.homeProfile,
+    presentation: tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' }),
   };
   return malformedProjection ? { ...user, capabilities: 'navigation.hacienda' } : user;
 }
@@ -149,7 +168,7 @@ async function authenticatedContext(browser, viewport) {
     viewport: { width: viewport.width, height: viewport.height },
     reducedMotion: viewport.reducedMotion,
   });
-  await context.addInitScript(({ token }) => {
+  await context.addInitScript(({ token, theme }) => {
     sessionStorage.setItem('mjunin_token', token);
     sessionStorage.setItem('mjunin_user', JSON.stringify({
       id: 'qa-hacienda',
@@ -157,17 +176,19 @@ async function authenticatedContext(browser, viewport) {
       role: 'INTENDENTE',
       tenantId: 'tenant-junin-test',
     }));
-  }, { token: fakeBrowserToken() });
+    localStorage.setItem('govtech_theme', theme);
+  }, { token: fakeBrowserToken(), theme: viewport.theme || 'dark' });
   return context;
 }
 
 test('Hacienda source uses only the secure GRH experience client and compiles inline scripts', async () => {
   const html = await readFile(path.join(REPO, 'hacienda.html'), 'utf8');
   assert.doesNotMatch(html, /\/api\/grh-data|artifact=semantic|MuniAuth\.fetch|calculation_control_series|cross_source_reconciliation/);
-  assert.match(html, /<script src="js\/auth-fetch\.js"><\/script>\s*<script src="js\/grh-secure-data\.js"><\/script>/);
+  assert.match(html, /<script src="js\/auth-fetch\.js"><\/script>\s*<script src="js\/tenant-presentation\.js"><\/script>\s*<script src="js\/grh-secure-data\.js"><\/script>/);
   assert.match(html, /<script src="js\/grh-close-data\.js"><\/script>/);
   assert.match(html, /MuniGrhData\.loadExperience\(\{\s*timeoutMs:\s*10000\s*\}\)/);
   assert.match(html, /MuniGrhClose\.load\(\{\s*timeoutMs:\s*10000\s*\}\)/);
+  assert.match(html, /MuniTenantPresentation\.load\(\)/);
   assert.match(html, /await window\.requireCapability\('navigation\.hacienda'\)/);
   assert.match(html, /async function init\(\)[\s\S]*if \(!await requirePageCapability\(\)\) return;[\s\S]*await loadExperience\(\)/);
   assert.match(html, /retryLoad\.addEventListener\('click', loadAuthorizedExperience\)/);
@@ -179,6 +200,24 @@ test('Hacienda source uses only the secure GRH experience client and compiles in
   )].map(match => match[1]);
   assert.ok(inlineScripts.length >= 2);
   inlineScripts.forEach(script => assert.doesNotThrow(() => new Function(script)));
+});
+
+test('Hacienda operational typography has a static 12px minimum', async () => {
+  const html = await readFile(path.join(REPO, 'hacienda.html'), 'utf8');
+  const declarations = [...html.matchAll(/\bfont(?:-size)?\s*:\s*([^;{}]+)/gi)]
+    .map(match => match[0]);
+  const sizes = declarations.flatMap(declaration =>
+    [...declaration.matchAll(/(\d+(?:\.\d+)?)px\b/gi)].map(match => ({
+      declaration,
+      value: Number(match[1]),
+    }))
+  );
+  assert.ok(sizes.length >= 40, 'the gate must continue covering Hacienda typography declarations');
+  assert.deepEqual(
+    sizes.filter(size => size.value < 12),
+    [],
+    'Hacienda operational labels, tables and SVG text cannot fall below 12px',
+  );
 });
 
 test('Hacienda capability preflight redirects denied or malformed clients before every private contract', async t => {
@@ -236,10 +275,13 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     await new Promise(resolve => server.close(resolve));
   });
 
-  for (const viewport of [
-    { name: 'desktop', width: 1440, height: 1000, reducedMotion: 'no-preference' },
-    { name: 'mobile', width: 390, height: 844, reducedMotion: 'reduce' },
-  ]) {
+  const viewports = [
+    { name: 'desktop-dark', width: 1440, height: 1000, reducedMotion: 'no-preference', theme: 'dark' },
+    { name: 'desktop-light', width: 1440, height: 1000, reducedMotion: 'no-preference', theme: 'light' },
+    { name: 'mobile-dark', width: 390, height: 844, reducedMotion: 'reduce', theme: 'dark' },
+    { name: 'mobile-light', width: 390, height: 844, reducedMotion: 'reduce', theme: 'light' },
+  ];
+  for (const viewport of viewports) {
     const context = await authenticatedContext(browser, viewport);
     const page = await context.newPage();
     const consoleErrors = [];
@@ -286,6 +328,29 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
       closeCopy: document.querySelector('#closeReconciliationCopy')?.textContent.trim(),
       pageText: document.querySelector('#haciendaDataViews')?.innerText || '',
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      theme: document.documentElement.getAttribute('data-theme'),
+      palette: (() => {
+        const style = getComputedStyle(document.documentElement);
+        return Object.fromEntries(['bg', 'surface', 'surface-raised', 'muted', 'border'].map(name => [
+          name,
+          style.getPropertyValue(`--hac-${name}`).trim(),
+        ]));
+      })(),
+      fontFloorFailures: Array.from(document.querySelectorAll('.hac-topbar *, #haciendaDashboard *'))
+        .filter(node => {
+          const style = getComputedStyle(node);
+          const hasOwnText = Array.from(node.childNodes).some(child =>
+            child.nodeType === Node.TEXT_NODE && child.textContent.trim()
+          );
+          return (hasOwnText || node instanceof SVGTextElement) && node.getClientRects().length > 0 &&
+            style.display !== 'none' && style.visibility !== 'hidden' && Number.parseFloat(style.fontSize) < 12;
+        })
+        .slice(0, 12)
+        .map(node => ({
+          selector: `${node.tagName.toLowerCase()}.${node.className?.baseVal || node.className || ''}`,
+          size: getComputedStyle(node).fontSize,
+          text: node.textContent.trim().slice(0, 60),
+        })),
     }));
 
     assert.equal(result.dataHidden, false);
@@ -299,7 +364,7 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     assert.equal(result.quality, '88,99/100');
     assert.equal(result.reconciliation, '63,9%');
     assert.match(result.reconciliationNote, /Global.*acuerdo de valores.*no certifica pago/i);
-    assert.match(result.kpiGross, /u\.m\.$/);
+    assert.match(result.kpiGross, /^ARS\s/);
     assert.equal(result.tableRows, Math.min(10, releasedRows.length));
     assert.equal(result.qualityBars, 4);
     assert.equal(result.chartPaths, 3);
@@ -320,10 +385,28 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     for (const row of suppressedRows) {
       if (row.period) assert.equal(result.pageText.includes(row.period), false);
     }
+    assert.equal(result.theme, viewport.theme);
+    assert.deepEqual(result.fontFloorFailures, [], `${viewport.name} must render operational text at 12px or larger`);
+    for (const background of ['bg', 'surface', 'surface-raised']) {
+      assert.ok(
+        contrastRatio(result.palette.muted, result.palette[background]) >= 4.5,
+        `${viewport.name} muted text must meet AA against ${background}`,
+      );
+      assert.ok(
+        contrastRatio(result.palette.border, result.palette[background]) >= 3,
+        `${viewport.name} borders must meet non-text AA against ${background}`,
+      );
+    }
     assert.equal(result.overflow, 0, `${viewport.name} must not overflow horizontally`);
     assert.deepEqual(consoleErrors, []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(externalRequests, []);
+    if (process.env.HACIENDA_CAPTURE === '1') {
+      await page.screenshot({
+        path: path.join(tmpdir(), `hacienda-legibility-${viewport.name}.png`),
+        fullPage: true,
+      });
+    }
 
     const previousClose = releasedCloseRows.at(-2);
     await page.selectOption('#closePeriodSelect', previousClose.period);
@@ -356,10 +439,10 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     await context.close();
   }
 
-  assert.equal(requestLog.length, 6);
+  assert.equal(requestLog.length, viewports.length * 3);
   assert.deepEqual(
     requestLog.map(item => item.contract).sort(),
-    ['close', 'close', 'executive', 'executive', 'quality', 'quality'],
+    viewports.flatMap(() => ['close', 'executive', 'quality']).sort(),
   );
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
   assert.equal(requestLog.some(item => /grh-data|profile|semantic/i.test(item.pathname)), false);

@@ -1,8 +1,10 @@
 import { noStore, requireDatasetTenant, requireRole } from './lib/auth.js';
 import { readGrhArtifactBundle } from './lib/grh-artifacts.js';
 import { buildPortableGrhViews } from './lib/grh-portable-bundle.js';
+import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
 
 const REPORT_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
+const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' });
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -16,6 +18,17 @@ function escapeHtml(value) {
 function formatNumber(value, maximumFractionDigits = 0) {
   if (!Number.isFinite(value)) return 'No publicado';
   return new Intl.NumberFormat('es-AR', { maximumFractionDigits }).format(value);
+}
+
+function formatCurrencyCents(value) {
+  if (!Number.isSafeInteger(value) || value < 0) return 'No publicado';
+  return new Intl.NumberFormat(JUNIN_PRESENTATION.locale, {
+    style: 'currency',
+    currency: JUNIN_PRESENTATION.displayCurrencyCode,
+    currencyDisplay: 'code',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value / 100).replace(/\s+/g, ' ');
 }
 
 function latestReleasedCompensation(executive) {
@@ -64,12 +77,12 @@ export function buildGrhPrintableHtml(bundle, {
     <section class="grid" aria-label="Indicadores principales">
       <div class="metric"><span>Legajos registrados</span><strong>${formatNumber(quality.referential.legajo.rows)}</strong></div>
       <div class="metric"><span>Participantes · ${escapeHtml(latestControl.period)}</span><strong>${formatNumber(latestControl.participantCount)}</strong></div>
-      <div class="metric"><span>Neto de control · moneda no declarada</span><strong>${formatNumber(netControlCents / 100, 2)} unidades de origen</strong></div>
+      <div class="metric"><span>Neto de control · ARS</span><strong>${formatCurrencyCents(netControlCents)}</strong></div>
       <div class="metric"><span>Calidad del extracto</span><strong>${formatNumber(quality.quality.score, 2)}/100</strong></div>
       <div class="metric"><span>Cuarentena temporal</span><strong>${formatNumber(quality.quality.risks.quarantinedTemporalRows)}</strong></div>
       <div class="metric"><span>Conciliación cross-source</span><strong>${formatNumber(reconciliation, 2)}%</strong></div>
     </section>
-    <div class="note"><strong>Lectura responsable.</strong> “Legajos registrados” no equivale a empleados activos. Los importes son agregados de control de liquidación de períodos con al menos ${executive.privacy.portableThreshold} participantes: no acreditan pago bancario y la fuente no declara moneda. Las ausencias, licencias, movimientos o importes protegidos no se publican en este documento.</div>
+    <div class="note"><strong>Lectura responsable.</strong> “Legajos registrados” no equivale a empleados activos. Junín configura la presentación en pesos argentinos (ARS), aunque el dump original no declara un código de moneda. Los importes son controles agregados de períodos con al menos ${executive.privacy.portableThreshold} participantes y no acreditan pago bancario.</div>
     <h2>Controles de calidad</h2>
     <table class="quality">
       <thead><tr><th>Control</th><th>Resultado</th></tr></thead>

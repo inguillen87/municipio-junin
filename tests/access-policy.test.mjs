@@ -70,8 +70,8 @@ const EXPECTED_NAV_HREFS = [
   'dashboard.html',
   'reportes.html',
   'hacienda.html',
-  'grh-ejecutivo.html',
-  'control.html',
+  '/ejecutivo',
+  '/calidad',
   'rrhh.html',
   'ia.html',
   'auditoria.html',
@@ -297,17 +297,23 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
   const bottomSource = await readFile(new URL('../js/bottom-nav.js', import.meta.url), 'utf8');
   const items = extractSidebarItems(source);
   const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
-  const bottomCapabilities = [...bottomSource.matchAll(/^\s*'([^']+)':\s*\{/gm)].map(match => match[1]);
 
   assert.deepEqual(items.map(item => item.href), EXPECTED_NAV_HREFS);
   assert.equal(new Set(items.map(item => item.href)).size, items.length, 'sidebar hrefs must be unique');
   assert.equal(new Set(items.map(item => item.label)).size, items.length, 'sidebar labels must be unique');
   assert.deepEqual(declaredCapabilities, [...EXPECTED_NAV_CAPABILITIES].sort());
-  assert.ok(bottomCapabilities.length > 0);
-  assert.ok(bottomCapabilities.every(capability => EXPECTED_NAV_CAPABILITIES.includes(capability)));
-  assert.equal(new Set(bottomCapabilities).size, bottomCapabilities.length, 'bottom capabilities must be unique');
+  assert.match(source, /window\.MuniNavigationCatalog\s*=\s*Object\.freeze\(NAV_ITEMS\.reduce/);
+  assert.match(bottomSource, /var CATALOG = window\.MuniNavigationCatalog;/);
+  assert.doesNotMatch(bottomSource, /^\s*'navigation\.[^']+':\s*\{/m,
+    'bottom navigation must not duplicate the authoritative catalog');
 
-  assert.match(source, /href:'control\.html'[\s\S]*label:'Calidad y Linaje'[\s\S]*capability:'navigation\.data-quality'/);
+  assert.match(source, /href:'\/calidad'[\s\S]*label:'Calidad de datos'[\s\S]*capability:'navigation\.data-quality'/);
+  assert.match(source, /href:'\/ejecutivo'[\s\S]*label:'Resumen ejecutivo GRH'[\s\S]*capability:'navigation\.grh-executive'/);
+  assert.match(source, /label:'Panorama municipal'/);
+  assert.match(source, /label:'Hacienda y n(?:ó|Ã³)mina'/);
+  assert.match(source, /label:'Gesti(?:ó|Ã³)n de personas'/);
+  assert.match(source, /label:'Asistente GRH'/);
+  assert.match(source, /label:'Reportes'/);
   assert.match(source, /href:'auditoria\.html'[\s\S]*label:'Inventario de cargas'[\s\S]*capability:'navigation\.audit'/);
   assert.match(source, /href:'exportar\.html'[\s\S]*label:'Salidas gobernadas'[\s\S]*capability:'navigation\.export'/);
   assert.match(source, /href:'manuales\.html'[\s\S]*capability:'navigation\.help'/);

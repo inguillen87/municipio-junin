@@ -120,7 +120,7 @@ describe('buildExecutiveViewModel', () => {
       'publishedMovements',
     ]);
     expect(kpis.payrollParticipants?.value).toBe('20');
-    expect(kpis.latestPayrollControl?.value).toBe('1.800,00 u. fuente');
+    expect(kpis.latestPayrollControl?.value).toBe('ARS 1.800,00');
     expect(kpis.sectorCoverage?.value).toBe('60,0%');
     expect(kpis.lastCompleteAbsence?.value).toBe('50');
     expect(kpis.lastCompleteAbsence?.note).toMatch(/no una tasa/i);

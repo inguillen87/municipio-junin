@@ -13,6 +13,7 @@ import {
   applyPreparedBootstrap,
   cleanupVerifiedBootstrap,
   prepareBootstrapBundle,
+  resolveBootstrapCommandInvocation,
   verifyAppliedBootstrap,
 } from '../scripts/grh-directory-production-bootstrap-lib.mjs';
 
@@ -632,4 +633,19 @@ test('CLI help documents the skip-domain production workflow without executing e
   assert.match(result.stdout, /verify/);
   assert.match(result.stdout, /cleanup/);
   assert.doesNotMatch(result.stdout + result.stderr, /passwordHash|postgresql:\/\//i);
+});
+
+test('the production runner invokes the Vercel npm shim through cmd.exe on Windows', () => {
+  const invocation = resolveBootstrapCommandInvocation('vercel', ['inspect', STABLE_PRODUCTION_URL, '--json']);
+  if (process.platform === 'win32') {
+    assert.equal(invocation.command, process.env.ComSpec || 'cmd.exe');
+    assert.deepEqual(invocation.args, [
+      '/d', '/s', '/c', 'vercel.cmd', 'inspect', STABLE_PRODUCTION_URL, '--json',
+    ]);
+    return;
+  }
+  assert.deepEqual(invocation, {
+    command: 'vercel',
+    args: ['inspect', STABLE_PRODUCTION_URL, '--json'],
+  });
 });

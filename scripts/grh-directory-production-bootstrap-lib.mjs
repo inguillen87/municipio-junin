@@ -111,15 +111,21 @@ function parseWindowsSid(output) {
   return match?.[0] || null;
 }
 
-function executable(command) {
-  if (process.platform !== 'win32') return command;
-  if (command === 'vercel') return 'vercel.cmd';
-  if (command === 'git') return 'git.exe';
-  return command;
+export function resolveBootstrapCommandInvocation(command, args) {
+  if (process.platform !== 'win32') return { command, args };
+  if (command === 'vercel') {
+    return {
+      command: process.env.ComSpec || 'cmd.exe',
+      args: ['/d', '/s', '/c', 'vercel.cmd', ...args],
+    };
+  }
+  if (command === 'git') return { command: 'git.exe', args };
+  return { command, args };
 }
 
 export function defaultCommandRunner(command, args, { cwd, input } = {}) {
-  const result = spawnSync(executable(command), args, {
+  const invocation = resolveBootstrapCommandInvocation(command, args);
+  const result = spawnSync(invocation.command, invocation.args, {
     cwd,
     input,
     encoding: 'utf8',

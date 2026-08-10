@@ -126,6 +126,9 @@ describe('buildExecutiveViewModel', () => {
     expect(kpis.lastCompleteAbsence?.note).toMatch(/no una tasa/i);
     expect(kpis.publishedMovements?.value).toBe('330');
     expect(kpis.latestPayrollControl?.note).toMatch(/no equivale a pago bancario/i);
+    expect(model.truth.workforceDefinition).toMatch(/participación en liquidación/i);
+    expect(model.truth.workforceDefinition).toMatch(/no equivale a un padrón contractual activo/i);
+    expect(model.truth.workforceDefinition).not.toMatch(/payroll participation/i);
 
     expect(model.payroll.points).toHaveLength(4);
     expect(model.payroll.points[1]).toMatchObject({

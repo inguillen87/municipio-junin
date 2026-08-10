@@ -71,6 +71,10 @@ function formatSourceAmount(cents: number): string {
   return `${amountFormatter.format(cents / 100)} u. fuente`;
 }
 
+function formatWorkforceDefinition(): string {
+  return 'Participación en liquidación del último período: legajos con al menos un cálculo válido; no equivale a un padrón contractual activo.';
+}
+
 function periodIndex(period: string): number {
   const [year, month] = period.split('-').map(Number);
   return (year ?? 0) * 12 + (month ?? 0);
@@ -351,7 +355,7 @@ export function buildExecutiveViewModel(contract: ExecutiveContract): ExecutiveV
       snapshotLabel: formatDate(contract.source.snapshotAsOf),
       referencePeriod: contract.workforce.referencePeriod,
       freshnessLabel: `Snapshot histórico al ${formatDate(contract.source.snapshotAsOf)} · no es tiempo real.`,
-      workforceDefinition: contract.workforce.definition,
+      workforceDefinition: formatWorkforceDefinition(),
     },
     kpis: buildKpis(contract, payroll, sector),
     payroll,

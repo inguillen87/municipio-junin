@@ -170,6 +170,13 @@
   min-height: 12rem;
 }
 
+.executive-kpi-card[data-kpi='latestPayrollControl'] .kpi-card__value {
+  overflow-wrap: normal;
+  font-size: clamp(1.4rem, 2vw, 1.85rem);
+  line-height: 1.08;
+  word-break: normal;
+}
+
 .executive-kpi-card__top {
   display: flex;
   align-items: flex-start;

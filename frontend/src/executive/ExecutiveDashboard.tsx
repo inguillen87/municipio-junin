@@ -70,7 +70,12 @@ export function ExecutiveDashboard({ viewModel }: ExecutiveDashboardProps) {
 
       <section className="kpi-grid executive-kpi-grid" aria-label="Indicadores ejecutivos principales">
         {viewModel.kpis.map(kpi => (
-          <article className="kpi-card executive-kpi-card" data-tone={kpi.tone} key={kpi.key}>
+          <article
+            className="kpi-card executive-kpi-card"
+            data-kpi={kpi.key}
+            data-tone={kpi.tone}
+            key={kpi.key}
+          >
             <div className="executive-kpi-card__top">
               <span className="kpi-card__label">{kpi.label}</span>
               <span className="executive-kpi-card__status" data-status={kpi.status}>

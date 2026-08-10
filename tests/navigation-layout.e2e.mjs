@@ -486,7 +486,7 @@ test('public 404 never mounts an authenticated bottom bar or inert Más control'
   assert.equal(dashboardHref, '/dashboard');
   assert.equal(new URL(dashboardHref, `${baseUrl}/foo/bar`).pathname, '/dashboard');
   assert.equal(new URL(await page.locator('link[rel="stylesheet"]').getAttribute('href'), `${baseUrl}/foo/bar`).pathname, '/css/dashboard.css');
-  assert.equal(new URL(await page.locator('link[rel="icon"]').getAttribute('href'), `${baseUrl}/foo/bar`).pathname, '/favicon.ico');
+  assert.equal(new URL(await page.locator('link[rel="icon"]').getAttribute('href'), `${baseUrl}/foo/bar`).pathname, '/favicon.jpg');
   assert.equal(new URL(await page.locator('script[src]').getAttribute('src'), `${baseUrl}/foo/bar`).pathname, '/js/theme-switcher.js');
 });
 

@@ -5,9 +5,10 @@ actual es convertir el último backup de **GRH Junín** en indicadores trazables
 Intendencia, Hacienda y RRHH, sin publicar PII ni presentar datos simulados como
 si fueran reales.
 
-> Estado de esta documentación: snapshot local validado el 9 de agosto de 2026.
-> No constituye certificación de despliegue productivo, conexión en tiempo real ni
-> pago bancario conciliado.
+> Estado de esta documentación: código `master` y corte productivo verificados el
+> 10 de agosto de 2026. Los indicadores continúan describiendo el snapshot GRH del
+> 6 de agosto de 2026; no constituyen conexión en tiempo real ni pago bancario
+> conciliado.
 
 ## Decisiones de datos
 
@@ -53,7 +54,9 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
 | Cargas analíticas y conectores | Condicionado | Upload/Sheets escriben tablas legacy ligadas por entorno; no hay ingesta unificada ni sincronización |
-| Reportes ejecutivos GRH | Implementado local | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto y períodos gobernados; falta materialización y smoke remoto |
+| Reportes ejecutivos GRH | Verificado en Production | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto, períodos gobernados y smoke autenticado |
+| Accesos demostrativos por rol | Verificado en Production | Seis perfiles gobernados para recorrer permisos y superficies; no habilitan datos inventados ni sustituyen identidades institucionales definitivas |
+| Calidad modular React + TypeScript | Canary `/calidad` | Primera vertical componible sobre el mismo contrato `grh-quality-v1`; `/control` permanece como reversión durante la adopción |
 | WhatsApp | Condicionado | Webhooks informativos endurecidos; faltan proveedor, credenciales y E2E externo certificado |
 | Correo, cron y exportación cruda | Retirado | Responden 410 o no se programan hasta tener finalidad, auditoría e idempotencia |
 | Presupuesto, obras, compras y trámites | Sin fuente gobernada | No deben exhibir bases sintéticas como datos municipales |
@@ -75,12 +78,11 @@ Las cifras se regeneran desde el backup; no deben copiarse a mano en la UI.
 
 ## Arquitectura local y arquitectura objetivo
 
-El checkout local ya genera, valida y consume contratos agregados GRH. La
-materialización en PostgreSQL que aparece abajo es la **arquitectura objetivo
-condicionada**: no debe interpretarse como una base remota aplicada, migrada o
-certificada. Sin `grh_artifacts` materializado para un tenant real, los tests y
-smokes locales usan únicamente los artefactos privados permitidos por el
-entorno de desarrollo.
+El checkout genera, valida y consume contratos agregados GRH. Production usa de
+forma transitoria un runtime sellado, privado y fijado por SHA; PostgreSQL
+`grh_artifacts` sigue siendo el destino estable. El runtime sellado no convierte
+el snapshot en tiempo real ni reemplaza la migración, el restore y la operación
+de base gobernada.
 
 ```text
 Backup GRH privado
@@ -111,6 +113,26 @@ El repositorio contiene dos superficies backend:
 
 Ambas revalidan en base de datos el usuario, su estado, rol, municipio y estado
 del tenant. El frontend no es una frontera de autorización.
+
+### Frontend modular incremental
+
+La modernización evita una reescritura total. Las superficies heredadas
+continúan operativas mientras nuevas verticales entran como rutas canary:
+
+- `frontend/` contiene React + TypeScript estricto. La primera entrada es
+  `/calidad`, alimentada exclusivamente por `/api/auth/me` y
+  `/api/grh-quality`.
+- `build/assemble-dist.mjs` reconstruye `dist/` desde un allowlist explícito y
+  conserva byte a byte las superficies heredadas publicables.
+- Vite compila solamente las entradas modulares y genera assets con hash.
+- `build/verify-dist.mjs` rechaza `index.html`, configuración privada, fuentes
+  del backend, referencias rotas o una salida Vite incompleta.
+- `api/` conserva las funciones Serverless y sigue siendo la autoridad de
+  autenticación, tenant, RBAC, procedencia y privacidad.
+
+La ruta estable `/control` se conserva durante el canary. Sólo se reemplazará
+cuando la nueva experiencia supere pruebas locales, Preview/Production y
+recorridos autenticados por rol.
 
 ## Privacidad de los artefactos
 
@@ -168,6 +190,12 @@ Requisitos: Node.js, Python y PostgreSQL sólo para los flujos que consultan DB.
 
 ```powershell
 npm.cmd install
+
+# Validar TypeScript, lint, tests de dominio y artefacto web completo.
+npm.cmd run verify:web
+
+# Construir exclusivamente la salida publicable en dist/.
+npm.cmd run build
 
 # Servir archivos estáticos y funciones con el runtime elegido.
 # El backend Express alternativo se inicia por separado:

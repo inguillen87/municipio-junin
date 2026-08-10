@@ -164,7 +164,8 @@
     }
     .trust-theme-btn:hover { color: var(--trust-cyan); border-color: var(--trust-border-strong); transform: translateY(-1px); }
     .trust-theme-btn:focus-visible,
-    .trust-retry:focus-visible { outline: 3px solid color-mix(in srgb, var(--trust-blue) 42%, transparent); outline-offset: 3px; }
+    .trust-retry:focus-visible,
+    .trust-pilot-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--trust-blue) 42%, transparent); outline-offset: 3px; }
 
     .content-wrapper.trust-shell {
       width: 100%;
@@ -188,6 +189,27 @@
         radial-gradient(circle at 4% 112%, color-mix(in srgb, var(--trust-blue) 21%, transparent), transparent 40%),
         linear-gradient(128deg, var(--trust-surface-raised), var(--trust-surface));
       box-shadow: var(--trust-shadow);
+    }
+    .trust-pilot-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 42px;
+      margin-top: 18px;
+      padding: 0 16px;
+      border: 1px solid color-mix(in srgb, var(--trust-cyan) 48%, var(--trust-border));
+      border-radius: 12px;
+      color: var(--trust-text);
+      background: color-mix(in srgb, var(--trust-cyan) 10%, var(--trust-surface));
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    }
+    .trust-pilot-link:hover {
+      border-color: var(--trust-cyan);
+      background: color-mix(in srgb, var(--trust-cyan) 16%, var(--trust-surface));
+      transform: translateY(-1px);
     }
     .trust-hero::after {
       position: absolute;
@@ -538,6 +560,9 @@
             <span class="trust-chip trust-chip--warn">Snapshot histórico</span>
             <span class="trust-chip trust-chip--warn">Moneda no declarada</span>
           </div>
+          <a class="trust-pilot-link" href="/calidad">
+            Abrir nueva experiencia de calidad <span aria-hidden="true">&rarr;</span>
+          </a>
         </div>
         <aside class="trust-hero-aside" aria-label="Identidad del snapshot">
           <div>

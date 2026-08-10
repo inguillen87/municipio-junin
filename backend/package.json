@@ -4,7 +4,7 @@
   "description": "API REST — Sistema de Gestión Municipal Junín",
   "main": "server.js",
   "engines": {
-    "node": ">=22.3.0 <25"
+    "node": ">=22.12.0 <25"
   },
   "scripts": {
     "test": "node ../scripts/run-test-suite.mjs backend",

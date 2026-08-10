@@ -863,7 +863,7 @@ test('the documented test commands use the cross-platform suite runner', () => {
 test('runtime baselines are pinned and the current engineering environment passes preflight', () => {
   const rootManifest = JSON.parse(read('package.json'));
   const backendManifest = JSON.parse(read('backend/package.json'));
-  assert.equal(rootManifest.engines.node, '>=22.3.0 <25');
+  assert.equal(rootManifest.engines.node, '>=22.12.0 <25');
   assert.equal(backendManifest.engines.node, rootManifest.engines.node);
   assert.equal(read('.nvmrc').trim(), '24.15.0');
   assert.equal(read('.python-version').trim(), '3.11.9');

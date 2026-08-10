@@ -535,7 +535,7 @@ navegación y `js/auth-fetch.js` el acceso autenticado desde navegador.
 
 ### 6.1 Requisitos
 
-- Node.js `>=22.3.0 <25`; baseline local validado `24.15.0` en `.nvmrc`;
+- Node.js `>=22.12.0 <25`; baseline local validado `24.15.0` en `.nvmrc`;
 - npm;
 - Python `>=3.10`; baseline local validado `3.11.9` en `.python-version`;
 - PostgreSQL sólo para rutas que consultan o escriben DB;

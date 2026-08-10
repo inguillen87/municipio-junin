@@ -1,5 +1,7 @@
 # Los artefactos GRH locales no se empaquetan como assets del deployment.
-# Producción debe leerlos desde la tabla privada grh_artifacts.
+# Producción debe leerlos desde un runtime privado gobernado (sellado transitorio o grh_artifacts).
+dist/**
+frontend/node_modules/**
 api/_data/*.json
 docs/data/*.json
 

@@ -7,8 +7,8 @@ function fail(message) {
 }
 
 const [nodeMajor, nodeMinor] = process.versions.node.split('.').map(Number);
-if (!Number.isInteger(nodeMajor) || nodeMajor < 22 || nodeMajor >= 25 || (nodeMajor === 22 && nodeMinor < 3)) {
-  fail(`Node ${process.versions.node} no está soportado; use >=22.3.0 <25 (baseline local .nvmrc).`);
+if (!Number.isInteger(nodeMajor) || nodeMajor < 22 || nodeMajor >= 25 || (nodeMajor === 22 && nodeMinor < 12)) {
+  fail(`Node ${process.versions.node} no está soportado; use >=22.12.0 <25 (baseline local .nvmrc).`);
 }
 
 const python = spawnSync('python', ['--version'], { encoding: 'utf8', windowsHide: true });

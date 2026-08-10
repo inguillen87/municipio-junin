@@ -1,40 +1,341 @@
-<!doctype html>
-<html class="muni-shell-v1" lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex,nofollow">
-  <title>Analítica transversal | MuniControl Junín</title>
-  <meta name="description" content="Estado de integración de Analítica transversal en MuniControl Junín.">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics & BI | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  <!-- Chart.js MUST load before dashboard.css and before our scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
   <style>
-    html { color-scheme: dark; }
-    body { margin: 0; min-width: 320px; background: var(--bg, #07111f); }
-    .skip-link { position: fixed; left: 16px; top: -60px; z-index: 10000; padding: 10px 14px; border-radius: 9px; background: #e0f2fe; color: #082f49; font: 700 13px/1 system-ui, sans-serif; }
-    .skip-link:focus { top: 16px; }
-    .retired-menu { position: fixed; top: 14px; left: 14px; z-index: 999; display: none; min-width: 44px; min-height: 44px; border: 1px solid #334155; border-radius: 11px; background: #0f1f34; color: #e2e8f0; font: 700 12px/1 system-ui, sans-serif; }
-    @media (max-width: 900px) { .retired-menu { display: inline-flex; align-items: center; justify-content: center; } }
-    .source-noscript { max-width: 720px; margin: 80px auto; padding: 24px; border: 1px solid #334155; border-radius: 16px; color: #e2e8f0; font-family: system-ui, sans-serif; }
+    :root { --bg:#060b18; --surface:rgba(13,21,38,0.9); --border:rgba(255,255,255,0.07); --text:#f0f4ff; --muted:rgba(148,163,184,0.7); }
+    body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:60px; background:rgba(6,11,24,0.97); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+    .topbar-left { display:flex; align-items:center; gap:14px; }
+    .menu-btn { display:none; width:38px; height:38px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center; }
+    .page-title h1 { font-family:'Outfit',sans-serif; font-size:20px; font-weight:900; margin:0; color:var(--text); }
+    .breadcrumb { font-size:11px; color:var(--muted); }
+    .topbar-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#8b5cf6); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:white; }
+
+    .content-wrapper { padding:24px; }
+
+    /* Period selector */
+    .period-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+    .period-btn { padding:6px 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s; font-family:'Inter',sans-serif; }
+    .period-btn.active, .period-btn:hover { background:rgba(59,130,246,0.1); border-color:rgba(59,130,246,0.3); color:#60a5fa; }
+    .period-label { font-size:13px; color:var(--muted); margin-left:auto; font-weight:500; }
+
+    /* KPI row */
+    .kpi-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px; }
+    .kpi-mini { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+    .kpi-mini-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:6px; }
+    .kpi-mini-value { font-family:'Outfit',sans-serif; font-size:22px; font-weight:900; color:var(--text); }
+    .kpi-mini-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+    .kpi-mini-trend { font-size:11px; font-weight:700; margin-top:4px; }
+    .up { color:#10b981; } .down { color:#ef4444; } .neutral { color:#f59e0b; }
+
+    /* Charts grid */
+    .charts-main { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+    .charts-bottom { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .chart-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; }
+    .chart-card.full { grid-column:1/-1; }
+    .chart-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
+    .chart-title { font-family:'Outfit',sans-serif; font-size:15px; font-weight:800; margin:0 0 2px; color:var(--text); }
+    .chart-sub { font-size:11px; color:var(--muted); }
+    .chart-badge { padding:3px 10px; border-radius:99px; font-size:10px; font-weight:800; }
+    .badge-green { background:rgba(16,185,129,0.1); color:#34d399; }
+    .badge-red { background:rgba(239,68,68,0.1); color:#f87171; }
+    .badge-blue { background:rgba(59,130,246,0.1); color:#60a5fa; }
+
+    /* Table */
+    .data-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; }
+    .data-table th { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); padding:8px 12px; text-align:left; border-bottom:1px solid var(--border); }
+    .data-table td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.03); }
+    .data-table tr:hover td { background:rgba(59,130,246,0.04); }
+    .status-badge { padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700; }
+    .status-ok { background:rgba(16,185,129,0.1); color:#34d399; }
+    .status-warn { background:rgba(245,158,11,0.1); color:#fbbf24; }
+    .status-crit { background:rgba(239,68,68,0.1); color:#f87171; }
+
+    @media(max-width:900px) {
+      .menu-btn { display:flex!important; }
+      .kpi-row { grid-template-columns:repeat(2,1fr); }
+      .charts-main, .charts-bottom { grid-template-columns:1fr; }
+      .chart-card.full { grid-column:1; }
+      .content-wrapper { padding:14px; }
+    }
   </style>
 </head>
-<body data-retired-module="analytics" data-source-state="not-connected">
-  <a class="skip-link" href="#retired-module-root">Saltar al estado del módulo</a>
-  <button class="retired-menu" id="menuBtn" type="button" aria-label="Abrir navegación">Menú</button>
-  <aside id="sidebar" class="sidebar" aria-label="Navegación principal"></aside>
-  <main id="retired-module-root" tabindex="-1"></main>
-  <noscript><p class="source-noscript"><strong>Sin fuente conectada · no operativo.</strong> Este módulo requiere JavaScript únicamente para presentar su estado de integración; no hay datos municipales embebidos en la página.</p></noscript>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content" id="mainContent">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title">
+          <h1>Analytics & BI</h1>
+          <span class="breadcrumb">Cuadro de Mando Integral</span>
+        </div>
+      </div>
+      <div class="topbar-right" style="display:flex;gap:8px;align-items:center;">
+        <div class="topbar-avatar" id="topbarAvatar">SA</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+
+      <!-- Period selector -->
+      <div class="period-bar">
+        <button class="period-btn active" onclick="setPeriod(this,'7d')">7 dias</button>
+        <button class="period-btn" onclick="setPeriod(this,'30d')">30 dias</button>
+        <button class="period-btn" onclick="setPeriod(this,'90d')">3 meses</button>
+        <button class="period-btn" onclick="setPeriod(this,'ytd')">Anual</button>
+        <span class="period-label" id="periodLabel">Agosto 2026</span>
+      </div>
+
+      <!-- KPI row -->
+      <div class="kpi-row">
+        <div class="kpi-mini card-lift" data-reveal>
+          <div class="kpi-mini-label">Gasto total</div>
+          <div class="kpi-mini-value" id="statGasto" data-count="284" data-prefix="$" data-suffix="M" data-currency="false">$284M</div>
+          <div class="kpi-mini-trend down">-4.2% vs julio</div>
+        </div>
+        <div class="kpi-mini card-lift" data-reveal>
+          <div class="kpi-mini-label">Empleados activos</div>
+          <div class="kpi-mini-value" id="statEmp" data-count="1247" data-currency="false">1,247</div>
+          <div class="kpi-mini-trend up">+12 este mes</div>
+        </div>
+        <div class="kpi-mini card-lift" data-reveal>
+          <div class="kpi-mini-label">Reclamos resueltos</div>
+          <div class="kpi-mini-value" id="statRec" data-count="295" data-currency="false">295</div>
+          <div class="kpi-mini-trend up">92.8% SLA</div>
+        </div>
+        <div class="kpi-mini card-lift" data-reveal>
+          <div class="kpi-mini-label">Presupuesto ejec.</div>
+          <div class="kpi-mini-value" id="statPres" data-count="67" data-suffix="%" data-currency="false">67%</div>
+          <div class="kpi-mini-trend neutral">normal para agosto</div>
+        </div>
+        <div class="kpi-mini card-lift" data-reveal>
+          <div class="kpi-mini-label">Horas extra</div>
+          <div class="kpi-mini-value" id="statHe" data-count="4312" data-currency="false">4,312</div>
+          <div class="kpi-mini-trend down">-8% vs julio</div>
+        </div>
+      </div>
+
+      <!-- MAIN CHARTS -->
+      <div class="charts-main">
+
+        <div class="chart-card card-lift" data-reveal>
+          <div class="chart-header">
+            <div><div class="chart-title">Evolucion de Gastos</div><div class="chart-sub">Ultimos 12 meses</div></div>
+            <span class="chart-badge badge-blue">$284M</span>
+          </div>
+          <canvas id="chartGastoMensual" height="200"></canvas>
+        </div>
+
+        <div class="chart-card card-lift" data-reveal>
+          <div class="chart-header">
+            <div><div class="chart-title">Presupuesto por Secretaria</div><div class="chart-sub">Distribucion 2026</div></div>
+            <span class="chart-badge badge-green">67% ejec.</span>
+          </div>
+          <canvas id="chartPresupuestoDoughnut" height="200"></canvas>
+        </div>
+
+      </div>
+
+      <div class="charts-bottom">
+
+        <div class="chart-card card-lift" data-reveal>
+          <div class="chart-header">
+            <div><div class="chart-title">Horas Extra por Mes</div><div class="chart-sub">Ultimos 6 meses</div></div>
+            <span class="chart-badge badge-red">-8% vs julio</span>
+          </div>
+          <canvas id="chartHorasExtra" height="200"></canvas>
+        </div>
+
+        <div class="chart-card card-lift" data-reveal>
+          <div class="chart-header">
+            <div><div class="chart-title">Reclamos por Tipo</div><div class="chart-sub">Distribucion agosto</div></div>
+            <span class="chart-badge badge-blue">318 total</span>
+          </div>
+          <canvas id="chartReclamosTipo" height="200"></canvas>
+        </div>
+
+        <div class="chart-card full">
+          <div class="chart-header">
+            <div><div class="chart-title">Ejecucion Presupuestaria por Secretaria</div><div class="chart-sub">% ejecutado vs asignado</div></div>
+            <span class="chart-badge badge-red">2 secretarias en alerta</span>
+          </div>
+          <canvas id="chartEjecucionBarras" height="120"></canvas>
+        </div>
+
+      </div>
+
+      <!-- Rankings table -->
+      <div class="chart-card card-lift" data-reveal style="margin-top:16px">
+        <div class="chart-header">
+          <div><div class="chart-title">Ranking de Secretarias</div><div class="chart-sub">Eficiencia y ejecucion presupuestaria</div></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Secretaria</th><th>Presupuesto</th><th>Ejecutado</th><th>% Ejec.</th><th>Estado</th><th>Empleados</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Salud</strong></td><td>$68.2M</td><td>$61.2M</td><td>89.7%</td><td><span class="status-badge status-ok">Normal</span></td><td>312</td></tr>
+            <tr><td><strong>Obras Publicas</strong></td><td>$54.1M</td><td>$63.8M</td><td>117.9%</td><td><span class="status-badge status-crit">Critico</span></td><td>187</td></tr>
+            <tr><td><strong>Educacion</strong></td><td>$48.7M</td><td>$33.1M</td><td>68.0%</td><td><span class="status-badge status-ok">Normal</span></td><td>221</td></tr>
+            <tr><td><strong>Seguridad</strong></td><td>$42.3M</td><td>$38.9M</td><td>91.9%</td><td><span class="status-badge status-ok">Normal</span></td><td>198</td></tr>
+            <tr><td><strong>Personal</strong></td><td>$38.6M</td><td>$39.7M</td><td>102.8%</td><td><span class="status-badge status-warn">Atencion</span></td><td>89</td></tr>
+            <tr><td><strong>Hacienda</strong></td><td>$31.2M</td><td>$21.4M</td><td>68.6%</td><td><span class="status-badge status-ok">Normal</span></td><td>67</td></tr>
+            <tr><td><strong>Medio Ambiente</strong></td><td>$22.8M</td><td>$18.9M</td><td>82.9%</td><td><span class="status-badge status-ok">Normal</span></td><td>54</td></tr>
+            <tr><td><strong>Cultura</strong></td><td>$18.4M</td><td>$11.2M</td><td>60.9%</td><td><span class="status-badge status-ok">Normal</span></td><td>46</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
   <script src="js/nav.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/toast.js"></script>
   <script>
-    (function initialiseRetiredModule() {
-      if (!window.MuniDB || typeof window.MuniDB.mountRetiredModule !== 'function') {
-        document.getElementById('retired-module-root').textContent = 'Sin fuente conectada. Módulo no operativo.';
-        return;
-      }
-      window.MuniDB.mountRetiredModule({ module: 'analytics' });
-      if (typeof window.buildSidebar === 'function') window.buildSidebar('analytics');
-    })();
+    buildSidebar('analytics');
+    try { var u=JSON.parse(sessionStorage.getItem('mjunin_user')); if(u){var av=document.getElementById('topbarAvatar');if(av)av.textContent=(u.name||'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();} } catch(e){}
   </script>
-</body>
+  <script src="js/charts-premium.js"></script>
+  <script>
+  function setPeriod(btn, period) {
+    document.querySelectorAll('.period-btn').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    var labels = {'7d':'Ultimos 7 dias','30d':'Ultimos 30 dias','90d':'Ultimos 3 meses','ytd':'Ano 2026'};
+    document.getElementById('periodLabel').textContent = labels[period] || '';
+  }
+
+  // Render charts directly — no dependency on MuniCharts being loaded
+  function renderAllCharts() {
+    if (!window.Chart) { setTimeout(renderAllCharts, 150); return; }
+
+    var BLUE  = 'rgba(59,130,246,0.85)';
+    var GREEN = 'rgba(16,185,129,0.85)';
+    var AMBER = 'rgba(245,158,11,0.85)';
+    var RED   = 'rgba(239,68,68,0.85)';
+    var VIO   = 'rgba(139,92,246,0.85)';
+    var TEAL  = 'rgba(20,184,166,0.85)';
+    var borderColor = 'rgba(255,255,255,0.06)';
+    var textColor   = 'rgba(148,163,184,0.8)';
+    var gridColor   = 'rgba(255,255,255,0.04)';
+
+    var baseOpts = {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid:{color:gridColor}, ticks:{color:textColor,font:{size:11}} },
+        y: { grid:{color:gridColor}, ticks:{color:textColor,font:{size:11}} }
+      }
+    };
+
+    // 1. Gasto mensual - line chart
+    var meses = ['Sep','Oct','Nov','Dic','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago'];
+    var gastos = [241,258,312,287,263,271,289,275,268,282,296,284];
+    new Chart(document.getElementById('chartGastoMensual'), {
+      type: 'line',
+      data: {
+        labels: meses,
+        datasets: [{
+          label: 'Gasto ($M)', data: gastos,
+          borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)',
+          borderWidth: 2.5, fill: true, tension: 0.4,
+          pointBackgroundColor: '#3b82f6', pointRadius: 4, pointHoverRadius: 6
+        }]
+      },
+      options: Object.assign({}, baseOpts, { plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){return '$'+c.raw+'M';}}}} })
+    });
+
+    // 2. Presupuesto doughnut
+    new Chart(document.getElementById('chartPresupuestoDoughnut'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Salud','Obras','Educacion','Seguridad','Personal','Hacienda','Otros'],
+        datasets: [{ data: [68.2,54.1,48.7,42.3,38.6,31.2,35.4],
+          backgroundColor: [GREEN, RED, BLUE, VIO, AMBER, TEAL, 'rgba(100,116,139,0.6)'],
+          borderColor: 'rgba(6,11,24,0.5)', borderWidth: 2 }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:true, cutout:'68%',
+        plugins:{ legend:{display:true, position:'right', labels:{color:textColor, font:{size:11}, padding:12, boxWidth:12}} }
+      }
+    });
+
+    // 3. Horas extra - bar chart
+    var he = [3820,4120,3940,4580,4230,4312];
+    new Chart(document.getElementById('chartHorasExtra'), {
+      type: 'bar',
+      data: {
+        labels: ['Mar','Abr','May','Jun','Jul','Ago'],
+        datasets: [{ label:'Horas extra', data: he,
+          backgroundColor: he.map(function(v){ return v>4500?RED:v>4000?AMBER:GREEN; }),
+          borderRadius: 6, borderSkipped: false }]
+      },
+      options: Object.assign({}, baseOpts)
+    });
+
+    // 4. Reclamos tipo - horizontal bar
+    new Chart(document.getElementById('chartReclamosTipo'), {
+      type: 'bar',
+      data: {
+        labels: ['Baches','Luminaria','Agua','Residuos','Arbolado','Seguridad','Otros'],
+        datasets: [{ label:'Reclamos', data: [89,67,52,43,31,22,14],
+          backgroundColor: [RED, AMBER, BLUE, GREEN, TEAL, VIO, 'rgba(100,116,139,0.6)'],
+          borderRadius: 6 }]
+      },
+      options: Object.assign({}, baseOpts, { indexAxis:'y' })
+    });
+
+    // 5. Ejecucion barras - grouped
+    new Chart(document.getElementById('chartEjecucionBarras'), {
+      type: 'bar',
+      data: {
+        labels: ['Salud','Obras P.','Educacion','Seguridad','Personal','Hacienda','M.Ambiente','Cultura'],
+        datasets: [
+          { label:'Asignado ($M)', data: [68.2,54.1,48.7,42.3,38.6,31.2,22.8,18.4], backgroundColor:'rgba(59,130,246,0.25)', borderRadius:4 },
+          { label:'Ejecutado ($M)', data: [61.2,63.8,33.1,38.9,39.7,21.4,18.9,11.2],
+            backgroundColor: [GREEN,RED,GREEN,GREEN,AMBER,GREEN,GREEN,GREEN], borderRadius:4 }
+        ]
+      },
+      options: Object.assign({}, baseOpts, {
+        plugins:{ legend:{display:true, labels:{color:textColor,font:{size:11}}} }
+      })
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    renderAllCharts();
+    // Update KPIs from MuniDB if available
+    if (window.MuniDB) {
+      try {
+        var emp = MuniDB.getAll('empleados').filter(function(e){return e.estado==='activo';}).length;
+        var elEmp = document.getElementById('statEmp');
+        if (elEmp) { if (window.motionKit) window.motionKit.countUp(elEmp, emp, {currency:false}); else elEmp.textContent = emp.toLocaleString('es-AR'); }
+        var pag = MuniDB.getAll('pagos').reduce(function(s,p){return s+(p.monto||0);},0);
+        var elGasto = document.getElementById('statGasto');
+        if (elGasto) { if (window.motionKit) window.motionKit.countUp(elGasto, pag/1000000, {prefix:'$', suffix:'M', currency:false}); else elGasto.textContent = '$'+Math.round(pag/1000000)+'M'; }
+        var rec = MuniDB.getAll('reclamos');
+        var res = rec.filter(function(r){return r.estado==='resuelto';}).length;
+        var elRec = document.getElementById('statRec');
+        if (elRec) { if (window.motionKit) window.motionKit.countUp(elRec, res, {currency:false}); else elRec.textContent = res; }
+      } catch(e){}
+    }
+  });
+  </script>
+  <script src="js/theme-switcher.js"></script>
+  <script src='js/bottom-nav.js'></script>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

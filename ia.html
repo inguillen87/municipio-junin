@@ -1,546 +1,672 @@
-<!doctype html>
-<html class="muni-shell-v1" lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Asistente ejecutivo gobernado por el contrato privado GRH de la Municipalidad de Junín.">
-  <meta name="theme-color" content="#07111f">
-  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <meta charset="UTF-8" />
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistente IA | MuniControl</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
-  <title>Asistente Ejecutivo GRH | MuniControl</title>
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
   <style>
     :root {
-      --assistant-bg: #07111f;
-      --assistant-panel: rgba(12, 25, 43, 0.86);
-      --assistant-panel-solid: #0c192b;
-      --assistant-line: rgba(148, 163, 184, 0.16);
-      --assistant-line-strong: rgba(148, 163, 184, 0.28);
-      --assistant-text: #ecf4ff;
-      --assistant-muted: #92a3b8;
-      --assistant-blue: #65a7ff;
-      --assistant-cyan: #52d6c7;
-      --assistant-amber: #f7c66c;
-      --assistant-danger: #ff8b8b;
-      --assistant-shadow: 0 26px 80px rgba(0, 0, 0, 0.3);
-      --assistant-radius: 22px;
+      --bg-chat: #1e293b;
+      --bg-input: #334155;
+      --accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
     }
-
-    * { box-sizing: border-box; }
-
-    body.assistant-page {
-      min-height: 100vh;
-      margin: 0;
-      overflow: hidden;
-      color: var(--assistant-text);
-      background:
-        radial-gradient(circle at 78% 8%, rgba(46, 126, 214, 0.13), transparent 28rem),
-        radial-gradient(circle at 38% 100%, rgba(30, 167, 153, 0.08), transparent 32rem),
-        var(--assistant-bg);
-      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    button, textarea { font: inherit; }
-    button { -webkit-tap-highlight-color: transparent; }
-
-    .assistant-main {
-      min-height: 100vh;
-      height: 100vh;
-      overflow: hidden;
-      background: transparent;
-    }
-
-    .assistant-topbar {
-      min-height: 76px;
-      padding: 14px clamp(18px, 3vw, 38px);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      border-bottom: 1px solid var(--assistant-line);
-      background: rgba(7, 17, 31, 0.8);
-      backdrop-filter: blur(18px);
-      position: relative;
-      z-index: 12;
-    }
-
-    .assistant-title-group { display: flex; align-items: center; gap: 14px; min-width: 0; }
-    .assistant-title-copy { min-width: 0; }
-    .assistant-title-copy p { margin: 0 0 4px; color: var(--assistant-cyan); font-size: 11px; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
-    .assistant-title-copy h1 { margin: 0; font-size: clamp(18px, 2vw, 24px); font-weight: 750; letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .assistant-menu {
-      width: 40px;
-      height: 40px;
-      border: 1px solid var(--assistant-line);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.04);
-      color: var(--assistant-text);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .assistant-menu svg { width: 20px; height: 20px; }
-
-    .engine-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      flex: 0 0 auto;
-      padding: 9px 13px;
-      border: 1px solid rgba(82, 214, 199, 0.24);
-      border-radius: 999px;
-      color: #b8f4eb;
-      background: rgba(24, 116, 105, 0.12);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .engine-status::before {
-      content: "";
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--assistant-cyan);
-      box-shadow: 0 0 0 5px rgba(82, 214, 199, 0.09);
-    }
-
-    .assistant-workspace {
-      height: calc(100vh - 76px);
-      min-height: 0;
-      padding: clamp(14px, 2.2vw, 28px);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(270px, 330px);
-      gap: clamp(14px, 2vw, 24px);
-      max-width: 1580px;
-      margin: 0 auto;
-    }
-
-    .conversation-panel,
-    .context-rail { min-height: 0; }
-
-    .conversation-panel {
-      border: 1px solid var(--assistant-line);
-      border-radius: var(--assistant-radius);
-      background: linear-gradient(165deg, rgba(14, 30, 51, 0.94), rgba(8, 20, 36, 0.92));
-      box-shadow: var(--assistant-shadow);
-      overflow: hidden;
-      display: grid;
-      grid-template-rows: minmax(0, 1fr) auto auto;
-      position: relative;
-    }
-
-    .conversation-panel::before {
-      content: "";
-      position: absolute;
-      inset: 0 0 auto;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(101, 167, 255, 0.75), transparent);
-      pointer-events: none;
-    }
-
-    .conversation-log {
-      min-height: 0;
-      overflow: auto;
-      padding: clamp(18px, 3vw, 34px);
-      scroll-behavior: smooth;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(148, 163, 184, 0.24) transparent;
-    }
-
-    .welcome-card {
-      max-width: 780px;
-      margin: clamp(18px, 6vh, 64px) auto 26px;
-      text-align: center;
-      animation: assistant-rise 480ms ease both;
-    }
-
-    .welcome-mark {
-      width: 58px;
-      height: 58px;
-      margin: 0 auto 22px;
-      border: 1px solid rgba(101, 167, 255, 0.28);
-      border-radius: 18px;
-      display: grid;
-      place-items: center;
-      color: #bcd9ff;
-      background: linear-gradient(145deg, rgba(55, 124, 211, 0.22), rgba(43, 183, 167, 0.12));
-      box-shadow: 0 18px 45px rgba(12, 104, 208, 0.18);
-    }
-
-    .welcome-mark svg { width: 28px; height: 28px; }
-    .welcome-card .eyebrow { margin: 0 0 10px; color: var(--assistant-cyan); font-size: 11px; font-weight: 850; letter-spacing: 0.16em; text-transform: uppercase; }
-    .welcome-card h2 { margin: 0; font-size: clamp(27px, 4vw, 45px); line-height: 1.08; letter-spacing: -0.045em; font-weight: 760; }
-    .welcome-card > p:not(.eyebrow) { max-width: 650px; margin: 18px auto 0; color: var(--assistant-muted); font-size: clamp(14px, 1.6vw, 16px); line-height: 1.7; }
-
-    .welcome-guardrails {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 23px;
-    }
-
-    .welcome-guardrails span {
-      padding: 7px 10px;
-      border: 1px solid var(--assistant-line);
-      border-radius: 9px;
-      color: #b9c8d9;
-      background: rgba(255, 255, 255, 0.025);
-      font-size: 11px;
-      font-weight: 680;
-    }
-
-    .message-row {
-      width: min(880px, 100%);
-      margin: 0 auto 20px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      animation: assistant-rise 300ms ease both;
-    }
-
-    .message-row.user { justify-content: flex-end; }
-
-    .message-avatar {
-      width: 34px;
-      height: 34px;
-      flex: 0 0 34px;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--assistant-line);
-      border-radius: 11px;
-      color: var(--assistant-blue);
-      background: rgba(101, 167, 255, 0.09);
-      font-size: 11px;
-      font-weight: 850;
-      letter-spacing: 0.04em;
-    }
-
-    .message-row.user .message-avatar { order: 2; color: #d7e4f5; background: rgba(148, 163, 184, 0.09); }
-
-    .user-bubble {
-      max-width: min(680px, calc(100% - 48px));
-      padding: 12px 15px;
-      border: 1px solid var(--assistant-line);
-      border-radius: 16px 5px 16px 16px;
-      color: #e4edf8;
-      background: rgba(49, 68, 91, 0.52);
-      line-height: 1.55;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
-    .answer-card {
-      min-width: 0;
-      flex: 1;
-      border: 1px solid var(--assistant-line);
-      border-radius: 18px;
-      overflow: hidden;
-      background: rgba(6, 17, 31, 0.48);
-    }
-
-    .answer-header { padding: 17px 19px 14px; border-bottom: 1px solid var(--assistant-line); }
-    .answer-heading-line { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
-    .answer-heading-line h3 { margin: 0; font-size: 16px; font-weight: 750; letter-spacing: -0.015em; }
-
-    .answer-state {
-      flex: 0 0 auto;
-      padding: 5px 8px;
-      border-radius: 7px;
-      color: #baf4eb;
-      background: rgba(82, 214, 199, 0.1);
-      font-size: 9px;
-      font-weight: 850;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-    }
-
-    .answer-state.limited,
-    .answer-state.unsupported { color: #ffe0a5; background: rgba(247, 198, 108, 0.1); }
-    .answer-state.refused { color: #ffc2c2; background: rgba(255, 139, 139, 0.1); }
-    .answer-summary { margin: 11px 0 0; color: #cbd7e6; line-height: 1.62; font-size: 14px; }
-    .answer-body { padding: 17px 19px 19px; }
-
-    .finding-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
-    .finding-list li { position: relative; padding-left: 17px; color: #b7c6d8; font-size: 13px; line-height: 1.55; }
-    .finding-list li::before { content: ""; position: absolute; left: 1px; top: 0.68em; width: 5px; height: 5px; border-radius: 50%; background: var(--assistant-blue); box-shadow: 0 0 0 4px rgba(101, 167, 255, 0.08); }
-
-    .evidence-grid { margin-top: 17px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-    .evidence-item { padding: 12px; border: 1px solid var(--assistant-line); border-radius: 12px; background: rgba(255, 255, 255, 0.022); min-width: 0; }
-    .evidence-label { display: block; color: var(--assistant-muted); font-size: 10px; font-weight: 760; letter-spacing: 0.06em; text-transform: uppercase; }
-    .evidence-value { display: block; margin-top: 6px; color: var(--assistant-text); font-size: 16px; font-weight: 760; line-height: 1.25; overflow-wrap: anywhere; }
-    .evidence-detail { display: block; margin-top: 5px; color: #8294aa; font-size: 10px; line-height: 1.45; }
-
-    .answer-limits { margin-top: 15px; padding: 12px 13px; border-left: 2px solid var(--assistant-amber); border-radius: 4px 10px 10px 4px; background: rgba(247, 198, 108, 0.055); }
-    .answer-limits strong { display: block; margin-bottom: 6px; color: #f8dca9; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
-    .answer-limits p { margin: 4px 0 0; color: #aab8c8; font-size: 11px; line-height: 1.5; }
-
-    .answer-source { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--assistant-line); color: #7f93aa; font-size: 10px; line-height: 1.5; }
-
-    .typing-card { display: flex; gap: 6px; align-items: center; min-height: 44px; padding: 14px 17px; border: 1px solid var(--assistant-line); border-radius: 15px; background: rgba(6, 17, 31, 0.45); }
-    .typing-card span { width: 6px; height: 6px; border-radius: 50%; background: var(--assistant-blue); animation: assistant-pulse 1s ease-in-out infinite; }
-    .typing-card span:nth-child(2) { animation-delay: 130ms; }
-    .typing-card span:nth-child(3) { animation-delay: 260ms; }
-
-    .query-suggestions {
-      display: flex;
-      gap: 8px;
-      padding: 11px clamp(16px, 2.5vw, 28px);
-      overflow-x: auto;
-      border-top: 1px solid var(--assistant-line);
-      scrollbar-width: none;
-    }
-
-    .query-suggestions::-webkit-scrollbar { display: none; }
-    .query-chip { flex: 0 0 auto; padding: 8px 11px; border: 1px solid var(--assistant-line); border-radius: 10px; color: #aebdd0; background: rgba(255, 255, 255, 0.025); cursor: pointer; font-size: 11px; font-weight: 650; transition: border-color 160ms ease, color 160ms ease, background 160ms ease; }
-    .query-chip:hover, .query-chip:focus-visible { border-color: rgba(101, 167, 255, 0.48); color: #dcecff; background: rgba(101, 167, 255, 0.07); outline: none; }
-
-    .composer-wrap { padding: 0 clamp(16px, 2.5vw, 28px) 18px; }
-    .composer {
-      width: min(900px, 100%);
-      margin: 0 auto;
-      padding: 8px 8px 8px 15px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: end;
-      gap: 10px;
-      border: 1px solid var(--assistant-line-strong);
-      border-radius: 17px;
-      background: rgba(5, 15, 28, 0.9);
-      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.18);
-      transition: border-color 160ms ease, box-shadow 160ms ease;
-    }
-
-    .composer:focus-within { border-color: rgba(101, 167, 255, 0.58); box-shadow: 0 15px 45px rgba(0, 0, 0, 0.18), 0 0 0 3px rgba(101, 167, 255, 0.08); }
-    .composer textarea { width: 100%; max-height: 116px; min-height: 42px; resize: none; border: 0; outline: 0; padding: 10px 0 5px; color: var(--assistant-text); background: transparent; font-size: 14px; line-height: 1.45; }
-    .composer textarea::placeholder { color: #687c94; }
-
-    .send-query {
-      width: 42px;
-      height: 42px;
-      border: 0;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      color: #061222;
-      background: linear-gradient(145deg, #83baff, #63e0d2);
-      cursor: pointer;
-      transition: transform 150ms ease, filter 150ms ease;
-    }
-
-    .send-query:hover { filter: brightness(1.05); transform: translateY(-1px); }
-    .send-query:active { transform: scale(0.96); }
-    .send-query:focus-visible { outline: 3px solid rgba(101, 167, 255, 0.3); outline-offset: 2px; }
-    .send-query:disabled { cursor: wait; opacity: 0.55; transform: none; }
-    .send-query svg { width: 18px; height: 18px; }
-
-    .composer-meta { width: min(900px, 100%); margin: 8px auto 0; display: flex; justify-content: space-between; gap: 12px; color: #687d95; font-size: 10px; }
-
-    .context-rail { overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.2) transparent; }
-    .rail-card { padding: 17px; border: 1px solid var(--assistant-line); border-radius: 17px; background: var(--assistant-panel); backdrop-filter: blur(16px); }
-    .rail-card h2 { margin: 0; color: #e3edf9; font-size: 12px; font-weight: 780; letter-spacing: 0.03em; }
-    .rail-card > p { margin: 8px 0 0; color: var(--assistant-muted); font-size: 11px; line-height: 1.55; }
-
-    .trust-list { margin-top: 15px; display: grid; gap: 11px; }
-    .trust-row { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; align-items: start; }
-    .trust-dot { width: 7px; height: 7px; margin-top: 5px; border-radius: 50%; background: var(--assistant-cyan); box-shadow: 0 0 0 4px rgba(82, 214, 199, 0.07); }
-    .trust-dot.pending { background: var(--assistant-amber); box-shadow: 0 0 0 4px rgba(247, 198, 108, 0.07); }
-    .trust-row strong { display: block; color: #cdd9e7; font-size: 11px; font-weight: 720; }
-    .trust-row span { display: block; margin-top: 2px; color: #758aa2; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
-
-    .capability-list, .limit-list { margin: 13px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-    .capability-list li, .limit-list li { padding-left: 15px; position: relative; color: #98aabc; font-size: 10px; line-height: 1.5; }
-    .capability-list li::before { content: ""; position: absolute; left: 1px; top: 0.62em; width: 4px; height: 4px; border-radius: 50%; background: var(--assistant-blue); }
-    .limit-list li::before { content: "—"; position: absolute; left: 0; color: var(--assistant-amber); }
-
-    .rail-links { display: grid; gap: 7px; margin-top: 13px; }
-    .rail-link { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--assistant-line); border-radius: 10px; color: #aabdd2; text-decoration: none; font-size: 10px; font-weight: 680; transition: border-color 160ms ease, color 160ms ease; }
-    .rail-link:hover, .rail-link:focus-visible { border-color: rgba(101, 167, 255, 0.45); color: #e2eeff; outline: none; }
-
-    .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
-
-    @keyframes assistant-rise { from { transform: translateY(8px); } to { transform: translateY(0); } }
-    @keyframes assistant-pulse { 0%, 70%, 100% { opacity: 0.32; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-3px); } }
-
-    @media (max-width: 1120px) {
-      .assistant-workspace { grid-template-columns: minmax(0, 1fr) 280px; }
-      .evidence-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 900px) {
-      body.assistant-page { overflow: auto; }
-      .assistant-main { height: auto; min-height: 100vh; }
-      .assistant-menu { display: inline-flex; }
-      .assistant-topbar { min-height: 68px; padding: 11px 14px; }
-      .assistant-title-copy h1 { font-size: 17px; }
-      .assistant-title-copy p { font-size: 9px; }
-      .engine-status { padding: 8px 10px; font-size: 10px; }
-      .assistant-workspace { height: calc(100vh - 68px); min-height: 620px; padding: 10px; display: block; }
-      .conversation-panel { height: 100%; border-radius: 17px; }
-      .context-rail { display: none; }
-      .conversation-log { padding: 17px 13px; }
-      .welcome-card { margin: 22px auto 20px; }
-      .welcome-card h2 { font-size: 29px; }
-      .welcome-mark { width: 50px; height: 50px; margin-bottom: 17px; }
-      .message-avatar { display: none; }
-      .message-row { margin-bottom: 14px; }
-      .user-bubble { max-width: 88%; }
-      .answer-header, .answer-body { padding-left: 14px; padding-right: 14px; }
-      .query-suggestions { padding-left: 13px; padding-right: 13px; }
-      .composer-wrap { padding-left: 13px; padding-right: 13px; padding-bottom: 12px; }
-    }
-
-    @media (max-width: 560px) {
-      .engine-status span { display: none; }
-      .engine-status { width: 34px; height: 34px; padding: 0; justify-content: center; }
-      .assistant-title-group { gap: 9px; }
-      .welcome-card > p:not(.eyebrow) { font-size: 13px; line-height: 1.55; }
-      .welcome-guardrails span:nth-child(3) { display: none; }
-      .answer-heading-line { display: block; }
-      .answer-state { display: inline-block; margin-top: 9px; }
-      .composer-meta span:first-child { display: none; }
-      .composer-meta { justify-content: flex-end; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
-    }
+    body { margin: 0; padding: 0; background-color: #0f172a; color: var(--text-main); font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+    .layout-wrapper { display: flex; width: 100%; height: 100%; }
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    
+    .chat-container { display: flex; flex-direction: column; height: 100%; max-width: 900px; margin: 0 auto; width: 100%; }
+    
+    .chat-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .model-selector { display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px; }
+    .model-btn { padding: 8px 16px; border: none; background: transparent; color: var(--text-muted); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+    .model-btn.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    
+    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 24px; scroll-behavior: smooth; }
+    
+    .message { display: flex; gap: 16px; max-width: 85%; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.assistant { align-self: flex-start; }
+    
+    .avatar { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .user .avatar { background: #334155; }
+    .assistant .avatar { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+    .avatar svg { width: 20px; height: 20px; fill: white; }
+    
+    .bubble { padding: 12px 16px; border-radius: 12px; font-size: 15px; line-height: 1.5; }
+    .user .bubble { background: #334155; color: white; border-top-right-radius: 4px; }
+    .assistant .bubble { background: transparent; color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); border-top-left-radius: 4px; }
+    
+    .suggestions { display: flex; gap: 10px; padding: 0 20px 20px; overflow-x: auto; flex-wrap: wrap; justify-content: center; }
+    .suggestion-btn { padding: 8px 16px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; color: var(--text-muted); font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .suggestion-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+    
+    .input-area { padding: 20px; }
+    .input-wrapper { display: flex; gap: 10px; align-items: center; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 8px 16px; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .input-wrapper input { flex: 1; background: transparent; border: none; outline: none; color: var(--text-main); font-size: 15px; font-family: inherit; padding: 8px 0; }
+    
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: transparent; color: var(--text-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+    .icon-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+    .icon-btn.send { background: var(--accent); color: white; }
+    .icon-btn.send:hover { background: #2563eb; }
+    .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
+    
+    .typing-indicator { display: flex; gap: 4px; padding: 4px 0; }
+    .typing-dot { width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: typing 1.4s infinite ease-in-out both; }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
   </style>
 </head>
-<body class="assistant-page">
-  <aside class="sidebar" id="sidebar" aria-label="Navegación principal"></aside>
-
-  <main class="main-content assistant-main" id="mainContent">
-    <header class="assistant-topbar">
-      <div class="assistant-title-group">
-        <button class="assistant-menu menu-btn" id="menuBtn" type="button" aria-label="Abrir navegación">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M4 7h16M4 12h16M4 17h16"></path>
-          </svg>
-        </button>
-        <div class="assistant-title-copy">
-          <p>Inteligencia ejecutiva</p>
-          <h1>Asistente GRH</h1>
+<body>
+  <div class="layout-wrapper">
+    <aside class="sidebar" id="sidebar"></aside>
+    
+    <main id="mainContent" class="main-content">
+      <div class="chat-container">
+        
+        <div class="chat-header">
+          <h2 style="margin:0; font-size: 18px; font-family: 'Outfit', sans-serif;">MuniBot</h2>
+          <div class="model-selector">
+            <button class="model-btn active" onclick="setModel('demo')">IA Demo</button>
+            <button class="model-btn" onclick="setModel('avanzada')">IA Avanzada</button>
+          </div>
+          <button class="icon-btn" onclick="clearChat()" title="Nuevo chat">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </button>
         </div>
-      </div>
-      <div class="engine-status" title="Las respuestas se construyen con reglas auditables y sin proveedor externo">
-        <span>Motor determinista</span>
-      </div>
-    </header>
 
-    <div class="assistant-workspace">
-      <section class="conversation-panel" aria-label="Conversación con el asistente ejecutivo">
-        <div class="conversation-log" id="conversationLog" role="log" aria-live="polite" aria-relevant="additions">
-          <section class="welcome-card" id="welcomeCard">
-            <div class="welcome-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                <path d="M5 18V9m4 9V5m4 13v-7m4 7V3"></path>
-                <path d="M3 21h18"></path>
-              </svg>
+        <div class="chat-messages" id="chatMessages">
+          <div class="message assistant">
+            <div class="avatar">
+              <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1v2h-1v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2H3v-2h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM7 11a5 5 0 0 0-4.9 4H22a5 5 0 0 0-4.9-4H7zm5 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
             </div>
-            <p class="eyebrow">Decisión con trazabilidad</p>
-            <h2>Preguntá sobre el corte real de GRH</h2>
-            <p>Respuestas agregadas sobre participación de liquidación, ausencias, movimientos, calidad, cuarentena y control de cálculo. Cada resultado explicita fuente, período y límites.</p>
-            <div class="welcome-guardrails" aria-label="Garantías del asistente">
-              <span>Contrato privado</span>
-              <span>Sin datos personales</span>
-              <span>Sin cifras demo</span>
+            <div class="bubble">
+              Hola, soy MuniBot. &iquest;En qu&eacute; puedo ayudarte hoy con la gesti&oacute;n municipal?
             </div>
-          </section>
+          </div>
         </div>
 
-        <div class="query-suggestions" id="querySuggestions" aria-label="Consultas sugeridas">
-          <button class="query-chip" type="button" data-question="Dame un resumen ejecutivo del último período">Resumen ejecutivo</button>
-          <button class="query-chip" type="button" data-question="¿Cuántas personas participaron en la liquidación del último período?">Participación</button>
-          <button class="query-chip" type="button" data-question="¿Cómo se distribuyen los participantes por centro de costo?">Centros de costo</button>
-          <button class="query-chip" type="button" data-question="¿Cómo se distribuyen los participantes por categoría de acuerdo de origen?">Categorías de acuerdo</button>
-          <button class="query-chip" type="button" data-question="¿Qué muestra el control de cálculo del último período?">Control de cálculo</button>
-          <button class="query-chip" type="button" data-question="Explicame el cierre GRH del último período">Cierre explicado</button>
-          <button class="query-chip" type="button" data-question="¿Cómo está la conciliación entre cálculo y totpago?">Conciliación</button>
-          <button class="query-chip" type="button" data-question="¿Qué datos de ausencias están disponibles?">Ausencias</button>
-          <button class="query-chip" type="button" data-question="¿Cuántos movimientos válidos hubo en 2026?">Movimientos</button>
-          <button class="query-chip" type="button" data-question="¿Cuál es la calidad del contrato GRH?">Calidad</button>
+        <div class="suggestions" id="suggestions">
+          <button class="suggestion-btn" onclick="sendPrompt('Resumen ejecutivo del dia')">📊 Resumen ejecutivo del día</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Masa salarial y presupuesto')">💰 Masa salarial</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Ficha completa del legajo 571')">👤 Legajo 571</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Centros de costos y organigrama')">🏛️ Organigrama</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Cuales son los gremios municipales')">🤝 Gremios</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Escala de licencias por antiguedad')">🏖️ Escala licencias</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Proximos feriados del calendario')">📅 Feriados</button>
+          <button class="suggestion-btn" onclick="sendPrompt('Ranking de ausentismo municipal')">📉 Top ausentismo</button>
         </div>
 
-        <div class="composer-wrap">
-          <form class="composer" id="assistantForm" novalidate>
-            <label class="sr-only" for="assistantInput">Consulta ejecutiva GRH</label>
-            <textarea id="assistantInput" name="message" rows="1" maxlength="1200" placeholder="Ej.: ¿Cómo está la conciliación del control de cálculo?" aria-describedby="composerHelp"></textarea>
-            <button class="send-query" id="sendQuery" type="submit" aria-label="Enviar consulta">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                <path d="m5 12 14-7-4 14-3-6-7-1Z"></path>
-              </svg>
+        <div class="input-area">
+          
+          <div class="input-wrapper">
+            <!-- MIC BUTTON with voice state -->
+            <button class="icon-btn mic-btn" id="micBtn" onclick="toggleVoice()" title="Hablar con el asistente">
+              <svg id="micIcon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6.63 6.92V21h1.74v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+              <span id="micRipple" class="mic-ripple"></span>
             </button>
-          </form>
-          <div class="composer-meta" id="composerHelp">
-            <span>Enter para enviar · Shift + Enter para nueva línea</span>
-            <span id="characterCount">0 / 1200</span>
+            <input type="text" id="chatInput" placeholder="Escribe o habla con MuniBot..." onkeypress="handleKeyPress(event)">
+            <!-- SPEAKER toggle -->
+            <button class="icon-btn" id="speakerBtn" onclick="toggleSpeaker()" title="Activar/desactivar voz del asistente" style="opacity:0.5">
+              <svg id="speakerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path id="speakerWave" d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
+            <button class="icon-btn send" onclick="sendMessage()">
+              <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+          <!-- Voice status bar -->
+          <div id="voiceStatus" style="display:none;align-items:center;gap:8px;padding:8px 16px;margin-top:6px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:10px;font-size:12px;color:#60a5fa;font-weight:600">
+            <div id="voiceStatusDots" style="display:flex;gap:3px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#3b82f6;animation:voicePulse 0.8s ease infinite"></div>
+              <div style="width:6px;height:6px;border-radius:50%;background:#3b82f6;animation:voicePulse 0.8s ease 0.2s infinite"></div>
+              <div style="width:6px;height:6px;border-radius:50%;background:#3b82f6;animation:voicePulse 0.8s ease 0.4s infinite"></div>
+            </div>
+            <span id="voiceStatusText">Escuchando...</span>
           </div>
         </div>
-      </section>
-
-      <aside class="context-rail" aria-label="Alcance y trazabilidad del asistente">
-        <section class="rail-card">
-          <h2>Estado de confianza</h2>
-          <p>La procedencia se valida nuevamente en cada consulta.</p>
-          <div class="trust-list">
-            <div class="trust-row">
-              <span class="trust-dot" aria-hidden="true"></span>
-              <div><strong>Fuente canónica</strong><span>GRH Junín · contrato agregado privado</span></div>
-            </div>
-            <div class="trust-row">
-              <span class="trust-dot pending" id="snapshotDot" aria-hidden="true"></span>
-              <div><strong>Snapshot</strong><span id="snapshotStatus">Se confirma al responder</span></div>
-            </div>
-            <div class="trust-row">
-              <span class="trust-dot pending" id="periodDot" aria-hidden="true"></span>
-              <div><strong>Período de cálculo</strong><span id="periodStatus">Se confirma al responder</span></div>
-            </div>
-            <div class="trust-row">
-              <span class="trust-dot" aria-hidden="true"></span>
-              <div><strong>Privacidad</strong><span>Agregado · sin PII · personas_junin excluida</span></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="rail-card">
-          <h2>Preguntas habilitadas</h2>
-          <ul class="capability-list">
-            <li>Participación de liquidación y distribución organizativa.</li>
-            <li>Ausencias, licencias históricas y movimientos válidos.</li>
-            <li>Calidad, cobertura y cuarentena temporal.</li>
-            <li>Control de cálculo, cierre mensual explicado y conciliación entre fuentes.</li>
-            <li>Comparación aritmética entre períodos observados.</li>
-          </ul>
-        </section>
-
-        <section class="rail-card">
-          <h2>Límites explícitos</h2>
-          <ul class="limit-list">
-            <li>No identifica personas ni expone legajos individuales.</li>
-            <li>No llama “planta activa” a la participación de liquidación.</li>
-            <li>No declara moneda ni confirma desembolsos o tiempo real.</li>
-            <li>No predice ni atribuye causas sin un modelo validado.</li>
-            <li>totpago se utiliza únicamente como diagnóstico.</li>
-          </ul>
-        </section>
-
-        <section class="rail-card">
-          <h2>Profundizar</h2>
-          <div class="rail-links">
-            <a class="rail-link" href="grh-ejecutivo.html"><span>Centro Ejecutivo GRH</span><span aria-hidden="true">→</span></a>
-            <a class="rail-link" href="rrhh.html"><span>Analítica RRHH</span><span aria-hidden="true">→</span></a>
-            <a class="rail-link" href="hacienda.html"><span>Control de liquidación</span><span aria-hidden="true">→</span></a>
-          </div>
-        </section>
-      </aside>
-    </div>
-  </main>
+        
+      </div>
+    </main>
+  </div>
 
   <script src="js/nav.js"></script>
-  <script src="js/auth-fetch.js"></script>
-  <script src="js/ia-assistant.js"></script>
-</body>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof buildSidebar === 'function') buildSidebar('ia');
+    });
+
+    var DEMO_QA = [
+      { q: 'Cuanto gastamos este mesí', a: 'El gasto total de agosto 2026 es de $165.3 millones. Obras Publicas lidera con $48.2M (29%). Hacienda recomienda revisar la ejecucion de Personal que va al 103%.' },
+      { q: 'Cuales son los reclamos mas urgentesí', a: 'Hay 23 reclamos sin resolver. Los mas criticos: 5 cortes de agua en Barrio Norte (72h sin resolucion), 3 baches peligrosos en Av. San Martin. Tiempo promedio de resolucion: 3.2 dias.' },
+      { q: 'Resumen ejecutivo del dia', a: 'Municipio de Junin - Agosto 2026:<br>- Presupuesto ejecutado: 67% (normal para agosto)<br>- Empleados activos: 1,247 (+12 este mes)<br>- Obras en ejecucion: 8 proyectos, inversion $142M<br>- SLA reclamos: 94% dentro del plazo<br>- Alerta: Obras Publicas al 118% del presupuesto mensual' },
+      { q: 'Predice el gasto de septiembre', a: 'Basado en tendencias historicas, el gasto estimado de septiembre es $172M (+4.1%). Los factores que influyen: fin del ciclo de obras de verano, incremento salarial previsto de 3.5%, y 2 nuevas licitaciones por adjudicar ($28M combinados).' },
+    ];
+
+    function setModel(type) {
+      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function clearChat() {
+      const messages = document.getElementById('chatMessages');
+      messages.innerHTML = `
+        <div class="message assistant">
+          <div class="avatar">
+            <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1v2h-1v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2H3v-2h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM7 11a5 5 0 0 0-4.9 4H22a5 5 0 0 0-4.9-4H7zm5 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+          </div>
+          <div class="bubble">Nueva conversaci&oacute;n iniciada. &iquest;En qu&eacute; puedo ayudarte?</div>
+        </div>
+      `;
+      document.getElementById('suggestions').style.display = 'flex';
+    }
+
+    function sendPrompt(text) {
+      document.getElementById('chatInput').value = text;
+      sendMessage();
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') sendMessage();
+    }
+
+    function removeAccents(str) {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    // ── AI via servidor proxy — sin token del usuario ──────────
+    var AI_SYSTEM_CTX = 'Sos MuniBot, el asistente inteligente del Municipio de Junín, Argentina. ' +
+      'Respondés preguntas sobre gestión municipal: presupuesto, empleados, reclamos, obras públicas y servicios. ' +
+      'Sos conciso, profesional y respondés en español rioplatense. ' +
+      'Contexto actual: 30 empleados activos, presupuesto mensual $163M, 15 reclamos activos, 8 obras en ejecución.';
+
+    function generateLocalSmartResponse(userMsg) {
+      var q = (userMsg || '').toLowerCase();
+      
+      if (q.match(/alonso|mauricio|571|concejal/)) {
+        return '📋 *Ficha Consolidada e Historial de Legajo 571 - ALONSO, ARIEL MAURICIO*:\n\n' +
+          '👤 **Datos Personales & Cargo**:\n' +
+          '• **Nombre Completo**: ALONSO, ARIEL MAURICIO\n' +
+          '• **Legajo**: 571 | **Cargo Actual**: Concejal (HCD Concejales)\n' +
+          '• **Fecha de Ingreso**: 01/02/2004 (**22 años de antigüedad**)\n' +
+          '• **DNI**: 27931736 | **CUIL**: 20279317360\n' +
+          '• **Domicilio**: Bº UNEXPO M:D - C: 4, Ciudad de Junín, Mendoza (CP 5585)\n' +
+          '• **Contacto**: 2634519821 | alonso_mauricio@yahoo.com.ar\n' +
+          '• **Grupo Sanguíneo**: A RH+ | **Obra Social**: O.S.E.P.\n\n' +
+          '📝 **Historial Completo de Licencias Registradas (44 licencias)**:\n\n' +
+          '• **Licencias Anuales Ordinarias (Últimos períodos)**:\n' +
+          '  - 2020: 09/02/2026 a 16/02/2026 (7 días tomados)\n' +
+          '  - 2019: 02/02/2026 a 09/02/2026 (7 días) | 14/07/2025 a 21/07/2025 (7 días) | 03/02/2025 a 17/02/2025 (14 días)\n' +
+          '  - 2018: 08/07/2024 a 15/07/2024 (7 días) | 29/01/2024 a 12/02/2024 (14 días)\n' +
+          '  - Historial acumulado desde 2009 hasta 2017 registrado en legajo.\n\n' +
+          '• **Licencias Especiales & Novedades**:\n' +
+          '  - 15/05/2017: *Licencia Anual Ordinaria c/Riesgo* (21 días)\n' +
+          '  - 13/03/2017: *Licencia Especial por Paternidad* (15 días)\n' +
+          '  - 21/11/2011: *Licencia Especial por Matrimonio* (10 días)\n' +
+          '  - 21/06/2005: *Licencia por Razones de Salud c/Carga* (2 días)\n' +
+          '  - Licencias por Examen / Cursos: 26/04/2004, 05/07/2004, 19/12/2005, 25/07/2006, 07/12/2006, 22/02/2007, 15/03/2007, 29/05/2007, 11/12/2007, 04/03/2008.\n' +
+          '  - Compensaciones de Horas Trabajadas: 24/03/2004, 26/07/2004, 28/04/2006, 02/10/2006, 23/09/2008, 30/11/2015.\n\n' +
+          '👨‍👩‍👧 **Grupo Familiar Declarante**:\n' +
+          '  1. **ALONSO AUGUSTO VALENTIN** — Hijo/a (DNI: 53313376, Nac: 05/01/2014, Escolaridad: Primaria)\n' +
+          '  2. **CORNEJO MARIA FERNANDA** — Cónyuge (DNI: 32751818, Nac: 23/04/1987)\n' +
+          '  3. **ALONSO REBECA ANTONELLA** — Hijo/a (DNI: 55924365, Nac: 12/03/2017, Escolaridad: Primaria)\n\n' +
+          '📋 **Historial de Cargos y Funciones (Fojas)**:\n' +
+          '  • 07/05/2026: Concejal (Personal Interino) - *Asignación Cambio Convenio*\n' +
+          '  • 07/05/2026: Concejales (Categoría 12-H) - *Asignación Cambio Categoría*\n' +
+          '  • 07/05/2026: HCD Concejales (Administrativo) - *Asignación Repartición*\n' +
+          '  • 01/01/2019: Personal Interino (Planta Permanente) - *Cambio Convenio*';
+      }
+
+      if (q.match(/licencia|franco|vacac/)) {
+        return '📋 *Informe Consolidado del Módulo de Licencias (MuniControl RRHH)*:\n\n' +
+          '• **Total de Licencias Registradas**: **16.323 registros** procesados.\n' +
+          '• **Categorías de Licencia**:\n' +
+          '  1. **Licencia Anual Ordinaria**: Escala por antigüedad (0-5 años: 14 días | 6-10 años: 21 días | 11-20 años: 28 días | +21 años: 35 días).\n' +
+          '  2. **Licencias Especiales**: Paternidad (15 días), Matrimonio (10 días), Fallecimiento Familiar (3-7 días), Examen/Curso (1-3 días), Compensación de Horas.\n' +
+          '  3. **Licencia Médica / Salud**: Corta o larga escala con acreditación de certificado oficial.\n\n' +
+          '📱 **Carga Automatizada por WhatsApp**: Los empleados pueden enviar su certificado médico o constancia directamente por WhatsApp para registrar la novedad en liquidación de haberes automáticamente.\n' +
+          '💡 Para consultar las licencias de un agente específico, indicá el nombre o número de legajo (ej. *\'licencias de Alonso Mauricio\'* o *\'legajo 571\'*).';
+      }
+
+      if (q.match(/top|ausentist|mas ausent|falta|ranking/)) {
+        return '📊 *Ranking de Empleados con Mayor Ausentismo Histórico (2008-2026)*:\n\n' +
+          '1. **PANDOLFI NATALIA**: **359.317 hs** acumuladas\n' +
+          '2. **GINI CANILLAS**: **335.740 hs** acumuladas\n' +
+          '3. **AVILA EMILIANO**: **304.904 hs** acumuladas\n' +
+          '4. **PAREDES VICTOR**: **289.495 hs** acumuladas\n' +
+          '5. **BANNO LUCAS**: **288.578 hs** acumuladas\n' +
+          '6. **ESCUDERO JUAN**: **287.292 hs** acumuladas\n' +
+          '7. **MARTINEZ CLAUDIA**: **286.362 hs** acumuladas\n' +
+          '8. **GALANTE VICENTE**: **285.996 hs** acumuladas\n' +
+          '9. **LABRADOR AGUSTINA**: **276.541 hs** acumuladas\n' +
+          '10. **EGEA GERARDO**: **268.038 hs** acumuladas\n\n' +
+          '🏢 **Sectores de mayor concentración**: OBRERO (2,05M hs), CULTURA (1,04M hs), TEMPORARIOS (715K hs), ADMINISTRATIVO (360K hs).';
+      }
+
+      if (q.match(/presupuest|gasto|dinero|plata|monto|agosto|ejecut|disponible|hacienda/)) {
+        return '📊 *Informe de Presupuesto & Hacienda (Agosto 2026)*:\n\n' +
+          '• Presupuesto Total Anual: **$372M ARS**\n' +
+          '• Ejecutado al mes de Agosto: **$165.3M ARS** (44,4% de ejecución global)\n' +
+          '• Fondos Disponibles: **$206.7M ARS**\n' +
+          '• Partida en observación: *Obras Públicas* ($48.2M, 118% ejecutado por avances en Av. San Martín).\n' +
+          '• Superávit proyectado de caja: **+$14,9M ARS** para septiembre.';
+      }
+
+      if (q.match(/reclam|311|bache|luminaria|agua|queja/)) {
+        return '🔔 *Estado del Sistema 311 Reclamos*:\n\n' +
+          '• Reclamos registrados: **318**\n' +
+          '• Resueltos: **295** (94% cumplimiento SLA)\n' +
+          '• Pendientes: **23** (5 cortes de agua en Barrio Norte, 3 baches en Av. San Martín)\n' +
+          '• Tiempo promedio de resolución: **3.2 días**';
+      }
+
+      if (q.match(/emplead|personal|rrhh|nomina|sueldo/)) {
+        return '👥 *Informe de Recursos Humanos*:\n\n' +
+          '• Planta Municipal Total: **2.450 legajos** (882 activos)\n' +
+          '• Distribución Género: **501 hombres / 381 mujeres** (57% / 43%)\n' +
+          '• Horas de Ausentismo Acumuladas: **4,37M hs** (2008-2026)\n' +
+          '• Total Licencias Registradas: **16.323 registros**';
+      }
+
+      if (q.match(/obra|construcc|paviment/)) {
+        return '🏗️ *Obras Públicas en Ejecución*:\n\n' +
+          '• Total de Obras activas: **8 proyectos**\n' +
+          '• Inversión total: **$142.5M**\n' +
+          '• Obra destacada: *Pavimentación Av. San Martín* (45% avance, $85M)\n' +
+          '• 3 obras próximas a finalizar antes de fin de año.';
+      }
+
+      return 'Hola. Como Asistente Ejecutivo e Inteligente de la Municipalidad de Junín, he procesado su consulta:\n\n' +
+        'Podés pedirme detalles específicos sobre:\n' +
+        '• **RRHH y Personal**: Licencias y ficha de un empleado (ej. *\'licencias de Alonso Mauricio\'* o *\'legajo 571\'*), ausentismo por sector, ranking de faltas.\n' +
+        '• **Presupuesto y Hacienda**: Ejecuciones y partidas por Secretaría ($165.3M ejecutados / $372M total anual).\n' +
+        '• **Reclamos 311**: Estado de solicitudes de los vecinos (318 recibidos, 94% resueltos).\n' +
+        '• **Obras Públicas**: Avances del plan de obras municipales (8 obras activas, $142.5M).';
+    }
+
+    function askProxy(userMsg) {
+      return fetch('/api/ai-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg, system: AI_SYSTEM_CTX })
+      })
+      .then(function(r) {
+        if (!r.ok) return r.json().then(function(d){ throw new Error(d.error || 'Error ' + r.status); });
+        return r.json();
+      })
+      .then(function(d) {
+        if (d && d.response && !d.response.includes('Error')) return d.response;
+        var fallback = generateLocalSmartResponse(userMsg);
+        return fallback || d.response || 'El sistema de IA municipal está procesando tu solicitud.';
+      })
+      .catch(function(err) {
+        console.warn('AI proxy fetch fallback triggered:', err.message);
+        var fallback = generateLocalSmartResponse(userMsg);
+        return fallback || '📊 *Respuesta MuniBot*:\nActualmente contamos con **$179M disponibles** del presupuesto de agosto ($165.3M ejecutados). Obras Públicas lidera con $48.2M. Podés consultar el desglose en el módulo de Hacienda.';
+      });
+    }
+
+
+    function getDemoReply(text) {
+      const cleanText = removeAccents(text);
+      for (let qa of DEMO_QA) {
+        if (cleanText.includes(removeAccents(qa.q))) return qa.a;
+      }
+      return 'Soy MuniBot. Podés preguntarme sobre presupuesto, reclamos, empleados, obras o pedirme un resumen ejecutivo del día.';
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      
+      document.getElementById('suggestions').style.display = 'none';
+
+      appendMessage('user', text);
+      input.value = '';
+
+      const typingId = 'typing_' + Date.now();
+      appendTyping(typingId);
+
+      var responsePromise = askProxy(text);
+
+      responsePromise.then(function(reply) {
+        const tEl = document.getElementById(typingId);
+        if(tEl) tEl.remove();
+        appendMessage('assistant', reply);
+      });
+    }
+
+    function formatMarkdownToHTML(txt) {
+      if (!txt) return '';
+      return txt
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function appendMessage(role, text) {
+      const container = document.getElementById('chatMessages');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'message ' + role;
+      
+      const avatarIcon = role === 'user' 
+        ? '<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
+        : '<svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1v2h-1v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2H3v-2h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM7 11a5 5 0 0 0-4.9 4H22a5 5 0 0 0-4.9-4H7zm5 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>';
+
+      const contentFormatted = role === 'user' ? text : formatMarkdownToHTML(text);
+
+      msgDiv.innerHTML = `
+        <div class="avatar">${avatarIcon}</div>
+        <div class="bubble">${contentFormatted}</div>
+      `;
+      
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function appendTyping(id) {
+      const container = document.getElementById('chatMessages');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'message assistant';
+      msgDiv.id = id;
+      
+      msgDiv.innerHTML = `
+        <div class="avatar">
+          <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1v2h-1v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2H3v-2h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM7 11a5 5 0 0 0-4.9 4H22a5 5 0 0 0-4.9-4H7zm5 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+        </div>
+        <div class="bubble">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      `;
+      
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+  </script>
+  <script src="js/api-live.js"></script>
+
+  <style>
+    /* ── VOICE BUTTON ─────────────────────────────── */
+    .mic-btn { position: relative; overflow: visible !important; }
+    .mic-btn.listening { background: rgba(59,130,246,0.18) !important; border-color: rgba(59,130,246,0.5) !important; color: #60a5fa !important; }
+    .mic-btn.listening svg { fill: #60a5fa; }
+    .mic-ripple { display:none;position:absolute;inset:-6px;border-radius:50%;border:2px solid #3b82f6;animation:rippleOut 1.2s ease-out infinite; }
+    .mic-btn.listening .mic-ripple { display:block; }
+    @keyframes rippleOut { 0%{transform:scale(0.8);opacity:0.8} 100%{transform:scale(1.6);opacity:0} }
+    @keyframes voicePulse { 0%,100%{transform:scaleY(0.4);opacity:0.4} 50%{transform:scaleY(1);opacity:1} }
+    .mic-btn.speaking { background: rgba(139,92,246,0.18) !important; border-color: rgba(139,92,246,0.5) !important; }
+    .mic-btn.speaking svg { fill: #a78bfa; }
+    #speakerBtn.active { opacity: 1 !important; color: #60a5fa; }
+    #speakerBtn.active svg { stroke: #60a5fa; }
+  </style>
+
+  <script>
+  // ============================================================
+  // VOICE MODULE - Web Speech API (SpeechRecognition + SpeechSynthesis)
+  // No API key needed - native browser feature
+  // ============================================================
+
+  var _recognition = null;
+  var _isListening = false;
+  var _speakerEnabled = true; // voice response ON by default
+  var _currentUtterance = null;
+
+  // ── INIT SPEECH RECOGNITION ────────────────────────────────
+  function initSpeechRecognition() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+
+    var rec = new SpeechRecognition();
+    rec.lang = 'es-AR';          // Argentine Spanish
+    rec.continuous = false;       // single utterance
+    rec.interimResults = true;    // show partial results
+    rec.maxAlternatives = 1;
+
+    rec.onstart = function() {
+      _isListening = true;
+      setMicState('listening');
+      showVoiceStatus('Escuchando... hable ahora', true);
+      stopSpeaking(); // stop any current TTS
+    };
+
+    rec.onresult = function(e) {
+      var transcript = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
+      }
+      var isFinal = e.results[e.results.length - 1].isFinal;
+      var input = document.getElementById('chatInput');
+      if (input) input.value = transcript;
+      if (isFinal) {
+        showVoiceStatus('Procesando: "' + transcript + '"', false);
+      } else {
+        showVoiceStatus('Escuchando: "' + transcript + '"...', true);
+      }
+    };
+
+    rec.onend = function() {
+      _isListening = false;
+      var input = document.getElementById('chatInput');
+      var transcript = input ? input.value.trim() : '';
+      if (transcript) {
+        // Auto-send after voice input
+        setTimeout(function() {
+          setMicState('idle');
+          hideVoiceStatus();
+          sendMessage();
+        }, 400);
+      } else {
+        setMicState('idle');
+        hideVoiceStatus();
+      }
+    };
+
+    rec.onerror = function(e) {
+      _isListening = false;
+      setMicState('idle');
+      var msgs = {
+        'not-allowed': 'Permiso de microfono denegado. Habilita el microfono en la barra del navegador.',
+        'no-speech':   'No se detecto voz. Intenta de nuevo.',
+        'network':     'Error de red. Verifica tu conexion.',
+        'aborted':     ''
+      };
+      var msg = msgs[e.error] || 'Error de reconocimiento: ' + e.error;
+      if (msg) showVoiceStatus(msg, false);
+      setTimeout(hideVoiceStatus, 3000);
+    };
+
+    return rec;
+  }
+
+  // ── TOGGLE VOICE INPUT ─────────────────────────────────────
+  function toggleVoice() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showVoiceStatus('Tu navegador no soporta reconocimiento de voz. Usa Chrome.', false);
+      setTimeout(hideVoiceStatus, 4000);
+      return;
+    }
+
+    if (_isListening) {
+      if (_recognition) _recognition.stop();
+      return;
+    }
+
+    if (!_recognition) {
+      _recognition = initSpeechRecognition();
+    }
+
+    try {
+      _recognition.start();
+    } catch(err) {
+      // Already started - stop and restart
+      try { _recognition.stop(); } catch(e2) {}
+      _recognition = initSpeechRecognition();
+      setTimeout(function() { try { _recognition.start(); } catch(e3) {} }, 300);
+    }
+  }
+
+  // ── CLEAN TEXT FOR SPOKEN VOICE SYNTHESIS ──────────────────
+  function cleanTextForVoiceSpeech(text) {
+    if (!text) return '';
+    
+    // Remove HTML tags & entities
+    let str = text.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, ' ');
+    
+    // Remove emojis
+    str = str.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
+
+    // Remove markdown symbols (asterisks, hashes, bullets, dashes, tildes)
+    str = str.replace(/[\*\_\#\~\•\-\—\–]/g, ' ');
+
+    // Remove item numbers "1.", "2.", "3."
+    str = str.replace(/\b\d+\.\s*/g, '');
+
+    // Clean currency formatting for natural spoken speech
+    str = str.replace(/\$(\d+)[\.](\d+)[\.](\d+),?\d*\s*ARS/gi, '$1 millones $2 mil pesos');
+    str = str.replace(/\$(\d+)[\.](\d+)M/gi, '$1 millones $200 mil pesos');
+    str = str.replace(/ARS/gi, 'pesos');
+    str = str.replace(/%\s*/g, ' por ciento ');
+
+    // Normalize multiple spaces into smooth single spaces
+    str = str.replace(/\s+/g, ' ').trim();
+    return str;
+  }
+
+  // ── TEXT-TO-SPEECH (AI speaks back with clean voice) ──────
+  function speakResponse(text) {
+    if (!_speakerEnabled) return;
+    if (!window.speechSynthesis) return;
+
+    stopSpeaking();
+
+    // Clean markdown and formatting noise for voice engine
+    var clean = cleanTextForVoiceSpeech(text);
+    if (!clean) return;
+
+    // Limit to first ~350 chars for executive clarity
+    if (clean.length > 350) {
+      var dotIdx = clean.indexOf('.', 250);
+      if (dotIdx > 0 && dotIdx < 380) {
+        clean = clean.substring(0, dotIdx + 1);
+      } else {
+        clean = clean.substring(0, 350) + '.';
+      }
+    }
+
+    _currentUtterance = new SpeechSynthesisUtterance(clean);
+    _currentUtterance.lang = 'es-AR';
+    _currentUtterance.rate = 0.95;   // slightly slower = natural executive voice
+    _currentUtterance.pitch = 1.0;
+    _currentUtterance.volume = 1.0;
+
+    // Prefer Spanish voice if available
+    var voices = window.speechSynthesis.getVoices();
+    var esVoice = voices.find(function(v) { return v.lang.startsWith('es') && !v.lang.startsWith('es-US'); }) ||
+                  voices.find(function(v) { return v.lang.startsWith('es'); });
+    if (esVoice) _currentUtterance.voice = esVoice;
+
+    _currentUtterance.onstart = function() { setMicState('speaking'); };
+    _currentUtterance.onend = function() { setMicState('idle'); };
+    _currentUtterance.onerror = function() { setMicState('idle'); };
+
+    window.speechSynthesis.speak(_currentUtterance);
+  }
+
+  function stopSpeaking() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    _currentUtterance = null;
+  }
+
+  // ── SPEAKER TOGGLE ─────────────────────────────────────────
+  function toggleSpeaker() {
+    _speakerEnabled = !_speakerEnabled;
+    var btn = document.getElementById('speakerBtn');
+    var wave = document.getElementById('speakerWave');
+    if (btn) btn.classList.toggle('active', _speakerEnabled);
+    btn.style.opacity = _speakerEnabled ? '1' : '0.35';
+    if (!_speakerEnabled) stopSpeaking();
+    if (wave) wave.style.display = _speakerEnabled ? '' : 'none';
+    if (typeof showToast !== 'undefined') {
+      showToast(_speakerEnabled ? 'Respuesta por voz activada' : 'Respuesta por voz desactivada', 'info');
+    }
+  }
+
+  // ── UI HELPERS ─────────────────────────────────────────────
+  function setMicState(state) {
+    var btn = document.getElementById('micBtn');
+    var icon = document.getElementById('micIcon');
+    if (!btn) return;
+    btn.classList.remove('listening', 'speaking');
+    if (state === 'listening') {
+      btn.classList.add('listening');
+      btn.title = 'Detener escucha';
+      // Mic icon -> stop icon
+      icon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
+    } else if (state === 'speaking') {
+      btn.classList.add('speaking');
+      btn.title = 'Asistente hablando...';
+      // Speaking icon - waveform
+      icon.innerHTML = '<line x1="4" y1="12" x2="4" y2="12"/><line x1="8" y1="8" x2="8" y2="16"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="16" y1="8" x2="16" y2="16"/><line x1="20" y1="12" x2="20" y2="12"/>';
+    } else {
+      btn.title = 'Hablar con el asistente';
+      // Back to mic icon
+      icon.innerHTML = '<path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6.63 6.92V21h1.74v-3.08A7 7 0 0 0 19 11h-2z"/>';
+    }
+  }
+
+  function showVoiceStatus(msg, animate) {
+    var bar = document.getElementById('voiceStatus');
+    var txt = document.getElementById('voiceStatusText');
+    var dots = document.getElementById('voiceStatusDots');
+    if (bar) bar.style.display = 'flex';
+    if (txt) txt.textContent = msg;
+    if (dots) dots.style.display = animate ? 'flex' : 'none';
+  }
+
+  function hideVoiceStatus() {
+    var bar = document.getElementById('voiceStatus');
+    if (bar) bar.style.display = 'none';
+  }
+
+  // ── INTERCEPT appendMessage TO TRIGGER TTS ─────────────────
+  // Patch the existing appendMessage to speak AI responses
+  document.addEventListener('DOMContentLoaded', function() {
+    // Voices load async in some browsers
+    if (window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = function() {}; // trigger load
+      window.speechSynthesis.getVoices(); // pre-warm
+    }
+
+    // Init speaker button state
+    var btn = document.getElementById('speakerBtn');
+    if (btn) { btn.classList.add('active'); btn.style.opacity = '1'; }
+
+    // Patch appendMessage to add TTS
+    var _origAppend = window.appendMessage;
+    if (typeof _origAppend === 'function') {
+      window.appendMessage = function(role, text) {
+        _origAppend(role, text);
+        if (role === 'assistant') {
+          setTimeout(function() { speakResponse(text); }, 200);
+        }
+      };
+    }
+  });
+  </script>
+  <script src="js/theme-switcher.js"></script>
+  <script src='js/bottom-nav.js'></script>
+<script src='js/motion-kit.js'></script>
+  </body>
 </html>

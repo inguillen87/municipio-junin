@@ -37,3 +37,5 @@ docs/data/*.json
 
 # Cliente Prisma reproducible del backend Express (generado en postinstall).
 backend/generated/prisma/
+
+.env*

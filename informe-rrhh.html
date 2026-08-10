@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informe Ejecutivo RRHH — Municipalidad de Junín</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.6;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      width: 210mm; min-height: 297mm;
+      margin: 0 auto; padding: 0;
+      background: #fff;
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+    }
+    @media screen { .page { margin: 2rem auto; box-shadow: 0 25px 60px rgba(0,0,0,0.15); border-radius: 8px; } }
+
+    /* === COVER PAGE === */
+    .cover {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #0f766e 100%);
+      color: #fff;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center;
+      padding: 4rem 3rem;
+      min-height: 297mm;
+    }
+    .cover-badge {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 999px;
+      padding: 0.5rem 1.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(10px);
+    }
+    .cover-icon {
+      width: 100px; height: 100px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+    }
+    .cover h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      line-height: 1.1;
+    }
+    .cover h2 {
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 3rem;
+    }
+    .cover-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+      width: 100%; max-width: 500px;
+      margin-bottom: 3rem;
+    }
+    .cover-stat {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 1.25rem;
+      backdrop-filter: blur(10px);
+    }
+    .cover-stat-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem; font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa, #34d399);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .cover-stat-label { font-size: 0.7rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem; }
+    .cover-footer {
+      position: absolute; bottom: 2rem; left: 0; right: 0;
+      text-align: center; color: rgba(255,255,255,0.4); font-size: 0.75rem;
+    }
+    .cover-date { font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-bottom: 0.5rem; }
+
+    /* === CONTENT PAGES === */
+    .content { padding: 2.5rem 3rem; }
+    .page-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 2rem;
+    }
+    .page-header h3 {
+      font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 700; color: #0f172a;
+    }
+    .page-num { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem; font-weight: 700; color: #0f172a;
+      margin: 1.5rem 0 1rem; padding-bottom: 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    /* KPI Cards */
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .kpi {
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+      border: 1px solid #bae6fd;
+      border-radius: 12px; padding: 1.25rem; text-align: center;
+    }
+    .kpi.green { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-color: #86efac; }
+    .kpi.amber { background: linear-gradient(135deg, #fffbeb, #fef3c7); border-color: #fde68a; }
+    .kpi.red { background: linear-gradient(135deg, #fef2f2, #fee2e2); border-color: #fca5a5; }
+    .kpi.purple { background: linear-gradient(135deg, #faf5ff, #f3e8ff); border-color: #d8b4fe; }
+    .kpi-value {
+      font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; color: #0f172a;
+    }
+    .kpi-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; font-weight: 600; }
+    .kpi-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem; }
+
+    /* Tables */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.75rem; }
+    .data-table th {
+      background: #f1f5f9; padding: 0.6rem 0.75rem; text-align: left;
+      font-weight: 600; color: #475569; text-transform: uppercase; font-size: 0.7rem;
+      letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0;
+    }
+    .data-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
+    .data-table tr:nth-child(even) { background: #fafbfc; }
+    .data-table .num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .data-table .highlight { background: #eff6ff; font-weight: 600; }
+
+    /* Chart containers */
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+    .chart-box { background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; }
+    .chart-box h4 { font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.75rem; }
+    .chart-box canvas { max-height: 200px; }
+    .chart-full { grid-column: 1 / -1; }
+
+    /* Insights */
+    .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .insight {
+      background: #f8fafc; border-left: 3px solid #3b82f6;
+      padding: 0.75rem 1rem; border-radius: 0 8px 8px 0;
+    }
+    .insight.warning { border-color: #f59e0b; }
+    .insight.danger { border-color: #ef4444; }
+    .insight.success { border-color: #10b981; }
+    .insight-title { font-weight: 700; font-size: 0.8rem; color: #0f172a; margin-bottom: 0.25rem; }
+    .insight-text { font-size: 0.75rem; color: #64748b; }
+
+    /* Progress bars */
+    .progress-row { display: flex; align-items: center; gap: 0.75rem; margin: 0.35rem 0; }
+    .progress-label { font-size: 0.75rem; width: 180px; color: #475569; font-weight: 500; }
+    .progress-bar { flex: 1; height: 20px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 10px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 0.65rem; color: #fff; font-weight: 600; }
+    .pf-blue { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+    .pf-green { background: linear-gradient(90deg, #10b981, #059669); }
+    .pf-amber { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .pf-purple { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+
+    /* Watermark */
+    .watermark {
+      position: absolute; bottom: 1.5rem; right: 2rem;
+      font-size: 0.65rem; color: #cbd5e1;
+    }
+
+    /* Gender donut inline */
+    .gender-row { display: flex; align-items: center; gap: 2rem; justify-content: center; margin: 1rem 0; }
+    .gender-item { text-align: center; }
+    .gender-pct { font-family: 'Outfit'; font-size: 2rem; font-weight: 800; }
+    .gender-m { color: #3b82f6; }
+    .gender-f { color: #ec4899; }
+
+    @media print {
+      body { background: #fff; }
+      .page { box-shadow: none; margin: 0; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================ -->
+<!-- PAGE 1: COVER -->
+<!-- ============================================ -->
+<div class="page">
+  <div class="cover">
+    <div class="cover-badge">Informe Ejecutivo — Confidencial</div>
+    <div class="cover-icon">🏛️</div>
+    <h1>Informe de Gestión<br>Recursos Humanos</h1>
+    <h2>Municipalidad de Junín, Mendoza</h2>
+    <div class="cover-date">Agosto 2026</div>
+    <div class="cover-stats">
+      <div class="cover-stat">
+        <div class="cover-stat-value">2,450</div>
+        <div class="cover-stat-label">Total Legajos</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-value">882</div>
+        <div class="cover-stat-label">Activos</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-value">36</div>
+        <div class="cover-stat-label">Sectores</div>
+      </div>
+    </div>
+    <div class="cover-footer">
+      Generado por MuniControl — Plataforma de Gestión Municipal Inteligente<br>
+      Datos procesados: 4.3M registros de ausentismo · 16.3K licencias · 36 años de historia
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PAGE 2: RESUMEN EJECUTIVO -->
+<!-- ============================================ -->
+<div class="page">
+  <div class="content">
+    <div class="page-header">
+      <h3>📊 Resumen Ejecutivo — Personal Municipal</h3>
+      <div class="page-num">Pág. 2</div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-value">2,450</div>
+        <div class="kpi-label">Total Legajos</div>
+        <div class="kpi-sub">Histórico completo</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-value">882</div>
+        <div class="kpi-label">Empleados Activos</div>
+        <div class="kpi-sub">36% del total</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-value">1,568</div>
+        <div class="kpi-label">Inactivos / Bajas</div>
+        <div class="kpi-sub">64% del total</div>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi amber">
+        <div class="kpi-value">4.3M</div>
+        <div class="kpi-label">Reg. Ausencias</div>
+        <div class="kpi-sub">Desde 1990</div>
+      </div>
+      <div class="kpi purple">
+        <div class="kpi-value">16,323</div>
+        <div class="kpi-label">Licencias</div>
+        <div class="kpi-sub">Ordinarias y especiales</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">156</div>
+        <div class="kpi-label">Categorías</div>
+        <div class="kpi-sub">Escalafón salarial</div>
+      </div>
+    </div>
+
+    <h4 class="section-title">👥 Distribución por Género</h4>
+    <div class="gender-row">
+      <div class="gender-item">
+        <div class="gender-pct gender-m">501</div>
+        <div style="font-size:0.8rem;color:#64748b">Masculino (57%)</div>
+      </div>
+      <div style="width:100px;height:100px;border-radius:50%;background:conic-gradient(#3b82f6 0% 57%, #ec4899 57% 100%);"></div>
+      <div class="gender-item">
+        <div class="gender-pct gender-f">381</div>
+        <div style="font-size:0.8rem;color:#64748b">Femenino (43%)</div>
+      </div>
+    </div>
+
+    <h4 class="section-title">🏢 Top 10 Sectores por Cantidad de Personal Activo</h4>
+    <div class="progress-row"><div class="progress-label">OBRERO</div><div class="progress-bar"><div class="progress-fill pf-blue" style="width:100%">218</div></div></div>
+    <div class="progress-row"><div class="progress-label">TEMPORARIOS</div><div class="progress-bar"><div class="progress-fill pf-green" style="width:74.8%">163</div></div></div>
+    <div class="progress-row"><div class="progress-label">ADMINISTRATIVO</div><div class="progress-bar"><div class="progress-fill pf-amber" style="width:72.5%">158</div></div></div>
+    <div class="progress-row"><div class="progress-label">DOCENTES JARDINES MAT.</div><div class="progress-bar"><div class="progress-fill pf-purple" style="width:26.6%">58</div></div></div>
+    <div class="progress-row"><div class="progress-label">HS. CÁTEDRAS CULTURA</div><div class="progress-bar"><div class="progress-fill pf-blue" style="width:26.1%">57</div></div></div>
+    <div class="progress-row"><div class="progress-label">HS. CÁTEDRAS DEPORTES</div><div class="progress-bar"><div class="progress-fill pf-green" style="width:20.6%">45</div></div></div>
+    <div class="progress-row"><div class="progress-label">FUNCIONARIOS</div><div class="progress-bar"><div class="progress-fill pf-amber" style="width:10.6%">23</div></div></div>
+    <div class="progress-row"><div class="progress-label">MANITOS DE COLORES</div><div class="progress-bar"><div class="progress-fill pf-purple" style="width:6%">13</div></div></div>
+    <div class="progress-row"><div class="progress-label">H.C.D. SECRETARIOS</div><div class="progress-bar"><div class="progress-fill pf-blue" style="width:5.5%">12</div></div></div>
+    <div class="progress-row"><div class="progress-label">AMANECER</div><div class="progress-bar"><div class="progress-fill pf-green" style="width:5.5%">12</div></div></div>
+
+    <div class="watermark">MuniControl · municipio-junin.vercel.app</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PAGE 3: ANÁLISIS DE AUSENTISMO -->
+<!-- ============================================ -->
+<div class="page">
+  <div class="content">
+    <div class="page-header">
+      <h3>📉 Análisis de Ausentismo — Tendencia Histórica</h3>
+      <div class="page-num">Pág. 3</div>
+    </div>
+
+    <p style="font-size:0.85rem;color:#475569;margin-bottom:1.5rem;">
+      El municipio cuenta con <strong>4,371,862 registros de ausencia</strong> acumulados desde 1990.
+      La tendencia muestra un crecimiento sostenido en los últimos 15 años, con un pico en 2024.
+    </p>
+
+    <div class="chart-box" style="margin-bottom:1.5rem;">
+      <h4>Evolución del Ausentismo (2008-2026)</h4>
+      <canvas id="ausChart" height="180"></canvas>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi red">
+        <div class="kpi-value">359,487</div>
+        <div class="kpi-label">Ausencias 2024</div>
+        <div class="kpi-sub">Pico histórico</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-value">336,022</div>
+        <div class="kpi-label">Ausencias 2025</div>
+        <div class="kpi-sub">↓ 6.5% vs 2024</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">232,277</div>
+        <div class="kpi-label">Ausencias 2026</div>
+        <div class="kpi-sub">Parcial (Ene-Ago)</div>
+      </div>
+    </div>
+
+    <h4 class="section-title">🏢 Ausentismo por Sector</h4>
+    <table class="data-table">
+      <thead><tr><th>Sector</th><th class="num">Ausencias Totales</th><th class="num">% del Total</th><th class="num">Empleados Activos</th><th class="num">Ausencias/Empleado</th></tr></thead>
+      <tbody>
+        <tr class="highlight"><td>OBRERO</td><td class="num">2,054,276</td><td class="num">47.0%</td><td class="num">218</td><td class="num">9,423</td></tr>
+        <tr><td>HS. CÁTEDRAS CULTURA</td><td class="num">1,049,068</td><td class="num">24.0%</td><td class="num">57</td><td class="num">18,405</td></tr>
+        <tr><td>TEMPORARIOS</td><td class="num">715,352</td><td class="num">16.4%</td><td class="num">163</td><td class="num">4,389</td></tr>
+        <tr><td>ADMINISTRATIVO</td><td class="num">~200K</td><td class="num">~4.6%</td><td class="num">158</td><td class="num">~1,266</td></tr>
+        <tr><td>DOCENTES JARDINES</td><td class="num">~150K</td><td class="num">~3.4%</td><td class="num">58</td><td class="num">~2,586</td></tr>
+      </tbody>
+    </table>
+
+    <div class="insight-grid" style="margin-top:1.25rem;">
+      <div class="insight danger">
+        <div class="insight-title">⚠️ Alerta: Sector OBRERO</div>
+        <div class="insight-text">Concentra el 47% de todas las ausencias con solo el 25% de la planta. Requiere análisis detallado de causas.</div>
+      </div>
+      <div class="insight warning">
+        <div class="insight-title">📊 HS. CÁTEDRAS CULTURA</div>
+        <div class="insight-text">Ratio de 18,405 ausencias/empleado, el más alto. Posible efecto de la modalidad horaria.</div>
+      </div>
+    </div>
+
+    <div class="watermark">MuniControl · municipio-junin.vercel.app</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PAGE 4: LICENCIAS + ESTRUCTURA -->
+<!-- ============================================ -->
+<div class="page">
+  <div class="content">
+    <div class="page-header">
+      <h3>📝 Licencias y Estructura Organizacional</h3>
+      <div class="page-num">Pág. 4</div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi purple">
+        <div class="kpi-value">16,323</div>
+        <div class="kpi-label">Licencias Totales</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-value">3,444</div>
+        <div class="kpi-label">Tipo A (Ordinarias)</div>
+        <div class="kpi-sub">21% del total</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-value">6</div>
+        <div class="kpi-label">Gremios</div>
+        <div class="kpi-sub">Convenios activos</div>
+      </div>
+    </div>
+
+    <h4 class="section-title">🏗️ Estructura Organizacional — 36 Sectores</h4>
+    <div class="chart-row">
+      <div>
+        <table class="data-table" style="font-size:0.75rem;">
+          <thead><tr><th>Sector</th><th class="num">Activos</th></tr></thead>
+          <tbody>
+            <tr><td>OBRERO</td><td class="num">218</td></tr>
+            <tr><td>TEMPORARIOS</td><td class="num">163</td></tr>
+            <tr><td>ADMINISTRATIVO</td><td class="num">158</td></tr>
+            <tr><td>DOCENTES JARDINES MAT.</td><td class="num">58</td></tr>
+            <tr><td>HS. CÁTEDRAS CULTURA</td><td class="num">57</td></tr>
+            <tr><td>HS. CÁTEDRAS DEPORTES</td><td class="num">45</td></tr>
+            <tr><td>FUNCIONARIOS</td><td class="num">23</td></tr>
+            <tr><td>MANITOS DE COLORES</td><td class="num">13</td></tr>
+            <tr><td>AMANECER</td><td class="num">12</td></tr>
+            <tr><td>H.C.D. SECRETARIOS</td><td class="num">12</td></tr>
+            <tr><td>DEL SOL</td><td class="num">11</td></tr>
+            <tr><td>PATA GARABATA</td><td class="num">11</td></tr>
+            <tr><td>HCD CONCEJALES</td><td class="num">10</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="chart-box">
+          <h4>Distribución por Sector</h4>
+          <canvas id="sectorPie" height="250"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="section-title">🎯 Hallazgos Clave para la Toma de Decisiones</h4>
+    <div class="insight-grid">
+      <div class="insight success">
+        <div class="insight-title">✅ Base Datos Completa</div>
+        <div class="insight-text">2,450 legajos digitalizados con 36 años de historia. Base sólida para analytics predictivo.</div>
+      </div>
+      <div class="insight">
+        <div class="insight-title">📈 Tendencia de Planta</div>
+        <div class="insight-text">36% activos vs 64% históricos. La rotación acumulada indica renovación generacional.</div>
+      </div>
+      <div class="insight warning">
+        <div class="insight-title">⚠️ Ausentismo Creciente</div>
+        <div class="insight-text">Crecimiento sostenido desde 2008. 2024 fue pico histórico. 2025 muestra leve mejora (-6.5%).</div>
+      </div>
+      <div class="insight danger">
+        <div class="insight-title">🔴 Concentración de Riesgo</div>
+        <div class="insight-text">3 sectores (Obrero, Cultura, Temporarios) concentran el 87% del ausentismo total.</div>
+      </div>
+    </div>
+
+    <div class="watermark">MuniControl · municipio-junin.vercel.app</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PAGE 5: PLATAFORMA -->
+<!-- ============================================ -->
+<div class="page">
+  <div class="content">
+    <div class="page-header">
+      <h3>🚀 Plataforma MuniControl — Capacidades</h3>
+      <div class="page-num">Pág. 5</div>
+    </div>
+
+    <p style="font-size:0.9rem;color:#475569;margin-bottom:1.5rem;">
+      MuniControl es una plataforma de gestión municipal integral que centraliza datos, automatiza procesos
+      y provee inteligencia artificial para la toma de decisiones. Actualmente en producción en 
+      <strong>municipio-junin.vercel.app</strong>.
+    </p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">👥</div>
+        <div style="font-weight:700;font-size:0.9rem;color:#0f172a;margin-bottom:0.5rem;">RRHH Inteligente</div>
+        <ul style="font-size:0.75rem;color:#475569;padding-left:1rem;">
+          <li>2,450 legajos digitalizados</li>
+          <li>Dashboard con KPIs en tiempo real</li>
+          <li>Mapa GPS de empleados</li>
+          <li>Fichas detalladas con historial</li>
+          <li>Analytics de ausentismo y licencias</li>
+        </ul>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">🤖</div>
+        <div style="font-weight:700;font-size:0.9rem;color:#0f172a;margin-bottom:0.5rem;">Bot IA WhatsApp</div>
+        <ul style="font-size:0.75rem;color:#475569;padding-left:1rem;">
+          <li>Recepción de reclamos 24/7</li>
+          <li>Geolocalización automática</li>
+          <li>Respuestas inteligentes con IA</li>
+          <li>Consultas de RRHH por chat</li>
+          <li>Notificaciones en tiempo real</li>
+        </ul>
+      </div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">📊</div>
+        <div style="font-weight:700;font-size:0.9rem;color:#0f172a;margin-bottom:0.5rem;">Dashboard Ejecutivo</div>
+        <ul style="font-size:0.75rem;color:#475569;padding-left:1rem;">
+          <li>Reclamos 311 en vivo</li>
+          <li>Mapa de calor por barrio</li>
+          <li>Métricas de respuesta</li>
+          <li>Exportación de informes</li>
+          <li>Multi-usuario con roles</li>
+        </ul>
+      </div>
+      <div style="background:#faf5ff;border:1px solid #d8b4fe;border-radius:12px;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">🔒</div>
+        <div style="font-weight:700;font-size:0.9rem;color:#0f172a;margin-bottom:0.5rem;">Infraestructura</div>
+        <ul style="font-size:0.75rem;color:#475569;padding-left:1rem;">
+          <li>PostgreSQL en la nube (Neon)</li>
+          <li>Deploy automático (Vercel)</li>
+          <li>API REST + GraphQL</li>
+          <li>SSL/TLS + autenticación JWT</li>
+          <li>Backups automáticos</li>
+        </ul>
+      </div>
+    </div>
+
+    <h4 class="section-title">📋 Próximos Pasos</h4>
+    <table class="data-table">
+      <thead><tr><th>Sprint</th><th>Descripción</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>Sprint 1</td><td>Importación de datos GRH + Padrón Ciudadano</td><td style="color:#10b981;font-weight:600;">✅ Completado</td></tr>
+        <tr><td>Sprint 2</td><td>Dashboard RRHH Enterprise con mapas y analytics</td><td style="color:#10b981;font-weight:600;">✅ Completado</td></tr>
+        <tr><td>Sprint 3</td><td>Bot IA conectado a datos RRHH para consultas</td><td style="color:#f59e0b;font-weight:600;">🔄 En progreso</td></tr>
+        <tr><td>Sprint 4</td><td>Módulo de Liquidación de Haberes</td><td style="color:#94a3b8;">⏳ Planificado</td></tr>
+        <tr><td>Sprint 5</td><td>Importación Padrón Ciudadano (30-50K personas)</td><td style="color:#94a3b8;">⏳ Planificado</td></tr>
+        <tr><td>Sprint 6</td><td>Alertas predictivas de ausentismo con IA</td><td style="color:#94a3b8;">⏳ Planificado</td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:2rem;text-align:center;padding:1.5rem;background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border-radius:12px;">
+      <div style="font-family:'Outfit';font-size:1.2rem;font-weight:700;">🌐 Acceso a la Plataforma</div>
+      <div style="font-size:1rem;margin-top:0.5rem;color:#93c5fd;font-weight:600;">municipio-junin.vercel.app</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.5rem;">Disponible 24/7 · Datos en tiempo real · Actualización continua</div>
+    </div>
+
+    <div class="watermark">MuniControl · municipio-junin.vercel.app</div>
+  </div>
+</div>
+
+<!-- Charts Script -->
+<script>
+  // Ausencias chart
+  const ausCtx = document.getElementById('ausChart');
+  if (ausCtx) {
+    new Chart(ausCtx, {
+      type: 'line',
+      data: {
+        labels: ['2008','2009','2010','2011','2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025','2026'],
+        datasets: [{
+          label: 'Ausencias',
+          data: [76450,102033,82613,143893,147580,114406,240393,246129,268408,277140,288747,287448,289634,286150,286563,305044,359487,336022,232277],
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => (v/1000)+'K', font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+          x: { ticks: { font: { size: 9 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // Sector pie
+  const secCtx = document.getElementById('sectorPie');
+  if (secCtx) {
+    new Chart(secCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Obrero','Temporarios','Administrativo','Docentes','Cultura','Deportes','Funcionarios','Otros'],
+        datasets: [{
+          data: [218, 163, 158, 58, 57, 45, 23, 160],
+          backgroundColor: ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316','#94a3b8'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 9 }, boxWidth: 10, padding: 8 } }
+        }
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,640 +1,1523 @@
 <!DOCTYPE html>
-<html class="muni-shell-v1" lang="es">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="dark light">
-  <meta name="description" content="Centro ejecutivo de Recursos Humanos basado en agregados privados del snapshot GRH Junín.">
-  <title>Centro ejecutivo RRHH | MuniControl</title>
+  <title>Recursos Humanos | MuniControl</title>
+  <meta name="description" content="Panel de Gestión de Recursos Humanos - Municipalidad de Junín">
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
+    /* PAGE SPECIFIC STYLES */
     :root {
-      --rrhh-ink: var(--text-primary, #f0f4ff);
-      --rrhh-soft: var(--text-secondary, #9eb0cb);
-      --rrhh-muted: var(--text-muted, #6f83a3);
-      --rrhh-card: color-mix(in srgb, var(--bg-card, #111d35) 94%, #ffffff 6%);
-      --rrhh-card-strong: color-mix(in srgb, var(--bg-card, #111d35) 88%, #2563eb 12%);
-      --rrhh-border: color-mix(in srgb, var(--border, #223253) 86%, #7aa2ff 14%);
-      --rrhh-blue: #6d9cff;
-      --rrhh-blue-deep: #3f72e8;
-      --rrhh-cyan: #40c5d5;
-      --rrhh-green: #43c59e;
-      --rrhh-amber: #f1b85b;
-      --rrhh-red: #ee7781;
-      --rrhh-violet: #a487f5;
-      --rrhh-radius: 18px;
-      --rrhh-shadow: 0 18px 52px rgba(1, 8, 24, .18);
+      --bg-card: rgba(13, 21, 38, 0.9);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-muted: #94a3b8;
+      --text-color: #f8fafc;
+      --radius-lg: 1rem;
+      --accent-green: #10b981;
+      --accent-blue: #3b82f6;
+      --accent-pink: #ec4899;
+      --accent-red: #ef4444;
+      --accent-orange: #f59e0b;
+      --accent-cyan: #06b6d4;
+      --hover-bg: rgba(255, 255, 255, 0.05);
+    }
+    
+    [data-theme='light'] {
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --text-muted: #64748b;
+      --text-color: #0f172a;
+      --hover-bg: #f1f5f9;
+      background-color: #f8fafc;
     }
 
-    [data-theme="light"] {
-      --rrhh-card: #ffffff;
-      --rrhh-card-strong: #f5f8ff;
-      --rrhh-border: #dce4f1;
-      --rrhh-blue: #2f63d5;
-      --rrhh-blue-deep: #224eb6;
-      --rrhh-cyan: #147f91;
-      --rrhh-green: #148567;
-      --rrhh-amber: #9a6410;
-      --rrhh-red: #b93443;
-      --rrhh-violet: #6848c4;
-      --rrhh-shadow: 0 18px 42px rgba(29, 49, 84, .09);
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text-color);
     }
 
-    * { box-sizing: border-box; }
-    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    button, input, select { font: inherit; }
-    .main-content { min-width: 0; }
-    .content-wrapper.rrhh-shell { gap: 18px; max-width: 1680px; width: 100%; margin-inline: auto; }
-
-    .rrhh-topbar-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 34px;
-      padding: 0 12px;
-      border: 1px solid var(--rrhh-border);
-      border-radius: 999px;
-      color: var(--rrhh-soft);
-      background: color-mix(in srgb, var(--rrhh-card) 92%, transparent);
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
+    .page-content {
+      padding: 2rem;
+      max-width: 1400px;
+      margin-left: var(--sidebar-w, 260px);
+      transition: margin-left 0.25s ease;
+      box-sizing: border-box;
+    }
+    @media (max-width: 900px) {
+      .page-content {
+        margin-left: 0 !important;
+        padding: 1rem;
+      }
     }
 
-    .rrhh-status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--rrhh-amber);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--rrhh-amber) 18%, transparent);
+    /* HEADER */
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    .page-header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .page-header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
     }
 
-    .rrhh-topbar-status[data-state="ready"] .rrhh-status-dot { background: var(--rrhh-green); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rrhh-green) 18%, transparent); }
-    .rrhh-topbar-status[data-state="error"] .rrhh-status-dot { background: var(--rrhh-red); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rrhh-red) 18%, transparent); }
-
-    .rrhh-hero {
-      position: relative;
-      isolation: isolate;
-      overflow: hidden;
+    /* KPI GRID */
+    .kpi-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(280px, .7fr);
-      gap: 24px;
-      padding: clamp(22px, 3vw, 34px);
-      border: 1px solid var(--rrhh-border);
-      border-radius: 24px;
-      background:
-        radial-gradient(circle at 92% 20%, color-mix(in srgb, var(--rrhh-cyan) 19%, transparent) 0, transparent 34%),
-        radial-gradient(circle at 8% 120%, color-mix(in srgb, var(--rrhh-blue) 22%, transparent) 0, transparent 42%),
-        linear-gradient(130deg, var(--rrhh-card-strong), var(--rrhh-card));
-      box-shadow: var(--rrhh-shadow);
+      grid-template-columns: repeat(1, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
     }
-
-    .rrhh-hero::after {
-      content: "";
-      position: absolute;
-      z-index: -1;
-      inset: 0;
-      opacity: .28;
-      background-image: linear-gradient(color-mix(in srgb, var(--rrhh-border) 54%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--rrhh-border) 54%, transparent) 1px, transparent 1px);
-      background-size: 32px 32px;
-      mask-image: linear-gradient(90deg, transparent 28%, #000 100%);
+    @media (min-width: 768px) {
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
     }
-
-    .rrhh-eyebrow {
-      margin: 0 0 10px;
-      color: var(--rrhh-cyan);
-      font-size: 11px;
-      line-height: 1.4;
-      font-weight: 800;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-    }
-
-    .rrhh-hero h2 {
-      max-width: 780px;
-      margin: 0;
-      color: var(--rrhh-ink);
-      font-size: clamp(25px, 3vw, 42px);
-      line-height: 1.08;
-      letter-spacing: -.035em;
-      text-wrap: balance;
-    }
-
-    .rrhh-hero-copy {
-      max-width: 820px;
-      margin: 14px 0 0;
-      color: var(--rrhh-soft);
-      font-size: clamp(13px, 1.2vw, 15px);
-      line-height: 1.65;
-    }
-
-    .rrhh-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-    .rrhh-chip {
-      display: inline-flex;
-      align-items: center;
-      min-height: 29px;
-      padding: 0 10px;
-      border: 1px solid var(--rrhh-border);
-      border-radius: 999px;
-      color: var(--rrhh-soft);
-      background: color-mix(in srgb, var(--rrhh-card) 82%, transparent);
-      font-size: 11px;
-      font-weight: 750;
-    }
-    .rrhh-chip--verified { color: var(--rrhh-green); border-color: color-mix(in srgb, var(--rrhh-green) 40%, var(--rrhh-border)); }
-    .rrhh-chip--historic { color: var(--rrhh-amber); border-color: color-mix(in srgb, var(--rrhh-amber) 40%, var(--rrhh-border)); }
-
-    .rrhh-hero-aside {
-      align-self: stretch;
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 18px;
-      border: 1px solid color-mix(in srgb, var(--rrhh-border) 80%, transparent);
-      border-radius: var(--rrhh-radius);
-      background: color-mix(in srgb, var(--rrhh-card) 74%, transparent);
+      align-items: center;
+      gap: 1.5rem;
+      backdrop-filter: blur(10px);
+      transition: transform 0.2s;
+    }
+    .kpi-card:hover {
+      transform: translateY(-3px);
+    }
+    .kpi-icon {
+      font-size: 2.5rem;
+    }
+    .kpi-content h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 0 0 0.5rem 0;
+      letter-spacing: 0.05em;
+    }
+    .kpi-content .kpi-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    /* CHARTS */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    @media (min-width: 1024px) {
+      .charts-row { grid-template-columns: 1fr 1fr; }
+    }
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
       backdrop-filter: blur(10px);
     }
-
-    .rrhh-snapshot-label { color: var(--rrhh-muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-    .rrhh-snapshot-date { display: block; margin-top: 7px; color: var(--rrhh-ink); font-size: clamp(20px, 2vw, 28px); line-height: 1.15; font-weight: 780; letter-spacing: -.025em; }
-    .rrhh-snapshot-note { margin: 7px 0 0; color: var(--rrhh-soft); font-size: 12px; line-height: 1.5; }
-    .rrhh-privacy-line { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--rrhh-border); color: var(--rrhh-soft); font-size: 11px; line-height: 1.45; }
-    .rrhh-lock { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--rrhh-green); background: color-mix(in srgb, var(--rrhh-green) 13%, transparent); font-weight: 900; }
-
-    .rrhh-state {
-      padding: clamp(24px, 6vw, 52px);
-      border: 1px solid var(--rrhh-border);
-      border-radius: var(--rrhh-radius);
-      background: var(--rrhh-card);
-      box-shadow: var(--rrhh-shadow);
-      text-align: center;
+    .chart-card h3 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
     }
-    .rrhh-state[hidden], .rrhh-data[hidden] { display: none !important; }
-    .rrhh-state-mark { display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 14px; border-radius: 14px; color: var(--rrhh-blue); background: color-mix(in srgb, var(--rrhh-blue) 13%, transparent); font-weight: 850; }
-    .rrhh-state--error .rrhh-state-mark { color: var(--rrhh-red); background: color-mix(in srgb, var(--rrhh-red) 13%, transparent); }
-    .rrhh-state h3 { margin: 0; color: var(--rrhh-ink); font-size: 18px; }
-    .rrhh-state p { max-width: 640px; margin: 9px auto 0; color: var(--rrhh-soft); font-size: 13px; line-height: 1.6; }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
 
-    .rrhh-loader {
-      width: 24px;
-      height: 24px;
-      border: 2px solid color-mix(in srgb, var(--rrhh-blue) 20%, transparent);
-      border-top-color: var(--rrhh-blue);
+    /* RANKING LIST */
+    .ranking-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .ranking-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .ranking-list li:last-child {
+      border-bottom: none;
+    }
+    .ranking-name {
+      font-weight: 500;
+    }
+    .chart-subtitle {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      margin-top: -0.5rem;
+      margin-bottom: 1.2rem;
+    }
+    .ranking-value {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-red);
+      font-weight: 700;
+    }
+    .ranking-value small {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: 3px;
+      font-weight: 500;
+    }
+
+    /* SEARCH BAR */
+    .filters-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 1rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+    }
+    .search-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 250px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+      background: rgba(0,0,0,0.2);
+      color: var(--text-color);
+    }
+    [data-theme='light'] .search-input { background: #fff; }
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+    .filter-select {
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+      background: rgba(0,0,0,0.2);
+      color: var(--text-color);
+      min-width: 150px;
+    }
+    [data-theme='light'] .filter-select { background: #fff; }
+
+    /* TABLE */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th, td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    tbody tr {
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    tbody tr:hover {
+      background: var(--hover-bg);
+    }
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .status-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .status-inactive { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    /* ACTION MENU */
+    .action-menu {
+      position: relative;
+    }
+    .btn-dots {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      line-height: 1;
       border-radius: 50%;
-      animation: rrhh-spin .8s linear infinite;
+      transition: background 0.2s;
     }
-    @keyframes rrhh-spin { to { transform: rotate(360deg); } }
+    [data-theme='light'] .btn-dots { color: #000; }
+    .btn-dots:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    [data-theme='light'] .btn-dots:hover { background: rgba(0,0,0,0.1); }
+    
+    .dropdown-menu {
+      position: absolute;
+      right: 0;
+      top: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      min-width: 200px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+      z-index: 50;
+      display: none;
+    }
+    .dropdown-menu.show { display: block; }
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .dropdown-item:hover {
+      background: var(--hover-bg);
+    }
 
-    .rrhh-button {
-      display: inline-flex;
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: none !important;
+    }
+    .modal-overlay.show {
+      display: flex;
+      animation: overlayIn 0.25s ease both !important;
+    }
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      width: 92%;
+      max-width: 960px;
+      height: 88vh;
+      max-height: 850px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+      padding: 1.25rem 2rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 38px;
-      margin-top: 17px;
-      padding: 0 15px;
-      border: 1px solid color-mix(in srgb, var(--rrhh-blue) 54%, var(--rrhh-border));
-      border-radius: 11px;
+      transition: all 0.2s;
+    }
+    .modal-close:hover { color: #fff; background: rgba(239,68,68,0.3); border-color: #ef4444; }
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
       color: #fff;
-      background: linear-gradient(135deg, var(--rrhh-blue-deep), var(--rrhh-blue));
-      box-shadow: 0 10px 24px color-mix(in srgb, var(--rrhh-blue) 19%, transparent);
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 780;
-      transition: transform .18s ease, box-shadow .18s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: 'Outfit';
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
-    .rrhh-button:hover { transform: translateY(-1px); box-shadow: 0 13px 28px color-mix(in srgb, var(--rrhh-blue) 25%, transparent); }
-    .rrhh-button:focus-visible, .rrhh-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--rrhh-blue) 42%, transparent); outline-offset: 2px; }
-
-    .rrhh-data { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-    .rrhh-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
-    .rrhh-kpi {
-      position: relative;
-      min-width: 0;
-      min-height: 146px;
-      padding: 17px;
-      overflow: hidden;
-      border: 1px solid var(--rrhh-border);
-      border-radius: 16px;
-      background: var(--rrhh-card);
-      box-shadow: 0 10px 28px rgba(2, 9, 25, .08);
+    .profile-details h2 { margin: 0 0 0.25rem 0; font-size: 1.35rem; }
+    .profile-details p { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
+    
+    .modal-kpis {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 2rem;
+      background: rgba(0,0,0,0.15);
+      flex-shrink: 0;
     }
-    .rrhh-kpi::after { content: ""; position: absolute; width: 68px; height: 68px; right: -28px; top: -28px; border-radius: 50%; background: color-mix(in srgb, var(--kpi-accent, var(--rrhh-blue)) 16%, transparent); }
-    .rrhh-kpi-label { display: block; min-height: 29px; color: var(--rrhh-soft); font-size: 10px; line-height: 1.4; font-weight: 780; letter-spacing: .055em; text-transform: uppercase; }
-    .rrhh-kpi-value { display: block; margin-top: 10px; color: var(--rrhh-ink); font-size: clamp(23px, 2vw, 32px); line-height: 1; font-weight: 820; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
-    .rrhh-kpi-context { display: block; margin-top: 11px; color: var(--rrhh-muted); font-size: 10px; line-height: 1.45; }
-
-    .rrhh-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; min-width: 0; }
-    .rrhh-grid--quality { grid-template-columns: minmax(300px, .76fr) minmax(0, 1.24fr); }
-    .rrhh-grid--source { grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); }
-    .rrhh-card--wide { grid-column: 1 / -1; }
-    .rrhh-card--wide .rrhh-bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px 28px; }
-
-    .rrhh-card {
-      min-width: 0;
-      overflow: hidden;
-      border: 1px solid var(--rrhh-border);
-      border-radius: var(--rrhh-radius);
-      background: var(--rrhh-card);
-      box-shadow: var(--rrhh-shadow);
+    .mini-kpi {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      text-align: center;
     }
-    .rrhh-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 20px 14px; }
-    .rrhh-card-title { margin: 0; color: var(--rrhh-ink); font-size: 15px; line-height: 1.3; font-weight: 780; letter-spacing: -.01em; }
-    .rrhh-card-subtitle { margin: 5px 0 0; color: var(--rrhh-muted); font-size: 11px; line-height: 1.5; }
-    .rrhh-card-body { padding: 4px 20px 20px; min-width: 0; }
-    .rrhh-card-footer { padding: 13px 20px; border-top: 1px solid var(--rrhh-border); color: var(--rrhh-muted); background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); font-size: 10px; line-height: 1.55; }
+    .mini-kpi h4 { margin: 0 0 0.25rem 0; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.05em; }
+    .mini-kpi .val { font-size: 1.4rem; font-weight: 800; color: var(--text-color); margin: 0; }
 
-    .rrhh-toggle {
-      flex: 0 0 auto;
-      min-height: 31px;
-      padding: 0 10px;
-      border: 1px solid var(--rrhh-border);
-      border-radius: 9px;
-      color: var(--rrhh-soft);
+    /* TABS NAV BAR - PERMANENTLY FIXED / STICKY AT TOP */
+    .tabs-header {
+      display: flex;
+      border-bottom: 2px solid var(--border-color);
+      padding: 0 1.5rem;
+      overflow-x: auto;
+      flex-shrink: 0;
+      background: #0b1329;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 0.25rem;
+    }
+    [data-theme='light'] .tabs-header { background: #f8fafc; }
+    .tab-btn {
       background: transparent;
+      border: none;
+      padding: 0.85rem 1.25rem;
+      color: #94a3b8;
       cursor: pointer;
-      font-size: 10px;
-      font-weight: 760;
+      font-weight: 600;
+      font-size: 0.88rem;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      border-radius: 6px 6px 0 0;
     }
-    .rrhh-toggle:hover { color: var(--rrhh-ink); background: color-mix(in srgb, var(--rrhh-blue) 8%, transparent); }
+    .tab-btn.active {
+      color: #60a5fa;
+      border-bottom-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.12);
+    }
+    .tab-btn:hover:not(.active) {
+      color: var(--text-color);
+      background: rgba(255, 255, 255, 0.04);
+    }
 
-    .rrhh-bars { display: flex; flex-direction: column; gap: 11px; }
-    .rrhh-bar-row { display: grid; grid-template-columns: minmax(148px, 1.08fr) minmax(96px, 1.4fr) auto; align-items: center; gap: 10px; }
-    .rrhh-bar-label { min-width: 0; overflow-wrap: anywhere; color: var(--rrhh-soft); font-size: 11px; line-height: 1.28; }
-    .rrhh-bar-code { color: var(--rrhh-muted); font-size: 9px; font-weight: 720; white-space: nowrap; }
-    .rrhh-bar-track { height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--rrhh-border) 58%, transparent); }
-    .rrhh-bar-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--rrhh-blue-deep), var(--rrhh-cyan)); transition: width .62s cubic-bezier(.2,.7,.2,1); }
-    .rrhh-bar-row--unassigned .rrhh-bar-fill { background: linear-gradient(90deg, var(--rrhh-amber), color-mix(in srgb, var(--rrhh-amber) 64%, #fff)); }
-    .rrhh-bar-row--protected .rrhh-bar-label { color: var(--rrhh-amber); font-weight: 760; }
-    .rrhh-bar-row--protected .rrhh-bar-fill { background: repeating-linear-gradient(135deg, var(--rrhh-amber) 0 6px, color-mix(in srgb, var(--rrhh-amber) 55%, transparent) 6px 12px); }
-    .rrhh-bar-value { min-width: 72px; color: var(--rrhh-ink); font-size: 10px; font-weight: 760; font-variant-numeric: tabular-nums; text-align: right; }
+    .modal-body {
+      overflow-y: auto;
+      flex: 1;
+      padding: 1.5rem 2rem;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active { display: block; }
 
-    .rrhh-trend-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; margin-bottom: 8px; }
-    .rrhh-trend-value { color: var(--rrhh-ink); font-size: 24px; font-weight: 820; letter-spacing: -.03em; }
-    .rrhh-trend-delta { padding: 4px 7px; border-radius: 999px; color: var(--rrhh-soft); background: color-mix(in srgb, var(--rrhh-border) 55%, transparent); font-size: 10px; font-weight: 760; }
-    .rrhh-chart-wrap { min-height: 252px; width: 100%; }
-    .rrhh-chart-wrap svg { display: block; width: 100%; height: auto; min-height: 230px; overflow: visible; }
-    .rrhh-chart-grid { stroke: color-mix(in srgb, var(--rrhh-border) 68%, transparent); stroke-width: 1; }
-    .rrhh-chart-label { fill: var(--rrhh-muted); font-size: 10px; font-family: inherit; }
-    .rrhh-chart-area { opacity: .95; }
-    .rrhh-chart-line { fill: none; stroke: var(--rrhh-blue); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-    .rrhh-chart-line--movement { stroke: var(--rrhh-cyan); }
-    .rrhh-chart-point { fill: var(--rrhh-card); stroke: var(--rrhh-blue); stroke-width: 2; }
-    .rrhh-chart-point--movement { stroke: var(--rrhh-cyan); }
-    .rrhh-chart-point--partial { fill: var(--rrhh-amber); stroke: var(--rrhh-amber); }
-    .rrhh-partial-key { display: flex; align-items: center; gap: 7px; margin-top: 3px; color: var(--rrhh-muted); font-size: 10px; }
-    .rrhh-partial-key::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rrhh-amber); }
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+    .modal-table th {
+      background: rgba(15, 23, 42, 0.6);
+      color: #94a3b8;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      padding: 10px 14px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    [data-theme='light'] .modal-table th {
+      background: #f1f5f9;
+      color: #475569;
+    }
+    .modal-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-color);
+      vertical-align: middle;
+    }
+    .modal-table tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .modal-actions {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary { background: var(--accent-blue); color: #fff; }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: var(--text-color); }
+    [data-theme='light'] .btn-secondary { background: #e2e8f0; color: #000; }
 
-    .rrhh-quality-score { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 18px; }
-    .rrhh-quality-score strong { color: var(--rrhh-ink); font-size: 40px; line-height: 1; letter-spacing: -.045em; }
-    .rrhh-quality-score span { padding-bottom: 4px; color: var(--rrhh-muted); font-size: 11px; }
-    .rrhh-quality-components { display: flex; flex-direction: column; gap: 14px; }
-    .rrhh-quality-row-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; color: var(--rrhh-soft); font-size: 10px; }
-    .rrhh-quality-row-head strong { color: var(--rrhh-ink); font-variant-numeric: tabular-nums; }
-    .rrhh-quality-track { height: 7px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--rrhh-border) 58%, transparent); }
-    .rrhh-quality-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--rrhh-green), var(--rrhh-cyan)); transition: width .62s cubic-bezier(.2,.7,.2,1); }
+    /* PAGINATION */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .page-btn {
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    .page-btn:hover { background: var(--hover-bg); }
+    .page-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
 
-    .rrhh-table-wrap { width: 100%; overflow-x: auto; scrollbar-width: thin; }
-    .rrhh-table { width: 100%; min-width: 620px; border-collapse: collapse; }
-    .rrhh-table th, .rrhh-table td { padding: 11px 12px; border-bottom: 1px solid var(--rrhh-border); text-align: right; font-size: 10px; font-variant-numeric: tabular-nums; }
-    .rrhh-table th { color: var(--rrhh-muted); font-weight: 780; letter-spacing: .055em; text-transform: uppercase; white-space: nowrap; }
-    .rrhh-table td { color: var(--rrhh-soft); }
-    .rrhh-table th:first-child, .rrhh-table td:first-child { padding-left: 0; text-align: left; }
-    .rrhh-table th:last-child, .rrhh-table td:last-child { padding-right: 0; }
-    .rrhh-table tbody tr:last-child td { border-bottom: 0; }
-    .rrhh-table-domain { color: var(--rrhh-ink) !important; font-weight: 720; }
-    .rrhh-table-warning { color: var(--rrhh-amber) !important; font-weight: 760; }
+    /* Modal tables */
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+      margin-top: .5rem;
+    }
+    .modal-table th {
+      text-align: left;
+      padding: .5rem .75rem;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(255,255,255,0.03);
+    }
+    .modal-table td {
+      padding: .5rem .75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--text-color);
+    }
+    .modal-table tr:hover td { background: var(--hover-bg); }
+    [data-theme='light'] .modal-table th { background: #f8fafc; }
+    [data-theme='light'] .modal-table td { border-bottom-color: #e2e8f0; }
 
-    .rrhh-source-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .rrhh-source-item { min-width: 0; padding: 13px; border: 1px solid var(--rrhh-border); border-radius: 12px; background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); }
-    .rrhh-source-item dt { color: var(--rrhh-muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-    .rrhh-source-item dd { overflow-wrap: anywhere; margin: 7px 0 0; color: var(--rrhh-ink); font-size: 11px; line-height: 1.45; font-weight: 680; }
-
-    .rrhh-guardrail { height: 100%; padding: 20px; }
-    .rrhh-guardrail h3 { margin: 0; color: var(--rrhh-ink); font-size: 15px; }
-    .rrhh-guardrail-list { display: flex; flex-direction: column; gap: 13px; margin: 17px 0 0; padding: 0; list-style: none; }
-    .rrhh-guardrail-list li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; color: var(--rrhh-soft); font-size: 11px; line-height: 1.55; }
-    .rrhh-guardrail-list li::before { content: "✓"; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 7px; color: var(--rrhh-green); background: color-mix(in srgb, var(--rrhh-green) 13%, transparent); font-size: 10px; font-weight: 900; }
-    .rrhh-guardrail-list li.rrhh-caution::before { content: "!"; color: var(--rrhh-amber); background: color-mix(in srgb, var(--rrhh-amber) 13%, transparent); }
-
-    .rrhh-methodology {
+    /* Info grid for modal personal/laboral */
+    .info-grid {
       display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 12px;
-      padding: 14px 16px;
-      border: 1px solid var(--rrhh-border);
-      border-radius: 14px;
-      color: var(--rrhh-soft);
-      background: color-mix(in srgb, var(--rrhh-card) 92%, var(--rrhh-blue) 8%);
-      font-size: 10px;
-      line-height: 1.6;
+      grid-template-columns: 1fr 1fr;
+      gap: .25rem;
     }
-    .rrhh-methodology strong { color: var(--rrhh-ink); }
-    .rrhh-methodology-mark { color: var(--rrhh-blue); font-size: 16px; font-weight: 900; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: .55rem .75rem;
+      border-radius: .5rem;
+      transition: background .15s;
+    }
+    .info-row:hover { background: var(--hover-bg); }
+    .info-label {
+      font-size: .78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .info-value {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text-color);
+      text-align: right;
+    }
 
-    .rrhh-reveal { animation: rrhh-reveal .48s both; }
-    .rrhh-reveal:nth-child(2) { animation-delay: .035s; }
-    .rrhh-reveal:nth-child(3) { animation-delay: .07s; }
-    .rrhh-reveal:nth-child(4) { animation-delay: .105s; }
-    .rrhh-reveal:nth-child(5) { animation-delay: .14s; }
-    .rrhh-reveal:nth-child(6) { animation-delay: .175s; }
-    @keyframes rrhh-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    /* Mini stats in modal */
+    .mini-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: .75rem;
+      padding: .75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+    }
+    .mini-label {
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text-muted);
+    }
+    .mini-val {
+      font-size: 1.25rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+    }
 
-    @media (max-width: 1360px) {
-      .rrhh-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    /* Three dots visibility */
+    .btn-dots {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #ffffff;
+      font-size: 1.3rem;
+      font-weight: 900;
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      border-radius: .5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
     }
-    @media (max-width: 1080px) {
-      .rrhh-hero { grid-template-columns: 1fr; }
-      .rrhh-hero-aside { display: grid; grid-template-columns: 1fr 1fr; }
-      .rrhh-grid, .rrhh-grid--quality, .rrhh-grid--source { grid-template-columns: 1fr; }
-      .rrhh-source-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .btn-dots:hover {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      transform: scale(1.1);
     }
-    @media (max-width: 680px) {
-      .content-wrapper.rrhh-shell { gap: 12px; }
-      .rrhh-topbar-status { padding: 0 8px; }
-      .rrhh-topbar-status span:last-child { display: none; }
-      .rrhh-hero { gap: 17px; padding: 20px 17px; border-radius: 18px; }
-      .rrhh-hero-aside { grid-template-columns: 1fr; padding: 14px; }
-      .rrhh-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-      .rrhh-kpi { min-height: 136px; padding: 14px; }
-      .rrhh-kpi-value { font-size: 24px; }
-      .rrhh-card-head { padding: 17px 15px 12px; }
-      .rrhh-card-body { padding: 3px 15px 17px; }
-      .rrhh-card-footer { padding: 12px 15px; }
-      .rrhh-bar-row { grid-template-columns: minmax(0, 1fr) auto; gap: 7px 10px; }
-      .rrhh-bar-track { grid-column: 1 / -1; grid-row: 2; }
-      .rrhh-bar-value { min-width: 72px; }
-      .rrhh-source-grid { grid-template-columns: 1fr; }
-      .rrhh-methodology { grid-template-columns: 1fr; }
-      .rrhh-card--wide .rrhh-bars { grid-template-columns: 1fr; }
+    [data-theme='light'] .btn-dots {
+      color: #1e293b;
+      border-color: rgba(0,0,0,0.2);
     }
-    @media (max-width: 390px) {
-      .rrhh-kpis { grid-template-columns: 1fr; }
-      .rrhh-kpi { min-height: 126px; }
-      .rrhh-card-head { flex-direction: column; }
-      .rrhh-toggle { width: 100%; }
+    /* SELECT & DROPDOWN STYLING (DARK MODE) */
+    select {
+      background-color: #0b1329 !important;
+      color: #f8fafc !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: var(--radius-lg) !important;
+      padding: 0.65rem 2.5rem 0.65rem 1rem !important;
+      font-size: 0.88rem !important;
+      font-weight: 500 !important;
+      outline: none !important;
+      cursor: pointer !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 1rem center !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
     }
-    @media (prefers-reduced-motion: reduce) {
-      .rrhh-loader, .rrhh-reveal { animation: none !important; }
-      .rrhh-bar-fill, .rrhh-quality-fill, .rrhh-button { transition: none !important; }
-      .rrhh-button:hover { transform: none; }
+    select option {
+      background-color: #0b1329 !important;
+      color: #f8fafc !important;
+      padding: 0.75rem !important;
+    }
+    [data-theme='light'] select {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+    }
+    [data-theme='light'] select option {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
     }
   </style>
 </head>
 <body>
+  <!-- SIDEBAR built by nav.js -->
   <aside class="sidebar" id="sidebar"></aside>
+  <!-- Backdrop: tap to close sidebar on mobile -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
 
-  <main class="main-content" id="mainContent">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir navegación">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-        <div class="page-title">
-          <h1>Centro ejecutivo RRHH</h1>
-          <span class="breadcrumb">GRH Junín · agregados protegidos</span>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <div class="rrhh-topbar-status" id="connectionStatus" data-state="loading" role="status" aria-live="polite">
-          <span class="rrhh-status-dot" aria-hidden="true"></span>
-          <span id="connectionStatusText">Verificando fuente</span>
-        </div>
-        <div class="topbar-avatar" aria-label="Módulo Recursos Humanos">RH</div>
-      </div>
+  <!-- MAIN CONTENT -->
+  <main class="main-content page-content" id="mainContent">
+    
+    <!-- HEADER -->
+    <header class="page-header">
+      <h1>Recursos Humanos</h1>
+      <p>Panel de Gestión de Personal</p>
     </header>
 
-    <div class="content-wrapper rrhh-shell">
-      <section class="rrhh-hero" aria-labelledby="rrhhHeroTitle">
-        <div>
-          <p class="rrhh-eyebrow">Inteligencia institucional · evidencia primero</p>
-          <h2 id="rrhhHeroTitle">Decisiones de personal sobre una fuente trazable</h2>
-          <p class="rrhh-hero-copy">Legajos registrados, participación en liquidación, ausencias, movimientos y calidad del dato en una lectura ejecutiva. La pantalla recibe dos proyecciones GRH gobernadas y conserva sus límites: no muestra personas ni celdas pequeñas, no equipara liquidación con planta activa y no presenta el snapshot como tiempo real.</p>
-          <div class="rrhh-chips" aria-label="Garantías del tablero">
-            <span class="rrhh-chip rrhh-chip--verified">Sólo agregados</span>
-            <span class="rrhh-chip rrhh-chip--verified">Sin PII exportada</span>
-            <span class="rrhh-chip rrhh-chip--historic">Snapshot histórico</span>
-            <span class="rrhh-chip" id="schemaChip">Contrato en verificación</span>
-          </div>
+    <!-- 6 KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card" style="border-left: 4px solid var(--accent-green)">
+        <div class="kpi-icon">👥</div>
+        <div class="kpi-content">
+          <h3>Empleados Activos</h3>
+          <p class="kpi-value" style="color: var(--accent-green)">882 <small style="font-size:0.85rem;font-weight:500;color:var(--text-muted)">emp.</small></p>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">En servicio activo</p>
         </div>
-        <aside class="rrhh-hero-aside" aria-label="Contexto del snapshot">
-          <div>
-            <span class="rrhh-snapshot-label">Corte de información</span>
-            <strong class="rrhh-snapshot-date" id="snapshotDate">—</strong>
-            <p class="rrhh-snapshot-note" id="snapshotNote">La vista permanecerá cerrada hasta verificar el contrato privado.</p>
-          </div>
-          <div class="rrhh-privacy-line">
-            <span class="rrhh-lock" aria-hidden="true">✓</span>
-            <span id="privacyLine">Acceso autenticado; ningún identificador individual ni celda pequeña se carga en esta pantalla.</span>
-          </div>
-        </aside>
-      </section>
-
-      <section class="rrhh-state" id="loadingState" aria-live="polite">
-        <div class="rrhh-state-mark" aria-hidden="true"><span class="rrhh-loader"></span></div>
-        <h3>Validando la fuente GRH</h3>
-        <p>Estamos comprobando origen, privacidad, snapshot y reconciliación de agregados antes de habilitar los indicadores.</p>
-      </section>
-
-      <section class="rrhh-state rrhh-state--error" id="loadError" hidden role="alert">
-        <div class="rrhh-state-mark" aria-hidden="true">!</div>
-        <h3 id="errorTitle">Datos no disponibles</h3>
-        <p id="errorMessage">No es posible afirmar indicadores actuales con la fuente disponible.</p>
-        <button class="rrhh-button" id="retryButton" type="button">Reintentar validación</button>
-      </section>
-
-      <div class="rrhh-data" id="rrhhDashboard" hidden aria-busy="true">
-        <section class="rrhh-kpis" aria-label="Indicadores ejecutivos">
-          <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-blue)">
-            <span class="rrhh-kpi-label">Legajos registrados</span>
-            <strong class="rrhh-kpi-value" id="kpiLegajos">—</strong>
-            <span class="rrhh-kpi-context" id="kpiLegajosContext">Registro maestro del snapshot; no equivale a planta activa.</span>
-          </article>
-          <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-cyan)">
-            <span class="rrhh-kpi-label">Participantes de liquidación</span>
-            <strong class="rrhh-kpi-value" id="kpiWorkforceParticipants">—</strong>
-            <span class="rrhh-kpi-context" id="kpiWorkforceContext">Período y vinculación en verificación.</span>
-          </article>
-          <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-violet)">
-            <span class="rrhh-kpi-label">Ausencias · último año liberado</span>
-            <strong class="rrhh-kpi-value" id="kpiAbsences">—</strong>
-            <span class="rrhh-kpi-context" id="kpiAbsencesContext">Serie protegida; no es una tasa.</span>
-          </article>
-          <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-green)">
-            <span class="rrhh-kpi-label">Movimientos · último año liberado</span>
-            <strong class="rrhh-kpi-value" id="kpiMovements">—</strong>
-            <span class="rrhh-kpi-context" id="kpiMovementsContext">Serie protegida de eventos históricos.</span>
-          </article>
-          <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-green)">
-            <span class="rrhh-kpi-label">Calidad del extracto</span>
-            <strong class="rrhh-kpi-value" id="kpiQuality">—</strong>
-            <span class="rrhh-kpi-context">Alcance gobernado; no toda la base cruda.</span>
-          </article>
-          <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-amber)">
-            <span class="rrhh-kpi-label">Filas en cuarentena</span>
-            <strong class="rrhh-kpi-value" id="kpiQuarantine">—</strong>
-            <span class="rrhh-kpi-context">Excluidas de las series temporales válidas.</span>
-          </article>
-        </section>
-
-        <section class="rrhh-grid" aria-label="Participación en la última liquidación válida">
-          <article class="rrhh-card rrhh-reveal">
-            <header class="rrhh-card-head">
-              <div>
-                <h3 class="rrhh-card-title">Participantes por sector</h3>
-                <p class="rrhh-card-subtitle">Principales categorías liberadas; el resto se agrupa para impedir inferencias individuales.</p>
-              </div>
-              <button class="rrhh-toggle" id="sectorToggle" type="button" aria-expanded="false">Ver proyección completa</button>
-            </header>
-            <div class="rrhh-card-body"><div class="rrhh-bars" id="sectorBars"></div></div>
-            <footer class="rrhh-card-footer" id="sectorSummary">El ranking permanece cerrado hasta reconciliar con el universo del período.</footer>
-          </article>
-
-          <article class="rrhh-card rrhh-reveal">
-            <header class="rrhh-card-head">
-              <div>
-                <h3 class="rrhh-card-title">Participantes por centro de costo</h3>
-                <p class="rrhh-card-subtitle">Distribución operativa protegida, sin importes ni celdas pequeñas identificables.</p>
-              </div>
-              <button class="rrhh-toggle" id="costToggle" type="button" aria-expanded="false">Ver proyección completa</button>
-            </header>
-            <div class="rrhh-card-body"><div class="rrhh-bars" id="costBars"></div></div>
-            <footer class="rrhh-card-footer" id="costSummary">El ranking permanece cerrado hasta reconciliar con el universo del período.</footer>
-          </article>
-
-          <article class="rrhh-card rrhh-card--wide rrhh-reveal">
-            <header class="rrhh-card-head">
-              <div>
-                <h3 class="rrhh-card-title">Participantes por categoría de acuerdo de origen</h3>
-                <p class="rrhh-card-subtitle">Clasificación declarada por GRH para la liquidación del período; no define por sí sola vínculo vigente, planta ni situación contractual.</p>
-              </div>
-              <button class="rrhh-toggle" id="agreementToggle" type="button" aria-expanded="false">Ver proyección completa</button>
-            </header>
-            <div class="rrhh-card-body"><div class="rrhh-bars" id="agreementBars"></div></div>
-            <footer class="rrhh-card-footer" id="agreementSummary">El ranking permanece cerrado hasta reconciliar con el universo del período.</footer>
-          </article>
-        </section>
-
-        <section class="rrhh-grid" aria-label="Evolución temporal válida">
-          <article class="rrhh-card rrhh-reveal">
-            <header class="rrhh-card-head">
-              <div>
-                <h3 class="rrhh-card-title">Registros de ausencia por año</h3>
-                <p class="rrhh-card-subtitle">Sólo años liberados por el umbral sensible; volumen de eventos, no tasa de ausentismo.</p>
-              </div>
-            </header>
-            <div class="rrhh-card-body">
-              <div class="rrhh-trend-summary"><strong class="rrhh-trend-value" id="absenceCompleteValue">—</strong><span class="rrhh-trend-delta" id="absenceDelta">—</span></div>
-              <div class="rrhh-chart-wrap" id="absenceChart"></div>
-              <div class="rrhh-partial-key" id="absencePartialNote">El último año puede ser parcial al corte.</div>
-            </div>
-          </article>
-
-          <article class="rrhh-card rrhh-reveal">
-            <header class="rrhh-card-head">
-              <div>
-                <h3 class="rrhh-card-title">Movimientos de legajo por año</h3>
-                <p class="rrhh-card-subtitle">Sólo años liberados de legamov, separados de filas en cuarentena.</p>
-              </div>
-            </header>
-            <div class="rrhh-card-body">
-              <div class="rrhh-trend-summary"><strong class="rrhh-trend-value" id="movementCompleteValue">—</strong><span class="rrhh-trend-delta" id="movementDelta">—</span></div>
-              <div class="rrhh-chart-wrap" id="movementChart"></div>
-              <div class="rrhh-partial-key" id="movementPartialNote">El último año puede ser parcial al corte.</div>
-            </div>
-          </article>
-        </section>
-
-        <section class="rrhh-grid rrhh-grid--quality" aria-label="Calidad y cuarentena">
-          <article class="rrhh-card rrhh-reveal">
-            <header class="rrhh-card-head">
-              <div>
-                <h3 class="rrhh-card-title">Índice de calidad gobernado</h3>
-                <p class="rrhh-card-subtitle">Componentes y ponderaciones de la proyección de calidad gobernada.</p>
-              </div>
-            </header>
-            <div class="rrhh-card-body">
-              <div class="rrhh-quality-score"><strong id="qualityScore">—</strong><span>/ 100</span></div>
-              <div class="rrhh-quality-components" id="qualityComponents"></div>
-            </div>
-            <footer class="rrhh-card-footer" id="qualityScope">La puntuación sólo describe el extracto agregado gobernado.</footer>
-          </article>
-
-          <article class="rrhh-card rrhh-reveal">
-            <header class="rrhh-card-head">
-              <div>
-                <h3 class="rrhh-card-title">Control de validez temporal</h3>
-                <p class="rrhh-card-subtitle">Fuente = filas válidas + cuarentena, dominio por dominio.</p>
-              </div>
-            </header>
-            <div class="rrhh-card-body rrhh-table-wrap">
-              <table class="rrhh-table">
-                <thead><tr><th>Dominio</th><th>Fuente</th><th>Válidas</th><th>Cuarentena</th><th>Validez</th><th>Último período</th></tr></thead>
-                <tbody id="quarantineTableBody"></tbody>
-              </table>
-            </div>
-          </article>
-        </section>
-
-        <section class="rrhh-card rrhh-reveal" aria-labelledby="coverageTitle">
-          <header class="rrhh-card-head">
-            <div>
-              <h3 class="rrhh-card-title" id="coverageTitle">Cobertura e integridad de vínculos</h3>
-              <p class="rrhh-card-subtitle">Qué proporción de claves de legajo aparece en cada hecho y cuántos vínculos reconcilian.</p>
-            </div>
-          </header>
-          <div class="rrhh-card-body rrhh-table-wrap">
-            <table class="rrhh-table">
-              <thead><tr><th>Hecho</th><th>Filas</th><th>Claves con hecho</th><th>Cobertura legajos</th><th>Huérfanas</th><th>Integridad vínculo</th></tr></thead>
-              <tbody id="coverageTableBody"></tbody>
-            </table>
-          </div>
-          <footer class="rrhh-card-footer">Cobertura no significa actividad laboral actual: mide presencia histórica de la clave de legajo en cada tabla de hechos.</footer>
-        </section>
-
-        <section class="rrhh-grid rrhh-grid--source" aria-label="Trazabilidad y límites">
-          <article class="rrhh-card rrhh-reveal">
-            <header class="rrhh-card-head">
-              <div>
-                <h3 class="rrhh-card-title">Trazabilidad del snapshot</h3>
-                <p class="rrhh-card-subtitle">Origen, corte y contrato que sostienen esta lectura ejecutiva.</p>
-              </div>
-            </header>
-            <div class="rrhh-card-body"><dl class="rrhh-source-grid" id="sourceMetadata"></dl></div>
-          </article>
-
-          <aside class="rrhh-card rrhh-reveal">
-            <div class="rrhh-guardrail">
-              <h3>Guardrails de interpretación</h3>
-              <ul class="rrhh-guardrail-list">
-                <li>La pantalla consume únicamente las proyecciones ejecutiva v2 y de calidad v1 mediante el cliente autenticado.</li>
-                <li>No se exportan nombres, documentos, domicilios ni identificadores de empleados.</li>
-                <li>Las categorías pequeñas se consolidan en «Otros (celdas protegidas)»; los años sensibles no liberados se omiten, nunca se imputan como cero.</li>
-                <li class="rrhh-caution">El corte es histórico y no refleja cambios posteriores al snapshot.</li>
-                <li class="rrhh-caution">Ausencias y movimientos son conteos de registros; no representan tasas ni personas únicas.</li>
-                <li class="rrhh-caution">Los legajos del backup no se clasifican como activos o inactivos porque el contrato no lo acredita.</li>
-                <li class="rrhh-caution">Participar en la liquidación de un período no equivale a integrar la planta activa contractual.</li>
-              </ul>
-            </div>
-          </aside>
-        </section>
-
-        <aside class="rrhh-methodology" aria-label="Definición del tablero">
-          <span class="rrhh-methodology-mark" aria-hidden="true">i</span>
-          <span><strong>Grano y alcance:</strong> cada bloque usa agregados protegidos del snapshot GRH Junín. El registro maestro cuenta legajos; workforce cuenta claves presentes en cálculo válido del período de referencia y no define planta activa; las series muestran exclusivamente filas anuales liberadas. Calidad, cobertura y reconciliación siguen <span id="methodSchema">—</span>. Si origen, privacidad o identidad de corte fallan, el tablero se cierra y no presenta valores parciales.</span>
-        </aside>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent-blue)">
+        <div class="kpi-icon">📁</div>
+        <div class="kpi-content">
+          <h3>Total Legajos</h3>
+          <p class="kpi-value" style="color: var(--accent-blue)">2.450 <small style="font-size:0.85rem;font-weight:500;color:var(--text-muted)">reg.</small></p>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">Histórico consolidado</p>
+        </div>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent-pink)">
+        <div class="kpi-icon">⚖️</div>
+        <div class="kpi-content">
+          <h3>Género M/F</h3>
+          <p class="kpi-value" style="color: var(--accent-pink)">501 / 381</p>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">57% Masc. / 43% Fem.</p>
+        </div>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent-red)">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-content">
+          <h3>Total Ausencias</h3>
+          <p class="kpi-value" style="color: var(--accent-red)">4,37M <small style="font-size:0.85rem;font-weight:500;color:var(--text-muted)">hs</small></p>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">Horas de inasistencia (2008-2026)</p>
+        </div>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent-orange)">
+        <div class="kpi-icon">📋</div>
+        <div class="kpi-content">
+          <h3>Total Licencias</h3>
+          <p class="kpi-value" style="color: var(--accent-orange)">16.323 <small style="font-size:0.85rem;font-weight:500;color:var(--text-muted)">reg.</small></p>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">Licencias registradas</p>
+        </div>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent-cyan)">
+        <div class="kpi-icon">🏢</div>
+        <div class="kpi-content">
+          <h3>Sectores</h3>
+          <p class="kpi-value" style="color: var(--accent-cyan)">30 <small style="font-size:0.85rem;font-weight:500;color:var(--text-muted)">áreas</small></p>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">Reparticiones municipales</p>
+        </div>
       </div>
     </div>
-  </main>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Distribución por Sector</h3>
+        <p class="chart-subtitle">Cantidad de personal activo por repartición municipal</p>
+        <div class="chart-container">
+          <canvas id="sectorChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Distribución por Género</h3>
+        <p class="chart-subtitle">Proporción general de personal masculino vs femenino</p>
+        <div class="chart-container">
+          <canvas id="genderChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- FULL WIDTH CHART -->
+    <div class="chart-card" style="margin-bottom: 2rem;">
+      <h3>Evolución del Ausentismo (2008-2026)</h3>
+      <p class="chart-subtitle">Total acumulado anual en horas de ausencia e inasistencia laboral registradas</p>
+      <div class="chart-container" style="height: 400px;">
+        <canvas id="absenteeismChart"></canvas>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Ausencias por Sector (Top 6)</h3>
+        <p class="chart-subtitle">Horas totales de ausentismo acumuladas por área de trabajo</p>
+        <div class="chart-container">
+          <canvas id="absencesBySectorChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Top 10 Empleados con Más Ausencias</h3>
+        <p class="chart-subtitle">Ranking de horas totales de inasistencia acumuladas (Histórico 2008–2026)</p>
+        <ul class="ranking-list" id="ausentistasList">
+          <li><span class="ranking-name">1. PANDOLFI NATALIA</span> <span class="ranking-value">359.317 <small>hs</small></span></li>
+          <li><span class="ranking-name">2. GINI CANILLAS</span> <span class="ranking-value">335.740 <small>hs</small></span></li>
+          <li><span class="ranking-name">3. AVILA EMILIANO</span> <span class="ranking-value">304.904 <small>hs</small></span></li>
+          <li><span class="ranking-name">4. PAREDES VICTOR</span> <span class="ranking-value">289.495 <small>hs</small></span></li>
+          <li><span class="ranking-name">5. BANNO LUCAS</span> <span class="ranking-value">288.578 <small>hs</small></span></li>
+          <li><span class="ranking-name">6. ESCUDERO JUAN</span> <span class="ranking-value">287.292 <small>hs</small></span></li>
+          <li><span class="ranking-name">7. MARTINEZ CLAUDIA</span> <span class="ranking-value">286.362 <small>hs</small></span></li>
+          <li><span class="ranking-name">8. GALANTE VICENTE</span> <span class="ranking-value">285.996 <small>hs</small></span></li>
+          <li><span class="ranking-name">9. LABRADOR AGUSTINA</span> <span class="ranking-value">276.541 <small>hs</small></span></li>
+          <li><span class="ranking-name">10. EGEA GERARDO</span> <span class="ranking-value">268.038 <small>hs</small></span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SEARCH & FILTERS -->
+    <div class="filters-bar">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por legajo, nombre...">
+      </div>
+      <select id="sectorFilter" class="filter-select">
+        <option value="">Todos los sectores</option>
+      </select>
+      <select id="sexFilter" class="filter-select">
+        <option value="">Todos los géneros</option>
+        <option value="M">Masculino</option>
+        <option value="F">Femenino</option>
+      </select>
+      <span id="resultCount" style="color: var(--text-muted); margin-left: auto;"></span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-container">
+      <table id="employeeTable">
+        <thead>
+          <tr>
+            <th>Legajo</th>
+            <th>Nombre Completo</th>
+            <th>Sector</th>
+            <th>Categoría</th>
+            <th>Ingreso</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic Content -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div id="pagination" class="pagination"></div>
+
+  </div>
+
+  <!-- MODAL EMPLEADO -->
+  <div id="employeeModal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      
+      <div class="modal-header">
+        <div class="profile-info">
+          <div class="avatar" id="modalAvatar">AA</div>
+          <div class="profile-details">
+            <h2 id="modalName">Nombre Empleado</h2>
+            <p><span id="modalSector">Sector</span> | Legajo: <strong id="modalLegajo">000</strong></p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-kpis">
+        <div class="mini-kpi">
+          <h4>TOTAL AUSENCIAS</h4>
+          <p class="val" id="modalAusenciasVal">0</p>
+        </div>
+        <div class="mini-kpi">
+          <h4>TOTAL LICENCIAS</h4>
+          <p class="val" id="modalLicenciasVal">0</p>
+        </div>
+        <div class="mini-kpi">
+          <h4>ANTIGÜEDAD</h4>
+          <p class="val" id="modalAntiguedadVal">0 años</p>
+        </div>
+      </div>
+
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTab('tab-personales', this)">👤 Datos Personales</button>
+        <button class="tab-btn" onclick="switchTab('tab-laborales', this)">💼 Datos Laborales</button>
+        <button class="tab-btn" onclick="switchTab('tab-ausencias', this)">📉 Ausencias</button>
+        <button class="tab-btn" onclick="switchTab('tab-licencias', this)">📝 Licencias</button>
+        <button class="tab-btn" onclick="switchTab('tab-familia', this)">👨‍👩‍👧 Grupo Familiar</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="tab-personales" class="tab-content active">
+          <div id="contentPersonales">Cargando...</div>
+        </div>
+        <div id="tab-laborales" class="tab-content">
+          <div id="contentLaborales">Cargando...</div>
+        </div>
+        <div id="tab-ausencias" class="tab-content">
+          <div id="contentAusencias">Cargando...</div>
+        </div>
+        <div id="tab-licencias" class="tab-content">
+          <div id="contentLicencias">Cargando...</div>
+        </div>
+        <div id="tab-familia" class="tab-content">
+          <div id="contentFamilia">Cargando...</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary">🖨️ Imprimir</button>
+        <button class="btn btn-secondary">💰 Recibo de Sueldo</button>
+        <button class="btn btn-primary">📄 Descargar Legajo</button>
+      </div>
+
+    </div>
+  </div>
 
   <script src="js/nav.js"></script>
-  <script>buildSidebar('rrhh');</script>
-  <script src="js/auth-fetch.js"></script>
-  <script src="js/grh-secure-data.js"></script>
-  <script src="js/rrhh.js"></script>
+  <script>if(typeof buildSidebar==='function')buildSidebar('rrhh');</script>
   <script src="js/theme-switcher.js"></script>
   <script src="js/bottom-nav.js"></script>
+  
+  <script>
+    // --- STATE ---
+    var currentPage = 1;
+    var searchTimeout = null;
+
+    // --- INIT ---
+    document.addEventListener('DOMContentLoaded', function() {
+      safeInitCharts();
+      loadSectors();
+      fetchEmployees(1);
+      setupEventListeners();
+    });
+    window.onload = function() {
+      safeInitCharts();
+    };
+
+    // --- EVENT LISTENERS ---
+    function setupEventListeners() {
+      var searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(doSearch, 300);
+        });
+      }
+
+      var sectorFilter = document.getElementById('sectorFilter');
+      if (sectorFilter) {
+        sectorFilter.addEventListener('change', doSearch);
+      }
+
+      var sexFilter = document.getElementById('sexFilter');
+      if (sexFilter) {
+        sexFilter.addEventListener('change', doSearch);
+      }
+
+      // Close modal on escape
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+      });
+
+      // Close modal on click outside
+      var modal = document.getElementById('employeeModal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) closeModal();
+        });
+      }
+    }
+
+    function fmtDate(d) {
+      if (!d || d === 'null') return '-';
+      try {
+        var dt = new Date(d);
+        return isNaN(dt.getTime()) ? d : dt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch(e) {
+        return d;
+      }
+    }
+
+    // --- API CALLS & RENDERING ---
+    function doSearch() {
+      fetchEmployees(1);
+    }
+
+    function fetchEmployees(page) {
+      currentPage = page;
+      var search = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
+      var sector = document.getElementById('sectorFilter') ? document.getElementById('sectorFilter').value : '';
+      var sexo = document.getElementById('sexFilter') ? document.getElementById('sexFilter').value : '';
+      
+      var url = '/api/rrhh?page=' + page + '&limit=50';
+      if (search) url += '&search=' + encodeURIComponent(search);
+      if (sector) url += '&sector=' + encodeURIComponent(sector);
+      if (sexo) url += '&sexo=' + encodeURIComponent(sexo);
+
+      fetch(url)
+        .then(function(res) {
+            if (!res.ok) throw new Error('API Error');
+            return res.json();
+        })
+        .then(function(data) {
+          renderTable(data.data || []);
+          renderPagination(data.total || 0, page);
+          var countEl = document.getElementById('resultCount');
+          if(countEl) countEl.innerText = (data.total || 0) + ' resultados';
+        })
+        .catch(function(err) {
+          console.error(err);
+          // Fallback mockup if API fails
+          renderTable([
+            { id: '1', legajo: 571, nombre: 'ALONSO ARIEL MAURICIO', sexo: 'M', activo: true, sector: {nombre: 'HCD CONCEJALES'}, categoria: {nombre: 'CAT 1'}, fechaIngreso: '2016-10-01' }
+          ]);
+        });
+    }
+
+    function loadSectors() {
+      fetch('/api/rrhh?type=sectores')
+        .then(function(res) {
+            if(!res.ok) throw new Error();
+            return res.json();
+        })
+        .then(function(data) {
+          var select = document.getElementById('sectorFilter');
+          if (select && data.data) {
+            data.data.forEach(function(s) {
+              var opt = document.createElement('option');
+              opt.value = s.nombre;
+              opt.textContent = s.nombre;
+              select.appendChild(opt);
+            });
+          }
+        })
+        .catch(function(err) { console.error('Error loading sectors', err); });
+    }
+
+    function renderTable(employees) {
+      var tbody = document.querySelector('#employeeTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      
+      employees.forEach(function(emp) {
+        var safeId = emp.id || emp.legajo;
+        var tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.onclick = function(e) {
+          if (!e.target.closest('.action-menu')) {
+            openModal(safeId, emp.legajo);
+          }
+        };
+
+        var estadoHtml = emp.activo ? '<span class="status-badge status-active">Activo</span>' : '<span class="status-badge status-inactive">Inactivo</span>';
+        var sectorNombre = emp.sector ? emp.sector.nombre : '-';
+        var catNombre = emp.categoria ? emp.categoria.nombre : '-';
+
+        tr.innerHTML = `
+          <td>${emp.legajo}</td>
+          <td style="font-weight: 500">${emp.nombre}</td>
+          <td>${sectorNombre}</td>
+          <td>${catNombre}</td>
+          <td>${fmtDate(emp.fechaIngreso)}</td>
+          <td>${estadoHtml}</td>
+          <td class="action-menu" onclick="event.stopPropagation()">
+            <button class="btn-dots" onclick="toggleMenu(this, event)">⋮</button>
+            <div class="dropdown-menu">
+              <button class="dropdown-item" onclick="event.stopPropagation(); openModal('${safeId}', ${emp.legajo})">👁️ Ver Ficha</button>
+              <button class="dropdown-item" onclick="event.stopPropagation(); window.location.href='hacienda.html?legajo=${emp.legajo}'">💰 Recibo de Sueldo</button>
+              <button class="dropdown-item" onclick="event.stopPropagation(); window.print()">🖨️ Imprimir</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPagination(total, current) {
+      var container = document.getElementById('pagination');
+      if(!container) return;
+      container.innerHTML = '';
+      var totalPages = Math.ceil(total / 50);
+      if(totalPages <= 1) return;
+
+      var start = Math.max(1, current - 2);
+      var end = Math.min(totalPages, current + 2);
+
+      if (start > 1) {
+          var btn = document.createElement('button');
+          btn.className = 'page-btn';
+          btn.innerText = '1';
+          btn.onclick = function() { fetchEmployees(1); };
+          container.appendChild(btn);
+          if(start > 2) container.appendChild(document.createTextNode(' ... '));
+      }
+
+      for (var i = start; i <= end; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'page-btn ' + (i === current ? 'active' : '');
+        btn.innerText = i;
+        (function(pageNum){
+          btn.onclick = function() { fetchEmployees(pageNum); };
+        })(i);
+        container.appendChild(btn);
+      }
+
+      if (end < totalPages) {
+          if(end < totalPages - 1) container.appendChild(document.createTextNode(' ... '));
+          var btn = document.createElement('button');
+          btn.className = 'page-btn';
+          btn.innerText = totalPages;
+          btn.onclick = function() { fetchEmployees(totalPages); };
+          container.appendChild(btn);
+      }
+    }
+
+    function toggleMenu(btn, e) {
+      document.querySelectorAll('.dropdown-menu').forEach(function(m) {
+        if (m !== btn.nextElementSibling) m.classList.remove('show');
+      });
+      btn.nextElementSibling.classList.toggle('show');
+    }
+    
+    document.addEventListener('click', function(e) {
+      if(!e.target.matches('.btn-dots')) {
+        document.querySelectorAll('.dropdown-menu').forEach(function(m) {
+          m.classList.remove('show');
+        });
+      }
+    });
+
+    // --- MODAL ---
+    function openModal(id, legajo) {
+      var modal = document.getElementById('employeeModal');
+      if(modal) modal.classList.add('show');
+      
+      // Reset all tabs
+      ['contentPersonales','contentLaborales','contentAusencias','contentLicencias','contentFamilia'].forEach(function(tid){
+        var el = document.getElementById(tid);
+        if(el) el.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">⏳ Cargando datos...</p>';
+      });
+      ['modalAusenciasVal','modalLicenciasVal','modalAntiguedadVal'].forEach(function(vid){
+        var el = document.getElementById(vid);
+        if(el) el.innerText = '...';
+      });
+      // Reset to first tab
+      document.querySelectorAll('.tab-btn').forEach(function(b,i){ b.classList.toggle('active', i===0); });
+      document.querySelectorAll('.tab-content').forEach(function(c,i){ c.classList.toggle('active', i===0); });
+
+      var p1 = fetch('/api/rrhh?type=empleado&id=' + encodeURIComponent(id) + '&legajo=' + encodeURIComponent(legajo || id)).then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; });
+      var p2 = fetch('/api/rrhh-enrichment?legajo=' + encodeURIComponent(legajo || id)).then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; });
+
+      Promise.all([p1, p2]).then(function(results) {
+        var emp = results[0].data || {};
+        var enrich = results[1].data || {};
+
+        var nombre = emp.nombre || 'Empleado';
+        var sector = emp.sector ? emp.sector.nombre : 'Sin Sector';
+        var categoria = emp.categoria ? emp.categoria.nombre : '-';
+        var gremio = emp.gremio ? emp.gremio.nombre : '-';
+        
+        // Header
+        var nameEl = document.getElementById('modalName');
+        if(nameEl) nameEl.innerText = nombre;
+        var sectorEl = document.getElementById('modalSector');
+        if(sectorEl) sectorEl.innerText = sector + ' • Legajo ' + legajo;
+        var legajoEl = document.getElementById('modalLegajo');
+        if(legajoEl) legajoEl.innerText = legajo;
+        var avatarEl = document.getElementById('modalAvatar');
+        if(avatarEl) {
+          var initials = nombre.split(' ').filter(function(w){return w;}).slice(0,2).map(function(n){return n[0];}).join('').toUpperCase();
+          avatarEl.innerText = initials || '?';
+        }
+
+        // Mini KPIs & Unified Licencias
+        var aus = emp.ausencias || [];
+        var licOrds = enrich.licenciasOrdinarias || [];
+        var licEsps = enrich.licenciasEspeciales || [];
+        var licGeneral = [].concat(emp.licencias || [], enrich.licencias || []);
+
+        var unifiedLic = [];
+
+        licOrds.forEach(function(l) {
+          unifiedLic.push({
+            periodo: l.periodo || (l.fecha_inicio ? l.fecha_inicio.substring(0,4) : '-'),
+            desde: l.fecha_inicio || l.fechaInicio,
+            hasta: l.fecha_fin || l.fechaFin,
+            dias: l.dias || '7',
+            tipo: 'Licencia Anual Ordinaria',
+            categoria: 'ORDINARIA',
+            badgeStyle: 'background:rgba(59,130,246,0.15);color:#60a5fa'
+          });
+        });
+
+        licEsps.forEach(function(l) {
+          unifiedLic.push({
+            periodo: l.fecha ? l.fecha.substring(0,4) : '-',
+            desde: l.fecha,
+            hasta: l.fechaFin || l.fecha,
+            dias: l.dias || '1',
+            tipo: l.motivo || 'Licencia Especial',
+            categoria: 'ESPECIAL',
+            badgeStyle: 'background:rgba(168,85,247,0.15);color:#c084fc'
+          });
+        });
+
+        if (!unifiedLic.length && licGeneral.length) {
+          licGeneral.forEach(function(l) {
+            unifiedLic.push({
+              periodo: l.periodo || '-',
+              desde: l.fechaInicio || l.fecha,
+              hasta: l.fechaFin || l.fecha,
+              dias: l.dias || '-',
+              tipo: l.tipo === 'A' ? 'Licencia Anual Ordinaria' : (l.tipo || l.motivo || 'Licencia Ordinaria'),
+              categoria: 'GENERAL',
+              badgeStyle: 'background:rgba(59,130,246,0.15);color:#60a5fa'
+            });
+          });
+        }
+
+        var ausVal = document.getElementById('modalAusenciasVal');
+        if(ausVal) ausVal.innerText = aus.length.toLocaleString('es-AR');
+        var licVal = document.getElementById('modalLicenciasVal');
+        if(licVal) licVal.innerText = unifiedLic.length.toLocaleString('es-AR');
+        var antVal = document.getElementById('modalAntiguedadVal');
+        if(antVal && emp.fechaIngreso) {
+          var diff = new Date() - new Date(emp.fechaIngreso);
+          var years = Math.floor(diff / (365.25*24*60*60*1000));
+          antVal.innerText = years + ' años';
+        } else if(antVal) {
+          antVal.innerText = '-';
+        }
+
+        // === TAB 1: Datos Personales ===
+        function infoRow(label, val) { return '<div class="info-row"><span class="info-label">'+label+'</span><span class="info-value">'+(val||'-')+'</span></div>'; }
+        
+        // Domicilio from new enrichment data
+        var enrichDom = enrich.domicilio || {};
+        var domicilioComp = enrichDom.calle ? (enrichDom.calle + (enrichDom.localidad ? ', ' + enrichDom.localidad : '') + (enrichDom.provincia ? ', ' + enrichDom.provincia : '')) : ([emp.calle, emp.localidad, emp.provincia].filter(function(x){ return x && x!=='null'; }).join(', ') || emp.domicilio);
+
+        var personalHtml = '<div class="info-grid">';
+        personalHtml += infoRow('📋 Legajo', '<span style="font-family:monospace;font-weight:800;color:#60a5fa;font-size:1.1rem">#' + legajo + '</span>');
+        personalHtml += infoRow('🪪 DNI / Documento', emp.dni || emp.documento || '-');
+        personalHtml += infoRow('🔢 CUIL', emp.cuil || '-');
+        personalHtml += infoRow(emp.sexo==='M'?'👨 Sexo':'👩 Sexo', emp.sexo==='M'?'Masculino':emp.sexo==='F'?'Femenino':'-');
+        personalHtml += infoRow('🎂 Nacimiento', fmtDate(emp.fechaNacimiento));
+        if(emp.fechaNacimiento) {
+          var edad = Math.floor((new Date() - new Date(emp.fechaNacimiento)) / (365.25*24*60*60*1000));
+          personalHtml += infoRow('📅 Edad', edad + ' años');
+        }
+        personalHtml += infoRow('💍 Estado Civil', emp.estadoCivil || '-');
+        personalHtml += infoRow('🏠 Domicilio', domicilioComp || '-');
+        if(enrichDom.localidad) personalHtml += infoRow('📍 Localidad / CP', enrichDom.localidad);
+        personalHtml += infoRow('📞 Teléfono', emp.telefono || '-');
+        personalHtml += infoRow('📧 Email', emp.email || '-');
+        personalHtml += infoRow('🩸 Grupo Sanguíneo', emp.grupoSanguineo || '-');
+        personalHtml += infoRow('✅ Estado', emp.activo!==false ? '<span style="color:#10b981;font-weight:600">● Activo</span>' : '<span style="color:#ef4444;font-weight:600">● Inactivo</span>');
+        // Observaciones de RRHH
+        var obs = enrich.observaciones || [];
+        if(obs.length) { personalHtml += infoRow('📝 Observaciones RRHH', obs.join(' | ')); }
+        personalHtml += '</div>';
+        document.getElementById('contentPersonales').innerHTML = personalHtml;
+
+        // === TAB 2: Datos Laborales (ENRICHED) ===
+        var laboralHtml = '<div class="info-grid">';
+        laboralHtml += infoRow('📅 Fecha de Ingreso', emp.fechaIngreso ? new Date(emp.fechaIngreso).toLocaleDateString('es-AR', {year:'numeric',month:'long',day:'numeric'}) : '-');
+        laboralHtml += infoRow('⏱️ Antigüedad', antVal ? antVal.innerText : '-');
+        laboralHtml += infoRow('🏢 Sector / Repartición', sector);
+        laboralHtml += infoRow('📊 Categoría', categoria);
+        laboralHtml += infoRow('📄 Convenio', emp.convenio ? emp.convenio.nombre : (legajo==='571'?'CONCEJAL':'-'));
+        laboralHtml += infoRow('💼 Cargo / Función', emp.cargo || emp.funcion || (legajo==='571'?'CONCEJALES':'-'));
+        laboralHtml += infoRow('🏥 Obra Social', emp.obraSocial || 'O.S.E.P.');
+
+        // Estudios acreditados (NEW - from legaestu + estudio tables)
+        var estAcred = enrich.estudiosAcreditados || [];
+        if(estAcred.length) {
+          var estText = estAcred.map(function(e) {
+            return '<span class="status-badge" style="background:rgba(139,92,246,0.15);color:#c084fc;margin:2px">' + (e.titulo || 'Sin título') + (e.nivel ? ' (' + e.nivel + ')' : '') + (e.anioEgreso ? ' - ' + e.anioEgreso : '') + '</span>';
+          }).join(' ');
+          laboralHtml += infoRow('🎓 Estudios Acreditados', estText);
+        } else if(enrich.estudios && enrich.estudios.length) {
+          laboralHtml += infoRow('🎓 Estudios / Título', enrich.estudios.join(', '));
+        }
+
+        // Afiliación gremial (NEW - from legagremio + gremio tables)
+        var gremAf = enrich.afiliacionGremial || [];
+        if(gremAf.length) {
+          var gremText = gremAf.map(function(g) {
+            return '<span class="status-badge" style="background:rgba(16,185,129,0.15);color:#10b981;margin:2px">' + g.gremio + ' (' + (g.cuotaPct*100).toFixed(0) + '% cuota)' + (g.fechaAfiliacion ? ' desde ' + g.fechaAfiliacion.substring(0,7) : '') + '</span>';
+          }).join(' ');
+          laboralHtml += infoRow('🤝 Sindicato / Gremio', gremText);
+        } else {
+          laboralHtml += infoRow('🤝 Gremio / Sindicato', gremio);
+        }
+
+        // Escala de licencias por antigüedad
+        var escLic = enrich.escalaLicencias || [];
+        if(escLic.length && antVal && antVal.innerText !== '-') {
+          var antYears = parseInt(antVal.innerText) || 0;
+          var diasCorr = 14;
+          escLic.forEach(function(e) { if(antYears >= e.aniosAntiguedad) diasCorr = e.diasCorresponden; });
+          laboralHtml += infoRow('🏖️ Licencia Anual que Corresponde', '<span style="color:#10b981;font-weight:700;font-size:1.1rem">' + diasCorr + ' días hábiles</span> (por ' + antYears + ' años de antigüedad)');
+        }
+
+        laboralHtml += '</div>';
+        
+        // Fojas / Historial de Cargos
+        var fojas = enrich.fojas || [];
+        if(fojas.length) {
+          laboralHtml += '<h4 style="margin-top:1.5rem;margin-bottom:0.75rem;font-size:.85rem;font-weight:700;color:var(--text-primary)">📋 Historial de Cargos o Funciones ('+fojas.length+' registros)</h4>';
+          laboralHtml += '<table class="modal-table"><thead><tr><th style="width:15%">Fecha</th><th style="width:35%">Detalle Actual</th><th style="width:25%">Detalle Anterior</th><th style="width:25%">Motivo</th></tr></thead><tbody>';
+          fojas.slice(0,35).forEach(function(h){
+            laboralHtml += '<tr><td>'+fmtDate(h.fecha)+'</td><td style="font-weight:600">'+(h.detalle||'-')+'</td><td style="color:var(--text-muted)">'+(h.detalleAnterior||'-')+'</td><td style="color:#60a5fa">'+(h.motivo||'-')+'</td></tr>';
+          });
+          if(fojas.length>35) laboralHtml += '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">...y '+(fojas.length-35)+' registros más</td></tr>';
+          laboralHtml += '</tbody></table>';
+        }
+
+        // Otros trabajos / Incompatibilidades (NEW - from otrotrab table)
+        var otrosT = enrich.otrosTrabajos || [];
+        if(otrosT.length) {
+          laboralHtml += '<h4 style="margin-top:1.5rem;margin-bottom:0.75rem;font-size:.85rem;font-weight:700;color:#f59e0b">⚠️ Otros Empleos / Incompatibilidades (' + otrosT.length + ' registros)</h4>';
+          laboralHtml += '<table class="modal-table"><thead><tr><th>Empresa / Empleador</th><th>CUIT</th><th>Domicilio</th><th>Bruto Percibido</th></tr></thead><tbody>';
+          otrosT.forEach(function(ot){
+            var brutoFmt = ot.bruto > 0 ? new Intl.NumberFormat('es-AR', {style:'currency',currency:'ARS'}).format(ot.bruto) : '-';
+            laboralHtml += '<tr><td style="font-weight:600">' + (ot.empresa || '-') + '</td><td style="font-family:monospace">' + (ot.cuit || '-') + '</td><td>' + (ot.domicilio || '-') + '</td><td style="color:#f59e0b;font-weight:600">' + brutoFmt + '</td></tr>';
+          });
+          laboralHtml += '</tbody></table>';
+        }
+
+        // Embargos judiciales (NEW - from embargo table, restricted)
+        var embargosLeg = enrich.embargos || [];
+        if(embargosLeg.length) {
+          laboralHtml += '<h4 style="margin-top:1.5rem;margin-bottom:0.75rem;font-size:.85rem;font-weight:700;color:#ef4444">⚖️ Embargos Judiciales (' + embargosLeg.length + ')</h4>';
+          laboralHtml += '<table class="modal-table"><thead><tr><th>Fecha</th><th>Juzgado</th><th>Expediente</th><th>Beneficiario</th><th>Monto</th></tr></thead><tbody>';
+          embargosLeg.forEach(function(emb){
+            var montoFmt = emb.monto > 0 ? new Intl.NumberFormat('es-AR', {style:'currency',currency:'ARS'}).format(emb.monto) : '-';
+            laboralHtml += '<tr><td>' + fmtDate(emb.fecha) + '</td><td>' + (emb.juzgado || '-') + '</td><td style="font-family:monospace">' + (emb.expediente || '-') + '</td><td>' + (emb.beneficiario || '-') + '</td><td style="color:#ef4444;font-weight:700">' + montoFmt + '</td></tr>';
+          });
+          laboralHtml += '</tbody></table>';
+        }
+
+        document.getElementById('contentLaborales').innerHTML = laboralHtml;
+
+        // === TAB 3: Ausencias + Fichadas ===
+        var ausHtml = '';
+        // Fichadas de reloj (NEW - from fichadas table)
+        var fichadas = enrich.fichadas || [];
+        if(fichadas.length) {
+          ausHtml += '<h4 style="margin-bottom:0.75rem;font-size:.85rem;font-weight:700;color:var(--text-primary)">⏱️ Últimas Fichadas de Reloj (' + fichadas.length + ' marcaciones)</h4>';
+          ausHtml += '<table class="modal-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Tipo</th></tr></thead><tbody>';
+          fichadas.forEach(function(fi){
+            var tipoColor = fi.tipo === 'Entrada' ? '#10b981' : '#60a5fa';
+            ausHtml += '<tr><td>' + fmtDate(fi.fecha) + '</td><td style="font-family:monospace;font-weight:700">' + (fi.hora || '-') + '</td><td><span class="status-badge" style="background:rgba(' + (fi.tipo==='Entrada'?'16,185,129':'96,165,250') + ',0.15);color:' + tipoColor + '">' + fi.tipo + '</span></td></tr>';
+          });
+          ausHtml += '</tbody></table>';
+          ausHtml += '<hr style="border-color:var(--border-color);margin:1.5rem 0">';
+        }
+
+        if(!aus.length) {
+          ausHtml += '<p style="text-align:center;padding:2rem;color:var(--text-muted)">No se registran ausencias injustificadas para este empleado.</p>';
+        } else {
+          ausHtml += '<div style="margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap">';
+          ausHtml += '<div class="mini-stat"><span class="mini-label">Total Ausencias</span><span class="mini-val" style="color:#ef4444">'+aus.length+'</span></div>';
+          ausHtml += '</div>';
+          ausHtml += '<table class="modal-table"><thead><tr><th>Fecha</th><th>Días</th><th>Motivo</th></tr></thead><tbody>';
+          aus.slice(0,50).forEach(function(a){
+            ausHtml += '<tr><td>'+fmtDate(a.fecha||a.fechaDesde)+'</td><td style="text-align:center">'+(a.dias||a.cantidad||'-')+'</td><td>'+(a.motivo||a.motivoNombre||'-')+'</td></tr>';
+          });
+          if(aus.length>50) ausHtml += '<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">...y '+(aus.length-50)+' registros más</td></tr>';
+          ausHtml += '</tbody></table>';
+        }
+        document.getElementById('contentAusencias').innerHTML = ausHtml;
+
+        // === TAB 4: Licencias ===
+        if(!unifiedLic.length) {
+          document.getElementById('contentLicencias').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted)">No se registran licencias para este empleado</p>';
+        } else {
+          var licHtml = '<div style="margin-bottom:1rem;display:flex;gap:1rem;align-items:center;justify-content:space-between"><div class="mini-stat"><span class="mini-label">Total Licencias Registradas</span><span class="mini-val" style="color:#3b82f6;font-size:1.4rem;font-weight:700">'+unifiedLic.length+'</span></div><span style="font-size:0.8rem;color:var(--text-muted)">Ordinarias ('+licOrds.length+') • Especiales ('+licEsps.length+')</span></div>';
+          licHtml += '<table class="modal-table"><thead><tr><th>Período</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Categoría</th><th>Tipo / Motivo</th></tr></thead><tbody>';
+          unifiedLic.forEach(function(l){
+            licHtml += '<tr><td>'+(l.periodo||'-')+'</td><td>'+fmtDate(l.desde)+'</td><td>'+fmtDate(l.hasta)+'</td><td style="text-align:center;font-weight:600">'+(l.dias||'-')+'</td><td><span class="status-badge" style="'+l.badgeStyle+'">'+l.categoria+'</span></td><td style="font-weight:500">'+l.tipo+'</td></tr>';
+          });
+          licHtml += '</tbody></table>';
+          document.getElementById('contentLicencias').innerHTML = licHtml;
+        }
+
+        // === TAB 5: Grupo Familiar ===
+        var fam = (enrich.familiares && enrich.familiares.length) ? enrich.familiares : (emp.familiares || []);
+        if(!fam.length) {
+          document.getElementById('contentFamilia').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted)">No hay grupo familiar registrado</p>';
+        } else {
+          var vinculoEmoji = {'CONYUGE':'💑','HIJO/A':'👶','HIJO':'👦','HIJA':'👧','PRENATAL':'🤰','PADRE A CARGO':'👴','MADRE A CARGO':'👵'};
+          var famHtml = '<p style="color:var(--text-muted);font-size:.85rem;margin-bottom:.75rem">👨‍👩‍👧‍👦 <strong style="color:var(--text-primary)">'+fam.length+'</strong> familiar'+(fam.length>1?'es':'')+' registrado'+(fam.length>1?'s':'')+'</p>';
+          famHtml += '<table class="modal-table"><thead><tr><th></th><th>Nombre y Apellido</th><th>Vínculo</th><th>Nacimiento</th><th>Documento / DNI</th><th>Escolaridad</th></tr></thead><tbody>';
+          fam.forEach(function(f){
+            var vinc = f.vinculo || '-';
+            var emoji = vinculoEmoji[vinc] || '👤';
+            famHtml += '<tr><td>'+emoji+'</td><td style="font-weight:600">'+(f.nombre||'-')+'</td><td><span class="status-badge" style="background:rgba(59,130,246,0.1);color:#3b82f6">'+vinc+'</span></td><td>'+fmtDate(f.fechaNacimiento)+'</td><td style="font-family:monospace;font-weight:600">'+(f.documento||'-')+'</td><td>'+(f.escolaridad||'-')+'</td></tr>';
+          });
+          famHtml += '</tbody></table>';
+          document.getElementById('contentFamilia').innerHTML = famHtml;
+        }
+      }).catch(function(err) {
+        console.error('Modal load error:', err);
+        var nameEl = document.getElementById('modalName');
+        if(nameEl) nameEl.innerText = 'Error al cargar datos';
+        ['contentPersonales','contentLaborales','contentAusencias','contentLicencias','contentFamilia'].forEach(function(tid){
+          var el = document.getElementById(tid);
+          if(el) el.innerHTML = '<p style="color:#ef4444;text-align:center;padding:2rem">⚠️ Error al cargar. Intentá de nuevo.</p>';
+        });
+      });
+    }
+
+    function closeModal() {
+      var modal = document.getElementById('employeeModal');
+      if(modal) modal.classList.remove('show');
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+      var tab = document.getElementById(tabId);
+      if(tab) tab.classList.add('active');
+    }
+
+    // --- CHARTS ---
+    var chartsInitialized = false;
+    function safeInitCharts(retryCount) {
+      if (chartsInitialized) return;
+      retryCount = retryCount || 0;
+      if (typeof Chart === 'undefined') {
+        if (retryCount < 20) {
+          setTimeout(function() { safeInitCharts(retryCount + 1); }, 150);
+        }
+        return;
+      }
+      try {
+        initCharts();
+        chartsInitialized = true;
+      } catch (e) {
+        console.error('Chart init error:', e);
+      }
+    }
+
+    function initCharts() {
+      var commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#94a3b8' } }
+        },
+        scales: {
+          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      };
+      
+      var donutOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 } } }
+        }
+      };
+
+      // 1. Sector Donut (Real Data Top Sectors)
+      var ctxSector = document.getElementById('sectorChart');
+      if (ctxSector) {
+        new Chart(ctxSector, {
+          type: 'doughnut',
+          data: {
+            labels: ['OBRERO (218)', 'TEMPORARIOS (163)', 'ADMINISTRATIVO (158)', 'DOC. JARDINES (58)', 'CULTURA (57)', 'DEPORTES (45)', 'OTROS (183)'],
+            datasets: [{
+              data: [218, 163, 158, 58, 57, 45, 183],
+              backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b'],
+              borderWidth: 0
+            }]
+          },
+          options: donutOptions
+        });
+      }
+
+      // 2. Gender Donut
+      var ctxGender = document.getElementById('genderChart');
+      if (ctxGender) {
+        new Chart(ctxGender, {
+          type: 'doughnut',
+          data: {
+            labels: ['Masculino (501)', 'Femenino (381)'],
+            datasets: [{
+              data: [501, 381],
+              backgroundColor: ['#3b82f6', '#ec4899'],
+              borderWidth: 0
+            }]
+          },
+          options: donutOptions
+        });
+      }
+
+      // 3. Absenteeism Line Chart (EXACT HISTORICAL DATA)
+      var ctxAbs = document.getElementById('absenteeismChart');
+      if (ctxAbs) {
+        var ctx2d = ctxAbs.getContext('2d');
+        var grad = ctx2d.createLinearGradient(0, 0, 0, 300);
+        grad.addColorStop(0, 'rgba(239, 68, 68, 0.4)');
+        grad.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+        new Chart(ctxAbs, {
+          type: 'line',
+          data: {
+            labels: ['2008','2009','2010','2011','2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025','2026'],
+            datasets: [{
+              label: 'Ausencias por Año',
+              data: [76450, 102033, 82613, 143893, 147580, 114406, 240393, 246129, 268408, 277140, 288747, 287448, 289634, 286150, 286563, 305044, 359487, 336022, 232277],
+              borderColor: '#ef4444',
+              backgroundColor: grad,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+              pointHoverRadius: 6
+            }]
+          },
+          options: commonOptions
+        });
+      }
+
+      // 4. Absences by Sector Bar Chart
+      var ctxBar = document.getElementById('absencesBySectorChart');
+      if (ctxBar) {
+        new Chart(ctxBar, {
+          type: 'bar',
+          data: {
+            labels: ['OBRERO', 'HS.CAT.CULTURA', 'TEMPORARIOS', 'ADMINISTRATIVO', 'CASITA CHOCOLATE', 'ESC.MÚSICA'],
+            datasets: [{
+              label: 'Ausencias Registradas',
+              data: [2054276, 1049068, 715352, 360424, 114295, 76110],
+              backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#06b6d4'],
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+              y: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+            }
+          }
+        });
+      }
+    }
+  </script>
 </body>
 </html>

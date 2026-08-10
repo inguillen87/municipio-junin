@@ -5,7 +5,6 @@
 
 /* Motion System global (animaciones UX de toda la plataforma) */
 @import url("motion-system.css");
-@import url("institutional-shell.css");
 
 /* ── RESET & BASE ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1408,7 +1407,7 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
   .chart-container { height: 170px !important; }
 }
 
-/* ===== BUTTON POLISH — NO MORE GRAY BUTTONS ===== */
+/* ===== BUTTON POLISH � NO MORE GRAY BUTTONS ===== */
 .btn-secondary {
   background: rgba(59,130,246,0.08) !important;
   border: 1px solid rgba(59,130,246,0.25) !important;
@@ -1486,7 +1485,7 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
   transform: translateY(-1px);
 }
 
-/* Select filters — colored, not gray */
+/* Select filters � colored, not gray */
 .select-filter {
   background: rgba(59,130,246,0.06) !important;
   border: 1px solid rgba(59,130,246,0.2) !important;
@@ -1525,7 +1524,7 @@ button, a, .tab-btn, .kpi-card, .legend-item, .reclamo-item {
   }
 }
 /* ============================================================
-   MOBILE-FIRST RESPONSIVE SYSTEM — MuniControl v2
+   MOBILE-FIRST RESPONSIVE SYSTEM � MuniControl v2
    Breakpoints: 480px | 640px | 768px | 900px | 1200px
    ============================================================ */
 
@@ -2455,7 +2454,7 @@ a, button { -webkit-tap-highlight-color: rgba(59,130,246,0.1); }
   transform: scale(0.96) !important;
 }
 /* ---------------------------------------------------------------
-   MOBILE & PWA — RESPONSIVE OVERHAUL
+   MOBILE & PWA � RESPONSIVE OVERHAUL
    --------------------------------------------------------------- */
 
 /* -- Topbar mobile: hide widgets, keep title + menu + avatar -- */
@@ -2504,7 +2503,7 @@ a, button { -webkit-tap-highlight-color: rgba(59,130,246,0.1); }
   .notif-btn { width: 36px; height: 36px; padding: 0; justify-content: center; }
   #themeToggleBtn { width: 36px; height: 36px; padding: 0; justify-content: center; }
 
-  /* User avatar — smaller on mobile */
+  /* User avatar � smaller on mobile */
   .topbar-avatar,
   [class*="avatar"]:not(.msg-avatar):not(.user-avatar-small) {
     width: 32px !important;

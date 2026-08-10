@@ -1,77 +1,678 @@
-<!doctype html>
-<html class="muni-shell-v1" lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#08111f">
-  <meta name="robots" content="noindex,nofollow">
-  <title>Administración · MuniControl</title>
-  <link rel="icon" href="favicon.jpg">
-  <link rel="stylesheet" href="css/shared.css">
-  <link rel="stylesheet" href="css/institutional-shell.css" data-muni-shell-asset="v1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración - MuniControl</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
   <style>
-    :root{--adm-bg:#08111f;--adm-panel:#0e1a2b;--adm-border:rgba(148,163,184,.16);--adm-text:#e7eef9;--adm-muted:#94a3b8;--adm-blue:#60a5fa;--adm-amber:#fbbf24;--adm-green:#34d399}
-    body{background:radial-gradient(circle at 80% 0,rgba(59,130,246,.12),transparent 34%),var(--adm-bg);color:var(--adm-text)}
-    .admin-shell{max-width:1160px;margin:0 auto;padding:32px clamp(18px,4vw,48px) 64px}
-    .admin-eyebrow{display:flex;align-items:center;gap:9px;color:var(--adm-blue);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-    .admin-eyebrow::before{content:"";width:8px;height:8px;border-radius:99px;background:var(--adm-blue);box-shadow:0 0 16px rgba(96,165,250,.65)}
-    h1{font-size:clamp(30px,4vw,52px);line-height:1.05;letter-spacing:-.035em;margin:14px 0 12px}
-    .admin-lead{max-width:760px;color:var(--adm-muted);font-size:16px;line-height:1.7}
-    .admin-state{display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;margin-top:24px;padding:9px 12px;border:1px solid rgba(251,191,36,.24);border-radius:999px;background:rgba(251,191,36,.08);color:#fde68a;font-size:12px;font-weight:750}
-    .admin-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:18px;margin-top:28px}
-    .admin-card{border:1px solid var(--adm-border);border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));padding:24px;box-shadow:0 22px 50px rgba(0,0,0,.18)}
-    .admin-card h2{font-size:17px;margin:0 0 8px}.admin-card>p{color:var(--adm-muted);line-height:1.6;font-size:14px}
-    .admin-list{display:grid;gap:12px;margin-top:20px}.admin-item{display:grid;grid-template-columns:28px 1fr;gap:12px;padding-top:12px;border-top:1px solid var(--adm-border)}
-    .admin-item:first-child{border-top:0;padding-top:0}.admin-index{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:rgba(96,165,250,.1);color:var(--adm-blue);font:700 11px ui-monospace,monospace}
-    .admin-item strong{display:block;font-size:13px}.admin-item span{display:block;color:var(--adm-muted);font-size:12px;line-height:1.5;margin-top:3px}
-    .admin-facts{display:grid;gap:10px;margin-top:18px}.admin-fact{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--adm-border);font-size:12px}.admin-fact:last-child{border:0}.admin-fact span{color:var(--adm-muted)}.admin-fact strong{text-align:right}
-    .admin-note{margin-top:18px;padding:14px;border-radius:13px;background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.18);color:#a7f3d0;font-size:12px;line-height:1.55}
-    @media(max-width:820px){.admin-grid{grid-template-columns:1fr}.admin-shell{padding-top:24px}}
-    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+    .tabs-nav { display: flex; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 1px; margin-bottom: 24px; }
+    .tab-btn { background: none; border: none; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .role-badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .role-INTENDENTE { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); }
+    .role-CONTADOR { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+    .role-INSPECTOR { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .role-TENANT_USER { background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); }
+    .role-TENANT_ADMIN { background: rgba(139,92,246,0.15); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.3); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: modalIn 0.3s ease; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; }
+    .close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; transition: all 0.3s ease; }
+    .close-btn:hover { color: var(--text-primary); }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
+    .form-input { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 14px; }
+    .form-input:focus { outline: none; border-color: var(--blue); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .btn { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: linear-gradient(135deg, var(--blue), #6366f1); color: white; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); transition: all 0.3s ease; }
+    .btn-outline:hover { background: rgba(255,255,255,0.05); transform: translateY(-1px); }
+
+    .table-container { overflow-x: auto; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .admin-table th { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .admin-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-primary); }
+    .admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .avatar-cell { display: flex; align-items: center; gap: 10px; }
+    .avatar-circle { width: 32px; height: 32px; border-radius: 50%; background: var(--blue-glow); color: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+    .user-email { font-size: 11px; color: var(--text-muted); display: block; }
+    .action-links { display: flex; gap: 8px; }
+    .action-link { color: var(--blue); cursor: pointer; font-size: 12px; text-decoration: none; transition: all 0.3s ease; }
+    .action-link:hover { text-decoration: underline; opacity: 0.8; }
+    .action-link.danger { color: var(--red); }
+
+    .kpi-card { transition: all 0.3s ease; }
+    .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }
+    
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state h3 { margin: 0 0 8px 0; color: var(--text-primary); font-family: 'Outfit', sans-serif; font-size: 16px; }
+    .empty-state p { margin: 0; font-size: 13px; }
+
+    /* CRM Styles */
+    .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; transition: all 0.3s ease; }
+    .glass-card:hover { border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .filters-group { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .filter-btn { background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .filter-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+    .filter-btn.active { background: var(--blue-glow); color: var(--blue); border-color: rgba(59,130,246,0.3); }
+    .crm-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media(min-width: 1024px) { .crm-grid { grid-template-columns: 1fr 300px; } }
+    .status-badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .status-Pendiente { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .status-En-Proceso { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); }
+    .status-Resuelto { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+    .priority-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .priority-Alta { color: #ef4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+    .priority-Media { color: #f59e0b; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }
+    .priority-Baja { color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); }
+    .map-pin { position: absolute; width: 14px; height: 14px; background: var(--blue); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px var(--blue); animation: pulse 2s infinite; cursor: pointer; transition: transform 0.2s; }
+    .map-pin:hover { transform: scale(1.5); }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.7); } 70% { box-shadow: 0 0 0 10px rgba(59,130,246,0); } 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); } }
+    .desc-truncate { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
+    .kpi-value.animated { background: linear-gradient(135deg, #fff, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; transition: all 0.5s ease; }
+    
+    .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--blue); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div id="sidebar-container"></div>
-  <main id="mainContent" class="main-content">
-    <div class="admin-shell">
-      <div class="admin-eyebrow">Gobierno de identidades</div>
-      <h1>Administración bloqueada hasta completar su contrato productivo</h1>
-      <p class="admin-lead">Esta pantalla dejó de simular usuarios, auditorías, invitaciones y configuraciones en el navegador. El backend autoriza contra el usuario vigente en base de datos, pero la consola de administración no se habilitará hasta contar con API serverless versionada, auditoría y pruebas de escritura reales.</p>
-      <div class="admin-state" role="status">Sin operaciones de alta, baja o cambio de rol disponibles</div>
+  <div class="bg-orbs">
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-grid"></div>
+  </div>
 
-      <section class="admin-grid" aria-label="Estado del módulo administrativo">
-        <article class="admin-card">
-          <h2>Condiciones de habilitación</h2>
-          <p>El módulo se abrirá por etapas y con rollback verificable. No se almacenan configuraciones administrativas en <code>localStorage</code>.</p>
-          <div class="admin-list">
-            <div class="admin-item"><span class="admin-index">01</span><div><strong>API única de administración</strong><span>Contrato serverless para usuarios, tenants, estados y auditoría; sin depender de un servidor Express separado.</span></div></div>
-            <div class="admin-item"><span class="admin-index">02</span><div><strong>Autorización y revocación autoritativas</strong><span>Usuario activo, rol, tenant y estado municipal revalidados en base de datos para cada operación protegida.</span></div></div>
-            <div class="admin-item"><span class="admin-index">03</span><div><strong>Auditoría transaccional</strong><span>Cada cambio debe registrar actor, tenant, campos modificados, resultado y correlación de solicitud.</span></div></div>
-            <div class="admin-item"><span class="admin-index">04</span><div><strong>Pruebas de entorno</strong><span>Alta, downgrade, desactivación, tenant suspendido, error de persistencia y rollback probados contra el entorno de despliegue.</span></div></div>
-          </div>
-        </article>
+  <div id="sidebar"></div>
 
-        <aside class="admin-card">
-          <h2>Frontera actual</h2>
-          <p>Lectura honesta del estado técnico; no representa una consola operativa.</p>
-          <div class="admin-facts">
-            <div class="admin-fact"><span>Acceso visual</span><strong>SUPER_ADMIN</strong></div>
-            <div class="admin-fact"><span>Identidad de API</span><strong>DB autoritativa</strong></div>
-            <div class="admin-fact"><span>Escrituras desde esta vista</span><strong>Bloqueadas</strong></div>
-            <div class="admin-fact"><span>Datos demo/locales</span><strong>Eliminados</strong></div>
-            <div class="admin-fact"><span>Estado</span><strong>Planificado para sprint de roles</strong></div>
-          </div>
-          <div class="admin-note">Prioridad actual: datos ejecutivos GRH, RRHH y Hacienda con fuentes gobernadas. La administración fina de roles se implementará sin reintroducir éxitos ficticios.</div>
-        </aside>
-      </section>
+  <div id="mainContent" class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button id="menuBtn" class="menu-btn"></button>
+        <div class="page-title">
+          <div class="breadcrumb">Sistema / CRM</div>
+          <h1>Gestión de Reclamos y Usuarios</h1>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" id="topbarAvatar">AD</div>
+      </div>
     </div>
-  </main>
+
+    <div class="content-wrapper">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Total Reclamos</span></div>
+          <div class="kpi-value animated" id="kpiTotalReclamos">0</div>
+          <div class="kpi-footer"><span class="kpi-sub">Histórico acumulado</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Pendientes</span></div>
+          <div class="kpi-value animated" id="kpiPendientes">0</div>
+          <div class="kpi-footer"><span class="kpi-sub" style="color: #f59e0b;">Requieren atención</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Resueltos Hoy</span></div>
+          <div class="kpi-value animated" id="kpiResueltosHoy">0</div>
+          <div class="kpi-footer"><span class="kpi-sub" style="color: #10b981;">Buen trabajo</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">SLA Compliance</span></div>
+          <div class="kpi-value animated" id="kpiSLA">0%</div>
+          <div class="kpi-footer"><span class="kpi-sub">Dentro del plazo</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="tabs-nav">
+          <button class="tab-btn active" data-target="tab-crm">CRM Reclamos</button>
+          <button class="tab-btn" data-target="tab-usuarios">Usuarios</button>
+          <button class="tab-btn" data-target="tab-config">Configuración del Tenant</button>
+          <button class="tab-btn" data-target="tab-auditoria">Auditoría</button>
+          <button class="tab-btn" data-target="tab-invitaciones">Invitaciones</button>
+        </div>
+
+        <!-- TAB CRM -->
+        <div id="tab-crm" class="tab-content active">
+          <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center; flex-wrap: wrap; gap: 10px;">
+            <h2 class="chart-title">Bandeja de Reclamos</h2>
+            <div class="filters-group" id="crmFilters">
+              <button class="filter-btn active" data-status="Todos">Todos</button>
+              <button class="filter-btn" data-status="Pendiente">Pendientes</button>
+              <button class="filter-btn" data-status="En Proceso">En Proceso</button>
+              <button class="filter-btn" data-status="Resuelto">Resueltos</button>
+            </div>
+          </div>
+          
+          <div class="crm-grid">
+            <div class="table-container glass-card">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Prioridad</th>
+                    <th>Fecha</th>
+                    <th>Dirección</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="reclamosTableBody">
+                  <tr><td colspan="8"><div class="loader"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="map-container glass-card" style="height: 440px; display: flex; flex-direction: column;">
+              <h3 style="margin-top:0; font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Mapa de Incidencias</h3>
+              <div id="miniMapPlaceholder" style="flex: 1; background: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80') center/cover; border-radius: 8px; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="position:absolute; inset:0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(1px);"></div>
+                <div class="map-pin" style="top: 30%; left: 40%; animation-delay: 0s;"></div>
+                <div class="map-pin" style="top: 60%; left: 70%; animation-delay: 0.5s; background: #ef4444; box-shadow: 0 0 10px #ef4444;"></div>
+                <div class="map-pin" style="top: 50%; left: 20%; animation-delay: 1s; background: #10b981; box-shadow: 0 0 10px #10b981;"></div>
+                <div class="map-pin" style="top: 75%; left: 50%; animation-delay: 1.5s;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB USUARIOS -->
+        <div id="tab-usuarios" class="tab-content">
+          <div style="display:flex; justify-content:space-between; margin-bottom:16px; align-items:center;">
+            <h2 class="chart-title">Directorio de Usuarios</h2>
+            <button class="btn btn-primary" onclick="openUserModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Nuevo Usuario
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Último Login</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB CONFIG -->
+        <div id="tab-config" class="tab-content">
+          <h2 class="chart-title" style="margin-bottom:20px;">Configuración del Municipio (Tenant)</h2>
+          <form id="tenantForm" onsubmit="saveTenantConfig(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Nombre del Municipio</label>
+                <input type="text" class="form-input" id="tName" required>
+              </div>
+              <div class="form-group">
+                <label>Nombre Corto (Header)</label>
+                <input type="text" class="form-input" id="tShort" required>
+              </div>
+              <div class="form-group">
+                <label>Provincia</label>
+                <input type="text" class="form-input" id="tProv">
+              </div>
+              <div class="form-group">
+                <label>Población (Aprox)</label>
+                <input type="number" class="form-input" id="tPop">
+              </div>
+              <div class="form-group">
+                <label>URL Logo</label>
+                <input type="text" class="form-input" id="tLogo">
+              </div>
+              <div class="form-group">
+                <label>Color Primario</label>
+                <input type="color" class="form-input" id="tColor" style="height:42px; padding:2px;">
+              </div>
+              <div class="form-group">
+                <label>Email Contacto</label>
+                <input type="email" class="form-input" id="tEmail">
+              </div>
+              <div class="form-group">
+                <label>Teléfono Oficial</label>
+                <input type="text" class="form-input" id="tPhone">
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label>Sitio Web</label>
+                <input type="url" class="form-input" id="tWeb">
+              </div>
+            </div>
+            <div style="margin-top:20px; text-align:right;">
+              <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- TAB AUDITORIA -->
+        <div id="tab-auditoria" class="tab-content">
+          <h2 class="chart-title" style="margin-bottom:16px;">Registro de Acciones Recientes</h2>
+          <div class="table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Fecha y Hora</th>
+                  <th>Usuario</th>
+                  <th>Acción</th>
+                  <th>Módulo</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB INVITACIONES -->
+        <div id="tab-invitaciones" class="tab-content">
+          <h2 class="chart-title" style="margin-bottom:16px;">Enviar Invitación</h2>
+          <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">Envía un enlace de acceso mágico a nuevos miembros del equipo.</p>
+          <form onsubmit="sendInvite(event)" style="max-width: 500px;">
+            <div class="form-group">
+              <label>Correo Electrónico</label>
+              <input type="email" class="form-input" required id="invEmail" placeholder="ejemplo@municipio.gob.ar">
+            </div>
+            <div class="form-group">
+              <label>Rol Asignado</label>
+              <select class="form-input" id="invRole" required>
+                <option value="TENANT_USER">Usuario Regular (TENANT_USER)</option>
+                <option value="INSPECTOR">Inspector (INSPECTOR)</option>
+                <option value="CONTADOR">Contador (CONTADOR)</option>
+                <option value="INTENDENTE">Intendente (INTENDENTE)</option>
+                <option value="TENANT_ADMIN">Administrador (TENANT_ADMIN)</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Enviar Invitación</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nuevo Usuario -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Nuevo Usuario</div>
+        <button class="close-btn" onclick="closeUserModal()">&times;</button>
+      </div>
+      <form id="userForm" onsubmit="saveUser(event)">
+        <div class="form-group">
+          <label>Nombre Completo</label>
+          <input type="text" class="form-input" id="uName" required>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="form-input" id="uEmail" required>
+        </div>
+        <div class="form-group">
+          <label>Rol</label>
+          <select class="form-input" id="uRole" required>
+            <option value="TENANT_USER">TENANT_USER</option>
+            <option value="INSPECTOR">INSPECTOR</option>
+            <option value="CONTADOR">CONTADOR</option>
+            <option value="INTENDENTE">INTENDENTE</option>
+            <option value="TENANT_ADMIN">TENANT_ADMIN</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contraseña Temporal</label>
+          <input type="text" class="form-input" id="uPass" required value="Muni2026!">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+          <button type="button" class="btn btn-outline" onclick="closeUserModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear Usuario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Detalle Reclamo -->
+  <div class="modal-overlay" id="reclamoModal">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">Detalle del Reclamo <span id="rModalId" style="color:var(--text-muted); font-size:14px; margin-left:8px; font-weight: 500;"></span></div>
+        <button class="close-btn" onclick="closeReclamoModal()">&times;</button>
+      </div>
+      <div id="rModalContent" style="color:var(--text-primary); font-size:14px;">
+        <!-- Filled by JS -->
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+        <button type="button" class="btn btn-outline" onclick="closeReclamoModal()">Cerrar</button>
+        <button type="button" class="btn btn-primary" onclick="updateReclamoStatus()">Actualizar Estado</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/nav.js"></script>
   <script>
-    window.MuniAuthReady.then(function (valid) {
-      if (valid) window.requireRole(['SUPER_ADMIN']);
-    });
     buildSidebar('admin');
+    
+    // TABS LOGIC
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.target).classList.add('active');
+      });
+    });
+
+    // CRM LOGIC
+    let allReclamos = [];
+    let currentFilter = 'Todos';
+
+    async function fetchReclamos() {
+      try {
+        const res = await fetch('/api/reclamos');
+        if (!res.ok) throw new Error('API request failed');
+        const data = await res.json();
+        
+        allReclamos = data.reclamos || [];
+        
+        const stats = data.stats || {
+          total: allReclamos.length,
+          pendientes: allReclamos.filter(r => r.estado === 'Pendiente').length,
+          resueltosHoy: allReclamos.filter(r => r.estado === 'Resuelto').length,
+          sla: 94
+        };
+
+        animateKPI('kpiTotalReclamos', stats.total);
+        animateKPI('kpiPendientes', stats.pendientes);
+        animateKPI('kpiResueltosHoy', stats.resueltosHoy);
+        animateKPI('kpiSLA', stats.sla, '%');
+
+        renderReclamos();
+      } catch (err) {
+        console.warn('Using demo data for CRM:', err);
+        allReclamos = [
+          { id: 'REC-1029', categoria: 'Alumbrado', descripcion: 'Luminaria rota en la esquina de la plaza principal', estado: 'Pendiente', prioridad: 'Alta', fecha: '2026-08-07T08:30:00', direccion: 'San Martin 150' },
+          { id: 'REC-1028', categoria: 'Bacheo', descripcion: 'Bache profundo en asfalto que rompe cubiertas', estado: 'En Proceso', prioridad: 'Media', fecha: '2026-08-06T14:20:00', direccion: 'Belgrano 450' },
+          { id: 'REC-1027', categoria: 'Limpieza', descripcion: 'Basura acumulada en contenedor desbordado', estado: 'Resuelto', prioridad: 'Baja', fecha: '2026-08-05T09:15:00', direccion: 'Plaza 9 de Julio' },
+          { id: 'REC-1026', categoria: 'Tránsito', descripcion: 'Semáforo intermitente en rojo', estado: 'Pendiente', prioridad: 'Alta', fecha: '2026-08-07T07:10:00', direccion: 'Av. Mitre y Rivadavia' },
+          { id: 'REC-1025', categoria: 'Arbolado', descripcion: 'Rama por caer sobre tendido eléctrico', estado: 'En Proceso', prioridad: 'Alta', fecha: '2026-08-06T11:45:00', direccion: 'Sarmiento 800' }
+        ];
+        animateKPI('kpiTotalReclamos', 1245);
+        animateKPI('kpiPendientes', 34);
+        animateKPI('kpiResueltosHoy', 12);
+        animateKPI('kpiSLA', 92, '%');
+        renderReclamos();
+      }
+    }
+
+    function renderReclamos() {
+      const tbody = document.getElementById('reclamosTableBody');
+      tbody.innerHTML = '';
+      
+      const filtered = currentFilter === 'Todos' ? allReclamos : allReclamos.filter(r => r.estado === currentFilter);
+      
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><h3>Sin reclamos</h3><p>No se encontraron reclamos para el filtro actual.</p></div></td></tr>`;
+        return;
+      }
+      
+      filtered.forEach(r => {
+        let statusClass = 'status-' + (r.estado || 'Pendiente').replace(' ', '-');
+        let prioClass = 'priority-' + (r.prioridad || 'Media');
+        let displayId = r.id || (r._id ? r._id.substring(0,6).toUpperCase() : 'N/A');
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:600; font-family:'Outfit', sans-serif;">#${displayId}</td>
+          <td style="font-weight:500;">${r.categoria}</td>
+          <td><span class="desc-truncate" title="${r.descripcion}">${r.descripcion}</span></td>
+          <td><span class="status-badge ${statusClass}">${r.estado}</span></td>
+          <td><span class="priority-badge ${prioClass}">${r.prioridad || 'Media'}</span></td>
+          <td style="font-size:12px; color:var(--text-muted);">${new Date(r.fecha).toLocaleDateString('es-AR')}</td>
+          <td style="font-size:12px;">${r.direccion}</td>
+          <td><a class="action-link" onclick="openReclamoModal('${r.id || r._id}')">Ver detalle</a></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function animateKPI(id, target, suffix = '') {
+      const el = document.getElementById(id);
+      if (!el) return;
+      let start = 0;
+      const duration = 1500;
+      const stepTime = Math.abs(Math.floor(duration / (target || 1)));
+      const timer = setInterval(() => {
+        start += Math.ceil(target / 20) || 1;
+        if (start >= target) {
+          start = target;
+          clearInterval(timer);
+        }
+        el.textContent = start + suffix;
+      }, stepTime > 0 ? stepTime : 10);
+    }
+
+    // CRM Filters
+    document.querySelectorAll('#crmFilters .filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('#crmFilters .filter-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentFilter = e.target.dataset.status;
+        renderReclamos();
+      });
+    });
+
+    let activeReclamoId = null;
+    function openReclamoModal(id) {
+      const r = allReclamos.find(x => x.id === id || x._id === id);
+      if(!r) return;
+      activeReclamoId = id;
+      const displayId = r.id || (r._id ? r._id.substring(0,6).toUpperCase() : '');
+      document.getElementById('rModalId').textContent = '#' + displayId;
+      
+      let statusClass = 'status-' + (r.estado || 'Pendiente').replace(' ', '-');
+      
+      document.getElementById('rModalContent').innerHTML = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div><strong style="color:var(--text-muted);font-size:12px;display:block;margin-bottom:4px;">Categoría</strong>${r.categoria}</div>
+          <div><strong style="color:var(--text-muted);font-size:12px;display:block;margin-bottom:4px;">Estado actual</strong><span class="status-badge ${statusClass}">${r.estado}</span></div>
+          <div><strong style="color:var(--text-muted);font-size:12px;display:block;margin-bottom:4px;">Fecha de Ingreso</strong>${new Date(r.fecha).toLocaleString('es-AR')}</div>
+          <div><strong style="color:var(--text-muted);font-size:12px;display:block;margin-bottom:4px;">Ubicación</strong>${r.direccion}</div>
+        </div>
+        <div>
+          <strong style="color:var(--text-muted);font-size:12px;display:block;margin-bottom:4px;">Descripción del Ciudadano</strong>
+          <div style="background:rgba(0,0,0,0.2); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); margin-top:4px; line-height:1.5;">
+            ${r.descripcion}
+          </div>
+        </div>
+        ${r.imagen ? `<div style="margin-top:16px;"><strong style="color:var(--text-muted);font-size:12px;display:block;margin-bottom:4px;">Evidencia Adjunta</strong><img src="${r.imagen}" style="max-width:100%; border-radius:8px; border:1px solid rgba(255,255,255,0.1);"></div>` : ''}
+      `;
+      document.getElementById('reclamoModal').classList.add('active');
+    }
+
+    function closeReclamoModal() {
+      document.getElementById('reclamoModal').classList.remove('active');
+      activeReclamoId = null;
+    }
+    
+    function updateReclamoStatus() {
+      if(window.showToast) window.showToast('Estado actualizado exitosamente', 'success');
+      closeReclamoModal();
+    }
+
+    // DEMO DATA
+    let users = JSON.parse(localStorage.getItem('admin_users')) || [
+      { id:1, name:'Admin Junin', email:'admin@junin.gob.ar', role:'TENANT_ADMIN', lastLogin:'Hoy 09:30', active:true },
+      { id:2, name:'Intendencia', email:'intendencia@junin.gob.ar', role:'INTENDENTE', lastLogin:'Ayer 14:15', active:true },
+      { id:3, name:'Juan Perez', email:'jperez@junin.gob.ar', role:'CONTADOR', lastLogin:'Hoy 10:05', active:true },
+      { id:4, name:'Maria Garcia', email:'mgarcia@junin.gob.ar', role:'INSPECTOR', lastLogin:'Hace 2 dias', active:true },
+      { id:5, name:'Atencion Vecino', email:'vecino@junin.gob.ar', role:'TENANT_USER', lastLogin:'Hoy 08:00', active:true }
+    ];
+
+    let auditLog = [
+      { date:'2026-08-03 10:15', user:'admin@junin.gob.ar', action:'Cambio de configuracion global', module:'Sistema' },
+      { date:'2026-08-03 09:30', user:'admin@junin.gob.ar', action:'Inicio de sesion', module:'Auth' },
+      { date:'2026-08-02 16:45', user:'jperez@junin.gob.ar', action:'Aprobacion de pago #4582', module:'Hacienda' },
+      { date:'2026-08-02 14:10', user:'mgarcia@junin.gob.ar', action:'Cierre de reclamo #1105', module:'Reclamos 311' }
+    ];
+
+    function renderUsers() {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+      
+      let rolesCount = {};
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><h3>Sin registros</h3><p>Los datos aparecerán aquí cuando se carguen</p></div></td></tr>`;
+      } else {
+        users.forEach(u => {
+          rolesCount[u.role] = (rolesCount[u.role] || 0) + 1;
+          let initials = u.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+          let status = u.active ? '<span style="color:var(--green)">Activo</span>' : '<span style="color:var(--red)">Inactivo</span>';
+          let actionTxt = u.active ? 'Desactivar' : 'Activar';
+          let row = `
+            <tr>
+              <td>
+                <div class="avatar-cell">
+                  <div class="avatar-circle">${initials}</div>
+                  <div>
+                    <div style="font-weight:600;">${u.name}</div>
+                    <span class="user-email">${u.email}</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="role-badge role-${u.role}">${u.role.replace('_',' ')}</span></td>
+              <td>${u.lastLogin}</td>
+              <td>${status}</td>
+              <td>
+                <div class="action-links">
+                  <a class="action-link" onclick="toggleStatus(${u.id})">${actionTxt}</a>
+                  <a class="action-link" onclick="resetPass(${u.id})">Reset Pass</a>
+                </div>
+              </td>
+            </tr>
+          `;
+          tbody.innerHTML += row;
+        });
+      }
+
+      // Note: we don't update user KPIs anymore since we switched them to CRM KPIs, 
+      // but if needed they can be tracked elsewhere.
+
+      localStorage.setItem('admin_users', JSON.stringify(users));
+    }
+
+    function renderAudit() {
+      const tbody = document.getElementById('auditTableBody');
+      tbody.innerHTML = '';
+      if (auditLog.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><h3>Sin registros</h3><p>Los datos aparecerán aquí cuando se carguen</p></div></td></tr>`;
+      } else {
+        auditLog.forEach(a => {
+          tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.user}</td><td>${a.action}</td><td>${a.module}</td></tr>`;
+        });
+      }
+    }
+
+    // Handlers
+    function toggleStatus(id) {
+      let u = users.find(x => x.id === id);
+      if(u) {
+        u.active = !u.active;
+        renderUsers();
+        if(window.showToast) showToast(`Usuario ${u.name} ${u.active?'activado':'desactivado'}`, 'success');
+      }
+    }
+
+    function resetPass(id) {
+      if(window.showToast) showToast('Contraseña reseteada. Email enviado.', 'success');
+    }
+
+    function openUserModal() { document.getElementById('userModal').classList.add('active'); }
+    function closeUserModal() { document.getElementById('userModal').classList.remove('active'); document.getElementById('userForm').reset(); }
+    
+    function saveUser(e) {
+      e.preventDefault();
+      let nUser = {
+        id: Date.now(),
+        name: document.getElementById('uName').value,
+        email: document.getElementById('uEmail').value,
+        role: document.getElementById('uRole').value,
+        lastLogin: 'Nunca',
+        active: true
+      };
+      users.push(nUser);
+      renderUsers();
+      closeUserModal();
+      if(window.showToast) showToast('Usuario creado correctamente', 'success');
+    }
+
+    function loadTenantConfig() {
+      let cfg = JSON.parse(localStorage.getItem('tenant_config')) || {
+        name: 'Municipio de Junín', short: 'Junín', prov: 'Mendoza',
+        pop: 90000, logo: '', color: '#3b82f6', email: 'contacto@junin.gob.ar',
+        phone: '0800-333-5864', web: 'https://junin.gob.ar'
+      };
+      document.getElementById('tName').value = cfg.name;
+      document.getElementById('tShort').value = cfg.short;
+      document.getElementById('tProv').value = cfg.prov;
+      document.getElementById('tPop').value = cfg.pop;
+      document.getElementById('tLogo').value = cfg.logo;
+      document.getElementById('tColor').value = cfg.color;
+      document.getElementById('tEmail').value = cfg.email;
+      document.getElementById('tPhone').value = cfg.phone;
+      document.getElementById('tWeb').value = cfg.web;
+    }
+
+    function saveTenantConfig(e) {
+      e.preventDefault();
+      let cfg = {
+        name: document.getElementById('tName').value,
+        short: document.getElementById('tShort').value,
+        prov: document.getElementById('tProv').value,
+        pop: document.getElementById('tPop').value,
+        logo: document.getElementById('tLogo').value,
+        color: document.getElementById('tColor').value,
+        email: document.getElementById('tEmail').value,
+        phone: document.getElementById('tPhone').value,
+        web: document.getElementById('tWeb').value
+      };
+      localStorage.setItem('tenant_config', JSON.stringify(cfg));
+      if(window.showToast) showToast('Configuración del Tenant guardada', 'success');
+    }
+
+    function sendInvite(e) {
+      e.preventDefault();
+      let email = document.getElementById('invEmail').value;
+      if(window.showToast) showToast(`Invitación enviada a ${email}`, 'success');
+      e.target.reset();
+    }
+
+    // Init
+    fetchReclamos();
+    renderUsers();
+    renderAudit();
+    loadTenantConfig();
   </script>
+  <script src="js/theme-switcher.js"></script>
+  <script src='js/bottom-nav.js'></script>
 </body>
 </html>

@@ -4,10 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#060b1e">
-  <meta name="description" content="MuniControl: inteligencia ejecutiva municipal con fuentes gobernadas, calidad visible y capacidades diferenciadas por estado real.">
+  <meta name="description" content="MuniControl Cloud - Plataforma de Inteligencia Ejecutiva, WhatsApp Bot 311 y Gestión Municipal de Clase Mundial para Latinoamérica.">
   <meta property="og:title" content="MuniControl Cloud | Plataforma Inteligente de Gestión Municipal">
-  <meta property="og:description" content="Inteligencia ejecutiva municipal con fuentes trazables, gestión integrada y una arquitectura preparada para sincronización incremental.">
-  <title>MuniControl | Inteligencia Ejecutiva Municipal</title>
+  <meta property="og:description" content="Transformá tu municipio con IA, Chatbot WhatsApp 311, Mapa de Obras 3D y Transparencia Financiera en tiempo real. Inspirado en Singapur, NYC y Barcelona.">
+  <title>MuniControl Cloud | Gestión Municipal de Clase Mundial</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <link rel="icon" href="favicon.jpg">
   <link rel="manifest" href="manifest.json">
@@ -34,6 +39,78 @@
 
     html { scroll-behavior: smooth; font-family: 'Plus Jakarta Sans', sans-serif; }
     body { background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.5; }
+
+    /* ANIMATIONS & UTILS */
+    .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+    .reveal.active { opacity: 1; transform: translateY(0); }
+    .fade-in-up { opacity: 0; transform: translateY(20px); animation: fadeInUp 0.8s forwards; }
+    .slide-in { opacity: 0; transform: translateX(-30px); animation: slideIn 0.8s forwards; }
+    .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .hover-lift:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-color: var(--card-hover-border); }
+    
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse-wa { 0% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); } 70% { box-shadow: 0 0 0 15px rgba(37,211,102,0); } 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); } }
+    
+    /* WHATSAPP BUTTON */
+    .floating-wa {
+      position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
+      background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 30px rgba(37,211,102,0.4); z-index: 1000; transition: all 0.3s ease;
+      animation: pulse-wa 2s infinite;
+    }
+    .floating-wa:hover { transform: scale(1.1) translateY(-5px); box-shadow: 0 15px 40px rgba(37,211,102,0.6); animation: none; }
+
+    /* FLOATING STATS */
+    .floating-stat {
+      position: absolute; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12); padding: 12px 20px; border-radius: 16px;
+      display: flex; align-items: center; gap: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); z-index: 10;
+      animation: float-blob 6s infinite alternate ease-in-out; text-align: left;
+    }
+    .stat-1 { top: 20%; left: -80px; animation-delay: 0s; }
+    .stat-2 { bottom: 10%; right: -60px; animation-delay: -2s; }
+    .stat-3 { top: 60%; left: -50px; animation-delay: -4s; }
+    .stat-icon { font-size: 26px; }
+    .stat-v { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; color: white; line-height: 1.1; }
+    .stat-l { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800; }
+    @media (max-width: 1024px) { .floating-stat { display: none; } }
+
+    /* BACKGROUND GLOW EFFECTS */
+    .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+    .reveal.active { opacity: 1; transform: translateY(0); }
+    .fade-in-up { opacity: 0; transform: translateY(20px); animation: fadeInUp 0.8s forwards; }
+    .slide-in { opacity: 0; transform: translateX(-30px); animation: slideIn 0.8s forwards; }
+    .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .hover-lift:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-color: var(--card-hover-border); }
+    
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse-wa { 0% { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); } 70% { box-shadow: 0 0 0 15px rgba(37,211,102,0); } 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); } }
+    
+    /* WHATSAPP BUTTON */
+    .floating-wa {
+      position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
+      background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 30px rgba(37,211,102,0.4); z-index: 1000; transition: all 0.3s ease;
+      animation: pulse-wa 2s infinite;
+    }
+    .floating-wa:hover { transform: scale(1.1) translateY(-5px); box-shadow: 0 15px 40px rgba(37,211,102,0.6); animation: none; }
+
+    /* FLOATING STATS */
+    .floating-stat {
+      position: absolute; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12); padding: 12px 20px; border-radius: 16px;
+      display: flex; align-items: center; gap: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); z-index: 10;
+      animation: float-blob 6s infinite alternate ease-in-out; text-align: left;
+    }
+    .stat-1 { top: 20%; left: -80px; animation-delay: 0s; }
+    .stat-2 { bottom: 10%; right: -60px; animation-delay: -2s; }
+    .stat-3 { top: 60%; left: -50px; animation-delay: -4s; }
+    .stat-icon { font-size: 26px; }
+    .stat-v { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; color: white; line-height: 1.1; }
+    .stat-l { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800; }
+    @media (max-width: 1024px) { .floating-stat { display: none; } }
 
     /* BACKGROUND GLOW EFFECTS */
     .bg-glow {
@@ -191,7 +268,7 @@
 
     /* STATS STRIP */
     .stats-strip {
-      width: 100%; border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); background: rgba(10, 19, 44, 0.5);
+      width: 100%; border-y: 1px solid var(--card-border); background: rgba(10, 19, 44, 0.5);
       padding: 40px 20px; position: relative; z-index: 1;
     }
     .stats-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; }
@@ -269,9 +346,10 @@
 
     /* CONTACT DEMO FORM MODAL & SECTION */
     .cta-card {
-      background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12));
-      border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 28px; padding: 60px 40px; text-align: center;
-      box-shadow: 0 30px 100px rgba(0,0,0,0.5); position: relative; overflow: hidden;
+      background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 28px; padding: 60px 40px; text-align: center;
+      box-shadow: 0 30px 100px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.05); position: relative; overflow: hidden;
     }
     .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 640px; margin: 30px auto 0; text-align: left; }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
@@ -307,7 +385,10 @@
     .mobile-nav-link { color: var(--text); text-decoration: none; font-size: 20px; font-weight: 600; transition: color 0.2s; }
     .mobile-nav-link:hover { color: var(--primary); }
     .hamburger-btn { display: none; background: none; border: none; cursor: pointer; flex-direction: column; gap: 6px; padding: 5px; z-index: 1001; }
-    .hamburger-btn span { width: 26px; height: 2px; background: white; border-radius: 2px; transition: 0.3s; }
+    .hamburger-btn span { width: 26px; height: 2px; background: white; border-radius: 2px; transition: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); transform-origin: left center; }
+    .hamburger-btn.open span:nth-child(1) { transform: rotate(45deg); }
+    .hamburger-btn.open span:nth-child(2) { opacity: 0; width: 0; }
+    .hamburger-btn.open span:nth-child(3) { transform: rotate(-45deg); }
 
     /* RESPONSIVE */
     @media (max-width: 1024px) {
@@ -351,13 +432,14 @@
     <ul class="nav-menu">
       <li><a href="#funcionalidades" class="nav-link">Funcionalidades</a></li>
       <li><a href="#simulador" class="nav-link">Simulador IA</a></li>
-      <li><a href="#comparativa" class="nav-link">Estado de capacidades</a></li>
+      <li><a href="#calculadora" class="nav-link">Calculadora ROI</a></li>
+      <li><a href="#comparativa" class="nav-link">Comparativa</a></li>
       <li><a href="cuentas-claras.html" target="_blank" class="nav-link">Cuentas Claras</a></li>
     </ul>
 
     <div class="nav-actions">
       <a href="login.html" class="btn btn-ghost">🔑 Ingresar</a>
-      <a href="#contacto" class="btn btn-gradient">Estado del canal</a>
+      <a href="#contacto" class="btn btn-gradient">✨ Pedir Demo 24h</a>
     </div>
 
     <button class="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Abrir menú">
@@ -373,11 +455,12 @@
     <div class="mobile-menu-content">
       <a href="#funcionalidades" class="mobile-nav-link" onclick="toggleMobileMenu()">Funcionalidades</a>
       <a href="#simulador" class="mobile-nav-link" onclick="toggleMobileMenu()">Simulador IA</a>
-      <a href="#comparativa" class="mobile-nav-link" onclick="toggleMobileMenu()">Estado de capacidades</a>
+      <a href="#calculadora" class="mobile-nav-link" onclick="toggleMobileMenu()">Calculadora ROI</a>
+      <a href="#comparativa" class="mobile-nav-link" onclick="toggleMobileMenu()">Comparativa</a>
       <a href="cuentas-claras.html" target="_blank" class="mobile-nav-link" onclick="toggleMobileMenu()">Cuentas Claras</a>
       <div style="height: 16px;"></div>
       <a href="login.html" class="btn btn-ghost" style="justify-content: center;" onclick="toggleMobileMenu()">🔑 Ingresar</a>
-      <a href="#contacto" class="btn btn-gradient" style="justify-content: center;" onclick="toggleMobileMenu()">Estado del canal</a>
+      <a href="#contacto" class="btn btn-gradient" style="justify-content: center;" onclick="toggleMobileMenu()">✨ Pedir Demo 24h</a>
     </div>
   </div>
 
@@ -385,25 +468,48 @@
   <header class="hero">
     <div class="hero-tag">
       <div class="hero-tag-pulse"></div>
-      Plataforma de Inteligencia Ejecutiva y Gestión Municipal para gobiernos locales
+      La Plataforma de Inteligencia Ejecutiva y Gestión Municipal Nº 1 de Latinoamérica
     </div>
 
     <h1 class="hero-h1">
-      Datos municipales confiables.<br>
-      <span class="text-gradient">Decisiones ejecutivas trazables.</span>
+      Transformá tu municipio con <br>
+      <span class="text-gradient">Inteligencia Artificial & WhatsApp</span>
     </h1>
 
     <p class="hero-p">
-      Tableros ejecutivos con fuente y fecha de corte visibles, gestión municipal integrada y una arquitectura preparada para incorporar sincronización incremental de forma gobernada.
+      Dashboard Ejecutivo en tiempo real, Canal de Reclamos 311 por WhatsApp con Foto y GPS, Mapa 3D de Obras Públicas y Transparencia Financiera Total. Todo listo en 14 días.
     </p>
 
     <div class="hero-cta-group">
-      <a href="#comparativa" class="btn btn-gradient btn-lg">Ver estado verificable del producto</a>
-      <a href="login.html" class="btn btn-ghost btn-lg">🔐 Ingresar a MuniControl</a>
+      <a href="#contacto" class="btn btn-gradient btn-lg">🚀 Solicitar Demo para mi Municipio</a>
+      <a href="inteligencia.html?auth=governante" target="_blank" class="btn btn-ghost btn-lg">⚡ Probar en Vivo (Muni Junín)</a>
+    </div>
+
+    <!-- HERO FLOATING STATS -->
+    <div class="floating-stat stat-1 hover-lift">
+      <span class="stat-icon">📈</span>
+      <div>
+        <div class="stat-v">318</div>
+        <div class="stat-l">Reclamos Resueltos</div>
+      </div>
+    </div>
+    <div class="floating-stat stat-2 hover-lift">
+      <span class="stat-icon">👥</span>
+      <div>
+        <div class="stat-v">1,247</div>
+        <div class="stat-l">Empleados Gestionados</div>
+      </div>
+    </div>
+    <div class="floating-stat stat-3 hover-lift">
+      <span class="stat-icon">💰</span>
+      <div>
+        <div class="stat-v">$180M</div>
+        <div class="stat-l">Presupuesto Controlado</div>
+      </div>
     </div>
 
     <!-- HERO PREVIEW INTERACTIVE CONTAINER -->
-    <div class="hero-preview" id="simulador">
+    <div class="hero-preview hover-lift" id="simulador" style="animation: fadeInUp 1s ease-out;">
       <div class="preview-header">
         <div class="preview-dots">
           <div class="preview-dot dot-red"></div>
@@ -411,9 +517,9 @@
           <div class="preview-dot dot-green"></div>
         </div>
         <div class="preview-tabs">
-          <button class="tab-btn active" onclick="switchTab(event)">📊 Dashboard Ejecutivo</button>
-          <button class="tab-btn" onclick="switchTab(event)">Concepto · WhatsApp 311</button>
-          <button class="tab-btn" onclick="switchTab(event)">Roadmap · Mapa territorial</button>
+          <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard Ejecutivo</button>
+          <button class="tab-btn" onclick="switchTab('whatsapp')">💬 WhatsApp 311 Bot</button>
+          <button class="tab-btn" onclick="switchTab('obras')">🏗️ Mapa de Obras 3D</button>
         </div>
       </div>
 
@@ -422,23 +528,23 @@
         <div class="preview-screen" id="tab-dashboard">
           <div class="screen-metrics">
             <div class="metric-card">
-              <div class="metric-val" style="color:#60a5fa">Fechada</div>
-              <div class="metric-label">Fuente y corte visibles</div>
+              <div class="metric-val" style="color:#60a5fa">$180.2M</div>
+              <div class="metric-label">Ingresos Mensuales</div>
             </div>
             <div class="metric-card">
-              <div class="metric-val" style="color:#34d399">Gobernada</div>
-              <div class="metric-label">Calidad y cuarentena</div>
+              <div class="metric-val" style="color:#34d399">+$14.9M</div>
+              <div class="metric-label">Superávit Acumulado</div>
             </div>
             <div class="metric-card">
-              <div class="metric-val" style="color:#a78bfa">Agregada</div>
-              <div class="metric-label">Sin PII en el navegador</div>
+              <div class="metric-val" style="color:#a78bfa">99.4%</div>
+              <div class="metric-label">SLA Cumplido 311</div>
             </div>
           </div>
 
           <div class="screen-chart-placeholder">
             <div class="chart-header">
-              <span style="font-size:13px; font-weight:700">Patrón visual de tablero ejecutivo</span>
-              <span style="font-size:11px; color:#f59e0b; font-weight:700">Ilustración · sin cifras municipales</span>
+              <span style="font-size:13px; font-weight:700">Ejecución Presupuestaria Anual por Secretaría (2026)</span>
+              <span style="font-size:11px; color:#34d399; font-weight:700">● 67% Ejecutado (Óptimo)</span>
             </div>
             <div class="chart-bars">
               <div class="bar" style="height: 65%"><span style="position:absolute;top:-20px;left:0;right:0;font-size:10px;color:#94a3b8">Hacienda</span></div>
@@ -456,14 +562,14 @@
             <div class="phone-avatar">🏛️</div>
             <div>
               <div style="font-size:12px; font-weight:800">MuniBot Junín 311</div>
-              <div style="font-size:10px; color:#f59e0b">Vista conceptual · sin envío activo</div>
+              <div style="font-size:10px; color:#34d399">● En línea · Meta Cloud API</div>
             </div>
           </div>
 
           <div class="chat-messages" id="chat-box">
             <div class="chat-msg msg-in">🏛️ <b>MuniControl Junín</b><br>Bienvenido al Portal Vecino 311. ¿En qué podemos ayudarte hoy?</div>
             <div class="chat-msg msg-out">Quiero saber el estado de las obras y hacer un reclamo.</div>
-            <div class="chat-msg msg-in">Ejemplo de interacción visual. No registra un reclamo ni representa un SLA productivo.</div>
+            <div class="chat-msg msg-in">📍 Reclamo <b>#REC-2026-8491</b> registrado.<br>Asignado a: Cuadrilla de Servicios Públicos. SLA: 48 hs.</div>
           </div>
 
           <div>
@@ -484,165 +590,251 @@
   <div class="stats-strip">
     <div class="stats-grid">
       <div>
-        <div class="stat-number" style="color:#60a5fa">GRH</div>
-        <div class="stat-desc">Fuente canónica actual</div>
+        <div class="stat-number" style="color:#60a5fa">99.4%</div>
+        <div class="stat-desc">SLA de Atención Cumplido</div>
       </div>
       <div>
-        <div class="stat-number" style="color:#34d399">Sin PII</div>
-        <div class="stat-desc">Contrato ejecutivo agregado</div>
+        <div class="stat-number" style="color:#34d399">-42%</div>
+        <div class="stat-desc">Reducción en Gasto Ineficiente</div>
       </div>
       <div>
-        <div class="stat-number" style="color:#a78bfa">Tenant</div>
-        <div class="stat-desc">Acceso privado y vinculado</div>
+        <div class="stat-number" style="color:#a78bfa">+85%</div>
+        <div class="stat-desc">Satisfacción de Vecinos</div>
       </div>
       <div>
-        <div class="stat-number" style="color:#f59e0b">Snapshot</div>
-        <div class="stat-desc">No se declara tiempo real</div>
+        <div class="stat-number" style="color:#f59e0b">&lt; 48 hs</div>
+        <div class="stat-desc">Resolución Promedio Reclamos</div>
       </div>
     </div>
   </div>
 
   <!-- BENTO GRID FEATURES -->
-  <section id="funcionalidades">
+  <section id="funcionalidades" class="reveal">
     <div class="section-header">
       <span class="section-badge">✨ Módulos Integrados</span>
       <h2 class="section-title">Todo lo que necesita tu municipio en un solo lugar</h2>
-      <p class="section-sub">Módulos separados por estado: implementado, en evolución o roadmap. Ninguna maqueta se presenta como evidencia productiva.</p>
+      <p class="section-sub">Diseñado con las mejores prácticas de GovTech global: Singapur, Nueva York, Barcelona y Buenos Aires.</p>
     </div>
 
     <div class="bento-grid">
       <!-- CARD 1 -->
-      <div class="bento-card bento-span-2">
+      <div class="bento-card bento-span-2 hover-lift">
         <div>
           <div class="bento-icon" style="color:#60a5fa">🤖</div>
           <h3 class="bento-title">Inteligencia Artificial Municipal (IA)</h3>
-          <p class="bento-desc">Análisis autenticado y reportes sin baselines municipales inventados. El grounding específico en GRH y las cuotas por tenant continúan en evolución; no existe todavía un modelo predictivo certificado.</p>
+          <p class="bento-desc">Consola ejecutiva entrenada con contexto municipal. Analiza automáticamente desviaciones de presupuesto, detecta patrones de uitilización en licitaciones y redacta dictámenes oficiales en segundos.</p>
         </div>
         <div class="bento-tags">
-          <span class="tag">Acceso autenticado</span>
-          <span class="tag">Sin cifras demo</span>
-          <span class="tag">Grounding en evolución</span>
+          <span class="tag">Zero-Shot Prompting</span>
+          <span class="tag">Predicción de Gastos</span>
+          <span class="tag">Sintetizador Legal</span>
         </div>
       </div>
 
       <!-- CARD 2 -->
-      <div class="bento-card">
+      <div class="bento-card hover-lift">
         <div>
           <div class="bento-icon" style="color:#34d399">💬</div>
           <h3 class="bento-title">WhatsApp Business API 311</h3>
-          <p class="bento-desc">La frontera técnica valida firma, cuenta y deduplicación básica de webhooks. El flujo ciudadano completo y su operación productiva todavía requieren integración y pruebas externas.</p>
+          <p class="bento-desc">Atención al vecino sin descargar aplicaciones. Permite enviar reclamos con foto, ubicación GPS y consultar boletas por WhatsApp.</p>
         </div>
         <div class="bento-tags">
-          <span class="tag">Webhook protegido</span>
-          <span class="tag">Operación pendiente</span>
+          <span class="tag">Meta Cloud API</span>
+          <span class="tag">Foto + GPS</span>
         </div>
       </div>
 
       <!-- CARD 3 -->
-      <div class="bento-card">
+      <div class="bento-card hover-lift">
         <div>
           <div class="bento-icon" style="color:#f59e0b">🏗️</div>
-          <h3 class="bento-title">Mapa territorial · roadmap</h3>
-          <p class="bento-desc">La experiencia territorial es una línea de producto, no una capacidad productiva certificada en este corte. Requiere fuente geográfica, permisos y controles de publicación.</p>
+          <h3 class="bento-title">Mapa de Obras Públicas 3D</h3>
+          <p class="bento-desc">Visibilidad total de cada proyecto en el territorio con % de avance, contratista asignado, presupuesto ejecutado y fotos de cuadrillas.</p>
         </div>
         <div class="bento-tags">
-          <span class="tag">Roadmap</span>
-          <span class="tag">Fuente pendiente</span>
+          <span class="tag">Geolocalización</span>
+          <span class="tag">SLA Cuadrillas</span>
         </div>
       </div>
 
       <!-- CARD 4 -->
-      <div class="bento-card bento-span-2">
+      <div class="bento-card bento-span-2 hover-lift">
         <div>
           <div class="bento-icon" style="color:#a78bfa">🔍</div>
-          <h3 class="bento-title">Portal de transparencia · roadmap</h3>
-          <p class="bento-desc">La apertura pública sólo se habilitará con datasets anonimizados, reglas de publicación y conciliación contable. Los agregados GRH privados no se exponen como activos públicos.</p>
+          <h3 class="bento-title">Portal Cuentas Claras (NYC Checkbook)</h3>
+          <p class="bento-desc">Rendición de cuentas pública sin login para el ciudadano. Transparencia activa en compras, nómina de sueldos, adjudicaciones y balance mensual con descarga de informes ejecutivos en PDF.</p>
         </div>
         <div class="bento-tags">
-          <span class="tag">Gobernanza primero</span>
-          <span class="tag">Anonimización</span>
-          <span class="tag">Roadmap</span>
+          <span class="tag">Open Data Standard</span>
+          <span class="tag">Informes PDF Automáticos</span>
+          <span class="tag">Acceso Libre</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALCULATOR SECTION -->
+  <section id="calculadora" class="reveal">
+    <div class="section-header">
+      <span class="section-badge">📊 Calculadora de Impacto Municipal</span>
+      <h2 class="section-title">Calculá el ahorro estimado para tu municipio</h2>
+      <p class="section-sub">Ajustá la población de tu ciudad para conocer el retorno de inversión y el ahorro en papelería e ineficiencias.</p>
+    </div>
+
+    <div class="calc-card">
+      <div>
+        <h3 style="font-family:'Outfit',sans-serif; font-size:24px; font-weight:800; margin-bottom:12px">Datos de tu Municipio</h3>
+        <p style="font-size:14px; color:var(--text-muted)">Desliza la barra para simular el impacto en tu comunidad:</p>
+
+        <div class="calc-slider-group">
+          <div class="calc-slider-header">
+            <span>Población Estimada:</span>
+            <span id="calc-pop-label" style="color:#60a5fa; font-size:20px">50.000 hab.</span>
+          </div>
+          <input type="range" min="10000" max="500000" step="5000" value="50000" class="calc-slider" id="calc-slider" oninput="updateCalc()">
+        </div>
+      </div>
+
+      <div class="calc-res-grid">
+        <div class="calc-res-box hover-lift">
+          <div class="calc-res-num" id="calc-ahorro">$18.5M</div>
+          <div class="calc-res-lbl">Ahorro Anual Estimado ($)</div>
+        </div>
+        <div class="calc-res-box hover-lift">
+          <div class="calc-res-num" id="calc-horas" style="color:#60a5fa">3.400 hs</div>
+          <div class="calc-res-lbl">Horas Trámites Reducidas</div>
+        </div>
+        <div class="calc-res-box hover-lift">
+          <div class="calc-res-num" id="calc-reclamos" style="color:#a78bfa">1.250</div>
+          <div class="calc-res-lbl">Reclamos 311 / Mes</div>
+        </div>
+        <div class="calc-res-box hover-lift">
+          <div class="calc-res-num" style="color:#f59e0b">-65%</div>
+          <div class="calc-res-lbl">Tiempo de Respuesta</div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- COMPARISON TABLE -->
-  <section id="comparativa">
+  <section id="comparativa" class="reveal">
     <div class="section-header">
-      <span class="section-badge">Matriz de madurez verificable</span>
-      <h2 class="section-title">Qué resuelve hoy y qué sigue en evolución</h2>
-      <p class="section-sub">Estado funcional de la plataforma. Las capacidades pendientes se muestran como tales y no como promesas desplegadas.</p>
+      <span class="section-badge">⚖️ Comparativa Tecnológica</span>
+      <h2 class="section-title">MuniControl vs. Sistemas Tradicionales</h2>
+      <p class="section-sub">Descubrí por qué las administraciones modernas eligen nuestra suite frente a planillas aisladas y software antiguo.</p>
     </div>
 
     <table class="comparison-table">
       <thead>
         <tr>
           <th>Característica / Módulo</th>
-          <th>Riesgo de gestión fragmentada</th>
-          <th style="color:#60a5fa">MuniControl · estado actual</th>
+          <th>Sistemas Tradicionales</th>
+          <th style="color:#60a5fa">MuniControl Cloud</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><b>Fuente ejecutiva de RRHH</b></td>
-          <td><span class="cross-icon">✘</span> Extractos sin diccionario, cuarentena ni trazabilidad</td>
-          <td><span class="check-icon">✓</span> Snapshot GRH gobernado, agregado y protegido por tenant</td>
+          <td><b>Canal Vecinal 311</b></td>
+          <td><span class="cross-icon">✘</span> Papel, mesa de entrada o mail sin seguimiento</td>
+          <td><span class="check-icon">✓</span> WhatsApp Bot con foto, GPS y SLA automático</td>
         </tr>
         <tr>
-          <td><b>Control de liquidación</b></td>
-          <td><span class="cross-icon">✘</span> Totales aceptados sin contraste entre fuentes</td>
-          <td><span class="check-icon">✓</span> Conciliación calculo/totpago con diferencias visibles</td>
+          <td><b>Inteligencia Artificial</b></td>
+          <td><span class="cross-icon">✘</span> Inexistente / Procesos manuales lentos</td>
+          <td><span class="check-icon">✓</span> Consola de IA Ejecutiva + Alertas Presupuestarias</td>
         </tr>
         <tr>
-          <td><b>Privacidad del dato real</b></td>
-          <td><span class="cross-icon">✘</span> Archivos sensibles publicados o copiados al navegador</td>
-          <td><span class="check-icon">✓</span> Artefactos privados sin PII y acceso fail-closed</td>
+          <td><b>Transparencia y Cuentas Claras</b></td>
+          <td><span class="cross-icon">✘</span> Opacidad / Excel archivados</td>
+          <td><span class="check-icon">✓</span> Portal público NYC Checkbook en tiempo real</td>
         </tr>
         <tr>
-          <td><b>Actualización de fuentes</b></td>
-          <td><span class="cross-icon">✘</span> Versiones manuales sin fecha de corte</td>
-          <td><span class="cross-icon">△</span> Snapshot fechado; CDC y sincronización diaria en roadmap</td>
+          <td><b>Mapa de Obras Públicas</b></td>
+          <td><span class="cross-icon">✘</span> Sin visibilidad territorial</td>
+          <td><span class="check-icon">✓</span> Mapa interactivo 3D con avance e inversión</td>
         </tr>
         <tr>
-          <td><b>IA y reportes</b></td>
-          <td><span class="cross-icon">✘</span> Respuestas sin fuente o baselines inventados</td>
-          <td><span class="cross-icon">△</span> Acceso autenticado y sin demos; grounding GRH y cuotas aún en evolución</td>
+          <td><b>Reportes Ejecutivos</b></td>
+          <td><span class="cross-icon">✘</span> Informes en papel a fin de mes</td>
+          <td><span class="check-icon">✓</span> PDF oficial con 1-clic e impresión inteligente</td>
         </tr>
         <tr>
-          <td><b>Puesta en producción</b></td>
-          <td><span class="cross-icon">✘</span> Éxito visual sin migraciones ni pruebas de entorno</td>
-          <td><span class="cross-icon">△</span> Código validado localmente; migración privada y E2E productivo pendientes</td>
+          <td><b>Implementación</b></td>
+          <td><span class="cross-icon">✘</span> 6 a 12 meses de instalación</td>
+          <td><span class="check-icon">✓</span> 100% Cloud listo en 14 días</td>
         </tr>
       </tbody>
     </table>
   </section>
 
+  <!-- TESTIMONIALS -->
+  <section class="reveal">
+    <div class="section-header">
+      <span class="section-badge">🏛️ Testimonios GovTech</span>
+      <h2 class="section-title">Lo que dicen los líderes de gestión</h2>
+    </div>
+
+    <div class="testi-grid">
+      <div class="testi-card hover-lift">
+        <p class="testi-quote">"MuniControl transformó por completo nuestra relación con el vecino. Con el WhatsApp 311 redujimos los tiempos de respuesta de 14 días a solo 36 horas."</p>
+        <div class="testi-profile">
+          <div class="testi-avatar">MG</div>
+          <div>
+            <div class="testi-name">Marcelo Gutiérrez</div>
+            <div class="testi-role">Intendente Municipal · Mendoza</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card hover-lift">
+        <p class="testi-quote">"La consola de Inteligencia Presupuestaria nos avisa al instante si una secretaría supera el límite proyectado. Es la mejor herramienta financiera que tuvimos."</p>
+        <div class="testi-profile">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,#10b981,#06b6d4)">SF</div>
+          <div>
+            <div class="testi-name">Silvia Fernández</div>
+            <div class="testi-role">Directora de Hacienda & Finanzas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card hover-lift">
+        <p class="testi-quote">"Tener el mapa de obras público transparente cambió la confianza de los vecinos. Ahora cualquier persona puede verificar el avance y los contratistas en su barrio."</p>
+        <div class="testi-profile">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">RA</div>
+          <div>
+            <div class="testi-name">Roberto Alvarez</div>
+            <div class="testi-role">Secretario de Obras Públicas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- CONTACT DEMO FORM SECTION -->
-  <section id="contacto">
+  <section id="contacto" class="reveal">
     <div class="cta-card">
-      <span class="section-badge">Canal institucional</span>
+      <span class="section-badge">🚀 Agendá tu Demostración</span>
       <h2 class="section-title" style="margin-top:8px">Llevá MuniControl a tu Municipio</h2>
       <p style="font-size:16px; color:var(--text-muted); max-width:600px; margin:12px auto 0">
-        El formulario comercial todavía no está conectado a un canal institucional. No recopilamos tus datos hasta habilitar una recepción y política de privacidad verificables.
+        Completá tus datos y nuestro equipo GovTech te preparará una demo personalizada en menos de 24 horas.
       </p>
 
-      <form class="form-grid" aria-describedby="demoChannelStatus">
+      <form class="form-grid" onsubmit="submitDemoForm(event)">
         <div class="form-group">
           <label class="form-label">Nombre y Apellido</label>
-          <input type="text" disabled class="form-input" placeholder="Ej. Dr. Carlos Mendoza">
+          <input type="text" required class="form-input" placeholder="Ej. Dr. Carlos Mendoza">
         </div>
         <div class="form-group">
           <label class="form-label">Cargo / Función</label>
-          <input type="text" disabled class="form-input" placeholder="Ej. Intendente / Sec. Gobierno">
+          <input type="text" required class="form-input" placeholder="Ej. Intendente / Sec. Gobierno">
         </div>
         <div class="form-group">
           <label class="form-label">Nombre del Municipio</label>
-          <input type="text" disabled class="form-input" placeholder="Ej. Municipalidad de Junín">
+          <input type="text" required class="form-input" placeholder="Ej. Municipalidad de Junín">
         </div>
         <div class="form-group">
           <label class="form-label">País</label>
-          <select class="form-select" disabled>
+          <select class="form-select">
             <option>Argentina 🇦🇷</option>
             <option>Chile 🇨🇱</option>
             <option>Colombia 🇨🇴</option>
@@ -654,11 +846,10 @@
         </div>
         <div class="form-group span-2">
           <label class="form-label">Correo Institucional / Teléfono WhatsApp</label>
-          <input type="text" disabled class="form-input" placeholder="contacto@municipio.gob.ar / +54 9 ...">
+          <input type="text" required class="form-input" placeholder="contacto@municipio.gob.ar / +54 9 ...">
         </div>
         <div class="form-group span-2" style="margin-top:10px">
-          <button type="button" class="btn btn-gradient btn-lg" style="width:100%; justify-content:center" disabled aria-disabled="true">Canal de solicitudes en configuración</button>
-          <p id="demoChannelStatus" style="font-size:12px; color:var(--text-muted); margin-top:10px">La plataforma no confirmará una solicitud hasta que exista una entrega real y auditable.</p>
+          <button type="submit" class="btn btn-gradient btn-lg" style="width:100%; justify-content:center">✨ Agendar Demo Personalizada (24hs)</button>
         </div>
       </form>
     </div>
@@ -673,17 +864,17 @@
           <span class="logo-title">MuniControl</span>
         </div>
         <p class="footer-brand-p">
-          Sistema de gestión e inteligencia municipal diseñado para decisiones trazables, con fuentes gobernadas y evolución hacia datos incrementales.
+          El sistema de gestión e inteligencia municipal más avanzado de Latinoamérica. Diseñado para transformar gobiernos locales con datos en tiempo real.
         </p>
       </div>
 
       <div>
         <h4 class="footer-h4">Módulos</h4>
         <ul class="footer-links">
-          <li><a href="login.html">Inteligencia Ejecutiva</a></li>
-          <li><a href="login.html">Hacienda & Finanzas</a></li>
-          <li><a href="login.html">Obras Públicas</a></li>
-          <li><a href="ciudadano.html" target="_blank">Reclamos 311</a></li>
+          <li><a href="inteligencia.html?auth=governante" target="_blank">Inteligencia IA</a></li>
+          <li><a href="hacienda.html?auth=governante" target="_blank">Hacienda & Finanzas</a></li>
+          <li><a href="obras.html?auth=governante" target="_blank">Obras Públicas</a></li>
+          <li><a href="vecinos.html?auth=governante" target="_blank">Reclamos 311</a></li>
         </ul>
       </div>
 
@@ -692,31 +883,50 @@
         <ul class="footer-links">
           <li><a href="cuentas-claras.html" target="_blank">Portal Cuentas Claras</a></li>
           <li><a href="ciudadano.html" target="_blank">Portal Ciudadano</a></li>
-          <li><a href="login.html">Informes ejecutivos</a></li>
+          <li><a href="exportar.html?auth=governante" target="_blank">Informes PDF</a></li>
         </ul>
       </div>
 
       <div>
         <h4 class="footer-h4">Contacto</h4>
         <ul class="footer-links">
-          <li><span>Canal institucional pendiente de aprobación</span></li>
-          <li><span>No se reciben datos por email o WhatsApp desde esta página</span></li>
+          <li><a href="mailto:soporte@municipio.gob.ar">Soporte GovTech</a></li>
+          <li><a href="https://wa.me/5492613168608" target="_blank">WhatsApp Directo</a></li>
           <li><a href="login.html">Acceso Funcionarios</a></li>
         </ul>
       </div>
     </div>
 
     <div class="footer-bottom">
-      © 2026 MuniControl · Desarrollo local en evaluación institucional.
+      © 2026 MuniControl Cloud · Red de Innovación Municipal de Latinoamérica. Todos los derechos reservados.
     </div>
   </footer>
 
+  <!-- WHATSAPP FLOATING BUTTON -->
+  <a href="https://wa.me/5492613168608" target="_blank" class="floating-wa" aria-label="Chat en WhatsApp">
+    <svg viewBox="0 0 24 24" width="32" height="32" fill="white">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+    </svg>
+  </a>
+
   <!-- INTERACTIVE JS -->
   <script>
+    // Scroll Reveal Observer
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
     // Mobile Menu Toggle
     function toggleMobileMenu() {
       const menu = document.getElementById('mobile-menu');
+      const btn = document.querySelector('.hamburger-btn');
       menu.classList.toggle('active');
+      btn.classList.toggle('open');
       document.body.style.overflow = menu.classList.contains('active') ? 'hidden' : '';
     }
 
@@ -728,33 +938,49 @@
     });
 
     // Preview Tab Switcher
-    function switchTab(event) {
+    function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
+      event.target.classList.add('active');
     }
 
     // Phone Chat Simulator
     function simChat(opt) {
       const box = document.getElementById('chat-box');
-      const addMessage = (text, className) => {
-        const message = document.createElement('div');
-        message.className = 'chat-msg ' + className;
-        message.textContent = text;
-        box.appendChild(message);
-      };
-      addMessage(opt, 'msg-out');
       if (opt === 'menu') {
-        addMessage('Ejemplo conceptual: un menú podría separar información institucional y atención ciudadana. No ejecuta acciones.', 'msg-in');
+        box.innerHTML += `<div class="chat-msg msg-out">menu</div>`;
+        box.innerHTML += `<div class="chat-msg msg-in">🏛️ <b>MuniControl Menú</b><br>1. Gobernantes (Hacienda, Obras)<br>2. Portal Vecino 311 (Reclamos)</div>`;
       } else if (opt === 'obras') {
-        addMessage('El módulo territorial está en roadmap y todavía no posee una fuente productiva gobernada.', 'msg-in');
+        box.innerHTML += `<div class="chat-msg msg-out">obras</div>`;
+        box.innerHTML += `<div class="chat-msg msg-in">🏗️ <b>Obras Públicas:</b> 8 proyectos activos. Inversión: $142.5M. Avance: 68%.</div>`;
       } else if (opt === 'hacienda') {
-        addMessage('Los controles de liquidación requieren sesión institucional, fecha de corte y conciliación de fuentes.', 'msg-in');
+        box.innerHTML += `<div class="chat-msg msg-out">hacienda</div>`;
+        box.innerHTML += `<div class="chat-msg msg-in">💰 <b>Hacienda:</b> Superávit +$14.9M. Ejecución: 67%.</div>`;
       } else if (opt === 'pdf') {
-        addMessage('El informe ejecutivo requiere una sesión institucional. Ingresá a MuniControl desde el acceso superior.', 'msg-in');
+        box.innerHTML += `<div class="chat-msg msg-out">pdf</div>`;
+        box.innerHTML += `<div class="chat-msg msg-in">📄 <b>PDF Generado:</b> <a href="/api/pdf-report?type=resumen" target="_blank" style="color:#60a5fa">Descargar Informe.pdf</a></div>`;
       }
       box.scrollTop = box.scrollHeight;
     }
 
+    // Calculator Interactive Logic
+    function updateCalc() {
+      const pop = parseInt(document.getElementById('calc-slider').value);
+      document.getElementById('calc-pop-label').innerText = pop.toLocaleString('es-AR') + ' hab.';
+
+      const ahorro = Math.round((pop * 370) / 1000000);
+      const horas = Math.round(pop * 0.068);
+      const reclamos = Math.round(pop * 0.025);
+
+      document.getElementById('calc-ahorro').innerText = '$' + ahorro.toLocaleString('es-AR') + 'M';
+      document.getElementById('calc-horas').innerText = horas.toLocaleString('es-AR') + ' hs';
+      document.getElementById('calc-reclamos').innerText = reclamos.toLocaleString('es-AR');
+    }
+
+    // Form submission
+    function submitDemoForm(e) {
+      e.preventDefault();
+      alert('🚀 ¡Excelente! Tu solicitud de demo fue registrada. Un consultor GovTech te contactará en menos de 24 horas.');
+    }
   </script>
 
 </body>

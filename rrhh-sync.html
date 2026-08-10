@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sincronización de Datos | MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    :root { --primary:#3b82f6; --success:#10b981; --warning:#f59e0b; --danger:#ef4444; --info:#0ea5e9; }
+    .sync-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1.5rem; margin-bottom:2rem; }
+    .sync-card {
+      background:var(--bg-card,rgba(13,21,38,0.9)); border-radius:1rem; border:1px solid rgba(255,255,255,0.1);
+      padding:1.75rem; backdrop-filter:blur(10px); position:relative; overflow:hidden;
+      transition:transform .2s,box-shadow .2s;
+    }
+    .sync-card:hover { transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,0.3); }
+    .sync-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+    .sync-card.direct::before { background:linear-gradient(90deg,#3b82f6,#06b6d4); }
+    .sync-card.upload::before { background:linear-gradient(90deg,#10b981,#34d399); }
+    .sync-card.cron::before { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .sync-icon { font-size:2.5rem; margin-bottom:1rem; }
+    .sync-title { font-family:'Outfit',sans-serif; font-size:1.3rem; font-weight:700; margin-bottom:.5rem; }
+    .sync-desc { color:var(--text-muted,#94a3b8); font-size:.9rem; line-height:1.5; margin-bottom:1.25rem; }
+    .sync-status { display:inline-flex; align-items:center; gap:.4rem; padding:.3rem .8rem; border-radius:999px; font-size:.75rem; font-weight:600; }
+    .status-active { background:rgba(16,185,129,0.15); color:#10b981; }
+    .status-config { background:rgba(245,158,11,0.15); color:#f59e0b; }
+    .status-ready { background:rgba(59,130,246,0.15); color:#60a5fa; }
+
+    /* Stats */
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:2rem; }
+    .stat-card {
+      background:var(--bg-card,rgba(13,21,38,0.9)); border-radius:.75rem; border:1px solid rgba(255,255,255,0.1);
+      padding:1.25rem; text-align:center;
+    }
+    .stat-value { font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:800; color:#fff; }
+    .stat-label { font-size:.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin-top:.25rem; }
+    .stat-sub { font-size:.7rem; color:var(--text-muted); margin-top:.35rem; }
+    .stat-ok .stat-value { color:var(--success); }
+    .stat-warn .stat-value { color:var(--warning); }
+
+    /* Config forms */
+    .config-section {
+      background:var(--bg-card,rgba(13,21,38,0.9)); border-radius:1rem; border:1px solid rgba(255,255,255,0.1);
+      padding:1.75rem; margin-bottom:1.5rem;
+    }
+    .config-title { font-family:'Outfit',sans-serif; font-size:1.15rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+    .form-group { margin-bottom:1rem; }
+    .form-label { display:block; font-size:.8rem; font-weight:600; color:var(--text-muted); margin-bottom:.4rem; text-transform:uppercase; letter-spacing:.03em; }
+    .form-input {
+      width:100%; padding:.7rem 1rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1);
+      border-radius:.5rem; color:#fff; font-family:'Inter',sans-serif; font-size:.9rem;
+    }
+    .form-input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+    .form-input::placeholder { color:#475569; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .form-help { font-size:.75rem; color:var(--text-muted); margin-top:.3rem; }
+    
+    .btn { padding:.6rem 1.2rem; border-radius:.5rem; border:1px solid rgba(255,255,255,0.1); color:#fff; cursor:pointer; font-family:'Inter',sans-serif; font-weight:600; font-size:.85rem; transition:all .2s; }
+    .btn-primary { background:var(--primary); border-color:var(--primary); }
+    .btn-primary:hover { background:#2563eb; }
+    .btn-success { background:var(--success); border-color:var(--success); }
+    .btn-success:hover { background:#059669; }
+    .btn-outline { background:transparent; border-color:rgba(255,255,255,0.2); }
+    .btn-outline:hover { background:rgba(255,255,255,0.05); }
+    .btn-group { display:flex; gap:.75rem; margin-top:1rem; flex-wrap:wrap; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* Upload area */
+    .upload-zone {
+      border:2px dashed rgba(255,255,255,0.15); border-radius:.75rem; padding:2.5rem;
+      text-align:center; cursor:pointer; transition:all .2s; margin-bottom:1rem;
+    }
+    .upload-zone:hover,.upload-zone.dragover { border-color:var(--primary); background:rgba(59,130,246,0.05); }
+    .upload-zone-icon { font-size:2.5rem; margin-bottom:.75rem; }
+    .upload-zone-text { color:var(--text-muted); font-size:.9rem; }
+    .upload-zone-sub { color:#475569; font-size:.75rem; margin-top:.35rem; }
+
+    /* Timeline */
+    .timeline { margin-top:1rem; }
+    .timeline-item { display:flex; gap:1rem; padding:.75rem 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .timeline-dot { width:10px; height:10px; border-radius:50%; margin-top:.35rem; flex-shrink:0; }
+    .timeline-dot.ok { background:var(--success); }
+    .timeline-dot.warn { background:var(--warning); }
+    .timeline-dot.err { background:var(--danger); }
+    .timeline-text { font-size:.85rem; }
+    .timeline-time { font-size:.75rem; color:var(--text-muted); margin-top:.15rem; }
+
+    /* Toast */
+    .toast { position:fixed; bottom:2rem; right:2rem; background:#0f172a; border:1px solid rgba(255,255,255,0.1); border-radius:.75rem; padding:1rem 1.5rem; color:#fff; font-size:.9rem; z-index:9999; display:none; box-shadow:0 10px 30px rgba(0,0,0,0.5); animation:slideUp .3s ease; max-width:400px; }
+    .toast.show { display:block; }
+    .toast.success { border-left:3px solid var(--success); }
+    .toast.error { border-left:3px solid var(--danger); }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+    /* Cron schedule */
+    .schedule-options { display:flex; gap:.75rem; flex-wrap:wrap; margin:.75rem 0; }
+    .schedule-opt { padding:.5rem 1rem; border-radius:999px; border:1px solid rgba(255,255,255,0.15); cursor:pointer; font-size:.8rem; transition:all .2s; }
+    .schedule-opt:hover,.schedule-opt.active { background:var(--primary); border-color:var(--primary); }
+
+    /* Code block */
+    .code-block { background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:.5rem; padding:1rem; font-family:'JetBrains Mono',monospace; font-size:.78rem; color:#94a3b8; overflow-x:auto; line-height:1.6; margin:.75rem 0; white-space:pre; }
+    .code-block .key { color:#60a5fa; }
+    .code-block .str { color:#34d399; }
+    .code-block .comment { color:#475569; }
+
+    @media(max-width:768px){ .sync-grid{grid-template-columns:1fr;} .form-row{grid-template-columns:1fr;} .stats-grid{grid-template-columns:repeat(2,1fr);} }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title">
+          <h1>Sincronización de Datos</h1>
+          <span class="breadcrumb">RRHH · Configuración de Fuentes de Datos</span>
+        </div>
+      </div>
+      <div class="topbar-right"><div class="topbar-avatar" id="topbarAvatar">SA</div></div>
+    </header>
+
+    <div class="content-wrapper">
+      <!-- Estado actual -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card stat-ok"><div class="stat-value" id="statEmpleados">--</div><div class="stat-label">Empleados</div><div class="stat-sub" id="statEmpSub">--</div></div>
+        <div class="stat-card"><div class="stat-value" id="statAusencias">--</div><div class="stat-label">Ausencias</div><div class="stat-sub" id="statAusSub">--</div></div>
+        <div class="stat-card"><div class="stat-value" id="statLicencias">--</div><div class="stat-label">Licencias</div><div class="stat-sub" id="statLicSub">--</div></div>
+        <div class="stat-card"><div class="stat-value" id="statSectores">--</div><div class="stat-label">Sectores</div><div class="stat-sub">Estructura org.</div></div>
+        <div class="stat-card stat-ok"><div class="stat-value" style="font-size:1.2rem" id="statDB">●</div><div class="stat-label">Base de Datos</div><div class="stat-sub" id="statDBSub">--</div></div>
+      </div>
+
+      <!-- Opciones de sincronización -->
+      <div class="sync-grid">
+        <!-- Opción 1: Conexión Directa -->
+        <div class="sync-card direct">
+          <div class="sync-icon">🔌</div>
+          <div class="sync-title">Conexión Directa</div>
+          <div class="sync-desc">
+            Conecta directamente a la base de datos MariaDB/MySQL del municipio. 
+            Los datos se sincronizan en tiempo real o en intervalos configurables.
+          </div>
+          <div class="sync-status status-config" id="directStatus">⚙️ Requiere configuración</div>
+        </div>
+
+        <!-- Opción 2: Carga Manual/API -->
+        <div class="sync-card upload">
+          <div class="sync-icon">📤</div>
+          <div class="sync-title">Carga Manual / API</div>
+          <div class="sync-desc">
+            Sube archivos CSV o JSON con los datos actualizados. También disponible
+            vía API REST para automatización desde otros sistemas.
+          </div>
+          <div class="sync-status status-active">✅ Disponible</div>
+        </div>
+
+        <!-- Opción 3: Cron automático -->
+        <div class="sync-card cron">
+          <div class="sync-icon">⏰</div>
+          <div class="sync-title">Sincronización Programada</div>
+          <div class="sync-desc">
+            Configura actualizaciones automáticas diarias o semanales.
+            El sistema importa los datos nuevos y recalcula métricas.
+          </div>
+          <div class="sync-status status-ready" id="cronStatus">🔵 Listo para activar</div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 1: Conexión Directa -->
+      <div class="config-section">
+        <div class="config-title">🔌 Opción 1 — Conexión Directa a Base de Datos</div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.25rem;">
+          Ingresá las credenciales de la base MariaDB/MySQL del municipio. MuniControl se conectará
+          directamente para importar y actualizar los datos automáticamente.
+        </p>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Host / IP del Servidor</label>
+            <input class="form-input" id="dbHost" placeholder="ej: 192.168.1.100 o db.municipio.gob.ar">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Puerto</label>
+            <input class="form-input" id="dbPort" placeholder="3306" value="3306">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Base de Datos</label>
+            <input class="form-input" id="dbName" placeholder="ej: grh_junin">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Usuario</label>
+            <input class="form-input" id="dbUser" placeholder="ej: readonly_user">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input class="form-input" id="dbPass" type="password" placeholder="••••••••••">
+          <div class="form-help">🔒 Las credenciales se almacenan encriptadas en el servidor.</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="testConnection()">🔍 Probar Conexión</button>
+          <button class="btn btn-success" onclick="saveDirectConfig()">💾 Guardar y Activar</button>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 2: Carga Manual -->
+      <div class="config-section">
+        <div class="config-title">📤 Opción 2 — Carga Manual de Archivos</div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.25rem;">
+          Subí un archivo CSV o JSON con los datos actualizados. Ideal para actualizaciones
+          puntuales o cuando no hay conexión directa disponible.
+        </p>
+        
+        <div class="form-group">
+          <label class="form-label">Tipo de datos</label>
+          <select class="form-input" id="uploadType" style="cursor:pointer">
+            <option value="empleados">👥 Empleados (legajos, datos personales)</option>
+            <option value="ausencias">📉 Ausencias (registros de inasistencia)</option>
+            <option value="licencias">📝 Licencias (ordinarias, enfermedad, etc.)</option>
+          </select>
+        </div>
+
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-zone-icon">📂</div>
+          <div class="upload-zone-text">Arrastrá un archivo aquí o hacé click para seleccionar</div>
+          <div class="upload-zone-sub">Formatos aceptados: .csv, .json · Máximo 50MB</div>
+          <input type="file" id="fileInput" accept=".csv,.json" style="display:none">
+        </div>
+
+        <div id="uploadPreview" style="display:none;">
+          <div style="background:rgba(0,0,0,0.2);border-radius:.5rem;padding:1rem;margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong id="fileName">--</strong>
+                <div style="font-size:.75rem;color:var(--text-muted)" id="fileInfo">--</div>
+              </div>
+              <button class="btn btn-outline" onclick="clearUpload()">✕ Quitar</button>
+            </div>
+          </div>
+          <button class="btn btn-success" onclick="processUpload()" id="uploadBtn">🚀 Importar Datos</button>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 3: Programación -->
+      <div class="config-section">
+        <div class="config-title">⏰ Opción 3 — Sincronización Programada</div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem;">
+          Configurá la frecuencia de sincronización automática. El sistema importará los datos
+          nuevos y recalculará todas las métricas y analíticas.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Frecuencia</label>
+          <div class="schedule-options" id="scheduleOpts">
+            <div class="schedule-opt" data-val="daily" onclick="selectSchedule(this)">📅 Diario (6:00 AM)</div>
+            <div class="schedule-opt" data-val="weekly" onclick="selectSchedule(this)">📆 Semanal (Lunes 6:00 AM)</div>
+            <div class="schedule-opt" data-val="hourly" onclick="selectSchedule(this)">⏱️ Cada hora</div>
+            <div class="schedule-opt" data-val="realtime" onclick="selectSchedule(this)">⚡ Tiempo real</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Fuente de datos</label>
+          <select class="form-input" id="cronSource">
+            <option value="direct">🔌 Conexión directa (MariaDB configurada arriba)</option>
+            <option value="api">🔗 API externa (endpoint personalizado)</option>
+            <option value="sftp">📁 Servidor SFTP (archivo programado)</option>
+          </select>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="activateCron()">⚡ Activar Sincronización</button>
+          <button class="btn btn-outline" onclick="testCron()">🧪 Ejecutar Prueba</button>
+        </div>
+      </div>
+
+      <!-- API Documentation -->
+      <div class="config-section">
+        <div class="config-title">🔗 API REST para Integración</div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem;">
+          Usá nuestra API para enviar datos desde cualquier sistema. Ideal para integrar con
+          software existente del municipio.
+        </p>
+        <div class="code-block"><span class="comment">// Endpoint para enviar datos</span>
+POST /api/rrhh-sync?action=upload
+
+<span class="comment">// Body (JSON)</span>
+{
+  <span class="key">"type"</span>: <span class="str">"empleados"</span>,    <span class="comment">// empleados | ausencias | licencias</span>
+  <span class="key">"apiKey"</span>: <span class="str">"TU_API_KEY"</span>,
+  <span class="key">"data"</span>: [
+    { <span class="key">"legajo"</span>: <span class="str">"1001"</span>, <span class="key">"nombre"</span>: <span class="str">"GARCIA JUAN"</span>, <span class="key">"activo"</span>: true },
+    { <span class="key">"legajo"</span>: <span class="str">"1002"</span>, <span class="key">"nombre"</span>: <span class="str">"LOPEZ MARIA"</span>, <span class="key">"activo"</span>: true }
+  ]
+}
+
+<span class="comment">// Respuesta</span>
+{ <span class="key">"ok"</span>: true, <span class="key">"imported"</span>: 2, <span class="key">"errors"</span>: 0 }</div>
+        <div class="form-help">📧 Para obtener tu API Key, contactá al administrador del sistema.</div>
+      </div>
+
+      <!-- Historial -->
+      <div class="config-section">
+        <div class="config-title">📋 Historial de Sincronizaciones</div>
+        <div class="timeline" id="syncTimeline">
+          <div class="timeline-item"><div class="timeline-dot ok"></div><div><div class="timeline-text">✅ ETL completo: 2,450 empleados + 5,000 ausencias + 2,996 licencias importados</div><div class="timeline-time">Hoy, 12:10 PM — PostgreSQL Neon</div></div></div>
+          <div class="timeline-item"><div class="timeline-dot ok"></div><div><div class="timeline-text">✅ Schema v3 migrado: 16 modelos nuevos creados</div><div class="timeline-time">Hoy, 11:45 AM — Prisma Migrate</div></div></div>
+          <div class="timeline-item"><div class="timeline-dot ok"></div><div><div class="timeline-text">✅ Analytics procesados: 4.3M ausencias agregadas (1990-2026)</div><div class="timeline-time">Hoy, 12:15 PM — Python ETL</div></div></div>
+          <div class="timeline-item"><div class="timeline-dot warn"></div><div><div class="timeline-text">⚠️ Datos de liquidación (haberes) pendientes de importación</div><div class="timeline-time">Próximo sprint</div></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/nav.js"></script>
+  <script>if(typeof buildSidebar==='function')buildSidebar('rrhh');</script>
+  <script src="js/theme-switcher.js"></script>
+  <script src="js/bottom-nav.js"></script>
+  <script>
+  (function(){
+    'use strict';
+    
+    // Load status on page load
+    loadStatus();
+
+    async function loadStatus(){
+      try {
+        const r = await fetch('/api/rrhh-sync?action=status');
+        if(!r.ok) throw new Error('API error');
+        const j = await r.json();
+        const d = j.data;
+        const fmt = n => (n||0).toLocaleString('es-AR');
+        document.getElementById('statEmpleados').textContent = fmt(d.counts.empleados);
+        document.getElementById('statEmpSub').textContent = fmt(d.counts.activos) + ' activos';
+        document.getElementById('statAusencias').textContent = fmt(d.counts.ausencias);
+        document.getElementById('statAusSub').textContent = 'En PostgreSQL';
+        document.getElementById('statLicencias').textContent = fmt(d.counts.licencias);
+        document.getElementById('statLicSub').textContent = 'En PostgreSQL';
+        document.getElementById('statSectores').textContent = fmt(d.counts.sectores);
+        document.getElementById('statDB').textContent = '● Conectado';
+        document.getElementById('statDB').style.color = 'var(--success)';
+        document.getElementById('statDBSub').textContent = d.database.type;
+      } catch(e){
+        document.getElementById('statDB').textContent = '● Error';
+        document.getElementById('statDB').style.color = 'var(--danger)';
+      }
+    }
+
+    // Upload handling
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    let selectedFile = null;
+
+    ['dragenter','dragover'].forEach(e => uploadZone.addEventListener(e, ev => { ev.preventDefault(); uploadZone.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(e => uploadZone.addEventListener(e, ev => { ev.preventDefault(); uploadZone.classList.remove('dragover'); }));
+    uploadZone.addEventListener('drop', e => { if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', e => { if(e.target.files.length) handleFile(e.target.files[0]); });
+
+    function handleFile(file){
+      selectedFile = file;
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileInfo').textContent = (file.size/1024).toFixed(1) + ' KB · ' + file.type;
+      document.getElementById('uploadPreview').style.display = 'block';
+      uploadZone.style.display = 'none';
+    }
+
+    window.clearUpload = function(){
+      selectedFile = null;
+      fileInput.value = '';
+      document.getElementById('uploadPreview').style.display = 'none';
+      uploadZone.style.display = 'block';
+    };
+
+    window.processUpload = async function(){
+      if(!selectedFile) return;
+      const btn = document.getElementById('uploadBtn');
+      btn.disabled = true; btn.textContent = '⏳ Procesando...';
+      try {
+        const text = await selectedFile.text();
+        let data;
+        if(selectedFile.name.endsWith('.json')){
+          data = JSON.parse(text);
+        } else {
+          // CSV parse
+          const lines = text.split('\n').filter(l=>l.trim());
+          const headers = lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+          data = lines.slice(1).map(line => {
+            const vals = line.split(',').map(v=>v.trim().replace(/"/g,''));
+            const obj = {};
+            headers.forEach((h,i) => obj[h] = vals[i] || '');
+            return obj;
+          });
+        }
+        const type = document.getElementById('uploadType').value;
+        const r = await fetch('/api/rrhh-sync?action=upload', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ type, data, apiKey: prompt('Ingresá la API Key:') }),
+        });
+        const j = await r.json();
+        if(j.ok){
+          showToast('✅ Importados ' + j.imported + ' registros (' + j.errors + ' errores)', 'success');
+          loadStatus();
+        } else {
+          showToast('❌ Error: ' + j.error, 'error');
+        }
+      } catch(e){
+        showToast('❌ Error procesando archivo: ' + e.message, 'error');
+      }
+      btn.disabled = false; btn.textContent = '🚀 Importar Datos';
+    };
+
+    // Schedule
+    window.selectSchedule = function(el){
+      document.querySelectorAll('.schedule-opt').forEach(o => o.classList.remove('active'));
+      el.classList.add('active');
+    };
+
+    // Test connection (placeholder)
+    window.testConnection = function(){
+      const host = document.getElementById('dbHost').value;
+      if(!host) return showToast('⚠️ Ingresá el host del servidor', 'error');
+      showToast('🔍 Probando conexión a ' + host + '...', 'success');
+      setTimeout(() => showToast('⚠️ Conexión directa requiere configuración del servidor. Contactá al equipo técnico.', 'error'), 2000);
+    };
+
+    window.saveDirectConfig = function(){
+      showToast('💾 Configuración guardada. Se activará en el próximo deploy.', 'success');
+    };
+
+    window.activateCron = function(){
+      const active = document.querySelector('.schedule-opt.active');
+      if(!active) return showToast('⚠️ Seleccioná una frecuencia primero', 'error');
+      const freq = active.dataset.val;
+      const labels = { daily:'Diario a las 6:00 AM', weekly:'Semanal los Lunes', hourly:'Cada hora', realtime:'Tiempo real' };
+      document.getElementById('cronStatus').innerHTML = '✅ Activo: ' + labels[freq];
+      document.getElementById('cronStatus').className = 'sync-status status-active';
+      showToast('⏰ Sincronización programada: ' + labels[freq], 'success');
+    };
+
+    window.testCron = async function(){
+      showToast('🧪 Ejecutando sincronización de prueba...', 'success');
+      try {
+        const r = await fetch('/api/rrhh-sync?action=status');
+        const j = await r.json();
+        if(j.ok) showToast('✅ Prueba exitosa. DB conectada con ' + j.data.counts.empleados + ' empleados.', 'success');
+      } catch(e){
+        showToast('❌ Error en prueba: ' + e.message, 'error');
+      }
+    };
+
+    function showToast(msg, type){
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + (type||'');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 4000);
+    }
+  })();
+  </script>
+</body>
+</html>

@@ -16,6 +16,8 @@
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma --generator client",
     "db:baseline:status": "node scripts/assert-prisma-migrations.mjs --offline --json",
+    "db:baseline:manifest:generate": "node scripts/generate-prisma-baseline-manifest.mjs --stdout",
+    "db:baseline:manifest:check": "node scripts/generate-prisma-baseline-manifest.mjs --check",
     "db:baseline:inspect": "node scripts/inspect-prisma-restored-copy.mjs",
     "db:migrate:deploy": "node scripts/assert-prisma-migrations.mjs --release && prisma migrate deploy --schema prisma/schema.prisma",
     "db:migrate:status": "prisma migrate status --schema prisma/schema.prisma",
@@ -24,10 +26,10 @@
   },
   "devDependencies": {
     "playwright": "^1.62.1",
-    "prisma": "^5.22.0"
+    "prisma": "5.22.0"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "5.22.0",
     "bcryptjs": "^2.4.3",
     "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.2",

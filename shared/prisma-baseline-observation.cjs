@@ -982,11 +982,14 @@ function collectMigrationRowIssues(history) {
     const finished = timestampMillis(row.finished_at);
     const startedCanonical = started !== null && new Date(started).toISOString() === row.started_at;
     const finishedCanonical = finished !== null && new Date(finished).toISOString() === row.finished_at;
+    const stepsCanonical = steps !== null && steps.toString(10) === row.applied_steps_count;
+    const resolvedApplied = stepsCanonical && steps === 0n && startedCanonical && finishedCanonical
+      && started === finished && row.rolled_back_at === null;
     if (typeof row.migration_id !== 'string' || !UUID.test(row.migration_id)
       || typeof row.checksum !== 'string' || !SHA256_HEX.test(row.checksum)
       || typeof row.migration_name !== 'string' || !MIGRATION_NAME.test(row.migration_name)
       || !startedCanonical || !finishedCanonical || row.rolled_back_at !== null
-      || steps === null || steps < 1n) {
+      || !stepsCanonical || steps < 0n || (steps === 0n && !resolvedApplied)) {
       issues.add('MIGRATION_ROW_INCOMPLETE_OR_INVALID');
     }
     if (typeof row.migration_id === 'string') {

@@ -77,6 +77,16 @@ model Tenant {
   auditLogs       AuditLog[]
   documentos      Documento[]
   notificaciones  Notificacion[]
+  barrios         Barrio[]         @ignore
+  calles          Calle[]          @ignore
+  categoriasGrh   CategoriaGrh[]   @ignore
+  ciudadanos      Ciudadano[]      @ignore
+  conveniosGrh    ConvenioGrh[]    @ignore
+  empleadosGrh    EmpleadoGrh[]    @ignore
+  gremiosGrh      GremioGrh[]      @ignore
+  localidades     Localidad[]      @ignore
+  motivosAusencia MotivoAusencia[] @ignore
+  sectoresGrh     SectorGrh[]      @ignore
 
   @@map("tenants")
 }
@@ -307,4 +317,255 @@ model Invitation {
   createdAt DateTime  @default(now())
 
   @@map("invitations")
+}
+
+model AusenciaGrh {
+  id            String          @id
+  tenantId      String
+  empleadoId    String
+  fecha         DateTime
+  dias          Float?
+  fechaRegreso  DateTime?
+  motivoId      String?
+  motivoCodigo  String?
+  observaciones String?
+  periodo       String?
+  createdAt     DateTime        @default(now())
+  empleado      EmpleadoGrh     @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+  motivo        MotivoAusencia? @relation(fields: [motivoId], references: [id])
+
+  @@index([empleadoId])
+  @@index([tenantId, fecha])
+  @@map("ausencias_grh")
+  @@ignore
+}
+
+model Barrio {
+  id        String   @id
+  tenantId  String
+  nombre    String
+  codigo    String?
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, nombre])
+  @@map("barrios")
+  @@ignore
+}
+
+model Calle {
+  id        String   @id
+  tenantId  String
+  nombre    String
+  codigo    String?
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("calles")
+  @@ignore
+}
+
+model CategoriaGrh {
+  id        String        @id
+  tenantId  String
+  codigo    String
+  nombre    String
+  abrev     String?
+  createdAt DateTime      @default(now())
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  empleados EmpleadoGrh[]
+
+  @@unique([tenantId, codigo])
+  @@map("categorias_grh")
+  @@ignore
+}
+
+model Ciudadano {
+  id        String    @id
+  tenantId  String
+  nombre    String
+  sexo      String?
+  fechaNac  DateTime?
+  dni       String?
+  cuil      String?
+  calle     String?
+  numero    String?
+  barrio    String?
+  localidad String?
+  latitud   Float?
+  longitud  Float?
+  telefono  String?
+  email     String?
+  createdAt DateTime  @default(now())
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([dni])
+  @@index([tenantId])
+  @@map("ciudadanos")
+  @@ignore
+}
+
+model ConvenioGrh {
+  id        String        @id
+  tenantId  String
+  codigo    String
+  nombre    String
+  createdAt DateTime      @default(now())
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  empleados EmpleadoGrh[]
+
+  @@unique([tenantId, codigo])
+  @@map("convenios_grh")
+  @@ignore
+}
+
+model EmpleadoGrh {
+  id              String        @id
+  tenantId        String
+  legajo          String
+  nombre          String
+  sexo            String?
+  fechaNacimiento DateTime?
+  dni             String?
+  cuil            String?
+  grupoSanguineo  String?
+  telefono        String?
+  email           String?
+  calle           String?
+  numero          String?
+  piso            String?
+  dpto            String?
+  barrioNombre    String?
+  localidad       String?
+  provincia       String?       @default("Mendoza")
+  latitud         Float?
+  longitud        Float?
+  fechaIngreso    DateTime?
+  fechaEgreso     DateTime?
+  activo          Boolean       @default(true)
+  sueldoBasico    Float?
+  antiguedadAnios Int?
+  antiguedadMeses Int?
+  horasDiarias    Float?
+  horasMensuales  Float?
+  lugarTrabajo    String?
+  concursado      Boolean?
+  profesion       String?
+  sectorId        String?
+  categoriaId     String?
+  gremioId        String?
+  convenioId      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime
+  ausencias       AusenciaGrh[]
+  categoria       CategoriaGrh? @relation(fields: [categoriaId], references: [id])
+  convenio        ConvenioGrh?  @relation(fields: [convenioId], references: [id])
+  gremio          GremioGrh?    @relation(fields: [gremioId], references: [id])
+  sector          SectorGrh?    @relation(fields: [sectorId], references: [id])
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  familiares      FamiliarGrh[]
+  licencias       LicenciaGrh[]
+
+  @@unique([tenantId, legajo])
+  @@index([categoriaId])
+  @@index([sectorId])
+  @@index([tenantId, activo])
+  @@map("empleados_grh")
+  @@ignore
+}
+
+model FamiliarGrh {
+  id           String      @id
+  empleadoId   String
+  nombre       String
+  vinculo      String
+  fechaNac     DateTime?
+  cuil         String?
+  sexo         String?
+  discapacidad Boolean     @default(false)
+  escolaridad  String?
+  createdAt    DateTime    @default(now())
+  empleado     EmpleadoGrh @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+
+  @@index([empleadoId])
+  @@map("familiares_grh")
+  @@ignore
+}
+
+model GremioGrh {
+  id        String        @id
+  tenantId  String
+  codigo    String
+  nombre    String
+  abrev     String?
+  createdAt DateTime      @default(now())
+  empleados EmpleadoGrh[]
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, codigo])
+  @@map("gremios_grh")
+  @@ignore
+}
+
+model LicenciaGrh {
+  id            String      @id
+  tenantId      String
+  empleadoId    String
+  tipo          String?
+  fechaInicio   DateTime?
+  fechaFin      DateTime?
+  dias          Int?
+  periodo       String?
+  observaciones String?
+  createdAt     DateTime    @default(now())
+  empleado      EmpleadoGrh @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+
+  @@index([empleadoId])
+  @@index([tenantId])
+  @@map("licencias_grh")
+  @@ignore
+}
+
+model Localidad {
+  id        String   @id
+  tenantId  String
+  nombre    String
+  codigo    String?
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, nombre])
+  @@map("localidades")
+  @@ignore
+}
+
+model MotivoAusencia {
+  id        String        @id
+  tenantId  String
+  codigo    String
+  nombre    String
+  diasMax   Int?
+  conGoce   Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  ausencias AusenciaGrh[]
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, codigo])
+  @@map("motivos_ausencia")
+  @@ignore
+}
+
+model SectorGrh {
+  id        String        @id
+  tenantId  String
+  codigo    String
+  nombre    String
+  abrev     String?
+  createdAt DateTime      @default(now())
+  empleados EmpleadoGrh[]
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, codigo])
+  @@map("sectores_grh")
+  @@ignore
 }

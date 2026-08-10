@@ -53,31 +53,73 @@ El estado de migraciones sí requiere `DIRECT_URL` accesible.
 ## 3. Migraciones: gate obligatorio
 
 No ejecutar `prisma db push`, `migrate reset` ni SQL copiado manualmente en
-producción. Este checkout todavía requiere comparar el esquema Prisma y las
-migraciones SQL gobernadas con la base real antes de aplicar cambios.
+producción. S14C incorpora una historia Prisma gobernada y reproducible en Git:
+
+- `prisma/migrations/20260809220336_baseline/migration.sql` es el baseline
+  aditivo revisable;
+- `prisma/migrations/baseline-manifest.json` fija schema, SQL, lock, Prisma
+  `5.22.0`, engine y toolchain exactos;
+- `prisma/migrations/migration_lock.toml` fija PostgreSQL como provider;
+- raíz y backend fijan `prisma` y `@prisma/client` en `5.22.0`, sin rangos.
+
+El chequeo del manifest puede terminar en verde localmente; el gate offline
+además exige los dos pins derivados exactos. Ninguna verificación conecta a Neon
+ni autoriza DDL:
+
+```powershell
+$manifest = Get-Content prisma/migrations/baseline-manifest.json -Raw | ConvertFrom-Json
+$env:PRISMA_BASELINE_ID = $manifest.baselineId
+$env:PRISMA_MIGRATION_SET_ID = $manifest.migrationSetId
+npm.cmd run db:baseline:manifest:check
+npm.cmd run db:baseline:status
+```
+
+El schema también preserva 13 tablas GRH observadas en Preview mediante modelos
+mapeados con `@@ignore`: 5 contienen datos sensibles y 8 son catálogos o
+referencias. `@@ignore` las excluye de ambos Prisma Client, pero **no** impide que
+Migrate las materialice o preserve y **no** es un control de seguridad de base.
+El rol runtime/owner o SQL crudo todavía podría alcanzarlas según sus privilegios;
+antes de habilitar lecturas se requiere un rol DB de mínimo privilegio y ACL
+verificada.
+
+El replay externo S14C ejercitó dos hijos Neon descartables creados en un LSN de
+Preview, sin escribir en Preview ni Production. En A, una DB vacía aceptó
+`prisma migrate deploy`, terminó sin drift y materializó las 25 tablas, incluidas
+las 13 ignoradas. En B3, una copia existente aceptó únicamente
+`prisma migrate resolve --applied 20260809220336_baseline`; status y diff quedaron
+en cero y el catálogo de negocio no cambió, salvo la historia
+`_prisma_migrations`. Esto es un ensayo child-at-LSN: no es snapshot ni
+backup/restore gobernado. S14C conserva un receipt externo saneado, pero no es un
+receipt gobernado de release ni una atestación institucional.
+
+La identidad técnica del proyecto Neon observado sigue mostrando el nombre
+`puntolimpio-staging-neon`, cuya propiedad/alcance institucional no está
+resuelta para MuniControl Junín. Esa ambigüedad bloquea cualquier DDL en las
+ramas estables aunque el replay descartable y el gate offline pasen.
 
 - `migrations/001_data_intelligence.sql` contiene tablas analíticas legacy sin
   `tenant_id`; sólo es admisible en un deployment dedicado y vinculado mediante
   `LEGACY_ANALYTICS_TENANT_ID`.
 - `migrations/002_grh_artifacts.sql` crea la materialización GRH privada y
   tenant-bound.
-- Una base existente debe auditar drift y datos antes de establecer un baseline.
-- Una base nueva necesita una historia Prisma revisada; no se debe improvisar
-  durante el deploy.
+- Una base existente debe auditar drift y datos antes de marcar el baseline como
+  aplicado.
+- Una base nueva sólo puede usar la historia Prisma versionada y revisada; no se
+  debe improvisar durante el deploy.
 - El contrato offline, receipt conectado, freeze de DDL, restore y rollback están
   definidos en [`docs/PRISMA_BASELINE_Y_DRIFT.md`](docs/PRISMA_BASELINE_Y_DRIFT.md).
 
-Después de preparar la revisión y disponer de backup/restauración probada sólo
-pueden ejecutarse los controles no mutantes:
+En una base estable sólo pueden ejecutarse controles no mutantes mientras no
+exista autorización institucional:
 
 ```bash
 npm --prefix backend run db:baseline:status
 npm --prefix backend run db:status
 ```
 
-`db:baseline:status` permanece rojo en este checkout hasta construir el baseline
-desde una copia restaurada de la DB real. No crear un manifest para silenciarlo.
-Aunque el baseline y un receipt sintácticamente válido existan, `db:migrate`
+`db:baseline:status` exige los pins exactos del manifest; su salida verde acredita
+integridad local, no estado de una DB. Aunque el baseline y un receipt
+sintácticamente válido existan, `db:migrate`
 permanece bloqueado con `RELEASE_ATTESTATION_NOT_GOVERNED`. El receipt sólo es
 evidencia estructural de preflight; no autoriza DDL. La habilitación futura exige
 una atestación institucional firmada por CI/KMS/OIDC, identidad de workload,
@@ -134,3 +176,16 @@ En preview, antes de producción:
 
 Registrar URL, deployment ID, fecha y resultado. Una suite local no reemplaza
 esta certificación.
+
+## 7. Corte público comprobado
+
+El hotfix `e74339c` reemplaza por una respuesta `404` segura cualquier intento de
+descargar `/prisma` o archivos bajo `/prisma/**`; el cuerpo ya no expone el schema
+y la respuesta usa `no-store` y `nosniff`. Después de desplegar ese commit,
+`https://municipio-junin.vercel.app` pasó el Release Truth Gate actual **12/12**.
+
+Ese 12/12 verifica la superficie HTTP pública del deployment observado. No
+acredita propiedad del proyecto Neon, aplicación del baseline en Preview o
+Production, backup, restore, datos GRH remotos, cuentas ni atestación de DDL. La
+release publicada `v1.10.0` conserva su evidencia histórica **11/11**; S14C no
+reescribe ese registro ni crea por sí mismo una versión nueva.

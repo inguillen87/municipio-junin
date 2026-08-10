@@ -1,8 +1,8 @@
 # Procedimiento de baseline y drift Prisma
 
-**Versi\u00f3n:** 1.2.0
+**Versi\u00f3n:** 1.3.0
 **Fecha de corte:** 9 de agosto de 2026
-**Estado:** WP0-L v2 ejecutado conectado sobre restore descartable; historia Prisma `absent`, descubrimiento no aprobable; baseline real y atestación de release pendientes
+**Estado:** S14C `Unreleased`; baseline v2 reproducible y replay aprobado en branches hijos efímeros; cero escrituras Preview/Production; DDL estable bloqueado por target y atestación no gobernados
 **Alcance:** esquema core Prisma y futura migraci\u00f3n RBAC/ABAC
 
 ## 1. Decisi\u00f3n operativa
@@ -33,7 +33,15 @@ la base siga sin drift ni autoriza DDL. Por eso `--release` termina siempre con
 - `prisma/schema.prisma` valida est\u00e1ticamente.
 - `prisma/proposals/rbac-abac-v1.prisma` es una propuesta aislada; no es una
   migraci\u00f3n aplicable.
-- No existe todav\u00eda `prisma/migrations/` ni `migration_lock.toml`.
+- Existe `prisma/migrations/20260809220336_baseline/migration.sql`,
+  `migration_lock.toml` y `baseline-manifest.json` contract v2.
+- Prisma y `@prisma/client` están pineados exactamente a `5.22.0` en root y
+  backend. El baseline normalizado tiene 20.134 bytes y 82 sentencias permitidas:
+  3 enums, 25 tablas, 25 índices y 29 claves foráneas; cero DML, `DROP` o
+  `_prisma_migrations`.
+- El schema preserva 13 tablas observadas en Preview —5 sensibles y 8 de
+  referencia— con `@@map` + `@@ignore`. Ambos clientes omiten sus delegates y
+  Migrate las preserva. Esto no sustituye seguridad DB ni bloquea `$queryRaw`.
 - Los SQL de `database/migrations/` y `migrations/` no forman una historia Prisma
   compatible. Hay nombres de tablas que colisionan con estructuras diferentes.
 - S14B inspeccionó una copia restaurada descartable mediante el recolector
@@ -43,11 +51,12 @@ la base siga sin drift ni autoriza DDL. Por eso `--release` termina siempre con
 - El contrato v2 y sus consultas allowlisted conservan cobertura por adapters
   sintéticos y suman evidencia dinámica contra PostgreSQL restaurado. Esa
   ejecución no crea una historia Prisma, no evalúa drift y no autoriza release.
-- `npm.cmd run db:baseline:status` debe finalizar con c\u00f3digo 1 y
-  `MIGRATIONS_MISSING`. Ese rojo es intencional.
+- `npm.cmd run db:baseline:manifest:check` debe confirmar coincidencia byte a
+  byte. `db:baseline:status` termina verde sólo con los pins exactos del manifest;
+  `--release` permanece rojo con `RELEASE_ATTESTATION_NOT_GOVERNED`.
 
-No se debe volver verde el gate generando un baseline desde el schema supuesto.
-El baseline nace del estado real restaurado y conciliado.
+El verde offline acredita únicamente integridad reproducible del checkout. No
+autoriza marcar el baseline en una DB estable ni ejecutar DDL.
 
 ## 3. Fronteras que el gate verifica
 
@@ -73,13 +82,27 @@ variable ambiental que pueda convertir el receipt en autorización.
 `migrationSetId` identifica el schema y la lista completa de migraciones de un
 release. Agregar RBAC cambia el segundo, nunca el primero.
 
+La política `prisma-baseline-additive-v1` analiza SQL con comentarios, strings y
+dollar quotes; sólo admite `CREATE TYPE ... AS ENUM`, `CREATE TABLE`,
+`CREATE [UNIQUE] INDEX` y `ALTER TABLE ... ADD ... FOREIGN KEY`. Canonicaliza LF,
+rechaza BOM/CR/NUL, exige `.gitattributes` para `prisma/migrations/**` y liga el
+manifest a los lockfiles root/backend, Prisma Engine, migration lock, schema y
+cada SQL. Una mutación de cualquiera de esas entradas cambia el set o bloquea el
+gate.
+
 ## 4. Comandos seguros y comandos prohibidos
 
 Inspecci\u00f3n offline actual:
 
 ```powershell
+$env:PRISMA_BASELINE_ID='prisma-baseline-7c5f5aac9da1e72c6d2750110fba03944bdde6a6cb285f0d945ff84ce7be9fbb'
+$env:PRISMA_MIGRATION_SET_ID='prisma-set-075152dc94eadb7865ed91e952e17ef20cf0e21c5e91b5720277eb08c7b466be'
+npm.cmd run db:baseline:manifest:check
 npm.cmd run db:baseline:status
 ```
+
+Esos IDs no son secretos ni aprobaciones: son pins derivados del checkout. No se
+deben copiar desde una variable remota sin compararlos con el manifest versionado.
 
 Validaci\u00f3n est\u00e1tica, usando URLs locales ficticias sin conexi\u00f3n:
 
@@ -203,6 +226,13 @@ repetirse; tampoco pueden repetirse nombres de migraci\u00f3n. Una firma, defaul
 PK, UUID o fila incompatible degrada el estado a `inconsistent` y lo mantiene no
 aprobable; una relaci\u00f3n cuya firma no coincide ni siquiera se consulta como
 historia Prisma.
+Los campos `logs` de Prisma no se consultan ni se persisten: pueden contener
+detalle operativo sensible y no son la fuente de verdad del estado. Una fila
+ejecutada exige al menos un paso aplicado, `finished_at` v\u00e1lido y ausencia de
+rollback. La forma exacta que genera `migrate resolve --applied` tambi\u00e9n es
+`valid` cuando tiene cero pasos, `started_at` y `finished_at` normalizados e
+id\u00e9nticos, y `rolled_back_at` nulo; cualquier otra fila con cero pasos permanece
+`inconsistent`. En todos los casos `approvalEligible` contin\u00faa en `false`.
 La consulta de filas usa columnas tipadas, no una proyecci\u00f3n `to_jsonb`, y
 normaliza timestamps PostgreSQL equivalentes (por ejemplo `+00:00`) a ISO `Z`.
 Aplica `LIMIT 10001` para detectar overflow y admite como m\u00e1ximo 10.000 filas,
@@ -264,7 +294,7 @@ evidencia externa antes de cualquier uso institucional.
 El directorio `scripts/` ya est\u00e1 excluido del bundle Vercel; este flujo tampoco
 debe ejecutarse como Function o job de producci\u00f3n.
 
-### Corte conectado S14B — descubrimiento no aprobable
+### Corte conectado S14B — WP0-L v2 ejecutado conectado, descubrimiento no aprobable
 
 La reauditoría previa separó los targets DB de Preview y Production y registró
 `DB_CONFIG_ISOLATION=PASS`, `DB_CONFIG_SSLMODE_VERIFY_FULL=true` y
@@ -300,9 +330,44 @@ administrativa expuso una credencial owner; fue rotada y el valor anterior qued�
 invalidado, sin reproducir el secreto.
 
 La suite raíz cerró 619 pruebas —618 aprobadas, 0 fallidas y 1 smoke opt-in
-omitido— y backend 20/20. S14B sigue `Unreleased`: `v1.10.0` conserva su release
-público 11/11 y no existe baseline, migración, drift aprobado, cuenta, lifecycle,
-bump, tag, GitHub Release o `v1.11.0`.
+omitido— y backend 20/20. En aquel cierre `Unreleased`, `v1.10.0` conservó su
+release público 11/11 y no existían baseline, migración, drift aprobado, cuenta,
+lifecycle, bump, tag, GitHub Release o `v1.11.0`.
+
+### Corte S14C — replay autoritativo efímero, no release
+
+Neon no admite snapshots en el branch no-root Preview. El replay autorizado usó
+dos branches hijos efímeros secuenciales del parent Preview
+`br-proud-hat-achuevv2`, ambos fijados al LSN exacto `0/307FA88`. No se creó ni
+finalizó un snapshot, no se usó `finalize` y ningún target estable recibió DDL:
+
+1. **Caso A, DB vacía:** `prisma migrate deploy` aplicó el baseline; quedaron 25
+   tablas, incluidas las 13 `@@ignore`; `migrate status` y el diff semántico
+   cerraron en cero.
+2. **Caso B3, copia existente:** `prisma migrate resolve --applied
+   20260809220336_baseline` se ejecutó una vez. La historia generada por Prisma
+   con cero pasos aplicados fue `valid`; status y diff cerraron en cero. El
+   fingerprint corregido pre/post, excluyendo únicamente `_prisma_migrations`,
+   fue byte-idéntico: 449 filas, 140.715 bytes y SHA-256
+   `0388a4871483fdd37286a03ab1d7acd01f25ef0ecae309925dadf912fe589028`.
+
+Los intentos instrumentales B/B2 abortados no son evidencia de aceptación. El
+receipt saneado `s14c-baseline-disposable-replay-receipt.json` permanece externo
+y no versionado; su SHA-256 es
+`613db7889e4e23033927814fa5ee8e4a891e9a91772268e01b08645d3f4ae51b`.
+El cleanup confirmó sólo main + Preview, 2 endpoints y 0 snapshots. Preview y
+Production recibieron cero escrituras.
+
+Este replay acredita compatibilidad técnica de los dos caminos en copias
+efímeras. No acredita backup/restore operativo, target estable, dos revisores ni
+atestación de release. El proyecto Neon se presenta como
+`puntolimpio-staging-neon`; ownership y naming no están gobernados. Es un BLOCKER
+para DDL estable, cuentas y release. La suite raíz S14C cerró 635 —634 aprobadas,
+0 fallidas y 1 smoke opt-in omitido— y backend 20/20. S14C sigue `Unreleased`;
+`v1.10.0` conserva tag `4108ca0` y 11/11 histórico, mientras el hotfix
+post-release `e74339c` cerró Production 12/12.
+
+El camino institucional completo que aún debe ejecutarse es:
 
 1. Congelar commit, digest del schema, target l\u00f3gico y ventana.
 2. Crear backup privado y registrar identificador, RPO, tama\u00f1o y custodio.
@@ -352,34 +417,39 @@ correcto. Por eso se ejecuta despu\u00e9s de la comparaci\u00f3n, no antes.
 
 ## 6. Manifest offline
 
-El manifest can\u00f3nico vivir\u00e1 como
-`prisma/migrations/baseline-manifest.json` cuando WP0 termine. No existe todav\u00eda.
-Su contrato exacto es:
+El manifest can\u00f3nico existe en
+`prisma/migrations/baseline-manifest.json`. Su contrato v2 fija exactamente:
 
 ```json
 {
-  "contractVersion": 1,
+  "contractVersion": 2,
   "provider": "postgresql",
   "prismaMajor": 5,
-  "baselineId": "prisma-baseline-<sha256>",
+  "prismaVersion": "5.22.0",
+  "prismaEngineVersion": "5.22.0-44.605197351a3c8bdd595af2d2a9bc3025bca48ea2",
+  "prismaToolchainLockSha256": "a0a2225a57216845723112cfce1edfb6f348e725610557db9243cd638b94792b",
+  "migrationLockSha256": "d6bae7899f05da956e1070ba5703455503208ef79e161acb18c93bfe3c6cd236",
+  "baselinePolicyVersion": "prisma-baseline-additive-v1",
+  "baselineId": "prisma-baseline-7c5f5aac9da1e72c6d2750110fba03944bdde6a6cb285f0d945ff84ce7be9fbb",
   "baselineMigration": {
-    "directory": "YYYYMMDDHHMMSS_baseline",
-    "sha256": "<sha256-normalizado>"
+    "directory": "20260809220336_baseline",
+    "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
   },
-  "schemaSha256": "<sha256-normalizado>",
-  "migrationHistorySha256": "<sha256-can\u00f3nico>",
-  "migrationSetId": "prisma-set-<sha256>",
+  "schemaSha256": "1953c275cec5415a0508d77dcd433f65a7124bcc5c22c6ac7c52c61ccd9afb4d",
+  "migrationHistorySha256": "f42aa4107d44f4b9e8949187f099f0f1700bd100c346edfe900a0bfb4efb48ef",
+  "migrationSetId": "prisma-set-075152dc94eadb7865ed91e952e17ef20cf0e21c5e91b5720277eb08c7b466be",
   "migrations": [
     {
-      "directory": "YYYYMMDDHHMMSS_baseline",
-      "sha256": "<sha256-normalizado>"
+      "directory": "20260809220336_baseline",
+      "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
     }
   ]
 }
 ```
 
 No contiene `approved:true`, URLs de DB, nombres de servidor ni secretos. El
-script deriva ambos IDs y rechaza cualquier valor autoafirmado que no coincida.
+generador deriva todos los campos desde schema, migration lock, SQL y toolchain;
+`db:baseline:manifest:check` exige coincidencia byte a byte.
 
 ## 7. Receipt externo de preflight
 
@@ -391,6 +461,11 @@ status, diff y restore, y el pipeline recibe:
 - `PRISMA_TARGET_ID`;
 - `PRISMA_DRIFT_RECEIPT_PATH`;
 - `PRISMA_DRIFT_RECEIPT_SHA256`.
+
+El receipt S14C de replay no se presenta como este receipt formal: acredita los
+casos efímeros A/B3 y su cleanup, pero no contiene backup/restore institucional,
+doble revisión ni atestación de workload. Por eso no debe inyectarse en
+`PRISMA_DRIFT_RECEIPT_PATH` para promover un release.
 
 El receipt incluye IDs del baseline/set/target, herramienta y run, fingerprints
 del schema y `_prisma_migrations`, hashes de status/diff, referencias no secretas
@@ -429,6 +504,9 @@ sesiones o asignaciones.
 No se aprovisionan cuentas de demostraci\u00f3n o institucionales hasta probar:
 
 - baseline y drift conectados;
+- ownership/naming del proyecto DB y target aprobados;
+- rol runtime sin privilegios sobre las 13 tablas `@@ignore`, salvo lector
+  explícito tenant-bound y auditado;
 - tablas lifecycle, sesiones y credenciales de un solo uso;
 - expiraci\u00f3n y revocaci\u00f3n inmediata;
 - MFA para perfiles privilegiados;
@@ -448,7 +526,7 @@ secretos, no conecta a PostgreSQL y no crea identidades.
 Las pruebas de [`../tests/prisma-migration-gate.test.mjs`](../tests/prisma-migration-gate.test.mjs)
 cubren:
 
-- checkout actual bloqueado;
+- checkout actual reproducible offline y release bloqueado;
 - separaci\u00f3n baseline/set;
 - receipt sintético bien formado que sigue bloqueado por falta de atestación;
 - alteraci\u00f3n de SQL y archivos extra;
@@ -470,8 +548,17 @@ pretty, output exclusivo y estados `valid`, `absent`, `empty` e `inconsistent`.
 Son fixtures con adapter inyectado; por sí solos no certifican PostgreSQL,
 proveedor, DACL Windows, backup, restore ni drift reales. S14B añadió una
 observación conectada separada, pero su estado `absent`, sus flags externos en
-`false` y `approvalEligible:false` mantienen bloqueados baseline, drift y release.
+`false` y `approvalEligible:false` no constituyeron baseline, drift o release.
 
 Los fixtures prueban la lógica del gate; el artefacto S14B prueba únicamente la
 observación read-only realizada. Ninguno sustituye la atestación externa o la
 autorización institucional.
+
+`prisma-schema-ownership.test.mjs` fija los 13 modelos, su clasificación 5/8,
+ambos clientes sin delegates y la proyección completa de campos, tipos, defaults,
+índices, relaciones y backrelations. `prisma-baseline-sql.test.mjs` y
+`prisma-migration-gate.test.mjs` fijan el toolchain 5.22.0, manifest v2, LF,
+allowlist 82 = 3/25/25/29, regeneración byte-idéntica y bloqueo permanente de
+release. La suite raíz S14C cerró 635 —634 aprobadas, 0 fallidas y 1 opt-in
+omitido— y backend 20/20. Los replay A/B3 agregan evidencia externa efímera, no
+autorización estable.

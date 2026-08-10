@@ -10,10 +10,11 @@
 > Release público `v1.10.0` verificado; producto S13 en commit `d11fd39`. La
 > sesión privada positiva y S13 privado conservan validación local sobre el
 > snapshot aprobado.
-> S14B permanece `Unreleased`: Preview y Production usan branches DB distintos,
-> las conexiones remotas exigen `sslmode=verify-full`, el mapping Neon quedó
-> identificado y WP0 se ejecutó conectado. El resultado no es baseline,
-> migración, cuenta, lifecycle ni release `v1.11.0`.
+> S14C permanece `Unreleased`: el schema preserva 13 tablas existentes de
+> Preview —5 sensibles y 8 de referencia— sin delegates en ambos Prisma Client;
+> el baseline v2 Prisma 5.22 es reproducible y pasó dos casos autoritativos en
+> branches hijos efímeros. Preview y Production recibieron cero escrituras. No
+> habilita DDL estable, cuenta, lifecycle ni release `v1.11.0`.
 > `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`, un brief único
 > desde agregados del snapshot aprobado, con validación local. Separa la señal global cross-source de
 > la mensual, expone `temporalQuarantineRows`, aplica k=10 y excluye PII,
@@ -30,7 +31,8 @@
 > `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
 > no draft y no prerelease.
 >
-> El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
+> Para `v1.10.0`, el deployment Production
+> `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
 > alias `https://municipio-junin.vercel.app`, con `gitSource master/4108ca0`. El
 > gate productivo cerró 11/11 exit `0` con
 > `checkedAt 2026-08-09T16:33:56.200Z`. El browser público cerró 10/10 estados a
@@ -38,6 +40,11 @@
 > anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays,
 > requests externos y fallas de red. Los logs del corte registraron 0 errores y
 > 0 respuestas 500.
+>
+> El hotfix post-release `e74339c` reemplazó `/prisma/schema.prisma` por un 404
+> seguro, `no-store`, `nosniff` y sin marcadores del schema. Production cerró el
+> gate ampliado 12/12; el tag `v1.10.0` permanece en `4108ca0` con su 11/11
+> histórico.
 >
 > Focal raíz S13 135/135; QA adversarial 104/104 con 0 P1/P2; suite raíz final de
 > 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20.
@@ -581,11 +588,23 @@ El proceso escucha en `PORT` o, si no se define, en `3001`. Sin DB accesible,
 - `backendClient`: cliente independiente en `backend/generated/prisma`, usado por
   `backend/lib/prisma.js`.
 
+S14C representa además 13 tablas ya existentes de Preview con `@@map` +
+`@@ignore`: 5 sensibles y 8 de referencia. El contrato
+`prisma-schema-ownership-v1` fija `clientAccess:disabled`,
+`migratePreserved:true` y la proyección
+`588d171e79b7c7841a01b8850302dee2fdbe98a9923677cb68563ece31ddedf8`.
+Los dos clientes generados omiten esos models/delegates; Migrate conserva las
+tablas. `@@ignore` no crea una ACL: `$queryRaw` o un rol DB sobredimensionado
+todavía pueden leerlas. Antes de cuentas o datos GRH conectados, el rol runtime
+debe probar cero grants sobre las 13 tablas o un lector explícito, mínimo,
+tenant-bound y auditado.
+
 Comandos desde la raíz:
 
 ```powershell
 npm.cmd run db:validate
 npm.cmd run db:generate
+npm.cmd run db:baseline:manifest:check
 npm.cmd run db:baseline:status
 npm.cmd run db:migrate:status
 ```
@@ -618,10 +637,12 @@ al entorno revisado. Toda conexión remota debe declarar exactamente
 - El receipt prueba integridad y forma de evidencia de preflight; no autoriza DDL
   ni demuestra ausencia eterna de drift. Falta una atestación institucional
   firmada por CI/KMS/OIDC, con identidad de workload y protección anti-replay.
-- **Estado de este checkout:** no existe todavía una historia Prisma baseline
-  revisada. Ambos comandos se detienen en el gate y no llegan a ejecutar
-  `prisma migrate deploy`. Crear y revisar ese baseline es precondición, pero no
-  suficiente: la atestación institucional también debe implementarse y revisarse.
+- **Estado de este checkout:** existe el baseline v2
+  `20260809220336_baseline`, reproducible con Prisma exacto `5.22.0`. El modo
+  offline termina verde sólo con `PRISMA_BASELINE_ID` y
+  `PRISMA_MIGRATION_SET_ID` iguales al manifest; esto no habilita deploy. El modo
+  `--release` continúa en código 1 con `RELEASE_ATTESTATION_NOT_GOVERNED` antes
+  de `prisma migrate deploy`.
 - Los archivos de `migrations/*.sql` no forman automáticamente una historia
   `prisma/migrations`; no afirmar que el comando Prisma aplicó esos SQL.
 - Antes de migrar: identificar base y branch, revisar drift, revisar SQL, probar
@@ -630,6 +651,20 @@ al entorno revisado. Toda conexión remota debe declarar exactamente
   una base municipal compartida o productiva.
 - El procedimiento completo, contrato del manifest, receipt, restore y rollback
   está en [`PRISMA_BASELINE_Y_DRIFT.md`](PRISMA_BASELINE_Y_DRIFT.md).
+
+El manifest S14C contract v2 fija:
+
+- `baselineId`:
+  `prisma-baseline-7c5f5aac9da1e72c6d2750110fba03944bdde6a6cb285f0d945ff84ce7be9fbb`;
+- `migrationSetId`:
+  `prisma-set-075152dc94eadb7865ed91e952e17ef20cf0e21c5e91b5720277eb08c7b466be`;
+- schema SHA-256:
+  `1953c275cec5415a0508d77dcd433f65a7124bcc5c22c6ac7c52c61ccd9afb4d`;
+- baseline SQL SHA-256:
+  `a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd`;
+- política `prisma-baseline-additive-v1`: 82 sentencias —3 `CREATE TYPE`,
+  25 `CREATE TABLE`, 25 `CREATE INDEX` y 29 FK—, sin DML, `DROP` ni
+  `_prisma_migrations`.
 
 WP0-L agrega `npm.cmd run db:baseline:inspect`. Su modo `--check-config` valida
 localmente argumentos, URL, target, output y estado Git sin conectarse. El modo
@@ -653,7 +688,7 @@ usa `strict`; todos mantienen `approvalEligible:false`. El catálogo se ordena
 canónicamente y persiste `definitionSha256`, no SQL crudo. Aplica límites
 fail-closed, sin truncado, de 20.000 filas, 1 KiB por campo distinto de la
 definición, 256 KiB por definición y 4 MiB acumulados. El contrato detallado y
-sus límites adicionales están en el runbook Prisma `1.2.0`.
+sus límites adicionales están en el runbook Prisma `1.3.0`.
 
 La auditoría runtime de S14A usó fingerprints no reversibles y no expuso URLs ni
 credenciales. En aquel corte Preview y Production resolvieron al mismo destino
@@ -697,9 +732,48 @@ main y Preview `ready`, el directorio temporal ausente y el artefacto externo
 retenido fuera del checkout.
 
 S14B cerró 619 pruebas raíz —618 aprobadas, 0 fallidas y 1 smoke opt-in omitido—
-y backend 20/20. Sigue `Unreleased`: `v1.10.0` conserva su evidencia pública
-histórica 11/11 y no existe bump, tag, GitHub Release `v1.11.0`, baseline,
-migración, drift aprobado, cuenta o lifecycle persistido.
+y backend 20/20. En aquel cierre `Unreleased`, `v1.10.0` conservó su evidencia
+pública histórica 11/11 y no existían bump, tag, GitHub Release `v1.11.0`,
+baseline, migración, drift aprobado, cuenta o lifecycle persistido.
+
+#### Evidencia S14C — ownership, baseline y replay efímero
+
+S14C construyó `20260809220336_baseline` y su manifest v2. La reproducción
+Prisma 5.22 emitió exactamente el mismo SQL: 20.134 bytes y 82 sentencias
+aditivas —3 enums, 25 tablas, 25 índices y 29 claves foráneas—, sin DML, `DROP`
+o `_prisma_migrations`.
+
+El replay empleó dos casos autoritativos secuenciales sobre branches hijos
+efímeros del Preview `br-proud-hat-achuevv2`, fijados al LSN `0/307FA88`. No usó
+snapshot, `finalize` ni target estable:
+
+1. **A — deploy vacío:** `prisma migrate deploy` creó 25 tablas; las 13 tablas
+   `@@ignore` quedaron presentes; `migrate status` y el diff semántico cerraron
+   en cero.
+2. **B3 — resolve sobre copia existente:** `prisma migrate resolve --applied
+   20260809220336_baseline` se ejecutó una sola vez. La fila canónica generada
+   por Prisma con cero pasos quedó `valid`; status y diff cerraron en cero. El
+   fingerprint correcto pre/post, excluyendo sólo `_prisma_migrations`, fue
+   byte-idéntico: 449 filas, 140.715 bytes y SHA-256
+   `0388a4871483fdd37286a03ab1d7acd01f25ef0ecae309925dadf912fe589028`.
+
+B y B2 fueron intentos instrumentales abortados y no son evidencia de
+aceptación. El receipt saneado externo
+`s14c-baseline-disposable-replay-receipt.json`, fuera del checkout y no
+versionado, tiene SHA-256
+`613db7889e4e23033927814fa5ee8e4a891e9a91772268e01b08645d3f4ae51b`.
+El cleanup confirmó main + Preview únicamente, 2 endpoints y 0 snapshots.
+Preview y Production recibieron cero escrituras.
+
+Este replay prueba los dos caminos técnicos sobre copias efímeras; no es
+snapshot/restore, backup operativo, aplicación estable ni receipt institucional
+de release. Neon muestra el proyecto como `puntolimpio-staging-neon`; ownership
+y naming no están gobernados. Ese BLOCKER impide DDL estable, cuentas y release,
+y `RELEASE_ATTESTATION_NOT_GOVERNED` permanece obligatorio. La validación S14C
+cerró 635 pruebas raíz —634 aprobadas, 0 fallidas y 1 smoke opt-in omitido— y
+backend 20/20. Sigue `Unreleased`, sin bump, tag, GitHub Release o `v1.11.0`.
+`v1.10.0` conserva `4108ca0` y su 11/11 histórico; el hotfix post-release
+`e74339c` cerró Production 12/12.
 
 ### 7.2 Aprovisionamiento retirado
 
@@ -956,6 +1030,7 @@ inesperados o una suite parcial no satisfacen el gate.
 | login institucional | `node --test tests/login-institutional.e2e.mjs tests/public-truth-boundaries.test.mjs tests/access-policy.test.mjs` |
 | inicio seguro por rol | `node --test tests/access-policy.test.mjs tests/login-institutional.e2e.mjs tests/navigation-layout.e2e.mjs tests/role-workspace.e2e.mjs` |
 | WP0-L read-only | `node --test tests/prisma-baseline-observation.test.mjs tests/database-url-policy.test.mjs tests/prisma-migration-gate.test.mjs` |
+| ownership + baseline S14C | `node --test tests/prisma-schema-ownership.test.mjs tests/prisma-baseline-sql.test.mjs tests/prisma-migration-gate.test.mjs tests/operations-documentation.test.mjs` y `npm.cmd run db:baseline:manifest:check` |
 | IAM-MAP-01 | `node --test tests/account-lifecycle-prisma-mapper.test.mjs tests/account-lifecycle-foundation.test.mjs tests/rbac-lifecycle-proposal.test.mjs` |
 | shell institucional UX-E2A | `node --test tests/institutional-shell.test.mjs tests/navigation-layout.e2e.mjs` |
 | bundle inmutable O2A.1 | `node --test tests/grh-pipeline-foundation.test.mjs tests/grh-pipeline-replay.test.mjs` |
@@ -985,6 +1060,11 @@ Evidencia S14B local/conectada: suite raíz 619 —618 aprobadas, 0 fallidas y 1
 smoke opt-in omitido— y backend 20/20. La observación WP0 conectada sigue siendo
 `discovery_non_approvable`; estos conteos no recertifican `v1.10.0` ni habilitan
 baseline, migración, cuenta o release.
+
+Evidencia S14C local/efímera: suite raíz 635 —634 aprobadas, 0 fallidas y 1 smoke
+opt-in omitido— y backend 20/20. Los dos casos autoritativos de replay pasaron,
+pero no escribieron Preview o Production ni resolvieron el BLOCKER de ownership
+y naming de `puntolimpio-staging-neon`; no habilitan DDL, cuenta o release.
 
 ## 13. Release, preview, producción y rollback
 
@@ -1028,10 +1108,13 @@ digest exacto. También exige que el rewrite sea exactamente `/inicio` →
 `/inicio.html` en `vercel.json`. Exige
 HTTPS exacto y DNS público estable, rechaza proxies ambientales, prohíbe
 redirecciones de API y requiere un header contractual distinto por endpoint.
-El contrato actual enumera seis APIs y produce 11 checks totales —cinco
-documentos más seis fronteras API— cuando se ejecuta contra un candidato
-desplegado. Para `v1.10.0` la ejecución productiva cerró 11/11 exit `0` con
-`checkedAt 2026-08-09T16:33:56.200Z`.
+El contrato actual enumera seis APIs y produce 12 checks totales —cinco
+documentos, seis fronteras API y `/prisma/schema.prisma`— cuando se ejecuta
+contra un candidato desplegado. La ruta Prisma debe responder 404 sin redirect,
+sin marcadores del schema y con `no-store` + `nosniff`. Para `v1.10.0`, antes de
+incorporar este probe, la ejecución productiva histórica cerró 11/11 exit `0`
+con `checkedAt 2026-08-09T16:33:56.200Z`; el hotfix post-release `e74339c` cerró
+el gate ampliado 12/12.
 Limita tiempo/cuerpo y devuelve un receipt JSON saneado. Código `1` significa
 que el candidato es legacy o incompleto; código `2`, que la configuración o el
 propio contrato local son inválidos. Ninguno de los dos puede promoverse.
@@ -1485,10 +1568,12 @@ Diagnóstico recomendado:
 | Techo de autorización `recurso:acción` | Operativo local | 26 recursos, 12 acciones, 46 permisos y 79 firmas exactas: 37 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
+| Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |
+| Baseline/replay S14C | Reproducible y aprobado en branches efímeros | manifest v2, Prisma 5.22, 82 sentencias; A vacío y B3 resolve con status/diff cero; catálogo B3 byte-idéntico; cero escrituras Preview/Production; DDL estable bloqueado por ownership/naming del proyecto Neon |
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
 | Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
-| Preview/producción Vercel | Superficie pública `v1.10.0` desplegada; sesiones positivas, S13 privado y datos privados no certificados | commit/tag `4108ca0`, product commit `d11fd39`, deployment `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY` en `Production`, gate 11/11 exit `0`, browser público 10/10 a 390/1440 px y logs 0 errores/0 respuestas 500; faltan smokes positivos con sesión, DB y datos remotos |
+| Preview/producción Vercel | Release público histórico `v1.10.0` desplegado; sesiones positivas, S13 privado y datos privados no certificados | tag `4108ca0`, deployment release `READY` y gate histórico 11/11; hotfix post-release `e74339c` bloquea el schema público y cerró 12/12; faltan smokes positivos con sesión, DB y datos remotos |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |
 | Correo y cron | Retirado | responden `410` y no están programados; falta auditoría tenant-bound e idempotencia |
 | WhatsApp | Condicionado | requiere `PUBLIC_APP_URL` HTTPS aprobado, proveedor, secretos, plantillas y E2E externo |
@@ -1563,9 +1648,10 @@ Gates documentales vigentes:
   `tests/operations-documentation.test.mjs` escanea referencias estáticas
   `process.env.*` del runtime y agrega una lista explícita sólo cuando la lectura
   dinámica esté gobernada; cualquier diferencia bloquea el release.
-- La migración continúa bloqueada hasta disponer de baseline revisado, drift,
-  backup restaurado y atestación institucional CI/KMS/OIDC. Un receipt de
-  preflight no autoriza el release.
+- La migración continúa bloqueada aunque el baseline S14C esté revisado y
+  reproducido: faltan ownership/naming gobernados del target, drift conectado,
+  backup restaurado y atestación institucional CI/KMS/OIDC. Un receipt de replay
+  o preflight no autoriza el release.
 
 ### Obligación por feature
 

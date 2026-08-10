@@ -12,6 +12,26 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **S14C — ownership del schema y baseline Prisma gobernado (`Unreleased`):**
+  el schema activo preserva las 13 tablas ya existentes observadas en Preview
+  mediante modelos `@@map` + `@@ignore`: 5 sensibles y 8 de referencia. El
+  contrato `prisma-schema-ownership-v1` fija `clientAccess:disabled`,
+  `migratePreserved:true` y la proyección exacta
+  `588d171e79b7c7841a01b8850302dee2fdbe98a9923677cb68563ece31ddedf8`.
+- Se incorporó el baseline `20260809220336_baseline` y su manifest v2,
+  reproducibles con Prisma `5.22.0`. La política
+  `prisma-baseline-additive-v1` admite exactamente 82 sentencias: 3 enums, 25
+  tablas, 25 índices y 29 claves foráneas; no contiene DML, `DROP` ni
+  `_prisma_migrations`.
+- Dos casos autoritativos se ejecutaron sobre branches hijos efímeros y
+  secuenciales de Preview `br-proud-hat-achuevv2`, fijados al LSN exacto
+  `0/307FA88`, sin snapshot, `finalize` ni target estable. El caso A aplicó el
+  baseline sobre una DB vacía y cerró con 25 tablas, las 13 ignoradas presentes,
+  status consistente y diff semántico cero. El caso B3 ejecutó `resolve` una sola
+  vez sobre una copia de la DB existente; la historia de cero
+  pasos quedó `valid`, status y diff cerraron en cero y el catálogo pre/post fue
+  byte-idéntico: 449 filas, 140.715 bytes y SHA-256
+  `0388a4871483fdd37286a03ab1d7acd01f25ef0ecae309925dadf912fe589028`.
 - **S14B — aislamiento DB y observación WP0 conectada (`Unreleased`):**
   Preview y Production quedaron mapeados a branches DB distintos y las cuatro
   conexiones remotas de runtime/migración exigen `sslmode=verify-full`. El
@@ -35,6 +55,15 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Seguridad
 
+- `@@ignore` elimina los 13 delegates de ambos Prisma Client, pero no constituye
+  seguridad de base: `$queryRaw` o una credencial DB sobredimensionada todavía
+  podrían acceder esas relaciones. Antes de entregar una cuenta, el rol runtime
+  deberá acreditar cero privilegios sobre las 13 tablas o un lector explícito,
+  mínimo, tenant-bound y auditado.
+- Se detectó que `/prisma/schema.prisma` exponía metadatos del schema en la
+  superficie pública. `1d8dfcd` cambió el estado HTTP pero conservó el body y no
+  se aceptó como corrección. El hotfix `e74339c` reemplazó el body por el 404
+  seguro, `no-store` y `nosniff`; Production cerró el gate ampliado 12/12.
 - Como antecedente, S14A había registrado `DB_CONFIG_ISOLATION=FAIL`,
   `DB_CONFIG_SSLMODE_VERIFY_FULL=false` y `NEON_MAPPING=UNKNOWN`; esos valores
   describen aquel NO-GO y no el estado actual.
@@ -50,6 +79,28 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Estado verificable
 
+- El baseline v2 fija `baselineId`
+  `prisma-baseline-7c5f5aac9da1e72c6d2750110fba03944bdde6a6cb285f0d945ff84ce7be9fbb`,
+  `migrationSetId`
+  `prisma-set-075152dc94eadb7865ed91e952e17ef20cf0e21c5e91b5720277eb08c7b466be`,
+  schema SHA-256
+  `1953c275cec5415a0508d77dcd433f65a7124bcc5c22c6ac7c52c61ccd9afb4d`
+  y SQL SHA-256
+  `a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd`.
+- El receipt saneado externo `s14c-baseline-disposable-replay-receipt.json`, no
+  versionado, tiene SHA-256
+  `613db7889e4e23033927814fa5ee8e4a891e9a91772268e01b08645d3f4ae51b`.
+  El cleanup confirmó únicamente main + Preview, 2 endpoints y 0 snapshots.
+  Los intentos instrumentales B/B2 abortados no son evidencia de aceptación.
+- Preview y Production recibieron cero escrituras. El proyecto Neon observado
+  expone el nombre `puntolimpio-staging-neon`; su ownership y naming no están
+  gobernados. Este BLOCKER mantiene cerrados DDL estable, release de migraciones
+  y cuentas, aun con el replay aprobado. `--release` continúa fallando con
+  `RELEASE_ATTESTATION_NOT_GOVERNED`.
+- La validación funcional S14C cerró 635 pruebas raíz: 634 aprobadas, 0 fallidas
+  y 1 smoke opt-in omitido; backend cerró 20/20. Estos conteos pertenecen al
+  incremento `Unreleased` y no reemplazan la evidencia histórica 591/590 de
+  `v1.10.0`.
 - WP0 se ejecutó conectado desde el commit
   `38b25e80e8413cc8688f393de2930e77098eb3f4`. El artefacto externo
   `wp0-observation-48054484dbcd80ffbaa46a197a97ccfb3a8a1a97223e868dc1e755d010d8ada4`
@@ -66,15 +117,18 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
   618 aprobadas, 0 fallidas y 1 smoke opt-in omitido; backend cerró 20/20. Estos
   conteos pertenecen al incremento `Unreleased` y no reemplazan la evidencia
   histórica 591/590 de `v1.10.0`.
-- S14B no modifica ni recertifica el release público `v1.10.0`: se conserva su
-  evidencia vigente de 11/11 dentro del alcance público ya registrado. El
-  incremento permanece `Unreleased`, sin bump de paquete, tag, `v1.11.0` ni
-  GitHub Release.
+- S14C no modifica ni recertifica el release público `v1.10.0`: su tag permanece
+  en `4108ca0` con la evidencia histórica 11/11. `e74339c` es un hotfix
+  post-release con gate productivo 12/12; no mueve aquel tag. El incremento
+  permanece `Unreleased`, sin bump de paquete, tag, `v1.11.0` ni GitHub Release.
 
 ### Pendiente
 
-- Construir y revisar el baseline real desde el estado observado, evaluar drift y
-  producir el receipt y la atestación institucional independientes antes de DDL.
+- Gobernar la propiedad y el nombre del proyecto Neon y producir un receipt de
+  release con backup/restore, revisores independientes y atestación institucional
+  CI/KMS/OIDC antes de cualquier DDL sobre Preview o Production.
+- Restringir el rol runtime sobre las 13 tablas externas antes de conectar una
+  identidad o un lector GRH gobernado.
 - Diseñar, migrar y probar la persistencia IAM antes de crear identidades.
 - Implementar y probar el lifecycle gobernado antes de entregar cuentas por rol.
 

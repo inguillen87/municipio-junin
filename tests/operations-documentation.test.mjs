@@ -447,7 +447,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(backendManifest.version, '1.0.0');
   assert.match(
     read('docs/PRISMA_BASELINE_Y_DRIFT.md'),
-    /\*\*Vers(?:ión|i\\u00f3n):\*\* 1\.2\.0/
+    /\*\*Vers(?:ión|i\\u00f3n):\*\* 1\.3\.0/
   );
 });
 
@@ -485,7 +485,7 @@ test('S14B records isolated DB targets and connected WP0 discovery without relea
   }
 
   const runbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
-  assert.match(runbook, /\*\*Versi\\u00f3n:\*\* 1\.2\.0/);
+  assert.match(runbook, /\*\*Versi\\u00f3n:\*\* 1\.3\.0/);
   for (const state of ['absent', 'empty', 'inconsistent', 'valid']) {
     assert.match(runbook, new RegExp(`\\b${state}\\b`));
   }
@@ -586,6 +586,33 @@ test('S14B records isolated DB targets and connected WP0 discovery without relea
   assert.equal(rootLock.packages[''].version, '1.10.0');
   assert.equal(backendManifest.version, '1.0.0');
   assert.doesNotMatch(read('CHANGELOG.md'), /^## \[1\.11\.0\]/m);
+
+  const replayReceiptSha = '613db7889e4e23033927814fa5ee8e4a891e9a91772268e01b08645d3f4ae51b';
+  const catalogFingerprintSha = '0388a4871483fdd37286a03ab1d7acd01f25ef0ecae309925dadf912fe589028';
+  for (const relativePath of closurePaths) {
+    const source = read(relativePath);
+    assert.match(source, /S14C/);
+    assert.match(source, /13\s+tablas[\s\S]{0,100}5 sensibles[\s\S]{0,80}8 (?:de )?referencia/i);
+    assert.match(source, /@@ignore/);
+    assert.match(source, /\$queryRaw/);
+    assert.match(source, /br-proud-hat-achuevv2/);
+    assert.match(source, /0\/307FA88/);
+    assert.match(source, /(?:caso )?A[\s\S]{0,180}(?:vac[ií]a|vac[ií]o)/i);
+    assert.match(source, /B3[\s\S]{0,220}(?:resolve|resolvi[oó])/i);
+    assert.match(source, /449 filas[\s\S]{0,80}140\.715\s+bytes/i);
+    assert.match(source, new RegExp(catalogFingerprintSha));
+    assert.match(source, /s14c-baseline-disposable-replay-receipt\.json/);
+    assert.match(source, new RegExp(replayReceiptSha));
+    assert.match(source, /main \+ Preview[\s\S]{0,80}2 endpoints[\s\S]{0,80}0 snapshots/i);
+    assert.match(source, /Preview y\s+Production[\s\S]{0,80}cero\s+escrituras/i);
+    assert.match(source, /puntolimpio-staging-neon/);
+    assert.match(source, /ownership[\s\S]{0,80}naming[\s\S]{0,120}(?:no\s+est[aá]n\s+gobernados|bloquea)/i);
+    assert.match(source, /RELEASE_ATTESTATION_NOT_GOVERNED/);
+    assert.match(source, /635 pruebas[\s\S]{0,100}634 aprobadas[\s\S]{0,100}1\s+(?:smoke\s+)?opt-in\s+omitido[\s\S]{0,100}backend[\s\S]{0,30}20\/20/i);
+    assert.match(source, /e74339c[\s\S]{0,160}12\/12/i);
+    assert.match(source, /v1\.10\.0[\s\S]{0,200}4108ca0[\s\S]{0,180}11\/11|v1\.10\.0[\s\S]{0,200}11\/11[\s\S]{0,180}4108ca0/i);
+    assert.match(source, /Unreleased/);
+  }
 
   const roadmap = read('docs/ENTERPRISE_PRODUCT_ROADMAP.md');
   assert.match(
@@ -745,9 +772,10 @@ test('release 1.10.0 preserves the exact public 1.9.0 and 1.8.1 evidence', () =>
   }
 
   const prismaRunbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
-  assert.match(prismaRunbook, /\*\*Versi\\u00f3n:\*\* 1\.2\.0/);
+  assert.match(prismaRunbook, /\*\*Versi\\u00f3n:\*\* 1\.3\.0/);
   assert.match(prismaRunbook, /WP0-L v2 ejecutado conectado/);
-  assert.match(prismaRunbook, /historia Prisma `absent`[\s\S]{0,100}baseline real[\s\S]{0,100}pendiente/i);
+  assert.match(prismaRunbook, /Corte conectado S14B[\s\S]{0,2400}`_prisma_migrations` `absent`/i);
+  assert.match(prismaRunbook, /S14C[\s\S]{0,180}baseline v2 reproducible/i);
 });
 
 test('the public role tour is documented as visual-only and cannot impersonate authorization', () => {
@@ -848,17 +876,25 @@ test('runtime baselines are pinned and the current engineering environment passe
   assert.match(result.stdout, /"ok":true/);
 });
 
-test('Prisma release stays blocked until connected baseline and drift evidence exist', () => {
+test('Prisma baseline is reproducible offline while release stays blocked without governed attestation', () => {
+  const manifest = JSON.parse(read('prisma/migrations/baseline-manifest.json'));
   const result = spawnSync(process.execPath, ['scripts/assert-prisma-migrations.mjs', '--offline', '--json'], {
     cwd: root,
     encoding: 'utf8',
     windowsHide: true,
-    env: { ...process.env },
+    env: {
+      ...process.env,
+      PRISMA_BASELINE_ID: manifest.baselineId,
+      PRISMA_MIGRATION_SET_ID: manifest.migrationSetId,
+    },
   });
-  assert.equal(result.status, 1, 'the current checkout must not be migration-ready without prisma/migrations');
+  assert.equal(result.status, 0, result.stderr || result.stdout);
   const payload = JSON.parse(result.stdout);
-  assert.equal(payload.ok, false);
-  assert.equal(payload.errors.some(error => error.code === 'MIGRATIONS_MISSING'), true);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.migrationCount, 1);
+  assert.equal(payload.prismaVersion, '5.22.0');
+  assert.equal(payload.baselinePolicyVersion, 'prisma-baseline-additive-v1');
+  assert.equal(manifest.contractVersion, 2);
 
   const runbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
   assert.match(runbook, /integridad offline[\s\S]*evidencia conectada/i);

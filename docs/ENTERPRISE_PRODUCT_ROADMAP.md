@@ -7,10 +7,11 @@ Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 El corte actual es el release público verificado `v1.10.0`. El producto S13 está
 en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
 sobre el snapshot aprobado.
-S14B es un incremento técnico `Unreleased`: separó los targets DB de Preview y
-Production, impuso `sslmode=verify-full`, identificó el mapping Neon y ejecutó
-WP0 conectado. El resultado es descubrimiento no aprobable; no crea baseline,
-migraciones, cuentas, lifecycle, tag ni `v1.11.0`.
+S14C es un incremento técnico `Unreleased`: reconcilia 13 tablas ya existentes
+en Preview —5 sensibles y 8 de referencia— sin exponerlas en Prisma Client,
+incorpora un baseline v2 reproducible y lo prueba en dos branches hijos efímeros
+de Preview. No escribe Preview o Production, no habilita DDL estable, cuentas,
+lifecycle, tag ni `v1.11.0`.
 `GET /api/grh-decision-brief` entrega `grh-decision-brief-v1`: un brief ejecutivo
 único derivado de agregados del snapshot aprobado, con validación local, que separa
 la señal global cross-source de la evidencia mensual, expone
@@ -27,7 +28,8 @@ La route policy es `2026-08-09.2`; la access policy permanece en
 `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
 no draft y no prerelease.
 
-El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
+Para el release `v1.10.0`, el deployment Production
+`dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
 alias `https://municipio-junin.vercel.app`, con `gitSource master/4108ca0`. El
 gate productivo cerró 11/11 exit `0` con
 `checkedAt 2026-08-09T16:33:56.200Z`. El browser público cerró 10/10 estados a
@@ -35,6 +37,11 @@ gate productivo cerró 11/11 exit `0` con
 anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays,
 requests externos y fallas de red. Los logs del corte registraron 0 errores y
 0 respuestas 500.
+
+Como hotfix post-release, `e74339c` reemplazó la respuesta pública de
+`/prisma/schema.prisma` por un 404 seguro, `no-store`, `nosniff` y sin marcadores
+del schema. Production cerró el gate ampliado 12/12. El tag `v1.10.0` permanece
+en `4108ca0` con su evidencia histórica 11/11.
 
 El focal raíz S13 cerró 135/135 y el QA adversarial 104/104 con 0 P1/P2. La suite
 raíz final revalidó 591 pruebas: 590 aprobadas, 0 fallidas y 1 smoke opt-in
@@ -148,9 +155,11 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política `2026-08-09.1`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
 | Tour visual público de roles | `/roles` y `public-role-tour-v1` publicados en `v1.8.1` para siete perfiles; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Mantener el gate público y no confundir el recorrido con RBAC ni autorización positiva |
 | MuniGuía contextual | Evidencia privada sólo local para `muniguia-contextual-v1`: tres pasos deterministas para doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Proyección autoritativa simulada; mantener autorización server-side y Manual como fallback; no confundir con el smoke público |
-| WP0-L: observación de copia restaurada | S14B ejecutado conectado desde `38b25e8` sobre restore descartable: observador de mínimo privilegio, `REPEATABLE READ READ ONLY`, `TLSv1.3`, 968 filas de catálogo y `_prisma_migrations` `absent`; resultado `discovery_non_approvable`, `approvalEligible:false`; artefacto externo retenido con cuatro flags de evidencia en `false` | Construir baseline curado, evaluar drift y obtener receipt + atestación institucional independientes; la observación no es approval, migración ni autorización DDL |
+| WP0-L: observación de copia restaurada | Antecedente S14B ejecutado conectado desde `38b25e8` sobre restore descartable: observador de mínimo privilegio, `REPEATABLE READ READ ONLY`, `TLSv1.3`, 968 filas de catálogo y `_prisma_migrations` `absent`; resultado `discovery_non_approvable`, `approvalEligible:false`; artefacto externo retenido con cuatro flags de evidencia en `false` | S14C construyó después el baseline y su replay efímero; WP0-L continúa siendo descubrimiento no aprobable, no approval ni autorización DDL |
 | Aislamiento DB Preview/Production | Targets mapeados a branches distintos; `DB_CONFIG_ISOLATION=PASS`, `DB_CONFIG_SSLMODE_VERIFY_FULL=true`, `NEON_MAPPING=IDENTIFIED`; credencial owner expuesta durante la operación rotada e invalidada | Mantener la separación y `verify-full`; no confundir aislamiento de targets DB con sesión positiva, datos privados o lifecycle gobernado |
-| IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Resolver drift de esquema, aprobar baseline/migración y construir el adaptador transaccional antes de aprovisionar identidades |
+| Ownership de tablas externas S14C | 13 tablas reales de Preview —5 sensibles y 8 de referencia— representadas con `@@map` + `@@ignore`; ambos Prisma Client omiten sus delegates y Migrate las preserva | Restringir el rol DB runtime: `@@ignore` no bloquea `$queryRaw` ni credenciales sobredimensionadas |
+| Baseline Prisma S14C | Manifest v2, Prisma 5.22.0, una migración y 82 sentencias aditivas —3 enums, 25 tablas, 25 índices, 29 FK—; caso A vacío y B3 resolve pasan sobre child branches efímeros en LSN `0/307FA88`; raíz 634 + 1 opt-in y backend 20/20 | Gobernar ownership/naming del proyecto visible `puntolimpio-staging-neon`; después producir backup/restore, doble revisión, receipt y atestación institucional antes de DDL estable |
+| IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Aplicar de forma gobernada el baseline en el target autorizado, aprobar la migración IAM y construir el adaptador transaccional antes de aprovisionar identidades |
 | UX-E2A: shell institucional | Shell compartido en `v1.8.1`; la superficie pública productiva cerró 10/10 con exit `0` | Mantener pruebas por rol; la UI no concede autorización ni prueba datos privados |
 | Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Storage privado, antivirus y auditoría persistente |
 | PDF/TXT/JSON y bases externas | Parcial o planificado | Contratos de parser/conector, cuotas y sandbox |
@@ -160,9 +169,9 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
 | Techo exacto `recurso:acción` | Implementado localmente: 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta (37 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
-| Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; gate baseline/release y expiración TRIAL implementados, sin migración | Baseline conectado, migración, policy engine, lifecycle de cuentas y matriz aprobada |
+| Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
-| Producción remota | Commit/tag `v1.10.0` `4108ca0`, product commit `d11fd39`; deployment `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY` en `Production`, alias productivo y GitHub Release live | Gate 11/11, browser público 10/10 a 390/1440 px y logs 0 errores/0 respuestas 500; no inferir DB, cuentas, autorización positiva o datos GRH remotos |
+| Producción remota | Release histórico `v1.10.0`: tag `4108ca0`, product commit `d11fd39`, deployment `READY`, gate 11/11 y GitHub Release live. Hotfix post-release `e74339c`: `/prisma/schema.prisma` 404 seguro y gate 12/12 | No mover el tag ni inferir DB, cuentas, autorización positiva o datos GRH remotos; cada deployment posterior requiere repetir el gate actual de 12 probes |
 
 El gate E0.1 del workspace también está cerrado localmente: `/inicio` debe
 reescribirse exactamente a `/inicio.html`, responder sin redirects y coincidir
@@ -275,7 +284,8 @@ El WP0 de base, receipt conectado y rollback se rige por
 
 Objetivo: que el código ya validado exista en un preview seguro.
 
-- revisar y versionar migraciones;
+- conservar el baseline S14C reproducible y obtener gobierno del target, receipt
+  conectado formal y atestación institucional antes de aplicarlo de forma estable;
 - materializar contratos GRH privados;
 - configurar secretos, tenant CUID y pin `GRH_SOURCE_SHA256` aprobado;
 - repetir en preview la migración ya cerrada localmente: cinco UIs sobre
@@ -537,6 +547,24 @@ cuatro flags de evidencia en `false`; la suite raíz cerró 619 pruebas —618
 aprobadas y 1 smoke opt-in omitido— y backend 20/20. El incremento sigue
 `Unreleased`: no modifica ni recertifica el 11/11 público de `v1.10.0` y no crea
 baseline, migración, cuenta, lifecycle, bump, tag, GitHub Release ni `v1.11.0`.
+
+Incremento `Unreleased` S14C: el schema preserva 13 tablas existentes de Preview
+—5 sensibles y 8 de referencia— sin delegates en Prisma Client; el baseline v2
+reproducible fija Prisma `5.22.0` y 82 sentencias aditivas. Dos casos
+autoritativos sobre branches hijos efímeros del Preview
+`br-proud-hat-achuevv2`, LSN `0/307FA88`, cerraron deploy vacío y resolve B3 con
+status/diff cero; el catálogo B3 permaneció byte-idéntico en 449 filas, 140.715
+bytes y SHA-256
+`0388a4871483fdd37286a03ab1d7acd01f25ef0ecae309925dadf912fe589028`.
+El receipt externo `s14c-baseline-disposable-replay-receipt.json` tiene SHA-256
+`613db7889e4e23033927814fa5ee8e4a891e9a91772268e01b08645d3f4ae51b` y no está
+versionado.
+El cleanup dejó main + Preview, 2 endpoints y 0 snapshots; Preview y Production
+recibieron cero escrituras. El proyecto visible `puntolimpio-staging-neon` no
+tiene ownership/naming gobernado y bloquea DDL estable, cuentas y release. La
+salida obligatoria permanece `RELEASE_ATTESTATION_NOT_GOVERNED`. La
+suite raíz cerró 635 pruebas —634 aprobadas y 1 opt-in omitido— y backend 20/20. S14C no
+mueve `v1.10.0`/`4108ca0`; el hotfix post-release `e74339c` cerró 12/12.
 
 Cambio 1.8.0: registra WP0-L, IAM-MAP-01, UX-E2A y el antecedente del preview
 protegido `fa5dcc5`. El release quedó en `master` y la superficie pública

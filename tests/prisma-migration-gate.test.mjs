@@ -9,9 +9,25 @@ import {
   inspectMigrationGate,
   inspectOfflineMigrationGate,
 } from '../scripts/assert-prisma-migrations.mjs';
+import {
+  canonicalManifestText,
+  CANONICAL_MIGRATION_LOCK,
+  deriveBaselineManifest,
+} from '../shared/prisma-migration-contract.mjs';
 
 const temporaryRoots = [];
 const NOW = new Date('2026-08-08T18:00:00.000Z');
+const PRISMA_VERSION = '5.22.0';
+const ENGINE_VERSION = '5.22.0-44.605197351a3c8bdd595af2d2a9bc3025bca48ea2';
+const TOOLCHAIN_PACKAGES = [
+  '@prisma/client',
+  '@prisma/debug',
+  '@prisma/engines',
+  '@prisma/engines-version',
+  '@prisma/fetch-engine',
+  '@prisma/get-platform',
+  'prisma',
+];
 
 afterEach(() => {
   while (temporaryRoots.length) {
@@ -35,11 +51,35 @@ function writeUtf8(filePath, content) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
+function toolchainLock() {
+  const packages = {};
+  for (const packageName of TOOLCHAIN_PACKAGES) {
+    packages[`node_modules/${packageName}`] = {
+      version: packageName === '@prisma/engines-version' ? ENGINE_VERSION : PRISMA_VERSION,
+      resolved: `https://registry.npmjs.org/${packageName}/fixture.tgz`,
+      integrity: `sha512-${digest(packageName)}`,
+    };
+  }
+  return { lockfileVersion: 3, packages };
+}
+
+function writeToolchain(repoRoot) {
+  const pkg = {
+    dependencies: { '@prisma/client': PRISMA_VERSION },
+    devDependencies: { prisma: PRISMA_VERSION },
+  };
+  const lock = toolchainLock();
+  writeUtf8(path.join(repoRoot, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`);
+  writeUtf8(path.join(repoRoot, 'package-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
+  writeUtf8(path.join(repoRoot, 'backend', 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`);
+  writeUtf8(path.join(repoRoot, 'backend', 'package-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
+}
+
 function buildFixture() {
   const repoRoot = tempDirectory('municontrol-prisma-gate-repo-');
   const migrationsRoot = path.join(repoRoot, 'prisma', 'migrations');
   const migrationDirectory = '20260808000000_baseline';
-  writeUtf8(path.join(repoRoot, 'package.json'), JSON.stringify({ devDependencies: { prisma: '^5.22.0' } }));
+  writeToolchain(repoRoot);
   writeUtf8(path.join(repoRoot, 'prisma', 'schema.prisma'), [
     'generator client {',
     '  provider = "prisma-client-js"',
@@ -50,44 +90,29 @@ function buildFixture() {
     '}',
     '',
   ].join('\n'));
-  writeUtf8(path.join(migrationsRoot, 'migration_lock.toml'), 'provider = "postgresql"\n');
-  writeUtf8(path.join(migrationsRoot, migrationDirectory, 'migration.sql'), 'CREATE TABLE "baseline_probe" ("id" TEXT PRIMARY KEY);\n');
+  writeUtf8(path.join(migrationsRoot, 'migration_lock.toml'), CANONICAL_MIGRATION_LOCK);
+  writeUtf8(
+    path.join(migrationsRoot, migrationDirectory, 'migration.sql'),
+    'CREATE TABLE "baseline_probe" ("id" TEXT NOT NULL, CONSTRAINT "baseline_probe_pkey" PRIMARY KEY ("id"));\n',
+  );
 
-  const migration = {
-    directory: migrationDirectory,
-    sha256: digest('CREATE TABLE "baseline_probe" ("id" TEXT PRIMARY KEY);\n'),
-  };
-  const migrations = [migration];
-  const schemaSha256 = digest(fs.readFileSync(path.join(repoRoot, 'prisma', 'schema.prisma'), 'utf8'));
-  const migrationHistorySha256 = digest(JSON.stringify(migrations));
-  const baselineId = `prisma-baseline-${digest(JSON.stringify({
-    provider: 'postgresql',
-    prismaMajor: 5,
-    baselineMigration: migration,
-  }))}`;
-  const migrationSetId = `prisma-set-${digest(JSON.stringify({
-    baselineId,
-    schemaSha256,
-    migrationHistorySha256,
-    migrations,
-  }))}`;
-  const manifest = {
-    contractVersion: 1,
-    provider: 'postgresql',
-    prismaMajor: 5,
-    baselineId,
-    baselineMigration: migration,
-    schemaSha256,
-    migrationHistorySha256,
-    migrationSetId,
-    migrations,
-  };
-  writeUtf8(path.join(migrationsRoot, 'baseline-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  const derived = deriveBaselineManifest({ repoRoot });
+  assert.equal(derived.ok, true, JSON.stringify(derived.errors));
+  writeUtf8(
+    path.join(migrationsRoot, 'baseline-manifest.json'),
+    canonicalManifestText(derived.manifest),
+  );
   const env = {
-    PRISMA_BASELINE_ID: baselineId,
-    PRISMA_MIGRATION_SET_ID: migrationSetId,
+    PRISMA_BASELINE_ID: derived.baselineId,
+    PRISMA_MIGRATION_SET_ID: derived.migrationSetId,
   };
-  return { repoRoot, migrationsRoot, migrationDirectory, manifest, env };
+  return {
+    repoRoot,
+    migrationsRoot,
+    migrationDirectory,
+    manifest: derived.manifest,
+    env,
+  };
 }
 
 function attachValidReceipt(fixture, overrides = {}) {
@@ -133,10 +158,27 @@ function attachValidReceipt(fixture, overrides = {}) {
   };
 }
 
-test('the real checkout remains fail-closed until a reviewed Prisma history exists', () => {
-  const result = inspectOfflineMigrationGate({ env: {} });
-  assert.equal(result.ok, false);
-  assert.ok(result.errors.some(error => error.code === 'MIGRATIONS_MISSING'));
+test('the real checkout has a reproducible offline baseline but still requires exact environment pins', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.resolve('prisma/migrations/baseline-manifest.json'), 'utf8'));
+  const withoutPins = inspectOfflineMigrationGate({ env: {} });
+  assert.equal(withoutPins.ok, false);
+  assert.deepEqual(withoutPins.errors.map(error => error.code), ['ENVIRONMENT_PIN_MISMATCH']);
+
+  const result = inspectOfflineMigrationGate({
+    env: {
+      PRISMA_BASELINE_ID: manifest.baselineId,
+      PRISMA_MIGRATION_SET_ID: manifest.migrationSetId,
+    },
+  });
+  assert.equal(result.ok, true, JSON.stringify(result.errors));
+  assert.equal(result.prismaVersion, PRISMA_VERSION);
+  assert.deepEqual(result.baselineSql, {
+    statementCount: 82,
+    enum: 3,
+    table: 25,
+    index: 25,
+    foreignKey: 29,
+  });
 });
 
 test('offline gate binds immutable baseline separately from the complete migration set', () => {
@@ -146,6 +188,7 @@ test('offline gate binds immutable baseline separately from the complete migrati
   assert.equal(result.baselineId, fixture.manifest.baselineId);
   assert.equal(result.migrationSetId, fixture.manifest.migrationSetId);
   assert.equal(result.migrationCount, 1);
+  assert.equal(result.prismaEngineVersion, ENGINE_VERSION);
 });
 
 test('offline gate rejects a schema provider that disagrees with the PostgreSQL history', () => {
@@ -174,7 +217,24 @@ test('tampered migration and ungoverned extra files are rejected', () => {
   const result = inspectMigrationGate({ mode: 'offline', repoRoot: fixture.repoRoot, env: fixture.env, now: NOW });
   assert.equal(result.ok, false);
   assert.ok(result.errors.some(error => error.code === 'MIGRATION_ROOT_EXTRA'));
-  assert.ok(result.errors.some(error => error.code === 'MIGRATION_SET_MISMATCH'));
+  assert.ok(result.errors.some(error => error.code === 'BASELINE_SQL_POLICY_VIOLATION'));
+});
+
+test('canonical lock, LF and exact Prisma toolchain are mandatory', () => {
+  const fixture = buildFixture();
+  writeUtf8(path.join(fixture.migrationsRoot, 'migration_lock.toml'), `${CANONICAL_MIGRATION_LOCK}extra = "unsafe"\n`);
+  const migrationPath = path.join(fixture.migrationsRoot, fixture.migrationDirectory, 'migration.sql');
+  fs.writeFileSync(migrationPath, fs.readFileSync(migrationPath, 'utf8').replaceAll('\n', '\r\n'), 'utf8');
+  const backendPackagePath = path.join(fixture.repoRoot, 'backend', 'package.json');
+  const backendPackage = JSON.parse(fs.readFileSync(backendPackagePath, 'utf8'));
+  backendPackage.devDependencies.prisma = '^5.22.0';
+  writeUtf8(backendPackagePath, `${JSON.stringify(backendPackage, null, 2)}\n`);
+
+  const result = inspectMigrationGate({ mode: 'offline', repoRoot: fixture.repoRoot, env: fixture.env, now: NOW });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some(error => error.code === 'MIGRATION_LOCK_INVALID'));
+  assert.ok(result.errors.some(error => error.code === 'MIGRATION_TEXT_NOT_CANONICAL'));
+  assert.ok(result.errors.some(error => error.code === 'PRISMA_TOOLCHAIN_VERSION_INVALID'));
 });
 
 test('release receipt inside the repository is rejected even when its hash is pinned', () => {
@@ -227,6 +287,22 @@ test('expired evidence and duplicate reviewers never authorize deployment', () =
   assert.equal(result.ok, false);
   assert.ok(result.errors.some(error => error.code === 'RECEIPT_TIME_INVALID'));
   assert.ok(result.errors.some(error => error.code === 'RECEIPT_REVIEWERS_INVALID'));
+});
+
+test('absent history and non-array pending migrations remain fail-closed', () => {
+  const fixture = buildFixture();
+  const env = attachValidReceipt(fixture, {
+    checks: {
+      migrateStatus: 'history_absent',
+      driftStatus: 'no_unexpected_drift',
+      restoreStatus: 'passed',
+    },
+    pendingMigrations: fixture.migrationDirectory,
+  });
+  const result = inspectMigrationGate({ mode: 'release', repoRoot: fixture.repoRoot, env, now: NOW });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some(error => error.code === 'RECEIPT_CHECK_FAILED'));
+  assert.ok(result.errors.some(error => error.code === 'RECEIPT_PENDING_INVALID'));
 });
 
 test('an explicit offline or release mode is mandatory', () => {

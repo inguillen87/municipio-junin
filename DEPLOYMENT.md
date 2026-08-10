@@ -20,7 +20,10 @@ npm run test:backend
 También son obligatorios:
 
 - contrato semántico GRH válido y agregado, sin PII;
-- migraciones revisadas contra la base destino;
+- manifest y baseline Prisma versionados, regenerables y validados offline con
+  sus pins exactos;
+- migraciones revisadas contra la base destino y autorización institucional de
+  DDL; un gate offline verde no satisface este punto;
 - backup recuperable y ensayo de restauración;
 - `git diff --check`, sintaxis y QA desktop/móvil;
 - cero artefactos GRH JSON dentro del repositorio o bundle;
@@ -48,15 +51,29 @@ En producción `ALLOW_LOCAL_GRH_ARTIFACTS` debe permanecer ausente o desactivada
 No existen variables de seed vigentes: `db:seed` es un gate retirado que termina
 con código `1`, no acepta secretos y no conecta a la base.
 
+Los 13 modelos GRH mapeados con `@@ignore` preservan las tablas observadas al
+generar migraciones y no aparecen en Prisma Client. `@@ignore` no revoca permisos
+SQL, no configura RLS y no protege frente a credenciales owner; la release debe
+exigir un rol runtime de mínimo privilegio y ACL verificadas antes de cualquier
+lector GRH.
+
 ## 3. Preview
 
 1. Crear un preview desde un commit revisado.
-2. Ejecutar el preflight de [`docs/PRISMA_BASELINE_Y_DRIFT.md`](docs/PRISMA_BASELINE_Y_DRIFT.md); revisar drift, backup y restore sin aplicar ni marcar una migración. `--release` permanece bloqueado con `RELEASE_ATTESTATION_NOT_GOVERNED` hasta implementar atestación institucional CI/KMS/OIDC.
-3. Configurar `GRH_SOURCE_SHA256` desde el manifiesto aprobado; no copiarlo de una fila DB no verificada.
-4. Materializar `profile` y `semantic` GRH en `grh_artifacts` para el tenant.
-5. Ejecutar smokes anónimos, por rol y cross-tenant; un bundle incompleto, un metadata drift o un SHA distinto deben responder `503`.
-6. Validar dashboards, impresión, móvil, modo reducido y fallas `503`.
-7. Ejecutar el Release Truth Gate sin token ni cookie:
+2. Cargar `PRISMA_BASELINE_ID` y `PRISMA_MIGRATION_SET_ID` directamente desde el
+   manifest versionado y ejecutar `db:baseline:manifest:check` y
+   `db:baseline:status`. Ambos pueden pasar offline; no conectan ni autorizan DDL.
+3. Ejecutar el preflight conectado de
+   [`docs/PRISMA_BASELINE_Y_DRIFT.md`](docs/PRISMA_BASELINE_Y_DRIFT.md); revisar
+   identidad del target, drift, backup y restore sin aplicar ni marcar una
+   migración. `--release` permanece bloqueado con
+   `RELEASE_ATTESTATION_NOT_GOVERNED` hasta implementar atestación institucional
+   CI/KMS/OIDC.
+4. Configurar `GRH_SOURCE_SHA256` desde el manifiesto aprobado; no copiarlo de una fila DB no verificada.
+5. Materializar `profile` y `semantic` GRH en `grh_artifacts` para el tenant.
+6. Ejecutar smokes anónimos, por rol y cross-tenant; un bundle incompleto, un metadata drift o un SHA distinto deben responder `503`.
+7. Validar dashboards, impresión, móvil, modo reducido y fallas `503`.
+8. Ejecutar el Release Truth Gate sin token ni cookie:
 
    ```bash
    npm run release:truth:check -- --base-url https://preview-approved.example
@@ -65,8 +82,25 @@ con código `1`, no acepta secretos y no conecta a la base.
    Debe terminar con código `0`. El receipt JSON conserva sólo origen, política,
    huellas públicas, estados, tamaños y códigos; no contiene cuerpos, PII, tokens
    ni errores crudos.
-8. Guardar evidencia: URL, deployment ID, commit, DB branch, fecha, operador y
+9. Guardar evidencia: URL, deployment ID, commit, DB branch, fecha, operador y
    receipt del gate en el sistema externo de release; no commitear receipts.
+
+### Replay descartable S14C: evidencia útil, no promoción
+
+S14C verificó el baseline sobre dos hijos Neon descartables creados en un LSN de
+Preview, sin escrituras sobre Preview ni Production:
+
+- A aplicó `prisma migrate deploy` en una DB vacía, terminó con status/diff cero
+  y materializó las 25 tablas, incluidas las 13 preservadas con `@@ignore`;
+- B3 ejecutó `prisma migrate resolve --applied 20260809220336_baseline` sobre una
+  copia existente; status/diff quedaron en cero y el catálogo de negocio no
+  cambió, salvo `_prisma_migrations`.
+
+Un child-at-LSN no es snapshot ni backup/restore gobernado. S14C conserva un
+receipt externo saneado, pero no es un receipt gobernado de release ni una
+atestación institucional. Tampoco resuelve que el proyecto Neon observado se denomine
+`puntolimpio-staging-neon`: hasta documentar propiedad, municipio y alcance de
+ese target, queda prohibido aplicar o marcar migraciones en ramas estables.
 
 Comando manual, sólo con autorización de release:
 
@@ -93,10 +127,22 @@ criptográficamente el socket a una IP. La allowlist del host, el deployment ID,
 el commit y la evidencia del proveedor se aprueban por separado en el sistema
 externo de release.
 
-Al corte del 9 de agosto de 2026, `https://municipio-junin.vercel.app` falla este
-gate con release legacy, APIs actuales ausentes, claims inseguros y manual
-desactualizado. No debe presentarse a funcionarios ni promoverse como la versión
-actual hasta reemplazarlo por un preview que termine con código `0`.
+Al corte del 9 de agosto de 2026, el hotfix `e74339c` sustituyó la superficie
+pública `/prisma` y `/prisma/**` por un `404` seguro cuyo cuerpo no contiene el
+schema, con `no-store` y `nosniff`. Después del deploy,
+`https://municipio-junin.vercel.app` terminó el Release Truth Gate actual en
+**12/12** y código `0`.
+
+El repositorio `inguillen87/municipio-junin` es público: este hotfix evita servir
+un artefacto interno desde la aplicación, pero no vuelve confidenciales las
+definiciones versionadas. Git debe contener cero valores o PII reales; ocultar el
+modelo exigiría además repositorio privado y una política de acceso separada.
+
+Este resultado reemplaza el diagnóstico operativo de “release legacy fallando”,
+pero no certifica DB, cuentas, datos GRH, backup/restore, propiedad Neon ni
+autorización de migraciones. La release `v1.10.0` conserva como evidencia
+histórica su gate **11/11**; el 12/12 actual no reescribe esa release ni constituye
+por sí solo una nueva versión.
 
 ## 4. Promoción y smoke de producción
 

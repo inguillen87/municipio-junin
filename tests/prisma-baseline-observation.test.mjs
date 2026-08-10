@@ -1319,6 +1319,137 @@ test('timestamps PostgreSQL con offset se canonicalizan a ISO Z sin degradar val
   assert.equal(observation.inventory.prismaMigrations.rows[0].finished_at, '2026-08-09T10:00:01.000Z');
 });
 
+test('migrate resolve --applied exacto conserva historia valid sin ampliar el shape publico', async t => {
+  const paths = await sandbox(t);
+  const config = await validated(paths);
+  const executedRow = validRows()[QUERY_IDS.MIGRATION_HISTORY][0];
+  const resolvedRow = {
+    ...executedRow,
+    migration_id: 'c37fc457-2f68-4a88-9995-41997ecab224',
+    migration_name: '20260809220336_baseline',
+    started_at: '2026-08-09 10:02:00+00:00',
+    finished_at: new Date('2026-08-09T10:02:00.000Z'),
+    applied_steps_count: '0',
+  };
+  const observation = await runRestoredCopyObservation({
+    adapter: fakeAdapter({ [QUERY_IDS.MIGRATION_HISTORY]: [executedRow, resolvedRow] }),
+    config,
+    commit: COMMIT,
+    schemaSha256: SCHEMA_SHA,
+    now: FIXED_NOW,
+  });
+
+  assert.equal(observation.inventory.prismaMigrations.state, 'valid');
+  assert.deepEqual(observation.inventory.prismaMigrations.issues, []);
+  assert.equal(observation.quality.collectionMode, 'strict');
+  assert.equal(observation.quality.approvalEligible, false);
+  assert.equal(observation.inventory.prismaMigrations.count, 2);
+  const persistedResolved = observation.inventory.prismaMigrations.rows.find(
+    row => row.migration_name === resolvedRow.migration_name,
+  );
+  assert.equal(persistedResolved.started_at, '2026-08-09T10:02:00.000Z');
+  assert.equal(persistedResolved.finished_at, persistedResolved.started_at);
+  assert.deepEqual(Object.keys(persistedResolved).sort(), [
+    'applied_steps_count', 'checksum', 'finished_at', 'migration_id',
+    'migration_name', 'rolled_back_at', 'started_at',
+  ]);
+  assert.doesNotThrow(() => assertObservationSafe(JSON.parse(JSON.stringify(observation))));
+});
+
+test('zero-step incompleto, ejecutado fuera de resolve o rollback permanece inconsistent', async t => {
+  const paths = await sandbox(t);
+  const config = await validated(paths);
+  const base = {
+    ...validRows()[QUERY_IDS.MIGRATION_HISTORY][0],
+    started_at: new Date('2026-08-09T10:02:00.000Z'),
+    finished_at: new Date('2026-08-09T10:02:00.000Z'),
+    applied_steps_count: '0',
+  };
+  const cases = [
+    {
+      label: 'finished_at null',
+      override: { finished_at: null },
+      issues: ['MIGRATION_ROW_INCOMPLETE_OR_INVALID', 'MIGRATION_TIMESTAMPS_INCONSISTENT'],
+    },
+    {
+      label: 'timestamps distintos',
+      override: { finished_at: new Date('2026-08-09T10:02:00.001Z') },
+      issues: ['MIGRATION_ROW_INCOMPLETE_OR_INVALID'],
+    },
+    {
+      label: 'rollback marcado',
+      override: { rolled_back_at: new Date('2026-08-09T10:02:00.000Z') },
+      issues: ['MIGRATION_ROW_INCOMPLETE_OR_INVALID'],
+    },
+    {
+      label: 'cero no canonico',
+      override: { applied_steps_count: '00' },
+      issues: ['MIGRATION_ROW_INCOMPLETE_OR_INVALID'],
+    },
+    {
+      label: 'pasos negativos',
+      override: { applied_steps_count: '-1' },
+      issues: ['MIGRATION_ROW_INCOMPLETE_OR_INVALID'],
+    },
+  ];
+
+  for (const { label, override, issues } of cases) {
+    const observation = await runRestoredCopyObservation({
+      adapter: fakeAdapter({ [QUERY_IDS.MIGRATION_HISTORY]: [{ ...base, ...override }] }),
+      config,
+      commit: COMMIT,
+      schemaSha256: SCHEMA_SHA,
+      now: FIXED_NOW,
+    });
+    assert.equal(observation.inventory.prismaMigrations.state, 'inconsistent', label);
+    assert.deepEqual(
+      observation.inventory.prismaMigrations.issues,
+      issues,
+      label,
+    );
+    assert.equal(observation.quality.collectionMode, 'discovery_non_approvable', label);
+    assert.equal(observation.quality.approvalEligible, false, label);
+    assert.doesNotThrow(
+      () => assertObservationSafe(JSON.parse(JSON.stringify(observation))),
+      label,
+    );
+  }
+});
+
+test('sink recomputa la firma zero-step y rechaza un resolve aplicado adulterado', async t => {
+  const paths = await sandbox(t);
+  const config = await validated(paths);
+  const resolvedRow = {
+    ...validRows()[QUERY_IDS.MIGRATION_HISTORY][0],
+    started_at: new Date('2026-08-09T10:02:00.000Z'),
+    finished_at: new Date('2026-08-09T10:02:00.000Z'),
+    applied_steps_count: '0',
+  };
+  const observation = await runRestoredCopyObservation({
+    adapter: fakeAdapter({ [QUERY_IDS.MIGRATION_HISTORY]: [resolvedRow] }),
+    config,
+    commit: COMMIT,
+    schemaSha256: SCHEMA_SHA,
+    now: FIXED_NOW,
+  });
+
+  for (const mutate of [
+    row => { row.finished_at = null; },
+    row => { row.finished_at = '2026-08-09T10:02:00.001Z'; },
+    row => { row.rolled_back_at = '2026-08-09T10:02:00.000Z'; },
+    row => { row.applied_steps_count = '00'; },
+    row => { row.applied_steps_count = '-1'; },
+  ]) {
+    const forged = JSON.parse(JSON.stringify(observation));
+    mutate(forged.inventory.prismaMigrations.rows[0]);
+    rebuildObservationDigests(forged);
+    assert.throws(
+      () => assertObservationSafe(forged),
+      error => error?.code === 'OBSERVATION_SCHEMA_INVALID',
+    );
+  }
+});
+
 test('historia absent, empty e inconsistent queda persistible pero nunca aprobable', async t => {
   const paths = await sandbox(t);
   const config = await validated(paths);

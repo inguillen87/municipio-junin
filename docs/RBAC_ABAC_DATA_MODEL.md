@@ -1,12 +1,12 @@
 # Modelo de datos RBAC/ABAC enterprise — MuniControl
 
-**Versión del diseño:** 1.0.0
+**Versión del diseño:** 1.1.0
 
-**Fecha de corte:** 8 de agosto de 2026
+**Fecha de corte:** 9 de agosto de 2026
 
 **Estado:** propuesta técnica; no implementada, no migrada y sin cuentas creadas
 
-**Esquema revisado:** `prisma/schema.prisma` sobre `HEAD 2a07996adacd60519ebf8708ff444cf7c6839aae` y cambios locales no consolidados
+**Esquema revisado:** `prisma/schema.prisma` y baseline S14C del mismo change set; base pública previa `e74339c`
 
 **Propuesta Prisma aislada:** [`../prisma/proposals/rbac-abac-v1.prisma`](../prisma/proposals/rbac-abac-v1.prisma)
 
@@ -27,8 +27,10 @@ fase puede ampliar permisos de forma silenciosa.
 
 Este diseño es deliberadamente una propuesta. No se debe crear todavía un
 usuario por perfil, aplicar una migración ni modificar `User.role`: falta una
-historia Prisma baseline revisada contra la base destino. El gate actual que
-bloquea `prisma migrate deploy` es correcto y debe permanecer cerrado.
+atestación institucional de release y resolver la propiedad/alcance del proyecto
+Neon observado. S14C ya incorpora una historia Prisma baseline reproducible, pero
+el gate que bloquea `prisma migrate deploy` sobre ramas estables sigue siendo
+correcto y debe permanecer cerrado con `RELEASE_ATTESTATION_NOT_GOVERNED`.
 
 ## 2. Evidencia inspeccionada y diagnóstico
 
@@ -47,15 +49,38 @@ bloquea `prisma migrate deploy` es correcto y debe permanecer cerrado.
 | `shared/account-lifecycle.cjs` | Máquina pura, determinista y fail-closed de cuenta/invitación/sesión | Es una fundación testeable; no persiste, autentica ni habilita cuentas |
 | `shared/access-policy.cjs` | Roles y capacidades de navegación son exactos y fail-closed | Es una buena frontera de UX; no expresa autorización por recurso o ámbito |
 | `shared/route-policy.cjs` | Rutas protegidas, recursos, acciones y permisos exactos están versionados | Es el techo de permisos que el plano de datos debe respetar |
-| `scripts/assert-prisma-migrations.mjs` | Falla si no existen `prisma/migrations/migration_lock.toml` y migraciones revisables | Impide aplicar cambios sin baseline, que es exactamente lo necesario hoy |
-| `prisma/` | No existe todavía `prisma/migrations/` | No hay historia Prisma desplegable ni rollback auditado |
+| `scripts/assert-prisma-migrations.mjs` | Valida offline el manifest y la historia sólo con pins exactos; el modo release agrega siempre `RELEASE_ATTESTATION_NOT_GOVERNED` | Separa integridad local de autorización institucional de DDL |
+| `prisma/migrations/` | Contiene el baseline aditivo `20260809220336_baseline`, lock y manifest v2 fijados a Prisma `5.22.0` | Existe una historia reproducible en Git; todavía no está autorizada ni marcada en Preview o Production |
+| `prisma/schema.prisma` y `shared/prisma-schema-ownership.cjs` | Preservan 13 tablas GRH de Preview con modelos mapeados `@@ignore`: 5 sensibles y 8 de referencia | Prisma Client no expone delegates, pero `@@ignore` no aporta ACL/RLS ni bloquea SQL crudo o credenciales owner |
 | `database/migrations/001_initial.sql` y `migrations/*.sql` | Son SQL legacy o materializaciones independientes | No constituyen el baseline del schema Prisma activo |
 
-El checkout contiene trabajo no consolidado. Antes de implementar hay que
-refrescar estas observaciones y fijar commit, digest del schema y estado de la DB
-destino; este documento no presenta el árbol actual como una revisión inmutable.
+El manifest fija digest del schema, baseline, migration set, lock y toolchain. Al
+implementar RBAC/ABAC habrá que derivar un nuevo `migrationSetId`, fijar el commit
+y refrescar el estado de la DB destino; este documento no convierte el baseline
+actual en una autorización para agregar las tablas propuestas.
 
-### 2.2 Inferencia estructural
+### 2.2 Evidencia conectada S14C y límite estable
+
+El baseline pasó dos replays sobre hijos Neon descartables creados en un LSN de
+Preview, sin escribir en Preview ni Production. El hijo A aplicó `migrate deploy`
+sobre una DB vacía, obtuvo status/diff cero y materializó las 25 tablas esperadas,
+incluidas las 13 ignoradas. El hijo B3 ejecutó únicamente
+`migrate resolve --applied 20260809220336_baseline` sobre una copia existente;
+status/diff quedaron en cero y el catálogo de negocio permaneció idéntico salvo
+`_prisma_migrations`.
+
+La prueba child-at-LSN no es snapshot ni backup/restore gobernado. S14C conserva
+un receipt externo saneado, pero no es un receipt gobernado de release ni una
+atestación institucional. Además, el proyecto Neon observado conserva
+el nombre `puntolimpio-staging-neon`; su propiedad y alcance para MuniControl
+Junín son ambiguos. Ambas fronteras mantienen bloqueado todo DDL estable.
+
+En paralelo, el hotfix público `e74339c` sustituyó la ruta que servía el schema
+Prisma desde la aplicación por un `404` sin esas definiciones. El deployment pasó
+el gate HTTP **12/12**. Es una verificación de superficie, no de RBAC ni DB, y no
+reescribe la evidencia histórica **11/11** de `v1.10.0`.
+
+### 2.3 Inferencia estructural
 
 Los controles existentes protegen bien dos límites concretos: una identidad JWT
 no autoriza por sí sola y un rol desconocido se deniega. Sin embargo, el permiso
@@ -473,17 +498,19 @@ contrato sería más peligroso que útil.
 
 ### Fase 0 — Congelar identidad y baseline
 
-- elegir DB destino y ventana; registrar commit, schema digest y backup;
+- conservar el baseline S14C, schema digest y toolchain exactos ya versionados;
 - inventariar tablas, constraints, enums, extensiones, `_prisma_migrations` y
-  drift sin modificar la base;
-- comparar DB real, `prisma/schema.prisma` y SQL independientes;
-- construir un baseline Prisma revisable y marcarlo aplicado sólo tras doble
-  revisión DBA/ingeniería;
-- ensayar restore; mantener bloqueados `db push`, `migrate reset` y migraciones
-  ad hoc.
+  drift de la rama estable sin modificarla;
+- resolver documentalmente propietario, municipio, target y ventana del proyecto
+  Neon hoy denominado `puntolimpio-staging-neon`;
+- obtener backup/restore gobernado y atestación CI/KMS/OIDC con doble revisión
+  DBA/ingeniería antes de marcar el baseline en una rama estable;
+- mantener bloqueados `db push`, `migrate reset` y migraciones ad hoc.
 
-**Gate:** `npm.cmd run db:migrate:status` debe explicar la historia sin drift no
-resuelto. Hasta entonces no se avanza.
+**Gate:** el manifest y `db:baseline:status` pueden pasar offline con pins exactos;
+eso no habilita DDL. `db:migrate:status` debe explicar la historia estable sin
+drift y el modo release debe seguir fallando con
+`RELEASE_ATTESTATION_NOT_GOVERNED` hasta implementar la atestación institucional.
 
 ### Fase 1 — Tablas aditivas inertes
 
@@ -657,8 +684,10 @@ deja evidencia.
 
 Orden recomendado de paquetes revisables:
 
-- **WP0 — Baseline y drift:** evidencia DB, baseline Prisma, restore, preflight y
-  atestación institucional CI/KMS/OIDC. El receipt estructural no autoriza DDL.
+- **WP0 — Baseline y drift:** baseline Prisma y replay descartable A/B3 ya
+  reproducibles; siguen pendientes identidad institucional del target, evidencia
+  de DB estable, backup/restore gobernado, preflight y atestación CI/KMS/OIDC. El
+  child-at-LSN y el receipt estructural no autorizan DDL.
 - **WP1 — Catálogo:** bundle, capabilities exactas, roles y scopes inertes.
 - **WP2 — Organización:** OrgUnit, closure, memberships y atributos confiables.
 - **WP3 — Asignaciones:** lifecycle, approvals y SoD preventivo.
@@ -675,8 +704,11 @@ un preview aislado se pueden aprovisionar cuentas temporales por perfil.
 ## 16. Evidencia de validación de esta propuesta
 
 El archivo aislado fue formateado y validado localmente con Prisma 5.22 sin
-conectarse a una DB. Esa validación demuestra sintaxis del datamodel, no FKs hacia
-el schema activo, SQL de hardening, migración, seguridad runtime ni despliegue.
+conectarse a una DB. Por separado, el baseline core S14C pasó replay en los hijos
+descartables A/B3; ese replay no incluyó la propuesta RBAC/ABAC. Por lo tanto, la
+validación de esta propuesta sólo demuestra sintaxis del datamodel: no demuestra
+FKs hacia el schema activo, SQL de hardening, migración RBAC/ABAC, seguridad
+runtime, DB estable ni despliegue.
 
 Comandos de revisión seguros:
 

@@ -1,0 +1,24 @@
+{
+  "contractVersion": 2,
+  "provider": "postgresql",
+  "prismaMajor": 5,
+  "prismaVersion": "5.22.0",
+  "prismaEngineVersion": "5.22.0-44.605197351a3c8bdd595af2d2a9bc3025bca48ea2",
+  "prismaToolchainLockSha256": "a0a2225a57216845723112cfce1edfb6f348e725610557db9243cd638b94792b",
+  "migrationLockSha256": "d6bae7899f05da956e1070ba5703455503208ef79e161acb18c93bfe3c6cd236",
+  "baselinePolicyVersion": "prisma-baseline-additive-v1",
+  "baselineId": "prisma-baseline-7c5f5aac9da1e72c6d2750110fba03944bdde6a6cb285f0d945ff84ce7be9fbb",
+  "baselineMigration": {
+    "directory": "20260809220336_baseline",
+    "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
+  },
+  "schemaSha256": "1953c275cec5415a0508d77dcd433f65a7124bcc5c22c6ac7c52c61ccd9afb4d",
+  "migrationHistorySha256": "f42aa4107d44f4b9e8949187f099f0f1700bd100c346edfe900a0bfb4efb48ef",
+  "migrationSetId": "prisma-set-075152dc94eadb7865ed91e952e17ef20cf0e21c5e91b5720277eb08c7b466be",
+  "migrations": [
+    {
+      "directory": "20260809220336_baseline",
+      "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
+    }
+  ]
+}

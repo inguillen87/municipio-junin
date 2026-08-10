@@ -868,7 +868,7 @@ test('private person answers render leave cards, actions and bounded match optio
       containsPii: true,
       directorySchemaVersion: 'grh-directory-v1',
     };
-    if (body.message === 'Licencias de Persona Prueba') {
+    if (body.message === 'Licencias del legajo 7001') {
       return {
         payload: {
           status: 'answered',
@@ -1006,7 +1006,7 @@ test('private person answers render leave cards, actions and bounded match optio
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
   assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'light', 'private-person-light');
   assert.equal(requestLog.length, 3);
-  assert.equal(requestLog[1].body.message, 'Licencias de Persona Prueba');
+  assert.equal(requestLog[1].body.message, 'Licencias del legajo 7001');
   assert.deepEqual(consoleErrors, []);
   await context.close();
 });

@@ -579,13 +579,13 @@
     ].filter(Boolean).join(' · ');
   }
 
-  function submitPersonLookup(displayName) {
-    if (!safeText(displayName, 200, false) || busy) return;
+  function submitPersonLookup(item) {
+    if (!item || !positiveInteger(item.legajo) || busy) return;
     closePersonSearch();
     var input = byId('assistantInput');
     var form = byId('assistantForm');
     if (!input || !form) return;
-    input.value = 'Licencias de ' + displayName;
+    input.value = 'Licencias del legajo ' + item.legajo;
     resizeInput(input);
     form.requestSubmit();
   }
@@ -611,7 +611,7 @@
       button.setAttribute('role', 'listitem');
       button.appendChild(createElement('strong', '', item.displayName));
       button.appendChild(createElement('span', '', personResultContext(item)));
-      button.addEventListener('click', function() { submitPersonLookup(item.displayName); });
+      button.addEventListener('click', function() { submitPersonLookup(item); });
       results.appendChild(button);
     });
     var prefix = payload.query.total > namedItems.length

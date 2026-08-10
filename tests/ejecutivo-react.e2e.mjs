@@ -364,6 +364,143 @@ function assertNoLegacyDataEndpoint(apiLog) {
   assert.equal(apiLog.some(entry => /\/api\/(?:_data|grh-data)(?:\/|$)/.test(entry.path)), false);
 }
 
+async function seedTheme(context, theme) {
+  await context.addInitScript(selectedTheme => {
+    if (sessionStorage.getItem('municontrol-visual-theme-seeded') === '1') return;
+    localStorage.setItem('govtech_theme', selectedTheme);
+    localStorage.setItem('municontrol-color-theme:v1', selectedTheme);
+    sessionStorage.setItem('municontrol-visual-theme-seeded', '1');
+  }, theme);
+}
+
+async function readVisualAudit(page) {
+  return page.evaluate(() => {
+    const parseColor = value => {
+      if (!value || value === 'none' || value === 'transparent') return [0, 0, 0, 0];
+      const rgbMatch = String(value).match(/rgba?\(([^)]+)\)/i);
+      if (rgbMatch) {
+        const parts = rgbMatch[1].replace('/', ' ').split(/[\s,]+/).filter(Boolean).map(Number);
+        return [parts[0], parts[1], parts[2], Number.isFinite(parts[3]) ? parts[3] : 1];
+      }
+      const srgbMatch = String(value).match(/color\(srgb\s+([^)]+)\)/i);
+      if (!srgbMatch) return null;
+      const parts = srgbMatch[1].replace('/', ' ').split(/[\s,]+/).filter(Boolean);
+      const channel = part => part.endsWith('%') ? Number.parseFloat(part) * 2.55 : Number(part) * 255;
+      const alpha = parts[3]?.endsWith('%') ? Number.parseFloat(parts[3]) / 100 : Number(parts[3]);
+      return [channel(parts[0]), channel(parts[1]), channel(parts[2]), Number.isFinite(alpha) ? alpha : 1];
+    };
+    const composite = (front, back) => {
+      const alpha = front[3] + back[3] * (1 - front[3]);
+      if (!alpha) return [0, 0, 0, 0];
+      return [0, 1, 2].map(index =>
+        (front[index] * front[3] + back[index] * back[3] * (1 - front[3])) / alpha
+      ).concat(alpha);
+    };
+    const luminance = color => color.slice(0, 3).map(channel => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+    const contrastRatio = (first, second) => {
+      const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    const effectiveBackground = node => {
+      const layers = [];
+      let current = node;
+      while (current instanceof Element) {
+        const color = parseColor(getComputedStyle(current).backgroundColor);
+        if (color && color[3] > 0) layers.push(color);
+        if (color && color[3] >= 1) break;
+        current = current.parentElement;
+      }
+      let result = [255, 255, 255, 1];
+      for (let index = layers.length - 1; index >= 0; index -= 1) {
+        result = composite(layers[index], result);
+      }
+      return result;
+    };
+    const selectorFor = node => {
+      const className = typeof node.className === 'string' ? node.className : node.className?.baseVal || '';
+      return `${node.tagName.toLowerCase()}${node.id ? `#${node.id}` : ''}${
+        className ? `.${className.trim().replace(/\s+/g, '.')}` : ''
+      }`;
+    };
+    const visible = node => {
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return node.getClientRects().length > 0 && rect.width > 0 && rect.height > 0 &&
+        style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0 &&
+        !node.closest('.sr-only');
+    };
+    const ownsVisibleText = node => node instanceof SVGTextElement || Array.from(node.childNodes).some(child =>
+      child.nodeType === Node.TEXT_NODE && child.textContent.trim()
+    );
+    const textNodes = Array.from(document.querySelectorAll('body *')).filter(node =>
+      visible(node) && !node.matches('script, style, title, desc, option') && ownsVisibleText(node)
+    );
+    const textViolations = textNodes.map(node => {
+      const style = getComputedStyle(node);
+      const background = effectiveBackground(node);
+      const rawColor = parseColor(node instanceof SVGTextElement && style.fill !== 'none' ? style.fill : style.color);
+      const textColor = rawColor ? composite(rawColor, background) : null;
+      return {
+        selector: selectorFor(node),
+        text: node.textContent.trim().slice(0, 80),
+        ratio: textColor ? contrastRatio(textColor, background) : 0,
+        foreground: node instanceof SVGTextElement ? style.fill : style.color,
+        background: `rgb(${background.slice(0, 3).map(Math.round).join(', ')})`,
+      };
+    }).filter(result => result.ratio < 4.5 - 0.01);
+    const fontFloorViolations = textNodes.map(node => ({
+      selector: selectorFor(node),
+      text: node.textContent.trim().slice(0, 80),
+      size: Number.parseFloat(getComputedStyle(node).fontSize),
+    })).filter(result => result.size < 12 - 0.01);
+    const controlBoundaryViolations = Array.from(document.querySelectorAll(
+      '.theme-toggle, .button, .executive-hero__actions a',
+    )).filter(visible).map(node => {
+      const style = getComputedStyle(node);
+      const outside = effectiveBackground(node.parentElement || node);
+      const rawBorder = parseColor(style.borderTopColor);
+      const border = rawBorder ? composite(rawBorder, outside) : outside;
+      return {
+        selector: selectorFor(node),
+        ratio: Number.parseFloat(style.borderTopWidth) > 0 ? contrastRatio(border, outside) : 1,
+      };
+    }).filter(result => result.ratio < 3 - 0.01);
+
+    return {
+      theme: document.documentElement.dataset.theme,
+      colorScheme: document.documentElement.style.colorScheme,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      textViolations,
+      fontFloorViolations,
+      controlBoundaryViolations,
+    };
+  });
+}
+
+function assertVisualAudit(audit, expectedTheme, viewportName) {
+  assert.equal(audit.theme, expectedTheme, `${viewportName} active theme`);
+  assert.equal(audit.colorScheme, expectedTheme, `${viewportName} browser color scheme`);
+  assert.deepEqual(
+    audit.textViolations,
+    [],
+    `${viewportName} visible text must meet 4.5:1: ${JSON.stringify(audit.textViolations)}`,
+  );
+  assert.deepEqual(
+    audit.fontFloorViolations,
+    [],
+    `${viewportName} operational text must render at 12px or larger: ${JSON.stringify(audit.fontFloorViolations)}`,
+  );
+  assert.deepEqual(
+    audit.controlBoundaryViolations,
+    [],
+    `${viewportName} control boundaries must meet 3:1: ${JSON.stringify(audit.controlBoundaryViolations)}`,
+  );
+  assert.ok(audit.overflow <= 1, `${viewportName} overflow=${audit.overflow}`);
+}
+
 async function readyDiagnostics(page) {
   return page.evaluate(expectedCollections => {
     const normalize = value => String(value || '').replace(/\s+/g, ' ').trim();
@@ -496,6 +633,67 @@ test('React Ejecutivo validates the governed synthetic contract and fails closed
         }
       }
       assertNoLegacyDataEndpoint(apiLog);
+    });
+  });
+
+  await t.test('keeps both themes legible and persists a real toggle on desktop and mobile', async () => {
+    await withScenario({ name: 'visual-themes', role: 'INTENDENTE' }, async ({ baseUrl }) => {
+      for (const viewport of [
+        { name: 'desktop-dark', width: 1_440, height: 1_000, theme: 'dark' },
+        { name: 'desktop-light', width: 1_440, height: 1_000, theme: 'light' },
+        { name: 'mobile-dark', width: 390, height: 844, theme: 'dark' },
+        { name: 'mobile-light', width: 390, height: 844, theme: 'light' },
+      ]) {
+        const { context, page } = await newMonitoredPage(browser, baseUrl, {
+          viewport: { width: viewport.width, height: viewport.height },
+          reducedMotion: viewport.width === 390 ? 'reduce' : 'no-preference',
+        });
+        try {
+          await seedTheme(context, viewport.theme);
+          await page.goto(`${baseUrl}/ejecutivo`, { waitUntil: 'domcontentloaded' });
+          await page.waitForSelector('#page-title');
+          assertVisualAudit(await readVisualAudit(page), viewport.theme, viewport.name);
+
+          const nextTheme = viewport.theme === 'dark' ? 'light' : 'dark';
+          await page.locator('button.theme-toggle').click();
+          await page.waitForFunction(expected => document.documentElement.dataset.theme === expected, nextTheme);
+          const persisted = await page.evaluate(() => ({
+            legacy: localStorage.getItem('govtech_theme'),
+            versioned: localStorage.getItem('municontrol-color-theme:v1'),
+          }));
+          assert.deepEqual(persisted, { legacy: nextTheme, versioned: nextTheme }, `${viewport.name} storage`);
+
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await page.waitForSelector('#page-title');
+          assert.equal(await page.locator('html').getAttribute('data-theme'), nextTheme, `${viewport.name} reload`);
+        } finally {
+          await context.close();
+        }
+      }
+
+      const { context, page } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 1_440, height: 1_000 },
+      });
+      try {
+        await context.addInitScript(() => {
+          if (sessionStorage.getItem('municontrol-theme-conflict-seeded') === '1') return;
+          localStorage.setItem('govtech_theme', 'dark');
+          localStorage.setItem('municontrol-color-theme:v1', 'light');
+          sessionStorage.setItem('municontrol-theme-conflict-seeded', '1');
+        });
+        await page.goto(`${baseUrl}/ejecutivo`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('#page-title');
+        assert.equal(await page.locator('html').getAttribute('data-theme'), 'light', 'versioned key wins conflicts');
+        assert.deepEqual(await page.evaluate(() => ({
+          legacy: localStorage.getItem('govtech_theme'),
+          versioned: localStorage.getItem('municontrol-color-theme:v1'),
+        })), { legacy: 'light', versioned: 'light' }, 'AppShell synchronizes conflicting keys');
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('#page-title');
+        assert.equal(await page.locator('html').getAttribute('data-theme'), 'light', 'canonical theme survives reload');
+      } finally {
+        await context.close();
+      }
     });
   });
 

@@ -65,6 +65,129 @@ function contrastRatio(first, second) {
   return (luminances[0] + 0.05) / (luminances[1] + 0.05);
 }
 
+async function readRenderedThemeAudit(page) {
+  return page.evaluate(() => {
+    const parseColor = value => {
+      if (!value || value === 'none' || value === 'transparent') return [0, 0, 0, 0];
+      const match = String(value).match(/rgba?\(([^)]+)\)/i);
+      if (!match) return null;
+      const parts = match[1].replace('/', ' ').split(/[\s,]+/).filter(Boolean).map(Number);
+      return [parts[0], parts[1], parts[2], Number.isFinite(parts[3]) ? parts[3] : 1];
+    };
+    const composite = (front, back) => {
+      const alpha = front[3] + back[3] * (1 - front[3]);
+      if (!alpha) return [0, 0, 0, 0];
+      return [0, 1, 2].map(index =>
+        (front[index] * front[3] + back[index] * back[3] * (1 - front[3])) / alpha
+      ).concat(alpha);
+    };
+    const luminance = color => color.slice(0, 3).map(channel => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+    const ratio = (first, second) => {
+      const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    const effectiveBackground = node => {
+      const layers = [];
+      let current = node;
+      while (current instanceof Element) {
+        const color = parseColor(getComputedStyle(current).backgroundColor);
+        if (color && color[3] > 0) layers.push(color);
+        if (color && color[3] >= 1) break;
+        current = current.parentElement;
+      }
+      let result = [255, 255, 255, 1];
+      for (let index = layers.length - 1; index >= 0; index -= 1) result = composite(layers[index], result);
+      return result;
+    };
+    const selectorFor = node => {
+      const classes = typeof node.className === 'string' ? node.className : node.className?.baseVal || '';
+      return `${node.tagName.toLowerCase()}${node.id ? `#${node.id}` : ''}${classes ? `.${classes.trim().replace(/\s+/g, '.')}` : ''}`;
+    };
+    const visible = node => {
+      const style = getComputedStyle(node);
+      return node.getClientRects().length > 0 && style.display !== 'none' && style.visibility !== 'hidden' &&
+        Number(style.opacity) > 0;
+    };
+    const textNodes = Array.from(document.querySelectorAll('body.hacienda-page *')).filter(node => {
+      if (!visible(node) || node.matches('script, style, title, desc, option, .hac-visually-hidden')) return false;
+      return node instanceof SVGTextElement || Array.from(node.childNodes).some(child =>
+        child.nodeType === Node.TEXT_NODE && child.textContent.trim()
+      );
+    });
+    const textViolations = textNodes.map(node => {
+      const style = getComputedStyle(node);
+      const background = effectiveBackground(node);
+      const rawTextColor = parseColor(node instanceof SVGTextElement ? style.fill : style.color);
+      const textColor = rawTextColor ? composite(rawTextColor, background) : null;
+      return {
+        selector: selectorFor(node),
+        text: node.textContent.trim().slice(0, 70),
+        ratio: textColor ? Number(ratio(textColor, background).toFixed(2)) : 0,
+        size: Number.parseFloat(style.fontSize),
+      };
+    });
+    const boundarySelector = [
+      '.hac-topbar', '.hac-menu-btn', '.hac-icon-btn', '.hac-retry-btn', '.hac-source-state',
+      '.hac-hero', '.hac-chip', '.hac-select', '.hac-error', '.hac-stat',
+      '.hac-panel', '.hac-panel-badge', '.hac-close-figure', '.hac-close-metric', '.hac-close-note',
+      '.hac-alert', '.hac-equation-card', '.hac-scenario-banner', '.hac-sim-result', '.hac-table-wrap',
+      '.hac-methodology', '[data-muni-shell="primary-nav"]', '[data-muni-shell="bottom-nav"]'
+    ].join(',');
+    const boundaryViolations = Array.from(document.querySelectorAll(boundarySelector)).filter(visible).map(node => {
+      const style = getComputedStyle(node);
+      const outside = effectiveBackground(node.parentElement || node);
+      const inside = effectiveBackground(node);
+      const borderRatios = ['Top', 'Right', 'Bottom', 'Left'].map(side => {
+        const width = Number.parseFloat(style[`border${side}Width`]) || 0;
+        const rawBorder = parseColor(style[`border${side}Color`]);
+        const border = rawBorder ? composite(rawBorder, outside) : outside;
+        return width > 0 ? ratio(border, outside) : 1;
+      });
+      const boundaryRatio = Math.max(
+        ratio(inside, outside),
+        ...borderRatios,
+      );
+      return { selector: selectorFor(node), ratio: Number(boundaryRatio.toFixed(2)) };
+    }).filter(result => result.ratio < 3 - 0.01);
+    const bottomNav = document.querySelector('[data-muni-shell="bottom-nav"]');
+    return {
+      theme: document.documentElement.dataset.theme,
+      bodyBackground: getComputedStyle(document.body).backgroundColor,
+      mainBackground: getComputedStyle(document.querySelector('#mainContent')).backgroundColor,
+      mainColor: getComputedStyle(document.querySelector('#mainContent')).color,
+      bottomNavBackground: bottomNav ? getComputedStyle(bottomNav).backgroundColor : null,
+      textViolations: textViolations.filter(result => result.ratio < 4.5 - 0.01),
+      fontFloorViolations: textViolations.filter(result => result.size < 12),
+      boundaryViolations,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      legacyStored: localStorage.getItem('govtech_theme'),
+      versionedStored: localStorage.getItem('municontrol-color-theme:v1'),
+    };
+  });
+}
+
+function assertRenderedThemeAudit(audit, expectedTheme, viewportName) {
+  assert.equal(audit.theme, expectedTheme, `${viewportName} theme`);
+  assert.equal(audit.legacyStored, expectedTheme, `${viewportName} legacy storage`);
+  assert.equal(audit.versionedStored, expectedTheme, `${viewportName} canonical storage`);
+  assert.deepEqual(audit.textViolations, [], `${viewportName} text contrast: ${JSON.stringify(audit.textViolations)}`);
+  assert.deepEqual(audit.fontFloorViolations, [], `${viewportName} font floor: ${JSON.stringify(audit.fontFloorViolations)}`);
+  assert.deepEqual(audit.boundaryViolations, [], `${viewportName} boundaries: ${JSON.stringify(audit.boundaryViolations)}`);
+  assert.equal(audit.overflow, 0, `${viewportName} must not overflow horizontally`);
+  assert.notEqual(audit.bodyBackground, audit.mainColor, `${viewportName} body cannot equal text`);
+  assert.notEqual(audit.mainBackground, audit.mainColor, `${viewportName} main cannot equal text`);
+  if (viewportName.startsWith('mobile-')) {
+    assert.equal(
+      audit.bottomNavBackground,
+      expectedTheme === 'light' ? 'rgb(248, 250, 252)' : 'rgb(9, 23, 40)',
+      `${viewportName} bottom navigation background`,
+    );
+  }
+}
+
 function authoritativeUser(role = 'INTENDENTE', malformedProjection = false) {
   const tenantId = 'tenant-junin-test';
   const access = accessPolicy.getSessionAccessForUser({ role, tenantId });
@@ -168,7 +291,7 @@ async function authenticatedContext(browser, viewport) {
     viewport: { width: viewport.width, height: viewport.height },
     reducedMotion: viewport.reducedMotion,
   });
-  await context.addInitScript(({ token, theme }) => {
+  await context.addInitScript(({ token, legacyTheme, versionedTheme }) => {
     sessionStorage.setItem('mjunin_token', token);
     sessionStorage.setItem('mjunin_user', JSON.stringify({
       id: 'qa-hacienda',
@@ -176,8 +299,16 @@ async function authenticatedContext(browser, viewport) {
       role: 'INTENDENTE',
       tenantId: 'tenant-junin-test',
     }));
-    localStorage.setItem('govtech_theme', theme);
-  }, { token: fakeBrowserToken(), theme: viewport.theme || 'dark' });
+    if (!sessionStorage.getItem('qa-theme-seeded')) {
+      if (legacyTheme) localStorage.setItem('govtech_theme', legacyTheme);
+      if (versionedTheme) localStorage.setItem('municontrol-color-theme:v1', versionedTheme);
+      sessionStorage.setItem('qa-theme-seeded', 'true');
+    }
+  }, {
+    token: fakeBrowserToken(),
+    legacyTheme: viewport.legacyTheme || viewport.theme || 'dark',
+    versionedTheme: viewport.versionedTheme || null,
+  });
   return context;
 }
 
@@ -193,12 +324,14 @@ test('Hacienda source uses only the secure GRH experience client and compiles in
   assert.match(html, /async function init\(\)[\s\S]*if \(!await requirePageCapability\(\)\) return;[\s\S]*await loadExperience\(\)/);
   assert.match(html, /retryLoad\.addEventListener\('click', loadAuthorizedExperience\)/);
   assert.match(html, /row\.privacyStatus !== 'released'/);
+  assert.match(html, /<script src="js\/theme-switcher\.js"><\/script>[\s\S]*<link rel="stylesheet" href="css\/dashboard\.css">/);
+  assert.match(html, /id="themeToggleBtn"[^>]+data-muni-theme-control/);
   assert.match(html, /La reconciliación es global/);
 
   const inlineScripts = [...html.matchAll(
     /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi,
   )].map(match => match[1]);
-  assert.ok(inlineScripts.length >= 2);
+  assert.ok(inlineScripts.length >= 1);
   inlineScripts.forEach(script => assert.doesNotThrow(() => new Function(script)));
 });
 
@@ -276,10 +409,10 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
   });
 
   const viewports = [
-    { name: 'desktop-dark', width: 1440, height: 1000, reducedMotion: 'no-preference', theme: 'dark' },
-    { name: 'desktop-light', width: 1440, height: 1000, reducedMotion: 'no-preference', theme: 'light' },
-    { name: 'mobile-dark', width: 390, height: 844, reducedMotion: 'reduce', theme: 'dark' },
-    { name: 'mobile-light', width: 390, height: 844, reducedMotion: 'reduce', theme: 'light' },
+    { name: 'desktop-dark', width: 1440, height: 1000, reducedMotion: 'no-preference', theme: 'dark', versionedTheme: 'dark', legacyTheme: 'light' },
+    { name: 'desktop-light', width: 1440, height: 1000, reducedMotion: 'no-preference', theme: 'light', versionedTheme: 'light', legacyTheme: 'dark' },
+    { name: 'mobile-dark', width: 390, height: 844, reducedMotion: 'reduce', theme: 'dark', versionedTheme: 'dark', legacyTheme: 'light' },
+    { name: 'mobile-light', width: 390, height: 844, reducedMotion: 'reduce', theme: 'light', versionedTheme: 'light', legacyTheme: 'dark' },
   ];
   for (const viewport of viewports) {
     const context = await authenticatedContext(browser, viewport);
@@ -352,6 +485,7 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
           text: node.textContent.trim().slice(0, 60),
         })),
     }));
+    const renderedTheme = await readRenderedThemeAudit(page);
 
     assert.equal(result.dataHidden, false);
     assert.equal(result.errorHidden, true);
@@ -386,6 +520,7 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
       if (row.period) assert.equal(result.pageText.includes(row.period), false);
     }
     assert.equal(result.theme, viewport.theme);
+    assertRenderedThemeAudit(renderedTheme, viewport.theme, viewport.name);
     assert.deepEqual(result.fontFloorFailures, [], `${viewport.name} must render operational text at 12px or larger`);
     for (const background of ['bg', 'surface', 'surface-raised']) {
       assert.ok(
@@ -407,6 +542,32 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
         fullPage: true,
       });
     }
+
+    const oppositeTheme = viewport.theme === 'dark' ? 'light' : 'dark';
+    await page.locator('#themeToggleBtn').click();
+    await page.waitForFunction(expected => (
+      document.documentElement.dataset.theme === expected &&
+      localStorage.getItem('municontrol-color-theme:v1') === expected &&
+      localStorage.getItem('govtech_theme') === expected
+    ), oppositeTheme);
+    const immediateTheme = await page.evaluate(() => ({
+      colorScheme: getComputedStyle(document.documentElement).colorScheme,
+      metaTheme: document.querySelector('meta[name="theme-color"]')?.content,
+      preference: document.querySelector('#themeToggleBtn')?.dataset.themePreference,
+      resolved: document.querySelector('#themeToggleBtn')?.dataset.themeResolved,
+    }));
+    assert.equal(immediateTheme.colorScheme, oppositeTheme, `${viewport.name} color-scheme`);
+    assert.equal(immediateTheme.preference, oppositeTheme, `${viewport.name} button preference`);
+    assert.equal(immediateTheme.resolved, oppositeTheme, `${viewport.name} button resolved theme`);
+    assert.equal(immediateTheme.metaTheme, oppositeTheme === 'light' ? '#f0f4ff' : '#060b18');
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForSelector('#haciendaDashboard[aria-busy="false"]');
+    assertRenderedThemeAudit(
+      await readRenderedThemeAudit(page),
+      oppositeTheme,
+      `${viewport.name}-reload`,
+    );
 
     const previousClose = releasedCloseRows.at(-2);
     await page.selectOption('#closePeriodSelect', previousClose.period);
@@ -439,10 +600,10 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     await context.close();
   }
 
-  assert.equal(requestLog.length, viewports.length * 3);
+  assert.equal(requestLog.length, viewports.length * 6);
   assert.deepEqual(
     requestLog.map(item => item.contract).sort(),
-    viewports.flatMap(() => ['close', 'executive', 'quality']).sort(),
+    viewports.flatMap(() => ['close', 'executive', 'quality', 'close', 'executive', 'quality']).sort(),
   );
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
   assert.equal(requestLog.some(item => /grh-data|profile|semantic/i.test(item.pathname)), false);

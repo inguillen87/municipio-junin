@@ -1,0 +1,386 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import {
+  GRH_DIRECTORY_EXCLUDED_FIELDS,
+  inspectGrhDirectoryArtifact,
+  inspectGrhDirectoryResponse,
+} from '../api/lib/grh-directory-contract.js';
+import {
+  clearGrhDirectorySnapshotCache,
+  createGrhDirectorySnapshotEnvelope,
+  decryptGrhDirectorySnapshotEnvelope,
+  GRH_DIRECTORY_SNAPSHOT_ACTION,
+  GRH_DIRECTORY_SNAPSHOT_ENTITY,
+} from '../api/lib/grh-directory-snapshot.js';
+import { readGrhDirectory } from '../api/lib/grh-directory-store.js';
+
+const SNAPSHOT_KEY = Buffer.alloc(32, 7).toString('base64url');
+
+function artifactFixture() {
+  const records = [{
+    company_code: 101,
+    legajo: 1001,
+    display_name: 'Ágata de Prueba',
+    sector: { code: 7, label: 'Salud' },
+    organization: { code: 5, label: 'Hospital Municipal' },
+    position: {
+      code: 4,
+      label: 'Directora',
+      parent: { code: 40, label: 'Secretaría' },
+      depends_on: { code: 50, label: 'Municipio' },
+    },
+    category: { code: 3, label: 'Categoría A' },
+    agreement: { code: 2, label: 'Convenio municipal' },
+    absence: { event_count: 2, latest_date: '2026-07-01' },
+    leave: { event_count: 2, latest_start_date: '2026-05-01', latest_end_date: '2026-05-10' },
+    leave_history: [
+      { start_date: '2026-05-01', end_date: '2026-05-10', days: 10 },
+      { start_date: '2025-02-01', end_date: '2025-02-02', days: 2 },
+    ],
+    position_observation: {
+      label: 'Dirección observada',
+      observed_date: '2026-08-31',
+      observed_period: '2026-08',
+      status: 'source_future_effective',
+      source_table: 'histolegajo',
+    },
+  }, {
+    company_code: 101,
+    legajo: 1002,
+    display_name: 'Bruno Operativo',
+    sector: { code: 7, label: 'Salud' },
+    organization: { code: 6, label: 'Atención primaria' },
+    position: { code: 8, label: 'Enfermero', parent: null, depends_on: null },
+    category: { code: 4, label: 'Categoría B' },
+    agreement: { code: 2, label: 'Convenio municipal' },
+    absence: { event_count: 0, latest_date: null },
+    leave: { event_count: 0, latest_start_date: null, latest_end_date: null },
+    leave_history: [],
+    position_observation: null,
+  }, {
+    company_code: 202,
+    legajo: 1001,
+    display_name: 'Celina Administración',
+    sector: { code: 9, label: 'Administración' },
+    organization: null,
+    position: null,
+    category: null,
+    agreement: null,
+    absence: { event_count: 1, latest_date: '2026-01-05' },
+    leave: { event_count: 1, latest_start_date: '2024-04-01', latest_end_date: '2024-04-01' },
+    leave_history: [{ start_date: '2024-04-01', end_date: '2024-04-01', days: 1 }],
+    position_observation: null,
+  }];
+  return {
+    schema_version: 'grh-directory-v1',
+    source: {
+      canonical_system: 'GRH Junín',
+      file: 'grh_junin.backup_2026080615_plataforma.sql.gz',
+      sha256: 'a'.repeat(64),
+      compressed_size_bytes: 44537741,
+      snapshot_as_of: '2026-08-06',
+      generated_at: '2026-08-10T15:00:00.000Z',
+    },
+    privacy: {
+      contains_personal_data: true,
+      private_storage_required: true,
+      excluded_fields: [...GRH_DIRECTORY_EXCLUDED_FIELDS],
+    },
+    counts: {
+      source_rows: {
+        ausencia: 3,
+        cargo: 2,
+        catego: 2,
+        convenio: 1,
+        histolegajo: 1,
+        legajo: 3,
+        licencia: 3,
+        organiza: 2,
+        persona: 3,
+        sectores: 2,
+      },
+      directory_records: 3,
+      person_matches: 3,
+      records_with_name: 3,
+      records_without_name: 0,
+      duplicate_person_links: 0,
+      invalid_employee_key_rows: 0,
+      valid_absence_events: 3,
+      quarantined_absence_events: 0,
+      valid_leave_events: 3,
+      quarantined_leave_events: 0,
+      valid_position_observation_rows: 1,
+      blank_position_observation_rows: 0,
+      quarantined_position_observation_rows: 0,
+      future_effective_position_observation_rows: 1,
+      records_with_position_observation: 1,
+    },
+    records,
+  };
+}
+
+function envelopeFixture({ tenantId = 'tenant-a', key = SNAPSHOT_KEY } = {}) {
+  return createGrhDirectorySnapshotEnvelope({
+    tenantId,
+    artifact: artifactFixture(),
+    key,
+    nonce: Buffer.alloc(12, tenantId === 'tenant-a' ? 1 : 2),
+  });
+}
+
+function snapshotQuery(envelope, expectedTenant = 'tenant-a') {
+  return async (sql, values) => {
+    assert.match(sql, /FROM audit_logs/);
+    assert.doesNotMatch(sql, /grh_directory_people/);
+    assert.deepEqual(values, [
+      expectedTenant,
+      GRH_DIRECTORY_SNAPSHOT_ACTION,
+      GRH_DIRECTORY_SNAPSHOT_ENTITY,
+    ]);
+    return { rows: [{ details: envelope }] };
+  };
+}
+
+test.beforeEach(() => clearGrhDirectorySnapshotCache());
+
+test('AES-256-GCM envelope is exact, opaque and round-trips a governed artifact', () => {
+  const artifact = artifactFixture();
+  assert.equal(inspectGrhDirectoryArtifact(artifact).ok, true);
+  const envelope = envelopeFixture();
+  assert.deepEqual(Object.keys(envelope).sort(), [
+    'aad', 'authTag', 'cipher', 'ciphertext', 'compression', 'kind', 'keyVersion',
+    'leaveRecordCount', 'nonce', 'positionObservationCount', 'recordCount',
+    'schemaVersion', 'snapshotAsOf', 'sourceSha256',
+  ].sort());
+  assert.equal(GRH_DIRECTORY_SNAPSHOT_ACTION, 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1');
+  assert.equal(envelope.kind, 'grh.directory.snapshot.v1');
+  assert.deepEqual(envelope.aad, {
+    tenantId: 'tenant-a',
+    schemaVersion: 'grh-directory-v1',
+    sourceSha256: 'a'.repeat(64),
+    snapshotAsOf: '2026-08-06',
+    keyVersion: 'v1',
+    compression: 'gzip',
+  });
+  assert.equal(envelope.nonce, Buffer.alloc(12, 1).toString('base64url'));
+  assert.equal(envelope.authTag.length, 22);
+  assert.doesNotMatch(JSON.stringify(envelope), /Ágata|Bruno|Celina|legajo/i);
+
+  const decrypted = decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a',
+    envelope,
+    key: SNAPSHOT_KEY,
+  });
+  assert.deepEqual(decrypted, artifact);
+  assert.equal(Object.isFrozen(decrypted), true);
+  assert.equal(Object.isFrozen(decrypted.records[0]), true);
+});
+
+test('keys and encoded fields must be canonical and authenticated before decompression', () => {
+  const envelope = envelopeFixture();
+  assert.throws(() => createGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a',
+    artifact: artifactFixture(),
+    key: SNAPSHOT_KEY + '=',
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_KEY_INVALID');
+
+  const wrongKey = Buffer.alloc(32, 8).toString('base64url');
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope, key: wrongKey,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_AUTH_INVALID');
+
+  const badTag = structuredClone(envelope);
+  badTag.authTag = Buffer.alloc(16, 9).toString('base64url');
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: badTag, key: SNAPSHOT_KEY,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_AUTH_INVALID');
+
+  const nonCanonicalNonce = structuredClone(envelope);
+  nonCanonicalNonce.nonce += '=';
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: nonCanonicalNonce, key: SNAPSHOT_KEY,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_ENVELOPE_INVALID');
+});
+
+test('exact metadata, tenant-bound AAD, count identity and ciphertext limits fail closed', () => {
+  const envelope = envelopeFixture();
+  assert.equal(decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope, key: SNAPSHOT_KEY,
+  }).records.length, 3);
+  const extra = { ...structuredClone(envelope), plaintext: 'forbidden' };
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: extra, key: SNAPSHOT_KEY,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_ENVELOPE_INVALID');
+
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-b', envelope, key: SNAPSHOT_KEY,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_AAD_INVALID');
+
+  const wrongCount = structuredClone(envelope);
+  wrongCount.leaveRecordCount += 1;
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: wrongCount, key: SNAPSHOT_KEY,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_COUNT_MISMATCH');
+
+  const oversized = structuredClone(envelope);
+  oversized.ciphertext = Buffer.alloc(4 * 1024 * 1024 + 1, 1).toString('base64url');
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: oversized, key: SNAPSHOT_KEY,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_ENVELOPE_INVALID');
+});
+
+test('JSONB key reordering is safe while cache entries remain tenant and key isolated', () => {
+  const firstEnvelope = envelopeFixture({ tenantId: 'tenant-a' });
+  firstEnvelope.aad = {
+    compression: 'gzip',
+    keyVersion: 'v1',
+    snapshotAsOf: '2026-08-06',
+    sourceSha256: 'a'.repeat(64),
+    schemaVersion: 'grh-directory-v1',
+    tenantId: 'tenant-a',
+  };
+  const first = decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: firstEnvelope, key: SNAPSHOT_KEY,
+  });
+  const secondEnvelope = envelopeFixture({ tenantId: 'tenant-b' });
+  const second = decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-b', envelope: secondEnvelope, key: SNAPSHOT_KEY,
+  });
+  assert.notEqual(first, second);
+  assert.equal(first.source.sha256, second.source.sha256);
+
+  const wrongKey = Buffer.alloc(32, 8).toString('base64url');
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: firstEnvelope, key: wrongKey,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_AUTH_INVALID');
+});
+
+test('snapshot list mode supports accent-insensitive token search, facets and opaque cursors', async () => {
+  const envelope = envelopeFixture();
+  const environment = { GRH_DIRECTORY_SNAPSHOT_KEY_V1: SNAPSHOT_KEY };
+  const first = await readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: { limit: '1' },
+    queryImpl: snapshotQuery(envelope),
+    environment,
+  });
+  assert.equal(inspectGrhDirectoryResponse(first).ok, true);
+  assert.equal(first.items[0].displayName, 'Ágata de Prueba');
+  assert.equal(first.query.total, 3);
+  assert.equal(first.query.hasNext, true);
+  assert.equal(first.facets.sectors[0].code, 7);
+  assert.equal(first.facets.sectors[0].count, 2);
+  assert.equal(first.facets.categories[0].agreementCode, 2);
+
+  const second = await readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: { limit: '1', cursor: first.query.nextCursor },
+    queryImpl: snapshotQuery(envelope),
+    environment,
+  });
+  assert.equal(second.items[0].displayName, 'Bruno Operativo');
+  assert.equal(second.query.page, 2);
+
+  const searched = await readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: { search: 'prueba agata', hasLeave: 'true' },
+    queryImpl: snapshotQuery(envelope),
+    environment,
+  });
+  assert.equal(inspectGrhDirectoryResponse(searched).ok, true);
+  assert.equal(searched.query.total, 1);
+  assert.equal(searched.items[0].legajo, 1001);
+  assert.doesNotMatch(JSON.stringify(searched.items), /dni|cuil|salary|address|bank_account/i);
+});
+
+test('snapshot search normalizes compatibility characters on both query and stored names', async () => {
+  const artifact = artifactFixture();
+  artifact.records[1].display_name = 'Bruno \uFF2Fperativo';
+  const envelope = createGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a',
+    artifact,
+    key: SNAPSHOT_KEY,
+    nonce: Buffer.alloc(12, 9),
+  });
+  const result = await readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: { search: 'operativo' },
+    queryImpl: snapshotQuery(envelope),
+    environment: { GRH_DIRECTORY_SNAPSHOT_KEY_V1: SNAPSHOT_KEY },
+  });
+  assert.equal(inspectGrhDirectoryResponse(result).ok, true);
+  assert.equal(result.query.total, 1);
+  assert.equal(result.items[0].legajo, 1002);
+});
+
+test('snapshot cursors are bound to the active source and storage ordering contract', async () => {
+  const envelope = envelopeFixture();
+  const pinnedEnvironment = {
+    GRH_DIRECTORY_SNAPSHOT_KEY_V1: SNAPSHOT_KEY,
+    GRH_SOURCE_SHA256: 'a'.repeat(64),
+  };
+  const first = await readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: { limit: '1' },
+    queryImpl: snapshotQuery(envelope),
+    environment: pinnedEnvironment,
+  });
+  assert.equal(typeof first.query.nextCursor, 'string');
+
+  await assert.rejects(() => readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: { limit: '1', cursor: first.query.nextCursor },
+    queryImpl: async () => assert.fail('a cursor from another backend must fail before SQL'),
+    environment: { GRH_SOURCE_SHA256: 'a'.repeat(64) },
+  }), error => error.code === 'GRH_DIRECTORY_QUERY_INVALID' && error.status === 400);
+
+  await assert.rejects(() => readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: { limit: '1', cursor: first.query.nextCursor },
+    queryImpl: async () => assert.fail('a cursor from another source must fail before reading'),
+    environment: {
+      GRH_DIRECTORY_SNAPSHOT_KEY_V1: SNAPSHOT_KEY,
+      GRH_SOURCE_SHA256: 'b'.repeat(64),
+    },
+  }), error => error.code === 'GRH_DIRECTORY_QUERY_INVALID' && error.status === 400);
+});
+
+test('snapshot detail preserves ambiguity handling and returns governed leave history', async () => {
+  const envelope = envelopeFixture();
+  const options = {
+    tenantId: 'tenant-a',
+    queryImpl: snapshotQuery(envelope),
+    environment: { GRH_DIRECTORY_SNAPSHOT_KEY_V1: SNAPSHOT_KEY },
+  };
+  await assert.rejects(() => readGrhDirectory({
+    ...options,
+    query: { legajo: '1001' },
+  }), error => error.code === 'GRH_DIRECTORY_LEGAJO_AMBIGUOUS' && error.status === 409);
+
+  const detail = await readGrhDirectory({
+    ...options,
+    query: { legajo: '1001', company: '101' },
+  });
+  assert.equal(inspectGrhDirectoryResponse(detail).ok, true);
+  assert.equal(detail.facets, null);
+  assert.equal(detail.items[0].leaveHistory.total, 2);
+  assert.equal(detail.items[0].leaveHistory.items[0].startDate, '2026-05-01');
+});
+
+test('without the snapshot key the existing materialized-table SQL path is unchanged', async () => {
+  let materializedSql = false;
+  await assert.rejects(() => readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: {},
+    environment: {},
+    queryImpl: async (sql, values) => {
+      materializedSql = true;
+      assert.match(sql, /FROM grh_directory_sources/);
+      assert.doesNotMatch(sql, /FROM audit_logs/);
+      assert.equal(values[0], 'tenant-a');
+      return { rows: [] };
+    },
+  }), error => error.code === 'GRH_DIRECTORY_SOURCE_UNAVAILABLE');
+  assert.equal(materializedSql, true);
+});

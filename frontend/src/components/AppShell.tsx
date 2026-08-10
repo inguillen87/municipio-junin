@@ -14,10 +14,10 @@ function systemTheme(): ResolvedTheme {
 
 function initialThemePreference(): ThemePreference {
   try {
-    const legacyTheme = window.localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
-    if (legacyTheme === 'light' || legacyTheme === 'dark' || legacyTheme === 'auto') return legacyTheme;
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'auto') return storedTheme;
+    const legacyTheme = window.localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
+    if (legacyTheme === 'light' || legacyTheme === 'dark' || legacyTheme === 'auto') return legacyTheme;
   } catch {
     // A restricted browser can deny localStorage without blocking the dashboard.
   }

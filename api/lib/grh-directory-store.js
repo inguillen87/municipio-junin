@@ -6,6 +6,10 @@ import {
   GRH_DIRECTORY_EXCLUDED_FIELDS,
   GRH_DIRECTORY_SCHEMA_VERSION,
 } from './grh-directory-contract.js';
+import {
+  isGrhDirectorySnapshotEnabled,
+  loadGrhDirectorySnapshotArtifact,
+} from './grh-directory-snapshot.js';
 
 const ALLOWED_QUERY_KEYS = new Set([
   'search',
@@ -40,6 +44,8 @@ const FACET_DIMENSIONS = Object.freeze({
 });
 const MAX_SEARCH_TOKENS = 6;
 const MAX_CURSOR_OFFSET = 1_000_000;
+const CURSOR_ORDERING_VERSION = 'unicode-nfkc-es-v1';
+const SOURCE_SHA256_PATTERN = /^[0-9a-f]{64}$/;
 
 function directoryError(code, status = 503) {
   const error = new Error('El directorio GRH no esta disponible.');
@@ -97,7 +103,7 @@ function labelFilterValue(value) {
 }
 
 function searchTokenValue(value) {
-  return value.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
+  return value.normalize('NFKC').normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase();
 }
 
 function hasValue(value) {
@@ -115,6 +121,7 @@ function cursorValue(value) {
 
 function queryFingerprint(parsed) {
   const canonical = {
+    cursorScope: parsed.cursorScope,
     searchTokens: parsed.searchTokens,
     sector: parsed.sector,
     organization: parsed.organization,
@@ -153,8 +160,11 @@ function decodeGrhDirectoryCursor(value, parsed) {
   }
 }
 
-export function parseGrhDirectoryQuery(query = {}) {
+export function parseGrhDirectoryQuery(query = {}, { cursorScope = 'materialized:unbound:unicode-nfkc-es-v1' } = {}) {
   if (!query || typeof query !== 'object' || Array.isArray(query)) {
+    throw directoryError('GRH_DIRECTORY_QUERY_INVALID', 400);
+  }
+  if (typeof cursorScope !== 'string' || !/^[a-z0-9:-]{1,160}$/.test(cursorScope)) {
     throw directoryError('GRH_DIRECTORY_QUERY_INVALID', 400);
   }
   for (const key of Object.keys(query)) {
@@ -185,6 +195,7 @@ export function parseGrhDirectoryQuery(query = {}) {
     throw directoryError('GRH_DIRECTORY_QUERY_INVALID', 400);
   }
   const parsed = {
+    cursorScope,
     mode,
     page,
     limit,
@@ -558,13 +569,252 @@ function mapFacets(value) {
   }));
 }
 
-export async function readGrhDirectory({ tenantId, query = {}, queryImpl = defaultQuery } = {}) {
+function compareNullableLabels(left, right) {
+  if (left === null && right === null) return 0;
+  if (left === null) return 1;
+  if (right === null) return -1;
+  return left.localeCompare(right, 'es', { sensitivity: 'variant' });
+}
+
+function minimumLabel(current, candidate) {
+  if (candidate === null || candidate === undefined) return current;
+  const value = String(candidate);
+  if (current === null || compareNullableLabels(value, current) < 0) return value;
+  return current;
+}
+
+function dimensionFacets(records, property) {
+  const grouped = new Map();
+  for (const record of records) {
+    const dimensionValue = record[property];
+    if (!dimensionValue) continue;
+    const key = String(dimensionValue.code);
+    const current = grouped.get(key) || { code: dimensionValue.code, label: null, count: 0 };
+    current.label = minimumLabel(current.label, dimensionValue.label);
+    current.count += 1;
+    grouped.set(key, current);
+  }
+  return [...grouped.values()].sort((left, right) => (
+    right.count - left.count ||
+    compareNullableLabels(left.label, right.label) ||
+    left.code - right.code
+  ));
+}
+
+function categoryFacets(records) {
+  const grouped = new Map();
+  for (const record of records) {
+    if (!record.agreement || !record.category) continue;
+    const key = record.agreement.code + ':' + record.category.code;
+    const current = grouped.get(key) || {
+      agreementCode: record.agreement.code,
+      code: record.category.code,
+      label: null,
+      count: 0,
+    };
+    current.label = minimumLabel(current.label, record.category.label);
+    current.count += 1;
+    grouped.set(key, current);
+  }
+  return [...grouped.values()].sort((left, right) => (
+    right.count - left.count ||
+    compareNullableLabels(left.label, right.label) ||
+    left.agreementCode - right.agreementCode ||
+    left.code - right.code
+  ));
+}
+
+function positionObservationFacets(records) {
+  const grouped = new Map();
+  for (const record of records) {
+    const observation = record.position_observation;
+    if (!observation) continue;
+    const key = observation.status + ':' + observation.label;
+    const current = grouped.get(key) || {
+      label: observation.label,
+      count: 0,
+      status: observation.status,
+    };
+    current.count += 1;
+    grouped.set(key, current);
+  }
+  return [...grouped.values()].sort((left, right) => (
+    right.count - left.count ||
+    left.label.localeCompare(right.label, 'es', { sensitivity: 'variant' }) ||
+    left.status.localeCompare(right.status)
+  ));
+}
+
+function snapshotFacets(records) {
+  return {
+    sectors: dimensionFacets(records, 'sector'),
+    organizations: dimensionFacets(records, 'organization'),
+    positions: dimensionFacets(records, 'position'),
+    positionObservations: positionObservationFacets(records),
+    categories: categoryFacets(records),
+    agreements: dimensionFacets(records, 'agreement'),
+  };
+}
+
+function artifactDimension(value) {
+  if (!value) return null;
+  return { code: value.code, label: value.label };
+}
+
+function artifactPosition(value) {
+  if (!value) return null;
+  return {
+    code: value.code,
+    label: value.label,
+    parent: artifactDimension(value.parent),
+    dependsOn: artifactDimension(value.depends_on),
+  };
+}
+
+function artifactPositionObservation(value) {
+  if (!value) return null;
+  return {
+    label: value.label,
+    observedDate: value.observed_date,
+    observedPeriod: value.observed_period,
+    status: value.status,
+    sourceTable: value.source_table,
+  };
+}
+
+function snapshotItem(record, mode) {
+  const item = {
+    companyCode: record.company_code,
+    legajo: record.legajo,
+    displayName: record.display_name,
+    sector: artifactDimension(record.sector),
+    organization: artifactDimension(record.organization),
+    position: artifactPosition(record.position),
+    positionObservation: artifactPositionObservation(record.position_observation),
+    category: artifactDimension(record.category),
+    agreement: artifactDimension(record.agreement),
+    events: {
+      absenceCount: record.absence.event_count,
+      latestAbsenceDate: record.absence.latest_date,
+      leaveCount: record.leave.event_count,
+      latestLeaveStartDate: record.leave.latest_start_date,
+      latestLeaveEndDate: record.leave.latest_end_date,
+    },
+  };
+  if (mode === 'detail') {
+    item.leaveHistory = {
+      total: record.leave.event_count,
+      limit: GRH_DIRECTORY_DETAIL_LEAVE_LIMIT,
+      items: record.leave_history.slice(0, GRH_DIRECTORY_DETAIL_LEAVE_LIMIT).map(event => ({
+        startDate: event.start_date,
+        endDate: event.end_date,
+        days: event.days,
+      })),
+    };
+  }
+  return item;
+}
+
+function snapshotRecordOrder(left, right) {
+  if (left.display_name === null && right.display_name !== null) return 1;
+  if (left.display_name !== null && right.display_name === null) return -1;
+  if (left.display_name !== null && right.display_name !== null) {
+    const byName = left.display_name.localeCompare(right.display_name, 'es', { sensitivity: 'variant' });
+    if (byName) return byName;
+  }
+  return left.legajo - right.legajo || left.company_code - right.company_code;
+}
+
+function snapshotRecordMatches(record, parsed) {
+  const searchableName = record.display_name ? searchTokenValue(record.display_name) : '';
+  const legajo = String(record.legajo);
+  if (!parsed.searchTokens.every(token => searchableName.includes(token) || legajo.startsWith(token))) return false;
+  for (const name of Object.keys(DIMENSION_FILTERS)) {
+    if (parsed[name] !== null && record[name]?.code !== parsed[name]) return false;
+  }
+  if (parsed.positionObservation !== null &&
+      record.position_observation?.label?.normalize('NFKC') !== parsed.positionObservation) return false;
+  if (parsed.hasAbsence !== null && (record.absence.event_count > 0) !== parsed.hasAbsence) return false;
+  if (parsed.hasLeave !== null && (record.leave.event_count > 0) !== parsed.hasLeave) return false;
+  if (parsed.legajo !== null && record.legajo !== parsed.legajo) return false;
+  if (parsed.company !== null && record.company_code !== parsed.company) return false;
+  return true;
+}
+
+function responseFromSnapshot(artifact, parsed) {
+  const filtered = artifact.records.filter(record => snapshotRecordMatches(record, parsed));
+  if (parsed.mode === 'list') filtered.sort(snapshotRecordOrder);
+  const total = filtered.length;
+  if (parsed.mode === 'detail' && total === 0) throw directoryError('GRH_DIRECTORY_NOT_FOUND', 404);
+  if (parsed.mode === 'detail' && total > 1 && parsed.company === null) {
+    throw directoryError('GRH_DIRECTORY_LEGAJO_AMBIGUOUS', 409);
+  }
+  const rawItems = parsed.mode === 'detail'
+    ? filtered.slice(0, 1)
+    : filtered.slice(parsed.offset, parsed.offset + parsed.limit + 1);
+  const hasNext = parsed.mode === 'list' && rawItems.length > parsed.limit;
+  const items = rawItems.slice(0, parsed.limit).map(record => snapshotItem(record, parsed.mode));
+  return {
+    schemaVersion: GRH_DIRECTORY_SCHEMA_VERSION,
+    source: {
+      canonicalSystem: artifact.source.canonical_system,
+      sourceFile: artifact.source.file,
+      sourceSha256: artifact.source.sha256,
+      snapshotAsOf: artifact.source.snapshot_as_of,
+    },
+    privacy: {
+      containsPersonalData: true,
+      excludedFields: [...GRH_DIRECTORY_EXCLUDED_FIELDS],
+    },
+    query: {
+      mode: parsed.mode,
+      page: parsed.page,
+      limit: parsed.limit,
+      total,
+      hasNext,
+      cursor: parsed.cursor,
+      nextCursor: hasNext ? encodeGrhDirectoryCursor(parsed.offset + parsed.limit, parsed) : null,
+    },
+    facets: parsed.mode === 'list' ? snapshotFacets(artifact.records) : null,
+    items,
+  };
+}
+
+export async function readGrhDirectory({
+  tenantId,
+  query = {},
+  queryImpl = defaultQuery,
+  environment = process.env,
+} = {}) {
   if (typeof tenantId !== 'string' || !tenantId) throw directoryError('GRH_DIRECTORY_TENANT_REQUIRED');
-  const parsed = parseGrhDirectoryQuery(query);
+  const snapshotEnabled = isGrhDirectorySnapshotEnabled(environment);
+  const configuredSourceSha = SOURCE_SHA256_PATTERN.test(environment?.GRH_SOURCE_SHA256 || '')
+    ? environment.GRH_SOURCE_SHA256
+    : null;
+  const cursorScope = [
+    snapshotEnabled ? 'snapshot' : 'materialized',
+    configuredSourceSha || 'unbound',
+    CURSOR_ORDERING_VERSION,
+  ].join(':');
+  const parsed = parseGrhDirectoryQuery(query, { cursorScope });
+  if (snapshotEnabled) {
+    const artifact = await loadGrhDirectorySnapshotArtifact({
+      tenantId,
+      key: environment.GRH_DIRECTORY_SNAPSHOT_KEY_V1,
+      queryImpl,
+    });
+    if (configuredSourceSha && artifact.source.sha256 !== configuredSourceSha) {
+      throw directoryError('GRH_DIRECTORY_SOURCE_MISMATCH');
+    }
+    return responseFromSnapshot(artifact, parsed);
+  }
   const built = buildGrhDirectorySql(tenantId, parsed);
   const result = await queryImpl(built.sql, built.values);
   const source = result?.rows?.[0];
   if (!source) throw directoryError('GRH_DIRECTORY_SOURCE_UNAVAILABLE');
+  if (configuredSourceSha && String(source.source_sha256) !== configuredSourceSha) {
+    throw directoryError('GRH_DIRECTORY_SOURCE_MISMATCH');
+  }
   let rawItems = source.items;
   if (typeof rawItems === 'string') rawItems = JSON.parse(rawItems);
   if (!Array.isArray(rawItems)) throw directoryError('GRH_DIRECTORY_ROW_INVALID');

@@ -284,13 +284,129 @@ async function createServer(requestLog, availability = { unavailable: false }, o
   return server;
 }
 
-async function seedSession(context) {
-  await context.addInitScript(({ token }) => {
+async function seedSession(context, theme = 'dark') {
+  await context.addInitScript(({ token, selectedTheme }) => {
     sessionStorage.setItem('mjunin_token', token);
     sessionStorage.setItem('mjunin_user', JSON.stringify({
       id: 'qa-rrhh', name: 'QA RRHH', role: 'INTENDENTE', tenantId: 'tenant-junin-test',
     }));
-  }, { token: fakeBrowserToken() });
+    localStorage.setItem('govtech_theme', selectedTheme);
+    localStorage.setItem('municontrol-color-theme:v1', selectedTheme);
+  }, { token: fakeBrowserToken(), selectedTheme: theme });
+}
+
+async function readContrastAudit(page) {
+  return page.evaluate(() => {
+    const parseColor = value => {
+      if (!value || value === 'none' || value === 'transparent') return [0, 0, 0, 0];
+      const match = String(value).match(/rgba?\(([^)]+)\)/i);
+      if (!match) return null;
+      const parts = match[1].replace('/', ' ').split(/[\s,]+/).filter(Boolean).map(Number);
+      return [parts[0], parts[1], parts[2], Number.isFinite(parts[3]) ? parts[3] : 1];
+    };
+    const composite = (front, back) => {
+      const alpha = front[3] + back[3] * (1 - front[3]);
+      if (!alpha) return [0, 0, 0, 0];
+      return [0, 1, 2].map(index =>
+        (front[index] * front[3] + back[index] * back[3] * (1 - front[3])) / alpha
+      ).concat(alpha);
+    };
+    const luminance = color => color.slice(0, 3).map(channel => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+    const ratio = (first, second) => {
+      const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    const effectiveBackground = node => {
+      const layers = [];
+      let current = node;
+      while (current instanceof Element) {
+        const color = parseColor(getComputedStyle(current).backgroundColor);
+        if (color && color[3] > 0) layers.push(color);
+        if (color && color[3] >= 1) break;
+        current = current.parentElement;
+      }
+      let result = [255, 255, 255, 1];
+      for (let index = layers.length - 1; index >= 0; index -= 1) result = composite(layers[index], result);
+      return result;
+    };
+    const selectorFor = node => {
+      const classes = typeof node.className === 'string' ? node.className : node.className?.baseVal || '';
+      return `${node.tagName.toLowerCase()}${node.id ? `#${node.id}` : ''}${classes ? `.${classes.trim().replace(/\s+/g, '.')}` : ''}`;
+    };
+    const visible = node => {
+      const style = getComputedStyle(node);
+      return node.getClientRects().length > 0 && style.display !== 'none' && style.visibility !== 'hidden' &&
+        Number(style.opacity) > 0;
+    };
+
+    const textViolations = Array.from(document.querySelectorAll('body.rrhh-page *')).filter(node => {
+      if (!visible(node) || node.matches('script, style, title, desc, option')) return false;
+      return node instanceof SVGTextElement || Array.from(node.childNodes).some(child =>
+        child.nodeType === Node.TEXT_NODE && child.textContent.trim()
+      );
+    }).map(node => {
+      const style = getComputedStyle(node);
+      const background = effectiveBackground(node);
+      const rawTextColor = parseColor(node instanceof SVGTextElement ? style.fill : style.color);
+      const textColor = rawTextColor ? composite(rawTextColor, background) : null;
+      return {
+        selector: selectorFor(node),
+        text: node.textContent.trim().slice(0, 70),
+        ratio: textColor ? ratio(textColor, background) : 0,
+        color: node instanceof SVGTextElement ? style.fill : style.color,
+        background: `rgb(${background.slice(0, 3).map(Math.round).join(', ')})`,
+      };
+    }).filter(result => result.ratio < 4.5 - 0.01);
+
+    const boundarySelector = [
+      '.topbar', '[data-muni-shell="primary-nav"]', '[data-muni-shell="bottom-nav"]',
+      '.rrhh-hero', '.rrhh-hero-aside', '.rrhh-state', '.rrhh-kpi', '.rrhh-card',
+      '.rrhh-action', '.rrhh-button', '.rrhh-toggle', '.rrhh-field input', '.rrhh-field select',
+      '.rrhh-person-card', '.rrhh-person-dialog', '.rrhh-person-dimension', '.rrhh-event-card',
+      '.rrhh-leave-history', '.rrhh-source-item', '.rrhh-methodology'
+    ].join(',');
+    const boundaryViolations = Array.from(document.querySelectorAll(boundarySelector)).filter(visible).map(node => {
+      const style = getComputedStyle(node);
+      const outside = effectiveBackground(node.parentElement || node);
+      const inside = effectiveBackground(node);
+      const borderSides = ['Top', 'Right', 'Bottom', 'Left'].flatMap(side => {
+        const width = Number.parseFloat(style[`border${side}Width`]) || 0;
+        if (width <= 0) return [];
+        const parsed = parseColor(style[`border${side}Color`]);
+        return parsed ? [composite(parsed, outside)] : [];
+      });
+      const boundaryRatio = Math.max(
+        ratio(inside, outside),
+        ...borderSides.map(border => ratio(border, outside)),
+      );
+      return { selector: selectorFor(node), ratio: boundaryRatio };
+    }).filter(result => result.ratio < 3 - 0.01);
+
+    const rootStyle = getComputedStyle(document.documentElement);
+    return {
+      theme: document.documentElement.getAttribute('data-theme'),
+      bodyBackground: getComputedStyle(document.body).backgroundColor,
+      mainBackground: getComputedStyle(document.querySelector('#mainContent')).backgroundColor,
+      mainColor: getComputedStyle(document.querySelector('#mainContent')).color,
+      topbarBackground: getComputedStyle(document.querySelector('.topbar')).backgroundColor,
+      textViolations,
+      boundaryViolations,
+      tokenInk: rootStyle.getPropertyValue('--rrhh-ink').trim(),
+      tokenPage: rootStyle.getPropertyValue('--rrhh-page').trim(),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+}
+
+function assertContrastAudit(audit, expectedTheme, viewportName) {
+  assert.equal(audit.theme, expectedTheme, `${viewportName} theme`);
+  assert.deepEqual(audit.textViolations, [], `${viewportName} text contrast: ${JSON.stringify(audit.textViolations)}`);
+  assert.deepEqual(audit.boundaryViolations, [], `${viewportName} boundaries: ${JSON.stringify(audit.boundaryViolations)}`);
+  assert.equal(audit.overflow, 0, `${viewportName} must not overflow horizontally`);
+  assert.notEqual(audit.mainBackground, audit.mainColor, `${viewportName} main text cannot equal its background`);
 }
 
 function formatNumber(value) {
@@ -314,12 +430,18 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
 
   const expectedWorkforce = projections.executive.workforce;
   const expectedQuality = projections.quality;
-  for (const viewport of [
-    { name: 'desktop', width: 1440, height: 1000, reducedMotion: 'no-preference' },
-    { name: 'mobile', width: 390, height: 844, reducedMotion: 'reduce' },
-  ]) {
-    const context = await browser.newContext({ viewport, reducedMotion: viewport.reducedMotion });
-    await seedSession(context);
+  const viewports = [
+    { name: 'desktop-dark', width: 1440, height: 1000, reducedMotion: 'no-preference', theme: 'dark' },
+    { name: 'desktop-light', width: 1440, height: 1000, reducedMotion: 'no-preference', theme: 'light' },
+    { name: 'mobile-dark', width: 390, height: 844, reducedMotion: 'reduce', theme: 'dark' },
+    { name: 'mobile-light', width: 390, height: 844, reducedMotion: 'reduce', theme: 'light' },
+  ];
+  for (const viewport of viewports) {
+    const context = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height },
+      reducedMotion: viewport.reducedMotion,
+    });
+    await seedSession(context, viewport.theme);
     const page = await context.newPage();
     const consoleErrors = [];
     const externalRequests = [];
@@ -370,6 +492,9 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
         accessibleCharts: document.querySelectorAll('.rrhh-chart-wrap svg[role="img"][aria-label]').length,
         directoryState: document.querySelector('#directoryStatusBadge')?.dataset.state,
         directoryRows: document.querySelectorAll('#directoryTableBody tr, #directoryMobileList .rrhh-person-card').length,
+        directorySearchDisabled: document.querySelector('#directorySearch')?.disabled,
+        directoryFormLocked: document.querySelector('#directoryForm')?.dataset.locked,
+        privateAccessVisible: !document.querySelector('#directoryPrivateAccess')?.hidden,
         actionCount: document.querySelectorAll('.rrhh-actions .rrhh-action').length,
         busy: dashboard?.getAttribute('aria-busy'),
         duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
@@ -410,10 +535,14 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
     assert.equal(collapsed.accessibleCharts, 3);
     assert.equal(collapsed.directoryState, 'denied');
     assert.equal(collapsed.directoryRows, 0);
+    assert.equal(collapsed.directorySearchDisabled, true);
+    assert.equal(collapsed.directoryFormLocked, 'true');
+    assert.equal(collapsed.privateAccessVisible, true);
     assert.equal(collapsed.actionCount, 5);
     assert.equal(collapsed.busy, 'false');
     assert.deepEqual(collapsed.duplicateIds, []);
     if (viewport.reducedMotion === 'reduce') assert.equal(collapsed.revealAnimation, 'none');
+    assertContrastAudit(await readContrastAudit(page), viewport.theme, viewport.name);
 
     if (process.env.RRHH_CAPTURE === '1') {
       await page.screenshot({ path: path.join(tmpdir(), `rrhh-dashboard-${viewport.name}.png`), fullPage: true });
@@ -455,11 +584,10 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
     await context.close();
   }
 
-  assert.equal(requestLog.length, 6);
-  assert.deepEqual(requestLog.map(item => item.path).sort(), [
-    '/api/grh-directory', '/api/grh-directory', '/api/grh-executive', '/api/grh-executive',
-    '/api/grh-quality', '/api/grh-quality',
-  ]);
+  assert.equal(requestLog.length, viewports.length * 3);
+  assert.deepEqual(requestLog.map(item => item.path).sort(), viewports.flatMap(() => [
+    '/api/grh-directory', '/api/grh-executive', '/api/grh-quality',
+  ]).sort());
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
 });
 

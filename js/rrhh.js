@@ -59,7 +59,7 @@
       'methodSchema', 'openDirectoryAction', 'compareGroupsAction', 'workforceDistribution', 'peopleDirectory',
       'directoryStatusBadge', 'directoryForm', 'directorySearch', 'directorySector', 'directoryOrganization',
       'directoryPosition', 'directoryEvent', 'directorySubmit', 'directoryReset', 'directoryState',
-      'directoryStateTitle', 'directoryStateMessage', 'directoryResults', 'directoryResultCount',
+      'directoryStateTitle', 'directoryStateMessage', 'directoryPrivateAccess', 'directoryResults', 'directoryResultCount',
       'directoryResultLabel', 'directorySourceLabel', 'directoryTableBody', 'directoryMobileList',
       'directoryPrevious', 'directoryNext', 'directoryPageLabel', 'personDialog', 'personDialogTitle',
       'personDialogSubtitle', 'personDialogClose', 'personDialogLoading', 'personDialogContent',
@@ -803,6 +803,7 @@
       elements.directorySearch, elements.directorySector, elements.directoryOrganization,
       elements.directoryPosition, elements.directoryEvent, elements.directorySubmit, elements.directoryReset
     ].forEach(function (element) { if (element) element.disabled = disabled; });
+    if (elements.directoryForm) elements.directoryForm.dataset.locked = disabled ? 'true' : 'false';
   }
 
   function showDirectoryState(status, title, message) {
@@ -816,6 +817,7 @@
     }
     setText(elements.directoryStateTitle, title);
     setText(elements.directoryStateMessage, message);
+    if (elements.directoryPrivateAccess) elements.directoryPrivateAccess.hidden = status !== 'denied';
     if (elements.directoryState) elements.directoryState.hidden = false;
     if (elements.directoryResults) elements.directoryResults.hidden = true;
     setDirectoryControlsDisabled(status === 'denied' || status === 'invalid' || status === 'loading');
@@ -1284,6 +1286,10 @@
     elements.directoryForm.addEventListener('submit', function (event) {
       event.preventDefault();
       if (state.directory.access !== 'denied' && state.directory.access !== 'invalid') loadDirectory(1, null, true);
+    });
+    elements.directoryPrivateAccess.addEventListener('click', function () {
+      if (typeof global.doLogout === 'function') global.doLogout();
+      else global.location.assign('/login.html');
     });
     elements.directoryReset.addEventListener('click', function () {
       elements.directoryForm.reset();

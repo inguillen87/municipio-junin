@@ -65,6 +65,129 @@ function fakeBrowserToken() {
   })}.qa`;
 }
 
+async function readRenderedThemeAudit(page) {
+  return page.evaluate(() => {
+    const parseColor = value => {
+      if (!value || value === 'none' || value === 'transparent') return [0, 0, 0, 0];
+      const match = String(value).match(/rgba?\(([^)]+)\)/i);
+      if (!match) return null;
+      const parts = match[1].replace('/', ' ').split(/[\s,]+/).filter(Boolean).map(Number);
+      return [parts[0], parts[1], parts[2], Number.isFinite(parts[3]) ? parts[3] : 1];
+    };
+    const composite = (front, back) => {
+      const alpha = front[3] + back[3] * (1 - front[3]);
+      if (!alpha) return [0, 0, 0, 0];
+      return [0, 1, 2].map(index =>
+        (front[index] * front[3] + back[index] * back[3] * (1 - front[3])) / alpha
+      ).concat(alpha);
+    };
+    const luminance = color => color.slice(0, 3).map(channel => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+    const ratio = (first, second) => {
+      const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    const effectiveBackground = node => {
+      const layers = [];
+      let current = node;
+      while (current instanceof Element) {
+        const color = parseColor(getComputedStyle(current).backgroundColor);
+        if (color && color[3] > 0) layers.push(color);
+        if (color && color[3] >= 1) break;
+        current = current.parentElement;
+      }
+      let result = [255, 255, 255, 1];
+      for (let index = layers.length - 1; index >= 0; index -= 1) result = composite(layers[index], result);
+      return result;
+    };
+    const selectorFor = node => {
+      const classes = typeof node.className === 'string' ? node.className : node.className?.baseVal || '';
+      return `${node.tagName.toLowerCase()}${node.id ? `#${node.id}` : ''}${classes ? `.${classes.trim().replace(/\s+/g, '.')}` : ''}`;
+    };
+    const visible = node => {
+      const style = getComputedStyle(node);
+      return node.getClientRects().length > 0 && style.display !== 'none' && style.visibility !== 'hidden' &&
+        Number(style.opacity) > 0;
+    };
+    const textNodes = Array.from(document.querySelectorAll('body.assistant-page *')).filter(node => {
+      if (!visible(node) || node.matches('script, style, title, desc, option, .sr-only')) return false;
+      return node instanceof SVGTextElement || Array.from(node.childNodes).some(child =>
+        child.nodeType === Node.TEXT_NODE && child.textContent.trim()
+      );
+    });
+    const textResults = textNodes.map(node => {
+      const style = getComputedStyle(node);
+      const background = effectiveBackground(node);
+      const rawTextColor = parseColor(node instanceof SVGTextElement ? style.fill : style.color);
+      const textColor = rawTextColor ? composite(rawTextColor, background) : null;
+      return {
+        selector: selectorFor(node),
+        text: node.textContent.trim().slice(0, 70),
+        ratio: textColor ? Number(ratio(textColor, background).toFixed(2)) : 0,
+        size: Number.parseFloat(style.fontSize),
+        color: node instanceof SVGTextElement ? style.fill : style.color,
+        background: `rgb(${background.slice(0, 3).map(Math.round).join(', ')})`,
+      };
+    });
+    const boundarySelector = [
+      '.assistant-topbar', '.assistant-menu', '.assistant-theme', '.engine-status',
+      '.conversation-panel', '.welcome-mark', '.welcome-guardrails span', '.query-chip',
+      '.composer', '.send-query', '.rail-card', '.rail-link',
+      '.answer-card', '.answer-state', '.evidence-item', '.directory-history-item',
+      '.directory-option', '.answer-action', '.answer-limits',
+      '[data-muni-shell="primary-nav"]', '[data-muni-shell="bottom-nav"]'
+    ].join(',');
+    const boundaryViolations = Array.from(document.querySelectorAll(boundarySelector)).filter(visible).map(node => {
+      const style = getComputedStyle(node);
+      const outside = effectiveBackground(node.parentElement || node);
+      const inside = effectiveBackground(node);
+      const borderRatios = ['Top', 'Right', 'Bottom', 'Left'].map(side => {
+        const width = Number.parseFloat(style[`border${side}Width`]) || 0;
+        const rawBorder = parseColor(style[`border${side}Color`]);
+        const border = rawBorder ? composite(rawBorder, outside) : outside;
+        return width > 0 ? ratio(border, outside) : 1;
+      });
+      const boundaryRatio = Math.max(ratio(inside, outside), ...borderRatios);
+      return { selector: selectorFor(node), ratio: Number(boundaryRatio.toFixed(2)) };
+    }).filter(result => result.ratio < 3 - 0.01);
+    const bottomNav = document.querySelector('[data-muni-shell="bottom-nav"]');
+    return {
+      theme: document.documentElement.dataset.theme,
+      bodyBackground: getComputedStyle(document.body).backgroundColor,
+      mainBackground: getComputedStyle(document.querySelector('#mainContent')).backgroundColor,
+      mainColor: getComputedStyle(document.querySelector('#mainContent')).color,
+      bottomNavBackground: bottomNav ? getComputedStyle(bottomNav).backgroundColor : null,
+      textViolations: textResults.filter(result => result.ratio < 4.5 - 0.01),
+      fontFloorViolations: textResults.filter(result => result.size < 12),
+      boundaryViolations,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      legacyStored: localStorage.getItem('govtech_theme'),
+      versionedStored: localStorage.getItem('municontrol-color-theme:v1'),
+    };
+  });
+}
+
+function assertRenderedThemeAudit(audit, expectedTheme, viewportName) {
+  assert.equal(audit.theme, expectedTheme, `${viewportName} theme`);
+  assert.equal(audit.legacyStored, expectedTheme, `${viewportName} legacy storage`);
+  assert.equal(audit.versionedStored, expectedTheme, `${viewportName} canonical storage`);
+  assert.deepEqual(audit.textViolations, [], `${viewportName} text contrast: ${JSON.stringify(audit)}`);
+  assert.deepEqual(audit.fontFloorViolations, [], `${viewportName} font floor: ${JSON.stringify(audit.fontFloorViolations)}`);
+  assert.deepEqual(audit.boundaryViolations, [], `${viewportName} boundaries: ${JSON.stringify(audit.boundaryViolations)}`);
+  assert.equal(audit.overflow, 0, `${viewportName} must not overflow horizontally`);
+  assert.notEqual(audit.bodyBackground, audit.mainColor, `${viewportName} body cannot equal text`);
+  assert.notEqual(audit.mainBackground, audit.mainColor, `${viewportName} main cannot equal text`);
+  if (viewportName.includes('mobile')) {
+    assert.equal(
+      audit.bottomNavBackground,
+      expectedTheme === 'light' ? 'rgb(248, 250, 252)' : 'rgb(9, 23, 40)',
+      `${viewportName} bottom navigation background`,
+    );
+  }
+}
+
 function provenance(executive, quality) {
   const latest = executive.compensation.series
     .filter(row => row.privacyStatus === 'released')
@@ -208,13 +331,22 @@ async function createServer(requestLog, options = {}) {
   return server;
 }
 
-async function seedSession(context) {
-  await context.addInitScript(({ token }) => {
+async function seedSession(context, themeState = {}) {
+  await context.addInitScript(({ token, legacyTheme, versionedTheme }) => {
     sessionStorage.setItem('mjunin_token', token);
     sessionStorage.setItem('mjunin_user', JSON.stringify({
       id: 'qa-ai', name: 'QA Ejecutivo', role: 'INTENDENTE', tenantId: 'tenant-junin-test',
     }));
-  }, { token: fakeBrowserToken() });
+    if (!sessionStorage.getItem('qa-theme-seeded')) {
+      if (legacyTheme) localStorage.setItem('govtech_theme', legacyTheme);
+      if (versionedTheme) localStorage.setItem('municontrol-color-theme:v1', versionedTheme);
+      sessionStorage.setItem('qa-theme-seeded', 'true');
+    }
+  }, {
+    token: fakeBrowserToken(),
+    legacyTheme: themeState.legacyTheme || null,
+    versionedTheme: themeState.versionedTheme || null,
+  });
 }
 
 test('assistant guards start and every submit with the exact AI capability', async () => {
@@ -306,12 +438,18 @@ test('assistant theme control keeps operational copy readable on desktop and mob
     await new Promise(resolve => server.close(resolve));
   });
 
-  for (const viewport of [
-    { name: 'desktop', width: 1440, height: 960 },
-    { name: 'mobile', width: 390, height: 844 },
+  for (const scenario of [
+    { name: 'clean-desktop', width: 1440, height: 960, expectedTheme: 'dark' },
+    { name: 'desktop-dark-conflict', width: 1440, height: 960, expectedTheme: 'dark', versionedTheme: 'dark', legacyTheme: 'light' },
+    { name: 'desktop-light-conflict', width: 1440, height: 960, expectedTheme: 'light', versionedTheme: 'light', legacyTheme: 'dark' },
+    { name: 'mobile-dark-conflict', width: 390, height: 844, expectedTheme: 'dark', versionedTheme: 'dark', legacyTheme: 'light', reducedMotion: 'reduce' },
+    { name: 'mobile-light-conflict', width: 390, height: 844, expectedTheme: 'light', versionedTheme: 'light', legacyTheme: 'dark', reducedMotion: 'reduce' },
   ]) {
-    const context = await browser.newContext({ viewport });
-    await seedSession(context);
+    const context = await browser.newContext({
+      viewport: { width: scenario.width, height: scenario.height },
+      reducedMotion: scenario.reducedMotion || 'no-preference',
+    });
+    await seedSession(context, scenario);
     const page = await context.newPage();
     const consoleErrors = [];
     page.on('console', message => {
@@ -321,44 +459,56 @@ test('assistant theme control keeps operational copy readable on desktop and mob
     await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
     const themeButton = page.locator('#themeToggleBtn');
     await themeButton.waitFor();
-    assert.match(await themeButton.getAttribute('aria-label'), /Modo oscuro.*Cambiar tema/);
+    assert.match(
+      await themeButton.getAttribute('aria-label'),
+      scenario.expectedTheme === 'dark' ? /Modo oscuro.*Cambiar tema/ : /Modo claro.*Cambiar tema/,
+      scenario.name,
+    );
+    assertRenderedThemeAudit(await readRenderedThemeAudit(page), scenario.expectedTheme, scenario.name);
+    if (process.env.IA_THEME_CAPTURE === '1') {
+      await page.screenshot({ path: path.join(tmpdir(), `municontrol-ia-theme-${scenario.name}.png`), fullPage: true });
+    }
 
-    const dark = await page.evaluate(() => {
-      const selectors = [
-        '.assistant-title-copy p', '.welcome-card .eyebrow', '.welcome-guardrails span',
-        '.query-chip', '.composer-meta', '.rail-card > p', '.trust-row span',
-      ];
-      return {
-        theme: document.documentElement.getAttribute('data-theme'),
-        bodyColor: getComputedStyle(document.body).color,
-        minimumFontSize: Math.min(...selectors.map(selector => Number.parseFloat(getComputedStyle(document.querySelector(selector)).fontSize))),
-        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      };
-    });
-    assert.equal(dark.theme, 'dark', viewport.name);
-    assert.equal(dark.bodyColor, 'rgb(236, 244, 255)', viewport.name);
-    assert.ok(dark.minimumFontSize >= 12, viewport.name);
-    assert.equal(dark.overflow, 0, viewport.name);
-
+    const oppositeTheme = scenario.expectedTheme === 'dark' ? 'light' : 'dark';
     await themeButton.click();
-    await page.waitForFunction(() => (
-      document.documentElement.getAttribute('data-theme') === 'light'
-      && getComputedStyle(document.body).color === 'rgb(16, 42, 67)'
-    ));
-    const light = await page.evaluate(() => ({
-      bodyColor: getComputedStyle(document.body).color,
-      preference: document.querySelector('#themeToggleBtn')?.getAttribute('data-theme-preference'),
-      legacyStored: localStorage.getItem('govtech_theme'),
-      versionedStored: localStorage.getItem('municontrol-color-theme:v1'),
-      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    await page.waitForFunction(expected => (
+      document.documentElement.dataset.theme === expected &&
+      localStorage.getItem('municontrol-color-theme:v1') === expected &&
+      localStorage.getItem('govtech_theme') === expected
+    ), oppositeTheme);
+    const immediate = await page.evaluate(() => ({
+      colorScheme: getComputedStyle(document.documentElement).colorScheme,
+      metaTheme: document.querySelector('meta[name="theme-color"]')?.content,
+      preference: document.querySelector('#themeToggleBtn')?.dataset.themePreference,
+      resolved: document.querySelector('#themeToggleBtn')?.dataset.themeResolved,
     }));
-    assert.equal(light.bodyColor, 'rgb(16, 42, 67)', viewport.name);
-    assert.equal(light.preference, 'light', viewport.name);
-    assert.equal(light.legacyStored, 'light', viewport.name);
-    assert.equal(light.versionedStored, 'light', viewport.name);
-    assert.equal(light.overflow, 0, viewport.name);
-    assert.match(await themeButton.getAttribute('aria-label'), /Modo claro.*Cambiar tema/);
-    assert.deepEqual(consoleErrors, [], viewport.name);
+    assert.deepEqual(immediate, {
+      colorScheme: oppositeTheme,
+      metaTheme: oppositeTheme === 'light' ? '#f0f4ff' : '#060b18',
+      preference: oppositeTheme,
+      resolved: oppositeTheme,
+    }, `${scenario.name} immediate synchronization`);
+    assertRenderedThemeAudit(await readRenderedThemeAudit(page), oppositeTheme, `${scenario.name}-toggle`);
+    if (process.env.IA_THEME_CAPTURE === '1') {
+      await page.screenshot({ path: path.join(tmpdir(), `municontrol-ia-theme-${scenario.name}-toggle.png`), fullPage: true });
+    }
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.locator('#themeToggleBtn').waitFor();
+    assertRenderedThemeAudit(await readRenderedThemeAudit(page), oppositeTheme, `${scenario.name}-reload`);
+    if (scenario.name === 'clean-desktop') {
+      const peer = await context.newPage();
+      await peer.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+      await peer.evaluate(() => window.MuniTheme.apply('dark'));
+      await page.waitForFunction(() => (
+        document.documentElement.dataset.theme === 'dark' &&
+        localStorage.getItem('municontrol-color-theme:v1') === 'dark' &&
+        localStorage.getItem('govtech_theme') === 'dark'
+      ));
+      assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'dark', 'cross-tab-dark');
+      await peer.close();
+    }
+    assert.deepEqual(consoleErrors, [], scenario.name);
     await context.close();
   }
 
@@ -440,6 +590,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
       { label: 'Hacienda', href: '/hacienda' },
       { label: 'Calidad', href: '/calidad' },
     ]);
+    assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'dark', `${viewport.name}-answer-dark`);
 
     await page.getByRole('button', { name: 'Categorías de acuerdo' }).click();
     await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
@@ -485,6 +636,9 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.match(leaveResult.text, /1997–2009/);
     assert.match(leaveResult.text, /no describe licencias actuales/i);
     assert.equal(leaveResult.overflow, 0, `${viewport.name} leave answer must not overflow horizontally`);
+    await page.locator('#themeToggleBtn').click();
+    await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
+    assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'light', `${viewport.name}-answers-light`);
     assert.deepEqual(consoleErrors, []);
     assert.deepEqual(externalRequests, []);
     if (process.env.IA_CAPTURE === '1') {
@@ -629,6 +783,7 @@ test('private person answers render leave cards, actions and bounded match optio
   assert.equal(matched.action, 'Abrir ficha en RRHH');
   assert.equal(matched.actionHref, '/rrhh?company=1&legajo=7001#peopleDirectory');
   assert.equal(matched.overflow, 0);
+  assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'dark', 'private-person-dark');
 
   await page.locator('#assistantInput').fill('Nombre Repetido');
   await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
@@ -640,6 +795,9 @@ test('private person answers render leave cards, actions and bounded match optio
   assert.equal(options.length, 2);
   assert.match(options[0].text, /PERSONA PRUEBA A.*Legajo 7001.*SECTOR A/s);
   assert.equal(options[1].href, '/rrhh?company=1&legajo=7002#peopleDirectory');
+  await page.locator('#themeToggleBtn').click();
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
+  assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'light', 'private-person-light');
   assert.equal(requestLog.length, 2);
   assert.deepEqual(consoleErrors, []);
   await context.close();
@@ -680,11 +838,19 @@ test('assistant rejects attacks and routes person lookups without echoing the se
     return {
       title: card?.querySelector('.answer-heading-line h3')?.textContent.trim(),
       text: card?.textContent || '',
+      actions: Array.from(card?.querySelectorAll('.answer-action') || [], link => ({
+        label: link.textContent.trim(),
+        href: link.getAttribute('href'),
+      })),
     };
   });
   assert.equal(directoryAnswer.title, 'Directorio individual requerido');
   assert.match(directoryAnswer.text, /demostración pública no busca ni muestra fichas, legajos o licencias de una persona/i);
   assert.doesNotMatch(directoryAnswer.text, /luciana|prueba/i);
+  assert.deepEqual(directoryAnswer.actions, [
+    { label: 'Abrir RRHH agregado', href: '/rrhh' },
+    { label: 'Ingresar con acceso privado', href: '/login.html' },
+  ]);
   assert.equal(requestLog.length, 2);
   await context.close();
 });

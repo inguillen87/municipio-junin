@@ -4,6 +4,7 @@ const express = require('express');
 const { isSuperAdmin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
+const GRH_DIRECTORY_SNAPSHOT_PAYLOAD_ACTION = 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1';
 let prisma;
 try { prisma = require('../lib/prisma'); } catch { prisma = null; }
 
@@ -102,11 +103,17 @@ router.get('/audit', ...isSuperAdmin, async (req, res) => {
   if (!requirePrisma(res)) return;
   try {
     const logs = await prisma.auditLog.findMany({
+      where: {
+        action: { not: GRH_DIRECTORY_SNAPSHOT_PAYLOAD_ACTION },
+      },
       include: { user: { select: { name: true, email: true } }, tenant: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
-    return res.json({ ok: true, source: 'postgresql', data: logs });
+    // Defense in depth: even if a mock, proxy, or future persistence adapter
+    // ignores the query predicate, a private snapshot envelope is never emitted.
+    const serializableLogs = logs.filter(log => log?.action !== GRH_DIRECTORY_SNAPSHOT_PAYLOAD_ACTION);
+    return res.json({ ok: true, source: 'postgresql', data: serializableLogs });
   } catch (error) {
     console.error('[ADMIN-AUDIT]', error.message);
     return res.status(503).json({ error: 'No se pudo consultar la auditoría' });

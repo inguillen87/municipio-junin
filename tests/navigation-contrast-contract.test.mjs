@@ -44,8 +44,8 @@ test('legacy light and dark tokens meet the AA text and non-text contrast floors
   const dashboardLight = block(dashboard, '[data-theme="light"]');
   const shellDark = block(shell, ':root');
   const shellLight = block(shell, '[data-theme="light"]');
-  const assistantDark = block(assistant, ':root');
-  const assistantLight = block(assistant, '[data-theme="light"]');
+  const assistantDark = block(assistant, 'html.muni-shell-v1[data-theme="dark"]');
+  const assistantLight = block(assistant, 'html.muni-shell-v1[data-theme="light"]');
 
   for (const name of ['text-primary', 'text-secondary', 'text-muted']) {
     assert.ok(
@@ -153,6 +153,11 @@ test('legacy and React theme controls read and persist both compatible keys', as
     assert.match(source, /(?:localStorage|window\.localStorage)\.getItem/);
     assert.equal((source.match(/\.setItem\(/g) || []).length >= 2, true);
   }
+  assert.ok(
+    legacyTheme.indexOf('readStoredTheme(THEME_STORAGE_KEY)') < legacyTheme.indexOf('readStoredTheme(LEGACY_THEME_STORAGE_KEY)'),
+    'legacy surfaces must prefer the canonical versioned theme when stored keys conflict',
+  );
+  assert.match(legacyTheme, /var next = current === 'dark' \? 'light' : 'dark'/);
 });
 
 test('retired RRHH aliases preserve the public contract but expose no invented surface', async () => {

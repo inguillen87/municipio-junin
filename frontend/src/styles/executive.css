@@ -1,7 +1,7 @@
 .executive-eyebrow {
   margin: 0 0 0.55rem;
   color: var(--accent);
-  font-size: 0.675rem;
+  font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -34,7 +34,8 @@
   overflow: hidden;
   border-color: color-mix(in srgb, var(--brand) 34%, var(--border));
   color: #f4f9fd;
-  background:
+  background-color: #041f35;
+  background-image:
     radial-gradient(circle at 86% 12%, rgb(87 207 196 / 24%), transparent 15rem),
     linear-gradient(122deg, #041f35, #064f79 72%, #0b6d72);
   box-shadow: var(--shadow-md);
@@ -108,9 +109,9 @@
   padding: 0.45rem 0.7rem;
   border: 1px solid rgb(255 255 255 / 24%);
   border-radius: 999px;
-  color: #eaf5fa;
-  background: rgb(4 27 45 / 38%);
-  font-size: 0.675rem;
+  color: #ffffff;
+  background: #123b52;
+  font-size: 0.75rem;
   font-weight: 800;
 }
 
@@ -136,7 +137,7 @@
 .executive-truth__status p {
   margin: 0;
   color: var(--success);
-  font-size: 0.675rem;
+  font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -177,7 +178,7 @@
 
 .executive-truth dt {
   color: var(--text-muted);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 850;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -186,7 +187,7 @@
 .executive-truth dd {
   overflow-wrap: anywhere;
   color: var(--text-strong);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 750;
   line-height: 1.45;
 }
@@ -230,7 +231,7 @@
   border-radius: 999px;
   color: var(--success);
   background: color-mix(in srgb, var(--success) 8%, var(--surface));
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 900;
   white-space: nowrap;
 }
@@ -295,7 +296,7 @@
   border-radius: 999px;
   color: var(--brand-strong);
   background: var(--surface-tint);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 850;
   text-align: center;
 }
@@ -332,7 +333,7 @@
 .executive-sector__summary span {
   display: block;
   color: var(--text-muted);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -400,7 +401,7 @@
   gap: 1rem;
   margin-top: 0.8rem;
   color: var(--text-muted);
-  font-size: 0.675rem;
+  font-size: 0.75rem;
   font-weight: 750;
 }
 
@@ -441,7 +442,7 @@
   border-radius: 0.7rem;
   color: var(--text-muted);
   background: color-mix(in srgb, var(--warning) 7%, var(--surface));
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
 
@@ -533,7 +534,7 @@
 .executive-sector__list p {
   margin: 0.45rem 0 0;
   color: var(--text-muted);
-  font-size: 0.675rem;
+  font-size: 0.75rem;
 }
 
 .executive-annual-grid {
@@ -564,7 +565,7 @@
 .executive-annual-card header p {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -580,7 +581,7 @@
   flex: 0 0 auto;
   max-width: 48%;
   color: var(--brand-strong);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 850;
   text-align: right;
 }
@@ -612,7 +613,7 @@
 
 .executive-annual-card__values :is(span, small) {
   color: var(--text-muted);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 .executive-annual-card__values strong {
@@ -633,7 +634,7 @@
 .executive-annual-card__note {
   margin: 0.8rem 0 0;
   color: var(--text-strong);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
   line-height: 1.5;
 }
@@ -678,7 +679,7 @@
 
 .executive-privacy dt {
   color: var(--text-muted);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -721,7 +722,7 @@
   .topbar__nav a {
     min-width: 0;
     padding-inline: 0.35rem;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     white-space: nowrap;
   }
 

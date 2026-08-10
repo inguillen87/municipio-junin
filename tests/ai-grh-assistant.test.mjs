@@ -313,6 +313,7 @@ test('person lookups require a governed directory without echoing names or legaj
     });
     assert.deepEqual(result.answer.actions, [
       { id: 'open_rrhh', label: 'Abrir RRHH agregado', href: '/rrhh' },
+      { id: 'private_login', label: 'Ingresar con acceso privado', href: '/login.html' },
     ]);
     assert.doesNotMatch(JSON.stringify(result), /Luciana|Prueba|123/i, question);
     assert.match(result.answer.summary, /no busca ni muestra fichas, legajos o licencias de una persona/i);

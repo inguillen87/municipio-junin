@@ -1,3 +1,18 @@
+export const BOOTSTRAP_INTERNAL_STAGES = Object.freeze([
+  'configuration', 'snapshot_key', 'connect', 'schema_privilege', 'tenant_reference_privilege',
+  'begin', 'migration', 'schema', 'tenant',
+  'consumed', 'source', 'pilot', 'user', 'snapshot_encrypt', 'publication', 'counts', 'audit', 'commit',
+]);
+
+export function bootstrapInternalDiagnostic(stage, error) {
+  const safeStage = BOOTSTRAP_INTERNAL_STAGES.includes(stage) ? stage : 'configuration';
+  const code = `BOOTSTRAP_INTERNAL_${safeStage.toUpperCase()}`;
+  const pgCode = typeof error?.code === 'string' && /^[0-9A-Z]{5}$/.test(error.code)
+    ? error.code
+    : null;
+  return Object.freeze(pgCode ? { code, pgCode } : { code });
+}
+
 const ENDPOINT_TEMPLATE = String.raw`import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import bcrypt from 'bcryptjs';
@@ -8,6 +23,12 @@ import {
   flattenGrhDirectoryArtifact,
   publishGrhDirectory,
 } from './lib/grh-directory-publication.js';
+import {
+  GRH_DIRECTORY_SNAPSHOT_ACTION,
+  GRH_DIRECTORY_SNAPSHOT_ENTITY,
+  GRH_DIRECTORY_SNAPSHOT_KEY_VERSION,
+  createGrhDirectorySnapshotEnvelope,
+} from './lib/grh-directory-snapshot.js';
 import databaseUrlPolicy from '../shared/database-url-policy.cjs';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 
@@ -19,6 +40,7 @@ const { isPublishedDemoIdentity } = publishedDemoPolicy;
 
 const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v1';
 const DIRECTORY_CONTRACT = 'grh-directory-v1';
+const BOOTSTRAP_MODE = __BOOTSTRAP_MODE__;
 const OPERATION_ID = __OPERATION_ID__;
 const MIGRATION_SQL = __MIGRATION_SQL__;
 const MIGRATION_SHA256 = __MIGRATION_SHA256__;
@@ -26,7 +48,8 @@ const EXPECTED_MANIFEST = Object.freeze(__EXPECTED_MANIFEST__);
 const EXPECTED_MANIFEST_SHA256 = __EXPECTED_MANIFEST_SHA256__;
 const MAX_COMPRESSED_BYTES = 4_000_000;
 const MAX_UNCOMPRESSED_BYTES = 16 * 1024 * 1024;
-const PILOT_ROLE = 'CONTADOR';
+__BOOTSTRAP_INTERNAL_DIAGNOSTIC__
+const PILOT_ROLE = 'INTENDENTE';
 const PILOT_NAME = 'Piloto privado GRH';
 const TABLES = Object.freeze([
   'grh_directory_sources',
@@ -78,6 +101,15 @@ class BootstrapError extends Error {
   }
 }
 
+class BootstrapInternalError extends Error {
+  constructor(stage, cause) {
+    super('GRH bootstrap internal failure');
+    const diagnostic = bootstrapInternalDiagnostic(stage, cause);
+    this.code = diagnostic.code;
+    this.pgCode = diagnostic.pgCode || null;
+  }
+}
+
 function exactKeys(value, expected) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const actual = Object.keys(value).sort();
@@ -99,6 +131,33 @@ function constantTimeEqual(left, right) {
 
 function digest(buffer) {
   return createHash('sha256').update(buffer).digest('hex');
+}
+
+function decodeSnapshotKey() {
+  const encoded = String(process.env.GRH_DIRECTORY_SNAPSHOT_KEY_V1 || '').trim();
+  if (!/^[A-Za-z0-9_-]{43}$/.test(encoded)) {
+    throw new BootstrapError('BOOTSTRAP_SNAPSHOT_KEY_INVALID', 503);
+  }
+  const key = Buffer.from(encoded, 'base64url');
+  if (key.length !== 32 || key.toString('base64url') !== encoded) {
+    throw new BootstrapError('BOOTSTRAP_SNAPSHOT_KEY_INVALID', 503);
+  }
+  return { encoded, decoded: key };
+}
+
+function encryptSnapshot(tenantId, artifact, inspected, key) {
+  const snapshot = createGrhDirectorySnapshotEnvelope({
+    tenantId,
+    artifact,
+    key: key.encoded,
+    keyVersion: GRH_DIRECTORY_SNAPSHOT_KEY_VERSION,
+  });
+  if (snapshot.recordCount !== inspected.flattened.people.length ||
+      snapshot.leaveRecordCount !== inspected.flattened.leaveEvents.length ||
+      snapshot.positionObservationCount !== inspected.positionObservationCount) {
+    throw new BootstrapError('BOOTSTRAP_PUBLICATION_COUNT_MISMATCH', 409);
+  }
+  return snapshot;
 }
 
 function send(res, status, code, details = {}) {
@@ -213,9 +272,14 @@ async function assertDirectorySchema(client) {
 }
 
 async function applyBootstrap(envelope, inspected) {
+  let stage = 'configuration';
   const tenantId = String(process.env.GRH_TENANT_ID || '').trim();
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(tenantId) ||
       String(process.env.GRH_DIRECTORY_ALLOWED_USER_IDS || '').trim() !== inspected.pilot.id) {
+    throw new BootstrapError('BOOTSTRAP_RUNTIME_CONFIGURATION_INVALID', 503);
+  }
+  let snapshotKey = null;
+  if (!['ddl', 'encrypted_snapshot'].includes(BOOTSTRAP_MODE)) {
     throw new BootstrapError('BOOTSTRAP_RUNTIME_CONFIGURATION_INVALID', 503);
   }
   let database;
@@ -235,7 +299,28 @@ async function applyBootstrap(envelope, inspected) {
   });
   let transaction = false;
   try {
+    if (BOOTSTRAP_MODE === 'encrypted_snapshot') {
+      stage = 'snapshot_key';
+      snapshotKey = decodeSnapshotKey();
+    }
+    stage = 'connect';
     await client.connect();
+    if (BOOTSTRAP_MODE === 'ddl') {
+      stage = 'schema_privilege';
+      const privileges = await client.query(
+        "SELECT has_schema_privilege(current_user, 'public', 'CREATE') AS can_create, " +
+        "has_table_privilege(current_user, 'public.tenants', 'REFERENCES') AS can_reference_tenant",
+      );
+      const privilegeRow = privileges.rows?.[0] || {};
+      if (privilegeRow.can_create !== true) {
+        throw new BootstrapInternalError(stage, { code: '42501' });
+      }
+      stage = 'tenant_reference_privilege';
+      if (privilegeRow.can_reference_tenant !== true) {
+        throw new BootstrapInternalError(stage, { code: '42501' });
+      }
+    }
+    stage = 'begin';
     await client.query('BEGIN');
     transaction = true;
     await client.query("SET LOCAL search_path TO public, pg_catalog");
@@ -245,9 +330,14 @@ async function applyBootstrap(envelope, inspected) {
       "SELECT pg_advisory_xact_lock(hashtext('grh-directory-bootstrap-v1'), hashtext($1))",
       [tenantId],
     );
-    await client.query(MIGRATION_SQL);
-    await assertDirectorySchema(client);
+    if (BOOTSTRAP_MODE === 'ddl') {
+      stage = 'migration';
+      await client.query(MIGRATION_SQL);
+      stage = 'schema';
+      await assertDirectorySchema(client);
+    }
 
+    stage = 'tenant';
     const tenantResult = await client.query(
       'SELECT id, slug, status, "trialEndsAt" FROM tenants WHERE id = $1 FOR SHARE',
       [tenantId],
@@ -259,6 +349,7 @@ async function applyBootstrap(envelope, inspected) {
       throw new BootstrapError('BOOTSTRAP_TENANT_INVALID', 409);
     }
 
+    stage = 'consumed';
     const consumed = await client.query(
       'SELECT 1 FROM audit_logs WHERE "tenantId" = $1 AND action = $2 AND "entityId" = $3 LIMIT 1',
       [tenantId, 'GRH_DIRECTORY_BOOTSTRAP_V1', OPERATION_ID],
@@ -266,13 +357,17 @@ async function applyBootstrap(envelope, inspected) {
     if ((consumed.rows || []).length > 0) {
       throw new BootstrapError('BOOTSTRAP_ALREADY_CONSUMED', 410);
     }
-    const existingSource = await client.query(
-      'SELECT 1 FROM grh_directory_sources WHERE tenant_id = $1 FOR UPDATE',
-      [tenantId],
-    );
-    if ((existingSource.rows || []).length > 0) {
-      throw new BootstrapError('BOOTSTRAP_DIRECTORY_ALREADY_MATERIALIZED', 409);
+    if (BOOTSTRAP_MODE === 'ddl') {
+      stage = 'source';
+      const existingSource = await client.query(
+        'SELECT 1 FROM grh_directory_sources WHERE tenant_id = $1 FOR UPDATE',
+        [tenantId],
+      );
+      if ((existingSource.rows || []).length > 0) {
+        throw new BootstrapError('BOOTSTRAP_DIRECTORY_ALREADY_MATERIALIZED', 409);
+      }
     }
+    stage = 'pilot';
     const existingPilot = await client.query(
       'SELECT id FROM users WHERE id = $1 OR lower(email) = lower($2) FOR UPDATE',
       [inspected.pilot.id, inspected.pilot.email],
@@ -281,34 +376,54 @@ async function applyBootstrap(envelope, inspected) {
       throw new BootstrapError('BOOTSTRAP_PILOT_CONFLICT', 409);
     }
 
+    stage = 'user';
     await client.query(
       'INSERT INTO users (id, email, "passwordHash", name, role, "tenantId", active, "loginCount", "createdAt", "updatedAt") ' +
       'VALUES ($1, $2, $3, $4, $5::"Role", $6, true, 0, NOW(), NOW())',
       [inspected.pilot.id, inspected.pilot.email, inspected.pilot.passwordHash,
         inspected.pilot.name, inspected.pilot.role, tenantId],
     );
-    const publication = await publishGrhDirectory(client, tenantId, inspected.artifact, {
-      chunkSize: 1000,
-      transactionMode: 'external',
-    });
-    if (publication.status !== 'published') {
-      throw new BootstrapError('BOOTSTRAP_PUBLICATION_STATE_INVALID', 409);
+    if (BOOTSTRAP_MODE === 'encrypted_snapshot') {
+      stage = 'snapshot_encrypt';
+      const snapshotEnvelope = encryptSnapshot(tenantId, inspected.artifact, inspected, snapshotKey);
+      stage = 'publication';
+      await client.query(
+        'INSERT INTO audit_logs (id, "tenantId", "userId", action, entity, "entityId", details, "createdAt") ' +
+        'VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, NOW())',
+        [randomUUID(), tenantId, inspected.pilot.id, GRH_DIRECTORY_SNAPSHOT_ACTION,
+          GRH_DIRECTORY_SNAPSHOT_ENTITY,
+          OPERATION_ID, JSON.stringify(snapshotEnvelope)],
+      );
+      snapshotKey.decoded.fill(0);
+      snapshotKey = null;
+    } else {
+      stage = 'publication';
+      const publication = await publishGrhDirectory(client, tenantId, inspected.artifact, {
+        chunkSize: 1000,
+        transactionMode: 'external',
+      });
+      if (publication.status !== 'published') {
+        throw new BootstrapError('BOOTSTRAP_PUBLICATION_STATE_INVALID', 409);
+      }
+      stage = 'counts';
+      const verified = await client.query(
+        'SELECT (SELECT COUNT(*)::int FROM grh_directory_people WHERE tenant_id = $1) AS people, ' +
+        '(SELECT COUNT(*)::int FROM grh_directory_leave_events WHERE tenant_id = $1) AS leave_events, ' +
+        '(SELECT COUNT(*)::int FROM grh_directory_people WHERE tenant_id = $1 ' +
+        'AND position_observation_label IS NOT NULL) AS position_observations',
+        [tenantId],
+      );
+      const counts = verified.rows?.[0] || {};
+      if (Number(counts.people) !== inspected.flattened.people.length ||
+          Number(counts.leave_events) !== inspected.flattened.leaveEvents.length ||
+          Number(counts.position_observations) !== inspected.positionObservationCount) {
+        throw new BootstrapError('BOOTSTRAP_PUBLICATION_COUNT_MISMATCH', 409);
+      }
     }
-    const verified = await client.query(
-      'SELECT (SELECT COUNT(*)::int FROM grh_directory_people WHERE tenant_id = $1) AS people, ' +
-      '(SELECT COUNT(*)::int FROM grh_directory_leave_events WHERE tenant_id = $1) AS leave_events, ' +
-      '(SELECT COUNT(*)::int FROM grh_directory_people WHERE tenant_id = $1 ' +
-      'AND position_observation_label IS NOT NULL) AS position_observations',
-      [tenantId],
-    );
-    const counts = verified.rows?.[0] || {};
-    if (Number(counts.people) !== inspected.flattened.people.length ||
-        Number(counts.leave_events) !== inspected.flattened.leaveEvents.length ||
-        Number(counts.position_observations) !== inspected.positionObservationCount) {
-      throw new BootstrapError('BOOTSTRAP_PUBLICATION_COUNT_MISMATCH', 409);
-    }
+    stage = 'audit';
     const auditDetails = {
       contract: BOOTSTRAP_CONTRACT,
+      publicationMode: BOOTSTRAP_MODE,
       schemaVersion: DIRECTORY_CONTRACT,
       operationId: OPERATION_ID,
       requestId: envelope.operation.requestId,
@@ -327,6 +442,7 @@ async function applyBootstrap(envelope, inspected) {
       [randomUUID(), tenantId, inspected.pilot.id, 'GRH_DIRECTORY_BOOTSTRAP_V1',
         'grh_directory', OPERATION_ID, JSON.stringify(auditDetails)],
     );
+    stage = 'commit';
     await client.query('COMMIT');
     transaction = false;
     return {
@@ -336,8 +452,10 @@ async function applyBootstrap(envelope, inspected) {
     };
   } catch (error) {
     if (transaction) await client.query('ROLLBACK').catch(() => {});
-    throw error;
+    if (error instanceof BootstrapError || error instanceof BootstrapInternalError) throw error;
+    throw new BootstrapInternalError(stage, error);
   } finally {
+    if (snapshotKey) snapshotKey.decoded.fill(0);
     await client.end().catch(() => {});
   }
 }
@@ -381,8 +499,11 @@ export default async function handler(req, res) {
       ...counts,
     });
   } catch (error) {
-    const known = error instanceof BootstrapError;
-    return send(res, known ? error.status : 500, known ? error.code : 'BOOTSTRAP_INTERNAL_ERROR');
+    if (error instanceof BootstrapError) return send(res, error.status, error.code);
+    const internal = error instanceof BootstrapInternalError
+      ? error
+      : new BootstrapInternalError('configuration', error);
+    return send(res, 500, internal.code, internal.pgCode ? { pgCode: internal.pgCode } : {});
   }
 }
 `;
@@ -391,24 +512,46 @@ function literal(value) {
   return JSON.stringify(value);
 }
 
+function replaceTemplateToken(source, token, replacement) {
+  const first = source.indexOf(token);
+  if (first < 0 || source.indexOf(token, first + token.length) >= 0) {
+    throw new TypeError('Invalid GRH bootstrap template token');
+  }
+  // A replacement function is mandatory here: PostgreSQL regexes contain `$'`,
+  // which String#replace otherwise interprets as the template suffix.
+  return source.replace(token, () => replacement);
+}
+
 export function renderGrhDirectoryBootstrapFunction({
+  mode,
   operationId,
   migrationSql,
   migrationSha256,
   manifest,
   manifestSha256,
 } = {}) {
-  if (typeof operationId !== 'string' || !/^[0-9a-f-]{36}$/.test(operationId) ||
+  if (!['ddl', 'encrypted_snapshot'].includes(mode) ||
+      typeof operationId !== 'string' || !/^[0-9a-f-]{36}$/.test(operationId) ||
       typeof migrationSql !== 'string' || !migrationSql.trim() ||
       !/^[0-9a-f]{64}$/.test(migrationSha256 || '') ||
       !manifest || typeof manifest !== 'object' || Array.isArray(manifest) ||
       !/^[0-9a-f]{64}$/.test(manifestSha256 || '')) {
     throw new TypeError('Invalid GRH bootstrap template input');
   }
-  return ENDPOINT_TEMPLATE
-    .replace('__OPERATION_ID__', literal(operationId))
-    .replace('__MIGRATION_SQL__', literal(migrationSql))
-    .replace('__MIGRATION_SHA256__', literal(migrationSha256))
-    .replace('__EXPECTED_MANIFEST__', literal(manifest))
-    .replace('__EXPECTED_MANIFEST_SHA256__', literal(manifestSha256));
+  const replacements = [
+    ['__BOOTSTRAP_INTERNAL_DIAGNOSTIC__', [
+      `const BOOTSTRAP_INTERNAL_STAGES = Object.freeze(${literal(BOOTSTRAP_INTERNAL_STAGES)});`,
+      bootstrapInternalDiagnostic.toString(),
+    ].join('\n')],
+    ['__BOOTSTRAP_MODE__', literal(mode)],
+    ['__OPERATION_ID__', literal(operationId)],
+    ['__MIGRATION_SQL__', literal(migrationSql)],
+    ['__MIGRATION_SHA256__', literal(migrationSha256)],
+    ['__EXPECTED_MANIFEST__', literal(manifest)],
+    ['__EXPECTED_MANIFEST_SHA256__', literal(manifestSha256)],
+  ];
+  return replacements.reduce(
+    (source, [token, replacement]) => replaceTemplateToken(source, token, replacement),
+    ENDPOINT_TEMPLATE,
+  );
 }

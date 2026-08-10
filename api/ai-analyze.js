@@ -221,7 +221,10 @@ function buildDirectoryRequiredResponse() {
     evidence: [],
     caveats: ['El acceso nominal requiere un rol ejecutivo y una identidad municipal incluida en la habilitación privada.'],
     nextQuestions: ['¿Qué métricas agregadas GRH están disponibles?'],
-    actions: [{ id: 'open_rrhh', label: 'Abrir RRHH', href: '/rrhh' }],
+    actions: [
+      { id: 'open_rrhh', label: 'Abrir RRHH', href: '/rrhh' },
+      { id: 'private_login', label: 'Ingresar con acceso privado', href: '/login.html' },
+    ],
     directory: {
       status: 'directory_required',
       enabled: false,
@@ -1110,6 +1113,7 @@ function directoryRequiredAnswer(context) {
     nextQuestions: latestYear ? [`¿Cuántas licencias hubo en ${latestYear}?`, '¿Cómo se distribuyen los participantes por sector?'] : ['¿Qué métricas agregadas GRH están disponibles?'],
     actions: [
       { id: 'open_rrhh', label: 'Abrir RRHH agregado', href: '/rrhh' },
+      { id: 'private_login', label: 'Ingresar con acceso privado', href: '/login.html' },
     ],
     directory: {
       status: 'directory_required',

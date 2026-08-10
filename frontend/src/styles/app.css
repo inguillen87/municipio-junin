@@ -11,12 +11,12 @@
   --surface-tint: #e8f2fb;
   --text: #172b3d;
   --text-strong: #0c2033;
-  --text-muted: #526779;
-  --border: #d4dee7;
-  --border-strong: #b9c8d5;
+  --text-muted: #435a6e;
+  --border: #758b9d;
+  --border-strong: #526a7e;
   --brand: #075ea8;
   --brand-strong: #054779;
-  --accent: #008b87;
+  --accent: #006f6b;
   --success: #17734d;
   --warning: #9a5900;
   --danger: #a42d32;
@@ -41,8 +41,8 @@
   --text: #dce8f2;
   --text-strong: #f3f7fb;
   --text-muted: #a9bdce;
-  --border: #294157;
-  --border-strong: #3b5a73;
+  --border: #527a99;
+  --border-strong: #6b96b5;
   --brand: #66b7f2;
   --brand-strong: #9ad1f7;
   --accent: #50c8bd;
@@ -161,7 +161,8 @@ a {
   border: 1px solid color-mix(in srgb, var(--brand) 42%, var(--border));
   border-radius: 0.875rem;
   color: #ffffff;
-  background: linear-gradient(145deg, #075ea8, #073d68);
+  background-color: #073d68;
+  background-image: linear-gradient(145deg, #075ea8, #073d68);
   box-shadow: 0 8px 18px rgb(7 94 168 / 18%);
   font-size: 0.8125rem;
   font-weight: 900;
@@ -183,7 +184,7 @@ a {
 .identity__copy small {
   overflow: hidden;
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -321,7 +322,7 @@ a {
 .panel__eyebrow {
   margin: 0 0 0.625rem;
   color: var(--accent);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -366,7 +367,7 @@ a {
 .source-status__heading p {
   margin: 0;
   color: var(--success);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -420,7 +421,7 @@ a {
 .source-status dt,
 .source-status__facts dt {
   color: var(--text-muted);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -506,7 +507,7 @@ a {
   display: block;
   min-height: 2em;
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 850;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -525,7 +526,7 @@ a {
 .kpi-card p {
   margin: 0.75rem 0 0;
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
 
@@ -585,7 +586,7 @@ a {
   border-radius: 999px;
   color: var(--brand-strong);
   background: var(--surface-tint);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 850;
 }
 
@@ -650,7 +651,7 @@ a {
   display: block;
   margin-top: 0.4rem;
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.45;
 }
 
@@ -670,7 +671,7 @@ a {
 
 .warning-note {
   border-color: color-mix(in srgb, var(--warning) 40%, var(--border));
-  color: color-mix(in srgb, var(--warning) 80%, var(--text));
+  color: var(--warning);
   background: color-mix(in srgb, var(--warning) 7%, var(--surface));
 }
 
@@ -738,7 +739,7 @@ thead th {
   top: 0;
   color: var(--text-muted);
   background: var(--surface-soft);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -803,7 +804,7 @@ tbody tr:hover :is(th, td) {
   border-radius: 0.625rem;
   color: var(--brand-strong);
   background: var(--surface-tint);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 900;
 }
 
@@ -829,7 +830,7 @@ tbody tr:hover :is(th, td) {
   border-radius: 999px;
   color: var(--success);
   background: color-mix(in srgb, var(--success) 10%, transparent);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 850;
 }
 
@@ -861,7 +862,7 @@ tbody tr:hover :is(th, td) {
   border: 1px solid currentColor;
   border-radius: 50%;
   color: var(--warning);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 900;
 }
 

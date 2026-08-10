@@ -338,7 +338,10 @@ test('apply uses a unique production deployment with skip-domain and leaves the 
       if (args[0] === 'env' && args[1] === 'ls') return jsonResult({ envs: [] });
       if (args[0] === 'env' && ['add', 'rm'].includes(args[1])) return { stdout: '', stderr: '' };
       if (args[0] === 'deploy') {
-        return jsonResult({ id: 'dpl_temp_unique', url: 'https://municipio-junin-private-123.vercel.app' });
+        return jsonResult({
+          status: 'ok',
+          deployment: { id: 'dpl_temp_unique', url: 'https://municipio-junin-private-123.vercel.app' },
+        });
       }
       if (args[0] === 'inspect' && args[1] === STABLE_PRODUCTION_URL) {
         return jsonResult({ id: 'dpl_stable', url: STABLE_PRODUCTION_URL, status: 'READY', target: 'production' });
@@ -406,7 +409,7 @@ test('apply refuses to overwrite a pre-existing allowlist or bootstrap secret', 
       if (command === 'git') return { stdout: '?? ' + state.endpointRelativePath + '\n', stderr: '' };
       if (args[0] === 'link') return { stdout: '', stderr: '' };
       if (args[0] === 'env' && args[1] === 'ls') {
-        return jsonResult({ envs: [{ name: 'GRH_DIRECTORY_ALLOWED_USER_IDS' }] });
+        return jsonResult({ envs: [{ key: 'GRH_DIRECTORY_ALLOWED_USER_IDS' }] });
       }
       assert.fail('environment guard must stop execution');
     };

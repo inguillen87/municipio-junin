@@ -367,14 +367,18 @@ function collectEnvironmentNames(value, names = new Set()) {
     value.forEach(item => collectEnvironmentNames(item, names));
   } else if (value && typeof value === 'object') {
     if (typeof value.name === 'string') names.add(value.name);
+    if (typeof value.key === 'string') names.add(value.key);
     Object.values(value).forEach(item => collectEnvironmentNames(item, names));
   }
   return names;
 }
 
 function deploymentIdentity(value) {
-  const id = value?.id || value?.deploymentId || value?.uid;
-  const rawUrl = value?.url || value?.deploymentUrl || value?.inspectorUrl;
+  const candidate = value?.deployment && typeof value.deployment === 'object'
+    ? value.deployment
+    : value;
+  const id = candidate?.id || candidate?.deploymentId || candidate?.uid;
+  const rawUrl = candidate?.url || candidate?.deploymentUrl || candidate?.inspectorUrl;
   const url = typeof rawUrl === 'string'
     ? (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') ? rawUrl : 'https://' + rawUrl)
     : null;

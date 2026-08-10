@@ -688,6 +688,10 @@
       var evaluationStatus = document.getElementById('evaluationStatus');
       var EVALUATION_PASSWORD = 'Junin2026!';
       var SAFE_DEFAULT_PATHS = Object.freeze(['inicio.html']);
+      var SAFE_RETURN_PATHS = Object.freeze({
+        'rrhh.html#peopleDirectory': 'navigation.rrhh',
+        'ia.html': 'navigation.ai-assistant'
+      });
 
       function togglePass() {
         var visible = passInput.type === 'password';
@@ -738,6 +742,22 @@
         return candidate;
       }
 
+      function validatedReturnPath(user) {
+        var params;
+        try {
+          params = new URLSearchParams(window.location.search || '');
+        } catch (error) {
+          return null;
+        }
+        var keys = Array.from(params.keys());
+        if (keys.length !== 1 || keys[0] !== 'return' || params.getAll('return').length !== 1) return null;
+        var candidate = params.get('return');
+        var requiredCapability = SAFE_RETURN_PATHS[candidate];
+        var capabilities = user && Array.isArray(user.capabilities) ? user.capabilities : [];
+        if (!requiredCapability || capabilities.indexOf(requiredCapability) === -1) return null;
+        return candidate;
+      }
+
       async function doLogin(event) {
         event.preventDefault();
         resetError();
@@ -779,7 +799,7 @@
           sessionStorage.setItem('mjunin_user', JSON.stringify(session));
           sessionStorage.setItem('mjunin_token', payload.token);
           submitButton.textContent = 'Accediendo…';
-          window.location.href = validatedDefaultPath(session);
+          window.location.href = validatedReturnPath(session) || validatedDefaultPath(session);
         } catch (error) {
           setSubmitting(false);
           showError('El servicio de acceso no está disponible en este momento. Intentá nuevamente más tarde.', errorMessage);

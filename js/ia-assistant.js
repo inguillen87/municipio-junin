@@ -5,8 +5,16 @@
   var ENDPOINT = '/api/ai-analyze';
   var MAX_LENGTH = 1200;
   var REQUEST_TIMEOUT_MS = 18000;
+  var DIRECTORY_ENDPOINT = '/api/grh-directory';
+  var DIRECTORY_SCHEMA = 'grh-directory-v1';
+  var DIRECTORY_SEARCH_LIMIT = 8;
+  var DIRECTORY_DEBOUNCE_MS = 280;
+  var DIRECTORY_TIMEOUT_MS = 10000;
   var busy = false;
   var typingNode = null;
+  var directoryTimer = null;
+  var directoryController = null;
+  var directorySequence = 0;
 
   function byId(id) { return document.getElementById(id); }
 
@@ -85,11 +93,16 @@
     card.appendChild(header);
 
     var body = createElement('div', 'answer-body');
+    appendAnswerVisual(body, answer.visual);
+    var detailsContent = createElement('div', 'answer-details-content');
     var findings = safeArray(answer.findings);
     if (findings.length) {
       var list = createElement('ul', 'finding-list');
       findings.forEach(function(finding) { list.appendChild(createElement('li', '', finding)); });
-      body.appendChild(list);
+      var findingsSection = createElement('section', 'answer-findings');
+      findingsSection.appendChild(createElement('h4', '', 'Hallazgos'));
+      findingsSection.appendChild(list);
+      detailsContent.appendChild(findingsSection);
     }
 
     var evidence = safeArray(answer.evidence);
@@ -107,22 +120,147 @@
     }
 
     appendDirectoryContract(body, answer.directory);
+    appendAnswerActions(body, answer.actions);
 
     var caveats = safeArray(answer.caveats);
     if (caveats.length) {
       var limits = createElement('section', 'answer-limits');
       limits.appendChild(createElement('strong', '', 'Límites de lectura'));
       caveats.forEach(function(caveat) { limits.appendChild(createElement('p', '', caveat)); });
-      body.appendChild(limits);
+      detailsContent.appendChild(limits);
     }
 
-    appendAnswerActions(body, answer.actions);
+    if (detailsContent.childElementCount) {
+      var details = createElement('details', 'answer-details');
+      details.appendChild(createElement('summary', '', 'Detalles y límites'));
+      details.appendChild(detailsContent);
+      body.appendChild(details);
+    }
 
     if (answer.source) body.appendChild(createElement('p', 'answer-source', answer.source));
     card.appendChild(body);
-    row.appendChild(card);
+    var stack = createElement('div', 'answer-stack');
+    stack.appendChild(card);
+    appendNextQuestions(stack, answer.nextQuestions);
+    row.appendChild(stack);
     appendToLog(row, 'start');
     updateProvenance(payload.provenance);
+  }
+
+  function exactObjectKeys(value, expected) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    var actual = Object.keys(value).sort();
+    var keys = expected.slice().sort();
+    return actual.length === keys.length && actual.every(function(key, index) { return key === keys[index]; });
+  }
+
+  function safeText(value, maximum, nullable) {
+    if (nullable && value === null) return true;
+    return typeof value === 'string' && value === value.trim() && value.length > 0 &&
+      value.length <= maximum && !/[\u0000-\u001f\u007f]/u.test(value);
+  }
+
+  function validAnswerVisual(value) {
+    if (!exactObjectKeys(value, [
+      'schemaVersion', 'kind', 'title', 'subtitle', 'order', 'unit', 'scaleMax', 'items'
+    ]) || value.schemaVersion !== 'grh-answer-visual-v1' || value.kind !== 'bar' ||
+        !safeText(value.title, 160, false) || !safeText(value.subtitle, 240, false) ||
+        !['ranked', 'chronological', 'defined'].includes(value.order) ||
+        !['participants', 'records', 'rows', 'percent', 'source_currency_cents'].includes(value.unit) ||
+        !Number.isFinite(value.scaleMax) || value.scaleMax <= 0 ||
+        (value.unit !== 'percent' && !Number.isSafeInteger(value.scaleMax)) ||
+        !Array.isArray(value.items) || value.items.length < 2 || value.items.length > 13) return false;
+
+    var labels = new Set();
+    var previous = Number.POSITIVE_INFINITY;
+    var maximum = 0;
+    var valid = value.items.every(function(item) {
+      if (!exactObjectKeys(item, ['label', 'value', 'displayValue']) ||
+          !safeText(item.label, 120, false) || !Number.isFinite(item.value) || item.value < 0 ||
+          (value.unit === 'percent' ? item.value > 100 : !Number.isSafeInteger(item.value)) ||
+          item.value > value.scaleMax || !safeText(item.displayValue, 64, false) || labels.has(item.label)) return false;
+      if (value.order === 'ranked' && item.value > previous) return false;
+      labels.add(item.label);
+      maximum = Math.max(maximum, item.value);
+      previous = item.value;
+      return true;
+    });
+    return valid && maximum > 0 && value.scaleMax >= maximum;
+  }
+
+  function appendAnswerVisual(body, visual) {
+    if (!validAnswerVisual(visual)) return;
+    var figure = createElement('figure', 'answer-visual');
+    figure.setAttribute('aria-label', visual.title);
+    figure.dataset.schemaVersion = visual.schemaVersion;
+    figure.dataset.order = visual.order;
+
+    var caption = createElement('figcaption', 'answer-visual-header');
+    caption.appendChild(createElement('h4', '', visual.title));
+    caption.appendChild(createElement('p', '', visual.subtitle));
+    figure.appendChild(caption);
+
+    var list = createElement('div', 'answer-visual-list');
+    list.setAttribute('role', 'list');
+    visual.items.forEach(function(item) {
+      var visualRow = createElement('div', 'answer-visual-row');
+      visualRow.setAttribute('role', 'listitem');
+      visualRow.setAttribute('aria-label', item.label + ': ' + item.displayValue);
+
+      var labels = createElement('div', 'answer-visual-labels');
+      labels.appendChild(createElement('span', 'answer-visual-label', item.label));
+      labels.appendChild(createElement('strong', 'answer-visual-value', item.displayValue));
+      visualRow.appendChild(labels);
+
+      var track = createElement('div', 'answer-visual-track');
+      track.setAttribute('aria-hidden', 'true');
+      var fill = createElement('span', 'answer-visual-fill');
+      if (item.value === 0) fill.classList.add('is-zero');
+      fill.style.width = Math.max(0, Math.min(100, item.value / visual.scaleMax * 100)) + '%';
+      track.appendChild(fill);
+      visualRow.appendChild(track);
+      list.appendChild(visualRow);
+    });
+    figure.appendChild(list);
+    figure.appendChild(createElement('p', 'answer-visual-scale', answerVisualScaleLabel(visual)));
+    body.appendChild(figure);
+  }
+
+  function answerVisualScaleLabel(visual) {
+    if (visual.unit === 'percent') return 'Escala 0–100 %';
+    if (visual.unit === 'source_currency_cents') {
+      return 'Barras desde cero · unidad de control indicada en cada valor';
+    }
+    var labels = { participants: 'participantes', records: 'registros', rows: 'filas' };
+    var formatted = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(visual.scaleMax);
+    return 'Escala 0–' + formatted + ' ' + labels[visual.unit];
+  }
+
+  function validAnswerTextList(value, maximumItems, maximumLength) {
+    if (!Array.isArray(value) || value.length > maximumItems) return [];
+    var seen = new Set();
+    return value.filter(function(item) {
+      if (!safeText(item, maximumLength, false) || seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
+  }
+
+  function appendNextQuestions(container, rawQuestions) {
+    var questions = validAnswerTextList(rawQuestions, 4, 300);
+    if (!questions.length) return;
+    var section = createElement('section', 'answer-followups');
+    section.setAttribute('aria-label', 'Preguntas siguientes');
+    section.appendChild(createElement('p', 'answer-followups-label', 'Seguir analizando'));
+    var chips = createElement('div', 'answer-followups-list');
+    questions.forEach(function(question) {
+      var button = createElement('button', 'answer-followup', question);
+      button.type = 'button';
+      button.dataset.followUpQuestion = question;
+      chips.appendChild(button);
+    });
+    section.appendChild(chips);
+    container.appendChild(section);
   }
 
   function appendUnavailable(title, detail) {
@@ -257,6 +395,293 @@
     return value && typeof value === 'object' && typeof value.label === 'string' ? value.label : '';
   }
 
+  function validDirectoryDate(value) {
+    return value === null || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value));
+  }
+
+  function validDirectoryDimension(value) {
+    return value === null || (
+      exactObjectKeys(value, ['code', 'label']) && Number.isSafeInteger(value.code) && value.code >= 0 &&
+      safeText(value.label, 200, true)
+    );
+  }
+
+  function validDirectoryRelation(value) {
+    return value === null || (
+      exactObjectKeys(value, ['code', 'label']) && Number.isSafeInteger(value.code) && value.code > 0 &&
+      safeText(value.label, 200, true)
+    );
+  }
+
+  function validDirectoryPosition(value) {
+    return value === null || (
+      exactObjectKeys(value, ['code', 'label', 'parent', 'dependsOn']) &&
+      Number.isSafeInteger(value.code) && value.code >= 0 && safeText(value.label, 200, true) &&
+      validDirectoryRelation(value.parent) && validDirectoryRelation(value.dependsOn)
+    );
+  }
+
+  function validDirectoryPositionObservation(value, snapshotAsOf) {
+    if (value === null) return true;
+    if (!exactObjectKeys(value, ['label', 'observedDate', 'observedPeriod', 'status', 'sourceTable']) ||
+        !safeText(value.label, 200, false) || !validDirectoryDate(value.observedDate) || value.observedDate === null ||
+        typeof value.observedPeriod !== 'string' || !/^\d{4}-\d{2}$/.test(value.observedPeriod) ||
+        value.observedDate.slice(0, 7) !== value.observedPeriod ||
+        !['historical_observation', 'source_future_effective'].includes(value.status) ||
+        value.sourceTable !== 'histolegajo') return false;
+    return value.status === 'source_future_effective'
+      ? value.observedDate > snapshotAsOf
+      : value.observedDate <= snapshotAsOf;
+  }
+
+  function validDirectoryEvents(value, snapshotAsOf) {
+    if (!exactObjectKeys(value, [
+      'absenceCount', 'latestAbsenceDate', 'leaveCount', 'latestLeaveStartDate', 'latestLeaveEndDate'
+    ]) || !Number.isSafeInteger(value.absenceCount) || value.absenceCount < 0 ||
+        !Number.isSafeInteger(value.leaveCount) || value.leaveCount < 0) return false;
+    return ['latestAbsenceDate', 'latestLeaveStartDate', 'latestLeaveEndDate'].every(function(key) {
+      return validDirectoryDate(value[key]) && (value[key] === null || value[key] <= snapshotAsOf);
+    }) && (value.latestLeaveStartDate === null || value.latestLeaveEndDate === null ||
+      value.latestLeaveEndDate >= value.latestLeaveStartDate);
+  }
+
+  function validDirectoryItem(item, snapshotAsOf) {
+    return exactObjectKeys(item, [
+      'companyCode', 'legajo', 'displayName', 'sector', 'organization', 'position', 'positionObservation',
+      'category', 'agreement', 'events'
+    ]) && Number.isSafeInteger(item.companyCode) && item.companyCode > 0 &&
+      Number.isSafeInteger(item.legajo) && item.legajo > 0 && safeText(item.displayName, 200, true) &&
+      validDirectoryDimension(item.sector) && validDirectoryDimension(item.organization) &&
+      validDirectoryPosition(item.position) &&
+      validDirectoryPositionObservation(item.positionObservation, snapshotAsOf) &&
+      validDirectoryDimension(item.category) && validDirectoryDimension(item.agreement) &&
+      validDirectoryEvents(item.events, snapshotAsOf);
+  }
+
+  function validDirectoryFacetRow(row, name) {
+    var keys = name === 'categories' ? ['agreementCode', 'code', 'label', 'count'] :
+      name === 'positionObservations' ? ['label', 'count', 'status'] : ['code', 'label', 'count'];
+    if (!exactObjectKeys(row, keys) || !Number.isSafeInteger(row.count) || row.count < 1) return false;
+    if (name === 'positionObservations') {
+      return safeText(row.label, 200, false) &&
+        ['historical_observation', 'source_future_effective'].includes(row.status);
+    }
+    return Number.isSafeInteger(row.code) && row.code >= 0 && safeText(row.label, 200, true) &&
+      (name !== 'categories' || (Number.isSafeInteger(row.agreementCode) && row.agreementCode >= 0));
+  }
+
+  function validDirectoryFacets(value) {
+    var names = ['sectors', 'organizations', 'positions', 'positionObservations', 'categories', 'agreements'];
+    if (!exactObjectKeys(value, names)) return false;
+    return names.every(function(name) {
+      if (!Array.isArray(value[name]) || value[name].length > 5000) return false;
+      var seen = new Set();
+      return value[name].every(function(row) {
+        var key = name === 'categories' ? String(row && row.agreementCode) + ':' + String(row && row.code) :
+          name === 'positionObservations' ? String(row && row.status) + ':' + String(row && row.label) :
+            String(row && row.code);
+        if (!validDirectoryFacetRow(row, name) || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    });
+  }
+
+  function validDirectoryListResponse(payload) {
+    if (!exactObjectKeys(payload, ['schemaVersion', 'source', 'privacy', 'query', 'facets', 'items']) ||
+        payload.schemaVersion !== DIRECTORY_SCHEMA) return false;
+    var source = payload.source;
+    if (!exactObjectKeys(source, ['canonicalSystem', 'sourceFile', 'sourceSha256', 'snapshotAsOf']) ||
+        !safeText(source.canonicalSystem, 100, false) || !safeText(source.sourceFile, 260, false) ||
+        !source.sourceFile.endsWith('.sql.gz') || !/^[0-9a-f]{64}$/.test(source.sourceSha256) ||
+        !validDirectoryDate(source.snapshotAsOf) || source.snapshotAsOf === null) return false;
+    if (!exactObjectKeys(payload.privacy, ['containsPersonalData', 'excludedFields']) ||
+        payload.privacy.containsPersonalData !== true || !Array.isArray(payload.privacy.excludedFields) ||
+        payload.privacy.excludedFields.join('|') !== 'dni|cuil|contact|address|bank_account|salary|event_cause') return false;
+    var query = payload.query;
+    if (!exactObjectKeys(query, ['mode', 'page', 'limit', 'total', 'hasNext', 'cursor', 'nextCursor']) ||
+        query.mode !== 'list' || query.page !== 1 || query.limit !== DIRECTORY_SEARCH_LIMIT ||
+        !Number.isSafeInteger(query.total) || query.total < 0 || typeof query.hasNext !== 'boolean' ||
+        query.cursor !== null || (query.nextCursor !== null && (!safeText(query.nextCursor, 512, false))) ||
+        Boolean(query.nextCursor) !== query.hasNext || !validDirectoryFacets(payload.facets) ||
+        !Array.isArray(payload.items) || payload.items.length > DIRECTORY_SEARCH_LIMIT) return false;
+    var identities = new Set();
+    return payload.items.every(function(item) {
+      var identity = String(item && item.companyCode) + ':' + String(item && item.legajo);
+      if (!validDirectoryItem(item, source.snapshotAsOf) || identities.has(identity)) return false;
+      identities.add(identity);
+      return true;
+    });
+  }
+
+  function clearDirectorySearch() {
+    if (directoryTimer) global.clearTimeout(directoryTimer);
+    directoryTimer = null;
+    if (directoryController) directoryController.abort();
+    directoryController = null;
+    directorySequence += 1;
+  }
+
+  function clearPersonResults() {
+    var results = byId('personSearchResults');
+    if (results) while (results.firstChild) results.removeChild(results.firstChild);
+  }
+
+  function setPersonSearchStatus(message) {
+    var status = byId('personSearchStatus');
+    if (status) status.textContent = message;
+  }
+
+  function openPersonSearch() {
+    var panel = byId('personSearchPanel');
+    var input = byId('personSearchInput');
+    if (!panel || !input) return;
+    panel.hidden = false;
+    if (!input.disabled) {
+      setPersonSearchStatus('Escribí al menos 2 caracteres para consultar el directorio privado.');
+      input.focus({ preventScroll: true });
+    }
+  }
+
+  function closePersonSearch() {
+    clearDirectorySearch();
+    clearPersonResults();
+    var panel = byId('personSearchPanel');
+    var input = byId('personSearchInput');
+    if (panel) panel.hidden = true;
+    if (input && !input.disabled) input.value = '';
+  }
+
+  function showDirectoryDenied() {
+    clearPersonResults();
+    var badge = byId('personAccessBadge');
+    var input = byId('personSearchInput');
+    var denied = byId('personSearchDenied');
+    if (badge) {
+      badge.textContent = 'Vista pública / acceso nominal requerido';
+      badge.classList.add('denied');
+    }
+    if (input) {
+      input.value = '';
+      input.disabled = true;
+    }
+    if (denied) denied.hidden = false;
+    setPersonSearchStatus('El perfil actual no puede consultar nombres ni fichas individuales.');
+  }
+
+  function personResultContext(item) {
+    var position = dimensionLabel(item.position) || dimensionLabel(item.positionObservation);
+    return [
+      'Legajo ' + item.legajo,
+      dimensionLabel(item.sector),
+      dimensionLabel(item.organization),
+      position,
+    ].filter(Boolean).join(' · ');
+  }
+
+  function submitPersonLookup(displayName) {
+    if (!safeText(displayName, 200, false) || busy) return;
+    closePersonSearch();
+    var input = byId('assistantInput');
+    var form = byId('assistantForm');
+    if (!input || !form) return;
+    input.value = 'Licencias de ' + displayName;
+    resizeInput(input);
+    form.requestSubmit();
+  }
+
+  function renderPersonResults(payload) {
+    clearPersonResults();
+    var results = byId('personSearchResults');
+    var badge = byId('personAccessBadge');
+    var denied = byId('personSearchDenied');
+    var namedItems = payload.items.filter(function(item) { return safeText(item.displayName, 200, false); });
+    if (badge) {
+      badge.textContent = 'Acceso nominal verificado';
+      badge.classList.remove('denied');
+    }
+    if (denied) denied.hidden = true;
+    if (!namedItems.length) {
+      setPersonSearchStatus('No hay coincidencias nominales para esta búsqueda.');
+      return;
+    }
+    namedItems.forEach(function(item) {
+      var button = createElement('button', 'person-search-result');
+      button.type = 'button';
+      button.setAttribute('role', 'listitem');
+      button.appendChild(createElement('strong', '', item.displayName));
+      button.appendChild(createElement('span', '', personResultContext(item)));
+      button.addEventListener('click', function() { submitPersonLookup(item.displayName); });
+      results.appendChild(button);
+    });
+    var prefix = payload.query.total > namedItems.length
+      ? 'Mostrando ' + namedItems.length + ' de ' + payload.query.total + ' coincidencias.'
+      : namedItems.length + (namedItems.length === 1 ? ' coincidencia.' : ' coincidencias.');
+    setPersonSearchStatus(prefix + ' Seleccioná una persona para consultar sus licencias.');
+  }
+
+  async function searchPeople(rawQuery, sequence) {
+    if (!await requirePageCapability() || sequence !== directorySequence) return;
+    if (!global.MuniAuth || typeof global.MuniAuth.fetch !== 'function') {
+      setPersonSearchStatus('No se pudo abrir el canal autenticado del directorio.');
+      return;
+    }
+    directoryController = new AbortController();
+    var controller = directoryController;
+    var timeout = global.setTimeout(function() { controller.abort(); }, DIRECTORY_TIMEOUT_MS);
+    try {
+      var parameters = new URLSearchParams({ search: rawQuery, limit: String(DIRECTORY_SEARCH_LIMIT) });
+      var response = await global.MuniAuth.fetch(DIRECTORY_ENDPOINT + '?' + parameters.toString(), {
+        method: 'GET',
+        cache: 'no-store',
+        redirect: 'error',
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      });
+      if (sequence !== directorySequence) return;
+      if (response.status === 403) {
+        showDirectoryDenied();
+        return;
+      }
+      if (!response.ok || response.headers.get('x-municontrol-contract') !== DIRECTORY_SCHEMA ||
+          !/^application\/json(?:\s*;|\s*$)/i.test(response.headers.get('content-type') || '')) {
+        throw new Error('GRH_DIRECTORY_UNAVAILABLE');
+      }
+      var payload = await response.json();
+      if (sequence !== directorySequence) return;
+      if (!validDirectoryListResponse(payload)) throw new Error('GRH_DIRECTORY_RESPONSE_INVALID');
+      renderPersonResults(payload);
+    } catch (error) {
+      if (error && error.name === 'AbortError') return;
+      if (global.MuniAuth && global.MuniAuth.isAuthError && global.MuniAuth.isAuthError(error)) return;
+      clearPersonResults();
+      setPersonSearchStatus('No se pudo verificar el directorio. Intentá nuevamente.');
+    } finally {
+      global.clearTimeout(timeout);
+      if (directoryController === controller) directoryController = null;
+    }
+  }
+
+  function schedulePersonSearch(value) {
+    clearDirectorySearch();
+    clearPersonResults();
+    var query = String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+    if (query.length < 2) {
+      setPersonSearchStatus('Escribí al menos 2 caracteres para iniciar la búsqueda.');
+      return;
+    }
+    if (query.length > 80) {
+      setPersonSearchStatus('La búsqueda admite hasta 80 caracteres.');
+      return;
+    }
+    var sequence = directorySequence;
+    setPersonSearchStatus('Consultando el directorio privado…');
+    directoryTimer = global.setTimeout(function() {
+      directoryTimer = null;
+      searchPeople(query, sequence);
+    }, DIRECTORY_DEBOUNCE_MS);
+  }
+
   function safeState(value) {
     return ['answered', 'limited', 'unsupported', 'refused'].indexOf(value) !== -1 ? value : 'answered';
   }
@@ -303,6 +728,9 @@
         button.disabled = nextBusy;
       });
     }
+    document.querySelectorAll('.answer-followup, .person-search-result').forEach(function(button) {
+      button.disabled = nextBusy;
+    });
   }
 
   function redirectToSafeWorkspace() {
@@ -426,6 +854,9 @@
     var form = byId('assistantForm');
     var input = byId('assistantInput');
     var suggestions = byId('querySuggestions');
+    var conversation = byId('conversationLog');
+    var personInput = byId('personSearchInput');
+    var personClose = byId('personSearchClose');
 
     if (form) {
       form.addEventListener('submit', async function(event) {
@@ -453,16 +884,44 @@
       suggestions.addEventListener('click', async function(event) {
         var personLookup = event.target.closest('[data-person-lookup]');
         if (personLookup && !busy) {
-          if (input) {
-            input.value = 'Licencias de ';
-            resizeInput(input);
-            input.focus();
-          }
+          openPersonSearch();
           return;
         }
         var button = event.target.closest('[data-question]');
         if (!button || busy) return;
+        closePersonSearch();
         await ask(button.getAttribute('data-question'));
+      });
+    }
+
+    if (conversation) {
+      conversation.addEventListener('click', function(event) {
+        var followUp = event.target.closest('[data-follow-up-question]');
+        if (!followUp || busy || !input || !form) return;
+        var question = followUp.dataset.followUpQuestion;
+        if (!safeText(question, 300, false)) return;
+        input.value = question;
+        resizeInput(input);
+        form.requestSubmit();
+      });
+    }
+
+    if (personInput) {
+      personInput.addEventListener('input', function() { schedulePersonSearch(personInput.value); });
+      personInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closePersonSearch();
+          var trigger = suggestions && suggestions.querySelector('[data-person-lookup]');
+          if (trigger) trigger.focus({ preventScroll: true });
+        }
+      });
+    }
+    if (personClose) {
+      personClose.addEventListener('click', function() {
+        closePersonSearch();
+        var trigger = suggestions && suggestions.querySelector('[data-person-lookup]');
+        if (trigger) trigger.focus({ preventScroll: true });
       });
     }
   }

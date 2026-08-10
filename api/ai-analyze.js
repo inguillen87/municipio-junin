@@ -22,7 +22,9 @@ const MAX_MESSAGE_LENGTH = 1200;
 const MAX_DIRECTORY_OPTIONS = 6;
 const MAX_DIRECTORY_SEARCH_TOKENS = 6;
 const MAX_DIRECTORY_LEAVE_HISTORY = 24;
+const MAX_ANSWER_VISUAL_ITEMS = 13;
 const ENGINE_ID = 'grh-deterministic-v1';
+export const GRH_ANSWER_VISUAL_SCHEMA_VERSION = 'grh-answer-visual-v1';
 const SUPPORTED_INTENTS = Object.freeze([
   'executive_summary',
   'workforce',
@@ -673,6 +675,8 @@ export function buildDeterministicAnswer(message, executive, quality, close = nu
   if (result.availablePeriodRange) answer.availablePeriodRange = { ...result.availablePeriodRange };
   if (result.directory) answer.directory = { ...result.directory };
   if (result.actions) answer.actions = result.actions.map(action => ({ ...action }));
+  const visual = result.visual ? cloneAnswerVisual(result.visual) : null;
+  if (visual) answer.visual = visual;
 
   return {
     httpStatus: result.httpStatus || 200,
@@ -943,6 +947,7 @@ function executiveSummary(context) {
       `totpago se usa sólo como diagnóstico; su acuerdo de valores global es ${formatPercent(context.reconciliation.valueAgreementPct)}.`,
     ],
     nextQuestions: ['¿Cómo se distribuyen los participantes por centro de costo?', '¿Qué muestra el control de cálculo?', '¿Qué registros quedaron en cuarentena?'],
+    visual: executiveConfidenceVisual(context),
   };
 }
 
@@ -988,6 +993,7 @@ function workforceDistributionAnswer(context, rawMessage) {
     evidence: ranking.map(item => metric(titleCase(item.label), formatInteger(item.participants), `${formatPercent(item.sharePct)} de los participantes del período.`)),
     caveats: [dimension.caveat],
     nextQuestions: dimension.nextQuestions,
+    visual: workforceRankingVisual(context, dimension, rankingRows(context.workforce[dimension.key])),
   };
 }
 
@@ -1045,6 +1051,7 @@ function workforceDistributionOverview(context, requestedDimensions) {
     evidence: available.map(({ dimension, top }) => metric(dimension.title, formatInteger(top.participants), `${titleCase(top.label)} · ${formatPercent(top.sharePct)}.`)),
     caveats: ['Cada dimensión describe una clasificación de origen distinta. Sus valores no deben sumarse entre sí ni interpretarse como cargos, planta activa u organigrama vigente.'],
     nextQuestions: ['¿Cómo se distribuyen por centro de costo?', '¿Cómo se distribuyen por sector?', '¿Cómo se distribuyen por categoría de acuerdo de origen?'],
+    visual: workforceOverviewVisual(context, available),
   };
 }
 
@@ -1089,6 +1096,10 @@ function absenceAnswer(context, periodRequest) {
     ],
     caveats: ['No se informa “ausentismo actual” porque el contrato no permite construir una tasa comparable y gobernada.'],
     nextQuestions: ['¿Qué registros quedaron en cuarentena?', '¿Qué cobertura tienen los cruces con legajo?'],
+    visual: annualEventVisual(context.absence, {
+      title: 'Ausencias registradas por año',
+      subtitle: 'Filas válidas de ausencia; sólo años liberados por privacidad.',
+    }),
     resolvedPeriod: year,
   };
 }
@@ -1170,6 +1181,10 @@ function leaveAnswer(context, periodRequest) {
     actions: [
       { id: 'open_rrhh', label: 'Abrir analítica RRHH', href: '/rrhh' },
     ],
+    visual: annualEventVisual(context.leave, {
+      title: 'Licencias históricas por año',
+      subtitle: 'Filas válidas de licencia; la fuente termina en 2009 y no describe estado actual.',
+    }),
     availablePeriodRange,
     resolvedPeriod: year,
   };
@@ -1196,6 +1211,10 @@ function movementsAnswer(context, periodRequest) {
     ],
     caveats: ['No se derivan rotación, altas o bajas sin una taxonomía validada de tipos de movimiento.'],
     nextQuestions: ['¿Cuál es la cobertura del cruce con legajo?', '¿Qué calidad tiene el extracto?'],
+    visual: annualEventVisual(context.movements, {
+      title: 'Movimientos registrados por año',
+      subtitle: 'Filas válidas de legamov; no representan altas, bajas ni personas únicas.',
+    }),
     resolvedPeriod: year,
   };
 }
@@ -1218,6 +1237,7 @@ function qualityAnswer(context) {
     ],
     caveats: ['El score evalúa el extracto agregado gobernado; no certifica la aptitud de cada tabla cruda de GRH.'],
     nextQuestions: ['¿Por qué totpago es sólo diagnóstico?', '¿Cómo se compone la cuarentena?'],
+    visual: qualityComponentsVisual(components),
   };
 }
 
@@ -1234,6 +1254,7 @@ function quarantineAnswer(context) {
     evidence: breakdown.map(item => metric(item.source, formatInteger(item.rows), 'Excluidas por fecha o período inválido según la política del snapshot.')),
     caveats: ['Las razones de cuarentena pueden superponerse; el total informado corresponde a filas únicas excluidas.'],
     nextQuestions: ['¿Cuál es el score de calidad?', '¿Qué período se considera válido?'],
+    visual: quarantineVisual(breakdown),
   };
 }
 
@@ -1264,6 +1285,7 @@ function calculationControlAnswer(context, periodRequest) {
     ],
     caveats: [currencyDisclosure(context)],
     nextQuestions: ['¿Cómo concilia con totpago?', '¿Cómo cambió frente al período anterior?'],
+    visual: calculationControlVisual(context, control),
     resolvedPeriod: period,
   };
 }
@@ -1300,6 +1322,7 @@ function closeExplanationAnswer(context, periodRequest) {
       'El control de cálculo no prueba transferencia, acreditación bancaria ni asiento contable.',
     ],
     nextQuestions: ['¿Cómo cambió el neto frente al mes anterior?', '¿Cuál es la calidad global del extracto?'],
+    visual: closeComponentsVisual(context, row),
     resolvedPeriod: row.period,
   };
 }
@@ -1323,6 +1346,7 @@ function reconciliationAnswer(context) {
     ],
     caveats: ['Una alta cobertura de corridas no implica acuerdo de importes; ambas medidas deben leerse juntas.'],
     nextQuestions: ['¿Qué muestra el control de cálculo?', '¿Cuál es el principal riesgo de calidad?'],
+    visual: reconciliationVisual(data),
   };
 }
 
@@ -1351,6 +1375,7 @@ function trendAnswer(context, periodRequest) {
     ],
     caveats: [currencyDisclosure(context), 'No se proyectan períodos futuros ni se explican causas sin variables y metodología adicionales.'],
     nextQuestions: ['¿Qué compone el control del último período?', '¿Cómo está la conciliación cross-source?'],
+    visual: trendVisual(context, previous, current),
     resolvedPeriod: `${previous.period}→${current.period}`,
   };
 }
@@ -1449,6 +1474,254 @@ function refusal(title, summary, caveats, code) {
     httpStatus: 422,
     code,
   };
+}
+
+function executiveConfidenceVisual(context) {
+  const data = context.reconciliation;
+  return buildBarVisual({
+    title: 'Señales de confianza del corte',
+    subtitle: 'Indicadores porcentuales independientes; no deben sumarse entre sí.',
+    order: 'defined',
+    unit: 'percent',
+    scaleMax: 100,
+    items: [
+      visualItem('Calidad gobernada', context.quality.score, formatPercent(context.quality.score)),
+      visualItem('Conciliación cross-source', data.scorePct, formatPercent(data.scorePct)),
+      visualItem('Cobertura de corridas', data.runCoveragePct, formatPercent(data.runCoveragePct)),
+      visualItem('Acuerdo de valores', data.valueAgreementPct, formatPercent(data.valueAgreementPct)),
+    ],
+  });
+}
+
+function workforceRankingVisual(context, dimension, rows) {
+  const items = [...rows]
+    .sort((left, right) => right.participants - left.participants || left.label.localeCompare(right.label, 'es'))
+    .slice(0, MAX_ANSWER_VISUAL_ITEMS)
+    .map(row => visualItem(
+      titleCase(row.label),
+      row.participants,
+      `${formatInteger(row.participants)} · ${formatPercent(row.sharePct)}`,
+    ));
+  return buildBarVisual({
+    title: dimension.title,
+    subtitle: `Participación de liquidación ${context.latestPeriod}; escala sobre ${formatInteger(context.workforce.payrollParticipants)} participantes, no planta activa.`,
+    order: 'ranked',
+    unit: 'participants',
+    scaleMax: context.workforce.payrollParticipants,
+    items,
+  });
+}
+
+function workforceOverviewVisual(context, available) {
+  const items = available
+    .map(({ dimension, top }) => visualItem(
+      `${dimension.summaryLabel}: ${titleCase(top.label)}`,
+      top.participants,
+      `${formatInteger(top.participants)} · ${formatPercent(top.sharePct)}`,
+    ))
+    .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label, 'es'))
+    .slice(0, MAX_ANSWER_VISUAL_ITEMS);
+  return buildBarVisual({
+    title: 'Mayores concentraciones por dimensión',
+    subtitle: `Cada barra pertenece a una clasificación distinta de ${context.latestPeriod}; no deben sumarse entre sí.`,
+    order: 'ranked',
+    unit: 'participants',
+    scaleMax: context.workforce.payrollParticipants,
+    items,
+  });
+}
+
+function annualEventVisual(domain, { title, subtitle }) {
+  const rows = Array.isArray(domain?.series)
+    ? domain.series
+      .filter(row => row?.privacyStatus === 'released' && Number.isSafeInteger(row.value) && row.value >= 0)
+      .slice()
+      .sort((left, right) => left.period.localeCompare(right.period))
+      .slice(-MAX_ANSWER_VISUAL_ITEMS)
+    : [];
+  const items = rows.map(row => visualItem(row.period, row.value, formatInteger(row.value)));
+  return buildBarVisual({
+    title,
+    subtitle,
+    order: 'chronological',
+    unit: 'records',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function qualityComponentsVisual(components) {
+  const definitions = [
+    ['Validez temporal', components?.temporalValidity?.score],
+    ['Integridad referencial', components?.referentialIntegrity?.score],
+    ['Conciliación de liquidación', components?.payrollReconciliation?.score],
+    ['Unicidad de legajo', components?.legajoKeyUniqueness?.score],
+  ];
+  return buildBarVisual({
+    title: 'Componentes de calidad gobernada',
+    subtitle: 'Puntajes ponderados del extracto agregado; no certifican cada tabla cruda.',
+    order: 'defined',
+    unit: 'percent',
+    scaleMax: 100,
+    items: definitions.map(([label, value]) => visualItem(label, value, formatPercent(value))),
+  });
+}
+
+function quarantineVisual(breakdown) {
+  const items = breakdown
+    .map(item => visualItem(item.source, item.rows, formatInteger(item.rows)))
+    .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label, 'es'));
+  return buildBarVisual({
+    title: 'Filas temporales excluidas por fuente',
+    subtitle: 'Filas fuera de los KPIs gobernados por fecha o período inválido.',
+    order: 'ranked',
+    unit: 'rows',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function calculationControlVisual(context, control) {
+  const amounts = control.amounts;
+  const items = [
+    visualItem('Bruto con asignaciones', amounts.grossWithFamilyAllowancesCents, formatSourceAmount(amounts.grossWithFamilyAllowancesCents, context.presentation)),
+    visualItem('Retenciones', amounts.employeeWithholdingsCents, formatSourceAmount(amounts.employeeWithholdingsCents, context.presentation)),
+    visualItem('Neto de control', amounts.netPayrollCents, formatSourceAmount(amounts.netPayrollCents, context.presentation)),
+    visualItem('Aportes patronales', amounts.employerContributionsCents, formatSourceAmount(amounts.employerContributionsCents, context.presentation)),
+  ];
+  return buildBarVisual({
+    title: `Magnitudes del control · ${control.period}`,
+    subtitle: `${currencyDisclosure(context)} Las barras comparan magnitudes y no deben sumarse entre sí; no prueban desembolso.`,
+    order: 'defined',
+    unit: 'source_currency_cents',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function closeComponentsVisual(context, row) {
+  const components = row.components;
+  const definitions = [
+    ['Ingresos contributivos', components.contributoryEarningsCents],
+    ['Ingresos no contributivos', components.nonContributoryEarningsCents],
+    ['Asignaciones familiares', components.familyAllowancesCents],
+    ['Bruto con asignaciones', components.grossWithFamilyAllowancesCents],
+    ['Retenciones', components.employeeWithholdingsCents],
+    ['Neto de control', components.netPayrollCents],
+    ['Neto a pagar del control', components.netToPayCents],
+    ['Aportes patronales', components.employerContributionsCents],
+  ];
+  const items = definitions.map(([label, value]) => visualItem(label, value, formatSourceAmount(value, context.presentation)));
+  return buildBarVisual({
+    title: `Componentes del cierre · ${row.period}`,
+    subtitle: `${currencyDisclosure(context)} Son magnitudes aritméticas del mismo cierre; no deben sumarse todas entre sí ni interpretarse como pago.`,
+    order: 'defined',
+    unit: 'source_currency_cents',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function reconciliationVisual(data) {
+  return buildBarVisual({
+    title: 'Conciliación global calculo vs totpago',
+    subtitle: 'Indicadores globales independientes; cobertura alta no implica acuerdo de importes.',
+    order: 'defined',
+    unit: 'percent',
+    scaleMax: 100,
+    items: [
+      visualItem('Score de conciliación', data.scorePct, formatPercent(data.scorePct)),
+      visualItem('Cobertura de corridas', data.runCoveragePct, formatPercent(data.runCoveragePct)),
+      visualItem('Exactitud de métricas', data.metricExactRatePct, formatPercent(data.metricExactRatePct)),
+      visualItem('Acuerdo de valores', data.valueAgreementPct, formatPercent(data.valueAgreementPct)),
+    ],
+  });
+}
+
+function trendVisual(context, previous, current) {
+  const items = [previous, current].map(row => visualItem(
+    row.period,
+    row.amounts.netPayrollCents,
+    formatSourceAmount(row.amounts.netPayrollCents, context.presentation),
+  ));
+  return buildBarVisual({
+    title: 'Neto de control por período',
+    subtitle: `${currencyDisclosure(context)} Comparación observada; no es pronóstico ni evidencia de pago.`,
+    order: 'chronological',
+    unit: 'source_currency_cents',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function visualItem(label, value, displayValue) {
+  return { label, value, displayValue };
+}
+
+function maxVisualValue(items) {
+  return items.reduce((maximum, item) => Math.max(maximum, Number(item?.value) || 0), 0);
+}
+
+function buildBarVisual({ title, subtitle, order, unit, scaleMax, items }) {
+  const allowedOrders = new Set(['ranked', 'chronological', 'defined']);
+  const allowedUnits = new Set(['participants', 'records', 'rows', 'percent', 'source_currency_cents']);
+  const normalizedTitle = typeof title === 'string' ? title.trim() : '';
+  const normalizedSubtitle = typeof subtitle === 'string' ? subtitle.trim() : '';
+  if (!safeVisualText(normalizedTitle, 160) || !safeVisualText(normalizedSubtitle, 240) ||
+      !allowedOrders.has(order) || !allowedUnits.has(unit) ||
+      unit.length > 48 || !Array.isArray(items) || items.length < 2 ||
+      items.length > MAX_ANSWER_VISUAL_ITEMS) return null;
+
+  const normalizedItems = [];
+  const labels = new Set();
+  for (const item of items) {
+    const label = typeof item?.label === 'string' ? item.label.trim() : '';
+    const displayValue = typeof item?.displayValue === 'string' ? item.displayValue.trim() : '';
+    if (!safeVisualText(label, 120) || !safeVisualText(displayValue, 64) ||
+        !Number.isFinite(item?.value) || item.value < 0) return null;
+    if (unit === 'percent') {
+      if (item.value > 100) return null;
+    } else if (!Number.isSafeInteger(item.value)) {
+      return null;
+    }
+    if (labels.has(label)) return null;
+    labels.add(label);
+    normalizedItems.push({ label, value: item.value, displayValue });
+  }
+
+  if (order === 'ranked') {
+    normalizedItems.sort((left, right) => right.value - left.value || left.label.localeCompare(right.label, 'es'));
+  }
+  const maximum = maxVisualValue(normalizedItems);
+  if (!(maximum > 0) || !Number.isFinite(scaleMax) || scaleMax < maximum) return null;
+  if (unit !== 'percent' && !Number.isSafeInteger(scaleMax)) return null;
+
+  return {
+    schemaVersion: GRH_ANSWER_VISUAL_SCHEMA_VERSION,
+    kind: 'bar',
+    title: normalizedTitle,
+    subtitle: normalizedSubtitle,
+    order,
+    unit,
+    scaleMax,
+    items: normalizedItems,
+  };
+}
+
+function safeVisualText(value, maximum) {
+  return typeof value === 'string' && value.length > 0 && value.length <= maximum &&
+    !/[\u0000-\u001f\u007f]/u.test(value);
+}
+
+function cloneAnswerVisual(visual) {
+  return buildBarVisual({
+    title: visual?.title,
+    subtitle: visual?.subtitle,
+    order: visual?.order,
+    unit: visual?.unit,
+    scaleMax: visual?.scaleMax,
+    items: Array.isArray(visual?.items) ? visual.items.map(item => ({ ...item })) : null,
+  });
 }
 
 function buildProvenance(executive, quality, close = null, presentation = null) {

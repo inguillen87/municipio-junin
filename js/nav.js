@@ -859,7 +859,9 @@ window.MuniTheme && window.MuniTheme.apply(window.MuniTheme.get());
   });
 })();
 
-window.doLogout = function() {
+var SAFE_LOGOUT_RETURN_PATHS = ['rrhh.html#peopleDirectory', 'ia.html'];
+
+window.doLogout = function(returnPath) {
   authoritativeAccessProjection = null;
   window.__muniAuthValidated = false;
   sessionStorage.removeItem('mjunin_user');
@@ -877,7 +879,8 @@ window.doLogout = function() {
       // El cierre de sesión no depende de que CacheStorage esté disponible.
     }
   }
-  window.location.replace('login.html');
+  var safeReturn = SAFE_LOGOUT_RETURN_PATHS.indexOf(returnPath) !== -1 ? returnPath : null;
+  window.location.replace(safeReturn ? 'login.html?return=' + encodeURIComponent(safeReturn) : 'login.html');
 };
 
 function ensureMenuButton(sidebarEl) {

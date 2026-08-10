@@ -34,6 +34,7 @@ const PRIVATE_DATA_PATHS = new Set([
   '/api/grh-data',
   '/api/reports',
   '/api/ai-analyze',
+  '/api/grh-directory',
   '/api/raw',
 ]);
 
@@ -136,7 +137,8 @@ async function readRenderedThemeAudit(page) {
       '.conversation-panel', '.welcome-mark', '.welcome-guardrails span', '.query-chip',
       '.composer', '.send-query', '.rail-card', '.rail-link',
       '.answer-card', '.answer-state', '.evidence-item', '.directory-history-item',
-      '.directory-option', '.answer-action', '.answer-limits',
+      '.directory-option', '.answer-action', '.answer-limits', '.answer-visual', '.answer-details',
+      '.answer-followups', '.answer-followup', '.person-search-panel', '.person-search-result',
       '[data-muni-shell="primary-nav"]', '[data-muni-shell="bottom-nav"]'
     ].join(',');
     const boundaryViolations = Array.from(document.querySelectorAll(boundarySelector)).filter(visible).map(node => {
@@ -210,6 +212,50 @@ function provenance(executive, quality) {
   };
 }
 
+function directoryListPayload() {
+  const source = {
+    canonicalSystem: 'GRH Junín',
+    sourceFile: 'grh-junin.sql.gz',
+    sourceSha256: 'a'.repeat(64),
+    snapshotAsOf: '2026-08-06',
+  };
+  const emptyFacets = {
+    sectors: [], organizations: [], positions: [], positionObservations: [], categories: [], agreements: [],
+  };
+  const item = (legajo, displayName, sector) => ({
+    companyCode: 1,
+    legajo,
+    displayName,
+    sector: { code: legajo, label: sector },
+    organization: null,
+    position: null,
+    positionObservation: null,
+    category: null,
+    agreement: null,
+    events: {
+      absenceCount: 0,
+      latestAbsenceDate: null,
+      leaveCount: 1,
+      latestLeaveStartDate: '2009-04-01',
+      latestLeaveEndDate: '2009-04-05',
+    },
+  });
+  return {
+    schemaVersion: 'grh-directory-v1',
+    source,
+    privacy: {
+      containsPersonalData: true,
+      excludedFields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'event_cause'],
+    },
+    query: { mode: 'list', page: 1, limit: 8, total: 2, hasNext: false, cursor: null, nextCursor: null },
+    facets: emptyFacets,
+    items: [
+      item(7001, 'Persona Prueba', 'SECTOR PRUEBA'),
+      item(7002, 'Persona Prueba Dos', 'SECTOR DOS'),
+    ],
+  };
+}
+
 async function requestBody(request) {
   var chunks = [];
   for await (const chunk of request) chunks.push(chunk);
@@ -258,6 +304,33 @@ async function createServer(requestLog, options = {}) {
         options.authRole || 'INTENDENTE',
         options.malformedProjection === true,
       ) }));
+      return;
+    }
+    if (url.pathname === '/api/grh-directory') {
+      requestLog.push({
+        method: request.method,
+        authorization: request.headers.authorization || '',
+        pathname: url.pathname,
+        query: Object.fromEntries(url.searchParams),
+      });
+      if (options.directoryMode === 'denied') {
+        response.writeHead(403, {
+          'Content-Type': CONTENT_TYPES['.json'],
+          'Cache-Control': 'no-store, private',
+          'X-MuniControl-Contract': 'grh-directory-v1',
+        });
+        response.end(JSON.stringify({ error: 'Acceso nominal no habilitado' }));
+        return;
+      }
+      const payload = typeof options.directoryPayload === 'function'
+        ? options.directoryPayload(directoryListPayload())
+        : directoryListPayload();
+      response.writeHead(200, {
+        'Content-Type': CONTENT_TYPES['.json'],
+        'Cache-Control': 'no-store, private',
+        'X-MuniControl-Contract': options.directoryContract || 'grh-directory-v1',
+      });
+      response.end(JSON.stringify(payload));
       return;
     }
     if (PRIVATE_DATA_PATHS.has(url.pathname)) {
@@ -555,6 +628,14 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
         snapshot: document.querySelector('#snapshotStatus')?.textContent.trim(),
         period: document.querySelector('#periodStatus')?.textContent.trim(),
         evidenceCount: document.querySelectorAll('.evidence-item').length,
+        visualTag: document.querySelector('.answer-visual')?.tagName,
+        captionTag: document.querySelector('.answer-visual > :first-child')?.tagName,
+        visualRows: document.querySelectorAll('.answer-visual-row').length,
+        visualScale: document.querySelector('.answer-visual-scale')?.textContent.trim(),
+        visualValues: Array.from(document.querySelectorAll('.answer-visual-value'), node => node.textContent.trim()),
+        detailsOpen: document.querySelector('.answer-details')?.open,
+        bodyOrder: Array.from(document.querySelector('.answer-body')?.children || [], node => node.className),
+        followUps: Array.from(document.querySelectorAll('.answer-followup'), node => node.textContent.trim()),
         answerText,
         bodyText: document.body.textContent || '',
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -574,6 +655,14 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.match(result.snapshot, /2026-08-06/);
     assert.match(result.period, /2026-07/);
     assert.equal(result.evidenceCount >= 4, true);
+    assert.equal(result.visualTag, 'FIGURE');
+    assert.equal(result.captionTag, 'FIGCAPTION');
+    assert.equal(result.visualRows, 4);
+    assert.equal(result.visualScale, 'Escala 0–100 %');
+    assert.equal(result.visualValues.length, 4);
+    assert.equal(result.detailsOpen, false);
+    assert.deepEqual(result.bodyOrder, ['answer-visual', 'evidence-grid', 'answer-details', 'answer-source']);
+    assert.equal(result.followUps.length, 3);
     assert.match(result.answerText, /856/);
     assert.match(result.answerText, /Fuente: GRH Junín/);
     assert.match(result.answerText, /totpago se usa sólo como diagnóstico/i);
@@ -591,6 +680,12 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
       { label: 'Calidad', href: '/calidad' },
     ]);
     assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'dark', `${viewport.name}-answer-dark`);
+
+    const followUpQuestion = result.followUps[0];
+    await page.locator('.answer-followup').first().click();
+    await page.waitForFunction(() => document.querySelectorAll('.answer-card').length === 2);
+    assert.equal(requestLog.at(-1).body.message, followUpQuestion);
+    assert.equal(await page.locator('.message-row.user .user-bubble').last().textContent(), followUpQuestion);
 
     await page.getByRole('button', { name: 'Categorías de acuerdo' }).click();
     await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
@@ -647,7 +742,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     await context.close();
   }
 
-  assert.equal(requestLog.length, 8);
+  assert.equal(requestLog.length, 10);
   assert.equal(requestLog.every(item => item.method === 'POST'), true);
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
   assert.equal(requestLog.every(item => item.body.mode === 'deterministic'), true);
@@ -655,6 +750,113 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
   assert.equal(requestLog.filter(item => item.body.message === '¿Cómo se distribuyen los participantes por categoría de acuerdo de origen?').length, 2);
   assert.equal(requestLog.filter(item => item.body.message === 'Explicame el cierre GRH del último período').length, 2);
   assert.equal(requestLog.filter(item => item.body.message === '¿Qué licencias históricas están disponibles?').length, 2);
+  assert.equal(requestLog.filter(item => item.body.message === '¿Cómo se distribuyen los participantes por centro de costo?').length, 2);
+});
+
+test('assistant renders only the exact visual contract and ignores mutated visuals', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const baseVisual = {
+    schemaVersion: 'grh-answer-visual-v1',
+    kind: 'bar',
+    title: 'Participantes por área',
+    subtitle: 'Comparación del último período liberado.',
+    order: 'ranked',
+    unit: 'participants',
+    scaleMax: 10,
+    items: [
+      { label: 'Servicios', value: 10, displayValue: '10' },
+      { label: 'Gobierno', value: 5, displayValue: '5' },
+      { label: 'Sin observaciones', value: 0, displayValue: '0' },
+    ],
+  };
+  const answerFor = (body, views) => {
+    if (!body.message.startsWith('Visual ')) return null;
+    let visual = structuredClone(baseVisual);
+    if (body.message === 'Visual extra') visual.unexpected = true;
+    if (body.message === 'Visual item mutado') visual.items[0].unexpected = true;
+    if (body.message === 'Visual escala inválida') visual.scaleMax = 9;
+    return {
+      payload: {
+        status: 'answered',
+        intent: 'workforce_distribution',
+        response: 'Respuesta visual verificada.',
+        provenance: provenance(views.executive, views.quality),
+        answer: {
+          title: 'Respuesta visual',
+          summary: 'Resumen antes de la comparación.',
+          findings: ['Hallazgo verificable.'],
+          evidence: [{ label: 'Total', value: '10', detail: 'Participantes liberados.' }],
+          caveats: ['No equivale a planta activa.'],
+          actions: [{ id: 'open_rrhh', label: 'Abrir RRHH', href: '/rrhh' }],
+          source: 'Fuente: GRH Junín · snapshot 2026-08-06.',
+          nextQuestions: ['Visual siguiente'],
+          visual,
+        },
+      },
+    };
+  };
+  const server = await createServer(requestLog, { answerFor });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  await seedSession(context);
+  const page = await context.newPage();
+  const consoleErrors = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+
+  await page.locator('#assistantInput').fill('Visual válido');
+  await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+  await page.waitForSelector('.answer-visual');
+  const valid = await page.evaluate(() => {
+    const card = document.querySelector('.answer-card');
+    const visual = card.querySelector('.answer-visual');
+    return {
+      tag: visual.tagName,
+      caption: visual.firstElementChild?.tagName,
+      rows: visual.querySelectorAll('.answer-visual-row').length,
+      labels: Array.from(visual.querySelectorAll('.answer-visual-row'), row => row.getAttribute('aria-label')),
+      widths: Array.from(visual.querySelectorAll('.answer-visual-fill'), fill => fill.style.width),
+      scale: visual.querySelector('.answer-visual-scale')?.textContent.trim(),
+      nonBarGraphics: visual.querySelectorAll('svg, canvas, [class*="legend"]').length,
+      bodyOrder: Array.from(card.querySelector('.answer-body').children, node => node.className),
+      detailsOpen: card.querySelector('.answer-details')?.open,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  assert.deepEqual(valid, {
+    tag: 'FIGURE',
+    caption: 'FIGCAPTION',
+    rows: 3,
+    labels: ['Servicios: 10', 'Gobierno: 5', 'Sin observaciones: 0'],
+    widths: ['100%', '50%', '0%'],
+    scale: 'Escala 0–10 participantes',
+    nonBarGraphics: 0,
+    bodyOrder: ['answer-visual', 'evidence-grid', 'answer-actions', 'answer-details', 'answer-source'],
+    detailsOpen: false,
+    overflow: 0,
+  });
+  assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'dark', 'visual-mobile-dark');
+
+  for (const question of ['Visual extra', 'Visual item mutado', 'Visual escala inválida']) {
+    const expectedCards = await page.locator('.answer-card').count() + 1;
+    await page.locator('#assistantInput').fill(question);
+    await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+    await page.waitForFunction(count => document.querySelectorAll('.answer-card').length === count, expectedCards);
+    const latest = page.locator('.answer-card').last();
+    assert.equal(await latest.locator('.answer-visual').count(), 0, question);
+    assert.equal(await latest.locator('.evidence-item').count(), 1, question);
+  }
+  assert.equal(requestLog.length, 4);
+  assert.deepEqual(consoleErrors, []);
+  await context.close();
 });
 
 test('private person answers render leave cards, actions and bounded match options', { skip: !HAS_PRIVATE_GRH }, async t => {
@@ -760,11 +962,16 @@ test('private person answers render leave cards, actions and bounded match optio
 
   assert.equal(await page.getByText('Acceso según perfil', { exact: true }).isVisible(), true);
   assert.equal(await page.locator('.rail-link[href="/calidad"] small').textContent(), 'Datos confiables y pendientes');
+  assert.equal(requestLog.length, 0, 'directory search must not run during page load');
   await page.getByRole('button', { name: 'Buscar licencias por persona' }).click();
-  assert.equal(await page.locator('#assistantInput').inputValue(), 'Licencias de ');
-  assert.equal(requestLog.length, 0, 'the person chip must prepare the query, not run a broad lookup');
-  await page.locator('#assistantInput').fill('Licencias de Persona Prueba');
-  await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+  assert.equal(await page.locator('#personSearchPanel').isVisible(), true);
+  assert.equal(await page.locator('#assistantInput').inputValue(), '');
+  assert.equal(requestLog.length, 0, 'opening the person search must not run a broad lookup');
+  await page.locator('#personSearchInput').fill('Pe');
+  await page.waitForFunction(() => document.querySelectorAll('.person-search-result').length === 2);
+  assert.equal(requestLog.length, 1);
+  assert.deepEqual(requestLog[0].query, { search: 'Pe', limit: '8' });
+  await page.locator('.person-search-result').first().click();
   await page.waitForSelector('.directory-history-item');
   const matched = await page.evaluate(() => {
     const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
@@ -798,9 +1005,81 @@ test('private person answers render leave cards, actions and bounded match optio
   await page.locator('#themeToggleBtn').click();
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
   assertRenderedThemeAudit(await readRenderedThemeAudit(page), 'light', 'private-person-light');
-  assert.equal(requestLog.length, 2);
+  assert.equal(requestLog.length, 3);
+  assert.equal(requestLog[1].body.message, 'Licencias de Persona Prueba');
   assert.deepEqual(consoleErrors, []);
   await context.close();
+});
+
+test('person typeahead is on-demand and fails closed for denied or mutated directory contracts', async t => {
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => browser.close());
+
+  for (const scenario of [
+    { name: 'denied', options: { directoryMode: 'denied' } },
+    { name: 'wrong-header', options: { directoryContract: 'grh-directory-v0' } },
+    { name: 'mutated-payload', options: { directoryPayload: payload => ({ ...payload, unexpected: true }) } },
+  ]) {
+    const requestLog = [];
+    const server = await createServer(requestLog, scenario.options);
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    try {
+      const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+      await seedSession(context);
+      const page = await context.newPage();
+      const consoleErrors = [];
+      page.on('console', message => {
+        if (message.type() === 'error') consoleErrors.push(message.text());
+      });
+      await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+      assert.equal(requestLog.length, 0, `${scenario.name}: no directory request on load`);
+      await page.getByRole('button', { name: 'Buscar licencias por persona' }).click();
+      assert.equal(requestLog.length, 0, `${scenario.name}: no directory request on open`);
+      assert.equal(await page.locator('#personSearchInput').getAttribute('maxlength'), '80');
+      if (scenario.name === 'wrong-header') {
+        await page.locator('#personSearchInput').evaluate(input => {
+          input.value = 'x'.repeat(81);
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        await page.waitForTimeout(350);
+        assert.equal(requestLog.length, 0, 'overlong searches never reach the directory');
+        assert.equal(
+          await page.locator('#personSearchStatus').textContent(),
+          'La búsqueda admite hasta 80 caracteres.'
+        );
+      }
+      await page.locator('#personSearchInput').fill('Pe');
+      await page.waitForFunction(name => {
+        const status = document.querySelector('#personSearchStatus')?.textContent || '';
+        return name === 'denied'
+          ? status.includes('no puede consultar nombres')
+          : status.includes('No se pudo verificar el directorio');
+      }, scenario.name);
+      assert.equal(await page.locator('.person-search-result').count(), 0, scenario.name);
+      assert.equal(requestLog.length, 1, scenario.name);
+      assert.equal(requestLog[0].method, 'GET');
+      assert.equal(requestLog[0].authorization.startsWith('Bearer '), true);
+      assert.deepEqual(requestLog[0].query, { search: 'Pe', limit: '8' });
+      if (scenario.name === 'denied') {
+        assert.equal(await page.locator('#personAccessBadge').textContent(), 'Vista pública / acceso nominal requerido');
+        assert.equal(await page.locator('#personSearchInput').inputValue(), '');
+        assert.equal(await page.locator('#personSearchInput').isDisabled(), true);
+        const cta = page.locator('#personSearchDenied a');
+        assert.equal(await cta.getAttribute('href'), '/login.html?return=ia.html');
+        assert.equal(await cta.isVisible(), true);
+      } else {
+        assert.equal(await page.locator('#personSearchDenied').isHidden(), true);
+      }
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 0);
+      const actionableConsoleErrors = consoleErrors.filter(message => !(
+        scenario.name === 'denied' && /Failed to load resource:.*403 \(Forbidden\)/.test(message)
+      ));
+      assert.deepEqual(actionableConsoleErrors, [], scenario.name);
+      await context.close();
+    } finally {
+      await new Promise(resolve => server.close(resolve));
+    }
+  }
 });
 
 test('assistant rejects attacks and routes person lookups without echoing the sensitive request', { skip: !HAS_PRIVATE_GRH }, async t => {

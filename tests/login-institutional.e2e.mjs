@@ -137,6 +137,15 @@ async function createServer(requestLog) {
       return;
     }
 
+    if (url.pathname === '/rrhh.html' && request.method === 'GET') {
+      response.writeHead(200, {
+        'Cache-Control': 'no-store',
+        'Content-Type': 'text/html; charset=utf-8',
+      });
+      response.end('<!doctype html><html lang="es"><title>RRHH privado</title><body><main id="peopleDirectory">Directorio privado</main></body></html>');
+      return;
+    }
+
     response.writeHead(404, { 'Cache-Control': 'no-store' });
     response.end();
   });
@@ -162,7 +171,8 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /sessionStorage\.setItem\('mjunin_user'/);
   assert.match(source, /sessionStorage\.setItem\('mjunin_token'/);
   assert.match(source, /SAFE_DEFAULT_PATHS = Object\.freeze\(\['inicio\.html'\]\)/);
-  assert.match(source, /window\.location\.href = validatedDefaultPath\(session\)/);
+  assert.match(source, /SAFE_RETURN_PATHS = Object\.freeze/);
+  assert.match(source, /window\.location\.href = validatedReturnPath\(session\) \|\| validatedDefaultPath\(session\)/);
   assert.doesNotMatch(source, /window\.location\.href = 'index\.html'/);
 
   assert.doesNotMatch(source, /gradient|@keyframes|\bfloat\b|\bglow\b|kpi-card|data-count/i);
@@ -441,6 +451,43 @@ test('login rejects a server-supplied external default path and falls back to in
   });
   await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
   await page.fill('#emailInput', 'unsafe-path@junin.gob.ar');
+  await page.fill('#passInput', TEST_PASSWORD);
+  await Promise.all([
+    page.waitForURL(`${baseUrl}/inicio.html`),
+    page.click('#btnLogin'),
+  ]);
+  assert.equal(await page.textContent('#loginSuccess'), 'Sesión iniciada');
+  assert.deepEqual(externalRequests, []);
+});
+
+test('login accepts only a capability-bound private return and rejects hostile return URLs', async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  t.after(async () => context.close());
+  const page = await context.newPage();
+  const externalRequests = [];
+  page.on('request', request => {
+    if (!request.url().startsWith(baseUrl)) externalRequests.push(request.url());
+  });
+
+  await page.goto(`${baseUrl}/login.html?return=rrhh.html%23peopleDirectory`, { waitUntil: 'networkidle' });
+  await page.fill('#emailInput', SUCCESS_EMAIL);
+  await page.fill('#passInput', TEST_PASSWORD);
+  await Promise.all([
+    page.waitForURL(`${baseUrl}/rrhh.html#peopleDirectory`),
+    page.click('#btnLogin'),
+  ]);
+  assert.equal(await page.textContent('#peopleDirectory'), 'Directorio privado');
+
+  await page.goto(`${baseUrl}/login.html?return=https%3A%2F%2Fattacker.example%2F`, { waitUntil: 'networkidle' });
+  await page.fill('#emailInput', SUCCESS_EMAIL);
   await page.fill('#passInput', TEST_PASSWORD);
   await Promise.all([
     page.waitForURL(`${baseUrl}/inicio.html`),

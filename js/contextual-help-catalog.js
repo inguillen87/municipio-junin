@@ -112,7 +112,7 @@ const PAGES = deepFreeze({
   hacienda: {
     href: 'hacienda.html',
     aliases: ['/hacienda', '/hacienda.html'],
-    label: 'Hacienda',
+    label: 'Hacienda y nómina',
     objective: 'Revisá cálculo y conciliación mensual sin convertirlos en evidencia bancaria.',
     requiredCapability: 'navigation.hacienda',
     manualAnchor: 'interpretacion',
@@ -125,7 +125,7 @@ const PAGES = deepFreeze({
   grhExecutive: {
     href: 'grh-ejecutivo.html',
     aliases: ['/grh-ejecutivo', '/grh-ejecutivo.html'],
-    label: 'Centro Ejecutivo GRH',
+    label: 'Resumen ejecutivo GRH',
     objective: 'Profundizá en agregados GRH preservando privacidad, linaje y período.',
     requiredCapability: 'navigation.grh-executive',
     manualAnchor: 'fuente',
@@ -138,8 +138,8 @@ const PAGES = deepFreeze({
   quality: {
     href: 'control.html',
     aliases: ['/control', '/control.html'],
-    label: 'Calidad y Linaje',
-    objective: 'Determiná si el snapshot es apto antes de reutilizar sus resultados.',
+    label: 'Calidad de datos',
+    objective: 'Verificá si los datos son confiables antes de reutilizar sus resultados.',
     requiredCapability: 'navigation.data-quality',
     manualAnchor: 'seguridad',
     steps: [
@@ -152,12 +152,12 @@ const PAGES = deepFreeze({
     href: 'rrhh.html',
     aliases: ['/rrhh', '/rrhh.html'],
     label: 'RRHH',
-    objective: 'Leé participación y eventos agregados sin reconstruir fichas personales.',
+    objective: 'Analizá la dotación agregada y usá el directorio sólo cuando tu identidad privada esté habilitada.',
     requiredCapability: 'navigation.rrhh',
     manualAnchor: 'seguridad',
     steps: [
       { id: 'wait-validation', selector: '#connectionStatus', title: 'Esperá la validación', copy: 'No interpretes la pantalla hasta que los contratos ejecutivo y de calidad estén conciliados.' },
-      { id: 'separate-populations', selector: '#rrhhHeroTitle', title: 'Separá las poblaciones', copy: 'Participantes observados no equivalen automáticamente a planta activa ni a personas únicas actuales.' },
+      { id: 'confirm-directory-mode', selector: '#peopleDirectory', title: 'Verificá el modo del directorio', copy: 'La vista pública conserva sólo agregados; una identidad privada habilitada permite buscar y abrir fichas del snapshot.' },
       { id: 'review-coverage', selector: '#coverageTitle', title: 'Verificá la cobertura', copy: 'Confirmá años, períodos y celdas protegidas antes de comparar ausencias o movimientos.' },
     ],
   },
@@ -165,7 +165,7 @@ const PAGES = deepFreeze({
     href: 'ia.html',
     aliases: ['/ia', '/ia.html'],
     label: 'Asistente GRH',
-    objective: 'Formulá consultas deterministas limitadas a la evidencia gobernada.',
+    objective: 'Consultá evidencia GRH verificada y profundizá mediante visuales y acciones del resultado.',
     requiredCapability: 'navigation.ai-assistant',
     manualAnchor: 'superficies',
     steps: [

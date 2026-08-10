@@ -142,8 +142,13 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   assert.match(runtime, /navigation\.help/);
   assert.match(runtime, /aria-modal/);
   assert.match(runtime, /prefers-reduced-motion/);
+  assert.match(runtime, /Ayuda de pantalla/);
+  assert.match(runtime, /no consulta datos ni reemplaza al Asistente GRH/);
+  assert.doesNotMatch(runtime, /createElement\('span', 'muni-guide-trigger-label', 'MuniGuía'\)/);
 
   const catalog = await readFile(path.join(ROOT, 'js/contextual-help-catalog.js'), 'utf8');
   assert.doesNotMatch(catalog, /https?:\/\//i);
   assert.doesNotMatch(catalog, /(?:@|\bDNI\b|\bCUIL\b|\blegajo\b)/i);
+  assert.equal(MUNIGUIA_CATALOG.pages.quality.label, 'Calidad de datos');
+  assert.equal(MUNIGUIA_CATALOG.pages.rrhh.steps[1].selector, '#peopleDirectory');
 });

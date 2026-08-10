@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
+  GRH_ANSWER_VISUAL_SCHEMA_VERSION,
   buildDeterministicAnswer,
   classifyIntent,
   createAiAnalyzeHandler,
@@ -52,6 +53,39 @@ function realViews() {
 
 function answer(question, views = realViews(), presentation = JUNIN_PRESENTATION) {
   return buildDeterministicAnswer(question, views.executive, views.quality, views.close, presentation);
+}
+
+function assertBarVisual(visual, { unit, order }) {
+  assert.ok(visual);
+  assert.deepEqual(Object.keys(visual), [
+    'schemaVersion', 'kind', 'title', 'subtitle', 'order', 'unit', 'scaleMax', 'items',
+  ]);
+  assert.equal(visual.schemaVersion, GRH_ANSWER_VISUAL_SCHEMA_VERSION);
+  assert.equal(visual.kind, 'bar');
+  assert.equal(visual.unit, unit);
+  assert.equal(visual.order, order);
+  assert.equal(typeof visual.title, 'string');
+  assert.equal(typeof visual.subtitle, 'string');
+  assert.equal(visual.title.length > 0 && visual.title.length <= 160, true);
+  assert.equal(visual.subtitle.length > 0 && visual.subtitle.length <= 240, true);
+  assert.equal(Number.isFinite(visual.scaleMax), true);
+  assert.equal(visual.scaleMax > 0, true);
+  assert.equal(visual.items.length >= 2 && visual.items.length <= 13, true);
+  assert.equal(new Set(visual.items.map(item => item.label)).size, visual.items.length);
+  let previous = Number.POSITIVE_INFINITY;
+  for (const item of visual.items) {
+    assert.deepEqual(Object.keys(item), ['label', 'value', 'displayValue']);
+    assert.equal(typeof item.label, 'string');
+    assert.equal(typeof item.displayValue, 'string');
+    assert.equal(item.label.length > 0 && item.label.length <= 120, true);
+    assert.equal(item.displayValue.length > 0 && item.displayValue.length <= 64, true);
+    assert.equal(Number.isFinite(item.value), true);
+    assert.equal(item.value >= 0 && item.value <= visual.scaleMax, true);
+    if (unit === 'percent') assert.equal(item.value <= 100, true);
+    else assert.equal(Number.isSafeInteger(item.value), true);
+    if (order === 'ranked') assert.equal(item.value <= previous, true);
+    previous = item.value;
+  }
 }
 
 function responseRecorder() {
@@ -199,6 +233,141 @@ test('assistant contracts require semantic v2, portable k=10 and matching lineag
   const v1 = structuredClone(bundle.semantic);
   v1.schema_version = 'grh-semantic-v1';
   assert.equal(validateSemanticContract(v1), false);
+});
+
+test('bar visuals expose bounded canonical distribution and annual-series numbers', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const distribution = answer('Centro de costo', views);
+  const distributionVisual = distribution.answer.visual;
+  assertBarVisual(distributionVisual, { unit: 'participants', order: 'ranked' });
+  const expectedDistribution = views.executive.workforce.byCostCenter.rows
+    .filter(row => ['released', 'protected_aggregate'].includes(row.privacyStatus))
+    .slice()
+    .sort((left, right) => right.participants - left.participants || left.label.localeCompare(right.label, 'es'))
+    .slice(0, 13);
+  assert.equal(distributionVisual.scaleMax, views.executive.workforce.payrollParticipants);
+  assert.deepEqual(
+    distributionVisual.items.map(item => item.value),
+    expectedDistribution.map(row => row.participants),
+  );
+  assert.doesNotMatch(JSON.stringify(distributionVisual), /sourceCode|companyCode|dni|cuil|legajo/i);
+
+  for (const scenario of [
+    { question: 'Ausencias 2026', domain: 'absence' },
+    { question: 'Licencias 2009', domain: 'leave' },
+    { question: 'Movimientos 2026', domain: 'movements' },
+  ]) {
+    const result = answer(scenario.question, views);
+    const visual = result.answer.visual;
+    assertBarVisual(visual, { unit: 'records', order: 'chronological' });
+    const expected = views.executive[scenario.domain].series
+      .filter(row => row.privacyStatus === 'released')
+      .slice()
+      .sort((left, right) => left.period.localeCompare(right.period))
+      .slice(-13);
+    assert.deepEqual(visual.items.map(item => item.label), expected.map(row => row.period));
+    assert.deepEqual(visual.items.map(item => item.value), expected.map(row => row.value));
+  }
+});
+
+test('financial visuals retain canonical cents and never infer source currency or payment', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const releasedControl = views.executive.compensation.series.filter(row => row.privacyStatus === 'released');
+  const currentControl = releasedControl.at(-1);
+  const previousControl = releasedControl.at(-2);
+  const control = answer(`Control de calculo ${currentControl.period}`, views);
+  assertBarVisual(control.answer.visual, { unit: 'source_currency_cents', order: 'defined' });
+  assert.deepEqual(control.answer.visual.items.map(item => item.value), [
+    currentControl.amounts.grossWithFamilyAllowancesCents,
+    currentControl.amounts.employeeWithholdingsCents,
+    currentControl.amounts.netPayrollCents,
+    currentControl.amounts.employerContributionsCents,
+  ]);
+  assert.match(control.answer.visual.subtitle, /configuración municipal/i);
+  assert.match(control.answer.visual.subtitle, /no prueban desembolso/i);
+
+  const currentClose = views.close.series.filter(row => row.privacyStatus === 'released').at(-1);
+  const close = answer(`Cierre GRH ${currentClose.period}`, views);
+  assertBarVisual(close.answer.visual, { unit: 'source_currency_cents', order: 'defined' });
+  assert.deepEqual(close.answer.visual.items.map(item => item.value), [
+    currentClose.components.contributoryEarningsCents,
+    currentClose.components.nonContributoryEarningsCents,
+    currentClose.components.familyAllowancesCents,
+    currentClose.components.grossWithFamilyAllowancesCents,
+    currentClose.components.employeeWithholdingsCents,
+    currentClose.components.netPayrollCents,
+    currentClose.components.netToPayCents,
+    currentClose.components.employerContributionsCents,
+  ]);
+  assert.doesNotMatch(JSON.stringify(close.answer.visual), /63[,.]88|bank|pagado/i);
+
+  const trend = answer(`Variacion ${previousControl.period} vs ${currentControl.period}`, views);
+  assertBarVisual(trend.answer.visual, { unit: 'source_currency_cents', order: 'chronological' });
+  assert.deepEqual(trend.answer.visual.items.map(item => item.value), [
+    previousControl.amounts.netPayrollCents,
+    currentControl.amounts.netPayrollCents,
+  ]);
+
+  const unknownPresentation = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'otro-municipio' });
+  const unknownCurrency = answer(`Control de calculo ${currentControl.period}`, views, unknownPresentation);
+  assert.equal(unknownCurrency.answer.visual.unit, 'source_currency_cents');
+  assert.doesNotMatch(JSON.stringify(unknownCurrency.answer.visual.items), /ARS|\$/);
+  assert.match(JSON.stringify(unknownCurrency.answer.visual.items), /unidades de origen/i);
+});
+
+test('quality, quarantine and reconciliation visuals preserve their governed metric grains', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const quality = answer('Calidad del contrato GRH', views);
+  assertBarVisual(quality.answer.visual, { unit: 'percent', order: 'defined' });
+  assert.deepEqual(quality.answer.visual.items.map(item => item.value), [
+    views.quality.quality.components.temporalValidity.score,
+    views.quality.quality.components.referentialIntegrity.score,
+    views.quality.quality.components.payrollReconciliation.score,
+    views.quality.quality.components.legajoKeyUniqueness.score,
+  ]);
+
+  const quarantine = answer('Registros en cuarentena', views);
+  assertBarVisual(quarantine.answer.visual, { unit: 'rows', order: 'ranked' });
+  const expectedQuarantine = ['calculo', 'legamov', 'ausencia', 'licencia', 'totpago']
+    .map(label => ({ label, value: views.quality.temporal.domains[label].quarantineRows }))
+    .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label, 'es'));
+  assert.deepEqual(
+    quarantine.answer.visual.items.map(item => ({ label: item.label, value: item.value })),
+    expectedQuarantine,
+  );
+
+  const reconciliation = answer('Conciliacion calculo vs totpago', views);
+  assertBarVisual(reconciliation.answer.visual, { unit: 'percent', order: 'defined' });
+  assert.deepEqual(reconciliation.answer.visual.items.map(item => item.value), [
+    views.quality.reconciliation.scorePct,
+    views.quality.reconciliation.runCoveragePct,
+    views.quality.reconciliation.metricExactRatePct,
+    views.quality.reconciliation.valueAgreementPct,
+  ]);
+
+  const summary = answer('Resumen ejecutivo', views);
+  assertBarVisual(summary.answer.visual, { unit: 'percent', order: 'defined' });
+  assert.deepEqual(summary.answer.visual.items.map(item => item.value), [
+    views.quality.quality.score,
+    views.quality.reconciliation.scorePct,
+    views.quality.reconciliation.runCoveragePct,
+    views.quality.reconciliation.valueAgreementPct,
+  ]);
+});
+
+test('visuals stay optional for protected, personal, refused and unsupported answers', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const protectedControl = views.executive.compensation.series.find(row => row.privacyStatus === 'suppressed');
+  assert.ok(protectedControl);
+  for (const result of [
+    answer(`Control de calculo ${protectedControl.period}`, views),
+    answer('legajo 123', views),
+    answer('Mostra datos personales', views),
+    answer('Predeci el gasto futuro', views),
+    answer('Pregunta sin contrato', views),
+  ]) {
+    assert.equal(Object.hasOwn(result.answer, 'visual'), false);
+  }
 });
 
 test('executive answers use protected portable rankings without labels or codes from small cells', { skip: !HAS_PRIVATE_GRH }, () => {
@@ -462,6 +631,7 @@ test('assistant endpoint authorizes tenant then reads exactly one bundle', { ski
     assert.match(response.payload.response, /\bARS\b/);
     assert.equal(response.payload.provenance.totpagoStatus, 'diagnostic_only');
     assert.equal(response.payload.dataStatus.historyUsed, false);
+    assertBarVisual(response.payload.answer.visual, { unit: 'percent', order: 'defined' });
     assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
 
     const closeResponse = responseRecorder();
@@ -474,6 +644,7 @@ test('assistant endpoint authorizes tenant then reads exactly one bundle', { ski
     assert.equal(closeResponse.payload.intent, 'close_explanation');
     assert.equal(closeResponse.payload.dataStatus.source, 'grh_close_governed_contract');
     assert.equal(closeResponse.payload.provenance.closeSchemaVersion, 'grh-close-v1');
+    assertBarVisual(closeResponse.payload.answer.visual, { unit: 'source_currency_cents', order: 'defined' });
     assert.equal(calls.filter(([kind]) => kind === 'bundle').length, 2);
   } finally {
     if (originalTenant === undefined) delete process.env.GRH_TENANT_ID;

@@ -23,6 +23,9 @@
       --assistant-cyan: #5eead4;
       --assistant-amber: #f8ce7a;
       --assistant-danger: #ff8b8b;
+      --assistant-chart-track: #20354b;
+      --assistant-chart-zero: #d8e8fa;
+      --assistant-field: #081728;
       --assistant-shadow: 0 26px 80px rgba(0, 0, 0, 0.3);
       --assistant-radius: 22px;
     }
@@ -39,6 +42,9 @@
       --assistant-cyan: #0f6f7c;
       --assistant-amber: #92400e;
       --assistant-danger: #b91c1c;
+      --assistant-chart-track: #d7e1eb;
+      --assistant-chart-zero: #334b60;
+      --assistant-field: #ffffff;
       --assistant-shadow: 0 18px 50px rgba(15, 35, 55, 0.12);
     }
 
@@ -61,7 +67,7 @@
       font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    button, textarea { font: inherit; }
+    button, textarea, input { font: inherit; }
     button { -webkit-tap-highlight-color: transparent; }
 
     html[data-theme] body.assistant-page > .assistant-main {
@@ -168,7 +174,7 @@
       box-shadow: var(--assistant-shadow);
       overflow: hidden;
       display: grid;
-      grid-template-rows: minmax(0, 1fr) auto auto;
+      grid-template-rows: minmax(0, 1fr) auto auto auto;
       position: relative;
     }
 
@@ -275,7 +281,7 @@
 
     .answer-card {
       min-width: 0;
-      flex: 1;
+      width: 100%;
       border: 1px solid var(--assistant-line);
       border-radius: 18px;
       overflow: hidden;
@@ -304,6 +310,20 @@
     .answer-state.refused { color: #ffc2c2; background: rgba(255, 139, 139, 0.1); }
     .answer-summary { margin: 11px 0 0; color: #cbd7e6; line-height: 1.62; font-size: 14px; }
     .answer-body { padding: 17px 19px 19px; }
+    .answer-stack { min-width: 0; flex: 1; }
+
+    .answer-visual { margin: 0; padding: 14px; border: 1px solid var(--assistant-line); border-radius: 13px; background: rgba(255, 255, 255, 0.022); }
+    .answer-visual-header h4 { margin: 0; color: var(--assistant-text); font-size: 14px; font-weight: 780; line-height: 1.35; }
+    .answer-visual-header p { margin: 5px 0 0; color: var(--assistant-muted); font-size: 12px; line-height: 1.5; }
+    .answer-visual-list { margin-top: 14px; display: grid; gap: 12px; }
+    .answer-visual-row { min-width: 0; }
+    .answer-visual-labels { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
+    .answer-visual-label { min-width: 0; color: var(--assistant-text); font-size: 12px; font-weight: 680; line-height: 1.4; overflow-wrap: anywhere; }
+    .answer-visual-value { flex: 0 0 auto; color: var(--assistant-text); font-size: 12px; font-weight: 800; line-height: 1.4; font-variant-numeric: tabular-nums; }
+    .answer-visual-track { position: relative; width: 100%; height: 10px; margin-top: 6px; overflow: hidden; border-left: 2px solid var(--assistant-chart-zero); border-radius: 0 5px 5px 0; background: var(--assistant-chart-track); }
+    .answer-visual-fill { display: block; height: 100%; min-width: 0; border-right: 1px solid var(--assistant-text); background: var(--assistant-blue); }
+    .answer-visual-fill.is-zero { border-right: 0; }
+    .answer-visual-scale { margin: 11px 0 0; color: var(--assistant-muted); font-size: 12px; line-height: 1.4; }
 
     .finding-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
     .finding-list li { position: relative; padding-left: 17px; color: #b7c6d8; font-size: 13px; line-height: 1.55; }
@@ -333,12 +353,48 @@
     .answer-limits strong { display: block; margin-bottom: 6px; color: #f8dca9; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
     .answer-limits p { margin: 4px 0 0; color: #aab8c8; font-size: 12px; line-height: 1.5; }
 
+    .answer-details { margin-top: 15px; border: 1px solid var(--assistant-line); border-radius: 11px; overflow: hidden; }
+    .answer-details summary { min-height: 44px; padding: 11px 13px; display: flex; align-items: center; color: var(--assistant-text); background: rgba(255, 255, 255, 0.025); cursor: pointer; font-size: 12px; font-weight: 760; }
+    .answer-details summary:focus-visible { outline: 3px solid var(--assistant-blue); outline-offset: -3px; }
+    .answer-details-content { padding: 13px; border-top: 1px solid var(--assistant-line); }
+    .answer-findings h4 { margin: 0 0 9px; color: var(--assistant-text); font-size: 12px; font-weight: 780; text-transform: uppercase; letter-spacing: 0.06em; }
+    .answer-details .answer-limits { margin-top: 13px; }
+
     .answer-source { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--assistant-line); color: #8294aa; font-size: 12px; line-height: 1.5; }
+
+    .answer-followups { margin-top: 9px; padding: 12px; border: 1px solid var(--assistant-line); border-radius: 13px; background: var(--assistant-panel-solid); }
+    .answer-followups-label { margin: 0 0 8px; color: var(--assistant-muted); font-size: 12px; font-weight: 760; text-transform: uppercase; letter-spacing: 0.06em; }
+    .answer-followups-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .answer-followup { min-height: 44px; max-width: 100%; padding: 8px 11px; border: 1px solid var(--assistant-line-strong); border-radius: 10px; color: var(--assistant-text); background: transparent; cursor: pointer; font-size: 12px; font-weight: 680; line-height: 1.35; text-align: left; overflow-wrap: anywhere; }
+    .answer-followup:hover, .answer-followup:focus-visible { border-color: var(--assistant-blue); background: rgba(101, 167, 255, 0.09); outline: none; }
 
     .typing-card { display: flex; gap: 6px; align-items: center; min-height: 44px; padding: 14px 17px; border: 1px solid var(--assistant-line); border-radius: 15px; background: rgba(6, 17, 31, 0.45); }
     .typing-card span { width: 6px; height: 6px; border-radius: 50%; background: var(--assistant-blue); animation: assistant-pulse 1s ease-in-out infinite; }
     .typing-card span:nth-child(2) { animation-delay: 130ms; }
     .typing-card span:nth-child(3) { animation-delay: 260ms; }
+
+    .person-search-panel { margin: 0 clamp(16px, 2.5vw, 28px) 11px; padding: 15px; border: 1px solid var(--assistant-line-strong); border-radius: 15px; background: var(--assistant-panel-solid); }
+    .person-search-panel[hidden] { display: none !important; }
+    .person-search-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .person-search-header h2 { margin: 6px 0 0; color: var(--assistant-text); font-size: 15px; font-weight: 780; }
+    .person-access-badge { display: inline-flex; min-height: 24px; align-items: center; padding: 3px 8px; border: 1px solid var(--assistant-line); border-radius: 999px; color: var(--assistant-cyan); font-size: 12px; font-weight: 760; }
+    .person-access-badge.denied { color: var(--assistant-amber); }
+    .person-search-close { min-width: 64px; min-height: 44px; padding: 8px 11px; border: 1px solid var(--assistant-line); border-radius: 10px; color: var(--assistant-text); background: transparent; cursor: pointer; font-size: 12px; font-weight: 720; }
+    .person-search-panel > label { display: block; margin-top: 13px; color: var(--assistant-text); font-size: 12px; font-weight: 720; }
+    .person-search-panel > input { width: 100%; min-height: 44px; margin-top: 6px; padding: 9px 11px; border: 1px solid var(--assistant-line-strong); border-radius: 10px; color: var(--assistant-text); background: var(--assistant-field); font-size: 13px; outline: none; }
+    .person-search-panel > input:focus { border-color: var(--assistant-blue); box-shadow: 0 0 0 3px rgba(101, 167, 255, 0.12); }
+    .person-search-panel > input::placeholder { color: var(--assistant-muted); }
+    .person-search-status { margin: 8px 0 0; color: var(--assistant-muted); font-size: 12px; line-height: 1.45; }
+    .person-search-results { max-height: 236px; margin-top: 10px; display: grid; gap: 7px; overflow-y: auto; }
+    .person-search-result { width: 100%; min-height: 48px; padding: 9px 11px; border: 1px solid var(--assistant-line); border-radius: 10px; color: var(--assistant-text); background: transparent; cursor: pointer; text-align: left; }
+    .person-search-result strong, .person-search-result span { display: block; overflow-wrap: anywhere; }
+    .person-search-result strong { font-size: 13px; }
+    .person-search-result span { margin-top: 3px; color: var(--assistant-muted); font-size: 12px; line-height: 1.35; }
+    .person-search-result:hover, .person-search-result:focus-visible, .person-search-close:hover, .person-search-close:focus-visible { border-color: var(--assistant-blue); background: rgba(101, 167, 255, 0.09); outline: none; }
+    .person-search-denied { margin-top: 11px; padding: 12px; border-left: 3px solid var(--assistant-amber); border-radius: 5px 10px 10px 5px; background: rgba(247, 198, 108, 0.06); }
+    .person-search-denied strong { display: block; color: var(--assistant-text); font-size: 13px; }
+    .person-search-denied p { margin: 5px 0 10px; color: var(--assistant-muted); font-size: 12px; line-height: 1.45; }
+    .person-search-denied a { display: inline-flex; min-height: 44px; align-items: center; padding: 8px 11px; border: 1px solid currentColor; border-radius: 9px; color: var(--assistant-amber); font-size: 12px; font-weight: 760; text-decoration: none; }
 
     .query-suggestions {
       display: flex;
@@ -448,6 +504,8 @@
     html[data-theme="light"] .answer-summary,
     html[data-theme="light"] .finding-list li { color: #334b60; }
     html[data-theme="light"] .evidence-item { background: #f7fafc; }
+    html[data-theme="light"] .answer-visual,
+    html[data-theme="light"] .answer-details summary { background: #f7fafc; }
     html[data-theme="light"] .evidence-detail,
     html[data-theme="light"] .answer-source,
     html[data-theme="light"] .composer-meta,
@@ -456,12 +514,33 @@
     html[data-theme="light"] .directory-history-item,
     html[data-theme="light"] .directory-option { background: #f7fafc; }
     html[data-theme="light"] .answer-action { color: #123f82; background: #eaf2ff; }
+    html[data-theme="light"] .answer-followup:hover,
+    html[data-theme="light"] .answer-followup:focus-visible,
+    html[data-theme="light"] .person-search-result:hover,
+    html[data-theme="light"] .person-search-result:focus-visible { background: #eaf2ff; }
     html[data-theme="light"] .answer-limits { background: #fff7ed; }
     html[data-theme="light"] .answer-limits strong { color: #78350f; }
     html[data-theme="light"] .answer-limits p,
     html[data-theme="light"] .capability-list li,
     html[data-theme="light"] .limit-list li,
     html[data-theme="light"] .rail-note { color: #40566a; }
+    html.muni-shell-v1[data-theme="light"] body.assistant-page .answer-details .answer-findings h4 {
+      color: #102a43 !important;
+    }
+    html.muni-shell-v1[data-theme="light"] body.assistant-page .answer-details .finding-list li {
+      color: #334b60 !important;
+    }
+    html.muni-shell-v1[data-theme="light"] body.assistant-page .answer-details .answer-limits {
+      color: #40566a !important;
+      background: #fff7ed !important;
+      border-left-color: #92400e !important;
+    }
+    html.muni-shell-v1[data-theme="light"] body.assistant-page .answer-details .answer-limits strong {
+      color: #78350f !important;
+    }
+    html.muni-shell-v1[data-theme="light"] body.assistant-page .answer-details .answer-limits p {
+      color: #40566a !important;
+    }
     html[data-theme="light"] .query-chip,
     html[data-theme="light"] .composer,
     html[data-theme="light"] .rail-card,
@@ -521,6 +600,7 @@
       .message-row { margin-bottom: 14px; }
       .user-bubble { max-width: 88%; }
       .answer-header, .answer-body { padding-left: 14px; padding-right: 14px; }
+      .person-search-panel { margin-left: 13px; margin-right: 13px; padding: 13px; }
       .query-suggestions { padding-left: 13px; padding-right: 13px; }
       .composer-wrap { padding-left: 13px; padding-right: 13px; padding-bottom: 12px; }
     }
@@ -533,6 +613,8 @@
       .welcome-guardrails span:nth-child(3) { display: none; }
       .answer-heading-line { display: block; }
       .answer-state { display: inline-block; margin-top: 9px; }
+      .answer-followups-list { display: grid; }
+      .answer-followup { width: 100%; }
       .composer-meta span:first-child { display: none; }
       .composer-meta { justify-content: flex-end; }
     }
@@ -549,6 +631,11 @@
       .composer,
       .rail-card,
       .answer-card,
+      .answer-visual,
+      .answer-details,
+      .answer-followups,
+      .person-search-panel,
+      .person-search-result,
       .query-chip,
       .rail-link {
         color: CanvasText !important;
@@ -557,7 +644,12 @@
         forced-color-adjust: auto;
       }
       .send-query,
-      .answer-action { color: ButtonText !important; background: ButtonFace !important; border: 1px solid ButtonText !important; }
+      .answer-action,
+      .answer-followup,
+      .person-search-close,
+      .person-search-denied a { color: ButtonText !important; background: ButtonFace !important; border: 1px solid ButtonText !important; }
+      .answer-visual-track { border-left: 2px solid CanvasText !important; background: Canvas !important; }
+      .answer-visual-fill { background: Highlight !important; border-color: HighlightText !important; }
     }
   </style>
 </head>
@@ -605,6 +697,27 @@
             </div>
           </section>
         </div>
+
+        <section class="person-search-panel" id="personSearchPanel" aria-labelledby="personSearchTitle" hidden>
+          <div class="person-search-header">
+            <div>
+              <span class="person-access-badge" id="personAccessBadge">Directorio privado</span>
+              <h2 id="personSearchTitle">Buscar licencias por persona</h2>
+            </div>
+            <button class="person-search-close" id="personSearchClose" type="button" aria-label="Cerrar búsqueda de personas">Cerrar</button>
+          </div>
+          <label for="personSearchInput">Nombre, apellido o legajo</label>
+          <input id="personSearchInput" type="search" minlength="2" maxlength="80" autocomplete="off"
+                 spellcheck="false" placeholder="Escribí al menos 2 caracteres"
+                 aria-describedby="personSearchStatus" aria-controls="personSearchResults">
+          <p class="person-search-status" id="personSearchStatus" role="status" aria-live="polite">La búsqueda comienza al escribir. No se consulta el directorio al abrir.</p>
+          <div class="person-search-results" id="personSearchResults" role="list" aria-label="Coincidencias del directorio"></div>
+          <div class="person-search-denied" id="personSearchDenied" hidden>
+            <strong>Vista pública / acceso nominal requerido</strong>
+            <p>Ingresá con la identidad privada habilitada para buscar fichas y licencias individuales.</p>
+            <a href="/login.html?return=ia.html">Ingresar con acceso privado</a>
+          </div>
+        </section>
 
         <div class="query-suggestions" id="querySuggestions" aria-label="Consultas sugeridas">
           <button class="query-chip" type="button" data-person-lookup="true">Buscar licencias por persona</button>

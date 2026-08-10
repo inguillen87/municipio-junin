@@ -247,10 +247,10 @@ function buildInterface(context) {
   trigger.setAttribute('aria-haspopup', 'dialog');
   trigger.setAttribute('aria-controls', 'muniGuideDialog');
   trigger.setAttribute('aria-expanded', 'false');
-  trigger.setAttribute('aria-label', `Abrir MuniGuía para ${context.page.label}`);
+  trigger.setAttribute('aria-label', `Abrir ayuda de pantalla para ${context.page.label}`);
   const triggerMark = createElement('span', 'muni-guide-trigger-mark', '?');
   triggerMark.setAttribute('aria-hidden', 'true');
-  trigger.append(triggerMark, createElement('span', 'muni-guide-trigger-label', 'MuniGuía'));
+  trigger.append(triggerMark, createElement('span', 'muni-guide-trigger-label', 'Ayuda'));
 
   const overlay = createElement('div', 'muni-guide-overlay');
   overlay.id = 'muniGuideOverlay';
@@ -270,13 +270,13 @@ function buildInterface(context) {
 
   const header = createElement('header', 'muni-guide-header');
   const headingGroup = createElement('div', 'muni-guide-heading');
-  const eyebrow = createElement('p', 'muni-guide-eyebrow', `Ayuda contextual · ${context.role.label}`);
+  const eyebrow = createElement('p', 'muni-guide-eyebrow', `Ayuda de pantalla · ${context.role.label}`);
   const title = createElement('h2', 'muni-guide-title', context.page.label);
   title.id = 'muniGuideTitle';
   headingGroup.append(eyebrow, title);
   const close = createElement('button', 'muni-guide-close', 'Cerrar');
   close.type = 'button';
-  close.setAttribute('aria-label', 'Cerrar MuniGuía');
+  close.setAttribute('aria-label', 'Cerrar ayuda de pantalla');
   header.append(headingGroup, close);
 
   const objective = createElement('p', 'muni-guide-objective', context.page.objective);
@@ -289,7 +289,7 @@ function buildInterface(context) {
   const step = createElement('section', 'muni-guide-step');
   const stepTitle = createElement('h3', 'muni-guide-step-title');
   const stepCopy = createElement('p', 'muni-guide-step-copy');
-  const locate = createElement('button', 'muni-guide-locate', 'Mostrar en pantalla');
+  const locate = createElement('button', 'muni-guide-locate', 'Ir a esta sección');
   locate.type = 'button';
   step.append(stepTitle, stepCopy, locate);
 
@@ -309,7 +309,7 @@ function buildInterface(context) {
     if (related) links.appendChild(related);
   }
 
-  const trust = createElement('p', 'muni-guide-trust', 'Guía local y determinista · sin IA, datos ni persistencia');
+  const trust = createElement('p', 'muni-guide-trust', 'Orientación local · no consulta datos ni reemplaza al Asistente GRH');
   dialog.append(header, objective, roleIntent, progress, step, controls, links, trust);
   document.body.append(trigger, overlay, dialog);
 

@@ -115,10 +115,34 @@ function extractRoleArray(source, constantName) {
   return [...match[1].matchAll(/'([^']+)'/g)].map(role => role[1]);
 }
 
-test('Serverless ESM and Express CJS consume the same bumped policy', () => {
+test('Serverless, Express and the React session gate consume the same bumped policy', async () => {
   assert.strictEqual(esmPolicy, cjsPolicy);
   assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-11.2');
   assert.deepEqual(Object.values(esmPolicy.ROLES), EXPECTED_ROLES);
+
+  const reactSession = await readFile(new URL('../frontend/src/auth/session.ts', import.meta.url), 'utf8');
+  const reactVersion = reactSession.match(/const ACCESS_POLICY_VERSION = '([^']+)'/);
+  assert.ok(reactVersion, 'React must expose one exact fail-closed access policy version');
+  assert.equal(reactVersion[1], esmPolicy.ACCESS_POLICY_VERSION);
+  const reactCapabilityBlock = reactSession.match(/const KNOWN_CAPABILITIES = new Set\(\[([\s\S]*?)\]\);/);
+  assert.ok(reactCapabilityBlock, 'React must keep an explicit capability allowlist');
+  const reactCapabilities = [...reactCapabilityBlock[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
+  assert.deepEqual(reactCapabilities, Object.values(esmPolicy.CAPABILITIES));
+  for (const profile of Object.values(esmPolicy.ROLE_HOME_PROFILE)) {
+    assert.match(reactSession, new RegExp(`['"]${profile.variant}['"]`));
+  }
+  const reactPriorityBlock = reactSession.match(
+    /const ROLE_HOME_PRIORITIES = Object\.freeze\(\{([\s\S]*?)\n\} as const\);/,
+  );
+  assert.ok(reactPriorityBlock, 'React must keep one explicit canonical home-priority map');
+  for (const role of EXPECTED_ROLES) {
+    const roleBlock = reactPriorityBlock[1].match(
+      new RegExp(`${role}: Object\\.freeze\\(\\[([\\s\\S]*?)\\]\\),`),
+    );
+    assert.ok(roleBlock, `React must keep canonical home priorities for ${role}`);
+    const priorities = [...roleBlock[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
+    assert.deepEqual(priorities, esmPolicy.ROLE_HOME_PROFILE[role].priorityCapabilities);
+  }
 
   for (const role of EXPECTED_ROLES) {
     assert.deepEqual(esmPolicy.getCapabilitiesForRole(role), cjsPolicy.getCapabilitiesForRole(role));

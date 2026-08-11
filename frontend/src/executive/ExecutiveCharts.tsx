@@ -99,6 +99,7 @@ export function PayrollChart({ payroll }: { payroll: PayrollSeriesViewModel }) {
 
   return (
     <figure
+      id="periodTableTitle"
       className="executive-chart"
       data-executive-collection="payroll"
       aria-labelledby="payroll-chart-heading"

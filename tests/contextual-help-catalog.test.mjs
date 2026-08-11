@@ -37,6 +37,10 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
   const aliases = [];
+  const legacyAliases = {
+    grhExecutive: ['/grh-ejecutivo', '/grh-ejecutivo.html'],
+    quality: ['/control', '/control.html'],
+  };
   for (const [role, definition] of Object.entries(MUNIGUIA_CATALOG.roles)) {
     assert.deepEqual(Object.keys(definition).sort(), ['focusCapabilities', 'intent', 'label', 'variant']);
     assert.equal(definition.variant, accessPolicy.ROLE_HOME_PROFILE[role].variant);
@@ -53,10 +57,19 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
     ]);
     assert.equal(accessPolicy.isKnownCapability(page.requiredCapability), true, `${pageId}:capability`);
     assert.match(page.href, /^[a-z0-9-]+\.html$/);
-    assert.deepEqual(page.aliases, [`/${page.href.replace(/\.html$/, '')}`, `/${page.href}`]);
+    assert.deepEqual(page.aliases, [
+      `/${page.href.replace(/\.html$/, '')}`,
+      `/${page.href}`,
+      ...(legacyAliases[pageId] || []),
+    ]);
     aliases.push(...page.aliases);
     assert.match(manual, idPattern(page.manualAnchor), `${pageId}:manual anchor`);
     assert.equal(page.steps.length, 3, `${pageId}:exactly three steps`);
+    const legacySource = pageId === 'grhExecutive'
+      ? await readFile(path.join(ROOT, 'grh-ejecutivo.html'), 'utf8')
+      : pageId === 'quality'
+        ? await readFile(path.join(ROOT, 'control.html'), 'utf8')
+        : null;
     const pageSource = pageId === 'territory'
       ? (await Promise.all([
           readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
@@ -69,7 +82,19 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
             readFile(path.join(ROOT, 'frontend', 'src', 'structure', 'StructureDashboard.tsx'), 'utf8'),
             readFile(path.join(ROOT, 'frontend', 'src', 'structure', 'StructureCharts.tsx'), 'utf8'),
           ])).join('\n')
-      : await readFile(path.join(ROOT, page.href), 'utf8');
+        : pageId === 'grhExecutive'
+          ? (await Promise.all([
+              readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
+              readFile(path.join(ROOT, 'frontend', 'src', 'executive', 'ExecutiveDashboard.tsx'), 'utf8'),
+              readFile(path.join(ROOT, 'frontend', 'src', 'executive', 'ExecutiveCharts.tsx'), 'utf8'),
+            ])).join('\n')
+          : pageId === 'quality'
+            ? (await Promise.all([
+                readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
+                readFile(path.join(ROOT, 'frontend', 'src', 'app', 'App.tsx'), 'utf8'),
+                readFile(path.join(ROOT, 'frontend', 'src', 'components', 'SourceStatus.tsx'), 'utf8'),
+              ])).join('\n')
+            : await readFile(path.join(ROOT, page.href), 'utf8');
     const stepIds = new Set();
     for (const step of page.steps) {
       assert.deepEqual(Object.keys(step).sort(), ['copy', 'id', 'selector', 'title']);
@@ -78,6 +103,9 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
       assert.equal(stepIds.has(step.id), false, `${pageId}:duplicate step id`);
       stepIds.add(step.id);
       assert.match(pageSource, idPattern(step.selector.slice(1)), `${pageId}:${step.selector}`);
+      if (legacySource) {
+        assert.match(legacySource, idPattern(step.selector.slice(1)), `${pageId}:legacy:${step.selector}`);
+      }
       assert.ok(step.copy.length >= 60, `${pageId}:${step.id}:substantive copy`);
     }
     assert.equal(Object.isFrozen(page), true);
@@ -151,6 +179,9 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   assert.doesNotMatch(runtime, /\b(?:innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval)\b/);
   assert.match(runtime, /document\.createElement/);
   assert.match(runtime, /\.textContent\s*=/);
+  assert.match(runtime, /export function unmountMuniGuia/);
+  assert.match(runtime, /removeEventListener/);
+  assert.match(runtime, /state\.generation/);
   assert.match(runtime, /navigation\.help/);
   assert.match(runtime, /aria-modal/);
   assert.match(runtime, /prefers-reduced-motion/);

@@ -8,6 +8,7 @@ const FOCUSABLE_SELECTOR = [
 
 const state = {
   context: null,
+  contextKey: null,
   currentStep: 0,
   dialog: null,
   overlay: null,
@@ -17,18 +18,75 @@ const state = {
   open: false,
   closing: false,
   closeTimer: null,
+  openFrame: null,
+  highlightTimer: null,
+  highlightedTarget: null,
   elements: null,
   externalTriggers: [],
+  listeners: [],
+  generation: 0,
+  pendingMount: null,
 };
+
+let stylesheetPending = null;
+
+function contextKey(context) {
+  return [
+    context.contract,
+    context.role.id,
+    context.page.id,
+    context.related ? context.related.capability : '',
+  ].join('|');
+}
+
+function listen(target, type, listener, options) {
+  target.addEventListener(type, listener, options);
+  state.listeners.push(() => target.removeEventListener(type, listener, options));
+}
+
+function removeListeners() {
+  state.listeners.splice(0).reverse().forEach((remove) => {
+    try {
+      remove();
+    } catch {
+      // Teardown is best-effort and must remain idempotent.
+    }
+  });
+}
 
 function ensureStylesheet() {
   const selector = 'link[data-muni-guide-asset="v1"],link[href$="css/contextual-help.css"]';
-  const existing = document.querySelector(selector);
+  let existing = document.querySelector(selector);
   if (existing && existing.sheet) return Promise.resolve(existing);
+  if (existing && existing.dataset.muniGuideState === 'error') {
+    existing.remove();
+    existing = null;
+  }
+  if (stylesheetPending && stylesheetPending.link.isConnected &&
+      (!existing || stylesheetPending.link === existing)) {
+    return stylesheetPending.promise;
+  }
+
   const link = existing || document.createElement('link');
-  return new Promise((resolve, reject) => {
-    link.addEventListener('load', () => resolve(link), { once: true });
-    link.addEventListener('error', () => reject(new Error('muniguia-stylesheet-unavailable')), { once: true });
+  let pendingPromise;
+  pendingPromise = new Promise((resolve, reject) => {
+    const cleanup = () => {
+      link.removeEventListener('load', handleLoad);
+      link.removeEventListener('error', handleError);
+    };
+    const handleLoad = () => {
+      cleanup();
+      link.dataset.muniGuideState = 'ready';
+      resolve(link);
+    };
+    const handleError = () => {
+      cleanup();
+      link.dataset.muniGuideState = 'error';
+      if (link.isConnected) link.remove();
+      reject(new Error('muniguia-stylesheet-unavailable'));
+    };
+    link.addEventListener('load', handleLoad);
+    link.addEventListener('error', handleError);
     if (!existing) {
       link.rel = 'stylesheet';
       link.href = new URL('../css/contextual-help.css', import.meta.url).href;
@@ -36,6 +94,17 @@ function ensureStylesheet() {
       document.head.appendChild(link);
     }
   });
+  const pending = { link, promise: pendingPromise };
+  stylesheetPending = pending;
+  pendingPromise.then(
+    () => {
+      if (stylesheetPending === pending) stylesheetPending = null;
+    },
+    () => {
+      if (stylesheetPending === pending) stylesheetPending = null;
+    },
+  );
+  return pendingPromise;
 }
 
 function createElement(tag, className, text) {
@@ -43,6 +112,29 @@ function createElement(tag, className, text) {
   if (className) element.className = className;
   if (typeof text === 'string') element.textContent = text;
   return element;
+}
+
+function attributeSnapshot(element, name) {
+  return {
+    present: element.hasAttribute(name),
+    value: element.getAttribute(name),
+  };
+}
+
+function restoreAttribute(element, name, snapshot) {
+  if (snapshot.present) element.setAttribute(name, snapshot.value);
+  else element.removeAttribute(name);
+}
+
+function restoreExternalTriggers() {
+  state.externalTriggers.forEach((entry) => {
+    const { element } = entry;
+    element.hidden = entry.hidden;
+    restoreAttribute(element, 'aria-haspopup', entry.ariaHaspopup);
+    restoreAttribute(element, 'aria-controls', entry.ariaControls);
+    restoreAttribute(element, 'aria-expanded', entry.ariaExpanded);
+  });
+  state.externalTriggers = [];
 }
 
 function safeInternalHref(value) {
@@ -75,8 +167,8 @@ function currentTarget() {
 function updateTriggerState(expanded) {
   const value = expanded ? 'true' : 'false';
   if (state.trigger) state.trigger.setAttribute('aria-expanded', value);
-  state.externalTriggers.forEach((trigger) => {
-    if (trigger.isConnected) trigger.setAttribute('aria-expanded', value);
+  state.externalTriggers.forEach(({ element }) => {
+    if (element.isConnected) element.setAttribute('aria-expanded', value);
   });
 }
 
@@ -135,8 +227,14 @@ function dialogControls() {
   return Array.from(state.dialog.querySelectorAll(FOCUSABLE_SELECTOR)).filter(visible);
 }
 
+function cancelOpenFrame() {
+  if (state.openFrame !== null) window.cancelAnimationFrame(state.openFrame);
+  state.openFrame = null;
+}
+
 function finishClose(options = {}) {
   if (!state.dialog || !state.overlay) return;
+  cancelOpenFrame();
   if (state.closeTimer) window.clearTimeout(state.closeTimer);
   state.closeTimer = null;
   state.open = false;
@@ -154,6 +252,7 @@ function finishClose(options = {}) {
 
 function closeGuide(options = {}) {
   if ((!state.open && !state.closing) || !state.dialog || !state.overlay) return;
+  cancelOpenFrame();
   if (state.closing) {
     if (options.immediate === true) finishClose(options);
     return;
@@ -175,6 +274,7 @@ function openGuide(opener) {
   if (state.open || !state.dialog || !state.overlay) return;
   if (state.closing) finishClose({ restoreFocus: false });
   if (typeof window.closeMobileSidebar === 'function') window.closeMobileSidebar();
+  cancelOpenFrame();
   if (state.closeTimer) window.clearTimeout(state.closeTimer);
   state.opener = visible(opener) ? opener : state.trigger;
   state.currentStep = 0;
@@ -187,21 +287,41 @@ function openGuide(opener) {
   isolateBackground();
   state.closing = false;
   state.open = true;
-  window.requestAnimationFrame(() => {
-    state.overlay.classList.add('is-open');
-    state.dialog.classList.add('is-open');
-    state.elements.close.focus({ preventScroll: true });
+  const generation = state.generation;
+  const overlay = state.overlay;
+  const dialog = state.dialog;
+  const close = state.elements.close;
+  state.openFrame = window.requestAnimationFrame(() => {
+    state.openFrame = null;
+    if (generation !== state.generation || !state.open || state.overlay !== overlay ||
+        state.dialog !== dialog || !overlay.isConnected || !dialog.isConnected || !close.isConnected) {
+      return;
+    }
+    overlay.classList.add('is-open');
+    dialog.classList.add('is-open');
+    close.focus({ preventScroll: true });
   });
+}
+
+function clearTargetHighlight() {
+  if (state.highlightTimer) window.clearTimeout(state.highlightTimer);
+  state.highlightTimer = null;
+  if (state.highlightedTarget) state.highlightedTarget.classList.remove('muni-guide-target');
+  state.highlightedTarget = null;
 }
 
 function locateCurrentStep() {
   const target = currentTarget();
   if (!target) return;
+  clearTargetHighlight();
   closeGuide({
     afterClose: () => {
       target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
       target.classList.add('muni-guide-target');
-      window.setTimeout(() => target.classList.remove('muni-guide-target'), 1800);
+      state.highlightedTarget = target;
+      state.highlightTimer = window.setTimeout(() => {
+        if (state.highlightedTarget === target) clearTargetHighlight();
+      }, 1800);
     },
   });
 }
@@ -318,15 +438,15 @@ function buildInterface(context) {
   state.dialog = dialog;
   state.elements = { close, locate, next, previous, progress, stepCopy, stepTitle };
 
-  trigger.addEventListener('click', () => openGuide(trigger));
-  close.addEventListener('click', () => closeGuide());
-  overlay.addEventListener('click', () => closeGuide());
-  locate.addEventListener('click', locateCurrentStep);
-  previous.addEventListener('click', () => {
+  listen(trigger, 'click', () => openGuide(trigger));
+  listen(close, 'click', () => closeGuide());
+  listen(overlay, 'click', () => closeGuide());
+  listen(locate, 'click', locateCurrentStep);
+  listen(previous, 'click', () => {
     if (state.currentStep > 0) state.currentStep -= 1;
     renderStep();
   });
-  next.addEventListener('click', () => {
+  listen(next, 'click', () => {
     if (state.currentStep >= context.page.steps.length - 1) {
       closeGuide();
       return;
@@ -334,32 +454,113 @@ function buildInterface(context) {
     state.currentStep += 1;
     renderStep();
   });
-  document.addEventListener('keydown', handleDialogKeydown);
+  listen(document, 'keydown', handleDialogKeydown);
 
-  state.externalTriggers = Array.from(document.querySelectorAll('[data-muniguia-open]'));
-  state.externalTriggers.forEach((externalTrigger) => {
-    if (externalTrigger.tagName !== 'BUTTON') return;
+  state.externalTriggers = Array.from(document.querySelectorAll('[data-muniguia-open]'))
+    .filter((externalTrigger) => externalTrigger.tagName === 'BUTTON')
+    .map((externalTrigger) => ({
+      element: externalTrigger,
+      hidden: externalTrigger.hidden,
+      ariaHaspopup: attributeSnapshot(externalTrigger, 'aria-haspopup'),
+      ariaControls: attributeSnapshot(externalTrigger, 'aria-controls'),
+      ariaExpanded: attributeSnapshot(externalTrigger, 'aria-expanded'),
+    }));
+  state.externalTriggers.forEach(({ element: externalTrigger }) => {
     externalTrigger.hidden = false;
     externalTrigger.setAttribute('aria-haspopup', 'dialog');
     externalTrigger.setAttribute('aria-controls', dialog.id);
     externalTrigger.setAttribute('aria-expanded', 'false');
-    externalTrigger.addEventListener('click', () => openGuide(externalTrigger));
+    listen(externalTrigger, 'click', () => openGuide(externalTrigger));
   });
   renderStep();
+}
+
+function removeGuideNodes() {
+  [state.dialog, state.overlay, state.trigger].forEach((element) => {
+    if (element && element.isConnected) element.remove();
+  });
+}
+
+function clearWindowRuntime() {
+  try {
+    Reflect.deleteProperty(window, 'MuniGuia');
+  } catch {
+    // The local runtime is installed as a configurable window property.
+  }
+}
+
+export function unmountMuniGuia() {
+  state.generation += 1;
+  state.pendingMount = null;
+
+  closeGuide({ immediate: true, restoreFocus: false });
+  cancelOpenFrame();
+  if (state.closeTimer) window.clearTimeout(state.closeTimer);
+  state.closeTimer = null;
+  clearTargetHighlight();
+  restoreBackground();
+  removeListeners();
+  restoreExternalTriggers();
+  removeGuideNodes();
+  document.documentElement.classList.remove('muni-guide-open');
+  clearWindowRuntime();
+
+  state.context = null;
+  state.contextKey = null;
+  state.currentStep = 0;
+  state.dialog = null;
+  state.overlay = null;
+  state.trigger = null;
+  state.opener = null;
+  state.isolated = [];
+  state.open = false;
+  state.closing = false;
+  state.openFrame = null;
+  state.elements = null;
 }
 
 export async function mountMuniGuia(input) {
   const context = resolveMuniGuiaContext(input);
   if (!context) return false;
-  if (state.context) return state.context.contract === context.contract && state.context.page.id === context.page.id;
-  await ensureStylesheet();
-  state.context = context;
-  buildInterface(context);
-  window.MuniGuia = Object.freeze({
-    contract: context.contract,
-    close: () => closeGuide(),
-    closeForNavigation: () => closeGuide({ immediate: true, restoreFocus: false }),
-    open: () => openGuide(state.trigger),
-  });
-  return true;
+  const key = contextKey(context);
+  if (state.context) {
+    if (state.contextKey === key) return true;
+    unmountMuniGuia();
+  }
+  if (state.pendingMount) {
+    if (state.pendingMount.key === key) return state.pendingMount.promise;
+    unmountMuniGuia();
+  }
+
+  const generation = state.generation;
+  let pendingPromise;
+  pendingPromise = (async () => {
+    try {
+      await ensureStylesheet();
+      if (generation !== state.generation) return false;
+      if (state.context) return state.contextKey === key;
+
+      state.context = context;
+      state.contextKey = key;
+      try {
+        buildInterface(context);
+        window.MuniGuia = Object.freeze({
+          contract: context.contract,
+          close: () => closeGuide(),
+          closeForNavigation: () => closeGuide({ immediate: true, restoreFocus: false }),
+          open: () => openGuide(state.trigger),
+        });
+      } catch (error) {
+        if (generation === state.generation) unmountMuniGuia();
+        throw error;
+      }
+      return true;
+    } finally {
+      if (state.pendingMount && state.pendingMount.promise === pendingPromise) {
+        state.pendingMount = null;
+      }
+    }
+  })();
+  state.pendingMount = { key, promise: pendingPromise };
+  return pendingPromise;
 }

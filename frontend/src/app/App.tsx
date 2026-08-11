@@ -164,7 +164,7 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
         </Panel>
 
         <Panel
-          id="lineage-title"
+          id="lineageTitle"
           eyebrow="Trazabilidad"
           title="Cadena de validación"
           description="La evidencia avanza por controles explícitos antes de llegar al navegador."
@@ -184,7 +184,7 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
         </Panel>
 
         <Panel
-          id="risk-title"
+          id="riskTitle"
           eyebrow="Lectura responsable"
           title="Registro de riesgos"
           description="Las limitaciones acompañan al indicador; no quedan ocultas detrás del score."

@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer as createViteServer } from 'vite';
 
+import accessPolicy from '../shared/access-policy.cjs';
+
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const PWA_REGISTER_SOURCE = readFileSync(path.join(REPO, 'js', 'pwa-register.js'), 'utf8');
@@ -17,6 +19,7 @@ const AUTH_CONTRACT = 'municontrol-auth-me-v1';
 const EXECUTIVE_CONTRACT = 'grh-executive-v2';
 const PROTECTED_BUCKET = 'Otros (celdas protegidas)';
 const EXPECTED_COLLECTIONS = ['absence', 'leave', 'movements', 'payroll', 'sector'];
+const MUNIGUIA_STUB_SOURCE = 'export async function mountMuniGuia(){return true} export function unmountMuniGuia(){}';
 
 let scenarioSequence = 0;
 
@@ -147,17 +150,17 @@ function createExecutiveFixture() {
 const EXECUTIVE_FIXTURE = createExecutiveFixture();
 
 function authorizedSession(role = 'INTENDENTE', overrides = {}) {
+  const access = accessPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-executive-e2e' });
+  assert.ok(access);
   return {
     user: {
       id: `executive-e2e-${role.toLowerCase()}`,
       name: `Perfil ${role} QA`,
       role,
       tenantId: 'tenant-executive-e2e',
-      capabilities: [
-        'session.read',
-        'navigation.workspace',
-        'navigation.grh-executive',
-      ],
+      capabilities: access.capabilities,
+      accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+      homeProfile: access.homeProfile,
       tenant: {
         id: 'tenant-executive-e2e',
         shortName: 'Junin QA',
@@ -234,6 +237,10 @@ function testApiPlugin(scenario, apiLog, pwaLog) {
 
         if (url.pathname === '/js/auth-fetch.js') {
           send(response, 200, 'text/javascript; charset=utf-8', AUTH_CLIENT_SOURCE);
+          return;
+        }
+        if (url.pathname === '/js/contextual-help.js') {
+          send(response, 200, 'text/javascript; charset=utf-8', MUNIGUIA_STUB_SOURCE);
           return;
         }
 

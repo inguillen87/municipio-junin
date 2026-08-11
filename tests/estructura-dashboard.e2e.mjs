@@ -20,6 +20,7 @@ const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const CONTRACT_HEADER = 'x-municontrol-contract';
 const AUTH_CONTRACT = 'municontrol-auth-me-v1';
 const ANALYTICS_CONTRACT = GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION;
+const MUNIGUIA_STUB_SOURCE = 'export async function mountMuniGuia(){return true} export function unmountMuniGuia(){}';
 const PAGE_CAPABILITY = 'navigation.organization-analytics';
 const TENANT_ID = 'tenant-structure-e2e';
 const SOURCE_SHA = '8cfe17751c48067563a6b609eb75e4ab73512fef131d2bb829ab0bd7364f4c28';
@@ -331,6 +332,8 @@ function authorizedSession(role = 'INTENDENTE', includeCapability = true) {
       role,
       tenantId: TENANT_ID,
       capabilities,
+      accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+      homeProfile: access.homeProfile,
       tenant: { id: TENANT_ID, shortName: 'Junín QA' },
     },
   };
@@ -358,6 +361,10 @@ function scenarioPlugin(scenario, apiLog) {
         }
         if (url.pathname === '/js/auth-fetch.js') {
           send(response, 200, 'text/javascript; charset=utf-8', AUTH_CLIENT_SOURCE);
+          return;
+        }
+        if (url.pathname === '/js/contextual-help.js') {
+          send(response, 200, 'text/javascript; charset=utf-8', MUNIGUIA_STUB_SOURCE);
           return;
         }
         if (url.pathname === '/js/pwa-register.js') {

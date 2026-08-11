@@ -72,14 +72,17 @@ function authoritativeUser(subject, role, tenantId = 'tenant-junin-guide') {
 }
 
 async function createServer(users, requestLog) {
+  let failNextGuideStylesheet = false;
   const cleanPages = new Map([
     ['/inicio', 'inicio.html'],
     ['/dashboard', 'dashboard.html'],
     ['/reportes', 'reportes.html'],
     ['/hacienda', 'hacienda.html'],
+    ['/ejecutivo', 'grh-ejecutivo.html'],
     ['/grh-ejecutivo', 'grh-ejecutivo.html'],
     ['/estructura', 'inicio.html'],
     ['/territorio', 'inicio.html'],
+    ['/calidad', 'control.html'],
     ['/control', 'control.html'],
     ['/rrhh', 'rrhh.html'],
     ['/ia', 'ia.html'],
@@ -91,6 +94,7 @@ async function createServer(users, requestLog) {
   ]);
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
+    if (url.searchParams.get('fail_guide_css_once') === '1') failNextGuideStylesheet = true;
     requestLog.push({ method: request.method, path: url.pathname, query: url.search });
     if (url.pathname === '/api/auth/me') {
       const user = users.get(tokenSubject(request));
@@ -107,6 +111,21 @@ async function createServer(users, requestLog) {
       response.writeHead(418, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
       response.end(JSON.stringify({ error: 'MuniGuía must not call private APIs' }));
       return;
+    }
+
+    const referer = String(request.headers.referer || '');
+    if (url.pathname === '/css/contextual-help.css' && failNextGuideStylesheet) {
+      failNextGuideStylesheet = false;
+      response.writeHead(503, {
+        'Cache-Control': 'no-store',
+        'Content-Type': CONTENT_TYPES['.html'],
+        'X-Content-Type-Options': 'nosniff',
+      });
+      response.end('<!doctype html><title>intentional stylesheet failure</title>');
+      return;
+    }
+    if (url.pathname === '/css/contextual-help.css' && referer.includes('delay_guide_css=1')) {
+      await new Promise((resolve) => setTimeout(resolve, 350));
     }
 
     let relative;
@@ -443,6 +462,248 @@ test('animated close keeps dialog semantics and focus valid until the surface is
   assert.equal(await page.locator('#muniGuideDialog').getAttribute('aria-hidden'), 'true');
   assert.equal(await page.locator('#mainContent').evaluate((element) => element.inert), false);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'muniGuideTrigger');
+  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
+  await context.close();
+});
+
+test('runtime unmount is complete, idempotent and cancels a mount waiting for its stylesheet', async (t) => {
+  const subject = 'guide-lifecycle';
+  const users = new Map([[subject, authoritativeUser(subject, 'INTENDENTE')]]);
+  const requestLog = [];
+  const server = await createServer(users, requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise((resolve) => server.close(resolve));
+  });
+
+  const mountedPage = await authenticatedPage(browser, baseUrl, subject, 'INTENDENTE', {
+    reducedMotion: 'reduce',
+  });
+  const lifecyclePageErrors = [];
+  mountedPage.page.on('pageerror', (error) => lifecyclePageErrors.push(error.message));
+  await mountedPage.page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'networkidle' });
+  await mountedPage.page.locator('#muniGuideTrigger').waitFor({ state: 'visible' });
+  await mountedPage.page.locator('[data-muniguia-open]').click();
+  await mountedPage.page.locator('.muni-guide-locate').click();
+  assert.equal(
+    await mountedPage.page.locator('#roleChip').evaluate((element) => element.classList.contains('muni-guide-target')),
+    true,
+  );
+  await mountedPage.page.locator('#muniGuideTrigger').click();
+  await mountedPage.page.locator('#muniGuideDialog.is-open').waitFor();
+
+  const afterUnmount = await mountedPage.page.evaluate(async () => {
+    const runtime = await import('/js/contextual-help.js');
+    runtime.unmountMuniGuia();
+    runtime.unmountMuniGuia();
+    const external = document.querySelector('[data-muniguia-open]');
+    external.click();
+    return {
+      bodyInert: Array.from(document.body.children).some((element) => element.inert),
+      external: {
+        ariaControls: external.getAttribute('aria-controls'),
+        ariaExpanded: external.getAttribute('aria-expanded'),
+        ariaHaspopup: external.getAttribute('aria-haspopup'),
+        hidden: external.hidden,
+      },
+      guideNodes: document.querySelectorAll('#muniGuideTrigger, #muniGuideOverlay, #muniGuideDialog').length,
+      highlighted: document.querySelector('#roleChip').classList.contains('muni-guide-target'),
+      rootOpen: document.documentElement.classList.contains('muni-guide-open'),
+      runtime: typeof window.MuniGuia,
+    };
+  });
+  assert.deepEqual(afterUnmount, {
+    bodyInert: false,
+    external: {
+      ariaControls: null,
+      ariaExpanded: null,
+      ariaHaspopup: null,
+      hidden: true,
+    },
+    guideNodes: 0,
+    highlighted: false,
+    rootOpen: false,
+    runtime: 'undefined',
+  });
+
+  const remounted = await mountedPage.page.evaluate(async (policyVersion) => {
+    const runtime = await import('/js/contextual-help.js');
+    const projection = window.MuniAccess.getValidatedSession();
+    return runtime.mountMuniGuia({
+      role: projection.user.role,
+      capabilities: [...projection.capabilities],
+      variant: projection.homeProfile.variant,
+      policyVersion,
+      pathname: window.location.pathname,
+    });
+  }, accessPolicy.ACCESS_POLICY_VERSION);
+  assert.equal(remounted, true);
+  assert.equal(await mountedPage.page.locator('#muniGuideTrigger').count(), 1);
+  assert.equal(await mountedPage.page.locator('[data-muniguia-open]').getAttribute('aria-expanded'), 'false');
+  const queuedOpen = await mountedPage.page.evaluate(() => {
+    let nextFrameId = 10_000;
+    const callbacks = new Map();
+    window.requestAnimationFrame = (callback) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      callbacks.set(frameId, callback);
+      return frameId;
+    };
+    window.cancelAnimationFrame = (frameId) => callbacks.delete(frameId);
+    window.__muniGuideQueuedFrames = callbacks;
+    document.querySelector('#muniGuideTrigger').click();
+    return {
+      dialogUnhidden: !document.querySelector('#muniGuideDialog').hidden,
+      pendingFrames: callbacks.size,
+      rootOpen: document.documentElement.classList.contains('muni-guide-open'),
+    };
+  });
+  assert.deepEqual(queuedOpen, { dialogUnhidden: true, pendingFrames: 1, rootOpen: true });
+  const afterFrameUnmount = await mountedPage.page.evaluate(async () => {
+    const runtime = await import('/js/contextual-help.js');
+    runtime.unmountMuniGuia();
+    return {
+      guideNodes: document.querySelectorAll('#muniGuideTrigger, #muniGuideOverlay, #muniGuideDialog').length,
+      pendingFrames: window.__muniGuideQueuedFrames.size,
+      rootOpen: document.documentElement.classList.contains('muni-guide-open'),
+    };
+  });
+  assert.deepEqual(afterFrameUnmount, { guideNodes: 0, pendingFrames: 0, rootOpen: false });
+  assert.deepEqual(lifecyclePageErrors, []);
+  await mountedPage.context.close();
+
+  const racingPage = await authenticatedPage(browser, baseUrl, subject, 'INTENDENTE', {
+    reducedMotion: 'reduce',
+  });
+  const stylesheetRequest = racingPage.page.waitForRequest((request) =>
+    new URL(request.url()).pathname === '/css/contextual-help.css'
+  );
+  await Promise.all([
+    racingPage.page.goto(`${baseUrl}/inicio.html?delay_guide_css=1`, { waitUntil: 'domcontentloaded' }),
+    stylesheetRequest,
+  ]);
+  const cancelled = await racingPage.page.evaluate(async (policyVersion) => {
+    const runtime = await import('/js/contextual-help.js');
+    const projection = window.MuniAccess.getValidatedSession();
+    const pending = runtime.mountMuniGuia({
+      role: projection.user.role,
+      capabilities: [...projection.capabilities],
+      variant: projection.homeProfile.variant,
+      policyVersion,
+      pathname: window.location.pathname,
+    });
+    runtime.unmountMuniGuia();
+    return pending;
+  }, accessPolicy.ACCESS_POLICY_VERSION);
+  assert.equal(cancelled, false);
+  assert.deepEqual(await racingPage.page.evaluate(() => ({
+    externalHidden: document.querySelector('[data-muniguia-open]').hidden,
+    guideNodes: document.querySelectorAll('#muniGuideTrigger, #muniGuideOverlay, #muniGuideDialog').length,
+    rootOpen: document.documentElement.classList.contains('muni-guide-open'),
+    runtime: typeof window.MuniGuia,
+  })), {
+    externalHidden: true,
+    guideNodes: 0,
+    rootOpen: false,
+    runtime: 'undefined',
+  });
+
+  const recovered = await racingPage.page.evaluate(async (policyVersion) => {
+    const runtime = await import('/js/contextual-help.js');
+    const projection = window.MuniAccess.getValidatedSession();
+    return runtime.mountMuniGuia({
+      role: projection.user.role,
+      capabilities: [...projection.capabilities],
+      variant: projection.homeProfile.variant,
+      policyVersion,
+      pathname: window.location.pathname,
+    });
+  }, accessPolicy.ACCESS_POLICY_VERSION);
+  assert.equal(recovered, true);
+  assert.equal(await racingPage.page.locator('#muniGuideTrigger').count(), 1);
+  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
+  await racingPage.context.close();
+});
+
+test('a failed guide stylesheet is discarded and one concurrent retry recovers without losing loaded CSS', async (t) => {
+  const subject = 'guide-css-retry';
+  const users = new Map([[subject, authoritativeUser(subject, 'INTENDENTE')]]);
+  const requestLog = [];
+  const server = await createServer(users, requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise((resolve) => server.close(resolve));
+  });
+
+  const { context, page } = await authenticatedPage(browser, baseUrl, subject, 'INTENDENTE', {
+    reducedMotion: 'reduce',
+  });
+  const failedStylesheet = page.waitForRequest((request) =>
+    new URL(request.url()).pathname === '/css/contextual-help.css'
+  );
+  await Promise.all([
+    page.goto(`${baseUrl}/inicio.html?fail_guide_css_once=1`, { waitUntil: 'domcontentloaded' }),
+    failedStylesheet,
+  ]);
+  await page.waitForTimeout(250);
+  const failedLinkState = await page.evaluate(() => {
+    const link = document.querySelector('link[data-muni-guide-asset="v1"],link[href$="css/contextual-help.css"]');
+    return link ? {
+      connected: link.isConnected,
+      guideState: link.dataset.muniGuideState || null,
+      sheet: Boolean(link.sheet),
+    } : null;
+  });
+  assert.equal(failedLinkState, null);
+  assert.equal(await page.locator('#muniGuideTrigger').count(), 0);
+
+  const retried = await page.evaluate(async (policyVersion) => {
+    const runtime = await import('/js/contextual-help.js');
+    const projection = window.MuniAccess.getValidatedSession();
+    const input = {
+      role: projection.user.role,
+      capabilities: [...projection.capabilities],
+      variant: projection.homeProfile.variant,
+      policyVersion,
+      pathname: window.location.pathname,
+    };
+    return Promise.all([runtime.mountMuniGuia(input), runtime.mountMuniGuia(input)]);
+  }, accessPolicy.ACCESS_POLICY_VERSION);
+  assert.deepEqual(retried, [true, true]);
+  await page.locator('#muniGuideTrigger').waitFor({ state: 'visible' });
+  assert.equal(
+    requestLog.filter((entry) => entry.path === '/css/contextual-help.css').length,
+    2,
+  );
+
+  const retainedAndRemounted = await page.evaluate(async (policyVersion) => {
+    const runtime = await import('/js/contextual-help.js');
+    runtime.unmountMuniGuia();
+    const retainedLink = document.querySelector('link[data-muni-guide-asset="v1"]');
+    const projection = window.MuniAccess.getValidatedSession();
+    const mounted = await runtime.mountMuniGuia({
+      role: projection.user.role,
+      capabilities: [...projection.capabilities],
+      variant: projection.homeProfile.variant,
+      policyVersion,
+      pathname: window.location.pathname,
+    });
+    return {
+      linkConnected: Boolean(retainedLink?.isConnected),
+      linkReady: Boolean(retainedLink?.sheet),
+      mounted,
+    };
+  }, accessPolicy.ACCESS_POLICY_VERSION);
+  assert.deepEqual(retainedAndRemounted, { linkConnected: true, linkReady: true, mounted: true });
+  assert.equal(
+    requestLog.filter((entry) => entry.path === '/css/contextual-help.css').length,
+    2,
+  );
+  assert.equal(await page.locator('#muniGuideTrigger').count(), 1);
   assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
   await context.close();
 });

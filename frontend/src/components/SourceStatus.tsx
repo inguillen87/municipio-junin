@@ -17,7 +17,7 @@ interface SourceStatusProps {
 
 export function SourceStatus({ source }: SourceStatusProps) {
   return (
-    <aside className="source-status" aria-labelledby="source-status-title">
+    <aside id="snapshotMeta" className="source-status" aria-labelledby="source-status-title">
       <div className="source-status__heading">
         <span className="status-dot" aria-hidden="true" />
         <p>Proyección validada</p>

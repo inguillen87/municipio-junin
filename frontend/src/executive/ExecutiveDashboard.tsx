@@ -34,7 +34,7 @@ export function ExecutiveDashboard({ viewModel }: ExecutiveDashboardProps) {
             <a href="/hacienda">Abrir nómina</a>
             <a href="/ia">Consultar GRH</a>
           </nav>
-          <div className="executive-hero__guardrails" aria-label="Alcance de la lectura">
+          <div id="periodRange" className="executive-hero__guardrails" aria-label="Alcance de la lectura">
             <span>Corte {viewModel.truth.snapshotLabel}</span>
             <span>Período {viewModel.truth.referencePeriod}</span>
             <span>Moneda ARS</span>
@@ -93,7 +93,7 @@ export function ExecutiveDashboard({ viewModel }: ExecutiveDashboardProps) {
         ))}
       </section>
 
-      <div className="executive-dashboard-grid">
+      <div id="executiveInsights" className="executive-dashboard-grid">
         <section className="executive-panel executive-panel--wide" aria-labelledby="payroll-title">
           <header className="executive-panel__header">
             <div>

@@ -125,8 +125,8 @@ const PAGES = deepFreeze({
     ],
   },
   grhExecutive: {
-    href: 'grh-ejecutivo.html',
-    aliases: ['/grh-ejecutivo', '/grh-ejecutivo.html'],
+    href: 'ejecutivo.html',
+    aliases: ['/ejecutivo', '/ejecutivo.html', '/grh-ejecutivo', '/grh-ejecutivo.html'],
     label: 'Resumen ejecutivo GRH',
     objective: 'Profundizá en agregados GRH preservando privacidad, linaje y período.',
     requiredCapability: 'navigation.grh-executive',
@@ -134,7 +134,7 @@ const PAGES = deepFreeze({
     steps: [
       { id: 'bound-window', selector: '#periodRange', title: 'Delimitá la ventana', copy: 'Confirmá el rango observado y evitá presentar un snapshot histórico como tiempo real.' },
       { id: 'read-evidence', selector: '#executiveInsights', title: 'Leé la evidencia agregada', copy: 'Interpretá sólo métricas liberadas y mantené visible cualquier supresión por privacidad.' },
-      { id: 'confirm-periods', selector: '#periodTableTitle', title: 'Confirmá los períodos', copy: 'Usá la tabla para distinguir observación disponible, hueco protegido y ausencia de fuente.' },
+      { id: 'confirm-periods', selector: '#periodTableTitle', title: 'Confirmá los períodos', copy: 'Revisá la serie y abrí su detalle tabular para distinguir observación disponible, hueco protegido y ausencia de fuente.' },
     ],
   },
   organizationAnalytics: {
@@ -164,8 +164,8 @@ const PAGES = deepFreeze({
     ],
   },
   quality: {
-    href: 'control.html',
-    aliases: ['/control', '/control.html'],
+    href: 'calidad.html',
+    aliases: ['/calidad', '/calidad.html', '/control', '/control.html'],
     label: 'Calidad de datos',
     objective: 'Verificá si los datos son confiables antes de reutilizar sus resultados.',
     requiredCapability: 'navigation.data-quality',

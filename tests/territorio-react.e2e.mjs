@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer as createViteServer } from 'vite';
 
+import accessPolicy from '../shared/access-policy.cjs';
+
 import {
   MUNICIPAL_TERRITORY_ACCESS_ISSUE,
   MUNICIPAL_TERRITORY_BASEMAPS,
@@ -21,6 +23,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const CONTRACT_HEADER = 'x-municontrol-contract';
 const AUTH_CONTRACT = 'municontrol-auth-me-v1';
+const MUNIGUIA_STUB_SOURCE = 'export async function mountMuniGuia(){return true} export function unmountMuniGuia(){}';
 const SCREENSHOTS = Object.freeze({
   desktop: path.join(tmpdir(), 'municontrol-territorio-desktop-dark.png'),
   mobile: path.join(tmpdir(), 'municontrol-territorio-mobile-light.png'),
@@ -106,17 +109,19 @@ function createTerritoryFixture(status = 'ready') {
 }
 
 function authorizedSession(role = 'INTENDENTE', includeCapability = true) {
+  const access = accessPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-territory-e2e' });
+  assert.ok(access);
   return {
     user: {
       id: `territory-e2e-${role.toLowerCase()}`,
       name: `Perfil ${role} QA`,
       role,
       tenantId: 'tenant-territory-e2e',
-      capabilities: [
-        'session.read',
-        'navigation.workspace',
-        ...(includeCapability ? ['navigation.territory'] : []),
-      ],
+      capabilities: access.capabilities.filter(capability =>
+        includeCapability || capability !== 'navigation.territory'
+      ),
+      accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+      homeProfile: access.homeProfile,
       tenant: { id: 'tenant-territory-e2e', shortName: 'Junín QA' },
     },
   };
@@ -143,6 +148,10 @@ function scenarioPlugin(scenario, apiLog) {
         }
         if (url.pathname === '/js/auth-fetch.js') {
           send(response, 200, 'text/javascript; charset=utf-8', AUTH_CLIENT_SOURCE);
+          return;
+        }
+        if (url.pathname === '/js/contextual-help.js') {
+          send(response, 200, 'text/javascript; charset=utf-8', MUNIGUIA_STUB_SOURCE);
           return;
         }
         if (url.pathname === '/js/pwa-register.js') {
@@ -458,7 +467,7 @@ test('Centro Territorial React is governed, interactive, responsive and fail-clo
       const { context, page, diagnostics } = await newPage(browser, baseUrl, { viewport: { width: 390, height: 844 } });
       try {
         await page.goto(`${baseUrl}/territorio`, { waitUntil: 'domcontentloaded' });
-        await page.waitForURL(`${baseUrl}/inicio.html`);
+        await page.waitForURL(`${baseUrl}/inicio.html`, { timeout: 60_000 });
         assert.deepEqual(apiLog.map(entry => entry.path), ['/api/auth/me']);
         assert.deepEqual(diagnostics.externalRequests, []);
         assert.deepEqual(diagnostics.consoleErrors, []);

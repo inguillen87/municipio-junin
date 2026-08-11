@@ -1003,7 +1003,7 @@ npm.cmd run test:backend
 git diff --check
 ```
 
-`scripts/run-test-suite.mjs` enumera archivos de forma explícita para que la suite
+`scripts/run-test-suite.mjs` enumera archivos de forma explícita y limita la concurrencia a cuatro procesos para que la suite
 sea reproducible tanto en PowerShell como en shells que expanden comodines. Un
 release debe conservar la salida completa de estos comandos; cero tests, skips
 inesperados o una suite parcial no satisfacen el gate.

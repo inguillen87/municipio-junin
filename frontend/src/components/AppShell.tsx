@@ -1,6 +1,8 @@
 import { useLayoutEffect, useState, type ReactNode } from 'react';
 
-import { Topbar, type TopbarIdentity, type TopbarLink } from './Topbar';
+import type { SessionIdentity } from '../auth/session';
+import { MuniGuiaBridge } from './MuniGuiaBridge';
+import { Topbar, type TopbarLink } from './Topbar';
 
 const THEME_STORAGE_KEY = 'municontrol-color-theme:v1';
 const LEGACY_THEME_STORAGE_KEY = 'govtech_theme';
@@ -27,7 +29,7 @@ function initialThemePreference(): ThemePreference {
 
 interface AppShellProps {
   children: ReactNode;
-  identity: TopbarIdentity | null;
+  identity: SessionIdentity | null;
   links: readonly TopbarLink[];
   busy: boolean;
 }
@@ -69,6 +71,7 @@ export function AppShell({ children, identity, links, busy }: AppShellProps) {
       <main id="contenido-principal" className="main-content" aria-busy={busy}>
         {children}
       </main>
+      <MuniGuiaBridge identity={identity} />
     </div>
   );
 }

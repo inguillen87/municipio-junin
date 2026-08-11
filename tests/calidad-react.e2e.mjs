@@ -8,10 +8,13 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer as createViteServer } from 'vite';
 
+import accessPolicy from '../shared/access-policy.cjs';
+
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const PWA_REGISTER_SOURCE = readFileSync(path.join(REPO, 'js', 'pwa-register.js'), 'utf8');
 const PWA_TEST_WORKER_SOURCE = "self.addEventListener('install', () => self.skipWaiting()); self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));";
+const MUNIGUIA_STUB_SOURCE = 'export async function mountMuniGuia(){return true} export function unmountMuniGuia(){}';
 
 function percentage(numerator, denominator) {
   return denominator === 0 ? 0 : Number(((numerator / denominator) * 100).toFixed(4));
@@ -233,17 +236,18 @@ function createQualityFixture() {
 const QUALITY_FIXTURE = createQualityFixture();
 
 function authorizedSession(overrides = {}) {
+  const role = overrides.role ?? 'INTENDENTE';
+  const access = accessPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-quality-e2e' });
+  assert.ok(access);
   return {
     user: {
       id: 'quality-e2e-profile',
       name: 'Perfil ejecutivo QA',
-      role: 'INTENDENTE',
+      role,
       tenantId: 'tenant-quality-e2e',
-      capabilities: [
-        'session.read',
-        'navigation.workspace',
-        'navigation.data-quality',
-      ],
+      capabilities: access.capabilities,
+      accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+      homeProfile: access.homeProfile,
       tenant: {
         id: 'tenant-quality-e2e',
         shortName: 'Junin QA',
@@ -295,6 +299,10 @@ function testApiPlugin(scenario, apiLog, pwaLog) {
               fetch(input, init) { return window.fetch(input, init); }
             });
           `);
+          return;
+        }
+        if (url.pathname === '/js/contextual-help.js') {
+          send(response, 200, 'text/javascript; charset=utf-8', MUNIGUIA_STUB_SOURCE);
           return;
         }
 

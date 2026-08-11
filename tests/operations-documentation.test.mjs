@@ -845,6 +845,11 @@ test('the documented test commands use the cross-platform suite runner', () => {
     'node ../scripts/assert-prisma-migrations.mjs --release && prisma migrate deploy --schema ../prisma/schema.prisma');
   assert.equal(backendManifest.scripts['db:migrate:dev'], undefined);
 
+  const suiteRunner = read('scripts/run-test-suite.mjs');
+  assert.match(suiteRunner, /const concurrency = 4;/);
+  assert.match(suiteRunner, /--test-concurrency=\$\{concurrency\}/);
+  assert.match(read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md'), /concurrencia a cuatro procesos/i);
+
   for (const relativePath of ['README.md', 'DEPLOYMENT.md', 'docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md']) {
     const source = read(relativePath);
     assert.doesNotMatch(source, /node --test tests\/\*\.mjs|npm --prefix backend exec -- node/i);

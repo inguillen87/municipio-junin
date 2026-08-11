@@ -414,6 +414,18 @@ test('PWA shell installs, updates and stays fail-closed for private traffic and 
     initial: fixture.initialCacheName,
     retired: 'municontrol-shell-v1-retired-e2e',
   });
+  await page.waitForFunction(async ({ expected, initial, retired }) => {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const keys = await caches.keys();
+      if (!keys.includes(expected) || keys.includes(initial) || keys.includes(retired)) return false;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    return true;
+  }, {
+    expected: fixture.updatedCacheName,
+    initial: fixture.initialCacheName,
+    retired: 'municontrol-shell-v1-retired-e2e',
+  });
 
   const updatedCaches = await cacheSnapshot(page);
   assert.ok(Object.hasOwn(updatedCaches, fixture.updatedCacheName));

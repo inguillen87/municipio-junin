@@ -21,7 +21,7 @@ const CAPABILITY = 'navigation.territory';
 const ROUTE_ID = 'serverless.municipal.territory.read';
 
 test('territorial navigation is explicit for all roles and exact in low-role priorities', () => {
-  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.1');
+  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.2');
   assert.equal(accessPolicy.CAPABILITIES.NAV_TERRITORY, CAPABILITY);
   for (const role of ROLES) {
     assert.equal(accessPolicy.hasCapability(role, CAPABILITY), true, role);
@@ -52,7 +52,7 @@ test('territorial API is one exact GET resource and remains available to publish
   }
   assert.equal(routePolicy.authorizeRoute('DEMO', 'serverless', 'POST', '/api/municipal-territory'), false);
   assert.equal(routePolicy.authorizeRoute('DEMO', 'serverless', 'GET', '/api/municipal-territory/future'), false);
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.1');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.2');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     assert.equal(publishedDemoPolicy.evaluatePublishedDemoRoute({ ...profile, routeId: ROUTE_ID }).allowed, true, profile.email);
@@ -61,7 +61,7 @@ test('territorial API is one exact GET resource and remains available to publish
 });
 
 test('territorio is a governed Vite entry while the retired mapa file remains a legacy compatibility surface', async () => {
-  assert.deepEqual(GOVERNED_VITE_HTML_FILES, ['calidad.html', 'ejecutivo.html', 'territorio.html']);
+  assert.deepEqual(GOVERNED_VITE_HTML_FILES, ['calidad.html', 'ejecutivo.html', 'estructura.html', 'territorio.html']);
   assert.deepEqual(VITE_ENTRY_HTML_FILES, GOVERNED_VITE_HTML_FILES);
   assert.equal(GOVERNED_LEGACY_HTML_FILES.includes('territorio.html'), false);
   assert.equal(PUBLIC_LEGACY_HTML_FILES.includes('territorio.html'), false);

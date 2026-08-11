@@ -63,6 +63,12 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
           readFile(path.join(ROOT, 'frontend', 'src', 'territory', 'TerritoryDashboard.tsx'), 'utf8'),
           readFile(path.join(ROOT, 'frontend', 'src', 'territory', 'TerritoryMap.tsx'), 'utf8'),
         ])).join('\n')
+      : pageId === 'organizationAnalytics'
+        ? (await Promise.all([
+            readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
+            readFile(path.join(ROOT, 'frontend', 'src', 'structure', 'StructureDashboard.tsx'), 'utf8'),
+            readFile(path.join(ROOT, 'frontend', 'src', 'structure', 'StructureCharts.tsx'), 'utf8'),
+          ])).join('\n')
       : await readFile(path.join(ROOT, page.href), 'utf8');
     const stepIds = new Set();
     for (const step of page.steps) {
@@ -163,6 +169,11 @@ test('related actions and runtime remain capability-bound, local, non-persistent
     ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],
   );
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.requiredCapability, 'navigation.organization-analytics');
+  assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.label, 'Dotación y ausencias');
+  assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.title),
+    ['Confirmá fuente y corte', 'Compará el mapa de calor', 'Priorizá una revisión'],
+  );
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.territory.steps.map((step) => step.selector),
     ['#territoryMap', '#territoryLocalities', '#territorySources'],

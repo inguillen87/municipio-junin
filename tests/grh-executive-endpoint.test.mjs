@@ -239,6 +239,43 @@ test('an authorized Junin official receives only the validated interactive proje
   }
 });
 
+test('a published evaluation identity receives only the portable k=10 projection', async () => {
+  const originalTenant = process.env.GRH_TENANT_ID;
+  process.env.GRH_TENANT_ID = 'tenant-junin-executive-test';
+  try {
+    const semantic = await semanticFixture();
+    const handler = createGrhExecutiveHandler({
+      requireCapabilityImpl: async () => ({
+        id: 'published-intendente',
+        email: 'intendente@junin.gov.ar',
+        role: 'INTENDENTE',
+        tenantId: process.env.GRH_TENANT_ID,
+        authMethod: 'jwt-db',
+      }),
+      requireDatasetTenantImpl: () => true,
+      readArtifactBundleImpl: async () => ({ profile: {}, semantic }),
+    });
+    const response = responseRecorder();
+
+    await handler({ method: 'GET', url: '/api/grh-executive', headers: {}, query: {} }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(validateGrhExecutiveContract(response.payload), true);
+    assert.equal(response.payload.privacy.audience, 'portable');
+    for (const ranking of [
+      response.payload.workforce.bySector,
+      response.payload.workforce.byCostCenter,
+      response.payload.workforce.byAgreement,
+    ]) {
+      assert.equal(ranking.threshold, 10);
+      assert.equal(ranking.rows.every(row => row.participants >= 10), true);
+    }
+  } finally {
+    if (originalTenant === undefined) delete process.env.GRH_TENANT_ID;
+    else process.env.GRH_TENANT_ID = originalTenant;
+  }
+});
+
 test('artifact and output-contract failures return the same detail-free 503 boundary', async () => {
   const originalTenant = process.env.GRH_TENANT_ID;
   process.env.GRH_TENANT_ID = 'tenant-junin-executive-test';

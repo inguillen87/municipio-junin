@@ -1,5 +1,10 @@
 import { noStore, requireCapability, requireDatasetTenant } from './lib/auth.js';
 import { assertPrismaDatabaseTransport, prisma } from './lib/db.js';
+import { readGrhArtifactBundle } from './lib/grh-artifacts.js';
+import {
+  inspectGrhProfileContract,
+  inspectGrhSemanticContract,
+} from './lib/grh-contract.js';
 import { inspectGrhDirectoryArtifact } from './lib/grh-directory-contract.js';
 import { loadGrhDirectorySnapshotArtifact } from './lib/grh-directory-snapshot.js';
 import {
@@ -13,14 +18,13 @@ import routePolicy from '../shared/route-policy.cjs';
 import releaseTruthContract from '../shared/release-truth-contract.cjs';
 
 const { ACTIONS, RESOURCES } = routePolicy;
-const { API_CONTRACTS, HEADER_NAME } = releaseTruthContract;
+const { HEADER_NAME } = releaseTruthContract;
 const SOURCE_SHA256_PATTERN = /^[0-9a-f]{64}$/;
 
 export const GRH_ORGANIZATION_ANALYTICS_RESOURCE =
   RESOURCES.GRH_ORGANIZATION_ANALYTICS || 'grh.organization.analytics';
 
-const CONTRACT_VALUE = API_CONTRACTS['/api/grh-organization-analytics'] ||
-  GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION;
+const CONTRACT_VALUE = GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION;
 
 function unavailableResponse(res) {
   return res.status(503).json({
@@ -51,17 +55,46 @@ export async function readEncryptedGrhDirectorySnapshot({
   });
 }
 
-function sourcePinIsValid(artifact, environment) {
+function sourceIdentityIsValid({
+  artifact,
+  bundle,
+  environment,
+  inspectProfileImpl,
+  inspectSemanticImpl,
+}) {
   const pin = environment?.GRH_SOURCE_SHA256;
-  return typeof pin === 'string' && SOURCE_SHA256_PATTERN.test(pin) &&
-    artifact?.source?.sha256 === pin;
+  const semantic = bundle?.semantic;
+  const profile = bundle?.profile;
+  if (
+    typeof pin !== 'string' || !SOURCE_SHA256_PATTERN.test(pin) ||
+    !inspectSemanticImpl(semantic)?.ok ||
+    !inspectProfileImpl(
+      profile,
+      artifact?.source?.file,
+      artifact?.source?.sha256,
+      artifact?.source?.snapshot_as_of,
+    )?.ok
+  ) return false;
+
+  return artifact?.source?.sha256 === pin &&
+    semantic?.source?.sha256 === pin &&
+    semantic?.source?.file === artifact?.source?.file &&
+    semantic?.source?.snapshot_as_of === artifact?.source?.snapshot_as_of &&
+    semantic?.source?.canonical_system === artifact?.source?.canonical_system &&
+    semantic?.source?.compressed_size_bytes === artifact?.source?.compressed_size_bytes &&
+    profile?.source === artifact?.source?.file &&
+    profile?.sha256 === pin &&
+    profile?.snapshot_as_of === artifact?.source?.snapshot_as_of;
 }
 
 export function createGrhOrganizationAnalyticsHandler({
   requireCapabilityImpl = requireCapability,
   requireDatasetTenantImpl = requireDatasetTenant,
   readSnapshotArtifactImpl = readEncryptedGrhDirectorySnapshot,
+  readArtifactBundleImpl = readGrhArtifactBundle,
   inspectArtifactImpl = inspectGrhDirectoryArtifact,
+  inspectProfileImpl = inspectGrhProfileContract,
+  inspectSemanticImpl = inspectGrhSemanticContract,
   buildProjectionImpl = buildGrhOrganizationAnalyticsProjection,
   inspectContractImpl = inspectGrhOrganizationAnalyticsContract,
   environment = process.env,
@@ -89,15 +122,25 @@ export function createGrhOrganizationAnalyticsHandler({
     if (!caller || !requireDatasetTenantImpl(res, caller, 'GRH_TENANT_ID')) return;
 
     try {
-      const artifact = await readSnapshotArtifactImpl({
-        tenantId: String(caller.tenantId),
+      const tenantId = String(caller.tenantId);
+      const [artifact, bundle] = await Promise.all([
+        readSnapshotArtifactImpl({ tenantId, environment }),
+        readArtifactBundleImpl(tenantId),
+      ]);
+      if (!inspectArtifactImpl(artifact)?.ok || !sourceIdentityIsValid({
+        artifact,
+        bundle,
         environment,
-      });
-      if (!inspectArtifactImpl(artifact)?.ok || !sourcePinIsValid(artifact, environment)) {
+        inspectProfileImpl,
+        inspectSemanticImpl,
+      })) {
         throw new Error('GRH organization analytics source invalid');
       }
-      const projection = buildProjectionImpl(artifact);
-      if (!inspectContractImpl(projection)?.ok) {
+      const projection = buildProjectionImpl(artifact, bundle.semantic);
+      if (!inspectContractImpl(projection, {
+        expectedSourceSha256: artifact.source.sha256,
+        expectedSnapshotAsOf: artifact.source.snapshot_as_of,
+      })?.ok) {
         throw new Error('GRH organization analytics contract invalid');
       }
       return res.status(200).json(projection);

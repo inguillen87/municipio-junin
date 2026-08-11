@@ -78,7 +78,7 @@ async function createServer(users, requestLog) {
     ['/reportes', 'reportes.html'],
     ['/hacienda', 'hacienda.html'],
     ['/grh-ejecutivo', 'grh-ejecutivo.html'],
-    ['/estructura', 'estructura.html'],
+    ['/estructura', 'inicio.html'],
     ['/territorio', 'inicio.html'],
     ['/control', 'control.html'],
     ['/rrhh', 'rrhh.html'],
@@ -127,6 +127,14 @@ async function createServer(users, requestLog) {
           '<section id="territoryMap" aria-label="Mapa territorial"></section>',
           '<section id="territoryLocalities" aria-label="Localidades oficiales"></section>',
           '<section id="territorySources" aria-label="Fuentes territoriales"></section>',
+          '</main>',
+        ].join('')));
+      }
+      if (url.pathname === '/estructura') {
+        body = Buffer.from(body.toString('utf8').replace('</main>', [
+          '<section id="organizationSnapshotStatus" aria-label="Estado del snapshot"></section>',
+          '<section id="organizationExplorer" aria-label="Explorador de dotación"></section>',
+          '<section id="absenceRiskPanel" aria-label="Historial de ausencias"></section>',
           '</main>',
         ].join('')));
       }

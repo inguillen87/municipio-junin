@@ -8,7 +8,9 @@ import releaseTruth from '../shared/release-truth-contract.cjs';
 import routePolicy from '../shared/route-policy.cjs';
 import {
   GOVERNED_HTML_FILES,
+  GOVERNED_VITE_HTML_FILES,
   PUBLIC_LEGACY_HTML_FILES,
+  VITE_ENTRY_HTML_FILES,
 } from '../build/public-web-contract.mjs';
 import { MUNIGUIA_CATALOG } from '../js/contextual-help-catalog.js';
 
@@ -45,56 +47,90 @@ test('organization analytics has one exact private capability and route boundary
   });
 });
 
-test('published demo identities cannot discover or authorize the organization analytics surface', () => {
-  for (const [role, email] of [
-    ['TENANT_ADMIN', 'admin@junin.gov.ar'],
-    ['INTENDENTE', 'intendente@junin.gov.ar'],
-    ['CONTADOR', 'contador@junin.gov.ar'],
-  ]) {
-    const projection = accessPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-junin', email });
-    assert.equal(projection.capabilities.includes(CAPABILITY), false, role);
+test('published route ceiling opens only aggregate organization analytics and canonical RBAC still denies low roles', () => {
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.2');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
+
+  for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
+    const projection = accessPolicy.getSessionAccessForUser({
+      role: profile.role,
+      tenantId: 'tenant-junin',
+      email: profile.email,
+    });
     const decision = publishedDemoPolicy.evaluatePublishedDemoRoute({
-      email,
-      role,
-      tenantSlug: 'junin',
+      ...profile,
       routeId: ROUTE_ID,
     });
     assert.equal(decision.applies, true);
-    assert.equal(decision.allowed, false);
-    assert.equal(decision.code, publishedDemoPolicy.PUBLISHED_DEMO_DECISION_CODES.DENIED);
+    assert.equal(decision.allowed, true, `${profile.email}:published ceiling`);
+    const canonicalAllowed = routePolicy.authorizeRoute(
+      profile.role,
+      'serverless',
+      'GET',
+      '/api/grh-organization-analytics',
+    );
+    const expected = EXECUTIVE_ROLES.includes(profile.role);
+    assert.equal(canonicalAllowed && decision.allowed, expected, `${profile.email}:effective access`);
+    assert.equal(projection.capabilities.includes(CAPABILITY), expected, `${profile.email}:discovery`);
+  }
+
+  const directoryRouteId = 'serverless.grh.directory.read';
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(directoryRouteId), false);
+  for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
+    const directoryDecision = publishedDemoPolicy.evaluatePublishedDemoRoute({
+      ...profile,
+      routeId: directoryRouteId,
+    });
+    assert.equal(directoryDecision.allowed, false, `${profile.email}:directory`);
+    assert.equal(directoryDecision.code, publishedDemoPolicy.PUBLISHED_DEMO_DECISION_CODES.DENIED);
   }
 });
 
 test('release, build, clean route, navigation and contextual help stay aligned', async () => {
   assert.equal(
     releaseTruth.API_CONTRACTS['/api/grh-organization-analytics'],
-    'grh-organization-analytics-v1',
+    'grh-organization-analytics-v2',
   );
-  assert.ok(PUBLIC_LEGACY_HTML_FILES.includes('estructura.html'));
+  assert.equal(PUBLIC_LEGACY_HTML_FILES.includes('estructura.html'), false);
+  assert.ok(GOVERNED_VITE_HTML_FILES.includes('estructura.html'));
+  assert.ok(VITE_ENTRY_HTML_FILES.includes('estructura.html'));
   assert.ok(GOVERNED_HTML_FILES.includes('estructura.html'));
   assert.ok(PUBLIC_LEGACY_HTML_FILES.includes('organigrama.html'));
 
-  const [vercelSource, navSource, pageSource] = await Promise.all([
+  const [vercelSource, viteSource, navSource, workspaceSource, pageSource, dashboardSource] = await Promise.all([
     readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
+    readFile(new URL('../frontend/vite.config.ts', import.meta.url), 'utf8'),
     readFile(new URL('../js/nav.js', import.meta.url), 'utf8'),
-    readFile(new URL('../estructura.html', import.meta.url), 'utf8'),
+    readFile(new URL('../inicio.html', import.meta.url), 'utf8'),
+    readFile(new URL('../frontend/estructura.html', import.meta.url), 'utf8'),
+    readFile(new URL('../frontend/src/structure/StructureDashboard.tsx', import.meta.url), 'utf8'),
   ]);
   const vercel = JSON.parse(vercelSource);
   assert.deepEqual(
     vercel.rewrites.filter((rewrite) => rewrite.source === '/estructura'),
     [{ source: '/estructura', destination: '/estructura.html' }],
   );
-  assert.match(navSource, /id:'estructura'[\s\S]*href:'\/estructura'[\s\S]*capability:'navigation\.organization-analytics'/);
+  assert.match(viteSource, /estructura:\s*fileURLToPath\(new URL\('\.\/estructura\.html'/);
+  assert.match(pageSource, /src="\/src\/structure-main\.tsx"/);
+  assert.match(navSource, /id:'estructura'[\s\S]*href:'\/estructura'[\s\S]*label:'Dotación y ausencias'[\s\S]*capability:'navigation\.organization-analytics'/);
   assert.doesNotMatch(navSource, /href:'(?:\/)?organigrama(?:\.html)?'/);
+  assert.match(
+    workspaceSource,
+    /'navigation\.organization-analytics':\s*Object\.freeze\(\{\s*href:\s*'\/estructura',\s*label:\s*'Dotación y ausencias'/,
+  );
+  assert.match(workspaceSource, /priorityCapabilities\.concat\(\[\s*'navigation\.organization-analytics'\s*\]\)/);
+  assert.match(workspaceSource, /projection\.capabilities\.indexOf\(capability\) !== -1/);
 
   const guide = MUNIGUIA_CATALOG.pages.organizationAnalytics;
   assert.deepEqual(guide.aliases, ['/estructura', '/estructura.html']);
   assert.equal(guide.requiredCapability, CAPABILITY);
+  assert.equal(guide.label, 'Dotación y ausencias');
+  assert.match(guide.objective, /sala de situación/i);
   assert.deepEqual(
     guide.steps.map((step) => step.selector),
     ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],
   );
   for (const selector of guide.steps.map((step) => step.selector.slice(1))) {
-    assert.match(pageSource, new RegExp(`id=["']${selector}["']`));
+    assert.match(`${pageSource}\n${dashboardSource}`, new RegExp(`id=["']${selector}["']`));
   }
 });

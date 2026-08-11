@@ -194,10 +194,16 @@ function validMonetarySeries(value: unknown): boolean {
   return true;
 }
 
-function validSensitiveDomain(value: unknown, expectedTable: string): boolean {
+function validSensitiveDomain(
+  value: unknown,
+  expectedTable: string,
+  audience: 'interactive' | 'portable',
+): boolean {
   if (!exactKeys(value, SHAPES.sensitiveDomain) || value.sourceTable !== expectedTable ||
       value.metric !== 'valid_rows_by_year' || !Array.isArray(value.series) || value.series.length > 200) return false;
   const periods = new Set<string>();
+  let suppressedRows = 0;
+  let sawPortableSuppressed = false;
   for (const row of value.series) {
     if (!exactKeys(row, SHAPES.sensitiveRow)) return false;
     const periodIsSafe = typeof row.period === 'string' && /^\d{4}$/.test(row.period);
@@ -205,16 +211,22 @@ function validSensitiveDomain(value: unknown, expectedTable: string): boolean {
     if (row.period !== null) periods.add(row.period as string);
 
     if (row.privacyStatus === 'released') {
+      if (audience === 'portable' && sawPortableSuppressed) return false;
       if (!periodIsSafe || !nonNegativeInteger(row.value) || !nonNegativeInteger(row.participantCount) ||
           row.participantCount < 10 || row.participantCount > row.value ||
           row.participantDisplay !== String(row.participantCount)) return false;
     } else if (row.privacyStatus === 'suppressed') {
+      suppressedRows += 1;
+      if (audience === 'portable') {
+        sawPortableSuppressed = true;
+        if (row.period !== null) return false;
+      }
       if (row.value !== null || row.participantCount !== null || row.participantDisplay !== '<10') return false;
     } else {
       return false;
     }
   }
-  return true;
+  return suppressedRows === 0 || suppressedRows >= 2;
 }
 
 function validExecutive(value: unknown): value is ExecutiveContract {
@@ -222,7 +234,8 @@ function validExecutive(value: unknown): value is ExecutiveContract {
       value.policyVersion !== 'grh-small-cell-v1' || !validSource(value.source)) return false;
 
   const privacy = value.privacy;
-  if (!exactKeys(privacy, SHAPES.privacy) || privacy.audience !== 'interactive' ||
+  if (!exactKeys(privacy, SHAPES.privacy) ||
+      (privacy.audience !== 'interactive' && privacy.audience !== 'portable') ||
       privacy.interactiveThreshold !== 5 || privacy.sensitiveThreshold !== 10 ||
       privacy.portableThreshold !== 10 || privacy.protectedBucketLabel !== PROTECTED_BUCKET) return false;
 
@@ -230,9 +243,12 @@ function validExecutive(value: unknown): value is ExecutiveContract {
   if (!exactKeys(workforce, SHAPES.workforce) || !shortText(workforce.definition, 1000) ||
       typeof workforce.referencePeriod !== 'string' || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(workforce.referencePeriod) ||
       !positiveInteger(workforce.payrollParticipants)) return false;
-  if (!validRanking(workforce.bySector, workforce.payrollParticipants, 5) ||
-      !validRanking(workforce.byCostCenter, workforce.payrollParticipants, 5) ||
-      !validRanking(workforce.byAgreement, workforce.payrollParticipants, 5)) return false;
+  const workforceThreshold = privacy.audience === 'portable'
+    ? privacy.portableThreshold
+    : privacy.interactiveThreshold;
+  if (!validRanking(workforce.bySector, workforce.payrollParticipants, workforceThreshold) ||
+      !validRanking(workforce.byCostCenter, workforce.payrollParticipants, workforceThreshold) ||
+      !validRanking(workforce.byAgreement, workforce.payrollParticipants, workforceThreshold)) return false;
 
   const compensation = value.compensation;
   if (!exactKeys(compensation, SHAPES.compensation) || compensation.currency !== 'not_declared_in_source' ||
@@ -240,9 +256,9 @@ function validExecutive(value: unknown): value is ExecutiveContract {
       compensation.metricStatus !== 'calculation_control_not_bank_disbursement' ||
       !validMonetarySeries(compensation.series)) return false;
 
-  return validSensitiveDomain(value.absence, 'ausencia') &&
-    validSensitiveDomain(value.leave, 'licencia') &&
-    validSensitiveDomain(value.movements, 'legamov');
+  return validSensitiveDomain(value.absence, 'ausencia', privacy.audience) &&
+    validSensitiveDomain(value.leave, 'licencia', privacy.audience) &&
+    validSensitiveDomain(value.movements, 'legamov', privacy.audience);
 }
 
 export function validateExecutiveContract(value: unknown): value is ExecutiveContract {

@@ -144,6 +144,7 @@ test('Serverless published identities are constrained by identity, role, tenant 
     ['GET', '/api/grh-quality'],
     ['GET', '/api/grh-close'],
     ['GET', '/api/grh-decision-brief'],
+    ['GET', '/api/grh-organization-analytics'],
     ['GET', '/api/reports'],
     ['GET', '/api/pdf-report'],
     ['POST', '/api/ai-analyze'],
@@ -178,6 +179,14 @@ test('Serverless published identities are constrained by identity, role, tenant 
         assert.equal(response.payload.code, 'ROUTE_PERMISSION_DENIED');
       }
     }
+
+    const directoryResponse = responseRecorder();
+    const directory = await requireAuth(
+      requestFor(id, 'GET', '/api/grh-directory?limit=20'),
+      directoryResponse,
+    );
+    assert.equal(directory, null, `${profile.email} must not gain nominal GRH directory access`);
+    assert.equal(directoryResponse.statusCode, 403);
 
     const [sensitiveMethod, sensitiveUrl] = sensitiveRouteForRole[profile.role];
     const sensitiveResponse = responseRecorder();

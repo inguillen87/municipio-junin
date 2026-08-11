@@ -20,8 +20,10 @@ si fueran reales.
   representados.
 - Los artefactos servidos al frontend son agregados sin nombres, documentos,
   domicilios, teléfonos ni identificadores de empleado.
-- La moneda no está declarada en la fuente. La interfaz usa `u.m.` y nunca asume
-  ARS o `$`.
+- El dump no declara un código de moneda. Junín configura la presentación en
+  pesos argentinos (`ARS`) mediante una política de tenant versionada; esa
+  configuración de visualización no reescribe la procedencia del dump ni prueba
+  pago bancario.
 - `totpago` tiene diferencias materiales contra `calculo`; por eso no se usa como
   nómina pagada. La lectura ejecutiva usa conceptos de **control de cálculo** y
   conserva `totpago` sólo como diagnóstico de conciliación.
@@ -53,6 +55,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 |---|---|---|
 | Centro Ejecutivo GRH | Implementado | Contratos privados `profile` + `semantic`; snapshot histórico |
 | Centro Ejecutivo RRHH | Implementado | Dotación registrada, ausencias, movimientos, calidad y cuarentena agregadas |
+| Sala de situación de dotación y ausencias | Validada localmente | React + TypeScript, seis KPI, cohortes de cálculo, dos series históricas, matriz 5×5, comparador y acciones; contrato `grh-organization-analytics-v2`, k=10 y sin directorio nominal |
 | Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
@@ -61,6 +64,8 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Accesos demostrativos por rol | Verificado en Production | Seis perfiles gobernados para recorrer permisos y superficies; no habilitan datos inventados ni sustituyen identidades institucionales definitivas |
 | Calidad modular React + TypeScript | Canary `/calidad` | Primera vertical componible sobre el mismo contrato `grh-quality-v1`; `/control` permanece como reversión durante la adopción |
 | Centro Ejecutivo modular React + TypeScript | Canary `/ejecutivo` | Lectura summary-first de `grh-executive-v2`; `/grh-ejecutivo` permanece como reversión estable y no se reemplaza en este sprint |
+| Centro territorial Junín | Verificado en Production | Límite IGN, siete localidades GeoRef y cuatro mapas base oficiales; referencia territorial sin capas GRH, obras ni reclamos |
+| PWA y shell móvil | Implementado | Manifest instalable, service worker network-first, fallback offline y navegación responsive; las APIs y respuestas privadas nunca se cachean |
 | WhatsApp | Condicionado | Webhooks informativos endurecidos; faltan proveedor, credenciales y E2E externo certificado |
 | Correo, cron y exportación cruda | Retirado | Responden 410 o no se programan hasta tener finalidad, auditoría e idempotencia |
 | Presupuesto, obras, compras y trámites | Sin fuente gobernada | No deben exhibir bases sintéticas como datos municipales |

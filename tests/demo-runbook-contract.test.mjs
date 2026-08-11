@@ -9,20 +9,23 @@ const stableNavigationUrl = new URL('../js/nav.js', import.meta.url);
 test('el runbook de Intendencia conserva recorrido, verdad y rollback', async () => {
   const source = await readFile(runbookUrl, 'utf8');
 
-  for (const route of ['/login', '/inicio', '/ejecutivo', '/calidad', '/reportes', '/ia']) {
+  for (const route of [
+    '/login', '/inicio', '/estructura', '/ejecutivo', '/hacienda', '/calidad',
+    '/reportes', '/ia', '/territorio',
+  ]) {
     assert.ok(source.includes('`' + route + '`'), `Falta la ruta ${route}.`);
   }
   assert.match(source, /6 de agosto de 2026/i);
   assert.match(source, /no (?:demuestra|es) una\s+conexi[oó]n en tiempo real/i);
   assert.match(source, /participantes de c[aá]lculo.+no.+personal activo/is);
-  assert.match(source, /unidades de fuente.+no es pago bancario/is);
-  assert.match(source, /moneda no est[aá] declarada/i);
+  assert.match(source, /ARS.+configuraci[oó]n municipal.+no pago bancario/is);
+  assert.match(source, /moneda (?:no )?declarada por el dump/i);
   assert.match(source, /no se publican filas crudas/i);
   assert.match(source, /20\.534 filas.+cuarentena/i);
   assert.match(source, /63,88\/100/i);
   assert.match(source, /\/grh-ejecutivo/);
   assert.match(source, /canary cerr[oó] sin cifras/i);
-  assert.match(source, /5:45[–-]6:20/);
+  assert.match(source, /6:20[–-]6:50/);
 });
 
 test('el runbook no contiene identidades, correos ni secretos de acceso', async () => {

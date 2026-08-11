@@ -119,7 +119,7 @@ test('desktop and mobile navigation share canonical labels and React canary rout
   for (const label of [
     'Panorama municipal',
     'Resumen ejecutivo GRH',
-    'Estructura y ausencias',
+    'Dotación y ausencias',
     'Centro territorial',
     'Hacienda y nómina',
     'Gestión de personas',

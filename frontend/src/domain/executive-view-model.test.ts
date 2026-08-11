@@ -199,6 +199,10 @@ describe('buildExecutiveViewModel', () => {
     const contract = validClone((candidate) => {
       const absence = candidate.absence as Record<string, unknown>;
       const absenceSeries = absence.series as unknown[];
+      absenceSeries[0] = {
+        period: '2022', value: null, participantCount: null,
+        participantDisplay: '<10', privacyStatus: 'suppressed',
+      };
       absenceSeries[1] = {
         period: '2023', value: null, participantCount: null,
         participantDisplay: '<10', privacyStatus: 'suppressed',
@@ -207,6 +211,10 @@ describe('buildExecutiveViewModel', () => {
       const movementSeries = movements.series as unknown[];
       movementSeries.push({
         period: '2025', value: null, participantCount: null,
+        participantDisplay: '<10', privacyStatus: 'suppressed',
+      });
+      movementSeries.push({
+        period: '2026', value: null, participantCount: null,
         participantDisplay: '<10', privacyStatus: 'suppressed',
       });
     });

@@ -19,7 +19,6 @@ const contentTypes = {
 };
 const pages = [
   'inicio.html',
-  'estructura.html',
   'configuracion.html',
   'manuales.html',
   'inteligencia.html',

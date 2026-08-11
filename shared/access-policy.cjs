@@ -1,7 +1,5 @@
 'use strict';
 
-const { isPublishedDemoIdentity } = require('./published-demo-policy.cjs');
-
 // Runtime-neutral RBAC foundation shared by Serverless (ESM) and Express (CJS).
 //
 // Security contract:
@@ -9,7 +7,7 @@ const { isPublishedDemoIdentity } = require('./published-demo-policy.cjs');
 // - there is no rank, inheritance or wildcard grant;
 // - unknown roles and capabilities are denied;
 // - adding a capability never grants it automatically to an existing role.
-const ACCESS_POLICY_VERSION = '2026-08-11.1';
+const ACCESS_POLICY_VERSION = '2026-08-11.2';
 
 const ROLES = Object.freeze({
   SUPER_ADMIN: 'SUPER_ADMIN',
@@ -238,11 +236,7 @@ function getSessionAccessForUser(user) {
   const roleCapabilities = user.role === ROLES.SUPER_ADMIN && !hasTenant
     ? [CAPABILITIES.SESSION_READ, CAPABILITIES.NAV_WORKSPACE, CAPABILITIES.NAV_HELP]
     : getCapabilitiesForRole(user.role);
-  // Published role-preview identities remain a deliberately narrower product
-  // surface even when their static role ceiling includes private GRH access.
-  const capabilities = isPublishedDemoIdentity(user.email)
-    ? roleCapabilities.filter(capability => capability !== CAPABILITIES.NAV_ORGANIZATION_ANALYTICS)
-    : roleCapabilities;
+  const capabilities = roleCapabilities;
   const baseProfile = getHomeProfileForRole(user.role);
   if (!baseProfile || !capabilities.includes(CAPABILITIES.NAV_WORKSPACE)) return null;
   const priorityCapabilities = baseProfile.priorityCapabilities.filter(capability =>

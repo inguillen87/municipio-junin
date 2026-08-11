@@ -1,19 +1,24 @@
-export const GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION = 'grh-organization-analytics-v1';
+import {
+  GRH_PRIVACY_THRESHOLDS,
+  GRH_PROTECTED_BUCKET_LABEL,
+} from './grh-privacy.js';
+
+export const GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION = 'grh-organization-analytics-v2';
 export const GRH_ORGANIZATION_ANALYTICS_THRESHOLD = 10;
 export const GRH_ORGANIZATION_ANALYTICS_PROTECTED_LABEL = 'Otros grupos protegidos';
 
 export const GRH_ORGANIZATION_ANALYTICS_ACTIONS = Object.freeze([
   Object.freeze({
-    id: 'open_people_directory',
+    id: 'open_workforce_dashboard',
     label: 'Abrir Gestión de personas',
-    href: '/rrhh#peopleDirectory',
+    href: '/rrhh',
     requiredCapability: 'navigation.rrhh',
   }),
   Object.freeze({
-    id: 'review_absence_records',
-    label: 'Revisar legajos con ausencias',
-    href: '/rrhh?hasAbsence=true#peopleDirectory',
-    requiredCapability: 'navigation.rrhh',
+    id: 'open_executive_summary',
+    label: 'Abrir resumen ejecutivo',
+    href: '/ejecutivo',
+    requiredCapability: 'navigation.grh-executive',
   }),
   Object.freeze({
     id: 'open_data_quality',
@@ -49,6 +54,8 @@ const TOP_LEVEL_KEYS = Object.freeze([
   'sectors',
   'matrix',
   'absenceRanking',
+  'payrollCohort',
+  'activity',
   'dataQuality',
   'actions',
   'limits',
@@ -135,6 +142,39 @@ const DATA_QUALITY_KEYS = Object.freeze([
   'lastFuturePositionDate',
 ]);
 const ACTION_KEYS = Object.freeze(['id', 'label', 'href', 'requiredCapability']);
+const PAYROLL_COHORT_KEYS = Object.freeze([
+  'definition',
+  'referencePeriod',
+  'payrollParticipants',
+  'bySector',
+  'byCostCenter',
+  'byAgreement',
+]);
+const EXECUTIVE_RANKING_KEYS = Object.freeze([
+  'threshold',
+  'totalParticipants',
+  'participantDisplay',
+  'privacyStatus',
+  'rows',
+]);
+const EXECUTIVE_RANKING_ROW_KEYS = Object.freeze([
+  'companyCode',
+  'sourceCode',
+  'label',
+  'participants',
+  'participantDisplay',
+  'sharePct',
+  'privacyStatus',
+]);
+const ACTIVITY_KEYS = Object.freeze(['absence', 'movements']);
+const ACTIVITY_DOMAIN_KEYS = Object.freeze(['sourceTable', 'metric', 'series']);
+const ACTIVITY_SERIES_ROW_KEYS = Object.freeze([
+  'period',
+  'value',
+  'participantCount',
+  'participantDisplay',
+  'privacyStatus',
+]);
 const MATRIX_PRIVACY_STATUSES = new Set([
   'released',
   'not_observed',
@@ -146,7 +186,6 @@ const FORBIDDEN_KEYS = new Set([
   'display_name',
   'displayName',
   'legajo',
-  'companyCode',
   'company_code',
   'dni',
   'cuil',
@@ -157,6 +196,12 @@ const FORBIDDEN_KEYS = new Set([
   'event_cause',
   'email',
   'userId',
+  'amounts',
+  'compensation',
+  'currency',
+  'leave',
+  'licencia',
+  'license',
 ]);
 
 function exactKeys(value, expected) {
@@ -186,6 +231,10 @@ function finiteNonNegative(value) {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
+function finitePercentage(value) {
+  return finiteNonNegative(value) && value <= 100;
+}
+
 function nullableFiniteNonNegative(value) {
   return value === null || finiteNonNegative(value);
 }
@@ -193,6 +242,12 @@ function nullableFiniteNonNegative(value) {
 function safeLabel(value, maximum = 200) {
   return typeof value === 'string' && value.trim().length > 0 && value.length <= maximum &&
     !/[\u0000-\u001f\u007f]/u.test(value);
+}
+
+function safeCode(value) {
+  if (Number.isSafeInteger(value) && value >= 0) return true;
+  return typeof value === 'string' && value.length > 0 && value.length <= 64 &&
+    /^[A-Za-z0-9._/-]+$/u.test(value);
 }
 
 function round4(value) {
@@ -390,6 +445,151 @@ function validateAbsenceRanking(value, coverage, errors) {
   add(errors, absenceEvents === value.absenceEvents, 'absenceRanking.eventReconciliation');
 }
 
+function validateExecutiveRanking(value, path, totalParticipants, errors) {
+  add(errors, exactKeys(value, EXECUTIVE_RANKING_KEYS), `${path}.shape`);
+  const threshold = GRH_PRIVACY_THRESHOLDS.portable;
+  add(errors, value?.threshold === threshold, `${path}.threshold`);
+  add(errors, value?.totalParticipants === totalParticipants, `${path}.totalParticipants`);
+  add(errors, value?.participantDisplay === String(totalParticipants), `${path}.participantDisplay`);
+  add(errors,
+    value?.privacyStatus === 'released' || value?.privacyStatus === 'partially_suppressed',
+    `${path}.privacyStatus`);
+  add(errors, Array.isArray(value?.rows) && value.rows.length > 0, `${path}.rows`);
+  if (!Array.isArray(value?.rows) || !positiveInteger(totalParticipants)) return;
+
+  let participantTotal = 0;
+  let protectedRows = 0;
+  const identities = new Set();
+  value.rows.forEach((row, index) => {
+    const rowPath = `${path}.rows.${index}`;
+    add(errors, exactKeys(row, EXECUTIVE_RANKING_ROW_KEYS), `${rowPath}.shape`);
+    if (row?.privacyStatus === 'released') {
+      add(errors,
+        safeCode(row?.companyCode) && safeCode(row?.sourceCode) &&
+          safeLabel(row?.label, 160) && row.label !== GRH_PROTECTED_BUCKET_LABEL,
+        `${rowPath}.identity`);
+      const identity = `${String(row?.companyCode)}:${String(row?.sourceCode)}:${String(row?.label)}`;
+      add(errors, !identities.has(identity), `${rowPath}.unique`);
+      identities.add(identity);
+    } else if (row?.privacyStatus === 'protected_aggregate') {
+      protectedRows += 1;
+      add(errors,
+        row?.companyCode === null && row?.sourceCode === null &&
+          row?.label === GRH_PROTECTED_BUCKET_LABEL,
+        `${rowPath}.protectedIdentity`);
+    } else {
+      add(errors, false, `${rowPath}.privacyStatus`);
+    }
+    add(errors,
+      nonNegativeInteger(row?.participants) && row.participants >= threshold &&
+        row.participants <= totalParticipants,
+      `${rowPath}.participants`);
+    if (nonNegativeInteger(row?.participants)) {
+      participantTotal += row.participants;
+      add(errors, row?.participantDisplay === String(row.participants), `${rowPath}.participantDisplay`);
+      add(errors,
+        finitePercentage(row?.sharePct) &&
+          row.sharePct === expectedShare(row.participants, totalParticipants),
+        `${rowPath}.sharePct`);
+    }
+  });
+  add(errors, participantTotal === totalParticipants, `${path}.participantReconciliation`);
+  add(errors, protectedRows <= 1, `${path}.protectedRows`);
+  add(errors,
+    value?.privacyStatus === (protectedRows === 0 ? 'released' : 'partially_suppressed'),
+    `${path}.statusReconciliation`);
+}
+
+function validatePayrollCohort(value, errors) {
+  add(errors, exactKeys(value, PAYROLL_COHORT_KEYS), 'payrollCohort.shape');
+  add(errors, safeLabel(value?.definition, 500), 'payrollCohort.definition');
+  add(errors, /^\d{4}-(?:0[1-9]|1[0-2])$/u.test(value?.referencePeriod || ''),
+    'payrollCohort.referencePeriod');
+  add(errors, positiveInteger(value?.payrollParticipants), 'payrollCohort.payrollParticipants');
+  for (const property of ['bySector', 'byCostCenter', 'byAgreement']) {
+    validateExecutiveRanking(
+      value?.[property],
+      `payrollCohort.${property}`,
+      value?.payrollParticipants,
+      errors,
+    );
+  }
+}
+
+function validateActivityDomain(value, property, source, errors) {
+  const path = `activity.${property}`;
+  const expectedTable = property === 'absence' ? 'ausencia' : 'legamov';
+  add(errors, exactKeys(value, ACTIVITY_DOMAIN_KEYS), `${path}.shape`);
+  add(errors, value?.sourceTable === expectedTable, `${path}.sourceTable`);
+  add(errors, value?.metric === 'valid_rows_by_year', `${path}.metric`);
+  add(errors, Array.isArray(value?.series) && value.series.length > 0, `${path}.series`);
+  if (!Array.isArray(value?.series)) return;
+
+  const snapshotYear = Number(String(source?.snapshotAsOf || '').slice(0, 4));
+  const periods = new Set();
+  let suppressedRows = 0;
+  value.series.forEach((row, index) => {
+    const rowPath = `${path}.series.${index}`;
+    add(errors, exactKeys(row, ACTIVITY_SERIES_ROW_KEYS), `${rowPath}.shape`);
+    const periodIsSafe = /^\d{4}$/u.test(row?.period || '');
+    if (row?.period !== null) {
+      add(errors,
+        periodIsSafe && !periods.has(row.period) && Number(row.period) <= snapshotYear,
+        `${rowPath}.period`);
+      periods.add(row.period);
+    }
+    if (row?.privacyStatus === 'released') {
+      add(errors, periodIsSafe, `${rowPath}.releasedPeriod`);
+      add(errors,
+        nonNegativeInteger(row?.participantCount) &&
+          row.participantCount >= GRH_PRIVACY_THRESHOLDS.sensitive,
+        `${rowPath}.smallCell`);
+      add(errors,
+        nonNegativeInteger(row?.value) && row.value >= row?.participantCount,
+        `${rowPath}.value`);
+      add(errors,
+        row?.participantDisplay === String(row?.participantCount),
+        `${rowPath}.participantDisplay`);
+    } else if (row?.privacyStatus === 'suppressed') {
+      suppressedRows += 1;
+      add(errors, row?.period === null, `${rowPath}.suppressedPeriod`);
+      add(errors, row?.participantCount === null, `${rowPath}.suppressedParticipantCount`);
+      add(errors, row?.value === null, `${rowPath}.suppressedValue`);
+      add(errors, row?.participantDisplay === 'Protegido', `${rowPath}.suppressedDisplay`);
+    } else {
+      add(errors, false, `${rowPath}.privacyStatus`);
+    }
+  });
+  add(errors, suppressedRows === 0 || suppressedRows >= 2, `${path}.complementarySuppression`);
+}
+
+function validateSectorPayrollIsolation(sectors, payrollCohort, errors) {
+  if (!Array.isArray(sectors?.rows) || !Array.isArray(payrollCohort?.bySector?.rows)) return;
+  const payrollByCode = new Map();
+  for (const row of payrollCohort.bySector.rows) {
+    if (row?.privacyStatus !== 'released' || !safeCode(row?.sourceCode) ||
+        !nonNegativeInteger(row?.participants)) continue;
+    const code = String(row.sourceCode);
+    payrollByCode.set(code, (payrollByCode.get(code) || 0) + row.participants);
+  }
+  for (const row of sectors.rows) {
+    if (row?.privacyStatus !== 'released' || !nonNegativeInteger(row?.registeredRecords)) continue;
+    const participants = payrollByCode.get(String(row.code));
+    if (participants === undefined) continue;
+    const complement = row.registeredRecords - participants;
+    add(errors, complement >= 0, `payrollCohort.bySector.${String(row.code)}.registeredBounds`);
+    add(errors,
+      complement === 0 || complement >= GRH_ORGANIZATION_ANALYTICS_THRESHOLD,
+      `payrollCohort.bySector.${String(row.code)}.complementaryPrivacy`);
+  }
+}
+
+function validateActivity(value, source, errors) {
+  add(errors, exactKeys(value, ACTIVITY_KEYS), 'activity.shape');
+  validateActivityDomain(value?.absence, 'absence', source, errors);
+  validateActivityDomain(value?.movements, 'movements', source, errors);
+}
+
 function validateAxis(rows, path, errors) {
   add(errors, Array.isArray(rows) && rows.length > 0 && rows.length <= 8, `${path}.array`);
   if (!Array.isArray(rows)) return new Set();
@@ -502,7 +702,10 @@ function validateActions(actions, errors) {
   });
 }
 
-export function inspectGrhOrganizationAnalyticsContract(value) {
+export function inspectGrhOrganizationAnalyticsContract(value, {
+  expectedSourceSha256 = null,
+  expectedSnapshotAsOf = null,
+} = {}) {
   const errors = [];
   add(errors, exactKeys(value, TOP_LEVEL_KEYS), 'contract.shape');
   add(errors,
@@ -515,11 +718,22 @@ export function inspectGrhOrganizationAnalyticsContract(value) {
   validateDimension(value?.sectors, 'sector', value?.coverage, errors);
   validateMatrix(value?.matrix, errors);
   validateAbsenceRanking(value?.absenceRanking, value?.coverage, errors);
+  validatePayrollCohort(value?.payrollCohort, errors);
+  validateSectorPayrollIsolation(value?.sectors, value?.payrollCohort, errors);
+  validateActivity(value?.activity, value?.source, errors);
   validateDataQuality(value?.dataQuality, value?.coverage, value?.source, errors);
   validateActions(value?.actions, errors);
   add(errors,
     JSON.stringify(value?.limits) === JSON.stringify(GRH_ORGANIZATION_ANALYTICS_LIMITS),
     'limits.allowlist');
+  add(errors,
+    expectedSourceSha256 === null ||
+      (SHA256_PATTERN.test(expectedSourceSha256) && value?.source?.sourceSha256 === expectedSourceSha256),
+    'source.expectedSha256');
+  add(errors,
+    expectedSnapshotAsOf === null ||
+      (DATE_PATTERN.test(expectedSnapshotAsOf) && value?.source?.snapshotAsOf === expectedSnapshotAsOf),
+    'source.expectedSnapshotAsOf');
   for (const path of forbiddenKeyPaths(value)) errors.push(`pii_key.${path}`);
   return Object.freeze({
     ok: errors.length === 0,

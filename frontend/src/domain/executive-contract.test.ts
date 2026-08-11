@@ -145,6 +145,33 @@ function createValidContract(): ExecutiveContract {
   return candidate;
 }
 
+function createPortableContract(): ExecutiveContract {
+  const candidate = structuredClone(createValidContract());
+  (candidate.privacy as unknown as { audience: 'interactive' | 'portable' }).audience = 'portable';
+  const rankings = [
+    candidate.workforce.bySector,
+    candidate.workforce.byCostCenter,
+    candidate.workforce.byAgreement,
+  ] as unknown as Array<{
+    threshold: number;
+    rows: Array<ExecutiveContract['workforce']['bySector']['rows'][number]>;
+  }>;
+  for (const ranking of rankings) ranking.threshold = 10;
+  const sectorRanking = rankings[0];
+  if (!sectorRanking) throw new Error('Portable sector ranking is required');
+  sectorRanking.rows = [{
+    companyCode: null,
+    sourceCode: null,
+    label: 'Otros (celdas protegidas)',
+    participants: 20,
+    participantDisplay: '20',
+    sharePct: 100,
+    privacyStatus: 'protected_aggregate',
+  }];
+  if (!validateExecutiveContract(candidate)) throw new Error('Invalid portable executive fixture');
+  return candidate;
+}
+
 function setAt(root: unknown, path: readonly string[], value: unknown): void {
   let cursor = root as Record<string, unknown>;
   for (const key of path.slice(0, -1)) cursor = cursor[key] as Record<string, unknown>;
@@ -188,10 +215,55 @@ describe('validateExecutiveContract', () => {
     expect(validateExecutiveContract(createValidContract())).toBe(true);
   });
 
+  it('accepts the portable k=10 projection used by published evaluation identities', () => {
+    expect(validateExecutiveContract(createPortableContract())).toBe(true);
+  });
+
+  it('requires portable protected periods to be opaque and ordered after released periods', () => {
+    const leakedPeriod = structuredClone(createPortableContract()) as unknown as Record<string, unknown>;
+    const leakedAbsence = (leakedPeriod.absence as { series: Array<Record<string, unknown>> }).series;
+    leakedAbsence.splice(1, 0,
+      {
+        period: '2021',
+        value: null,
+        participantCount: null,
+        participantDisplay: '<10',
+        privacyStatus: 'suppressed',
+      },
+      {
+        period: null,
+        value: null,
+        participantCount: null,
+        participantDisplay: '<10',
+        privacyStatus: 'suppressed',
+      });
+    expect(validateExecutiveContract(leakedPeriod)).toBe(false);
+
+    const reordered = structuredClone(createPortableContract()) as unknown as Record<string, unknown>;
+    const reorderedAbsence = (reordered.absence as { series: Array<Record<string, unknown>> }).series;
+    reorderedAbsence.unshift(
+      {
+        period: null,
+        value: null,
+        participantCount: null,
+        participantDisplay: '<10',
+        privacyStatus: 'suppressed',
+      },
+      {
+        period: null,
+        value: null,
+        participantCount: null,
+        participantDisplay: '<10',
+        privacyStatus: 'suppressed',
+      },
+    );
+    expect(validateExecutiveContract(reordered)).toBe(false);
+  });
+
   it.each([
     ['an extra top-level field', ['unexpected'], true],
     ['a schema downgrade', ['schemaVersion'], 'grh-executive-v1'],
-    ['a portable payload on the interactive endpoint', ['privacy', 'audience'], 'portable'],
+    ['an unknown audience', ['privacy', 'audience'], 'public'],
     ['a false realtime claim', ['source', 'realtime'], true],
     ['a released small cell', ['workforce', 'bySector', 'rows', '0', 'participants'], 4],
     ['a protected source code', ['workforce', 'bySector', 'rows', '1', 'sourceCode'], 99],

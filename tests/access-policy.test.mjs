@@ -117,7 +117,7 @@ function extractRoleArray(source, constantName) {
 
 test('Serverless ESM and Express CJS consume the same bumped policy', () => {
   assert.strictEqual(esmPolicy, cjsPolicy);
-  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-11.1');
+  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-11.2');
   assert.deepEqual(Object.values(esmPolicy.ROLES), EXPECTED_ROLES);
 
   for (const role of EXPECTED_ROLES) {
@@ -231,7 +231,7 @@ test('tenantless SUPER_ADMIN receives a contextual workspace without ambient mun
   assert.equal(esmPolicy.getSessionAccessForUser(null), null);
 });
 
-test('organization analytics is private to tenant-bound executive identities and excluded from published demos', () => {
+test('organization analytics is projected to executive identities, including published demos, and denied to low roles', () => {
   const capability = esmPolicy.CAPABILITIES.NAV_ORGANIZATION_ANALYTICS;
   const executiveRoles = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
   for (const role of executiveRoles) {
@@ -247,6 +247,15 @@ test('organization analytics is private to tenant-bound executive identities and
     ['TENANT_ADMIN', 'admin@junin.gov.ar'],
     ['INTENDENTE', 'intendente@junin.gov.ar'],
     ['CONTADOR', 'contador@junin.gov.ar'],
+  ]) {
+    const publishedAccess = esmPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-junin', email });
+    assert.equal(publishedAccess.capabilities.includes(capability), true, email);
+  }
+
+  for (const [role, email] of [
+    ['TENANT_USER', 'rrhh@junin.gov.ar'],
+    ['INSPECTOR', 'inspector@junin.gov.ar'],
+    ['DEMO', 'demo@junin.gov.ar'],
   ]) {
     const publishedAccess = esmPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-junin', email });
     assert.equal(publishedAccess.capabilities.includes(capability), false, email);
@@ -362,7 +371,7 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
 
   assert.match(source, /href:'\/calidad'[\s\S]*label:'Calidad de datos'[\s\S]*capability:'navigation\.data-quality'/);
   assert.match(source, /href:'\/ejecutivo'[\s\S]*label:'Resumen ejecutivo GRH'[\s\S]*capability:'navigation\.grh-executive'/);
-  assert.match(source, /href:'\/estructura'[\s\S]*label:'Estructura y ausencias'[\s\S]*capability:'navigation\.organization-analytics'/);
+  assert.match(source, /href:'\/estructura'[\s\S]*label:'Dotación y ausencias'[\s\S]*capability:'navigation\.organization-analytics'/);
   assert.match(source, /href:'\/territorio'[\s\S]*label:'Centro territorial'[\s\S]*capability:'navigation\.territory'/);
   assert.match(source, /label:'Panorama municipal'/);
   assert.match(source, /label:'Hacienda y n(?:ó|Ã³)mina'/);

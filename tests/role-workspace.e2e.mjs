@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { chromium } from 'playwright';
 import accessPolicy from '../shared/access-policy.cjs';
+import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const ROLES = Object.values(accessPolicy.ROLES);
@@ -77,12 +78,17 @@ function tokenSubject(request) {
   }
 }
 
-function authoritativeUser(id, role, tenantId = 'tenant-junin-e2e') {
-  const access = accessPolicy.getSessionAccessForUser({ role, tenantId });
+function authoritativeUser(
+  id,
+  role,
+  tenantId = 'tenant-junin-e2e',
+  email = `${role.toLowerCase()}@internal.invalid`,
+) {
+  const access = accessPolicy.getSessionAccessForUser({ role, tenantId, email });
   return {
     id,
     name: `Perfil ${role}`,
-    email: `${role.toLowerCase()}@internal.invalid`,
+    email,
     role,
     tenantId,
     tenant: tenantId ? { name: 'Municipalidad de Junín', shortName: 'Junín' } : null,
@@ -173,6 +179,16 @@ function expectedBottom(access) {
   ];
 }
 
+function expectedWorkspaceActions(access) {
+  const capabilities = access.homeProfile.priorityCapabilities
+    .filter(capability => capability !== 'navigation.workspace' && ACTION_CAPABILITIES.has(capability));
+  if (access.capabilities.includes('navigation.organization-analytics') &&
+      !capabilities.includes('navigation.organization-analytics')) {
+    capabilities.push('navigation.organization-analytics');
+  }
+  return capabilities;
+}
+
 test('safe workspace renders the exact seven role variants at 390 and 1440 without data requests', async t => {
   const users = new Map();
   for (const role of ROLES) users.set(`matrix-${role}`, authoritativeUser(`matrix-${role}`, role));
@@ -222,8 +238,7 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
         };
       });
 
-      const expectedActions = expectedAccess.homeProfile.priorityCapabilities
-        .filter(capability => capability !== 'navigation.workspace' && ACTION_CAPABILITIES.has(capability));
+      const expectedActions = expectedWorkspaceActions(expectedAccess);
       assert.equal(result.variant, VARIANTS[role], `${role}:${viewport.width}:variant`);
       assert.equal(result.role, role, `${role}:${viewport.width}:server role must replace stale browser role`);
       assert.equal(result.busy, 'false');
@@ -253,6 +268,53 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
       await context.close();
     }
   }
+});
+
+test('published high roles discover the aggregate staffing room in navigation and Inicio while low roles do not', async t => {
+  const users = new Map(publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.map((profile, index) => [
+    `published-structure-${index}`,
+    authoritativeUser(
+      `published-structure-${index}`,
+      profile.role,
+      'tenant-junin-e2e',
+      profile.email,
+    ),
+  ]));
+  const requestLog = [];
+  const server = await createServer(users, requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  for (const [index, profile] of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.entries()) {
+    const subject = `published-structure-${index}`;
+    const { context, page } = await workspacePage(browser, baseUrl, subject, { width: 1440, height: 940 });
+    await page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#workspaceViews:not([hidden])');
+
+    const surface = await page.evaluate(() => ({
+      action: document.querySelector('#workspaceActions a[data-capability="navigation.organization-analytics"]')?.getAttribute('href') || null,
+      actionText: document.querySelector('#workspaceActions a[data-capability="navigation.organization-analytics"]')?.textContent || '',
+      nav: document.querySelector('.sidebar a[href="/estructura"]')?.getAttribute('href') || null,
+      navText: document.querySelector('.sidebar a[href="/estructura"]')?.textContent || '',
+    }));
+    const expected = ['TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'].includes(profile.role);
+    assert.equal(surface.nav, expected ? '/estructura' : null, `${profile.email}:navigation`);
+    assert.equal(surface.action, expected ? '/estructura' : null, `${profile.email}:Inicio CTA`);
+    if (expected) {
+      assert.match(surface.navText, /Dotación y ausencias/);
+      assert.match(surface.actionText, /Dotación y ausencias/);
+    }
+    await context.close();
+  }
+
+  assert.equal(
+    requestLog.some(entry => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(entry.path)),
+    false,
+  );
 });
 
 test('tenantless SUPER_ADMIN receives only workspace and help in the authoritative projection', async t => {

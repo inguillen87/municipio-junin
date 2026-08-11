@@ -262,6 +262,37 @@ test('sensitive yearly counts release at k=10 and suppress small or unknown card
   ]);
 });
 
+test('a single protected year forces one complementary suppression', () => {
+  const rows = protectGrhSensitiveCountSeries([
+    { period: '2023', value: 100, participantCount: 20 },
+    { period: '2024', value: 80, participantCount: 10 },
+    { period: '2025', value: 7, participantCount: 7 },
+  ], {
+    audience: 'portable',
+    domain: 'absence',
+    allowSuppressedPeriod: false,
+  });
+
+  assert.equal(rows.filter(row => row.privacyStatus === 'suppressed').length, 2);
+  assert.deepEqual(rows.filter(row => row.privacyStatus === 'suppressed'), [
+    {
+      period: null,
+      value: null,
+      participantCount: null,
+      participantDisplay: '<10',
+      privacyStatus: 'suppressed',
+    },
+    {
+      period: null,
+      value: null,
+      participantCount: null,
+      participantDisplay: '<10',
+      privacyStatus: 'suppressed',
+    },
+  ]);
+  assert.equal(rows[0].period, '2023');
+});
+
 test('the real semantic v2 projection includes privacy-protected movements', async () => {
   const semantic = await realSemantic();
   const projection = buildGrhExecutiveProjection(semantic, {
@@ -340,4 +371,24 @@ test('the executive contract is exact-keyed and rejects privacy bypasses', async
   const brokenIdentity = structuredClone(projection);
   brokenIdentity.workforce.bySector.rows[0].participants -= 1;
   assert.ok(inspectGrhExecutiveContract(brokenIdentity).errors.includes('workforce.bySector.total_identity'));
+
+  const portable = buildGrhExecutiveProjection(await realSemantic(), {
+    audience: 'portable',
+    rankingLimit: 10,
+  });
+  const firstSuppressedIndex = portable.absence.series.findIndex(row => row.privacyStatus === 'suppressed');
+  assert.notEqual(firstSuppressedIndex, -1);
+
+  const leakedPortablePeriod = structuredClone(portable);
+  leakedPortablePeriod.absence.series[firstSuppressedIndex].period = '1991';
+  assert.ok(inspectGrhExecutiveContract(leakedPortablePeriod).errors.includes(
+    'ausencia.series.portable_suppressed_period',
+  ));
+
+  const reorderedPortable = structuredClone(portable);
+  const [suppressedRow] = reorderedPortable.absence.series.splice(firstSuppressedIndex, 1);
+  reorderedPortable.absence.series.unshift(suppressedRow);
+  assert.ok(inspectGrhExecutiveContract(reorderedPortable).errors.includes(
+    'ausencia.series.portable_order',
+  ));
 });

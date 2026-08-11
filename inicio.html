@@ -563,6 +563,7 @@
         'navigation.reports': Object.freeze({ href: 'reportes.html', label: 'Reportes', copy: 'Salidas agregadas con período, fuente y controles explícitos.', tag: 'Evidencia' }),
         'navigation.hacienda': Object.freeze({ href: 'hacienda.html', label: 'Hacienda y nómina', copy: 'Evolución del cálculo, componentes y conciliación mensual en ARS.', tag: 'Control' }),
         'navigation.grh-executive': Object.freeze({ href: '/ejecutivo', label: 'Resumen ejecutivo GRH', copy: 'Personal, nómina, sectores y alertas del último corte GRH.', tag: 'Decisión' }),
+        'navigation.organization-analytics': Object.freeze({ href: '/estructura', label: 'Dotación y ausencias', copy: 'Sala de situación agregada para comparar áreas, períodos históricos y señales de revisión.', tag: 'Gestión' }),
         'navigation.territory': Object.freeze({ href: '/territorio', label: 'Centro territorial', copy: 'Límite y localidades oficiales.', tag: 'Territorio' }),
         'navigation.data-quality': Object.freeze({ href: '/calidad', label: 'Calidad de datos', copy: 'Inventario, cuarentena, procedencia y riesgos del snapshot.', tag: 'Confianza' }),
         'navigation.rrhh': Object.freeze({ href: 'rrhh.html', label: 'Gestión de personas', copy: 'Indicadores, buscador autorizado, cargos y licencias del GRH.', tag: 'Gestión' }),
@@ -590,7 +591,10 @@
       }
       function orderedActionCapabilities(projection) {
         var ordered = [];
-        projection.homeProfile.priorityCapabilities.forEach(function(capability) {
+        var candidates = projection.homeProfile.priorityCapabilities.concat([
+          'navigation.organization-analytics'
+        ]);
+        candidates.forEach(function(capability) {
           if (capability !== 'navigation.workspace' && ACTIONS[capability] &&
               projection.capabilities.indexOf(capability) !== -1 && ordered.indexOf(capability) === -1) {
             ordered.push(capability);

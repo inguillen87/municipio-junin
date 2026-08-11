@@ -138,6 +138,108 @@ function artifactFixture() {
   };
 }
 
+function semanticFixture(artifact = artifactFixture()) {
+  return {
+    source: {
+      file: artifact.source.file,
+      sha256: artifact.source.sha256,
+      snapshot_as_of: artifact.source.snapshot_as_of,
+      canonical_system: artifact.source.canonical_system,
+      compressed_size_bytes: artifact.source.compressed_size_bytes,
+    },
+    workforce: {
+      matched_legajo_participants: 68,
+      legajo_match_rate_pct: 97.1429,
+    },
+  };
+}
+
+function executiveRanking(rows, totalParticipants = 70) {
+  return {
+    threshold: 10,
+    totalParticipants,
+    participantDisplay: String(totalParticipants),
+    privacyStatus: 'released',
+    rows: rows.map(([companyCode, sourceCode, label, participants]) => ({
+      companyCode,
+      sourceCode,
+      label,
+      participants,
+      participantDisplay: String(participants),
+      sharePct: Number(((participants / totalParticipants) * 100).toFixed(4)),
+      privacyStatus: 'released',
+    })),
+  };
+}
+
+function executiveProjectionFixture(artifact = artifactFixture()) {
+  return {
+    source: {
+      canonicalSystem: artifact.source.canonical_system,
+      sourceFile: artifact.source.file,
+      sourceSha256: artifact.source.sha256,
+      snapshotAsOf: artifact.source.snapshot_as_of,
+    },
+    workforce: {
+      definition: 'Participantes distintos en calculo valido; no dotacion contractual activa.',
+      referencePeriod: '2026-07',
+      payrollParticipants: 70,
+      bySector: executiveRanking([
+        [101, 1, 'Administrativo', 30],
+        [101, 2, 'Servicios', 25],
+        [101, 3, 'Operativo', 15],
+      ]),
+      byCostCenter: executiveRanking([
+        [101, 10, 'Servicios publicos', 40],
+        [101, 20, 'Gobierno', 20],
+        [101, 30, 'Cultura', 10],
+      ]),
+      byAgreement: executiveRanking([
+        [101, 100, 'Planta permanente', 50],
+        [101, 200, 'Personal temporario', 20],
+      ]),
+    },
+    absence: {
+      sourceTable: 'ausencia',
+      metric: 'valid_rows_by_year',
+      series: [
+        { period: '2024', value: 20, participantCount: 10, participantDisplay: '10', privacyStatus: 'released' },
+        { period: '2025', value: 30, participantCount: 15, participantDisplay: '15', privacyStatus: 'released' },
+        { period: '2026', value: null, participantCount: null, participantDisplay: '<10', privacyStatus: 'suppressed' },
+      ],
+    },
+    movements: {
+      sourceTable: 'legamov',
+      metric: 'valid_rows_by_year',
+      series: [
+        { period: '2024', value: 140, participantCount: 20, participantDisplay: '20', privacyStatus: 'released' },
+        { period: '2025', value: 180, participantCount: 25, participantDisplay: '25', privacyStatus: 'released' },
+        { period: '2026', value: 210, participantCount: 30, participantDisplay: '30', privacyStatus: 'released' },
+      ],
+    },
+  };
+}
+
+function bundleFixture(artifact = artifactFixture()) {
+  return {
+    profile: {
+      source: artifact.source.file,
+      sha256: artifact.source.sha256,
+      snapshot_as_of: artifact.source.snapshot_as_of,
+    },
+    semantic: semanticFixture(artifact),
+  };
+}
+
+function buildProjectionFixture(artifact = artifactFixture(), semantic = semanticFixture(artifact)) {
+  return buildGrhOrganizationAnalyticsProjection(artifact, semantic, {
+    buildExecutiveProjectionImpl: (_semantic, options) => {
+      assert.deepEqual(options, { audience: 'portable' });
+      return executiveProjectionFixture(artifact);
+    },
+  });
+}
+
 function matrixAxisPrivacyFixture({ smallIntersections = [] } = {}) {
   const organizations = Array.from({ length: 7 }, (_, index) => ({
     code: index + 1,
@@ -264,7 +366,7 @@ function protectedCountByAxis(matrix, axis, code) {
 test('projection is exact, visualizable and removes every nominal field', () => {
   const artifact = artifactFixture();
   assert.equal(inspectGrhDirectoryArtifact(artifact).ok, true);
-  const projection = buildGrhOrganizationAnalyticsProjection(artifact);
+  const projection = buildProjectionFixture(artifact);
   assert.equal(inspectGrhOrganizationAnalyticsContract(projection).ok, true);
   assert.equal(projection.schemaVersion, GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION);
   assert.deepEqual(projection.coverage, {
@@ -280,19 +382,39 @@ test('projection is exact, visualizable and removes every nominal field', () => 
   assert.equal(projection.organizations.protectedCategoryCount, 2);
   assert.equal(projection.organizations.rows.reduce((sum, row) => sum + row.registeredRecords, 0), 70);
   assert.equal(projection.sectors.rows.reduce((sum, row) => sum + row.registeredRecords, 0), 70);
+  assert.deepEqual(Object.keys(projection.payrollCohort), [
+    'definition',
+    'referencePeriod',
+    'payrollParticipants',
+    'bySector',
+    'byCostCenter',
+    'byAgreement',
+  ]);
+  assert.equal(projection.payrollCohort.payrollParticipants, 70);
+  assert.deepEqual(Object.keys(projection.activity), ['absence', 'movements']);
+  assert.equal(projection.activity.absence.sourceTable, 'ausencia');
+  assert.equal(projection.activity.movements.sourceTable, 'legamov');
+  assert.equal(
+    projection.activity.absence.series.filter(row => row.privacyStatus === 'suppressed').length,
+    2,
+  );
+  assert.equal(projection.activity.absence.series
+    .filter(row => row.privacyStatus === 'suppressed')
+    .every(row => row.period === null && row.participantDisplay === 'Protegido'), true);
   assert.deepEqual(projection.actions, GRH_ORGANIZATION_ANALYTICS_ACTIONS);
   assert.deepEqual(projection.limits, GRH_ORGANIZATION_ANALYTICS_LIMITS);
   assert.equal(Object.isFrozen(projection), true);
   assert.equal(Object.isFrozen(projection.matrix.cells), true);
 
   const serialized = JSON.stringify(projection);
-  assert.doesNotMatch(serialized, /Persona privada|"legajo"|"display_name"|"displayName"|"company_code"|"companyCode"/i);
+  assert.doesNotMatch(serialized, /Persona privada|"legajo"|"display_name"|"displayName"|"company_code"/i);
+  assert.doesNotMatch(serialized, /"compensation"|"amounts"|"leave"|"licencia"/i);
   assert.doesNotMatch(serialized, /ORGANIZACIÓN PROTEGIDA [CE]/u);
   assert.match(serialized, new RegExp(GRH_ORGANIZATION_ANALYTICS_PROTECTED_LABEL));
 });
 
 test('absence metrics use distinct affected records and only the canonical ranking publishes them', () => {
-  const projection = buildGrhOrganizationAnalyticsProjection(artifactFixture());
+  const projection = buildProjectionFixture();
   const organizationB = projection.organizations.rows.find(row => row.code === 2);
   assert.equal(organizationB.registeredRecords, 20);
   assert.equal(organizationB.absencePrivacyStatus, 'protected');
@@ -326,7 +448,7 @@ test('absence metrics use distinct affected records and only the canonical ranki
 });
 
 test('cross-view differencing cannot recover a below-k organization absence count', () => {
-  const projection = buildGrhOrganizationAnalyticsProjection(crossViewDifferencingFixture());
+  const projection = buildProjectionFixture(crossViewDifferencingFixture());
   assert.equal(inspectGrhOrganizationAnalyticsContract(projection).ok, true);
   for (const dimension of [projection.organizations, projection.sectors]) {
     assert.equal(dimension.rows.every(row => (
@@ -361,7 +483,7 @@ test('cross-view differencing cannot recover a below-k organization absence coun
 });
 
 test('matrix emits the full cross product and complementary suppression leaves no single unknown margin', () => {
-  const projection = buildGrhOrganizationAnalyticsProjection(artifactFixture());
+  const projection = buildProjectionFixture();
   const { matrix } = projection;
   assert.equal(matrix.cells.length, matrix.rows.length * matrix.columns.length);
   assert.equal(matrix.cells.some(cell => cell.privacyStatus === 'not_observed' && cell.registeredRecords === 0), true);
@@ -396,8 +518,8 @@ test('matrix emits the full cross product and complementary suppression leaves n
 });
 
 test('matrix axes and released cells do not reveal changes among protected intersections', () => {
-  const first = buildGrhOrganizationAnalyticsProjection(matrixAxisPrivacyFixture());
-  const second = buildGrhOrganizationAnalyticsProjection(matrixAxisPrivacyFixture({
+  const first = buildProjectionFixture(matrixAxisPrivacyFixture());
+  const second = buildProjectionFixture(matrixAxisPrivacyFixture({
     smallIntersections: [
       { organizationCode: 1, sectorCode: 20, count: 1 },
       { organizationCode: 1, sectorCode: 30, count: 2 },
@@ -423,7 +545,7 @@ test('matrix axes and released cells do not reveal changes among protected inter
 });
 
 test('contract rejects shape drift, PII keys, bad denominators and protected absence disclosure', () => {
-  const projection = buildGrhOrganizationAnalyticsProjection(artifactFixture());
+  const projection = buildProjectionFixture();
 
   const pii = structuredClone(projection);
   pii.organizations.rows[0].legajo = 1234;
@@ -443,6 +565,81 @@ test('contract rejects shape drift, PII keys, bad denominators and protected abs
   const quality = structuredClone(projection);
   quality.dataQuality.unlinkedValidAbsenceEvents += 1;
   assert.equal(inspectGrhOrganizationAnalyticsContract(quality).ok, false);
+
+  const cohortExtraKey = structuredClone(projection);
+  cohortExtraKey.payrollCohort.bySector.rows[0].rawLabel = 'no permitido';
+  assert.equal(inspectGrhOrganizationAnalyticsContract(cohortExtraKey).ok, false);
+
+  const cohortSmallCell = structuredClone(projection);
+  cohortSmallCell.payrollCohort.bySector.rows[0].participants = 9;
+  cohortSmallCell.payrollCohort.bySector.rows[0].participantDisplay = '9';
+  assert.equal(inspectGrhOrganizationAnalyticsContract(cohortSmallCell).ok, false);
+
+  const cohortTotalDrift = structuredClone(projection);
+  cohortTotalDrift.payrollCohort.byCostCenter.rows[0].participants -= 1;
+  assert.equal(inspectGrhOrganizationAnalyticsContract(cohortTotalDrift).ok, false);
+
+  const cohortMatchDisclosure = structuredClone(projection);
+  cohortMatchDisclosure.payrollCohort.matchedLegajoParticipants = 68;
+  assert.equal(inspectGrhOrganizationAnalyticsContract(cohortMatchDisclosure).ok, false);
+
+  const sectorDifferenceDisclosure = structuredClone(projection);
+  const sectorRow = sectorDifferenceDisclosure.sectors.rows.find(row => row.code !== null);
+  const firstPayrollRow = sectorDifferenceDisclosure.payrollCohort.bySector.rows[0];
+  const secondPayrollRow = sectorDifferenceDisclosure.payrollCohort.bySector.rows[1];
+  const previousFirstParticipants = firstPayrollRow.participants;
+  const disclosedParticipants = sectorRow.registeredRecords - 1;
+  const shiftedParticipants = previousFirstParticipants - disclosedParticipants;
+  firstPayrollRow.sourceCode = sectorRow.code;
+  firstPayrollRow.participants = disclosedParticipants;
+  firstPayrollRow.participantDisplay = String(disclosedParticipants);
+  firstPayrollRow.sharePct = Number((disclosedParticipants / 70 * 100).toFixed(4));
+  secondPayrollRow.participants += shiftedParticipants;
+  secondPayrollRow.participantDisplay = String(secondPayrollRow.participants);
+  secondPayrollRow.sharePct = Number((secondPayrollRow.participants / 70 * 100).toFixed(4));
+  assert.equal(inspectGrhOrganizationAnalyticsContract(sectorDifferenceDisclosure).ok, false);
+
+  const activitySmallCell = structuredClone(projection);
+  activitySmallCell.activity.movements.series[0].participantCount = 9;
+  activitySmallCell.activity.movements.series[0].participantDisplay = '9';
+  assert.equal(inspectGrhOrganizationAnalyticsContract(activitySmallCell).ok, false);
+
+  const singleSuppressedPeriod = structuredClone(projection);
+  const suppressedRows = singleSuppressedPeriod.activity.absence.series
+    .filter(row => row.privacyStatus === 'suppressed');
+  suppressedRows[0].period = '2024';
+  suppressedRows[0].value = 20;
+  suppressedRows[0].participantCount = 10;
+  suppressedRows[0].participantDisplay = '10';
+  suppressedRows[0].privacyStatus = 'released';
+  assert.equal(inspectGrhOrganizationAnalyticsContract(singleSuppressedPeriod).ok, false);
+
+  const protectedPeriodDisclosure = structuredClone(projection);
+  protectedPeriodDisclosure.activity.absence.series
+    .find(row => row.privacyStatus === 'suppressed').period = '2026';
+  assert.equal(inspectGrhOrganizationAnalyticsContract(protectedPeriodDisclosure).ok, false);
+
+  const amountReinjection = structuredClone(projection);
+  amountReinjection.activity.absence.series[0].amounts = { grossCents: 1 };
+  assert.equal(inspectGrhOrganizationAnalyticsContract(amountReinjection).ok, false);
+
+  const leaveReinjection = structuredClone(projection);
+  leaveReinjection.activity.leave = projection.activity.absence;
+  assert.equal(inspectGrhOrganizationAnalyticsContract(leaveReinjection).ok, false);
+
+  const sourceDrift = structuredClone(projection);
+  sourceDrift.source.sourceSha256 = 'b'.repeat(64);
+  assert.equal(inspectGrhOrganizationAnalyticsContract(sourceDrift, {
+    expectedSourceSha256: SOURCE_SHA,
+    expectedSnapshotAsOf: '2026-08-06',
+  }).ok, false);
+
+  const snapshotDrift = structuredClone(projection);
+  snapshotDrift.source.snapshotAsOf = '2026-08-05';
+  assert.equal(inspectGrhOrganizationAnalyticsContract(snapshotDrift, {
+    expectedSourceSha256: SOURCE_SHA,
+    expectedSnapshotAsOf: '2026-08-06',
+  }).ok, false);
 });
 
 test('encrypted snapshot helper derives the projection source without a plaintext runtime fallback', async () => {
@@ -488,6 +685,13 @@ test('endpoint is GET-only, tenant-bound, capability-bound, no-store and exact-c
       calls.push(['read', tenantId]);
       return artifact;
     },
+    readArtifactBundleImpl: async tenantId => {
+      calls.push(['bundle', tenantId]);
+      return bundleFixture(artifact);
+    },
+    inspectProfileImpl: () => ({ ok: true, errors: [] }),
+    inspectSemanticImpl: () => ({ ok: true, errors: [] }),
+    buildProjectionImpl: (directory, semantic) => buildProjectionFixture(directory, semantic),
     environment: {
       GRH_SOURCE_SHA256: SOURCE_SHA,
       GRH_DIRECTORY_SNAPSHOT_KEY_V1: 'unused-by-injected-reader',
@@ -506,6 +710,7 @@ test('endpoint is GET-only, tenant-bound, capability-bound, no-store and exact-c
     ['capability', GRH_ORGANIZATION_ANALYTICS_RESOURCE, 'read'],
     ['tenant', 'tenant-junin', 'GRH_TENANT_ID'],
     ['read', 'tenant-junin'],
+    ['bundle', 'tenant-junin'],
   ]);
 
   let authCalled = false;
@@ -522,17 +727,20 @@ test('endpoint is GET-only, tenant-bound, capability-bound, no-store and exact-c
 test('endpoint fails closed before reading on denied identity and on every invalid source/contract state', async () => {
   const artifact = artifactFixture();
   let reads = 0;
+  let bundleReads = 0;
   const denied = createGrhOrganizationAnalyticsHandler({
     requireCapabilityImpl: async (_req, res) => {
       res.status(403).json({ code: 'ROUTE_PERMISSION_DENIED' });
       return null;
     },
     readSnapshotArtifactImpl: async () => { reads += 1; return artifact; },
+    readArtifactBundleImpl: async () => { bundleReads += 1; return bundleFixture(artifact); },
   });
   const deniedResponse = responseRecorder();
   await denied({ method: 'GET', headers: {} }, deniedResponse);
   assert.equal(deniedResponse.statusCode, 403);
   assert.equal(reads, 0);
+  assert.equal(bundleReads, 0);
 
   for (const scenario of [
     {
@@ -550,12 +758,48 @@ test('endpoint fails closed before reading on denied identity and on every inval
       environment: { GRH_SOURCE_SHA256: SOURCE_SHA },
       reader: async () => { throw new Error('private failure detail'); },
     },
+    {
+      name: 'semantic sha mismatch',
+      environment: { GRH_SOURCE_SHA256: SOURCE_SHA },
+      reader: async () => artifact,
+      bundleReader: async () => {
+        const bundle = bundleFixture(artifact);
+        bundle.semantic.source.sha256 = 'b'.repeat(64);
+        return bundle;
+      },
+    },
+    {
+      name: 'semantic snapshot mismatch',
+      environment: { GRH_SOURCE_SHA256: SOURCE_SHA },
+      reader: async () => artifact,
+      bundleReader: async () => {
+        const bundle = bundleFixture(artifact);
+        bundle.semantic.source.snapshot_as_of = '2026-08-05';
+        return bundle;
+      },
+    },
+    {
+      name: 'semantic contract invalid',
+      environment: { GRH_SOURCE_SHA256: SOURCE_SHA },
+      reader: async () => artifact,
+      inspectSemantic: () => ({ ok: false, errors: ['semantic.invalid'] }),
+    },
+    {
+      name: 'profile contract invalid',
+      environment: { GRH_SOURCE_SHA256: SOURCE_SHA },
+      reader: async () => artifact,
+      inspectProfile: () => ({ ok: false, errors: ['profile.invalid'] }),
+    },
   ]) {
     await withQuietErrors(async () => {
       const handler = createGrhOrganizationAnalyticsHandler({
         requireCapabilityImpl: async () => ({ id: 'pilot', role: 'INTENDENTE', tenantId: 'tenant-junin' }),
         requireDatasetTenantImpl: () => true,
         readSnapshotArtifactImpl: scenario.reader,
+        readArtifactBundleImpl: scenario.bundleReader || (async () => bundleFixture(artifact)),
+        inspectProfileImpl: scenario.inspectProfile || (() => ({ ok: true, errors: [] })),
+        inspectSemanticImpl: scenario.inspectSemantic || (() => ({ ok: true, errors: [] })),
+        buildProjectionImpl: (directory, semantic) => buildProjectionFixture(directory, semantic),
         environment: scenario.environment,
       });
       const response = responseRecorder();
@@ -574,7 +818,11 @@ test('current private snapshot reconciles the verified aggregate baseline withou
   skip: !existsSync(PRIVATE_ARTIFACT_PATH),
 }, async () => {
   const artifact = JSON.parse(await readFile(PRIVATE_ARTIFACT_PATH, 'utf8'));
-  const projection = buildGrhOrganizationAnalyticsProjection(artifact);
+  const semantic = JSON.parse(await readFile(
+    new URL('../api/_data/grh-semantic.json', import.meta.url),
+    'utf8',
+  ));
+  const projection = buildGrhOrganizationAnalyticsProjection(artifact, semantic);
   assert.equal(inspectGrhOrganizationAnalyticsContract(projection).ok, true);
   assert.equal(projection.coverage.registeredRecords, 2449);
   assert.equal(projection.coverage.withOrganization.records, 1735);
@@ -608,5 +856,6 @@ test('current private snapshot reconciles the verified aggregate baseline withou
     assert.notEqual(protectedCountByAxis(projection.matrix, 'sectorCode', column.code), 1);
   }
   const serialized = JSON.stringify(projection);
-  assert.doesNotMatch(serialized, /"display_name"|"displayName"|"legajo"|"company_code"|"companyCode"/u);
+  assert.doesNotMatch(serialized, /"display_name"|"displayName"|"legajo"|"company_code"/u);
+  assert.doesNotMatch(serialized, /"compensation"|"amounts"|"leave"|"licencia"/u);
 });

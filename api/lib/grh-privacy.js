@@ -300,7 +300,7 @@ export function protectGrhSensitiveCountSeries(rows, {
   }
   const periodCounts = uniqueSafePeriods(rows, YEAR_PERIOD);
 
-  return deepFreeze(rows.map(row => {
+  const protectedRows = rows.map(row => {
     const periodIsSafe = safePeriod(row?.period, YEAR_PERIOD) && periodCounts.get(row.period) === 1;
     const participantCount = row?.participantCount;
     const releasable = periodIsSafe && nonNegativeInteger(participantCount) &&
@@ -322,5 +322,31 @@ export function protectGrhSensitiveCountSeries(rows, {
       participantDisplay: `<${threshold}`,
       privacyStatus: 'suppressed',
     };
-  }));
+  });
+
+  const suppressedRows = protectedRows.filter(row => row.privacyStatus === 'suppressed');
+  if (suppressedRows.length === 1) {
+    const companion = protectedRows
+      .filter(row => row.privacyStatus === 'released')
+      .sort((left, right) => (
+        left.participantCount - right.participantCount ||
+        String(left.period).localeCompare(String(right.period))
+      ))[0];
+    if (!companion) {
+      throw privacyError('La serie sensible GRH no admite supresion complementaria segura.');
+    }
+    companion.period = allowSuppressedPeriod ? companion.period : null;
+    companion.value = null;
+    companion.participantCount = null;
+    companion.participantDisplay = `<${threshold}`;
+    companion.privacyStatus = 'suppressed';
+  }
+
+  const outputRows = allowSuppressedPeriod
+    ? protectedRows
+    : [
+        ...protectedRows.filter(row => row.privacyStatus === 'released'),
+        ...protectedRows.filter(row => row.privacyStatus === 'suppressed'),
+      ];
+  return deepFreeze(outputRows);
 }

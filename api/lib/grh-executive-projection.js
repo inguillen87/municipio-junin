@@ -61,7 +61,7 @@ function sensitiveDomainProjection(domain, audience, domainName) {
     ), {
       audience,
       domain: domainName,
-      allowSuppressedPeriod: true,
+      allowSuppressedPeriod: audience === 'interactive',
     }),
   };
 }

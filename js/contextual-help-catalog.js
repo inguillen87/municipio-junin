@@ -1,5 +1,5 @@
 const CONTRACT = 'muniguia-contextual-v1';
-const ACCESS_POLICY_VERSION = '2026-08-11.1';
+const ACCESS_POLICY_VERSION = '2026-08-11.2';
 const MOUNT_CAPABILITY = 'navigation.help';
 
 const KNOWN_CAPABILITIES = Object.freeze([
@@ -140,14 +140,14 @@ const PAGES = deepFreeze({
   organizationAnalytics: {
     href: 'estructura.html',
     aliases: ['/estructura', '/estructura.html'],
-    label: 'Estructura y ausencias',
-    objective: 'Explorá la estructura organizativa observada y priorizá la revisión de eventos históricos de ausencia con evidencia agregada.',
+    label: 'Dotación y ausencias',
+    objective: 'Usá la sala de situación para comparar la dotación observada y orientar revisiones agregadas de ausencias.',
     requiredCapability: 'navigation.organization-analytics',
     manualAnchor: 'interpretacion',
     steps: [
-      { id: 'confirm-organization-snapshot', selector: '#organizationSnapshotStatus', title: 'Confirmá el corte', copy: 'Verificá fuente, período y cobertura antes de interpretar una distribución organizativa o un volumen histórico agregado de eventos de ausencia.' },
-      { id: 'explore-organization', selector: '#organizationExplorer', title: 'Explorá la estructura', copy: 'Recorré niveles y áreas observadas sin presentar la matriz analítica como un organigrama oficial del municipio.' },
-      { id: 'review-absence-risk', selector: '#absenceRiskPanel', title: 'Priorizá la revisión', copy: 'Usá el ranking histórico para orientar una revisión agregada; no atribuyas causas ni decisiones individuales desde esta señal.' },
+      { id: 'confirm-organization-snapshot', selector: '#organizationSnapshotStatus', title: 'Confirmá fuente y corte', copy: 'Revisá la fuente, la fecha del snapshot y la cobertura antes de interpretar las comparaciones.' },
+      { id: 'explore-organization', selector: '#organizationExplorer', title: 'Compará el mapa de calor', copy: 'Contrastá niveles y áreas en el mapa de calor con una misma base agregada.' },
+      { id: 'review-absence-risk', selector: '#absenceRiskPanel', title: 'Priorizá una revisión', copy: 'Usá el ranking y las series históricas para elegir qué señal revisar en los tableros vinculados.' },
     ],
   },
   territory: {

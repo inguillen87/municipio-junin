@@ -1,4 +1,5 @@
 import { inspectGrhDirectoryArtifact } from './grh-directory-contract.js';
+import { buildGrhExecutiveProjection } from './grh-executive-projection.js';
 import {
   GRH_ORGANIZATION_ANALYTICS_ACTIONS,
   GRH_ORGANIZATION_ANALYTICS_LIMITS,
@@ -211,6 +212,100 @@ function buildDimension(records, dimension, limit = DEFAULT_RANKING_LIMIT) {
     releasedCategoryCount: visible.length,
     protectedCategoryCount: protectedGroups.length,
     rows,
+  };
+}
+
+function protectSectorDimensionAgainstPayroll(sectors, payrollRanking) {
+  const payrollByCode = new Map();
+  for (const row of payrollRanking?.rows || []) {
+    if (row?.privacyStatus !== 'released' || row?.sourceCode === null ||
+        !nonNegativeInteger(row?.participants)) continue;
+    const code = String(row.sourceCode);
+    payrollByCode.set(code, (payrollByCode.get(code) || 0) + row.participants);
+  }
+
+  const releasedRows = sectors.rows.filter(row => row.privacyStatus === 'released');
+  const existingProtected = sectors.rows.find(row => row.code === null) || null;
+  const protectedCodes = new Set();
+  for (const row of releasedRows) {
+    const participants = payrollByCode.get(String(row.code));
+    if (participants === undefined) continue;
+    const complement = row.registeredRecords - participants;
+    if (complement < 0) {
+      throw analyticsError('GRH_ORGANIZATION_ANALYTICS_SECTOR_COHORT_MISMATCH', [String(row.code)]);
+    }
+    if (complement > 0 && complement < GRH_ORGANIZATION_ANALYTICS_THRESHOLD) {
+      protectedCodes.add(row.code);
+    }
+  }
+  if (protectedCodes.size === 0) return sectors;
+
+  if (!existingProtected && protectedCodes.size === 1) {
+    const companion = releasedRows
+      .filter(row => !protectedCodes.has(row.code))
+      .sort((left, right) => (
+        left.registeredRecords - right.registeredRecords ||
+        String(left.code).localeCompare(String(right.code), 'en', { numeric: true })
+      ))[0];
+    if (!companion) {
+      throw analyticsError('GRH_ORGANIZATION_ANALYTICS_SECTOR_COMPLEMENT_FAILED');
+    }
+    protectedCodes.add(companion.code);
+  }
+
+  const moved = releasedRows.filter(row => protectedCodes.has(row.code));
+  const kept = releasedRows.filter(row => !protectedCodes.has(row.code));
+  const protectedRecords = (existingProtected?.registeredRecords || 0) +
+    moved.reduce((total, row) => total + row.registeredRecords, 0);
+  if (protectedRecords < GRH_ORGANIZATION_ANALYTICS_THRESHOLD) {
+    throw analyticsError('GRH_ORGANIZATION_ANALYTICS_SECTOR_COMPLEMENT_FAILED');
+  }
+  const protectedRow = {
+    code: null,
+    label: GRH_ORGANIZATION_ANALYTICS_PROTECTED_LABEL,
+    registeredRecords: protectedRecords,
+    sharePct: sharePct(protectedRecords, sectors.denominatorRecords),
+    recordsWithAbsence: null,
+    absenceEvents: null,
+    eventsPerRegisteredRecord: null,
+    absencePrivacyStatus: ABSENCE_PRIVACY_PROTECTED,
+    privacyStatus: 'protected_aggregate',
+  };
+  return {
+    ...sectors,
+    releasedCategoryCount: kept.length,
+    protectedCategoryCount: sectors.protectedCategoryCount + moved.length,
+    rows: [...kept, protectedRow],
+  };
+}
+
+function protectActivityDomain(domain) {
+  if (!Array.isArray(domain?.series) || domain.series.length === 0) {
+    throw analyticsError('GRH_ORGANIZATION_ANALYTICS_ACTIVITY_INVALID');
+  }
+  const rows = domain.series.map(row => ({ ...row }));
+  const suppressed = rows.filter(row => row.privacyStatus === 'suppressed');
+  if (suppressed.length === 1) {
+    const companion = rows
+      .filter(row => row.privacyStatus === 'released')
+      .sort((left, right) => (
+        left.participantCount - right.participantCount || String(left.period).localeCompare(String(right.period))
+      ))[0];
+    if (!companion) {
+      throw analyticsError('GRH_ORGANIZATION_ANALYTICS_ACTIVITY_COMPLEMENT_FAILED');
+    }
+    companion.privacyStatus = 'suppressed';
+  }
+  return {
+    sourceTable: domain.sourceTable,
+    metric: domain.metric,
+    series: rows.map(row => row.privacyStatus === 'suppressed' ? {
+      period: null,
+      value: null,
+      participantCount: null,
+      participantDisplay: 'Protegido',
+      privacyStatus: 'suppressed',
+    } : row),
   };
 }
 
@@ -489,7 +584,26 @@ function buildCoverage(records) {
   };
 }
 
-export function buildGrhOrganizationAnalyticsProjection(artifact) {
+function assertSourceIdentity(artifact, semantic, executive) {
+  const semanticSource = semantic?.source;
+  const executiveSource = executive?.source;
+  if (
+    semanticSource?.file !== artifact.source.file ||
+    semanticSource?.sha256 !== artifact.source.sha256 ||
+    semanticSource?.snapshot_as_of !== artifact.source.snapshot_as_of ||
+    semanticSource?.canonical_system !== artifact.source.canonical_system ||
+    executiveSource?.sourceFile !== artifact.source.file ||
+    executiveSource?.sourceSha256 !== artifact.source.sha256 ||
+    executiveSource?.snapshotAsOf !== artifact.source.snapshot_as_of ||
+    executiveSource?.canonicalSystem !== artifact.source.canonical_system
+  ) {
+    throw analyticsError('GRH_ORGANIZATION_ANALYTICS_SOURCE_IDENTITY_MISMATCH');
+  }
+}
+
+export function buildGrhOrganizationAnalyticsProjection(artifact, semantic, {
+  buildExecutiveProjectionImpl = buildGrhExecutiveProjection,
+} = {}) {
   const artifactInspection = inspectGrhDirectoryArtifact(artifact);
   if (!artifactInspection.ok) {
     throw analyticsError('GRH_ORGANIZATION_ANALYTICS_SOURCE_INVALID', artifactInspection.errors);
@@ -498,9 +612,14 @@ export function buildGrhOrganizationAnalyticsProjection(artifact) {
   if (records.length < GRH_ORGANIZATION_ANALYTICS_THRESHOLD) {
     throw analyticsError('GRH_ORGANIZATION_ANALYTICS_SOURCE_PROTECTED');
   }
+  const executive = buildExecutiveProjectionImpl(semantic, { audience: 'portable' });
+  assertSourceIdentity(artifact, semantic, executive);
   const coverage = buildCoverage(records);
   const organizations = buildDimension(records, 'organization');
-  const sectors = buildDimension(records, 'sector');
+  const sectors = protectSectorDimensionAgainstPayroll(
+    buildDimension(records, 'sector'),
+    executive.workforce.bySector,
+  );
   const projection = {
     schemaVersion: GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION,
     source: {
@@ -521,11 +640,26 @@ export function buildGrhOrganizationAnalyticsProjection(artifact) {
     sectors,
     matrix: buildMatrix(records, organizations, sectors),
     absenceRanking: buildAbsenceRanking(records),
+    payrollCohort: {
+      definition: executive.workforce.definition,
+      referencePeriod: executive.workforce.referencePeriod,
+      payrollParticipants: executive.workforce.payrollParticipants,
+      bySector: executive.workforce.bySector,
+      byCostCenter: executive.workforce.byCostCenter,
+      byAgreement: executive.workforce.byAgreement,
+    },
+    activity: {
+      absence: protectActivityDomain(executive.absence),
+      movements: protectActivityDomain(executive.movements),
+    },
     dataQuality: buildDataQuality(artifact, records, coverage),
     actions: GRH_ORGANIZATION_ANALYTICS_ACTIONS.map(action => ({ ...action })),
     limits: [...GRH_ORGANIZATION_ANALYTICS_LIMITS],
   };
-  const inspection = inspectGrhOrganizationAnalyticsContract(projection);
+  const inspection = inspectGrhOrganizationAnalyticsContract(projection, {
+    expectedSourceSha256: semantic.source.sha256,
+    expectedSnapshotAsOf: semantic.source.snapshot_as_of,
+  });
   if (!inspection.ok) {
     throw analyticsError('GRH_ORGANIZATION_ANALYTICS_PROJECTION_INVALID', inspection.errors);
   }

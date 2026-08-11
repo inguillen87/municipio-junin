@@ -318,7 +318,7 @@ test('documentation 1.10.0 records the exact role workspace without claiming acc
     'INSPECTOR',
     'DEMO',
   ];
-  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.1');
+  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.2');
   assert.deepEqual(Object.keys(accessPolicy.ROLE_HOME_PROFILE).sort(), expectedRoles.sort());
   assert.ok(expectedRoles.every(role => accessPolicy.ROLE_CAPABILITIES[role].includes('navigation.workspace')));
 
@@ -385,7 +385,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     return counts;
   }, {});
   assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.1');
-  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.1');
+  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.2');
   assert.equal(routePolicy.PROTECTED_ROUTES.length, 82);
   assert.deepEqual(runtimeCounts, { serverless: 40, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 29);
@@ -393,7 +393,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 49);
   assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 9);
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v1');
-  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-organization-analytics'], 'grh-organization-analytics-v1');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-organization-analytics'], 'grh-organization-analytics-v2');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/municipal-territory'], 'municipal-territory-v1');
 

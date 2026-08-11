@@ -69,7 +69,7 @@ var MUNI_NAV_ASSET_BASE = (function() {
   }
 })();
 
-var CLIENT_ACCESS_POLICY_VERSION = '2026-08-11.1';
+var CLIENT_ACCESS_POLICY_VERSION = '2026-08-11.2';
 var ACCESS_NOTICE_KEY = 'mjunin_access_notice';
 var KNOWN_ROLES = ['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO'];
 var KNOWN_CAPABILITIES = [
@@ -302,7 +302,7 @@ var NAV_ITEMS = [
   { id:'reportes',      href:'reportes.html',       icon:'doc',    label:'Reportes',              section:'PRINCIPAL',     capability:'navigation.reports' },
   { id:'hacienda',      href:'hacienda.html',       icon:'bank',   label:'Hacienda y nómina',     section:'GESTIÓN',       capability:'navigation.hacienda' },
   { id:'grh-ejecutivo', href:'/ejecutivo',          icon:'people', label:'Resumen ejecutivo GRH', section:'GESTIÓN',       capability:'navigation.grh-executive' },
-  { id:'estructura',    href:'/estructura',          icon:'people', label:'Estructura y ausencias', section:'GESTIÓN',       capability:'navigation.organization-analytics' },
+  { id:'estructura',    href:'/estructura',          icon:'people', label:'Dotación y ausencias',   section:'GESTIÓN',       capability:'navigation.organization-analytics' },
   { id:'territorio',    href:'/territorio',          icon:'map',    label:'Centro territorial',     section:'TERRITORIO',    capability:'navigation.territory' },
   { id:'control',       href:'/calidad',            icon:'gauge',  label:'Calidad de datos',      section:'GESTIÓN',       capability:'navigation.data-quality' },
   { id:'rrhh',          href:'rrhh.html',           icon:'people', label:'Gestión de personas',  section:'GESTIÓN',       capability:'navigation.rrhh' },

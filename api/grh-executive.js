@@ -4,9 +4,11 @@ import { inspectGrhExecutiveContract } from './lib/grh-executive-contract.js';
 import { buildGrhExecutiveProjection } from './lib/grh-executive-projection.js';
 import routePolicy from '../shared/route-policy.cjs';
 import releaseTruthContract from '../shared/release-truth-contract.cjs';
+import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 
 const { ACTIONS, RESOURCES } = routePolicy;
 const { API_CONTRACTS, HEADER_NAME } = releaseTruthContract;
+const { isPublishedDemoIdentity } = publishedDemoPolicy;
 
 function unavailableResponse(res) {
   return res.status(503).json({
@@ -21,6 +23,7 @@ export function createGrhExecutiveHandler({
   readArtifactBundleImpl = readGrhArtifactBundle,
   buildProjectionImpl = buildGrhExecutiveProjection,
   inspectContractImpl = inspectGrhExecutiveContract,
+  isPublishedDemoIdentityImpl = isPublishedDemoIdentity,
 } = {}) {
   return async function handler(req, res) {
     res.setHeader(HEADER_NAME, API_CONTRACTS['/api/grh-executive']);
@@ -47,7 +50,8 @@ export function createGrhExecutiveHandler({
       const bundle = await readArtifactBundleImpl(process.env.GRH_TENANT_ID);
       if (!bundle?.profile || !bundle?.semantic) throw new Error('GRH bundle incomplete');
 
-      const projection = buildProjectionImpl(bundle.semantic, { audience: 'interactive' });
+      const audience = isPublishedDemoIdentityImpl(caller.email) ? 'portable' : 'interactive';
+      const projection = buildProjectionImpl(bundle.semantic, { audience });
       const inspection = inspectContractImpl(projection);
       if (!inspection?.ok) throw new Error('GRH executive contract invalid');
 

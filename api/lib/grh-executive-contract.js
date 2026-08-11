@@ -162,12 +162,14 @@ function inspectMonetarySeries(errors, series) {
   }
 }
 
-function inspectSensitiveSeries(errors, domain, expectedTable) {
+function inspectSensitiveSeries(errors, domain, expectedTable, audience) {
   addShape(errors, domain, SHAPES.sensitiveDomain, `${expectedTable}.structure`);
   add(errors, domain?.sourceTable === expectedTable, `${expectedTable}.source_table`);
   add(errors, domain?.metric === 'valid_rows_by_year', `${expectedTable}.metric`);
   add(errors, Array.isArray(domain?.series), `${expectedTable}.series`);
   const periods = new Set();
+  let suppressedRows = 0;
+  let sawPortableSuppressed = false;
   for (const row of Array.isArray(domain?.series) ? domain.series : []) {
     addShape(errors, row, SHAPES.sensitiveRow, `${expectedTable}.series.row_structure`);
     const periodSafe = /^\d{4}$/.test(row?.period || '');
@@ -176,6 +178,8 @@ function inspectSensitiveSeries(errors, domain, expectedTable) {
       periods.add(row.period);
     }
     if (row?.privacyStatus === 'released') {
+      add(errors, audience !== 'portable' || !sawPortableSuppressed,
+        `${expectedTable}.series.portable_order`);
       add(errors, periodSafe, `${expectedTable}.series.released_period`);
       add(errors, nonNegativeInteger(row.participantCount) &&
         row.participantCount >= GRH_PRIVACY_THRESHOLDS.sensitive,
@@ -185,6 +189,11 @@ function inspectSensitiveSeries(errors, domain, expectedTable) {
       add(errors, nonNegativeInteger(row.value), `${expectedTable}.series.released_value`);
       add(errors, row.participantCount <= row.value, `${expectedTable}.series.cardinality_identity`);
     } else if (row?.privacyStatus === 'suppressed') {
+      suppressedRows += 1;
+      if (audience === 'portable') {
+        sawPortableSuppressed = true;
+        add(errors, row.period === null, `${expectedTable}.series.portable_suppressed_period`);
+      }
       add(errors, row.participantCount === null, `${expectedTable}.series.suppressed_count`);
       add(errors, row.participantDisplay === `<${GRH_PRIVACY_THRESHOLDS.sensitive}`,
         `${expectedTable}.series.suppressed_display`);
@@ -193,6 +202,8 @@ function inspectSensitiveSeries(errors, domain, expectedTable) {
       add(errors, false, `${expectedTable}.series.privacy_status`);
     }
   }
+  add(errors, suppressedRows === 0 || suppressedRows >= 2,
+    `${expectedTable}.series.complementary_suppression`);
 }
 
 export function inspectGrhExecutiveContract(data) {
@@ -249,9 +260,9 @@ export function inspectGrhExecutiveContract(data) {
     'compensation.metric_status');
   inspectMonetarySeries(errors, compensation?.series);
 
-  inspectSensitiveSeries(errors, data?.absence, 'ausencia');
-  inspectSensitiveSeries(errors, data?.leave, 'licencia');
-  inspectSensitiveSeries(errors, data?.movements, 'legamov');
+  inspectSensitiveSeries(errors, data?.absence, 'ausencia', privacy?.audience);
+  inspectSensitiveSeries(errors, data?.leave, 'licencia', privacy?.audience);
+  inspectSensitiveSeries(errors, data?.movements, 'legamov', privacy?.audience);
 
   const uniqueErrors = Object.freeze([...new Set(errors)]);
   return Object.freeze({ ok: uniqueErrors.length === 0, errors: uniqueErrors });

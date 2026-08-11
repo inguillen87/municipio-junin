@@ -206,11 +206,13 @@
     return true;
   }
 
-  function validSensitiveDomain(domain, expectedTable) {
+  function validSensitiveDomain(domain, expectedTable, audience) {
     if (!exactKeys(domain, SHAPES.sensitiveDomain) || domain.sourceTable !== expectedTable ||
         domain.metric !== 'valid_rows_by_year' || !Array.isArray(domain.series) ||
         domain.series.length > 200) return false;
     var periods = new Set();
+    var suppressedRows = 0;
+    var sawPortableSuppressed = false;
     for (var index = 0; index < domain.series.length; index += 1) {
       var row = domain.series[index];
       if (!exactKeys(row, SHAPES.sensitiveRow)) return false;
@@ -218,16 +220,22 @@
       if (row.period !== null && (!periodIsSafe || periods.has(row.period))) return false;
       if (row.period !== null) periods.add(row.period);
       if (row.privacyStatus === 'released') {
+        if (audience === 'portable' && sawPortableSuppressed) return false;
         if (!periodIsSafe || !nonNegativeInteger(row.value) || !nonNegativeInteger(row.participantCount) ||
             row.participantCount < 10 || row.participantCount > row.value ||
             row.participantDisplay !== String(row.participantCount)) return false;
       } else if (row.privacyStatus === 'suppressed') {
+        suppressedRows += 1;
+        if (audience === 'portable') {
+          sawPortableSuppressed = true;
+          if (row.period !== null) return false;
+        }
         if (row.value !== null || row.participantCount !== null || row.participantDisplay !== '<10') return false;
       } else {
         return false;
       }
     }
-    return true;
+    return suppressedRows === 0 || suppressedRows >= 2;
   }
 
   function validExecutive(data) {
@@ -236,17 +244,22 @@
         !validSource(data.source, SHAPES.executiveSource)) return false;
 
     var privacy = data.privacy;
-    if (!exactKeys(privacy, SHAPES.executivePrivacy) || privacy.audience !== 'interactive' ||
+    if (!exactKeys(privacy, SHAPES.executivePrivacy) ||
+        !['interactive', 'portable'].includes(privacy.audience) ||
         privacy.interactiveThreshold !== 5 || privacy.sensitiveThreshold !== 10 ||
         privacy.portableThreshold !== 10 || privacy.protectedBucketLabel !== PROTECTED_BUCKET) return false;
+
+    var workforceThreshold = privacy.audience === 'portable'
+      ? privacy.portableThreshold
+      : privacy.interactiveThreshold;
 
     var workforce = data.workforce;
     if (!exactKeys(workforce, SHAPES.workforce) || !shortText(workforce.definition, 1000) ||
         !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(workforce.referencePeriod) ||
         !positiveInteger(workforce.payrollParticipants)) return false;
-    if (!validRanking(workforce.bySector, workforce.payrollParticipants, 5) ||
-        !validRanking(workforce.byCostCenter, workforce.payrollParticipants, 5) ||
-        !validRanking(workforce.byAgreement, workforce.payrollParticipants, 5)) return false;
+    if (!validRanking(workforce.bySector, workforce.payrollParticipants, workforceThreshold) ||
+        !validRanking(workforce.byCostCenter, workforce.payrollParticipants, workforceThreshold) ||
+        !validRanking(workforce.byAgreement, workforce.payrollParticipants, workforceThreshold)) return false;
 
     var compensation = data.compensation;
     if (!exactKeys(compensation, SHAPES.compensation) ||
@@ -255,9 +268,9 @@
         compensation.metricStatus !== 'calculation_control_not_bank_disbursement' ||
         !validMonetarySeries(compensation.series)) return false;
 
-    return validSensitiveDomain(data.absence, 'ausencia') &&
-      validSensitiveDomain(data.leave, 'licencia') &&
-      validSensitiveDomain(data.movements, 'legamov');
+    return validSensitiveDomain(data.absence, 'ausencia', privacy.audience) &&
+      validSensitiveDomain(data.leave, 'licencia', privacy.audience) &&
+      validSensitiveDomain(data.movements, 'legamov', privacy.audience);
   }
 
   function validInventoryGroup(group) {

@@ -206,6 +206,9 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /No es tiempo real/);
   assert.match(source, /Sin PII/);
   assert.match(source, /Identidad emitida por la Municipalidad/);
+  assert.match(source, /id="privateGrhLoginLink"\s+href="\/login\.html\?access=private-grh&amp;return=rrhh\.html%23peopleDirectory"/);
+  assert.match(source, /Directorio nominal y licencias individuales sólo para una cuenta asignada/i);
+  assert.match(source, /AD · MÁS OPCIONES/);
   assert.match(source, /class="tour-link"\s+href="\/roles"/);
   assert.match(source, /No inicia sesi.n ni accede a datos/i);
   assert.match(source, /fetch\('\/api\/auth\/login'/);
@@ -566,7 +569,12 @@ test('private GRH login explains the handoff, rejects public profiles and return
   });
 
   const privateLogin = `${baseUrl}/login.html?access=private-grh&return=rrhh.html%23peopleDirectory`;
-  await page.goto(privateLogin, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
+  assert.equal(await page.locator('#privateGrhLoginLink').isVisible(), true);
+  await Promise.all([
+    page.waitForURL(privateLogin),
+    page.click('#privateGrhLoginLink'),
+  ]);
   assert.equal(await page.locator('#privateAccessNotice').isVisible(), true);
   assert.equal(await page.locator('#evaluationAccess').isHidden(), true);
   assert.equal(await page.textContent('#accessKicker'), 'Acceso privado GRH');

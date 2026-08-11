@@ -11,13 +11,13 @@ const root = path.resolve(import.meta.dirname, '..');
 const clientPath = path.join(root, 'js', 'grh-secure-data.js');
 const clientSource = await readFile(clientPath, 'utf8');
 
-async function realProjections() {
+async function realProjections(audience = 'interactive') {
   const [profile, semantic] = await Promise.all([
     readFile(new URL('../api/_data/grh-profile.json', import.meta.url), 'utf8').then(JSON.parse),
     readFile(new URL('../api/_data/grh-semantic.json', import.meta.url), 'utf8').then(JSON.parse),
   ]);
   return {
-    executive: buildGrhExecutiveProjection(semantic, { audience: 'interactive' }),
+    executive: buildGrhExecutiveProjection(semantic, { audience }),
     quality: buildGrhQualityProjection(profile, semantic),
   };
 }
@@ -124,6 +124,50 @@ test('individual loaders accept only their fixed endpoint and exact current sche
   assert.deepEqual(calls.map(call => call.url), ['/api/grh-executive', '/api/grh-quality']);
   assert.equal(Object.isFrozen(executive.compensation.series[0].amounts), true);
   assert.equal(Object.isFrozen(quality.inventory.all), true);
+});
+
+test('the secure client accepts the exact interactive and portable executive audiences', async (t) => {
+  for (const audience of ['interactive', 'portable']) {
+    await t.test(audience, async () => {
+      const projections = await realProjections(audience);
+      const api = loadClient(async () => response(projections.executive));
+      const executive = await api.loadExecutive({ timeoutMs: 1000 });
+      assert.equal(executive.privacy.audience, audience);
+      assert.equal(executive.workforce.bySector.threshold, audience === 'portable' ? 10 : 5);
+    });
+  }
+});
+
+test('portable projections fail closed when suppression identity or threshold is weakened', async (t) => {
+  const projections = await realProjections('portable');
+  const mutations = [
+    {
+      name: 'portable threshold drift',
+      mutate(value) {
+        value.privacy.portableThreshold = 5;
+      },
+    },
+    {
+      name: 'portable suppressed period disclosed',
+      mutate(value) {
+        const row = value.absence.series.find(item => item.privacyStatus === 'suppressed');
+        assert.ok(row, 'real portable projection must exercise suppressed periods');
+        row.period = '1998';
+      },
+    },
+  ];
+
+  for (const scenario of mutations) {
+    await t.test(scenario.name, async () => {
+      const payload = clone(projections.executive);
+      scenario.mutate(payload);
+      const api = loadClient(async () => response(payload));
+      await assert.rejects(
+        api.loadExecutive(),
+        error => assertTypedError(error, 'GRH_EXECUTIVE_CONTRACT_INVALID', 502),
+      );
+    });
+  }
 });
 
 test('experience rejects different SHA, snapshot or canonical system without returning a mixed bundle', async (t) => {

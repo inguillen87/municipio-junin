@@ -1,5 +1,5 @@
 const CONTRACT = 'muniguia-contextual-v1';
-const ACCESS_POLICY_VERSION = '2026-08-10.1';
+const ACCESS_POLICY_VERSION = '2026-08-11.1';
 const MOUNT_CAPABILITY = 'navigation.help';
 
 const KNOWN_CAPABILITIES = Object.freeze([
@@ -10,6 +10,7 @@ const KNOWN_CAPABILITIES = Object.freeze([
   'navigation.hacienda',
   'navigation.grh-executive',
   'navigation.organization-analytics',
+  'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',
@@ -47,8 +48,8 @@ const ROLES = deepFreeze({
   TENANT_USER: {
     variant: 'municipal-limited',
     label: 'Usuario municipal',
-    intent: 'Usá únicamente Inicio y Ayuda; solicitá una asignación formal si tu función requiere otro módulo.',
-    focusCapabilities: ['navigation.help'],
+    intent: 'Consultá la referencia territorial oficial y la ayuda institucional sin asumir acceso a expedientes, personas u operaciones.',
+    focusCapabilities: ['navigation.territory', 'navigation.help'],
   },
   CONTADOR: {
     variant: 'financial-control',
@@ -59,14 +60,14 @@ const ROLES = deepFreeze({
   INSPECTOR: {
     variant: 'territorial-unassigned',
     label: 'Inspección',
-    intent: 'Seguí sólo procedimientos y casos formalmente asignados; la interfaz no inventa expedientes ni personas.',
-    focusCapabilities: ['navigation.help'],
+    intent: 'Usá límites y localidades oficiales como referencia; la interfaz no inventa expedientes, domicilios ni personas.',
+    focusCapabilities: ['navigation.territory', 'navigation.help'],
   },
   DEMO: {
     variant: 'controlled-preview',
     label: 'Vista controlada',
-    intent: 'Explorá el alcance documentado sin simular capacidades, datos o autorización ausentes.',
-    focusCapabilities: ['navigation.help'],
+    intent: 'Explorá la referencia territorial y el alcance documentado sin simular capas operativas, datos o autorizaciones ausentes.',
+    focusCapabilities: ['navigation.territory', 'navigation.help'],
   },
 });
 
@@ -147,6 +148,19 @@ const PAGES = deepFreeze({
       { id: 'confirm-organization-snapshot', selector: '#organizationSnapshotStatus', title: 'Confirmá el corte', copy: 'Verificá fuente, período y cobertura antes de interpretar una distribución organizativa o un volumen histórico agregado de eventos de ausencia.' },
       { id: 'explore-organization', selector: '#organizationExplorer', title: 'Explorá la estructura', copy: 'Recorré niveles y áreas observadas sin presentar la matriz analítica como un organigrama oficial del municipio.' },
       { id: 'review-absence-risk', selector: '#absenceRiskPanel', title: 'Priorizá la revisión', copy: 'Usá el ranking histórico para orientar una revisión agregada; no atribuyas causas ni decisiones individuales desde esta señal.' },
+    ],
+  },
+  territory: {
+    href: 'territorio.html',
+    aliases: ['/territorio', '/territorio.html'],
+    label: 'Centro territorial',
+    objective: 'Ubicá el partido y sus localidades mediante referencias oficiales, con fuente y límites visibles.',
+    requiredCapability: 'navigation.territory',
+    manualAnchor: 'superficies',
+    steps: [
+      { id: 'read-territory-map', selector: '#territoryMap', title: 'Ubicá la referencia', copy: 'Usá el mapa como referencia oficial del partido y sus localidades; no lo interpretes como una capa operativa municipal.' },
+      { id: 'review-localities', selector: '#territoryLocalities', title: 'Revisá las localidades', copy: 'Consultá nombres y ubicación publicados por la fuente sin inferir cobertura, población ni situación de servicios.' },
+      { id: 'confirm-territory-sources', selector: '#territorySources', title: 'Confirmá las fuentes', copy: 'Verificá IGN, GeoRef, corte y límites antes de reutilizar una geometría o presentar el tablero a terceros.' },
     ],
   },
   quality: {

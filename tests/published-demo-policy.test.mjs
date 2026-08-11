@@ -33,6 +33,7 @@ const EXPECTED_ALLOWED_ROUTES = Object.freeze([
   ['serverless', 'GET', '/grh-decision-brief'],
   ['serverless', 'GET', '/grh-executive'],
   ['serverless', 'GET', '/grh-quality'],
+  ['serverless', 'GET', '/municipal-territory'],
   ['serverless', 'GET', '/pdf-report'],
   ['serverless', 'GET', '/reports'],
 ]);

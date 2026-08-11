@@ -3,11 +3,27 @@ export const SAFE_WORKSPACE = '/inicio.html';
 const SESSION_CONTRACT = 'municontrol-auth-me-v1';
 const CONTRACT_HEADER = 'x-municontrol-contract';
 
-const GOVERNED_DATA_ROLES = new Set([
+const KNOWN_SESSION_ROLES = new Set([
   'SUPER_ADMIN',
   'TENANT_ADMIN',
   'INTENDENTE',
+  'TENANT_USER',
   'CONTADOR',
+  'INSPECTOR',
+  'DEMO',
+]);
+
+const LIMITED_SESSION_ROLES = new Set([
+  'TENANT_USER',
+  'INSPECTOR',
+  'DEMO',
+]);
+
+const LIMITED_SESSION_CAPABILITIES = new Set([
+  'session.read',
+  'navigation.workspace',
+  'navigation.territory',
+  'navigation.help',
 ]);
 
 const KNOWN_CAPABILITIES = new Set([
@@ -18,6 +34,7 @@ const KNOWN_CAPABILITIES = new Set([
   'navigation.hacienda',
   'navigation.grh-executive',
   'navigation.organization-analytics',
+  'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',
@@ -71,7 +88,7 @@ export function parseAuthoritativeSession(
       !nonEmptyString(user.tenantId) || !Array.isArray(user.capabilities)) {
     return null;
   }
-  if (!GOVERNED_DATA_ROLES.has(user.role)) return null;
+  if (!KNOWN_SESSION_ROLES.has(user.role)) return null;
 
   const capabilities = user.capabilities;
   if (!capabilities.every((capability): capability is string =>
@@ -79,6 +96,10 @@ export function parseAuthoritativeSession(
     return null;
   }
   if (capabilities.length === 0 || new Set(capabilities).size !== capabilities.length) return null;
+  if (LIMITED_SESSION_ROLES.has(user.role) &&
+      !capabilities.every(capability => LIMITED_SESSION_CAPABILITIES.has(capability))) {
+    return null;
+  }
   if (!capabilities.includes('session.read') || !capabilities.includes('navigation.workspace') ||
       !capabilities.includes(requiredCapability)) {
     return null;

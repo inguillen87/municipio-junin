@@ -107,11 +107,12 @@ test('legacy operational copy has a 12px minimum on the dashboard, shell and GRH
 });
 
 test('desktop and mobile navigation share canonical labels and React canary routes', async () => {
-  const [navigation, bottomNavigation, executive, quality] = await Promise.all([
+  const [navigation, bottomNavigation, executive, quality, territory] = await Promise.all([
     file('js/nav.js'),
     file('js/bottom-nav.js'),
     file('frontend/src/executive/ExecutiveApp.tsx'),
     file('frontend/src/app/App.tsx'),
+    file('frontend/src/territory/TerritoryApp.tsx'),
   ]);
   const catalog = navigation.match(/var NAV_ITEMS = \[[\s\S]*?\n\];/)?.[0] || '';
 
@@ -119,6 +120,7 @@ test('desktop and mobile navigation share canonical labels and React canary rout
     'Panorama municipal',
     'Resumen ejecutivo GRH',
     'Estructura y ausencias',
+    'Centro territorial',
     'Hacienda y nómina',
     'Gestión de personas',
     'Calidad de datos',
@@ -130,6 +132,7 @@ test('desktop and mobile navigation share canonical labels and React canary rout
 
   assert.match(catalog, /href:'\/ejecutivo'/);
   assert.match(catalog, /href:'\/estructura'/);
+  assert.match(catalog, /href:'\/territorio'/);
   assert.match(catalog, /href:'\/calidad'/);
   assert.doesNotMatch(catalog, /(?:grh-ejecutivo|control)\.html/);
   assert.match(navigation, /window\.MuniNavigationCatalog\s*=\s*Object\.freeze/);
@@ -141,6 +144,8 @@ test('desktop and mobile navigation share canonical labels and React canary rout
     assert.match(reactNavigation, /href: '\/calidad', label: 'Calidad de datos'/);
     assert.doesNotMatch(reactNavigation, /grh-ejecutivo\.html/);
   }
+  assert.match(territory, /href: '\/territorio', label: 'Territorio', current: true/);
+  assert.match(territory, /REQUIRED_CAPABILITY = 'navigation\.territory'/);
 });
 
 test('legacy and React theme controls read and persist both compatible keys', async () => {

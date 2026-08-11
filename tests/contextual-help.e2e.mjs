@@ -79,6 +79,7 @@ async function createServer(users, requestLog) {
     ['/hacienda', 'hacienda.html'],
     ['/grh-ejecutivo', 'grh-ejecutivo.html'],
     ['/estructura', 'estructura.html'],
+    ['/territorio', 'inicio.html'],
     ['/control', 'control.html'],
     ['/rrhh', 'rrhh.html'],
     ['/ia', 'ia.html'],
@@ -120,7 +121,15 @@ async function createServer(users, requestLog) {
       return;
     }
     try {
-      const body = await readFile(target);
+      let body = await readFile(target);
+      if (url.pathname === '/territorio') {
+        body = Buffer.from(body.toString('utf8').replace('</main>', [
+          '<section id="territoryMap" aria-label="Mapa territorial"></section>',
+          '<section id="territoryLocalities" aria-label="Localidades oficiales"></section>',
+          '<section id="territorySources" aria-label="Fuentes territoriales"></section>',
+          '</main>',
+        ].join('')));
+      }
       response.writeHead(200, {
         'Cache-Control': 'no-store',
         'Content-Type': CONTENT_TYPES[path.extname(target)] || 'application/octet-stream',
@@ -265,7 +274,7 @@ test('MuniGuía projects the seven authoritative role contexts at 390 and 1440 w
   assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
 });
 
-test('all thirteen exact clean paths mount their capability-bound guide and unknown or public paths stay empty', async (t) => {
+test('all fourteen exact clean paths mount their capability-bound guide and unknown or public paths stay empty', async (t) => {
   const subject = 'guide-super';
   const users = new Map([[subject, authoritativeUser(subject, 'SUPER_ADMIN')]]);
   const requestLog = [];

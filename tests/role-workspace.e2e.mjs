@@ -31,6 +31,7 @@ const ACTION_CAPABILITIES = new Set([
   'navigation.hacienda',
   'navigation.grh-executive',
   'navigation.organization-analytics',
+  'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',
@@ -46,6 +47,7 @@ const BOTTOM_HREF = new Map([
   ['navigation.hacienda', 'hacienda.html'],
   ['navigation.grh-executive', '/ejecutivo'],
   ['navigation.organization-analytics', '/estructura'],
+  ['navigation.territory', '/territorio'],
   ['navigation.data-quality', '/calidad'],
   ['navigation.rrhh', 'rrhh.html'],
   ['navigation.ai-assistant', 'ia.html'],
@@ -108,7 +110,7 @@ async function createServer(users, requestLog) {
       return;
     }
 
-    if (/^\/api\/(?:grh|ai|reports|pdf)/.test(url.pathname)) {
+    if (/^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(url.pathname)) {
       response.writeHead(418, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
       response.end(JSON.stringify({ error: 'workspace must never request this endpoint' }));
       return;
@@ -208,6 +210,12 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
           policy: document.querySelector('#policyVersion').textContent,
           role: JSON.parse(sessionStorage.getItem('mjunin_user')).role,
+          territoryAction: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]')
+            ? {
+                href: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]').getAttribute('href'),
+                text: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]').textContent,
+              }
+            : null,
           targets,
           text: document.querySelector('#workspaceViews').textContent,
           variant: document.body.dataset.roleVariant,
@@ -222,6 +230,10 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
       assert.equal(result.errorHidden, true);
       assert.ok(result.overflow <= 1, `${role}:${viewport.width}:overflow=${result.overflow}`);
       assert.deepEqual([...result.actionCapabilities].sort(), [...expectedActions].sort(), `${role}:${viewport.width}:actions`);
+      if (['TENANT_USER', 'INSPECTOR', 'DEMO'].includes(role)) {
+        assert.equal(result.territoryAction?.href, '/territorio', `${role}:${viewport.width}:territory href`);
+        assert.match(result.territoryAction?.text || '', /Límite y localidades oficiales/i, `${role}:${viewport.width}:territory copy`);
+      }
       assert.ok(result.actionCapabilities.every(capability => expectedAccess.capabilities.includes(capability)));
       assert.match(result.policy, new RegExp(accessPolicy.ACCESS_POLICY_VERSION.replaceAll('.', '\\.')));
       assert.doesNotMatch(result.text, /@internal\.invalid|tenant-junin-e2e|personas_junin/i);
@@ -233,7 +245,7 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
 
       const currentRequests = requestLog.slice(before).map(entry => entry.path);
       assert.equal(currentRequests.filter(pathname => pathname === '/api/auth/me').length, 1, `${role}:${viewport.width}:one authoritative session lookup`);
-      assert.equal(currentRequests.some(pathname => /^\/api\/(?:grh|ai|reports|pdf)/.test(pathname)), false, `${role}:${viewport.width}:no data APIs`);
+      assert.equal(currentRequests.some(pathname => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(pathname)), false, `${role}:${viewport.width}:no data APIs`);
 
       await page.evaluate(() => document.activeElement?.blur());
       await page.keyboard.press('Tab');
@@ -270,7 +282,7 @@ test('tenantless SUPER_ADMIN receives only workspace and help in the authoritati
   assert.deepEqual(result.actions, []);
   assert.deepEqual(result.bottom, ['inicio.html', '#more']);
   assert.deepEqual(result.sidebar, ['inicio.html', 'cuentas-claras.html', 'ciudadano.html', 'manuales.html']);
-  assert.equal(requestLog.some(entry => /^\/api\/(?:grh|ai|reports|pdf)/.test(entry.path)), false);
+  assert.equal(requestLog.some(entry => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(entry.path)), false);
 });
 
 test('malformed and unknown authoritative projections fail closed before workspace render', async t => {
@@ -304,7 +316,7 @@ test('malformed and unknown authoritative projections fail closed before workspa
     assert.deepEqual(state, { pending: false, privateLinks: 0, token: null, user: null }, subject);
     await context.close();
   }
-  assert.equal(requestLog.some(entry => /^\/api\/(?:grh|ai|reports|pdf)/.test(entry.path)), false);
+  assert.equal(requestLog.some(entry => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(entry.path)), false);
 });
 
 test('async capability denial returns to inicio with an accessible notice and never authorizes', async t => {
@@ -329,5 +341,5 @@ test('async capability denial returns to inicio with an accessible notice and ne
   await page.waitForFunction(() => document.activeElement?.id === 'accessNotice');
   assert.match(await page.textContent('#accessNotice'), /no tiene habilitada/i);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'accessNotice');
-  assert.equal(requestLog.some(entry => /^\/api\/(?:grh|ai|reports|pdf)/.test(entry.path)), false);
+  assert.equal(requestLog.some(entry => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(entry.path)), false);
 });

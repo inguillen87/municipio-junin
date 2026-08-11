@@ -25,6 +25,7 @@ const EXPECTED_NAV_CAPABILITIES = [
   'navigation.hacienda',
   'navigation.grh-executive',
   'navigation.organization-analytics',
+  'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',
@@ -42,6 +43,7 @@ const EXECUTIVE_BASE = [
   'navigation.hacienda',
   'navigation.grh-executive',
   'navigation.organization-analytics',
+  'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',
@@ -51,10 +53,10 @@ const EXPECTED_ROLE_CAPABILITIES = {
   SUPER_ADMIN: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
   INTENDENTE: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.help'],
   TENANT_ADMIN: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
-  TENANT_USER: ['session.read', 'navigation.workspace', 'navigation.help'],
+  TENANT_USER: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
   CONTADOR: [...EXECUTIVE_BASE, 'navigation.export', 'navigation.help'],
-  INSPECTOR: ['session.read', 'navigation.workspace', 'navigation.help'],
-  DEMO: ['session.read', 'navigation.workspace', 'navigation.help'],
+  INSPECTOR: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
+  DEMO: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
 };
 
 const EXPECTED_HOME_VARIANTS = {
@@ -74,6 +76,7 @@ const EXPECTED_NAV_HREFS = [
   'hacienda.html',
   '/ejecutivo',
   '/estructura',
+  '/territorio',
   '/calidad',
   'rrhh.html',
   'ia.html',
@@ -114,7 +117,7 @@ function extractRoleArray(source, constantName) {
 
 test('Serverless ESM and Express CJS consume the same bumped policy', () => {
   assert.strictEqual(esmPolicy, cjsPolicy);
-  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-10.1');
+  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-11.1');
   assert.deepEqual(Object.values(esmPolicy.ROLES), EXPECTED_ROLES);
 
   for (const role of EXPECTED_ROLES) {
@@ -164,12 +167,13 @@ test('role grants exactly match governed APIs and low roles receive no executive
     assert.equal(new Set(capabilities).size, capabilities.length, `${role} contains duplicate capabilities`);
     assert.ok(capabilities.every(capability => esmPolicy.isKnownCapability(capability)));
     assert.equal(esmPolicy.hasCapability(role, 'navigation.workspace'), true, `${role} must receive a safe workspace`);
+    assert.equal(esmPolicy.hasCapability(role, 'navigation.territory'), true, `${role} must receive the official territorial reference`);
     assert.equal(esmPolicy.hasCapability(role, 'navigation.help'), true, `${role} must discover the manual`);
   }
 
   for (const lowRole of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
     for (const executiveCapability of EXPECTED_NAV_CAPABILITIES.filter(capability =>
-      capability !== 'navigation.workspace' && capability !== 'navigation.help'
+      capability !== 'navigation.workspace' && capability !== 'navigation.territory' && capability !== 'navigation.help'
     )) {
       assert.equal(esmPolicy.hasCapability(lowRole, executiveCapability), false, `${lowRole}:${executiveCapability}`);
     }
@@ -204,6 +208,13 @@ test('role home profiles are immutable, minimal and never expand grants', () => 
     assert.ok(projected.priorityCapabilities.every(capability => esmPolicy.hasCapability(role, capability)));
   }
   assert.equal(esmPolicy.getHomeProfileForRole('UNKNOWN_ROLE'), null);
+  for (const lowRole of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    assert.deepEqual(
+      esmPolicy.getHomeProfileForRole(lowRole).priorityCapabilities,
+      ['navigation.workspace', 'navigation.territory', 'navigation.help'],
+      lowRole,
+    );
+  }
 });
 
 test('tenantless SUPER_ADMIN receives a contextual workspace without ambient municipal links', () => {
@@ -239,6 +250,18 @@ test('organization analytics is private to tenant-bound executive identities and
   ]) {
     const publishedAccess = esmPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-junin', email });
     assert.equal(publishedAccess.capabilities.includes(capability), false, email);
+  }
+});
+
+test('the official territorial reference remains available to every tenant-bound role and published demo', () => {
+  const capability = esmPolicy.CAPABILITIES.NAV_TERRITORY;
+  for (const role of EXPECTED_ROLES) {
+    const access = esmPolicy.getSessionAccessForUser({
+      role,
+      tenantId: 'tenant-junin',
+      email: role === 'DEMO' ? 'demo@junin.gov.ar' : `${role.toLowerCase()}@example.test`,
+    });
+    assert.equal(access.capabilities.includes(capability), true, role);
   }
 });
 
@@ -286,6 +309,10 @@ test('navigation grants stay aligned with the current GRH, audit, export and imp
     [...EXPECTED_ROLES].sort(),
   );
   assert.deepEqual(
+    EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.territory')).sort(),
+    [...EXPECTED_ROLES].sort(),
+  );
+  assert.deepEqual(
     EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.audit')).sort(),
     [...auditRoles].sort(),
   );
@@ -314,7 +341,7 @@ test('capability snapshots cannot mutate the canonical policy', () => {
   first.push('navigation.dashboard');
   const second = esmPolicy.getCapabilitiesForRole('TENANT_USER');
 
-  assert.deepEqual(second, ['session.read', 'navigation.workspace', 'navigation.help']);
+  assert.deepEqual(second, ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help']);
   assert.equal(Object.isFrozen(esmPolicy.ROLE_CAPABILITIES.TENANT_USER), true);
 });
 
@@ -336,6 +363,7 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
   assert.match(source, /href:'\/calidad'[\s\S]*label:'Calidad de datos'[\s\S]*capability:'navigation\.data-quality'/);
   assert.match(source, /href:'\/ejecutivo'[\s\S]*label:'Resumen ejecutivo GRH'[\s\S]*capability:'navigation\.grh-executive'/);
   assert.match(source, /href:'\/estructura'[\s\S]*label:'Estructura y ausencias'[\s\S]*capability:'navigation\.organization-analytics'/);
+  assert.match(source, /href:'\/territorio'[\s\S]*label:'Centro territorial'[\s\S]*capability:'navigation\.territory'/);
   assert.match(source, /label:'Panorama municipal'/);
   assert.match(source, /label:'Hacienda y n(?:ó|Ã³)mina'/);
   assert.match(source, /label:'Gesti(?:ó|Ã³)n de personas'/);

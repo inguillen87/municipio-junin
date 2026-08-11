@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 import {
   assertClassifiedRootHtmlNames,
   GOVERNED_HTML_FILES,
+  GOVERNED_LEGACY_HTML_FILES,
+  GOVERNED_VITE_HTML_FILES,
   PUBLIC_DIRECTORIES,
   PUBLIC_LEGACY_HTML_FILES,
   PUBLIC_ROOT_FILES,
@@ -143,7 +145,7 @@ test('el artefacto web se ensambla, compila y verifica sin secretos', { timeout:
   for (const fileName of rootHtml) {
     assertSameBytes(path.join(repositoryRoot, fileName), path.join(distRoot, fileName));
   }
-  for (const fileName of GOVERNED_HTML_FILES) {
+  for (const fileName of GOVERNED_LEGACY_HTML_FILES) {
     assert.equal(rootHtml.includes(fileName), true, `Falta la superficie gobernada ${fileName}.`);
     assertSameBytes(path.join(repositoryRoot, fileName), path.join(distRoot, fileName));
   }
@@ -172,6 +174,7 @@ test('el artefacto web se ensambla, compila y verifica sin secretos', { timeout:
   for (const fileName of VITE_ENTRY_HTML_FILES) {
     assert.equal(lstatSync(path.join(distRoot, fileName)).isFile(), true);
   }
+  assert.deepEqual(GOVERNED_HTML_FILES, [...GOVERNED_LEGACY_HTML_FILES, ...GOVERNED_VITE_HTML_FILES]);
 
   const manifest = JSON.parse(readFileSync(path.join(distRoot, '.vite', 'manifest.json'), 'utf8'));
   const manifestEntries = Object.entries(manifest)
@@ -229,8 +232,17 @@ test('el artefacto web se ensambla, compila y verifica sin secretos', { timeout:
 
 test('el contrato nominal rechaza HTML raiz no clasificado e index.html sin crear archivos', () => {
   assert.equal(PUBLIC_LEGACY_HTML_FILES.length, 42);
-  assert.equal(GOVERNED_HTML_FILES.includes('estructura.html'), true);
-  assert.deepEqual(VITE_ENTRY_HTML_FILES, ['calidad.html', 'ejecutivo.html']);
+  assert.deepEqual(GOVERNED_LEGACY_HTML_FILES, [
+    'login.html',
+    'dashboard.html',
+    'inicio.html',
+    'roles.html',
+    'manuales.html',
+    'estructura.html',
+  ]);
+  assert.deepEqual(GOVERNED_VITE_HTML_FILES, ['calidad.html', 'ejecutivo.html', 'territorio.html']);
+  assert.deepEqual(VITE_ENTRY_HTML_FILES, GOVERNED_VITE_HTML_FILES);
+  assert.equal(GOVERNED_HTML_FILES.length, 9);
   assert.deepEqual(
     assertClassifiedRootHtmlNames([...PUBLIC_LEGACY_HTML_FILES]),
     PUBLIC_LEGACY_HTML_FILES,

@@ -11,7 +11,7 @@ test('public service worker keeps a versioned offline shell without caching priv
   const source = await readFile(path.join(REPO, 'sw.js'), 'utf8');
 
   assert.match(source, /const CACHE_PREFIX = 'municontrol-shell-';/);
-  assert.match(source, /const CACHE_NAME = 'municontrol-shell-v6';/);
+  assert.match(source, /const CACHE_NAME = 'municontrol-shell-v7';/);
   assert.match(source, /const LEGACY_CACHE_PREFIX = 'municontrol-public-';/);
   assert.doesNotMatch(source, /municontrol-public-v[1-5]/);
 
@@ -30,11 +30,14 @@ test('public service worker keeps a versioned offline shell without caching priv
   const navigation = source.match(/async function networkFirstNavigation\(request\) \{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(navigation, /fetch\(request, \{ cache: 'no-store' \}\)/);
   assert.doesNotMatch(navigation, /cache\.put|caches\.open/);
+  const offlineFallback = source.match(/async function offlineDocument\(\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(offlineFallback, /caches\.match\([\s\S]*cacheName: CACHE_NAME/);
+  assert.doesNotMatch(offlineFallback, /caches\.open/);
 
   const publicAsset = source.match(/async function networkFirstPublicAsset\(pathname\) \{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(publicAsset, /return await fetch\(canonicalRequest\)/);
-  assert.match(publicAsset, /names\.includes\(CACHE_NAME\)/);
-  assert.doesNotMatch(publicAsset, /cache\.put/);
+  assert.match(publicAsset, /caches\.match\(canonicalRequest, \{ cacheName: CACHE_NAME \}\)/);
+  assert.doesNotMatch(publicAsset, /cache\.put|caches\.open/);
 });
 
 function visibleText(html) {

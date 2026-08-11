@@ -109,7 +109,10 @@ async function readRenderedThemeAudit(page) {
     };
     const visible = node => {
       const style = getComputedStyle(node);
-      return node.getClientRects().length > 0 && style.display !== 'none' && style.visibility !== 'hidden' &&
+      const closedDetails = node.closest('details:not([open])');
+      const hiddenByClosedDetails = closedDetails && !node.closest('summary');
+      return !hiddenByClosedDetails && node.getClientRects().length > 0 &&
+        style.display !== 'none' && style.visibility !== 'hidden' &&
         Number(style.opacity) > 0;
     };
     const textNodes = Array.from(document.querySelectorAll('body.assistant-page *')).filter(node => {

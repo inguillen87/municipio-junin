@@ -346,7 +346,7 @@
     }
   </style>
 </head>
-<body data-role-tour-contract="public-role-tour-v1" data-access-policy-version="2026-08-10.1">
+<body data-role-tour-contract="public-role-tour-v1" data-access-policy-version="2026-08-11.1">
   <a class="skip-link" href="#roleTour">Ir al recorrido</a>
   <div class="shell">
     <header class="masthead">
@@ -412,7 +412,7 @@
 
     <footer class="page-footer">
       <span>Contrato público public-role-tour-v1</span>
-      <span>Política descriptiva 2026-08-10.1 · sin datos ni autenticación</span>
+      <span>Política descriptiva 2026-08-11.1 · sin datos ni autenticación</span>
     </footer>
   </div>
 
@@ -471,33 +471,36 @@
         }),
         Object.freeze({
           role: 'TENANT_USER', label: 'Usuario municipal', variant: 'municipal-limited',
-          title: 'Acceso acotado hasta una asignación formal.',
-          mission: 'Consulta orientación y servicios públicos sin asumir acceso por pertenecer al municipio.',
-          question: '¿Necesitás orientación o solicitar una capacidad por el canal autorizado?',
+          title: 'Referencia territorial oficial con acceso acotado.',
+          mission: 'Consulta límites y localidades oficiales sin asumir capas operativas ni acceso por pertenecer al municipio.',
+          question: '¿Buscás una localidad oficial o el procedimiento institucional aplicable?',
           priorities: Object.freeze([
+            Object.freeze({ capability: 'navigation.territory', label: 'Centro territorial', copy: 'Límite y localidades oficiales, con fuente y fecha.' }),
             Object.freeze({ capability: 'navigation.help', label: 'Manual y ayuda', copy: 'Procedimientos, límites y respuesta ante incidentes.' })
           ]),
-          limits: Object.freeze(['No existe acceso implícito por pertenecer al municipio.', 'No muestra indicadores ejecutivos ni datos GRH.', 'No permite autoasignarse permisos.'])
+          limits: Object.freeze(['No existe acceso implícito por pertenecer al municipio.', 'Territorio no incluye empleados, domicilios, obras ni reclamos.', 'No permite autoasignarse permisos.'])
         }),
         Object.freeze({
           role: 'INSPECTOR', label: 'Inspección', variant: 'territorial-unassigned',
-          title: 'Trabajo territorial sólo con casos asignados.',
-          mission: 'Evita inventar agenda, expedientes o ubicaciones hasta contar con asignación por caso, minimización y auditoría.',
-          question: '¿La tarea territorial fue asignada formalmente y con alcance verificable?',
+          title: 'Referencia territorial sin casos asignados.',
+          mission: 'Ubica límites y localidades oficiales sin inventar agenda, expedientes, ubicaciones operativas ni asignaciones.',
+          question: '¿Necesitás una referencia oficial o una tarea asignada por el canal correspondiente?',
           priorities: Object.freeze([
+            Object.freeze({ capability: 'navigation.territory', label: 'Centro territorial', copy: 'Límite y localidades oficiales, no casos operativos.' }),
             Object.freeze({ capability: 'navigation.help', label: 'Procedimiento institucional', copy: 'Orientación vigente mientras no haya casos gobernados.' })
           ]),
-          limits: Object.freeze(['No muestra personas, domicilios o reclamos globales.', 'No habilita casos de terceros o ámbitos inferidos.', 'No reemplaza una asignación server-side por caso.'])
+          limits: Object.freeze(['No muestra personas, domicilios, obras ni reclamos.', 'No habilita casos de terceros o ámbitos inferidos.', 'No reemplaza una asignación server-side por caso.'])
         }),
         Object.freeze({
           role: 'DEMO', label: 'Vista controlada', variant: 'controlled-preview',
-          title: 'Exploración documentada sin capacidades simuladas.',
-          mission: 'Explica qué está operativo, condicionado o en hoja de ruta sin exponer datos ni compartir credenciales.',
-          question: '¿Qué capacidad está operativa y qué evidencia falta para ampliarla?',
+          title: 'Exploración oficial sin capacidades simuladas.',
+          mission: 'Consulta la referencia territorial pública y explica su alcance sin exponer datos ni presentar capas operativas inexistentes.',
+          question: '¿Qué fuente oficial respalda la referencia y qué queda fuera de alcance?',
           priorities: Object.freeze([
+            Object.freeze({ capability: 'navigation.territory', label: 'Centro territorial', copy: 'Límite y localidades oficiales con procedencia.' }),
             Object.freeze({ capability: 'navigation.help', label: 'Alcance documentado', copy: 'Estados de producto, procedimientos y límites verificables.' })
           ]),
-          limits: Object.freeze(['No contiene datos municipales reales ni acceso por rol.', 'No demuestra una integración conectada.', 'No habilita módulos por URL, storage o apariencia visual.'])
+          limits: Object.freeze(['No contiene empleados, domicilios, obras ni reclamos.', 'No demuestra una integración operativa conectada.', 'No habilita módulos por URL, storage o apariencia visual.'])
         })
       ]);
 

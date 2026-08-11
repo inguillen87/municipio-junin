@@ -11,6 +11,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-data': 'grh-raw-retired-v1',
   '/api/grh-directory': 'grh-directory-v1',
   '/api/grh-organization-analytics': 'grh-organization-analytics-v1',
+  '/api/municipal-territory': 'municipal-territory-v1',
 });
 
 module.exports = Object.freeze({

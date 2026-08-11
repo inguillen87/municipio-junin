@@ -43,7 +43,7 @@ export const PUBLIC_LEGACY_HTML_FILES = Object.freeze([
   'whatsapp.html',
 ]);
 
-export const GOVERNED_HTML_FILES = Object.freeze([
+export const GOVERNED_LEGACY_HTML_FILES = Object.freeze([
   'login.html',
   'dashboard.html',
   'inicio.html',
@@ -52,10 +52,18 @@ export const GOVERNED_HTML_FILES = Object.freeze([
   'estructura.html',
 ]);
 
-export const VITE_ENTRY_HTML_FILES = Object.freeze([
+export const GOVERNED_VITE_HTML_FILES = Object.freeze([
   'calidad.html',
   'ejecutivo.html',
+  'territorio.html',
 ]);
+
+export const GOVERNED_HTML_FILES = Object.freeze([
+  ...GOVERNED_LEGACY_HTML_FILES,
+  ...GOVERNED_VITE_HTML_FILES,
+]);
+
+export const VITE_ENTRY_HTML_FILES = Object.freeze([...GOVERNED_VITE_HTML_FILES]);
 
 export const PUBLIC_DIRECTORIES = Object.freeze(['css', 'js', 'img']);
 

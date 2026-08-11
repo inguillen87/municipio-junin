@@ -32,7 +32,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 13);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 14);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -57,7 +57,13 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
     aliases.push(...page.aliases);
     assert.match(manual, idPattern(page.manualAnchor), `${pageId}:manual anchor`);
     assert.equal(page.steps.length, 3, `${pageId}:exactly three steps`);
-    const pageSource = await readFile(path.join(ROOT, page.href), 'utf8');
+    const pageSource = pageId === 'territory'
+      ? (await Promise.all([
+          readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
+          readFile(path.join(ROOT, 'frontend', 'src', 'territory', 'TerritoryDashboard.tsx'), 'utf8'),
+          readFile(path.join(ROOT, 'frontend', 'src', 'territory', 'TerritoryMap.tsx'), 'utf8'),
+        ])).join('\n')
+      : await readFile(path.join(ROOT, page.href), 'utf8');
     const stepIds = new Set();
     for (const step of page.steps) {
       assert.deepEqual(Object.keys(step).sort(), ['copy', 'id', 'selector', 'title']);
@@ -157,4 +163,9 @@ test('related actions and runtime remain capability-bound, local, non-persistent
     ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],
   );
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.requiredCapability, 'navigation.organization-analytics');
+  assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.territory.steps.map((step) => step.selector),
+    ['#territoryMap', '#territoryLocalities', '#territorySources'],
+  );
+  assert.equal(MUNIGUIA_CATALOG.pages.territory.requiredCapability, 'navigation.territory');
 });

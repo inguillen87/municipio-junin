@@ -4,6 +4,7 @@ import { fetchAuthoritativeSession, parseAuthoritativeSession } from './session'
 
 const REQUIRED_CAPABILITY = 'navigation.grh-executive';
 const ORGANIZATION_CAPABILITY = 'navigation.organization-analytics';
+const TERRITORY_CAPABILITY = 'navigation.territory';
 
 function validPayload(): { user: Record<string, unknown> } {
   return {
@@ -22,6 +23,7 @@ function validPayload(): { user: Record<string, unknown> } {
         'navigation.workspace',
         REQUIRED_CAPABILITY,
         ORGANIZATION_CAPABILITY,
+        TERRITORY_CAPABILITY,
       ],
     },
   };
@@ -42,6 +44,7 @@ describe('parseAuthoritativeSession', () => {
         'navigation.workspace',
         REQUIRED_CAPABILITY,
         ORGANIZATION_CAPABILITY,
+        TERRITORY_CAPABILITY,
       ],
     });
     expect(Object.isFrozen(identity)).toBe(true);
@@ -54,8 +57,47 @@ describe('parseAuthoritativeSession', () => {
     expect(identity?.capabilities).toContain(ORGANIZATION_CAPABILITY);
   });
 
+  it.each(['TENANT_USER', 'INSPECTOR', 'DEMO'])('accepts %s only for the exact territorial capability', role => {
+    const payload = validPayload();
+    payload.user = {
+      ...payload.user,
+      role,
+      capabilities: ['session.read', 'navigation.workspace', TERRITORY_CAPABILITY, 'navigation.help'],
+    };
+
+    const identity = parseAuthoritativeSession(payload, TERRITORY_CAPABILITY);
+    expect(identity?.role).toBe(role);
+    expect(identity?.capabilities).toEqual([
+      'session.read',
+      'navigation.workspace',
+      TERRITORY_CAPABILITY,
+      'navigation.help',
+    ]);
+    expect(parseAuthoritativeSession(payload, REQUIRED_CAPABILITY)).toBeNull();
+  });
+
+  it.each(['TENANT_USER', 'INSPECTOR', 'DEMO'])(
+    'rejects %s when an executive capability is injected into its territorial projection',
+    role => {
+      const payload = validPayload();
+      payload.user = {
+        ...payload.user,
+        role,
+        capabilities: [
+          'session.read',
+          'navigation.workspace',
+          TERRITORY_CAPABILITY,
+          REQUIRED_CAPABILITY,
+          'navigation.help',
+        ],
+      };
+
+      expect(parseAuthoritativeSession(payload, TERRITORY_CAPABILITY)).toBeNull();
+      expect(parseAuthoritativeSession(payload, REQUIRED_CAPABILITY)).toBeNull();
+    },
+  );
+
   it.each([
-    ['low role', { role: 'DEMO' }],
     ['unknown role', { role: 'MAYOR' }],
     ['tenant mismatch', { tenant: { id: 'tenant-other', shortName: 'Otro' } }],
     ['missing tenant', { tenant: undefined }],

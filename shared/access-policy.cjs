@@ -9,7 +9,7 @@ const { isPublishedDemoIdentity } = require('./published-demo-policy.cjs');
 // - there is no rank, inheritance or wildcard grant;
 // - unknown roles and capabilities are denied;
 // - adding a capability never grants it automatically to an existing role.
-const ACCESS_POLICY_VERSION = '2026-08-10.1';
+const ACCESS_POLICY_VERSION = '2026-08-11.1';
 
 const ROLES = Object.freeze({
   SUPER_ADMIN: 'SUPER_ADMIN',
@@ -29,6 +29,7 @@ const CAPABILITIES = Object.freeze({
   NAV_HACIENDA: 'navigation.hacienda',
   NAV_GRH_EXECUTIVE: 'navigation.grh-executive',
   NAV_ORGANIZATION_ANALYTICS: 'navigation.organization-analytics',
+  NAV_TERRITORY: 'navigation.territory',
   NAV_DATA_QUALITY: 'navigation.data-quality',
   NAV_RRHH: 'navigation.rrhh',
   NAV_AI_ASSISTANT: 'navigation.ai-assistant',
@@ -50,6 +51,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
     CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
+    CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_DATA_QUALITY,
     CAPABILITIES.NAV_RRHH,
     CAPABILITIES.NAV_AI_ASSISTANT,
@@ -66,6 +68,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
     CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
+    CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_DATA_QUALITY,
     CAPABILITIES.NAV_RRHH,
     CAPABILITIES.NAV_AI_ASSISTANT,
@@ -81,6 +84,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
     CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
+    CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_DATA_QUALITY,
     CAPABILITIES.NAV_RRHH,
     CAPABILITIES.NAV_AI_ASSISTANT,
@@ -92,6 +96,7 @@ const ROLE_CAPABILITIES = Object.freeze({
   TENANT_USER: Object.freeze([
     CAPABILITIES.SESSION_READ,
     CAPABILITIES.NAV_WORKSPACE,
+    CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_HELP,
   ]),
   CONTADOR: Object.freeze([
@@ -102,6 +107,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
     CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
+    CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_DATA_QUALITY,
     CAPABILITIES.NAV_RRHH,
     CAPABILITIES.NAV_AI_ASSISTANT,
@@ -111,11 +117,13 @@ const ROLE_CAPABILITIES = Object.freeze({
   INSPECTOR: Object.freeze([
     CAPABILITIES.SESSION_READ,
     CAPABILITIES.NAV_WORKSPACE,
+    CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_HELP,
   ]),
   DEMO: Object.freeze([
     CAPABILITIES.SESSION_READ,
     CAPABILITIES.NAV_WORKSPACE,
+    CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_HELP,
   ]),
 });
@@ -159,6 +167,7 @@ const ROLE_HOME_PROFILE = Object.freeze({
     defaultPath: 'inicio.html',
     priorityCapabilities: Object.freeze([
       CAPABILITIES.NAV_WORKSPACE,
+      CAPABILITIES.NAV_TERRITORY,
       CAPABILITIES.NAV_HELP,
     ]),
   }),
@@ -177,6 +186,7 @@ const ROLE_HOME_PROFILE = Object.freeze({
     defaultPath: 'inicio.html',
     priorityCapabilities: Object.freeze([
       CAPABILITIES.NAV_WORKSPACE,
+      CAPABILITIES.NAV_TERRITORY,
       CAPABILITIES.NAV_HELP,
     ]),
   }),
@@ -185,6 +195,7 @@ const ROLE_HOME_PROFILE = Object.freeze({
     defaultPath: 'inicio.html',
     priorityCapabilities: Object.freeze([
       CAPABILITIES.NAV_WORKSPACE,
+      CAPABILITIES.NAV_TERRITORY,
       CAPABILITIES.NAV_HELP,
     ]),
   }),

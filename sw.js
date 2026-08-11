@@ -1,6 +1,6 @@
 // MuniControl public shell. Authenticated pages and API responses are never cached.
 const CACHE_PREFIX = 'municontrol-shell-';
-const CACHE_NAME = 'municontrol-shell-v6';
+const CACHE_NAME = 'municontrol-shell-v7';
 const LEGACY_CACHE_PREFIX = 'municontrol-public-';
 const OFFLINE_FALLBACK = '/offline';
 
@@ -67,8 +67,8 @@ self.addEventListener('message', event => {
 });
 
 async function offlineDocument() {
-  const cache = await caches.open(CACHE_NAME);
-  return (await cache.match(publicAssetRequest(OFFLINE_FALLBACK))) || Response.error();
+  return (await caches.match(publicAssetRequest(OFFLINE_FALLBACK), { cacheName: CACHE_NAME }))
+    || Response.error();
 }
 
 async function networkFirstNavigation(request) {
@@ -87,10 +87,10 @@ async function networkFirstPublicAsset(pathname) {
     // never recreate a retired cache after a newer worker has activated.
     return await fetch(canonicalRequest);
   } catch (error) {
-    const names = await caches.keys();
-    if (!names.includes(CACHE_NAME)) return Response.error();
-    const cache = await caches.open(CACHE_NAME);
-    return (await cache.match(canonicalRequest)) || Response.error();
+    // CacheStorage.match never creates a deleted cache. This avoids a retired
+    // worker recreating its cache while a newer worker is activating.
+    return (await caches.match(canonicalRequest, { cacheName: CACHE_NAME }))
+      || Response.error();
   }
 }
 

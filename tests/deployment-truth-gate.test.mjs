@@ -839,6 +839,7 @@ test('valid Vercel topology passes exact clean document paths without redirects'
     '/api/grh-data',
     '/api/grh-directory',
     '/api/grh-organization-analytics',
+    '/api/municipal-territory',
   ]);
   assert.deepEqual(receipt.checks.map((check) => check.path), [
     '/',

@@ -7,6 +7,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   assertClassifiedRootHtmlNames,
   GOVERNED_HTML_FILES,
+  GOVERNED_LEGACY_HTML_FILES,
+  GOVERNED_VITE_HTML_FILES,
   PUBLIC_DIRECTORIES,
   PUBLIC_ROOT_FILES,
   VITE_ENTRY_HTML_FILES,
@@ -133,7 +135,7 @@ async function rootHtmlNames() {
 }
 
 async function verifyLegacyCopies(htmlNames) {
-  for (const fileName of GOVERNED_HTML_FILES) {
+  for (const fileName of GOVERNED_LEGACY_HTML_FILES) {
     if (!htmlNames.includes(fileName)) {
       throw new Error(`La superficie gobernada no existe en la fuente: ${fileName}.`);
     }
@@ -338,6 +340,9 @@ function referencedManifestFiles(manifest) {
 async function verifyViteOutput() {
   for (const fileName of VITE_ENTRY_HTML_FILES) {
     await assertRegularFile(path.join(distRoot, fileName), `Entrada React ${fileName}`);
+  }
+  if (JSON.stringify(GOVERNED_VITE_HTML_FILES) !== JSON.stringify(VITE_ENTRY_HTML_FILES)) {
+    throw new Error('Toda superficie Vite gobernada debe ser una entrada MPA exacta.');
   }
 
   const manifestPath = path.join(distRoot, '.vite', 'manifest.json');

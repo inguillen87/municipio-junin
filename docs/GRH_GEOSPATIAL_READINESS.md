@@ -1,6 +1,6 @@
 # Preparación geoespacial GRH — evidencia, privacidad y gates
 
-**Versión:** 1.0.0  
+**Versión:** 1.1.0
 **Estado:** diagnóstico local; no existe una capa cartográfica GRH publicable  
 **Fuente:** backup canónico GRH Junín, snapshot 2026-08-06  
 **Exclusión:** `personas_junin` se mantuvo completamente fuera del análisis  
@@ -19,6 +19,18 @@ La siguiente entrega geoespacial honesta es un **panel de preparación de capas*
 cobertura, calidad, linaje, frescura, sistema de coordenadas y gates pendientes.
 El renderer cartográfico se incorpora recién cuando exista una capa municipal
 autorizada, versionada y verificable.
+
+### Centro territorial no es un mapa GRH
+
+La ruta gobernada `/territorio` ofrece únicamente una referencia oficial del
+límite municipal y las localidades publicadas por IGN/GeoRef, con fuente, fecha
+y límites de uso visibles. No contiene empleados, domicilios, obras, reclamos ni
+ninguna otra capa operativa municipal.
+
+Su publicación no satisface el contrato `grh-geo-readiness-v1`, no habilita
+georreferenciación de personas y no cambia esta decisión: **no activar mapa GRH**.
+El mapa territorial de referencia y una futura capa analítica GRH son superficies
+distintas, con fuentes, finalidades, contratos y autorizaciones independientes.
 
 ## 2. Evidencia observada
 
@@ -129,4 +141,5 @@ El mapa deja de estar bloqueado sólo cuando una prueba demuestra simultáneamen
 geometría oficial válida, linaje, fecha, finalidad, denominador cuando corresponda,
 privacidad k≥10 antes de filtros, autorización server-side y degradación honesta ante
 fuente vencida. Hasta entonces, [`../mapa.html`](../mapa.html) debe permanecer como
-capacidad retirada o catálogo de preparación, sin puntos ni cifras inventadas.
+capacidad retirada, sin puntos ni cifras inventadas. La referencia oficial
+`/territorio` no modifica este gate porque no contiene ni representa datos GRH.

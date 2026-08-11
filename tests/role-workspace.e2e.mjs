@@ -50,7 +50,7 @@ const BOTTOM_HREF = new Map([
   ['navigation.organization-analytics', '/estructura'],
   ['navigation.territory', '/territorio'],
   ['navigation.data-quality', '/calidad'],
-  ['navigation.rrhh', 'rrhh.html'],
+  ['navigation.rrhh', 'areas-grh.html'],
   ['navigation.ai-assistant', 'ia.html'],
   ['navigation.audit', 'auditoria.html'],
   ['navigation.export', 'exportar.html'],

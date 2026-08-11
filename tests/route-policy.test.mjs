@@ -16,6 +16,7 @@ const EXPECTED_SERVERLESS = [
   'GET /grh-data',
   'GET /grh-directory',
   'GET /grh-directory-access',
+  'GET /grh-domain-catalog',
   'GET /grh-organization-analytics',
   'GET /grh-workforce-finance',
   'GET /municipal-territory',
@@ -156,6 +157,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'grh-data.js',
     'grh-directory.js',
     'grh-directory-access.js',
+    'grh-domain-catalog.js',
     'grh-organization-analytics.js',
     'grh-workforce-finance.js',
     'grh-close.js',
@@ -236,6 +238,10 @@ test('route authorization is exact by runtime, method and path', () => {
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-directory-access'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-directory'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-directory-access'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), true);
+  assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), true);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-domain-catalog'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics'), true);
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics?period=2026-07'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics'), false);

@@ -38,7 +38,7 @@ test('territorial navigation is explicit for all roles and exact in low-role pri
 });
 
 test('territorial API is one exact GET resource and remains available to published demo identities', () => {
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.3');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.4');
   assert.equal(routePolicy.RESOURCES.MUNICIPAL_TERRITORY, 'municipal.territory');
   assert.equal(routePolicy.PERMISSIONS.MUNICIPAL_TERRITORY_READ, 'municipal.territory:read');
   const routes = routePolicy.PROTECTED_ROUTES.filter(route => route.id === ROUTE_ID);
@@ -52,7 +52,7 @@ test('territorial API is one exact GET resource and remains available to publish
   }
   assert.equal(routePolicy.authorizeRoute('DEMO', 'serverless', 'POST', '/api/municipal-territory'), false);
   assert.equal(routePolicy.authorizeRoute('DEMO', 'serverless', 'GET', '/api/municipal-territory/future'), false);
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.3');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.4');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     assert.equal(publishedDemoPolicy.evaluatePublishedDemoRoute({ ...profile, routeId: ROUTE_ID }).allowed, true, profile.email);

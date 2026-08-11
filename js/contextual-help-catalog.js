@@ -176,6 +176,19 @@ const PAGES = deepFreeze({
       { id: 'close-risks', selector: '#riskTitle', title: 'Cerrá con los riesgos', copy: 'Registrá cuarentena, discrepancias y límites antes de habilitar una decisión o exportación.' },
     ],
   },
+  grhDomains: {
+    href: 'areas-grh.html',
+    aliases: ['/areas-grh', '/areas-grh.html'],
+    label: 'Áreas y datos GRH',
+    objective: 'Explorá los dominios reales de la fuente y elegí el siguiente análisis desde su cobertura verificable.',
+    requiredCapability: 'navigation.rrhh',
+    manualAnchor: 'fuente',
+    steps: [
+      { id: 'confirm-domain-source', selector: '#grhSourceStatus', title: 'Confirmá fuente y corte', copy: 'Esperá la validación del catálogo y revisá el corte publicado antes de interpretar tablas, períodos o coberturas.' },
+      { id: 'choose-domain', selector: '#grhDomainGrid', title: 'Elegí un área', copy: 'Recorré los ocho dominios y seleccioná el que corresponda a la pregunta de gestión que necesitás responder.' },
+      { id: 'inspect-domain-evidence', selector: '#grhEvidenceTitle', title: 'Revisá la evidencia', copy: 'Contrastá tablas, filas, período, cobertura y acciones disponibles antes de continuar al tablero especializado.' },
+    ],
+  },
   rrhh: {
     href: 'rrhh.html',
     aliases: ['/rrhh', '/rrhh.html'],

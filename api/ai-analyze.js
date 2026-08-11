@@ -7,6 +7,30 @@ import { validateGrhQualityContract } from './lib/grh-quality-contract.js';
 import { validateGrhCloseContract } from './lib/grh-close-contract.js';
 import { buildGrhCloseProjection } from './lib/grh-close-projection.js';
 import {
+  inspectGrhDecisionBriefContract,
+} from './lib/grh-decision-brief-contract.js';
+import {
+  buildGrhDecisionBriefProjection,
+} from './lib/grh-decision-brief-projection.js';
+import {
+  inspectGrhDomainCatalogContract,
+} from './lib/grh-domain-catalog-contract.js';
+import {
+  buildGrhDomainCatalogProjection,
+} from './lib/grh-domain-catalog.js';
+import {
+  readGrhWorkforceFinanceArtifact,
+} from './lib/grh-workforce-finance-artifact.js';
+import {
+  inspectGrhWorkforceFinanceContract,
+} from './lib/grh-workforce-finance-contract.js';
+import {
+  buildGrhWorkforceFinanceProjection,
+} from './lib/grh-workforce-finance-projection.js';
+import {
+  inspectGrhWorkforceFinanceSourceContract,
+} from './lib/grh-workforce-finance-source-contract.js';
+import {
   GRH_DIRECTORY_SCHEMA_VERSION,
   inspectGrhDirectoryResponse,
 } from './lib/grh-directory-contract.js';
@@ -26,7 +50,80 @@ const MAX_DIRECTORY_LEAVE_HISTORY = 24;
 const MAX_ANSWER_VISUAL_ITEMS = 13;
 const ENGINE_ID = 'grh-deterministic-v1';
 export const GRH_ANSWER_VISUAL_SCHEMA_VERSION = 'grh-answer-visual-v1';
+const FINANCE_INTENTS = new Set([
+  'workforce_finance_overview',
+  'workforce_finance_trend',
+  'workforce_finance_composition',
+  'workforce_finance_compare',
+]);
+const FINANCE_DIMENSIONS = Object.freeze([
+  Object.freeze({
+    key: 'costCenter',
+    label: 'centro de costo',
+    pattern: /centro(?:s)? de costo(?:s)?|centro(?:s)? costo(?:s)?/,
+  }),
+  Object.freeze({ key: 'sector', label: 'sector', pattern: /\bsector(?:es)?\b/ }),
+  Object.freeze({
+    key: 'agreement',
+    label: 'categoría de acuerdo',
+    pattern: /\bconvenio(?:s)?\b|\bacuerdo(?:s)?\b|categoria(?:s)?(?: de acuerdo)?/,
+  }),
+]);
+const NON_FINANCIAL_TREND_DIMENSIONS = Object.freeze([
+  Object.freeze({ key: 'organization', label: 'organización', pattern: /\borganizacion(?:es)?\b/ }),
+  Object.freeze({ key: 'position', label: 'cargo', pattern: /\bcargo(?:s)?\b|\bpuesto(?:s)?\b/ }),
+  Object.freeze({ key: 'area', label: 'área', pattern: /\barea(?:s)?\b|\bdepartamento(?:s)?\b|\bsecretaria(?:s)?\b|\breparticion(?:es)?\b/ }),
+]);
+const FINANCE_COMPONENTS = Object.freeze([
+  Object.freeze({
+    key: 'netToPayCents',
+    label: 'Neto a pagar informado',
+    pattern: /neto a pagar/,
+  }),
+  Object.freeze({
+    key: 'grossWithFamilyAllowancesCents',
+    label: 'Bruto con asignaciones',
+    pattern: /bruto(?: con asignaciones)?|masa salarial/,
+  }),
+  Object.freeze({
+    key: 'nonContributoryEarningsCents',
+    label: 'Ingresos no contributivos',
+    pattern: /no contributiv|no remunerativ/,
+  }),
+  Object.freeze({
+    key: 'contributoryEarningsCents',
+    label: 'Ingresos contributivos',
+    pattern: /(?:ingresos? )?contributiv|remunerativ/,
+  }),
+  Object.freeze({
+    key: 'familyAllowancesCents',
+    label: 'Asignaciones familiares',
+    pattern: /asignaciones? familiares?/,
+  }),
+  Object.freeze({
+    key: 'employeeWithholdingsCents',
+    label: 'Retenciones del personal',
+    pattern: /retenciones?|descuentos? del personal/,
+  }),
+  Object.freeze({
+    key: 'employerContributionsCents',
+    label: 'Aportes patronales',
+    pattern: /aportes? patronales?|contribuciones? patronales?/,
+  }),
+  Object.freeze({
+    key: 'netPayrollCents',
+    label: 'Neto de control',
+    pattern: /neto(?: de control| de nomina| salarial)?|costo neto/,
+  }),
+]);
 const SUPPORTED_INTENTS = Object.freeze([
+  'decision_brief',
+  'workforce_finance_overview',
+  'workforce_finance_trend',
+  'workforce_finance_composition',
+  'workforce_finance_compare',
+  'domain_catalog',
+  'data_inventory',
   'executive_summary',
   'workforce',
   'workforce_distribution',
@@ -48,6 +145,14 @@ export function createAiAnalyzeHandler({
   requireDatasetTenantImpl = requireDatasetTenant,
   readArtifactBundleImpl = readGrhArtifactBundle,
   readDirectoryImpl = readGrhDirectory,
+  readWorkforceFinanceArtifactImpl = readGrhWorkforceFinanceArtifact,
+  buildDecisionBriefProjectionImpl = buildGrhDecisionBriefProjection,
+  inspectDecisionBriefContractImpl = inspectGrhDecisionBriefContract,
+  buildDomainCatalogProjectionImpl = buildGrhDomainCatalogProjection,
+  inspectDomainCatalogContractImpl = inspectGrhDomainCatalogContract,
+  inspectWorkforceFinanceSourceImpl = inspectGrhWorkforceFinanceSourceContract,
+  buildWorkforceFinanceProjectionImpl = buildGrhWorkforceFinanceProjection,
+  inspectWorkforceFinanceContractImpl = inspectGrhWorkforceFinanceContract,
   authorizeDirectoryImpl = authorizeGrhDirectoryRequest,
   directoryAuthorizationDependencies = {},
   environment = process.env,
@@ -111,6 +216,47 @@ export function createAiAnalyzeHandler({
       const close = buildGrhCloseProjection(bundle.semantic);
       const presentation = resolveTenantPresentation(caller.tenant);
       const provenance = buildProvenance(executive, quality, close, presentation);
+      const assistantData = {
+        decisionBrief: null,
+        domainCatalog: null,
+        workforceFinance: null,
+      };
+      if (classification.intent === 'decision_brief') {
+        const decisionBrief = buildDecisionBriefProjectionImpl(executive, quality, close);
+        if (!inspectDecisionBriefContractImpl(decisionBrief)?.ok ||
+            !projectionMatchesAssistantSource(decisionBrief, provenance)) {
+          throw new Error('GRH decision brief invalid');
+        }
+        assistantData.decisionBrief = decisionBrief;
+      }
+      if (classification.intent === 'domain_catalog' || classification.intent === 'data_inventory') {
+        const domainCatalog = buildDomainCatalogProjectionImpl(bundle);
+        if (!inspectDomainCatalogContractImpl(domainCatalog)?.ok ||
+            !projectionMatchesAssistantSource(domainCatalog, provenance, { requireLatestPeriod: false })) {
+          throw new Error('GRH domain catalog invalid');
+        }
+        assistantData.domainCatalog = domainCatalog;
+      }
+      if (FINANCE_INTENTS.has(classification.intent)) {
+        const envelope = await readWorkforceFinanceArtifactImpl({
+          tenantId: String(caller.tenantId),
+          expectedSourceSha256: provenance.sourceSha256,
+          expectedSnapshotAsOf: provenance.snapshotAsOf,
+          environment,
+        });
+        const sourceArtifact = envelope?.payload;
+        if (!inspectWorkforceFinanceSourceImpl(sourceArtifact)?.ok) {
+          throw new Error('GRH workforce-finance source invalid');
+        }
+        const workforceFinance = buildWorkforceFinanceProjectionImpl(sourceArtifact, {
+          presentation: workforceFinancePresentation(presentation),
+        });
+        if (!inspectWorkforceFinanceContractImpl(workforceFinance)?.ok ||
+            !projectionMatchesAssistantSource(workforceFinance, provenance)) {
+          throw new Error('GRH workforce-finance projection invalid');
+        }
+        assistantData.workforceFinance = workforceFinance;
+      }
       const answer = classification.intent === 'person_lookup'
         ? await buildPrivateDirectoryResponse({
           message,
@@ -119,7 +265,14 @@ export function createAiAnalyzeHandler({
           expectedSource: executive.source,
           readAudit: directoryReadAudit,
         })
-        : buildDeterministicAnswer(message, executive, quality, close, presentation);
+        : buildDeterministicAnswer(
+          message,
+          executive,
+          quality,
+          close,
+          presentation,
+          assistantData,
+        );
       const nominal = answer.intent === 'person_lookup';
       const responseProvenance = nominal
         ? {
@@ -133,9 +286,15 @@ export function createAiAnalyzeHandler({
         available: true,
         source: nominal
           ? 'grh_directory_private_contract'
-          : (answer.intent === 'close_explanation'
-            ? 'grh_close_governed_contract'
-            : 'grh_executive_portable_contract'),
+          : (FINANCE_INTENTS.has(answer.intent)
+            ? 'grh_workforce_finance_governed_contract'
+            : (['domain_catalog', 'data_inventory'].includes(answer.intent)
+              ? 'grh_domain_catalog_governed_contract'
+            : (answer.intent === 'decision_brief'
+              ? 'grh_decision_brief_governed_contract'
+              : (answer.intent === 'close_explanation'
+                ? 'grh_close_governed_contract'
+                : 'grh_executive_portable_contract')))),
         snapshotAsOf: provenance.snapshotAsOf,
         historyUsed: nominal && answer.answer?.directory?.status === 'matched',
       });
@@ -158,6 +317,34 @@ export function createAiAnalyzeHandler({
       });
     }
   };
+}
+
+function workforceFinancePresentation(presentation) {
+  if (!hasConfiguredCurrency(presentation)) {
+    throw new Error('GRH workforce-finance presentation invalid');
+  }
+  return {
+    schemaVersion: presentation.schemaVersion,
+    locale: presentation.locale,
+    displayCurrencyCode: presentation.displayCurrencyCode,
+    basis: presentation.displayCurrencyBasis,
+    effectiveFrom: presentation.displayCurrencyEffectiveOn,
+    sourceCurrencyStatus: presentation.sourceCurrencyStatus,
+  };
+}
+
+function projectionMatchesAssistantSource(
+  projection,
+  provenance,
+  { requireLatestPeriod = true } = {},
+) {
+  return projection?.source?.canonicalSystem === provenance?.source &&
+    projection?.source?.sourceFile === provenance?.sourceFile &&
+    projection?.source?.sourceSha256 === provenance?.sourceSha256 &&
+    projection?.source?.snapshotAsOf === provenance?.snapshotAsOf &&
+    (!requireLatestPeriod || projection?.source?.latestValidCalculationPeriod ===
+      provenance?.latestValidCalculationPeriod) &&
+    projection?.source?.realtime === false;
 }
 
 function scopeDirectoryReader(readDirectoryImpl, authorization) {
@@ -366,7 +553,7 @@ async function buildPrivateDirectoryResponse({
 
 function parsePersonLookup(rawMessage) {
   const message = normalize(rawMessage).replace(/[¿?¡!.,;:()[\]{}"“”]/gu, ' ').replace(/\s+/g, ' ').trim();
-  const legajo = message.match(/\blegajo\s*(?:n(?:ro)?\.?|numero|#|=|-)?\s*(\d{1,15})\b/);
+  const legajo = message.match(/\blegajo\s*(?:(?:n(?:ro)?|numero)\s*[°º.]?|#|=|-)?\s*(\d{1,15})\b/);
   if (legajo) {
     const value = Number(legajo[1]);
     return Number.isSafeInteger(value) && value > 0
@@ -571,7 +758,7 @@ export function classifyIntent(rawMessage) {
   if (/(ignora|omite|saltea).{0,35}(instruccion|regla|politica)|prompt del sistema|system prompt|jailbreak|revela.{0,25}(token|clave|secreto|variable de entorno)|(?:dump|volcado).{0,20}(base|tabla|sql)/.test(message)) {
     return { intent: 'policy_attack', policy: 'refused' };
   }
-  if (/\b(dni|cuit|cuil|domicilio|direccion particular|telefono|correo personal|email personal)\b|nombre y apellido|lista de (?:todos los )?empleados|sueldo (?:de|individual)|datos personales/.test(message)) {
+  if (/\b(dni|cuit|cuil|domicilio|direccion particular|telefono|correo personal|email personal)\b|lista de (?:todos los )?empleados|sueldo (?:de|individual)|datos personales/.test(message)) {
     return { intent: 'pii_request', policy: 'refused' };
   }
   if (isPersonLookup(message, rawMessage)) {
@@ -586,6 +773,12 @@ export function classifyIntent(rawMessage) {
   if (/\b(hola|buen dia|buenas|ayuda|que podes responder|como funciona)\b/.test(message)) {
     return { intent: 'help', policy: 'allowed' };
   }
+  if (/^(?:personas?(?: y)? estructura|asistencia(?: y)? tiempo|licencias?(?: y)? salud(?: laboral)?|carrera(?: y)? desarrollo|relaciones? laborales?|nomina(?: y)? control(?: de calculo)?|beneficios?(?: y)? descuentos?|movimientos?(?: y)? trazabilidad)$/.test(message)) {
+    return { intent: 'domain_catalog', policy: 'allowed' };
+  }
+  if (/requiere atencion|necesita atencion|prioridades?|que accion sigue|que revisar primero|brief de decision|agenda de decision/.test(message)) {
+    return { intent: 'decision_brief', policy: 'allowed' };
+  }
   if (/resumen|panorama|estado general|informe ejecutivo|principales alertas|tablero ejecutivo/.test(message)) {
     return { intent: 'executive_summary', policy: 'allowed' };
   }
@@ -595,16 +788,36 @@ export function classifyIntent(rawMessage) {
   if (/concili|cross.?source|totpago|diferencia.{0,20}(calculo|fuente)|compar.{0,20}(calculo|totpago)/.test(message)) {
     return { intent: 'reconciliation', policy: 'allowed' };
   }
+  const financeIntent = classifyWorkforceFinanceIntent(message);
+  if (financeIntent) return { intent: financeIntent, policy: 'allowed' };
+  if (/inventario (?:de )?(?:datos|tablas|fuentes)|que tablas(?: de [a-z ]{2,60})? (?:hay|existen|contiene|estan disponibles)|tablas disponibles/.test(message)) {
+    return { intent: 'data_inventory', policy: 'allowed' };
+  }
+  if (/catalogo (?:de )?(?:areas|datos|dominios)|que (?:areas(?: y datos)?|datos|dominios)(?: grh)? (?:hay|cubre|estan disponibles)|mapa de datos|que (?:datos|evidencia) de (?:carrera(?: y formacion)?|formacion|estudios?|beneficios?(?: y descuentos?)?|descuentos?|gremios?|relacion(?:es)? laboral(?:es)?) (?:hay|existe(?:n)?(?: en la base)?|estan disponibles)|que convenios? y gremios? (?:hay|existen|estan representados|estan disponibles)/.test(message)) {
+    return { intent: 'domain_catalog', policy: 'allowed' };
+  }
   if (/cuarenten|registro.{0,15}(invalido|excluido)|fecha.{0,15}(anomala|futura|corrupta)/.test(message)) {
     return { intent: 'quarantine', policy: 'allowed' };
   }
   if (/calidad|confiab|integridad|cobertura|score|puntaje/.test(message)) {
     return { intent: 'quality', policy: 'allowed' };
   }
+  if (/ausenc|ausent|inasist/.test(message)) {
+    return { intent: 'absence', policy: 'allowed' };
+  }
+  if (/licencia/.test(message)) {
+    return { intent: 'leave', policy: 'allowed' };
+  }
+  if (/\bmovimientos?\b|legamov/.test(message)) {
+    return { intent: 'movements', policy: 'allowed' };
+  }
+  if (/(?:dotacion|participantes?|personas).{0,40}(?:centro(?:s)? de costo(?:s)?|sector|convenio|acuerdo)|(?:centro(?:s)? de costo(?:s)?|por sector|por convenio|por acuerdo).{0,40}(?:dotacion|participantes?|personas)/.test(message)) {
+    return { intent: 'workforce_distribution', policy: 'allowed' };
+  }
   if (/evolucion|tendencia|variacion|cambio|compar.{0,15}(mes|periodo)|contra el mes|versus|\bvs\b/.test(message)) {
     return { intent: 'trend', policy: 'allowed' };
   }
-  if (/centro(?:s)? de costo|por sector|por convenio|por acuerdo|categoria(?:s)? de acuerdo|distribu|concentracion|area.{0,15}(mas|mayor)|sector.{0,15}(mas|mayor)/.test(message)) {
+  if (/centro(?:s)? de costo(?:s)?|por sector|por convenio|por acuerdo|categoria(?:s)? de acuerdo|distribu|concentracion|area.{0,15}(mas|mayor)|sector.{0,15}(mas|mayor)/.test(message)) {
     return { intent: 'workforce_distribution', policy: 'allowed' };
   }
   if (/dotacion|participante|participaron|cuantas personas|cuantos agentes|planta activa|empleados activos/.test(message)) {
@@ -613,13 +826,7 @@ export function classifyIntent(rawMessage) {
   if (/control de calculo|liquidacion|remuneracion|retencion|aporte patronal|bruto|neto|concepto\s*(?:998|999)|masa salarial|nomina|sueldo/.test(message)) {
     return { intent: 'calculation_control', policy: 'allowed' };
   }
-  if (/ausenc|ausent|inasist/.test(message)) {
-    return { intent: 'absence', policy: 'allowed' };
-  }
-  if (/licencia/.test(message)) {
-    return { intent: 'leave', policy: 'allowed' };
-  }
-  if (/movimiento|legamov|alta|baja/.test(message)) {
+  if (/movimiento|legamov|\b(?:alta|baja)\b/.test(message)) {
     return { intent: 'movements', policy: 'allowed' };
   }
   if (/personal|emplead|legajo/.test(message)) {
@@ -634,8 +841,27 @@ export function classifyIntent(rawMessage) {
   return { intent: 'out_of_scope', policy: 'unsupported' };
 }
 
+function classifyWorkforceFinanceIntent(message) {
+  const dimensions = FINANCE_DIMENSIONS.filter(item => item.pattern.test(message));
+  if (dimensions.length === 0) return null;
+  const hasFinancialMetric = /costo (?:neto|salarial|de nomina)|importe|monto|finanz|neto|bruto|retencion|aporte patronal|masa salarial|nomina|\bcalculo\b/.test(message);
+  if (/compar| versus |\bvs\b/.test(message)) {
+    return hasFinancialMetric ? 'workforce_finance_compare' : null;
+  }
+  if (/componentes?|composicion|descomposicion|desglos|como se compone/.test(message)) {
+    return hasFinancialMetric ? 'workforce_finance_composition' : null;
+  }
+  if (/evolucion|tendencia|ultimos? \d{1,2} meses|serie (?:mensual|historica)/.test(message)) {
+    return hasFinancialMetric ? 'workforce_finance_trend' : null;
+  }
+  if (hasFinancialMetric) {
+    return 'workforce_finance_overview';
+  }
+  return null;
+}
+
 function isPersonLookup(message, rawMessage) {
-  const legajoLookup = /\blegajo\s*(?:n(?:ro)?\.?|numero|#|:|=|-)?\s*\d+\b/.test(message);
+  const legajoLookup = /\blegajo\s*(?:(?:n(?:ro)?|numero)\s*[°º.]?|#|:|=|-)?\s*\d+\b/.test(message);
   const fileLookup = /\b(?:ficha|historial(?:\s+de\s+licencias)?)\s+(?:personal\s+|laboral\s+)?(?:de|del)\s+(?!(?:licencias?|municipio|personal|organismo|area|sector|periodo|ano|historicas?)\b)(?:(?:empleado|agente|concejal)\b|(?:[a-z][a-z'-]{1,}\s+){1,3}[a-z][a-z'-]{1,}\b)/.test(message);
   const leaveLookup = /\blicencias?\s+(?:de|del)\s+(?!(?:19|20)\d{2}\b)(?:un(?:a)?\s+)?(?:empleado|agente|concejal|[a-z][a-z'-]{1,}(?:\s+[a-z][a-z'-]{1,}){1,3})\b/.test(message);
   const namedRoleLookup = /\b(?:empleado|agente|concejal)\s+(?:llamad[oa]\s+)?[a-z][a-z'-]{1,}(?:\s+[a-z][a-z'-]{1,}){1,3}\b/.test(message);
@@ -646,19 +872,35 @@ function isPersonLookup(message, rawMessage) {
 function isBarePersonName(message, rawMessage) {
   const raw = String(rawMessage || '').trim();
   if (!/^[\p{L}'-]+(?:\s+[\p{L}'-]+){1,5}$/u.test(raw)) return false;
+  if (/^(?:que|como|cual|cuanto|cuantos|dame|mostra(?:r(?:me)?|me)?|muestra(?:me)?|explica(?:r(?:me)?|me)?|analiza(?:r(?:me)?|me)?|compara|comparar|tendencia|evolucion|resumen|panorama|estado|inventario|catalogo)\b/.test(message)) {
+    return false;
+  }
   const tokens = message.split(' ');
   return tokens.length >= 2 && tokens.length <= MAX_DIRECTORY_SEARCH_TOKENS &&
     tokens.every(token => /^[a-z'-]{2,40}$/u.test(token));
 }
 
-export function buildDeterministicAnswer(message, executive, quality, close = null, presentation = null) {
+export function buildDeterministicAnswer(
+  message,
+  executive,
+  quality,
+  close = null,
+  presentation = null,
+  assistantData = {},
+) {
   if (!validateAssistantContracts(executive, quality, close)) {
     const error = new Error('Los contratos portables GRH no son válidos.');
     error.code = 'GRH_ASSISTANT_CONTRACT_INVALID';
     throw error;
   }
   const classification = classifyIntent(message);
-  const context = semanticContext(executive, quality, close, presentation);
+  const context = semanticContext(
+    executive,
+    quality,
+    close,
+    presentation,
+    assistantData,
+  );
   const periodRequest = parsePeriodRequest(message);
   let result;
 
@@ -690,6 +932,19 @@ export function buildDeterministicAnswer(message, executive, quality, close = nu
       break;
     case 'help':
       result = helpAnswer();
+      break;
+    case 'decision_brief':
+      result = decisionBriefAnswer(context);
+      break;
+    case 'workforce_finance_overview':
+    case 'workforce_finance_trend':
+    case 'workforce_finance_composition':
+    case 'workforce_finance_compare':
+      result = workforceFinanceAnswer(context, message, classification.intent);
+      break;
+    case 'domain_catalog':
+    case 'data_inventory':
+      result = domainCatalogAnswer(context, classification.intent, message);
       break;
     case 'executive_summary':
       result = executiveSummary(context);
@@ -725,7 +980,7 @@ export function buildDeterministicAnswer(message, executive, quality, close = nu
       result = reconciliationAnswer(context);
       break;
     case 'trend':
-      result = trendAnswer(context, periodRequest);
+      result = trendAnswer(context, periodRequest, message);
       break;
     case 'source':
       result = sourceAnswer(context);
@@ -786,7 +1041,13 @@ export function parsePeriodRequest(rawMessage) {
   };
 }
 
-function semanticContext(executive, qualityProjection, closeProjection = null, presentation = null) {
+function semanticContext(
+  executive,
+  qualityProjection,
+  closeProjection = null,
+  presentation = null,
+  assistantData = {},
+) {
   const series = executive.compensation.series
     .filter(row => row.privacyStatus === 'released')
     .slice()
@@ -821,8 +1082,58 @@ function semanticContext(executive, qualityProjection, closeProjection = null, p
     privacyThreshold: executive.privacy.portableThreshold,
     privacyPolicyVersion: executive.policyVersion,
     presentation: hasConfiguredCurrency(presentation) ? presentation : null,
+    decisionBrief: validAssistantDecisionBrief(
+      assistantData?.decisionBrief,
+      executive.source,
+    ),
+    domainCatalog: validAssistantDomainCatalog(
+      assistantData?.domainCatalog,
+      executive.source,
+    ),
+    workforceFinance: validAssistantWorkforceFinance(
+      assistantData?.workforceFinance,
+      executive.source,
+    ),
     baseCaveats: [],
   };
+}
+
+function validAssistantDecisionBrief(value, source) {
+  if (value === undefined || value === null) return null;
+  if (!inspectGrhDecisionBriefContract(value)?.ok || !sameAssistantSource(value.source, source)) {
+    const error = new Error('El contrato decision-brief GRH no es válido.');
+    error.code = 'GRH_DECISION_BRIEF_CONTRACT_INVALID';
+    throw error;
+  }
+  return value;
+}
+
+function validAssistantDomainCatalog(value, source) {
+  if (value === undefined || value === null) return null;
+  if (!inspectGrhDomainCatalogContract(value)?.ok || !sameAssistantSource(value.source, source)) {
+    const error = new Error('El contrato domain-catalog GRH no es válido.');
+    error.code = 'GRH_DOMAIN_CATALOG_CONTRACT_INVALID';
+    throw error;
+  }
+  return value;
+}
+
+function validAssistantWorkforceFinance(value, source) {
+  if (value === undefined || value === null) return null;
+  if (!inspectGrhWorkforceFinanceContract(value)?.ok || !sameAssistantSource(value.source, source)) {
+    const error = new Error('El contrato workforce-finance GRH no es válido.');
+    error.code = 'GRH_WORKFORCE_FINANCE_CONTRACT_INVALID';
+    throw error;
+  }
+  return value;
+}
+
+function sameAssistantSource(left, right) {
+  return left?.canonicalSystem === right?.canonicalSystem &&
+    left?.sourceFile === right?.sourceFile &&
+    left?.sourceSha256 === right?.sourceSha256 &&
+    left?.snapshotAsOf === right?.snapshotAsOf &&
+    left?.realtime === false && right?.realtime === false;
 }
 
 function resolveAnnualRequest(periodRequest, metricName) {
@@ -1075,7 +1386,7 @@ function resolveWorkforceDimensions(rawMessage) {
   const dimensions = [
     {
       key: 'byCostCenter',
-      requested: /centro(?:s)? de costo|centro(?:s)? costo/.test(message),
+      requested: /centro(?:s)? de costo(?:s)?|centro(?:s)? costo(?:s)?/.test(message),
       title: 'Participantes por centro de costo',
       summaryLabel: 'los centros de costo de origen',
       caveat: 'Los centros de costo provienen de referencias GRH y describen imputación de liquidación; no prueban presupuesto ejecutado ni organigrama contractual vigente.',
@@ -1125,6 +1436,521 @@ function workforceDistributionOverview(context, requestedDimensions) {
     caveats: ['Cada dimensión describe una clasificación de origen distinta. Sus valores no deben sumarse entre sí ni interpretarse como cargos, planta activa u organigrama vigente.'],
     nextQuestions: ['¿Cómo se distribuyen por centro de costo?', '¿Cómo se distribuyen por sector?', '¿Cómo se distribuyen por categoría de acuerdo de origen?'],
     visual: workforceOverviewVisual(context, available),
+  };
+}
+
+function decisionBriefAnswer(context) {
+  const brief = context.decisionBrief;
+  if (!brief) {
+    return assistantContractUnavailable(
+      'Brief de decisión no disponible',
+      'El contrato ejecutivo no está disponible para esta consulta.',
+      'GRH_DECISION_BRIEF_UNAVAILABLE',
+    );
+  }
+  const priorityLabels = {
+    cross_source_material_difference: 'La conciliación cross-source presenta diferencias materiales.',
+    temporal_quarantine_present: `${formatInteger(brief.situation.temporalQuarantineRows)} filas temporales permanecen en cuarentena.`,
+    historical_snapshot: `El corte es histórico (${brief.source.snapshotAsOf}) y no opera en tiempo real.`,
+  };
+  const statusLabels = {
+    attention_required: 'requiere atención',
+    review_recommended: 'requiere revisión',
+    context_only: 'aporta contexto',
+  };
+  const findings = brief.priorities.map(priority =>
+    priorityLabels[priority.code] || `Prioridad gobernada: ${priority.code}.`);
+  if (brief.change.status === 'released') {
+    findings.push(
+      `Frente a ${brief.change.previousPeriod}, la participación cambió ${formatSignedInteger(brief.change.participantDelta)} y el acuerdo mensual de valores cambió ${formatSignedPercent(brief.change.valueAgreementDeltaPctPoints)} puntos porcentuales.`,
+    );
+  }
+  return {
+    title: `Brief de decisión GRH · ${brief.period}`,
+    summary: `El corte ${statusLabels[brief.status] || 'requiere lectura contextual'}. La primera acción es revisar la diferencia entre cálculo y totpago sin convertir el control en una afirmación de pago.`,
+    findings,
+    evidence: [
+      metric('Participantes', brief.situation.participantDisplay, 'Participación de cálculo; no planta activa.'),
+      metric('Calidad gobernada', formatPercent(brief.situation.qualityScorePct), 'Score del extracto agregado.'),
+      metric('Cobertura mensual de corridas', formatPercent(brief.situation.runCoveragePct), 'No implica acuerdo de importes.'),
+      metric('Acuerdo mensual de valores', formatPercent(brief.situation.valueAgreementPct), 'Comparación cálculo/totpago del mismo período.'),
+    ],
+    caveats: [
+      'El brief prioriza señales verificadas; no asigna responsables, plazos ni causas.',
+      'El cálculo de nómina no certifica transferencia bancaria ni asiento contable.',
+    ],
+    nextQuestions: [
+      '¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?',
+      '¿Cómo está la conciliación entre cálculo y totpago?',
+      '¿Qué registros quedaron en cuarentena?',
+    ],
+    actions: [
+      {
+        id: 'open_hacienda_reconciliation',
+        label: 'Revisar conciliación en Hacienda',
+        href: '/hacienda#closeReconciliationTitle',
+        requiredCapability: 'navigation.hacienda',
+      },
+      {
+        id: 'open_data_quality',
+        label: 'Revisar cuarentena y calidad',
+        href: '/calidad',
+        requiredCapability: 'navigation.data-quality',
+      },
+      {
+        id: 'open_organization_analytics',
+        label: 'Abrir estructura y ausencias',
+        href: '/estructura#organizationExplorer',
+        requiredCapability: 'navigation.organization-analytics',
+      },
+    ],
+    visual: decisionBriefVisual(brief),
+    resolvedPeriod: brief.period,
+  };
+}
+
+function domainCatalogAnswer(context, intent, rawMessage) {
+  const catalog = context.domainCatalog;
+  if (!catalog) {
+    return assistantContractUnavailable(
+      'Catálogo GRH no disponible',
+      'El inventario gobernado de dominios no está disponible para esta consulta.',
+      'GRH_DOMAIN_CATALOG_UNAVAILABLE',
+    );
+  }
+  const selected = selectDomainCatalogDomain(catalog, rawMessage);
+  const rankedDomains = catalog.domains.slice().sort((left, right) =>
+    right.counts.rows - left.counts.rows || left.title.localeCompare(right.title, 'es'));
+  const inventory = intent === 'data_inventory';
+  if (selected) {
+    const tables = selected.tables.slice().sort((left, right) =>
+      right.rows - left.rows || left.label.localeCompare(right.label, 'es'));
+    return {
+      title: `${selected.title} · ${domainStatusLabel(selected.status)}`,
+      summary: selected.summary,
+      findings: [
+        `${formatInteger(selected.counts.tables)} tablas mapeadas, ${formatInteger(selected.counts.nonEmptyTables)} con filas y ${formatInteger(selected.counts.rows)} filas inventariadas.`,
+        ...tables.slice(0, 5).map(table =>
+          `${table.label}: ${formatInteger(table.rows)} filas · ${table.status === 'available' ? 'disponible' : 'vacía'}.`),
+      ],
+      evidence: [
+        metric('Tablas del dominio', formatInteger(selected.counts.tables), `${formatInteger(selected.counts.nonEmptyTables)} no vacías.`),
+        metric('Filas inventariadas', formatInteger(selected.counts.rows), 'Metadato del diccionario gobernado.'),
+        metric('Cobertura temporal', domainPeriodLabel(selected.periods), 'No se completan períodos ausentes.'),
+        ...selected.coverage.slice(0, 2).map(item => metric(
+          item.label,
+          item.unit === 'percent' ? formatPercent(item.value) : formatInteger(item.value),
+          item.status === 'verified' ? 'Cobertura verificada.' : 'Cobertura informativa.',
+        )),
+      ],
+      caveats: [
+        'El catálogo publica metadatos y cobertura; no abre filas crudas ni convierte tablas catalogadas en indicadores certificados.',
+        'Una tabla disponible puede requerir una proyección y reglas de negocio adicionales antes de usarse para decidir.',
+      ],
+      nextQuestions: selected.questions.slice(0, 4),
+      actions: [
+        {
+          id: `open_grh_domain_${selected.id}`,
+          label: `Abrir ${selected.title}`,
+          href: `/areas-grh.html?domain=${encodeURIComponent(selected.id)}`,
+          requiredCapability: 'navigation.rrhh',
+        },
+        {
+          id: 'open_data_quality',
+          label: 'Revisar calidad y linaje',
+          href: '/calidad',
+          requiredCapability: 'navigation.data-quality',
+        },
+      ],
+      visual: domainCatalogTableVisual(tables, selected.title),
+    };
+  }
+  return {
+    title: inventory ? 'Inventario gobernado de datos GRH' : 'Catálogo de áreas y dominios GRH',
+    summary: `${formatInteger(catalog.counts.totalTables)} tablas y ${formatInteger(catalog.counts.totalRows)} filas están inventariadas en la fuente. ${formatInteger(catalog.counts.domainCount)} dominios organizan la evidencia; catalogado no equivale a indicador certificado.`,
+    findings: rankedDomains.slice(0, 5).map(domain =>
+      `${domain.title}: ${formatInteger(domain.counts.rows)} filas en ${formatInteger(domain.counts.tables)} tablas · ${domainStatusLabel(domain.status)}.`),
+    evidence: [
+      metric('Tablas totales', formatInteger(catalog.counts.totalTables), `${formatInteger(catalog.counts.nonEmptyTables)} no vacías.`),
+      metric('Filas totales', formatInteger(catalog.counts.totalRows), 'Diccionario completo del snapshot.'),
+      metric('Tablas mapeadas', formatInteger(catalog.counts.mappedTables), `${formatInteger(catalog.counts.domainCount)} dominios.`),
+      metric('Filas mapeadas', formatInteger(catalog.counts.mappedRows), 'Suma reconciliada de los dominios publicados.'),
+    ],
+    caveats: [
+      'El catálogo expone metadatos agregados; no abre filas crudas ni certifica automáticamente una métrica por cada tabla.',
+      `Snapshot ${catalog.source.snapshotAsOf}; no es tiempo real.`,
+    ],
+    nextQuestions: rankedDomains.slice(0, 4).map(domain =>
+      `¿Qué tablas de ${domain.title} hay?`),
+    actions: [
+      {
+        id: 'open_grh_domain_catalog',
+        label: 'Abrir áreas y datos GRH',
+        href: '/areas-grh.html',
+        requiredCapability: 'navigation.rrhh',
+      },
+      {
+        id: 'open_data_quality',
+        label: 'Revisar calidad de datos',
+        href: '/calidad',
+        requiredCapability: 'navigation.data-quality',
+      },
+    ],
+    visual: domainCatalogOverviewVisual(rankedDomains),
+  };
+}
+
+function selectDomainCatalogDomain(catalog, rawMessage) {
+  const message = normalize(rawMessage);
+  const definitions = [
+    ['personas_estructura', /personas?|estructura|legajos?|organiza|dotacion/],
+    ['asistencia_tiempo', /asistencia|ausencias?|tiempo|turnos?|horarios?|fichadas?/],
+    ['licencias_salud', /licencias?|salud laboral|medic|\bart\b/],
+    ['carrera_desarrollo', /carrera|desarrollo|formacion|estudios?|trayectoria|calificaciones?/],
+    ['relaciones_laborales', /relaciones? laborales?|convenios?|gremios?|ambitos?|niveles?/],
+    ['nomina_control', /nomina|control de calculo|liquidacion|totpago|cierre/],
+    ['beneficios_descuentos', /beneficios?|descuentos?|embargos?|anticipos?|prestamos?|ganancias|obra social/],
+    ['movimientos_trazabilidad', /movimientos?|trazabilidad|novedades?|errores? de importacion/],
+  ];
+  const matches = definitions.filter(([, pattern]) => pattern.test(message));
+  if (matches.length !== 1) return null;
+  return catalog.domains.find(domain => domain.id === matches[0][0]) || null;
+}
+
+function domainStatusLabel(status) {
+  return {
+    operational: 'operativo',
+    partial: 'parcial',
+    catalogued: 'catalogado',
+  }[status] || 'sin estado';
+}
+
+function domainPeriodLabel(periods) {
+  if (periods?.status === 'not_available') return 'No disponible';
+  if (periods?.first === periods?.last) return periods.first;
+  return `${periods?.first || '—'} → ${periods?.last || '—'}`;
+}
+
+function workforceFinanceAnswer(context, rawMessage, intent) {
+  if (!context.workforceFinance) {
+    return assistantContractUnavailable(
+      'Análisis de cohortes financieras no disponible',
+      'El contrato workforce-finance no está disponible para esta consulta.',
+      'GRH_WORKFORCE_FINANCE_UNAVAILABLE',
+    );
+  }
+  const query = parseWorkforceFinanceQuery(rawMessage, context.workforceFinance, intent);
+  if (!query.ok) return workforceFinanceLimit(query);
+  if (intent === 'workforce_finance_trend') return workforceFinanceTrendAnswer(context, query);
+  if (intent === 'workforce_finance_composition') return workforceFinanceCompositionAnswer(context, query);
+  if (intent === 'workforce_finance_compare') return workforceFinanceCompareAnswer(context, query);
+  return workforceFinanceOverviewAnswer(context, query);
+}
+
+export function parseWorkforceFinanceQuery(rawMessage, projection, intent) {
+  if (!inspectGrhWorkforceFinanceContract(projection)?.ok || !FINANCE_INTENTS.has(intent)) {
+    return { ok: false, code: 'FINANCE_CONTRACT_INVALID' };
+  }
+  const message = normalize(rawMessage);
+  const dimensions = FINANCE_DIMENSIONS.filter(item => item.pattern.test(message));
+  if (dimensions.length !== 1) {
+    return { ok: false, code: dimensions.length ? 'FINANCE_DIMENSION_AMBIGUOUS' : 'FINANCE_DIMENSION_REQUIRED' };
+  }
+  const dimension = dimensions[0];
+  const view = projection.dimensionViews.find(item => item.dimension === dimension.key);
+  if (!view) return { ok: false, code: 'FINANCE_DIMENSION_UNAVAILABLE' };
+
+  const periodRequest = parsePeriodRequest(rawMessage);
+  if (periodRequest.invalid || periodRequest.months.length > 1 || periodRequest.years.length) {
+    return { ok: false, code: 'FINANCE_PERIOD_INVALID' };
+  }
+  const period = periodRequest.months[0] || projection.cohort.lastPeriod;
+  const periodRow = view.periods.find(item => item.period === period);
+  if (!periodRow || periodRow.privacyStatus !== 'released') {
+    return { ok: false, code: 'FINANCE_PERIOD_UNAVAILABLE', period };
+  }
+
+  const component = FINANCE_COMPONENTS.find(item => item.pattern.test(message)) ||
+    FINANCE_COMPONENTS.find(item => item.key === 'netPayrollCents');
+  const categories = matchFinanceCategories(message, view, period);
+  const requiredCount = intent === 'workforce_finance_compare'
+    ? 2
+    : (intent === 'workforce_finance_overview' ? null : 1);
+  if (categories.length > 2 || (requiredCount !== null && categories.length !== requiredCount) ||
+      (intent === 'workforce_finance_overview' && categories.length > 1)) {
+    return {
+      ok: false,
+      code: categories.length === 0 ? 'FINANCE_CATEGORY_REQUIRED' : 'FINANCE_CATEGORY_AMBIGUOUS',
+      period,
+      dimension: dimension.key,
+    };
+  }
+
+  const rawWindow = message.match(/ultimos?\s+(\d{1,2})\s+meses/);
+  const windowMonths = rawWindow ? Number(rawWindow[1]) : 12;
+  if (intent === 'workforce_finance_trend' &&
+      (!Number.isSafeInteger(windowMonths) || windowMonths < 2 || windowMonths > 12)) {
+    return { ok: false, code: 'FINANCE_TREND_WINDOW_UNSUPPORTED' };
+  }
+  return {
+    ok: true,
+    intent,
+    dimension,
+    component,
+    period,
+    periodRow,
+    view,
+    categories,
+    windowMonths,
+    projection,
+  };
+}
+
+function matchFinanceCategories(message, view, period) {
+  const candidates = new Map();
+  for (const row of view.periods) {
+    if (row.period > period || row.privacyStatus !== 'released') continue;
+    for (const cell of row.cells) {
+      if (cell.privacyStatus !== 'released' || !Number.isSafeInteger(cell.companyCode) ||
+          !Number.isSafeInteger(cell.sourceCode)) continue;
+      const normalizedLabel = normalize(cell.label);
+      if (!normalizedLabel || !message.includes(normalizedLabel)) continue;
+      const id = `${cell.companyCode}:${cell.sourceCode}`;
+      const previous = candidates.get(id);
+      if (!previous || row.period > previous.observedPeriod) {
+        candidates.set(id, { ...cell, observedPeriod: row.period, normalizedLabel });
+      }
+    }
+  }
+  const matches = [...candidates.values()];
+  return matches
+    .filter(candidate => !matches.some(other =>
+      other !== candidate && other.normalizedLabel.length > candidate.normalizedLabel.length &&
+      other.normalizedLabel.includes(candidate.normalizedLabel)))
+    .sort((left, right) => message.indexOf(left.normalizedLabel) - message.indexOf(right.normalizedLabel));
+}
+
+function workforceFinanceOverviewAnswer(context, query) {
+  const released = query.periodRow.cells.filter(cell => cell.privacyStatus === 'released');
+  const selected = query.categories[0] || null;
+  const rows = selected
+    ? released.filter(cell => financeCellIdentity(cell) === financeCellIdentity(selected))
+    : released.slice().sort((left, right) =>
+      right.components[query.component.key] - left.components[query.component.key] ||
+      left.label.localeCompare(right.label, 'es'));
+  if (!rows.length) return workforceFinanceLimit({ ok: false, code: 'FINANCE_CATEGORY_UNAVAILABLE' });
+  const top = rows[0];
+  const findings = selected
+    ? [
+      `${top.label}: ${formatSourceAmount(top.components[query.component.key], context.presentation)} de ${query.component.label.toLowerCase()}.`,
+      `Participación de asignación del período: ${formatPercent(top.allocationSharePct)}.`,
+    ]
+    : rows.slice(0, 5).map((cell, index) =>
+      `${index + 1}. ${cell.label}: ${formatSourceAmount(cell.components[query.component.key], context.presentation)} (${formatPercent(cell.allocationSharePct)}).`);
+  return {
+    title: `${query.component.label} por ${query.dimension.label} · ${query.period}`,
+    summary: `${top.label} concentra el mayor valor liberado: ${formatSourceAmount(top.components[query.component.key], context.presentation)}. Es asignación observada en cálculo, no presupuesto ejecutado ni pago bancario.`,
+    findings,
+    evidence: rows.slice(0, 4).map(cell => metric(
+      cell.label,
+      formatSourceAmount(cell.components[query.component.key], context.presentation),
+      `${formatPercent(cell.allocationSharePct)} del neto asignado del período.`,
+    )),
+    caveats: workforceFinanceCaveats(query.projection),
+    nextQuestions: [
+      `¿Cómo evolucionó el neto de ${top.label} por ${query.dimension.label} en los últimos 12 meses?`,
+      `Mostrá los componentes de ${top.label} por ${query.dimension.label} en ${query.period}`,
+    ],
+    actions: financeActions(top, query.dimension),
+    visual: selected
+      ? workforceFinanceComponentsVisual(context, top, query)
+      : workforceFinanceRankingVisual(context, rows, query),
+    resolvedPeriod: query.period,
+  };
+}
+
+function workforceFinanceCompositionAnswer(context, query) {
+  const selected = financeCellForPeriod(query.periodRow, query.categories[0]);
+  if (!selected) return workforceFinanceLimit({ ok: false, code: 'FINANCE_CATEGORY_UNAVAILABLE' });
+  return {
+    title: `Composición de ${selected.label} · ${query.period}`,
+    summary: `El neto de control asignado a ${selected.label} es ${formatSourceAmount(selected.components.netPayrollCents, context.presentation)}. La composición es aritmética y no atribuye causas.`,
+    findings: [
+      `Bruto con asignaciones: ${formatSourceAmount(selected.components.grossWithFamilyAllowancesCents, context.presentation)}.`,
+      `Retenciones: ${formatSourceAmount(selected.components.employeeWithholdingsCents, context.presentation)}.`,
+      `Aportes patronales: ${formatSourceAmount(selected.components.employerContributionsCents, context.presentation)}.`,
+      `Participación de asignación: ${formatPercent(selected.allocationSharePct)}.`,
+    ],
+    evidence: FINANCE_COMPONENTS.map(component => metric(
+      component.label,
+      formatSourceAmount(selected.components[component.key], context.presentation),
+      'Componente de cálculo liberado.',
+    )),
+    caveats: workforceFinanceCaveats(query.projection),
+    nextQuestions: [
+      `¿Cómo evolucionó el neto de ${selected.label} por ${query.dimension.label} en los últimos 12 meses?`,
+      `¿Qué costo neto se concentra por ${query.dimension.label} en ${query.period}?`,
+    ],
+    actions: financeActions(selected, query.dimension),
+    visual: workforceFinanceComponentsVisual(context, selected, query),
+    resolvedPeriod: query.period,
+  };
+}
+
+function workforceFinanceTrendAnswer(context, query) {
+  const selected = query.categories[0];
+  const rows = query.view.periods
+    .filter(row => row.period <= query.period)
+    .slice(-query.windowMonths)
+    .map(row => ({ row, cell: financeCellForPeriod(row, selected) }))
+    .filter(item => item.row.privacyStatus === 'released' && item.cell);
+  if (rows.length < 2) return workforceFinanceLimit({ ok: false, code: 'FINANCE_TREND_UNAVAILABLE' });
+  const first = rows[0];
+  const latest = rows.at(-1);
+  const firstValue = first.cell.components[query.component.key];
+  const latestValue = latest.cell.components[query.component.key];
+  const delta = latestValue - firstValue;
+  const deltaPct = firstValue === 0 ? null : delta / firstValue * 100;
+  return {
+    title: `${query.component.label} de ${latest.cell.label} · tendencia`,
+    summary: `Entre ${first.row.period} y ${latest.row.period}, el valor cambió ${formatSourceAmountSigned(delta, context.presentation)}${deltaPct === null ? '' : ` (${formatSignedPercent(deltaPct)})`}.`,
+    findings: [
+      `${first.row.period}: ${formatSourceAmount(firstValue, context.presentation)}.`,
+      `${latest.row.period}: ${formatSourceAmount(latestValue, context.presentation)}.`,
+      `${rows.length} meses liberados dentro de una ventana de ${query.windowMonths}; no se completaron huecos ni celdas protegidas.`,
+    ],
+    evidence: [
+      metric('Cambio observado', formatSourceAmountSigned(delta, context.presentation), `${first.row.period} → ${latest.row.period}.`),
+      metric('Meses liberados', formatInteger(rows.length), `Ventana solicitada: ${query.windowMonths}.`),
+    ],
+    caveats: workforceFinanceCaveats(query.projection),
+    nextQuestions: [
+      `Mostrá los componentes de ${latest.cell.label} por ${query.dimension.label} en ${latest.row.period}`,
+      `¿Qué costo neto se concentra por ${query.dimension.label} en ${latest.row.period}?`,
+    ],
+    actions: financeActions(latest.cell, query.dimension),
+    visual: workforceFinanceTrendVisual(context, rows, query),
+    resolvedPeriod: `${first.row.period}→${latest.row.period}`,
+  };
+}
+
+function workforceFinanceCompareAnswer(context, query) {
+  const cells = query.categories.map(category => financeCellForPeriod(query.periodRow, category));
+  if (cells.some(cell => !cell)) {
+    return workforceFinanceLimit({ ok: false, code: 'FINANCE_CATEGORY_UNAVAILABLE' });
+  }
+  const [left, right] = cells;
+  const leftValue = left.components[query.component.key];
+  const rightValue = right.components[query.component.key];
+  const delta = leftValue - rightValue;
+  const larger = delta >= 0 ? left : right;
+  const smaller = delta >= 0 ? right : left;
+  const absoluteDelta = Math.abs(delta);
+  const smallerValue = smaller.components[query.component.key];
+  const deltaPct = smallerValue === 0 ? null : absoluteDelta / smallerValue * 100;
+  return {
+    title: `${query.component.label} comparado · ${query.period}`,
+    summary: `${larger.label} supera a ${smaller.label} por ${formatSourceAmount(absoluteDelta, context.presentation)}${deltaPct === null ? '' : ` (${formatPercent(deltaPct)})`}.`,
+    findings: cells.map(cell =>
+      `${cell.label}: ${formatSourceAmount(cell.components[query.component.key], context.presentation)} (${formatPercent(cell.allocationSharePct)} de asignación).`),
+    evidence: cells.map(cell => metric(
+      cell.label,
+      formatSourceAmount(cell.components[query.component.key], context.presentation),
+      `${query.dimension.label} · ${query.period}.`,
+    )),
+    caveats: workforceFinanceCaveats(query.projection),
+    nextQuestions: cells.map(cell =>
+      `¿Cómo evolucionó el neto de ${cell.label} por ${query.dimension.label} en los últimos 12 meses?`),
+    actions: cells.flatMap(cell => financeActions(cell, query.dimension)).slice(0, 4),
+    visual: workforceFinanceComparisonVisual(context, cells, query),
+    resolvedPeriod: query.period,
+  };
+}
+
+function financeCellForPeriod(periodRow, identity) {
+  return periodRow?.privacyStatus === 'released'
+    ? periodRow.cells.find(cell =>
+      cell.privacyStatus === 'released' && financeCellIdentity(cell) === financeCellIdentity(identity)) || null
+    : null;
+}
+
+function financeCellIdentity(cell) {
+  return `${cell?.companyCode}:${cell?.sourceCode}`;
+}
+
+function financeActions(cell, dimension) {
+  if (!Number.isSafeInteger(cell?.companyCode) || !Number.isSafeInteger(cell?.sourceCode)) {
+    return [{
+      id: 'open_hacienda_cohorts',
+      label: 'Abrir cohortes en Hacienda',
+      href: '/hacienda#cohortContext',
+      requiredCapability: 'navigation.hacienda',
+    }];
+  }
+  const parameters = new URLSearchParams({
+    cohort: dimension.key,
+    company: String(cell.companyCode),
+    code: String(cell.sourceCode),
+  });
+  return [{
+    id: `open_hacienda_${dimension.key}_${cell.companyCode}_${cell.sourceCode}`,
+    label: `Abrir ${cell.label} en Hacienda`,
+    href: `/hacienda?${parameters.toString()}#cohortContext`,
+    requiredCapability: 'navigation.hacienda',
+  }];
+}
+
+function workforceFinanceCaveats(projection) {
+  return [
+    'Los importes son control de cálculo presentado en ARS por configuración del tenant; la fuente no declara moneda y no certifica pago.',
+    'Cada vista usa una sola dimensión. No se cruzan sector, centro de costo y acuerdo ni se habilitan filtros arbitrarios.',
+    projection.cohort.participantsMayOverlapAcrossCategories
+      ? 'Una persona puede aparecer en más de una categoría observada durante el período; las categorías no describen planta contractual exclusiva.'
+      : 'Las categorías describen observaciones de cálculo, no estado contractual.',
+  ];
+}
+
+function workforceFinanceLimit(query) {
+  const messages = {
+    FINANCE_CONTRACT_INVALID: 'El contrato financiero no superó la validación exacta.',
+    FINANCE_DIMENSION_REQUIRED: 'Indicá una dimensión: sector, centro de costo o categoría de acuerdo.',
+    FINANCE_DIMENSION_AMBIGUOUS: 'Elegí una sola dimensión; el contrato no permite intersecciones.',
+    FINANCE_DIMENSION_UNAVAILABLE: 'La dimensión solicitada no está publicada.',
+    FINANCE_PERIOD_INVALID: 'Indicá como máximo un período mensual YYYY-MM dentro del contrato.',
+    FINANCE_PERIOD_UNAVAILABLE: 'El período solicitado no está liberado en el contrato financiero.',
+    FINANCE_CATEGORY_REQUIRED: 'Indicá una categoría publicada dentro de la dimensión elegida.',
+    FINANCE_CATEGORY_AMBIGUOUS: 'La consulta no identifica la cantidad exacta de categorías requerida.',
+    FINANCE_CATEGORY_UNAVAILABLE: 'La categoría no está liberada para ese período.',
+    FINANCE_TREND_WINDOW_UNSUPPORTED: 'La tendencia admite entre 2 y 12 meses observados.',
+    FINANCE_TREND_UNAVAILABLE: 'No hay al menos dos meses liberados y comparables para esa categoría.',
+  };
+  return {
+    title: 'Consulta financiera incompleta',
+    summary: messages[query.code] || 'La consulta no cumple el contrato unidimensional de cohortes financieras.',
+    findings: [],
+    evidence: [],
+    caveats: ['No se sustituyó la dimensión, categoría o período solicitado por otro valor.'],
+    nextQuestions: [
+      '¿Qué costo neto se concentra por centro de costo en 2026-07?',
+      'Mostrá los componentes de Servicios Públicos por centro de costo en 2026-07',
+    ],
+    status: 'limited',
+    httpStatus: 422,
+    code: query.code || 'FINANCE_QUERY_INVALID',
+  };
+}
+
+function assistantContractUnavailable(title, summary, code) {
+  return {
+    title,
+    summary,
+    findings: [],
+    evidence: [],
+    caveats: ['No se generó una respuesta alternativa ni se reutilizó otro contrato.'],
+    nextQuestions: ['¿Cuál es la fuente y el corte disponibles?'],
+    status: 'limited',
+    httpStatus: 503,
+    code,
   };
 }
 
@@ -1423,7 +2249,11 @@ function reconciliationAnswer(context) {
   };
 }
 
-function trendAnswer(context, periodRequest) {
+function trendAnswer(context, periodRequest, rawMessage = '') {
+  const message = normalize(rawMessage);
+  const requestedDimension = [...FINANCE_DIMENSIONS, ...NON_FINANCIAL_TREND_DIMENSIONS]
+    .find(item => item.pattern.test(message));
+  if (requestedDimension) return dimensionalTrendLimit(requestedDimension);
   const resolved = resolveTrendRequest(context, periodRequest);
   if (resolved.error) return resolved.error;
   const { current, previous } = resolved;
@@ -1450,6 +2280,45 @@ function trendAnswer(context, periodRequest) {
     nextQuestions: ['¿Qué compone el control del último período?', '¿Cómo está la conciliación cross-source?'],
     visual: trendVisual(context, previous, current),
     resolvedPeriod: `${previous.period}→${current.period}`,
+  };
+}
+
+function dimensionalTrendLimit(dimension) {
+  const examples = {
+    sector: '¿Cómo evolucionó el neto de Obrero por sector en los últimos 12 meses?',
+    costCenter: '¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?',
+    agreement: '¿Cómo evolucionó el neto de Personal interino por acuerdo en los últimos 12 meses?',
+  };
+  return {
+    title: `Definí la categoría para la tendencia por ${dimension.label}`,
+    summary: `La fuente no publica una serie histórica general de distribución por ${dimension.label}. No la sustituí por la variación municipal total. Para recorrer los 24 meses gobernados, indicá una categoría liberada y una métrica como neto, bruto, retenciones o aportes.`,
+    findings: [
+      `La distribución agregada actual por ${dimension.label} sigue disponible en Dotación y estructura.`,
+      'Hacienda y nómina permite tendencias mensuales por una sola dimensión y categoría.',
+    ],
+    evidence: [],
+    caveats: ['No se mezclan categorías ni se presenta el total municipal como si fuera una tendencia dimensional.'],
+    nextQuestions: [
+      examples[dimension.key] || '¿Qué tablas de personas y estructura hay?',
+      '¿Cómo se distribuyen los participantes por sector y centro de costo?',
+    ],
+    actions: [
+      {
+        id: 'open_workforce_structure',
+        label: 'Abrir dotación y estructura',
+        href: '/estructura',
+        requiredCapability: 'navigation.organization-analytics',
+      },
+      {
+        id: 'open_workforce_finance',
+        label: 'Abrir Hacienda y nómina',
+        href: '/hacienda#cohortContext',
+        requiredCapability: 'navigation.hacienda',
+      },
+    ],
+    status: 'limited',
+    httpStatus: 422,
+    code: 'DIMENSIONAL_TREND_REQUIRES_CATEGORY',
   };
 }
 
@@ -1721,6 +2590,119 @@ function trendVisual(context, previous, current) {
     title: 'Neto de control por período',
     subtitle: `${currencyDisclosure(context)} Comparación observada; no es pronóstico ni evidencia de pago.`,
     order: 'chronological',
+    unit: 'source_currency_cents',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function decisionBriefVisual(brief) {
+  return buildBarVisual({
+    title: 'Señales para decidir',
+    subtitle: 'Indicadores independientes del último período; no deben sumarse entre sí.',
+    order: 'defined',
+    unit: 'percent',
+    scaleMax: 100,
+    items: [
+      visualItem('Calidad gobernada', brief.situation.qualityScorePct, formatPercent(brief.situation.qualityScorePct)),
+      visualItem('Cobertura de corridas', brief.situation.runCoveragePct, formatPercent(brief.situation.runCoveragePct)),
+      visualItem('Exactitud de métricas', brief.situation.metricExactRatePct, formatPercent(brief.situation.metricExactRatePct)),
+      visualItem('Acuerdo mensual de valores', brief.situation.valueAgreementPct, formatPercent(brief.situation.valueAgreementPct)),
+    ],
+  });
+}
+
+function domainCatalogOverviewVisual(domains) {
+  const items = domains.slice(0, MAX_ANSWER_VISUAL_ITEMS).map(domain => visualItem(
+    domain.title,
+    domain.counts.rows,
+    `${formatInteger(domain.counts.rows)} filas`,
+  ));
+  return buildBarVisual({
+    title: 'Dominios por filas inventariadas',
+    subtitle: 'Metadato de tablas mapeadas; volumen no equivale a calidad, prioridad ni personas activas.',
+    order: 'ranked',
+    unit: 'rows',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function domainCatalogTableVisual(tables, domainTitle) {
+  const items = tables
+    .filter(table => table.rows > 0)
+    .slice(0, MAX_ANSWER_VISUAL_ITEMS)
+    .map(table => visualItem(table.label, table.rows, `${formatInteger(table.rows)} filas`));
+  return buildBarVisual({
+    title: `Tablas principales · ${domainTitle}`,
+    subtitle: 'Filas registradas en el diccionario gobernado; no son personas únicas ni indicadores certificados.',
+    order: 'ranked',
+    unit: 'rows',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function workforceFinanceRankingVisual(context, rows, query) {
+  const items = rows
+    .slice(0, MAX_ANSWER_VISUAL_ITEMS)
+    .map(cell => visualItem(
+      cell.label,
+      cell.components[query.component.key],
+      formatSourceAmount(cell.components[query.component.key], context.presentation),
+    ));
+  return buildBarVisual({
+    title: `${query.component.label} por ${query.dimension.label}`,
+    subtitle: `${query.period} · asignación observada en cálculo; no presupuesto ejecutado ni pago.`,
+    order: 'ranked',
+    unit: 'source_currency_cents',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function workforceFinanceComponentsVisual(context, cell, query) {
+  const items = FINANCE_COMPONENTS.map(component => visualItem(
+    component.label,
+    cell.components[component.key],
+    formatSourceAmount(cell.components[component.key], context.presentation),
+  ));
+  return buildBarVisual({
+    title: `Componentes de ${cell.label}`,
+    subtitle: `${query.period} · descomposición aritmética de cálculo; no atribución causal.`,
+    order: 'defined',
+    unit: 'source_currency_cents',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function workforceFinanceTrendVisual(context, rows, query) {
+  const items = rows.map(({ row, cell }) => visualItem(
+    row.period,
+    cell.components[query.component.key],
+    formatSourceAmount(cell.components[query.component.key], context.presentation),
+  ));
+  return buildBarVisual({
+    title: `${query.component.label} · evolución observada`,
+    subtitle: `${rows.at(-1).cell.label} · sólo meses con celda liberada; no pronóstico.`,
+    order: 'chronological',
+    unit: 'source_currency_cents',
+    scaleMax: maxVisualValue(items),
+    items,
+  });
+}
+
+function workforceFinanceComparisonVisual(context, cells, query) {
+  const items = cells.map(cell => visualItem(
+    cell.label,
+    cell.components[query.component.key],
+    formatSourceAmount(cell.components[query.component.key], context.presentation),
+  ));
+  return buildBarVisual({
+    title: `${query.component.label} · comparación`,
+    subtitle: `${query.period} · dos categorías liberadas de la misma dimensión: ${query.dimension.label}.`,
+    order: 'defined',
     unit: 'source_currency_cents',
     scaleMax: maxVisualValue(items),
     items,

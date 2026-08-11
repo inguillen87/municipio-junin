@@ -8,11 +8,15 @@ import {
   buildDeterministicAnswer,
   classifyIntent,
   createAiAnalyzeHandler,
+  parseWorkforceFinanceQuery,
   validateAssistantContracts,
   validateSemanticContract,
 } from '../api/ai-analyze.js';
 import { buildPortableGrhViews } from '../api/lib/grh-portable-bundle.js';
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
+import { buildGrhDecisionBriefProjection } from '../api/lib/grh-decision-brief-projection.js';
+import { buildGrhDomainCatalogProjection } from '../api/lib/grh-domain-catalog.js';
+import { buildGrhWorkforceFinanceProjection } from '../api/lib/grh-workforce-finance-projection.js';
 import {
   GRH_DIRECTORY_EXCLUDED_FIELDS,
   GRH_DIRECTORY_SCHEMA_VERSION,
@@ -24,6 +28,7 @@ const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ 
 
 const PROFILE_URL = new URL('../api/_data/grh-profile.json', import.meta.url);
 const SEMANTIC_URL = new URL('../api/_data/grh-semantic.json', import.meta.url);
+const WORKFORCE_FINANCE_URL = new URL('../api/_data/grh-workforce-finance.json', import.meta.url);
 const HAS_PRIVATE_GRH = existsSync(PROFILE_URL) && existsSync(SEMANTIC_URL);
 
 function realBundle() {
@@ -48,6 +53,24 @@ function realViews() {
   return {
     ...buildPortableGrhViews(bundle),
     close: buildGrhCloseProjection(bundle.semantic),
+  };
+}
+
+function realAssistantData(views = realViews(), bundle = realBundle()) {
+  const source = JSON.parse(readFileSync(WORKFORCE_FINANCE_URL, 'utf8'));
+  const presentation = {
+    schemaVersion: JUNIN_PRESENTATION.schemaVersion,
+    locale: JUNIN_PRESENTATION.locale,
+    displayCurrencyCode: JUNIN_PRESENTATION.displayCurrencyCode,
+    basis: JUNIN_PRESENTATION.displayCurrencyBasis,
+    effectiveFrom: JUNIN_PRESENTATION.displayCurrencyEffectiveOn,
+    sourceCurrencyStatus: JUNIN_PRESENTATION.sourceCurrencyStatus,
+  };
+  return {
+    decisionBrief: buildGrhDecisionBriefProjection(views.executive, views.quality, views.close),
+    domainCatalog: buildGrhDomainCatalogProjection(bundle),
+    workforceFinance: buildGrhWorkforceFinanceProjection(source, { presentation }),
+    workforceFinanceSource: source,
   };
 }
 
@@ -982,6 +1005,228 @@ test('private directory provenance drift and database errors fail closed without
   assert.equal(logs.every(line => line === '[GRH-ASSISTANT] Directorio privado no disponible'), true);
 });
 
+test('decision brief and workforce-finance intents answer from the governed real contracts', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const data = realAssistantData(views);
+  const ask = question => buildDeterministicAnswer(
+    question,
+    views.executive,
+    views.quality,
+    views.close,
+    JUNIN_PRESENTATION,
+    data,
+  );
+
+  const brief = ask('¿Qué requiere atención y qué acción sigue?');
+  assert.equal(brief.intent, 'decision_brief');
+  assert.equal(brief.status, 'answered');
+  assert.equal(brief.resolvedPeriod, '2026-07');
+  assert.deepEqual(brief.answer.actions.map(action => action.href), [
+    '/hacienda#closeReconciliationTitle',
+    '/calidad',
+    '/estructura#organizationExplorer',
+  ]);
+  assertBarVisual(brief.answer.visual, { unit: 'percent', order: 'defined' });
+
+  const overview = ask('¿Qué costo neto se concentra por centro de costo en 2026-07?');
+  assert.equal(overview.intent, 'workforce_finance_overview');
+  assert.match(overview.answer.summary, /SERVICIOS PUBLICOS/);
+  assertBarVisual(overview.answer.visual, { unit: 'source_currency_cents', order: 'ranked' });
+
+  const trend = ask('¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?');
+  assert.equal(trend.intent, 'workforce_finance_trend');
+  assert.equal(trend.answer.visual.items.length, 12);
+  assertBarVisual(trend.answer.visual, { unit: 'source_currency_cents', order: 'chronological' });
+
+  const composition = ask('Mostrá los componentes del cálculo de Servicios Públicos por centro de costo en 2026-07');
+  assert.equal(composition.intent, 'workforce_finance_composition');
+  assert.equal(composition.answer.visual.items.length, 8);
+  assert.equal(composition.answer.actions[0].href,
+    '/hacienda?cohort=costCenter&company=101&code=2#cohortContext');
+
+  const comparison = ask('Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en 2026-07');
+  assert.equal(comparison.intent, 'workforce_finance_compare');
+  assert.deepEqual(comparison.answer.visual.items.map(item => item.label), [
+    'SERVICIOS PUBLICOS',
+    'SECRETARIA DE GOBIERNO',
+  ]);
+  assert.equal(comparison.answer.actions.length, 2);
+  assert.doesNotMatch(JSON.stringify(comparison), /dni|cuil|legajo|nombre|apellido/i);
+});
+
+test('workforce-finance parser is one-dimensional, released-only and period bounded', { skip: !HAS_PRIVATE_GRH }, () => {
+  const projection = realAssistantData().workforceFinance;
+  const ambiguous = parseWorkforceFinanceQuery(
+    'Compará OBRERO y ADMINISTRATIVO por sector y centro de costo en 2026-07',
+    projection,
+    'workforce_finance_compare',
+  );
+  assert.deepEqual(ambiguous, { ok: false, code: 'FINANCE_DIMENSION_AMBIGUOUS' });
+
+  const protectedCell = parseWorkforceFinanceQuery(
+    'Mostrá los componentes de Otros celdas protegidas por categoría de acuerdo en 2026-07',
+    projection,
+    'workforce_finance_composition',
+  );
+  assert.equal(protectedCell.ok, false);
+  assert.equal(protectedCell.code, 'FINANCE_CATEGORY_REQUIRED');
+
+  const missingPeriod = parseWorkforceFinanceQuery(
+    'Mostrá el neto por centro de costo en 2020-01',
+    projection,
+    'workforce_finance_overview',
+  );
+  assert.equal(missingPeriod.ok, false);
+  assert.equal(missingPeriod.code, 'FINANCE_PERIOD_UNAVAILABLE');
+
+  const oversizedWindow = parseWorkforceFinanceQuery(
+    'Evolución del neto de Servicios Públicos por centro de costo en los últimos 24 meses',
+    projection,
+    'workforce_finance_trend',
+  );
+  assert.equal(oversizedWindow.ok, false);
+  assert.equal(oversizedWindow.code, 'FINANCE_TREND_WINDOW_UNSUPPORTED');
+});
+
+test('assistant endpoint reads workforce-finance only for its allowlisted intents', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const bundle = realBundle();
+  const finance = realAssistantData().workforceFinanceSource;
+  const calls = [];
+  const handler = createAiAnalyzeHandler({
+    requireRoleImpl: async () => ({
+      id: 'contador-real',
+      role: 'CONTADOR',
+      tenantId: 'tenant-junin',
+      tenant: { slug: 'junin' },
+    }),
+    requireDatasetTenantImpl: () => true,
+    readArtifactBundleImpl: async () => bundle,
+    readWorkforceFinanceArtifactImpl: async input => {
+      calls.push(input);
+      return { payload: finance };
+    },
+  });
+
+  const financeResponse = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: { message: 'Mostrá los componentes del cálculo de Servicios Públicos por centro de costo en 2026-07' },
+  }, financeResponse);
+  assert.equal(financeResponse.statusCode, 200);
+  assert.equal(financeResponse.payload.intent, 'workforce_finance_composition');
+  assert.equal(financeResponse.payload.dataStatus.source, 'grh_workforce_finance_governed_contract');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].tenantId, 'tenant-junin');
+
+  const briefResponse = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: { message: '¿Qué requiere atención y qué acción sigue?' },
+  }, briefResponse);
+  assert.equal(briefResponse.statusCode, 200);
+  assert.equal(briefResponse.payload.intent, 'decision_brief');
+  assert.equal(briefResponse.payload.dataStatus.source, 'grh_decision_brief_governed_contract');
+  assert.equal(calls.length, 1);
+});
+
+test('domain catalog intents stay aggregate and route to the governed explorer', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const data = realAssistantData(views);
+  for (const [question, expectedIntent] of [
+    ['¿Qué áreas y datos hay?', 'domain_catalog'],
+    ['¿Qué tablas hay?', 'data_inventory'],
+  ]) {
+    const result = buildDeterministicAnswer(
+      question,
+      views.executive,
+      views.quality,
+      views.close,
+      JUNIN_PRESENTATION,
+      data,
+    );
+    assert.equal(result.intent, expectedIntent);
+    assert.equal(result.answer.actions[0].href, '/areas-grh.html');
+    assert.equal(result.answer.actions[0].requiredCapability, 'navigation.rrhh');
+    assert.match(result.answer.summary, /257 tablas/);
+    assert.match(result.answer.summary, /6\.573\.057 filas/);
+    assert.equal(result.answer.evidence.some(item =>
+      item.label === 'Tablas mapeadas' && item.value === '53'), true);
+    assert.equal(result.answer.evidence.some(item =>
+      item.label === 'Filas mapeadas' && item.value === '6.354.042'), true);
+    assert.doesNotMatch(JSON.stringify(result), /employeeIdentifiers|rawRows/i);
+  }
+
+  for (const [question, expectedDomain] of [
+    ['¿Qué datos de carrera y formación existen?', 'Carrera y desarrollo'],
+    ['¿Qué datos de beneficios y descuentos existen?', 'Beneficios y descuentos'],
+    ['¿Qué convenios y gremios están representados?', 'Relaciones laborales'],
+  ]) {
+    assert.deepEqual(classifyIntent(question), { intent: 'domain_catalog', policy: 'allowed' });
+    const result = buildDeterministicAnswer(
+      question,
+      views.executive,
+      views.quality,
+      views.close,
+      JUNIN_PRESENTATION,
+      data,
+    );
+    assert.match(result.answer.title, new RegExp(expectedDomain, 'i'));
+    assert.match(result.answer.actions[0].href, /^\/areas-grh\.html\?domain=/);
+  }
+
+  const expectedQuestionIntents = {
+    personas_estructura: ['workforce', 'workforce_distribution', 'quality'],
+    asistencia_tiempo: ['absence', 'absence', 'data_inventory'],
+    licencias_salud: ['leave', 'leave', 'data_inventory'],
+    carrera_desarrollo: ['domain_catalog', 'data_inventory', 'domain_catalog'],
+    relaciones_laborales: ['workforce_distribution', 'domain_catalog', 'data_inventory'],
+    nomina_control: ['decision_brief', 'workforce_finance_overview', 'workforce_finance_composition'],
+    beneficios_descuentos: ['data_inventory', 'data_inventory', 'domain_catalog'],
+    movimientos_trazabilidad: ['movements', 'movements', 'data_inventory'],
+  };
+  for (const domain of data.domainCatalog.domains) {
+    const expectedIntents = expectedQuestionIntents[domain.id];
+    assert.equal(expectedIntents?.length, domain.questions.length, domain.id);
+    for (const [index, question] of domain.questions.entries()) {
+      const result = buildDeterministicAnswer(
+        question,
+        views.executive,
+        views.quality,
+        views.close,
+        JUNIN_PRESENTATION,
+        data,
+      );
+      assert.equal(result.httpStatus, 200, `${domain.id}: ${question}`);
+      assert.equal(result.intent, expectedIntents[index], `${domain.id}: ${question}`);
+      if (['domain_catalog', 'data_inventory'].includes(result.intent)) {
+        assert.match(result.answer.title, new RegExp(domain.title, 'i'), `${domain.id}: ${question}`);
+      }
+    }
+  }
+});
+
+test('every visible assistant suggestion resolves through a supported aggregate contract', { skip: !HAS_PRIVATE_GRH }, () => {
+  const source = readFileSync(new URL('../ia.html', import.meta.url), 'utf8');
+  const questions = [...source.matchAll(/data-question="([^"]+)"/g)].map(match => match[1]);
+  assert.equal(questions.length >= 12, true);
+  assert.equal(new Set(questions).size, questions.length);
+  const views = realViews();
+  const data = realAssistantData(views);
+  for (const question of questions) {
+    const result = buildDeterministicAnswer(
+      question,
+      views.executive,
+      views.quality,
+      views.close,
+      JUNIN_PRESENTATION,
+      data,
+    );
+    assert.equal(result.httpStatus, 200, question);
+    assert.notEqual(result.intent, 'out_of_scope', question);
+    assert.notEqual(result.intent, 'person_lookup', question);
+  }
+});
+
 test('intent classifier keeps deterministic allowlist boundaries', () => {
   assert.deepEqual(classifyIntent('Explicame el cierre GRH 2026-07'), { intent: 'close_explanation', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Conciliacion del periodo 2026-07'), { intent: 'close_explanation', policy: 'allowed' });
@@ -991,13 +1236,56 @@ test('intent classifier keeps deterministic allowlist boundaries', () => {
   assert.deepEqual(classifyIntent('luciana prueba concejal'), { intent: 'person_lookup', policy: 'limited' });
   assert.deepEqual(classifyIntent('Licencias de Prueba Luciana'), { intent: 'person_lookup', policy: 'limited' });
   assert.deepEqual(classifyIntent('legajo 123'), { intent: 'person_lookup', policy: 'limited' });
+  for (const question of ['legajo n 123', 'legajo nro 123', 'legajo n° 123', 'legajo nº 123', 'legajo número 123']) {
+    assert.deepEqual(classifyIntent(question), { intent: 'person_lookup', policy: 'limited' }, question);
+  }
+  for (const question of [
+    'qué hay sobre carrera', 'cómo anda recursos humanos', 'mostrá juan pérez', 'mostrar juan pérez',
+    'mostrame juan pérez', 'mostrarme juan pérez', 'analizá juan pérez', 'analizar juan pérez',
+    'analizame juan pérez', 'analizarme juan pérez', 'explicar juan pérez', 'explicame juan pérez',
+    'explicarme juan pérez', 'dame juan pérez',
+  ]) {
+    assert.notEqual(classifyIntent(question).intent, 'person_lookup', question);
+  }
   assert.deepEqual(classifyIntent('Licencias 2009'), { intent: 'leave', policy: 'allowed' });
   assert.deepEqual(classifyIntent('¿Qué licencias históricas están disponibles?'), { intent: 'leave', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Historial de licencias del municipio'), { intent: 'leave', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Historial de licencias de Juan Pérez'), { intent: 'person_lookup', policy: 'limited' });
   assert.deepEqual(classifyIntent('Distribución por centro de costo'), { intent: 'workforce_distribution', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Centro de costo'), { intent: 'workforce_distribution', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Compará la dotación por sector'), { intent: 'workforce_distribution', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Tendencia por sector'), { intent: 'trend', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Composición por sector'), { intent: 'workforce_distribution', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Compará el neto por centro de costo'), { intent: 'workforce_finance_compare', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Carrera desarrollo'), { intent: 'domain_catalog', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Beneficios descuentos'), { intent: 'domain_catalog', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('Relaciones laborales'), { intent: 'domain_catalog', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('¿Qué áreas y datos GRH hay disponibles?'), { intent: 'domain_catalog', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Buen día'), { intent: 'help', policy: 'allowed' });
   assert.deepEqual(classifyIntent('¿Qué datos de ausencias hay?'), { intent: 'absence', policy: 'allowed' });
   assert.deepEqual(classifyIntent('¿Cuánto se pagó por transferencia?'), { intent: 'bank_payment_limit', policy: 'limited' });
+});
+
+test('generic dimensional trends never substitute the municipal total', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const data = realAssistantData(views);
+  for (const question of [
+    'Tendencia por sector', 'Evolución por centro de costo', 'Tendencia por centros de costos',
+    'Cómo evolucionó la distribución por convenio', 'Tendencia por organización',
+    'Evolución por cargo', 'Cómo evolucionó la dotación por área',
+  ]) {
+    const result = buildDeterministicAnswer(
+      question,
+      views.executive,
+      views.quality,
+      views.close,
+      JUNIN_PRESENTATION,
+      data,
+    );
+    assert.equal(result.intent, 'trend', question);
+    assert.equal(result.httpStatus, 422, question);
+    assert.equal(result.answer.code, 'DIMENSIONAL_TREND_REQUIRES_CATEGORY', question);
+    assert.match(result.answer.summary, /No la sustituí por la variación municipal total/i, question);
+    assert.equal(result.answer.actions.some(action => action.href === '/hacienda#cohortContext'), true, question);
+  }
 });

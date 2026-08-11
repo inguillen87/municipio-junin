@@ -2,6 +2,7 @@ export const PUBLIC_LEGACY_HTML_FILES = Object.freeze([
   '404.html',
   'admin.html',
   'analytics.html',
+  'areas-grh.html',
   'auditoria.html',
   'ciudadano.html',
   'configuracion.html',
@@ -46,6 +47,7 @@ export const GOVERNED_LEGACY_HTML_FILES = Object.freeze([
   'login.html',
   'dashboard.html',
   'inicio.html',
+  'areas-grh.html',
   'roles.html',
   'manuales.html',
 ]);

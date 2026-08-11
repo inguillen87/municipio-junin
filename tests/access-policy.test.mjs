@@ -76,10 +76,11 @@ const EXPECTED_NAV_HREFS = [
   'hacienda.html',
   '/ejecutivo',
   '/estructura',
-  '/territorio',
-  '/calidad',
+  'areas-grh.html',
   'rrhh.html',
   'ia.html',
+  '/territorio',
+  '/calidad',
   'auditoria.html',
   'exportar.html',
   'importar.html',
@@ -387,8 +388,13 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
   assert.deepEqual(items.map(item => item.href), EXPECTED_NAV_HREFS);
   assert.equal(new Set(items.map(item => item.href)).size, items.length, 'sidebar hrefs must be unique');
   assert.equal(new Set(items.map(item => item.label)).size, items.length, 'sidebar labels must be unique');
-  assert.deepEqual(declaredCapabilities, [...EXPECTED_NAV_CAPABILITIES].sort());
+  assert.deepEqual(declaredCapabilities, [...EXPECTED_NAV_CAPABILITIES, 'navigation.rrhh'].sort());
+  assert.equal(items.filter(item => item.capability === 'navigation.rrhh').length, 2,
+    'RRHH exposes the governed domain explorer and the operational directory');
   assert.match(source, /window\.MuniNavigationCatalog\s*=\s*Object\.freeze\(NAV_ITEMS\.reduce/);
+  assert.match(source, /!Object\.prototype\.hasOwnProperty\.call\(catalog, item\.capability\)/,
+    'the first governed route remains the canonical quick-navigation destination');
+  assert.equal(items.find(item => item.capability === 'navigation.rrhh').href, 'areas-grh.html');
   assert.match(bottomSource, /var CATALOG = window\.MuniNavigationCatalog;/);
   assert.doesNotMatch(bottomSource, /^\s*'navigation\.[^']+':\s*\{/m,
     'bottom navigation must not duplicate the authoritative catalog');
@@ -399,7 +405,8 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
   assert.match(source, /href:'\/territorio'[\s\S]*label:'Centro territorial'[\s\S]*capability:'navigation\.territory'/);
   assert.match(source, /label:'Panorama municipal'/);
   assert.match(source, /label:'Hacienda y n(?:ó|Ã³)mina'/);
-  assert.match(source, /label:'Gesti(?:ó|Ã³)n de personas'/);
+  assert.match(source, /label:'Áreas y datos GRH'/);
+  assert.match(source, /label:'Directorio y fichas'/);
   assert.match(source, /label:'Asistente GRH'/);
   assert.match(source, /label:'Reportes'/);
   assert.match(source, /href:'auditoria\.html'[\s\S]*label:'Inventario de cargas'[\s\S]*capability:'navigation\.audit'/);

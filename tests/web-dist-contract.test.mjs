@@ -231,17 +231,18 @@ test('el artefacto web se ensambla, compila y verifica sin secretos', { timeout:
 });
 
 test('el contrato nominal rechaza HTML raiz no clasificado e index.html sin crear archivos', () => {
-  assert.equal(PUBLIC_LEGACY_HTML_FILES.length, 41);
+  assert.equal(PUBLIC_LEGACY_HTML_FILES.length, 42);
   assert.deepEqual(GOVERNED_LEGACY_HTML_FILES, [
     'login.html',
     'dashboard.html',
     'inicio.html',
+    'areas-grh.html',
     'roles.html',
     'manuales.html',
   ]);
   assert.deepEqual(GOVERNED_VITE_HTML_FILES, ['calidad.html', 'ejecutivo.html', 'estructura.html', 'territorio.html']);
   assert.deepEqual(VITE_ENTRY_HTML_FILES, GOVERNED_VITE_HTML_FILES);
-  assert.equal(GOVERNED_HTML_FILES.length, 9);
+  assert.equal(GOVERNED_HTML_FILES.length, 10);
   assert.deepEqual(
     assertClassifiedRootHtmlNames([...PUBLIC_LEGACY_HTML_FILES]),
     PUBLIC_LEGACY_HTML_FILES,

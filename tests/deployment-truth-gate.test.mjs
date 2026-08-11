@@ -839,6 +839,7 @@ test('valid Vercel topology passes exact clean document paths without redirects'
     '/api/grh-data',
     '/api/grh-directory',
     '/api/grh-directory-access',
+    '/api/grh-domain-catalog',
     '/api/grh-organization-analytics',
     '/api/grh-workforce-finance',
     '/api/municipal-territory',

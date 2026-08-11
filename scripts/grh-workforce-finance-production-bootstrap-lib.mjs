@@ -119,7 +119,7 @@ export function resolveBootstrapCommandInvocation(command, args) {
       return `"${text}"`;
     }).join(' ') + '"';
     return {
-      command: process.env.ComSpec || 'cmd.exe',
+      command: process.env['ComSpec'] || 'cmd.exe',
       args: ['/d', '/v:off', '/s', '/c', commandLine],
     };
   }

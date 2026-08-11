@@ -33,6 +33,15 @@
     }
   }
 
+  function currentCapabilities() {
+    var user = currentUser();
+    if (!user || !Array.isArray(user.capabilities)) return [];
+    return user.capabilities.filter(function(capability, index, values) {
+      return typeof capability === 'string' && capability.length <= 100 &&
+        /^[a-z0-9.-]+$/i.test(capability) && values.indexOf(capability) === index;
+    });
+  }
+
   function canUseExecutiveAssistant() {
     var user = currentUser();
     return Boolean(user && EXECUTIVE_ROLES.indexOf(user.role) !== -1);
@@ -362,12 +371,19 @@
     var validActions = safeArray(actions).slice(0, 4);
     if (!validActions.length) return;
     var row = createElement('div', 'answer-actions');
+    var capabilities = currentCapabilities();
     validActions.forEach(function(action) {
       if (!action || typeof action !== 'object') return;
       var href = safeInternalHref(action.href);
       if (!href || typeof action.label !== 'string' || !action.label.trim()) return;
+      var requiredCapability = action.requiredCapability;
+      if (requiredCapability !== undefined &&
+          (typeof requiredCapability !== 'string' ||
+            !/^[a-z0-9.-]{1,100}$/i.test(requiredCapability) ||
+            capabilities.indexOf(requiredCapability) === -1)) return;
       var link = createElement('a', 'answer-action', action.label.trim());
       link.href = href;
+      if (requiredCapability) link.dataset.capability = requiredCapability;
       row.appendChild(link);
     });
     if (row.childElementCount) body.appendChild(row);
@@ -795,7 +811,7 @@
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-MuniControl-Purpose': 'PERSON_LOOKUP',
+          'X-MuniControl-Purpose': questionPurpose(text),
         },
         body: JSON.stringify({ message: text, mode: 'deterministic' }),
         signal: controller.signal,
@@ -830,6 +846,101 @@
     }
   }
 
+  function normalizedQuestion(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  function isPersonLookupQuestion(value) {
+    var raw = String(value || '').trim();
+    var normalized = normalizedQuestion(raw);
+    if (/\blegajo\s*(?:(?:n|nro|numero)\s*)?\d+\b/.test(normalized) ||
+        /\b(?:ficha|historial(?: de licencias)?)\s+(?:personal |laboral )?(?:de|del)\s+(?!(?:licencias?|municipio|personal|organismo|area|sector|periodo|ano|historicas?)\b)(?:(?:empleado|agente|concejal)\b|(?:[a-z][a-z'-]{1,}\s+){1,3}[a-z][a-z'-]{1,}\b)/.test(normalized) ||
+        /\blicencias?\s+(?:de|del)\s+(?!(?:19|20)\d{2}\b)(?:un(?:a)?\s+)?(?:empleado|agente|concejal|[a-z][a-z'-]{1,}(?:\s+[a-z][a-z'-]{1,}){1,3})\b/.test(normalized) ||
+        /\b(?:empleado|agente|concejal)\s+(?:llamad[oa]\s+)?[a-z][a-z'-]{1,}(?:\s+[a-z][a-z'-]{1,}){1,3}\b/.test(normalized) ||
+        /^(?:[a-z][a-z'-]{1,}\s+){1,4}(?:concejal|empleado|agente)$/.test(normalized)) {
+      return true;
+    }
+    if (/^(?:personas?(?: y)? estructura|asistencia(?: y)? tiempo|licencias?(?: y)? salud(?: laboral)?|carrera(?: y)? desarrollo|relaciones? laborales?|nomina(?: y)? control(?: de calculo)?|beneficios?(?: y)? descuentos?|movimientos?(?: y)? trazabilidad)$/.test(normalized)) {
+      return false;
+    }
+    if (/^(?:que|como|cual|cuanto|cuantos|dame|mostra(?:r(?:me)?|me)?|muestra(?:me)?|explica(?:r(?:me)?|me)?|analiza(?:r(?:me)?|me)?|compara|comparar|tendencia|evolucion|resumen|panorama|estado|inventario|catalogo)\b/.test(normalized)) {
+      return false;
+    }
+    if (!/^[\p{L}'-]+(?:\s+[\p{L}'-]+){1,5}$/u.test(raw)) return false;
+    var tokens = normalized.split(' ');
+    return tokens.length >= 2 && tokens.length <= 6 &&
+      tokens.every(function(token) { return /^[a-z'-]{2,40}$/.test(token); });
+  }
+
+  function questionPurpose(value) {
+    return isPersonLookupQuestion(value) ? 'PERSON_LOOKUP' : 'AGGREGATE_ANALYSIS';
+  }
+
+  function configureSuggestionsForRole() {
+    var suggestions = byId('querySuggestions');
+    var user = currentUser();
+    if (!suggestions || !user || typeof user.role !== 'string') return;
+    suggestions.querySelectorAll('[data-roles]').forEach(function(button) {
+      var roles = String(button.dataset.roles || '').split(',').map(function(role) {
+        return role.trim();
+      }).filter(Boolean);
+      var visible = roles.indexOf(user.role) !== -1;
+      button.hidden = !visible;
+      button.disabled = !visible;
+    });
+  }
+
+  function parseQuestionDeepLink() {
+    if (!global.location.search) return null;
+    var parameters;
+    try {
+      parameters = new URLSearchParams(global.location.search);
+    } catch (_) {
+      return null;
+    }
+    var keys = Array.from(parameters.keys());
+    if (keys.length !== 1 || keys[0] !== 'question' ||
+        parameters.getAll('question').length !== 1) return null;
+    var question = String(parameters.get('question') || '').trim();
+    if (!safeText(question, 300, false)) return null;
+    var normalized = normalizedQuestion(question);
+    if (isPersonLookupQuestion(question) ||
+        /\b(dni|cuit|cuil|domicilio|telefono|correo personal|email personal|legajo|nombre|apellido|persona|empleado)\b/.test(normalized)) {
+      return null;
+    }
+    if (!/(area|dato|tabla|dominio|inventario|resumen|prioridad|atencion|calidad|cuarentena|conciliacion|calculo|cierre|neto|bruto|retencion|aporte|sector|centros? de costos?|convenio|acuerdo|ausencia|movimiento|fuente|snapshot|carrera|formacion|estudio|licencia|beneficio|descuento|gremio|turno|horario|relacion laboral|salud|trayectoria)/.test(normalized)) {
+      return null;
+    }
+    return question;
+  }
+
+  async function consumeQuestionDeepLink() {
+    var hadSearch = Boolean(global.location.search);
+    var question = parseQuestionDeepLink();
+    if (!question) {
+      if (hadSearch) {
+        try {
+          global.history.replaceState(null, '', global.location.pathname + global.location.hash);
+        } catch (_) {}
+      }
+      return;
+    }
+    try {
+      global.history.replaceState(null, '', global.location.pathname + global.location.hash);
+    } catch (_) {}
+    var input = byId('assistantInput');
+    if (input) {
+      input.value = question;
+      resizeInput(input);
+    }
+    await ask(question);
+  }
+
   function resizeInput(input) {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 116) + 'px';
@@ -861,6 +972,7 @@
     var conversation = byId('conversationLog');
     var personInput = byId('personSearchInput');
     var personClose = byId('personSearchClose');
+    configureSuggestionsForRole();
 
     if (form) {
       form.addEventListener('submit', async function(event) {
@@ -933,9 +1045,10 @@
   async function start() {
     if (!await requirePageCapability()) return;
     Promise.resolve(global.MuniAuthReady)
-      .then(function(valid) {
+      .then(async function(valid) {
         if (valid === false) return;
         bindInterface();
+        await consumeQuestionDeepLink();
       })
       .catch(function() {
         appendUnavailable('Sesión no verificable', 'No se pudo validar la sesión institucional.');

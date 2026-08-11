@@ -9,7 +9,7 @@
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <script src="js/theme-switcher.js"></script>
   <link rel="stylesheet" href="css/dashboard.css">
-  <title>Asistente Ejecutivo GRH | MuniControl</title>
+  <title>BOT IA · Asistente GRH | MuniControl</title>
   <style>
     html.muni-shell-v1[data-theme="dark"] {
       --assistant-bg: #07111f;
@@ -666,7 +666,7 @@
         </button>
         <div class="assistant-title-copy">
           <p>Inteligencia ejecutiva</p>
-          <h1>Asistente GRH</h1>
+          <h1>BOT IA · Asistente GRH</h1>
         </div>
       </div>
       <div class="assistant-topbar-actions">
@@ -721,6 +721,24 @@
 
         <div class="query-suggestions" id="querySuggestions" aria-label="Consultas sugeridas">
           <button class="query-chip" type="button" data-person-lookup="true">Buscar licencias por persona</button>
+          <button class="query-chip" type="button"
+                  data-roles="INTENDENTE,TENANT_ADMIN,SUPER_ADMIN"
+                  data-question="¿Qué requiere atención y qué acción sigue?">Prioridades para decidir</button>
+          <button class="query-chip" type="button"
+                  data-roles="INTENDENTE,CONTADOR,TENANT_ADMIN,SUPER_ADMIN"
+                  data-question="¿Qué costo neto se concentra por centro de costo en 2026-07?">Costo por área</button>
+          <button class="query-chip" type="button"
+                  data-roles="CONTADOR,INTENDENTE,TENANT_ADMIN,SUPER_ADMIN"
+                  data-question="¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?">Tendencia por cohorte</button>
+          <button class="query-chip" type="button"
+                  data-roles="CONTADOR,INTENDENTE,TENANT_ADMIN,SUPER_ADMIN"
+                  data-question="Mostrá los componentes del cálculo de Servicios Públicos por centro de costo en 2026-07">Componentes por área</button>
+          <button class="query-chip" type="button"
+                  data-roles="CONTADOR,INTENDENTE,TENANT_ADMIN,SUPER_ADMIN"
+                  data-question="Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en 2026-07">Comparar áreas</button>
+          <button class="query-chip" type="button"
+                  data-roles="INTENDENTE,CONTADOR,TENANT_ADMIN,SUPER_ADMIN"
+                  data-question="¿Qué áreas y datos hay?">Áreas y datos</button>
           <button class="query-chip" type="button" data-question="Dame un resumen ejecutivo del último período">Resumen ejecutivo</button>
           <button class="query-chip" type="button" data-question="¿Cuántas personas participaron en la liquidación del último período?">Participación</button>
           <button class="query-chip" type="button" data-question="¿Cómo se distribuyen los participantes por centro de costo?">Centros de costo</button>
@@ -778,6 +796,7 @@
           <h2>Qué podés consultar</h2>
           <ul class="capability-list">
             <li>Participación y distribución organizativa.</li>
+            <li>Prioridades, tendencias, componentes y comparación financiera por una sola dimensión.</li>
             <li>Licencias, ausencias y movimientos históricos.</li>
             <li>Fichas y licencias por persona para perfiles privados habilitados.</li>
             <li>Cálculo, cierre, conciliación y calidad.</li>

@@ -32,7 +32,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 14);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 15);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -195,6 +195,11 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   assert.doesNotMatch(catalog, /ausentismo/i);
   assert.equal(MUNIGUIA_CATALOG.pages.quality.label, 'Calidad de datos');
   assert.equal(MUNIGUIA_CATALOG.pages.rrhh.steps[1].selector, '#peopleDirectory');
+  assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.grhDomains.steps.map((step) => step.selector),
+    ['#grhSourceStatus', '#grhDomainGrid', '#grhEvidenceTitle'],
+  );
+  assert.equal(MUNIGUIA_CATALOG.pages.grhDomains.requiredCapability, 'navigation.rrhh');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.selector),
     ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],

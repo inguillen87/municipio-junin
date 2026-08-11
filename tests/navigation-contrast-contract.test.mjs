@@ -89,11 +89,12 @@ test('legacy light and dark tokens meet the AA text and non-text contrast floors
 });
 
 test('legacy operational copy has a 12px minimum on the dashboard, shell and GRH surfaces', async () => {
-  const [dashboard, shell, rrhh, assistant] = await Promise.all([
+  const [dashboard, shell, rrhh, assistant, explorer] = await Promise.all([
     file('css/dashboard.css'),
     file('css/institutional-shell.css'),
     file('rrhh.html'),
     file('ia.html'),
+    file('css/grh-explorer.css'),
   ]);
 
   assert.doesNotMatch(dashboard, /font-size:\s*(?:[0-9]|1[01])px/);
@@ -102,6 +103,7 @@ test('legacy operational copy has a 12px minimum on the dashboard, shell and GRH
   const rrhhWithoutDecorativeCheck = rrhh.replace(/\.rrhh-guardrail-list li::before\s*\{[^}]+\}/g, '');
   assert.doesNotMatch(rrhhWithoutDecorativeCheck, /font-size:\s*(?:[0-9]|1[01])px/);
   assert.doesNotMatch(assistant, /font-size:\s*(?:[0-9]|1[01])px/);
+  assert.doesNotMatch(explorer, /font-size:\s*(?:[0-9]|1[01])px/);
   assert.match(assistant, /<script src="js\/theme-switcher\.js"><\/script>[\s\S]*<script src="js\/nav\.js"><\/script>/);
   assert.match(assistant, /id="themeToggleBtn"[^>]+aria-label="Cambiar tema"/);
 });
@@ -122,7 +124,8 @@ test('desktop and mobile navigation share canonical labels and React canary rout
     'Dotación y ausencias',
     'Centro territorial',
     'Hacienda y nómina',
-    'Gestión de personas',
+    'Áreas y datos GRH',
+    'Directorio y fichas',
     'Calidad de datos',
     'Asistente GRH',
     'Reportes',

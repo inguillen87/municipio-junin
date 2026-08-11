@@ -300,13 +300,14 @@ var NAV_ITEMS = [
   { id:'workspace',     href:'inicio.html',         icon:'home',   label:'Inicio',                section:'PRINCIPAL',     capability:'navigation.workspace' },
   { id:'dashboard',     href:'dashboard.html',      icon:'chart',  label:'Panorama municipal',    section:'PRINCIPAL',     capability:'navigation.dashboard' },
   { id:'reportes',      href:'reportes.html',       icon:'doc',    label:'Reportes',              section:'PRINCIPAL',     capability:'navigation.reports' },
-  { id:'hacienda',      href:'hacienda.html',       icon:'bank',   label:'Hacienda y nómina',     section:'GESTIÓN',       capability:'navigation.hacienda' },
-  { id:'grh-ejecutivo', href:'/ejecutivo',          icon:'people', label:'Resumen ejecutivo GRH', section:'GESTIÓN',       capability:'navigation.grh-executive' },
-  { id:'estructura',    href:'/estructura',          icon:'people', label:'Dotación y ausencias',   section:'GESTIÓN',       capability:'navigation.organization-analytics' },
+  { id:'hacienda',      href:'hacienda.html',       icon:'bank',   label:'Hacienda y nómina',     section:'HACIENDA',      capability:'navigation.hacienda' },
+  { id:'grh-ejecutivo', href:'/ejecutivo',          icon:'people', label:'Resumen ejecutivo GRH', section:'RRHH',          capability:'navigation.grh-executive' },
+  { id:'estructura',    href:'/estructura',          icon:'chart',  label:'Dotación y ausencias',   section:'RRHH',          capability:'navigation.organization-analytics' },
+  { id:'areas-grh',     href:'areas-grh.html',       icon:'chart',  label:'Áreas y datos GRH',      section:'RRHH',          capability:'navigation.rrhh' },
+  { id:'rrhh',          href:'rrhh.html',            icon:'people', label:'Directorio y fichas',    section:'RRHH',          capability:'navigation.rrhh' },
+  { id:'ia',            href:'ia.html',             icon:'ai',     label:'Asistente GRH',         section:'RRHH',          capability:'navigation.ai-assistant' },
   { id:'territorio',    href:'/territorio',          icon:'map',    label:'Centro territorial',     section:'TERRITORIO',    capability:'navigation.territory' },
-  { id:'control',       href:'/calidad',            icon:'gauge',  label:'Calidad de datos',      section:'GESTIÓN',       capability:'navigation.data-quality' },
-  { id:'rrhh',          href:'rrhh.html',           icon:'people', label:'Gestión de personas',  section:'GESTIÓN',       capability:'navigation.rrhh' },
-  { id:'ia',            href:'ia.html',             icon:'ai',     label:'Asistente GRH',         section:'INTELIGENCIA',  capability:'navigation.ai-assistant' },
+  { id:'control',       href:'/calidad',            icon:'gauge',  label:'Calidad de datos',      section:'DATOS',         capability:'navigation.data-quality' },
   { id:'auditoria',     href:'auditoria.html',      icon:'shield', label:'Inventario de cargas', section:'DATOS',         capability:'navigation.audit' },
   { id:'exportar',      href:'exportar.html',       icon:'export', label:'Salidas gobernadas',   section:'DATOS',         capability:'navigation.export' },
   { id:'importar',      href:'importar.html',       icon:'upload', label:'Importar datos',        section:'DATOS',         capability:'navigation.import' },
@@ -316,7 +317,7 @@ var NAV_ITEMS = [
 ];
 
 window.MuniNavigationCatalog = Object.freeze(NAV_ITEMS.reduce(function(catalog, item) {
-  if (item.capability) {
+  if (item.capability && !Object.prototype.hasOwnProperty.call(catalog, item.capability)) {
     catalog[item.capability] = Object.freeze({
       href: item.href,
       icon: item.icon,
@@ -951,6 +952,7 @@ var MUNIGUIA_PRIVATE_PATHS = [
   '/estructura', '/estructura.html',
   '/territorio', '/territorio.html',
   '/calidad', '/calidad.html', '/control', '/control.html',
+  '/areas-grh', '/areas-grh.html',
   '/rrhh', '/rrhh.html',
   '/ia', '/ia.html',
   '/auditoria', '/auditoria.html',

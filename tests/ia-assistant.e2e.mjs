@@ -10,13 +10,18 @@ import { chromium } from 'playwright';
 import { buildDeterministicAnswer } from '../api/ai-analyze.js';
 import { buildPortableGrhViews } from '../api/lib/grh-portable-bundle.js';
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
+import { buildGrhDecisionBriefProjection } from '../api/lib/grh-decision-brief-projection.js';
+import { buildGrhDomainCatalogProjection } from '../api/lib/grh-domain-catalog.js';
+import { buildGrhWorkforceFinanceProjection } from '../api/lib/grh-workforce-finance-projection.js';
 import accessPolicy from '../shared/access-policy.cjs';
 import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROFILE_PATH = path.join(REPO, 'api', '_data', 'grh-profile.json');
 const SEMANTIC_PATH = path.join(REPO, 'api', '_data', 'grh-semantic.json');
-const HAS_PRIVATE_GRH = existsSync(PROFILE_PATH) && existsSync(SEMANTIC_PATH);
+const WORKFORCE_FINANCE_PATH = path.join(REPO, 'api', '_data', 'grh-workforce-finance.json');
+const HAS_PRIVATE_GRH = existsSync(PROFILE_PATH) && existsSync(SEMANTIC_PATH) &&
+  existsSync(WORKFORCE_FINANCE_PATH);
 const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' });
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -267,6 +272,7 @@ async function requestBody(request) {
 
 async function createServer(requestLog, options = {}) {
   let views = null;
+  let assistantData = null;
   if (HAS_PRIVATE_GRH) {
     const profile = JSON.parse(await readFile(PROFILE_PATH, 'utf8'));
     const semantic = JSON.parse(await readFile(SEMANTIC_PATH, 'utf8'));
@@ -285,6 +291,22 @@ async function createServer(requestLog, options = {}) {
     views = {
       ...buildPortableGrhViews(bundle),
       close: buildGrhCloseProjection(semantic),
+    };
+    const workforceFinanceSource = JSON.parse(await readFile(WORKFORCE_FINANCE_PATH, 'utf8'));
+    const financePresentation = {
+      schemaVersion: JUNIN_PRESENTATION.schemaVersion,
+      locale: JUNIN_PRESENTATION.locale,
+      displayCurrencyCode: JUNIN_PRESENTATION.displayCurrencyCode,
+      basis: JUNIN_PRESENTATION.displayCurrencyBasis,
+      effectiveFrom: JUNIN_PRESENTATION.displayCurrencyEffectiveOn,
+      sourceCurrencyStatus: JUNIN_PRESENTATION.sourceCurrencyStatus,
+    };
+    assistantData = {
+      decisionBrief: buildGrhDecisionBriefProjection(views.executive, views.quality, views.close),
+      domainCatalog: buildGrhDomainCatalogProjection(bundle),
+      workforceFinance: buildGrhWorkforceFinanceProjection(workforceFinanceSource, {
+        presentation: financePresentation,
+      }),
     };
   }
 
@@ -378,7 +400,14 @@ async function createServer(requestLog, options = {}) {
         return;
       }
 
-      const answer = buildDeterministicAnswer(body.message, views.executive, views.quality, views.close, JUNIN_PRESENTATION);
+      const answer = buildDeterministicAnswer(
+        body.message,
+        views.executive,
+        views.quality,
+        views.close,
+        JUNIN_PRESENTATION,
+        assistantData,
+      );
       response.writeHead(answer.httpStatus, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
       response.end(JSON.stringify({
         status: answer.status,
@@ -750,13 +779,118 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
   assert.equal(requestLog.length, 10);
   assert.equal(requestLog.every(item => item.method === 'POST'), true);
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
-  assert.equal(requestLog.every(item => item.purpose === 'PERSON_LOOKUP'), true);
+  assert.equal(requestLog.every(item => item.purpose === 'AGGREGATE_ANALYSIS'), true);
   assert.equal(requestLog.every(item => item.body.mode === 'deterministic'), true);
   assert.equal(requestLog.every(item => !Object.hasOwn(item.body, 'history')), true);
   assert.equal(requestLog.filter(item => item.body.message === '¿Cómo se distribuyen los participantes por categoría de acuerdo de origen?').length, 2);
   assert.equal(requestLog.filter(item => item.body.message === 'Explicame el cierre GRH del último período').length, 2);
   assert.equal(requestLog.filter(item => item.body.message === '¿Qué licencias históricas están disponibles?').length, 2);
   assert.equal(requestLog.filter(item => item.body.message === '¿Cómo se distribuyen los participantes por centro de costo?').length, 2);
+});
+
+test('assistant renders decision and workforce-finance answers with real deep links', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1360, height: 900 } });
+  await seedSession(context, 'INTENDENTE');
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+
+  await page.getByRole('button', { name: 'Prioridades para decidir' }).click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Brief de decisión GRH')));
+  const brief = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      actions: Array.from(card?.querySelectorAll('.answer-action') || [], link => ({
+        href: link.getAttribute('href'),
+        capability: link.dataset.capability,
+      })),
+      visualItems: card?.querySelectorAll('.answer-visual-row').length,
+    };
+  });
+  assert.deepEqual(brief.actions, [
+    { href: '/hacienda#closeReconciliationTitle', capability: 'navigation.hacienda' },
+    { href: '/calidad', capability: 'navigation.data-quality' },
+    { href: '/estructura#organizationExplorer', capability: 'navigation.organization-analytics' },
+  ]);
+  assert.equal(brief.visualItems, 4);
+
+  await page.getByRole('button', { name: 'Componentes por área' }).click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Composición de SERVICIOS PUBLICOS')));
+  const finance = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      actionHref: card?.querySelector('.answer-action')?.getAttribute('href'),
+      visualItems: card?.querySelectorAll('.answer-visual-row').length,
+      text: card?.textContent || '',
+    };
+  });
+  assert.equal(finance.actionHref,
+    '/hacienda?cohort=costCenter&company=101&code=2#cohortContext');
+  assert.equal(finance.visualItems, 8);
+  assert.match(finance.text, /no atribuye causas/i);
+  assert.doesNotMatch(finance.text, /DNI|CUIL|legajo/i);
+  assert.equal(requestLog.length, 2);
+  assert.equal(requestLog.every(item => item.purpose === 'AGGREGATE_ANALYSIS'), true);
+  await context.close();
+});
+
+test('question deep link is bounded, aggregate-only and sent after authenticated capability', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1280, height: 820 } });
+  await seedSession(context, 'INTENDENTE');
+  const page = await context.newPage();
+  const question = '¿Qué áreas y datos hay?';
+  await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent(question)}`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Catálogo de áreas y dominios GRH')));
+  assert.equal(requestLog.length, 1);
+  assert.equal(requestLog[0].purpose, 'AGGREGATE_ANALYSIS');
+  assert.equal(requestLog[0].body.message, question);
+  assert.equal(new URL(page.url()).search, '');
+
+  const careerQuestion = 'Que datos de carrera y formacion existen';
+  await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent(careerQuestion)}`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Carrera y desarrollo')));
+  assert.equal(requestLog.length, 2);
+  assert.equal(requestLog[1].purpose, 'AGGREGATE_ANALYSIS');
+  assert.equal(new URL(page.url()).search, '');
+
+  await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent('legajo 123')}`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(100);
+  assert.equal(requestLog.length, 2);
+  assert.equal(new URL(page.url()).search, '');
+  assert.equal(await page.locator('.answer-card').count(), 0);
+
+  await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent('Licencias de Juan Perez')}`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(100);
+  assert.equal(requestLog.length, 2);
+  assert.equal(new URL(page.url()).search, '');
+  assert.equal(await page.locator('.answer-card').count(), 0);
+
+  await page.goto(`${baseUrl}/ia.html?question=resumen&question=calidad`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(100);
+  assert.equal(requestLog.length, 2);
+  assert.equal(new URL(page.url()).search, '');
+  await context.close();
 });
 
 test('assistant renders only the exact visual contract and ignores mutated visuals', { skip: !HAS_PRIVATE_GRH }, async t => {
@@ -1114,7 +1248,7 @@ test('assistant rejects attacks and routes person lookups without echoing the se
   assert.doesNotMatch(answerText, /12345678|legajo 42/i);
   assert.match(answerText, /snapshot 2026-08-06/);
 
-  await page.locator('#assistantInput').fill('luciana prueba concejal');
+  await page.locator('#assistantInput').fill('luciana prueba');
   await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
   await page.waitForFunction(() => {
     const cards = Array.from(document.querySelectorAll('.answer-card'));
@@ -1139,6 +1273,13 @@ test('assistant rejects attacks and routes person lookups without echoing the se
     { label: 'Ingresar con acceso privado', href: '/login.html' },
   ]);
   assert.equal(requestLog.length, 2);
+  assert.equal(requestLog[1].purpose, 'PERSON_LOOKUP');
+
+  await page.locator('#assistantInput').fill('Legajo N° 123');
+  await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+  await page.waitForFunction(() => document.querySelectorAll('.answer-card').length >= 3);
+  assert.equal(requestLog.length, 3);
+  assert.equal(requestLog[2].purpose, 'PERSON_LOOKUP');
   await context.close();
 });
 

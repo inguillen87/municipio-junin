@@ -732,7 +732,7 @@
         </section>
 
         <a class="tour-link" id="privateGrhLoginLink" href="/login.html?access=private-grh&amp;return=rrhh.html%23peopleDirectory">
-          <span>Ingresar con credencial privada GRH<span class="tour-link-note">Directorio nominal y licencias individuales sólo para una cuenta asignada; no usa los accesos públicos.</span></span>
+          <span>Tengo una credencial privada GRH<span class="tour-link-note">Abre el formulario privado; no inicia sesión automáticamente ni usa los accesos públicos.</span></span>
         </a>
 
         <a class="tour-link" href="/roles">
@@ -769,7 +769,12 @@
       var evaluationAccess = document.getElementById('evaluationAccess');
       var evaluationGrid = document.getElementById('evaluationGrid');
       var evaluationStatus = document.getElementById('evaluationStatus');
+      var privateGrhLoginLink = document.getElementById('privateGrhLoginLink');
       var EVALUATION_PASSWORD = 'Junin2026!';
+      var PUBLISHED_EVALUATION_EMAILS = Object.freeze(Array.from(
+        evaluationGrid.querySelectorAll('[data-evaluation-email]'),
+        function (button) { return String(button.dataset.evaluationEmail || '').toLowerCase(); }
+      ));
       var SAFE_DEFAULT_PATHS = Object.freeze(['inicio.html']);
       var SAFE_RETURN_PATHS = Object.freeze({
         'rrhh.html#peopleDirectory': 'navigation.rrhh',
@@ -798,6 +803,7 @@
         accessIntro.textContent = 'Usá la credencial privada asignada para consultar el snapshot nominal autorizado.';
         privateAccessNotice.hidden = false;
         evaluationAccess.hidden = true;
+        privateGrhLoginLink.hidden = true;
         submitButton.textContent = 'Ingresar al directorio GRH';
         emailInput.focus({ preventScroll: true });
       }
@@ -905,6 +911,13 @@
 
         var email = emailInput.value.trim().toLowerCase();
         var password = passInput.value;
+        if (privateGrhMode && PUBLISHED_EVALUATION_EMAILS.indexOf(email) !== -1) {
+          passInput.value = '';
+          emailInput.setAttribute('aria-invalid', 'true');
+          passInput.setAttribute('aria-invalid', 'true');
+          showError('Administrador, Intendente y los demás perfiles públicos no abren el directorio. Ingresá el usuario privado GRH asignado.', emailInput);
+          return;
+        }
         if (!email || !password) {
           var missing = failureForStatus(400);
           emailInput.setAttribute('aria-invalid', 'true');

@@ -207,7 +207,8 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /Sin PII/);
   assert.match(source, /Identidad emitida por la Municipalidad/);
   assert.match(source, /id="privateGrhLoginLink"\s+href="\/login\.html\?access=private-grh&amp;return=rrhh\.html%23peopleDirectory"/);
-  assert.match(source, /Directorio nominal y licencias individuales sólo para una cuenta asignada/i);
+  assert.match(source, /Tengo una credencial privada GRH/i);
+  assert.match(source, /Abre el formulario privado; no inicia sesión automáticamente/i);
   assert.match(source, /AD · MÁS OPCIONES/);
   assert.match(source, /class="tour-link"\s+href="\/roles"/);
   assert.match(source, /No inicia sesi.n ni accede a datos/i);
@@ -577,6 +578,7 @@ test('private GRH login explains the handoff, rejects public profiles and return
   ]);
   assert.equal(await page.locator('#privateAccessNotice').isVisible(), true);
   assert.equal(await page.locator('#evaluationAccess').isHidden(), true);
+  assert.equal(await page.locator('#privateGrhLoginLink').isHidden(), true);
   assert.equal(await page.textContent('#accessKicker'), 'Acceso privado GRH');
   assert.equal(await page.textContent('#btnLogin'), 'Ingresar al directorio GRH');
 
@@ -584,7 +586,7 @@ test('private GRH login explains the handoff, rejects public profiles and return
   await page.fill('#passInput', EVALUATION_PASSWORD);
   await page.click('#btnLogin');
   await page.waitForSelector('#errorMsg:not([hidden])');
-  assert.match(await page.textContent('#errorMsg'), /Ese perfil .* no tiene acceso al directorio nominal/i);
+  assert.match(await page.textContent('#errorMsg'), /perfiles públicos no abren el directorio/i);
   assert.equal(page.url(), privateLogin);
   assert.equal(await page.evaluate(() => sessionStorage.getItem('mjunin_token')), null);
 
@@ -598,7 +600,6 @@ test('private GRH login explains the handoff, rejects public profiles and return
 
   const probes = requestLog.filter(entry => entry.path === '/api/grh-directory');
   assert.deepEqual(probes.map(entry => ({ authorization: entry.authorization, limit: entry.limit })), [
-    { authorization: 'Bearer signed-evaluation-token-intendente', limit: '1' },
     { authorization: 'Bearer signed-token-for-login-e2e', limit: '1' },
   ]);
   assert.deepEqual(externalRequests, []);

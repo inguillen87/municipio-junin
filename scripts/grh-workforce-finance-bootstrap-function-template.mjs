@@ -182,14 +182,14 @@ async function apply(body) {
     }
     const readBack = await loadGrhWorkforceFinanceSnapshotArtifact({
       tenantId,
+      key,
+      queryImpl: (sql, values) => client.query(sql, values),
       expectedSourceSha256: GRH_WORKFORCE_FINANCE_APPROVED_SOURCE.sourceSha256,
       expectedSnapshotAsOf: GRH_WORKFORCE_FINANCE_APPROVED_SOURCE.snapshotAsOf,
       expectedReleaseId: GRH_WORKFORCE_FINANCE_APPROVED_RELEASE_ID,
       expectedPolicyVersion: GRH_WORKFORCE_FINANCE_POLICY_VERSION,
-      environment: process.env,
-      query: (sql, values) => client.query(sql, values),
     });
-    inspectArtifact(readBack.payload);
+    inspectArtifact(readBack);
     return receipt;
   } finally {
     await client.end().catch(() => {});

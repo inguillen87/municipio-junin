@@ -22,6 +22,11 @@ import { renderGrhWorkforceFinanceBootstrapFunction } from '../scripts/grh-workf
 
 const rootRepository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const artifactSourcePath = path.join(rootRepository, 'api/_data/grh-workforce-finance.json');
+const vercelIgnore = await fs.readFile(path.join(rootRepository, '.vercelignore'), 'utf8');
+const runtimePublisherSource = await fs.readFile(
+  path.join(rootRepository, 'api/lib/grh-workforce-finance-snapshot-publisher.js'),
+  'utf8',
+);
 const gitSha = 'f'.repeat(40);
 const operationId = '11111111-1111-4111-8111-111111111111';
 const entityId = '22222222-2222-4222-8222-222222222222';
@@ -123,7 +128,11 @@ test('template is a raw-body, candidate-only, fingerprint-pinned one-shot publis
   assert.match(rendered, /publishGrhWorkforceFinanceSnapshot/);
   assert.match(rendered, /from '\.\/lib\/grh-workforce-finance-snapshot-publisher\.js'/);
   assert.doesNotMatch(rendered, /from '\.\.\/scripts\//);
+  assert.match(vercelIgnore, /^scripts\/\*\*$/m);
+  assert.doesNotMatch(runtimePublisherSource, /from ['"][^'"]*scripts\//);
   assert.match(rendered, /loadGrhWorkforceFinanceSnapshotArtifact/);
+  assert.match(rendered, /queryImpl: \(sql, values\) => client\.query\(sql, values\)/);
+  assert.doesNotMatch(rendered, /inspectArtifact\(readBack\.payload\)/);
   assert.match(rendered, new RegExp(APPROVED_SNAPSHOT_KEY_FINGERPRINT_SHA256));
   assert.doesNotMatch(rendered, /DATABASE_URL\s*\|\|/);
   assert.doesNotMatch(rendered, /console\.(?:log|error)/);

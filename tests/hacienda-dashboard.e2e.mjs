@@ -134,7 +134,11 @@ async function readRenderedThemeAudit(page) {
       '.hac-hero', '.hac-chip', '.hac-select', '.hac-error', '.hac-stat',
       '.hac-panel', '.hac-panel-badge', '.hac-close-figure', '.hac-close-metric', '.hac-close-note',
       '.hac-alert', '.hac-equation-card', '.hac-scenario-banner', '.hac-sim-result', '.hac-table-wrap',
-      '.hac-methodology', '[data-muni-shell="primary-nav"]', '[data-muni-shell="bottom-nav"]'
+      '.hac-methodology', '#radarWindow', '#radarFilter',
+      '#reconciliationHeatmap [data-radar-period]',
+      '#reconciliationHeatmap [data-radar-privacy="protected"]',
+      '#varianceRanking [data-radar-open-period]',
+      '[data-muni-shell="primary-nav"]', '[data-muni-shell="bottom-nav"]'
     ].join(',');
     const boundaryViolations = Array.from(document.querySelectorAll(boundarySelector)).filter(visible).map(node => {
       const style = getComputedStyle(node);
@@ -188,6 +192,204 @@ function assertRenderedThemeAudit(audit, expectedTheme, viewportName) {
   }
 }
 
+async function readRadarSnapshot(page) {
+  return page.evaluate(() => ({
+    window: document.querySelector('#radarWindow')?.value,
+    filter: document.querySelector('#radarFilter')?.value,
+    kpis: Object.fromEntries([
+      'radarPublishedCount',
+      'radarBelow50Count',
+      'radarProtectedCount',
+      'radarLatestAgreement',
+    ].map(id => {
+      const node = document.getElementById(id);
+      return [id, {
+        text: node?.textContent.trim() || '',
+        value: node?.dataset.radarValue || '',
+      }];
+    })),
+    heatmap: Array.from(document.querySelectorAll('#reconciliationHeatmap [data-radar-period]')).map(node => ({
+      tag: node.tagName,
+      period: node.dataset.radarPeriod,
+      status: node.dataset.radarStatus,
+      pressed: node.getAttribute('aria-pressed'),
+      text: node.textContent.trim(),
+    })),
+    protectedCells: Array.from(document.querySelectorAll(
+      '#reconciliationHeatmap [data-radar-privacy="protected"]',
+    )).map(node => ({
+      tag: node.tagName,
+      period: node.dataset.radarPeriod || '',
+      openPeriod: node.dataset.radarOpenPeriod || '',
+      datasetKeys: Object.keys(node.dataset).sort(),
+      tabIndex: node.tabIndex,
+      text: node.textContent.trim(),
+    })),
+    trendPaths: Array.from(document.querySelectorAll('#reconciliationTrend path[data-radar-series]')).map(node => ({
+      series: node.dataset.radarSeries,
+      d: node.getAttribute('d') || '',
+    })),
+    trendPoints: Array.from(document.querySelectorAll(
+      '#reconciliationTrend circle[data-radar-series][data-radar-point]',
+    )).map(node => ({
+      series: node.dataset.radarSeries,
+      period: node.dataset.radarPoint,
+      value: node.dataset.radarValue,
+    })),
+    trendLabels: Array.from(document.querySelectorAll('#reconciliationTrend svg text'))
+      .map(node => node.textContent.trim()),
+    ranking: Array.from(document.querySelectorAll('#varianceRanking [data-radar-open-period]')).map(node => ({
+      tag: node.tagName,
+      period: node.dataset.radarOpenPeriod,
+      cents: node.dataset.radarVarianceCents,
+      text: node.textContent.trim().replace(/\s+/g, ' '),
+    })),
+    summary: {
+      text: document.querySelector('#radarSummary')?.textContent.trim() || '',
+      visibleCount: document.querySelector('#radarSummary')?.dataset.radarVisibleCount || '',
+      windowCount: document.querySelector('#radarSummary')?.dataset.radarWindowCount || '',
+    },
+    radarText: document.querySelector('#reconciliationRadar')?.innerText || '',
+  }));
+}
+
+function expectedTrendPoints(rows) {
+  const fields = {
+    coverage: 'runCoveragePct',
+    exactness: 'metricExactRatePct',
+    agreement: 'valueAgreementPct',
+  };
+  return Object.entries(fields).flatMap(([series, field]) => rows
+    .filter(row => row.privacyStatus === 'released')
+    .map(row => ({
+      series,
+      period: row.period,
+      value: String(row.reconciliation[field]),
+    })))
+    .sort((left, right) => (
+      left.series.localeCompare(right.series) || left.period.localeCompare(right.period)
+    ));
+}
+
+function normalizeTrendPoints(points) {
+  return points.map(point => ({
+    series: point.series,
+    period: point.period,
+    value: String(Number(point.value)),
+  })).sort((left, right) => (
+    left.series.localeCompare(right.series) || left.period.localeCompare(right.period)
+  ));
+}
+
+function formatArsCents(cents) {
+  const presentation = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' });
+  return new Intl.NumberFormat(presentation.locale, {
+    style: 'currency',
+    currency: presentation.displayCurrencyCode,
+    currencyDisplay: 'code',
+  }).format(cents / 100).replace(/\s+/g, ' ');
+}
+
+function assertRadarSnapshot(snapshot, windowRows, filter, label) {
+  const filteredRows = radarRowsForFilter(windowRows, filter);
+  const releasedRows = filteredRows.filter(row => row.privacyStatus === 'released');
+  const protectedRows = filteredRows.filter(row => row.privacyStatus !== 'released');
+  assert.equal(snapshot.filter, filter, `${label} filter`);
+  assert.equal(snapshot.summary.visibleCount, String(filteredRows.length), `${label} visible summary`);
+  assert.equal(snapshot.summary.windowCount, String(windowRows.length), `${label} window summary`);
+  assert.deepEqual(
+    snapshot.heatmap.map(item => ({ period: item.period, status: item.status })),
+    releasedRows.map(row => ({ period: row.period, status: radarStatus(row) })),
+    `${label} heatmap rows and statuses`,
+  );
+  assert.equal(
+    snapshot.heatmap.every(item => item.tag === 'BUTTON'),
+    true,
+    `${label} released heatmap cells must be buttons`,
+  );
+  assert.equal(snapshot.protectedCells.length, protectedRows.length, `${label} protected heatmap count`);
+  assert.equal(
+    snapshot.protectedCells.every(cell => (
+      cell.tag === 'SPAN' && !cell.period && !cell.openPeriod && cell.tabIndex < 0 &&
+      JSON.stringify(cell.datasetKeys) === JSON.stringify(['radarPrivacy']) &&
+      !/\bARS\b|\$|\d/.test(cell.text)
+    )),
+    true,
+    `${label} protected cells cannot expose amounts or click targets`,
+  );
+  assert.deepEqual(
+    normalizeTrendPoints(snapshot.trendPoints),
+    expectedTrendPoints(filteredRows),
+    `${label} trend points`,
+  );
+  assert.equal(
+    snapshot.trendPoints.every(point => Number(point.value) >= 0 && Number(point.value) <= 100),
+    true,
+    `${label} trend values must use the contractual 0-100 scale`,
+  );
+  const expectedRanking = radarRanking(filteredRows);
+  assert.deepEqual(
+    snapshot.ranking.map(item => ({ period: item.period, cents: Number(item.cents) })),
+    expectedRanking.map(row => ({
+      period: row.period,
+      cents: row.reconciliation.absoluteVarianceCents,
+    })),
+    `${label} variance ranking`,
+  );
+  snapshot.ranking.forEach((item, index) => {
+    const expectedAmount = formatArsCents(expectedRanking[index].reconciliation.absoluteVarianceCents);
+    assert.equal(item.tag, 'BUTTON', `${label} ranking entry must be actionable`);
+    assert.ok(
+      item.text.includes(expectedAmount),
+      `${label} ranking must convert source cents to visible ARS: ` +
+        `${JSON.stringify(item.text)} does not include ${JSON.stringify(expectedAmount)}`,
+    );
+  });
+  assert.match(
+    snapshot.radarText,
+    /\bno p[eé]rdida\s*\/\s*pago\s*\/\s*fraude\b/i,
+    `${label} must state the diagnostic limitation`,
+  );
+  const radarClaims = snapshot.radarText.replace(
+    /\bno p[eé]rdida\s*\/\s*pago\s*\/\s*fraude\b/gi,
+    '',
+  );
+  assert.doesNotMatch(radarClaims, /\b(?:p[eé]rdida|fraude)\b/i, `${label} neutral radar language`);
+  assert.doesNotMatch(
+    snapshot.radarText,
+    /\b(?:pago|causa)\s+(?:confirmad[oa]|realizad[oa]|detectad[oa]|identificad[oa]|demostrad[oa])\b/i,
+    `${label} cannot assert payment or causality`,
+  );
+}
+
+async function assertClosePeriodSelection(page, series, row, label) {
+  const rendered = await page.evaluate(() => ({
+    selected: document.querySelector('#closePeriodSelect')?.value,
+    participants: document.querySelector('#closeParticipants')?.textContent.trim(),
+    agreement: document.querySelector('#closeValueAgreement')?.textContent.trim(),
+    badge: document.querySelector('#closeComparisonBadge')?.textContent.trim(),
+    copy: document.querySelector('#closeComparisonCopy')?.textContent.trim(),
+    pressedPeriods: Array.from(document.querySelectorAll(
+      '#reconciliationHeatmap [data-radar-period][aria-pressed="true"]',
+    )).map(node => node.dataset.radarPeriod),
+  }));
+  assert.equal(rendered.selected, row.period, `${label} close selector`);
+  assert.equal(rendered.participants, row.participantCount.toLocaleString('es-AR'), `${label} participants`);
+  assert.equal(
+    rendered.agreement,
+    `${row.reconciliation.valueAgreementPct.toLocaleString('es-AR', { maximumFractionDigits: 1 })}%`,
+    `${label} value agreement`,
+  );
+  const expectedComparison = expectedCloseComparison(series, row.period);
+  if (expectedComparison.released) {
+    assert.equal(rendered.badge, expectedComparison.badge, `${label} historical comparison`);
+  } else {
+    assert.match(rendered.badge, /protegida|no disponible/i, `${label} protected comparison`);
+    assert.match(rendered.copy, /proteg|no existe|faltante/i, `${label} protected comparison reason`);
+  }
+  assert.deepEqual(rendered.pressedPeriods, [row.period], `${label} radar selection`);
+}
+
 function authoritativeUser(role = 'INTENDENTE', malformedProjection = false) {
   const tenantId = 'tenant-junin-test';
   const access = accessPolicy.getSessionAccessForUser({ role, tenantId });
@@ -213,6 +415,100 @@ function fakeBrowserToken() {
     tenantId: 'tenant-junin-test',
     exp: Math.floor(Date.now() / 1000) + 600,
   })}.qa`;
+}
+
+const RADAR_DEFAULT_WINDOW = 36;
+
+function radarRowsForWindow(series, value = String(RADAR_DEFAULT_WINDOW)) {
+  const size = value === 'all' ? series.length : Number.parseInt(value, 10);
+  assert.ok(Number.isSafeInteger(size) && size > 0, `invalid radar window ${value}`);
+  return series.slice(-Math.min(size, series.length));
+}
+
+function radarStatus(row) {
+  if (row.privacyStatus !== 'released') return 'protected';
+  if (row.reconciliation.matchedRuns === 0) return 'noCounterpart';
+  if (row.reconciliation.valueAgreementPct < 50) return 'below50';
+  if (row.reconciliation.valueAgreementPct < 90) return 'below90';
+  return 'atLeast90';
+}
+
+function radarRowsForFilter(rows, filter) {
+  if (filter === 'all') return rows;
+  if (filter === 'protected') return rows.filter(row => row.privacyStatus !== 'released');
+  if (filter === 'noCounterpart') {
+    return rows.filter(row => (
+      row.privacyStatus === 'released' && row.reconciliation.matchedRuns === 0
+    ));
+  }
+  if (filter === 'below50') {
+    return rows.filter(row => (
+      row.privacyStatus === 'released' && row.reconciliation.valueAgreementPct < 50
+    ));
+  }
+  if (filter === 'below90') {
+    return rows.filter(row => (
+      row.privacyStatus === 'released' && row.reconciliation.valueAgreementPct < 90
+    ));
+  }
+  assert.fail(`unsupported radar filter ${filter}`);
+}
+
+function radarRanking(rows) {
+  return rows
+    .filter(row => row.privacyStatus === 'released')
+    .slice()
+    .sort((left, right) => (
+      right.reconciliation.absoluteVarianceCents - left.reconciliation.absoluteVarianceCents ||
+      right.period.localeCompare(left.period)
+    ))
+    .slice(0, 6);
+}
+
+function previousCalendarMonth(period) {
+  const [year, month] = period.split('-').map(Number);
+  return month === 1
+    ? `${String(year - 1).padStart(4, '0')}-12`
+    : `${String(year).padStart(4, '0')}-${String(month - 1).padStart(2, '0')}`;
+}
+
+function monthLabel(period) {
+  const [year, month] = period.split('-').map(Number);
+  return new Intl.DateTimeFormat('es-AR', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'America/Argentina/Buenos_Aires',
+  }).format(new Date(Date.UTC(year, month - 1, 15, 12))).replace('.', '');
+}
+
+function expectedCloseComparison(series, period) {
+  const current = series.find(row => row.period === period);
+  const previousPeriod = previousCalendarMonth(period);
+  const previous = series.find(row => row.period === previousPeriod);
+  if (!current || !previous || current.privacyStatus !== 'released' || previous.privacyStatus !== 'released') {
+    return { released: false, previousPeriod };
+  }
+  return {
+    released: true,
+    previousPeriod,
+    badge: `${monthLabel(previousPeriod)} → ${monthLabel(period)}`,
+  };
+}
+
+function releasedSegments(rows) {
+  let count = 0;
+  let previousReleasedPeriod = null;
+  for (const row of rows) {
+    if (row.privacyStatus === 'released') {
+      if (!previousReleasedPeriod || previousReleasedPeriod !== previousCalendarMonth(row.period)) {
+        count += 1;
+      }
+      previousReleasedPeriod = row.period;
+    } else {
+      previousReleasedPeriod = null;
+    }
+  }
+  return count;
 }
 
 async function createServer(requestLog, options = {}) {
@@ -402,6 +698,16 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     row => row.privacyStatus === 'released',
   );
   const latestClose = releasedCloseRows.at(-1);
+  const defaultRadarRows = radarRowsForWindow(PROJECTIONS.close.series);
+  const defaultRadarReleased = defaultRadarRows.filter(row => row.privacyStatus === 'released');
+  const defaultRadarProtected = defaultRadarRows.filter(row => row.privacyStatus !== 'released');
+  const defaultRadarBelow50 = defaultRadarReleased.filter(
+    row => row.reconciliation.valueAgreementPct < 50,
+  );
+  const latestDefaultRadar = defaultRadarReleased.at(-1);
+
+  assert.equal(PROJECTIONS.close.schemaVersion, 'grh-close-v1');
+  assert.ok(PROJECTIONS.close.series.length >= RADAR_DEFAULT_WINDOW);
 
   t.after(async () => {
     await browser.close();
@@ -430,6 +736,7 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
 
     await page.goto(`${baseUrl}/hacienda.html`, { waitUntil: 'networkidle' });
     await page.waitForSelector('#haciendaDashboard[aria-busy="false"]');
+    await page.waitForSelector('#reconciliationRadar:not([hidden])');
     const result = await page.evaluate(() => ({
       dataHidden: document.querySelector('#haciendaDataViews')?.hidden,
       errorHidden: document.querySelector('#loadError')?.hidden,
@@ -459,6 +766,10 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
       closeValueAgreement: document.querySelector('#closeValueAgreement')?.textContent.trim(),
       closeDeltas: document.querySelectorAll('#closeDeltaList .hac-close-delta').length,
       closeCopy: document.querySelector('#closeReconciliationCopy')?.textContent.trim(),
+      radarHeatmapColumns: getComputedStyle(
+        document.querySelector('.hac-radar-heatmap-grid'),
+      ).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
+      radarTrendTabIndex: document.querySelector('#reconciliationTrend')?.tabIndex,
       pageText: document.querySelector('#haciendaDataViews')?.innerText || '',
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       theme: document.documentElement.getAttribute('data-theme'),
@@ -485,6 +796,7 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
           text: node.textContent.trim().slice(0, 60),
         })),
     }));
+    const radar = await readRadarSnapshot(page);
     const renderedTheme = await readRenderedThemeAudit(page);
 
     assert.equal(result.dataHidden, false);
@@ -495,8 +807,16 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     assert.equal(result.published, releasedRows.length.toLocaleString('es-AR'));
     assert.equal(result.protectedCount, suppressedRows.length.toLocaleString('es-AR'));
     assert.match(result.protectedNote, new RegExp(`${suppressedRows.length} períodos.*k=10.*omiten`, 'i'));
-    assert.equal(result.quality, '88,99/100');
-    assert.equal(result.reconciliation, '63,9%');
+    assert.equal(
+      result.quality,
+      `${PROJECTIONS.quality.quality.score.toLocaleString('es-AR', { maximumFractionDigits: 2 })}/100`,
+    );
+    assert.equal(
+      result.reconciliation,
+      `${PROJECTIONS.quality.quality.components.payrollReconciliation.score.toLocaleString('es-AR', {
+        maximumFractionDigits: 1,
+      })}%`,
+    );
     assert.match(result.reconciliationNote, /Global.*acuerdo de valores.*no certifica pago/i);
     assert.match(result.kpiGross, /^ARS\s/);
     assert.equal(result.tableRows, Math.min(10, releasedRows.length));
@@ -515,6 +835,27 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     assert.equal(result.closeValueAgreement, `${latestClose.reconciliation.valueAgreementPct.toLocaleString('es-AR', { maximumFractionDigits: 1 })}%`);
     assert.equal(result.closeDeltas, PROJECTIONS.close.comparison.status === 'released' ? 9 : 0);
     assert.match(result.closeCopy, /No reutiliza el score global/i);
+    assert.equal(result.radarHeatmapColumns, 12, `${viewport.name} radar keeps its 12-month grid`);
+    assert.equal(result.radarTrendTabIndex, 0, `${viewport.name} radar trend is keyboard focusable`);
+    assert.equal(radar.window, String(RADAR_DEFAULT_WINDOW), `${viewport.name} default radar window`);
+    assert.equal(radar.kpis.radarPublishedCount.value, String(defaultRadarReleased.length));
+    assert.equal(radar.kpis.radarBelow50Count.value, String(defaultRadarBelow50.length));
+    assert.equal(radar.kpis.radarProtectedCount.value, String(defaultRadarProtected.length));
+    assert.equal(
+      Number(radar.kpis.radarLatestAgreement.value),
+      latestDefaultRadar.reconciliation.valueAgreementPct,
+    );
+    assert.equal(
+      Number(radar.kpis.radarPublishedCount.value) + Number(radar.kpis.radarProtectedCount.value),
+      defaultRadarRows.length,
+      `${viewport.name} radar released plus protected must reconcile to its window`,
+    );
+    assertRadarSnapshot(radar, defaultRadarRows, 'all', `${viewport.name} default radar`);
+    assert.deepEqual(
+      radar.trendPaths.map(path => path.series).sort(),
+      ['agreement', 'coverage', 'exactness'],
+      `${viewport.name} default radar trend series`,
+    );
     assert.equal(result.pageText.includes('<10'), false);
     for (const row of suppressedRows) {
       if (row.period) assert.equal(result.pageText.includes(row.period), false);
@@ -536,10 +877,20 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     assert.deepEqual(consoleErrors, []);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(externalRequests, []);
+    if (viewport.name.startsWith('mobile-')) {
+      const trend = page.locator('#reconciliationTrend');
+      await trend.focus();
+      await page.keyboard.press('ArrowRight');
+      await page.waitForFunction(() => document.querySelector('#reconciliationTrend')?.scrollLeft > 0);
+      await page.evaluate(() => { document.querySelector('#reconciliationTrend').scrollLeft = 0; });
+    }
     if (process.env.HACIENDA_CAPTURE === '1') {
       await page.screenshot({
         path: path.join(tmpdir(), `hacienda-legibility-${viewport.name}.png`),
         fullPage: true,
+      });
+      await page.locator('#reconciliationRadar').screenshot({
+        path: path.join(tmpdir(), `hacienda-radar-${viewport.name}.png`),
       });
     }
 
@@ -569,6 +920,122 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
       `${viewport.name}-reload`,
     );
 
+    const historicalRadarRow = defaultRadarReleased.at(-2);
+    await page.locator(
+      `#reconciliationHeatmap [data-radar-period="${historicalRadarRow.period}"]`,
+    ).click();
+    await page.waitForFunction(period => (
+      document.querySelector('#closePeriodSelect')?.value === period &&
+      document.querySelector(
+        `#reconciliationHeatmap [data-radar-period="${period}"]`,
+      )?.getAttribute('aria-pressed') === 'true'
+    ), historicalRadarRow.period);
+    assert.deepEqual(pageErrors, [], `${viewport.name} heatmap interaction errors`);
+    await assertClosePeriodSelection(
+      page,
+      PROJECTIONS.close.series,
+      historicalRadarRow,
+      `${viewport.name} heatmap open`,
+    );
+    await page.waitForFunction(() => {
+      const closeTitle = document.querySelector('#closeTitle')?.getBoundingClientRect();
+      const topbar = document.querySelector('.hac-topbar')?.getBoundingClientRect();
+      return closeTitle && topbar && closeTitle.top >= topbar.bottom - 1;
+    });
+
+    const leadingVarianceRow = radarRanking(defaultRadarRows)[0];
+    await page.locator(
+      `#varianceRanking [data-radar-open-period="${leadingVarianceRow.period}"]`,
+    ).click();
+    await page.waitForFunction(period => (
+      document.querySelector('#closePeriodSelect')?.value === period
+    ), leadingVarianceRow.period);
+    await assertClosePeriodSelection(
+      page,
+      PROJECTIONS.close.series,
+      leadingVarianceRow,
+      `${viewport.name} ranking open`,
+    );
+
+    if (viewport.name === 'desktop-dark') {
+      await page.selectOption('#radarWindow', 'all');
+      await page.waitForFunction(count => (
+        document.querySelector('#radarSummary')?.dataset.radarWindowCount === String(count)
+      ), PROJECTIONS.close.series.length);
+      const allRowsRadar = await readRadarSnapshot(page);
+      const allReleasedRows = PROJECTIONS.close.series.filter(row => row.privacyStatus === 'released');
+      const allProtectedRows = PROJECTIONS.close.series.filter(row => row.privacyStatus !== 'released');
+      const allBelow50Rows = allReleasedRows.filter(row => row.reconciliation.valueAgreementPct < 50);
+      assert.equal(allRowsRadar.window, 'all');
+      assert.equal(allRowsRadar.kpis.radarPublishedCount.value, String(allReleasedRows.length));
+      assert.equal(allRowsRadar.kpis.radarBelow50Count.value, String(allBelow50Rows.length));
+      assert.equal(allRowsRadar.kpis.radarProtectedCount.value, String(allProtectedRows.length));
+      assert.equal(
+        Number(allRowsRadar.kpis.radarPublishedCount.value) +
+          Number(allRowsRadar.kpis.radarProtectedCount.value),
+        PROJECTIONS.close.series.length,
+      );
+      assertRadarSnapshot(
+        allRowsRadar,
+        PROJECTIONS.close.series,
+        'all',
+        `${viewport.name} all-window radar`,
+      );
+      for (const row of allProtectedRows) {
+        assert.equal(
+          allRowsRadar.trendLabels.includes(monthLabel(row.period)),
+          false,
+          `${viewport.name} protected period cannot appear on the trend axis`,
+        );
+      }
+      const expectedSegments = releasedSegments(PROJECTIONS.close.series);
+      for (const pathResult of allRowsRadar.trendPaths) {
+        assert.equal(
+          (pathResult.d.match(/\bM/g) || []).length,
+          expectedSegments,
+          `${viewport.name} ${pathResult.series} trend must break at protected periods`,
+        );
+      }
+
+      const unavailableComparisonRow = PROJECTIONS.close.series.find(row => (
+        row.privacyStatus === 'released' &&
+        !expectedCloseComparison(PROJECTIONS.close.series, row.period).released
+      ));
+      assert.ok(unavailableComparisonRow, 'fixture must exercise a protected or missing prior month');
+      await page.locator(
+        `#reconciliationHeatmap [data-radar-period="${unavailableComparisonRow.period}"]`,
+      ).click();
+      await page.waitForFunction(period => (
+        document.querySelector('#closePeriodSelect')?.value === period
+      ), unavailableComparisonRow.period);
+      await assertClosePeriodSelection(
+        page,
+        PROJECTIONS.close.series,
+        unavailableComparisonRow,
+        `${viewport.name} protected historical comparison`,
+      );
+
+      for (const filter of ['below90', 'below50', 'noCounterpart', 'protected']) {
+        await page.selectOption('#radarFilter', filter);
+        const expectedFiltered = radarRowsForFilter(PROJECTIONS.close.series, filter);
+        await page.waitForFunction(count => (
+          document.querySelector('#radarSummary')?.dataset.radarVisibleCount === String(count)
+        ), expectedFiltered.length);
+        assertRadarSnapshot(
+          await readRadarSnapshot(page),
+          PROJECTIONS.close.series,
+          filter,
+          `${viewport.name} ${filter} radar`,
+        );
+      }
+
+      await page.selectOption('#radarFilter', 'all');
+      await page.selectOption('#radarWindow', String(RADAR_DEFAULT_WINDOW));
+      await page.waitForFunction(count => (
+        document.querySelector('#radarSummary')?.dataset.radarWindowCount === String(count)
+      ), defaultRadarRows.length);
+    }
+
     const previousClose = releasedCloseRows.at(-2);
     await page.selectOption('#closePeriodSelect', previousClose.period);
     await page.waitForFunction(expected =>
@@ -577,6 +1044,12 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     assert.match(
       await page.locator('#closeBridgeCaption').textContent(),
       new RegExp(previousClose.period.slice(0, 4)),
+    );
+    const previousComparison = expectedCloseComparison(PROJECTIONS.close.series, previousClose.period);
+    assert.equal(
+      await page.locator('#closeComparisonBadge').textContent(),
+      previousComparison.badge,
+      `${viewport.name} close selector comparison must follow the selected month`,
     );
 
     await page.selectOption('#periodRange', '24');
@@ -597,6 +1070,9 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
       simulatorHidden: true,
       sourceVisible: true,
     });
+    assert.deepEqual(consoleErrors, [], `${viewport.name} final console errors`);
+    assert.deepEqual(pageErrors, [], `${viewport.name} final page errors`);
+    assert.deepEqual(externalRequests, [], `${viewport.name} final external requests`);
     await context.close();
   }
 

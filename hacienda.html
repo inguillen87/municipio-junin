@@ -443,7 +443,7 @@
     .hac-legend span { display: inline-flex; align-items: center; gap: 5px; }
     .hac-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--legend); }
 
-    .hac-close { margin-top: 14px; }
+    .hac-close { margin-top: 14px; scroll-margin-top: 82px; }
     .hac-close-toolbar {
       display: flex;
       align-items: flex-end;
@@ -557,6 +557,217 @@
     }
     .hac-close-delta span { display: block; color: var(--hac-muted); font-size: 12px; line-height: 1.35; }
     .hac-close-delta strong { display: block; margin-top: 5px; color: var(--hac-text); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+    .hac-radar { margin-top: 14px; }
+    .hac-radar-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 12px;
+    }
+    .hac-radar-control {
+      display: grid;
+      min-width: min(100%,220px);
+      gap: 7px;
+    }
+    .hac-radar-control label {
+      color: var(--hac-muted);
+      font-size: 12px;
+      font-weight: 820;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .hac-radar-kpis {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: 9px;
+      margin-top: 16px;
+    }
+    .hac-radar-kpi {
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid var(--hac-border);
+      border-radius: 12px;
+      background: var(--hac-soft);
+    }
+    .hac-radar-kpi span {
+      display: block;
+      color: var(--hac-muted);
+      font-size: 12px;
+      font-weight: 810;
+      letter-spacing: .07em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+    .hac-radar-kpi strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--hac-text);
+      font-size: 21px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+    }
+    .hac-radar-visual {
+      min-width: 0;
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--hac-border);
+      border-radius: 14px;
+      background: var(--hac-soft);
+    }
+    .hac-radar-visual h4 {
+      margin: 0;
+      color: var(--hac-text);
+      font-size: 13px;
+      font-weight: 810;
+    }
+    .hac-radar-visual > p {
+      margin: 5px 0 11px;
+      color: var(--hac-muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .hac-radar-scroll {
+      max-width: 100%;
+      overflow-x: auto;
+      overscroll-behavior-inline: contain;
+      scrollbar-gutter: stable;
+      border: 1px solid var(--hac-border);
+      border-radius: 12px;
+      background: var(--hac-surface-raised);
+    }
+    .hac-radar-scroll:focus-visible,
+    .hac-radar-cell:focus-visible,
+    .hac-radar-rank:focus-visible {
+      outline: 3px solid var(--hac-border-strong);
+      outline-offset: 2px;
+    }
+    .hac-radar-heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(12,minmax(58px,1fr));
+      min-width: 720px;
+      gap: 6px;
+      padding: 9px;
+    }
+    .hac-radar-cell {
+      display: grid;
+      min-width: 0;
+      min-height: 62px;
+      align-content: center;
+      gap: 3px;
+      padding: 7px 5px;
+      border: 1px solid var(--hac-border);
+      border-radius: 9px;
+      background: var(--hac-surface);
+      color: var(--hac-text-soft);
+      text-align: center;
+      font: inherit;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+    button.hac-radar-cell {
+      cursor: pointer;
+      transition: border-color .16s ease,background .16s ease,color .16s ease;
+    }
+    button.hac-radar-cell:hover {
+      border-color: var(--hac-border-strong);
+      background: rgba(var(--hac-blue-rgb),.1);
+      color: var(--hac-text);
+    }
+    .hac-radar-cell[aria-pressed="true"] {
+      border-color: var(--hac-blue);
+      box-shadow: inset 0 0 0 2px var(--hac-blue);
+    }
+    .hac-radar-cell[data-radar-status="atLeast90"] { border-left: 4px solid var(--hac-blue); }
+    .hac-radar-cell[data-radar-status="below90"] { border-left: 4px dashed var(--hac-blue); }
+    .hac-radar-cell[data-radar-status="below50"] { border-left: 4px double var(--hac-blue); }
+    .hac-radar-cell[data-radar-status="noCounterpart"] { border-left: 4px dotted var(--hac-violet); }
+    .hac-radar-cell[data-radar-privacy="protected"] {
+      border-style: dashed;
+      background: var(--hac-soft);
+      color: var(--hac-muted);
+      cursor: not-allowed;
+    }
+    .hac-radar-cell-period { font-weight: 780; text-transform: capitalize; }
+    .hac-radar-cell-value { color: var(--hac-text); font-weight: 840; font-variant-numeric: tabular-nums; }
+    .hac-radar-cell-status { color: var(--hac-muted); font-size: 12px; }
+    .hac-radar-empty {
+      min-height: 92px;
+      padding: 24px 14px;
+      color: var(--hac-muted);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .hac-radar-detail-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1.4fr) minmax(300px,.6fr);
+      gap: 14px;
+    }
+    .hac-radar-trend {
+      min-height: 300px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-inline: contain;
+    }
+    .hac-radar-trend svg { display: block; width: 100%; min-width: 600px; height: auto; min-height: 280px; }
+    .hac-radar-trend text { fill: var(--hac-muted); font: 12px Inter,ui-sans-serif,system-ui,sans-serif; }
+    .hac-radar-trend .hac-radar-axis { stroke: var(--hac-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .hac-radar-trend .hac-radar-series { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+    .hac-radar-trend .hac-radar-point { stroke: var(--hac-surface); stroke-width: 2; vector-effect: non-scaling-stroke; }
+    .hac-radar-legend-line {
+      width: 24px;
+      height: 0;
+      border-top: 3px solid var(--legend);
+    }
+    .hac-radar-legend-line[data-pattern="dash"] { border-top-style: dashed; }
+    .hac-radar-legend-line[data-pattern="dot"] { border-top-style: dotted; }
+    .hac-radar-ranking { display: grid; gap: 9px; }
+    .hac-radar-rank {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      width: 100%;
+      min-height: 48px;
+      grid-template-columns: minmax(86px,.55fr) minmax(130px,1fr);
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      padding: 8px 10px;
+      border: 1px solid var(--hac-border);
+      border-radius: 10px;
+      background: var(--hac-surface-raised);
+      color: var(--hac-text);
+      font: inherit;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .hac-radar-rank::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset: 0 auto 0 0;
+      width: var(--radar-rank-width,0%);
+      background: rgba(var(--hac-blue-rgb),.12);
+    }
+    .hac-radar-rank:hover { border-color: var(--hac-border-strong); }
+    .hac-radar-rank-period { font-weight: 790; text-transform: capitalize; }
+    .hac-radar-rank-value { justify-self: end; font-weight: 830; font-variant-numeric: tabular-nums; text-align: right; }
+    .hac-radar-summary {
+      margin: 13px 0 0;
+      color: var(--hac-text-soft);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .hac-radar-caveat {
+      margin: 7px 0 0;
+      padding-left: 10px;
+      border-left: 3px solid var(--hac-amber);
+      color: var(--hac-muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
 
     .hac-alerts { display: grid; gap: 9px; }
     .hac-alert {
@@ -721,7 +932,7 @@
     @keyframes hac-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
     @media (max-width: 1100px) {
-      .hac-layout,.hac-layout-balanced,.hac-close-grid { grid-template-columns: 1fr; }
+      .hac-layout,.hac-layout-balanced,.hac-close-grid,.hac-radar-detail-grid { grid-template-columns: 1fr; }
       .hac-close-reconciliation-grid,.hac-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
     }
     @media (max-width: 900px) {
@@ -750,6 +961,11 @@
       .hac-close-toolbar { align-items: stretch; flex-direction: column; }
       .hac-close-control { width: 100%; }
       .hac-close-chart,.hac-close-chart svg { min-height: 240px; }
+      .hac-radar-controls { align-items: stretch; flex-direction: column; }
+      .hac-radar-control { width: 100%; }
+      .hac-radar-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      #reconciliationHeatmap > .hac-radar-heatmap-grid { grid-template-columns: repeat(12,minmax(58px,1fr)) !important; }
+      .hac-radar-trend { overflow-x: auto; overscroll-behavior-inline: contain; }
       .hac-error { grid-template-columns: auto 1fr; }
       .hac-error .hac-retry-btn { grid-column: 1/-1; width: 100%; }
     }
@@ -760,6 +976,7 @@
       .hac-close-metrics,.hac-close-reconciliation-grid,.hac-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .hac-close-metric strong { font-size: 13px; }
       .hac-close-delta strong { font-size: 12px; }
+      .hac-radar-kpis { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -777,6 +994,11 @@
       .hac-select,
       .hac-retry-btn,
       .hac-table-wrap,
+      .hac-radar-visual,
+      .hac-radar-scroll,
+      .hac-radar-cell,
+      .hac-radar-rank,
+      .hac-radar-kpi,
       .hac-methodology {
         color: CanvasText !important;
         background: Canvas !important;
@@ -882,10 +1104,70 @@
         </article>
       </section>
 
+      <section class="hac-panel hac-radar" id="reconciliationRadar" aria-labelledby="radarTitle">
+        <div class="hac-panel-head">
+          <div>
+            <h3 id="radarTitle">Radar de conciliación histórica</h3>
+            <p class="hac-panel-subtitle">Cobertura, exactitud, acuerdo y varianza por cierre mensual.</p>
+          </div>
+          <span class="hac-panel-badge">grh-close-v1 · ARS</span>
+        </div>
+        <div class="hac-radar-controls" aria-label="Controles del radar histórico">
+          <div class="hac-radar-control">
+            <label for="radarWindow">Ventana</label>
+            <select class="hac-select" id="radarWindow">
+              <option value="24">24 meses</option>
+              <option value="36" selected>36 meses</option>
+              <option value="all">Todo el histórico</option>
+            </select>
+          </div>
+          <div class="hac-radar-control">
+            <label for="radarFilter">Foco</label>
+            <select class="hac-select" id="radarFilter">
+              <option value="all" selected>Todos los cierres</option>
+              <option value="below90">Acuerdo menor a 90%</option>
+              <option value="below50">Acuerdo menor a 50%</option>
+              <option value="noCounterpart">Sin corridas coincidentes</option>
+              <option value="protected">Períodos protegidos</option>
+            </select>
+          </div>
+        </div>
+        <div class="hac-radar-kpis" aria-label="Indicadores de la ventana histórica">
+          <div class="hac-radar-kpi"><span>Meses publicados</span><strong id="radarPublishedCount">—</strong></div>
+          <div class="hac-radar-kpi"><span>Acuerdo menor a 50%</span><strong id="radarBelow50Count">—</strong></div>
+          <div class="hac-radar-kpi"><span>Períodos protegidos</span><strong id="radarProtectedCount">—</strong></div>
+          <div class="hac-radar-kpi"><span>Último acuerdo</span><strong id="radarLatestAgreement">—</strong></div>
+        </div>
+        <article class="hac-radar-visual" aria-labelledby="radarHeatmapTitle">
+          <h4 id="radarHeatmapTitle">Matriz mensual de acuerdo</h4>
+          <p>Seleccioná un mes publicado para abrir su cierre. Los umbrales son focos de exploración, no un dictamen de calidad.</p>
+          <div class="hac-radar-scroll" id="reconciliationHeatmap" tabindex="0" role="region" aria-label="Matriz histórica desplazable" aria-describedby="radarSummary"></div>
+        </article>
+        <div class="hac-radar-detail-grid">
+          <article class="hac-radar-visual" aria-labelledby="radarTrendTitle">
+            <h4 id="radarTrendTitle">Indicadores mensuales de conciliación</h4>
+            <p>Escala fija de 0 a 100%. Los huecos y períodos protegidos interrumpen cada serie.</p>
+            <div class="hac-radar-trend" id="reconciliationTrend" tabindex="0" role="region" aria-label="Tendencia histórica desplazable de cobertura, exactitud y acuerdo"></div>
+            <div class="hac-legend" aria-label="Leyenda de indicadores">
+              <span><i class="hac-radar-legend-line" style="--legend:var(--hac-blue)"></i>cobertura</span>
+              <span><i class="hac-radar-legend-line" data-pattern="dash" style="--legend:var(--hac-teal)"></i>exactitud</span>
+              <span><i class="hac-radar-legend-line" data-pattern="dot" style="--legend:var(--hac-amber)"></i>acuerdo</span>
+            </div>
+          </article>
+          <article class="hac-radar-visual" aria-labelledby="varianceRankingTitle">
+            <h4 id="varianceRankingTitle">Mayor varianza absoluta</h4>
+            <p>Top 6 de la ventana visible, en pesos argentinos y con escala desde cero.</p>
+            <div class="hac-radar-ranking" id="varianceRanking" aria-live="polite"></div>
+          </article>
+        </div>
+        <p class="hac-radar-summary" id="radarSummary" role="status" aria-live="polite">Preparando radar histórico…</p>
+        <p class="hac-radar-caveat">diferencia diagnóstica entre fuentes, no pérdida/pago/fraude.</p>
+      </section>
+
       <section class="hac-panel hac-close" aria-labelledby="closeTitle">
         <div class="hac-panel-head">
           <div>
-            <h3 id="closeTitle">Cierre GRH explicado</h3>
+            <h3 id="closeTitle" tabindex="-1">Cierre GRH explicado</h3>
             <p class="hac-panel-subtitle">Cómo se compone el neto y cuánto concilian cálculo y totpago en el período.</p>
           </div>
           <span class="hac-panel-badge">grh-close-v1 · k=10</span>
@@ -927,7 +1209,7 @@
         </div>
         <div class="hac-close-comparison" aria-labelledby="closeComparisonTitle">
           <div class="hac-close-comparison-head">
-            <div><h4 id="closeComparisonTitle">Último cierre frente al mes anterior</h4><p id="closeComparisonCopy">Comparación aritmética protegida; una diferencia no demuestra su causa.</p></div>
+            <div><h4 id="closeComparisonTitle">Cierre seleccionado frente al mes anterior</h4><p id="closeComparisonCopy">Comparación aritmética protegida; una diferencia no demuestra su causa.</p></div>
             <span class="hac-panel-badge" id="closeComparisonBadge">—</span>
           </div>
           <p id="closeComparisonReconciliation">Preparando comparación mensual…</p>
@@ -1004,7 +1286,7 @@
           <div class="hac-methodology-content">
             <div><strong>Importes publicados</strong>La proyección entrega bruto, retenciones, neto y aportes en centavos. Junín configura su presentación en pesos argentinos (ARS); el dump original no incluía un código de moneda.</div>
             <div><strong>Control de cálculo</strong>Los importes sirven para analizar el cálculo salarial. No prueban una transferencia bancaria, un asiento contable, un saldo de tesorería ni la efectiva percepción por una persona.</div>
-            <div><strong>Conciliación global</strong>La proyección de calidad publica cobertura, exactitud y acuerdo de valores globales. No se atribuye ni se inventa una conciliación para cada período.</div>
+            <div><strong>Conciliación</strong>La proyección de calidad conserva el diagnóstico global. El contrato grh-close-v1 publica cobertura, exactitud, acuerdo y varianza de cada período liberado, sin reutilizar ese score global.</div>
             <div><strong>Totpago</strong>Permanece como diagnóstico cross-source global. No alimenta los importes mensuales ni se presenta como evidencia de pago.</div>
             <div><strong>Snapshot</strong>La fuente es histórica y no representa operación en tiempo real. El corte visible controla el horizonte válido.</div>
             <div><strong>Privacidad</strong>La serie monetaria aplica umbral k=10: todo período suprimido se omite por completo y nunca se reemplaza por cero. La proyección de calidad no contiene PII, filas crudas, códigos de celda ni etiquetas categóricas.</div>
@@ -1043,11 +1325,7 @@
         timeStyle: 'short',
         timeZone: 'America/Argentina/Buenos_Aires'
       });
-      var monthFormatter = new Intl.DateTimeFormat('es-AR', {
-        month: 'short',
-        year: 'numeric',
-        timeZone: 'UTC'
-      });
+      var monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'];
 
       var state = {
         experience: null,
@@ -1058,6 +1336,8 @@
         latest: null,
         protectedPeriods: 0,
         range: '12',
+        radarWindow: '36',
+        radarFilter: 'all',
         loadSequence: 0
       };
       var elements = {};
@@ -1081,7 +1361,10 @@
           'closeGross', 'closeWithholdings', 'closeNet', 'closeNetToPay', 'closeEmployer',
           'closeControlNote', 'closeReconciliationCopy', 'closeCoverage', 'closeExactRate',
           'closeValueAgreement', 'closeVariance', 'closeComparisonCopy',
-          'closeComparisonBadge', 'closeComparisonReconciliation', 'closeDeltaList'
+          'closeComparisonBadge', 'closeComparisonReconciliation', 'closeDeltaList',
+          'closeTitle', 'radarWindow', 'radarFilter', 'radarPublishedCount',
+          'radarBelow50Count', 'radarProtectedCount', 'radarLatestAgreement',
+          'reconciliationHeatmap', 'reconciliationTrend', 'varianceRanking', 'radarSummary'
         ].forEach(function (id) { elements[id] = byId(id); });
       }
 
@@ -1112,6 +1395,13 @@
         return formatAmount(value / 100);
       }
 
+      function formatCentsExact(value) {
+        return window.MuniTenantPresentation.formatAmount(value / 100, state.presentation, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+
       function formatCentsCompact(value) {
         return formatAmountCompact(value / 100);
       }
@@ -1131,9 +1421,7 @@
 
       function monthLabel(period) {
         var parts = period.split('-').map(Number);
-        return monthFormatter
-          .format(new Date(Date.UTC(parts[0], parts[1] - 1, 1)))
-          .replace('.', '');
+        return monthNames[parts[1] - 1] + ' ' + parts[0];
       }
 
       function parseSnapshot(value) {
@@ -1214,6 +1502,330 @@
 
       function addSvgTitle(parent, textValue) {
         parent.appendChild(createSvg('title', {}, textValue));
+      }
+
+      function previousCalendarPeriod(period) {
+        var parts = period.split('-').map(Number);
+        var date = new Date(Date.UTC(parts[0], parts[1] - 2, 1));
+        return date.getUTCFullYear() + '-' + String(date.getUTCMonth() + 1).padStart(2, '0');
+      }
+
+      function nextCalendarPeriod(period) {
+        var parts = period.split('-').map(Number);
+        var date = new Date(Date.UTC(parts[0], parts[1], 1));
+        return date.getUTCFullYear() + '-' + String(date.getUTCMonth() + 1).padStart(2, '0');
+      }
+
+      function radarWindowRows() {
+        if (!state.close) return [];
+        return state.radarWindow === 'all'
+          ? state.close.series.slice()
+          : state.close.series.slice(-Number(state.radarWindow));
+      }
+
+      function radarStatus(row) {
+        if (row.privacyStatus !== 'released') return 'protected';
+        if (row.reconciliation.matchedRuns === 0) return 'noCounterpart';
+        if (row.reconciliation.valueAgreementPct < 50) return 'below50';
+        if (row.reconciliation.valueAgreementPct < 90) return 'below90';
+        return 'atLeast90';
+      }
+
+      function radarRowMatches(row) {
+        if (state.radarFilter === 'protected') return row.privacyStatus !== 'released';
+        if (row.privacyStatus !== 'released') return state.radarFilter === 'all';
+        if (state.radarFilter === 'below90') return row.reconciliation.valueAgreementPct < 90;
+        if (state.radarFilter === 'below50') return row.reconciliation.valueAgreementPct < 50;
+        if (state.radarFilter === 'noCounterpart') return row.reconciliation.matchedRuns === 0;
+        return true;
+      }
+
+      function radarStatusLabel(status) {
+        return {
+          atLeast90: 'acuerdo ≥90%',
+          below90: 'acuerdo <90%',
+          below50: 'acuerdo <50%',
+          noCounterpart: 'sin corridas coincidentes',
+          protected: 'protegido'
+        }[status];
+      }
+
+      function radarFilterLabel() {
+        return {
+          all: 'todos los cierres',
+          below90: 'acuerdo menor a 90%',
+          below50: 'acuerdo menor a 50%',
+          noCounterpart: 'sin corridas coincidentes',
+          protected: 'períodos protegidos'
+        }[state.radarFilter];
+      }
+
+      function appendRadarCellText(cell, className, value) {
+        var node = document.createElement('span');
+        node.className = className;
+        node.textContent = value;
+        cell.appendChild(node);
+      }
+
+      function syncRadarSelection() {
+        if (!elements.reconciliationHeatmap) return;
+        elements.reconciliationHeatmap.querySelectorAll('[data-radar-period]').forEach(function (button) {
+          button.setAttribute('aria-pressed', button.dataset.radarPeriod === state.closePeriod ? 'true' : 'false');
+        });
+      }
+
+      function renderReconciliationHeatmap(windowRows) {
+        elements.reconciliationHeatmap.replaceChildren();
+        var visibleRows = windowRows.filter(radarRowMatches);
+        elements.reconciliationHeatmap.dataset.radarVisibleCount = String(visibleRows.length);
+        elements.reconciliationHeatmap.dataset.radarWindowCount = String(windowRows.length);
+        if (!visibleRows.length) {
+          var empty = document.createElement('div');
+          empty.className = 'hac-radar-empty';
+          empty.textContent = 'No hay cierres que cumplan este foco en la ventana seleccionada.';
+          elements.reconciliationHeatmap.appendChild(empty);
+          return visibleRows;
+        }
+
+        var grid = document.createElement('div');
+        grid.className = 'hac-radar-heatmap-grid';
+        visibleRows.forEach(function (row) {
+          var status = radarStatus(row);
+          var cell;
+          if (row.privacyStatus === 'released') {
+            cell = document.createElement('button');
+            cell.type = 'button';
+            cell.dataset.radarPeriod = row.period;
+            cell.dataset.radarStatus = status;
+            cell.dataset.radarValue = String(row.reconciliation.valueAgreementPct);
+            cell.setAttribute('aria-pressed', row.period === state.closePeriod ? 'true' : 'false');
+            cell.setAttribute(
+              'aria-label',
+              monthLabel(row.period) + ': acuerdo ' + percentFormatter.format(row.reconciliation.valueAgreementPct) +
+                ' por ciento, ' + radarStatusLabel(status) + '. Abrir cierre.'
+            );
+            appendRadarCellText(cell, 'hac-radar-cell-period', monthLabel(row.period));
+            appendRadarCellText(cell, 'hac-radar-cell-value', percentFormatter.format(row.reconciliation.valueAgreementPct) + '%');
+            appendRadarCellText(cell, 'hac-radar-cell-status', radarStatusLabel(status));
+          } else {
+            cell = document.createElement('span');
+            cell.dataset.radarPrivacy = 'protected';
+            cell.setAttribute('aria-label', 'Período protegido, sin dato publicado.');
+            appendRadarCellText(cell, 'hac-radar-cell-period', 'Período protegido');
+            appendRadarCellText(cell, 'hac-radar-cell-value', 'Sin dato');
+            appendRadarCellText(cell, 'hac-radar-cell-status', radarStatusLabel(status));
+          }
+          cell.className = 'hac-radar-cell';
+          grid.appendChild(cell);
+        });
+        elements.reconciliationHeatmap.appendChild(grid);
+        return visibleRows;
+      }
+
+      function renderReconciliationTrend(windowRows) {
+        elements.reconciliationTrend.replaceChildren();
+        var visibleReleased = windowRows.filter(function (row) {
+          return row.privacyStatus === 'released' && radarRowMatches(row);
+        });
+        elements.reconciliationTrend.dataset.radarPointCount = String(visibleReleased.length);
+        if (!visibleReleased.length) {
+          var empty = document.createElement('div');
+          empty.className = 'hac-radar-empty';
+          empty.textContent = state.radarFilter === 'protected'
+            ? 'Los períodos protegidos no publican indicadores de conciliación.'
+            : 'No hay indicadores publicados para este foco.';
+          elements.reconciliationTrend.appendChild(empty);
+          return;
+        }
+
+        var width = Math.max(760, windowRows.length * 16);
+        var height = 300;
+        var padding = { top: 20, right: 28, bottom: 46, left: 48 };
+        var plotWidth = width - padding.left - padding.right;
+        var plotHeight = height - padding.top - padding.bottom;
+        var xAt = function (index) {
+          return padding.left + (windowRows.length === 1 ? plotWidth / 2 : index * plotWidth / (windowRows.length - 1));
+        };
+        var yAt = function (value) {
+          return padding.top + (100 - value) * plotHeight / 100;
+        };
+        var titleId = 'reconciliationTrendSvgTitle';
+        var descriptionId = 'reconciliationTrendSvgDescription';
+        var svg = createSvg('svg', {
+          viewBox: '0 0 ' + width + ' ' + height,
+          role: 'img',
+          'aria-labelledby': titleId + ' ' + descriptionId,
+          focusable: 'false'
+        });
+        svg.style.width = width + 'px';
+        svg.style.minWidth = width + 'px';
+        svg.style.maxWidth = 'none';
+        svg.appendChild(createSvg('title', { id: titleId }, 'Indicadores mensuales de conciliación'));
+        svg.appendChild(createSvg('desc', { id: descriptionId }, 'Cobertura con línea continua, exactitud con línea discontinua y acuerdo con línea punteada, en escala de cero a cien por ciento. Los huecos y períodos protegidos cortan las líneas.'));
+
+        [0, 25, 50, 75, 100].forEach(function (tick) {
+          var y = yAt(tick);
+          svg.appendChild(createSvg('line', {
+            x1: padding.left,
+            x2: width - padding.right,
+            y1: y,
+            y2: y,
+            class: 'hac-radar-axis'
+          }));
+          svg.appendChild(createSvg('text', {
+            x: padding.left - 8,
+            y: y + 4,
+            'text-anchor': 'end'
+          }, tick + '%'));
+        });
+
+        var labelEvery = Math.max(1, Math.ceil(windowRows.length / 8));
+        windowRows.forEach(function (row, index) {
+          if (row.privacyStatus !== 'released' || !radarRowMatches(row)) return;
+          if (index % labelEvery !== 0 && index !== windowRows.length - 1) return;
+          svg.appendChild(createSvg('text', {
+            x: xAt(index),
+            y: height - 17,
+            'text-anchor': index === 0 ? 'start' : index === windowRows.length - 1 ? 'end' : 'middle'
+          }, monthLabel(row.period)));
+        });
+
+        [
+          { name: 'coverage', key: 'runCoveragePct', color: 'var(--hac-blue)', dash: '' },
+          { name: 'exactness', key: 'metricExactRatePct', color: 'var(--hac-teal)', dash: '8 5' },
+          { name: 'agreement', key: 'valueAgreementPct', color: 'var(--hac-amber)', dash: '2 5' }
+        ].forEach(function (series) {
+          var commands = [];
+          var previousVisiblePeriod = null;
+          var previousVisibleIndex = -2;
+          windowRows.forEach(function (row, index) {
+            var visible = row.privacyStatus === 'released' && radarRowMatches(row);
+            if (!visible) {
+              previousVisiblePeriod = null;
+              previousVisibleIndex = -2;
+              return;
+            }
+            var value = row.reconciliation[series.key];
+            var continuous = previousVisibleIndex === index - 1 &&
+              previousVisiblePeriod && nextCalendarPeriod(previousVisiblePeriod) === row.period;
+            commands.push((continuous ? 'L' : 'M') + xAt(index).toFixed(2) + ' ' + yAt(value).toFixed(2));
+            previousVisiblePeriod = row.period;
+            previousVisibleIndex = index;
+          });
+          var path = createSvg('path', {
+            d: commands.join(' '),
+            class: 'hac-radar-series',
+            stroke: series.color,
+            'stroke-dasharray': series.dash,
+            'data-radar-series': series.name
+          });
+          svg.appendChild(path);
+          windowRows.forEach(function (row, index) {
+            if (row.privacyStatus !== 'released' || !radarRowMatches(row)) return;
+            var value = row.reconciliation[series.key];
+            var point = createSvg('circle', {
+              cx: xAt(index),
+              cy: yAt(value),
+              r: 3.2,
+              class: 'hac-radar-point',
+              fill: series.color,
+              'data-radar-series': series.name,
+              'data-radar-point': row.period,
+              'data-radar-value': value
+            });
+            addSvgTitle(point, monthLabel(row.period) + ': ' + percentFormatter.format(value) + '%');
+            svg.appendChild(point);
+          });
+        });
+        elements.reconciliationTrend.appendChild(svg);
+      }
+
+      function renderVarianceRanking(windowRows) {
+        elements.varianceRanking.replaceChildren();
+        var ranking = windowRows.filter(function (row) {
+          return row.privacyStatus === 'released' && radarRowMatches(row);
+        }).sort(function (left, right) {
+          return right.reconciliation.absoluteVarianceCents - left.reconciliation.absoluteVarianceCents ||
+            right.period.localeCompare(left.period);
+        }).slice(0, 6);
+        elements.varianceRanking.dataset.radarRankCount = String(ranking.length);
+        if (!ranking.length) {
+          var empty = document.createElement('div');
+          empty.className = 'hac-radar-empty';
+          empty.textContent = state.radarFilter === 'protected'
+            ? 'Los períodos protegidos no publican varianza.'
+            : 'No hay varianzas publicadas para este foco.';
+          elements.varianceRanking.appendChild(empty);
+          return;
+        }
+        var maximum = Math.max.apply(null, ranking.map(function (row) {
+          return row.reconciliation.absoluteVarianceCents;
+        })) || 1;
+        ranking.forEach(function (row) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'hac-radar-rank';
+          button.dataset.radarOpenPeriod = row.period;
+          button.dataset.radarVarianceCents = String(row.reconciliation.absoluteVarianceCents);
+          button.style.setProperty('--radar-rank-width', (row.reconciliation.absoluteVarianceCents / maximum * 100).toFixed(2) + '%');
+          button.setAttribute(
+            'aria-label',
+            monthLabel(row.period) + ': varianza absoluta ' + formatCentsExact(row.reconciliation.absoluteVarianceCents) + '. Abrir cierre.'
+          );
+          appendRadarCellText(button, 'hac-radar-rank-period', monthLabel(row.period));
+          appendRadarCellText(button, 'hac-radar-rank-value', formatCentsExact(row.reconciliation.absoluteVarianceCents));
+          elements.varianceRanking.appendChild(button);
+        });
+      }
+
+      function renderRadar() {
+        var windowRows = radarWindowRows();
+        var released = windowRows.filter(function (row) { return row.privacyStatus === 'released'; });
+        var protectedRows = windowRows.filter(function (row) { return row.privacyStatus !== 'released'; });
+        var below50 = released.filter(function (row) { return row.reconciliation.valueAgreementPct < 50; });
+        var latest = released[released.length - 1];
+        var visibleRows = renderReconciliationHeatmap(windowRows);
+        setText(elements.radarPublishedCount, numberFormatter.format(released.length));
+        setText(elements.radarBelow50Count, numberFormatter.format(below50.length));
+        setText(elements.radarProtectedCount, numberFormatter.format(protectedRows.length));
+        setText(
+          elements.radarLatestAgreement,
+          latest ? percentFormatter.format(latest.reconciliation.valueAgreementPct) + '%' : '—'
+        );
+        elements.radarPublishedCount.dataset.radarValue = String(released.length);
+        elements.radarBelow50Count.dataset.radarValue = String(below50.length);
+        elements.radarProtectedCount.dataset.radarValue = String(protectedRows.length);
+        elements.radarLatestAgreement.dataset.radarValue = latest
+          ? String(latest.reconciliation.valueAgreementPct)
+          : '';
+        renderReconciliationTrend(windowRows);
+        renderVarianceRanking(windowRows);
+        elements.radarSummary.dataset.radarVisibleCount = String(visibleRows.length);
+        elements.radarSummary.dataset.radarWindowCount = String(windowRows.length);
+        setText(
+          elements.radarSummary,
+          numberFormatter.format(visibleRows.length) + ' de ' + numberFormatter.format(windowRows.length) +
+            ' períodos visibles para “' + radarFilterLabel() + '”. ' +
+            numberFormatter.format(released.length) + ' publicados y ' +
+            numberFormatter.format(protectedRows.length) + ' protegidos en la ventana.'
+        );
+      }
+
+      function openRadarPeriod(period) {
+        var row = state.close && state.close.series.find(function (item) {
+          return item.period === period && item.privacyStatus === 'released';
+        });
+        if (!row) return;
+        state.closePeriod = row.period;
+        elements.closePeriodSelect.value = row.period;
+        renderClosePeriod();
+        renderCloseComparison();
+        syncRadarSelection();
+        elements.closeTitle.focus({ preventScroll: true });
+        elements.closeTitle.closest('.hac-close').scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+          block: 'start'
+        });
       }
 
       function renderCloseBridge(row) {
@@ -1339,11 +1951,61 @@
         elements.closeDeltaList.appendChild(item);
       }
 
+      function unavailableCloseComparison(previousPeriod, currentPeriod, reason) {
+        return {
+          status: 'unavailable',
+          reason: reason,
+          previousPeriod: previousPeriod,
+          currentPeriod: currentPeriod,
+          participantDelta: null,
+          componentDeltas: null,
+          reconciliationDeltas: null
+        };
+      }
+
+      function closeComparisonForPeriod(period) {
+        var previousPeriod = previousCalendarPeriod(period);
+        var previous = state.close.series.find(function (row) { return row.period === previousPeriod; });
+        var current = state.close.series.find(function (row) { return row.period === period; });
+        if (!previous) return unavailableCloseComparison(previousPeriod, period, 'period_missing');
+        if (!current || previous.privacyStatus !== 'released' || current.privacyStatus !== 'released') {
+          return unavailableCloseComparison(previousPeriod, period, 'privacy_protected');
+        }
+        var componentKeys = [
+          'grossWithFamilyAllowancesCents', 'contributoryEarningsCents',
+          'nonContributoryEarningsCents', 'familyAllowancesCents',
+          'employeeWithholdingsCents', 'netPayrollCents', 'netToPayCents',
+          'employerContributionsCents'
+        ];
+        var componentDeltas = {};
+        componentKeys.forEach(function (key) {
+          componentDeltas[key] = current.components[key] - previous.components[key];
+        });
+        var roundFour = function (value) { return Number(value.toFixed(4)); };
+        return {
+          status: 'released',
+          reason: 'both_periods_released',
+          previousPeriod: previousPeriod,
+          currentPeriod: period,
+          participantDelta: current.participantCount - previous.participantCount,
+          componentDeltas: componentDeltas,
+          reconciliationDeltas: {
+            runCoveragePct: roundFour(current.reconciliation.runCoveragePct - previous.reconciliation.runCoveragePct),
+            metricExactRatePct: roundFour(current.reconciliation.metricExactRatePct - previous.reconciliation.metricExactRatePct),
+            valueAgreementPct: roundFour(current.reconciliation.valueAgreementPct - previous.reconciliation.valueAgreementPct),
+            absoluteVarianceCents: current.reconciliation.absoluteVarianceCents - previous.reconciliation.absoluteVarianceCents
+          }
+        };
+      }
+
       function renderCloseComparison() {
-        var comparison = state.close.comparison;
+        var comparison = closeComparisonForPeriod(state.closePeriod);
         elements.closeDeltaList.replaceChildren();
         if (comparison.status !== 'released') {
-          setText(elements.closeComparisonBadge, 'comparación protegida');
+          setText(
+            elements.closeComparisonBadge,
+            comparison.reason === 'period_missing' ? 'mes anterior no disponible' : 'comparación protegida'
+          );
           setText(
             elements.closeComparisonCopy,
             comparison.reason === 'period_missing'
@@ -1837,6 +2499,7 @@
         renderSource();
         renderKpis();
         renderClose();
+        renderRadar();
         renderChart();
         renderAlerts();
         renderQuality();
@@ -1946,7 +2609,31 @@
         });
         elements.closePeriodSelect.addEventListener('change', function (event) {
           state.closePeriod = event.target.value;
-          if (state.close) renderClosePeriod();
+          if (state.close) {
+            renderClosePeriod();
+            renderCloseComparison();
+            syncRadarSelection();
+          }
+        });
+        elements.radarWindow.addEventListener('change', function (event) {
+          state.radarWindow = event.target.value;
+          if (state.close) renderRadar();
+        });
+        elements.radarFilter.addEventListener('change', function (event) {
+          state.radarFilter = event.target.value;
+          if (state.close) renderRadar();
+        });
+        elements.reconciliationHeatmap.addEventListener('click', function (event) {
+          var button = event.target.closest('[data-radar-period]');
+          if (button && elements.reconciliationHeatmap.contains(button)) {
+            openRadarPeriod(button.dataset.radarPeriod);
+          }
+        });
+        elements.varianceRanking.addEventListener('click', function (event) {
+          var button = event.target.closest('[data-radar-open-period]');
+          if (button && elements.varianceRanking.contains(button)) {
+            openRadarPeriod(button.dataset.radarOpenPeriod);
+          }
         });
         elements.parityRange.addEventListener('input', renderSimulator);
         elements.retryLoad.addEventListener('click', loadAuthorizedExperience);

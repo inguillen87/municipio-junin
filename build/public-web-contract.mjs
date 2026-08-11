@@ -9,6 +9,7 @@ export const PUBLIC_LEGACY_HTML_FILES = Object.freeze([
   'cuentas-claras.html',
   'dashboard.html',
   'exportar.html',
+  'estructura.html',
   'form-public.html',
   'forms.html',
   'grh-ejecutivo.html',
@@ -48,6 +49,7 @@ export const GOVERNED_HTML_FILES = Object.freeze([
   'inicio.html',
   'roles.html',
   'manuales.html',
+  'estructura.html',
 ]);
 
 export const VITE_ENTRY_HTML_FILES = Object.freeze([

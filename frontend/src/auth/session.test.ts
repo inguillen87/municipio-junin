@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchAuthoritativeSession, parseAuthoritativeSession } from './session';
 
 const REQUIRED_CAPABILITY = 'navigation.grh-executive';
+const ORGANIZATION_CAPABILITY = 'navigation.organization-analytics';
 
 function validPayload(): { user: Record<string, unknown> } {
   return {
@@ -20,6 +21,7 @@ function validPayload(): { user: Record<string, unknown> } {
         'session.read',
         'navigation.workspace',
         REQUIRED_CAPABILITY,
+        ORGANIZATION_CAPABILITY,
       ],
     },
   };
@@ -39,10 +41,17 @@ describe('parseAuthoritativeSession', () => {
         'session.read',
         'navigation.workspace',
         REQUIRED_CAPABILITY,
+        ORGANIZATION_CAPABILITY,
       ],
     });
     expect(Object.isFrozen(identity)).toBe(true);
     expect(Object.isFrozen(identity?.capabilities)).toBe(true);
+  });
+
+  it('accepts the organization analytics capability in an authoritative executive session', () => {
+    const identity = parseAuthoritativeSession(validPayload(), ORGANIZATION_CAPABILITY);
+
+    expect(identity?.capabilities).toContain(ORGANIZATION_CAPABILITY);
   });
 
   it.each([

@@ -10,6 +10,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-decision-brief': 'grh-decision-brief-v1',
   '/api/grh-data': 'grh-raw-retired-v1',
   '/api/grh-directory': 'grh-directory-v1',
+  '/api/grh-organization-analytics': 'grh-organization-analytics-v1',
 });
 
 module.exports = Object.freeze({

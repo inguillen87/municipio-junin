@@ -1,5 +1,7 @@
 'use strict';
 
+const { isPublishedDemoIdentity } = require('./published-demo-policy.cjs');
+
 // Runtime-neutral RBAC foundation shared by Serverless (ESM) and Express (CJS).
 //
 // Security contract:
@@ -7,7 +9,7 @@
 // - there is no rank, inheritance or wildcard grant;
 // - unknown roles and capabilities are denied;
 // - adding a capability never grants it automatically to an existing role.
-const ACCESS_POLICY_VERSION = '2026-08-09.1';
+const ACCESS_POLICY_VERSION = '2026-08-10.1';
 
 const ROLES = Object.freeze({
   SUPER_ADMIN: 'SUPER_ADMIN',
@@ -26,6 +28,7 @@ const CAPABILITIES = Object.freeze({
   NAV_REPORTS: 'navigation.reports',
   NAV_HACIENDA: 'navigation.hacienda',
   NAV_GRH_EXECUTIVE: 'navigation.grh-executive',
+  NAV_ORGANIZATION_ANALYTICS: 'navigation.organization-analytics',
   NAV_DATA_QUALITY: 'navigation.data-quality',
   NAV_RRHH: 'navigation.rrhh',
   NAV_AI_ASSISTANT: 'navigation.ai-assistant',
@@ -46,6 +49,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_REPORTS,
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
+    CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
     CAPABILITIES.NAV_DATA_QUALITY,
     CAPABILITIES.NAV_RRHH,
     CAPABILITIES.NAV_AI_ASSISTANT,
@@ -61,6 +65,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_REPORTS,
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
+    CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
     CAPABILITIES.NAV_DATA_QUALITY,
     CAPABILITIES.NAV_RRHH,
     CAPABILITIES.NAV_AI_ASSISTANT,
@@ -75,6 +80,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_REPORTS,
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
+    CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
     CAPABILITIES.NAV_DATA_QUALITY,
     CAPABILITIES.NAV_RRHH,
     CAPABILITIES.NAV_AI_ASSISTANT,
@@ -95,6 +101,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_REPORTS,
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
+    CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
     CAPABILITIES.NAV_DATA_QUALITY,
     CAPABILITIES.NAV_RRHH,
     CAPABILITIES.NAV_AI_ASSISTANT,
@@ -217,9 +224,14 @@ function getHomeProfileForRole(role) {
 function getSessionAccessForUser(user) {
   if (!user || typeof user !== 'object' || !isKnownRole(user.role)) return null;
   const hasTenant = typeof user.tenantId === 'string' && user.tenantId.trim().length > 0;
-  const capabilities = user.role === ROLES.SUPER_ADMIN && !hasTenant
+  const roleCapabilities = user.role === ROLES.SUPER_ADMIN && !hasTenant
     ? [CAPABILITIES.SESSION_READ, CAPABILITIES.NAV_WORKSPACE, CAPABILITIES.NAV_HELP]
     : getCapabilitiesForRole(user.role);
+  // Published role-preview identities remain a deliberately narrower product
+  // surface even when their static role ceiling includes private GRH access.
+  const capabilities = isPublishedDemoIdentity(user.email)
+    ? roleCapabilities.filter(capability => capability !== CAPABILITIES.NAV_ORGANIZATION_ANALYTICS)
+    : roleCapabilities;
   const baseProfile = getHomeProfileForRole(user.role);
   if (!baseProfile || !capabilities.includes(CAPABILITIES.NAV_WORKSPACE)) return null;
   const priorityCapabilities = baseProfile.priorityCapabilities.filter(capability =>

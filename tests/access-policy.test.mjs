@@ -24,6 +24,7 @@ const EXPECTED_NAV_CAPABILITIES = [
   'navigation.reports',
   'navigation.hacienda',
   'navigation.grh-executive',
+  'navigation.organization-analytics',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',
@@ -40,6 +41,7 @@ const EXECUTIVE_BASE = [
   'navigation.reports',
   'navigation.hacienda',
   'navigation.grh-executive',
+  'navigation.organization-analytics',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',
@@ -71,6 +73,7 @@ const EXPECTED_NAV_HREFS = [
   'reportes.html',
   'hacienda.html',
   '/ejecutivo',
+  '/estructura',
   '/calidad',
   'rrhh.html',
   'ia.html',
@@ -111,7 +114,7 @@ function extractRoleArray(source, constantName) {
 
 test('Serverless ESM and Express CJS consume the same bumped policy', () => {
   assert.strictEqual(esmPolicy, cjsPolicy);
-  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-09.1');
+  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-10.1');
   assert.deepEqual(Object.values(esmPolicy.ROLES), EXPECTED_ROLES);
 
   for (const role of EXPECTED_ROLES) {
@@ -217,6 +220,28 @@ test('tenantless SUPER_ADMIN receives a contextual workspace without ambient mun
   assert.equal(esmPolicy.getSessionAccessForUser(null), null);
 });
 
+test('organization analytics is private to tenant-bound executive identities and excluded from published demos', () => {
+  const capability = esmPolicy.CAPABILITIES.NAV_ORGANIZATION_ANALYTICS;
+  const executiveRoles = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
+  for (const role of executiveRoles) {
+    const privateAccess = esmPolicy.getSessionAccessForUser({
+      role,
+      tenantId: 'tenant-junin',
+      email: `private-${role.toLowerCase()}@example.test`,
+    });
+    assert.equal(privateAccess.capabilities.includes(capability), true, role);
+  }
+
+  for (const [role, email] of [
+    ['TENANT_ADMIN', 'admin@junin.gov.ar'],
+    ['INTENDENTE', 'intendente@junin.gov.ar'],
+    ['CONTADOR', 'contador@junin.gov.ar'],
+  ]) {
+    const publishedAccess = esmPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-junin', email });
+    assert.equal(publishedAccess.capabilities.includes(capability), false, email);
+  }
+});
+
 test('navigation grants stay aligned with the current GRH, audit, export and import APIs', async () => {
   const [rawGrhSource, aiSource, auditSource, exportSource, uploadSource, sheetsSource] = await Promise.all([
     readFile(new URL('../api/grh-data.js', import.meta.url), 'utf8'),
@@ -245,6 +270,7 @@ test('navigation grants stay aligned with the current GRH, audit, export and imp
     'navigation.reports',
     'navigation.hacienda',
     'navigation.grh-executive',
+    'navigation.organization-analytics',
     'navigation.data-quality',
     'navigation.rrhh',
     'navigation.ai-assistant',
@@ -309,6 +335,7 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
 
   assert.match(source, /href:'\/calidad'[\s\S]*label:'Calidad de datos'[\s\S]*capability:'navigation\.data-quality'/);
   assert.match(source, /href:'\/ejecutivo'[\s\S]*label:'Resumen ejecutivo GRH'[\s\S]*capability:'navigation\.grh-executive'/);
+  assert.match(source, /href:'\/estructura'[\s\S]*label:'Estructura y ausencias'[\s\S]*capability:'navigation\.organization-analytics'/);
   assert.match(source, /label:'Panorama municipal'/);
   assert.match(source, /label:'Hacienda y n(?:ó|Ã³)mina'/);
   assert.match(source, /label:'Gesti(?:ó|Ã³)n de personas'/);

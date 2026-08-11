@@ -779,23 +779,52 @@
     }
     var keys = Array.from(params.keys());
     if (!keys.length) return { status: 'none', consumed: false };
-    var exactKeys = keys.length === 2 && ['company', 'legajo'].every(function (key) {
+    var exactPersonKeys = keys.length === 2 && ['company', 'legajo'].every(function (key) {
       return params.getAll(key).length === 1;
     }) && keys.every(function (key) { return key === 'company' || key === 'legajo'; });
-    if (!exactKeys || global.location.hash !== '#peopleDirectory') {
+    if (global.location.hash !== '#peopleDirectory') {
       return { status: 'invalid', consumed: false };
     }
-    var companyRaw = params.get('company');
-    var legajoRaw = params.get('legajo');
-    if (!/^[1-9]\d*$/.test(companyRaw || '') || !/^[1-9]\d*$/.test(legajoRaw || '')) {
+    if (exactPersonKeys) {
+      var companyRaw = params.get('company');
+      var legajoRaw = params.get('legajo');
+      if (!/^[1-9]\d*$/.test(companyRaw || '') || !/^[1-9]\d*$/.test(legajoRaw || '')) {
+        return { status: 'invalid', consumed: false };
+      }
+      var companyCode = Number(companyRaw);
+      var legajo = Number(legajoRaw);
+      if (!Number.isSafeInteger(companyCode) || !Number.isSafeInteger(legajo)) {
+        return { status: 'invalid', consumed: false };
+      }
+      return { status: 'person', companyCode: companyCode, legajo: legajo, consumed: false };
+    }
+
+    var dimensionKeys = ['organization', 'sector'];
+    var dimension = dimensionKeys.find(function (key) { return params.has(key); });
+    var absenceOnly = !dimension && keys.length === 1 && keys[0] === 'hasAbsence' &&
+      params.getAll('hasAbsence').length === 1 && params.get('hasAbsence') === 'true';
+    if (absenceOnly) {
+      return { status: 'filter', dimension: null, code: null, hasAbsence: true, consumed: false };
+    }
+    var allowedFilterKeys = dimension ? [dimension, 'hasAbsence'] : [];
+    var exactFilterKeys = Boolean(dimension) && (keys.length === 1 || keys.length === 2) &&
+      keys.every(function (key) { return allowedFilterKeys.indexOf(key) !== -1 && params.getAll(key).length === 1; }) &&
+      dimensionKeys.filter(function (key) { return params.has(key); }).length === 1;
+    var dimensionRaw = dimension ? params.get(dimension) : '';
+    var absenceRaw = params.get('hasAbsence');
+    if (!exactFilterKeys || !/^(?:0|[1-9]\d*)$/.test(dimensionRaw || '') ||
+        (absenceRaw !== null && absenceRaw !== 'true')) {
       return { status: 'invalid', consumed: false };
     }
-    var companyCode = Number(companyRaw);
-    var legajo = Number(legajoRaw);
-    if (!Number.isSafeInteger(companyCode) || !Number.isSafeInteger(legajo)) {
-      return { status: 'invalid', consumed: false };
-    }
-    return { status: 'person', companyCode: companyCode, legajo: legajo, consumed: false };
+    var dimensionCode = Number(dimensionRaw);
+    if (!Number.isSafeInteger(dimensionCode)) return { status: 'invalid', consumed: false };
+    return {
+      status: 'filter',
+      dimension: dimension,
+      code: dimensionCode,
+      hasAbsence: absenceRaw === 'true',
+      consumed: false
+    };
   }
 
   function setDirectoryControlsDisabled(disabled) {
@@ -846,6 +875,11 @@
     var eventFilter = elements.directoryEvent.value;
     if (eventFilter === 'leave' || eventFilter === 'both') query.hasLeave = true;
     if (eventFilter === 'absence' || eventFilter === 'both') query.hasAbsence = true;
+    var deepLink = state.directory.deepLink;
+    if (!cursor && page === 1 && deepLink && deepLink.status === 'filter' && !deepLink.consumed) {
+      if (deepLink.dimension) query[deepLink.dimension] = deepLink.code;
+      if (deepLink.hasAbsence) query.hasAbsence = true;
+    }
     return query;
   }
 
@@ -1020,6 +1054,18 @@
     renderFacet(elements.directorySector, payload.facets.sectors, 'Todos', 'sectors');
     renderFacet(elements.directoryOrganization, payload.facets.organizations, 'Todas', 'organizations');
     renderFacet(elements.directoryPosition, payload.facets.positionObservations, 'Todos', 'positionObservations');
+    var deepLink = state.directory.deepLink;
+    if (deepLink && deepLink.status === 'filter' && !deepLink.consumed) {
+      var targetSelect = deepLink.dimension === 'organization'
+        ? elements.directoryOrganization
+        : (deepLink.dimension === 'sector' ? elements.directorySector : null);
+      if (targetSelect && Array.from(targetSelect.options).some(function (option) { return option.value === String(deepLink.code); })) {
+        targetSelect.value = String(deepLink.code);
+      }
+      if (deepLink.hasAbsence) elements.directoryEvent.value = 'absence';
+      deepLink.consumed = true;
+      elements.peopleDirectory.scrollIntoView({ block: 'start' });
+    }
     renderDirectoryRows(payload.items);
     setText(elements.directoryResultCount, numberFormatter.format(payload.query.total));
     setText(elements.directoryResultLabel, payload.query.total === 1 ? 'resultado' : 'resultados');
@@ -1243,7 +1289,7 @@
       renderDashboard(experience);
       if (state.directory.deepLink.status === 'invalid') {
         showDirectoryState('invalid', 'El enlace al directorio no es válido',
-          'La URL debe incluir únicamente una empresa y un legajo válidos. No se consultó ni se muestra información nominal.');
+          'La URL debe identificar una persona o un filtro operativo permitido, sin parámetros adicionales. No se consultó ni se muestra información nominal.');
         return;
       }
       var directoryReady = await loadDirectory(1, null, true);

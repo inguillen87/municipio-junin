@@ -15,6 +15,7 @@ const EXPECTED_SERVERLESS = [
   'GET /auth/me',
   'GET /grh-data',
   'GET /grh-directory',
+  'GET /grh-organization-analytics',
   'GET /grh-executive',
   'GET /grh-quality',
   'GET /grh-close',
@@ -151,6 +152,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'google-sheets.js',
     'grh-data.js',
     'grh-directory.js',
+    'grh-organization-analytics.js',
     'grh-close.js',
     'grh-decision-brief.js',
     'grh-executive.js',
@@ -187,6 +189,9 @@ test('resource/action grants preserve the current operational boundaries', () =>
   assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_CONTRACT, action.READ), true);
   assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_DIRECTORY, action.READ), true);
   assert.equal(esmPolicy.hasResourceAction('TENANT_USER', resource.GRH_DIRECTORY, action.READ), false);
+  assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), true);
+  assert.equal(esmPolicy.hasResourceAction('CONTADOR', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), true);
+  assert.equal(esmPolicy.hasResourceAction('TENANT_USER', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), false);
   assert.equal(esmPolicy.hasResourceAction('CONTADOR', resource.GRH_ANALYSIS, action.EXECUTE), true);
   assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_REPORT, action.READ), true);
   assert.equal(esmPolicy.hasResourceAction('CONTADOR', resource.GRH_REPORT, action.READ), true);
@@ -212,6 +217,11 @@ test('route authorization is exact by runtime, method and path', () => {
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-directory?q=secretaria'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-directory'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-directory'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics'), true);
+  assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics?period=2026-07'), true);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-organization-analytics'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics/future'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-executive'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-executive'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-quality'), true);

@@ -19,6 +19,7 @@ const contentTypes = {
 };
 const pages = [
   'inicio.html',
+  'estructura.html',
   'configuracion.html',
   'manuales.html',
   'inteligencia.html',
@@ -32,6 +33,7 @@ const privateNavCatalog = [
   ['reportes.html', 'navigation.reports'],
   ['hacienda.html', 'navigation.hacienda'],
   ['/ejecutivo', 'navigation.grh-executive'],
+  ['/estructura', 'navigation.organization-analytics'],
   ['/calidad', 'navigation.data-quality'],
   ['rrhh.html', 'navigation.rrhh'],
   ['ia.html', 'navigation.ai-assistant'],
@@ -60,6 +62,7 @@ const bottomCatalog = [
   ['reportes.html', 'navigation.reports'],
   ['hacienda.html', 'navigation.hacienda'],
   ['/ejecutivo', 'navigation.grh-executive'],
+  ['/estructura', 'navigation.organization-analytics'],
   ['/calidad', 'navigation.data-quality'],
   ['rrhh.html', 'navigation.rrhh'],
   ['ia.html', 'navigation.ai-assistant'],
@@ -137,6 +140,15 @@ async function createServer(options = {}) {
         : { data: [] };
       response.writeHead(200, { 'Content-Type': contentTypes['.json'], 'Cache-Control': 'no-store' });
       response.end(JSON.stringify(payload));
+      return;
+    }
+    if (url.pathname === '/api/grh-organization-analytics') {
+      response.writeHead(200, {
+        'Content-Type': contentTypes['.json'],
+        'Cache-Control': 'no-store',
+        'X-MuniControl-Contract': 'grh-organization-analytics-v1',
+      });
+      response.end('{}');
       return;
     }
 

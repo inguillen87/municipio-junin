@@ -1,5 +1,5 @@
 const CONTRACT = 'muniguia-contextual-v1';
-const ACCESS_POLICY_VERSION = '2026-08-09.1';
+const ACCESS_POLICY_VERSION = '2026-08-10.1';
 const MOUNT_CAPABILITY = 'navigation.help';
 
 const KNOWN_CAPABILITIES = Object.freeze([
@@ -9,6 +9,7 @@ const KNOWN_CAPABILITIES = Object.freeze([
   'navigation.reports',
   'navigation.hacienda',
   'navigation.grh-executive',
+  'navigation.organization-analytics',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',
@@ -133,6 +134,19 @@ const PAGES = deepFreeze({
       { id: 'bound-window', selector: '#periodRange', title: 'Delimitá la ventana', copy: 'Confirmá el rango observado y evitá presentar un snapshot histórico como tiempo real.' },
       { id: 'read-evidence', selector: '#executiveInsights', title: 'Leé la evidencia agregada', copy: 'Interpretá sólo métricas liberadas y mantené visible cualquier supresión por privacidad.' },
       { id: 'confirm-periods', selector: '#periodTableTitle', title: 'Confirmá los períodos', copy: 'Usá la tabla para distinguir observación disponible, hueco protegido y ausencia de fuente.' },
+    ],
+  },
+  organizationAnalytics: {
+    href: 'estructura.html',
+    aliases: ['/estructura', '/estructura.html'],
+    label: 'Estructura y ausencias',
+    objective: 'Explorá la estructura organizativa observada y priorizá la revisión de eventos históricos de ausencia con evidencia agregada.',
+    requiredCapability: 'navigation.organization-analytics',
+    manualAnchor: 'interpretacion',
+    steps: [
+      { id: 'confirm-organization-snapshot', selector: '#organizationSnapshotStatus', title: 'Confirmá el corte', copy: 'Verificá fuente, período y cobertura antes de interpretar una distribución organizativa o un volumen histórico agregado de eventos de ausencia.' },
+      { id: 'explore-organization', selector: '#organizationExplorer', title: 'Explorá la estructura', copy: 'Recorré niveles y áreas observadas sin presentar la matriz analítica como un organigrama oficial del municipio.' },
+      { id: 'review-absence-risk', selector: '#absenceRiskPanel', title: 'Priorizá la revisión', copy: 'Usá el ranking histórico para orientar una revisión agregada; no atribuyas causas ni decisiones individuales desde esta señal.' },
     ],
   },
   quality: {

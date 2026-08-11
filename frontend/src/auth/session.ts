@@ -17,6 +17,7 @@ const KNOWN_CAPABILITIES = new Set([
   'navigation.reports',
   'navigation.hacienda',
   'navigation.grh-executive',
+  'navigation.organization-analytics',
   'navigation.data-quality',
   'navigation.rrhh',
   'navigation.ai-assistant',

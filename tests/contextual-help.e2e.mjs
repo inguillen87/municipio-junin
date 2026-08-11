@@ -78,6 +78,7 @@ async function createServer(users, requestLog) {
     ['/reportes', 'reportes.html'],
     ['/hacienda', 'hacienda.html'],
     ['/grh-ejecutivo', 'grh-ejecutivo.html'],
+    ['/estructura', 'estructura.html'],
     ['/control', 'control.html'],
     ['/rrhh', 'rrhh.html'],
     ['/ia', 'ia.html'],
@@ -264,7 +265,7 @@ test('MuniGuía projects the seven authoritative role contexts at 390 and 1440 w
   assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
 });
 
-test('all twelve exact clean paths mount their capability-bound guide and unknown or public paths stay empty', async (t) => {
+test('all thirteen exact clean paths mount their capability-bound guide and unknown or public paths stay empty', async (t) => {
   const subject = 'guide-super';
   const users = new Map([[subject, authoritativeUser(subject, 'SUPER_ADMIN')]]);
   const requestLog = [];

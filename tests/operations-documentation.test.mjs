@@ -290,12 +290,12 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-10.3');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 80);
-  assert.deepEqual(runtimeCounts, { serverless: 38, express: 42 });
-  assert.equal(Object.keys(routePolicy.RESOURCES).length, 27);
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-10.4');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 81);
+  assert.deepEqual(runtimeCounts, { serverless: 39, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 28);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
-  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 47);
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 48);
   for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark, inApp]) {
     assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos/i);
     assert.match(source, /79\s+firmas/i);
@@ -314,7 +314,7 @@ test('documentation 1.10.0 records the exact role workspace without claiming acc
     'INSPECTOR',
     'DEMO',
   ];
-  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-09.1');
+  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-10.1');
   assert.deepEqual(Object.keys(accessPolicy.ROLE_HOME_PROFILE).sort(), expectedRoles.sort());
   assert.ok(expectedRoles.every(role => accessPolicy.ROLE_CAPABILITIES[role].includes('navigation.workspace')));
 
@@ -380,15 +380,16 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-10.3');
-  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-09.1');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 80);
-  assert.deepEqual(runtimeCounts, { serverless: 38, express: 42 });
-  assert.equal(Object.keys(routePolicy.RESOURCES).length, 27);
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-10.4');
+  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-10.1');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 81);
+  assert.deepEqual(runtimeCounts, { serverless: 39, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 28);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
-  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 47);
-  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 7);
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 48);
+  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 8);
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v1');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-organization-analytics'], 'grh-organization-analytics-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
 
   for (const relativePath of releasePaths) {

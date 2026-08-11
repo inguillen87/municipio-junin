@@ -118,6 +118,7 @@ test('desktop and mobile navigation share canonical labels and React canary rout
   for (const label of [
     'Panorama municipal',
     'Resumen ejecutivo GRH',
+    'Estructura y ausencias',
     'Hacienda y nómina',
     'Gestión de personas',
     'Calidad de datos',
@@ -128,6 +129,7 @@ test('desktop and mobile navigation share canonical labels and React canary rout
   }
 
   assert.match(catalog, /href:'\/ejecutivo'/);
+  assert.match(catalog, /href:'\/estructura'/);
   assert.match(catalog, /href:'\/calidad'/);
   assert.doesNotMatch(catalog, /(?:grh-ejecutivo|control)\.html/);
   assert.match(navigation, /window\.MuniNavigationCatalog\s*=\s*Object\.freeze/);

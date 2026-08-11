@@ -14,7 +14,7 @@
 
 const { ROLES, isKnownRole } = require('./access-policy.cjs');
 
-const ROUTE_POLICY_VERSION = '2026-08-10.3';
+const ROUTE_POLICY_VERSION = '2026-08-10.4';
 
 const RUNTIMES = Object.freeze({
   SERVERLESS: 'serverless',
@@ -25,6 +25,7 @@ const RESOURCES = Object.freeze({
   SESSION: 'session',
   GRH_CONTRACT: 'grh.contract',
   GRH_DIRECTORY: 'grh.directory',
+  GRH_ORGANIZATION_ANALYTICS: 'grh.organization.analytics',
   GRH_ANALYSIS: 'grh.analysis',
   GRH_REPORT: 'grh.report',
   LEGACY_AI: 'legacy.ai',
@@ -75,6 +76,7 @@ const PERMISSIONS = Object.freeze({
   SESSION_REFRESH: permissionId(RESOURCES.SESSION, ACTIONS.REFRESH),
   GRH_CONTRACT_READ: permissionId(RESOURCES.GRH_CONTRACT, ACTIONS.READ),
   GRH_DIRECTORY_READ: permissionId(RESOURCES.GRH_DIRECTORY, ACTIONS.READ),
+  GRH_ORGANIZATION_ANALYTICS_READ: permissionId(RESOURCES.GRH_ORGANIZATION_ANALYTICS, ACTIONS.READ),
   GRH_ANALYSIS_EXECUTE: permissionId(RESOURCES.GRH_ANALYSIS, ACTIONS.EXECUTE),
   GRH_REPORT_READ: permissionId(RESOURCES.GRH_REPORT, ACTIONS.READ),
   LEGACY_AI_EXECUTE: permissionId(RESOURCES.LEGACY_AI, ACTIONS.EXECUTE),
@@ -137,6 +139,7 @@ const PERMISSION_GRANTS = Object.freeze({
   [PERMISSIONS.SESSION_REFRESH]: Object.freeze(['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO']),
   [PERMISSIONS.GRH_CONTRACT_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_DIRECTORY_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
+  [PERMISSIONS.GRH_ORGANIZATION_ANALYTICS_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_ANALYSIS_EXECUTE]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_REPORT_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.LEGACY_AI_EXECUTE]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
@@ -204,6 +207,7 @@ const PROTECTED_ROUTES = Object.freeze([
   route('serverless.auth.me.read', 'serverless', 'GET', '/auth/me', PERMISSIONS.SESSION_READ),
   route('serverless.grh.contract.read', 'serverless', 'GET', '/grh-data', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.directory.read', 'serverless', 'GET', '/grh-directory', PERMISSIONS.GRH_DIRECTORY_READ),
+  route('serverless.grh.organization-analytics.read', 'serverless', 'GET', '/grh-organization-analytics', PERMISSIONS.GRH_ORGANIZATION_ANALYTICS_READ),
   route('serverless.grh.executive.read', 'serverless', 'GET', '/grh-executive', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.quality.read', 'serverless', 'GET', '/grh-quality', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.close.read', 'serverless', 'GET', '/grh-close', PERMISSIONS.GRH_CONTRACT_READ),

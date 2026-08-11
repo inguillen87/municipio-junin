@@ -32,7 +32,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 12);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 13);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -149,6 +149,12 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   const catalog = await readFile(path.join(ROOT, 'js/contextual-help-catalog.js'), 'utf8');
   assert.doesNotMatch(catalog, /https?:\/\//i);
   assert.doesNotMatch(catalog, /(?:@|\bDNI\b|\bCUIL\b|\blegajo\b)/i);
+  assert.doesNotMatch(catalog, /ausentismo/i);
   assert.equal(MUNIGUIA_CATALOG.pages.quality.label, 'Calidad de datos');
   assert.equal(MUNIGUIA_CATALOG.pages.rrhh.steps[1].selector, '#peopleDirectory');
+  assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.selector),
+    ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],
+  );
+  assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.requiredCapability, 'navigation.organization-analytics');
 });

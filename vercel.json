@@ -21,6 +21,7 @@
   "rewrites": [
     { "source": "/", "destination": "/login" },
     { "source": "/inicio", "destination": "/inicio.html" },
+    { "source": "/estructura", "destination": "/estructura.html" },
     { "source": "/api/whatsapp/webhook", "destination": "/api/whatsapp-webhook" }
   ],
   "headers": [

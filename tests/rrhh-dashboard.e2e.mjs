@@ -755,6 +755,75 @@ test('RRHH opens an authorized IA deep-link only after the initial directory aut
   await context.close();
 });
 
+test('RRHH applies authorized organization and absence deep-links on their first directory request', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog, { unavailable: false }, { directoryMode: 'allowed' });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await seedSession(context);
+  const page = await context.newPage();
+  const target = `${baseUrl}/rrhh?organization=100&hasAbsence=true#peopleDirectory`;
+  await page.goto(target, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'ready');
+
+  const result = await page.evaluate(() => ({
+    count: document.querySelector('#directoryResultCount')?.textContent.trim(),
+    rows: document.querySelectorAll('#directoryTableBody tr').length,
+    organization: document.querySelector('#directoryOrganization')?.value,
+    sector: document.querySelector('#directorySector')?.value,
+    event: document.querySelector('#directoryEvent')?.value,
+    dialogOpen: document.querySelector('#personDialog')?.open,
+  }));
+  assert.deepEqual(result, {
+    count: '4',
+    rows: 4,
+    organization: '100',
+    sector: '',
+    event: 'absence',
+    dialogOpen: false,
+  });
+  assert.equal(page.url(), target);
+  const directoryRequests = requestLog.filter(entry => entry.path === '/api/grh-directory');
+  assert.equal(directoryRequests.length, 1);
+  assert.deepEqual(directoryRequests[0].query, {
+    page: '1',
+    limit: '20',
+    organization: '100',
+    hasAbsence: 'true',
+  });
+
+  const zeroCodeTarget = `${baseUrl}/rrhh?organization=0&hasAbsence=true#peopleDirectory`;
+  await page.goto(zeroCodeTarget, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'ready');
+  assert.deepEqual(
+    requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).query,
+    { page: '1', limit: '20', organization: '0', hasAbsence: 'true' },
+  );
+  assert.equal(page.url(), zeroCodeTarget);
+
+  const absenceTarget = `${baseUrl}/rrhh?hasAbsence=true#peopleDirectory`;
+  await page.goto(absenceTarget, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'ready');
+  assert.deepEqual(await page.evaluate(() => ({
+    count: document.querySelector('#directoryResultCount')?.textContent.trim(),
+    organization: document.querySelector('#directoryOrganization')?.value,
+    sector: document.querySelector('#directorySector')?.value,
+    event: document.querySelector('#directoryEvent')?.value,
+  })), { count: '7', organization: '', sector: '', event: 'absence' });
+  assert.deepEqual(
+    requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).query,
+    { page: '1', limit: '20', hasAbsence: 'true' },
+  );
+  assert.equal(page.url(), absenceTarget);
+  await context.close();
+});
+
 test('RRHH does not follow an IA person deep-link after the directory returns 403', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
   const server = await createServer(requestLog, { unavailable: false }, { directoryMode: 'denied' });
@@ -810,6 +879,10 @@ test('RRHH rejects malformed or extended person deep-links before every nominal 
     '/rrhh?company=1&company=2&legajo=1001#peopleDirectory',
     '/rrhh?company=1&legajo=9007199254740992#peopleDirectory',
     '/rrhh?company=1&legajo=1001#otroDestino',
+    '/rrhh?organization=00&hasAbsence=true#peopleDirectory',
+    '/rrhh?organization=100&sector=10#peopleDirectory',
+    '/rrhh?organization=100&hasAbsence=false#peopleDirectory',
+    '/rrhh?sector=10&scope=all#peopleDirectory',
   ]) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await seedSession(context);
@@ -831,7 +904,7 @@ test('RRHH rejects malformed or extended person deep-links before every nominal 
     assert.equal(rejected.dialogOpen, false);
     assert.equal(rejected.resultsHidden, true);
     assert.equal(rejected.controlsDisabled, true);
-    assert.match(rejected.stateText, /URL debe incluir únicamente.*No se consultó ni se muestra información nominal/i);
+    assert.match(rejected.stateText, /URL debe identificar una persona o un filtro operativo permitido.*No se consultó ni se muestra información nominal/i);
     assert.equal(page.url(), `${baseUrl}${pathAndQuery}`);
     assert.equal(
       requestLog.filter(entry => entry.path === '/api/grh-directory').length,

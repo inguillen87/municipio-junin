@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 
 import {
   WorkforceFinanceBootstrapError,
+  abortAmbiguousWorkforceFinanceBootstrap,
   applyWorkforceFinanceBootstrap,
   cleanupWorkforceFinanceBootstrap,
   prepareWorkforceFinanceBootstrap,
@@ -58,6 +59,10 @@ export async function runWorkforceFinanceBootstrapCli(argv = process.argv.slice(
   if (command === 'cleanup') {
     exactOptions(options, ['state']);
     return cleanupWorkforceFinanceBootstrap({ statePath: options.state });
+  }
+  if (command === 'abort-ambiguous') {
+    exactOptions(options, ['state']);
+    return abortAmbiguousWorkforceFinanceBootstrap({ statePath: options.state });
   }
   throw new WorkforceFinanceBootstrapError('BOOTSTRAP_COMMAND_INVALID');
 }

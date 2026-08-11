@@ -16,7 +16,7 @@ import {
 } from './lib/grh-workforce-finance-snapshot.js';
 import {
   publishGrhWorkforceFinanceSnapshot,
-} from '../scripts/publish-grh-workforce-finance-snapshot.mjs';
+} from './lib/grh-workforce-finance-snapshot-publisher.js';
 
 const { Client } = pg;
 const { inspectDatabaseUrl } = databaseUrlPolicy;
@@ -129,6 +129,9 @@ async function apply(body) {
   inspectArtifact(body.artifact);
   const tenantId = String(process.env.GRH_TENANT_ID || '').trim();
   if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(tenantId)) {
+    throw new BootstrapError('BOOTSTRAP_RUNTIME_CONFIGURATION_INVALID', 503);
+  }
+  if (process.env.GRH_WORKFORCE_FINANCE_ARTIFACT_SOURCE !== 'encrypted_snapshot') {
     throw new BootstrapError('BOOTSTRAP_RUNTIME_CONFIGURATION_INVALID', 503);
   }
   let database;

@@ -13,6 +13,7 @@ import {
   BOOTSTRAP_SECRET_ENV,
   SNAPSHOT_KEY_ENV,
   STABLE_PRODUCTION_URL,
+  abortAmbiguousWorkforceFinanceBootstrap,
   applyWorkforceFinanceBootstrap,
   cleanupWorkforceFinanceBootstrap,
   prepareWorkforceFinanceBootstrap,
@@ -48,8 +49,8 @@ async function fixture() {
     'api/lib/grh-workforce-finance-source-contract.js',
     'api/lib/grh-workforce-finance-snapshot.js',
     'api/lib/grh-workforce-finance-artifact.js',
+    'api/lib/grh-workforce-finance-snapshot-publisher.js',
     'api/grh-workforce-finance.js',
-    'scripts/publish-grh-workforce-finance-snapshot.mjs',
     'shared/database-url-policy.cjs',
     'vercel.json',
   ]) {
@@ -118,7 +119,10 @@ test('template is a raw-body, candidate-only, fingerprint-pinned one-shot publis
   assert.match(rendered, /VERCEL_URL/);
   assert.match(rendered, /VERCEL_ENV !== 'production'/);
   assert.match(rendered, /process\.env\.DIRECT_URL/);
+  assert.match(rendered, /GRH_WORKFORCE_FINANCE_ARTIFACT_SOURCE !== 'encrypted_snapshot'/);
   assert.match(rendered, /publishGrhWorkforceFinanceSnapshot/);
+  assert.match(rendered, /from '\.\/lib\/grh-workforce-finance-snapshot-publisher\.js'/);
+  assert.doesNotMatch(rendered, /from '\.\.\/scripts\//);
   assert.match(rendered, /loadGrhWorkforceFinanceSnapshotArtifact/);
   assert.match(rendered, new RegExp(APPROVED_SNAPSHOT_KEY_FINGERPRINT_SHA256));
   assert.doesNotMatch(rendered, /DATABASE_URL\s*\|\|/);
@@ -227,5 +231,47 @@ test('apply fails closed when the pre-existing key/source env contract is incomp
       securePathImpl: async () => {},
     }),
     error => error.code === 'BOOTSTRAP_RUNTIME_ENV_INVALID',
+  );
+});
+
+test('ambiguous abort removes only transient candidate material and makes no DB claim', async t => {
+  const current = await fixture();
+  t.after(() => current.cleanup());
+  const state = await current.state();
+  state.status = 'apply_ambiguous';
+  state.deployment = {
+    id: 'dpl_candidate',
+    url: 'https://workforce-candidate.vercel.app',
+    baselineAliasDeploymentId: 'dpl_baseline',
+    skipDomain: true,
+  };
+  await fs.writeFile(current.prepared.statePath, JSON.stringify(state, null, 2) + '\n');
+  const calls = [];
+  const runner = (command, args) => {
+    calls.push({ command, args });
+    assert.equal(command, 'vercel');
+    if (args[0] === 'inspect' && args[1] === STABLE_PRODUCTION_URL) {
+      return { stdout: JSON.stringify({ id: 'dpl_baseline', status: 'READY', target: 'production' }), stderr: '' };
+    }
+    if (args[0] === 'inspect') {
+      return { stdout: JSON.stringify({ id: 'dpl_candidate', status: 'READY', target: 'production' }), stderr: '' };
+    }
+    if (args[0] === 'env' && args[1] === 'rm') return { stdout: '', stderr: '' };
+    if (args[0] === 'remove') return { stdout: '', stderr: '' };
+    throw new Error(`unexpected vercel: ${args.join(' ')}`);
+  };
+  const result = await abortAmbiguousWorkforceFinanceBootstrap({
+    statePath: current.prepared.statePath,
+    runner,
+    securePathImpl: async () => {},
+  });
+  assert.equal(result.status, 'aborted_ambiguous');
+  assert.equal(result.publicationVerified, false);
+  assert.equal(result.databaseMutationClaimed, false);
+  assert.equal(result.snapshotKeyRetained, true);
+  assert.equal(result.artifactSourceRetained, true);
+  assert.deepEqual(
+    calls.filter(call => call.args[0] === 'env').map(call => call.args[2]),
+    [BOOTSTRAP_SECRET_ENV],
   );
 });

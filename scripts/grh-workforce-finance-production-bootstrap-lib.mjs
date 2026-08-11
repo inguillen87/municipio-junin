@@ -30,7 +30,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const SHA256 = /^[0-9a-f]{64}$/;
 const MAX_ARTIFACT_BYTES = 16 * 1024 * 1024;
 const MAX_COMPRESSED_BYTES = 2 * 1024 * 1024;
-const STATUSES = new Set(['prepared', 'deployment_created', 'apply_ambiguous', 'verified', 'cleaned']);
+const STATUSES = new Set([
+  'prepared', 'deployment_created', 'apply_ambiguous', 'verified', 'cleaned',
+  'aborted_ambiguous',
+]);
 
 export class WorkforceFinanceBootstrapError extends Error {
   constructor(code) {
@@ -202,8 +205,8 @@ function requiredWorktreeFiles(worktreePath) {
     'api/lib/grh-workforce-finance-source-contract.js',
     'api/lib/grh-workforce-finance-snapshot.js',
     'api/lib/grh-workforce-finance-artifact.js',
+    'api/lib/grh-workforce-finance-snapshot-publisher.js',
     'api/grh-workforce-finance.js',
-    'scripts/publish-grh-workforce-finance-snapshot.mjs',
     'shared/database-url-policy.cjs',
     'vercel.json',
   ].map(relative => path.join(worktreePath, relative));
@@ -688,6 +691,40 @@ export async function cleanupWorkforceFinanceBootstrap({
   });
 }
 
+export async function abortAmbiguousWorkforceFinanceBootstrap({
+  statePath,
+  runner = defaultCommandRunner,
+  securePathImpl = defaultSecurePath,
+} = {}) {
+  const loaded = await loadState(statePath);
+  const { state } = loaded;
+  if (state.status !== 'apply_ambiguous' || !state.deployment?.id) {
+    fail('BOOTSTRAP_ABORT_REQUIRES_AMBIGUOUS_STATE');
+  }
+  assertRecordedDeployment(runner, state);
+  run(runner, 'vercel', ['env', 'rm', BOOTSTRAP_SECRET_ENV, 'production', '--yes'], {
+    cwd: state.worktreePath,
+  });
+  run(runner, 'vercel', ['remove', state.deployment.id, '--yes'], { cwd: state.worktreePath });
+  await removeExact(state.endpointPath, state.endpointSha256);
+  await removeExact(state.payloadPath, state.payloadSha256);
+  await removeExact(state.secretPath);
+  state.status = 'aborted_ambiguous';
+  state.receipt = null;
+  await writeState(loaded.statePath, state, securePathImpl);
+  return Object.freeze({
+    status: 'aborted_ambiguous',
+    deploymentRemoved: true,
+    bootstrapSecretRemoved: true,
+    snapshotKeyRetained: true,
+    artifactSourceRetained: true,
+    stableAliasUnchanged: true,
+    publicationVerified: false,
+    databaseMutationClaimed: false,
+    keyFingerprintSha256: state.keyFingerprintSha256,
+  });
+}
+
 export function safeCliResult(result) {
   const allowed = new Set([
     'statePath', 'expectedGitSha', 'operationId', 'entityId', 'artifactSha256',
@@ -696,6 +733,7 @@ export function safeCliResult(result) {
     'stableAliasUnchanged', 'releaseId', 'sourceSha256', 'envelopeSha256',
     'ciphertextSha256', 'cellCount', 'deploymentRemoved', 'bootstrapSecretRemoved',
     'snapshotKeyRetained', 'artifactSourceRetained',
+    'publicationVerified', 'databaseMutationClaimed',
   ]);
   return Object.freeze(Object.fromEntries(Object.entries(result || {}).filter(([key]) => allowed.has(key))));
 }

@@ -579,6 +579,12 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
       assert.equal(expanded[name].protectedRows, ranking.privacyStatus === 'partially_suppressed' ? 1 : 0, `${name} privacy bucket`);
       assert.equal(expanded[name].sharesReconcile, true, `${name} shares`);
     }
+    await Promise.all([
+      page.waitForURL(`${baseUrl}/login.html?access=private-grh&return=rrhh.html%23peopleDirectory`),
+      page.click('#directoryPrivateAccess'),
+    ]);
+    assert.equal(await page.locator('#privateAccessNotice').isVisible(), true);
+    assert.equal(await page.locator('#evaluationAccess').isHidden(), true);
     assert.deepEqual(consoleErrors.filter(message => !/status of 403 \(Forbidden\)/.test(message)), []);
     assert.deepEqual(externalRequests, []);
     await context.close();

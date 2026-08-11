@@ -465,6 +465,36 @@
       border-top: 1px solid var(--border);
     }
 
+    .private-access-notice {
+      margin: 0 0 20px;
+      padding: 15px 16px;
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      background: var(--surface-raised);
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .private-access-notice strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .private-access-notice p { margin: 0; }
+
+    .private-access-notice a {
+      display: inline-block;
+      min-height: 44px;
+      margin-top: 9px;
+      padding: 11px 0;
+      color: var(--accent-strong);
+      font-weight: 760;
+      text-underline-offset: 3px;
+    }
+
     .evaluation-access h3 {
       margin: 0 0 6px;
       color: var(--text);
@@ -576,10 +606,16 @@
         <div class="mobile-wordmark" aria-hidden="true">MuniControl · Junín</div>
 
         <header class="access-header">
-          <p class="access-kicker">Acceso institucional</p>
+          <p class="access-kicker" id="accessKicker">Acceso institucional</p>
           <h2 id="accessTitle">Ingresá a tu espacio de trabajo</h2>
-          <p class="access-intro">Usá las credenciales asignadas por la administración municipal.</p>
+          <p class="access-intro" id="accessIntro">Usá las credenciales asignadas por la administración municipal.</p>
         </header>
+
+        <section class="private-access-notice" id="privateAccessNotice" aria-labelledby="privateAccessTitle" hidden>
+          <strong id="privateAccessTitle">Acceso privado al directorio GRH</strong>
+          <p>La sesión de evaluación ya se cerró. Ingresá con la credencial privada asignada; los perfiles públicos no habilitan nombres, legajos ni licencias individuales.</p>
+          <a href="/login.html">Volver a los accesos de evaluación</a>
+        </section>
 
         <form class="login-form" id="loginForm" autocomplete="on" novalidate>
           <div class="error-message" id="errorMsg" role="alert" aria-live="assertive" tabindex="-1" hidden>No pudimos completar el acceso.</div>
@@ -632,6 +668,7 @@
 
         <section
           class="evaluation-access"
+          id="evaluationAccess"
           data-demo-contract="published-evaluation-readonly-v1"
           aria-labelledby="evaluationTitle"
         >
@@ -684,6 +721,11 @@
       var toggleButton = document.getElementById('togglePassBtn');
       var errorMessage = document.getElementById('errorMsg');
       var submitButton = document.getElementById('btnLogin');
+      var accessKicker = document.getElementById('accessKicker');
+      var accessTitle = document.getElementById('accessTitle');
+      var accessIntro = document.getElementById('accessIntro');
+      var privateAccessNotice = document.getElementById('privateAccessNotice');
+      var evaluationAccess = document.getElementById('evaluationAccess');
       var evaluationGrid = document.getElementById('evaluationGrid');
       var evaluationStatus = document.getElementById('evaluationStatus');
       var EVALUATION_PASSWORD = 'Junin2026!';
@@ -692,6 +734,32 @@
         'rrhh.html#peopleDirectory': 'navigation.rrhh',
         'ia.html': 'navigation.ai-assistant'
       });
+
+      function hasPrivateGrhContext() {
+        var params;
+        try {
+          params = new URLSearchParams(window.location.search || '');
+        } catch (error) {
+          return false;
+        }
+        var keys = Array.from(params.keys()).sort();
+        return keys.length === 2 && keys[0] === 'access' && keys[1] === 'return' &&
+          params.getAll('access').length === 1 && params.get('access') === 'private-grh' &&
+          params.getAll('return').length === 1 && params.get('return') === 'rrhh.html#peopleDirectory';
+      }
+
+      var privateGrhMode = hasPrivateGrhContext();
+
+      function applyAccessContext() {
+        if (!privateGrhMode) return;
+        accessKicker.textContent = 'Acceso privado GRH';
+        accessTitle.textContent = 'Ingresá al directorio de personas';
+        accessIntro.textContent = 'Usá la credencial privada asignada para consultar el snapshot nominal autorizado.';
+        privateAccessNotice.hidden = false;
+        evaluationAccess.hidden = true;
+        submitButton.textContent = 'Ingresar al directorio GRH';
+        emailInput.focus({ preventScroll: true });
+      }
 
       function togglePass() {
         var visible = passInput.type === 'password';
@@ -716,7 +784,9 @@
       function setSubmitting(submitting) {
         form.setAttribute('aria-busy', submitting ? 'true' : 'false');
         submitButton.disabled = submitting;
-        submitButton.textContent = submitting ? 'Verificando acceso…' : 'Ingresar al sistema';
+        submitButton.textContent = submitting
+          ? 'Verificando acceso…'
+          : privateGrhMode ? 'Ingresar al directorio GRH' : 'Ingresar al sistema';
         evaluationGrid.querySelectorAll('.evaluation-button').forEach(function (button) {
           button.disabled = submitting;
         });
@@ -750,12 +820,42 @@
           return null;
         }
         var keys = Array.from(params.keys());
-        if (keys.length !== 1 || keys[0] !== 'return' || params.getAll('return').length !== 1) return null;
+        if (privateGrhMode) {
+          if (!hasPrivateGrhContext()) return null;
+        } else if (keys.length !== 1 || keys[0] !== 'return' || params.getAll('return').length !== 1) {
+          return null;
+        }
         var candidate = params.get('return');
         var requiredCapability = SAFE_RETURN_PATHS[candidate];
         var capabilities = user && Array.isArray(user.capabilities) ? user.capabilities : [];
         if (!requiredCapability || capabilities.indexOf(requiredCapability) === -1) return null;
         return candidate;
+      }
+
+      async function verifyPrivateGrhAccess(token) {
+        var controller = new AbortController();
+        var timer = window.setTimeout(function () { controller.abort(); }, 8000);
+        try {
+          var response = await fetch('/api/grh-directory?limit=1', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            cache: 'no-store',
+            signal: controller.signal
+          });
+          var contract = response.headers.get('X-MuniControl-Contract');
+          if (response.body && typeof response.body.cancel === 'function') {
+            try { await response.body.cancel(); } catch (error) { /* best effort */ }
+          }
+          return {
+            ok: response.status === 200 && contract === 'grh-directory-v1',
+            status: response.status
+          };
+        } finally {
+          window.clearTimeout(timer);
+        }
       }
 
       async function doLogin(event) {
@@ -795,6 +895,27 @@
             return;
           }
 
+          if (privateGrhMode) {
+            var privateAccess;
+            try {
+              privateAccess = await verifyPrivateGrhAccess(payload.token);
+            } catch (error) {
+              privateAccess = { ok: false, status: 503 };
+            }
+            if (!privateAccess.ok) {
+              passInput.value = '';
+              passInput.setAttribute('aria-invalid', 'true');
+              setSubmitting(false);
+              showError(
+                privateAccess.status === 403
+                  ? 'Ese perfil es de evaluación y no tiene acceso al directorio nominal. Usá la credencial privada GRH asignada.'
+                  : 'No pudimos confirmar el acceso privado GRH en este momento. Intentá nuevamente.',
+                privateAccess.status === 403 ? emailInput : errorMessage
+              );
+              return;
+            }
+          }
+
           var session = Object.assign({}, payload.user, { loginAt: new Date().toISOString() });
           sessionStorage.setItem('mjunin_user', JSON.stringify(session));
           sessionStorage.setItem('mjunin_token', payload.token);
@@ -816,6 +937,7 @@
         evaluationStatus.textContent = 'Validando el perfil ' + button.querySelector('.evaluation-label').textContent + '…';
         form.requestSubmit();
       });
+      applyAccessContext();
       window.togglePass = togglePass;
       window.doLogin = doLogin;
     })();

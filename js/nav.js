@@ -861,7 +861,7 @@ window.MuniTheme && window.MuniTheme.apply(window.MuniTheme.get());
 
 var SAFE_LOGOUT_RETURN_PATHS = ['rrhh.html#peopleDirectory', 'ia.html'];
 
-window.doLogout = function(returnPath) {
+window.doLogout = function(returnPath, accessMode) {
   authoritativeAccessProjection = null;
   window.__muniAuthValidated = false;
   sessionStorage.removeItem('mjunin_user');
@@ -880,7 +880,10 @@ window.doLogout = function(returnPath) {
     }
   }
   var safeReturn = SAFE_LOGOUT_RETURN_PATHS.indexOf(returnPath) !== -1 ? returnPath : null;
-  window.location.replace(safeReturn ? 'login.html?return=' + encodeURIComponent(safeReturn) : 'login.html');
+  var privateGrh = accessMode === 'private-grh' && safeReturn === 'rrhh.html#peopleDirectory';
+  var loginTarget = safeReturn ? 'login.html?return=' + encodeURIComponent(safeReturn) : 'login.html';
+  if (privateGrh) loginTarget = 'login.html?access=private-grh&return=' + encodeURIComponent(safeReturn);
+  window.location.replace(loginTarget);
 };
 
 function ensureMenuButton(sidebarEl) {

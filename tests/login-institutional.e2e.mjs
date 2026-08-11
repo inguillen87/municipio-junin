@@ -45,6 +45,26 @@ async function createServer(requestLog) {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
 
+    if (url.pathname === '/api/grh-directory' && request.method === 'GET') {
+      const authorization = request.headers.authorization || '';
+      requestLog.push({
+        authorization,
+        limit: url.searchParams.get('limit'),
+        method: request.method,
+        path: url.pathname,
+      });
+      const privateAccess = authorization === 'Bearer signed-token-for-login-e2e' &&
+        url.searchParams.size === 1 && url.searchParams.get('limit') === '1';
+      response.writeHead(privateAccess ? 200 : 403, {
+        'Cache-Control': 'no-store, private',
+        'Content-Type': 'application/json; charset=utf-8',
+        'X-Content-Type-Options': 'nosniff',
+        'X-MuniControl-Contract': 'grh-directory-v1',
+      });
+      response.end(JSON.stringify(privateAccess ? { probe: 'authorized' } : { code: 'GRH_DIRECTORY_ACCESS_DENIED' }));
+      return;
+    }
+
     if (url.pathname === '/api/auth/login' && request.method === 'POST') {
       let body;
       try {
@@ -172,6 +192,9 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /sessionStorage\.setItem\('mjunin_token'/);
   assert.match(source, /SAFE_DEFAULT_PATHS = Object\.freeze\(\['inicio\.html'\]\)/);
   assert.match(source, /SAFE_RETURN_PATHS = Object\.freeze/);
+  assert.match(source, /params\.get\('access'\) === 'private-grh'/);
+  assert.match(source, /fetch\('\/api\/grh-directory\?limit=1'/);
+  assert.match(source, /Ese perfil .* no tiene acceso al directorio nominal/i);
   assert.match(source, /window\.location\.href = validatedReturnPath\(session\) \|\| validatedDefaultPath\(session\)/);
   assert.doesNotMatch(source, /window\.location\.href = 'index\.html'/);
 
@@ -494,5 +517,53 @@ test('login accepts only a capability-bound private return and rejects hostile r
     page.click('#btnLogin'),
   ]);
   assert.equal(await page.textContent('#loginSuccess'), 'Sesión iniciada');
+  assert.deepEqual(externalRequests, []);
+});
+
+test('private GRH login explains the handoff, rejects public profiles and returns an authorized identity to the directory', async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  t.after(async () => context.close());
+  const page = await context.newPage();
+  const externalRequests = [];
+  page.on('request', request => {
+    if (!request.url().startsWith(baseUrl)) externalRequests.push(request.url());
+  });
+
+  const privateLogin = `${baseUrl}/login.html?access=private-grh&return=rrhh.html%23peopleDirectory`;
+  await page.goto(privateLogin, { waitUntil: 'networkidle' });
+  assert.equal(await page.locator('#privateAccessNotice').isVisible(), true);
+  assert.equal(await page.locator('#evaluationAccess').isHidden(), true);
+  assert.equal(await page.textContent('#accessKicker'), 'Acceso privado GRH');
+  assert.equal(await page.textContent('#btnLogin'), 'Ingresar al directorio GRH');
+
+  await page.fill('#emailInput', PUBLISHED_EVALUATION_IDENTITIES[0].email);
+  await page.fill('#passInput', EVALUATION_PASSWORD);
+  await page.click('#btnLogin');
+  await page.waitForSelector('#errorMsg:not([hidden])');
+  assert.match(await page.textContent('#errorMsg'), /Ese perfil .* no tiene acceso al directorio nominal/i);
+  assert.equal(page.url(), privateLogin);
+  assert.equal(await page.evaluate(() => sessionStorage.getItem('mjunin_token')), null);
+
+  await page.fill('#emailInput', SUCCESS_EMAIL);
+  await page.fill('#passInput', TEST_PASSWORD);
+  await Promise.all([
+    page.waitForURL(`${baseUrl}/rrhh.html#peopleDirectory`),
+    page.click('#btnLogin'),
+  ]);
+  assert.equal(await page.textContent('#peopleDirectory'), 'Directorio privado');
+
+  const probes = requestLog.filter(entry => entry.path === '/api/grh-directory');
+  assert.deepEqual(probes.map(entry => ({ authorization: entry.authorization, limit: entry.limit })), [
+    { authorization: 'Bearer signed-evaluation-token-intendente', limit: '1' },
+    { authorization: 'Bearer signed-token-for-login-e2e', limit: '1' },
+  ]);
   assert.deepEqual(externalRequests, []);
 });

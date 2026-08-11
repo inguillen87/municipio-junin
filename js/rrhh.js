@@ -1288,8 +1288,8 @@
       if (state.directory.access !== 'denied' && state.directory.access !== 'invalid') loadDirectory(1, null, true);
     });
     elements.directoryPrivateAccess.addEventListener('click', function () {
-      if (typeof global.doLogout === 'function') global.doLogout('rrhh.html#peopleDirectory');
-      else global.location.assign('/login.html?return=rrhh.html%23peopleDirectory');
+      if (typeof global.doLogout === 'function') global.doLogout('rrhh.html#peopleDirectory', 'private-grh');
+      else global.location.assign('/login.html?access=private-grh&return=rrhh.html%23peopleDirectory');
     });
     elements.directoryReset.addEventListener('click', function () {
       elements.directoryForm.reset();

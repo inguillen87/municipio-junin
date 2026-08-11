@@ -41,9 +41,31 @@ async function readJsonBody(request) {
 }
 
 async function createServer(requestLog) {
-  const loginSource = await readFile(LOGIN_PATH);
+  const [loginSource, pwaRegisterSource] = await Promise.all([
+    readFile(LOGIN_PATH),
+    readFile(path.join(REPO, 'js', 'pwa-register.js')),
+  ]);
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
+
+    if (url.pathname === '/js/pwa-register.js' && request.method === 'GET') {
+      response.writeHead(200, {
+        'Cache-Control': 'no-store',
+        'Content-Type': 'text/javascript; charset=utf-8',
+      });
+      response.end(pwaRegisterSource);
+      return;
+    }
+
+    if (url.pathname === '/sw.js' && request.method === 'GET') {
+      response.writeHead(200, {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Content-Type': 'text/javascript; charset=utf-8',
+        'Service-Worker-Allowed': '/',
+      });
+      response.end("self.addEventListener('install', () => self.skipWaiting()); self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));");
+      return;
+    }
 
     if (url.pathname === '/api/grh-directory' && request.method === 'GET') {
       const authorization = request.headers.authorization || '';
@@ -206,10 +228,14 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.deepEqual(publishedEmails, PUBLISHED_EVALUATION_IDENTITIES.map(identity => identity.email));
   assert.doesNotMatch(source, /\/api\/auth\/seed-demo|ensureSeeded|fillUser\s*\(/i);
   assert.doesNotMatch(source, /AES-256|JWT firmado|HTTPS requerido/i);
-  assert.doesNotMatch(source, /<img\b|<canvas\b|<video\b|<link\b[^>]*rel=["']stylesheet|<script\b[^>]*src=/i);
+  assert.doesNotMatch(source, /<img\b|<canvas\b|<video\b|<link\b[^>]*rel=["']stylesheet/i);
+  const externalScripts = Array.from(source.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi), match => match[1]);
+  assert.deepEqual(externalScripts, ['/js/pwa-register.js']);
   assert.doesNotMatch(source, /https?:\/\//i);
 
-  const inlineScripts = Array.from(source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi), match => match[1]);
+  const inlineScripts = Array.from(source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
+    .filter(match => !/\bsrc\s*=/.test(match[0]))
+    .map(match => match[1]);
   assert.equal(inlineScripts.length, 1);
   assert.doesNotThrow(() => new Function(inlineScripts[0]));
 });
@@ -256,7 +282,7 @@ test('login is responsive, reduced-motion safe and has no external requests', as
         button: bounds('#btnLogin'),
         email: bounds('#emailInput'),
         h1: document.querySelectorAll('h1').length,
-        heavyAssets: document.querySelectorAll('img, canvas, video, link[rel="stylesheet"], script[src]').length,
+        heavyAssets: document.querySelectorAll('img, canvas, video, link[rel="stylesheet"], script[src]:not([src="/js/pwa-register.js"])').length,
         main: document.querySelectorAll('main').length,
         mainOverflow: document.querySelector('main').scrollWidth - document.querySelector('main').clientWidth,
         maxCssTimeMs: Math.max(0, ...cssTimes.map(value => {
@@ -266,6 +292,7 @@ test('login is responsive, reduced-motion safe and has no external requests', as
         })),
         pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         password: bounds('#passInput'),
+        pwaRegisterScripts: document.querySelectorAll('script[src="/js/pwa-register.js"]').length,
         toggle: bounds('#togglePassBtn'),
       };
     });
@@ -273,6 +300,7 @@ test('login is responsive, reduced-motion safe and has no external requests', as
     assert.equal(metrics.main, 1, `${viewport.name}: one main landmark`);
     assert.equal(metrics.h1, 1, `${viewport.name}: one page heading`);
     assert.equal(metrics.heavyAssets, 0, `${viewport.name}: no heavy or external presentation assets`);
+    assert.equal(metrics.pwaRegisterScripts, 1, `${viewport.name}: exactly one local PWA register script`);
     assert.ok(metrics.pageOverflow <= 1, `${viewport.name}: page must not overflow horizontally`);
     assert.ok(metrics.mainOverflow <= 1, `${viewport.name}: main must not overflow horizontally`);
     assert.ok(metrics.access.left >= -1 && metrics.access.right <= viewport.width + 1, `${viewport.name}: access panel fits viewport`);

@@ -7,15 +7,34 @@ import { fileURLToPath } from 'node:url';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORTALS = ['cuentas-claras.html', 'ciudadano.html'];
 
-test('public service worker invalidates the pre-routing cache while remaining network-first', async () => {
+test('public service worker keeps a versioned offline shell without caching private traffic', async () => {
   const source = await readFile(path.join(REPO, 'sw.js'), 'utf8');
 
-  assert.match(source, /const CACHE_NAME = 'municontrol-public-v5';/);
-  assert.doesNotMatch(source, /municontrol-public-v[34]/);
-  assert.match(source, /PUBLIC_ASSETS = new Set\(\[[\s\S]*'\/roles'/);
+  assert.match(source, /const CACHE_PREFIX = 'municontrol-shell-';/);
+  assert.match(source, /const CACHE_NAME = 'municontrol-shell-v6';/);
+  assert.match(source, /const LEGACY_CACHE_PREFIX = 'municontrol-public-';/);
+  assert.doesNotMatch(source, /municontrol-public-v[1-5]/);
+
+  const allowlist = source.match(/const PUBLIC_ASSETS = Object\.freeze\(\[([\s\S]*?)\]\);/)?.[1] || '';
+  assert.match(allowlist, /OFFLINE_FALLBACK/);
+  assert.match(allowlist, /'\/manifest\.json'/);
+  assert.doesNotMatch(allowlist, /['"]\/(?:login|inicio|dashboard|api)(?:[./'"])/i);
+
+  assert.match(source, /request\.headers\.has\('authorization'\)/);
+  assert.match(source, /request\.headers\.has\('range'\)/);
+  assert.match(source, /url\.pathname === '\/api'/);
   assert.match(source, /url\.pathname\.startsWith\('\/api\/'\)/);
-  assert.match(source, /keys\.filter\(key => key !== CACHE_NAME\)\.map\(key => caches\.delete\(key\)\)/);
-  assert.match(source, /fetch\(request\)[\s\S]*cache\.put\(request, copy\)/);
+  assert.match(source, /filter\(key => isOwnedCache\(key\) && key !== CACHE_NAME\)/);
+  assert.match(source, /event\.data\.type === 'SKIP_WAITING'/);
+
+  const navigation = source.match(/async function networkFirstNavigation\(request\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(navigation, /fetch\(request, \{ cache: 'no-store' \}\)/);
+  assert.doesNotMatch(navigation, /cache\.put|caches\.open/);
+
+  const publicAsset = source.match(/async function networkFirstPublicAsset\(pathname\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(publicAsset, /return await fetch\(canonicalRequest\)/);
+  assert.match(publicAsset, /names\.includes\(CACHE_NAME\)/);
+  assert.doesNotMatch(publicAsset, /cache\.put/);
 });
 
 function visibleText(html) {

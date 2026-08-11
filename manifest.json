@@ -1,23 +1,28 @@
 {
-  "name": "MuniControl Junín — Estado de servicios públicos",
-  "short_name": "Muni Junín",
-  "description": "Estado público de disponibilidad y contratos requeridos para habilitar servicios digitales del Municipio de Junín, Mendoza.",
-  "start_url": "/ciudadano.html",
+  "id": "/",
+  "name": "MuniControl Junín — Gestión municipal",
+  "short_name": "MuniControl",
+  "description": "Plataforma de gestión, control y analítica para municipios y gobiernos locales de Argentina.",
+  "start_url": "/login",
   "scope": "/",
-  "lang": "es",
+  "lang": "es-AR",
+  "dir": "ltr",
   "display": "standalone",
-  "background_color": "#f3f7f6",
-  "theme_color": "#0b5d4a",
+  "background_color": "#07101f",
+  "theme_color": "#07101f",
+  "categories": ["business", "government", "productivity"],
   "icons": [
     {
-      "src": "img/municontrol-logo-new.jpg",
+      "src": "/img/municontrol-icon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "img/municontrol-logo-new.jpg",
+      "src": "/img/municontrol-icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

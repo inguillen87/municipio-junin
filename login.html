@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07111f">
   <meta name="description" content="Acceso institucional a MuniControl de la Municipalidad de Junín.">
+  <link rel="manifest" href="/manifest.json">
   <title>Acceso institucional | MuniControl Junín</title>
   <style>
     :root {
@@ -342,6 +343,38 @@
 
     .tour-link:hover { background: var(--surface-soft); }
 
+    .pwa-install {
+      display: flex;
+      width: 100%;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 12px;
+      padding: 0 18px;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      background: var(--surface-raised);
+      color: var(--accent-strong);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .pwa-install:hover { background: var(--surface-soft); }
+    .pwa-install:disabled { cursor: wait; opacity: .72; }
+    .pwa-install[hidden] { display: none; }
+
+    .pwa-install-status {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .pwa-install-status:empty { display: none; }
+
     .tour-link-note {
       display: block;
       margin-top: 7px;
@@ -454,6 +487,7 @@
       .form-input,
       .submit-button,
       .evaluation-button,
+      .pwa-install,
       .tour-link,
       .error-message { border: 1px solid CanvasText; }
       .submit-button { background: ButtonFace; color: ButtonText; }
@@ -701,6 +735,9 @@
           <span>Ver recorrido público por perfiles<span class="tour-link-note">No inicia sesión ni accede a datos</span></span>
         </a>
 
+        <button class="pwa-install" type="button" data-pwa-install hidden>Instalar MuniControl</button>
+        <p class="pwa-install-status" data-pwa-install-status role="status" aria-live="polite"></p>
+
         <section class="access-policy" aria-labelledby="accessPolicyTitle">
           <h3 id="accessPolicyTitle">Identidad emitida por la Municipalidad</h3>
           <p>La identidad se revalida en la base en cada request. Estas seis cuentas no pueden escribir, importar, conectar fuentes ni enviar acciones.</p>
@@ -942,5 +979,6 @@
       window.doLogin = doLogin;
     })();
   </script>
+  <script src="/js/pwa-register.js"></script>
 </body>
 </html>

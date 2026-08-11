@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#060b18">
+  <meta name="robots" content="noindex,nofollow">
   <title>Sin conexión — MuniControl</title>
-  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
   <link rel="icon" href="/favicon.jpg">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,7 +25,7 @@
       50% { transform: translateY(-12px); }
     }
     h1 { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 900; margin-bottom: 12px; }
-    p { color: rgba(148,163,184,0.8); font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+    p { color: #bac6d8; font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
     .badge {
       display: inline-flex; align-items: center; gap: 8px;
       background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
@@ -34,26 +35,34 @@
     .dot { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
     .btn {
-      display: inline-block; padding: 12px 28px;
+      display: inline-block; min-height: 44px; padding: 12px 28px;
       background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
       border-radius: 12px; color: #60a5fa; font-size: 14px; font-weight: 700;
       cursor: pointer; text-decoration: none; transition: all 0.2s;
     }
     .btn:hover { background: rgba(59,130,246,0.25); transform: translateY(-2px); }
+    .btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
     .features { margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
     .feature { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; }
     .feature-icon { font-size: 20px; margin-bottom: 6px; }
-    .feature-label { font-size: 11px; font-weight: 700; color: rgba(148,163,184,0.7); }
-    .feature-val { font-size: 12px; color: rgba(148,163,184,0.5); margin-top: 2px; }
+    .feature-label { font-size: 12px; font-weight: 700; color: #aebbd0; }
+    .feature-val { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="icon">📡</div>
-    <div class="badge"><div class="dot"></div> Sin conexión a internet</div>
+    <div class="icon" aria-hidden="true">📡</div>
+    <div class="badge"><div class="dot" aria-hidden="true"></div> Sin conexión a internet</div>
     <h1>Se necesita conexión segura</h1>
     <p>MuniControl no muestra datos operativos ni acepta cambios sin conexión. Las fuentes protegidas deben volver a validarse contra el servidor.</p>
-    <button class="btn" onclick="window.location.reload()">🔄 Reintentar conexión</button>
+    <button class="btn" id="offlineRetry" type="button">🔄 Reintentar conexión</button>
     <div class="features">
       <div class="feature">
         <div class="feature-icon">📊</div>
@@ -78,10 +87,12 @@
     </div>
   </div>
   <script>
-    // Auto-retry when connection is restored
-    window.addEventListener('online', function() {
-      window.location.href = '/dashboard.html';
-    });
+    function retryOriginalNavigation() {
+      window.location.reload();
+    }
+
+    document.getElementById('offlineRetry').addEventListener('click', retryOriginalNavigation);
+    window.addEventListener('online', retryOriginalNavigation, { once: true });
   </script>
 </body>
 </html>

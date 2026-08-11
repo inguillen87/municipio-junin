@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -9,6 +10,8 @@ import { createServer as createViteServer } from 'vite';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
+const PWA_REGISTER_SOURCE = readFileSync(path.join(REPO, 'js', 'pwa-register.js'), 'utf8');
+const PWA_TEST_WORKER_SOURCE = "self.addEventListener('install', () => self.skipWaiting()); self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));";
 const CONTRACT_HEADER = 'x-municontrol-contract';
 const AUTH_CONTRACT = 'municontrol-auth-me-v1';
 const EXECUTIVE_CONTRACT = 'grh-executive-v2';
@@ -201,7 +204,7 @@ const AUTH_CLIENT_SOURCE = `
   })();
 `;
 
-function testApiPlugin(scenario, apiLog) {
+function testApiPlugin(scenario, apiLog, pwaLog) {
   return {
     name: `ejecutivo-react-e2e-${scenario.name}`,
     configureServer(server) {
@@ -211,6 +214,21 @@ function testApiPlugin(scenario, apiLog) {
         if (url.pathname === '/ejecutivo') {
           request.url = `/ejecutivo.html${url.search}`;
           next();
+          return;
+        }
+
+        if (url.pathname === '/js/pwa-register.js') {
+          pwaLog.push(url.pathname);
+          send(response, 200, 'text/javascript; charset=utf-8', PWA_REGISTER_SOURCE);
+          return;
+        }
+
+        if (url.pathname === '/sw.js') {
+          pwaLog.push(url.pathname);
+          send(response, 200, 'text/javascript; charset=utf-8', PWA_TEST_WORKER_SOURCE, {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Service-Worker-Allowed': '/',
+          });
           return;
         }
 
@@ -305,13 +323,14 @@ function testApiPlugin(scenario, apiLog) {
 async function withScenario(scenario, run) {
   scenarioSequence += 1;
   const apiLog = [];
+  const pwaLog = [];
   const server = await createViteServer({
     configFile: FRONTEND_CONFIG,
     appType: 'mpa',
     cacheDir: path.join(tmpdir(), `municontrol-ejecutivo-vite-${process.pid}-${scenarioSequence}`),
     clearScreen: false,
     logLevel: 'silent',
-    plugins: [testApiPlugin(scenario, apiLog)],
+    plugins: [testApiPlugin(scenario, apiLog, pwaLog)],
     server: {
       host: '127.0.0.1',
       port: 0,
@@ -326,7 +345,7 @@ async function withScenario(scenario, run) {
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
   try {
-    return await run({ apiLog, baseUrl });
+    return await run({ apiLog, baseUrl, pwaLog });
   } finally {
     await server.close();
   }
@@ -358,6 +377,26 @@ async function newMonitoredPage(browser, baseUrl, options = {}) {
 
 function apiPaths(apiLog, start = 0) {
   return apiLog.slice(start).map(entry => entry.path);
+}
+
+async function assertDirectPwaRegistration(page, baseUrl, pwaLog, start, label) {
+  await page.waitForFunction(() => navigator.serviceWorker?.getRegistration('/').then(registration => (
+    registration?.active?.state === 'activated'
+  )));
+  const registration = await page.evaluate(async () => {
+    const current = await navigator.serviceWorker.ready;
+    return {
+      scope: current.scope,
+      scriptPath: new URL(current.active.scriptURL).pathname,
+      updateViaCache: current.updateViaCache,
+    };
+  });
+  const paths = pwaLog.slice(start);
+  assert.ok(paths.includes('/js/pwa-register.js'), `${label}: direct entry requests the local PWA register`);
+  assert.ok(paths.includes('/sw.js'), `${label}: PWA register executes service-worker registration`);
+  assert.equal(registration.scope, `${baseUrl}/`, `${label}: root PWA scope`);
+  assert.equal(registration.scriptPath, '/sw.js', `${label}: registered worker path`);
+  assert.equal(registration.updateViaCache, 'none', `${label}: worker update bypasses HTTP cache`);
 }
 
 function assertNoLegacyDataEndpoint(apiLog) {
@@ -568,7 +607,7 @@ test('React Ejecutivo validates the governed synthetic contract and fails closed
   t.after(async () => browser.close());
 
   await t.test('renders five KPIs and five governed collections at every target viewport', async () => {
-    await withScenario({ name: 'authorized-intendente', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+    await withScenario({ name: 'authorized-intendente', role: 'INTENDENTE' }, async ({ apiLog, baseUrl, pwaLog }) => {
       for (const viewport of [
         {
           name: 'desktop',
@@ -588,6 +627,7 @@ test('React Ejecutivo validates the governed synthetic contract and fails closed
         },
       ]) {
         const start = apiLog.length;
+        const pwaStart = pwaLog.length;
         const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, viewport.context);
         try {
           const executiveResponsePromise = page.waitForResponse(response =>
@@ -597,6 +637,7 @@ test('React Ejecutivo validates the governed synthetic contract and fails closed
           assert.equal(executiveResponse.status(), 200);
           assert.equal(executiveResponse.headers()[CONTRACT_HEADER], EXECUTIVE_CONTRACT);
           await page.waitForSelector('#page-title');
+          await assertDirectPwaRegistration(page, baseUrl, pwaLog, pwaStart, viewport.name);
 
           const result = await readyDiagnostics(page);
           assert.equal(result.path, '/ejecutivo');

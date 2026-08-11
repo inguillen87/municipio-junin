@@ -18,7 +18,13 @@ test('institutional shell has a single local owner and no runtime sidebar styles
   ]);
 
   assert.equal((dashboard.match(/@import url\("institutional-shell\.css"\)/g) || []).length, 1);
-  assert.doesNotMatch(nav, /createElement\(['"]link['"]\)|appendChild\(link\)/);
+  const stylesheetOwner = nav.slice(
+    nav.indexOf('function ensureInstitutionalShellStylesheet'),
+    nav.indexOf('function ensurePwaShellAssets'),
+  );
+  assert.doesNotMatch(stylesheetOwner, /createElement\(['"]link['"]\)|appendChild\(link\)/);
+  assert.equal((nav.match(/document\.createElement\(['"]link['"]\)/g) || []).length, 1);
+  assert.match(nav, /manifest\.href\s*=\s*['"]\/manifest\.json['"]/);
   assert.match(nav, /data-muni-shell',\s*'primary-nav'/);
   assert.doesNotMatch(nav, /sidebarNavCSS|injectSidebarCSS|municontrol-logo(?:-sidebar)?\.jpg/);
   assert.match(nav, /class="sb-brand-mark"[^>]*>MC</);

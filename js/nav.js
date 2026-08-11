@@ -14,6 +14,24 @@ function ensureInstitutionalShellStylesheet() {
   return null;
 }
 
+function ensurePwaShellAssets() {
+  var manifest = document.querySelector('link[rel="manifest"]');
+  if (!manifest) {
+    manifest = document.createElement('link');
+    manifest.rel = 'manifest';
+    manifest.href = '/manifest.json';
+    manifest.setAttribute('data-muni-pwa-asset', 'manifest-v1');
+    document.head.appendChild(manifest);
+  }
+
+  if (document.querySelector('script[data-muni-pwa-asset="register-v1"],script[src$="/js/pwa-register.js"]')) return;
+  var registerScript = document.createElement('script');
+  registerScript.src = '/js/pwa-register.js';
+  registerScript.defer = true;
+  registerScript.setAttribute('data-muni-pwa-asset', 'register-v1');
+  document.head.appendChild(registerScript);
+}
+
 function enableInstitutionalShellInteractivity() {
   var root = document.documentElement;
   if (root.classList.contains('muni-shell-interactive') || root.dataset.muniShellMotionQueued === 'true') return;
@@ -40,6 +58,7 @@ function enableInstitutionalShellInteractivity() {
 }
 
 ensureInstitutionalShellStylesheet();
+ensurePwaShellAssets();
 
 var MUNI_NAV_ASSET_BASE = (function() {
   try {
@@ -870,7 +889,8 @@ window.doLogout = function(returnPath, accessMode) {
     try {
       Promise.resolve(caches.keys()).then(function(names) {
         return Promise.all(names.filter(function(name) {
-          return name.indexOf('municontrol-') === 0;
+          return name.indexOf('municontrol-') === 0 &&
+            name.indexOf('municontrol-shell-') !== 0;
         }).map(function(name) { return caches.delete(name); }));
       }).catch(function() {
         // CacheStorage es best-effort y nunca demora la salida de la sesión.

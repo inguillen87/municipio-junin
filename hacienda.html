@@ -429,6 +429,136 @@
       font-weight: 760;
       white-space: nowrap;
     }
+    .hac-cohort { margin-top: 14px; scroll-margin-top: 82px; border-color: var(--hac-border-strong); }
+    .hac-cohort[hidden] { display: none !important; }
+    .hac-cohort-state {
+      display: grid;
+      min-height: 74px;
+      gap: 10px;
+      place-items: center;
+      padding: 16px;
+      border: 1px dashed var(--hac-border);
+      border-radius: 13px;
+      color: var(--hac-text-soft);
+      background: var(--hac-soft);
+      font-size: 13px;
+      line-height: 1.55;
+      text-align: center;
+    }
+    .hac-cohort-state[hidden],.hac-cohort-content[hidden] { display: none !important; }
+    .hac-cohort-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; }
+    .hac-cohort-kpi { min-width: 0; padding: 13px; border: 1px solid var(--hac-border); border-radius: 12px; background: var(--hac-soft); }
+    .hac-cohort-kpi span,.hac-cohort-global span,.hac-cohort-insight span { display: block; color: var(--hac-muted); font-size: 12px; font-weight: 790; }
+    .hac-cohort-kpi strong { display: block; margin-top: 7px; color: var(--hac-text); font-size: clamp(19px,2vw,27px); line-height: 1.1; }
+    .hac-cohort-grid { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(290px,.7fr); gap: 14px; margin-top: 14px; }
+    .hac-cohort-figure,.hac-cohort-decision { min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--hac-border); border-radius: 13px; background: var(--hac-surface-raised); }
+    .hac-cohort-figure h4,.hac-cohort-decision h4 { margin: 0; color: var(--hac-text); font-size: 14px; }
+    .hac-cohort-figure figcaption,.hac-cohort-decision > p { margin: 5px 0 0; color: var(--hac-muted); font-size: 12px; line-height: 1.5; }
+    .hac-cohort-ranking { display: grid; gap: 9px; margin-top: 14px; }
+    .hac-cohort-rank { display: grid; width: 100%; min-height: 44px; grid-template-columns: minmax(120px,.8fr) minmax(120px,1fr) auto; align-items: center; gap: 10px; padding: 8px 9px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: inherit; font: inherit; text-align: left; }
+    button.hac-cohort-rank { cursor: pointer; }
+    .hac-cohort-rank:focus-visible,
+    .hac-cohort-trend:focus-visible,
+    .hac-cohort-field select:focus-visible {
+      outline: 3px solid var(--hac-border-strong);
+      outline-offset: 2px;
+    }
+    .hac-cohort-rank[data-selected="true"] { border-color: var(--hac-border-strong); background: rgba(var(--hac-blue-rgb),.09); }
+    .hac-cohort-rank-label { overflow: hidden; color: var(--hac-text-soft); font-size: 12px; font-weight: 760; text-overflow: ellipsis; white-space: nowrap; }
+    .hac-cohort-track { height: 10px; overflow: hidden; border: 1px solid var(--hac-border-strong); border-radius: 999px; background: var(--hac-surface); }
+    .hac-cohort-bar { display: block; height: 100%; border-radius: inherit; background: var(--hac-blue); transform-origin: left; animation: hac-grow .45s var(--hac-ease) both; }
+    .hac-cohort-rank[data-selected="true"] .hac-cohort-bar { background: var(--hac-teal); }
+    .hac-cohort-rank-value { color: var(--hac-text); font-size: 12px; font-weight: 830; white-space: nowrap; }
+    .hac-cohort-insights { display: grid; gap: 9px; margin-top: 13px; }
+    .hac-cohort-insight { padding: 11px; border: 1px solid var(--hac-border); border-radius: 10px; background: var(--hac-soft); }
+    .hac-cohort-insight strong { display: block; margin-top: 5px; color: var(--hac-text); font-size: 14px; line-height: 1.35; }
+    .hac-cohort-global-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; margin-top: 14px; }
+    .hac-cohort-global { padding: 11px; border: 1px solid var(--hac-border); border-radius: 10px; }
+    .hac-cohort-global strong { display: block; margin-top: 5px; color: var(--hac-text); font-size: 14px; }
+    .hac-cohort-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+    .hac-cohort-caveat { margin: 12px 0 0; color: var(--hac-muted); font-size: 12px; line-height: 1.55; }
+    .hac-cohort-toolbar {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid var(--hac-border);
+      border-radius: 13px;
+      background: var(--hac-soft);
+    }
+    .hac-cohort-field { display: grid; min-width: 0; gap: 6px; }
+    .hac-cohort-field span {
+      color: var(--hac-muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .hac-cohort-field select {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 38px 0 12px;
+      border: 1px solid var(--hac-border-strong);
+      border-radius: 10px;
+      background: var(--hac-surface-raised);
+      color: var(--hac-text);
+      font: 750 13px Inter,ui-sans-serif,system-ui,sans-serif;
+    }
+    .hac-cohort-kpi[data-tone="money"] { background: linear-gradient(145deg,var(--hac-soft),rgba(var(--hac-blue-rgb),.08)); }
+    .hac-cohort-kpi[data-tone="risk"] { border-color: rgba(var(--hac-amber-rgb),.72); }
+    .hac-cohort-composition { display: grid; gap: 9px; margin-top: 14px; }
+    .hac-cohort-component {
+      display: grid;
+      grid-template-columns: minmax(150px,.8fr) minmax(130px,1fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .hac-cohort-component-label { color: var(--hac-text-soft); font-size: 12px; font-weight: 750; }
+    .hac-cohort-component-value { color: var(--hac-text); font-size: 12px; font-weight: 830; white-space: nowrap; }
+    .hac-cohort-component-track {
+      height: 11px;
+      overflow: hidden;
+      border: 1px solid var(--hac-border-strong);
+      border-radius: 999px;
+      background: var(--hac-surface);
+    }
+    .hac-cohort-component-bar {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--hac-blue);
+      transform-origin: left;
+      animation: hac-grow .45s var(--hac-ease) both;
+    }
+    .hac-cohort-component[data-component="employeeWithholdingsCents"] .hac-cohort-component-bar { background: var(--hac-amber); }
+    .hac-cohort-component[data-component="netPayrollCents"] .hac-cohort-component-bar { background: var(--hac-teal); }
+    .hac-cohort-component[data-component="employerContributionsCents"] .hac-cohort-component-bar { background: var(--hac-violet); }
+    .hac-cohort-trend { min-height: 250px; margin-top: 12px; overflow-x: auto; overscroll-behavior-inline: contain; }
+    .hac-cohort-trend svg { display: block; width: 100%; min-width: 620px; height: auto; }
+    .hac-cohort-trend text { fill: var(--hac-muted); font: 12px Inter,ui-sans-serif,system-ui,sans-serif; }
+    .hac-cohort-trend-grid { stroke: var(--hac-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .hac-cohort-trend-line { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+    .hac-cohort-trend-line[data-series="gross"] { stroke: var(--hac-blue); }
+    .hac-cohort-trend-line[data-series="net"] { stroke: var(--hac-teal); }
+    .hac-cohort-trend-line[data-series="employer"] { stroke: var(--hac-violet); }
+    .hac-cohort-trend-point { stroke: var(--hac-surface-raised); stroke-width: 2; vector-effect: non-scaling-stroke; }
+    .hac-cohort-trend-point[data-series="gross"] { fill: var(--hac-blue); }
+    .hac-cohort-trend-point[data-series="net"] { fill: var(--hac-teal); }
+    .hac-cohort-trend-point[data-series="employer"] { fill: var(--hac-violet); }
+    .hac-cohort-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; color: var(--hac-muted); font-size: 12px; }
+    .hac-cohort-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .hac-cohort-legend i { width: 11px; height: 11px; border-radius: 3px; background: var(--series); }
+    .hac-cohort-evidence {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 9px;
+      margin-top: 14px;
+    }
+    .hac-cohort-evidence > div { padding: 11px; border: 1px solid var(--hac-border); border-radius: 10px; background: var(--hac-soft); }
+    .hac-cohort-evidence span { display: block; color: var(--hac-muted); font-size: 12px; font-weight: 790; }
+    .hac-cohort-evidence strong { display: block; margin-top: 5px; color: var(--hac-text); font-size: 13px; line-height: 1.4; }
     .hac-chart {
       min-height: 320px;
       overflow: hidden;
@@ -932,7 +1062,7 @@
     @keyframes hac-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
     @media (max-width: 1100px) {
-      .hac-layout,.hac-layout-balanced,.hac-close-grid,.hac-radar-detail-grid { grid-template-columns: 1fr; }
+      .hac-layout,.hac-layout-balanced,.hac-close-grid,.hac-radar-detail-grid,.hac-cohort-grid { grid-template-columns: 1fr; }
       .hac-close-reconciliation-grid,.hac-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
     }
     @media (max-width: 900px) {
@@ -964,6 +1094,10 @@
       .hac-radar-controls { align-items: stretch; flex-direction: column; }
       .hac-radar-control { width: 100%; }
       .hac-radar-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .hac-cohort-kpis,.hac-cohort-global-grid,.hac-cohort-evidence { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .hac-cohort-toolbar { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .hac-cohort-field:last-child { grid-column: 1/-1; }
+      .hac-cohort-rank { grid-template-columns: minmax(100px,.8fr) minmax(100px,1fr) auto; }
       #reconciliationHeatmap > .hac-radar-heatmap-grid { grid-template-columns: repeat(12,minmax(58px,1fr)) !important; }
       .hac-radar-trend { overflow-x: auto; overscroll-behavior-inline: contain; }
       .hac-error { grid-template-columns: auto 1fr; }
@@ -977,6 +1111,12 @@
       .hac-close-metric strong { font-size: 13px; }
       .hac-close-delta strong { font-size: 12px; }
       .hac-radar-kpis { grid-template-columns: 1fr; }
+      .hac-cohort-kpis,.hac-cohort-global-grid,.hac-cohort-evidence,.hac-cohort-toolbar { grid-template-columns: 1fr; }
+      .hac-cohort-field:last-child { grid-column: auto; }
+      .hac-cohort-rank { grid-template-columns: 1fr auto; }
+      .hac-cohort-track { grid-column: 1/-1; grid-row: 2; }
+      .hac-cohort-component { grid-template-columns: 1fr auto; }
+      .hac-cohort-component-track { grid-column: 1/-1; grid-row: 2; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -999,6 +1139,17 @@
       .hac-radar-cell,
       .hac-radar-rank,
       .hac-radar-kpi,
+      .hac-cohort-state,
+      .hac-cohort-kpi,
+      .hac-cohort-figure,
+      .hac-cohort-decision,
+      .hac-cohort-rank,
+      .hac-cohort-insight,
+      .hac-cohort-global,
+      .hac-cohort-toolbar,
+      .hac-cohort-field select,
+      .hac-cohort-component-track,
+      .hac-cohort-evidence > div,
       .hac-methodology {
         color: CanvasText !important;
         background: Canvas !important;
@@ -1102,6 +1253,101 @@
           <div class="hac-stat-value hac-skeleton" id="kpiReconciliation">Cargando</div>
           <p class="hac-stat-note" id="kpiReconciliationNote">Cálculo frente a totpago · no certifica pago.</p>
         </article>
+      </section>
+
+      <section class="hac-panel hac-cohort" id="cohortContext" aria-labelledby="cohortTitle">
+        <div class="hac-panel-head">
+          <div>
+            <h3 id="cohortTitle" tabindex="-1">Análisis financiero por dimensión observada</h3>
+            <p class="hac-panel-subtitle" id="cohortSubtitle">Bruto, retenciones, neto y aportes por una dimensión a la vez, sobre corridas reales de cálculo.</p>
+          </div>
+          <span class="hac-panel-badge" id="cohortBadge">grh-workforce-finance-v1 · k=10</span>
+        </div>
+        <div class="hac-cohort-state" id="cohortState">
+          <span id="cohortStateText" role="status" aria-live="polite">Validando la proyección financiera agregada…</span>
+          <button class="hac-retry-btn" id="cohortRetry" type="button" hidden>Reintentar proyección</button>
+        </div>
+        <div class="hac-cohort-content" id="cohortContent" hidden>
+          <div class="hac-cohort-toolbar" aria-label="Controles del análisis financiero por dimensión">
+            <label class="hac-cohort-field" for="cohortDimensionSelect">
+              <span>Dimensión observada</span>
+              <select id="cohortDimensionSelect">
+                <option value="sector">Sector</option>
+                <option value="costCenter">Centro de costo</option>
+                <option value="agreement">Convenio</option>
+              </select>
+            </label>
+            <label class="hac-cohort-field" for="cohortPeriodSelect">
+              <span>Período de cálculo</span>
+              <select id="cohortPeriodSelect"></select>
+            </label>
+            <label class="hac-cohort-field" for="cohortCategorySelect">
+              <span>Categoría liberada</span>
+              <select id="cohortCategorySelect"></select>
+            </label>
+          </div>
+          <div class="hac-cohort-kpis" aria-label="Indicadores financieros agregados de la categoría">
+            <div class="hac-cohort-kpi"><span>Participantes observados</span><strong id="cohortParticipants">—</strong></div>
+            <div class="hac-cohort-kpi"><span>Asignación del neto</span><strong id="cohortShare">—</strong></div>
+            <div class="hac-cohort-kpi"><span>Posición entre liberadas</span><strong id="cohortRank">—</strong></div>
+            <div class="hac-cohort-kpi"><span>Período</span><strong id="cohortPeriod">—</strong></div>
+            <div class="hac-cohort-kpi" data-tone="money"><span>Bruto de control</span><strong id="cohortGross">—</strong></div>
+            <div class="hac-cohort-kpi" data-tone="risk"><span>Retenciones de control</span><strong id="cohortWithholdings">—</strong></div>
+            <div class="hac-cohort-kpi" data-tone="money"><span>Neto de control</span><strong id="cohortNet">—</strong></div>
+            <div class="hac-cohort-kpi" data-tone="money"><span>Aportes patronales</span><strong id="cohortEmployer">—</strong></div>
+          </div>
+          <div class="hac-cohort-grid">
+            <figure class="hac-cohort-figure" aria-labelledby="cohortCompositionTitle">
+              <h4 id="cohortCompositionTitle">Composición del cálculo de la categoría</h4>
+              <figcaption>Ocho componentes observados en la corrida; escala común desde cero.</figcaption>
+              <div class="hac-cohort-composition" id="cohortComposition"></div>
+            </figure>
+            <aside class="hac-cohort-decision" aria-labelledby="cohortDecisionTitle">
+              <h4 id="cohortDecisionTitle">Control y cambio mensual</h4>
+              <p>Lecturas aritméticas; no explican causas ni acreditaciones bancarias.</p>
+              <div class="hac-cohort-insights">
+                <div class="hac-cohort-insight"><span>Variación del neto frente al mes previo</span><strong id="cohortChange">—</strong></div>
+                <div class="hac-cohort-insight"><span>Identidad bruto − retenciones = neto</span><strong id="cohortControl">—</strong></div>
+                <div class="hac-cohort-insight"><span>Participantes entre categorías</span><strong id="cohortParticipantAccounting">—</strong></div>
+                <div class="hac-cohort-insight"><span>Estado de privacidad</span><strong id="cohortPrivacy">—</strong></div>
+              </div>
+            </aside>
+          </div>
+          <div class="hac-cohort-grid">
+            <figure class="hac-cohort-figure" aria-labelledby="cohortTrendTitle">
+              <h4 id="cohortTrendTitle">Tendencia financiera de 24 meses</h4>
+              <figcaption id="cohortTrendCaption">Bruto, neto y aportes publicados. La línea se corta cuando cambia la membresía; los niveles visibles siguen siendo comparables.</figcaption>
+              <div class="hac-cohort-trend" id="cohortTrend" tabindex="0" role="region" aria-label="Tendencia financiera desplazable de 24 meses"></div>
+              <div class="hac-cohort-legend" aria-label="Series de tendencia">
+                <span><i style="--series:var(--hac-blue)"></i>Bruto</span>
+                <span><i style="--series:var(--hac-teal)"></i>Neto</span>
+                <span><i style="--series:var(--hac-violet)"></i>Aportes patronales</span>
+              </div>
+            </figure>
+            <figure class="hac-cohort-figure" aria-labelledby="cohortRankingTitle">
+              <h4 id="cohortRankingTitle">Asignación del neto por categoría</h4>
+              <figcaption id="cohortRankingCaption">Comparación unidimensional del mismo período; la selección queda resaltada.</figcaption>
+              <div class="hac-cohort-ranking" id="cohortRanking"></div>
+            </figure>
+          </div>
+          <div class="hac-cohort-evidence" aria-label="Evidencia y alcance de la proyección">
+            <div><span>Observación dimensional</span><strong id="cohortAssignmentEvidence">—</strong></div>
+            <div><span>Umbral y publicación</span><strong id="cohortReleaseEvidence">—</strong></div>
+            <div><span>Presentación monetaria</span><strong id="cohortPresentationEvidence">—</strong></div>
+            <div><span>Cruce con totpago</span><strong>Sólo total global del período</strong></div>
+          </div>
+          <div class="hac-cohort-global-grid" aria-label="Contexto global del cierre del mismo período">
+            <div class="hac-cohort-global"><span>Participantes globales</span><strong id="cohortGlobalParticipants">—</strong></div>
+            <div class="hac-cohort-global"><span>Bruto global de control</span><strong id="cohortGlobalGross">—</strong></div>
+            <div class="hac-cohort-global"><span>Neto global de control</span><strong id="cohortGlobalNet">—</strong></div>
+            <div class="hac-cohort-global"><span>Acuerdo global entre fuentes</span><strong id="cohortGlobalAgreement">—</strong></div>
+          </div>
+          <div class="hac-cohort-actions">
+            <a class="hac-retry-btn" id="cohortBackToRrhh" href="rrhh.html#workforceDistribution">Volver a RRHH</a>
+            <a class="hac-retry-btn" href="/ejecutivo">Abrir resumen ejecutivo</a>
+          </div>
+          <p class="hac-cohort-caveat">Los importes son agregados de control de cálculo de una dimensión observada en cada corrida. No representan salario individual, pago bancario, ejecución presupuestaria ni causalidad. Una persona puede aparecer en más de una categoría del mismo mes cuando la fuente registra cambios entre corridas; por eso los conteos no se suman como una distribución exclusiva.</p>
+        </div>
       </section>
 
       <section class="hac-panel hac-radar" id="reconciliationRadar" aria-labelledby="radarTitle">
@@ -1305,6 +1551,7 @@
   <script src="js/tenant-presentation.js"></script>
   <script src="js/grh-secure-data.js"></script>
   <script src="js/grh-close-data.js"></script>
+  <script src="js/grh-workforce-finance-data.js"></script>
   <script>
     (function () {
       'use strict';
@@ -1338,6 +1585,15 @@
         range: '12',
         radarWindow: '36',
         radarFilter: 'all',
+        cohortRequest: null,
+        workforceFinance: null,
+        workforceFinanceStatus: 'loading',
+        workforceFinanceError: null,
+        cohortDimension: 'sector',
+        cohortPeriod: null,
+        cohortCategory: null,
+        cohortDeepLinkResolved: null,
+        cohortScrolled: false,
         loadSequence: 0
       };
       var elements = {};
@@ -1364,7 +1620,16 @@
           'closeComparisonBadge', 'closeComparisonReconciliation', 'closeDeltaList',
           'closeTitle', 'radarWindow', 'radarFilter', 'radarPublishedCount',
           'radarBelow50Count', 'radarProtectedCount', 'radarLatestAgreement',
-          'reconciliationHeatmap', 'reconciliationTrend', 'varianceRanking', 'radarSummary'
+          'reconciliationHeatmap', 'reconciliationTrend', 'varianceRanking', 'radarSummary',
+          'cohortContext', 'cohortTitle', 'cohortSubtitle', 'cohortBadge', 'cohortState', 'cohortStateText', 'cohortContent',
+          'cohortParticipants', 'cohortShare', 'cohortRank', 'cohortPeriod', 'cohortRanking',
+          'cohortRankingCaption', 'cohortPrivacy',
+          'cohortGlobalParticipants', 'cohortGlobalGross', 'cohortGlobalNet', 'cohortGlobalAgreement',
+          'cohortBackToRrhh', 'cohortDimensionSelect', 'cohortPeriodSelect', 'cohortCategorySelect',
+          'cohortGross', 'cohortWithholdings', 'cohortNet', 'cohortEmployer', 'cohortComposition',
+          'cohortChange', 'cohortControl', 'cohortParticipantAccounting', 'cohortTrend',
+          'cohortTrendCaption', 'cohortAssignmentEvidence', 'cohortReleaseEvidence', 'cohortRetry',
+          'cohortPresentationEvidence'
         ].forEach(function (id) { elements[id] = byId(id); });
       }
 
@@ -1428,6 +1693,510 @@
         var parsed = new Date(value + 'T12:00:00-03:00');
         if (Number.isNaN(parsed.getTime())) throw new Error('GRH_SOURCE_DATE_INVALID');
         return parsed;
+      }
+
+      function parseCohortRequest() {
+        var hasSearch = Boolean(window.location.search);
+        var hasCohortHash = window.location.hash === '#cohortContext';
+        if (!hasSearch) return { status: 'none' };
+        if (!hasSearch || !hasCohortHash) return { status: 'invalid' };
+        var params;
+        try {
+          params = new URLSearchParams(window.location.search);
+        } catch (error) {
+          return { status: 'invalid' };
+        }
+        var keys = Array.from(params.keys());
+        var required = ['cohort', 'company', 'code'];
+        var exact = keys.length === required.length &&
+          required.every(function (key) { return params.getAll(key).length === 1; }) &&
+          keys.every(function (key) { return required.indexOf(key) !== -1; });
+        var dimension = params.get('cohort');
+        var companyRaw = params.get('company');
+        var codeRaw = params.get('code');
+        if (!exact || ['sector', 'costCenter', 'agreement'].indexOf(dimension) === -1 ||
+            !/^[1-9]\d*$/.test(companyRaw || '') || !/^(?:0|[1-9]\d*)$/.test(codeRaw || '')) {
+          return { status: 'invalid' };
+        }
+        var companyCode = Number(companyRaw);
+        var sourceCode = Number(codeRaw);
+        if (!Number.isSafeInteger(companyCode) || !Number.isSafeInteger(sourceCode)) return { status: 'invalid' };
+        return { status: 'valid', dimension: dimension, companyCode: companyCode, sourceCode: sourceCode };
+      }
+
+      var COHORT_COMPONENTS = [
+        { key: 'grossWithFamilyAllowancesCents', label: 'Bruto con asignaciones' },
+        { key: 'contributoryEarningsCents', label: 'Remunerativo' },
+        { key: 'nonContributoryEarningsCents', label: 'No remunerativo' },
+        { key: 'familyAllowancesCents', label: 'Asignaciones familiares' },
+        { key: 'employeeWithholdingsCents', label: 'Retenciones' },
+        { key: 'netPayrollCents', label: 'Neto de control' },
+        { key: 'netToPayCents', label: 'Neto a pagar informado' },
+        { key: 'employerContributionsCents', label: 'Aportes patronales' }
+      ];
+
+      function cohortDimensionLabel(dimension) {
+        return {
+          sector: 'sector',
+          costCenter: 'centro de costo',
+          agreement: 'convenio'
+        }[dimension] || 'dimensión';
+      }
+
+      function cohortCellIdentity(cell) {
+        return String(cell.companyCode) + ':' + String(cell.sourceCode);
+      }
+
+      function cohortRowMatches(row, request) {
+        return row.privacyStatus === 'released' &&
+          row.companyCode === request.companyCode && row.sourceCode === request.sourceCode;
+      }
+
+      function cohortView(dimension) {
+        return state.workforceFinance && state.workforceFinance.dimensionViews.find(function (view) {
+          return view.dimension === dimension;
+        });
+      }
+
+      function cohortPeriodRow(view, period) {
+        return view && view.periods.find(function (row) { return row.period === period; });
+      }
+
+      function releasedCohortCells(row) {
+        return row.cells.filter(function (cell) { return cell.privacyStatus === 'released'; }).sort(function (left, right) {
+          return right.components.netPayrollCents - left.components.netPayrollCents ||
+            left.label.localeCompare(right.label, 'es');
+        });
+      }
+
+      function showCohortState(title, message, options) {
+        var config = options || {};
+        elements.cohortContext.hidden = false;
+        elements.cohortContext.setAttribute('aria-busy', state.workforceFinanceStatus === 'loading' ? 'true' : 'false');
+        delete elements.cohortContext.dataset.contract;
+        delete elements.cohortContext.dataset.sourceSha256;
+        delete elements.cohortContext.dataset.releaseId;
+        ['dimension', 'period', 'companyCode', 'sourceCode'].forEach(function (key) {
+          delete elements.cohortContent.dataset[key];
+        });
+        elements.cohortContent.hidden = true;
+        elements.cohortState.hidden = false;
+        setText(elements.cohortTitle, title);
+        setText(elements.cohortBadge, config.badge || 'grh-workforce-finance-v1 · k=10');
+        setText(elements.cohortStateText, message);
+        elements.cohortRetry.hidden = config.retry !== true;
+      }
+
+      function replaceSelectOptions(select, options, selected) {
+        select.replaceChildren();
+        options.forEach(function (item) {
+          var option = document.createElement('option');
+          option.value = item.value;
+          option.textContent = item.label;
+          option.selected = item.value === selected;
+          option.disabled = item.disabled === true;
+          select.appendChild(option);
+        });
+      }
+
+      function latestSelectableCohortPeriod(view) {
+        for (var index = view.periods.length - 1; index >= 0; index -= 1) {
+          if (view.periods[index].cells.some(function (cell) { return cell.privacyStatus === 'released'; })) {
+            return view.periods[index].period;
+          }
+        }
+        return null;
+      }
+
+      function initializeCohortSelection(finance) {
+        var request = state.cohortRequest;
+        state.cohortDeepLinkResolved = true;
+        state.cohortScrolled = false;
+        state.cohortDimension = request && request.status === 'valid' ? request.dimension : 'sector';
+        var view = finance.dimensionViews.find(function (item) { return item.dimension === state.cohortDimension; });
+        var target = null;
+        if (request && request.status === 'valid') {
+          for (var index = view.periods.length - 1; index >= 0 && !target; index -= 1) {
+            var match = view.periods[index].cells.find(function (cell) { return cohortRowMatches(cell, request); });
+            if (match) target = { period: view.periods[index].period, cell: match };
+          }
+          if (!target) {
+            state.cohortDeepLinkResolved = false;
+            state.cohortPeriod = finance.cohort.lastPeriod;
+            state.cohortCategory = null;
+            return;
+          }
+        } else {
+          var latestPeriod = latestSelectableCohortPeriod(view);
+          if (!latestPeriod) {
+            view = finance.dimensionViews.find(function (item) { return latestSelectableCohortPeriod(item); }) || view;
+            state.cohortDimension = view.dimension;
+            latestPeriod = latestSelectableCohortPeriod(view);
+          }
+          var latest = cohortPeriodRow(view, latestPeriod);
+          var first = latest && releasedCohortCells(latest)[0];
+          if (first) target = { period: latest.period, cell: first };
+        }
+        state.cohortPeriod = target ? target.period : latestSelectableCohortPeriod(view);
+        state.cohortCategory = target ? cohortCellIdentity(target.cell) : null;
+      }
+
+      function ensureCohortSelection(view, row) {
+        var cells = releasedCohortCells(row);
+        if (!cells.some(function (cell) { return cohortCellIdentity(cell) === state.cohortCategory; })) {
+          state.cohortCategory = cells.length ? cohortCellIdentity(cells[0]) : null;
+        }
+        return cells;
+      }
+
+      function renderCohortComposition(cell) {
+        elements.cohortComposition.replaceChildren();
+        var maximum = Math.max.apply(null, COHORT_COMPONENTS.map(function (item) {
+          return cell.components[item.key];
+        }).concat([1]));
+        COHORT_COMPONENTS.forEach(function (item) {
+          var row = document.createElement('div');
+          var label = document.createElement('span');
+          var track = document.createElement('span');
+          var bar = document.createElement('span');
+          var value = document.createElement('strong');
+          var amount = cell.components[item.key];
+          row.className = 'hac-cohort-component';
+          row.dataset.component = item.key;
+          row.dataset.valueCents = String(amount);
+          label.className = 'hac-cohort-component-label';
+          label.textContent = item.label;
+          track.className = 'hac-cohort-component-track';
+          bar.className = 'hac-cohort-component-bar';
+          bar.style.width = (amount / maximum * 100).toFixed(4) + '%';
+          track.appendChild(bar);
+          value.className = 'hac-cohort-component-value';
+          value.textContent = formatCentsCompact(amount);
+          row.setAttribute('aria-label', item.label + ': ' + formatCentsExact(amount));
+          row.append(label, track, value);
+          elements.cohortComposition.appendChild(row);
+        });
+      }
+
+      function renderCohortRanking(row, selected) {
+        elements.cohortRanking.replaceChildren();
+        var ordered = row.cells.slice().sort(function (left, right) {
+          return right.components.netPayrollCents - left.components.netPayrollCents ||
+            left.label.localeCompare(right.label, 'es');
+        });
+        var maximum = Math.max.apply(null, ordered.map(function (cell) {
+          return cell.components.netPayrollCents;
+        }).concat([1]));
+        ordered.forEach(function (cell) {
+          var item = document.createElement(cell.privacyStatus === 'released' ? 'button' : 'div');
+          var label = document.createElement('span');
+          var track = document.createElement('span');
+          var bar = document.createElement('span');
+          var value = document.createElement('strong');
+          var selectable = cell.privacyStatus === 'released';
+          if (selectable) {
+            item.type = 'button';
+            item.dataset.companyCode = String(cell.companyCode);
+            item.dataset.sourceCode = String(cell.sourceCode);
+          }
+          item.className = 'hac-cohort-rank';
+          item.dataset.privacy = cell.privacyStatus;
+          item.dataset.selected = cell === selected ? 'true' : 'false';
+          item.dataset.netPayrollCents = String(cell.components.netPayrollCents);
+          item.dataset.allocationSharePct = String(cell.allocationSharePct);
+          label.className = 'hac-cohort-rank-label';
+          label.textContent = cell.label;
+          track.className = 'hac-cohort-track';
+          bar.className = 'hac-cohort-bar';
+          bar.style.width = (cell.components.netPayrollCents / maximum * 100).toFixed(4) + '%';
+          track.appendChild(bar);
+          value.className = 'hac-cohort-rank-value';
+          value.textContent = formatCentsCompact(cell.components.netPayrollCents) + ' · ' +
+            percentFormatter.format(cell.allocationSharePct) + '%';
+          item.setAttribute('aria-label', cell.label + ': neto de control ' +
+            formatCentsExact(cell.components.netPayrollCents) + ', asignación ' +
+            percentFormatter.format(cell.allocationSharePct) + ' por ciento' +
+            (selectable ? '. Seleccionar categoría.' : '. Agregado protegido no seleccionable.'));
+          item.append(label, track, value);
+          elements.cohortRanking.appendChild(item);
+        });
+        setText(elements.cohortRankingCaption,
+          'Asignación del neto del período, no participación exclusiva de personas. Los conteos entre categorías no se suman.');
+      }
+
+      function renderCohortTrend(view, selected) {
+        elements.cohortTrend.replaceChildren();
+        var identity = cohortCellIdentity(selected);
+        var observations = view.periods.map(function (row) {
+          return {
+            period: row.period,
+            cell: row.cells.find(function (cell) {
+              return cell.privacyStatus === 'released' && cohortCellIdentity(cell) === identity;
+            }) || null
+          };
+        });
+        var series = [
+          { id: 'gross', key: 'grossWithFamilyAllowancesCents', label: 'Bruto' },
+          { id: 'net', key: 'netPayrollCents', label: 'Neto' },
+          { id: 'employer', key: 'employerContributionsCents', label: 'Aportes patronales' }
+        ];
+        var values = [];
+        observations.forEach(function (item) {
+          if (item.cell) series.forEach(function (definition) { values.push(item.cell.components[definition.key]); });
+        });
+        var maximum = Math.max.apply(null, values.concat([1]));
+        var width = 820;
+        var height = 280;
+        var padding = { top: 20, right: 22, bottom: 46, left: 70 };
+        var plotWidth = width - padding.left - padding.right;
+        var plotHeight = height - padding.top - padding.bottom;
+        var xAt = function (index) {
+          return padding.left + index * plotWidth / (observations.length - 1);
+        };
+        var yAt = function (value) {
+          return padding.top + (maximum - value) * plotHeight / maximum;
+        };
+        var titleId = 'cohortTrendSvgTitle';
+        var descriptionId = 'cohortTrendSvgDescription';
+        var svg = createSvg('svg', {
+          viewBox: '0 0 ' + width + ' ' + height,
+          role: 'img',
+          'aria-labelledby': titleId + ' ' + descriptionId
+        });
+        svg.appendChild(createSvg('title', { id: titleId }, 'Tendencia financiera de ' + selected.label));
+        svg.appendChild(createSvg('desc', { id: descriptionId },
+          'Veinticuatro meses de bruto, neto y aportes agregados. Las líneas se interrumpen cuando la membresía no es comparable, aunque los niveles monetarios publicados sí pueden compararse aritméticamente.'));
+        [0, 0.5, 1].forEach(function (ratio) {
+          var value = maximum * ratio;
+          var y = yAt(value);
+          svg.appendChild(createSvg('line', {
+            x1: padding.left, x2: width - padding.right, y1: y, y2: y,
+            class: 'hac-cohort-trend-grid'
+          }));
+          svg.appendChild(createSvg('text', {
+            x: padding.left - 9, y: y + 4, 'text-anchor': 'end'
+          }, formatCentsCompact(value)));
+        });
+        observations.forEach(function (item, index) {
+          svg.appendChild(createSvg('line', {
+            x1: xAt(index), x2: xAt(index), y1: height - padding.bottom,
+            y2: height - padding.bottom + 5, class: 'hac-cohort-trend-grid',
+            'data-period-slot': item.period
+          }));
+          if (index === 0 || index === observations.length - 1 || index % 4 === 0) {
+            svg.appendChild(createSvg('text', {
+              x: xAt(index), y: height - 18, 'text-anchor': 'middle'
+            }, monthLabel(item.period)));
+          }
+        });
+        series.forEach(function (definition) {
+          var segments = [];
+          var active = [];
+          observations.forEach(function (item, index) {
+            if (!item.cell) {
+              if (active.length > 1) segments.push(active);
+              active = [];
+              return;
+            }
+            var point = [xAt(index), yAt(item.cell.components[definition.key])];
+            var connects = active.length > 0 && item.cell.change.status === 'released';
+            if (!connects) {
+              if (active.length > 1) segments.push(active);
+              active = [point];
+            } else {
+              active.push(point);
+            }
+          });
+          if (active.length > 1) segments.push(active);
+          segments.forEach(function (segment) {
+            var path = segment.map(function (point, index) {
+              return (index ? 'L' : 'M') + point[0].toFixed(2) + ',' + point[1].toFixed(2);
+            }).join(' ');
+            svg.appendChild(createSvg('path', {
+              d: path, class: 'hac-cohort-trend-line', 'data-series': definition.id
+            }));
+          });
+          observations.forEach(function (item, index) {
+            if (!item.cell) return;
+            var amount = item.cell.components[definition.key];
+            var circle = createSvg('circle', {
+              cx: xAt(index), cy: yAt(amount), r: 4,
+              class: 'hac-cohort-trend-point',
+              'data-series': definition.id,
+              'data-period': item.period,
+              'data-value-cents': amount
+            });
+            addSvgTitle(circle, definition.label + ' · ' + monthLabel(item.period) + ': ' + formatCentsExact(amount));
+            svg.appendChild(circle);
+          });
+        });
+        elements.cohortTrend.appendChild(svg);
+        elements.cohortTrend.dataset.periodSlots = String(observations.length);
+        elements.cohortTrend.dataset.availablePeriods = String(observations.filter(function (item) { return item.cell; }).length);
+        setText(elements.cohortTrendCaption,
+          'Niveles agregados publicados en ' + observations.filter(function (item) { return item.cell; }).length +
+          ' de 24 meses. La línea sólo une meses con membresía comparable; los niveles monetarios visibles siguen siendo aritméticamente comparables.');
+      }
+
+      function cohortChangeText(change) {
+        if (change.status === 'released') {
+          return formatSignedCentsCompact(change.netPayrollDeltaCents) + ' · ' +
+            (change.netPayrollDeltaPct === null ? 'base previa cero' :
+              (change.netPayrollDeltaPct >= 0 ? '+' : '') + percentFormatter.format(change.netPayrollDeltaPct) + '%') +
+            ' frente a ' + monthLabel(change.previousPeriod);
+        }
+        return {
+          pending_comparison: 'Primer período de la ventana; sin mes previo.',
+          privacy_protected: 'El servidor no publica un indicador de cambio; los niveles monetarios visibles siguen siendo comparables.',
+          protected_bucket_composition: 'La composición del agregado cambió; se muestran niveles, no un delta de cohorte estable.',
+          previous_period_missing: 'Mes previo no disponible.',
+          category_not_comparable: 'Categoría no comparable entre ambos meses.',
+          membership_change_protected: 'Membresía protegida; sin indicador de delta. Los niveles monetarios visibles siguen siendo comparables.',
+          participant_count_protected: 'Conteo protegido; sin indicador de delta. Los niveles monetarios visibles siguen siendo comparables.'
+        }[change.reason] || 'Cambio mensual no publicado.';
+      }
+
+      function cohortControlText(cell) {
+        if (cell.control.identityWithinRoundingTolerance === null) {
+          return 'Control aritmético publicado; tolerancia ligada al conteo protegida.';
+        }
+        return (cell.control.identityWithinRoundingTolerance ? 'Dentro de tolerancia' : 'Fuera de tolerancia') +
+          ' · residual ' + formatSignedCentsCompact(cell.control.netIdentityVarianceCents);
+      }
+
+      function cohortAccountingText(accounting) {
+        if (accounting.multiCategoryPrivacyStatus === 'protected') {
+          return 'Existe solapamiento entre categorías; su magnitud está protegida.';
+        }
+        if (accounting.multiCategoryPrivacyStatus === 'not_observed') {
+          return 'Sin solapamiento observado en este período.';
+        }
+        return numberFormatter.format(accounting.multiCategoryParticipants) +
+          ' participantes aparecen en más de una categoría; no sumar conteos.';
+      }
+
+      function renderCohortContext() {
+        var request = state.cohortRequest;
+        if (request && request.status === 'invalid') {
+          showCohortState('Enlace financiero no válido',
+            'La consulta fue rechazada. Sólo se admiten empresa y código para una dimensión agregada; nunca nombres ni legajos.');
+          return;
+        }
+        if (state.workforceFinanceStatus === 'error') {
+          showCohortState('Análisis financiero temporalmente no disponible',
+            'El resto de Hacienda continúa operativo. Esta proyección quedó cerrada porque no pudo validar fuente, contrato o permisos.',
+            { retry: true });
+          return;
+        }
+        if (state.workforceFinanceStatus === 'loading' || !state.workforceFinance) {
+          showCohortState('Análisis financiero por dimensión observada',
+            'Validando 24 meses de cálculo, privacidad y procedencia…');
+          return;
+        }
+        if (state.cohortDeepLinkResolved === false) {
+          showCohortState('Categoría financiera no publicada',
+            'El enlace solicitado no identifica una celda liberada en los 24 meses gobernados. No se reconstruyen ni estiman cifras protegidas.');
+          return;
+        }
+        var finance = state.workforceFinance;
+        var view = cohortView(state.cohortDimension);
+        var row = cohortPeriodRow(view, state.cohortPeriod);
+        if (!view || !row) {
+          showCohortState('Análisis financiero no verificable',
+            'La selección no pertenece a la ventana gobernada.');
+          return;
+        }
+        var cells = ensureCohortSelection(view, row);
+        var selected = cells.find(function (cell) { return cohortCellIdentity(cell) === state.cohortCategory; });
+        if (!selected) {
+          showCohortState('Categoría financiera no publicada',
+            'No hay una categoría liberada para esta selección.');
+          return;
+        }
+        var total = finance.periodTotals.find(function (item) { return item.period === row.period; });
+        var dimensionLabel = cohortDimensionLabel(view.dimension);
+        replaceSelectOptions(elements.cohortDimensionSelect, [
+          { value: 'sector', label: 'Sector' },
+          { value: 'costCenter', label: 'Centro de costo' },
+          { value: 'agreement', label: 'Convenio' }
+        ].map(function (item) {
+          item.disabled = !latestSelectableCohortPeriod(cohortView(item.value));
+          return item;
+        }), state.cohortDimension);
+        replaceSelectOptions(elements.cohortPeriodSelect, view.periods.slice().reverse().map(function (item) {
+          var selectable = item.cells.some(function (cell) { return cell.privacyStatus === 'released'; });
+          return {
+            value: item.period,
+            label: monthLabel(item.period) + (selectable ? '' : ' · protegido'),
+            disabled: !selectable
+          };
+        }), state.cohortPeriod);
+        replaceSelectOptions(elements.cohortCategorySelect, cells.map(function (cell) {
+          return {
+            value: cohortCellIdentity(cell),
+            label: cell.label + ' · ' + percentFormatter.format(cell.allocationSharePct) + '% del neto'
+          };
+        }), state.cohortCategory);
+
+        elements.cohortContext.hidden = false;
+        elements.cohortContext.setAttribute('aria-busy', 'false');
+        elements.cohortState.hidden = true;
+        elements.cohortContent.hidden = false;
+        elements.cohortRetry.hidden = true;
+        elements.cohortContext.dataset.contract = finance.schemaVersion;
+        elements.cohortContext.dataset.sourceSha256 = finance.source.sourceSha256;
+        elements.cohortContext.dataset.releaseId = finance.releaseId;
+        elements.cohortContent.dataset.dimension = view.dimension;
+        elements.cohortContent.dataset.period = row.period;
+        elements.cohortContent.dataset.companyCode = String(selected.companyCode);
+        elements.cohortContent.dataset.sourceCode = String(selected.sourceCode);
+        setText(elements.cohortTitle, 'Análisis financiero · ' + selected.label);
+        setText(elements.cohortSubtitle,
+          'Bruto, retenciones, neto y aportes por ' + dimensionLabel +
+          ' observado en la corrida; no es estado contractual de una persona.');
+        setText(elements.cohortBadge, dimensionLabel + ' · grh-workforce-finance-v1 · k=' + finance.privacy.threshold);
+        setText(elements.cohortParticipants, selected.participantDisplay);
+        setText(elements.cohortShare, percentFormatter.format(selected.allocationSharePct) + '%');
+        setText(elements.cohortRank, (cells.indexOf(selected) + 1) + ' de ' + cells.length + ' liberadas');
+        setText(elements.cohortPeriod, monthLabel(row.period));
+        setText(elements.cohortGross, formatCentsCompact(selected.components.grossWithFamilyAllowancesCents));
+        setText(elements.cohortWithholdings, formatCentsCompact(selected.components.employeeWithholdingsCents));
+        setText(elements.cohortNet, formatCentsCompact(selected.components.netPayrollCents));
+        setText(elements.cohortEmployer, formatCentsCompact(selected.components.employerContributionsCents));
+        setText(elements.cohortChange, cohortChangeText(selected.change));
+        setText(elements.cohortControl, cohortControlText(selected));
+        setText(elements.cohortParticipantAccounting, cohortAccountingText(row.participantAccounting));
+        setText(elements.cohortPrivacy,
+          selected.participantPrivacyStatus === 'released'
+            ? 'Importes y conteo agregados liberados · k=' + finance.privacy.threshold
+            : 'Importes agregados liberados; conteo protegido contra diferencias.');
+        renderCohortComposition(selected);
+        renderCohortTrend(view, selected);
+        renderCohortRanking(row, selected);
+
+        setText(elements.cohortAssignmentEvidence,
+          'Dimensión observada en cada corrida de cálculo; no situación contractual ni asignación histórica inferida.');
+        setText(elements.cohortReleaseEvidence,
+          'k=' + finance.privacy.threshold + ' · supresión primaria, complementaria, temporal y coordinada entre vistas.');
+        setText(elements.cohortPresentationEvidence,
+          finance.metric.presentationCurrency + ' por configuración municipal; GRH no declara moneda de origen.');
+        setText(elements.cohortGlobalParticipants, numberFormatter.format(total.participantCount));
+        setText(elements.cohortGlobalGross, formatCentsCompact(total.components.grossWithFamilyAllowancesCents));
+        setText(elements.cohortGlobalNet, formatCentsCompact(total.components.netPayrollCents));
+        setText(elements.cohortGlobalAgreement, percentFormatter.format(total.reconciliation.valueAgreementPct) + '%');
+        elements.cohortBackToRrhh.href = view.dimension === 'sector'
+          ? 'rrhh.html?sector=' + encodeURIComponent(String(selected.sourceCode)) + '#peopleDirectory'
+          : 'rrhh.html#workforceDistribution';
+        elements.cohortBackToRrhh.textContent = view.dimension === 'sector'
+          ? 'Directorio general del sector (no cohorte)'
+          : 'Abrir distribución general en RRHH';
+        if (request && request.status === 'valid' && !state.cohortScrolled) {
+          state.cohortScrolled = true;
+          window.setTimeout(function () {
+            elements.cohortContext.scrollIntoView({ block: 'start' });
+            elements.cohortTitle.focus({ preventScroll: true });
+          }, 0);
+        }
       }
 
       function normalizeCompensation(experience) {
@@ -2498,6 +3267,7 @@
       function renderAll() {
         renderSource();
         renderKpis();
+        renderCohortContext();
         renderClose();
         renderRadar();
         renderChart();
@@ -2556,9 +3326,58 @@
           close.source.canonicalSystem === experience.executive.source.canonicalSystem;
       }
 
+      function sameWorkforceFinanceSource(finance) {
+        var source = state.experience.executive.source;
+        var presentation = state.presentation;
+        return finance.source.sourceSha256 === source.sourceSha256 &&
+          finance.source.snapshotAsOf === source.snapshotAsOf &&
+          finance.source.canonicalSystem === source.canonicalSystem &&
+          finance.metric.presentationSchemaVersion === presentation.schemaVersion &&
+          finance.metric.presentationCurrency === presentation.displayCurrencyCode &&
+          finance.metric.presentationCurrencyBasis === presentation.displayCurrencyBasis &&
+          finance.metric.presentationCurrencyEffectiveOn === presentation.displayCurrencyEffectiveOn &&
+          finance.metric.presentationLocale === presentation.locale &&
+          finance.metric.sourceCurrencyStatus === presentation.sourceCurrencyStatus;
+      }
+
+      async function loadWorkforceFinance(sequence) {
+        if (state.cohortRequest && state.cohortRequest.status === 'invalid') return;
+        state.workforceFinance = null;
+        state.workforceFinanceStatus = 'loading';
+        state.workforceFinanceError = null;
+        state.cohortDeepLinkResolved = null;
+        renderCohortContext();
+        try {
+          if (!window.MuniGrhWorkforceFinance ||
+              typeof window.MuniGrhWorkforceFinance.load !== 'function') {
+            throw new Error('GRH_WORKFORCE_FINANCE_CLIENT_UNAVAILABLE');
+          }
+          var finance = await window.MuniGrhWorkforceFinance.load({ timeoutMs: 12000 });
+          if (sequence !== state.loadSequence) return;
+          if (!sameWorkforceFinanceSource(finance)) {
+            throw new Error('GRH_WORKFORCE_FINANCE_SOURCE_MISMATCH');
+          }
+          state.workforceFinance = finance;
+          state.workforceFinanceStatus = 'ready';
+          initializeCohortSelection(finance);
+          renderCohortContext();
+        } catch (error) {
+          if (sequence !== state.loadSequence) return;
+          state.workforceFinance = null;
+          state.workforceFinanceStatus = 'error';
+          state.workforceFinanceError = error && (error.code || error.message) || 'GRH_WORKFORCE_FINANCE_UNAVAILABLE';
+          renderCohortContext();
+        }
+      }
+
       async function loadExperience() {
         var sequence = state.loadSequence + 1;
         state.loadSequence = sequence;
+        state.workforceFinance = null;
+        state.workforceFinanceStatus = 'loading';
+        state.workforceFinanceError = null;
+        state.cohortDeepLinkResolved = null;
+        state.cohortScrolled = false;
         elements.loadError.hidden = true;
         elements.haciendaDataViews.hidden = true;
         elements.haciendaDashboard.setAttribute('aria-busy', 'true');
@@ -2591,6 +3410,7 @@
           state.latest = normalized.released[normalized.released.length - 1];
           state.protectedPeriods = normalized.protectedPeriods;
           renderAll();
+          loadWorkforceFinance(sequence);
         } catch (error) {
           if (sequence !== state.loadSequence) return;
           showError();
@@ -2635,12 +3455,45 @@
             openRadarPeriod(button.dataset.radarOpenPeriod);
           }
         });
+        elements.cohortDimensionSelect.addEventListener('change', function (event) {
+          if (!state.workforceFinance || state.workforceFinanceStatus !== 'ready') return;
+          state.cohortDimension = event.target.value;
+          state.cohortPeriod = latestSelectableCohortPeriod(cohortView(state.cohortDimension));
+          state.cohortCategory = null;
+          state.cohortDeepLinkResolved = true;
+          renderCohortContext();
+        });
+        elements.cohortPeriodSelect.addEventListener('change', function (event) {
+          if (!state.workforceFinance || state.workforceFinanceStatus !== 'ready') return;
+          state.cohortPeriod = event.target.value;
+          state.cohortCategory = null;
+          state.cohortDeepLinkResolved = true;
+          renderCohortContext();
+        });
+        elements.cohortCategorySelect.addEventListener('change', function (event) {
+          if (!state.workforceFinance || state.workforceFinanceStatus !== 'ready') return;
+          state.cohortCategory = event.target.value;
+          state.cohortDeepLinkResolved = true;
+          renderCohortContext();
+        });
+        elements.cohortRanking.addEventListener('click', function (event) {
+          var button = event.target.closest('button[data-company-code][data-source-code]');
+          if (!button || !elements.cohortRanking.contains(button) ||
+              !state.workforceFinance || state.workforceFinanceStatus !== 'ready') return;
+          state.cohortCategory = button.dataset.companyCode + ':' + button.dataset.sourceCode;
+          state.cohortDeepLinkResolved = true;
+          renderCohortContext();
+        });
         elements.parityRange.addEventListener('input', renderSimulator);
         elements.retryLoad.addEventListener('click', loadAuthorizedExperience);
+        elements.cohortRetry.addEventListener('click', function () {
+          if (state.experience && state.presentation) loadWorkforceFinance(state.loadSequence);
+        });
       }
 
       async function init() {
         cacheElements();
+        state.cohortRequest = parseCohortRequest();
         bindEvents();
         if (typeof window.buildSidebar === 'function') window.buildSidebar('hacienda');
         if (!await requirePageCapability()) return;

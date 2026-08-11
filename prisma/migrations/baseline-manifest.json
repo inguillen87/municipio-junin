@@ -12,13 +12,17 @@
     "directory": "20260809220336_baseline",
     "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
   },
-  "schemaSha256": "1953c275cec5415a0508d77dcd433f65a7124bcc5c22c6ac7c52c61ccd9afb4d",
-  "migrationHistorySha256": "f42aa4107d44f4b9e8949187f099f0f1700bd100c346edfe900a0bfb4efb48ef",
-  "migrationSetId": "prisma-set-075152dc94eadb7865ed91e952e17ef20cf0e21c5e91b5720277eb08c7b466be",
+  "schemaSha256": "bf749e18cf66d49953c5533ee76bd922c395f917cc7be7ff0f9b6d01183d208e",
+  "migrationHistorySha256": "9f0b2c2990bd63da701ac9b9bec8a27a685dabf507a6d52cb1fec2e13848baaf",
+  "migrationSetId": "prisma-set-c8e971506f972f971ebff466fc3592eb0e6c1829f770d3933715a1cb5a7941cb",
   "migrations": [
     {
       "directory": "20260809220336_baseline",
       "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
+    },
+    {
+      "directory": "20260811122648_grh_directory_enterprise_authz",
+      "sha256": "3633447eefbca9e94b48e26a43fee1e6ea12e75fb1c300b6e6d3dc856f48a96e"
     }
   ]
 }

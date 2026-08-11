@@ -5,6 +5,12 @@ const { isSuperAdmin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 const GRH_DIRECTORY_SNAPSHOT_PAYLOAD_ACTION = 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1';
+const GRH_WORKFORCE_FINANCE_SNAPSHOT_PAYLOAD_ACTION =
+  'GRH_WORKFORCE_FINANCE_SNAPSHOT_PAYLOAD_V1';
+const PRIVATE_SNAPSHOT_PAYLOAD_ACTIONS = Object.freeze([
+  GRH_DIRECTORY_SNAPSHOT_PAYLOAD_ACTION,
+  GRH_WORKFORCE_FINANCE_SNAPSHOT_PAYLOAD_ACTION,
+]);
 let prisma;
 try { prisma = require('../lib/prisma'); } catch { prisma = null; }
 
@@ -104,7 +110,7 @@ router.get('/audit', ...isSuperAdmin, async (req, res) => {
   try {
     const logs = await prisma.auditLog.findMany({
       where: {
-        action: { not: GRH_DIRECTORY_SNAPSHOT_PAYLOAD_ACTION },
+        action: { notIn: PRIVATE_SNAPSHOT_PAYLOAD_ACTIONS },
       },
       include: { user: { select: { name: true, email: true } }, tenant: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
@@ -112,7 +118,9 @@ router.get('/audit', ...isSuperAdmin, async (req, res) => {
     });
     // Defense in depth: even if a mock, proxy, or future persistence adapter
     // ignores the query predicate, a private snapshot envelope is never emitted.
-    const serializableLogs = logs.filter(log => log?.action !== GRH_DIRECTORY_SNAPSHOT_PAYLOAD_ACTION);
+    const serializableLogs = logs.filter(
+      log => !PRIVATE_SNAPSHOT_PAYLOAD_ACTIONS.includes(log?.action),
+    );
     return res.json({ ok: true, source: 'postgresql', data: serializableLogs });
   } catch (error) {
     console.error('[ADMIN-AUDIT]', error.message);

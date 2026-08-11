@@ -8,6 +8,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import accessPolicy from '../shared/access-policy.cjs';
+import { inspectGrhDirectoryAccessResponse } from '../api/lib/grh-directory-access-contract.js';
 import { inspectGrhDirectoryResponse } from '../api/lib/grh-directory-contract.js';
 import { buildGrhExecutiveProjection } from '../api/lib/grh-executive-projection.js';
 import { buildGrhQualityProjection } from '../api/lib/grh-quality-projection.js';
@@ -192,6 +193,26 @@ function fakeBrowserToken() {
   })}.qa`;
 }
 
+function directoryAccessPayload(status = 'static') {
+  const payload = {
+    schemaVersion: 'grh-directory-access-v1',
+    status,
+    policyVersion: status === 'static' ? 'static:2026-08-11.2' : 'grh-directory-policy-shadow-v1',
+    permission: 'grh.directory:read',
+    scope: { kind: 'TENANT', label: 'Municipio actual', organizationCount: null },
+    validity: { validFrom: null, validUntil: null },
+    audit: {
+      required: status !== 'static',
+      purposes: ['DIRECTORY_BROWSE', 'PERSON_LOOKUP', 'LEAVE_REVIEW'],
+      storesPersonalQuery: false,
+    },
+    limits: ['private_identity_required', 'purpose_required', 'tenant_bound', 'no_public_demo', 'no_raw_export'],
+  };
+  const inspection = inspectGrhDirectoryAccessResponse(payload);
+  assert.equal(inspection.ok, true, inspection.errors.join(', '));
+  return payload;
+}
+
 async function createServer(requestLog, availability = { unavailable: false }, options = {}) {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
@@ -203,11 +224,43 @@ async function createServer(requestLog, availability = { unavailable: false }, o
       response.end(`window.__muniAuthValidated = true; window.MuniAuthReady = Promise.resolve(true); ${malformed}`);
       return;
     }
+    if (url.pathname === '/api/grh-directory-access') {
+      requestLog.push({
+        path: url.pathname,
+        authorization: request.headers.authorization || '',
+        cacheControl: request.headers['cache-control'] || '',
+        query: Object.fromEntries(url.searchParams),
+      });
+      const accessMode = options.directoryAccessState?.mode || options.directoryAccessMode || 'allowed';
+      if (accessMode === 'allowed' || accessMode === 'invalid') {
+        const payload = directoryAccessPayload();
+        if (accessMode === 'invalid') payload.audit.required = true;
+        response.writeHead(200, {
+          'Content-Type': CONTENT_TYPES['.json'],
+          'Cache-Control': 'no-store, private',
+          'X-Content-Type-Options': 'nosniff',
+          'X-MuniControl-Contract': 'grh-directory-access-v1',
+        });
+        response.end(JSON.stringify(payload));
+        return;
+      }
+      response.writeHead(accessMode === 'unavailable' ? 503 : 403, {
+        'Content-Type': CONTENT_TYPES['.json'],
+        'Cache-Control': 'no-store, private',
+        'X-Content-Type-Options': 'nosniff',
+        'X-MuniControl-Contract': 'grh-directory-access-v1',
+      });
+      response.end(JSON.stringify({
+        code: accessMode === 'unavailable' ? 'GRH_DIRECTORY_ACCESS_UNAVAILABLE' : 'GRH_DIRECTORY_ACCESS_DENIED',
+      }));
+      return;
+    }
     if (url.pathname === '/api/grh-directory') {
       requestLog.push({
         path: url.pathname,
         authorization: request.headers.authorization || '',
         unavailable: false,
+        purpose: request.headers['x-municontrol-purpose'] || '',
         query: Object.fromEntries(url.searchParams),
       });
       const directoryMode = options.directoryMode || 'denied';
@@ -455,6 +508,7 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
     await page.goto(`${baseUrl}/rrhh.html`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#rrhhDashboard[aria-busy="false"]:not([hidden])');
     await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'denied');
+    await page.waitForFunction(() => document.querySelector('#directoryAccessPanel')?.dataset.state === 'static');
     const collapsed = await page.evaluate(() => {
       const dashboard = document.querySelector('#rrhhDashboard');
       const mainText = document.querySelector('main')?.textContent || '';
@@ -495,6 +549,15 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
         directorySearchDisabled: document.querySelector('#directorySearch')?.disabled,
         directoryFormLocked: document.querySelector('#directoryForm')?.dataset.locked,
         privateAccessVisible: !document.querySelector('#directoryPrivateAccess')?.hidden,
+        accessState: document.querySelector('#directoryAccessPanel')?.dataset.state,
+        accessStatus: document.querySelector('#directoryAccessStatus')?.textContent.trim(),
+        accessScope: document.querySelector('#directoryAccessScope')?.textContent.trim(),
+        accessValidity: document.querySelector('#directoryAccessValidity')?.textContent.trim(),
+        accessAudit: document.querySelector('#directoryAccessAudit')?.textContent.trim(),
+        accessLimits: document.querySelector('#directoryAccessLimits')?.textContent.trim(),
+        accessErrorHidden: document.querySelector('#directoryAccessError')?.hidden,
+        accessRetryHidden: document.querySelector('#directoryAccessRetry')?.hidden,
+        accessPanelText: document.querySelector('#directoryAccessPanel')?.textContent.replace(/\s+/g, ' ').trim(),
         actionCount: document.querySelectorAll('.rrhh-actions .rrhh-action').length,
         busy: dashboard?.getAttribute('aria-busy'),
         duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
@@ -538,6 +601,15 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
     assert.equal(collapsed.directorySearchDisabled, true);
     assert.equal(collapsed.directoryFormLocked, 'true');
     assert.equal(collapsed.privateAccessVisible, true);
+    assert.equal(collapsed.accessState, 'static');
+    assert.equal(collapsed.accessStatus, 'Piloto privado actual');
+    assert.equal(collapsed.accessScope, 'Municipio completo');
+    assert.equal(collapsed.accessValidity, 'Sin vigencia persistida');
+    assert.equal(collapsed.accessAudit, 'Pendiente de activación');
+    assert.equal(collapsed.accessLimits, '5 controles activos');
+    assert.equal(collapsed.accessErrorHidden, true);
+    assert.equal(collapsed.accessRetryHidden, true);
+    assert.doesNotMatch(collapsed.accessPanelText, /tenant-junin-test|grh\.directory|DIRECTORY_BROWSE|PERSON_LOOKUP|LEAVE_REVIEW|\b100\b|ALVAREZ/i);
     assert.equal(collapsed.actionCount, 5);
     assert.equal(collapsed.busy, 'false');
     assert.deepEqual(collapsed.duplicateIds, []);
@@ -590,9 +662,9 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
     await context.close();
   }
 
-  assert.equal(requestLog.length, viewports.length * 3);
+  assert.equal(requestLog.length, viewports.length * 4);
   assert.deepEqual(requestLog.map(item => item.path).sort(), viewports.flatMap(() => [
-    '/api/grh-directory', '/api/grh-executive', '/api/grh-quality',
+    '/api/grh-directory', '/api/grh-directory-access', '/api/grh-executive', '/api/grh-quality',
   ]).sort());
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
 });
@@ -614,6 +686,7 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   await page.goto(`${baseUrl}/rrhh.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'ready');
+  await page.waitForFunction(() => document.querySelector('#directoryAccessPanel')?.dataset.state === 'static');
 
   let directory = await page.evaluate(() => ({
     count: document.querySelector('#directoryResultCount')?.textContent.trim(),
@@ -658,12 +731,23 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
 
   await page.click('#directoryTableBody .rrhh-person-open');
   await page.waitForSelector('#personDialogContent:not([hidden])');
+  const requestsAfterPersonLoad = requestLog.length;
   const person = await page.evaluate(() => ({
     title: document.querySelector('#personDialogTitle')?.textContent.trim(),
     subtitle: document.querySelector('#personDialogSubtitle')?.textContent.trim(),
     dimensions: document.querySelector('#personDimensions')?.textContent.replace(/\s+/g, ' ').trim(),
     events: document.querySelector('#personEvents')?.textContent.replace(/\s+/g, ' ').trim(),
     leaves: Array.from(document.querySelectorAll('#personLeaveHistoryList li'), item => item.textContent.trim()),
+    sectorCohort: {
+      hidden: document.querySelector('#personHaciendaSector')?.hidden,
+      href: document.querySelector('#personHaciendaSector')?.getAttribute('href'),
+      text: document.querySelector('#personHaciendaSector')?.textContent.trim(),
+    },
+    agreementCohort: {
+      hidden: document.querySelector('#personHaciendaAgreement')?.hidden,
+      href: document.querySelector('#personHaciendaAgreement')?.getAttribute('href'),
+      text: document.querySelector('#personHaciendaAgreement')?.textContent.trim(),
+    },
     text: document.querySelector('#personDialog')?.textContent || '',
   }));
   assert.equal(person.title, 'ALVAREZ, ANA');
@@ -678,6 +762,34 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   assert.match(person.events, /No incluido en esta extracción nominal/);
   assert.equal(person.leaves.length, 2);
   assert.doesNotMatch(person.text, /\b(?:DNI|CUIL|domicilio|salario|cuenta bancaria|causa)\b/i);
+  assert.deepEqual(person.sectorCohort, {
+    hidden: false,
+    href: 'hacienda.html?cohort=sector&company=1&code=10#cohortContext',
+    text: 'Analizar finanzas del sector',
+  });
+  assert.deepEqual(person.agreementCohort, {
+    hidden: false,
+    href: 'hacienda.html?cohort=agreement&company=1&code=1#cohortContext',
+    text: 'Analizar finanzas del convenio',
+  });
+  for (const [dimension, href] of [
+    ['sector', person.sectorCohort.href],
+    ['agreement', person.agreementCohort.href],
+  ]) {
+    const target = new URL(href, 'https://municipio.example/rrhh.html');
+    assert.equal(target.pathname, '/hacienda.html');
+    assert.equal(target.hash, '#cohortContext');
+    assert.deepEqual(Array.from(target.searchParams), [
+      ['cohort', dimension],
+      ['company', '1'],
+      ['code', dimension === 'sector' ? '10' : '1'],
+    ]);
+    assert.equal(target.searchParams.has('name'), false);
+    assert.equal(target.searchParams.has('nombre'), false);
+    assert.equal(target.searchParams.has('legajo'), false);
+  }
+  await page.waitForTimeout(50);
+  assert.equal(requestLog.length, requestsAfterPersonLoad, 'rendering cohort CTAs issues zero extra requests');
   await page.click('#personDialogClose');
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -695,9 +807,84 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
     await page.screenshot({ path: path.join(tmpdir(), 'rrhh-directory-authorized-mobile.png'), fullPage: true });
   }
   assert.deepEqual(consoleErrors, []);
-  assert.ok(requestLog.filter(entry => entry.path === '/api/grh-directory').length >= 5);
+  const directoryRequests = requestLog.filter(entry => entry.path === '/api/grh-directory');
+  assert.ok(directoryRequests.length >= 5);
+  assert.equal(directoryRequests.every(entry => (
+    entry.query.legajo ? entry.purpose === 'PERSON_LOOKUP' : entry.purpose === 'DIRECTORY_BROWSE'
+  )), true);
+  const accessRequests = requestLog.filter(entry => entry.path === '/api/grh-directory-access');
+  assert.equal(accessRequests.length, 2);
+  assert.equal(accessRequests.every(entry => Object.keys(entry.query).length === 0), true);
   assert.equal(requestLog.every(entry => entry.authorization.startsWith('Bearer ')), true);
   await context.close();
+});
+
+test('RRHH access panel fails closed on malformed contracts and recovers from 403 or 503', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => browser.close());
+
+  for (const scenario of [
+    { mode: 'denied', state: 'denied', status: 'No habilitado', error: /perfil no tiene habilitado/i },
+    { mode: 'unavailable', state: 'unavailable', status: 'No disponible', error: /servicio de permisos no responde/i },
+    { mode: 'invalid', state: 'invalid', status: 'No verificable', error: /respuesta de acceso no pudo verificarse/i },
+  ]) {
+    const requestLog = [];
+    const directoryAccessState = { mode: scenario.mode };
+    const server = await createServer(requestLog, { unavailable: false }, {
+      directoryMode: 'allowed',
+      directoryAccessState,
+    });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    try {
+      const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await seedSession(context);
+      const page = await context.newPage();
+      await page.goto(`${baseUrl}/rrhh.html`, { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(expected => (
+        document.querySelector('#directoryAccessPanel')?.dataset.state === expected
+      ), scenario.state);
+      await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'ready');
+
+      const failed = await page.evaluate(() => ({
+        status: document.querySelector('#directoryAccessStatus')?.textContent.trim(),
+        scope: document.querySelector('#directoryAccessScope')?.textContent.trim(),
+        validity: document.querySelector('#directoryAccessValidity')?.textContent.trim(),
+        audit: document.querySelector('#directoryAccessAudit')?.textContent.trim(),
+        limits: document.querySelector('#directoryAccessLimits')?.textContent.trim(),
+        error: document.querySelector('#directoryAccessError')?.textContent.trim(),
+        errorHidden: document.querySelector('#directoryAccessError')?.hidden,
+        retryHidden: document.querySelector('#directoryAccessRetry')?.hidden,
+      }));
+      assert.equal(failed.status, scenario.status);
+      assert.deepEqual({ scope: failed.scope, validity: failed.validity, audit: failed.audit }, {
+        scope: '—', validity: '—', audit: '—',
+      });
+      assert.equal(failed.limits, 'Sin confirmación');
+      assert.match(failed.error, scenario.error);
+      assert.equal(failed.errorHidden, false);
+      assert.equal(failed.retryHidden, false);
+
+      let accessRequests = requestLog.filter(entry => entry.path === '/api/grh-directory-access');
+      assert.equal(accessRequests.length, 1);
+      assert.deepEqual(accessRequests[0].query, {});
+      assert.match(accessRequests[0].authorization, /^Bearer /);
+
+      directoryAccessState.mode = 'allowed';
+      await page.click('#directoryAccessRetry');
+      await page.waitForFunction(() => document.querySelector('#directoryAccessPanel')?.dataset.state === 'static');
+      const recovered = await page.evaluate(() => ({
+        status: document.querySelector('#directoryAccessStatus')?.textContent.trim(),
+        retryHidden: document.querySelector('#directoryAccessRetry')?.hidden,
+        errorHidden: document.querySelector('#directoryAccessError')?.hidden,
+      }));
+      assert.deepEqual(recovered, { status: 'Piloto privado actual', retryHidden: true, errorHidden: true });
+      accessRequests = requestLog.filter(entry => entry.path === '/api/grh-directory-access');
+      assert.equal(accessRequests.length, 2);
+      await context.close();
+    } finally {
+      await new Promise(resolve => server.close(resolve));
+    }
+  }
 });
 
 test('RRHH opens an authorized IA deep-link only after the initial directory authorization', { skip: !HAS_PRIVATE_GRH }, async t => {
@@ -743,6 +930,8 @@ test('RRHH opens an authorized IA deep-link only after the initial directory aut
   assert.equal(directoryRequests.length, 2);
   assert.deepEqual(directoryRequests[0].query, { page: '1', limit: '20' });
   assert.deepEqual(directoryRequests[1].query, { legajo: '1001', company: '1' });
+  assert.equal(directoryRequests[0].purpose, 'DIRECTORY_BROWSE');
+  assert.equal(directoryRequests[1].purpose, 'PERSON_LOOKUP');
 
   await page.click('#personDialogClose');
   await page.fill('#directorySearch', 'ALVAREZ');
@@ -752,6 +941,7 @@ test('RRHH opens an authorized IA deep-link only after the initial directory aut
   assert.equal(page.url(), target);
   directoryRequests = requestLog.filter(entry => entry.path === '/api/grh-directory');
   assert.deepEqual(directoryRequests.at(-1).query, { page: '1', limit: '20', search: 'ALVAREZ' });
+  assert.equal(directoryRequests.at(-1).purpose, 'DIRECTORY_BROWSE');
   await context.close();
 });
 
@@ -797,6 +987,7 @@ test('RRHH applies authorized organization and absence deep-links on their first
     organization: '100',
     hasAbsence: 'true',
   });
+  assert.equal(directoryRequests[0].purpose, 'DIRECTORY_BROWSE');
 
   const zeroCodeTarget = `${baseUrl}/rrhh?organization=0&hasAbsence=true#peopleDirectory`;
   await page.goto(zeroCodeTarget, { waitUntil: 'domcontentloaded' });
@@ -805,6 +996,7 @@ test('RRHH applies authorized organization and absence deep-links on their first
     requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).query,
     { page: '1', limit: '20', organization: '0', hasAbsence: 'true' },
   );
+  assert.equal(requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).purpose, 'DIRECTORY_BROWSE');
   assert.equal(page.url(), zeroCodeTarget);
 
   const absenceTarget = `${baseUrl}/rrhh?hasAbsence=true#peopleDirectory`;
@@ -820,6 +1012,7 @@ test('RRHH applies authorized organization and absence deep-links on their first
     requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).query,
     { page: '1', limit: '20', hasAbsence: 'true' },
   );
+  assert.equal(requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).purpose, 'DIRECTORY_BROWSE');
   assert.equal(page.url(), absenceTarget);
   await context.close();
 });
@@ -860,6 +1053,7 @@ test('RRHH does not follow an IA person deep-link after the directory returns 40
   const directoryRequests = requestLog.filter(entry => entry.path === '/api/grh-directory');
   assert.equal(directoryRequests.length, 1);
   assert.deepEqual(directoryRequests[0].query, { page: '1', limit: '20' });
+  assert.equal(directoryRequests[0].purpose, 'DIRECTORY_BROWSE');
   await context.close();
 });
 
@@ -933,6 +1127,11 @@ test('RRHH source uses one secure experience and contains no raw contract access
   assert.doesNotMatch(source, /\/api\/grh-data|artifact=(?:profile|semantic)|grh-semantic-v[01]/);
   assert.doesNotMatch(script, /(?:^|[^\w.])fetch\s*\(|localStorage/);
   assert.match(script, /MuniAuth\.fetch\(DIRECTORY_ENDPOINT/);
+  assert.match(script, /MuniAuth\.fetch\(DIRECTORY_ACCESS_ENDPOINT[\s\S]*cache: 'no-store'/);
+  assert.match(script, /response\.headers\.get\('X-MuniControl-Contract'\) !== DIRECTORY_ACCESS_SCHEMA/);
+  assert.match(script, /requestDirectory\(directoryQuery\(page, cursor\), 'DIRECTORY_BROWSE'\)/);
+  assert.match(script, /requestDirectory\(\{ legajo: legajo, company: companyCode \}, 'PERSON_LOOKUP'\)/);
+  assert.match(script, /'X-MuniControl-Purpose': purpose/);
   assert.match(script, /state\.directory\.deepLink = parseDirectoryDeepLink\(\)[\s\S]*if \(!await requirePageCapability\(\)\) return/);
   assert.match(script, /var directoryReady = await loadDirectory\(1, null, true\)[\s\S]*await openDirectoryDeepLink\(\)/);
   assert.equal((script.match(/sessionStorage/g) || []).length, 2, 'session storage is limited to preserving the denied-access notice');
@@ -1011,9 +1210,9 @@ test('RRHH fails closed on 503 and retry recovers only after both projections re
   assert.equal(recovered.status, 'Proyecciones verificadas');
   assert.equal(recovered.errorHidden, true);
   assert.equal(recovered.participants, projections.executive.workforce.bySector.participantDisplay);
-  assert.equal(requestLog.length, 5);
+  assert.equal(requestLog.length, 6);
   assert.deepEqual(requestLog.slice(2).map(item => item.path).sort(), [
-    '/api/grh-directory', '/api/grh-executive', '/api/grh-quality',
+    '/api/grh-directory', '/api/grh-directory-access', '/api/grh-executive', '/api/grh-quality',
   ]);
   await context.close();
 });

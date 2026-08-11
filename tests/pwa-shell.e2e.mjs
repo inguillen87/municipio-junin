@@ -407,20 +407,18 @@ test('PWA shell installs, updates and stays fail-closed for private traffic and 
     await current.update();
   });
   await page.waitForFunction(() => window.__pwaControllerChanges > 0, null, { timeout: 10_000 });
-  await page.waitForFunction(({ expected, initial, retired }) => caches.keys().then(keys => (
-    keys.includes(expected) && !keys.includes(initial) && !keys.includes(retired)
-  )), {
-    expected: fixture.updatedCacheName,
-    initial: fixture.initialCacheName,
-    retired: 'municontrol-shell-v1-retired-e2e',
-  });
-  await page.waitForFunction(async ({ expected, initial, retired }) => {
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const keys = await caches.keys();
-      if (!keys.includes(expected) || keys.includes(initial) || keys.includes(retired)) return false;
+  await page.evaluate(async ({ expected, initial, retired }) => {
+    const deadline = Date.now() + 10_000;
+    let consecutiveMatches = 0;
+    let lastKeys = [];
+    while (Date.now() < deadline) {
+      lastKeys = await caches.keys();
+      const clean = lastKeys.includes(expected) && !lastKeys.includes(initial) && !lastKeys.includes(retired);
+      consecutiveMatches = clean ? consecutiveMatches + 1 : 0;
+      if (consecutiveMatches >= 3) return;
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    return true;
+    throw new Error(`cache cleanup timeout: ${lastKeys.join(',')}`);
   }, {
     expected: fixture.updatedCacheName,
     initial: fixture.initialCacheName,

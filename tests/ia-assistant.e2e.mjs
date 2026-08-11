@@ -314,6 +314,7 @@ async function createServer(requestLog, options = {}) {
         method: request.method,
         authorization: request.headers.authorization || '',
         pathname: url.pathname,
+        purpose: request.headers['x-municontrol-purpose'] || '',
         query: Object.fromEntries(url.searchParams),
       });
       if (options.directoryMode === 'denied') {
@@ -355,6 +356,7 @@ async function createServer(requestLog, options = {}) {
         method: request.method,
         authorization: request.headers.authorization || '',
         pathname: url.pathname,
+        purpose: request.headers['x-municontrol-purpose'] || '',
         body,
       });
 
@@ -748,6 +750,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
   assert.equal(requestLog.length, 10);
   assert.equal(requestLog.every(item => item.method === 'POST'), true);
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
+  assert.equal(requestLog.every(item => item.purpose === 'PERSON_LOOKUP'), true);
   assert.equal(requestLog.every(item => item.body.mode === 'deterministic'), true);
   assert.equal(requestLog.every(item => !Object.hasOwn(item.body, 'history')), true);
   assert.equal(requestLog.filter(item => item.body.message === '¿Cómo se distribuyen los participantes por categoría de acuerdo de origen?').length, 2);
@@ -974,6 +977,7 @@ test('private person answers render leave cards, actions and bounded match optio
   await page.waitForFunction(() => document.querySelectorAll('.person-search-result').length === 2);
   assert.equal(requestLog.length, 1);
   assert.deepEqual(requestLog[0].query, { search: 'Pe', limit: '8' });
+  assert.equal(requestLog[0].purpose, 'DIRECTORY_BROWSE');
   await page.locator('.person-search-result').first().click();
   await page.waitForSelector('.directory-history-item');
   const matched = await page.evaluate(() => {
@@ -1062,6 +1066,7 @@ test('person typeahead is on-demand and fails closed for denied or mutated direc
       assert.equal(requestLog.length, 1, scenario.name);
       assert.equal(requestLog[0].method, 'GET');
       assert.equal(requestLog[0].authorization.startsWith('Bearer '), true);
+      assert.equal(requestLog[0].purpose, 'DIRECTORY_BROWSE');
       assert.deepEqual(requestLog[0].query, { search: 'Pe', limit: '8' });
       if (scenario.name === 'denied') {
         assert.equal(await page.locator('#personAccessBadge').textContent(), 'Vista pública / acceso nominal requerido');

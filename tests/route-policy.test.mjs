@@ -15,7 +15,9 @@ const EXPECTED_SERVERLESS = [
   'GET /auth/me',
   'GET /grh-data',
   'GET /grh-directory',
+  'GET /grh-directory-access',
   'GET /grh-organization-analytics',
+  'GET /grh-workforce-finance',
   'GET /municipal-territory',
   'GET /grh-executive',
   'GET /grh-quality',
@@ -131,7 +133,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
   for (const file of await javascriptFiles(apiRoot)) {
     if (file.includes(`${path.sep}api${path.sep}lib${path.sep}`)) continue;
     const source = await readFile(file, 'utf8');
-    if (/\b(?:requireRole|requireRoleOrInternal|requireAuth|requireCapability|requireCapabilityImpl|requireRoleImpl|isTrustedInternalRequest)\s*\(/.test(source)) {
+    if (/\b(?:requireRole|requireRoleOrInternal|requireAuth|requireCapability|requireCapabilityImpl|requireRoleImpl|isTrustedInternalRequest|authorizeGrhDirectoryRequest)\s*\(/.test(source)) {
       guardedServerless.push(path.relative(apiRoot, file).replaceAll('\\', '/'));
     }
   }
@@ -153,7 +155,9 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'google-sheets.js',
     'grh-data.js',
     'grh-directory.js',
+    'grh-directory-access.js',
     'grh-organization-analytics.js',
+    'grh-workforce-finance.js',
     'grh-close.js',
     'grh-decision-brief.js',
     'grh-executive.js',
@@ -194,6 +198,12 @@ test('resource/action grants preserve the current operational boundaries', () =>
   assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), true);
   assert.equal(esmPolicy.hasResourceAction('CONTADOR', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), true);
   assert.equal(esmPolicy.hasResourceAction('TENANT_USER', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), false);
+  for (const role of ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']) {
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_WORKFORCE_FINANCE, action.READ), true, role);
+  }
+  for (const role of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_WORKFORCE_FINANCE, action.READ), false, role);
+  }
   for (const role of ['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO']) {
     assert.equal(esmPolicy.hasResourceAction(role, resource.MUNICIPAL_TERRITORY, action.READ), true, role);
   }
@@ -221,13 +231,21 @@ test('route authorization is exact by runtime, method and path', () => {
 
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-data?artifact=semantic'), true);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-directory?q=secretaria'), true);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-directory-access'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-directory'), false);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-directory-access'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-directory'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-directory-access'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics'), true);
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics?period=2026-07'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-organization-analytics'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics/future'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-workforce-finance'), true);
+  assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-workforce-finance'), true);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-workforce-finance'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-workforce-finance'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-workforce-finance/future'), false);
   for (const role of ['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO']) {
     assert.equal(esmPolicy.authorizeRoute(role, runtime.SERVERLESS, 'GET', '/api/municipal-territory'), true, role);
   }

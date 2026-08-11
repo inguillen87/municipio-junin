@@ -5,6 +5,12 @@
   var COLLAPSED_RELEASED_ROWS = 8;
   var DIRECTORY_ENDPOINT = '/api/grh-directory';
   var DIRECTORY_SCHEMA = 'grh-directory-v1';
+  var DIRECTORY_ACCESS_ENDPOINT = '/api/grh-directory-access';
+  var DIRECTORY_ACCESS_SCHEMA = 'grh-directory-access-v1';
+  var DIRECTORY_ACCESS_PURPOSES = Object.freeze(['DIRECTORY_BROWSE', 'PERSON_LOOKUP', 'LEAVE_REVIEW']);
+  var DIRECTORY_ACCESS_LIMITS = Object.freeze([
+    'private_identity_required', 'purpose_required', 'tenant_bound', 'no_public_demo', 'no_raw_export'
+  ]);
   var DIRECTORY_PAGE_SIZE = 20;
   var numberFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
   var decimalFormatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -24,6 +30,10 @@
     sectorExpanded: false,
     costExpanded: false,
     agreementExpanded: false,
+    directoryAccess: {
+      sequence: 0,
+      status: 'loading'
+    },
     directory: {
       sequence: 0,
       access: 'loading',
@@ -57,13 +67,16 @@
       'movementCompleteValue', 'movementDelta', 'movementChart', 'movementPartialNote', 'qualityScore',
       'qualityComponents', 'qualityScope', 'quarantineTableBody', 'coverageTableBody', 'sourceMetadata',
       'methodSchema', 'openDirectoryAction', 'compareGroupsAction', 'workforceDistribution', 'peopleDirectory',
+      'directoryAccessPanel', 'directoryAccessStatus', 'directoryAccessScope', 'directoryAccessValidity',
+      'directoryAccessAudit', 'directoryAccessLimits', 'directoryAccessError', 'directoryAccessRetry',
       'directoryStatusBadge', 'directoryForm', 'directorySearch', 'directorySector', 'directoryOrganization',
       'directoryPosition', 'directoryEvent', 'directorySubmit', 'directoryReset', 'directoryState',
       'directoryStateTitle', 'directoryStateMessage', 'directoryPrivateAccess', 'directoryResults', 'directoryResultCount',
       'directoryResultLabel', 'directorySourceLabel', 'directoryTableBody', 'directoryMobileList',
       'directoryPrevious', 'directoryNext', 'directoryPageLabel', 'personDialog', 'personDialogTitle',
       'personDialogSubtitle', 'personDialogClose', 'personDialogLoading', 'personDialogContent',
-      'personDimensions', 'personEvents', 'personLeaveHistory', 'personLeaveHistoryTitle', 'personLeaveHistoryList'
+      'personDimensions', 'personEvents', 'personLeaveHistory', 'personLeaveHistoryTitle', 'personLeaveHistoryList',
+      'personHaciendaSector', 'personHaciendaAgreement'
     ].forEach(function (id) { elements[id] = byId(id); });
   }
 
@@ -618,6 +631,52 @@
     });
   }
 
+  function validIsoTimestampOrNull(value) {
+    if (value === null) return true;
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) &&
+      !Number.isNaN(Date.parse(value)) && new Date(value).toISOString() === value;
+  }
+
+  function validDirectoryAccess(payload) {
+    if (!exactObjectKeys(payload, [
+      'schemaVersion', 'status', 'policyVersion', 'permission', 'scope', 'validity', 'audit', 'limits'
+    ]) || payload.schemaVersion !== DIRECTORY_ACCESS_SCHEMA ||
+        !['static', 'shadow', 'active'].includes(payload.status) ||
+        typeof payload.policyVersion !== 'string' ||
+        !/^[A-Za-z0-9._:-]{1,80}$/.test(payload.policyVersion) ||
+        payload.permission !== 'grh.directory:read') return false;
+
+    var scope = payload.scope;
+    if (!exactObjectKeys(scope, ['kind', 'label', 'organizationCount']) ||
+        !['TENANT', 'ORG_UNIT', 'ORG_SUBTREE'].includes(scope.kind) ||
+        typeof scope.label !== 'string' || scope.label.trim() !== scope.label || !safeDirectoryText(scope.label, 120) ||
+        !(scope.organizationCount === null ||
+          (Number.isSafeInteger(scope.organizationCount) && scope.organizationCount >= 0)) ||
+        (scope.kind !== 'TENANT' && !(Number.isSafeInteger(scope.organizationCount) && scope.organizationCount > 0))) return false;
+
+    var validity = payload.validity;
+    if (!exactObjectKeys(validity, ['validFrom', 'validUntil']) ||
+        !validIsoTimestampOrNull(validity.validFrom) || !validIsoTimestampOrNull(validity.validUntil) ||
+        (payload.status === 'active' && validity.validFrom === null) ||
+        (validity.validUntil !== null && (validity.validFrom === null || validity.validUntil <= validity.validFrom))) return false;
+    if (payload.status === 'static' && (
+        !payload.policyVersion.startsWith('static:') || scope.kind !== 'TENANT' ||
+        scope.organizationCount !== null || validity.validFrom !== null || validity.validUntil !== null
+    )) return false;
+
+    var audit = payload.audit;
+    if (!exactObjectKeys(audit, ['required', 'purposes', 'storesPersonalQuery']) ||
+        audit.required !== (payload.status !== 'static') ||
+        audit.storesPersonalQuery !== false || !Array.isArray(audit.purposes) ||
+        audit.purposes.length !== DIRECTORY_ACCESS_PURPOSES.length ||
+        !audit.purposes.every(function (purpose, index) {
+          return purpose === DIRECTORY_ACCESS_PURPOSES[index];
+        })) return false;
+
+    return Array.isArray(payload.limits) && payload.limits.length === DIRECTORY_ACCESS_LIMITS.length &&
+      payload.limits.every(function (limit, index) { return limit === DIRECTORY_ACCESS_LIMITS[index]; });
+  }
+
   function safeDirectoryText(value, maximum) {
     return value === null || (
       typeof value === 'string' && value.length > 0 && value.length <= maximum &&
@@ -770,6 +829,115 @@
     return error;
   }
 
+  function resetDirectoryAccessFacts() {
+    setText(elements.directoryAccessScope, '—');
+    setText(elements.directoryAccessValidity, '—');
+    setText(elements.directoryAccessAudit, '—');
+  }
+
+  function showDirectoryAccessState(status, label, message) {
+    state.directoryAccess.status = status;
+    if (elements.directoryAccessPanel) elements.directoryAccessPanel.dataset.state = status;
+    setText(elements.directoryAccessStatus, label);
+    if (status === 'loading') {
+      resetDirectoryAccessFacts();
+      setText(elements.directoryAccessLimits, 'Verificando controles');
+    }
+    if (elements.directoryAccessRetry) {
+      elements.directoryAccessRetry.hidden = ['loading', 'static', 'shadow', 'active'].includes(status);
+      elements.directoryAccessRetry.disabled = status === 'loading';
+    }
+    if (elements.directoryAccessError) {
+      elements.directoryAccessError.hidden = !message;
+      setText(elements.directoryAccessError, message || '');
+    }
+  }
+
+  function formatDirectoryAccessDate(value) {
+    var date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '—' : dateTimeFormatter.format(date);
+  }
+
+  function directoryAccessValidityLabel(payload) {
+    var validity = payload.validity;
+    if (payload.status === 'static') return 'Sin vigencia persistida';
+    if (validity.validFrom === null && validity.validUntil === null) return 'Pendiente de activación';
+    if (validity.validFrom !== null && validity.validUntil !== null) {
+      return formatDirectoryAccessDate(validity.validFrom) + ' a ' + formatDirectoryAccessDate(validity.validUntil);
+    }
+    if (validity.validFrom !== null) return 'Desde ' + formatDirectoryAccessDate(validity.validFrom);
+    return 'Hasta ' + formatDirectoryAccessDate(validity.validUntil);
+  }
+
+  function renderDirectoryAccess(payload) {
+    var statusLabels = {
+      static: 'Piloto privado actual',
+      shadow: 'Política en observación',
+      active: 'Política activa'
+    };
+    showDirectoryAccessState(payload.status, statusLabels[payload.status], '');
+    setText(elements.directoryAccessScope, payload.scope.kind === 'TENANT' ? 'Municipio completo' :
+      payload.scope.kind === 'ORG_SUBTREE' ? 'Área y dependencias' : 'Unidad organizativa');
+    setText(elements.directoryAccessValidity, directoryAccessValidityLabel(payload));
+    setText(elements.directoryAccessAudit, payload.audit.required ? 'Obligatoria' : 'Pendiente de activación');
+    setText(elements.directoryAccessLimits, numberFormatter.format(payload.limits.length) + ' controles activos');
+  }
+
+  async function requestDirectoryAccess() {
+    if (!global.MuniAuth || typeof global.MuniAuth.fetch !== 'function') {
+      throw directoryError('GRH_DIRECTORY_ACCESS_CLIENT_UNAVAILABLE');
+    }
+    var controller = new AbortController();
+    var timer = global.setTimeout(function () { controller.abort(); }, 10000);
+    try {
+      var response = await global.MuniAuth.fetch(DIRECTORY_ACCESS_ENDPOINT, {
+        method: 'GET',
+        cache: 'no-store',
+        redirect: 'error',
+        headers: { Accept: 'application/json' },
+        signal: controller.signal
+      });
+      if (response.status === 403) throw directoryError('GRH_DIRECTORY_ACCESS_DENIED', 403);
+      if (!response.ok) throw directoryError('GRH_DIRECTORY_ACCESS_UNAVAILABLE', response.status);
+      if (response.headers.get('X-MuniControl-Contract') !== DIRECTORY_ACCESS_SCHEMA ||
+          !/^application\/json(?:\s*;|\s*$)/i.test(response.headers.get('content-type') || '')) {
+        throw directoryError('GRH_DIRECTORY_ACCESS_RESPONSE_INVALID', 502);
+      }
+      var payload = await response.json();
+      if (!validDirectoryAccess(payload)) throw directoryError('GRH_DIRECTORY_ACCESS_RESPONSE_INVALID', 502);
+      return payload;
+    } catch (error) {
+      if (error && error.name === 'AbortError') throw directoryError('GRH_DIRECTORY_ACCESS_TIMEOUT', 408);
+      throw error;
+    } finally {
+      global.clearTimeout(timer);
+    }
+  }
+
+  async function loadDirectoryAccess() {
+    var sequence = state.directoryAccess.sequence + 1;
+    state.directoryAccess.sequence = sequence;
+    showDirectoryAccessState('loading', 'Verificando', '');
+    try {
+      var payload = await requestDirectoryAccess();
+      if (sequence !== state.directoryAccess.sequence) return false;
+      renderDirectoryAccess(payload);
+      return true;
+    } catch (error) {
+      if (sequence !== state.directoryAccess.sequence) return false;
+      resetDirectoryAccessFacts();
+      setText(elements.directoryAccessLimits, 'Sin confirmación');
+      if (Number(error && error.status) === 403) {
+        showDirectoryAccessState('denied', 'No habilitado', 'Tu perfil no tiene habilitado este acceso.');
+      } else if (Number(error && error.status) === 503 || Number(error && error.status) === 408) {
+        showDirectoryAccessState('unavailable', 'No disponible', 'El servicio de permisos no responde.');
+      } else {
+        showDirectoryAccessState('invalid', 'No verificable', 'La respuesta de acceso no pudo verificarse.');
+      }
+      return false;
+    }
+  }
+
   function parseDirectoryDeepLink() {
     var params;
     try {
@@ -889,9 +1057,12 @@
     return params.toString();
   }
 
-  async function requestDirectory(query) {
+  async function requestDirectory(query, purpose) {
     if (!global.MuniAuth || typeof global.MuniAuth.fetch !== 'function') {
       throw directoryError('GRH_DIRECTORY_CLIENT_UNAVAILABLE');
+    }
+    if (purpose !== 'DIRECTORY_BROWSE' && purpose !== 'PERSON_LOOKUP') {
+      throw directoryError('GRH_DIRECTORY_PURPOSE_INVALID');
     }
     var controller = new AbortController();
     var timer = global.setTimeout(function () { controller.abort(); }, 10000);
@@ -900,7 +1071,7 @@
         method: 'GET',
         cache: 'no-store',
         redirect: 'error',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-MuniControl-Purpose': purpose },
         signal: controller.signal
       });
       if (response.status === 403) throw directoryError('GRH_DIRECTORY_ACCESS_DENIED', 403);
@@ -1088,7 +1259,7 @@
     state.directory.sequence = sequence;
     showDirectoryState('loading', 'Consultando directorio', 'Aplicando búsqueda y filtros sobre el snapshot GRH.');
     try {
-      var payload = await requestDirectory(directoryQuery(page, cursor));
+      var payload = await requestDirectory(directoryQuery(page, cursor), 'DIRECTORY_BROWSE');
       if (sequence !== state.directory.sequence) return false;
       renderDirectory(payload);
       return true;
@@ -1115,6 +1286,25 @@
     var item = createElement('div', 'rrhh-event-card');
     item.append(createElement('span', '', label), createElement('strong', '', value));
     elements.personEvents.appendChild(item);
+  }
+
+  function haciendaCohortHref(item, dimension) {
+    var source = dimension === 'sector' ? item.sector : item.agreement;
+    if (!source || !Number.isSafeInteger(item.companyCode) || item.companyCode <= 0 ||
+        !Number.isSafeInteger(source.code) || source.code < 0) return null;
+    var params = new URLSearchParams();
+    params.set('cohort', dimension);
+    params.set('company', String(item.companyCode));
+    params.set('code', String(source.code));
+    return 'hacienda.html?' + params.toString() + '#cohortContext';
+  }
+
+  function configureHaciendaCohortAction(element, item, dimension) {
+    var href = haciendaCohortHref(item, dimension);
+    if (!element) return;
+    element.hidden = href === null;
+    if (href === null) element.removeAttribute('href');
+    else element.href = href;
   }
 
   function renderPerson(item) {
@@ -1144,6 +1334,8 @@
     appendPersonEvent('Ausencias históricas', numberFormatter.format(item.events.absenceCount) +
       (item.events.latestAbsenceDate ? ' · última ' + formatEventDate(item.events.latestAbsenceDate) : ' · sin fecha publicada'));
     appendPersonEvent('Movimientos', 'No incluido en esta extracción nominal');
+    configureHaciendaCohortAction(elements.personHaciendaSector, item, 'sector');
+    configureHaciendaCohortAction(elements.personHaciendaAgreement, item, 'agreement');
     setText(elements.personLeaveHistoryTitle, item.leaveHistory.total
       ? 'Licencias publicadas · últimas ' + item.leaveHistory.items.length + ' de ' + item.leaveHistory.total
       : 'Licencias publicadas');
@@ -1171,7 +1363,7 @@
     if (typeof elements.personDialog.showModal === 'function') elements.personDialog.showModal();
     else elements.personDialog.setAttribute('open', '');
     try {
-      var payload = await requestDirectory({ legajo: legajo, company: companyCode });
+      var payload = await requestDirectory({ legajo: legajo, company: companyCode }, 'PERSON_LOOKUP');
       if (sequence !== state.directory.sequence || !elements.personDialog.open) return;
       renderPerson(payload.items[0]);
       return true;
@@ -1287,6 +1479,7 @@
       if (sequence !== state.loadSequence) return;
       state.experience = experience;
       renderDashboard(experience);
+      loadDirectoryAccess();
       if (state.directory.deepLink.status === 'invalid') {
         showDirectoryState('invalid', 'El enlace al directorio no es válido',
           'La URL debe identificar una persona o un filtro operativo permitido, sin parámetros adicionales. No se consultó ni se muestra información nominal.');
@@ -1321,6 +1514,7 @@
 
   function bindEvents() {
     elements.retryButton.addEventListener('click', loadAuthorizedDashboard);
+    elements.directoryAccessRetry.addEventListener('click', loadDirectoryAccess);
     bindRankingToggle(elements.sectorToggle, 'sectorExpanded', 'bySector', elements.sectorBars, elements.sectorSummary, 'categorías');
     bindRankingToggle(elements.costToggle, 'costExpanded', 'byCostCenter', elements.costBars, elements.costSummary, 'categorías');
     bindRankingToggle(elements.agreementToggle, 'agreementExpanded', 'byAgreement', elements.agreementBars, elements.agreementSummary, 'categorías');

@@ -132,6 +132,14 @@ El cierre local está implementado y probado:
 6. Hacienda consume `grh-close-v1` para cierre mensual explicado; no recibe PII,
    etiquetas, códigos o filas y sólo compara meses consecutivos liberados;
 7. GRH Ejecutivo ya no presenta el acuerdo global como si fuera mensual.
+8. Hacienda consume `grh-workforce-finance-v1` para 24 meses y tres vistas
+   marginales independientes —sector, centro de costo y convenio—. Cada celda
+   usa k=10, supresión primaria/complementaria y un gate cross-view sobre los
+   importes publicados. Los participantes observados pueden solaparse entre
+   categorías; la participación mostrada corresponde a nómina neta, nunca a
+   una distribución exclusiva de personas. La fuente no declara moneda: ARS
+   es sólo la base de presentación configurada por el municipio y el contrato
+   no acredita pago bancario, asiento contable ni ejecución presupuestaria.
 
 Este cierre no equivale a un deployment. Todavía se requieren publicación del
 bundle privado en el entorno objetivo, configuración de secretos y tenants,
@@ -177,6 +185,13 @@ La batería debe demostrar como mínimo:
 - cada conciliación mensual usa la fila del mismo período y nunca el resumen global;
 - la unidad monetaria sigue no declarada y la salida no afirma pago, causalidad
   ni tiempo real.
+- `grh-workforce-finance-v1` conserva exactamente 24 meses consecutivos y sólo
+  tres vistas de una dimensión; no admite filtros arbitrarios ni intersecciones;
+- el release financiero se recalcula sobre el contenido canónico y cualquier
+  alteración coordinada de importes se rechaza en builder, publisher, API y
+  navegador;
+- conteos protegidos anulan también tolerancias y sumas derivables, mientras los
+  niveles monetarios publicados permanecen aritméticamente comparables;
 - el Bot responde 422 —sin sustitución— ante año solo, período ausente o celda
   protegida, y nunca usa el score global como conciliación mensual.
 
@@ -217,5 +232,6 @@ propuesta aislada hasta contar con baseline y migración aprobados.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.7.0 | 2026-08-11 | Incorpora `grh-workforce-finance-v1`: 24 meses, sector/centro de costo/convenio observados por corrida, k=10, protección cross-view, release content-addressed y presentación ARS declarada como configuración municipal |
 | 1.6.0 | 2026-08-09 | Incorpora `grh-close-v1` en Hacienda y el Bot, comparación sólo entre meses consecutivos k≥10 y conciliación real por período; retira la atribución mensual de una tasa global |
 | 1.4.1 | 2026-08-08 | Registra el cierre local de la frontera raw y las proyecciones seguras existentes |

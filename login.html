@@ -887,7 +887,8 @@
             method: 'GET',
             headers: {
               'Accept': 'application/json',
-              'Authorization': 'Bearer ' + token
+              'Authorization': 'Bearer ' + token,
+              'X-MuniControl-Purpose': 'DIRECTORY_BROWSE'
             },
             cache: 'no-store',
             signal: controller.signal

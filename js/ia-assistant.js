@@ -635,7 +635,10 @@
         method: 'GET',
         cache: 'no-store',
         redirect: 'error',
-        headers: { Accept: 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          'X-MuniControl-Purpose': 'DIRECTORY_BROWSE',
+        },
         signal: controller.signal,
       });
       if (sequence !== directorySequence) return;
@@ -792,6 +795,7 @@
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'X-MuniControl-Purpose': 'PERSON_LOOKUP',
         },
         body: JSON.stringify({ message: text, mode: 'deterministic' }),
         signal: controller.signal,

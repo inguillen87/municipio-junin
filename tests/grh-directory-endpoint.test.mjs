@@ -33,6 +33,31 @@ function responseRecorder() {
   };
 }
 
+const PILOT_GUARDS = Object.freeze({
+  isPublicRequestImpl: () => false,
+  isPublishedIdentityImpl: () => false,
+  authorizationStore: Object.freeze({
+    async loadAuthorizationFacts() { throw new Error('disabled must not query enterprise facts'); },
+  }),
+  async appendAuditImpl() { throw new Error('disabled must not write enterprise audit'); },
+});
+
+function directoryRequest(query = {}, purpose = 'DIRECTORY_BROWSE') {
+  return {
+    method: 'GET',
+    query,
+    headers: { 'x-municontrol-purpose': purpose },
+  };
+}
+
+function pilotEnvironment(allowlist) {
+  return {
+    GRH_TENANT_ID: 'tenant-test',
+    GRH_DIRECTORY_AUTHZ_MODE: 'disabled',
+    ...(allowlist ? { GRH_DIRECTORY_ALLOWED_USER_IDS: allowlist } : {}),
+  };
+}
+
 function artifactFixture() {
   return {
     schema_version: 'grh-directory-v1',
@@ -401,40 +426,35 @@ test('the endpoint is GET-only, no-store and does not authenticate non-GET reque
 test('high role, exact user allowlist and tenant gate all precede directory access', async () => {
   let readCount = 0;
   const dependencies = {
-    requireDatasetTenantImpl: () => true,
+    ...PILOT_GUARDS,
     readDirectoryImpl: async () => { readCount += 1; return responseFixture(); },
   };
 
   const missingAllowlist = createGrhDirectoryHandler({
     ...dependencies,
-    environment: {},
+    environment: pilotEnvironment(),
     requireCapabilityImpl: async () => ({ id: 'official-1', role: 'INTENDENTE', tenantId: 'tenant-test' }),
   });
   const missingResponse = responseRecorder();
-  await missingAllowlist({ method: 'GET', query: {}, headers: {} }, missingResponse);
+  await missingAllowlist(directoryRequest(), missingResponse);
   assert.equal(missingResponse.statusCode, 403);
 
   const lowRole = createGrhDirectoryHandler({
     ...dependencies,
-    environment: { GRH_DIRECTORY_ALLOWED_USER_IDS: 'official-1' },
+    environment: pilotEnvironment('official-1'),
     requireCapabilityImpl: async () => ({ id: 'official-1', role: 'TENANT_USER', tenantId: 'tenant-test' }),
   });
   const lowResponse = responseRecorder();
-  await lowRole({ method: 'GET', query: {}, headers: {} }, lowResponse);
+  await lowRole(directoryRequest(), lowResponse);
   assert.equal(lowResponse.statusCode, 403);
 
   const tenantDenied = createGrhDirectoryHandler({
     ...dependencies,
-    environment: { GRH_DIRECTORY_ALLOWED_USER_IDS: 'official-1' },
+    environment: pilotEnvironment('official-1'),
     requireCapabilityImpl: async () => ({ id: 'official-1', role: 'TENANT_ADMIN', tenantId: 'foreign' }),
-    requireDatasetTenantImpl: (res, _caller, envName) => {
-      assert.equal(envName, 'GRH_TENANT_ID');
-      res.status(403).json({ error: 'tenant denied' });
-      return false;
-    },
   });
   const tenantResponse = responseRecorder();
-  await tenantDenied({ method: 'GET', query: {}, headers: {} }, tenantResponse);
+  await tenantDenied(directoryRequest(), tenantResponse);
   assert.equal(tenantResponse.statusCode, 403);
   assert.equal(readCount, 0);
 });
@@ -442,14 +462,16 @@ test('high role, exact user allowlist and tenant gate all precede directory acce
 test('an explicitly allowlisted high-role user receives only a valid directory response', async () => {
   const calls = [];
   const handler = createGrhDirectoryHandler({
-    environment: { GRH_DIRECTORY_ALLOWED_USER_IDS: 'official-1' },
+    ...PILOT_GUARDS,
+    environment: pilotEnvironment('official-1'),
     requireCapabilityImpl: async (_req, _res, resource, action) => {
       calls.push(['capability', resource, action]);
-      return { id: 'official-1', role: 'INTENDENTE', tenantId: 'tenant-test' };
-    },
-    requireDatasetTenantImpl: (_res, caller, envName) => {
-      calls.push(['tenant', caller.tenantId, envName]);
-      return true;
+      return {
+        id: 'official-1',
+        email: 'official-1@junin.gov.ar',
+        role: 'INTENDENTE',
+        tenantId: 'tenant-test',
+      };
     },
     readDirectoryImpl: async options => {
       calls.push(['read', options.tenantId, options.query]);
@@ -457,21 +479,25 @@ test('an explicitly allowlisted high-role user receives only a valid directory r
     },
   });
   const response = responseRecorder();
-  await handler({ method: 'GET', query: { search: 'Persona' }, headers: {} }, response);
+  await handler(directoryRequest({ search: 'Persona' }), response);
   assert.equal(response.statusCode, 200);
   assert.equal(inspectGrhDirectoryResponse(response.payload).ok, true);
   assert.deepEqual(calls, [
     ['capability', 'grh.directory', 'read'],
-    ['tenant', 'tenant-test', 'GRH_TENANT_ID'],
     ['read', 'tenant-test', { search: 'Persona' }],
   ]);
 });
 
 test('query, not-found, ambiguity and internal failures return detail-free boundaries', async () => {
   const base = {
-    environment: { GRH_DIRECTORY_ALLOWED_USER_IDS: 'official-1' },
-    requireCapabilityImpl: async () => ({ id: 'official-1', role: 'CONTADOR', tenantId: 'tenant-test' }),
-    requireDatasetTenantImpl: () => true,
+    ...PILOT_GUARDS,
+    environment: pilotEnvironment('official-1'),
+    requireCapabilityImpl: async () => ({
+      id: 'official-1',
+      email: 'official-1@junin.gov.ar',
+      role: 'CONTADOR',
+      tenantId: 'tenant-test',
+    }),
   };
   const scenarios = [
     [400, Object.assign(new Error('private query'), { status: 400 })],
@@ -482,7 +508,7 @@ test('query, not-found, ambiguity and internal failures return detail-free bound
   for (const [expected, error] of scenarios) {
     const handler = createGrhDirectoryHandler({ ...base, readDirectoryImpl: async () => { throw error; } });
     const response = responseRecorder();
-    await withQuietErrors(() => handler({ method: 'GET', query: {}, headers: {} }, response));
+    await withQuietErrors(() => handler(directoryRequest(), response));
     assert.equal(response.statusCode, expected);
     assert.doesNotMatch(JSON.stringify(response.payload), /private|database-url/i);
   }
@@ -492,7 +518,7 @@ test('query, not-found, ambiguity and internal failures return detail-free bound
     readDirectoryImpl: async () => ({ ...responseFixture(), unexpected: true }),
   });
   const invalidResponse = responseRecorder();
-  await withQuietErrors(() => invalidContract({ method: 'GET', query: {}, headers: {} }, invalidResponse));
+  await withQuietErrors(() => invalidContract(directoryRequest(), invalidResponse));
   assert.equal(invalidResponse.statusCode, 503);
 });
 

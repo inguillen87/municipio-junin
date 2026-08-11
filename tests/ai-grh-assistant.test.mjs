@@ -185,8 +185,14 @@ function fakeDirectoryDetail(item = fakeDirectoryItem(), source = fakeDirectoryS
   });
 }
 
-function privateAssistantHandler({ readDirectoryImpl, environment, caller } = {}) {
-  return createAiAnalyzeHandler({
+function privateAssistantHandler({
+  readDirectoryImpl,
+  environment,
+  caller,
+  authorizeDirectoryImpl,
+  directoryAuthorizationDependencies,
+} = {}) {
+  const handler = createAiAnalyzeHandler({
     requireRoleImpl: async () => caller || ({
       id: 'official-private',
       email: 'official-private@junin.gov.ar',
@@ -197,11 +203,20 @@ function privateAssistantHandler({ readDirectoryImpl, environment, caller } = {}
     requireDatasetTenantImpl: () => true,
     readArtifactBundleImpl: async () => realBundle(),
     readDirectoryImpl,
+    ...(authorizeDirectoryImpl ? { authorizeDirectoryImpl } : {}),
+    ...(directoryAuthorizationDependencies ? { directoryAuthorizationDependencies } : {}),
     environment: environment || {
       GRH_TENANT_ID: 'tenant-grh-test',
       GRH_DIRECTORY_ALLOWED_USER_IDS: 'official-private',
     },
   });
+  return (req, res) => handler({
+    ...req,
+    headers: {
+      'x-municontrol-purpose': 'PERSON_LOOKUP',
+      ...(req.headers || {}),
+    },
+  }, res);
 }
 
 test('assistant consumes one semantic-v2 bundle through portable, quality and close projections', async () => {
@@ -740,7 +755,111 @@ test('private allowlisted CONTADOR resolves a tenant-bound person and governed l
   assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
 });
 
-test('published demo identities and missing allowlists stay DIRECTORY_REQUIRED without reading the store', { skip: !HAS_PRIVATE_GRH }, async () => {
+test('person lookup shares enterprise authorization, enforces its scope and commits a sanitized audit before responding', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const source = fakeDirectorySource();
+  const item = fakeDirectoryItem();
+  const calls = [];
+  const decision = {
+    reason: 'DYNAMIC_ALLOWED',
+    scope: { tenantWide: false },
+    allowedOrganizationCodes: ['20', '21'],
+  };
+  const handler = privateAssistantHandler({
+    authorizeDirectoryImpl: async (req, _res, options) => {
+      calls.push(['authorize', req.headers['x-municontrol-purpose'], options.operation]);
+      return {
+        decision,
+        commitAudit: async event => {
+          calls.push(['audit', event]);
+          return true;
+        },
+      };
+    },
+    readDirectoryImpl: async input => {
+      calls.push(['read', input]);
+      assert.deepEqual(input.scopeOrganizationCodes, ['20', '21']);
+      return calls.filter(([kind]) => kind === 'read').length === 1
+        ? fakeDirectoryResponse({ source, items: [item] })
+        : fakeDirectoryDetail(item, source);
+    },
+  });
+  const response = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: { message: 'licencias de Prueba Persona', mode: 'deterministic' },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(calls.map(([kind]) => kind), ['authorize', 'read', 'audit', 'read', 'audit']);
+  assert.deepEqual(calls[0], ['authorize', 'PERSON_LOOKUP', 'list']);
+  assert.deepEqual(calls[2][1], {
+    operation: 'list',
+    outcome: 'ALLOWED',
+    reason: 'DYNAMIC_ALLOWED',
+    resultCount: 1,
+    decision,
+  });
+  assert.deepEqual(calls[4][1], {
+    operation: 'detail',
+    outcome: 'ALLOWED',
+    reason: 'DYNAMIC_ALLOWED',
+    resultCount: 1,
+    decision,
+  });
+  assert.doesNotMatch(JSON.stringify(calls.filter(([kind]) => kind === 'audit')), /PERSONA PRUEBA|7001|licencias de/i);
+});
+
+test('person lookup keeps the allowed list receipt and records a denied detail when the second read fails', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const source = fakeDirectorySource();
+  const item = fakeDirectoryItem();
+  const audits = [];
+  let reads = 0;
+  const decision = {
+    reason: 'DYNAMIC_ALLOWED',
+    scope: { tenantWide: true },
+    allowedOrganizationCodes: [],
+  };
+  const handler = privateAssistantHandler({
+    authorizeDirectoryImpl: async () => ({
+      decision,
+      commitAudit: async event => {
+        audits.push(event);
+        return true;
+      },
+    }),
+    readDirectoryImpl: async () => {
+      reads += 1;
+      if (reads === 1) return fakeDirectoryResponse({ source, items: [item] });
+      throw new Error('PERSONA PRUEBA legajo 7001 private database detail');
+    },
+  });
+  const response = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: { message: 'licencias de Prueba Persona', mode: 'deterministic' },
+  }, response);
+
+  assert.equal(response.statusCode, 503);
+  assert.deepEqual(audits, [
+    {
+      operation: 'list',
+      outcome: 'ALLOWED',
+      reason: 'DYNAMIC_ALLOWED',
+      resultCount: 1,
+      decision,
+    },
+    {
+      operation: 'detail',
+      outcome: 'DENIED',
+      reason: 'DIRECTORY_READ_ERROR',
+      resultCount: 0,
+      decision: null,
+    },
+  ]);
+  assert.doesNotMatch(JSON.stringify(audits), /PERSONA PRUEBA|7001|licencias de|database detail/i);
+});
+
+test('published demo identities and invalid static identities are hard-denied without reading the store', { skip: !HAS_PRIVATE_GRH }, async () => {
   let directoryReads = 0;
   const readDirectoryImpl = async () => {
     directoryReads += 1;
@@ -760,9 +879,8 @@ test('published demo identities and missing allowlists stay DIRECTORY_REQUIRED w
     });
     const publishedResponse = responseRecorder();
     await published({ method: 'POST', body: { message: 'legajo 7001' } }, publishedResponse);
-    assert.equal(publishedResponse.statusCode, 422, profile.email);
-    assert.equal(publishedResponse.payload.answer.code, 'DIRECTORY_REQUIRED', profile.email);
-    assert.equal(publishedResponse.payload.dataStatus.source, 'grh_directory_access_policy', profile.email);
+    assert.equal(publishedResponse.statusCode, 403, profile.email);
+    assert.equal(publishedResponse.payload.code, 'GRH_DIRECTORY_PUBLIC_ACCESS_DENIED', profile.email);
     publishedPayloads.push(publishedResponse.payload);
   }
 
@@ -775,8 +893,8 @@ test('published demo identities and missing allowlists stay DIRECTORY_REQUIRED w
   });
   const deniedResponse = responseRecorder();
   await notAllowlisted({ method: 'POST', body: { message: 'licencias de Persona Prueba' } }, deniedResponse);
-  assert.equal(deniedResponse.statusCode, 422);
-  assert.equal(deniedResponse.payload.answer.code, 'DIRECTORY_REQUIRED');
+  assert.equal(deniedResponse.statusCode, 403);
+  assert.equal(deniedResponse.payload.code, 'GRH_DIRECTORY_ACCESS_DENIED');
 
   const missingEmail = privateAssistantHandler({
     caller: {
@@ -789,8 +907,8 @@ test('published demo identities and missing allowlists stay DIRECTORY_REQUIRED w
   });
   const missingEmailResponse = responseRecorder();
   await missingEmail({ method: 'POST', body: { message: 'legajo 7001' } }, missingEmailResponse);
-  assert.equal(missingEmailResponse.statusCode, 422);
-  assert.equal(missingEmailResponse.payload.answer.code, 'DIRECTORY_REQUIRED');
+  assert.equal(missingEmailResponse.statusCode, 403);
+  assert.equal(missingEmailResponse.payload.code, 'GRH_DIRECTORY_ACCESS_DENIED');
   assert.equal(directoryReads, 0);
   assert.doesNotMatch(JSON.stringify([...publishedPayloads, deniedResponse.payload, missingEmailResponse.payload]), /PERSONA PRUEBA|7001/i);
 });

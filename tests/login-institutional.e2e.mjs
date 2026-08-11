@@ -74,8 +74,10 @@ async function createServer(requestLog) {
         limit: url.searchParams.get('limit'),
         method: request.method,
         path: url.pathname,
+        purpose: request.headers['x-municontrol-purpose'] || '',
       });
       const privateAccess = authorization === 'Bearer signed-token-for-login-e2e' &&
+        request.headers['x-municontrol-purpose'] === 'DIRECTORY_BROWSE' &&
         url.searchParams.size === 1 && url.searchParams.get('limit') === '1';
       response.writeHead(privateAccess ? 200 : 403, {
         'Cache-Control': 'no-store, private',
@@ -220,6 +222,7 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /SAFE_RETURN_PATHS = Object\.freeze/);
   assert.match(source, /params\.get\('access'\) === 'private-grh'/);
   assert.match(source, /fetch\('\/api\/grh-directory\?limit=1'/);
+  assert.match(source, /'X-MuniControl-Purpose': 'DIRECTORY_BROWSE'/);
   assert.match(source, /Ese perfil .* no tiene acceso al directorio nominal/i);
   assert.match(source, /window\.location\.href = validatedReturnPath\(session\) \|\| validatedDefaultPath\(session\)/);
   assert.doesNotMatch(source, /window\.location\.href = 'index\.html'/);
@@ -599,8 +602,8 @@ test('private GRH login explains the handoff, rejects public profiles and return
   assert.equal(await page.textContent('#peopleDirectory'), 'Directorio privado');
 
   const probes = requestLog.filter(entry => entry.path === '/api/grh-directory');
-  assert.deepEqual(probes.map(entry => ({ authorization: entry.authorization, limit: entry.limit })), [
-    { authorization: 'Bearer signed-token-for-login-e2e', limit: '1' },
+  assert.deepEqual(probes.map(entry => ({ authorization: entry.authorization, limit: entry.limit, purpose: entry.purpose })), [
+    { authorization: 'Bearer signed-token-for-login-e2e', limit: '1', purpose: 'DIRECTORY_BROWSE' },
   ]);
   assert.deepEqual(externalRequests, []);
 });

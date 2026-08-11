@@ -46,6 +46,95 @@ enum TenantStatus {
   CANCELLED
 }
 
+enum AccountLifecycleStatus {
+  INVITED
+  FIRST_LOGIN_REQUIRED
+  ACTIVE
+  SUSPENDED
+  LOCKED
+  EXPIRED
+  REVOKED
+  TERMINATED
+}
+
+enum OrgUnitKind {
+  MUNICIPALITY
+  SECRETARIAT
+  DIRECTORATE
+  DEPARTMENT
+  OFFICE
+  PROGRAM
+  PROJECT
+  TERRITORIAL_ZONE
+}
+
+enum OrgUnitStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum PolicyBundleStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+  REJECTED
+}
+
+enum RoleDefinitionStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+enum PermissionEffect {
+  ALLOW
+  DENY
+}
+
+enum ScopeKind {
+  PLATFORM
+  TENANT
+  ORG_UNIT
+  ORG_SUBTREE
+  SELF
+  ASSIGNED_RESOURCE
+  RESOURCE
+  DATASET
+  GEOGRAPHIC_BOUNDARY
+}
+
+enum ScopeStatus {
+  ACTIVE
+  RETIRED
+}
+
+enum RoleAssignmentStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  REVOKED
+  REJECTED
+}
+
+enum AssignmentSource {
+  BOOTSTRAP
+  INVITATION
+  ADMIN_REQUEST
+  ACCESS_REVIEW
+  IDENTITY_PROVIDER
+  MIGRATION
+}
+
+enum AuditOutcome {
+  ALLOWED
+  DENIED
+  FAILED
+  SUCCEEDED
+  PENDING
+}
+
 model Tenant {
   id              String       @id @default(cuid())
   slug            String       @unique
@@ -67,26 +156,34 @@ model Tenant {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  users           User[]
-  empleados       Empleado[]
-  pagos           Pago[]
-  reclamos        Reclamo[]
-  obras           Obra[]
-  presupuestos    Presupuesto[]
-  licitaciones    Licitacion[]
-  auditLogs       AuditLog[]
-  documentos      Documento[]
-  notificaciones  Notificacion[]
-  barrios         Barrio[]         @ignore
-  calles          Calle[]          @ignore
-  categoriasGrh   CategoriaGrh[]   @ignore
-  ciudadanos      Ciudadano[]      @ignore
-  conveniosGrh    ConvenioGrh[]    @ignore
-  empleadosGrh    EmpleadoGrh[]    @ignore
-  gremiosGrh      GremioGrh[]      @ignore
-  localidades     Localidad[]      @ignore
-  motivosAusencia MotivoAusencia[] @ignore
-  sectoresGrh     SectorGrh[]      @ignore
+  users               User[]
+  empleados           Empleado[]
+  pagos               Pago[]
+  reclamos            Reclamo[]
+  obras               Obra[]
+  presupuestos        Presupuesto[]
+  licitaciones        Licitacion[]
+  auditLogs           AuditLog[]
+  documentos          Documento[]
+  notificaciones      Notificacion[]
+  userSecurityStates  UserSecurityState[]
+  orgUnits            OrgUnit[]
+  orgUnitClosures     OrgUnitClosure[]
+  policyBundles       PolicyBundle[]
+  roleDefinitions     RoleDefinition[]
+  authorizationScopes AuthorizationScope[]
+  roleAssignments     RoleAssignment[]
+  securityAuditEvents SecurityAuditEvent[]
+  barrios             Barrio[]             @ignore
+  calles              Calle[]              @ignore
+  categoriasGrh       CategoriaGrh[]       @ignore
+  ciudadanos          Ciudadano[]          @ignore
+  conveniosGrh        ConvenioGrh[]        @ignore
+  empleadosGrh        EmpleadoGrh[]        @ignore
+  gremiosGrh          GremioGrh[]          @ignore
+  localidades         Localidad[]          @ignore
+  motivosAusencia     MotivoAusencia[]     @ignore
+  sectoresGrh         SectorGrh[]          @ignore
 
   @@map("tenants")
 }
@@ -106,8 +203,19 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  auditLogs    AuditLog[]
+  auditLogs                  AuditLog[]
+  securityState              UserSecurityState?   @relation("UserSecurityStateSubject")
+  securityStatesSuspended    UserSecurityState[]  @relation("UserSecurityStateSuspender")
+  securityStatesRevoked      UserSecurityState[]  @relation("UserSecurityStateRevoker")
+  orgUnitsCreated            OrgUnit[]            @relation("OrgUnitCreator")
+  policyBundlesCreated       PolicyBundle[]       @relation("PolicyBundleCreator")
+  roleDefinitionsCreated     RoleDefinition[]     @relation("RoleDefinitionCreator")
+  authorizationScopesCreated AuthorizationScope[] @relation("AuthorizationScopeCreator")
+  roleAssignmentsSubject     RoleAssignment[]     @relation("RoleAssignmentSubject")
+  roleAssignmentsRequested   RoleAssignment[]     @relation("RoleAssignmentRequester")
+  roleAssignmentsRevoked     RoleAssignment[]     @relation("RoleAssignmentRevoker")
 
+  @@unique([tenantId, id])
   @@map("users")
 }
 
@@ -304,6 +412,278 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@map("audit_logs")
+}
+
+model UserSecurityState {
+  userId                String                 @id @map("user_id")
+  tenantId              String?                @map("tenant_id")
+  lifecycleStatus       AccountLifecycleStatus @default(INVITED) @map("lifecycle_status")
+  tokenVersion          Int                    @default(1) @map("token_version")
+  authorizationVersion  Int                    @default(1) @map("authorization_version")
+  mustChangePassword    Boolean                @default(true) @map("must_change_password")
+  mfaRequired           Boolean                @default(false) @map("mfa_required")
+  failedLoginCount      Int                    @default(0) @map("failed_login_count")
+  lockedUntil           DateTime?              @map("locked_until") @db.Timestamptz(6)
+  accountExpiresAt      DateTime?              @map("account_expires_at") @db.Timestamptz(6)
+  activationCompletedAt DateTime?              @map("activation_completed_at") @db.Timestamptz(6)
+  passwordChangedAt     DateTime?              @map("password_changed_at") @db.Timestamptz(6)
+  suspendedAt           DateTime?              @map("suspended_at") @db.Timestamptz(6)
+  suspendedByUserId     String?                @map("suspended_by_user_id")
+  suspensionReasonCode  String?                @map("suspension_reason_code") @db.VarChar(80)
+  revokedAt             DateTime?              @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId       String?                @map("revoked_by_user_id")
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user        User    @relation("UserSecurityStateSubject", fields: [userId], references: [id], onDelete: Cascade)
+  tenant      Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  suspendedBy User?   @relation("UserSecurityStateSuspender", fields: [suspendedByUserId], references: [id], onDelete: SetNull)
+  revokedBy   User?   @relation("UserSecurityStateRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, lifecycleStatus])
+  @@index([accountExpiresAt])
+  @@map("auth_user_security_states")
+}
+
+model OrgUnit {
+  id              String        @id @default(cuid())
+  tenantId        String        @map("tenant_id")
+  code            String        @db.VarChar(80)
+  name            String        @db.VarChar(180)
+  kind            OrgUnitKind
+  status          OrgUnitStatus @default(ACTIVE)
+  parentId        String?       @map("parent_id")
+  hierarchyPath   String        @map("hierarchy_path") @db.VarChar(1200)
+  validFrom       DateTime      @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validUntil      DateTime?     @map("valid_until") @db.Timestamptz(6)
+  createdByUserId String?       @map("created_by_user_id")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent              OrgUnit?             @relation("OrgUnitHierarchy", fields: [tenantId, parentId], references: [tenantId, id], onDelete: Restrict)
+  children            OrgUnit[]            @relation("OrgUnitHierarchy")
+  createdBy           User?                @relation("OrgUnitCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  ancestorClosures    OrgUnitClosure[]     @relation("OrgUnitClosureAncestor")
+  descendantClosures  OrgUnitClosure[]     @relation("OrgUnitClosureDescendant")
+  authorizationScopes AuthorizationScope[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, code])
+  @@unique([tenantId, hierarchyPath])
+  @@index([tenantId, parentId, status])
+  @@map("auth_org_units")
+}
+
+model OrgUnitClosure {
+  id           String @id @default(cuid())
+  tenantId     String @map("tenant_id")
+  ancestorId   String @map("ancestor_id")
+  descendantId String @map("descendant_id")
+  depth        Int
+
+  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ancestor   OrgUnit @relation("OrgUnitClosureAncestor", fields: [tenantId, ancestorId], references: [tenantId, id], onDelete: Cascade)
+  descendant OrgUnit @relation("OrgUnitClosureDescendant", fields: [tenantId, descendantId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([tenantId, ancestorId, descendantId])
+  @@index([tenantId, descendantId, depth])
+  @@map("auth_org_unit_closure")
+}
+
+model PolicyBundle {
+  id                 String             @id @default(cuid())
+  namespace          String             @db.VarChar(120)
+  tenantId           String?            @map("tenant_id")
+  version            String             @db.VarChar(80)
+  status             PolicyBundleStatus @default(DRAFT)
+  schemaVersion      String             @map("schema_version") @db.VarChar(40)
+  routePolicyVersion String             @map("route_policy_version") @db.VarChar(80)
+  policyDigest       String             @unique @map("policy_digest") @db.Char(64)
+  description        String?
+  createdByUserId    String?            @map("created_by_user_id")
+  approvedRequestId  String?            @map("approved_request_id")
+  activatedAt        DateTime?          @map("activated_at") @db.Timestamptz(6)
+  retiredAt          DateTime?          @map("retired_at") @db.Timestamptz(6)
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy       User?            @relation("PolicyBundleCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  roleDefinitions RoleDefinition[]
+
+  @@unique([namespace, version])
+  @@index([tenantId, status])
+  @@index([status, activatedAt])
+  @@map("auth_policy_bundles")
+}
+
+model CapabilityDefinition {
+  key                String   @id @db.VarChar(160)
+  resourceType       String   @map("resource_type") @db.VarChar(100)
+  action             String   @db.VarChar(80)
+  description        String
+  dataClassification String   @map("data_classification") @db.VarChar(40)
+  privileged         Boolean  @default(false)
+  requiresMfa        Boolean  @default(false) @map("requires_mfa")
+  requiresReauth     Boolean  @default(false) @map("requires_reauth")
+  enabled            Boolean  @default(true)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  roleCapabilities RoleCapability[]
+
+  @@index([resourceType, action])
+  @@map("auth_capabilities")
+}
+
+model RoleDefinition {
+  id               String               @id @default(cuid())
+  namespace        String               @db.VarChar(120)
+  tenantId         String?              @map("tenant_id")
+  roleKey          String               @map("role_key") @db.VarChar(100)
+  version          Int                  @default(1)
+  displayName      String               @map("display_name") @db.VarChar(160)
+  description      String
+  status           RoleDefinitionStatus @default(DRAFT)
+  privileged       Boolean              @default(false)
+  requiresApproval Boolean              @default(true) @map("requires_approval")
+  policyBundleId   String               @map("policy_bundle_id")
+  validFrom        DateTime?            @map("valid_from") @db.Timestamptz(6)
+  validUntil       DateTime?            @map("valid_until") @db.Timestamptz(6)
+  createdByUserId  String?              @map("created_by_user_id")
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant           Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  policyBundle     PolicyBundle     @relation(fields: [policyBundleId], references: [id], onDelete: Restrict)
+  createdBy        User?            @relation("RoleDefinitionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  roleCapabilities RoleCapability[]
+  roleAssignments  RoleAssignment[]
+
+  @@unique([tenantId, id])
+  @@unique([namespace, roleKey, version])
+  @@index([tenantId, status])
+  @@index([policyBundleId])
+  @@map("auth_role_definitions")
+}
+
+model RoleCapability {
+  id                      String           @id @default(cuid())
+  roleDefinitionId        String           @map("role_definition_id")
+  capabilityKey           String           @map("capability_key") @db.VarChar(160)
+  effect                  PermissionEffect @default(ALLOW)
+  constraintSchemaVersion String?          @map("constraint_schema_version") @db.VarChar(40)
+  constraints             Json?
+  createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  roleDefinition RoleDefinition       @relation(fields: [roleDefinitionId], references: [id], onDelete: Cascade)
+  capability     CapabilityDefinition @relation(fields: [capabilityKey], references: [key], onDelete: Restrict)
+
+  @@unique([roleDefinitionId, capabilityKey])
+  @@index([capabilityKey, effect])
+  @@map("auth_role_capabilities")
+}
+
+model AuthorizationScope {
+  id                      String      @id @default(cuid())
+  tenantId                String?     @map("tenant_id")
+  kind                    ScopeKind
+  status                  ScopeStatus @default(ACTIVE)
+  orgUnitId               String?     @map("org_unit_id")
+  resourceType            String?     @map("resource_type") @db.VarChar(100)
+  resourceId              String?     @map("resource_id") @db.VarChar(200)
+  datasetKey              String?     @map("dataset_key") @db.VarChar(160)
+  geographicBoundaryId    String?     @map("geographic_boundary_id") @db.VarChar(200)
+  constraintSchemaVersion String?     @map("constraint_schema_version") @db.VarChar(40)
+  constraints             Json?
+  normalizedDigest        String      @map("normalized_digest") @db.Char(64)
+  createdByUserId         String?     @map("created_by_user_id")
+  createdAt               DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  retiredAt               DateTime?   @map("retired_at") @db.Timestamptz(6)
+
+  tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orgUnit         OrgUnit?         @relation(fields: [tenantId, orgUnitId], references: [tenantId, id], onDelete: Restrict)
+  createdBy       User?            @relation("AuthorizationScopeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  roleAssignments RoleAssignment[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, normalizedDigest])
+  @@index([tenantId, kind, status])
+  @@index([orgUnitId])
+  @@index([resourceType, resourceId])
+  @@map("auth_scopes")
+}
+
+model RoleAssignment {
+  id                     String               @id @default(cuid())
+  tenantId               String?              @map("tenant_id")
+  subjectUserId          String               @map("subject_user_id")
+  roleDefinitionId       String               @map("role_definition_id")
+  scopeId                String               @map("scope_id")
+  status                 RoleAssignmentStatus @default(PENDING_APPROVAL)
+  source                 AssignmentSource
+  validFrom              DateTime             @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validUntil             DateTime?            @map("valid_until") @db.Timestamptz(6)
+  reasonCode             String               @map("reason_code") @db.VarChar(80)
+  reasonDetail           String?              @map("reason_detail")
+  requestedByUserId      String               @map("requested_by_user_id")
+  approvalRequestId      String?              @map("approval_request_id")
+  activatedAt            DateTime?            @map("activated_at") @db.Timestamptz(6)
+  suspendedAt            DateTime?            @map("suspended_at") @db.Timestamptz(6)
+  revokedAt              DateTime?            @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId        String?              @map("revoked_by_user_id")
+  supersedesAssignmentId String?              @map("supersedes_assignment_id")
+  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant               Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subject              User               @relation("RoleAssignmentSubject", fields: [subjectUserId], references: [id], onDelete: Restrict)
+  roleDefinition       RoleDefinition     @relation(fields: [roleDefinitionId], references: [id], onDelete: Restrict)
+  scope                AuthorizationScope @relation(fields: [scopeId], references: [id], onDelete: Restrict)
+  requestedBy          User               @relation("RoleAssignmentRequester", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  revokedBy            User?              @relation("RoleAssignmentRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+  supersedesAssignment RoleAssignment?    @relation("RoleAssignmentSupersession", fields: [supersedesAssignmentId], references: [id], onDelete: Restrict)
+  supersededBy         RoleAssignment[]   @relation("RoleAssignmentSupersession")
+
+  @@index([subjectUserId, status, validUntil])
+  @@index([tenantId, roleDefinitionId, status])
+  @@index([scopeId, status])
+  @@index([approvalRequestId])
+  @@map("auth_role_assignments")
+}
+
+model SecurityAuditEvent {
+  sequence            BigInt       @id @default(autoincrement())
+  eventId             String       @unique @default(uuid()) @map("event_id") @db.Uuid
+  chainPartition      String       @map("chain_partition") @db.VarChar(160)
+  chainSequence       BigInt       @map("chain_sequence")
+  previousHash        String       @map("previous_hash") @db.Char(64)
+  eventHash           String       @unique @map("event_hash") @db.Char(64)
+  schemaVersion       String       @map("schema_version") @db.VarChar(40)
+  tenantId            String       @map("tenant_id")
+  principalHash       String       @map("principal_hash") @db.Char(64)
+  permission          String       @db.VarChar(160)
+  purpose             String       @db.VarChar(32)
+  operation           String       @db.VarChar(16)
+  outcome             AuditOutcome
+  authorizationMode   String       @map("authorization_mode") @db.VarChar(16)
+  authorizationReason String       @map("authorization_reason") @db.VarChar(64)
+  policyVersion       String?      @map("policy_version") @db.VarChar(128)
+  assignmentIds       String[]     @map("assignment_ids")
+  scopeIds            String[]     @map("scope_ids")
+  scopeKind           String       @map("scope_kind") @db.VarChar(20)
+  organizationCount   Int          @map("organization_count")
+  resultCount         Int          @map("result_count")
+  correlationId       String       @map("correlation_id") @db.VarChar(128)
+  occurredAt          DateTime     @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@unique([chainPartition, chainSequence])
+  @@index([tenantId, occurredAt])
+  @@index([principalHash, occurredAt])
+  @@index([permission, purpose, occurredAt])
+  @@index([correlationId])
+  @@map("security_audit_events")
 }
 
 model Invitation {

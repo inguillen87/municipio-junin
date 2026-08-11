@@ -11,11 +11,12 @@ import {
   inspectGrhDirectoryResponse,
 } from './lib/grh-directory-contract.js';
 import { readGrhDirectory } from './lib/grh-directory-store.js';
+import {
+  authorizeGrhDirectoryRequest,
+} from './grh-directory-access.js';
 import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
-import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 
 const { hasConfiguredCurrency, resolveTenantPresentation } = tenantPresentationPolicy;
-const { isPublishedDemoIdentity } = publishedDemoPolicy;
 
 const EXECUTIVE_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
 const MAX_MESSAGE_LENGTH = 1200;
@@ -47,6 +48,8 @@ export function createAiAnalyzeHandler({
   requireDatasetTenantImpl = requireDatasetTenant,
   readArtifactBundleImpl = readGrhArtifactBundle,
   readDirectoryImpl = readGrhDirectory,
+  authorizeDirectoryImpl = authorizeGrhDirectoryRequest,
+  directoryAuthorizationDependencies = {},
   environment = process.env,
 } = {}) {
   return async function handler(req, res) {
@@ -89,13 +92,17 @@ export function createAiAnalyzeHandler({
     }
 
     const classification = classifyIntent(message);
-    if (classification.intent === 'person_lookup' && !canUsePrivateDirectory(caller, environment)) {
-      const answer = buildDirectoryRequiredResponse();
-      return res.status(answer.httpStatus).json(buildAssistantPayload(answer, null, {
-        available: false,
-        source: 'grh_directory_access_policy',
-        snapshotAsOf: null,
-      }));
+    let directoryAuthorization = null;
+    let directoryReadAudit = null;
+    if (classification.intent === 'person_lookup') {
+      directoryAuthorization = await authorizeDirectoryImpl(req, res, {
+        operation: 'list',
+        environment,
+        requireCapabilityImpl: async () => caller,
+        ...directoryAuthorizationDependencies,
+      });
+      if (!directoryAuthorization) return;
+      directoryReadAudit = createDirectoryReadAudit(directoryAuthorization);
     }
 
     try {
@@ -108,8 +115,9 @@ export function createAiAnalyzeHandler({
         ? await buildPrivateDirectoryResponse({
           message,
           caller,
-          readDirectoryImpl,
+          readDirectoryImpl: scopeDirectoryReader(readDirectoryImpl, directoryAuthorization),
           expectedSource: executive.source,
+          readAudit: directoryReadAudit,
         })
         : buildDeterministicAnswer(message, executive, quality, close, presentation);
       const nominal = answer.intent === 'person_lookup';
@@ -135,6 +143,9 @@ export function createAiAnalyzeHandler({
       return res.status(answer.httpStatus).json(payload);
     } catch (error) {
       const directoryFailure = classification.intent === 'person_lookup';
+      if (directoryFailure && directoryReadAudit) {
+        await directoryReadAudit.denyPendingRead();
+      }
       console.error(directoryFailure
         ? '[GRH-ASSISTANT] Directorio privado no disponible'
         : '[GRH-ASSISTANT] Proyección portable no disponible');
@@ -149,21 +160,74 @@ export function createAiAnalyzeHandler({
   };
 }
 
-function parsePrivateDirectoryAllowlist(value) {
-  if (typeof value !== 'string' || !value.trim()) return null;
-  const ids = value.split(',').map(item => item.trim());
-  if (ids.some(id => !/^[A-Za-z0-9_-]{1,128}$/.test(id)) || new Set(ids).size !== ids.length) {
-    return null;
+function scopeDirectoryReader(readDirectoryImpl, authorization) {
+  if (authorization?.decision?.scope?.tenantWide) return readDirectoryImpl;
+  const allowedOrganizationCodes = authorization?.decision?.allowedOrganizationCodes;
+  if (!Array.isArray(allowedOrganizationCodes) || allowedOrganizationCodes.length === 0) {
+    throw new Error('directory authorization scope unavailable');
   }
-  return new Set(ids);
+  return input => readDirectoryImpl({
+    ...input,
+    scopeOrganizationCodes: [...allowedOrganizationCodes],
+  });
 }
 
-function canUsePrivateDirectory(caller, environment) {
-  if (!caller || !EXECUTIVE_ROLES.includes(caller.role) || !caller.tenantId ||
-      typeof caller.email !== 'string' || !caller.email.trim()) return false;
-  if (isPublishedDemoIdentity(caller.email)) return false;
-  const allowlist = parsePrivateDirectoryAllowlist(environment?.GRH_DIRECTORY_ALLOWED_USER_IDS);
-  return Boolean(allowlist?.has(String(caller.id || '')));
+function createDirectoryReadAudit(authorization) {
+  let pendingOperation = 'list';
+  let commitUnavailable = false;
+
+  async function commit(operation, outcome, resultCount, reason, decision) {
+    if (commitUnavailable || pendingOperation !== operation) {
+      throw new Error('directory audit state invalid');
+    }
+    const committed = await authorization.commitAudit({
+      operation,
+      outcome,
+      reason,
+      resultCount,
+      decision,
+    });
+    if (!committed) {
+      commitUnavailable = true;
+      throw new Error('directory audit unavailable');
+    }
+    pendingOperation = null;
+  }
+
+  return Object.freeze({
+    beginDetail() {
+      if (commitUnavailable || pendingOperation !== null) {
+        throw new Error('directory audit state invalid');
+      }
+      pendingOperation = 'detail';
+    },
+    async allowRead(operation, resultCount) {
+      return commit(
+        operation,
+        'ALLOWED',
+        resultCount,
+        authorization.decision.reason,
+        authorization.decision,
+      );
+    },
+    async denyPendingRead() {
+      if (commitUnavailable) return false;
+      if (pendingOperation === null) return true;
+      try {
+        await commit(pendingOperation, 'DENIED', 0, 'DIRECTORY_READ_ERROR', null);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  });
+}
+
+function directoryListResultCount(list) {
+  if (!Array.isArray(list?.items)) {
+    throw new Error('directory list result invalid');
+  }
+  return list.items.length;
 }
 
 function buildAssistantPayload(answer, provenance, dataStatus) {
@@ -239,7 +303,13 @@ function buildDirectoryRequiredResponse() {
   }, 'Acceso nominal GRH · sujeto al perfil institucional · sin consulta al directorio privado.');
 }
 
-async function buildPrivateDirectoryResponse({ message, caller, readDirectoryImpl, expectedSource }) {
+async function buildPrivateDirectoryResponse({
+  message,
+  caller,
+  readDirectoryImpl,
+  expectedSource,
+  readAudit,
+}) {
   const lookup = parsePersonLookup(message);
   if (!lookup) {
     return finalizeStandaloneAnswer({
@@ -262,6 +332,7 @@ async function buildPrivateDirectoryResponse({ message, caller, readDirectoryImp
     query: { search: lookup.search, limit: listLimit },
   });
   assertPrivateDirectoryContract(list, expectedSource, 'list');
+  await readAudit.allowRead('list', directoryListResultCount(list));
 
   const matches = lookup.kind === 'legajo'
     ? list.items.filter(item => item.legajo === lookup.legajo)
@@ -274,6 +345,7 @@ async function buildPrivateDirectoryResponse({ message, caller, readDirectoryImp
   if (matchCount === 0) return buildDirectoryNoMatch(expectedSource);
   if (matchCount > 1) return buildDirectoryMultipleMatches(matches, matchCount, expectedSource);
 
+  readAudit.beginDetail();
   const selected = matches[0];
   if (!selected) throw new Error('directory list result missing');
   const detail = await readDirectoryImpl({
@@ -287,6 +359,7 @@ async function buildPrivateDirectoryResponse({ message, caller, readDirectoryImp
   if (detail.items[0].companyCode !== selected.companyCode || detail.items[0].legajo !== selected.legajo) {
     throw new Error('directory detail identity mismatch');
   }
+  await readAudit.allowRead('detail', 1);
   const person = mapPrivateDirectoryPerson(detail.items[0]);
   return buildDirectoryPersonAnswer(person, detail.source);
 }

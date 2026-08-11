@@ -406,6 +406,41 @@
     }
     .rrhh-directory-status[data-state="ready"] { color: var(--rrhh-green); }
     .rrhh-directory-status[data-state="denied"], .rrhh-directory-status[data-state="unavailable"] { color: var(--rrhh-amber); }
+    .rrhh-directory-access-panel {
+      display: grid;
+      grid-template-columns: minmax(170px, .8fr) minmax(0, 2.4fr) auto;
+      gap: 12px;
+      align-items: center;
+      margin: 0 20px 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--rrhh-border);
+      border-radius: 14px;
+      color: var(--rrhh-soft);
+      background: color-mix(in srgb, var(--rrhh-card) 88%, var(--rrhh-blue) 12%);
+    }
+    .rrhh-directory-access-panel[data-state="active"] { border-color: color-mix(in srgb, var(--rrhh-green) 48%, var(--rrhh-border)); }
+    .rrhh-directory-access-panel[data-state="static"],
+    .rrhh-directory-access-panel[data-state="shadow"] { border-color: color-mix(in srgb, var(--rrhh-blue) 52%, var(--rrhh-border)); }
+    .rrhh-directory-access-panel[data-state="denied"],
+    .rrhh-directory-access-panel[data-state="unavailable"],
+    .rrhh-directory-access-panel[data-state="invalid"] { border-color: color-mix(in srgb, var(--rrhh-amber) 48%, var(--rrhh-border)); }
+    .rrhh-directory-access-summary { display: grid; gap: 3px; min-width: 0; }
+    .rrhh-directory-access-eyebrow { color: var(--rrhh-muted); font-size: 12px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+    .rrhh-directory-access-summary strong { color: var(--rrhh-ink); font-size: 14px; }
+    .rrhh-directory-access-facts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0;
+    }
+    .rrhh-directory-access-fact { min-width: 0; padding-left: 10px; border-left: 1px solid var(--rrhh-border); }
+    .rrhh-directory-access-fact dt { color: var(--rrhh-muted); font-size: 12px; font-weight: 820; letter-spacing: .06em; text-transform: uppercase; }
+    .rrhh-directory-access-fact dd { overflow-wrap: anywhere; margin: 3px 0 0; color: var(--rrhh-ink); font-size: 12px; font-weight: 760; }
+    .rrhh-directory-access-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; }
+    .rrhh-directory-access-limit { max-width: 152px; color: var(--rrhh-muted); font-size: 12px; line-height: 1.35; text-align: right; }
+    .rrhh-directory-access-retry { min-height: 34px; margin: 0; padding: 0 11px; white-space: nowrap; }
+    .rrhh-directory-access-error { grid-column: 1 / -1; margin: -2px 0 0; color: var(--rrhh-amber); font-size: 12px; font-weight: 720; }
+    .rrhh-directory-access-error[hidden], .rrhh-directory-access-retry[hidden] { display: none !important; }
     .rrhh-directory-tools {
       display: grid;
       grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(132px, .72fr)) auto auto;
@@ -539,6 +574,9 @@
       .rrhh-grid, .rrhh-grid--quality, .rrhh-grid--source { grid-template-columns: 1fr; }
       .rrhh-grid--trends { grid-template-columns: 1fr; }
       .rrhh-source-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .rrhh-directory-access-panel { grid-template-columns: minmax(150px, .7fr) minmax(0, 2fr); }
+      .rrhh-directory-access-actions { grid-column: 1 / -1; justify-content: flex-start; }
+      .rrhh-directory-access-limit { max-width: none; text-align: left; }
     }
     @media (max-width: 680px) {
       .content-wrapper.rrhh-shell { gap: 12px; }
@@ -559,6 +597,10 @@
       .rrhh-methodology { grid-template-columns: 1fr; }
       .rrhh-card--wide .rrhh-bars { grid-template-columns: 1fr; }
       .rrhh-actions .rrhh-action { flex: 1 1 148px; }
+      .rrhh-directory-access-panel { grid-template-columns: 1fr; margin-inline: 15px; }
+      .rrhh-directory-access-facts { grid-template-columns: 1fr; }
+      .rrhh-directory-access-fact { padding: 7px 0 0; border-top: 1px solid var(--rrhh-border); border-left: 0; }
+      .rrhh-directory-access-actions { grid-column: auto; }
       .rrhh-directory-tools { grid-template-columns: 1fr; padding-inline: 15px; }
       .rrhh-directory-tools .rrhh-field:first-child { grid-column: auto; }
       .rrhh-directory-table-wrap { display: none; }
@@ -698,6 +740,31 @@
             </div>
             <span class="rrhh-directory-status" id="directoryStatusBadge" data-state="loading">Verificando acceso</span>
           </header>
+          <aside class="rrhh-directory-access-panel" id="directoryAccessPanel" data-state="loading" aria-labelledby="directoryAccessTitle">
+            <div class="rrhh-directory-access-summary">
+              <span class="rrhh-directory-access-eyebrow" id="directoryAccessTitle">Mi acceso GRH</span>
+              <strong id="directoryAccessStatus">Verificando</strong>
+            </div>
+            <dl class="rrhh-directory-access-facts">
+              <div class="rrhh-directory-access-fact">
+                <dt>Ámbito</dt>
+                <dd id="directoryAccessScope">—</dd>
+              </div>
+              <div class="rrhh-directory-access-fact">
+                <dt>Vigencia</dt>
+                <dd id="directoryAccessValidity">—</dd>
+              </div>
+              <div class="rrhh-directory-access-fact">
+                <dt>Auditoría</dt>
+                <dd id="directoryAccessAudit">—</dd>
+              </div>
+            </dl>
+            <div class="rrhh-directory-access-actions">
+              <span class="rrhh-directory-access-limit" id="directoryAccessLimits">Verificando controles</span>
+              <button class="rrhh-button rrhh-directory-access-retry" id="directoryAccessRetry" type="button" hidden>Reintentar</button>
+            </div>
+            <p class="rrhh-directory-access-error" id="directoryAccessError" role="status" aria-live="polite" hidden></p>
+          </aside>
           <form class="rrhh-directory-tools" id="directoryForm" autocomplete="off">
             <label class="rrhh-field" for="directorySearch">
               Buscar persona o legajo
@@ -930,7 +997,8 @@
         </section>
         <div class="rrhh-person-actions">
           <a class="rrhh-action" href="ia.html">Analizar en Asistente GRH</a>
-          <a class="rrhh-action rrhh-action--secondary" href="hacienda.html">Cruzar con Hacienda</a>
+          <a class="rrhh-action rrhh-action--secondary" id="personHaciendaSector" href="hacienda.html" hidden>Analizar finanzas del sector</a>
+          <a class="rrhh-action rrhh-action--secondary" id="personHaciendaAgreement" href="hacienda.html" hidden>Analizar finanzas del convenio</a>
         </div>
       </div>
     </div>

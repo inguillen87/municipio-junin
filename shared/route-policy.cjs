@@ -14,7 +14,7 @@
 
 const { ROLES, isKnownRole } = require('./access-policy.cjs');
 
-const ROUTE_POLICY_VERSION = '2026-08-11.1';
+const ROUTE_POLICY_VERSION = '2026-08-11.3';
 
 const RUNTIMES = Object.freeze({
   SERVERLESS: 'serverless',
@@ -26,6 +26,7 @@ const RESOURCES = Object.freeze({
   GRH_CONTRACT: 'grh.contract',
   GRH_DIRECTORY: 'grh.directory',
   GRH_ORGANIZATION_ANALYTICS: 'grh.organization.analytics',
+  GRH_WORKFORCE_FINANCE: 'grh.workforce-finance',
   MUNICIPAL_TERRITORY: 'municipal.territory',
   GRH_ANALYSIS: 'grh.analysis',
   GRH_REPORT: 'grh.report',
@@ -78,6 +79,7 @@ const PERMISSIONS = Object.freeze({
   GRH_CONTRACT_READ: permissionId(RESOURCES.GRH_CONTRACT, ACTIONS.READ),
   GRH_DIRECTORY_READ: permissionId(RESOURCES.GRH_DIRECTORY, ACTIONS.READ),
   GRH_ORGANIZATION_ANALYTICS_READ: permissionId(RESOURCES.GRH_ORGANIZATION_ANALYTICS, ACTIONS.READ),
+  GRH_WORKFORCE_FINANCE_READ: permissionId(RESOURCES.GRH_WORKFORCE_FINANCE, ACTIONS.READ),
   MUNICIPAL_TERRITORY_READ: permissionId(RESOURCES.MUNICIPAL_TERRITORY, ACTIONS.READ),
   GRH_ANALYSIS_EXECUTE: permissionId(RESOURCES.GRH_ANALYSIS, ACTIONS.EXECUTE),
   GRH_REPORT_READ: permissionId(RESOURCES.GRH_REPORT, ACTIONS.READ),
@@ -142,6 +144,7 @@ const PERMISSION_GRANTS = Object.freeze({
   [PERMISSIONS.GRH_CONTRACT_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_DIRECTORY_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_ORGANIZATION_ANALYTICS_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
+  [PERMISSIONS.GRH_WORKFORCE_FINANCE_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.MUNICIPAL_TERRITORY_READ]: Object.freeze(['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO']),
   [PERMISSIONS.GRH_ANALYSIS_EXECUTE]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_REPORT_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
@@ -210,7 +213,9 @@ const PROTECTED_ROUTES = Object.freeze([
   route('serverless.auth.me.read', 'serverless', 'GET', '/auth/me', PERMISSIONS.SESSION_READ),
   route('serverless.grh.contract.read', 'serverless', 'GET', '/grh-data', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.directory.read', 'serverless', 'GET', '/grh-directory', PERMISSIONS.GRH_DIRECTORY_READ),
+  route('serverless.grh.directory-access.read', 'serverless', 'GET', '/grh-directory-access', PERMISSIONS.GRH_DIRECTORY_READ),
   route('serverless.grh.organization-analytics.read', 'serverless', 'GET', '/grh-organization-analytics', PERMISSIONS.GRH_ORGANIZATION_ANALYTICS_READ),
+  route('serverless.grh.workforce-finance.read', 'serverless', 'GET', '/grh-workforce-finance', PERMISSIONS.GRH_WORKFORCE_FINANCE_READ),
   route('serverless.municipal.territory.read', 'serverless', 'GET', '/municipal-territory', PERMISSIONS.MUNICIPAL_TERRITORY_READ),
   route('serverless.grh.executive.read', 'serverless', 'GET', '/grh-executive', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.quality.read', 'serverless', 'GET', '/grh-quality', PERMISSIONS.GRH_CONTRACT_READ),

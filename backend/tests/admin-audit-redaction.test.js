@@ -10,7 +10,9 @@ process.env.JWT_SECRET = 'admin-audit-redaction-secret-with-sufficient-length';
 const prisma = require('../lib/prisma');
 const adminRouter = require('../routes/admin');
 
-const SNAPSHOT_ACTION = 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1';
+const DIRECTORY_SNAPSHOT_ACTION = 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1';
+const WORKFORCE_FINANCE_SNAPSHOT_ACTION = 'GRH_WORKFORCE_FINANCE_SNAPSHOT_PAYLOAD_V1';
+const SNAPSHOT_ACTIONS = [DIRECTORY_SNAPSHOT_ACTION, WORKFORCE_FINANCE_SNAPSHOT_ACTION];
 
 async function startHarness() {
   const app = express();
@@ -48,9 +50,16 @@ test('GET /admin/audit excludes the encrypted GRH payload before fetch and befor
         tenant: { name: 'Municipio de prueba' },
       },
       {
-        id: 'private-snapshot-envelope',
-        action: SNAPSHOT_ACTION,
+        id: 'private-directory-snapshot-envelope',
+        action: DIRECTORY_SNAPSHOT_ACTION,
         details: { ciphertext: 'must-never-be-serialized', authTag: 'also-private' },
+        user: null,
+        tenant: { name: 'Municipio de prueba' },
+      },
+      {
+        id: 'private-workforce-finance-snapshot-envelope',
+        action: WORKFORCE_FINANCE_SNAPSHOT_ACTION,
+        details: { ciphertext: 'finance-must-never-be-serialized', aad: { tenantId: 'private' } },
         user: null,
         tenant: { name: 'Municipio de prueba' },
       },
@@ -73,7 +82,7 @@ test('GET /admin/audit excludes the encrypted GRH payload before fetch and befor
 
   assert.equal(response.status, 200);
   assert.deepEqual(receivedQuery.where, {
-    action: { not: SNAPSHOT_ACTION },
+    action: { notIn: SNAPSHOT_ACTIONS },
   });
   assert.deepEqual(payload, {
     ok: true,
@@ -86,5 +95,8 @@ test('GET /admin/audit excludes the encrypted GRH payload before fetch and befor
       tenant: { name: 'Municipio de prueba' },
     }],
   });
-  assert.doesNotMatch(JSON.stringify(payload), /must-never-be-serialized|also-private|private-snapshot-envelope/);
+  assert.doesNotMatch(
+    JSON.stringify(payload),
+    /must-never-be-serialized|also-private|finance-must-never-be-serialized|private-(?:directory|workforce-finance)-snapshot-envelope/,
+  );
 });

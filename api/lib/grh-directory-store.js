@@ -76,6 +76,32 @@ function integer(value, { minimum = 0, maximum = 2147483647, fallback = null } =
   return parsed;
 }
 
+export function normalizeGrhDirectoryScopeOrganizationCodes(value) {
+  if (value === null || value === undefined) return null;
+  if (!Array.isArray(value) || value.length === 0 || value.length > 512) {
+    throw directoryError('GRH_DIRECTORY_SCOPE_INVALID');
+  }
+  const normalized = value.map(item => {
+    if (typeof item === 'number') {
+      if (!Number.isSafeInteger(item) || item < 0 || item > 2147483647) {
+        throw directoryError('GRH_DIRECTORY_SCOPE_INVALID');
+      }
+      return item;
+    }
+    if (typeof item !== 'string' || !/^\d{1,10}$/.test(item)) {
+      throw directoryError('GRH_DIRECTORY_SCOPE_INVALID');
+    }
+    const parsed = Number(item);
+    if (!Number.isSafeInteger(parsed) || parsed > 2147483647) {
+      throw directoryError('GRH_DIRECTORY_SCOPE_INVALID');
+    }
+    return parsed;
+  });
+  return Object.freeze([...new Set(normalized)].sort((left, right) => left - right));
+}
+
+const normalizeScopeOrganizationCodes = normalizeGrhDirectoryScopeOrganizationCodes;
+
 function booleanValue(value) {
   if (value === undefined || value === null || value === '') return null;
   const normalized = String(scalar(value)).toLowerCase();
@@ -223,7 +249,7 @@ function escapeLike(value) {
   return value.replace(/[\\%_]/gu, match => '\\' + match);
 }
 
-function facetExpression() {
+function facetExpression(scopeClause = '') {
   const pairs = Object.entries(FACET_DIMENSIONS).map(([name, spec]) => {
     if (name === 'positionObservations') {
       return `'positionObservations', COALESCE(
@@ -234,6 +260,7 @@ function facetExpression() {
                   COUNT(*)::int AS count
              FROM grh_directory_people people
             WHERE people.tenant_id = $1
+              ${scopeClause}
               AND people.position_observation_label IS NOT NULL
               AND people.position_observation_status IS NOT NULL
             GROUP BY people.position_observation_label, people.position_observation_status
@@ -257,6 +284,7 @@ function facetExpression() {
               AND dimension.scope_code = people.agreement_code
               AND dimension.code = people.category_code
             WHERE people.tenant_id = $1
+              ${scopeClause}
               AND people.agreement_code IS NOT NULL
               AND people.category_code IS NOT NULL
             GROUP BY people.agreement_code, people.category_code
@@ -281,6 +309,7 @@ function facetExpression() {
               AND dimension.scope_code = 0
               AND dimension.code = people.${spec.column}
             WHERE people.tenant_id = $1
+              ${scopeClause}
               AND people.${spec.column} IS NOT NULL
             GROUP BY people.${spec.column}
             ORDER BY count DESC, label ASC NULLS LAST, code ASC
@@ -290,13 +319,19 @@ function facetExpression() {
   return `jsonb_build_object(${pairs.join(',\n      ')})`;
 }
 
-export function buildGrhDirectorySql(tenantId, parsed) {
+export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes = null } = {}) {
   const values = [tenantId];
   const where = ['p.tenant_id = $1'];
   const parameter = value => {
     values.push(value);
     return '$' + values.length;
   };
+  const scopeParameter = scopeOrganizationCodes === null
+    ? null
+    : parameter(scopeOrganizationCodes);
+  if (scopeParameter !== null) {
+    where.push(`p.organization_code = ANY(${scopeParameter}::integer[])`);
+  }
   for (const searchToken of parsed.searchTokens) {
     const nameToken = parameter('%' + escapeLike(searchToken) + '%');
     const legajoToken = parameter(escapeLike(searchToken) + '%');
@@ -349,7 +384,9 @@ export function buildGrhDirectorySql(tenantId, parsed) {
               ) recent_leave
            ) AS leave_history` : '';
   const facetsCte = parsed.mode === 'list'
-    ? `, facets AS (SELECT ${facetExpression()} AS value)`
+    ? `, facets AS (SELECT ${facetExpression(
+      scopeParameter === null ? '' : `AND people.organization_code = ANY(${scopeParameter}::integer[])`,
+    )} AS value)`
     : '';
   const facetsSelect = parsed.mode === 'list' ? '(SELECT value FROM facets)' : 'NULL::jsonb';
   const sql = `WITH filtered AS (
@@ -741,8 +778,12 @@ function snapshotRecordMatches(record, parsed) {
   return true;
 }
 
-function responseFromSnapshot(artifact, parsed) {
-  const filtered = artifact.records.filter(record => snapshotRecordMatches(record, parsed));
+function responseFromSnapshot(artifact, parsed, scopeOrganizationCodes = null) {
+  const scope = scopeOrganizationCodes === null ? null : new Set(scopeOrganizationCodes);
+  const scopedRecords = scope === null
+    ? artifact.records
+    : artifact.records.filter(record => record.organization && scope.has(record.organization.code));
+  const filtered = scopedRecords.filter(record => snapshotRecordMatches(record, parsed));
   if (parsed.mode === 'list') filtered.sort(snapshotRecordOrder);
   const total = filtered.length;
   if (parsed.mode === 'detail' && total === 0) throw directoryError('GRH_DIRECTORY_NOT_FOUND', 404);
@@ -775,7 +816,7 @@ function responseFromSnapshot(artifact, parsed) {
       cursor: parsed.cursor,
       nextCursor: hasNext ? encodeGrhDirectoryCursor(parsed.offset + parsed.limit, parsed) : null,
     },
-    facets: parsed.mode === 'list' ? snapshotFacets(artifact.records) : null,
+    facets: parsed.mode === 'list' ? snapshotFacets(scopedRecords) : null,
     items,
   };
 }
@@ -783,10 +824,12 @@ function responseFromSnapshot(artifact, parsed) {
 export async function readGrhDirectory({
   tenantId,
   query = {},
+  scopeOrganizationCodes = null,
   queryImpl = defaultQuery,
   environment = process.env,
 } = {}) {
   if (typeof tenantId !== 'string' || !tenantId) throw directoryError('GRH_DIRECTORY_TENANT_REQUIRED');
+  const normalizedScope = normalizeScopeOrganizationCodes(scopeOrganizationCodes);
   const snapshotEnabled = isGrhDirectorySnapshotEnabled(environment);
   const configuredSourceSha = SOURCE_SHA256_PATTERN.test(environment?.GRH_SOURCE_SHA256 || '')
     ? environment.GRH_SOURCE_SHA256
@@ -795,8 +838,14 @@ export async function readGrhDirectory({
     snapshotEnabled ? 'snapshot' : 'materialized',
     configuredSourceSha || 'unbound',
     CURSOR_ORDERING_VERSION,
+    normalizedScope === null
+      ? 'tenant'
+      : createHash('sha256').update(normalizedScope.join(',')).digest('hex').slice(0, 16),
   ].join(':');
   const parsed = parseGrhDirectoryQuery(query, { cursorScope });
+  if (normalizedScope !== null && parsed.organization !== null && !normalizedScope.includes(parsed.organization)) {
+    throw directoryError('GRH_DIRECTORY_SCOPE_DENIED', 403);
+  }
   if (snapshotEnabled) {
     const artifact = await loadGrhDirectorySnapshotArtifact({
       tenantId,
@@ -806,9 +855,9 @@ export async function readGrhDirectory({
     if (configuredSourceSha && artifact.source.sha256 !== configuredSourceSha) {
       throw directoryError('GRH_DIRECTORY_SOURCE_MISMATCH');
     }
-    return responseFromSnapshot(artifact, parsed);
+    return responseFromSnapshot(artifact, parsed, normalizedScope);
   }
-  const built = buildGrhDirectorySql(tenantId, parsed);
+  const built = buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes: normalizedScope });
   const result = await queryImpl(built.sql, built.values);
   const source = result?.rows?.[0];
   if (!source) throw directoryError('GRH_DIRECTORY_SOURCE_UNAVAILABLE');

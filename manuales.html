@@ -285,6 +285,7 @@
         <a href="#roles">Recorrido por rol</a>
         <a href="#fuente">Fuente GRH</a>
         <a href="#interpretacion">Cómo interpretar</a>
+        <a href="#decisiones-compromisos">Decisiones y compromisos</a>
         <a href="#superficies">Estado de superficies</a>
         <a href="#acceso">Acceso y errores</a>
         <a href="#rutinas">Rutinas de gestión</a>
@@ -303,9 +304,9 @@
             Manual vivo para funcionarios, equipos operativos y futuros ingenieros. Describe lo que la plataforma puede demostrar hoy, cómo decidir con el snapshot GRH y qué capacidades permanecen condicionadas o en hoja de ruta.
           </p>
 
-          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Release público <code>v1.10.0</code> verificado.</strong> Producto S13 en commit <code>d11fd39</code>; el commit/tag release apunta a <code>4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7</code> y el objeto del tag anotado es <code>07ac9eacf8bd89f27f5c437b99e713e8497b8934</code>. La <a href="https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0">GitHub Release v1.10.0</a> está live, no draft y no prerelease. El deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> quedó <code>READY</code>, alias <code>https://municipio-junin.vercel.app</code>, con <code>gitSource master/4108ca0</code>; gate productivo 11/11 exit <code>0</code>, <code>checkedAt 2026-08-09T16:33:56.200Z</code>. Browser público: 10/10 estados a 390/1440 px, <code>/</code> y <code>/roles</code> visibles; <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays, requests externos y fallas de red. Logs del corte: 0 errores y 0 respuestas 500. <code>GET /api/grh-decision-brief</code> entrega <code>grh-decision-brief-v1</code> desde agregados del snapshot aprobado; aplica k=10 y no exporta PII, importes, códigos de fuente/celda ni etiquetas/labels. La sesión privada positiva y S13 privado conservan validación local. Focal raíz S13 135/135; QA adversarial 104/104 con 0 P1/P2; suite raíz 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20. No certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. Este commit documental post-release no mueve el tag <code>v1.10.0</code> de <code>4108ca0</code>.</div></div>
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Referencia del último release público verificado: <code>v1.10.0</code>.</strong> Producto S13 en commit <code>d11fd39</code>; el commit/tag release apunta a <code>4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7</code> y el objeto del tag anotado es <code>07ac9eacf8bd89f27f5c437b99e713e8497b8934</code>. La <a href="https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0">GitHub Release v1.10.0</a> está live, no draft y no prerelease. El deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> quedó <code>READY</code>, alias <code>https://municipio-junin.vercel.app</code>, con <code>gitSource master/4108ca0</code>; gate productivo 11/11 exit <code>0</code>, <code>checkedAt 2026-08-09T16:33:56.200Z</code>. Browser público: 10/10 estados a 390/1440 px, <code>/</code> y <code>/roles</code> visibles; <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays, requests externos y fallas de red. Logs del corte: 0 errores y 0 respuestas 500. <code>GET /api/grh-decision-brief</code> entrega <code>grh-decision-brief-v1</code> desde agregados del snapshot aprobado; aplica k=10 y no exporta PII, importes, códigos de fuente/celda ni etiquetas/labels. La sesión privada positiva y S13 privado conservan validación local. Focal raíz S13 135/135; QA adversarial 104/104 con 0 P1/P2; suite raíz 591 pruebas —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20. No certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. <strong>Las capacidades posteriores descriptas como locales —incluido el Centro de decisiones— no forman parte de <code>v1.10.0</code> ni están certificadas online.</strong> Este commit documental post-release no mueve el tag <code>v1.10.0</code> de <code>4108ca0</code>.</div></div>
 
-          <p class="section-intro"><code>grh-decision-brief-v1</code> separa señal global de evidencia mensual, incluye <code>temporalQuarantineRows</code>, aplica k=10 y no exporta PII, importes, códigos de fuente/celda ni etiquetas/labels. Las CTA exigen su capability; un 503 admite sólo reintento manual y una celda actual <code>&lt;10</code> hace fallar cerrado el Panel integral. Route policy <code>2026-08-09.2</code>, access policy <code>2026-08-09.1</code>: 26 recursos, 12 acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—; el gate verificó seis APIs en 11 checks.</p>
+          <p class="section-intro"><code>grh-decision-brief-v1</code> separa señal global de evidencia mensual, incluye <code>temporalQuarantineRows</code>, aplica k=10 y no exporta PII, importes, códigos de fuente/celda ni etiquetas/labels. Las CTA exigen su capability; un 503 admite sólo reintento manual y una celda actual <code>&lt;10</code> hace fallar cerrado el Panel integral. Estado local de esta entrega, todavía no desplegado: route policy <code>2026-08-11.5</code>, access policy <code>2026-08-11.3</code>, 31 recursos, 12 acciones, 53 permisos y 88 rutas —46 Serverless + 42 Express—.</p>
 
           <div class="snapshot-bar" aria-label="Resumen de gobierno de datos">
             <div class="snapshot-item"><span>Fuente prioritaria</span><strong>Backup GRH de Junín</strong></div>
@@ -437,14 +438,32 @@
           <div class="callout info"><span aria-hidden="true">i</span><div><strong>Control de cálculo, no pago bancario.</strong> Antes de tomar una decisión vinculante, verificá en cada pantalla la fuente, la fecha, la definición del KPI, la cobertura y las alertas de calidad.</div></div>
         </section>
 
+        <section id="decisiones-compromisos">
+          <p class="section-kicker">05 · Seguimiento operativo</p>
+          <h2>De la prioridad al compromiso verificable</h2>
+          <p class="section-intro">El Centro de decisiones consume <code>grh-action-ledger-v1</code>: crea compromisos únicamente sobre prioridades accionables del <code>grh-decision-brief-v1</code> vigente y conserva los compromisos actuales e históricos. Cada registro fija fuente, SHA-256, corte, período y evidencia; no asigna responsables, aprueba decisiones ni ejecuta correcciones de forma automática.</p>
+          <div class="callout"><span aria-hidden="true">!</span><div><strong>Estado local, no desplegado.</strong> Esta superficie y su migración están implementadas y verificadas localmente, pero todavía no forman parte del release público <code>v1.10.0</code>. Requieren aplicar la migración en una base gobernada y superar un Preview autenticado antes de habilitarse online.</div></div>
+
+          <div class="steps">
+            <article class="step"><div><h3>Leer antes de crear</h3><p>Abrí <code>decisiones-grh.html</code>, verificá el período, el corte y el resumen. Una sugerencia disponible significa que el brief vigente permite crear y que todavía no existe un compromiso para esa prioridad.</p></div></article>
+            <article class="step"><div><h3>Confirmar responsable y fecha</h3><p>La creación es siempre humana: elegí <code>CONTADOR</code> o <code>TENANT_ADMIN</code> y una fecha entre hoy y 180 días. <code>POST /api/grh-action-ledger</code> valida el brief exacto y responde el registro completo actualizado.</p></div></article>
+            <article class="step"><div><h3>Seguir versión y línea de tiempo</h3><p>Usá sólo las transiciones que devuelve el servidor. <code>PATCH /api/grh-action-ledger</code> exige versión esperada y códigos estructurados para bloqueo, cancelación o resultado; los compromisos históricos siguen operables y muestran su propio período y corte.</p></div></article>
+          </div>
+
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Lectura y escritura:</strong> <code>GET /api/grh-action-ledger</code> consulta el registro; <code>POST</code> crea un compromiso y <code>PATCH</code> registra una transición. Un <code>503</code> inicial no muestra datos; durante una mutación conserva la última vista ya validada y exige reintento manual. <code>409</code> indica conflicto de versión, idempotencia o evidencia vigente; <code>422</code> rechaza forma, fecha o transición y <code>403</code> indica falta de permiso o responsabilidad.</div></div>
+          <div class="callout"><span aria-hidden="true">!</span><div><strong>Sin notas libres en v1.</strong> Los motivos y resultados son enumeraciones gobernadas. Un compromiso registra seguimiento sobre evidencia histórica; no constituye una orden, aprobación, delegación ni acto administrativo.</div></div>
+          <div class="actions"><a class="action primary" href="decisiones-grh.html">Abrir Centro de decisiones</a><a class="action" href="dashboard.html#decisionBrief">Volver al brief ejecutivo</a></div>
+        </section>
+
         <section id="superficies">
-          <p class="section-kicker">05 · Mapa de producto</p>
+          <p class="section-kicker">06 · Mapa de producto</p>
           <h2>Estado de las superficies</h2>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Superficie</th><th>Fuente</th><th>Comportamiento esperado</th></tr></thead>
               <tbody>
                 <tr><td><strong>Tablero ejecutivo / GRH</strong></td><td><code>grh-executive-v2</code> + <code>grh-quality-v1</code></td><td>Consumidores migrados localmente; 503 o estado no disponible si falla una proyección. No certifica despliegue.</td></tr>
+                <tr><td><strong>Centro de decisiones GRH</strong><br><small>Local · condicionado</small></td><td><code>grh-action-ledger-v1</code> sobre <code>grh-decision-brief-v1</code></td><td><code>GET</code> consulta; <code>POST</code> crea compromisos humanos y <code>PATCH</code> registra transiciones versionadas. Incluye compromisos vigentes e históricos; no aprueba ni ejecuta decisiones. No está incluido en <code>v1.10.0</code>: falta migración gobernada y Preview autenticado.</td></tr>
                 <tr><td><strong>RRHH / Hacienda</strong></td><td><code>grh-executive-v2</code> + <code>grh-quality-v1</code> + <code>grh-close-v1</code> en Hacienda</td><td>Cierre mensual explicado local; comparación sólo de meses consecutivos k≥10. El P1 global-como-mensual fue retirado. No certifica pago, causalidad, contabilidad ni producción.</td></tr>
                 <tr><td><strong>Calidad y Linaje</strong></td><td><code>grh-quality-v1</code></td><td>Consumidor migrado localmente; expone inventario, score, cuarentena, conciliación y riesgos sin categorías, códigos ni importes.</td></tr>
                 <tr><td><strong>MuniBot</strong></td><td>Bundle privado sólo server-side</td><td>“Cierre explicado” construye <code>grh-close-v1</code> para un único <code>YYYY-MM</code> liberado k≥10. Año solo, período protegido o ausente responde 422 sin sustitución; no usa score global ni afirma moneda, causa, pago o PII. Focal local 13/13, sin deployment.</td></tr>
@@ -460,7 +479,7 @@
         </section>
 
         <section id="acceso">
-          <p class="section-kicker">06 · Acceso seguro</p>
+          <p class="section-kicker">07 · Acceso seguro</p>
           <h2>Sesión, permisos y estados de error</h2>
           <p class="section-intro">El acceso se realiza con credenciales institucionales emitidas por el administrador. Esta documentación no publica usuarios ni contraseñas de ejemplo.</p>
 
@@ -474,7 +493,7 @@
         </section>
 
         <section id="rutinas">
-          <p class="section-kicker">07 · Procedimiento de gestión</p>
+          <p class="section-kicker">08 · Procedimiento de gestión</p>
           <h2>Rutinas recomendadas</h2>
           <div class="table-wrap">
             <table>
@@ -490,7 +509,7 @@
         </section>
 
         <section id="seguridad">
-          <p class="section-kicker">08 · Seguridad aplicada</p>
+          <p class="section-kicker">09 · Seguridad aplicada</p>
           <h2>Controles que protegen la decisión</h2>
           <p class="section-intro">La seguridad no es un módulo separado: evita que una cifra correcta termine en el municipio, usuario o informe equivocado.</p>
           <ul class="truth-list">
@@ -499,8 +518,8 @@
             <li>Los contratos fuente GRH son privados y quedan sólo en backend. El navegador recibe <code>grh-executive-v2</code>, <code>grh-quality-v1</code> o <code>grh-close-v1</code>; los consumidores de servidor proyectan antes de responder.</li>
             <li>La protección usa k=5 para rankings laborales interactivos y k=10 para compensación, eventos sensibles, geografía y salidas portables. Se aplica antes del top-N y usa supresión complementaria.</li>
             <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
-            <li>El techo local contiene 26 recursos, 12 acciones, 46 permisos y 79 firmas exactas: 37 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
-            <li>La política de acceso <code>2026-08-09.1</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
+            <li>El techo local no desplegado contiene 31 recursos, 12 acciones, 53 permisos y 88 firmas exactas: 46 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>La política de acceso local <code>2026-08-11.3</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
             <li>Excel, CSV y Google Sheets se tratan como contenido no confiable: formato, límites, encabezados y persistencia se validan antes de declarar éxito.</li>
             <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>
             <li>Un tenant <code>TRIAL</code> sólo accede con vencimiento futuro explícito. El alta con contraseña elegida por un administrador está retirada hasta implementar invitaciones, sesiones revocables, MFA y doble aprobación.</li>
@@ -510,7 +529,7 @@
         </section>
 
         <section id="exportaciones">
-          <p class="section-kicker">09 · Salida de datos</p>
+          <p class="section-kicker">10 · Salida de datos</p>
           <h2>Exportaciones y uso oficial</h2>
           <ul class="truth-list">
             <li>El informe ejecutivo GRH se genera en el servidor desde el contrato privado y debe conservar sus avisos de fuente y temporalidad.</li>
@@ -521,7 +540,7 @@
         </section>
 
         <section id="municipios">
-          <p class="section-kicker">10 · Producto replicable</p>
+          <p class="section-kicker">11 · Producto replicable</p>
           <h2>Cómo presentar la plataforma a otro municipio</h2>
           <p class="section-intro">La propuesta comercial debe demostrar gobierno de datos y capacidad real, no una colección de pantallas. Cada municipio necesita su propio tenant, fuentes, responsables y validación.</p>
           <div class="steps">
@@ -533,7 +552,7 @@
         </section>
 
         <section id="produccion">
-          <p class="section-kicker">11 · Runbook mínimo</p>
+          <p class="section-kicker">12 · Runbook mínimo</p>
           <h2>Condiciones para habilitar producción</h2>
           <div class="card-grid">
             <article class="card"><span class="tag private">Release público verificado</span><h3><code>v1.10.0</code> · S13</h3><p>Producto <code>d11fd39</code>, commit/tag <code>4108ca0</code>, deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> <code>READY</code>, gate 11/11 y browser público 10/10 limpio. S13 privado conserva validación local sobre el snapshot aprobado.</p></article>
@@ -558,9 +577,9 @@
         </section>
 
         <section id="documentacion">
-          <p class="section-kicker">12 · Gobierno documental</p>
+          <p class="section-kicker">13 · Gobierno documental</p>
           <h2>Un manual que crece con el producto</h2>
-          <p class="section-intro">Versión 1.10.0 · 9 de agosto de 2026. Release público verificado: producto S13 <code>d11fd39</code>; commit/tag <code>4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7</code>; objeto de tag anotado <code>07ac9eacf8bd89f27f5c437b99e713e8497b8934</code>; <a href="https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0">GitHub Release v1.10.0</a> live, no draft y no prerelease. El deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> quedó <code>READY</code> con alias <code>https://municipio-junin.vercel.app</code> y <code>gitSource master/4108ca0</code>; gate 11/11 exit <code>0</code>, <code>checkedAt 2026-08-09T16:33:56.200Z</code>. Browser público 10/10 estados a 390/1440 px: <code>/</code> y <code>/roles</code> visibles; <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays, requests externos y fallas de red. Logs del corte: 0 errores y 0 respuestas 500. Suite raíz 591 —590 aprobadas y 1 smoke opt-in omitido—, backend 20/20, focal S13 135/135 y QA 104/104. La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado; no certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. Este commit documental post-release no mueve el tag <code>v1.10.0</code> de <code>4108ca0</code>. Como antecedente se preserva <code>v1.9.0</code>: commit/tag <code>f9d1f88</code>, product commit <code>ed76347</code>, deployment <code>dpl_Euk4csdfWw5rayohoW3xXo1vXayY</code> <code>Ready</code>, gate 10/10 y GitHub Release live; ese cierre documental no movió su tag. También se preserva <code>v1.8.1</code> con artefacto <code>b82c0b3</code>.</p>
+          <p class="section-intro">Referencia histórica de Producción: versión 1.10.0 · 9 de agosto de 2026. Release público verificado: producto S13 <code>d11fd39</code>; commit/tag <code>4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7</code>; objeto de tag anotado <code>07ac9eacf8bd89f27f5c437b99e713e8497b8934</code>; <a href="https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0">GitHub Release v1.10.0</a> live, no draft y no prerelease. El deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> quedó <code>READY</code> con alias <code>https://municipio-junin.vercel.app</code> y <code>gitSource master/4108ca0</code>; gate 11/11 exit <code>0</code>, <code>checkedAt 2026-08-09T16:33:56.200Z</code>. Browser público 10/10 estados a 390/1440 px: <code>/</code> y <code>/roles</code> visibles; <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays, requests externos y fallas de red. Logs del corte: 0 errores y 0 respuestas 500. Suite raíz 591 —590 aprobadas y 1 smoke opt-in omitido—, backend 20/20, focal S13 135/135 y QA 104/104. La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado; no certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. Las funciones posteriores de este manual se documentan como locales y no cambian ni amplían ese release. Este commit documental post-release no mueve el tag <code>v1.10.0</code> de <code>4108ca0</code>. Como antecedente se preserva <code>v1.9.0</code>: commit/tag <code>f9d1f88</code>, product commit <code>ed76347</code>, deployment <code>dpl_Euk4csdfWw5rayohoW3xXo1vXayY</code> <code>Ready</code>, gate 10/10 y GitHub Release live; ese cierre documental no movió su tag. También se preserva <code>v1.8.1</code> con artefacto <code>b82c0b3</code>.</p>
           <ul class="truth-list">
             <li>Cada feature debe actualizar comportamiento, procedimiento, seguridad, estado de capacidad y pruebas documentales en el mismo cambio.</li>
             <li>Las funciones se clasifican como operativas, condicionadas al entorno o roadmap. No se promociona una capacidad por existir sólo en código local.</li>

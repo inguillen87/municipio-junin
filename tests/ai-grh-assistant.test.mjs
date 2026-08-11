@@ -1022,10 +1022,17 @@ test('decision brief and workforce-finance intents answer from the governed real
   assert.equal(brief.status, 'answered');
   assert.equal(brief.resolvedPeriod, '2026-07');
   assert.deepEqual(brief.answer.actions.map(action => action.href), [
+    '/decisiones-grh',
     '/hacienda#closeReconciliationTitle',
     '/calidad',
     '/estructura#organizationExplorer',
   ]);
+  assert.deepEqual(brief.answer.actions[0], {
+    id: 'open_grh_decisions',
+    label: 'Convertir prioridades en compromisos',
+    href: '/decisiones-grh',
+    requiredCapability: 'navigation.grh-decisions',
+  });
   assertBarVisual(brief.answer.visual, { unit: 'percent', order: 'defined' });
 
   const overview = ask('¿Qué costo neto se concentra por centro de costo en 2026-07?');

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchAuthoritativeSession, parseAuthoritativeSession } from './session';
 
 const REQUIRED_CAPABILITY = 'navigation.grh-executive';
+const DECISIONS_CAPABILITY = 'navigation.grh-decisions';
 const ORGANIZATION_CAPABILITY = 'navigation.organization-analytics';
 const TERRITORY_CAPABILITY = 'navigation.territory';
 const INTENDENTE_CAPABILITIES = Object.freeze([
@@ -12,6 +13,7 @@ const INTENDENTE_CAPABILITIES = Object.freeze([
   'navigation.reports',
   'navigation.hacienda',
   REQUIRED_CAPABILITY,
+  DECISIONS_CAPABILITY,
   ORGANIZATION_CAPABILITY,
   TERRITORY_CAPABILITY,
   'navigation.data-quality',
@@ -79,7 +81,7 @@ function validPayload(): { user: Record<string, unknown> } {
       name: 'Intendencia Junín',
       role: 'INTENDENTE',
       tenantId: 'tenant-junin',
-      accessPolicyVersion: '2026-08-11.2',
+      accessPolicyVersion: '2026-08-11.3',
       homeProfile: {
         variant: 'executive-leadership',
         defaultPath: 'inicio.html',
@@ -108,7 +110,7 @@ function payloadForRole(
       name: `Perfil ${role}`,
       role,
       tenantId: 'tenant-junin',
-      accessPolicyVersion: '2026-08-11.2',
+      accessPolicyVersion: '2026-08-11.3',
       homeProfile: {
         variant: profile.variant,
         defaultPath: 'inicio.html',
@@ -131,7 +133,7 @@ describe('parseAuthoritativeSession', () => {
       tenant: 'Junín',
       tenantId: 'tenant-junin',
       capabilities: [...INTENDENTE_CAPABILITIES],
-      accessPolicyVersion: '2026-08-11.2',
+      accessPolicyVersion: '2026-08-11.3',
       homeVariant: 'executive-leadership',
     });
     expect(Object.isFrozen(identity)).toBe(true);
@@ -142,6 +144,12 @@ describe('parseAuthoritativeSession', () => {
     const identity = parseAuthoritativeSession(validPayload(), ORGANIZATION_CAPABILITY);
 
     expect(identity?.capabilities).toContain(ORGANIZATION_CAPABILITY);
+  });
+
+  it('accepts the GRH decisions capability only when it is present in the governed session', () => {
+    const identity = parseAuthoritativeSession(validPayload(), DECISIONS_CAPABILITY);
+
+    expect(identity?.capabilities).toContain(DECISIONS_CAPABILITY);
   });
 
   it.each(Object.keys(ROLE_HOME_PROFILES) as TestRole[])(

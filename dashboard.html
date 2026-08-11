@@ -653,6 +653,10 @@
       text-decoration: none;
     }
     .exec-decision-cta:hover { text-decoration: underline; }
+    .exec-decision-ledger-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 14px; padding: 13px 15px; border: 1px solid rgba(var(--exec-blue-rgb),.24); border-radius: 12px; background: rgba(var(--exec-blue-rgb),.055); }
+    .exec-decision-ledger-row span { color: var(--exec-muted); font-size: 10px; line-height: 1.45; }
+    .exec-decision-ledger-cta { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 7px; color: var(--exec-blue); font-size: 11px; font-weight: 850; text-decoration: none; }
+    .exec-decision-ledger-cta:hover { text-decoration: underline; }
     .exec-decision-limit { margin: 12px 0 0; color: var(--exec-muted); font-size: 9.5px; line-height: 1.55; }
     .exec-layout-full { grid-template-columns: minmax(0,1fr); }
 
@@ -917,6 +921,11 @@
           <p class="exec-decision-limit" id="decisionBriefLimits">—</p>
         </section>
 
+        <div class="exec-decision-ledger-row" id="decisionLedgerActions" hidden>
+          <span>Convertí una prioridad validada en un compromiso con seguimiento, sin alterar la evidencia del brief.</span>
+          <a class="exec-decision-ledger-cta" id="decisionLedgerCta" href="decisiones-grh.html">Gestionar compromisos <span aria-hidden="true">→</span></a>
+        </div>
+
         <section class="exec-kpis" aria-label="Indicadores ejecutivos del snapshot GRH">
           <article class="exec-stat">
             <div class="exec-stat-label">Participantes en liquidación</div>
@@ -1166,7 +1175,7 @@
           'costCenterRanks','sectorBadge','sectorRanks','sourceList','roadmapList','sourceFile','sourceHash','profileGeneratedAt','semanticGeneratedAt',
           'monthlyCloseBrief','closePeriodBadge','closeParticipants','closeControlMetric','closeControlStatus','closeControlNote',
           'closeCoverage','closeExactness','closeAgreement','closeComparison','closeComparisonTitle','closeComparisonNote',
-          'closeParticipantDelta','closeCoverageDelta','closeExactnessDelta','closeAgreementDelta','decisionBrief',
+          'closeParticipantDelta','closeCoverageDelta','closeExactnessDelta','closeAgreementDelta','decisionBrief','decisionLedgerActions','decisionLedgerCta',
           'decisionBriefHeadline','decisionBriefStatus','decisionBriefBoundary','decisionAgreement','decisionAgreementNote',
           'decisionChange','decisionChangeNote','decisionQuality','decisionQualityNote','decisionPriorities','decisionBriefLimits'
         ].forEach(function (id) { elements[id] = byId(id); });
@@ -1373,6 +1382,14 @@
         });
       }
 
+      function canOpenDecisionLedger() {
+        var projection = window.MuniAccess && typeof window.MuniAccess.getValidatedSession === 'function'
+          ? window.MuniAccess.getValidatedSession()
+          : null;
+        return Boolean(projection && Array.isArray(projection.capabilities) &&
+          projection.capabilities.indexOf('navigation.grh-decisions') !== -1);
+      }
+
       function appendDecisionPriority(priority,capabilities) {
         var copy = DECISION_PRIORITY_COPY[priority.code];
         if(!copy) fail('El brief decisional contiene una prioridad desconocida.');
@@ -1403,6 +1420,7 @@
         setText(elements.decisionBriefStatus,statusCopy.label);
         elements.decisionBrief.dataset.status = brief.status;
         elements.decisionBriefStatus.dataset.status = brief.status;
+        elements.decisionLedgerActions.hidden = !canOpenDecisionLedger();
         setText(elements.decisionBriefBoundary,'k≥'+brief.privacy.threshold+' · snapshot '+
           civilDateFormatter.format(new Date(brief.source.snapshotAsOf+'T00:00:00Z')));
 

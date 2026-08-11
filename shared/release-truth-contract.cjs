@@ -8,6 +8,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-quality': 'grh-quality-v1',
   '/api/grh-close': 'grh-close-v1',
   '/api/grh-decision-brief': 'grh-decision-brief-v1',
+  '/api/grh-action-ledger': 'grh-action-ledger-v1',
   '/api/grh-data': 'grh-raw-retired-v1',
   '/api/grh-directory': 'grh-directory-v1',
   '/api/grh-directory-access': 'grh-directory-access-v1',

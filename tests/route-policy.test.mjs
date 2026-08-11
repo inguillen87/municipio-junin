@@ -24,6 +24,9 @@ const EXPECTED_SERVERLESS = [
   'GET /grh-quality',
   'GET /grh-close',
   'GET /grh-decision-brief',
+  'GET /grh-action-ledger',
+  'POST /grh-action-ledger',
+  'PATCH /grh-action-ledger',
   'POST /ai-analyze',
   'GET /pdf-report',
   'POST /ai-proxy',
@@ -162,6 +165,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'grh-workforce-finance.js',
     'grh-close.js',
     'grh-decision-brief.js',
+    'grh-action-ledger.js',
     'grh-executive.js',
     'grh-quality.js',
     'intelligence.js',
@@ -200,6 +204,15 @@ test('resource/action grants preserve the current operational boundaries', () =>
   assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), true);
   assert.equal(esmPolicy.hasResourceAction('CONTADOR', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), true);
   assert.equal(esmPolicy.hasResourceAction('TENANT_USER', resource.GRH_ORGANIZATION_ANALYTICS, action.READ), false);
+  for (const role of ['TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']) {
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_ACTION_LEDGER, action.READ), true, role);
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_ACTION_LEDGER, action.UPDATE), true, role);
+  }
+  assert.equal(esmPolicy.hasResourceAction('INTENDENTE', resource.GRH_ACTION_LEDGER, action.CREATE), true);
+  for (const role of ['SUPER_ADMIN', 'TENANT_ADMIN', 'CONTADOR', 'TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_ACTION_LEDGER, action.CREATE), false, role);
+  }
+  assert.equal(esmPolicy.hasResourceAction('SUPER_ADMIN', resource.GRH_ACTION_LEDGER, action.READ), false);
   for (const role of ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']) {
     assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_WORKFORCE_FINANCE, action.READ), true, role);
   }
@@ -238,6 +251,11 @@ test('route authorization is exact by runtime, method and path', () => {
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-directory-access'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-directory'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-directory-access'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-action-ledger'), true);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-action-ledger'), true);
+  assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'POST', '/api/grh-action-ledger'), false);
+  assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'PATCH', '/api/grh-action-ledger'), true);
+  assert.equal(esmPolicy.authorizeRoute('SUPER_ADMIN', runtime.SERVERLESS, 'GET', '/api/grh-action-ledger'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), true);
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), false);

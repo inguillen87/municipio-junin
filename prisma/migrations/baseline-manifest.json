@@ -12,9 +12,9 @@
     "directory": "20260809220336_baseline",
     "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
   },
-  "schemaSha256": "bf749e18cf66d49953c5533ee76bd922c395f917cc7be7ff0f9b6d01183d208e",
-  "migrationHistorySha256": "9f0b2c2990bd63da701ac9b9bec8a27a685dabf507a6d52cb1fec2e13848baaf",
-  "migrationSetId": "prisma-set-c8e971506f972f971ebff466fc3592eb0e6c1829f770d3933715a1cb5a7941cb",
+  "schemaSha256": "2912b35abfd570f4c3dd26c894073daafe4fc241abe06cec41389168c0a52069",
+  "migrationHistorySha256": "4f173cdb25d013e53ee6e3c41b3138d7ef3a26592a4df2710413d5abb223ded7",
+  "migrationSetId": "prisma-set-4f6184b469a7381f8b874d478e509e527696f267385b43a339ace6302f124380",
   "migrations": [
     {
       "directory": "20260809220336_baseline",
@@ -23,6 +23,10 @@
     {
       "directory": "20260811122648_grh_directory_enterprise_authz",
       "sha256": "3633447eefbca9e94b48e26a43fee1e6ea12e75fb1c300b6e6d3dc856f48a96e"
+    },
+    {
+      "directory": "20260811190000_grh_action_ledger",
+      "sha256": "c5a3b63d7d64f1be4089df82c161f90707674ce73cc870764a225ee725bc455a"
     }
   ]
 }

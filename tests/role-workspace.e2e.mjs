@@ -35,6 +35,7 @@ const ACTION_CAPABILITIES = new Set([
   'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
+  'navigation.grh-decisions',
   'navigation.ai-assistant',
   'navigation.audit',
   'navigation.export',
@@ -51,6 +52,7 @@ const BOTTOM_HREF = new Map([
   ['navigation.territory', '/territorio'],
   ['navigation.data-quality', '/calidad'],
   ['navigation.rrhh', 'areas-grh.html'],
+  ['navigation.grh-decisions', 'decisiones-grh.html'],
   ['navigation.ai-assistant', 'ia.html'],
   ['navigation.audit', 'auditoria.html'],
   ['navigation.export', 'exportar.html'],
@@ -185,6 +187,10 @@ function expectedWorkspaceActions(access) {
   if (access.capabilities.includes('navigation.organization-analytics') &&
       !capabilities.includes('navigation.organization-analytics')) {
     capabilities.push('navigation.organization-analytics');
+  }
+  if (access.capabilities.includes('navigation.grh-decisions') &&
+      !capabilities.includes('navigation.grh-decisions')) {
+    capabilities.push('navigation.grh-decisions');
   }
   return capabilities;
 }

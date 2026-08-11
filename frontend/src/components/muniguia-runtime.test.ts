@@ -23,7 +23,7 @@ function identity(capabilities: readonly string[] = [
     tenant: 'Junín',
     tenantId: 'tenant-junin',
     capabilities: Object.freeze([...capabilities]),
-    accessPolicyVersion: '2026-08-11.2',
+    accessPolicyVersion: '2026-08-11.3',
     homeVariant: 'executive-leadership',
   });
 }
@@ -41,7 +41,7 @@ describe('MuniGuía React runtime bridge', () => {
         'navigation.help',
       ],
       variant: 'executive-leadership',
-      policyVersion: '2026-08-11.2',
+      policyVersion: '2026-08-11.3',
       pathname: '/estructura',
     });
     expect(Object.isFrozen(input)).toBe(true);

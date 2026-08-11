@@ -7,7 +7,7 @@
 // - there is no rank, inheritance or wildcard grant;
 // - unknown roles and capabilities are denied;
 // - adding a capability never grants it automatically to an existing role.
-const ACCESS_POLICY_VERSION = '2026-08-11.2';
+const ACCESS_POLICY_VERSION = '2026-08-11.3';
 
 const ROLES = Object.freeze({
   SUPER_ADMIN: 'SUPER_ADMIN',
@@ -26,6 +26,7 @@ const CAPABILITIES = Object.freeze({
   NAV_REPORTS: 'navigation.reports',
   NAV_HACIENDA: 'navigation.hacienda',
   NAV_GRH_EXECUTIVE: 'navigation.grh-executive',
+  NAV_GRH_DECISIONS: 'navigation.grh-decisions',
   NAV_ORGANIZATION_ANALYTICS: 'navigation.organization-analytics',
   NAV_TERRITORY: 'navigation.territory',
   NAV_DATA_QUALITY: 'navigation.data-quality',
@@ -65,6 +66,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_REPORTS,
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
+    CAPABILITIES.NAV_GRH_DECISIONS,
     CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
     CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_DATA_QUALITY,
@@ -81,6 +83,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_REPORTS,
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
+    CAPABILITIES.NAV_GRH_DECISIONS,
     CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
     CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_DATA_QUALITY,
@@ -104,6 +107,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     CAPABILITIES.NAV_REPORTS,
     CAPABILITIES.NAV_HACIENDA,
     CAPABILITIES.NAV_GRH_EXECUTIVE,
+    CAPABILITIES.NAV_GRH_DECISIONS,
     CAPABILITIES.NAV_ORGANIZATION_ANALYTICS,
     CAPABILITIES.NAV_TERRITORY,
     CAPABILITIES.NAV_DATA_QUALITY,

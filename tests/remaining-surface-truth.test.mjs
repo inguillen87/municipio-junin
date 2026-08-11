@@ -54,7 +54,7 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   const docVersion = extractUniqueDocVersion(source);
   assert.match(docVersion, DOC_SEMVER_PATTERN);
   assert.equal(docVersion, '1.10.0');
-  assert.match(source, /release público[\s\S]{0,60}v1\.10\.0[\s\S]{0,60}verificad/i);
+  assert.match(source, /release público[\s\S]{0,100}(?:v1\.10\.0[\s\S]{0,60}verificad|verificad[\s\S]{0,60}v1\.10\.0)/i);
   assert.match(source, /producto S13[\s\S]{0,40}commit[\s\S]{0,30}d11fd39/i);
   assert.match(source, /4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7/);
   assert.match(source, /07ac9eacf8bd89f27f5c437b99e713e8497b8934/);

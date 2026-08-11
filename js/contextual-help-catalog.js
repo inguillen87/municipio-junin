@@ -1,5 +1,5 @@
 const CONTRACT = 'muniguia-contextual-v1';
-const ACCESS_POLICY_VERSION = '2026-08-11.2';
+const ACCESS_POLICY_VERSION = '2026-08-11.3';
 const MOUNT_CAPABILITY = 'navigation.help';
 
 const KNOWN_CAPABILITIES = Object.freeze([
@@ -13,6 +13,7 @@ const KNOWN_CAPABILITIES = Object.freeze([
   'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
+  'navigation.grh-decisions',
   'navigation.ai-assistant',
   'navigation.audit',
   'navigation.export',
@@ -189,6 +190,19 @@ const PAGES = deepFreeze({
       { id: 'inspect-domain-evidence', selector: '#grhEvidenceTitle', title: 'Revisá la evidencia', copy: 'Contrastá tablas, filas, período, cobertura y acciones disponibles antes de continuar al tablero especializado.' },
     ],
   },
+  grhDecisions: {
+    href: 'decisiones-grh.html',
+    aliases: ['/decisiones-grh', '/decisiones-grh.html'],
+    label: 'Centro de decisiones GRH',
+    objective: 'Revisá prioridades y compromisos con responsable, fecha y trazabilidad.',
+    requiredCapability: 'navigation.grh-decisions',
+    manualAnchor: 'decisiones-compromisos',
+    steps: [
+      { id: 'read-decision-summary', selector: '#decisionSummary', title: 'Leé la situación', copy: 'Revisá abiertos, bloqueados, vencidos y completados antes de consultar o actualizar un compromiso.' },
+      { id: 'confirm-decision-suggestion', selector: '#decisionSuggestions', title: 'Revisá la prioridad', copy: 'Contrastá la sugerencia con el brief vigente y usá sólo las acciones que el servidor habilite para tu perfil.' },
+      { id: 'follow-decision-commitments', selector: '#decisionCommitments', title: 'Seguí la evolución', copy: 'Abrí el detalle para revisar versión, transiciones autorizadas y línea de tiempo antes de actuar.' },
+    ],
+  },
   rrhh: {
     href: 'rrhh.html',
     aliases: ['/rrhh', '/rrhh.html'],
@@ -310,6 +324,13 @@ function pageForCapability(capability) {
   return null;
 }
 
+function projectPage(page) {
+  return {
+    objective: page.objective,
+    steps: page.steps.map((step) => ({ ...step })),
+  };
+}
+
 export function resolveMuniGuiaContext(input) {
   if (!exactInput(input) || input.policyVersion !== ACCESS_POLICY_VERSION) return null;
   const role = ROLES[input.role];
@@ -319,6 +340,7 @@ export function resolveMuniGuiaContext(input) {
       !capabilities.includes('navigation.workspace') || !capabilities.includes(MOUNT_CAPABILITY)) return null;
   const resolvedPage = pageForPathname(input.pathname);
   if (!resolvedPage || !capabilities.includes(resolvedPage.page.requiredCapability)) return null;
+  const pageProjection = projectPage(resolvedPage.page);
 
   let related = null;
   for (const capability of role.focusCapabilities) {
@@ -343,9 +365,9 @@ export function resolveMuniGuiaContext(input) {
     page: {
       id: resolvedPage.id,
       label: resolvedPage.page.label,
-      objective: resolvedPage.page.objective,
+      objective: pageProjection.objective,
       manualHref: `manuales.html#${resolvedPage.page.manualAnchor}`,
-      steps: resolvedPage.page.steps.map((step) => ({ ...step })),
+      steps: pageProjection.steps,
     },
     related,
   });

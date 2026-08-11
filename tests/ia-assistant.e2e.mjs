@@ -817,6 +817,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
     };
   });
   assert.deepEqual(brief.actions, [
+    { href: '/decisiones-grh', capability: 'navigation.grh-decisions' },
     { href: '/hacienda#closeReconciliationTitle', capability: 'navigation.hacienda' },
     { href: '/calidad', capability: 'navigation.data-quality' },
     { href: '/estructura#organizationExplorer', capability: 'navigation.organization-analytics' },

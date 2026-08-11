@@ -14,7 +14,7 @@
 
 const { ROLES, isKnownRole } = require('./access-policy.cjs');
 
-const ROUTE_POLICY_VERSION = '2026-08-11.4';
+const ROUTE_POLICY_VERSION = '2026-08-11.5';
 
 const RUNTIMES = Object.freeze({
   SERVERLESS: 'serverless',
@@ -24,6 +24,7 @@ const RUNTIMES = Object.freeze({
 const RESOURCES = Object.freeze({
   SESSION: 'session',
   GRH_CONTRACT: 'grh.contract',
+  GRH_ACTION_LEDGER: 'grh.action-ledger',
   GRH_DIRECTORY: 'grh.directory',
   GRH_ORGANIZATION_ANALYTICS: 'grh.organization.analytics',
   GRH_WORKFORCE_FINANCE: 'grh.workforce-finance',
@@ -77,6 +78,9 @@ const PERMISSIONS = Object.freeze({
   SESSION_READ: permissionId(RESOURCES.SESSION, ACTIONS.READ),
   SESSION_REFRESH: permissionId(RESOURCES.SESSION, ACTIONS.REFRESH),
   GRH_CONTRACT_READ: permissionId(RESOURCES.GRH_CONTRACT, ACTIONS.READ),
+  GRH_ACTION_LEDGER_READ: permissionId(RESOURCES.GRH_ACTION_LEDGER, ACTIONS.READ),
+  GRH_ACTION_LEDGER_CREATE: permissionId(RESOURCES.GRH_ACTION_LEDGER, ACTIONS.CREATE),
+  GRH_ACTION_LEDGER_UPDATE: permissionId(RESOURCES.GRH_ACTION_LEDGER, ACTIONS.UPDATE),
   GRH_DIRECTORY_READ: permissionId(RESOURCES.GRH_DIRECTORY, ACTIONS.READ),
   GRH_ORGANIZATION_ANALYTICS_READ: permissionId(RESOURCES.GRH_ORGANIZATION_ANALYTICS, ACTIONS.READ),
   GRH_WORKFORCE_FINANCE_READ: permissionId(RESOURCES.GRH_WORKFORCE_FINANCE, ACTIONS.READ),
@@ -142,6 +146,9 @@ const PERMISSION_GRANTS = Object.freeze({
   [PERMISSIONS.SESSION_READ]: Object.freeze(['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO']),
   [PERMISSIONS.SESSION_REFRESH]: Object.freeze(['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO']),
   [PERMISSIONS.GRH_CONTRACT_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
+  [PERMISSIONS.GRH_ACTION_LEDGER_READ]: Object.freeze(['TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
+  [PERMISSIONS.GRH_ACTION_LEDGER_CREATE]: Object.freeze(['INTENDENTE']),
+  [PERMISSIONS.GRH_ACTION_LEDGER_UPDATE]: Object.freeze(['TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_DIRECTORY_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_ORGANIZATION_ANALYTICS_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
   [PERMISSIONS.GRH_WORKFORCE_FINANCE_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']),
@@ -222,6 +229,9 @@ const PROTECTED_ROUTES = Object.freeze([
   route('serverless.grh.quality.read', 'serverless', 'GET', '/grh-quality', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.close.read', 'serverless', 'GET', '/grh-close', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.decision-brief.read', 'serverless', 'GET', '/grh-decision-brief', PERMISSIONS.GRH_CONTRACT_READ),
+  route('serverless.grh.action-ledger.read', 'serverless', 'GET', '/grh-action-ledger', PERMISSIONS.GRH_ACTION_LEDGER_READ),
+  route('serverless.grh.action-ledger.create', 'serverless', 'POST', '/grh-action-ledger', PERMISSIONS.GRH_ACTION_LEDGER_CREATE),
+  route('serverless.grh.action-ledger.update', 'serverless', 'PATCH', '/grh-action-ledger', PERMISSIONS.GRH_ACTION_LEDGER_UPDATE),
   route('serverless.grh.analysis.execute', 'serverless', 'POST', '/ai-analyze', PERMISSIONS.GRH_ANALYSIS_EXECUTE),
   route('serverless.grh.report.read', 'serverless', 'GET', '/pdf-report', PERMISSIONS.GRH_REPORT_READ),
 

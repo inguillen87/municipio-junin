@@ -197,7 +197,7 @@ function directoryAccessPayload(status = 'static') {
   const payload = {
     schemaVersion: 'grh-directory-access-v1',
     status,
-    policyVersion: status === 'static' ? 'static:2026-08-11.2' : 'grh-directory-policy-shadow-v1',
+    policyVersion: status === 'static' ? 'static:2026-08-11.3' : 'grh-directory-policy-shadow-v1',
     permission: 'grh.directory:read',
     scope: { kind: 'TENANT', label: 'Municipio actual', organizationCount: null },
     validity: { validFrom: null, validUntil: null },

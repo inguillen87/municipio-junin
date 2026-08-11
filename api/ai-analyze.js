@@ -1486,6 +1486,12 @@ function decisionBriefAnswer(context) {
     ],
     actions: [
       {
+        id: 'open_grh_decisions',
+        label: 'Convertir prioridades en compromisos',
+        href: '/decisiones-grh',
+        requiredCapability: 'navigation.grh-decisions',
+      },
+      {
         id: 'open_hacienda_reconciliation',
         label: 'Revisar conciliación en Hacienda',
         href: '/hacienda#closeReconciliationTitle',

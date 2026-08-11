@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html class="muni-shell-v1" lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Centro gobernado de decisiones y compromisos sobre el brief GRH vigente de Junín.">
+  <title>Centro de decisiones GRH | MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/grh-action-ledger.css">
+</head>
+<body class="decision-ledger-page" data-page-capability="navigation.grh-decisions">
+  <a class="decision-skip" href="#decisionLedger">Saltar al centro de decisiones</a>
+  <div id="sidebar"></div>
+
+  <main class="main-content" id="decisionLedgerMain">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir navegación">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title">
+          <h1>Centro de decisiones GRH</h1>
+          <span class="breadcrumb">Prioridad · responsable · vencimiento · evidencia</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="decision-source-status" id="decisionStatus" data-state="loading" role="status" aria-live="polite">
+          <span class="decision-source-dot" aria-hidden="true"></span>
+          <span id="decisionStatusText">Validando compromisos</span>
+          <button class="decision-status-retry" id="decisionRetry" type="button" hidden>Reintentar</button>
+        </div>
+        <div class="topbar-avatar" aria-label="Módulo de decisiones">DC</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper decision-shell" id="decisionLedger" aria-busy="true">
+      <section class="decision-hero" aria-labelledby="decisionLedgerTitle">
+        <div class="decision-hero-copy">
+          <p class="decision-eyebrow">Centro operativo · revisión humana</p>
+          <h2 id="decisionLedgerTitle">De una señal ejecutiva a un compromiso verificable.</h2>
+          <p>Convertí las prioridades del brief vigente en acciones con responsable, fecha y trazabilidad. El centro no aprueba decisiones ni asigna tareas automáticamente.</p>
+          <div class="decision-chips" aria-label="Contexto del registro">
+            <span class="decision-chip decision-chip--verified">Brief GRH vigente</span>
+            <span class="decision-chip" id="decisionPeriodChip">Período —</span>
+            <span class="decision-chip" id="decisionSnapshotChip">Corte —</span>
+            <span class="decision-chip" id="decisionPermissionChip">Verificando permisos</span>
+          </div>
+        </div>
+        <aside class="decision-hero-context" aria-label="Regla operativa">
+          <span>Regla de trabajo</span>
+          <strong>Una prioridad, un compromiso trazable</strong>
+          <p>La identidad de la evidencia queda fijada al crear. Los cambios posteriores conservan versión, actor y transición.</p>
+        </aside>
+        <div class="decision-summary" id="decisionSummary" aria-label="Resumen de compromisos"></div>
+      </section>
+
+      <section class="decision-state" id="decisionLoading" aria-live="polite">
+        <span class="decision-loader" aria-hidden="true"></span>
+        <h2>Validando brief, permisos y registro</h2>
+        <p>La cola permanece cerrada hasta recibir el contrato completo del servidor.</p>
+      </section>
+
+      <section class="decision-state decision-state--error" id="decisionError" role="alert" tabindex="-1" hidden>
+        <span class="decision-state-mark" aria-hidden="true">!</span>
+        <h2 id="decisionErrorTitle">Centro de decisiones no disponible</h2>
+        <p id="decisionErrorMessage">No se muestran compromisos parciales ni datos de reemplazo.</p>
+      </section>
+
+      <div class="decision-workspace" id="decisionContent" hidden>
+        <section class="decision-panel decision-panel--suggestions" aria-labelledby="decisionSuggestionsTitle">
+          <header class="decision-section-heading">
+            <div>
+              <p class="decision-eyebrow">Prioridades accionables</p>
+              <h2 id="decisionSuggestionsTitle">Sugerencias del brief vigente</h2>
+            </div>
+            <p>Crear siempre requiere una confirmación humana y un responsable permitido.</p>
+          </header>
+          <div class="decision-suggestions" id="decisionSuggestions"></div>
+        </section>
+
+        <section class="decision-panel" aria-labelledby="decisionCommitmentsTitle">
+          <header class="decision-section-heading decision-section-heading--queue">
+            <div>
+              <p class="decision-eyebrow">Cola actual e histórica</p>
+              <h2 id="decisionCommitmentsTitle">Compromisos y vencimientos</h2>
+            </div>
+            <div class="decision-filters" id="decisionFilters" aria-label="Filtrar compromisos">
+              <button type="button" data-filter="all" aria-pressed="true">Todos</button>
+              <button type="button" data-filter="active" aria-pressed="false">Activos</button>
+              <button type="button" data-filter="overdue" aria-pressed="false">Vencidos</button>
+              <button type="button" data-filter="completed" aria-pressed="false">Completados</button>
+              <button type="button" data-filter="canceled" aria-pressed="false">Cancelados</button>
+            </div>
+          </header>
+          <div class="decision-commitments" id="decisionCommitments"></div>
+          <div class="decision-empty" id="decisionEmpty" hidden>
+            <strong>No hay compromisos para este filtro.</strong>
+            <span>Elegí otra vista o creá uno desde una sugerencia disponible.</span>
+          </div>
+        </section>
+
+        <aside class="decision-limits" aria-labelledby="decisionLimitsTitle">
+          <div>
+            <p class="decision-eyebrow">Fronteras del centro</p>
+            <h2 id="decisionLimitsTitle">Qué registra y qué no resuelve</h2>
+          </div>
+          <ul id="decisionLimits"></ul>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div class="decision-drawer-layer" id="decisionDrawer" hidden>
+    <button class="decision-drawer-backdrop" type="button" data-close-drawer aria-label="Cerrar detalle"></button>
+    <aside class="decision-drawer" role="dialog" aria-modal="true" aria-labelledby="decisionDrawerTitle" tabindex="-1">
+      <header class="decision-drawer-head">
+        <div>
+          <p class="decision-eyebrow">Trazabilidad del compromiso</p>
+          <h2 id="decisionDrawerTitle">Detalle</h2>
+        </div>
+        <button class="decision-icon-button" type="button" data-close-drawer aria-label="Cerrar detalle">×</button>
+      </header>
+      <div class="decision-drawer-body">
+        <div class="decision-drawer-meta" id="decisionDrawerMeta"></div>
+        <div class="decision-transition-actions" id="decisionTransitionActions" aria-label="Acciones disponibles"></div>
+        <section aria-labelledby="decisionTimelineTitle">
+          <h3 id="decisionTimelineTitle">Línea de tiempo</h3>
+          <ol class="decision-timeline" id="decisionTimeline"></ol>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <dialog class="decision-dialog" id="decisionDialog" aria-labelledby="decisionDialogTitle">
+    <form method="dialog" id="decisionForm" novalidate>
+      <header>
+        <div>
+          <p class="decision-eyebrow" id="decisionDialogEyebrow">Nuevo compromiso</p>
+          <h2 id="decisionDialogTitle">Confirmá la acción</h2>
+        </div>
+        <button class="decision-icon-button" type="button" data-close-dialog aria-label="Cerrar formulario">×</button>
+      </header>
+      <p class="decision-dialog-copy" id="decisionDialogCopy"></p>
+      <div class="decision-form-grid">
+        <label class="decision-field" id="decisionAssigneeField" for="decisionAssigneeRole">
+          <span>Responsable</span>
+          <select id="decisionAssigneeRole" required>
+            <option value="CONTADOR">Contaduría</option>
+            <option value="TENANT_ADMIN">Administración municipal</option>
+          </select>
+        </label>
+        <label class="decision-field" id="decisionDueField" for="decisionDueOn">
+          <span>Fecha comprometida</span>
+          <input id="decisionDueOn" type="date" required>
+        </label>
+        <label class="decision-field" id="decisionReasonField" for="decisionReasonCode" hidden>
+          <span>Motivo estructurado</span>
+          <select id="decisionReasonCode"></select>
+        </label>
+        <label class="decision-field" id="decisionOutcomeField" for="decisionOutcomeCode" hidden>
+          <span>Resultado estructurado</span>
+          <select id="decisionOutcomeCode"></select>
+        </label>
+      </div>
+      <p class="decision-form-error" id="decisionFormError" role="alert" aria-live="assertive" hidden></p>
+      <footer>
+        <button class="decision-button decision-button--ghost" type="button" data-close-dialog>Cancelar</button>
+        <button class="decision-button decision-button--primary" id="decisionSubmit" value="submit">Confirmar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <noscript><div class="decision-noscript">Este centro necesita JavaScript para validar el registro autenticado. No muestra compromisos de respaldo.</div></noscript>
+  <script src="js/nav.js"></script>
+  <script>buildSidebar('decisiones-grh');</script>
+  <script src="js/auth-fetch.js"></script>
+  <script src="js/grh-action-ledger.js"></script>
+  <script src="js/theme-switcher.js"></script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>

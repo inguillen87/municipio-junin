@@ -24,6 +24,7 @@ const EXPECTED_NAV_CAPABILITIES = [
   'navigation.reports',
   'navigation.hacienda',
   'navigation.grh-executive',
+  'navigation.grh-decisions',
   'navigation.organization-analytics',
   'navigation.territory',
   'navigation.data-quality',
@@ -49,12 +50,18 @@ const EXECUTIVE_BASE = [
   'navigation.ai-assistant',
 ];
 
+const EXECUTIVE_WITH_DECISIONS = [
+  ...EXECUTIVE_BASE.slice(0, 6),
+  'navigation.grh-decisions',
+  ...EXECUTIVE_BASE.slice(6),
+];
+
 const EXPECTED_ROLE_CAPABILITIES = {
   SUPER_ADMIN: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
-  INTENDENTE: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.help'],
-  TENANT_ADMIN: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
+  INTENDENTE: [...EXECUTIVE_WITH_DECISIONS, 'navigation.audit', 'navigation.export', 'navigation.help'],
+  TENANT_ADMIN: [...EXECUTIVE_WITH_DECISIONS, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
   TENANT_USER: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
-  CONTADOR: [...EXECUTIVE_BASE, 'navigation.export', 'navigation.help'],
+  CONTADOR: [...EXECUTIVE_WITH_DECISIONS, 'navigation.export', 'navigation.help'],
   INSPECTOR: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
   DEMO: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
 };
@@ -77,6 +84,7 @@ const EXPECTED_NAV_HREFS = [
   '/ejecutivo',
   '/estructura',
   'areas-grh.html',
+  'decisiones-grh.html',
   'rrhh.html',
   'ia.html',
   '/territorio',
@@ -118,7 +126,7 @@ function extractRoleArray(source, constantName) {
 
 test('Serverless, Express and the React session gate consume the same bumped policy', async () => {
   assert.strictEqual(esmPolicy, cjsPolicy);
-  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-11.2');
+  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-11.3');
   assert.deepEqual(Object.values(esmPolicy.ROLES), EXPECTED_ROLES);
 
   const reactSession = await readFile(new URL('../frontend/src/auth/session.ts', import.meta.url), 'utf8');
@@ -338,6 +346,10 @@ test('navigation grants stay aligned with the current GRH, audit, export and imp
       [...grhRoles].sort(),
     );
   }
+  assert.deepEqual(
+    EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.grh-decisions')).sort(),
+    ['CONTADOR', 'INTENDENTE', 'TENANT_ADMIN'],
+  );
   assert.deepEqual(
     EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.workspace')).sort(),
     [...EXPECTED_ROLES].sort(),

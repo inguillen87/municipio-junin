@@ -32,7 +32,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 15);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 16);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -165,6 +165,16 @@ test('resolver uses effective capabilities and fails closed for role, variant, p
   assert.equal(resolveMuniGuiaContext({ ...tenantless, pathname: '/control' }), null);
 });
 
+test('decision guidance stays neutral because the catalog cannot distinguish a published read-only identity', () => {
+  for (const role of ['INTENDENTE', 'TENANT_ADMIN', 'CONTADOR']) {
+    const resolved = resolveMuniGuiaContext(sessionInput(role, '/decisiones-grh'));
+    assert.ok(resolved, role);
+    const copy = [resolved.page.objective, ...resolved.page.steps.map((step) => `${step.title} ${step.copy}`)].join(' ');
+    assert.doesNotMatch(copy, /Creá|crear|Convertí/i, role);
+    assert.match(copy, /acciones[\s\S]*servidor[\s\S]*perfil/i, role);
+  }
+});
+
 test('related actions and runtime remain capability-bound, local, non-persistent and sink-free', async () => {
   for (const role of ROLES) {
     const input = sessionInput(role, '/inicio');
@@ -200,6 +210,12 @@ test('related actions and runtime remain capability-bound, local, non-persistent
     ['#grhSourceStatus', '#grhDomainGrid', '#grhEvidenceTitle'],
   );
   assert.equal(MUNIGUIA_CATALOG.pages.grhDomains.requiredCapability, 'navigation.rrhh');
+  assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.grhDecisions.steps.map((step) => step.selector),
+    ['#decisionSummary', '#decisionSuggestions', '#decisionCommitments'],
+  );
+  assert.equal(MUNIGUIA_CATALOG.pages.grhDecisions.requiredCapability, 'navigation.grh-decisions');
+  assert.equal(MUNIGUIA_CATALOG.pages.grhDecisions.manualAnchor, 'decisiones-compromisos');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.selector),
     ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],

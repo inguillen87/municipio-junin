@@ -31,6 +31,7 @@ const EXPECTED_ALLOWED_ROUTES = Object.freeze([
   ['serverless', 'GET', '/auth/me'],
   ['serverless', 'POST', '/ai-analyze'],
   ['serverless', 'GET', '/grh-close'],
+  ['serverless', 'GET', '/grh-action-ledger'],
   ['serverless', 'GET', '/grh-decision-brief'],
   ['serverless', 'GET', '/grh-domain-catalog'],
   ['serverless', 'GET', '/grh-executive'],
@@ -77,7 +78,7 @@ function deployedRuntimeSourceFiles() {
 }
 
 test('the temporary containment identifies exactly the six previously published emails', () => {
-  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.4');
+  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.5');
   assert.deepEqual(PUBLISHED_DEMO_IDENTITIES, EXPECTED_IDENTITIES);
   assert.equal(new Set(PUBLISHED_DEMO_IDENTITIES).size, 6);
 
@@ -169,6 +170,20 @@ test('the only allowed POST remains deterministic, tenant-bound, provenance-bear
   assert.match(source, /intent:\s*'pii_request',\s*policy:\s*'refused'/);
   assert.match(source, /externalProvider:\s*false/);
   assert.match(source, /generated:\s*false/);
+});
+
+test('published profiles can inspect but never mutate the GRH action ledger', () => {
+  const profile = PUBLISHED_DEMO_PROFILES.find(candidate => candidate.role === 'INTENDENTE');
+  assert.equal(evaluatePublishedDemoRoute({
+    ...profile,
+    routeId: 'serverless.grh.action-ledger.read',
+  }).allowed, true);
+  for (const routeId of [
+    'serverless.grh.action-ledger.create',
+    'serverless.grh.action-ledger.update',
+  ]) {
+    assert.equal(evaluatePublishedDemoRoute({ ...profile, routeId }).allowed, false, routeId);
+  }
 });
 
 test('public evaluation access contains exactly six identities, one named credential and no seed path', () => {

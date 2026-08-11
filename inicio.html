@@ -560,6 +560,7 @@
       });
       var ACTIONS = Object.freeze({
         'navigation.dashboard': Object.freeze({ href: 'dashboard.html', label: 'Panorama municipal', copy: 'Panorama agregado, alertas y límites del snapshot GRH.', tag: 'Decisión' }),
+        'navigation.grh-decisions': Object.freeze({ href: 'decisiones-grh.html', label: 'Centro de decisiones', copy: 'Convertí prioridades del brief vigente en compromisos con responsable, vencimiento, versión y línea de tiempo.', tag: 'Seguimiento' }),
         'navigation.reports': Object.freeze({ href: 'reportes.html', label: 'Reportes', copy: 'Salidas agregadas con período, fuente y controles explícitos.', tag: 'Evidencia' }),
         'navigation.hacienda': Object.freeze({ href: 'hacienda.html', label: 'Hacienda y nómina', copy: 'Evolución del cálculo, componentes y conciliación mensual en ARS.', tag: 'Control' }),
         'navigation.grh-executive': Object.freeze({ href: '/ejecutivo', label: 'Resumen ejecutivo GRH', copy: 'Personal, nómina, sectores y alertas del último corte GRH.', tag: 'Decisión' }),
@@ -592,6 +593,7 @@
       function orderedActionCapabilities(projection) {
         var ordered = [];
         var candidates = projection.homeProfile.priorityCapabilities.concat([
+          'navigation.grh-decisions',
           'navigation.organization-analytics'
         ]);
         candidates.forEach(function(capability) {

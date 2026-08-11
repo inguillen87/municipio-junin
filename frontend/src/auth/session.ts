@@ -2,7 +2,7 @@ export const AUTH_TIMEOUT_MS = 12_000;
 export const SAFE_WORKSPACE = '/inicio.html';
 const SESSION_CONTRACT = 'municontrol-auth-me-v1';
 const CONTRACT_HEADER = 'x-municontrol-contract';
-const ACCESS_POLICY_VERSION = '2026-08-11.2';
+const ACCESS_POLICY_VERSION = '2026-08-11.3';
 
 const ROLE_HOME_VARIANTS = Object.freeze({
   SUPER_ADMIN: 'platform-governance',
@@ -80,6 +80,7 @@ const KNOWN_CAPABILITIES = new Set([
   'navigation.reports',
   'navigation.hacienda',
   'navigation.grh-executive',
+  'navigation.grh-decisions',
   'navigation.organization-analytics',
   'navigation.territory',
   'navigation.data-quality',

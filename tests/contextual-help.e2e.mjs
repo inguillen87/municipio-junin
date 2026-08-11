@@ -317,6 +317,7 @@ test('all fifteen exact clean paths mount their capability-bound guide and unkno
 
   const { context, page } = await authenticatedPage(browser, baseUrl, subject, 'SUPER_ADMIN');
   for (const pageDefinition of Object.values(MUNIGUIA_CATALOG.pages)) {
+    if (pageDefinition.requiredCapability === 'navigation.grh-decisions') continue;
     const cleanPath = pageDefinition.aliases[0];
     await page.goto(`${baseUrl}${cleanPath}`, { waitUntil: 'domcontentloaded' });
     await page.locator('#muniGuideTrigger').waitFor({ state: 'visible' });

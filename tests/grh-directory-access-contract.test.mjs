@@ -54,7 +54,7 @@ test('accepts an exact shadow tenant receipt without invented validity', () => {
 test('accepts an honest static pilot receipt without claiming active audit', () => {
   const value = fixture({
     status: 'static',
-    policyVersion: 'static:2026-08-11.2',
+    policyVersion: 'static:2026-08-11.3',
     scope: { kind: 'TENANT', label: 'Todo el municipio', organizationCount: null },
     validity: { validFrom: null, validUntil: null },
     audit: { ...fixture().audit, required: false },
@@ -72,7 +72,7 @@ test('rejects shape drift, unsafe versions and non-canonical allowlists', () => 
     fixture({ limits: [...GRH_DIRECTORY_ACCESS_LIMITS].reverse() }),
     fixture({
       status: 'static',
-      policyVersion: 'static:2026-08-11.2',
+      policyVersion: 'static:2026-08-11.3',
       scope: { kind: 'TENANT', label: 'Todo el municipio', organizationCount: null },
       validity: { validFrom: null, validUntil: null },
     }),

@@ -294,17 +294,21 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.4');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 85);
-  assert.deepEqual(runtimeCounts, { serverless: 43, express: 42 });
-  assert.equal(Object.keys(routePolicy.RESOURCES).length, 30);
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.5');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 88);
+  assert.deepEqual(runtimeCounts, { serverless: 46, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 31);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
-  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 50);
-  for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark, inApp]) {
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
+  for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark]) {
     assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos/i);
     assert.match(source, /79\s+firmas/i);
     assert.match(source, /37\s+Serverless[\s\S]{0,60}42\s+Express/i);
   }
+  assert.match(inApp, /estado local[\s\S]{0,120}todavía no desplegado/i);
+  assert.match(inApp, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos/i);
+  assert.match(inApp, /88\s+(?:rutas|firmas)/i);
+  assert.match(inApp, /46\s+Serverless[\s\S]{0,60}42\s+Express/i);
 });
 
 test('documentation 1.10.0 records the exact role workspace without claiming accounts from visual guidance', () => {
@@ -318,7 +322,7 @@ test('documentation 1.10.0 records the exact role workspace without claiming acc
     'INSPECTOR',
     'DEMO',
   ];
-  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.2');
+  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.3');
   assert.deepEqual(Object.keys(accessPolicy.ROLE_HOME_PROFILE).sort(), expectedRoles.sort());
   assert.ok(expectedRoles.every(role => accessPolicy.ROLE_CAPABILITIES[role].includes('navigation.workspace')));
 
@@ -384,20 +388,21 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.4');
-  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.2');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 85);
-  assert.deepEqual(runtimeCounts, { serverless: 43, express: 42 });
-  assert.equal(Object.keys(routePolicy.RESOURCES).length, 30);
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.5');
+  assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.3');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 88);
+  assert.deepEqual(runtimeCounts, { serverless: 46, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 31);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
-  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 50);
-  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 12);
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
+  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 13);
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory-access'], 'grh-directory-access-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-domain-catalog'], 'grh-domain-catalog-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-workforce-finance'], 'grh-workforce-finance-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-organization-analytics'], 'grh-organization-analytics-v2');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-action-ledger'], 'grh-action-ledger-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/municipal-territory'], 'municipal-territory-v1');
 
   for (const relativePath of releasePaths) {
@@ -415,9 +420,17 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     assert.match(source, /503[\s\S]{0,160}reintento\s+manual/i, relativePath);
     assert.match(source, /celda[\s\S]{0,80}(?:<10|&lt;10)[\s\S]{0,100}(?:falla|fallar) cerrado/i, relativePath);
     assert.match(source, /#decisionBrief/, relativePath);
-    assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);
-    assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos[\s\S]{0,80}79\s+(?:rutas|firmas)/i, relativePath);
-    assert.match(source, /37 Serverless[\s\S]{0,60}42 Express/i, relativePath);
+    if (relativePath === 'manuales.html') {
+      assert.match(source, /estado local[\s\S]{0,120}todavía no desplegado/i, relativePath);
+      assert.match(source, /2026-08-11\.5[\s\S]{0,100}2026-08-11\.3/, relativePath);
+      assert.match(source, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos[\s\S]{0,80}88\s+(?:rutas|firmas)/i, relativePath);
+      assert.match(source, /46 Serverless[\s\S]{0,60}42 Express/i, relativePath);
+      assert.match(source, /Centro de decisiones[\s\S]{0,1000}Estado local, no desplegado/i, relativePath);
+    } else {
+      assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);
+      assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos[\s\S]{0,80}79\s+(?:rutas|firmas)/i, relativePath);
+      assert.match(source, /37 Serverless[\s\S]{0,60}42 Express/i, relativePath);
+    }
     assert.match(source, /(?:seis APIs[\s\S]{0,80}11 checks|11\/11)/i, relativePath);
     assert.match(source, /135\/135[\s\S]{0,120}104\/104[\s\S]{0,80}0 P1\/P2/i, relativePath);
     assert.match(source, /591\s+(?:pruebas|totales)[\s\S]{0,100}590\s+aprobadas[\s\S]{0,80}0\s+fallidas[\s\S]{0,100}1\s+smoke\s+opt-in\s+omitido/i, relativePath);
@@ -452,6 +465,10 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     assert.match(source, /datos GRH[\s>]+remotos/i, relativePath);
     assert.match(source, /commit documental[\s>]+post-release[\s\S]{0,80}no mueve[\s\S]{0,60}tag[\s\S]{0,40}v1\.10\.0[\s\S]{0,40}4108ca0/i, relativePath);
   }
+
+  const liveManual = read('manuales.html');
+  assert.match(liveManual, /409[\s\S]{0,120}evidencia vigente/i);
+  assert.match(liveManual, /422[\s\S]{0,100}forma, fecha o transición/i);
 
   const backendManifest = JSON.parse(read('backend/package.json'));
   assert.equal(backendManifest.version, '1.0.0');
@@ -849,9 +866,9 @@ test('the documented test commands use the cross-platform suite runner', () => {
   assert.equal(backendManifest.scripts['db:migrate:dev'], undefined);
 
   const suiteRunner = read('scripts/run-test-suite.mjs');
-  assert.match(suiteRunner, /const concurrency = 4;/);
+  assert.match(suiteRunner, /const concurrency = 3;/);
   assert.match(suiteRunner, /--test-concurrency=\$\{concurrency\}/);
-  assert.match(read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md'), /concurrencia a cuatro procesos/i);
+  assert.match(read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md'), /concurrencia a tres procesos/i);
 
   for (const relativePath of ['README.md', 'DEPLOYMENT.md', 'docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md']) {
     const source = read(relativePath);
@@ -906,7 +923,7 @@ test('Prisma baseline is reproducible offline while release stays blocked withou
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true);
-  assert.equal(payload.migrationCount, 2);
+  assert.equal(payload.migrationCount, 3);
   assert.equal(payload.prismaVersion, '5.22.0');
   assert.equal(payload.baselinePolicyVersion, 'prisma-baseline-additive-v1');
   assert.equal(manifest.contractVersion, 2);

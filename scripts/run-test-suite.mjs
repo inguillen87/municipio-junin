@@ -33,10 +33,10 @@ if (files.length === 0) {
   process.exit(2);
 }
 
-// Several root files launch isolated Chromium/Vite harnesses. Four workers keep
-// useful parallelism without letting a fifth browser starve unrelated E2E
-// deadlines on CI or developer workstations.
-const concurrency = 4;
+// Several root files launch isolated Chromium/Vite harnesses. Three workers keep
+// useful parallelism without starving the React guide and territorial readiness
+// deadlines when another browser-heavy suite is added to the matrix.
+const concurrency = 3;
 const result = spawnSync(process.execPath, ['--test', `--test-concurrency=${concurrency}`, ...files], {
   cwd: repositoryRoot,
   env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' },

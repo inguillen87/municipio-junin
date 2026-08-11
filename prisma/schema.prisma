@@ -135,6 +135,34 @@ enum AuditOutcome {
   PENDING
 }
 
+enum GrhActionCommitmentState {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELED
+}
+
+enum GrhActionPrioritySeverity {
+  CRITICAL
+  WARNING
+}
+
+enum GrhActionLedgerCommand {
+  CREATE
+  CLAIM
+  BLOCK
+  RESUME
+  COMPLETE
+  RESCHEDULE
+  CANCEL
+}
+
+enum GrhActionCode {
+  REVIEW_CROSS_SOURCE_RECONCILIATION
+  REVIEW_TEMPORAL_QUARANTINE
+}
+
 model Tenant {
   id              String       @id @default(cuid())
   slug            String       @unique
@@ -156,34 +184,36 @@ model Tenant {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  users               User[]
-  empleados           Empleado[]
-  pagos               Pago[]
-  reclamos            Reclamo[]
-  obras               Obra[]
-  presupuestos        Presupuesto[]
-  licitaciones        Licitacion[]
-  auditLogs           AuditLog[]
-  documentos          Documento[]
-  notificaciones      Notificacion[]
-  userSecurityStates  UserSecurityState[]
-  orgUnits            OrgUnit[]
-  orgUnitClosures     OrgUnitClosure[]
-  policyBundles       PolicyBundle[]
-  roleDefinitions     RoleDefinition[]
-  authorizationScopes AuthorizationScope[]
-  roleAssignments     RoleAssignment[]
-  securityAuditEvents SecurityAuditEvent[]
-  barrios             Barrio[]             @ignore
-  calles              Calle[]              @ignore
-  categoriasGrh       CategoriaGrh[]       @ignore
-  ciudadanos          Ciudadano[]          @ignore
-  conveniosGrh        ConvenioGrh[]        @ignore
-  empleadosGrh        EmpleadoGrh[]        @ignore
-  gremiosGrh          GremioGrh[]          @ignore
-  localidades         Localidad[]          @ignore
-  motivosAusencia     MotivoAusencia[]     @ignore
-  sectoresGrh         SectorGrh[]          @ignore
+  users                User[]
+  empleados            Empleado[]
+  pagos                Pago[]
+  reclamos             Reclamo[]
+  obras                Obra[]
+  presupuestos         Presupuesto[]
+  licitaciones         Licitacion[]
+  auditLogs            AuditLog[]
+  documentos           Documento[]
+  notificaciones       Notificacion[]
+  userSecurityStates   UserSecurityState[]
+  orgUnits             OrgUnit[]
+  orgUnitClosures      OrgUnitClosure[]
+  policyBundles        PolicyBundle[]
+  roleDefinitions      RoleDefinition[]
+  authorizationScopes  AuthorizationScope[]
+  roleAssignments      RoleAssignment[]
+  securityAuditEvents  SecurityAuditEvent[]
+  grhActionCommitments GrhActionCommitment[]
+  grhActionEvents      GrhActionCommitmentEvent[]
+  barrios              Barrio[]                   @ignore
+  calles               Calle[]                    @ignore
+  categoriasGrh        CategoriaGrh[]             @ignore
+  ciudadanos           Ciudadano[]                @ignore
+  conveniosGrh         ConvenioGrh[]              @ignore
+  empleadosGrh         EmpleadoGrh[]              @ignore
+  gremiosGrh           GremioGrh[]                @ignore
+  localidades          Localidad[]                @ignore
+  motivosAusencia      MotivoAusencia[]           @ignore
+  sectoresGrh          SectorGrh[]                @ignore
 
   @@map("tenants")
 }
@@ -203,17 +233,20 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  auditLogs                  AuditLog[]
-  securityState              UserSecurityState?   @relation("UserSecurityStateSubject")
-  securityStatesSuspended    UserSecurityState[]  @relation("UserSecurityStateSuspender")
-  securityStatesRevoked      UserSecurityState[]  @relation("UserSecurityStateRevoker")
-  orgUnitsCreated            OrgUnit[]            @relation("OrgUnitCreator")
-  policyBundlesCreated       PolicyBundle[]       @relation("PolicyBundleCreator")
-  roleDefinitionsCreated     RoleDefinition[]     @relation("RoleDefinitionCreator")
-  authorizationScopesCreated AuthorizationScope[] @relation("AuthorizationScopeCreator")
-  roleAssignmentsSubject     RoleAssignment[]     @relation("RoleAssignmentSubject")
-  roleAssignmentsRequested   RoleAssignment[]     @relation("RoleAssignmentRequester")
-  roleAssignmentsRevoked     RoleAssignment[]     @relation("RoleAssignmentRevoker")
+  auditLogs                   AuditLog[]
+  securityState               UserSecurityState?         @relation("UserSecurityStateSubject")
+  securityStatesSuspended     UserSecurityState[]        @relation("UserSecurityStateSuspender")
+  securityStatesRevoked       UserSecurityState[]        @relation("UserSecurityStateRevoker")
+  orgUnitsCreated             OrgUnit[]                  @relation("OrgUnitCreator")
+  policyBundlesCreated        PolicyBundle[]             @relation("PolicyBundleCreator")
+  roleDefinitionsCreated      RoleDefinition[]           @relation("RoleDefinitionCreator")
+  authorizationScopesCreated  AuthorizationScope[]       @relation("AuthorizationScopeCreator")
+  roleAssignmentsSubject      RoleAssignment[]           @relation("RoleAssignmentSubject")
+  roleAssignmentsRequested    RoleAssignment[]           @relation("RoleAssignmentRequester")
+  roleAssignmentsRevoked      RoleAssignment[]           @relation("RoleAssignmentRevoker")
+  grhActionCommitmentsCreated GrhActionCommitment[]      @relation("GrhActionCommitmentCreator")
+  grhActionCommitmentsOwned   GrhActionCommitment[]      @relation("GrhActionCommitmentOwner")
+  grhActionEvents             GrhActionCommitmentEvent[] @relation("GrhActionCommitmentEventActor")
 
   @@unique([tenantId, id])
   @@map("users")
@@ -684,6 +717,69 @@ model SecurityAuditEvent {
   @@index([permission, purpose, occurredAt])
   @@index([correlationId])
   @@map("security_audit_events")
+}
+
+model GrhActionCommitment {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  tenantId           String                    @map("tenant_id")
+  briefSchemaVersion String                    @map("brief_schema_version") @db.VarChar(80)
+  briefPolicyVersion String                    @map("brief_policy_version") @db.VarChar(80)
+  sourceSha256       String                    @map("source_sha256") @db.Char(64)
+  snapshotAsOf       DateTime                  @map("snapshot_as_of") @db.Date
+  period             String                    @db.VarChar(7)
+  priorityCode       String                    @map("priority_code") @db.VarChar(80)
+  prioritySeverity   GrhActionPrioritySeverity @map("priority_severity")
+  actionCode         GrhActionCode             @map("action_code")
+  evidenceDigest     String                    @map("evidence_digest") @db.Char(64)
+  state              GrhActionCommitmentState  @default(OPEN)
+  assigneeRole       Role                      @map("assignee_role")
+  ownerUserId        String?                   @map("owner_user_id")
+  dueOn              DateTime                  @map("due_on") @db.Date
+  version            Int                       @default(1)
+  outcomeCode        String?                   @map("outcome_code") @db.VarChar(80)
+  createdByUserId    String                    @map("created_by_user_id")
+  createdAt          DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant    Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  createdBy User                       @relation("GrhActionCommitmentCreator", fields: [tenantId, createdByUserId], references: [tenantId, id], onDelete: Restrict)
+  owner     User?                      @relation("GrhActionCommitmentOwner", fields: [tenantId, ownerUserId], references: [tenantId, id], onDelete: Restrict)
+  events    GrhActionCommitmentEvent[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, briefSchemaVersion, briefPolicyVersion, sourceSha256, snapshotAsOf, period, evidenceDigest, priorityCode], map: "grh_action_commitments_evidence_priority_key")
+  @@index([tenantId, state, dueOn])
+  @@index([tenantId, assigneeRole, state])
+  @@map("grh_action_commitments")
+}
+
+model GrhActionCommitmentEvent {
+  sequence        BigInt                    @id @default(autoincrement())
+  eventId         String                    @unique @default(uuid()) @map("event_id") @db.Uuid
+  tenantId        String                    @map("tenant_id")
+  commitmentId    String                    @map("commitment_id") @db.Uuid
+  commandId       String                    @map("command_id") @db.Uuid
+  payloadDigest   String                    @map("payload_digest") @db.Char(64)
+  actorUserId     String                    @map("actor_user_id")
+  actorRole       Role                      @map("actor_role")
+  command         GrhActionLedgerCommand
+  fromState       GrhActionCommitmentState? @map("from_state")
+  toState         GrhActionCommitmentState  @map("to_state")
+  reasonCode      String?                   @map("reason_code") @db.VarChar(80)
+  outcomeCode     String?                   @map("outcome_code") @db.VarChar(80)
+  dueOn           DateTime?                 @map("due_on") @db.Date
+  expectedVersion Int                       @map("expected_version")
+  resultVersion   Int                       @map("result_version")
+  occurredAt      DateTime                  @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  commitment GrhActionCommitment @relation(fields: [tenantId, commitmentId], references: [tenantId, id], onDelete: Restrict)
+  actor      User                @relation("GrhActionCommitmentEventActor", fields: [tenantId, actorUserId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, commandId])
+  @@index([tenantId, commitmentId, sequence])
+  @@index([tenantId, actorUserId, occurredAt])
+  @@map("grh_action_commitment_events")
 }
 
 model Invitation {

@@ -223,9 +223,10 @@ test('the governed manifest binds the exact schema and additive migration bytes'
   assert.equal(derived.ok, true, JSON.stringify(derived.errors));
   assert.deepEqual(manifest, derived.manifest);
   assert.equal(manifest.baselineMigration.directory, '20260809220336_baseline');
-  assert.equal(manifest.migrations.at(-1).directory, migrationDirectory);
+  const governedMigration = manifest.migrations.find(entry => entry.directory === migrationDirectory);
+  assert.ok(governedMigration, `missing governed migration ${migrationDirectory}`);
   assert.equal(
-    manifest.migrations.at(-1).sha256,
+    governedMigration.sha256,
     crypto.createHash('sha256').update(migration).digest('hex'),
   );
 });

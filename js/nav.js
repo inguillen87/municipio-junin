@@ -69,7 +69,7 @@ var MUNI_NAV_ASSET_BASE = (function() {
   }
 })();
 
-var CLIENT_ACCESS_POLICY_VERSION = '2026-08-11.2';
+var CLIENT_ACCESS_POLICY_VERSION = '2026-08-11.3';
 var ACCESS_NOTICE_KEY = 'mjunin_access_notice';
 var KNOWN_ROLES = ['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO'];
 var KNOWN_CAPABILITIES = [
@@ -83,6 +83,7 @@ var KNOWN_CAPABILITIES = [
   'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
+  'navigation.grh-decisions',
   'navigation.ai-assistant',
   'navigation.audit',
   'navigation.export',
@@ -304,6 +305,7 @@ var NAV_ITEMS = [
   { id:'grh-ejecutivo', href:'/ejecutivo',          icon:'people', label:'Resumen ejecutivo GRH', section:'RRHH',          capability:'navigation.grh-executive' },
   { id:'estructura',    href:'/estructura',          icon:'chart',  label:'Dotación y ausencias',   section:'RRHH',          capability:'navigation.organization-analytics' },
   { id:'areas-grh',     href:'areas-grh.html',       icon:'chart',  label:'Áreas y datos GRH',      section:'RRHH',          capability:'navigation.rrhh' },
+  { id:'decisiones-grh',href:'decisiones-grh.html',  icon:'check',  label:'Centro de decisiones',  section:'RRHH',          capability:'navigation.grh-decisions' },
   { id:'rrhh',          href:'rrhh.html',            icon:'people', label:'Directorio y fichas',    section:'RRHH',          capability:'navigation.rrhh' },
   { id:'ia',            href:'ia.html',             icon:'ai',     label:'Asistente GRH',         section:'RRHH',          capability:'navigation.ai-assistant' },
   { id:'territorio',    href:'/territorio',          icon:'map',    label:'Centro territorial',     section:'TERRITORIO',    capability:'navigation.territory' },
@@ -330,6 +332,7 @@ window.MuniNavigationCatalog = Object.freeze(NAV_ITEMS.reduce(function(catalog, 
 // SVG ICONS
 var ICONS = {
   chart:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+  check:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
   bar:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="17" y="13" width="4" height="8"/></svg>',
   doc:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
   bank:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>',
@@ -953,6 +956,7 @@ var MUNIGUIA_PRIVATE_PATHS = [
   '/territorio', '/territorio.html',
   '/calidad', '/calidad.html', '/control', '/control.html',
   '/areas-grh', '/areas-grh.html',
+  '/decisiones-grh', '/decisiones-grh.html',
   '/rrhh', '/rrhh.html',
   '/ia', '/ia.html',
   '/auditoria', '/auditoria.html',

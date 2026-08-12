@@ -18,6 +18,7 @@ const EXPECTED_SERVERLESS = [
   'GET /grh-directory-access',
   'GET /grh-domain-catalog',
   'GET /grh-organization-analytics',
+  'GET /grh-movement-operations',
   'GET /grh-workforce-finance',
   'GET /municipal-territory',
   'GET /grh-executive',
@@ -162,6 +163,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'grh-directory-access.js',
     'grh-domain-catalog.js',
     'grh-organization-analytics.js',
+    'grh-movement-operations.js',
     'grh-workforce-finance.js',
     'grh-close.js',
     'grh-decision-brief.js',
@@ -265,6 +267,11 @@ test('route authorization is exact by runtime, method and path', () => {
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-organization-analytics'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics/future'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-movement-operations'), true);
+  assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-movement-operations'), true);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-movement-operations'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-movement-operations'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-movement-operations/future'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-workforce-finance'), true);
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-workforce-finance'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-workforce-finance'), false);

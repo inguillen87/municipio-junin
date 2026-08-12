@@ -567,12 +567,19 @@
         'navigation.organization-analytics': Object.freeze({ href: '/estructura', label: 'Dotación y ausencias', copy: 'Sala de situación agregada para comparar áreas, períodos históricos y señales de revisión.', tag: 'Gestión' }),
         'navigation.territory': Object.freeze({ href: '/territorio', label: 'Centro territorial', copy: 'Límite y localidades oficiales.', tag: 'Territorio' }),
         'navigation.data-quality': Object.freeze({ href: '/calidad', label: 'Calidad de datos', copy: 'Inventario, cuarentena, procedencia y riesgos del snapshot.', tag: 'Confianza' }),
-        'navigation.rrhh': Object.freeze({ href: 'areas-grh.html', label: 'Áreas y datos GRH', copy: 'Ocho dominios reales para explorar tablas, cobertura, filas, períodos, preguntas disponibles y próximos pasos según el estado de cada fuente.', tag: 'Explorar' }),
+        'navigation.rrhh': Object.freeze({ href: 'areas-grh.html', label: 'Mapa de datos GRH', copy: 'Ocho dominios reales para explorar tablas, cobertura, filas, períodos, preguntas disponibles y próximos pasos según el estado de cada fuente.', tag: 'Explorar' }),
         'navigation.ai-assistant': Object.freeze({ href: 'ia.html', label: 'Asistente GRH', copy: 'Preguntas sobre nómina, personas, licencias, ausencias y calidad.', tag: 'Consulta' }),
         'navigation.audit': Object.freeze({ href: 'auditoria.html', label: 'Inventario de cargas', copy: 'Metadatos permitidos; todavía no es auditoría institucional.', tag: 'Datos' }),
         'navigation.export': Object.freeze({ href: 'exportar.html', label: 'Salidas gobernadas', copy: 'Informes protegidos, no exportación cruda ni publicación automática.', tag: 'Salida' }),
         'navigation.import': Object.freeze({ href: 'importar.html', label: 'Importar datos', copy: 'Carga condicionada con validación y período explícito.', tag: 'Ingesta' }),
         'navigation.help': Object.freeze({ href: 'manuales.html', label: 'Manual y ayuda', copy: 'Alcance, procedimientos, límites y respuesta ante incidentes.', tag: 'Ayuda' })
+      });
+      var MOVEMENT_ACTION = Object.freeze({
+        capability: 'navigation.organization-analytics',
+        href: 'movimientos-grh.html',
+        label: 'Movimientos y trazabilidad',
+        copy: 'Evolución anual, participantes, intensidad, comparación y calidad de enlace sobre movimientos registrados.',
+        tag: 'Operación'
       });
 
       function setText(id, value) { document.getElementById(id).textContent = value; }
@@ -631,6 +638,22 @@
           go.className = 'ws-action-go'; go.setAttribute('aria-hidden', 'true'); go.textContent = '→';
           header.append(tag, title, copy); link.append(header, go); container.appendChild(link);
         });
+        if (projection.capabilities.indexOf(MOVEMENT_ACTION.capability) !== -1) {
+          var movementLink = document.createElement('a');
+          var movementHeader = document.createElement('div');
+          var movementTag = document.createElement('span');
+          var movementTitle = document.createElement('strong');
+          var movementCopy = document.createElement('p');
+          var movementGo = document.createElement('span');
+          movementLink.className = 'ws-action'; movementLink.href = MOVEMENT_ACTION.href;
+          movementLink.dataset.requiredCapability = MOVEMENT_ACTION.capability;
+          movementLink.dataset.action = 'movimientos-grh';
+          movementTag.className = 'ws-action-tag'; movementTag.textContent = MOVEMENT_ACTION.tag;
+          movementTitle.textContent = MOVEMENT_ACTION.label; movementCopy.textContent = MOVEMENT_ACTION.copy;
+          movementGo.className = 'ws-action-go'; movementGo.setAttribute('aria-hidden', 'true'); movementGo.textContent = '→';
+          movementHeader.append(movementTag, movementTitle, movementCopy); movementLink.append(movementHeader, movementGo);
+          container.appendChild(movementLink);
+        }
       }
       function showNotice() {
         var notice = '';

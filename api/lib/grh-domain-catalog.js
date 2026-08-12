@@ -131,10 +131,11 @@ const DOMAIN_DEFINITIONS = Object.freeze([
     tables: Object.freeze(['legamov', 'prenove', 'errorimportacion', 'errores', 'columna', 'reporte']),
     questions: Object.freeze([
       '¿Cuántos movimientos válidos hubo en 2026?',
-      '¿Cómo evolucionaron los movimientos por año?',
+      '¿Cómo cambiaron los movimientos entre 2024 y 2025?',
       '¿Qué tablas de movimientos y trazabilidad hay?',
     ]),
     actions: Object.freeze([
+      Object.freeze({ id: 'open_movement_center', label: 'Abrir Centro de movimientos', href: '/movimientos-grh.html', requiredCapability: 'navigation.organization-analytics' }),
       Object.freeze({ id: 'ask_movement_assistant', label: 'Analizar movimientos con BOT IA', href: 'ia.html?question=Cuantos%20movimientos%20validos%20hubo%20en%202026', requiredCapability: 'navigation.ai-assistant' }),
       Object.freeze({ id: 'open_movement_quality', label: 'Abrir calidad y cuarentena', href: '/calidad', requiredCapability: 'navigation.data-quality' }),
     ]),

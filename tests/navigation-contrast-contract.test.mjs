@@ -124,7 +124,7 @@ test('desktop and mobile navigation share canonical labels and React canary rout
     'Dotación y ausencias',
     'Centro territorial',
     'Hacienda y nómina',
-    'Áreas y datos GRH',
+    'Mapa de datos GRH',
     'Directorio y fichas',
     'Calidad de datos',
     'Asistente GRH',

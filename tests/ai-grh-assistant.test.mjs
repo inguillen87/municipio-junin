@@ -462,6 +462,51 @@ test('absence, leave and movement values are returned only for released years', 
   assert.doesNotMatch(absent.response, /años disponibles|último año disponible/i);
 });
 
+test('movement comparisons keep events, participants and intensity separate', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const result = answer('Compará movimientos 2024 y 2025', views);
+
+  assert.equal(result.intent, 'movements');
+  assert.equal(result.httpStatus, 200);
+  assert.equal(result.status, 'answered');
+  assert.equal(result.resolvedPeriod, '2024→2025');
+  assert.match(result.answer.title, /2024.*2025/);
+  assert.match(result.answer.summary, /-1\.176/);
+  assert.match(result.answer.summary, /\+64/);
+  assert.match(result.answer.findings.join(' '), /42,6.*38,42/);
+  assert.match(result.answer.caveats.join(' '), /no es una tasa de rotación/i);
+  assert.deepEqual(result.answer.actions, [{
+    id: 'open_movement_center',
+    label: 'Abrir Centro de movimientos',
+    href: '/movimientos-grh.html?metric=events&window=all&from=2024&to=2025',
+    requiredCapability: 'navigation.organization-analytics',
+  }]);
+  assert.equal(result.answer.visual.items.length, 2);
+  assert.equal(result.answer.visual.items[0].value, 37019);
+  assert.equal(result.answer.visual.items[1].value, 35843);
+
+  const partial = answer('Compará movimientos 2025 y 2026', views);
+  assert.equal(partial.httpStatus, 422);
+  assert.equal(partial.answer.code, 'MOVEMENT_COMPARISON_REQUIRES_COMPLETE_YEARS');
+  assert.match(partial.answer.summary, /año parcial/i);
+
+  const tooMany = answer('Compará movimientos 2023, 2024 y 2025', views);
+  assert.equal(tooMany.httpStatus, 422);
+  assert.equal(tooMany.answer.code, 'MOVEMENT_COMPARISON_REQUIRES_TWO_YEARS');
+});
+
+test('movement answer labels the snapshot year as partial and preserves the exact cutoff', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const snapshotYear = views.executive.source.snapshotAsOf.slice(0, 4);
+  const result = answer(`Movimientos ${snapshotYear}`, views);
+
+  assert.equal(result.httpStatus, 200);
+  assert.match(result.answer.title, /parcial/i);
+  assert.match(result.answer.summary, new RegExp(`hasta el corte ${views.executive.source.snapshotAsOf}`));
+  assert.match(result.answer.findings.join(' '), /incompleto/i);
+  assert.match(result.answer.caveats.join(' '), /no se anualiza/i);
+});
+
 test('generic leave overview resolves the latest released historical year and exposes its real range', { skip: !HAS_PRIVATE_GRH }, () => {
   const views = realViews();
   const result = answer('¿Qué licencias históricas están disponibles?', views);

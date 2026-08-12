@@ -81,6 +81,7 @@ async function createServer(users, requestLog) {
     ['/ejecutivo', 'grh-ejecutivo.html'],
     ['/grh-ejecutivo', 'grh-ejecutivo.html'],
     ['/estructura', 'inicio.html'],
+    ['/movimientos-grh', 'inicio.html'],
     ['/territorio', 'inicio.html'],
     ['/calidad', 'control.html'],
     ['/control', 'control.html'],
@@ -156,6 +157,14 @@ async function createServer(users, requestLog) {
           '<section id="organizationSnapshotStatus" aria-label="Estado del snapshot"></section>',
           '<section id="organizationExplorer" aria-label="Explorador de dotación"></section>',
           '<section id="absenceRiskPanel" aria-label="Historial de ausencias"></section>',
+          '</main>',
+        ].join('')));
+      }
+      if (url.pathname === '/movimientos-grh') {
+        body = Buffer.from(body.toString('utf8').replace('</main>', [
+          '<section id="movementSourceEvidence" aria-label="Fuente de movimientos"></section>',
+          '<section id="movementChartTitle" aria-label="Serie de movimientos"></section>',
+          '<section id="movementComparisonPanel" aria-label="Comparación de movimientos"></section>',
           '</main>',
         ].join('')));
       }

@@ -180,9 +180,9 @@ test('enterprise explorer renders the real governed projection and keeps filter 
   t.after(async () => context.close());
   await waitForReady(page);
   await page.locator('.muni-guide-trigger').waitFor();
-  assert.equal(await page.locator('.muni-guide-trigger').getAttribute('aria-label'), 'Abrir ayuda de pantalla para Áreas y datos GRH');
+  assert.equal(await page.locator('.muni-guide-trigger').getAttribute('aria-label'), 'Abrir ayuda de pantalla para Mapa de datos GRH');
   await page.locator('.muni-guide-trigger').click();
-  assert.equal(await page.locator('.muni-guide-title').textContent(), 'Áreas y datos GRH');
+  assert.equal(await page.locator('.muni-guide-title').textContent(), 'Mapa de datos GRH');
   assert.match(await page.locator('.muni-guide-dialog').innerText(), /Confirmá fuente y corte/);
   await page.keyboard.press('Escape');
   await page.locator('.muni-guide-dialog').waitFor({ state: 'hidden' });
@@ -201,6 +201,19 @@ test('enterprise explorer renders the real governed projection and keeps filter 
   assert.equal(await page.locator('#grhDomainTitle').textContent(), 'Nómina y control de cálculo');
   assert.equal(await page.locator('#grhEvidenceBody tr').count(), PROJECTION.domains[5].tables.length);
   assert.equal(await page.locator('#grhQuestionList li').count(), PROJECTION.domains[5].questions.length);
+  assert.equal(await page.locator('#grhQuestionList .grh-question-link').count(), PROJECTION.domains[5].questions.length);
+  assert.deepEqual(
+    await page.locator('#grhQuestionList .grh-question-link').evaluateAll(links => links.map(link => ({
+      question: link.querySelector('strong')?.textContent,
+      label: link.querySelector('span')?.textContent,
+      href: link.getAttribute('href'),
+    }))),
+    PROJECTION.domains[5].questions.map(question => ({
+      question,
+      label: 'Preguntar al BOT IA',
+      href: `/ia.html?question=${encodeURIComponent(question)}`,
+    })),
+  );
   assert.deepEqual(
     await page.locator('#grhDomainActions a').evaluateAll(links => links.map(link => link.getAttribute('href'))),
     PROJECTION.domains[5].actions.map(action => action.href),

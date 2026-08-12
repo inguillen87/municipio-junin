@@ -403,6 +403,9 @@ button, input, select { font: inherit; }
 .grh-evidence-cards { display: none; }
 .grh-question-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
 .grh-question { min-width: 0; padding: 15px; border: 1px solid var(--grhx-border-soft); border-radius: 13px; background: var(--grhx-panel-soft); }
+.grh-question-link { display: block; margin: -15px; padding: 15px; border-radius: 13px; color: inherit; text-decoration: none; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+.grh-question-link:hover { background: color-mix(in srgb, var(--grhx-green) 9%, transparent); transform: translateY(-1px); }
+.grh-question-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--grhx-green) 48%, transparent); outline-offset: 2px; }
 .grh-question strong { display: block; color: var(--grhx-text); font-size: 13px; line-height: 1.45; }
 .grh-question span { display: inline-flex; margin-top: 10px; color: var(--grhx-green); font-size: 12px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
 .grh-question[data-answerability="conditional"] span { color: var(--grhx-amber); }

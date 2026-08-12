@@ -146,6 +146,7 @@ test('Serverless published identities are constrained by identity, role, tenant 
     ['GET', '/api/grh-decision-brief'],
     ['GET', '/api/grh-action-ledger'],
     ['GET', '/api/grh-organization-analytics'],
+    ['GET', '/api/grh-movement-operations'],
     ['GET', '/api/reports'],
     ['GET', '/api/pdf-report'],
     ['POST', '/api/ai-analyze'],

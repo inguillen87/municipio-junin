@@ -82,11 +82,12 @@ const EXPECTED_NAV_HREFS = [
   'reportes.html',
   'hacienda.html',
   '/ejecutivo',
-  '/estructura',
-  'areas-grh.html',
   'decisiones-grh.html',
-  'rrhh.html',
   'ia.html',
+  '/estructura',
+  'movimientos-grh.html',
+  'rrhh.html',
+  'areas-grh.html',
   '/territorio',
   '/calidad',
   'auditoria.html',
@@ -400,13 +401,19 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
   assert.deepEqual(items.map(item => item.href), EXPECTED_NAV_HREFS);
   assert.equal(new Set(items.map(item => item.href)).size, items.length, 'sidebar hrefs must be unique');
   assert.equal(new Set(items.map(item => item.label)).size, items.length, 'sidebar labels must be unique');
-  assert.deepEqual(declaredCapabilities, [...EXPECTED_NAV_CAPABILITIES, 'navigation.rrhh'].sort());
+  assert.deepEqual(declaredCapabilities, [
+    ...EXPECTED_NAV_CAPABILITIES,
+    'navigation.organization-analytics',
+    'navigation.rrhh',
+  ].sort());
+  assert.equal(items.filter(item => item.capability === 'navigation.organization-analytics').length, 2,
+    'organization analytics exposes the situation room and the movement operations center');
   assert.equal(items.filter(item => item.capability === 'navigation.rrhh').length, 2,
     'RRHH exposes the governed domain explorer and the operational directory');
   assert.match(source, /window\.MuniNavigationCatalog\s*=\s*Object\.freeze\(NAV_ITEMS\.reduce/);
   assert.match(source, /!Object\.prototype\.hasOwnProperty\.call\(catalog, item\.capability\)/,
     'the first governed route remains the canonical quick-navigation destination');
-  assert.equal(items.find(item => item.capability === 'navigation.rrhh').href, 'areas-grh.html');
+  assert.equal(items.find(item => item.capability === 'navigation.rrhh').href, 'rrhh.html');
   assert.match(bottomSource, /var CATALOG = window\.MuniNavigationCatalog;/);
   assert.doesNotMatch(bottomSource, /^\s*'navigation\.[^']+':\s*\{/m,
     'bottom navigation must not duplicate the authoritative catalog');
@@ -414,10 +421,14 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
   assert.match(source, /href:'\/calidad'[\s\S]*label:'Calidad de datos'[\s\S]*capability:'navigation\.data-quality'/);
   assert.match(source, /href:'\/ejecutivo'[\s\S]*label:'Resumen ejecutivo GRH'[\s\S]*capability:'navigation\.grh-executive'/);
   assert.match(source, /href:'\/estructura'[\s\S]*label:'Dotación y ausencias'[\s\S]*capability:'navigation\.organization-analytics'/);
+  assert.match(source, /href:'movimientos-grh\.html'[\s\S]*label:'Movimientos y trazabilidad'[\s\S]*capability:'navigation\.organization-analytics'/);
+  assert.match(source, /section:'DIRECCIÓN GRH'/);
+  assert.match(source, /section:'PERSONAS Y ORGANIZACIÓN'/);
+  assert.match(source, /section:'DATOS GRH'/);
   assert.match(source, /href:'\/territorio'[\s\S]*label:'Centro territorial'[\s\S]*capability:'navigation\.territory'/);
   assert.match(source, /label:'Panorama municipal'/);
   assert.match(source, /label:'Hacienda y n(?:ó|Ã³)mina'/);
-  assert.match(source, /label:'Áreas y datos GRH'/);
+  assert.match(source, /label:'Mapa de datos GRH'/);
   assert.match(source, /label:'Directorio y fichas'/);
   assert.match(source, /label:'Asistente GRH'/);
   assert.match(source, /label:'Reportes'/);

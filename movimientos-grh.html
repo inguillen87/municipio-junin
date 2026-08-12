@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html class="muni-shell-v1" lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Centro operativo de movimientos históricos del GRH de Junín.">
+  <title>Movimientos y trazabilidad | MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/grh-movement-operations.css">
+</head>
+<body class="movement-operations-page" data-page-capability="navigation.organization-analytics">
+  <a class="movement-skip" href="#movementOperations">Saltar al centro de movimientos</a>
+  <div id="sidebar"></div>
+
+  <main class="main-content" id="movementOperationsMain">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir navegación">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title">
+          <h1>Movimientos y trazabilidad</h1>
+          <span class="breadcrumb">GRH · evolución histórica · calidad de enlace</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="movement-source-status" id="movementSourceStatus" data-state="loading" role="status" aria-live="polite">
+          <span class="movement-source-dot" aria-hidden="true"></span>
+          <span id="movementSourceStatusText">Validando movimientos</span>
+        </div>
+        <div class="topbar-avatar" aria-label="Centro de movimientos">MV</div>
+      </div>
+    </header>
+
+    <div class="content-wrapper movement-shell" id="movementOperations" aria-busy="true">
+      <section class="movement-hero" aria-labelledby="movementTitle">
+        <div class="movement-hero-copy">
+          <p class="movement-eyebrow">Centro operativo GRH · serie gobernada</p>
+          <h2 id="movementTitle">Evolución de movimientos con evidencia y comparación.</h2>
+          <p>Analizá volumen, participantes e intensidad anual sobre registros válidos de la fuente. Son <strong>movimientos registrados, no altas/bajas/rotación</strong>.</p>
+          <div class="movement-chips" aria-label="Identidad del corte">
+            <span class="movement-chip movement-chip--verified">Contrato GRH</span>
+            <span class="movement-chip" id="movementSnapshotChip">Corte —</span>
+            <span class="movement-chip" id="movementPolicyChip">Política —</span>
+            <span class="movement-chip">Histórico · no tiempo real</span>
+          </div>
+        </div>
+        <aside class="movement-hero-context" id="movementSourceEvidence" aria-label="Fuente y alcance">
+          <span>Fuente canónica</span>
+          <strong id="movementSourceName">Validando…</strong>
+          <p id="movementSourceFile">La serie permanece cerrada hasta verificar contrato, corte y procedencia.</p>
+        </aside>
+      </section>
+
+      <section class="movement-state" id="movementLoading" aria-live="polite">
+        <span class="movement-loader" aria-hidden="true"></span>
+        <h2>Validando serie de movimientos</h2>
+        <p>No se muestran cifras parciales ni datos de reemplazo.</p>
+      </section>
+
+      <section class="movement-state movement-state--error" id="movementError" role="alert" tabindex="-1" hidden>
+        <span class="movement-state-mark" aria-hidden="true">!</span>
+        <h2 id="movementErrorTitle">Centro de movimientos no disponible</h2>
+        <p id="movementErrorMessage">No se pudo verificar la serie gobernada.</p>
+        <button class="movement-button" id="movementRetry" type="button" hidden>Reintentar validación</button>
+      </section>
+
+      <div id="movementContent" hidden>
+        <p class="movement-deeplink-notice" id="movementDeepLinkNotice" role="status" tabindex="-1" hidden>El enlace contenía filtros no válidos. Se aplicó la vista inicial segura.</p>
+
+        <section class="movement-kpis" id="movementSummary" aria-label="Indicadores de cobertura">
+          <article><span>Movimientos válidos</span><strong id="movementValidRows">—</strong><small id="movementValidRate">—</small></article>
+          <article><span>Integridad con legajo</span><strong id="movementJoinRate">—</strong><small>Enlace de clave compuesta</small></article>
+          <article><span>Claves cubiertas</span><strong id="movementCoveredKeys">—</strong><small>Participantes históricos distintos</small></article>
+          <article><span>Último año completo</span><strong id="movementLatestYear">—</strong><small id="movementLatestYearMeta">—</small></article>
+        </section>
+
+        <section class="movement-panel movement-analysis" aria-labelledby="movementChartTitle">
+          <header class="movement-section-heading">
+            <div>
+              <p class="movement-eyebrow">Serie principal</p>
+              <h2 id="movementChartTitle">Evolución anual publicada</h2>
+              <p id="movementChartDefinition">Movimientos válidos por año.</p>
+            </div>
+            <div class="movement-controls">
+              <label>Indicador
+                <select id="movementMetric">
+                  <option value="events">Movimientos</option>
+                  <option value="participants">Participantes</option>
+                  <option value="intensity">Movimientos por participante</option>
+                </select>
+              </label>
+              <label>Ventana
+                <select id="movementWindow">
+                  <option value="5">Últimos 5 años</option>
+                  <option value="10">Últimos 10 años</option>
+                  <option value="all">Todos los años</option>
+                </select>
+              </label>
+            </div>
+          </header>
+          <figure class="movement-chart" aria-describedby="movementChartCaption">
+            <div class="movement-chart-scroll" id="movementChart" role="region" aria-label="Gráfico anual desplazable" tabindex="0"></div>
+            <figcaption id="movementChartCaption">Cada barra conserva el estado completo, parcial o protegido informado por el contrato.</figcaption>
+          </figure>
+        </section>
+
+        <section class="movement-two-column" aria-label="Comparación y calidad">
+          <article class="movement-panel" id="movementComparisonPanel">
+            <header class="movement-section-heading">
+              <div><p class="movement-eyebrow">Comparación controlada</p><h2>Contrastar dos años completos</h2></div>
+            </header>
+            <div class="movement-compare-controls">
+              <label>Desde<select id="movementCompareFrom"></select></label>
+              <label>Hasta<select id="movementCompareTo"></select></label>
+            </div>
+            <div class="movement-deltas" aria-live="polite">
+              <article><span>Diferencia de movimientos</span><strong id="movementEventsDelta">—</strong><small id="movementEventsDeltaPct">—</small></article>
+              <article><span>Diferencia de participantes</span><strong id="movementParticipantsDelta">—</strong><small id="movementParticipantsDeltaPct">—</small></article>
+              <article><span>Diferencia de intensidad</span><strong id="movementIntensityDelta">—</strong><small id="movementIntensityDeltaPct">—</small></article>
+            </div>
+            <p class="movement-caveat">La variación describe registros observados. No clasifica ingresos, egresos, promociones ni transferencias.</p>
+          </article>
+
+          <article class="movement-panel" id="movementQualityPanel">
+            <header class="movement-section-heading">
+              <div><p class="movement-eyebrow">Calidad y cuarentena</p><h2>Qué entra en la serie</h2></div>
+            </header>
+            <dl class="movement-quality-list">
+              <div><dt>Filas fuente</dt><dd id="movementSourceRows">—</dd></div>
+              <div><dt>Filas válidas</dt><dd id="movementQualityValidRows">—</dd></div>
+              <div><dt>Filas en cuarentena</dt><dd id="movementQuarantineRows">—</dd></div>
+              <div><dt>Filas vinculadas</dt><dd id="movementLinkedRows">—</dd></div>
+              <div><dt>Filas sin vínculo</dt><dd id="movementUnlinkedRows">—</dd></div>
+            </dl>
+            <div class="movement-actions" id="movementActions" aria-label="Acciones relacionadas"></div>
+          </article>
+        </section>
+
+        <section class="movement-panel" aria-labelledby="movementTableTitle">
+          <header class="movement-section-heading">
+            <div><p class="movement-eyebrow">Evidencia completa</p><h2 id="movementTableTitle">Serie anual y estado de publicación</h2></div>
+          </header>
+          <div class="movement-table-wrap" role="region" aria-label="Tabla anual desplazable" tabindex="0">
+            <table class="movement-table">
+              <thead><tr><th scope="col">Año</th><th scope="col">Cobertura</th><th scope="col">Publicación</th><th scope="col" class="movement-numeric">Movimientos</th><th scope="col" class="movement-numeric">Participantes</th><th scope="col" class="movement-numeric">Intensidad</th></tr></thead>
+              <tbody id="movementTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <details class="movement-source-detail">
+          <summary>Fuente, hash y límites de interpretación</summary>
+          <dl><div><dt>Archivo</dt><dd id="movementDetailFile">—</dd></div><div><dt>SHA-256</dt><dd><code id="movementSourceHash">—</code></dd></div></dl>
+          <ul id="movementLimits"></ul>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <noscript><div class="movement-noscript">Este centro necesita JavaScript para validar el contrato. No muestra una serie alternativa.</div></noscript>
+  <script src="js/nav.js"></script>
+  <script>buildSidebar('movimientos-grh');</script>
+  <script src="js/auth-fetch.js"></script>
+  <script src="js/grh-movement-operations.js"></script>
+  <script src="js/theme-switcher.js"></script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>

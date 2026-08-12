@@ -32,7 +32,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 16);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 17);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -226,6 +226,13 @@ test('related actions and runtime remain capability-bound, local, non-persistent
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.title),
     ['Confirmá fuente y corte', 'Compará el mapa de calor', 'Priorizá una revisión'],
   );
+  assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.movementOperations.steps.map((step) => step.selector),
+    ['#movementSourceEvidence', '#movementChartTitle', '#movementComparisonPanel'],
+  );
+  assert.equal(MUNIGUIA_CATALOG.pages.movementOperations.requiredCapability, 'navigation.organization-analytics');
+  assert.equal(MUNIGUIA_CATALOG.pages.movementOperations.label, 'Movimientos y trazabilidad');
+  assert.equal(MUNIGUIA_CATALOG.pages.grhDomains.label, 'Mapa de datos GRH');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.territory.steps.map((step) => step.selector),
     ['#territoryMap', '#territoryLocalities', '#territorySources'],

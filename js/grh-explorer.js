@@ -450,12 +450,28 @@
   function renderQuestions(domain) {
     var list = byId('grhQuestionList');
     clear(list);
+    var projection = global.MuniAccess && typeof global.MuniAccess.getValidatedSession === 'function'
+      ? global.MuniAccess.getValidatedSession()
+      : null;
+    var canAskAssistant = Boolean(projection && Array.isArray(projection.capabilities) &&
+      projection.capabilities.indexOf('navigation.ai-assistant') !== -1);
     domain.questions.forEach(function(question, index) {
       var item = element('li', 'grh-question');
-      item.append(
-        element('strong', '', question),
-        element('span', '', 'Pregunta ' + String(index + 1).padStart(2, '0'))
-      );
+      if (canAskAssistant) {
+        var link = element('a', 'grh-question-link');
+        link.href = '/ia.html?question=' + encodeURIComponent(question);
+        link.dataset.questionIndex = String(index + 1);
+        link.append(
+          element('strong', '', question),
+          element('span', '', 'Preguntar al BOT IA')
+        );
+        item.appendChild(link);
+      } else {
+        item.append(
+          element('strong', '', question),
+          element('span', '', 'Pregunta ' + String(index + 1).padStart(2, '0'))
+        );
+      }
       list.appendChild(item);
     });
   }
@@ -495,7 +511,7 @@
     detail.hidden = false;
     var index = state.contract.domains.indexOf(domain) + 1;
     var title = byId('grhDomainTitle');
-    byId('grhDomainOrder').textContent = 'Área ' + String(index).padStart(2, '0') + ' de ' + state.contract.domains.length;
+    byId('grhDomainOrder').textContent = 'Dominio ' + String(index).padStart(2, '0') + ' de ' + state.contract.domains.length;
     byId('grhDomainStatus').textContent = statusLabel(domain.status);
     byId('grhDomainStatus').dataset.status = domain.status;
     title.textContent = domain.title;
@@ -516,7 +532,7 @@
     var values = [
       'El corte es histórico y no representa información en tiempo real.',
       'Una fila registrada no equivale automáticamente a una persona activa.',
-      'Las áreas describen dominios del GRH; no certifican el organigrama vigente.',
+      'Estos dominios agrupan datos del GRH; no son departamentos ni certifican el organigrama vigente.',
       'Las acciones disponibles respetan la capacidad confirmada para la sesión.'
     ];
     var list = byId('grhGlobalLimits');

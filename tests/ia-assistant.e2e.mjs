@@ -840,7 +840,28 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.equal(finance.visualItems, 8);
   assert.match(finance.text, /no atribuye causas/i);
   assert.doesNotMatch(finance.text, /DNI|CUIL|legajo/i);
-  assert.equal(requestLog.length, 2);
+
+  await page.getByRole('button', { name: 'Comparar movimientos' }).click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Movimientos GRH · 2024')));
+  const movements = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      actionHref: card?.querySelector('.answer-action')?.getAttribute('href'),
+      actionCapability: card?.querySelector('.answer-action')?.dataset.capability,
+      visualItems: card?.querySelectorAll('.answer-visual-row').length,
+      evidenceItems: card?.querySelectorAll('.evidence-item').length,
+      text: card?.textContent || '',
+    };
+  });
+  assert.equal(movements.actionHref,
+    '/movimientos-grh.html?metric=events&window=all&from=2024&to=2025');
+  assert.equal(movements.actionCapability, 'navigation.organization-analytics');
+  assert.equal(movements.visualItems, 2);
+  assert.equal(movements.evidenceItems, 5);
+  assert.match(movements.text, /eventos por participante observado/i);
+  assert.match(movements.text, /no es una tasa de rotación/i);
+  assert.equal(requestLog.length, 3);
   assert.equal(requestLog.every(item => item.purpose === 'AGGREGATE_ANALYSIS'), true);
   await context.close();
 });

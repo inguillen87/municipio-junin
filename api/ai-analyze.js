@@ -2096,6 +2096,30 @@ function leaveAnswer(context, periodRequest) {
 }
 
 function movementsAnswer(context, periodRequest) {
+  if (periodRequest.invalid) {
+    return periodLimit(
+      'Período inválido',
+      `“${periodRequest.invalid}” no es un período calendario válido.`,
+      'INVALID_PERIOD',
+    );
+  }
+  if (periodRequest.months.length) {
+    return periodLimit(
+      'Granularidad no disponible',
+      `El contrato de movimientos sólo contiene agregados anuales; no puede responder ${periodRequest.label} como si fuera un mes.`,
+      'PERIOD_GRANULARITY_UNAVAILABLE',
+    );
+  }
+  if (periodRequest.years.length === 2) {
+    return movementComparisonAnswer(context, periodRequest.years);
+  }
+  if (periodRequest.years.length > 2) {
+    return periodLimit(
+      'Comparación de movimientos no disponible',
+      'Indicá exactamente dos años para comparar movimientos registrados.',
+      'MOVEMENT_COMPARISON_REQUIRES_TWO_YEARS',
+    );
+  }
   const requested = resolveAnnualRequest(periodRequest, 'movimientos');
   if (requested.error) return requested.error;
   const year = requested.year || context.latestPeriod.slice(0, 4);
@@ -2103,24 +2127,108 @@ function movementsAnswer(context, periodRequest) {
   if (!row || row.privacyStatus !== 'released') {
     return protectedOrUnavailablePeriod('Movimientos', year, context.privacyThreshold);
   }
+  const partial = year === String(context.snapshot || '').slice(0, 4);
+  const periodTruth = partial
+    ? `hasta el corte ${context.snapshot}`
+    : `durante ${year}`;
   return {
-    title: `Movimientos GRH · ${year}`,
-    summary: `Se observan ${formatInteger(row.value)} filas válidas de movimiento en ${year}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. Son eventos de legamov, no altas o bajas clasificadas.`,
+    title: `Movimientos GRH · ${year}${partial ? ' (parcial)' : ''}`,
+    summary: `Se observan ${formatInteger(row.value)} filas válidas de movimiento ${periodTruth}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. Son eventos de legamov, no altas o bajas clasificadas.`,
     findings: [
       `El período supera el umbral portable k=${context.privacyThreshold}.`,
+      ...(partial ? [`${year} está incompleto al corte ${context.snapshot}; no se presenta como un año cerrado.`] : []),
       'El contrato actual no clasifica de forma gobernada los eventos como ingreso, egreso, ascenso o cambio de área.',
     ],
     evidence: [
       metric(`Movimientos válidos ${year}`, formatInteger(row.value), 'Filas de legamov; no personas únicas.'),
       metric('Participantes distintos', formatInteger(row.participantCount), 'Cardinalidad usada para liberar el agregado portable.'),
+      metric('Eventos por participante observado', formatNumber(row.value / row.participantCount, 2), 'Intensidad descriptiva del año; no es una tasa de rotación.'),
     ],
-    caveats: ['No se derivan rotación, altas o bajas sin una taxonomía validada de tipos de movimiento.'],
-    nextQuestions: ['¿Cuál es la cobertura del cruce con legajo?', '¿Qué calidad tiene el extracto?'],
+    caveats: [
+      ...(partial ? ['El valor parcial no se anualiza ni se compara como si cubriera el año completo.'] : []),
+      'No se derivan rotación, altas o bajas sin una taxonomía validada de tipos de movimiento.',
+    ],
+    nextQuestions: ['Compará movimientos 2024 y 2025', '¿Cuál es la cobertura del cruce con legajo?'],
+    actions: [movementCenterAction()],
     visual: annualEventVisual(context.movements, {
       title: 'Movimientos registrados por año',
       subtitle: 'Filas válidas de legamov; no representan altas, bajas ni personas únicas.',
     }),
     resolvedPeriod: year,
+  };
+}
+
+function movementComparisonAnswer(context, requestedYears) {
+  const years = requestedYears.slice().sort((left, right) => left.localeCompare(right));
+  const snapshotYear = String(context.snapshot || '').slice(0, 4);
+  if (years.some(year => year >= snapshotYear)) {
+    return periodLimit(
+      'Comparación anual incompleta',
+      `La comparación exige dos años completos anteriores al snapshot ${context.snapshot}. ${snapshotYear} es un año parcial y no se compara como si estuviera cerrado.`,
+      'MOVEMENT_COMPARISON_REQUIRES_COMPLETE_YEARS',
+    );
+  }
+  const rows = years.map(year => context.movements.series.find(item => item.period === year));
+  if (rows.some(row => !row || row.privacyStatus !== 'released')) {
+    return periodLimit(
+      'Comparación de movimientos con publicación limitada',
+      `No se puede comparar ${years.join(' y ')}: uno de los años no está disponible o no alcanza el umbral portable k=${context.privacyThreshold}.`,
+      'PRIVACY_PROTECTED_OR_UNAVAILABLE',
+    );
+  }
+  const [from, to] = rows;
+  const fromIntensity = from.value / from.participantCount;
+  const toIntensity = to.value / to.participantCount;
+  const eventDelta = to.value - from.value;
+  const participantDelta = to.participantCount - from.participantCount;
+  const intensityDelta = toIntensity - fromIntensity;
+  const eventDeltaPct = eventDelta / from.value * 100;
+  const participantDeltaPct = participantDelta / from.participantCount * 100;
+  const intensityDeltaPct = intensityDelta / fromIntensity * 100;
+  return {
+    title: `Movimientos GRH · ${years[0]} → ${years[1]}`,
+    summary: `Entre ${years[0]} y ${years[1]}, los movimientos registrados cambiaron ${formatSignedInteger(eventDelta)} (${formatSignedPercent(eventDeltaPct)}), mientras los participantes distintos cambiaron ${formatSignedInteger(participantDelta)} (${formatSignedPercent(participantDeltaPct)}).`,
+    findings: [
+      `La intensidad descriptiva pasó de ${formatNumber(fromIntensity, 2)} a ${formatNumber(toIntensity, 2)} eventos por participante observado (${formatSignedPercent(intensityDeltaPct)}).`,
+      'La comparación usa filas válidas de legamov y participantes distintos de cada año completo.',
+    ],
+    evidence: [
+      metric(`Eventos ${years[0]}`, formatInteger(from.value), 'Movimientos registrados; no altas o bajas clasificadas.'),
+      metric(`Eventos ${years[1]}`, formatInteger(to.value), formatSignedPercent(eventDeltaPct)),
+      metric(`Participantes ${years[0]}`, formatInteger(from.participantCount), 'Participantes distintos observados en legamov.'),
+      metric(`Participantes ${years[1]}`, formatInteger(to.participantCount), formatSignedPercent(participantDeltaPct)),
+      metric('Cambio de intensidad', formatSignedNumber(intensityDelta, 2), `${formatSignedPercent(intensityDeltaPct)} · eventos por participante observado.`),
+    ],
+    caveats: [
+      'La intensidad no es una tasa de rotación y no demuestra ingresos, egresos, ascensos ni cambios de área.',
+      'No se atribuyen causas: la fuente todavía no tiene una taxonomía de tipos de movimiento validada.',
+    ],
+    nextQuestions: [`¿Cuántos movimientos válidos hubo en ${years[1]}?`, '¿Qué registros de movimientos quedaron en cuarentena?'],
+    actions: [movementCenterAction({ from: years[0], to: years[1] })],
+    visual: buildBarVisual({
+      title: `Movimientos registrados · ${years[0]} vs ${years[1]}`,
+      subtitle: 'Filas válidas de legamov; comparación de dos años completos.',
+      order: 'chronological',
+      unit: 'records',
+      scaleMax: Math.max(from.value, to.value),
+      items: [
+        visualItem(years[0], from.value, formatInteger(from.value)),
+        visualItem(years[1], to.value, formatInteger(to.value)),
+      ],
+    }),
+    resolvedPeriod: `${years[0]}→${years[1]}`,
+  };
+}
+
+function movementCenterAction(comparison = null) {
+  const query = comparison
+    ? `?metric=events&window=all&from=${comparison.from}&to=${comparison.to}`
+    : '?metric=events&window=all';
+  return {
+    id: 'open_movement_center',
+    label: 'Abrir Centro de movimientos',
+    href: `/movimientos-grh.html${query}`,
+    requiredCapability: 'navigation.organization-analytics',
   };
 }
 
@@ -2883,6 +2991,11 @@ function formatSignedPercent(value) {
 function formatSignedInteger(value) {
   const sign = value > 0 ? '+' : '';
   return `${sign}${formatInteger(value)}`;
+}
+
+function formatSignedNumber(value, decimals = 2) {
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${formatNumber(value, decimals)}`;
 }
 
 function currencyDisclosure(context) {

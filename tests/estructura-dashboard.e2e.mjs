@@ -275,6 +275,67 @@ function activitySeries({ participantStart, valueStart, valueStep }) {
   });
 }
 
+function canonicalAbsenceActivitySeries() {
+  return [
+    {
+      period: '2021',
+      value: 1_251,
+      participantCount: 535,
+      participantDisplay: '535',
+      privacyStatus: 'released',
+    },
+    {
+      period: '2022',
+      value: 1_670,
+      participantCount: 584,
+      participantDisplay: '584',
+      privacyStatus: 'released',
+    },
+    {
+      period: '2023',
+      value: 1_986,
+      participantCount: 581,
+      participantDisplay: '581',
+      privacyStatus: 'released',
+    },
+    {
+      period: '2024',
+      value: 2_172,
+      participantCount: 610,
+      participantDisplay: '610',
+      privacyStatus: 'released',
+    },
+    {
+      period: '2025',
+      value: 2_048,
+      participantCount: 614,
+      participantDisplay: '614',
+      privacyStatus: 'released',
+    },
+    {
+      period: '2026',
+      value: 1_559,
+      participantCount: 590,
+      participantDisplay: '590',
+      privacyStatus: 'released',
+    },
+    {
+      period: null,
+      value: null,
+      participantCount: null,
+      participantDisplay: 'Protegido',
+      privacyStatus: 'suppressed',
+    },
+    {
+      period: null,
+      value: null,
+      participantCount: null,
+      participantDisplay: 'Protegido',
+      privacyStatus: 'suppressed',
+    },
+  ];
+}
+
 function matrixFixture() {
   const rows = ORGANIZATION_LABELS.slice(0, 5).map((label, index) => ({ code: index + 1, label }));
   const columns = SECTOR_LABELS.slice(0, 5).map((label, index) => ({ code: index + 11, label }));
@@ -383,7 +444,7 @@ const PAYLOAD = Object.freeze({
     absence: {
       sourceTable: 'ausencia',
       metric: 'valid_rows_by_year',
-      series: activitySeries({ participantStart: 40, valueStart: 80, valueStep: 10 }),
+      series: canonicalAbsenceActivitySeries(),
     },
     movements: {
       sourceTable: 'legamov',
@@ -1127,6 +1188,96 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assertNoPrivateDirectory(apiLog, diagnostics);
         assertCleanDiagnostics(diagnostics, 'desktop ready');
         await page.screenshot({ path: SCREENSHOTS.desktop, fullPage: true });
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('compares only complete published absence years locally on mobile and keeps the cumulative ranking separate', async () => {
+    await withScenario({ name: 'absence-year-comparison', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+        reducedMotion: 'reduce',
+      });
+      try {
+        await page.goto(`${baseUrl}/estructura#ausencias`, { waitUntil: 'domcontentloaded' });
+        await waitReady(page);
+
+        const comparison = page.locator('[data-testid="absence-year-comparison"]');
+        const from = page.locator('[data-testid="absence-compare-from"]');
+        const to = page.locator('[data-testid="absence-compare-to"]');
+        const swap = page.locator('[data-testid="absence-compare-swap"]');
+        await comparison.scrollIntoViewIfNeeded();
+
+        assert.equal(new URL(page.url()).search, '');
+        assert.equal(new URL(page.url()).hash, '#ausencias');
+        assert.equal(await from.inputValue(), '2024');
+        assert.equal(await to.inputValue(), '2025');
+        assert.deepEqual(await from.locator('option').evaluateAll(options => options.map(option => ({
+          value: option.value,
+          disabled: option.disabled,
+        }))), [
+          { value: '2021', disabled: false },
+          { value: '2022', disabled: false },
+          { value: '2023', disabled: false },
+          { value: '2024', disabled: false },
+          { value: '2025', disabled: true },
+        ]);
+        assert.equal(await from.locator('option[value="2026"]').count(), 0);
+        assert.equal(await from.locator('option[value=""]').count(), 0);
+
+        const metricText = async testId => ({
+          values: await page.locator(`[data-testid="${testId}"] .absence-comparison-metric__values strong`)
+            .allTextContents(),
+          delta: (await page.locator(`[data-testid="${testId}"] .absence-comparison-metric__delta strong`)
+            .textContent())?.replace(/\s+/gu, ' ').trim(),
+        });
+        assert.deepEqual(await metricText('absence-compare-events'), {
+          values: ['2.172', '2.048'],
+          delta: '-124 · -5,71%',
+        });
+        assert.deepEqual(await metricText('absence-compare-participants'), {
+          values: ['610', '614'],
+          delta: '+4 · +0,66%',
+        });
+        assert.deepEqual(await metricText('absence-compare-intensity'), {
+          values: ['3,56', '3,34'],
+          delta: '-0,23 · -6,32%',
+        });
+
+        const comparisonText = (await comparison.textContent() || '').replace(/\s+/gu, ' ').trim();
+        assert.match(comparisonText, /2026 parcial al 6(?: de)? ago(?: de)? 2026/iu);
+        assert.match(comparisonText, /2 per(?:í|i)odos protegidos omitidos/iu);
+        assert.match(comparisonText, /no d(?:í|i)as perdidos ni una tasa sobre planta activa/iu);
+        assert.match(comparisonText, /no prueba causas, desempe(?:ñ|n)o ni impacto operativo/iu);
+        assert.equal(await comparison.locator('[data-testid="absence-ranking"]').count(), 0);
+        const cumulativeRanking = page.locator('#absenceRiskPanel');
+        const rankingBefore = (await cumulativeRanking.textContent() || '').replace(/\s+/gu, ' ').trim();
+        assert.match(rankingBefore, /Historia agregada.*Ausencias por organizaci(?:ó|o)n/iu);
+
+        const boxes = await Promise.all([from, swap, to].map(locator => locator.boundingBox()));
+        assert.ok(boxes.every(Boolean));
+        assert.ok(boxes.every(box => box.height >= 44));
+        assert.ok(boxes[0].y < boxes[1].y && boxes[1].y < boxes[2].y);
+        assert.ok(Math.abs(boxes[0].x - boxes[1].x) <= 1 && Math.abs(boxes[1].x - boxes[2].x) <= 1);
+
+        const pathsBeforeInteraction = apiPaths(apiLog);
+        await from.selectOption('2023');
+        assert.equal(await from.inputValue(), '2023');
+        await swap.focus();
+        await swap.press('Enter');
+        assert.equal(await from.inputValue(), '2025');
+        assert.equal(await to.inputValue(), '2023');
+        assert.match((await page.locator('[data-testid="absence-compare-announcement"]').textContent()) || '',
+          /2025 frente a 2023/iu);
+        assert.deepEqual(apiPaths(apiLog), pathsBeforeInteraction);
+        assert.equal(new URL(page.url()).search, '');
+        assert.equal(new URL(page.url()).hash, '#ausencias');
+        assert.equal((await cumulativeRanking.textContent() || '').replace(/\s+/gu, ' ').trim(), rankingBefore);
+        assert.ok((await readyDiagnostics(page)).overflow <= 1);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'absence year comparison');
       } finally {
         await context.close();
       }

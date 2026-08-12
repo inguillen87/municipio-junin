@@ -16,6 +16,7 @@ import {
   CostCenterComparison,
   type CostCenterComparisonSeed,
 } from './CostCenterComparison';
+import { AbsenceYearComparison } from './AbsenceYearComparison';
 
 const WORKFORCE_KEYS: readonly WorkforceDimensionKey[] = ['sector', 'costCenter', 'agreement'];
 const EXPLORER_DIMENSIONS: readonly ExplorerDimension[] = ['organization', 'sector', 'costCenter'];
@@ -714,6 +715,7 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
   const [workforceKey, setWorkforceKey] = useState<WorkforceDimensionKey>('sector');
   const [comparisonSeed, setComparisonSeed] = useState<CostCenterComparisonSeed | null>(null);
   const workforceRanking = viewModel.workforce[workforceKey];
+  const absenceDomain = viewModel.activity.find(domain => domain.key === 'absence') ?? null;
   const enabledActions = useMemo(() => {
     const capabilitySet = new Set(capabilities);
     return viewModel.actions.filter(action => capabilitySet.has(action.requiredCapability));
@@ -827,6 +829,13 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
           ))}
         </div>
       </section>
+
+      {absenceDomain ? (
+        <AbsenceYearComparison
+          domain={absenceDomain}
+          snapshotAsOf={viewModel.truth.snapshotAsOf}
+        />
+      ) : null}
 
       <section
         className="structure-section"

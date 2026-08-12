@@ -47,6 +47,8 @@ const MAX_MESSAGE_LENGTH = 1200;
 const MAX_DIRECTORY_OPTIONS = 6;
 const MAX_DIRECTORY_SEARCH_TOKENS = 6;
 const MAX_DIRECTORY_LEAVE_HISTORY = 24;
+const MAX_DIRECTORY_ABSENCE_HISTORY = 24;
+const MAX_DIRECTORY_MOVEMENT_HISTORY = 24;
 const MAX_ANSWER_VISUAL_ITEMS = 13;
 const ENGINE_ID = 'grh-deterministic-v1';
 export const GRH_ANSWER_VISUAL_SCHEMA_VERSION = 'grh-answer-visual-v1';
@@ -619,9 +621,11 @@ function mapPrivateDirectoryOption(item) {
     legajo: item.legajo,
     displayName: item.displayName,
     sector: mapPrivateDimension(item.sector),
+    costCenter: mapPrivateDimension(item.costCenter),
     organization: mapPrivateDimension(item.organization),
     position: mapPrivatePosition(item.position),
     positionObservation: mapPrivatePositionObservation(item.positionObservation),
+    movement: mapPrivateMovement(item.movement),
   };
 }
 
@@ -633,11 +637,24 @@ function mapPrivateDirectoryPerson(item) {
       days: event.days,
     }))
     : [];
+  const absenceItems = Array.isArray(item.absenceHistory?.items)
+    ? item.absenceHistory.items.slice(0, MAX_DIRECTORY_ABSENCE_HISTORY).map(event => ({
+      date: event.date,
+      days: event.days,
+    }))
+    : [];
+  const movementItems = Array.isArray(item.movementHistory?.items)
+    ? item.movementHistory.items.slice(0, MAX_DIRECTORY_MOVEMENT_HISTORY).map(event => ({
+      period: event.period,
+      rowCount: event.rowCount,
+    }))
+    : [];
   return {
     companyCode: item.companyCode,
     legajo: item.legajo,
     displayName: item.displayName,
     sector: mapPrivateDimension(item.sector),
+    costCenter: mapPrivateDimension(item.costCenter),
     organization: mapPrivateDimension(item.organization),
     position: mapPrivatePosition(item.position),
     positionObservation: mapPrivatePositionObservation(item.positionObservation),
@@ -648,10 +665,21 @@ function mapPrivateDirectoryPerson(item) {
       latestLeaveStartDate: item.events.latestLeaveStartDate,
       latestLeaveEndDate: item.events.latestLeaveEndDate,
     },
+    movement: mapPrivateMovement(item.movement),
+    absenceHistory: {
+      total: item.absenceHistory.total,
+      limit: Math.min(item.absenceHistory.limit, MAX_DIRECTORY_ABSENCE_HISTORY),
+      items: absenceItems,
+    },
     leaveHistory: {
       total: item.leaveHistory.total,
       limit: Math.min(item.leaveHistory.limit, MAX_DIRECTORY_LEAVE_HISTORY),
       items: leaveItems,
+    },
+    movementHistory: {
+      total: item.movementHistory.total,
+      limit: Math.min(item.movementHistory.limit, MAX_DIRECTORY_MOVEMENT_HISTORY),
+      items: movementItems,
     },
   };
 }
@@ -679,9 +707,18 @@ function mapPrivatePositionObservation(value) {
   } : null;
 }
 
+function mapPrivateMovement(value) {
+  return value ? {
+    rowCount: value.rowCount,
+    periodCount: value.periodCount,
+    latestPeriod: value.latestPeriod,
+  } : { rowCount: 0, periodCount: 0, latestPeriod: null };
+}
+
 function buildDirectoryPersonAnswer(person, source) {
   const identity = person.displayName || `Legajo ${formatInteger(person.legajo)}`;
-  const location = [person.sector?.label, person.organization?.label].filter(Boolean).join(' · ');
+  const location = [person.costCenter?.label, person.sector?.label, person.organization?.label]
+    .filter(Boolean).join(' · ');
   const leaveHistory = person.leaveHistory.items;
   const latestLeave = leaveHistory[0] || null;
   const positionFinding = person.position?.label
@@ -703,11 +740,13 @@ function buildDirectoryPersonAnswer(person, source) {
       metric('Legajo', formatInteger(person.legajo), `Empresa ${person.companyCode}`),
       metric('Ausencias', formatInteger(person.events.absenceCount), person.events.latestAbsenceDate ? `Última: ${person.events.latestAbsenceDate}` : 'Sin fecha registrada'),
       metric('Licencias históricas', formatInteger(person.leaveHistory.total), latestLeave ? `Última: ${latestLeave.startDate}${latestLeave.endDate ? ` a ${latestLeave.endDate}` : ''}` : 'Sin eventos asociados'),
+      metric('Movimientos fuente', formatInteger(person.movement.rowCount), person.movement.latestPeriod ? `${formatInteger(person.movement.periodCount)} períodos · último ${person.movement.latestPeriod}` : 'Sin filas válidas asociadas'),
       metric('Puesto', person.position?.label || person.positionObservation?.label || 'Sin dato', person.position ? 'Cargo informado por GRH' : (person.positionObservation ? 'Observación histórica, no cargo actual' : 'No informado')),
     ],
     caveats: [
       ...observationCaveat,
       'Las licencias son históricas y se limitan a fechas y días; no describen una situación actual.',
+      'Los movimientos son filas fuente agrupadas por período; no equivalen a altas, bajas, traslados ni rotación.',
     ],
     nextQuestions: [],
     actions: [{ id: 'open_rrhh_person', label: 'Abrir ficha en RRHH', href }],

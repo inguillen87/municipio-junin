@@ -23,6 +23,7 @@ function artifactFixture() {
     legajo: 1001,
     display_name: 'Ágata de Prueba',
     sector: { code: 7, label: 'Salud' },
+    cost_center: { code: 60, label: 'Hospital' },
     organization: { code: 5, label: 'Hospital Municipal' },
     position: {
       code: 4,
@@ -33,10 +34,19 @@ function artifactFixture() {
     category: { code: 3, label: 'Categoría A' },
     agreement: { code: 2, label: 'Convenio municipal' },
     absence: { event_count: 2, latest_date: '2026-07-01' },
+    absence_history: [
+      { date: '2026-07-01', days: 1 },
+      { date: '2026-06-01', days: 2 },
+    ],
     leave: { event_count: 2, latest_start_date: '2026-05-01', latest_end_date: '2026-05-10' },
     leave_history: [
       { start_date: '2026-05-01', end_date: '2026-05-10', days: 10 },
       { start_date: '2025-02-01', end_date: '2025-02-02', days: 2 },
+    ],
+    movement: { row_count: 3, period_count: 2, latest_period: '2026-07' },
+    movement_history: [
+      { period: '2026-07', row_count: 2 },
+      { period: '2026-06', row_count: 1 },
     ],
     position_observation: {
       label: 'Dirección observada',
@@ -50,30 +60,38 @@ function artifactFixture() {
     legajo: 1002,
     display_name: 'Bruno Operativo',
     sector: { code: 7, label: 'Salud' },
+    cost_center: { code: 60, label: 'Hospital' },
     organization: { code: 6, label: 'Atención primaria' },
     position: { code: 8, label: 'Enfermero', parent: null, depends_on: null },
     category: { code: 4, label: 'Categoría B' },
     agreement: { code: 2, label: 'Convenio municipal' },
     absence: { event_count: 0, latest_date: null },
+    absence_history: [],
     leave: { event_count: 0, latest_start_date: null, latest_end_date: null },
     leave_history: [],
+    movement: { row_count: 0, period_count: 0, latest_period: null },
+    movement_history: [],
     position_observation: null,
   }, {
     company_code: 202,
     legajo: 1001,
     display_name: 'Celina Administración',
     sector: { code: 9, label: 'Administración' },
+    cost_center: null,
     organization: null,
     position: null,
     category: null,
     agreement: null,
     absence: { event_count: 1, latest_date: '2026-01-05' },
+    absence_history: [{ date: '2026-01-05', days: null }],
     leave: { event_count: 1, latest_start_date: '2024-04-01', latest_end_date: '2024-04-01' },
     leave_history: [{ start_date: '2024-04-01', end_date: '2024-04-01', days: 1 }],
+    movement: { row_count: 1, period_count: 1, latest_period: '2025-12' },
+    movement_history: [{ period: '2025-12', row_count: 1 }],
     position_observation: null,
   }];
   return {
-    schema_version: 'grh-directory-v1',
+    schema_version: 'grh-directory-v2',
     source: {
       canonical_system: 'GRH Junín',
       file: 'grh_junin.backup_2026080615_plataforma.sql.gz',
@@ -93,8 +111,10 @@ function artifactFixture() {
         cargo: 2,
         catego: 2,
         convenio: 1,
+        costos: 2,
         histolegajo: 1,
         legajo: 3,
+        legamov: 4,
         licencia: 3,
         organiza: 2,
         persona: 3,
@@ -110,6 +130,8 @@ function artifactFixture() {
       quarantined_absence_events: 0,
       valid_leave_events: 3,
       quarantined_leave_events: 0,
+      valid_movement_rows: 4,
+      quarantined_movement_rows: 0,
       valid_position_observation_rows: 1,
       blank_position_observation_rows: 0,
       quarantined_position_observation_rows: 0,
@@ -144,24 +166,81 @@ function snapshotQuery(envelope, expectedTenant = 'tenant-a') {
 
 test.beforeEach(() => clearGrhDirectorySnapshotCache());
 
+test('v2 artifact rejects shape, cutoff, ordering and count identity drift', () => {
+  const missingV2Fields = artifactFixture();
+  delete missingV2Fields.records[0].movement;
+  delete missingV2Fields.records[0].movement_history;
+  assert.doesNotThrow(() => inspectGrhDirectoryArtifact(missingV2Fields));
+  assert.equal(inspectGrhDirectoryArtifact(missingV2Fields).ok, false);
+
+  const extraField = artifactFixture();
+  extraField.records[0].movement_history[0].cause = 'forbidden';
+  assert.ok(inspectGrhDirectoryArtifact(extraField).errors.includes(
+    'records.0.movement_history.0.shape',
+  ));
+
+  const absenceOrder = artifactFixture();
+  absenceOrder.records[0].absence_history.reverse();
+  assert.ok(inspectGrhDirectoryArtifact(absenceOrder).errors.includes(
+    'records.0.absence_history.deterministic_order',
+  ));
+
+  const absenceCutoff = artifactFixture();
+  absenceCutoff.records[0].absence_history[0].date = '2026-09-01';
+  assert.ok(inspectGrhDirectoryArtifact(absenceCutoff).errors.includes(
+    'records.0.absence_history.0.after_snapshot',
+  ));
+
+  const movementIdentity = artifactFixture();
+  movementIdentity.records[0].movement.row_count += 1;
+  assert.ok(inspectGrhDirectoryArtifact(movementIdentity).errors.includes(
+    'records.0.movement_history.row_count_identity',
+  ));
+
+  const movementOrder = artifactFixture();
+  movementOrder.records[0].movement_history.reverse();
+  assert.ok(inspectGrhDirectoryArtifact(movementOrder).errors.includes(
+    'records.0.movement_history.deterministic_order',
+  ));
+
+  const impossibleMovementMonth = artifactFixture();
+  impossibleMovementMonth.records[0].movement.latest_period = '2025-99';
+  impossibleMovementMonth.records[0].movement_history[0].period = '2025-99';
+  assert.ok(inspectGrhDirectoryArtifact(impossibleMovementMonth).errors.includes(
+    'records.0.movement.latest_period',
+  ));
+  assert.ok(inspectGrhDirectoryArtifact(impossibleMovementMonth).errors.includes(
+    'records.0.movement_history.0.period',
+  ));
+
+  const sourceIdentity = artifactFixture();
+  sourceIdentity.counts.valid_movement_rows -= 1;
+  assert.ok(inspectGrhDirectoryArtifact(sourceIdentity).errors.includes(
+    'counts.movement_source_identity',
+  ));
+});
+
 test('AES-256-GCM envelope is exact, opaque and round-trips a governed artifact', () => {
   const artifact = artifactFixture();
   assert.equal(inspectGrhDirectoryArtifact(artifact).ok, true);
   const envelope = envelopeFixture();
   assert.deepEqual(Object.keys(envelope).sort(), [
     'aad', 'authTag', 'cipher', 'ciphertext', 'compression', 'kind', 'keyVersion',
-    'leaveRecordCount', 'nonce', 'positionObservationCount', 'recordCount',
+    'absenceRecordCount', 'leaveRecordCount', 'movementPeriodCount', 'nonce',
+    'positionObservationCount', 'recordCount',
     'schemaVersion', 'snapshotAsOf', 'sourceSha256',
   ].sort());
   assert.equal(GRH_DIRECTORY_SNAPSHOT_ACTION, 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1');
-  assert.equal(envelope.kind, 'grh.directory.snapshot.v1');
+  assert.equal(envelope.kind, 'grh.directory.snapshot.v2');
   assert.deepEqual(envelope.aad, {
     tenantId: 'tenant-a',
-    schemaVersion: 'grh-directory-v1',
+    schemaVersion: 'grh-directory-v2',
     sourceSha256: 'a'.repeat(64),
     snapshotAsOf: '2026-08-06',
     keyVersion: 'v1',
     compression: 'gzip',
+    absenceRecordCount: 3,
+    movementPeriodCount: 3,
   });
   assert.equal(envelope.nonce, Buffer.alloc(12, 1).toString('base64url'));
   assert.equal(envelope.authTag.length, 22);
@@ -223,6 +302,18 @@ test('exact metadata, tenant-bound AAD, count identity and ciphertext limits fai
     tenantId: 'tenant-a', envelope: wrongCount, key: SNAPSHOT_KEY,
   }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_COUNT_MISMATCH');
 
+  const unauthenticatedAbsenceCount = structuredClone(envelope);
+  unauthenticatedAbsenceCount.absenceRecordCount += 1;
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: unauthenticatedAbsenceCount, key: SNAPSHOT_KEY,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_AAD_INVALID');
+
+  const unauthenticatedMovementCount = structuredClone(envelope);
+  unauthenticatedMovementCount.movementPeriodCount += 1;
+  assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
+    tenantId: 'tenant-a', envelope: unauthenticatedMovementCount, key: SNAPSHOT_KEY,
+  }), error => error.code === 'GRH_DIRECTORY_SNAPSHOT_AAD_INVALID');
+
   const oversized = structuredClone(envelope);
   oversized.ciphertext = Buffer.alloc(4 * 1024 * 1024 + 1, 1).toString('base64url');
   assert.throws(() => decryptGrhDirectorySnapshotEnvelope({
@@ -237,7 +328,9 @@ test('JSONB key reordering is safe while cache entries remain tenant and key iso
     keyVersion: 'v1',
     snapshotAsOf: '2026-08-06',
     sourceSha256: 'a'.repeat(64),
-    schemaVersion: 'grh-directory-v1',
+    schemaVersion: 'grh-directory-v2',
+    absenceRecordCount: 3,
+    movementPeriodCount: 3,
     tenantId: 'tenant-a',
   };
   const first = decryptGrhDirectorySnapshotEnvelope({
@@ -271,7 +364,15 @@ test('snapshot list mode supports accent-insensitive token search, facets and op
   assert.equal(first.query.hasNext, true);
   assert.equal(first.facets.sectors[0].code, 7);
   assert.equal(first.facets.sectors[0].count, 2);
+  assert.equal(first.facets.costCenters[0].code, 60);
+  assert.equal(first.facets.costCenters[0].count, 2);
   assert.equal(first.facets.categories[0].agreementCode, 2);
+  assert.deepEqual(first.items[0].costCenter, { code: 60, label: 'Hospital' });
+  assert.deepEqual(first.items[0].movement, {
+    rowCount: 3,
+    periodCount: 2,
+    latestPeriod: '2026-07',
+  });
 
   const second = await readGrhDirectory({
     tenantId: 'tenant-a',
@@ -346,7 +447,7 @@ test('snapshot cursors are bound to the active source and storage ordering contr
   }), error => error.code === 'GRH_DIRECTORY_QUERY_INVALID' && error.status === 400);
 });
 
-test('snapshot detail preserves ambiguity handling and returns governed leave history', async () => {
+test('snapshot detail preserves ambiguity handling and returns governed event histories', async () => {
   const envelope = envelopeFixture();
   const options = {
     tenantId: 'tenant-a',
@@ -366,6 +467,56 @@ test('snapshot detail preserves ambiguity handling and returns governed leave hi
   assert.equal(detail.facets, null);
   assert.equal(detail.items[0].leaveHistory.total, 2);
   assert.equal(detail.items[0].leaveHistory.items[0].startDate, '2026-05-01');
+  assert.deepEqual(detail.items[0].absenceHistory, {
+    total: 2,
+    limit: 24,
+    items: [
+      { date: '2026-07-01', days: 1 },
+      { date: '2026-06-01', days: 2 },
+    ],
+  });
+  assert.deepEqual(detail.items[0].movementHistory, {
+    total: 2,
+    limit: 24,
+    items: [
+      { period: '2026-07', rowCount: 2 },
+      { period: '2026-06', rowCount: 1 },
+    ],
+  });
+
+  const extraShape = structuredClone(detail);
+  extraShape.items[0].movementHistory.items[0].cause = 'forbidden';
+  assert.ok(inspectGrhDirectoryResponse(extraShape).errors.includes(
+    'items.0.movementHistory.items.0.shape',
+  ));
+
+  const missingV2Fields = structuredClone(detail);
+  delete missingV2Fields.items[0].movement;
+  delete missingV2Fields.items[0].movementHistory;
+  assert.doesNotThrow(() => inspectGrhDirectoryResponse(missingV2Fields));
+  assert.equal(inspectGrhDirectoryResponse(missingV2Fields).ok, false);
+
+  const absenceOrder = structuredClone(detail);
+  absenceOrder.items[0].absenceHistory.items.reverse();
+  assert.ok(inspectGrhDirectoryResponse(absenceOrder).errors.includes(
+    'items.0.absenceHistory.deterministic_order',
+  ));
+
+  const movementCount = structuredClone(detail);
+  movementCount.items[0].movementHistory.total += 1;
+  assert.ok(inspectGrhDirectoryResponse(movementCount).errors.includes(
+    'items.0.movementHistory.total_identity',
+  ));
+
+  const impossibleMovementMonth = structuredClone(detail);
+  impossibleMovementMonth.items[0].movement.latestPeriod = '2025-99';
+  impossibleMovementMonth.items[0].movementHistory.items[0].period = '2025-99';
+  assert.ok(inspectGrhDirectoryResponse(impossibleMovementMonth).errors.includes(
+    'items.0.movement.latestPeriod',
+  ));
+  assert.ok(inspectGrhDirectoryResponse(impossibleMovementMonth).errors.includes(
+    'items.0.movementHistory.items.0.period',
+  ));
 });
 
 test('without the snapshot key the existing materialized-table SQL path is unchanged', async () => {

@@ -228,13 +228,14 @@ function directoryListPayload() {
     snapshotAsOf: '2026-08-06',
   };
   const emptyFacets = {
-    sectors: [], organizations: [], positions: [], positionObservations: [], categories: [], agreements: [],
+    sectors: [], costCenters: [], organizations: [], positions: [], positionObservations: [], categories: [], agreements: [],
   };
   const item = (legajo, displayName, sector) => ({
     companyCode: 1,
     legajo,
     displayName,
     sector: { code: legajo, label: sector },
+    costCenter: { code: 2, label: 'CENTRO DE COSTO PRUEBA' },
     organization: null,
     position: null,
     positionObservation: null,
@@ -247,9 +248,10 @@ function directoryListPayload() {
       latestLeaveStartDate: '2009-04-01',
       latestLeaveEndDate: '2009-04-05',
     },
+    movement: { rowCount: 7, periodCount: 3, latestPeriod: '2026-07' },
   });
   return {
-    schemaVersion: 'grh-directory-v1',
+    schemaVersion: 'grh-directory-v2',
     source,
     privacy: {
       containsPersonalData: true,
@@ -343,7 +345,7 @@ async function createServer(requestLog, options = {}) {
         response.writeHead(403, {
           'Content-Type': CONTENT_TYPES['.json'],
           'Cache-Control': 'no-store, private',
-          'X-MuniControl-Contract': 'grh-directory-v1',
+          'X-MuniControl-Contract': 'grh-directory-v2',
         });
         response.end(JSON.stringify({ error: 'Acceso nominal no habilitado' }));
         return;
@@ -354,7 +356,7 @@ async function createServer(requestLog, options = {}) {
       response.writeHead(200, {
         'Content-Type': CONTENT_TYPES['.json'],
         'Cache-Control': 'no-store, private',
-        'X-MuniControl-Contract': options.directoryContract || 'grh-directory-v1',
+        'X-MuniControl-Contract': options.directoryContract || 'grh-directory-v2',
       });
       response.end(JSON.stringify(payload));
       return;
@@ -1396,7 +1398,7 @@ test('private person answers render leave cards, actions and bounded match optio
       ...provenance(views.executive, views.quality),
       aggregateOnly: false,
       containsPii: true,
-      directorySchemaVersion: 'grh-directory-v1',
+      directorySchemaVersion: 'grh-directory-v2',
     };
     if (body.message === 'Licencias del legajo 7001') {
       return {
@@ -1425,12 +1427,29 @@ test('private person answers render leave cards, actions and bounded match optio
                 companyCode: 1,
                 legajo: 7001,
                 displayName: 'PERSONA PRUEBA',
+                absenceHistory: {
+                  total: 2,
+                  limit: 24,
+                  items: [
+                    { date: '2026-07-10', days: 1 },
+                    { date: '2025-03-03', days: 2 },
+                  ],
+                },
                 leaveHistory: {
                   total: 2,
                   limit: 24,
                   items: [
                     { startDate: '2009-04-01', endDate: '2009-04-05', days: 5 },
                     { startDate: '2008-03-02', endDate: '2008-03-03', days: 2 },
+                  ],
+                },
+                movementHistory: {
+                  total: 3,
+                  limit: 24,
+                  items: [
+                    { period: '2026-07', rowCount: 3 },
+                    { period: '2026-06', rowCount: 2 },
+                    { period: '2025-12', rowCount: 2 },
                   ],
                 },
               },
@@ -1522,7 +1541,15 @@ test('private person answers render leave cards, actions and bounded match optio
   });
   assert.equal(matched.title, 'PERSONA PRUEBA');
   assert.equal(matched.evidence, 3);
-  assert.deepEqual(matched.histories, ['2009-04-01 → 2009-04-055 días', '2008-03-02 → 2008-03-032 días']);
+  assert.deepEqual(matched.histories, [
+    '2009-04-01 → 2009-04-055 días',
+    '2008-03-02 → 2008-03-032 días',
+    '2026-07-101 días informados',
+    '2025-03-032 días informados',
+    '2026-073 filas de legamov',
+    '2026-062 filas de legamov',
+    '2025-122 filas de legamov',
+  ]);
   assert.equal(matched.action, 'Abrir ficha en RRHH');
   assert.equal(matched.actionHref, '/rrhh?company=1&legajo=7001#peopleDirectory');
   assert.equal(matched.overflow, 0);

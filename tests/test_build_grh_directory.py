@@ -28,16 +28,23 @@ CREATE TABLE `legajo` (\n
   `CARGOID` int,\n
   `IDORGANIZA` int,\n
   `CODI_07` int,\n
+  `CODI_06` int,\n
   `SUEL_12` decimal(10,2),\n
   PRIMARY KEY (`CODI_01`,`LEGA_12`)\n
 ) ENGINE=InnoDB;\n
-INSERT INTO `legajo` VALUES (1,100,9001,2,3,4,5,7,999.99),(1,101,9002,9,3,4,5,8,888.88),(1,0,9001,2,3,4,5,7,777.77);\n
+INSERT INTO `legajo` VALUES (1,100,9001,2,3,4,5,7,60,999.99),(1,101,9002,9,3,4,5,8,61,888.88),(1,0,9001,2,3,4,5,7,60,777.77);\n
 CREATE TABLE `sectores` (\n
   `CODI_01` int,\n
   `CODI_07` int,\n
   `DETA_07` varchar(200)\n
 ) ENGINE=InnoDB;\n
 INSERT INTO `sectores` VALUES (1,7,'SECTOR SIETE'),(1,8,'SECTOR OCHO');\n
+CREATE TABLE `costos` (\n
+  `CODI_01` int,\n
+  `CODI_06` int,\n
+  `DETA_06` varchar(200)\n
+) ENGINE=InnoDB;\n
+INSERT INTO `costos` VALUES (1,60,'CENTRO SESENTA'),(1,61,'CENTRO SESENTA Y UNO'),(2,60,'OTRA EMPRESA');\n
 CREATE TABLE `organiza` (\n
   `IDORGANIZA` int,\n
   `N1_DESC` varchar(200),\n
@@ -78,9 +85,20 @@ CREATE TABLE `ausencia` (\n
   `CODI_01` int,\n
   `LEGA_12` int,\n
   `FAUS_20` date,\n
+  `DIAS_24` int,\n
   `MOTI_20` varchar(200)\n
 ) ENGINE=InnoDB;\n
-INSERT INTO `ausencia` VALUES (1,100,'2026-06-01','PRIVATE CAUSE'),(1,100,'2026-07-01','PRIVATE CAUSE'),(1,101,'2026-09-01','FUTURE');\n
+INSERT INTO `ausencia` VALUES (1,100,'2026-06-01',2,'PRIVATE CAUSE'),(1,100,'2026-07-01',1,'PRIVATE CAUSE'),(1,101,'2026-09-01',3,'FUTURE');\n
+CREATE TABLE `legamov` (\n
+  `CODI_01` int,\n
+  `LEGA_12` int,\n
+  `ANO_30` int,\n
+  `MES_30` int,\n
+  `TIPO_30` varchar(20),\n
+  `IMPO_30` decimal(10,2),\n
+  `CAUSA` varchar(200)\n
+) ENGINE=InnoDB;\n
+INSERT INTO `legamov` VALUES (1,100,2026,7,'PRIVATE TYPE',999.99,'PRIVATE CAUSE'),(1,100,2026,7,'PRIVATE TYPE',888.88,'PRIVATE CAUSE'),(1,100,2026,6,'PRIVATE TYPE',777.77,'PRIVATE CAUSE'),(1,101,2026,9,'FUTURE',666.66,'PRIVATE CAUSE'),(1,101,1900,1,'OLD',555.55,'PRIVATE CAUSE');\n
 CREATE TABLE `licencia` (\n
   `CODI_01` int,\n
   `LEGA_12` int,\n
@@ -125,7 +143,7 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
                 generated_at=dt.datetime(2026, 8, 10, 15, 0, tzinfo=dt.timezone.utc),
             )
 
-        self.assertEqual(result["schema_version"], "grh-directory-v1")
+        self.assertEqual(result["schema_version"], "grh-directory-v2")
         self.assertEqual(result["source"]["snapshot_as_of"], "2026-08-06")
         self.assertEqual(result["source"]["generated_at"], "2026-08-10T15:00:00.000Z")
         self.assertTrue(result["privacy"]["contains_personal_data"])
@@ -136,6 +154,8 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
         self.assertEqual(result["counts"]["quarantined_absence_events"], 1)
         self.assertEqual(result["counts"]["valid_leave_events"], 1)
         self.assertEqual(result["counts"]["quarantined_leave_events"], 1)
+        self.assertEqual(result["counts"]["valid_movement_rows"], 3)
+        self.assertEqual(result["counts"]["quarantined_movement_rows"], 2)
         self.assertEqual(result["counts"]["invalid_employee_key_rows"], 1)
         self.assertEqual(result["counts"]["valid_position_observation_rows"], 1)
         self.assertEqual(result["counts"]["blank_position_observation_rows"], 1)
@@ -146,6 +166,7 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
         first, second = result["records"]
         self.assertEqual((first["company_code"], first["legajo"], first["display_name"]), (1, 100, "ALFA ANA"))
         self.assertEqual(first["sector"], {"code": 7, "label": "SECTOR SIETE"})
+        self.assertEqual(first["cost_center"], {"code": 60, "label": "CENTRO SESENTA"})
         self.assertEqual(first["organization"], {"code": 5, "label": "ORGANIZACION"})
         self.assertEqual(first["position"], {
             "code": 4,
@@ -166,6 +187,24 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
         self.assertEqual(second["category"], {"code": 3, "label": "CATEGORIA NUEVE"})
         self.assertEqual(second["agreement"], {"code": 9, "label": "OTRO CONVENIO"})
         self.assertEqual(first["absence"], {"event_count": 2, "latest_date": "2026-07-01"})
+        self.assertEqual(first["absence_history"], [
+            {"date": "2026-07-01", "days": 1},
+            {"date": "2026-06-01", "days": 2},
+        ])
+        self.assertEqual(first["movement"], {
+            "row_count": 3,
+            "period_count": 2,
+            "latest_period": "2026-07",
+        })
+        self.assertEqual(first["movement_history"], [
+            {"period": "2026-07", "row_count": 2},
+            {"period": "2026-06", "row_count": 1},
+        ])
+        self.assertEqual(second["movement"], {
+            "row_count": 0,
+            "period_count": 0,
+            "latest_period": None,
+        })
         self.assertEqual(second["leave"], {
             "event_count": 1,
             "latest_start_date": "2026-05-01",
@@ -180,7 +219,8 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
         serialized = json.dumps(result, ensure_ascii=False).casefold()
         for forbidden in [
             "30111222", "30222333", "555-111", "999.99", "777.77", "private cause",
-            "private person", "moti_20", "suel_12", "idpersona"
+            "private person", "private type", "moti_20", "suel_12", "idpersona",
+            "tipo_30", "impo_30", "causa"
         ]:
             self.assertNotIn(forbidden, serialized)
 

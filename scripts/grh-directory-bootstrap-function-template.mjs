@@ -38,8 +38,8 @@ const { Client } = pg;
 const { inspectDatabaseUrl } = databaseUrlPolicy;
 const { isPublishedDemoIdentity } = publishedDemoPolicy;
 
-const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v1';
-const DIRECTORY_CONTRACT = 'grh-directory-v1';
+const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v2';
+const DIRECTORY_CONTRACT = 'grh-directory-v2';
 const BOOTSTRAP_MODE = __BOOTSTRAP_MODE__;
 const OPERATION_ID = __OPERATION_ID__;
 const MIGRATION_SQL = __MIGRATION_SQL__;
@@ -56,12 +56,15 @@ const TABLES = Object.freeze([
   'grh_directory_dimensions',
   'grh_directory_people',
   'grh_directory_leave_events',
+  'grh_directory_absence_events',
+  'grh_directory_movement_periods',
 ]);
 const EXPECTED_COLUMNS = Object.freeze({
   grh_directory_sources: Object.freeze([
     'tenant_id', 'schema_version', 'canonical_system', 'source_file', 'source_sha256',
     'snapshot_as_of', 'artifact_generated_at', 'record_count', 'leave_record_count',
-    'position_observation_count', 'published_at',
+    'position_observation_count', 'published_at', 'absence_record_count',
+    'movement_period_count',
   ]),
   grh_directory_dimensions: Object.freeze([
     'tenant_id', 'dimension', 'company_code', 'scope_code', 'code', 'label',
@@ -73,10 +76,17 @@ const EXPECTED_COLUMNS = Object.freeze({
     'position_observed_date', 'position_observed_period', 'position_observation_status',
     'position_observation_source', 'category_code', 'agreement_code',
     'absence_event_count', 'latest_absence_date', 'leave_event_count',
-    'latest_leave_start_date', 'latest_leave_end_date',
+    'latest_leave_start_date', 'latest_leave_end_date', 'cost_center_code',
+    'movement_row_count', 'movement_period_count', 'latest_movement_period',
   ]),
   grh_directory_leave_events: Object.freeze([
     'tenant_id', 'company_code', 'legajo', 'event_order', 'start_date', 'end_date', 'days',
+  ]),
+  grh_directory_absence_events: Object.freeze([
+    'tenant_id', 'company_code', 'legajo', 'event_order', 'event_date', 'days',
+  ]),
+  grh_directory_movement_periods: Object.freeze([
+    'tenant_id', 'company_code', 'legajo', 'period', 'row_count',
   ]),
 });
 const EXPECTED_INDEXES = Object.freeze([
@@ -91,6 +101,10 @@ const EXPECTED_INDEXES = Object.freeze([
   'idx_grh_directory_people_absence',
   'idx_grh_directory_people_leave',
   'idx_grh_directory_leave_events_recent',
+  'idx_grh_directory_people_cost_center',
+  'idx_grh_directory_people_movement',
+  'idx_grh_directory_absence_events_recent',
+  'idx_grh_directory_movement_periods_recent',
 ]);
 
 class BootstrapError extends Error {
@@ -153,7 +167,9 @@ function encryptSnapshot(tenantId, artifact, inspected, key) {
     keyVersion: GRH_DIRECTORY_SNAPSHOT_KEY_VERSION,
   });
   if (snapshot.recordCount !== inspected.flattened.people.length ||
+      snapshot.absenceRecordCount !== inspected.flattened.absenceEvents.length ||
       snapshot.leaveRecordCount !== inspected.flattened.leaveEvents.length ||
+      snapshot.movementPeriodCount !== inspected.flattened.movementPeriods.length ||
       snapshot.positionObservationCount !== inspected.positionObservationCount) {
     throw new BootstrapError('BOOTSTRAP_PUBLICATION_COUNT_MISMATCH', 409);
   }
@@ -257,8 +273,8 @@ async function assertDirectorySchema(client) {
     [TABLES.map(table => 'public.' + table)],
   );
   const integrity = constraints.rows?.[0] || {};
-  if (Number(integrity.primary_keys) !== 4 || Number(integrity.foreign_keys) !== 4 ||
-      Number(integrity.cascading_foreign_keys) !== 4) {
+  if (Number(integrity.primary_keys) !== 6 || Number(integrity.foreign_keys) !== 6 ||
+      Number(integrity.cascading_foreign_keys) !== 6) {
     throw new BootstrapError('BOOTSTRAP_SCHEMA_MISMATCH', 409);
   }
   const indexes = await client.query(
@@ -327,7 +343,7 @@ async function applyBootstrap(envelope, inspected) {
     await client.query("SET LOCAL lock_timeout = '3000ms'");
     await client.query("SET LOCAL statement_timeout = '25000ms'");
     await client.query(
-      "SELECT pg_advisory_xact_lock(hashtext('grh-directory-bootstrap-v1'), hashtext($1))",
+      "SELECT pg_advisory_xact_lock(hashtext('grh-directory-bootstrap-v2'), hashtext($1))",
       [tenantId],
     );
     if (BOOTSTRAP_MODE === 'ddl') {
@@ -349,23 +365,23 @@ async function applyBootstrap(envelope, inspected) {
       throw new BootstrapError('BOOTSTRAP_TENANT_INVALID', 409);
     }
 
-    stage = 'consumed';
-    const consumed = await client.query(
-      'SELECT 1 FROM audit_logs WHERE "tenantId" = $1 AND action = $2 AND "entityId" = $3 LIMIT 1',
-      [tenantId, 'GRH_DIRECTORY_BOOTSTRAP_V1', OPERATION_ID],
-    );
-    if ((consumed.rows || []).length > 0) {
-      throw new BootstrapError('BOOTSTRAP_ALREADY_CONSUMED', 410);
-    }
     if (BOOTSTRAP_MODE === 'ddl') {
       stage = 'source';
       const existingSource = await client.query(
-        'SELECT 1 FROM grh_directory_sources WHERE tenant_id = $1 FOR UPDATE',
+        'SELECT schema_version FROM grh_directory_sources WHERE tenant_id = $1 FOR UPDATE',
         [tenantId],
       );
-      if ((existingSource.rows || []).length > 0) {
-        throw new BootstrapError('BOOTSTRAP_DIRECTORY_ALREADY_MATERIALIZED', 409);
+      if ((existingSource.rows || []).some(row => row.schema_version !== DIRECTORY_CONTRACT)) {
+        throw new BootstrapError('BOOTSTRAP_DIRECTORY_VERSION_INVALID', 409);
       }
+    }
+    stage = 'consumed';
+    const consumed = await client.query(
+      'SELECT 1 FROM audit_logs WHERE "tenantId" = $1 AND action = $2 AND "entityId" = $3 LIMIT 1',
+      [tenantId, 'GRH_DIRECTORY_BOOTSTRAP_V2', OPERATION_ID],
+    );
+    if ((consumed.rows || []).length > 0) {
+      throw new BootstrapError('BOOTSTRAP_ALREADY_CONSUMED', 410);
     }
     stage = 'pilot';
     const existingPilot = await client.query(
@@ -402,20 +418,24 @@ async function applyBootstrap(envelope, inspected) {
         chunkSize: 1000,
         transactionMode: 'external',
       });
-      if (publication.status !== 'published') {
+      if (!['published', 'replaced', 'unchanged'].includes(publication.status)) {
         throw new BootstrapError('BOOTSTRAP_PUBLICATION_STATE_INVALID', 409);
       }
       stage = 'counts';
       const verified = await client.query(
         'SELECT (SELECT COUNT(*)::int FROM grh_directory_people WHERE tenant_id = $1) AS people, ' +
+        '(SELECT COUNT(*)::int FROM grh_directory_absence_events WHERE tenant_id = $1) AS absence_events, ' +
         '(SELECT COUNT(*)::int FROM grh_directory_leave_events WHERE tenant_id = $1) AS leave_events, ' +
+        '(SELECT COUNT(*)::int FROM grh_directory_movement_periods WHERE tenant_id = $1) AS movement_periods, ' +
         '(SELECT COUNT(*)::int FROM grh_directory_people WHERE tenant_id = $1 ' +
         'AND position_observation_label IS NOT NULL) AS position_observations',
         [tenantId],
       );
       const counts = verified.rows?.[0] || {};
       if (Number(counts.people) !== inspected.flattened.people.length ||
+          Number(counts.absence_events) !== inspected.flattened.absenceEvents.length ||
           Number(counts.leave_events) !== inspected.flattened.leaveEvents.length ||
+          Number(counts.movement_periods) !== inspected.flattened.movementPeriods.length ||
           Number(counts.position_observations) !== inspected.positionObservationCount) {
         throw new BootstrapError('BOOTSTRAP_PUBLICATION_COUNT_MISMATCH', 409);
       }
@@ -432,14 +452,16 @@ async function applyBootstrap(envelope, inspected) {
       migrationSha256: MIGRATION_SHA256,
       manifestSha256: EXPECTED_MANIFEST_SHA256,
       recordCount: inspected.flattened.people.length,
+      absenceRecordCount: inspected.flattened.absenceEvents.length,
       leaveRecordCount: inspected.flattened.leaveEvents.length,
+      movementPeriodCount: inspected.flattened.movementPeriods.length,
       positionObservationCount: inspected.positionObservationCount,
       pilotRole: PILOT_ROLE,
     };
     await client.query(
       'INSERT INTO audit_logs (id, "tenantId", "userId", action, entity, "entityId", details, "createdAt") ' +
       'VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, NOW())',
-      [randomUUID(), tenantId, inspected.pilot.id, 'GRH_DIRECTORY_BOOTSTRAP_V1',
+      [randomUUID(), tenantId, inspected.pilot.id, 'GRH_DIRECTORY_BOOTSTRAP_V2',
         'grh_directory', OPERATION_ID, JSON.stringify(auditDetails)],
     );
     stage = 'commit';
@@ -447,7 +469,9 @@ async function applyBootstrap(envelope, inspected) {
     transaction = false;
     return {
       recordCount: inspected.flattened.people.length,
+      absenceRecordCount: inspected.flattened.absenceEvents.length,
       leaveRecordCount: inspected.flattened.leaveEvents.length,
+      movementPeriodCount: inspected.flattened.movementPeriods.length,
       positionObservationCount: inspected.positionObservationCount,
     };
   } catch (error) {

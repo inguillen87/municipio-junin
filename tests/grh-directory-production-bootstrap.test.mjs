@@ -44,7 +44,7 @@ const uuids = Object.freeze([
 
 function artifactFixture() {
   return {
-    schema_version: 'grh-directory-v1',
+    schema_version: 'grh-directory-v2',
     source: {
       canonical_system: EXPECTED_SOURCE_MANIFEST.canonical_system,
       file: EXPECTED_SOURCE_MANIFEST.source_file,
@@ -64,8 +64,10 @@ function artifactFixture() {
         cargo: 1,
         catego: 1,
         convenio: 1,
+        costos: 1,
         histolegajo: 1,
         legajo: 1,
+        legamov: 1,
         licencia: 1,
         organiza: 1,
         persona: 1,
@@ -81,6 +83,8 @@ function artifactFixture() {
       quarantined_absence_events: 0,
       valid_leave_events: 1,
       quarantined_leave_events: 0,
+      valid_movement_rows: 1,
+      quarantined_movement_rows: 0,
       valid_position_observation_rows: 1,
       blank_position_observation_rows: 0,
       quarantined_position_observation_rows: 0,
@@ -92,6 +96,7 @@ function artifactFixture() {
       legajo: 1001,
       display_name: 'Persona sintética',
       sector: { code: 7, label: 'Sector' },
+      cost_center: { code: 12, label: 'Centro de costo' },
       organization: { code: 5, label: 'Organización' },
       position: {
         code: 4,
@@ -102,8 +107,11 @@ function artifactFixture() {
       category: { code: 3, label: 'Categoría' },
       agreement: { code: 2, label: 'Convenio' },
       absence: { event_count: 1, latest_date: '2026-07-01' },
+      absence_history: [{ date: '2026-07-01', days: 1 }],
       leave: { event_count: 1, latest_start_date: '2009-05-01', latest_end_date: '2009-05-10' },
       leave_history: [{ start_date: '2009-05-01', end_date: '2009-05-10', days: 10 }],
+      movement: { row_count: 1, period_count: 1, latest_period: '2026-07' },
+      movement_history: [{ period: '2026-07', row_count: 1 }],
       position_observation: {
         label: 'Puesto observado',
         observed_date: '2026-08-31',
@@ -117,7 +125,7 @@ function artifactFixture() {
 
 function responseFixture() {
   return {
-    schemaVersion: 'grh-directory-v1',
+    schemaVersion: 'grh-directory-v2',
     source: {
       canonicalSystem: EXPECTED_SOURCE_MANIFEST.canonical_system,
       sourceFile: EXPECTED_SOURCE_MANIFEST.source_file,
@@ -139,6 +147,7 @@ function responseFixture() {
     },
     facets: {
       sectors: [{ code: 7, label: 'Sector', count: 1 }],
+      costCenters: [{ code: 12, label: 'Centro de costo', count: 1 }],
       organizations: [{ code: 5, label: 'Organización', count: 1 }],
       positions: [{ code: 4, label: 'Cargo', count: 1 }],
       positionObservations: [{ label: 'Puesto observado', count: 1, status: 'source_future_effective' }],
@@ -150,6 +159,7 @@ function responseFixture() {
       legajo: 1001,
       displayName: 'Persona sintética',
       sector: { code: 7, label: 'Sector' },
+      costCenter: { code: 12, label: 'Centro de costo' },
       organization: { code: 5, label: 'Organización' },
       position: {
         code: 4,
@@ -173,8 +183,29 @@ function responseFixture() {
         latestLeaveStartDate: '2009-05-01',
         latestLeaveEndDate: '2009-05-10',
       },
+      movement: { rowCount: 1, periodCount: 1, latestPeriod: '2026-07' },
     }],
   };
+}
+
+function detailResponseFixture() {
+  const response = responseFixture();
+  response.query = {
+    mode: 'detail', page: 1, limit: 1, total: 1,
+    hasNext: false, cursor: null, nextCursor: null,
+  };
+  response.facets = null;
+  response.items[0].absenceHistory = {
+    total: 1, limit: 24, items: [{ date: '2026-07-01', days: 1 }],
+  };
+  response.items[0].leaveHistory = {
+    total: 1, limit: 24,
+    items: [{ startDate: '2009-05-01', endDate: '2009-05-10', days: 10 }],
+  };
+  response.items[0].movementHistory = {
+    total: 1, limit: 24, items: [{ period: '2026-07', rowCount: 1 }],
+  };
+  return response;
 }
 
 function nominalAiResponseFixture() {
@@ -189,7 +220,7 @@ function nominalAiResponseFixture() {
     answer: {
       directory: {
         status: 'matched',
-        person: responseFixture().items[0],
+        person: detailResponseFixture().items[0],
       },
     },
     provenance: {
@@ -289,10 +320,12 @@ function bootstrapAppliedBody(state) {
   return {
     ok: true,
     code: 'GRH_DIRECTORY_BOOTSTRAP_APPLIED',
-    schemaVersion: 'grh-directory-v1',
+    schemaVersion: 'grh-directory-v2',
     snapshotAsOf: state.snapshotAsOf,
     recordCount: state.recordCount,
+    absenceRecordCount: state.absenceRecordCount,
     leaveRecordCount: state.leaveRecordCount,
+    movementPeriodCount: state.movementPeriodCount,
     positionObservationCount: state.positionObservationCount,
   };
 }
@@ -315,7 +348,9 @@ test('prepare emits a private gzip envelope, snapshot key, and explicit encrypte
     assert.equal(state.snapshotKeyVersion, 'v1');
     assert.equal(state.snapshotKeyFingerprintSha256.length, 64);
     assert.equal(state.recordCount, 1);
+    assert.equal(state.absenceRecordCount, 1);
     assert.equal(state.leaveRecordCount, 1);
+    assert.equal(state.movementPeriodCount, 1);
     assert.equal(state.positionObservationCount, 1);
     assert.ok(state.payloadBytes < 4_000_000);
     assert.ok(state.uncompressedBytes < 16 * 1024 * 1024);
@@ -344,7 +379,7 @@ test('prepare emits a private gzip envelope, snapshot key, and explicit encrypte
     assert.equal((endpoint.match(/INSERT INTO audit_logs/g) || []).length, 2);
     assert.doesNotMatch(endpoint, /(?:UPDATE|DELETE FROM) audit_logs/i);
     assert.match(endpoint, /SET LOCAL statement_timeout = '25000ms'/);
-    assert.match(endpoint, /GRH_DIRECTORY_BOOTSTRAP_V1/);
+    assert.match(endpoint, /GRH_DIRECTORY_BOOTSTRAP_V2/);
     assert.match(endpoint, /process\.env\.DIRECT_URL/);
     assert.match(endpoint, /has_schema_privilege\(current_user, 'public', 'CREATE'\)/);
     assert.match(endpoint, /has_table_privilege\(current_user, 'public\.tenants', 'REFERENCES'\)/);
@@ -407,12 +442,14 @@ test('encrypted snapshot publication contract is exact and decrypts with the run
   assert.equal(GRH_DIRECTORY_SNAPSHOT_ENTITY, 'GRH_DIRECTORY_SNAPSHOT');
   assert.deepEqual(Object.keys(envelope), [
     'kind', 'schemaVersion', 'keyVersion', 'compression', 'cipher',
-    'sourceSha256', 'snapshotAsOf', 'recordCount', 'leaveRecordCount',
-    'positionObservationCount', 'nonce', 'ciphertext', 'authTag', 'aad',
+    'sourceSha256', 'snapshotAsOf', 'recordCount', 'absenceRecordCount',
+    'leaveRecordCount', 'movementPeriodCount', 'positionObservationCount',
+    'nonce', 'ciphertext', 'authTag', 'aad',
   ]);
-  assert.equal(envelope.kind, 'grh.directory.snapshot.v1');
+  assert.equal(envelope.kind, 'grh.directory.snapshot.v2');
   assert.deepEqual(Object.keys(envelope.aad), [
     'tenantId', 'schemaVersion', 'sourceSha256', 'snapshotAsOf', 'keyVersion', 'compression',
+    'absenceRecordCount', 'movementPeriodCount',
   ]);
   assert.equal(JSON.stringify(envelope).includes(artifact.records[0].display_name), false);
   assert.deepEqual(
@@ -536,7 +573,7 @@ test('apply uses a unique production deployment with skip-domain and leaves the 
         assert.match(options.input, /header = "X-GRH-Bootstrap-Secret: /);
         assert.ok(options.input.includes(secret));
         assert.match(options.input, /data-binary = "@.+grh-directory-bootstrap\.payload\.json\.gz"/);
-        return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v1');
+        return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v2');
       }
       assert.fail('unexpected command');
     };
@@ -835,7 +872,7 @@ async function appliedFixture() {
     }
     if (args[0] === 'inspect') return jsonResult({ id: 'dpl_temp_unique', status: 'READY', target: 'production' });
     if (args[0] === 'curl') {
-      return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v1');
+      return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v2');
     }
     assert.fail('unexpected command');
   };
@@ -944,9 +981,16 @@ function protectedVerificationRunner({
       assert.ok(options.input.includes('legajo 1001'));
       return protectedCurlResult(aiBody);
     }
+    if (route === '/api/grh-directory?company=101&legajo=1001') {
+      assert.ok(options.input.includes('X-MuniControl-Purpose: PERSON_LOOKUP'));
+      return protectedCurlResult(detailResponseFixture(), 200, 'grh-directory-v2');
+    }
     if (route === '/api/grh-directory?limit=1' ||
-        route === '/api/grh-directory?limit=1&hasLeave=true') {
-      return protectedCurlResult(responseFixture(), 200, 'grh-directory-v1');
+        route === '/api/grh-directory?limit=1&hasLeave=true' ||
+        route === '/api/grh-directory?limit=1&hasAbsence=true' ||
+        route === '/api/grh-directory?limit=1&hasMovement=true') {
+      assert.ok(options.input.includes('X-MuniControl-Purpose: DIRECTORY_BROWSE'));
+      return protectedCurlResult(responseFixture(), 200, 'grh-directory-v2');
     }
     assert.fail('unexpected protected route');
   };
@@ -956,7 +1000,7 @@ test('apply preserves a safe migration-stage diagnostic without persisting respo
   const fixture = await ambiguousFixture({
     receiptBody: { ok: false, code: 'BOOTSTRAP_INTERNAL_MIGRATION', pgCode: '42601' },
     receiptStatus: 500,
-    receiptContract: 'grh-directory-bootstrap-v1',
+    receiptContract: 'grh-directory-bootstrap-v2',
     expectedCode: 'BOOTSTRAP_INTERNAL_MIGRATION',
   });
   try {
@@ -989,7 +1033,7 @@ test('resolve surfaces a safe publication-stage diagnostic and rejects all body 
         ok: false,
         code: 'BOOTSTRAP_INTERNAL_PUBLICATION',
         pgCode: 'XX000',
-      }, 500, 'grh-directory-bootstrap-v1');
+      }, 500, 'grh-directory-bootstrap-v2');
     };
     let diagnostic;
     await assert.rejects(() => resolveAmbiguousBootstrap({
@@ -1022,7 +1066,7 @@ test('resolve replays the protected one-shot exactly once and promotes a valid 2
       if (args[0] !== 'curl') assert.fail('unexpected command');
       calls.push({ args: [...args], hasInput: typeof options.input === 'string' });
       assert.ok(options.input.includes(secret));
-      return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v1');
+      return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v2');
     };
     const result = await resolveAmbiguousBootstrap({
       statePath: fixture.prepared.statePath,
@@ -1053,7 +1097,7 @@ test('resolve treats 410 already-consumed as verification-only and never duplica
       if (args[0] === 'inspect') return jsonResult({ id: 'dpl_temp_unique', status: 'READY', target: 'production' });
       if (args[0] !== 'curl') assert.fail('unexpected command');
       oneShotCalls += 1;
-      return protectedCurlResult({ ok: false, code: 'BOOTSTRAP_ALREADY_CONSUMED' }, 410, 'grh-directory-bootstrap-v1');
+      return protectedCurlResult({ ok: false, code: 'BOOTSTRAP_ALREADY_CONSUMED' }, 410, 'grh-directory-bootstrap-v2');
     };
     const resolution = await resolveAmbiguousBootstrap({
       statePath: fixture.prepared.statePath,
@@ -1098,15 +1142,20 @@ test('verify keeps token and nominal rows in memory and emits only structural re
     assert.deepEqual(result, {
       status: 'verified',
       stableAliasUnchanged: true,
-      schemaVersion: 'grh-directory-v1',
+      schemaVersion: 'grh-directory-v2',
       snapshotAsOf: '2026-08-06',
       recordCount: 1,
+      absenceAvailable: true,
       leaveAvailable: true,
+      movementAvailable: true,
       positionObservationAvailable: true,
       nominalAiVerified: true,
     });
-    assert.equal(calls.length, 4);
+    assert.equal(calls.length, 9);
     assert.ok(calls.some(call => call.args[1] === '/api/grh-directory?limit=1&hasLeave=true'));
+    assert.ok(calls.some(call => call.args[1] === '/api/grh-directory?limit=1&hasAbsence=true'));
+    assert.ok(calls.some(call => call.args[1] === '/api/grh-directory?limit=1&hasMovement=true'));
+    assert.equal(calls.filter(call => call.args[1] === '/api/grh-directory?company=101&legajo=1001').length, 3);
     assert.ok(calls.every(call => call.hasInput));
     assert.equal(JSON.stringify(calls).includes(token), false);
     assert.equal(JSON.stringify(calls).includes(credential.password), false);
@@ -1244,7 +1293,7 @@ test('verify-production certifies the new stable deployment and finalize only se
     assert.equal(verified.productionDeploymentId, 'dpl_release_new');
     assert.equal(verified.productionGitSha, expectedGitSha);
     assert.equal(verified.snapshotKeyFingerprintSha256, state.snapshotKeyFingerprintSha256);
-    assert.equal(calls.length, 4);
+    assert.equal(calls.length, 9);
     assert.ok(calls.every(call => call.args.includes(STABLE_PRODUCTION_URL)));
 
     const finalized = await finalizeProductionBootstrap({

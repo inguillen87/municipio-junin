@@ -225,7 +225,7 @@ const PAGES = deepFreeze({
     manualAnchor: 'seguridad',
     steps: [
       { id: 'wait-validation', selector: '#connectionStatus', title: 'Esperá la validación', copy: 'No interpretes la pantalla hasta que los contratos ejecutivo y de calidad estén conciliados.' },
-      { id: 'confirm-directory-mode', selector: '#peopleDirectory', title: 'Verificá el modo del directorio', copy: 'La vista pública conserva sólo agregados; una identidad privada habilitada permite buscar y abrir fichas del snapshot.' },
+      { id: 'confirm-directory-mode', selector: '#peopleDirectory', title: 'Abrí una ficha verificable', copy: 'Una identidad privada habilita búsqueda y fichas con adscripción, señales y cronología de fuentes. Confirmá siempre el corte antes de actuar.' },
       { id: 'review-coverage', selector: '#coverageTitle', title: 'Verificá la cobertura', copy: 'Confirmá años, períodos y celdas protegidas antes de comparar ausencias o movimientos.' },
     ],
   },

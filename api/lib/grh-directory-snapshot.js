@@ -13,7 +13,7 @@ import {
 
 export const GRH_DIRECTORY_SNAPSHOT_ACTION = 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1';
 export const GRH_DIRECTORY_SNAPSHOT_ENTITY = 'GRH_DIRECTORY_SNAPSHOT';
-export const GRH_DIRECTORY_SNAPSHOT_KIND = 'grh.directory.snapshot.v1';
+export const GRH_DIRECTORY_SNAPSHOT_KIND = 'grh.directory.snapshot.v2';
 export const GRH_DIRECTORY_SNAPSHOT_KEY_VERSION = 'v1';
 
 const SNAPSHOT_CIPHER = 'aes-256-gcm';
@@ -38,7 +38,9 @@ const ENVELOPE_KEYS = Object.freeze([
   'sourceSha256',
   'snapshotAsOf',
   'recordCount',
+  'absenceRecordCount',
   'leaveRecordCount',
+  'movementPeriodCount',
   'positionObservationCount',
   'nonce',
   'ciphertext',
@@ -52,6 +54,8 @@ const AAD_KEYS = Object.freeze([
   'snapshotAsOf',
   'keyVersion',
   'compression',
+  'absenceRecordCount',
+  'movementPeriodCount',
 ]);
 const snapshotCache = new Map();
 
@@ -105,7 +109,14 @@ function positiveOrZeroInteger(value) {
   return Number.isSafeInteger(value) && value >= 0;
 }
 
-function buildAad({ tenantId, sourceSha256, snapshotAsOf, keyVersion }) {
+function buildAad({
+  tenantId,
+  sourceSha256,
+  snapshotAsOf,
+  keyVersion,
+  absenceRecordCount,
+  movementPeriodCount,
+}) {
   return {
     tenantId,
     schemaVersion: GRH_DIRECTORY_SCHEMA_VERSION,
@@ -113,6 +124,8 @@ function buildAad({ tenantId, sourceSha256, snapshotAsOf, keyVersion }) {
     snapshotAsOf,
     keyVersion,
     compression: SNAPSHOT_COMPRESSION,
+    absenceRecordCount,
+    movementPeriodCount,
   };
 }
 
@@ -123,8 +136,16 @@ function aadBytes(aad) {
 function artifactCounts(artifact) {
   return {
     recordCount: artifact.records.length,
+    absenceRecordCount: artifact.records.reduce(
+      (total, record) => total + record.absence_history.length,
+      0,
+    ),
     leaveRecordCount: artifact.records.reduce(
       (total, record) => total + record.leave_history.length,
+      0,
+    ),
+    movementPeriodCount: artifact.records.reduce(
+      (total, record) => total + record.movement_history.length,
       0,
     ),
     positionObservationCount: artifact.records.reduce(
@@ -156,7 +177,9 @@ function validateEnvelopeShape(envelope, tenantId) {
       !SHA256_PATTERN.test(envelope.sourceSha256 || '') ||
       !DATE_PATTERN.test(envelope.snapshotAsOf || '') ||
       !positiveOrZeroInteger(envelope.recordCount) ||
+      !positiveOrZeroInteger(envelope.absenceRecordCount) ||
       !positiveOrZeroInteger(envelope.leaveRecordCount) ||
+      !positiveOrZeroInteger(envelope.movementPeriodCount) ||
       !positiveOrZeroInteger(envelope.positionObservationCount)) {
     throw snapshotError('GRH_DIRECTORY_SNAPSHOT_ENVELOPE_INVALID');
   }
@@ -165,6 +188,8 @@ function validateEnvelopeShape(envelope, tenantId) {
     sourceSha256: envelope.sourceSha256,
     snapshotAsOf: envelope.snapshotAsOf,
     keyVersion: envelope.keyVersion,
+    absenceRecordCount: envelope.absenceRecordCount,
+    movementPeriodCount: envelope.movementPeriodCount,
   });
   if (!AAD_KEYS.every(key => envelope.aad[key] === expectedAad[key])) {
     throw snapshotError('GRH_DIRECTORY_SNAPSHOT_AAD_INVALID');
@@ -183,7 +208,9 @@ function cacheIdentity(tenantId, envelope, key) {
       sourceSha256: envelope.sourceSha256,
       snapshotAsOf: envelope.snapshotAsOf,
       recordCount: envelope.recordCount,
+      absenceRecordCount: envelope.absenceRecordCount,
       leaveRecordCount: envelope.leaveRecordCount,
+      movementPeriodCount: envelope.movementPeriodCount,
       positionObservationCount: envelope.positionObservationCount,
       nonce: envelope.nonce,
       ciphertext: envelope.ciphertext,
@@ -193,6 +220,8 @@ function cacheIdentity(tenantId, envelope, key) {
         sourceSha256: envelope.sourceSha256,
         snapshotAsOf: envelope.snapshotAsOf,
         keyVersion: envelope.keyVersion,
+        absenceRecordCount: envelope.absenceRecordCount,
+        movementPeriodCount: envelope.movementPeriodCount,
       }),
     }), 'utf8')
     .digest('hex');
@@ -243,11 +272,14 @@ export function createGrhDirectorySnapshotEnvelope({
   if (compressed.length === 0 || compressed.length > MAX_SNAPSHOT_GZIP_BYTES) {
     throw snapshotError('GRH_DIRECTORY_SNAPSHOT_SIZE_INVALID');
   }
+  const counts = artifactCounts(artifact);
   const aad = buildAad({
     tenantId,
     sourceSha256: artifact.source.sha256,
     snapshotAsOf: artifact.source.snapshot_as_of,
     keyVersion,
+    absenceRecordCount: counts.absenceRecordCount,
+    movementPeriodCount: counts.movementPeriodCount,
   });
   const cipher = createCipheriv(SNAPSHOT_CIPHER, encryptionKey, nonce, {
     authTagLength: SNAPSHOT_AUTH_TAG_BYTES,
@@ -257,7 +289,6 @@ export function createGrhDirectorySnapshotEnvelope({
   if (ciphertext.length > MAX_SNAPSHOT_CIPHERTEXT_BYTES) {
     throw snapshotError('GRH_DIRECTORY_SNAPSHOT_SIZE_INVALID');
   }
-  const counts = artifactCounts(artifact);
   return {
     kind: GRH_DIRECTORY_SNAPSHOT_KIND,
     schemaVersion: GRH_DIRECTORY_SCHEMA_VERSION,
@@ -333,7 +364,9 @@ export function decryptGrhDirectorySnapshotEnvelope({ tenantId, envelope, key } 
   }
   const counts = artifactCounts(artifact);
   if (counts.recordCount !== envelope.recordCount ||
+      counts.absenceRecordCount !== envelope.absenceRecordCount ||
       counts.leaveRecordCount !== envelope.leaveRecordCount ||
+      counts.movementPeriodCount !== envelope.movementPeriodCount ||
       counts.positionObservationCount !== envelope.positionObservationCount) {
     throw snapshotError('GRH_DIRECTORY_SNAPSHOT_COUNT_MISMATCH');
   }

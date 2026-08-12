@@ -67,6 +67,8 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(user, /cardinalidad desconocida|cantidad de personas distintas.*protegida/is);
   assert.match(user, /close_explanation[\s\S]{0,180}Cierre explicado/i);
   assert.match(user, /close_explanation[\s\S]{0,420}422/i);
+  assert.match(user, /grh-directory-v2/);
+  assert.match(user, /24 ausencias, licencias\s+y períodos|hasta 24 ausencias/i);
 
   const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
   assert.match(technical, /\*\*Versión:\*\* 1\.10\.0/);
@@ -83,6 +85,8 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(technical, /GET \/api\/grh-decision-brief[\s\S]{0,240}grh-decision-brief-v1/i);
   assert.match(technical, /\/api\/grh-data[\s\S]{0,240}410[\s\S]{0,120}sin leer artefactos/i);
   assert.match(technical, /profile[\s\S]{0,100}semantic[\s\S]{0,120}exclusivamente en backend/i);
+  assert.match(technical, /004_grh_directory_v2\.sql/);
+  assert.match(read('manuales.html'), /filas fuente[\s\S]{0,180}legamov/i);
 
   const roadmap = read('docs/ENTERPRISE_PRODUCT_ROADMAP.md');
   assert.match(roadmap, /Versión: 1\.10\.0/i);
@@ -396,7 +400,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
   assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 14);
-  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v1');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v2');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory-access'], 'grh-directory-access-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-domain-catalog'], 'grh-domain-catalog-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-workforce-finance'], 'grh-workforce-finance-v1');

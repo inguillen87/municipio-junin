@@ -69,6 +69,7 @@ function directoryItem(index, detail = false) {
     displayName: index === 1 ? 'ALVAREZ, ANA' : `PERSONA PRUEBA ${String(index).padStart(2, '0')}`,
     sector: { code: index % 2 ? 10 : 20, label: index % 2 ? 'ADMINISTRACION' : 'SERVICIOS' },
     organization: { code: index % 2 ? 100 : 200, label: index % 2 ? 'SECRETARIA DE GOBIERNO' : 'SECRETARIA DE SERVICIOS' },
+    costCenter: { code: index % 2 ? 30 : 40, label: index % 2 ? 'PERSONAL' : 'SERVICIOS URBANOS' },
     position: index === 2 ? {
       code: 1002,
       label: 'AGENTE MUNICIPAL CODIFICADO',
@@ -86,14 +87,30 @@ function directoryItem(index, detail = false) {
     category: { code: 7, label: 'CATEGORIA 7' },
     agreement: { code: 1, label: 'MUNICIPAL' },
     events: {
-      absenceCount: index % 3 === 0 ? 2 : 0,
-      latestAbsenceDate: index % 3 === 0 ? '2026-07-10' : null,
+      absenceCount: index === 1 ? 30 : (index % 3 === 0 ? 2 : 0),
+      latestAbsenceDate: index === 1 ? '2026-07-24' : (index % 3 === 0 ? '2026-07-10' : null),
       leaveCount,
       latestLeaveStartDate: leaveCount ? '2009-05-01' : null,
       latestLeaveEndDate: leaveCount ? '2009-05-05' : null,
     },
+    movement: index === 1
+      ? { rowCount: 7, periodCount: 3, latestPeriod: '2026-07' }
+      : (index % 4 === 0
+        ? { rowCount: 2, periodCount: 1, latestPeriod: '2026-06' }
+        : { rowCount: 0, periodCount: 0, latestPeriod: null }),
   };
   if (detail) {
+    item.absenceHistory = {
+      total: item.events.absenceCount,
+      limit: 24,
+      items: index === 1 ? Array.from({ length: 24 }, (_, offset) => ({
+        date: `2026-07-${String(24 - offset).padStart(2, '0')}`,
+        days: offset % 4 === 0 ? null : 1,
+      })) : item.events.absenceCount === 2 ? [
+        { date: '2026-07-10', days: 1 },
+        { date: '2025-11-03', days: null },
+      ] : [],
+    };
     item.leaveHistory = {
       total: leaveCount,
       limit: 24,
@@ -102,6 +119,17 @@ function directoryItem(index, detail = false) {
         { startDate: '2008-03-10', endDate: '2008-03-12', days: 3 },
       ] : leaveCount === 1 ? [
         { startDate: '2009-05-01', endDate: '2009-05-05', days: 5 },
+      ] : [],
+    };
+    item.movementHistory = {
+      total: item.movement.periodCount,
+      limit: 24,
+      items: item.movement.periodCount === 3 ? [
+        { period: '2026-07', rowCount: 3 },
+        { period: '2026-04', rowCount: 2 },
+        { period: '2025-12', rowCount: 2 },
+      ] : item.movement.periodCount === 1 ? [
+        { period: '2026-06', rowCount: 2 },
       ] : [],
     };
   }
@@ -125,7 +153,7 @@ function directoryPayload(url) {
     const match = all.find(item => item.legajo === detailLegajo);
     const item = directoryItem(all.indexOf(match) + 1, true);
     const payload = {
-      schemaVersion: 'grh-directory-v1', source, privacy,
+      schemaVersion: 'grh-directory-v2', source, privacy,
       query: { mode: 'detail', page: 1, limit: 1, total: 1, hasNext: false, cursor: null, nextCursor: null },
       facets: null,
       items: [item],
@@ -140,11 +168,12 @@ function directoryPayload(url) {
   if (search) filtered = filtered.filter(item => item.displayName.includes(search) || String(item.legajo).includes(search));
   if (url.searchParams.get('hasLeave') === 'true') filtered = filtered.filter(item => item.events.leaveCount > 0);
   if (url.searchParams.get('hasAbsence') === 'true') filtered = filtered.filter(item => item.events.absenceCount > 0);
+  if (url.searchParams.get('hasMovement') === 'true') filtered = filtered.filter(item => item.movement.rowCount > 0);
   const positionObservation = url.searchParams.get('positionObservation');
   if (positionObservation) {
     filtered = filtered.filter(item => item.positionObservation?.label === positionObservation);
   }
-  for (const [parameter, property] of [['sector', 'sector'], ['organization', 'organization'], ['position', 'position']]) {
+  for (const [parameter, property] of [['sector', 'sector'], ['organization', 'organization'], ['costCenter', 'costCenter'], ['position', 'position']]) {
     const rawCode = url.searchParams.get(parameter);
     const code = Number(rawCode);
     if (rawCode !== null && rawCode !== '' && Number.isSafeInteger(code) && code >= 0) {
@@ -158,7 +187,7 @@ function directoryPayload(url) {
   const items = filtered.slice(offset, offset + limit);
   const hasNext = offset + limit < filtered.length;
   const payload = {
-    schemaVersion: 'grh-directory-v1', source, privacy,
+    schemaVersion: 'grh-directory-v2', source, privacy,
     query: {
       mode: 'list', page, limit, total: filtered.length, hasNext,
       cursor: cursor || null,
@@ -167,6 +196,7 @@ function directoryPayload(url) {
     facets: {
       sectors: [{ code: 10, label: 'ADMINISTRACION', count: 11 }, { code: 20, label: 'SERVICIOS', count: 11 }],
       organizations: [{ code: 100, label: 'SECRETARIA DE GOBIERNO', count: 11 }, { code: 200, label: 'SECRETARIA DE SERVICIOS', count: 11 }],
+      costCenters: [{ code: 30, label: 'PERSONAL', count: 11 }, { code: 40, label: 'SERVICIOS URBANOS', count: 11 }],
       positions: [{ code: 1002, label: 'AGENTE MUNICIPAL CODIFICADO', count: 1 }],
       positionObservations: [
         { label: 'AGENTE MUNICIPAL INFORMADO', count: 20, status: 'source_future_effective' },
@@ -265,12 +295,21 @@ async function createServer(requestLog, availability = { unavailable: false }, o
       });
       const directoryMode = options.directoryMode || 'denied';
       if (directoryMode === 'allowed') {
+        const payload = directoryPayload(url);
+        if (options.directoryMutation === 'rows-without-period') {
+          payload.items[0].movement = { rowCount: 1, periodCount: 0, latestPeriod: null };
+        } else if (options.directoryMutation === 'period-without-rows') {
+          payload.items[0].movement = { rowCount: 0, periodCount: 1, latestPeriod: '2026-07' };
+        } else if (options.directoryMutation === 'impossible-period') {
+          payload.items[0].movement.latestPeriod = '2025-99';
+        }
         response.writeHead(200, {
           'Content-Type': CONTENT_TYPES['.json'],
           'Cache-Control': 'no-store, private',
           'X-Content-Type-Options': 'nosniff',
+          'X-MuniControl-Contract': options.directoryContract || 'grh-directory-v2',
         });
-        response.end(JSON.stringify(directoryPayload(url)));
+        response.end(JSON.stringify(payload));
         return;
       }
       response.writeHead(directoryMode === 'unavailable' ? 503 : 403, {
@@ -694,10 +733,12 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
     page: document.querySelector('#directoryPageLabel')?.textContent.trim(),
     sectorOptions: document.querySelector('#directorySector')?.options.length,
     organizationOptions: document.querySelector('#directoryOrganization')?.options.length,
+    costCenterOptions: document.querySelector('#directoryCostCenter')?.options.length,
     positionOptions: document.querySelector('#directoryPosition')?.options.length,
   }));
   assert.deepEqual(directory, {
-    count: '22', rows: 20, page: 'Página 1 de 2', sectorOptions: 3, organizationOptions: 3, positionOptions: 4,
+    count: '22', rows: 20, page: 'Página 1 de 2', sectorOptions: 3, organizationOptions: 3,
+    costCenterOptions: 3, positionOptions: 4,
   });
   const initialPositions = await page.locator('#directoryTableBody .rrhh-position-cell').allTextContents();
   assert.match(initialPositions[0], /DIRECTORA DE PERSONAL/);
@@ -723,6 +764,16 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   await page.click('#directoryReset');
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
 
+  await page.selectOption('#directoryCostCenter', '30');
+  await page.selectOption('#directoryEvent', 'movement');
+  await page.click('#directorySubmit');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '1');
+  assert.match(await page.locator('#directoryTableBody tr').innerText(), /PERSONAL/);
+  assert.ok(requestLog.some(entry => entry.path === '/api/grh-directory' &&
+    entry.query?.costCenter === '30' && entry.query?.hasMovement === 'true'));
+  await page.click('#directoryReset');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
+
   await page.fill('#directorySearch', 'ALVAREZ');
   await page.click('#directorySubmit');
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '1');
@@ -731,13 +782,27 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
 
   await page.click('#directoryTableBody .rrhh-person-open');
   await page.waitForSelector('#personDialogContent:not([hidden])');
+  await page.waitForTimeout(260);
   const requestsAfterPersonLoad = requestLog.length;
   const person = await page.evaluate(() => ({
     title: document.querySelector('#personDialogTitle')?.textContent.trim(),
     subtitle: document.querySelector('#personDialogSubtitle')?.textContent.trim(),
     dimensions: document.querySelector('#personDimensions')?.textContent.replace(/\s+/g, ' ').trim(),
     events: document.querySelector('#personEvents')?.textContent.replace(/\s+/g, ' ').trim(),
-    leaves: Array.from(document.querySelectorAll('#personLeaveHistoryList li'), item => item.textContent.trim()),
+    timelineCoverage: document.querySelector('#personTimelineCoverage')?.textContent.trim(),
+    timeline: Array.from(document.querySelectorAll('#personTimelineList li'), item => ({
+      kind: item.dataset.kind,
+      text: item.textContent.replace(/\s+/g, ' ').trim(),
+    })),
+    tabs: Array.from(document.querySelectorAll('#personTimelineTabs [role="tab"]'), tab => ({
+      text: tab.textContent.trim(), selected: tab.getAttribute('aria-selected'), tabIndex: tab.tabIndex,
+    })),
+    evidence: document.querySelector('#personEvidenceTitle')?.parentElement?.parentElement?.textContent.replace(/\s+/g, ' ').trim(),
+    cutoff: document.querySelector('#personDialogCutoff')?.textContent.trim(),
+    rect: (() => {
+      const rect = document.querySelector('#personDialog')?.getBoundingClientRect();
+      return rect ? { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height } : null;
+    })(),
     sectorCohort: {
       hidden: document.querySelector('#personHaciendaSector')?.hidden,
       href: document.querySelector('#personHaciendaSector')?.getAttribute('href'),
@@ -757,20 +822,41 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   assert.match(person.dimensions, /Vigencia futura informada por la fuente/);
   assert.match(person.dimensions, /31 de ago de 2026/);
   assert.match(person.dimensions, /Jerarquía del cargo\s*No informada por histolegajo/);
+  assert.match(person.dimensions, /Centro de costo informado\s*PERSONAL/);
   assert.doesNotMatch(person.dimensions, /SECRETARIA GENERAL|INTENDENCIA|cargo actual/i);
+  assert.match(person.events, /Ausencias históricas30 · última 24 de jul de 2026/);
   assert.match(person.events, /2 · última 0?1 de may de 2009 a 0?5 de may de 2009/);
-  assert.match(person.events, /No incluido en esta extracción nominal/);
-  assert.equal(person.leaves.length, 2);
+  assert.match(person.events, /Filas fuente legamov7 filas · 3 períodos · último 2026-07/);
+  assert.match(person.timelineCoverage, /Ausencias: últimos 24 de 30 registros/);
+  assert.match(person.timelineCoverage, /Licencias: últimos 2 de 2 registros/);
+  assert.match(person.timelineCoverage, /legamov: últimos 3 de 3 períodos/);
+  assert.match(person.timelineCoverage, /Máximo 24 visibles por filtro/);
+  assert.equal(person.timeline.length, 24);
+  assert.deepEqual(person.tabs.map(tab => tab.text), ['Todos', 'Ausencias', 'Licencias', 'Movimientos']);
+  assert.deepEqual(person.tabs.map(tab => tab.selected), ['true', 'false', 'false', 'false']);
+  assert.deepEqual(person.tabs.map(tab => tab.tabIndex), [0, -1, -1, -1]);
+  assert.equal(person.timeline.every(item => item.kind === 'absence'), true);
+  assert.match(person.timeline[0].text, /24 de jul de 2026/);
+  assert.match(person.timeline.at(-1).text, /01 de jul de 2026/);
+  assert.match(person.evidence, /Evidencia y corte/);
+  assert.match(person.cutoff, /Corte GRH/);
+  assert.ok(person.rect.width >= 730 && person.rect.width <= 770, JSON.stringify(person.rect));
+  assert.ok(Math.abs(person.rect.right - 1440) <= 1, JSON.stringify(person.rect));
+  assert.ok(person.rect.top <= 1 && Math.abs(person.rect.bottom - 1000) <= 1, JSON.stringify(person.rect));
+  if (process.env.RRHH_CAPTURE === '1') {
+    await page.screenshot({ path: path.join(tmpdir(), 'rrhh-person-drawer-desktop.png'), fullPage: false });
+  }
   assert.doesNotMatch(person.text, /\b(?:DNI|CUIL|domicilio|salario|cuenta bancaria|causa)\b/i);
+  assert.doesNotMatch(person.text, /departamento/i);
   assert.deepEqual(person.sectorCohort, {
     hidden: false,
     href: 'hacienda.html?cohort=sector&company=1&code=10#cohortContext',
-    text: 'Analizar finanzas del sector',
+    text: 'Hacienda · sector',
   });
   assert.deepEqual(person.agreementCohort, {
     hidden: false,
     href: 'hacienda.html?cohort=agreement&company=1&code=1#cohortContext',
-    text: 'Analizar finanzas del convenio',
+    text: 'Hacienda · convenio',
   });
   for (const [dimension, href] of [
     ['sector', person.sectorCohort.href],
@@ -790,7 +876,16 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   }
   await page.waitForTimeout(50);
   assert.equal(requestLog.length, requestsAfterPersonLoad, 'rendering cohort CTAs issues zero extra requests');
+  await page.click('[data-timeline-filter="movement"]');
+  assert.equal(await page.locator('#personTimelineList li').count(), 3);
+  assert.equal(await page.locator('#personTimelineList li[data-kind="movement"]').count(), 3);
+  assert.match(await page.locator('#personTimelineList li').first().innerText(), /Filas fuente legamov/);
+  assert.match(await page.locator('#personTimelineList li').first().innerText(), /no describe altas, bajas ni rotación/i);
+  await page.locator('[data-timeline-filter="movement"]').press('ArrowLeft');
+  assert.equal(await page.locator('[data-timeline-filter="leave"]').getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('#personTimelineList li[data-kind="leave"]').count(), 2);
   await page.click('#personDialogClose');
+  assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('rrhh-person-open')), true);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -803,6 +898,51 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   assert.equal(mobile.cardVisible, true);
   assert.equal(mobile.cards, 20);
   assert.ok(mobile.overflow <= 1, JSON.stringify(mobile));
+  await page.click('#directoryMobileList .rrhh-person-open');
+  await page.waitForSelector('#personDialogContent:not([hidden])');
+  await page.waitForTimeout(260);
+  const mobileDrawer = await page.evaluate(() => {
+    const rect = document.querySelector('#personDialog').getBoundingClientRect();
+    const close = document.querySelector('#personDialogClose').getBoundingClientRect();
+    const footer = document.querySelector('#personActions').getBoundingClientRect();
+    const controls = Array.from(document.querySelectorAll(
+      '#personDialogClose, #personTimelineTabs button, #personActions a',
+    ), control => {
+      const target = control.getBoundingClientRect();
+      return { width: target.width, height: target.height };
+    });
+    return {
+      rect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
+      close: { width: close.width, height: close.height },
+      footer: { top: footer.top, bottom: footer.bottom },
+      controls,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  assert.deepEqual(mobileDrawer.rect, { left: 0, right: 390, top: 0, bottom: 844 });
+  assert.ok(mobileDrawer.close.width >= 44 && mobileDrawer.close.height >= 44, JSON.stringify(mobileDrawer));
+  assert.ok(Math.abs(mobileDrawer.footer.bottom - 844) <= 1, JSON.stringify(mobileDrawer));
+  assert.equal(mobileDrawer.controls.every(control => control.width >= 44 && control.height >= 44), true,
+    JSON.stringify(mobileDrawer));
+  assert.ok(mobileDrawer.overflow <= 1, JSON.stringify(mobileDrawer));
+  if (process.env.RRHH_CAPTURE === '1') {
+    await page.screenshot({ path: path.join(tmpdir(), 'rrhh-person-drawer-mobile.png'), fullPage: false });
+  }
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#personDialog').getAttribute('open'), null);
+  assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('rrhh-person-open')), true);
+  await page.emulateMedia({ reducedMotion: 'reduce', forcedColors: 'active' });
+  await page.click('#directoryMobileList .rrhh-person-open');
+  await page.waitForSelector('#personDialogContent:not([hidden])');
+  const adaptedDrawer = await page.evaluate(() => ({
+    animationName: getComputedStyle(document.querySelector('#personDialog')).animationName,
+    selectedTabForcedColors: getComputedStyle(document.querySelector('.rrhh-timeline-tab[aria-selected="true"]')).forcedColorAdjust,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  assert.equal(adaptedDrawer.animationName, 'none');
+  assert.equal(adaptedDrawer.selectedTabForcedColors, 'none');
+  assert.ok(adaptedDrawer.overflow <= 1, JSON.stringify(adaptedDrawer));
+  await page.keyboard.press('Escape');
   if (process.env.RRHH_CAPTURE === '1') {
     await page.screenshot({ path: path.join(tmpdir(), 'rrhh-directory-authorized-mobile.png'), fullPage: true });
   }
@@ -971,8 +1111,8 @@ test('RRHH applies authorized organization and absence deep-links on their first
     dialogOpen: document.querySelector('#personDialog')?.open,
   }));
   assert.deepEqual(result, {
-    count: '4',
-    rows: 4,
+    count: '5',
+    rows: 5,
     organization: '100',
     sector: '',
     event: 'absence',
@@ -1007,13 +1147,41 @@ test('RRHH applies authorized organization and absence deep-links on their first
     organization: document.querySelector('#directoryOrganization')?.value,
     sector: document.querySelector('#directorySector')?.value,
     event: document.querySelector('#directoryEvent')?.value,
-  })), { count: '7', organization: '', sector: '', event: 'absence' });
+  })), { count: '8', organization: '', sector: '', event: 'absence' });
   assert.deepEqual(
     requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).query,
     { page: '1', limit: '20', hasAbsence: 'true' },
   );
   assert.equal(requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).purpose, 'DIRECTORY_BROWSE');
   assert.equal(page.url(), absenceTarget);
+
+  const movementTarget = `${baseUrl}/rrhh?costCenter=30&hasMovement=true#peopleDirectory`;
+  await page.goto(movementTarget, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'ready');
+  assert.deepEqual(await page.evaluate(() => ({
+    count: document.querySelector('#directoryResultCount')?.textContent.trim(),
+    costCenter: document.querySelector('#directoryCostCenter')?.value,
+    event: document.querySelector('#directoryEvent')?.value,
+  })), { count: '1', costCenter: '30', event: 'movement' });
+  assert.deepEqual(
+    requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).query,
+    { page: '1', limit: '20', costCenter: '30', hasMovement: 'true' },
+  );
+  assert.equal(page.url(), movementTarget);
+
+  const movementOnlyTarget = `${baseUrl}/rrhh?hasMovement=true#peopleDirectory`;
+  await page.goto(movementOnlyTarget, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'ready');
+  assert.deepEqual(await page.evaluate(() => ({
+    count: document.querySelector('#directoryResultCount')?.textContent.trim(),
+    costCenter: document.querySelector('#directoryCostCenter')?.value,
+    event: document.querySelector('#directoryEvent')?.value,
+  })), { count: '6', costCenter: '', event: 'movement' });
+  assert.deepEqual(
+    requestLog.filter(entry => entry.path === '/api/grh-directory').at(-1).query,
+    { page: '1', limit: '20', hasMovement: 'true' },
+  );
+  assert.equal(page.url(), movementOnlyTarget);
   await context.close();
 });
 
@@ -1077,6 +1245,10 @@ test('RRHH rejects malformed or extended person deep-links before every nominal 
     '/rrhh?organization=100&sector=10#peopleDirectory',
     '/rrhh?organization=100&hasAbsence=false#peopleDirectory',
     '/rrhh?sector=10&scope=all#peopleDirectory',
+    '/rrhh?costCenter=30&hasMovement=false#peopleDirectory',
+    '/rrhh?costCenter=30&hasAbsence=true#peopleDirectory',
+    '/rrhh?costCenter=30&costCenter=40#peopleDirectory',
+    '/rrhh?hasMovement=true&scope=all#peopleDirectory',
   ]) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await seedSession(context);
@@ -1109,6 +1281,58 @@ test('RRHH rejects malformed or extended person deep-links before every nominal 
   }
 });
 
+test('RRHH fails closed on mutated movement identities or a stale directory contract', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => browser.close());
+
+  for (const scenario of [
+    { name: 'rows without a period', directoryMutation: 'rows-without-period' },
+    { name: 'period without rows', directoryMutation: 'period-without-rows' },
+    { name: 'impossible movement month', directoryMutation: 'impossible-period' },
+    { name: 'stale v1 header', directoryContract: 'grh-directory-v1' },
+  ]) {
+    const requestLog = [];
+    const server = await createServer(requestLog, { unavailable: false }, {
+      directoryMode: 'allowed',
+      directoryMutation: scenario.directoryMutation,
+      directoryContract: scenario.directoryContract,
+    });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    try {
+      const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await seedSession(context);
+      const page = await context.newPage();
+      await page.goto(`${baseUrl}/rrhh.html`, { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'unavailable');
+      const rejected = await page.evaluate(() => ({
+        aggregateVisible: !document.querySelector('#rrhhDashboard')?.hidden,
+        rows: document.querySelectorAll('#directoryTableBody tr, #directoryMobileList .rrhh-person-card').length,
+        resultsHidden: document.querySelector('#directoryResults')?.hidden,
+        state: document.querySelector('#directoryStatusBadge')?.dataset.state,
+        stateText: document.querySelector('#directoryState')?.textContent.replace(/\s+/g, ' ').trim(),
+      }));
+      assert.deepEqual({
+        aggregateVisible: rejected.aggregateVisible,
+        rows: rejected.rows,
+        resultsHidden: rejected.resultsHidden,
+        state: rejected.state,
+      }, {
+        aggregateVisible: true,
+        rows: 0,
+        resultsHidden: true,
+        state: 'unavailable',
+      }, scenario.name);
+      assert.match(rejected.stateText,
+        /Directorio temporalmente no disponible.*El tablero agregado sigue operativo.*reintentar la consulta nominal/i,
+        scenario.name);
+      assert.equal(requestLog.filter(entry => entry.path === '/api/grh-directory').length, 1, scenario.name);
+      await context.close();
+    } finally {
+      await new Promise(resolve => server.close(resolve));
+    }
+  }
+});
+
 test('RRHH source uses one secure experience and contains no raw contract access or source-backed literals', async () => {
   const [html, script] = await Promise.all([
     readFile(path.join(REPO, 'rrhh.html'), 'utf8'),
@@ -1127,6 +1351,8 @@ test('RRHH source uses one secure experience and contains no raw contract access
   assert.doesNotMatch(source, /\/api\/grh-data|artifact=(?:profile|semantic)|grh-semantic-v[01]/);
   assert.doesNotMatch(script, /(?:^|[^\w.])fetch\s*\(|localStorage/);
   assert.match(script, /MuniAuth\.fetch\(DIRECTORY_ENDPOINT/);
+  assert.match(script, /var DIRECTORY_SCHEMA = 'grh-directory-v2'/);
+  assert.match(script, /response\.headers\.get\('X-MuniControl-Contract'\) !== DIRECTORY_SCHEMA/);
   assert.match(script, /MuniAuth\.fetch\(DIRECTORY_ACCESS_ENDPOINT[\s\S]*cache: 'no-store'/);
   assert.match(script, /response\.headers\.get\('X-MuniControl-Contract'\) !== DIRECTORY_ACCESS_SCHEMA/);
   assert.match(script, /requestDirectory\(directoryQuery\(page, cursor\), 'DIRECTORY_BROWSE'\)/);

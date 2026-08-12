@@ -36,20 +36,27 @@ function record({ index, organization, sector, absenceEvents = 0 }) {
     legajo: 1000 + index,
     display_name: `Persona privada ${index}`,
     sector: { code: sector.code, label: sector.label },
+    cost_center: { code: 2, label: 'CENTRO DE COSTO' },
     organization: { code: organization.code, label: organization.label },
     position: null,
     category: { code: 3, label: 'Categoría gobernada' },
     agreement: { code: 2, label: 'Convenio gobernado' },
     absence: {
       event_count: absenceEvents,
-      latest_date: absenceEvents > 0 ? '2026-08-01' : null,
+      latest_date: absenceEvents > 0 ? `2026-08-${String(absenceEvents).padStart(2, '0')}` : null,
     },
+    absence_history: Array.from({ length: absenceEvents }, (_, eventIndex) => ({
+      date: `2026-08-${String(eventIndex + 1).padStart(2, '0')}`,
+      days: 1,
+    })).reverse(),
     leave: {
       event_count: 0,
       latest_start_date: null,
       latest_end_date: null,
     },
     leave_history: [],
+    movement: { row_count: 0, period_count: 0, latest_period: null },
+    movement_history: [],
     position_observation: null,
   };
 }
@@ -91,7 +98,7 @@ function artifactFixture() {
 
   const absenceEvents = records.reduce((total, item) => total + item.absence.event_count, 0);
   return {
-    schema_version: 'grh-directory-v1',
+    schema_version: 'grh-directory-v2',
     source: {
       canonical_system: 'GRH Junín',
       file: 'grh_junin.backup_2026080615_plataforma.sql.gz',
@@ -111,8 +118,10 @@ function artifactFixture() {
         cargo: 0,
         catego: 1,
         convenio: 1,
+        costos: 1,
         histolegajo: 0,
         legajo: records.length,
+        legamov: 0,
         licencia: 0,
         organiza: 5,
         persona: records.length,
@@ -128,6 +137,8 @@ function artifactFixture() {
       quarantined_absence_events: 0,
       valid_leave_events: 0,
       quarantined_leave_events: 0,
+      valid_movement_rows: 0,
+      quarantined_movement_rows: 0,
       valid_position_observation_rows: 0,
       blank_position_observation_rows: 0,
       quarantined_position_observation_rows: 0,
@@ -824,8 +835,13 @@ test('endpoint fails closed before reading on denied identity and on every inval
 
 test('current private snapshot reconciles the verified aggregate baseline without emitting nominal rows', {
   skip: !existsSync(PRIVATE_ARTIFACT_PATH),
-}, async () => {
+}, async (context) => {
   const artifact = JSON.parse(await readFile(PRIVATE_ARTIFACT_PATH, 'utf8'));
+  const artifactInspection = inspectGrhDirectoryArtifact(artifact);
+  if (!artifactInspection.ok) {
+    context.skip('The installed private snapshot predates grh-directory-v2.');
+    return;
+  }
   const semantic = JSON.parse(await readFile(
     new URL('../api/_data/grh-semantic.json', import.meta.url),
     'utf8',

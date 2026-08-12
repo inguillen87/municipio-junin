@@ -4,7 +4,7 @@
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var COLLAPSED_RELEASED_ROWS = 8;
   var DIRECTORY_ENDPOINT = '/api/grh-directory';
-  var DIRECTORY_SCHEMA = 'grh-directory-v1';
+  var DIRECTORY_SCHEMA = 'grh-directory-v2';
   var DIRECTORY_ACCESS_ENDPOINT = '/api/grh-directory-access';
   var DIRECTORY_ACCESS_SCHEMA = 'grh-directory-access-v1';
   var DIRECTORY_ACCESS_PURPOSES = Object.freeze(['DIRECTORY_BROWSE', 'PERSON_LOOKUP', 'LEAVE_REVIEW']);
@@ -45,6 +45,9 @@
       items: [],
       facets: null,
       source: null,
+      timelineItems: [],
+      timelineFilter: 'all',
+      lastPersonTrigger: null,
       deepLink: { status: 'none', consumed: false }
     }
   };
@@ -69,13 +72,14 @@
       'methodSchema', 'openDirectoryAction', 'compareGroupsAction', 'workforceDistribution', 'peopleDirectory',
       'directoryAccessPanel', 'directoryAccessStatus', 'directoryAccessScope', 'directoryAccessValidity',
       'directoryAccessAudit', 'directoryAccessLimits', 'directoryAccessError', 'directoryAccessRetry',
-      'directoryStatusBadge', 'directoryForm', 'directorySearch', 'directorySector', 'directoryOrganization',
+      'directoryStatusBadge', 'directoryForm', 'directorySearch', 'directorySector', 'directoryOrganization', 'directoryCostCenter',
       'directoryPosition', 'directoryEvent', 'directorySubmit', 'directoryReset', 'directoryState',
       'directoryStateTitle', 'directoryStateMessage', 'directoryPrivateAccess', 'directoryResults', 'directoryResultCount',
       'directoryResultLabel', 'directorySourceLabel', 'directoryTableBody', 'directoryMobileList',
       'directoryPrevious', 'directoryNext', 'directoryPageLabel', 'personDialog', 'personDialogTitle',
-      'personDialogSubtitle', 'personDialogClose', 'personDialogLoading', 'personDialogContent',
-      'personDimensions', 'personEvents', 'personLeaveHistory', 'personLeaveHistoryTitle', 'personLeaveHistoryList',
+      'personDialogSubtitle', 'personDialogCutoff', 'personDialogClose', 'personDialogLoading', 'personDialogContent',
+      'personDimensions', 'personEvents', 'personTimeline', 'personTimelineCoverage', 'personTimelineTabs',
+      'personTimelineList', 'personTimelineEmpty', 'personEvidenceCutoff', 'personEvidenceSystem', 'personActions',
       'personHaciendaSector', 'personHaciendaAgreement'
     ].forEach(function (id) { elements[id] = byId(id); });
   }
@@ -715,7 +719,7 @@
     if (!exactObjectKeys(value, ['label', 'observedDate', 'observedPeriod', 'status', 'sourceTable']) ||
         typeof value.label !== 'string' || !safeDirectoryText(value.label, 200) ||
         typeof value.observedDate !== 'string' || !validDirectoryDate(value.observedDate) ||
-        typeof value.observedPeriod !== 'string' || !/^\d{4}-\d{2}$/.test(value.observedPeriod) ||
+        typeof value.observedPeriod !== 'string' || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(value.observedPeriod) ||
         value.observedDate.slice(0, 7) !== value.observedPeriod ||
         !['historical_observation', 'source_future_effective'].includes(value.status) ||
         value.sourceTable !== 'histolegajo') return false;
@@ -733,7 +737,18 @@
     return ['latestAbsenceDate', 'latestLeaveStartDate', 'latestLeaveEndDate'].every(function (key) {
       return validDirectoryDate(value[key]) && (value[key] === null || value[key] <= snapshotAsOf);
     }) && (value.latestLeaveStartDate === null || value.latestLeaveEndDate === null ||
-      value.latestLeaveEndDate >= value.latestLeaveStartDate);
+      value.latestLeaveEndDate >= value.latestLeaveStartDate) &&
+      ((value.absenceCount === 0) === (value.latestAbsenceDate === null));
+  }
+
+  function validDirectoryMovement(value, snapshotAsOf) {
+    if (!exactObjectKeys(value, ['rowCount', 'periodCount', 'latestPeriod']) ||
+        !Number.isSafeInteger(value.rowCount) || value.rowCount < 0 ||
+        !Number.isSafeInteger(value.periodCount) || value.periodCount < 0 ||
+        !(value.latestPeriod === null || /^\d{4}-(?:0[1-9]|1[0-2])$/.test(value.latestPeriod))) return false;
+    if ((value.rowCount === 0) !== (value.periodCount === 0) ||
+        (value.periodCount === 0) !== (value.latestPeriod === null)) return false;
+    return value.latestPeriod === null || value.latestPeriod <= snapshotAsOf.slice(0, 7);
   }
 
   function validLeaveHistory(history, expectedTotal, snapshotAsOf) {
@@ -749,19 +764,60 @@
     });
   }
 
+  function validAbsenceHistory(history, expectedTotal, expectedLatest, snapshotAsOf) {
+    if (!exactObjectKeys(history, ['total', 'limit', 'items']) || history.total !== expectedTotal ||
+        history.limit !== 24 || !Array.isArray(history.items) ||
+        history.items.length !== Math.min(expectedTotal, 24)) return false;
+    var previous = null;
+    var valid = history.items.every(function (event) {
+      if (!exactObjectKeys(event, ['date', 'days']) || typeof event.date !== 'string' ||
+          !validDirectoryDate(event.date) || event.date > snapshotAsOf ||
+          !(event.days === null || (Number.isSafeInteger(event.days) && event.days >= 0)) ||
+          (previous !== null && event.date > previous)) return false;
+      previous = event.date;
+      return true;
+    });
+    return valid && (!history.items.length || history.items[0].date === expectedLatest);
+  }
+
+  function validMovementHistory(history, expectedMovement, snapshotAsOf) {
+    if (!exactObjectKeys(history, ['total', 'limit', 'items']) || history.total !== expectedMovement.periodCount ||
+        history.limit !== 24 || !Array.isArray(history.items) ||
+        history.items.length !== Math.min(history.total, 24)) return false;
+    var previous = null;
+    var seen = new Set();
+    var valid = history.items.every(function (event) {
+      if (!exactObjectKeys(event, ['period', 'rowCount']) || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(event.period) ||
+          event.period > snapshotAsOf.slice(0, 7) || !Number.isSafeInteger(event.rowCount) || event.rowCount <= 0 ||
+          seen.has(event.period) || (previous !== null && event.period >= previous)) return false;
+      seen.add(event.period);
+      previous = event.period;
+      return true;
+    });
+    if (!valid || (history.items.length && history.items[0].period !== expectedMovement.latestPeriod)) return false;
+    return history.total > 24 || history.items.reduce(function (total, event) {
+      return total + event.rowCount;
+    }, 0) === expectedMovement.rowCount;
+  }
+
   function validDirectoryItem(item, snapshotAsOf, mode) {
     var keys = [
       'companyCode', 'legajo', 'displayName', 'sector', 'organization', 'position', 'positionObservation',
-      'category', 'agreement', 'events'
+      'costCenter', 'category', 'agreement', 'events', 'movement'
     ];
-    if (mode === 'detail') keys.push('leaveHistory');
+    if (mode === 'detail') keys.push('leaveHistory', 'absenceHistory', 'movementHistory');
     return exactObjectKeys(item, keys) && Number.isSafeInteger(item.companyCode) && item.companyCode > 0 &&
       Number.isSafeInteger(item.legajo) && item.legajo > 0 && safeDirectoryText(item.displayName, 200) &&
       validDirectoryDimension(item.sector) && validDirectoryDimension(item.organization) &&
       validDirectoryPosition(item.position) && validPositionObservation(item.positionObservation, snapshotAsOf) &&
-      validDirectoryDimension(item.category) &&
+      validDirectoryDimension(item.costCenter) && validDirectoryDimension(item.category) &&
       validDirectoryDimension(item.agreement) && validDirectoryEvents(item.events, snapshotAsOf) &&
-      (mode !== 'detail' || validLeaveHistory(item.leaveHistory, item.events.leaveCount, snapshotAsOf));
+      validDirectoryMovement(item.movement, snapshotAsOf) &&
+      (mode !== 'detail' || (
+        validLeaveHistory(item.leaveHistory, item.events.leaveCount, snapshotAsOf) &&
+        validAbsenceHistory(item.absenceHistory, item.events.absenceCount, item.events.latestAbsenceDate, snapshotAsOf) &&
+        validMovementHistory(item.movementHistory, item.movement, snapshotAsOf)
+      ));
   }
 
   function validDirectoryFacetRow(row, name) {
@@ -780,7 +836,7 @@
   function validDirectoryFacets(facets, mode) {
     if (mode === 'detail') return facets === null;
     return exactObjectKeys(facets, [
-      'sectors', 'organizations', 'positions', 'positionObservations', 'categories', 'agreements'
+      'sectors', 'organizations', 'costCenters', 'positions', 'positionObservations', 'categories', 'agreements'
     ]) &&
       Object.keys(facets).every(function (name) {
         if (!Array.isArray(facets[name]) || facets[name].length > 5000) return false;
@@ -967,21 +1023,25 @@
       return { status: 'person', companyCode: companyCode, legajo: legajo, consumed: false };
     }
 
-    var dimensionKeys = ['organization', 'sector'];
+    var dimensionKeys = ['organization', 'sector', 'costCenter'];
     var dimension = dimensionKeys.find(function (key) { return params.has(key); });
-    var absenceOnly = !dimension && keys.length === 1 && keys[0] === 'hasAbsence' &&
-      params.getAll('hasAbsence').length === 1 && params.get('hasAbsence') === 'true';
-    if (absenceOnly) {
-      return { status: 'filter', dimension: null, code: null, hasAbsence: true, consumed: false };
+    var eventKey = dimension === 'costCenter' ? 'hasMovement' : 'hasAbsence';
+    var eventOnly = !dimension && keys.length === 1 && ['hasAbsence', 'hasMovement'].includes(keys[0]) &&
+      params.getAll(keys[0]).length === 1 && params.get(keys[0]) === 'true';
+    if (eventOnly) {
+      return {
+        status: 'filter', dimension: null, code: null,
+        hasAbsence: keys[0] === 'hasAbsence', hasMovement: keys[0] === 'hasMovement', consumed: false
+      };
     }
-    var allowedFilterKeys = dimension ? [dimension, 'hasAbsence'] : [];
+    var allowedFilterKeys = dimension ? [dimension, eventKey] : [];
     var exactFilterKeys = Boolean(dimension) && (keys.length === 1 || keys.length === 2) &&
       keys.every(function (key) { return allowedFilterKeys.indexOf(key) !== -1 && params.getAll(key).length === 1; }) &&
       dimensionKeys.filter(function (key) { return params.has(key); }).length === 1;
     var dimensionRaw = dimension ? params.get(dimension) : '';
-    var absenceRaw = params.get('hasAbsence');
+    var eventRaw = params.get(eventKey);
     if (!exactFilterKeys || !/^(?:0|[1-9]\d*)$/.test(dimensionRaw || '') ||
-        (absenceRaw !== null && absenceRaw !== 'true')) {
+        (eventRaw !== null && eventRaw !== 'true')) {
       return { status: 'invalid', consumed: false };
     }
     var dimensionCode = Number(dimensionRaw);
@@ -990,14 +1050,15 @@
       status: 'filter',
       dimension: dimension,
       code: dimensionCode,
-      hasAbsence: absenceRaw === 'true',
+      hasAbsence: eventKey === 'hasAbsence' && eventRaw === 'true',
+      hasMovement: eventKey === 'hasMovement' && eventRaw === 'true',
       consumed: false
     };
   }
 
   function setDirectoryControlsDisabled(disabled) {
     [
-      elements.directorySearch, elements.directorySector, elements.directoryOrganization,
+      elements.directorySearch, elements.directorySector, elements.directoryOrganization, elements.directoryCostCenter,
       elements.directoryPosition, elements.directoryEvent, elements.directorySubmit, elements.directoryReset
     ].forEach(function (element) { if (element) element.disabled = disabled; });
     if (elements.directoryForm) elements.directoryForm.dataset.locked = disabled ? 'true' : 'false';
@@ -1036,17 +1097,20 @@
     }
     var search = String(elements.directorySearch.value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
     if (search) query.search = search;
-    [['sector', elements.directorySector], ['organization', elements.directoryOrganization]].forEach(function (entry) {
+    [['sector', elements.directorySector], ['organization', elements.directoryOrganization],
+      ['costCenter', elements.directoryCostCenter]].forEach(function (entry) {
       if (entry[1].value) query[entry[0]] = Number(entry[1].value);
     });
     if (elements.directoryPosition.value) query.positionObservation = elements.directoryPosition.value;
     var eventFilter = elements.directoryEvent.value;
     if (eventFilter === 'leave' || eventFilter === 'both') query.hasLeave = true;
     if (eventFilter === 'absence' || eventFilter === 'both') query.hasAbsence = true;
+    if (eventFilter === 'movement') query.hasMovement = true;
     var deepLink = state.directory.deepLink;
     if (!cursor && page === 1 && deepLink && deepLink.status === 'filter' && !deepLink.consumed) {
       if (deepLink.dimension) query[deepLink.dimension] = deepLink.code;
       if (deepLink.hasAbsence) query.hasAbsence = true;
+      if (deepLink.hasMovement) query.hasMovement = true;
     }
     return query;
   }
@@ -1076,7 +1140,8 @@
       });
       if (response.status === 403) throw directoryError('GRH_DIRECTORY_ACCESS_DENIED', 403);
       if (!response.ok) throw directoryError('GRH_DIRECTORY_UNAVAILABLE', response.status);
-      if (!/^application\/json(?:\s*;|\s*$)/i.test(response.headers.get('content-type') || '')) {
+      if (response.headers.get('X-MuniControl-Contract') !== DIRECTORY_SCHEMA ||
+          !/^application\/json(?:\s*;|\s*$)/i.test(response.headers.get('content-type') || '')) {
         throw directoryError('GRH_DIRECTORY_RESPONSE_INVALID', 502);
       }
       var payload = await response.json();
@@ -1180,8 +1245,10 @@
       appendCell(row, numberFormatter.format(item.legajo));
       appendPositionCell(row, item);
       appendCell(row, dimensionLabel(item.organization));
+      appendCell(row, dimensionLabel(item.costCenter));
       appendCell(row, numberFormatter.format(item.events.leaveCount));
       appendCell(row, numberFormatter.format(item.events.absenceCount));
+      appendCell(row, numberFormatter.format(item.movement.rowCount));
       var actionCell = document.createElement('td');
       actionCell.appendChild(createPersonButton(item, false));
       row.appendChild(actionCell);
@@ -1201,8 +1268,10 @@
         createElement('strong', '', positionValue.label),
         createElement('span', '', positionValue.context),
         createElement('span', '', 'Organización: ' + dimensionLabel(item.organization)),
+        createElement('span', '', 'Centro de costo informado: ' + dimensionLabel(item.costCenter)),
         createElement('span', '', numberFormatter.format(item.events.leaveCount) + ' licencias · ' +
-          numberFormatter.format(item.events.absenceCount) + ' ausencias')
+          numberFormatter.format(item.events.absenceCount) + ' ausencias · ' +
+          numberFormatter.format(item.movement.rowCount) + ' filas fuente legamov')
       );
       elements.directoryMobileList.appendChild(card);
     });
@@ -1224,16 +1293,19 @@
     setText(elements.directoryStatusBadge, 'Directorio habilitado');
     renderFacet(elements.directorySector, payload.facets.sectors, 'Todos', 'sectors');
     renderFacet(elements.directoryOrganization, payload.facets.organizations, 'Todas', 'organizations');
+    renderFacet(elements.directoryCostCenter, payload.facets.costCenters, 'Todos', 'costCenters');
     renderFacet(elements.directoryPosition, payload.facets.positionObservations, 'Todos', 'positionObservations');
     var deepLink = state.directory.deepLink;
     if (deepLink && deepLink.status === 'filter' && !deepLink.consumed) {
       var targetSelect = deepLink.dimension === 'organization'
         ? elements.directoryOrganization
-        : (deepLink.dimension === 'sector' ? elements.directorySector : null);
+        : (deepLink.dimension === 'sector' ? elements.directorySector :
+          (deepLink.dimension === 'costCenter' ? elements.directoryCostCenter : null));
       if (targetSelect && Array.from(targetSelect.options).some(function (option) { return option.value === String(deepLink.code); })) {
         targetSelect.value = String(deepLink.code);
       }
       if (deepLink.hasAbsence) elements.directoryEvent.value = 'absence';
+      if (deepLink.hasMovement) elements.directoryEvent.value = 'movement';
       deepLink.consumed = true;
       elements.peopleDirectory.scrollIntoView({ block: 'start' });
     }
@@ -1288,6 +1360,64 @@
     elements.personEvents.appendChild(item);
   }
 
+  function historyCoverageLabel(label, history, unit) {
+    var shown = history.items.length;
+    if (!history.total) return label + ': sin registros publicados';
+    return label + ': últimos ' + numberFormatter.format(shown) + ' de ' +
+      numberFormatter.format(history.total) + ' ' + unit;
+  }
+
+  function personTimelineItems(item) {
+    var leaves = item.leaveHistory.items.map(function (event) {
+      return {
+        kind: 'leave', sortKey: event.startDate, period: formatEventDate(event.startDate),
+        title: 'Licencia histórica', detail: (event.endDate ? 'Hasta ' + formatEventDate(event.endDate) + ' · ' : '') +
+          (event.days === null ? 'días no informados' : numberFormatter.format(event.days) + ' días publicados')
+      };
+    });
+    var absences = item.absenceHistory.items.map(function (event) {
+      return {
+        kind: 'absence', sortKey: event.date, period: formatEventDate(event.date),
+        title: 'Ausencia registrada',
+        detail: event.days === null ? 'Duración no informada por la fuente' :
+          numberFormatter.format(event.days) + ' días publicados'
+      };
+    });
+    var movements = item.movementHistory.items.map(function (event) {
+      return {
+        kind: 'movement', sortKey: event.period + '-01', period: event.period,
+        title: 'Filas fuente legamov', detail: numberFormatter.format(event.rowCount) +
+          (event.rowCount === 1 ? ' fila publicada' : ' filas publicadas') +
+          ' en el período; no describe altas, bajas ni rotación.'
+      };
+    });
+    return leaves.concat(absences, movements).sort(function (left, right) {
+      return right.sortKey.localeCompare(left.sortKey) || left.kind.localeCompare(right.kind);
+    });
+  }
+
+  function renderPersonTimeline(filter) {
+    state.directory.timelineFilter = filter;
+    elements.personTimelineTabs.querySelectorAll('[data-timeline-filter]').forEach(function (button) {
+      var selected = button.dataset.timelineFilter === filter;
+      button.setAttribute('aria-selected', String(selected));
+      button.tabIndex = selected ? 0 : -1;
+    });
+    clearNode(elements.personTimelineList);
+    var visible = state.directory.timelineItems.filter(function (event) {
+      return filter === 'all' || event.kind === filter;
+    }).slice(0, 24);
+    visible.forEach(function (event) {
+      var item = createElement('li', 'rrhh-person-timeline-item');
+      item.dataset.kind = event.kind;
+      var copy = createElement('div', 'rrhh-timeline-copy');
+      copy.append(createElement('strong', '', event.title), createElement('span', '', event.detail));
+      item.append(createElement('time', 'rrhh-timeline-period', event.period), copy);
+      elements.personTimelineList.appendChild(item);
+    });
+    elements.personTimelineEmpty.hidden = visible.length > 0;
+  }
+
   function haciendaCohortHref(item, dimension) {
     var source = dimension === 'sector' ? item.sector : item.agreement;
     if (!source || !Number.isSafeInteger(item.companyCode) || item.companyCode <= 0 ||
@@ -1310,9 +1440,9 @@
   function renderPerson(item) {
     clearNode(elements.personDimensions);
     clearNode(elements.personEvents);
-    clearNode(elements.personLeaveHistoryList);
     setText(elements.personDialogTitle, personIdentity(item));
     setText(elements.personDialogSubtitle, 'Legajo ' + numberFormatter.format(item.legajo) + ' · empresa ' + item.companyCode);
+    setText(elements.personDialogCutoff, 'Corte GRH ' + formatSnapshot(state.directory.source.snapshotAsOf));
     var positionValue = positionPresentation(item);
     appendPersonDimension(positionValue.context, positionValue.label);
     if (positionValue.kind === 'position') {
@@ -1325,31 +1455,31 @@
     }
     appendPersonDimension('Organización', dimensionLabel(item.organization));
     appendPersonDimension('Sector', dimensionLabel(item.sector));
+    appendPersonDimension('Centro de costo informado', dimensionLabel(item.costCenter));
     appendPersonDimension('Categoría', dimensionLabel(item.category));
     appendPersonDimension('Convenio', dimensionLabel(item.agreement));
-    appendPersonDimension('Situación', 'Legajo registrado en el snapshot');
+    appendPersonEvent('Ausencias históricas', numberFormatter.format(item.events.absenceCount) +
+      (item.events.latestAbsenceDate ? ' · última ' + formatEventDate(item.events.latestAbsenceDate) : ' · sin fecha publicada'));
     appendPersonEvent('Licencias históricas', numberFormatter.format(item.events.leaveCount) +
       (item.events.latestLeaveStartDate ? ' · última ' + formatEventDate(item.events.latestLeaveStartDate) +
         (item.events.latestLeaveEndDate ? ' a ' + formatEventDate(item.events.latestLeaveEndDate) : '') : ' · sin fecha publicada'));
-    appendPersonEvent('Ausencias históricas', numberFormatter.format(item.events.absenceCount) +
-      (item.events.latestAbsenceDate ? ' · última ' + formatEventDate(item.events.latestAbsenceDate) : ' · sin fecha publicada'));
-    appendPersonEvent('Movimientos', 'No incluido en esta extracción nominal');
+    appendPersonEvent('Filas fuente legamov', numberFormatter.format(item.movement.rowCount) + ' filas · ' +
+      numberFormatter.format(item.movement.periodCount) + ' períodos' +
+      (item.movement.latestPeriod ? ' · último ' + item.movement.latestPeriod : ' · sin período publicado'));
     configureHaciendaCohortAction(elements.personHaciendaSector, item, 'sector');
     configureHaciendaCohortAction(elements.personHaciendaAgreement, item, 'agreement');
-    setText(elements.personLeaveHistoryTitle, item.leaveHistory.total
-      ? 'Licencias publicadas · últimas ' + item.leaveHistory.items.length + ' de ' + item.leaveHistory.total
-      : 'Licencias publicadas');
-    if (!item.leaveHistory.items.length) {
-      elements.personLeaveHistoryList.appendChild(createElement('li', '', 'Sin licencias históricas asociadas a este legajo.'));
-    } else {
-      item.leaveHistory.items.forEach(function (event) {
-        var period = formatEventDate(event.startDate) + (event.endDate ? ' a ' + formatEventDate(event.endDate) : '');
-        var days = event.days === null ? 'días no informados' : numberFormatter.format(event.days) + ' días';
-        elements.personLeaveHistoryList.appendChild(createElement('li', '', period + ' · ' + days));
-      });
-    }
+    setText(elements.personTimelineCoverage, [
+      historyCoverageLabel('Ausencias', item.absenceHistory, item.absenceHistory.total === 1 ? 'registro' : 'registros'),
+      historyCoverageLabel('Licencias', item.leaveHistory, item.leaveHistory.total === 1 ? 'registro' : 'registros'),
+      historyCoverageLabel('legamov', item.movementHistory, item.movementHistory.total === 1 ? 'período' : 'períodos')
+    ].join(' · ') + '. Máximo 24 visibles por filtro.');
+    setText(elements.personEvidenceCutoff, formatSnapshot(state.directory.source.snapshotAsOf));
+    setText(elements.personEvidenceSystem, state.directory.source.canonicalSystem);
+    state.directory.timelineItems = personTimelineItems(item);
+    renderPersonTimeline('all');
     elements.personDialogLoading.hidden = true;
     elements.personDialogContent.hidden = false;
+    elements.personActions.hidden = false;
   }
 
   async function openPerson(companyCode, legajo) {
@@ -1357,9 +1487,11 @@
     state.directory.sequence = sequence;
     setText(elements.personDialogTitle, 'Ficha de persona');
     setText(elements.personDialogSubtitle, 'Consultando legajo ' + numberFormatter.format(legajo) + '…');
+    setText(elements.personDialogCutoff, 'Corte en verificación');
     setText(elements.personDialogLoading, 'Cargando ficha…');
     elements.personDialogLoading.hidden = false;
     elements.personDialogContent.hidden = true;
+    elements.personActions.hidden = true;
     if (typeof elements.personDialog.showModal === 'function') elements.personDialog.showModal();
     else elements.personDialog.setAttribute('open', '');
     try {
@@ -1372,7 +1504,7 @@
       if (Number(error && error.status) === 403 || (error && error.code === 'GRH_DIRECTORY_ACCESS_DENIED')) {
         clearNode(elements.personDimensions);
         clearNode(elements.personEvents);
-        clearNode(elements.personLeaveHistoryList);
+        clearNode(elements.personTimelineList);
         elements.personDialogContent.hidden = true;
         elements.personDialogLoading.hidden = true;
         setText(elements.personDialogTitle, 'Ficha no disponible');
@@ -1402,9 +1534,20 @@
     else elements.personDialog.removeAttribute('open');
   }
 
+  function restorePersonDialogFocus() {
+    var trigger = state.directory.lastPersonTrigger;
+    state.directory.lastPersonTrigger = null;
+    if (trigger && trigger.isConnected && !trigger.disabled && trigger.getClientRects().length) {
+      trigger.focus({ preventScroll: true });
+    } else if (elements.directorySearch && !elements.directorySearch.disabled) {
+      elements.directorySearch.focus({ preventScroll: true });
+    }
+  }
+
   function directoryOpenFromEvent(event) {
     var button = event.target.closest('.rrhh-person-open');
     if (!button) return;
+    state.directory.lastPersonTrigger = button;
     openPerson(Number(button.dataset.company), Number(button.dataset.legajo));
   }
 
@@ -1547,8 +1690,27 @@
     elements.directoryTableBody.addEventListener('click', directoryOpenFromEvent);
     elements.directoryMobileList.addEventListener('click', directoryOpenFromEvent);
     elements.personDialogClose.addEventListener('click', closePersonDialog);
+    elements.personDialog.addEventListener('cancel', function (event) {
+      event.preventDefault();
+      closePersonDialog();
+    });
+    elements.personDialog.addEventListener('close', restorePersonDialogFocus);
     elements.personDialog.addEventListener('click', function (event) {
       if (event.target === elements.personDialog) closePersonDialog();
+    });
+    elements.personTimelineTabs.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-timeline-filter]');
+      if (button) renderPersonTimeline(button.dataset.timelineFilter);
+    });
+    elements.personTimelineTabs.addEventListener('keydown', function (event) {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      var tabs = Array.from(elements.personTimelineTabs.querySelectorAll('[data-timeline-filter]'));
+      var current = Math.max(0, tabs.indexOf(document.activeElement));
+      var next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 :
+        (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      event.preventDefault();
+      tabs[next].focus();
+      tabs[next].click();
     });
   }
 

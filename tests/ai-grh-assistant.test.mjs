@@ -138,6 +138,7 @@ function fakeDirectoryItem(overrides = {}) {
     legajo: 7001,
     displayName: 'PERSONA PRUEBA',
     sector: { code: 10, label: 'SECTOR PRUEBA' },
+    costCenter: { code: 2, label: 'CENTRO DE COSTO PRUEBA' },
     organization: { code: 20, label: 'ORGANIZACION PRUEBA' },
     position: null,
     positionObservation: {
@@ -156,6 +157,7 @@ function fakeDirectoryItem(overrides = {}) {
       latestLeaveStartDate: '2009-04-01',
       latestLeaveEndDate: '2009-04-05',
     },
+    movement: { rowCount: 7, periodCount: 3, latestPeriod: '2026-07' },
     ...overrides,
   };
 }
@@ -185,6 +187,7 @@ function fakeDirectoryResponse({ mode = 'list', items = [], total = items.length
       positionObservations: [],
       categories: [],
       agreements: [],
+      costCenters: [],
     },
     items,
   };
@@ -196,6 +199,14 @@ function fakeDirectoryDetail(item = fakeDirectoryItem(), source = fakeDirectoryS
     source,
     items: [{
       ...item,
+      absenceHistory: {
+        total: item.events.absenceCount,
+        limit: 24,
+        items: [
+          { date: '2026-07-10', days: 1 },
+          { date: '2025-03-03', days: 2 },
+        ].slice(0, item.events.absenceCount),
+      },
       leaveHistory: {
         total: item.events.leaveCount,
         limit: 24,
@@ -203,6 +214,15 @@ function fakeDirectoryDetail(item = fakeDirectoryItem(), source = fakeDirectoryS
           { startDate: '2009-04-01', endDate: '2009-04-05', days: 5 },
           { startDate: '2008-03-02', endDate: '2008-03-03', days: 2 },
         ].slice(0, item.events.leaveCount),
+      },
+      movementHistory: {
+        total: item.movement.periodCount,
+        limit: 24,
+        items: [
+          { period: '2026-07', rowCount: 3 },
+          { period: '2026-06', rowCount: 2 },
+          { period: '2025-12', rowCount: 2 },
+        ].slice(0, item.movement.periodCount),
       },
     }],
   });
@@ -885,7 +905,7 @@ test('private allowlisted CONTADOR resolves a tenant-bound person and governed l
   assert.equal(response.payload.dataStatus.historyUsed, true);
   assert.equal(response.payload.provenance.aggregateOnly, false);
   assert.equal(response.payload.provenance.containsPii, true);
-  assert.equal(response.payload.provenance.directorySchemaVersion, 'grh-directory-v1');
+  assert.equal(response.payload.provenance.directorySchemaVersion, 'grh-directory-v2');
   assert.equal(calls.length, 2);
   assert.deepEqual(calls[0], {
     tenantId: 'tenant-grh-test',

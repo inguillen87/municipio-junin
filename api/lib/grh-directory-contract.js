@@ -2,8 +2,10 @@ const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
-export const GRH_DIRECTORY_SCHEMA_VERSION = 'grh-directory-v1';
+export const GRH_DIRECTORY_SCHEMA_VERSION = 'grh-directory-v2';
+export const GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT = 24;
 export const GRH_DIRECTORY_DETAIL_LEAVE_LIMIT = 24;
+export const GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT = 24;
 export const GRH_DIRECTORY_EXCLUDED_FIELDS = Object.freeze([
   'dni',
   'cuil',
@@ -33,8 +35,10 @@ const SOURCE_ROW_TABLES = Object.freeze([
   'cargo',
   'catego',
   'convenio',
+  'costos',
   'histolegajo',
   'legajo',
+  'legamov',
   'licencia',
   'organiza',
   'persona',
@@ -52,6 +56,8 @@ const ARTIFACT_COUNT_KEYS = Object.freeze([
   'quarantined_absence_events',
   'valid_leave_events',
   'quarantined_leave_events',
+  'valid_movement_rows',
+  'quarantined_movement_rows',
   'valid_position_observation_rows',
   'blank_position_observation_rows',
   'quarantined_position_observation_rows',
@@ -63,21 +69,28 @@ const ARTIFACT_RECORD_KEYS = Object.freeze([
   'legajo',
   'display_name',
   'sector',
+  'cost_center',
   'organization',
   'position',
   'category',
   'agreement',
   'absence',
+  'absence_history',
   'leave',
   'leave_history',
+  'movement',
+  'movement_history',
   'position_observation',
 ]);
 const DIMENSION_KEYS = Object.freeze(['code', 'label']);
 const POSITION_KEYS = Object.freeze(['code', 'label', 'parent', 'depends_on']);
 const POSITION_RELATION_KEYS = Object.freeze(['code', 'label']);
 const ABSENCE_KEYS = Object.freeze(['event_count', 'latest_date']);
+const ARTIFACT_ABSENCE_HISTORY_KEYS = Object.freeze(['date', 'days']);
 const LEAVE_KEYS = Object.freeze(['event_count', 'latest_start_date', 'latest_end_date']);
 const ARTIFACT_LEAVE_HISTORY_KEYS = Object.freeze(['start_date', 'end_date', 'days']);
+const MOVEMENT_KEYS = Object.freeze(['row_count', 'period_count', 'latest_period']);
+const ARTIFACT_MOVEMENT_HISTORY_KEYS = Object.freeze(['period', 'row_count']);
 const ARTIFACT_POSITION_OBSERVATION_KEYS = Object.freeze([
   'label',
   'observed_date',
@@ -86,7 +99,7 @@ const ARTIFACT_POSITION_OBSERVATION_KEYS = Object.freeze([
   'source_table',
 ]);
 const POSITION_OBSERVATION_STATUSES = new Set(['historical_observation', 'source_future_effective']);
-const PERIOD_PATTERN = /^\d{4}-\d{2}$/;
+const PERIOD_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])$/;
 
 const API_KEYS = Object.freeze(['schemaVersion', 'source', 'privacy', 'query', 'facets', 'items']);
 const API_SOURCE_KEYS = Object.freeze([
@@ -110,14 +123,21 @@ const API_ITEM_KEYS = Object.freeze([
   'legajo',
   'displayName',
   'sector',
+  'costCenter',
   'organization',
   'position',
   'positionObservation',
   'category',
   'agreement',
   'events',
+  'movement',
 ]);
-const API_DETAIL_ITEM_KEYS = Object.freeze([...API_ITEM_KEYS, 'leaveHistory']);
+const API_DETAIL_ITEM_KEYS = Object.freeze([
+  ...API_ITEM_KEYS,
+  'absenceHistory',
+  'leaveHistory',
+  'movementHistory',
+]);
 const API_EVENT_KEYS = Object.freeze([
   'absenceCount',
   'latestAbsenceDate',
@@ -136,6 +156,7 @@ const API_POSITION_OBSERVATION_KEYS = Object.freeze([
 ]);
 const API_FACET_KEYS = Object.freeze([
   'sectors',
+  'costCenters',
   'organizations',
   'positions',
   'positionObservations',
@@ -147,6 +168,11 @@ const API_CATEGORY_FACET_ITEM_KEYS = Object.freeze(['agreementCode', 'code', 'la
 const API_POSITION_OBSERVATION_FACET_KEYS = Object.freeze(['label', 'count', 'status']);
 const API_LEAVE_HISTORY_KEYS = Object.freeze(['total', 'limit', 'items']);
 const API_LEAVE_HISTORY_ITEM_KEYS = Object.freeze(['startDate', 'endDate', 'days']);
+const API_ABSENCE_HISTORY_KEYS = Object.freeze(['total', 'limit', 'items']);
+const API_ABSENCE_HISTORY_ITEM_KEYS = Object.freeze(['date', 'days']);
+const API_MOVEMENT_KEYS = Object.freeze(['rowCount', 'periodCount', 'latestPeriod']);
+const API_MOVEMENT_HISTORY_KEYS = Object.freeze(['total', 'limit', 'items']);
+const API_MOVEMENT_HISTORY_ITEM_KEYS = Object.freeze(['period', 'rowCount']);
 
 function exactKeys(value, expected) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -225,6 +251,25 @@ function validateArtifactPositionObservation(value, path, snapshotAsOf, errors) 
     path + '.historical_status_identity');
 }
 
+function artifactAbsenceHistoryErrors(events, path, snapshotAsOf) {
+  const errors = [];
+  add(errors, Array.isArray(events), path + '.array');
+  if (!Array.isArray(events)) return errors;
+  let previous = null;
+  events.forEach((event, index) => {
+    const itemPath = path + '.' + index;
+    add(errors, exactKeys(event, ARTIFACT_ABSENCE_HISTORY_KEYS), itemPath + '.shape');
+    add(errors, typeof event?.date === 'string' && DATE_PATTERN.test(event.date), itemPath + '.date');
+    add(errors, nullableNonNegativeInteger(event?.days), itemPath + '.days');
+    add(errors, !event?.date || event.date <= snapshotAsOf, itemPath + '.after_snapshot');
+    const key = [event?.date || '', String(event?.days ?? -1)].join(':');
+    add(errors, previous === null || previous.localeCompare(key, 'en', { numeric: true }) >= 0,
+      path + '.deterministic_order');
+    previous = key;
+  });
+  return errors;
+}
+
 function artifactLeaveHistoryErrors(events, path, snapshotAsOf) {
   const errors = [];
   add(errors, Array.isArray(events), path + '.array');
@@ -249,6 +294,26 @@ function artifactLeaveHistoryErrors(events, path, snapshotAsOf) {
   return errors;
 }
 
+function artifactMovementHistoryErrors(events, path, snapshotAsOf) {
+  const errors = [];
+  add(errors, Array.isArray(events), path + '.array');
+  if (!Array.isArray(events)) return errors;
+  let previous = null;
+  const seen = new Set();
+  events.forEach((event, index) => {
+    const itemPath = path + '.' + index;
+    add(errors, exactKeys(event, ARTIFACT_MOVEMENT_HISTORY_KEYS), itemPath + '.shape');
+    add(errors, typeof event?.period === 'string' && PERIOD_PATTERN.test(event.period), itemPath + '.period');
+    add(errors, positiveInteger(event?.row_count), itemPath + '.row_count');
+    add(errors, !event?.period || event.period <= snapshotAsOf.slice(0, 7), itemPath + '.after_snapshot');
+    add(errors, !seen.has(event?.period), itemPath + '.unique_period');
+    seen.add(event?.period);
+    add(errors, previous === null || previous > event?.period, path + '.deterministic_order');
+    previous = event?.period;
+  });
+  return errors;
+}
+
 function artifactRecordErrors(record, index, snapshotAsOf) {
   const path = 'records.' + index;
   const errors = [];
@@ -256,7 +321,7 @@ function artifactRecordErrors(record, index, snapshotAsOf) {
   add(errors, positiveInteger(record?.company_code), path + '.company_code');
   add(errors, positiveInteger(record?.legajo), path + '.legajo');
   add(errors, nullableLabel(record?.display_name), path + '.display_name');
-  for (const name of ['sector', 'organization', 'category', 'agreement']) {
+  for (const name of ['sector', 'cost_center', 'organization', 'category', 'agreement']) {
     validateDimension(record?.[name], path + '.' + name, errors);
   }
   validatePosition(record?.position, path + '.position', errors);
@@ -270,21 +335,35 @@ function artifactRecordErrors(record, index, snapshotAsOf) {
   add(errors, nonNegativeInteger(record?.absence?.event_count), path + '.absence.count');
   add(errors, nullableDate(record?.absence?.latest_date), path + '.absence.latest_date');
   add(errors,
-    record?.absence?.latest_date === null || record.absence.latest_date <= snapshotAsOf,
+    record?.absence?.latest_date == null || record?.absence?.latest_date <= snapshotAsOf,
     path + '.absence.after_snapshot');
+  add(errors,
+    (record?.absence?.event_count === 0) === (record?.absence?.latest_date === null),
+    path + '.absence.latest_identity');
+  errors.push(...artifactAbsenceHistoryErrors(
+    record?.absence_history,
+    path + '.absence_history',
+    snapshotAsOf,
+  ));
+  const absenceHistory = Array.isArray(record?.absence_history) ? record.absence_history : [];
+  add(errors, absenceHistory.length === record?.absence?.event_count,
+    path + '.absence_history.count_identity');
+  add(errors,
+    absenceHistory.length === 0 || absenceHistory[0]?.date === record?.absence?.latest_date,
+    path + '.absence_history.latest_identity');
   add(errors, exactKeys(record?.leave, LEAVE_KEYS), path + '.leave.shape');
   add(errors, nonNegativeInteger(record?.leave?.event_count), path + '.leave.count');
   add(errors, nullableDate(record?.leave?.latest_start_date), path + '.leave.latest_start');
   add(errors, nullableDate(record?.leave?.latest_end_date), path + '.leave.latest_end');
   add(errors,
-    record?.leave?.latest_start_date === null || record.leave.latest_start_date <= snapshotAsOf,
+    record?.leave?.latest_start_date == null || record?.leave?.latest_start_date <= snapshotAsOf,
     path + '.leave.start_after_snapshot');
   add(errors,
-    record?.leave?.latest_end_date === null || record.leave.latest_end_date <= snapshotAsOf,
+    record?.leave?.latest_end_date == null || record?.leave?.latest_end_date <= snapshotAsOf,
     path + '.leave.end_after_snapshot');
   add(errors,
     record?.leave?.latest_start_date === null || record?.leave?.latest_end_date === null ||
-      record.leave.latest_end_date >= record.leave.latest_start_date,
+      record?.leave?.latest_end_date >= record?.leave?.latest_start_date,
     path + '.leave.end_before_start');
   errors.push(...artifactLeaveHistoryErrors(record?.leave_history, path + '.leave_history', snapshotAsOf));
   const leaveHistory = Array.isArray(record?.leave_history) ? record.leave_history : [];
@@ -295,6 +374,37 @@ function artifactRecordErrors(record, index, snapshotAsOf) {
   add(errors,
     leaveHistory.length === 0 || leaveHistory[0]?.end_date === record?.leave?.latest_end_date,
     path + '.leave_history.latest_end_identity');
+  add(errors, exactKeys(record?.movement, MOVEMENT_KEYS), path + '.movement.shape');
+  add(errors, nonNegativeInteger(record?.movement?.row_count), path + '.movement.row_count');
+  add(errors, nonNegativeInteger(record?.movement?.period_count), path + '.movement.period_count');
+  add(errors,
+    record?.movement?.latest_period == null || (
+      typeof record?.movement?.latest_period === 'string' && PERIOD_PATTERN.test(record.movement.latest_period)
+    ),
+    path + '.movement.latest_period');
+  add(errors,
+    record?.movement?.latest_period == null || record?.movement?.latest_period <= snapshotAsOf.slice(0, 7),
+    path + '.movement.after_snapshot');
+  errors.push(...artifactMovementHistoryErrors(
+    record?.movement_history,
+    path + '.movement_history',
+    snapshotAsOf,
+  ));
+  const movementHistory = Array.isArray(record?.movement_history) ? record.movement_history : [];
+  const movementRows = movementHistory.reduce(
+    (total, event) => total + (positiveInteger(event?.row_count) ? event.row_count : 0),
+    0,
+  );
+  add(errors, movementHistory.length === record?.movement?.period_count,
+    path + '.movement_history.period_count_identity');
+  add(errors, movementRows === record?.movement?.row_count,
+    path + '.movement_history.row_count_identity');
+  add(errors,
+    movementHistory.length === 0 || movementHistory[0]?.period === record?.movement?.latest_period,
+    path + '.movement_history.latest_identity');
+  add(errors,
+    (movementHistory.length === 0) === (record?.movement?.latest_period === null),
+    path + '.movement_history.empty_identity');
   return errors;
 }
 
@@ -347,6 +457,18 @@ export function inspectGrhDirectoryArtifact(value) {
     value?.counts?.future_effective_position_observation_rows <=
       value?.counts?.valid_position_observation_rows,
     'counts.position_observation_future_bound');
+  add(errors,
+    value?.counts?.valid_absence_events + value?.counts?.quarantined_absence_events ===
+      value?.counts?.source_rows?.ausencia,
+    'counts.absence_source_identity');
+  add(errors,
+    value?.counts?.valid_leave_events + value?.counts?.quarantined_leave_events ===
+      value?.counts?.source_rows?.licencia,
+    'counts.leave_source_identity');
+  add(errors,
+    value?.counts?.valid_movement_rows + value?.counts?.quarantined_movement_rows ===
+      value?.counts?.source_rows?.legamov,
+    'counts.movement_source_identity');
 
   let previousKey = null;
   const seen = new Set();
@@ -354,6 +476,7 @@ export function inspectGrhDirectoryArtifact(value) {
   let names = 0;
   let absenceEvents = 0;
   let leaveEvents = 0;
+  let movementRows = 0;
   let positionObservations = 0;
   records.forEach((record, index) => {
     errors.push(...artifactRecordErrors(record, index, snapshotAsOf));
@@ -366,11 +489,13 @@ export function inspectGrhDirectoryArtifact(value) {
     if (record?.display_name) names += 1;
     if (nonNegativeInteger(record?.absence?.event_count)) absenceEvents += record.absence.event_count;
     if (nonNegativeInteger(record?.leave?.event_count)) leaveEvents += record.leave.event_count;
+    if (nonNegativeInteger(record?.movement?.row_count)) movementRows += record.movement.row_count;
     if (record?.position_observation) positionObservations += 1;
   });
   add(errors, names === value?.counts?.records_with_name, 'counts.records_with_name_identity');
   add(errors, absenceEvents <= value?.counts?.valid_absence_events, 'counts.absence_bound');
   add(errors, leaveEvents <= value?.counts?.valid_leave_events, 'counts.leave_bound');
+  add(errors, movementRows <= value?.counts?.valid_movement_rows, 'counts.movement_bound');
   add(errors,
     positionObservations === value?.counts?.records_with_position_observation,
     'counts.position_observation_record_identity');
@@ -432,6 +557,32 @@ function apiPositionObservationErrors(value, path, snapshotAsOf) {
   return errors;
 }
 
+function apiAbsenceHistoryErrors(value, path, snapshotAsOf, expectedTotal, expectedLatest) {
+  const errors = [];
+  add(errors, exactKeys(value, API_ABSENCE_HISTORY_KEYS), path + '.shape');
+  add(errors, nonNegativeInteger(value?.total), path + '.total');
+  add(errors, value?.total === expectedTotal, path + '.total_identity');
+  add(errors, value?.limit === GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT, path + '.limit');
+  add(errors, Array.isArray(value?.items), path + '.items.array');
+  const items = Array.isArray(value?.items) ? value.items : [];
+  add(errors, items.length === Math.min(expectedTotal || 0, GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT),
+    path + '.items.count_identity');
+  let previous = null;
+  items.forEach((event, index) => {
+    const itemPath = path + '.items.' + index;
+    add(errors, exactKeys(event, API_ABSENCE_HISTORY_ITEM_KEYS), itemPath + '.shape');
+    add(errors, typeof event?.date === 'string' && DATE_PATTERN.test(event.date), itemPath + '.date');
+    add(errors, nullableNonNegativeInteger(event?.days), itemPath + '.days');
+    add(errors, !event?.date || event.date <= snapshotAsOf, itemPath + '.after_snapshot');
+    const key = [event?.date || '', String(event?.days ?? -1)].join(':');
+    add(errors, previous === null || previous.localeCompare(key, 'en', { numeric: true }) >= 0,
+      path + '.deterministic_order');
+    previous = key;
+  });
+  add(errors, items.length === 0 || items[0]?.date === expectedLatest, path + '.latest_identity');
+  return errors;
+}
+
 function apiLeaveHistoryErrors(value, path, snapshotAsOf, expectedTotal) {
   const errors = [];
   add(errors, exactKeys(value, API_LEAVE_HISTORY_KEYS), path + '.shape');
@@ -462,6 +613,58 @@ function apiLeaveHistoryErrors(value, path, snapshotAsOf, expectedTotal) {
   return errors;
 }
 
+function apiMovementErrors(value, path, snapshotAsOf) {
+  const errors = [];
+  add(errors, exactKeys(value, API_MOVEMENT_KEYS), path + '.shape');
+  add(errors, nonNegativeInteger(value?.rowCount), path + '.rowCount');
+  add(errors, nonNegativeInteger(value?.periodCount), path + '.periodCount');
+  add(errors,
+    value?.latestPeriod == null || (
+      typeof value?.latestPeriod === 'string' && PERIOD_PATTERN.test(value.latestPeriod)
+    ),
+    path + '.latestPeriod');
+  add(errors,
+    value?.latestPeriod == null || value?.latestPeriod <= snapshotAsOf.slice(0, 7),
+    path + '.after_snapshot');
+  add(errors, (value?.periodCount === 0) === (value?.latestPeriod === null), path + '.latest_identity');
+  add(errors, (value?.rowCount === 0) === (value?.periodCount === 0), path + '.empty_identity');
+  return errors;
+}
+
+function apiMovementHistoryErrors(value, path, snapshotAsOf, expectedTotal, expectedRows, expectedLatest) {
+  const errors = [];
+  add(errors, exactKeys(value, API_MOVEMENT_HISTORY_KEYS), path + '.shape');
+  add(errors, nonNegativeInteger(value?.total), path + '.total');
+  add(errors, value?.total === expectedTotal, path + '.total_identity');
+  add(errors, value?.limit === GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT, path + '.limit');
+  add(errors, Array.isArray(value?.items), path + '.items.array');
+  const items = Array.isArray(value?.items) ? value.items : [];
+  add(errors, items.length === Math.min(expectedTotal || 0, GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT),
+    path + '.items.count_identity');
+  let previous = null;
+  const seen = new Set();
+  items.forEach((event, index) => {
+    const itemPath = path + '.items.' + index;
+    add(errors, exactKeys(event, API_MOVEMENT_HISTORY_ITEM_KEYS), itemPath + '.shape');
+    add(errors, typeof event?.period === 'string' && PERIOD_PATTERN.test(event.period), itemPath + '.period');
+    add(errors, positiveInteger(event?.rowCount), itemPath + '.rowCount');
+    add(errors, !event?.period || event.period <= snapshotAsOf.slice(0, 7), itemPath + '.after_snapshot');
+    add(errors, !seen.has(event?.period), itemPath + '.unique_period');
+    seen.add(event?.period);
+    add(errors, previous === null || previous > event?.period, path + '.deterministic_order');
+    previous = event?.period;
+  });
+  add(errors, items.length === 0 || items[0]?.period === expectedLatest, path + '.latest_identity');
+  if ((expectedTotal || 0) <= GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT) {
+    const rows = items.reduce(
+      (total, event) => total + (positiveInteger(event?.rowCount) ? event.rowCount : 0),
+      0,
+    );
+    add(errors, rows === expectedRows, path + '.row_count_identity');
+  }
+  return errors;
+}
+
 function apiItemErrors(item, index, snapshotAsOf, mode) {
   const path = 'items.' + index;
   const errors = [];
@@ -469,7 +672,7 @@ function apiItemErrors(item, index, snapshotAsOf, mode) {
   add(errors, positiveInteger(item?.companyCode), path + '.companyCode');
   add(errors, positiveInteger(item?.legajo), path + '.legajo');
   add(errors, nullableLabel(item?.displayName), path + '.displayName');
-  for (const name of ['sector', 'organization', 'category', 'agreement']) {
+  for (const name of ['sector', 'costCenter', 'organization', 'category', 'agreement']) {
     errors.push(...apiDimensionErrors(item?.[name], path + '.' + name));
   }
   errors.push(...apiPositionErrors(item?.position, path + '.position'));
@@ -484,15 +687,34 @@ function apiItemErrors(item, index, snapshotAsOf, mode) {
   }
   for (const name of ['latestAbsenceDate', 'latestLeaveStartDate', 'latestLeaveEndDate']) {
     add(errors, nullableDate(item?.events?.[name]), path + '.events.' + name);
-    add(errors, item?.events?.[name] === null || item.events[name] <= snapshotAsOf,
+    add(errors, item?.events?.[name] == null || item?.events?.[name] <= snapshotAsOf,
       path + '.events.' + name + '.after_snapshot');
   }
+  add(errors,
+    (item?.events?.absenceCount === 0) === (item?.events?.latestAbsenceDate === null),
+    path + '.events.absence_latest_identity');
+  errors.push(...apiMovementErrors(item?.movement, path + '.movement', snapshotAsOf));
   if (mode === 'detail') {
+    errors.push(...apiAbsenceHistoryErrors(
+      item?.absenceHistory,
+      path + '.absenceHistory',
+      snapshotAsOf,
+      item?.events?.absenceCount,
+      item?.events?.latestAbsenceDate,
+    ));
     errors.push(...apiLeaveHistoryErrors(
       item?.leaveHistory,
       path + '.leaveHistory',
       snapshotAsOf,
       item?.events?.leaveCount,
+    ));
+    errors.push(...apiMovementHistoryErrors(
+      item?.movementHistory,
+      path + '.movementHistory',
+      snapshotAsOf,
+      item?.movement?.periodCount,
+      item?.movement?.rowCount,
+      item?.movement?.latestPeriod,
     ));
   }
   return errors;
@@ -560,7 +782,9 @@ export function inspectGrhDirectoryResponse(value) {
   add(errors, typeof value?.query?.hasNext === 'boolean', 'response.query.hasNext');
   for (const name of ['cursor', 'nextCursor']) {
     add(errors, value?.query?.[name] === null || (
-      typeof value.query[name] === 'string' && value.query[name].length > 0 && value.query[name].length <= 512
+      typeof value?.query?.[name] === 'string' &&
+      value.query[name].length > 0 &&
+      value.query[name].length <= 512
     ), 'response.query.' + name);
   }
   add(errors,

@@ -29,7 +29,7 @@ test('materialized SQL applies the server scope to rows, totals and every facet'
   assert.match(built.sql, /p\.organization_code = ANY\(\$2::integer\[\]\)/);
   assert.equal(
     [...built.sql.matchAll(/people\.organization_code = ANY\(\$2::integer\[\]\)/g)].length,
-    6,
+    7,
   );
   assert.doesNotMatch(built.sql, /(?:7|12).*organization_code/);
 });

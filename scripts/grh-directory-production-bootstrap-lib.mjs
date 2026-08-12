@@ -17,8 +17,8 @@ import {
   renderGrhDirectoryBootstrapFunction,
 } from './grh-directory-bootstrap-function-template.mjs';
 
-export const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v1';
-export const DIRECTORY_CONTRACT = 'grh-directory-v1';
+export const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v2';
+export const DIRECTORY_CONTRACT = 'grh-directory-v2';
 export const PILOT_ROLE = 'INTENDENTE';
 export const PILOT_NAME = 'Piloto privado GRH';
 export const BOOTSTRAP_MODES = Object.freeze(['ddl', 'encrypted_snapshot']);
@@ -29,7 +29,9 @@ export const VERCEL_PROJECT = 'municipio-junin';
 export const VERCEL_SCOPE = 'marcelos-projects-c26aa499';
 export const MAX_COMPRESSED_BYTES = 4_000_000;
 export const MAX_UNCOMPRESSED_BYTES = 16 * 1024 * 1024;
-export const EXPECTED_MIGRATION_SHA256 = 'c33ef9e79c3960d26d377daae2a62b210a62be0733bb4480ec30fd48d1641b19';
+export const EXPECTED_MIGRATION_003_SHA256 = 'c33ef9e79c3960d26d377daae2a62b210a62be0733bb4480ec30fd48d1641b19';
+export const EXPECTED_MIGRATION_004_SHA256 = '0c4984cdfbe8a25b2f100925d0c3ca96702fa7a572587a6d830b8092c2c21a04';
+export const EXPECTED_MIGRATION_SHA256 = 'cf9d24f67190405271fc68e7d43e138f225c71109481a12a33f8cd53d0edf127';
 export const EXPECTED_MANIFEST_SHA256 = 'c19d48c256914124a160315243b4ddd0aa46ff0c8c6977f2955a9abb56c4b42a';
 export const EXPECTED_SOURCE_MANIFEST = Object.freeze({
   schema_version: 'grh-source-manifest-v1',
@@ -304,13 +306,21 @@ export async function prepareBootstrapBundle({
     preparing: true,
   });
 
-  const migrationPath = path.join(sourceRoot, 'migrations', '003_grh_directory.sql');
+  const baseMigrationPath = path.join(sourceRoot, 'migrations', '003_grh_directory.sql');
+  const upgradeMigrationPath = path.join(sourceRoot, 'migrations', '004_grh_directory_v2.sql');
   const manifestPath = path.join(sourceRoot, 'config', 'grh-source-manifest.json');
-  const migrationSql = normalizeNewlines(await fs.readFile(migrationPath, 'utf8'));
+  const baseMigrationSql = normalizeNewlines(await fs.readFile(baseMigrationPath, 'utf8'));
+  const upgradeMigrationSql = normalizeNewlines(await fs.readFile(upgradeMigrationPath, 'utf8'));
+  const migrationSql = baseMigrationSql + '\n' + upgradeMigrationSql;
   const manifestText = normalizeNewlines(await fs.readFile(manifestPath, 'utf8'));
+  const baseMigrationSha256 = sha256(Buffer.from(baseMigrationSql, 'utf8'));
+  const upgradeMigrationSha256 = sha256(Buffer.from(upgradeMigrationSql, 'utf8'));
   const migrationSha256 = sha256(Buffer.from(migrationSql, 'utf8'));
   const manifestSha256 = sha256(Buffer.from(manifestText, 'utf8'));
-  if (migrationSha256 !== EXPECTED_MIGRATION_SHA256 || manifestSha256 !== EXPECTED_MANIFEST_SHA256) {
+  if (baseMigrationSha256 !== EXPECTED_MIGRATION_003_SHA256 ||
+      upgradeMigrationSha256 !== EXPECTED_MIGRATION_004_SHA256 ||
+      migrationSha256 !== EXPECTED_MIGRATION_SHA256 ||
+      manifestSha256 !== EXPECTED_MANIFEST_SHA256) {
     fail('BOOTSTRAP_SOURCE_CONTRACT_DRIFT');
   }
   const manifest = JSON.parse(manifestText);
@@ -413,7 +423,9 @@ export async function prepareBootstrapBundle({
     sourceSha256: manifest.sha256,
     snapshotAsOf: manifest.snapshot_as_of,
     recordCount: flattened.people.length,
+    absenceRecordCount: flattened.absenceEvents.length,
     leaveRecordCount: flattened.leaveEvents.length,
+    movementPeriodCount: flattened.movementPeriods.length,
     positionObservationCount,
     stableProductionUrl: STABLE_PRODUCTION_URL,
     deployment: null,
@@ -587,7 +599,8 @@ async function loadState(statePath) {
     'snapshotKeyFingerprintSha256',
     'allowedUserIdPath', 'operationId', 'requestId',
     'migrationSha256', 'manifestSha256', 'sourceSha256', 'snapshotAsOf',
-    'recordCount', 'leaveRecordCount', 'positionObservationCount',
+    'recordCount', 'absenceRecordCount', 'leaveRecordCount', 'movementPeriodCount',
+    'positionObservationCount',
     'stableProductionUrl', 'deployment', 'productionVerification', 'finalizedAt',
   ]) || state.schemaVersion !== BOOTSTRAP_CONTRACT || !BOOTSTRAP_MODES.includes(state.mode) ||
       !BOOTSTRAP_STATE_STATUSES.has(state.status) ||
@@ -750,10 +763,14 @@ function inspectBootstrapApplyReceipt(receipt, state, code) {
   }
   if (receipt.status !== 201 || !exactKeys(receipt.body, [
     'ok', 'code', 'schemaVersion', 'snapshotAsOf', 'recordCount',
-    'leaveRecordCount', 'positionObservationCount',
+    'absenceRecordCount', 'leaveRecordCount', 'movementPeriodCount',
+    'positionObservationCount',
   ]) || receipt.body.ok !== true || receipt.body.code !== 'GRH_DIRECTORY_BOOTSTRAP_APPLIED' ||
       receipt.body.schemaVersion !== DIRECTORY_CONTRACT || receipt.body.snapshotAsOf !== state.snapshotAsOf ||
-      receipt.body.recordCount !== state.recordCount || receipt.body.leaveRecordCount !== state.leaveRecordCount ||
+      receipt.body.recordCount !== state.recordCount ||
+      receipt.body.absenceRecordCount !== state.absenceRecordCount ||
+      receipt.body.leaveRecordCount !== state.leaveRecordCount ||
+      receipt.body.movementPeriodCount !== state.movementPeriodCount ||
       receipt.body.positionObservationCount !== state.positionObservationCount) {
     fail(code);
   }
@@ -952,6 +969,9 @@ export async function applyPreparedBootstrap({
       deploymentUrl: deployment.url,
       stableAliasUnchanged: true,
       recordCount: state.recordCount,
+      absenceRecordCount: state.absenceRecordCount,
+      leaveRecordCount: state.leaveRecordCount,
+      movementPeriodCount: state.movementPeriodCount,
     });
   } catch (error) {
     if (!applyStarted) {
@@ -1034,6 +1054,9 @@ export async function resolveAmbiguousBootstrap({
     verificationRequired: true,
     stableAliasUnchanged: true,
     recordCount: state.recordCount,
+    absenceRecordCount: state.absenceRecordCount,
+    leaveRecordCount: state.leaveRecordCount,
+    movementPeriodCount: state.movementPeriodCount,
   });
 }
 
@@ -1080,9 +1103,11 @@ function verifyBootstrapBehavior({ runner, state, credential, deploymentUrl, sta
     fail('BOOTSTRAP_VERIFY_LOGIN_FAILED');
   }
   const headers = { Authorization: 'Bearer ' + token };
+  const browseHeaders = { ...headers, 'X-MuniControl-Purpose': 'DIRECTORY_BROWSE' };
+  const personHeaders = { ...headers, 'X-MuniControl-Purpose': 'PERSON_LOOKUP' };
   const directory = requireProtectedReceipt(protectedRequest(
     '/api/grh-directory?limit=1',
-    { method: 'GET', headers },
+    { method: 'GET', headers: browseHeaders },
     'BOOTSTRAP_VERIFY_DIRECTORY_FAILED',
   ), 'BOOTSTRAP_VERIFY_DIRECTORY_FAILED', DIRECTORY_CONTRACT);
   if (!inspectGrhDirectoryResponse(directory).ok || directory.source?.sourceSha256 !== state.sourceSha256 ||
@@ -1099,22 +1124,87 @@ function verifyBootstrapBehavior({ runner, state, credential, deploymentUrl, sta
   if (state.leaveRecordCount <= 0) fail('BOOTSTRAP_VERIFY_LEAVE_FAILED');
   const leave = requireProtectedReceipt(protectedRequest(
     '/api/grh-directory?limit=1&hasLeave=true',
-    { method: 'GET', headers },
+    { method: 'GET', headers: browseHeaders },
     'BOOTSTRAP_VERIFY_LEAVE_FAILED',
   ), 'BOOTSTRAP_VERIFY_LEAVE_FAILED', DIRECTORY_CONTRACT);
-  const nominalCandidate = leave.items?.[0];
+  const leaveCandidate = leave.items?.[0];
   if (!inspectGrhDirectoryResponse(leave).ok || leave.items?.length !== 1 ||
-      !Number.isInteger(nominalCandidate?.legajo) ||
-      Number(nominalCandidate?.events?.leaveCount || 0) <= 0) {
+      !Number.isInteger(leaveCandidate?.legajo) ||
+      Number(leaveCandidate?.events?.leaveCount || 0) <= 0) {
     fail('BOOTSTRAP_VERIFY_LEAVE_FAILED');
   }
   assertNoForbiddenKeys(leave);
+  const leaveDetail = requireProtectedReceipt(protectedRequest(
+    `/api/grh-directory?company=${leaveCandidate.companyCode}&legajo=${leaveCandidate.legajo}`,
+    { method: 'GET', headers: personHeaders },
+    'BOOTSTRAP_VERIFY_LEAVE_FAILED',
+  ), 'BOOTSTRAP_VERIFY_LEAVE_FAILED', DIRECTORY_CONTRACT);
+  if (!inspectGrhDirectoryResponse(leaveDetail).ok || leaveDetail.items?.length !== 1 ||
+      Number(leaveDetail.items?.[0]?.leaveHistory?.total || 0) <= 0 ||
+      !Array.isArray(leaveDetail.items?.[0]?.leaveHistory?.items) ||
+      leaveDetail.items[0].leaveHistory.items.length < 1) {
+    fail('BOOTSTRAP_VERIFY_LEAVE_FAILED');
+  }
+  assertNoForbiddenKeys(leaveDetail);
+
+  if (state.absenceRecordCount <= 0) fail('BOOTSTRAP_VERIFY_ABSENCE_FAILED');
+  const absence = requireProtectedReceipt(protectedRequest(
+    '/api/grh-directory?limit=1&hasAbsence=true',
+    { method: 'GET', headers: browseHeaders },
+    'BOOTSTRAP_VERIFY_ABSENCE_FAILED',
+  ), 'BOOTSTRAP_VERIFY_ABSENCE_FAILED', DIRECTORY_CONTRACT);
+  if (!inspectGrhDirectoryResponse(absence).ok || absence.items?.length !== 1 ||
+      Number(absence.items?.[0]?.events?.absenceCount || 0) <= 0) {
+    fail('BOOTSTRAP_VERIFY_ABSENCE_FAILED');
+  }
+  assertNoForbiddenKeys(absence);
+  const absenceCandidate = absence.items[0];
+  const absenceDetail = requireProtectedReceipt(protectedRequest(
+    `/api/grh-directory?company=${absenceCandidate.companyCode}&legajo=${absenceCandidate.legajo}`,
+    { method: 'GET', headers: personHeaders },
+    'BOOTSTRAP_VERIFY_ABSENCE_FAILED',
+  ), 'BOOTSTRAP_VERIFY_ABSENCE_FAILED', DIRECTORY_CONTRACT);
+  if (!inspectGrhDirectoryResponse(absenceDetail).ok || absenceDetail.items?.length !== 1 ||
+      Number(absenceDetail.items?.[0]?.absenceHistory?.total || 0) <= 0 ||
+      !Array.isArray(absenceDetail.items?.[0]?.absenceHistory?.items) ||
+      absenceDetail.items[0].absenceHistory.items.length < 1) {
+    fail('BOOTSTRAP_VERIFY_ABSENCE_FAILED');
+  }
+  assertNoForbiddenKeys(absenceDetail);
+
+  if (state.movementPeriodCount <= 0) fail('BOOTSTRAP_VERIFY_MOVEMENT_FAILED');
+  const movement = requireProtectedReceipt(protectedRequest(
+    '/api/grh-directory?limit=1&hasMovement=true',
+    { method: 'GET', headers: browseHeaders },
+    'BOOTSTRAP_VERIFY_MOVEMENT_FAILED',
+  ), 'BOOTSTRAP_VERIFY_MOVEMENT_FAILED', DIRECTORY_CONTRACT);
+  if (!inspectGrhDirectoryResponse(movement).ok || movement.items?.length !== 1 ||
+      Number(movement.items?.[0]?.movement?.rowCount || 0) <= 0 ||
+      Number(movement.items?.[0]?.movement?.periodCount || 0) <= 0) {
+    fail('BOOTSTRAP_VERIFY_MOVEMENT_FAILED');
+  }
+  assertNoForbiddenKeys(movement);
+  const movementCandidate = movement.items[0];
+  const movementDetail = requireProtectedReceipt(protectedRequest(
+    `/api/grh-directory?company=${movementCandidate.companyCode}&legajo=${movementCandidate.legajo}`,
+    { method: 'GET', headers: personHeaders },
+    'BOOTSTRAP_VERIFY_MOVEMENT_FAILED',
+  ), 'BOOTSTRAP_VERIFY_MOVEMENT_FAILED', DIRECTORY_CONTRACT);
+  if (!inspectGrhDirectoryResponse(movementDetail).ok || movementDetail.items?.length !== 1 ||
+      Number(movementDetail.items?.[0]?.movementHistory?.total || 0) <= 0 ||
+      !Array.isArray(movementDetail.items?.[0]?.movementHistory?.items) ||
+      movementDetail.items[0].movementHistory.items.length < 1) {
+    fail('BOOTSTRAP_VERIFY_MOVEMENT_FAILED');
+  }
+  assertNoForbiddenKeys(movementDetail);
+
+  const nominalCandidate = leaveCandidate;
 
   const nominalAssistant = requireProtectedReceipt(protectedRequest(
     '/api/ai-analyze',
     {
       method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json' },
+      headers: { ...personHeaders, 'Content-Type': 'application/json' },
       jsonBody: {
         message: `legajo ${nominalCandidate.legajo}`,
         mode: 'deterministic',
@@ -1130,14 +1220,21 @@ function verifyBootstrapBehavior({ runner, state, credential, deploymentUrl, sta
       nominalAssistant?.dataStatus?.snapshotAsOf !== state.snapshotAsOf ||
       nominalAssistant?.provenance?.sourceSha256 !== state.sourceSha256 ||
       nominalAssistant?.provenance?.snapshotAsOf !== state.snapshotAsOf ||
-      nominalAssistant?.answer?.directory?.status !== 'matched') {
+      nominalAssistant?.answer?.directory?.status !== 'matched' ||
+      Number(nominalAssistant?.answer?.directory?.person?.leaveHistory?.total || 0) <= 0 ||
+      !Array.isArray(nominalAssistant?.answer?.directory?.person?.leaveHistory?.items) ||
+      nominalAssistant.answer.directory.person.leaveHistory.items.length < 1 ||
+      !Array.isArray(nominalAssistant?.answer?.directory?.person?.absenceHistory?.items) ||
+      !Array.isArray(nominalAssistant?.answer?.directory?.person?.movementHistory?.items)) {
     fail('BOOTSTRAP_VERIFY_AI_FAILED');
   }
   return Object.freeze({
     schemaVersion: DIRECTORY_CONTRACT,
     snapshotAsOf: state.snapshotAsOf,
     recordCount: state.recordCount,
-    leaveAvailable: state.leaveRecordCount > 0,
+    absenceAvailable: true,
+    leaveAvailable: true,
+    movementAvailable: true,
     positionObservationAvailable: state.positionObservationCount > 0,
     nominalAiVerified: true,
   });
@@ -1339,9 +1436,11 @@ export function safeCliResult(result) {
   if (!result || typeof result !== 'object') return Object.freeze({ ok: true });
   const allowed = [
     'statePath', 'mode', 'endpointRelativePath', 'payloadBytes', 'uncompressedBytes',
-    'recordCount', 'leaveRecordCount', 'positionObservationCount', 'status',
+    'recordCount', 'absenceRecordCount', 'leaveRecordCount', 'movementPeriodCount',
+    'positionObservationCount', 'status',
     'deploymentId', 'deploymentUrl', 'stableAliasUnchanged', 'schemaVersion',
-    'snapshotAsOf', 'leaveAvailable', 'positionObservationAvailable', 'nominalAiVerified',
+    'snapshotAsOf', 'absenceAvailable', 'leaveAvailable', 'movementAvailable',
+    'positionObservationAvailable', 'nominalAiVerified',
     'alreadyConsumed', 'verificationRequired',
     'deploymentRemoved', 'bootstrapSecretRemoved', 'allowlistRetained', 'snapshotKeyRetained',
     'snapshotKeyLocalRetained', 'snapshotKeyVersion', 'snapshotKeyFingerprintSha256',

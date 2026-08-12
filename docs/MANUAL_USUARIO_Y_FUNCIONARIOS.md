@@ -136,7 +136,7 @@ municipio y los contratos privados publicados.
 | [Inicio seguro](../inicio.html) | Orienta el recorrido de los siete roles técnicos vigentes con capabilities calculadas en servidor | Consulta sólo `/api/auth/me`; no carga GRH, no crea permisos/cuentas y no certifica despliegue |
 | [Panel Ejecutivo GRH](../dashboard.html) | Panorama transversal desde `grh-executive-v2` + `grh-quality-v1`; incorpora lectura de `grh-close-v1` | Superficie privada separada; no certifica despliegue, pago ni tiempo real |
 | [Centro Ejecutivo GRH](../grh-ejecutivo.html) | Estructura, control de cálculo y eventos desde proyecciones seguras | Consumidor migrado localmente; sin fichas individuales ni PII |
-| [Centro Ejecutivo RRHH](../rrhh.html) | Participación y eventos anuales desde proyecciones seguras | Consumidor migrado localmente; un evento no equivale a una persona ni a una tasa |
+| [Centro Ejecutivo RRHH](../rrhh.html) | Participación agregada y directorio privado gobernado `grh-directory-v2`, con centro de costo informado y cronología acotada | La ficha nominal exige rol, usuario, tenant y finalidad autorizados; las filas de `legamov` no equivalen a altas, bajas, traslados ni rotación |
 | [Hacienda y Nómina](../hacienda.html) | Cierre mensual explicado: componentes de cálculo, controles y conciliación real por período desde importes protegidos | `grh-close-v1` local; sólo compara meses calendario consecutivos si ambos alcanzan k≥10; no certifica pago, presupuesto, causalidad, contabilidad ni deployment |
 | [Calidad y Linaje GRH](../control.html) | Inventario, procedencia, score, cuarentena, cobertura, conciliación y riesgos del snapshot | Consumidor migrado localmente a `grh-quality-v1`, que excluye categorías, códigos e importes |
 | [Centro de Reportes GRH](../reportes.html) | Informe local sobre proyección portable con umbral k=10 | Contrato v2 alineado localmente; no declarar deployment ni documento oficial |
@@ -148,8 +148,9 @@ municipio y los contratos privados publicados.
 | Shell institucional UX-E2A | Navegación coherente desktop/móvil, foco visible, targets táctiles, movimiento reducido e impresión en las páginas que cargan el menú | Validado localmente y en rutas canónicas del preview protegido; un enlace visible no concede permisos |
 
 Los endpoints seguros `GET /api/grh-executive` (`grh-executive-v2`),
-`GET /api/grh-quality` (`grh-quality-v1`) y `GET /api/grh-close`
-(`grh-close-v1`) están implementados localmente. Panel,
+`GET /api/grh-quality` (`grh-quality-v1`), `GET /api/grh-close`
+(`grh-close-v1`) y `GET /api/grh-directory` (`grh-directory-v2`) están
+implementados localmente. Panel,
 GRH, Calidad, RRHH y Hacienda no conservan referencias HTTP al contrato fuente.
 `GET /api/grh-data` autentica, verifica tenant y responde
 `410 GRH_RAW_CONTRACT_RETIRED` sin leer artefactos. La frontera raw está cerrada
@@ -455,8 +456,12 @@ efectivo, deuda o asiento contable sin una fuente adicional reconciliada.
    definiciones y conciliación asociadas.
 6. Abra [Calidad y Linaje GRH](../control.html) para distinguir cobertura,
    integridad de joins, cuarentena y riesgos antes de escalar una señal.
-7. Si se necesita una conclusión individual, detenga el recorrido: esa capacidad
-   está fuera del alcance actual.
+7. Si su identidad privada está autorizada, abra la ficha individual desde el
+   directorio. Confirme adscripción, corte y alcance antes de interpretar sus
+   tres señales históricas.
+8. Use la cronología sólo como evidencia acotada: hasta 24 ausencias, licencias
+   y períodos de filas fuente por historial. El centro de costo es una
+   clasificación informada; no equivale a departamento ni asignación exclusiva.
 
 Los conteos de ausencia y movimiento son eventos. No equivalen automáticamente a
 personas, días perdidos, tasa de ausentismo, rotación ni causalidad.
@@ -940,7 +945,10 @@ de ingeniería. No significa publicación en DB, API o producción.
 No. El control de cálculo no es evidencia bancaria.
 
 **¿Puede mostrar fichas individuales?**  
-No en el alcance actual. Requiere permisos finos, minimización y auditoría.
+Sí, únicamente en el directorio privado `grh-directory-v2` para identidades
+autorizadas, tenant correcto y finalidad gobernada. La respuesta minimiza campos,
+limita cada historial a 24 registros y no publica causas, contacto, domicilio,
+cuenta bancaria ni importes salariales.
 
 **¿Puede implementarse en otro municipio?**  
 La arquitectura puede adaptarse, pero cada municipio necesita una fuente

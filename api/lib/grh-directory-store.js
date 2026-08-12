@@ -2,7 +2,9 @@ import { createHash } from 'node:crypto';
 
 import { assertPrismaDatabaseTransport, prisma } from './db.js';
 import {
+  GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT,
   GRH_DIRECTORY_DETAIL_LEAVE_LIMIT,
+  GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT,
   GRH_DIRECTORY_EXCLUDED_FIELDS,
   GRH_DIRECTORY_SCHEMA_VERSION,
 } from './grh-directory-contract.js';
@@ -16,6 +18,7 @@ const ALLOWED_QUERY_KEYS = new Set([
   'page',
   'limit',
   'sector',
+  'costCenter',
   'organization',
   'position',
   'positionObservation',
@@ -23,12 +26,14 @@ const ALLOWED_QUERY_KEYS = new Set([
   'agreement',
   'hasAbsence',
   'hasLeave',
+  'hasMovement',
   'legajo',
   'company',
   'cursor',
 ]);
 const DIMENSION_FILTERS = Object.freeze({
   sector: 'sector_code',
+  costCenter: 'cost_center_code',
   organization: 'organization_code',
   position: 'position_code',
   category: 'category_code',
@@ -36,6 +41,7 @@ const DIMENSION_FILTERS = Object.freeze({
 });
 const FACET_DIMENSIONS = Object.freeze({
   sectors: Object.freeze({ column: 'sector_code', dimension: 'sector' }),
+  costCenters: Object.freeze({ column: 'cost_center_code', dimension: 'costCenter' }),
   organizations: Object.freeze({ column: 'organization_code', dimension: 'organization' }),
   positions: Object.freeze({ column: 'position_code', dimension: 'position' }),
   positionObservations: Object.freeze({ column: 'position_observation_label', dimension: null }),
@@ -150,6 +156,7 @@ function queryFingerprint(parsed) {
     cursorScope: parsed.cursorScope,
     searchTokens: parsed.searchTokens,
     sector: parsed.sector,
+    costCenter: parsed.costCenter,
     organization: parsed.organization,
     position: parsed.position,
     positionObservation: parsed.positionObservation,
@@ -157,6 +164,7 @@ function queryFingerprint(parsed) {
     agreement: parsed.agreement,
     hasAbsence: parsed.hasAbsence,
     hasLeave: parsed.hasLeave,
+    hasMovement: parsed.hasMovement,
     limit: parsed.limit,
   };
   return createHash('sha256').update(JSON.stringify(canonical)).digest('hex').slice(0, 24);
@@ -231,6 +239,7 @@ export function parseGrhDirectoryQuery(query = {}, { cursorScope = 'materialized
     company,
     hasAbsence: mode === 'list' ? booleanValue(query.hasAbsence) : null,
     hasLeave: mode === 'list' ? booleanValue(query.hasLeave) : null,
+    hasMovement: mode === 'list' ? booleanValue(query.hasMovement) : null,
     positionObservation,
     ...filters,
   };
@@ -349,13 +358,41 @@ export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes 
   if (parsed.hasLeave !== null) {
     where.push(parsed.hasLeave ? 'p.leave_event_count > 0' : 'p.leave_event_count = 0');
   }
+  if (parsed.hasMovement !== null) {
+    where.push(parsed.hasMovement ? 'p.movement_row_count > 0' : 'p.movement_row_count = 0');
+  }
   if (parsed.legajo !== null) where.push(`p.legajo = ${parameter(parsed.legajo)}`);
   if (parsed.company !== null) where.push(`p.company_code = ${parameter(parsed.company)}`);
 
   const internalLimit = parsed.mode === 'detail' ? 2 : parsed.limit + 1;
   const limitParameter = parameter(internalLimit);
   const offsetParameter = parameter(parsed.offset);
-  const leaveHistorySelect = parsed.mode === 'detail' ? `,
+  const detailHistorySelect = parsed.mode === 'detail' ? `,
+           (SELECT COALESCE(
+              jsonb_agg(
+                jsonb_build_object(
+                  'date', recent_absence.event_date::text,
+                  'days', recent_absence.days
+                ) ORDER BY recent_absence.event_date DESC,
+                           recent_absence.days DESC NULLS LAST,
+                           recent_absence.event_order ASC
+              ),
+              '[]'::jsonb
+            )
+              FROM (
+                SELECT absence_event.event_date,
+                       absence_event.days,
+                       absence_event.event_order
+                  FROM grh_directory_absence_events absence_event
+                 WHERE absence_event.tenant_id = p.tenant_id
+                   AND absence_event.company_code = p.company_code
+                   AND absence_event.legajo = p.legajo
+                 ORDER BY absence_event.event_date DESC,
+                          absence_event.days DESC NULLS LAST,
+                          absence_event.event_order ASC
+                 LIMIT ${GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT}
+              ) recent_absence
+           ) AS absence_history,
            (SELECT COALESCE(
               jsonb_agg(
                 jsonb_build_object(
@@ -382,7 +419,27 @@ export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes 
                           leave_event.event_order ASC
                  LIMIT ${GRH_DIRECTORY_DETAIL_LEAVE_LIMIT}
               ) recent_leave
-           ) AS leave_history` : '';
+            ) AS leave_history,
+           (SELECT COALESCE(
+              jsonb_agg(
+                jsonb_build_object(
+                  'period', recent_movement.period,
+                  'row_count', recent_movement.row_count
+                ) ORDER BY recent_movement.period DESC
+              ),
+              '[]'::jsonb
+            )
+              FROM (
+                SELECT movement_period.period,
+                       movement_period.row_count
+                  FROM grh_directory_movement_periods movement_period
+                 WHERE movement_period.tenant_id = p.tenant_id
+                   AND movement_period.company_code = p.company_code
+                   AND movement_period.legajo = p.legajo
+                 ORDER BY movement_period.period DESC
+                 LIMIT ${GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT}
+              ) recent_movement
+           ) AS movement_history` : '';
   const facetsCte = parsed.mode === 'list'
     ? `, facets AS (SELECT ${facetExpression(
       scopeParameter === null ? '' : `AND people.organization_code = ANY(${scopeParameter}::integer[])`,
@@ -395,6 +452,8 @@ export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes 
            p.display_name,
            p.sector_code,
            sector.label AS sector_label,
+           p.cost_center_code,
+           cost_center.label AS cost_center_label,
            p.organization_code,
            organization.label AS organization_label,
            p.position_code,
@@ -416,7 +475,10 @@ export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes 
            p.latest_absence_date,
            p.leave_event_count,
            p.latest_leave_start_date,
-           p.latest_leave_end_date${leaveHistorySelect}
+           p.latest_leave_end_date,
+           p.movement_row_count,
+           p.movement_period_count,
+           p.latest_movement_period${detailHistorySelect}
       FROM grh_directory_people p
       LEFT JOIN grh_directory_dimensions sector
         ON sector.tenant_id = p.tenant_id
@@ -424,6 +486,12 @@ export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes 
        AND sector.company_code = p.company_code
        AND sector.scope_code = 0
        AND sector.code = p.sector_code
+      LEFT JOIN grh_directory_dimensions cost_center
+        ON cost_center.tenant_id = p.tenant_id
+       AND cost_center.dimension = 'costCenter'
+       AND cost_center.company_code = p.company_code
+       AND cost_center.scope_code = 0
+       AND cost_center.code = p.cost_center_code
       LEFT JOIN grh_directory_dimensions organization
         ON organization.tenant_id = p.tenant_id
        AND organization.dimension = 'organization'
@@ -556,12 +624,39 @@ function mapLeaveHistory(row) {
   };
 }
 
+function mapAbsenceHistory(row) {
+  const history = jsonValue(row.absence_history);
+  if (!Array.isArray(history)) throw directoryError('GRH_DIRECTORY_ROW_INVALID');
+  return {
+    total: safeInteger(row.absence_event_count),
+    limit: GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT,
+    items: history.map(event => ({
+      date: dateValue(event.date),
+      days: nullableSafeInteger(event.days),
+    })),
+  };
+}
+
+function mapMovementHistory(row) {
+  const history = jsonValue(row.movement_history);
+  if (!Array.isArray(history)) throw directoryError('GRH_DIRECTORY_ROW_INVALID');
+  return {
+    total: safeInteger(row.movement_period_count),
+    limit: GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT,
+    items: history.map(event => ({
+      period: String(event.period),
+      rowCount: safeInteger(event.row_count),
+    })),
+  };
+}
+
 function mapItem(row, mode) {
   const item = {
     companyCode: safeInteger(row.company_code),
     legajo: safeInteger(row.legajo),
     displayName: row.display_name === null || row.display_name === undefined ? null : String(row.display_name),
     sector: dimension(row.sector_code, row.sector_label),
+    costCenter: dimension(row.cost_center_code, row.cost_center_label),
     organization: dimension(row.organization_code, row.organization_label),
     position: position(row),
     positionObservation: positionObservation(row),
@@ -574,8 +669,19 @@ function mapItem(row, mode) {
       latestLeaveStartDate: dateValue(row.latest_leave_start_date),
       latestLeaveEndDate: dateValue(row.latest_leave_end_date),
     },
+    movement: {
+      rowCount: safeInteger(row.movement_row_count),
+      periodCount: safeInteger(row.movement_period_count),
+      latestPeriod: row.latest_movement_period === null || row.latest_movement_period === undefined
+        ? null
+        : String(row.latest_movement_period),
+    },
   };
-  if (mode === 'detail') item.leaveHistory = mapLeaveHistory(row);
+  if (mode === 'detail') {
+    item.absenceHistory = mapAbsenceHistory(row);
+    item.leaveHistory = mapLeaveHistory(row);
+    item.movementHistory = mapMovementHistory(row);
+  }
   return item;
 }
 
@@ -685,6 +791,7 @@ function positionObservationFacets(records) {
 function snapshotFacets(records) {
   return {
     sectors: dimensionFacets(records, 'sector'),
+    costCenters: dimensionFacets(records, 'cost_center'),
     organizations: dimensionFacets(records, 'organization'),
     positions: dimensionFacets(records, 'position'),
     positionObservations: positionObservationFacets(records),
@@ -725,6 +832,7 @@ function snapshotItem(record, mode) {
     legajo: record.legajo,
     displayName: record.display_name,
     sector: artifactDimension(record.sector),
+    costCenter: artifactDimension(record.cost_center),
     organization: artifactDimension(record.organization),
     position: artifactPosition(record.position),
     positionObservation: artifactPositionObservation(record.position_observation),
@@ -737,8 +845,21 @@ function snapshotItem(record, mode) {
       latestLeaveStartDate: record.leave.latest_start_date,
       latestLeaveEndDate: record.leave.latest_end_date,
     },
+    movement: {
+      rowCount: record.movement.row_count,
+      periodCount: record.movement.period_count,
+      latestPeriod: record.movement.latest_period,
+    },
   };
   if (mode === 'detail') {
+    item.absenceHistory = {
+      total: record.absence.event_count,
+      limit: GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT,
+      items: record.absence_history.slice(0, GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT).map(event => ({
+        date: event.date,
+        days: event.days,
+      })),
+    };
     item.leaveHistory = {
       total: record.leave.event_count,
       limit: GRH_DIRECTORY_DETAIL_LEAVE_LIMIT,
@@ -746,6 +867,14 @@ function snapshotItem(record, mode) {
         startDate: event.start_date,
         endDate: event.end_date,
         days: event.days,
+      })),
+    };
+    item.movementHistory = {
+      total: record.movement.period_count,
+      limit: GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT,
+      items: record.movement_history.slice(0, GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT).map(event => ({
+        period: event.period,
+        rowCount: event.row_count,
       })),
     };
   }
@@ -767,12 +896,14 @@ function snapshotRecordMatches(record, parsed) {
   const legajo = String(record.legajo);
   if (!parsed.searchTokens.every(token => searchableName.includes(token) || legajo.startsWith(token))) return false;
   for (const name of Object.keys(DIMENSION_FILTERS)) {
-    if (parsed[name] !== null && record[name]?.code !== parsed[name]) return false;
+    const artifactName = name === 'costCenter' ? 'cost_center' : name;
+    if (parsed[name] !== null && record[artifactName]?.code !== parsed[name]) return false;
   }
   if (parsed.positionObservation !== null &&
       record.position_observation?.label?.normalize('NFKC') !== parsed.positionObservation) return false;
   if (parsed.hasAbsence !== null && (record.absence.event_count > 0) !== parsed.hasAbsence) return false;
   if (parsed.hasLeave !== null && (record.leave.event_count > 0) !== parsed.hasLeave) return false;
+  if (parsed.hasMovement !== null && (record.movement.row_count > 0) !== parsed.hasMovement) return false;
   if (parsed.legajo !== null && record.legajo !== parsed.legajo) return false;
   if (parsed.company !== null && record.company_code !== parsed.company) return false;
   return true;

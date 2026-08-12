@@ -898,7 +898,7 @@
             try { await response.body.cancel(); } catch (error) { /* best effort */ }
           }
           return {
-            ok: response.status === 200 && contract === 'grh-directory-v1',
+            ok: response.status === 200 && contract === 'grh-directory-v2',
             status: response.status
           };
         } finally {

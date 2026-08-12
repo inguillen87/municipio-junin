@@ -33,6 +33,7 @@ try:
         parse_generated_at,
         parse_int,
         parse_sql_tuples,
+        period_reasons,
         valid_employee_key,
     )
     from .grh_source_manifest import load_and_validate_canonical_source
@@ -49,17 +50,20 @@ except ImportError:  # Direct execution: python scripts/build_grh_directory.py
         parse_generated_at,
         parse_int,
         parse_sql_tuples,
+        period_reasons,
         valid_employee_key,
     )
     from grh_source_manifest import load_and_validate_canonical_source
 
 
-SCHEMA_VERSION = "grh-directory-v1"
+SCHEMA_VERSION = "grh-directory-v2"
 DEFAULT_MIN_YEAR = 1979
 TARGET_TABLES = {
     "persona",
     "legajo",
+    "legamov",
     "sectores",
+    "costos",
     "organiza",
     "cargo",
     "catego",
@@ -99,6 +103,7 @@ class ReferenceSpec:
 
 REFERENCE_SPECS = (
     ReferenceSpec("sectores", "sector", ("CODI_07", "SECT_12"), ("CODI_07",), ("DETA_07", "ABRE_07")),
+    ReferenceSpec("costos", "cost_center", ("CODI_06",), ("CODI_06",), ("DETA_06",)),
     ReferenceSpec("organiza", "organization", ("IDORGANIZA",), ("IDORGANIZA",), ("N1_DESC", "N1_ABRE")),
     ReferenceSpec("cargo", "position", ("CARGOID",), ("CARGOID",), ("DENOCARGO",)),
     ReferenceSpec(
@@ -194,7 +199,9 @@ def resolve_reference(
     if code is None:
         return None
     values = references[output]
-    value = values.get((company, scope, code)) or values.get((None, scope, code))
+    value = values.get((company, scope, code))
+    if value is None and output != "cost_center":
+        value = values.get((None, scope, code))
     label = value.get("label") if value else None
     if output != "position":
         return {"code": code, "label": label}
@@ -239,8 +246,10 @@ def build_directory(
         spec.output: {} for spec in REFERENCE_SPECS
     }
     absence_by_employee: dict[tuple[int, int], dict[str, object]] = collections.defaultdict(empty_event_summary)
+    absence_history_by_employee: dict[tuple[int, int], list[dict[str, object]]] = collections.defaultdict(list)
     leave_by_employee: dict[tuple[int, int], dict[str, object]] = collections.defaultdict(empty_event_summary)
     leave_history_by_employee: dict[tuple[int, int], list[dict[str, object]]] = collections.defaultdict(list)
+    movement_periods_by_employee: dict[tuple[int, int], collections.Counter[str]] = collections.defaultdict(collections.Counter)
     position_observation_by_employee: dict[tuple[int, int], dict[str, object]] = {}
     source_counts = collections.Counter()
     valid_event_counts = collections.Counter()
@@ -407,6 +416,24 @@ def build_directory(
                     else:
                         valid_event_counts[table_name] += 1
                         record_event(absence_by_employee[key], start)
+                        absence_history_by_employee[key].append({
+                            "date": start.isoformat(),
+                            "days": source_leave_days(row.get("DIAS_24")),
+                        })
+                elif table_name == "legamov":
+                    reasons, year, month, _ = period_reasons(
+                        row.get("ANO_30"),
+                        row.get("MES_30"),
+                        None,
+                        min_year=min_year,
+                        as_of=as_of,
+                        require_date=False,
+                    )
+                    if reasons or year is None or month is None:
+                        quarantine_event_counts[table_name] += 1
+                    else:
+                        valid_event_counts[table_name] += 1
+                        movement_periods_by_employee[key][f"{year:04d}-{month:02d}"] += 1
                 else:  # licencia
                     reasons, start = date_reasons(row.get("FINI_24"), min_year=min_year, as_of=as_of)
                     end = parse_date(row.get("FFIN_24"))
@@ -455,6 +482,14 @@ def build_directory(
             join_counts["without_name"] += 1
         assignments = raw["assignments"]
         absence = absence_by_employee.get((company, employee), empty_event_summary())
+        absence_history = sorted(
+            absence_history_by_employee.get((company, employee), []),
+            key=lambda event: (
+                str(event["date"]),
+                int(event["days"]) if event["days"] is not None else -1,
+            ),
+            reverse=True,
+        )
         leave = leave_by_employee.get((company, employee), empty_event_summary())
         leave_history = sorted(
             leave_history_by_employee.get((company, employee), []),
@@ -465,6 +500,14 @@ def build_directory(
             ),
             reverse=True,
         )
+        movement_history = [
+            {"period": period, "row_count": count}
+            for period, count in sorted(
+                movement_periods_by_employee.get((company, employee), {}).items(),
+                reverse=True,
+            )
+        ]
+        movement_row_count = sum(item["row_count"] for item in movement_history)
         records.append({
             "company_code": company,
             "legajo": employee,
@@ -483,12 +526,19 @@ def build_directory(
                 "event_count": absence["count"],
                 "latest_date": absence["latest_start"],
             },
+            "absence_history": absence_history,
             "leave": {
                 "event_count": leave["count"],
                 "latest_start_date": leave["latest_start"],
                 "latest_end_date": leave["latest_end"],
             },
             "leave_history": leave_history,
+            "movement": {
+                "row_count": movement_row_count,
+                "period_count": len(movement_history),
+                "latest_period": movement_history[0]["period"] if movement_history else None,
+            },
+            "movement_history": movement_history,
             "position_observation": position_observation_by_employee.get((company, employee)),
         })
 
@@ -521,6 +571,8 @@ def build_directory(
             "quarantined_absence_events": quarantine_event_counts["ausencia"],
             "valid_leave_events": valid_event_counts["licencia"],
             "quarantined_leave_events": quarantine_event_counts["licencia"],
+            "valid_movement_rows": valid_event_counts["legamov"],
+            "quarantined_movement_rows": quarantine_event_counts["legamov"],
             "valid_position_observation_rows": directory_quality_counts["valid_position_observation_rows"],
             "blank_position_observation_rows": directory_quality_counts["blank_position_observation_rows"],
             "quarantined_position_observation_rows": directory_quality_counts[

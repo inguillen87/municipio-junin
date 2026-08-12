@@ -6,7 +6,7 @@
   var MAX_LENGTH = 1200;
   var REQUEST_TIMEOUT_MS = 18000;
   var DIRECTORY_ENDPOINT = '/api/grh-directory';
-  var DIRECTORY_SCHEMA = 'grh-directory-v1';
+  var DIRECTORY_SCHEMA = 'grh-directory-v2';
   var DIRECTORY_SEARCH_LIMIT = 8;
   var DIRECTORY_DEBOUNCE_MS = 280;
   var DIRECTORY_TIMEOUT_MS = 10000;
@@ -339,6 +339,8 @@
     if (!directory || typeof directory !== 'object') return;
     if (directory.status === 'matched' && directory.person && typeof directory.person === 'object') {
       appendLeaveHistory(body, directory.person.leaveHistory);
+      appendAbsenceHistory(body, directory.person.absenceHistory);
+      appendMovementHistory(body, directory.person.movementHistory);
       return;
     }
     if (directory.status !== 'multiple_matches') return;
@@ -371,6 +373,45 @@
       var range = event.startDate + (dateValue(event.endDate) ? ' → ' + event.endDate : '');
       item.appendChild(createElement('strong', '', range));
       item.appendChild(createElement('span', '', Number.isSafeInteger(event.days) ? event.days + ' días' : 'Duración no informada'));
+      grid.appendChild(item);
+    });
+    if (!grid.childElementCount) return;
+    section.appendChild(grid);
+    body.appendChild(section);
+  }
+
+  function appendAbsenceHistory(body, history) {
+    if (!history || typeof history !== 'object') return;
+    var events = safeArray(history.items).slice(0, 6);
+    if (!events.length) return;
+    var section = createElement('section', 'directory-history');
+    section.appendChild(createElement('h4', '', 'Ausencias históricas · últimas ' + events.length + ' de ' + String(history.total || events.length)));
+    var grid = createElement('div', 'directory-history-grid');
+    events.forEach(function(event) {
+      if (!event || typeof event !== 'object' || !dateValue(event.date)) return;
+      var item = createElement('div', 'directory-history-item');
+      item.appendChild(createElement('strong', '', event.date));
+      item.appendChild(createElement('span', '', Number.isSafeInteger(event.days) ? event.days + ' días informados' : 'Días no informados'));
+      grid.appendChild(item);
+    });
+    if (!grid.childElementCount) return;
+    section.appendChild(grid);
+    body.appendChild(section);
+  }
+
+  function appendMovementHistory(body, history) {
+    if (!history || typeof history !== 'object') return;
+    var periods = safeArray(history.items).slice(0, 6);
+    if (!periods.length) return;
+    var section = createElement('section', 'directory-history');
+    section.appendChild(createElement('h4', '', 'Movimientos fuente · últimos ' + periods.length + ' de ' + String(history.total || periods.length) + ' períodos'));
+    var grid = createElement('div', 'directory-history-grid');
+    periods.forEach(function(event) {
+      if (!event || typeof event !== 'object' || typeof event.period !== 'string' ||
+          !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(event.period) || !Number.isSafeInteger(event.rowCount) || event.rowCount < 1) return;
+      var item = createElement('div', 'directory-history-item');
+      item.appendChild(createElement('strong', '', event.period));
+      item.appendChild(createElement('span', '', event.rowCount + ' filas de legamov'));
       grid.appendChild(item);
     });
     if (!grid.childElementCount) return;
@@ -459,7 +500,7 @@
     if (value === null) return true;
     if (!exactObjectKeys(value, ['label', 'observedDate', 'observedPeriod', 'status', 'sourceTable']) ||
         !safeText(value.label, 200, false) || !validDirectoryDate(value.observedDate) || value.observedDate === null ||
-        typeof value.observedPeriod !== 'string' || !/^\d{4}-\d{2}$/.test(value.observedPeriod) ||
+        typeof value.observedPeriod !== 'string' || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(value.observedPeriod) ||
         value.observedDate.slice(0, 7) !== value.observedPeriod ||
         !['historical_observation', 'source_future_effective'].includes(value.status) ||
         value.sourceTable !== 'histolegajo') return false;
@@ -479,17 +520,30 @@
       value.latestLeaveEndDate >= value.latestLeaveStartDate);
   }
 
+  function validDirectoryMovement(value, snapshotAsOf) {
+    if (!exactObjectKeys(value, ['rowCount', 'periodCount', 'latestPeriod']) ||
+        !Number.isSafeInteger(value.rowCount) || value.rowCount < 0 ||
+        !Number.isSafeInteger(value.periodCount) || value.periodCount < 0 ||
+        (value.latestPeriod !== null && (typeof value.latestPeriod !== 'string' ||
+          !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(value.latestPeriod) || value.latestPeriod > snapshotAsOf.slice(0, 7)))) {
+      return false;
+    }
+    return (value.periodCount === 0) === (value.latestPeriod === null) &&
+      (value.rowCount === 0) === (value.periodCount === 0);
+  }
+
   function validDirectoryItem(item, snapshotAsOf) {
     return exactObjectKeys(item, [
-      'companyCode', 'legajo', 'displayName', 'sector', 'organization', 'position', 'positionObservation',
-      'category', 'agreement', 'events'
+      'companyCode', 'legajo', 'displayName', 'sector', 'costCenter', 'organization', 'position',
+      'positionObservation', 'category', 'agreement', 'events', 'movement'
     ]) && Number.isSafeInteger(item.companyCode) && item.companyCode > 0 &&
       Number.isSafeInteger(item.legajo) && item.legajo > 0 && safeText(item.displayName, 200, true) &&
-      validDirectoryDimension(item.sector) && validDirectoryDimension(item.organization) &&
+      validDirectoryDimension(item.sector) && validDirectoryDimension(item.costCenter) &&
+      validDirectoryDimension(item.organization) &&
       validDirectoryPosition(item.position) &&
       validDirectoryPositionObservation(item.positionObservation, snapshotAsOf) &&
       validDirectoryDimension(item.category) && validDirectoryDimension(item.agreement) &&
-      validDirectoryEvents(item.events, snapshotAsOf);
+      validDirectoryEvents(item.events, snapshotAsOf) && validDirectoryMovement(item.movement, snapshotAsOf);
   }
 
   function validDirectoryFacetRow(row, name) {
@@ -505,7 +559,7 @@
   }
 
   function validDirectoryFacets(value) {
-    var names = ['sectors', 'organizations', 'positions', 'positionObservations', 'categories', 'agreements'];
+    var names = ['sectors', 'costCenters', 'organizations', 'positions', 'positionObservations', 'categories', 'agreements'];
     if (!exactObjectKeys(value, names)) return false;
     return names.every(function(name) {
       if (!Array.isArray(value[name]) || value[name].length > 5000) return false;

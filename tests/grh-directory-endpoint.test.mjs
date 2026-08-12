@@ -60,7 +60,7 @@ function pilotEnvironment(allowlist) {
 
 function artifactFixture() {
   return {
-    schema_version: 'grh-directory-v1',
+    schema_version: 'grh-directory-v2',
     source: {
       canonical_system: 'GRH Junín',
       file: 'grh_junin.backup_2026080615_plataforma.sql.gz',
@@ -80,8 +80,10 @@ function artifactFixture() {
         cargo: 1,
         catego: 1,
         convenio: 1,
+        costos: 1,
         histolegajo: 1,
         legajo: 1,
+        legamov: 2,
         licencia: 1,
         organiza: 1,
         persona: 1,
@@ -97,6 +99,8 @@ function artifactFixture() {
       quarantined_absence_events: 0,
       valid_leave_events: 1,
       quarantined_leave_events: 0,
+      valid_movement_rows: 2,
+      quarantined_movement_rows: 0,
       valid_position_observation_rows: 1,
       blank_position_observation_rows: 0,
       quarantined_position_observation_rows: 0,
@@ -108,6 +112,7 @@ function artifactFixture() {
       legajo: 1001,
       display_name: 'Persona de prueba',
       sector: { code: 7, label: 'Sector' },
+      cost_center: { code: 12, label: 'Centro de costo' },
       organization: { code: 5, label: 'Organización' },
       position: {
         code: 4,
@@ -118,8 +123,14 @@ function artifactFixture() {
       category: { code: 3, label: 'Categoría' },
       agreement: { code: 2, label: 'Convenio' },
       absence: { event_count: 2, latest_date: '2026-07-01' },
+      absence_history: [
+        { date: '2026-07-01', days: 2 },
+        { date: '2026-06-01', days: null },
+      ],
       leave: { event_count: 1, latest_start_date: '2026-05-01', latest_end_date: '2026-05-10' },
       leave_history: [{ start_date: '2026-05-01', end_date: '2026-05-10', days: 10 }],
+      movement: { row_count: 2, period_count: 1, latest_period: '2026-07' },
+      movement_history: [{ period: '2026-07', row_count: 2 }],
       position_observation: {
         label: 'Puesto observado',
         observed_date: '2026-08-31',
@@ -134,6 +145,7 @@ function artifactFixture() {
 function facetFixture() {
   return {
     sectors: [{ code: 7, label: 'Sector', count: 1 }],
+    costCenters: [{ code: 12, label: 'Centro de costo', count: 1 }],
     organizations: [{ code: 5, label: 'Organizacion', count: 1 }],
     positions: [{ code: 4, label: 'Cargo', count: 1 }],
     positionObservations: [{ label: 'Puesto observado', count: 1, status: 'source_future_effective' }],
@@ -142,9 +154,26 @@ function facetFixture() {
   };
 }
 
+function v2RowFields({ detail = false } = {}) {
+  return {
+    cost_center_code: 12,
+    cost_center_label: 'Centro de costo',
+    movement_row_count: 2,
+    movement_period_count: 1,
+    latest_movement_period: '2026-07',
+    ...(detail ? {
+      absence_history: [
+        { date: '2026-07-01', days: 2 },
+        { date: '2026-06-01', days: null },
+      ],
+      movement_history: [{ period: '2026-07', row_count: 2 }],
+    } : {}),
+  };
+}
+
 function responseFixture({ mode = 'list' } = {}) {
   return {
-    schemaVersion: 'grh-directory-v1',
+    schemaVersion: 'grh-directory-v2',
     source: {
       canonicalSystem: 'GRH Junín',
       sourceFile: 'grh_junin.backup_2026080615_plataforma.sql.gz',
@@ -170,6 +199,7 @@ function responseFixture({ mode = 'list' } = {}) {
       legajo: 1001,
       displayName: 'Persona de prueba',
       sector: { code: 7, label: 'Sector' },
+      costCenter: { code: 12, label: 'Centro de costo' },
       organization: { code: 5, label: 'Organización' },
       position: {
         code: 4,
@@ -193,11 +223,22 @@ function responseFixture({ mode = 'list' } = {}) {
         latestLeaveStartDate: '2026-05-01',
         latestLeaveEndDate: '2026-05-10',
       },
+      movement: { rowCount: 2, periodCount: 1, latestPeriod: '2026-07' },
       ...(mode === 'detail' ? {
+        absenceHistory: {
+          total: 2,
+          limit: 24,
+          items: [{ date: '2026-07-01', days: 2 }, { date: '2026-06-01', days: null }],
+        },
         leaveHistory: {
           total: 1,
           limit: 24,
           items: [{ startDate: '2026-05-01', endDate: '2026-05-10', days: 10 }],
+        },
+        movementHistory: {
+          total: 1,
+          limit: 24,
+          items: [{ period: '2026-07', rowCount: 2 }],
         },
       } : {}),
     }],
@@ -210,7 +251,7 @@ function withQuietErrors(callback) {
   return Promise.resolve().then(callback).finally(() => { console.error = original; });
 }
 
-test('the private artifact and API response use exact grh-directory-v1 contracts', () => {
+test('the private artifact and API response use exact grh-directory-v2 contracts', () => {
   const artifact = artifactFixture();
   const response = responseFixture();
   assert.equal(inspectGrhDirectoryArtifact(artifact).ok, true);
@@ -238,18 +279,23 @@ test('query parsing is exact and SQL keeps hostile search text in parameters', (
     page: '2',
     limit: '20',
     sector: '7',
+    costCenter: '12',
     positionObservation: 'Puesto observado',
     hasAbsence: 'true',
+    hasMovement: 'true',
   });
   assert.equal(parsed.page, 2);
   assert.equal(parsed.limit, 20);
   assert.equal(parsed.sector, 7);
+  assert.equal(parsed.costCenter, 12);
   const built = buildGrhDirectorySql('tenant-test', parsed);
   assert.doesNotMatch(built.sql, /O'Brien/);
   assert.ok(built.values.some(value => String(value).includes("o'brien")));
   assert.match(built.sql, /p\.sector_code = \$\d+/);
+  assert.match(built.sql, /p\.cost_center_code = \$\d+/);
   assert.match(built.sql, /p\.position_observation_label = \$\d+/);
   assert.match(built.sql, /absence_event_count > 0/);
+  assert.match(built.sql, /movement_row_count > 0/);
   assert.match(built.sql, /translate\(lower\(COALESCE\(p\.display_name/);
   assert.throws(() => parseGrhDirectoryQuery({ unknown: '1' }), /directorio/i);
   assert.throws(() => parseGrhDirectoryQuery({ company: '101' }), /directorio/i);
@@ -317,6 +363,7 @@ test('the store maps normalized rows without exposing excluded fields', async ()
             leave_event_count: 1,
             latest_leave_start_date: '2026-05-01',
             latest_leave_end_date: '2026-05-10',
+            ...v2RowFields(),
           }],
         }],
       };
@@ -370,6 +417,7 @@ test('detail mode returns up to 24 real leave events without causes or amounts',
           leave_event_count: 2,
           latest_leave_start_date: '2009-05-01',
           latest_leave_end_date: '2009-05-10',
+          ...v2RowFields({ detail: true }),
           leave_history: [
             { start_date: '2009-05-01', end_date: '2009-05-10', days: 10 },
             { start_date: '2008-02-01', end_date: '2008-02-02', days: 2 },
@@ -419,7 +467,7 @@ test('the endpoint is GET-only, no-store and does not authenticate non-GET reque
   assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
   assert.equal(response.headers['x-content-type-options'], 'nosniff');
   assert.equal(response.headers.vary, 'Authorization');
-  assert.equal(response.headers['x-municontrol-contract'], 'grh-directory-v1');
+  assert.equal(response.headers['x-municontrol-contract'], 'grh-directory-v2');
   assert.equal(authenticated, false);
 });
 
@@ -532,7 +580,14 @@ test('publication supports caller-owned transactions without committing or rolli
           return { rows: [] };
         }
         if (text.includes('AS people') && text.includes('AS dimensions')) {
-          return { rows: [{ people: 1, dimensions: 7, leave_events: 1, position_observations: 1 }] };
+          return { rows: [{
+            people: 1,
+            dimensions: 8,
+            absence_events: 2,
+            leave_events: 1,
+            movement_periods: 1,
+            position_observations: 1,
+          }] };
         }
         return { rows: [] };
       },
@@ -551,6 +606,8 @@ test('publication supports caller-owned transactions without committing or rolli
   assert.equal(externalCommands.includes('COMMIT'), false);
   assert.equal(externalCommands.includes('ROLLBACK'), false);
   assert.ok(externalCommands.some(sql => sql.includes('grh_directory_leave_events')));
+  assert.ok(externalCommands.some(sql => sql.includes('grh_directory_absence_events')));
+  assert.ok(externalCommands.some(sql => sql.includes('grh_directory_movement_periods')));
 
   const managedCommands = [];
   await publishGrhDirectory(fakeClient(managedCommands), 'tenant-test', artifactFixture());
@@ -569,8 +626,11 @@ test('category dimensions remain distinct by agreement during publication', () =
   second.agreement = { code: 9, label: 'Otro convenio' };
   second.category = { code: 3, label: 'Categoria de otro convenio' };
   second.absence = { event_count: 0, latest_date: null };
+  second.absence_history = [];
   second.leave = { event_count: 0, latest_start_date: null, latest_end_date: null };
   second.leave_history = [];
+  second.movement = { row_count: 0, period_count: 0, latest_period: null };
+  second.movement_history = [];
   artifact.records.push(second);
   const categories = flattenGrhDirectoryArtifact(artifact).dimensions
     .filter(item => item.dimension === 'category');

@@ -333,10 +333,24 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     const result = await page.evaluate(() => ({
       snapshot: document.querySelector('#snapshotChip')?.textContent.trim(),
       participants: document.querySelector('#kpiParticipants')?.textContent.trim(),
+      participantsNote: document.querySelector('#kpiParticipantsNote')?.textContent.trim(),
       quality: document.querySelector('#kpiQuality')?.textContent.trim(),
+      qualityNote: document.querySelector('#kpiQualityNote')?.textContent.trim(),
+      comparisonStatus: document.querySelector('#kpiCrossStatus')?.textContent.trim(),
+      comparisonStatusNote: document.querySelector('#kpiCrossStatusNote')?.textContent.trim(),
       cross: document.querySelector('#kpiCrossScore')?.textContent.trim(),
       agreement: document.querySelector('#kpiAgreement')?.textContent.trim(),
       coverage: document.querySelector('#kpiCoverage')?.textContent.trim(),
+      rows: document.querySelector('#kpiRows')?.textContent.trim(),
+      rowsNote: document.querySelector('#kpiRowsNote')?.textContent.trim(),
+      rowsContext: document.querySelector('#kpiRowsContext')?.textContent.trim(),
+      controlDetailsOpen: document.querySelector('#sourceControlDetails')?.open,
+      controlDetailsSummary: document.querySelector('#sourceControlDetails summary')?.textContent.trim(),
+      technicalDetailVisible: document.querySelector('.exec-control-details-body')?.getClientRects().length > 0,
+      controlCtas: Array.from(document.querySelectorAll('.exec-control-action:not([hidden])')).map(node => ({
+        href: node.getAttribute('href'),
+        text: node.textContent.trim(),
+      })),
       sourceCount: document.querySelector('#sourceCountChip')?.textContent.trim(),
       decisionTitle: document.querySelector('#decisionBriefTitle')?.textContent.trim(),
       decisionStatus: document.querySelector('#decisionBriefStatus')?.textContent.trim(),
@@ -361,6 +375,8 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       theme: document.documentElement.getAttribute('data-theme'),
       decisionAnimationDuration: getComputedStyle(document.querySelector('.exec-decision-priority')).animationDuration,
       closePrivacy: document.querySelector('#monthlyCloseBrief')?.dataset.privacyThreshold,
+      closeTitle: document.querySelector('#monthlyCloseTitle')?.textContent.trim(),
+      closeSummary: document.querySelector('.exec-close-summary')?.textContent.replace(/\s+/g, ' ').trim(),
       closePeriod: document.querySelector('#closePeriodBadge')?.textContent.trim(),
       closeParticipants: document.querySelector('#closeParticipants')?.textContent.trim(),
       closeControl: document.querySelector('#closeControlStatus')?.textContent.trim(),
@@ -374,6 +390,8 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       closeExactnessDelta: document.querySelector('#closeExactnessDelta')?.textContent.trim(),
       closeAgreementDelta: document.querySelector('#closeAgreementDelta')?.textContent.trim(),
       closeBriefText: document.querySelector('#monthlyCloseBrief')?.textContent.replace(/\s+/g, ' ').trim(),
+      closeTechnicalOpen: document.querySelector('.exec-close-technical')?.open,
+      closeTechnicalVisible: document.querySelector('.exec-close-technical-grid')?.getClientRects().length > 0,
       globalLabels: Array.from(document.querySelectorAll('.exec-stat-label')).map(node => node.textContent.trim()),
       kpiCount: document.querySelectorAll('.exec-stat').length,
       chartCount: document.querySelectorAll('#calculationChart svg').length,
@@ -383,29 +401,44 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       sectorProtected: document.querySelector('#sectorRanks [data-privacy-status="protected_aggregate"] .exec-rank-label')?.textContent.trim(),
       sourceTitles: Array.from(document.querySelectorAll('#sourceList .exec-source-row strong')).map(node => node.textContent.trim()),
       sourceText: document.querySelector('#sourceList')?.textContent.replace(/\s+/g, ' ').trim(),
+      defaultText: document.querySelector('#dataViews')?.innerText.replace(/\s+/g, ' ').trim(),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       errorVisible: !document.querySelector('#loadError')?.hidden,
     }));
 
     assert.equal(result.snapshot, '6 ago 2026');
     assert.equal(result.participants, '856');
-    assert.equal(result.quality, '88,99/100');
+    assert.equal(result.participantsNote, 'Legajos que aparecen al menos una vez en los cálculos de jul 2026.');
+    assert.equal(result.quality, '88,99%');
+    assert.equal(result.qualityNote, '20.534 registros apartados para revisión.');
+    assert.equal(result.comparisonStatus, 'Requiere revisión');
+    assert.match(result.comparisonStatusNote, /encontró diferencias.+antes de decidir/i);
     assert.equal(result.cross, '63,9%');
     assert.equal(result.agreement, '19,0%');
     assert.equal(result.coverage, '97,8%');
+    assert.match(result.rows, /^6,57\sM$/);
+    assert.equal(result.rowsNote, '6.573.057 registros · 257 tablas.');
+    assert.equal(result.rowsContext, 'Respaldo del 6 ago 2026');
+    assert.equal(result.controlDetailsOpen, false);
+    assert.equal(result.controlDetailsSummary, 'Cómo se controlaron los datos');
+    assert.equal(result.technicalDetailVisible, false, 'technical reconciliation metrics must stay collapsed by default');
+    assert.deepEqual(result.controlCtas, [
+      { href: 'control.html', text: 'Abrir Calidad de datos' },
+      { href: 'hacienda.html', text: 'Revisar en Hacienda' },
+    ]);
     assert.equal(result.sourceCount, '4/4');
-    assert.equal(result.decisionTitle, 'Qué requiere revisión ahora');
+    assert.equal(result.decisionTitle, 'Revisiones recomendadas');
     assert.equal(result.decisionStatus, 'Revisión prioritaria');
-    assert.equal(result.decisionBoundary, 'k≥10 · snapshot 6 ago 2026');
+    assert.equal(result.decisionBoundary, 'Datos protegidos · respaldo del 6 ago 2026');
     assert.equal(result.decisionAgreement, '6,5%');
     assert.equal(result.decisionChange, '+5,8 pp');
-    assert.equal(result.decisionQuality, '88,99/100');
-    assert.equal(result.decisionQualityNote, 'Snapshot · 20.534 filas temporales en cuarentena.');
+    assert.equal(result.decisionQuality, '88,99%');
+    assert.equal(result.decisionQualityNote, 'Todo el respaldo · 20.534 registros apartados para revisión.');
     assert.equal(result.decisionPriorityCount, 3);
     assert.deepEqual(result.decisionPriorityTitles, [
-      'El control cross-source requiere revisión',
-      'La cuarentena temporal sigue abierta',
-      'La lectura no es operativa en vivo',
+      'Hay diferencias entre las dos fuentes',
+      'Hay registros con fechas para revisar',
+      'Los datos no se actualizan en tiempo real',
     ]);
     assert.deepEqual(result.decisionCtas, ['hacienda.html', 'control.html']);
     assert.equal(result.decisionContract, 'grh-decision-brief-v1');
@@ -416,8 +449,8 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.equal(result.decisionPriorityTag, 'OL');
     assert.equal(result.theme, 'dark');
     assert.ok(result.decisionTop >= 0 && result.decisionTop < viewport.height, `${viewport.name} decision brief heading must start above the fold`);
-    assert.match(result.decisionText, /snapshot completo.+evidencia separada/i);
-    assert.doesNotMatch(result.decisionText, /(?:\$|\bARS\b|\bCBU\b|\bCUIL\b|\bDNI\b|nombre|apellido|companyCode|sourceCode|\blabel\b|concepto|u\. fuente|importe|causa|responsable|plazo|pago|contable)/i);
+    assert.match(result.decisionText, /comparación entre las dos fuentes.+decisión administrativa/i);
+    assert.doesNotMatch(result.decisionText, /(?:\$|\bARS\b|\bCBU\b|\bCUIL\b|\bDNI\b|nombre|apellido|companyCode|sourceCode|\blabel\b|concepto|u\. fuente|importe|responsable|plazo)/i);
     const conservativeDarkBackground = 'rgb(31, 25, 40)';
     assert.ok(
       contrastRatio(result.decisionEyebrowColor, conservativeDarkBackground) >= 4.5,
@@ -432,36 +465,61 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       `reduced motion must collapse decision animations: ${result.decisionAnimationDuration}`,
     );
     assert.equal(result.closePrivacy, '10');
-    assert.equal(result.closePeriod, 'jul 2026 · k≥10');
+    assert.equal(result.closeTitle, 'Qué muestran los cálculos de julio');
+    assert.match(result.closeSummary, /último mes disponible.+no confirma pagos.+padrón de personal/i);
+    assert.equal(result.closePeriod, 'jul 2026');
     assert.equal(result.closeParticipants, '856');
-    assert.equal(result.closeControl, 'Dentro de tolerancia');
-    assert.equal(result.closeControlNote, 'No exacta; permanece dentro del umbral.');
+    assert.equal(result.closeControl, 'Dentro del margen esperado');
+    assert.equal(result.closeControlNote, 'Las sumas no son idénticas, pero la diferencia está dentro del margen definido.');
     assert.equal(result.closeCoverage, '100,0%');
     assert.equal(result.closeExactness, '40,0%');
     assert.equal(result.closeAgreement, '6,5%');
-    assert.equal(result.closeComparison, 'jun 2026 → jul 2026');
+    assert.equal(result.closeComparison, 'jun 2026 frente a jul 2026');
     assert.equal(result.closeParticipantDelta, '+1');
     assert.equal(result.closeCoverageDelta, '0,0 pp');
     assert.equal(result.closeExactnessDelta, '0,0 pp');
     assert.equal(result.closeAgreementDelta, '+5,8 pp');
-    assert.equal(result.globalLabels.includes('Score cross-source global'), true);
-    assert.equal(result.globalLabels.includes('Acuerdo de valores global'), true);
-    assert.equal(result.globalLabels.includes('Cobertura global de corridas'), true);
-    assert.doesNotMatch(result.closeBriefText, /(?:\$|\bARS\b|\bCBU\b|\bCUIL\b|\bDNI\b|nombre|apellido|companyCode|sourceCode|\blabel\b|concepto|u\. fuente|causa|pago|contable)/i);
-    assert.equal(result.kpiCount, 6);
+    assert.deepEqual(result.globalLabels, [
+      'Personas incluidas en el cálculo de julio',
+      'Datos listos para analizar',
+      'Comparación entre las dos fuentes',
+      'Base analizada',
+    ]);
+    assert.equal(result.closeTechnicalOpen, false);
+    assert.equal(result.closeTechnicalVisible, false, 'monthly technical metrics must stay collapsed by default');
+    assert.doesNotMatch(result.closeBriefText, /(?:\$|\bARS\b|\bCBU\b|\bCUIL\b|\bDNI\b|companyCode|sourceCode|\blabel\b|u\. fuente)/i);
+    assert.equal(result.kpiCount, 4);
     assert.equal(result.chartCount, 1);
     assert.equal(result.costRows, 6);
     assert.equal(result.sectorRows, 6);
     assert.equal(result.costProtected, 'Otros (celdas protegidas)');
     assert.equal(result.sectorProtected, 'Otros (celdas protegidas)');
-    assert.equal(result.sourceTitles.includes('Control cross-source global con diferencias'), true);
-    assert.match(result.sourceText, /snapshot completo/i);
+    assert.equal(result.sourceTitles.includes('Comparación entre fuentes con diferencias'), true);
+    assert.match(result.sourceText, /respaldo completo/i);
     assert.doesNotMatch(result.sourceText, /material_differences_detected|\breconciled\b/);
+    assert.doesNotMatch(result.defaultText, /score cross-source|cross-source|acuerdo de valores|corridas|snapshot|extracto|gobernad[oa]|k≥10|totpago/i);
+    assert.doesNotMatch(result.defaultText, /285 de 589/i, 'technical reconciliation values must not appear in the default reading');
     assert.equal(result.overflow, 0, `${viewport.name} must not overflow horizontally`);
     assert.equal(result.errorVisible, false);
     assert.deepEqual(consoleErrors, []);
     assert.deepEqual(externalRequests, []);
     assert.deepEqual(rawContractRequests, []);
+
+    await page.click('#sourceControlDetails summary');
+    const controlDetail = await page.evaluate(() => ({
+      open: document.querySelector('#sourceControlDetails')?.open,
+      visible: document.querySelector('.exec-control-details-body')?.getClientRects().length > 0,
+      text: document.querySelector('.exec-control-details-body')?.innerText.replace(/\s+/g, ' ').trim(),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ctaHeights: Array.from(document.querySelectorAll('.exec-control-action:not([hidden])')).map(node => node.getBoundingClientRect().height),
+    }));
+    assert.equal(controlDetail.open, true);
+    assert.equal(controlDetail.visible, true);
+    assert.match(controlDetail.text, /285 de 589 grupos comparados coincidieron por completo/i);
+    assert.match(controlDetail.text, /Valores que coinciden 19,0%/i);
+    assert.match(controlDetail.text, /no demuestra que un sueldo haya sido pagado, transferido o contabilizado/i);
+    assert.equal(controlDetail.ctaHeights.every(height => height >= 44), true);
+    assert.equal(controlDetail.overflow, 0, `${viewport.name} opened control detail must not overflow horizontally`);
 
     const firstCta = page.locator('#decisionPriorities .exec-decision-cta').first();
     await firstCta.focus();
@@ -810,8 +868,8 @@ test('privacy_protected comparison copy refers only to the previous month after 
   assert.equal(result.errorHidden, true);
   assert.equal(result.agreement, '6,5%');
   assert.equal(result.change, 'Protegido');
-  assert.equal(result.note, 'El mes anterior no es publicable bajo k≥10.');
-  assert.equal(result.closeComparison, 'Comparación no publicable');
+  assert.equal(result.note, 'El mes anterior no puede mostrarse porque el grupo es demasiado pequeño.');
+  assert.equal(result.closeComparison, 'Comparación no disponible');
   await context.close();
 });
 
@@ -833,6 +891,7 @@ test('global reconciliation copy stays independent from a monthly agreement diff
   await page.waitForSelector('#executiveDashboard[aria-busy="false"]');
   const result = await page.evaluate(() => ({
     globalScore: document.querySelector('#kpiCrossScore')?.textContent.trim(),
+    comparisonStatus: document.querySelector('#kpiCrossStatus')?.textContent.trim(),
     monthlyAgreement: document.querySelector('#decisionAgreement')?.textContent.trim(),
     decisionStatus: document.querySelector('#decisionBriefStatus')?.textContent.trim(),
     priorityTitles: Array.from(document.querySelectorAll('#decisionPriorities strong')).map(node => node.textContent.trim()),
@@ -841,13 +900,14 @@ test('global reconciliation copy stays independent from a monthly agreement diff
     sourceText: document.querySelector('#sourceList')?.textContent.replace(/\s+/g, ' ').trim(),
   }));
   assert.equal(result.globalScore, '100,0%');
+  assert.equal(result.comparisonStatus, 'Sin diferencias relevantes');
   assert.equal(result.monthlyAgreement, '6,5%');
   assert.equal(result.decisionStatus, 'Revisión recomendada');
-  assert.equal(result.priorityTitles.includes('El control cross-source requiere revisión'), false);
+  assert.equal(result.priorityTitles.includes('Hay diferencias entre las dos fuentes'), false);
   assert.deepEqual(result.ctas, ['control.html']);
-  assert.equal(result.sourceTitles.includes('Control cross-source global conciliado'), true);
-  assert.equal(result.sourceTitles.includes('Control cross-source global con diferencias'), false);
-  assert.match(result.sourceText, /conciliación global cerrada/i);
+  assert.equal(result.sourceTitles.includes('Comparación entre fuentes sin diferencias relevantes'), true);
+  assert.equal(result.sourceTitles.includes('Comparación entre fuentes con diferencias'), false);
+  assert.match(result.sourceText, /no encontró diferencias relevantes/i);
   assert.doesNotMatch(result.sourceText, /material_differences_detected|\breconciled\b/);
   await context.close();
 });
@@ -916,6 +976,10 @@ test('decision brief CTAs are derived only from the current validated navigation
           nodes.map(node => node.getAttribute('href'))
         );
         assert.deepEqual(hrefs, expectedHrefs, name);
+        const controlHrefs = await page.locator('.exec-control-action:not([hidden])').evaluateAll(nodes =>
+          nodes.map(node => node.getAttribute('href')).sort()
+        );
+        assert.deepEqual(controlHrefs, [...expectedHrefs].sort(), `${name} control detail`);
         assert.equal(await page.locator('#decisionPriorities .exec-decision-priority').count(), 3, name);
         assert.equal(requestLog.filter(item => item.contract === 'decision').length, 1, name);
         await context.close();

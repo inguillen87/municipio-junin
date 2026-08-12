@@ -10,8 +10,11 @@ import { gunzipSync } from 'node:zlib';
 import {
   BOOTSTRAP_INTERNAL_STAGES,
   bootstrapInternalDiagnostic,
+  inspectBootstrapDatabaseTargets,
   renderGrhDirectoryBootstrapFunction,
 } from '../scripts/grh-directory-bootstrap-function-template.mjs';
+
+import { fingerprintDatabaseTarget } from '../api/lib/database-target-fingerprint.js';
 
 import {
   GRH_DIRECTORY_SNAPSHOT_ACTION,
@@ -41,7 +44,6 @@ const previewSourceGitSha = 'e'.repeat(40);
 const previewBranch = 'codex/grh-ledger-release-gates';
 const databaseTargetFingerprintSha256 = 'a'.repeat(64);
 const stableDatabaseTargetFingerprintSha256 = 'b'.repeat(64);
-const databaseTargetFingerprintMarker = '__MUNICTRL_DATABASE_TARGET__';
 const previewDeploymentId = 'dpl_preview_candidate';
 const previewDeploymentUrl = 'https://municipio-junin-preview-candidate.vercel.app';
 const uuids = Object.freeze([
@@ -300,7 +302,6 @@ async function makeFixture({ mode = 'encrypted_snapshot' } = {}) {
     'api/lib/database-target-fingerprint.js',
     'shared/database-url-policy.cjs',
     'shared/published-demo-policy.cjs',
-    'scripts/print-database-target-fingerprint.mjs',
     'vercel.json',
   ]) {
     const target = path.join(worktree, relative);
@@ -359,7 +360,6 @@ async function makePreviewFixture({
     'api/lib/database-target-fingerprint.js',
     'shared/database-url-policy.cjs',
     'shared/published-demo-policy.cjs',
-    'scripts/print-database-target-fingerprint.mjs',
     'vercel.json',
   ]) {
     const destination = path.join(worktree, relative);
@@ -534,6 +534,14 @@ function bootstrapAppliedBody(state) {
     body.databaseTargetFingerprintSha256 = state.databaseTargetFingerprintSha256;
   }
   return body;
+}
+
+function bootstrapPreflightBody(state) {
+  return {
+    ok: true,
+    code: 'GRH_DIRECTORY_BOOTSTRAP_PREFLIGHT_OK',
+    databaseTargetFingerprintSha256: state.databaseTargetFingerprintSha256,
+  };
 }
 
 test('prepare emits a private gzip envelope, snapshot key, and explicit encrypted-snapshot endpoint', async () => {
@@ -779,17 +787,62 @@ test('preview prepare is DDL-only and pins the attached worktree to the exact re
     assert.match(endpoint, /import \{ fingerprintDatabaseTarget \} from '\.\/lib\/database-target-fingerprint\.js';/);
     assert.match(endpoint, new RegExp(databaseTargetFingerprintSha256));
     assert.match(endpoint, /process\.env\.DIRECT_URL/);
-    const fingerprintCheck = endpoint.indexOf('fingerprintDatabaseTarget(process.env.DIRECT_URL)');
+    assert.match(endpoint, /process\.env\.DATABASE_URL/);
+    const runtimeGuard = endpoint.indexOf('const databaseTargetFingerprintSha256 = requireRuntimeDatabaseTargets()');
+    const directFingerprint = endpoint.indexOf('directFingerprint = fingerprintImpl(directUrl)');
+    const pooledFingerprint = endpoint.indexOf('databaseFingerprint = fingerprintImpl(databaseUrl)');
+    const databaseInspection = endpoint.indexOf('database = inspectDatabaseUrl(process.env.DIRECT_URL');
     const clientConstruction = endpoint.indexOf('new Client');
     const connect = endpoint.indexOf('await client.connect()');
     const migration = endpoint.indexOf('await client.query(MIGRATION_SQL)');
-    assert.ok(fingerprintCheck >= 0, 'the endpoint must fingerprint DIRECT_URL');
-    assert.ok(clientConstruction > fingerprintCheck, 'fingerprint must be checked before Client construction');
-    assert.ok(connect > fingerprintCheck, 'fingerprint must be checked before connecting');
+    assert.ok(directFingerprint >= 0, 'the endpoint must fingerprint DIRECT_URL');
+    assert.ok(pooledFingerprint > directFingerprint, 'the endpoint must also fingerprint DATABASE_URL');
+    assert.ok(runtimeGuard > pooledFingerprint, 'the runtime guard must use the dual-fingerprint inspector');
+    assert.ok(databaseInspection > runtimeGuard, 'both targets must be checked before URL inspection');
+    assert.ok(clientConstruction > databaseInspection, 'both targets must be checked before Client construction');
+    assert.ok(connect > clientConstruction, 'the client must be constructed before connecting');
     assert.ok(migration > connect, 'migration remains after the verified connection');
+    assert.match(endpoint, /action === 'preflight'/);
+    assert.match(endpoint, /GRH_DIRECTORY_BOOTSTRAP_PREFLIGHT_OK/);
     assert.doesNotMatch(endpoint, /postgres(?:ql)?:\/\/[^'"\s]+/i);
   } finally {
     await fixture.cleanup();
+  }
+});
+
+test('dual database target guard accepts one Neon child via direct and pooled URLs and fails closed otherwise', () => {
+  const childDirect =
+    'postgresql://preview_role:preview_password@ep-child-a1b2c3.us-east-2.aws.neon.tech/municontrol?sslmode=verify-full';
+  const childPooled =
+    'postgresql://preview_role:preview_password@ep-child-a1b2c3-pooler.us-east-2.aws.neon.tech/municontrol?sslmode=verify-full';
+  const mainPooled =
+    'postgresql://preview_role:preview_password@ep-main-d4e5f6-pooler.us-east-2.aws.neon.tech/municontrol?sslmode=verify-full';
+  const expectedFingerprint = fingerprintDatabaseTarget(childDirect);
+  assert.deepEqual(inspectBootstrapDatabaseTargets({
+    expectedFingerprint,
+    directUrl: childDirect,
+    databaseUrl: childPooled,
+    fingerprintImpl: fingerprintDatabaseTarget,
+  }), {
+    ok: true,
+    databaseTargetFingerprintSha256: expectedFingerprint,
+  });
+  for (const configuration of [
+    { directUrl: undefined, databaseUrl: childPooled, code: 'BOOTSTRAP_DATABASE_TARGET_INVALID', status: 503 },
+    { directUrl: childDirect, databaseUrl: undefined, code: 'BOOTSTRAP_DATABASE_TARGET_INVALID', status: 503 },
+    { directUrl: 'not-a-database-url', databaseUrl: childPooled, code: 'BOOTSTRAP_DATABASE_TARGET_INVALID', status: 503 },
+    { directUrl: childDirect, databaseUrl: mainPooled, code: 'BOOTSTRAP_DATABASE_TARGET_MISMATCH', status: 409 },
+  ]) {
+    assert.deepEqual(inspectBootstrapDatabaseTargets({
+      expectedFingerprint,
+      directUrl: configuration.directUrl,
+      databaseUrl: configuration.databaseUrl,
+      fingerprintImpl: fingerprintDatabaseTarget,
+    }), {
+      ok: false,
+      code: configuration.code,
+      status: configuration.status,
+    });
   }
 });
 
@@ -824,6 +877,13 @@ const requiredPreviewEnvironment = Object.freeze([
   'GRH_SOURCE_SHA256',
   'GRH_ARTIFACT_SOURCE',
 ]);
+const inheritedPreviewEnvironment = Object.freeze([
+  'JWT_SECRET',
+  'GRH_TENANT_ID',
+  'GRH_SOURCE_SHA256',
+  'GRH_ARTIFACT_SOURCE',
+]);
+const branchPreviewDatabaseEnvironment = Object.freeze(['DATABASE_URL', 'DIRECT_URL']);
 
 test('preview apply, verify, and cleanup remain branch-scoped and never mutate Production', async () => {
   const fixture = await makePreviewFixture();
@@ -850,16 +910,21 @@ test('preview apply, verify, and cleanup remain branch-scoped and never mutate P
         return previewPinnedGitCommand(args, options, { state: initial });
       }
       if (args[0] === 'link') return { stdout: '', stderr: '' };
-      if (args[0] === 'env' && args[1] === 'run') {
-        return {
-          stdout: databaseTargetFingerprintMarker + (args.includes('production')
-            ? stableDatabaseTargetFingerprintSha256
-            : databaseTargetFingerprintSha256) + '\n',
-          stderr: '',
-        };
-      }
       if (args[0] === 'env' && args[1] === 'ls') {
-        return jsonResult({ envs: requiredPreviewEnvironment.map(key => ({ key })) });
+        if (args.length === 4) {
+          return jsonResult({
+            envs: [
+              ...inheritedPreviewEnvironment.map(key => ({ key, gitBranch: null })),
+              { key: 'GRH_DIRECTORY_BOOTSTRAP_SECRET', gitBranch: 'codex/unrelated' },
+            ],
+          });
+        }
+        return jsonResult({
+          envs: [
+            ...branchPreviewDatabaseEnvironment.map(key => ({ key, gitBranch: previewBranch })),
+            { key: 'GRH_DIRECTORY_ALLOWED_USER_IDS', gitBranch: null },
+          ],
+        });
       }
       if (args[0] === 'env' && ['add', 'rm'].includes(args[1])) {
         return { stdout: '', stderr: '' };
@@ -879,6 +944,20 @@ test('preview apply, verify, and cleanup remain branch-scoped and never mutate P
       if (args[0] === 'ls') return jsonResult(previewDeploymentList());
       if (args[0] === 'curl' && args[1] === initial.endpointRoute) {
         assert.ok(options.input.includes(secret));
+        if (options.input.includes('X-GRH-Bootstrap-Action: preflight')) {
+          assert.equal(options.input.includes('data-binary'), false);
+          assert.equal(options.input.includes('postgresql://'), false);
+          const preflightBody = bootstrapPreflightBody(initial);
+          assert.deepEqual(Object.keys(preflightBody), [
+            'ok', 'code', 'databaseTargetFingerprintSha256',
+          ]);
+          assert.doesNotMatch(JSON.stringify(preflightBody), /(?:url|host|user)/i);
+          return protectedCurlResult(
+            preflightBody,
+            200,
+            'grh-directory-bootstrap-v3',
+          );
+        }
         return protectedCurlResult(bootstrapAppliedBody(initial), 201, 'grh-directory-bootstrap-v3');
       }
       if (args[0] === 'curl') return smokeRunner(command, args, options);
@@ -897,22 +976,15 @@ test('preview apply, verify, and cleanup remain branch-scoped and never mutate P
     assert.equal(applied.stableDatabaseTargetFingerprintSha256, stableDatabaseTargetFingerprintSha256);
     assert.notEqual(applied.deploymentId, 'dpl_stable');
 
-    const fingerprintRuns = calls.filter(call =>
-      call.args[0] === 'env' && call.args[1] === 'run');
-    assert.deepEqual(fingerprintRuns.map(call => call.args), [
-      [
-        'env', 'run', '-e', 'production', '--', 'node',
-        'scripts/print-database-target-fingerprint.mjs',
-      ],
-      [
-        'env', 'run', '-e', 'preview', '--git-branch', previewBranch, '--', 'node',
-        'scripts/print-database-target-fingerprint.mjs',
-      ],
+    assert.equal(calls.some(call =>
+      call.args[0] === 'env' && call.args[1] === 'run'), false);
+    const envLists = calls
+      .filter(call => call.args[0] === 'env' && call.args[1] === 'ls')
+      .map(call => call.args);
+    assert.deepEqual(envLists, [
+      ['env', 'ls', 'preview', '--json'],
+      ['env', 'ls', 'preview', previewBranch, '--json'],
     ]);
-    assert.ok(fingerprintRuns.every(call => !call.hasInput));
-
-    const envList = calls.find(call => call.args[0] === 'env' && call.args[1] === 'ls');
-    assert.deepEqual(envList.args, ['env', 'ls', 'preview', previewBranch, '--json']);
     const envAdds = calls.filter(call => call.args[0] === 'env' && call.args[1] === 'add');
     assert.deepEqual(envAdds.map(call => call.args), [
       ['env', 'add', 'GRH_DIRECTORY_ALLOWED_USER_IDS', 'preview', previewBranch, '--sensitive', '--yes'],
@@ -930,9 +1002,9 @@ test('preview apply, verify, and cleanup remain branch-scoped and never mutate P
     const firstHttp = calls.findIndex(call => call.args[0] === 'curl');
     const firstMutation = calls.findIndex(call =>
       (call.args[0] === 'env' && call.args[1] === 'add') || call.args[0] === 'deploy');
-    const lastFingerprint = calls.reduce((last, call, index) =>
-      call.args[0] === 'env' && call.args[1] === 'run' ? index : last, -1);
-    assert.ok(lastFingerprint >= 0 && lastFingerprint < firstMutation);
+    const lastEnvironmentInventory = calls.reduce((last, call, index) =>
+      call.args[0] === 'env' && call.args[1] === 'ls' ? index : last, -1);
+    assert.ok(lastEnvironmentInventory >= 0 && lastEnvironmentInventory < firstMutation);
     const candidateInspect = calls.findIndex(call =>
       call.args[0] === 'inspect' && call.args[1] === previewDeploymentUrl);
     const candidateList = calls.findIndex(call => call.args[0] === 'ls');
@@ -944,6 +1016,11 @@ test('preview apply, verify, and cleanup remain branch-scoped and never mutate P
     assert.ok(candidateList >= 0 && candidateList < firstHttp);
     assert.equal(postDeployStable.length >= 2, true);
     assert.ok(postDeployStable[1] < firstHttp);
+    const bootstrapCurls = calls.filter(call =>
+      call.args[0] === 'curl' && call.args[1] === initial.endpointRoute);
+    assert.equal(bootstrapCurls.length, 2);
+    assert.equal(bootstrapCurls[0].hasInput, true);
+    assert.equal(bootstrapCurls[1].hasInput, true);
 
     const safeApplied = safeCliResult(applied);
     assert.equal(safeApplied.databaseTargetFingerprintSha256, databaseTargetFingerprintSha256);
@@ -995,7 +1072,82 @@ test('preview apply, verify, and cleanup remain branch-scoped and never mutate P
   }
 });
 
-test('preview apply requires every runtime env and stops before branch env mutation or deployment', async () => {
+test('preview remote target mismatch rolls back deployment and temporary envs before payload apply', async () => {
+  const fixture = await makePreviewFixture();
+  try {
+    const state = await readState(fixture.prepared.statePath);
+    const calls = [];
+    const runner = (command, args, options = {}) => {
+      calls.push({
+        command,
+        args: [...args],
+        hasInput: typeof options.input === 'string',
+        preflight: typeof options.input === 'string' &&
+          options.input.includes('X-GRH-Bootstrap-Action: preflight'),
+        payload: typeof options.input === 'string' && options.input.includes('data-binary'),
+      });
+      if (command === 'git') return previewPinnedGitCommand(args, options, { state });
+      if (args[0] === 'link') return { stdout: '', stderr: '' };
+      if (args[0] === 'env' && args[1] === 'ls') {
+        const global = args.length === 4;
+        const keys = global ? inheritedPreviewEnvironment : branchPreviewDatabaseEnvironment;
+        const gitBranch = global ? null : previewBranch;
+        return jsonResult({ envs: keys.map(key => ({ key, gitBranch })) });
+      }
+      if (args[0] === 'env' && ['add', 'rm'].includes(args[1])) {
+        return { stdout: '', stderr: '' };
+      }
+      if (args[0] === 'deploy') {
+        return jsonResult({ id: previewDeploymentId, url: previewDeploymentUrl });
+      }
+      if (args[0] === 'inspect' && args[1] === STABLE_PRODUCTION_URL) {
+        return jsonResult({
+          id: 'dpl_stable',
+          url: STABLE_PRODUCTION_URL,
+          status: 'READY',
+          target: 'production',
+        });
+      }
+      if (args[0] === 'inspect') return jsonResult(previewDeploymentInspection());
+      if (args[0] === 'ls') return jsonResult(previewDeploymentList());
+      if (args[0] === 'curl') {
+        assert.equal(options.input.includes('X-GRH-Bootstrap-Action: preflight'), true);
+        assert.equal(options.input.includes('data-binary'), false);
+        return protectedCurlResult({
+          ok: false,
+          code: 'BOOTSTRAP_DATABASE_TARGET_MISMATCH',
+        }, 409, 'grh-directory-bootstrap-v3');
+      }
+      if (args[0] === 'remove') return { stdout: '', stderr: '' };
+      assert.fail(`unexpected preview preflight command: ${args.join(' ')}`);
+    };
+    await assert.rejects(() => applyPreparedBootstrap({
+      statePath: fixture.prepared.statePath,
+      runner,
+      securePathImpl: async () => {},
+    }), error => error?.code === 'BOOTSTRAP_DATABASE_TARGET_MISMATCH');
+    const curls = calls.filter(call => call.args[0] === 'curl');
+    assert.equal(curls.length, 1);
+    assert.equal(curls[0].preflight, true);
+    assert.equal(curls[0].payload, false);
+    assert.ok(calls.some(call =>
+      call.args.join(' ') === `remove ${previewDeploymentId} --yes`));
+    assert.deepEqual(calls
+      .filter(call => call.args[0] === 'env' && call.args[1] === 'rm')
+      .map(call => call.args[2])
+      .sort(), [
+      'GRH_DIRECTORY_ALLOWED_USER_IDS',
+      'GRH_DIRECTORY_BOOTSTRAP_SECRET',
+    ].sort());
+    const persisted = await readState(fixture.prepared.statePath);
+    assert.equal(persisted.status, 'prepared');
+    assert.equal(persisted.deployment, null);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('preview apply accepts inherited runtime envs but fails closed when one is absent everywhere', async () => {
   const fixture = await makePreviewFixture();
   try {
     const state = await readState(fixture.prepared.statePath);
@@ -1004,19 +1156,16 @@ test('preview apply requires every runtime env and stops before branch env mutat
       calls.push({ command, args: [...args] });
       if (command === 'git') return previewPinnedGitCommand(args, options, { state });
       if (args[0] === 'link') return { stdout: '', stderr: '' };
-      if (args[0] === 'env' && args[1] === 'run') {
-        return {
-          stdout: databaseTargetFingerprintMarker + (args.includes('production')
-            ? stableDatabaseTargetFingerprintSha256
-            : databaseTargetFingerprintSha256) + '\n',
-          stderr: '',
-        };
-      }
       if (args[0] === 'env' && args[1] === 'ls') {
+        if (args.length === 4) {
+          return jsonResult({
+            envs: inheritedPreviewEnvironment
+              .filter(key => key !== 'JWT_SECRET')
+              .map(key => ({ key, gitBranch: null })),
+          });
+        }
         return jsonResult({
-          envs: requiredPreviewEnvironment
-            .filter(key => key !== 'DIRECT_URL')
-            .map(key => ({ key })),
+          envs: branchPreviewDatabaseEnvironment.map(key => ({ key, gitBranch: previewBranch })),
         });
       }
       assert.fail('missing Preview runtime env reached a mutating command');
@@ -1027,9 +1176,17 @@ test('preview apply requires every runtime env and stops before branch env mutat
         runner,
         securePathImpl: async () => {},
       }),
-      error => typeof error?.code === 'string' && error.code.startsWith('BOOTSTRAP_'),
+      error => error?.code === 'BOOTSTRAP_PREVIEW_ENVIRONMENT_INCOMPLETE',
     );
-    assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'add'), false);
+    assert.deepEqual(calls
+      .filter(call => call.args[0] === 'env' && call.args[1] === 'ls')
+      .map(call => call.args), [
+      ['env', 'ls', 'preview', '--json'],
+      ['env', 'ls', 'preview', previewBranch, '--json'],
+    ]);
+    assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'run'), false);
+    assert.equal(calls.some(call =>
+      call.args[0] === 'env' && ['add', 'rm'].includes(call.args[1])), false);
     assert.equal(calls.some(call => call.args[0] === 'deploy'), false);
     assert.equal(calls.some(call => call.args[0] === 'curl'), false);
     assert.equal((await readState(fixture.prepared.statePath)).status, 'prepared');
@@ -1038,47 +1195,76 @@ test('preview apply requires every runtime env and stops before branch env mutat
   }
 });
 
-test('preview apply rejects effective database fingerprint drift or malformed output before mutation', async () => {
-  const cases = [
-    {
-      name: 'stable target drift',
-      stableOutput: databaseTargetFingerprintMarker + 'c'.repeat(64) + '\n',
-      previewOutput: databaseTargetFingerprintMarker + databaseTargetFingerprintSha256 + '\n',
-    },
-    {
-      name: 'candidate target drift',
-      stableOutput: databaseTargetFingerprintMarker + stableDatabaseTargetFingerprintSha256 + '\n',
-      previewOutput: databaseTargetFingerprintMarker + 'c'.repeat(64) + '\n',
-    },
-    {
-      name: 'malformed helper output',
-      stableOutput: databaseTargetFingerprintMarker + stableDatabaseTargetFingerprintSha256 + '\n' + databaseTargetFingerprintMarker + stableDatabaseTargetFingerprintSha256 + '\n',
-      previewOutput: databaseTargetFingerprintMarker + databaseTargetFingerprintSha256 + '\n',
-    },
-    {
-      name: 'empty helper output',
-      stableOutput: '',
-      previewOutput: databaseTargetFingerprintMarker + databaseTargetFingerprintSha256 + '\n',
-    },
+test('preview apply requires DATABASE_URL and DIRECT_URL on the exact branch even if global Preview has them', async () => {
+  const fixture = await makePreviewFixture();
+  try {
+    const state = await readState(fixture.prepared.statePath);
+    const calls = [];
+    const runner = (command, args, options = {}) => {
+      calls.push({ command, args: [...args] });
+      if (command === 'git') return previewPinnedGitCommand(args, options, { state });
+      if (args[0] === 'link') return { stdout: '', stderr: '' };
+      if (args[0] === 'env' && args[1] === 'ls') {
+        if (args.length === 4) {
+          return jsonResult({
+            envs: requiredPreviewEnvironment.map(key => ({ key, gitBranch: null })),
+          });
+        }
+        return jsonResult({ envs: [{ key: 'DATABASE_URL', gitBranch: previewBranch }] });
+      }
+      assert.fail('missing branch database override reached a mutating command');
+    };
+    await assert.rejects(
+      () => applyPreparedBootstrap({
+        statePath: fixture.prepared.statePath,
+        runner,
+        securePathImpl: async () => {},
+      }),
+      error => error?.code === 'BOOTSTRAP_PREVIEW_BRANCH_DATABASE_INCOMPLETE',
+    );
+    assert.deepEqual(calls
+      .filter(call => call.args[0] === 'env' && call.args[1] === 'ls')
+      .map(call => call.args), [
+      ['env', 'ls', 'preview', '--json'],
+      ['env', 'ls', 'preview', previewBranch, '--json'],
+    ]);
+    assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'run'), false);
+    assert.equal(calls.some(call =>
+      call.args[0] === 'env' && ['add', 'rm'].includes(call.args[1])), false);
+    assert.equal(calls.some(call => call.args[0] === 'deploy'), false);
+    assert.equal(calls.some(call => call.args[0] === 'curl'), false);
+    assert.equal((await readState(fixture.prepared.statePath)).status, 'prepared');
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('preview apply rejects temporary bootstrap secrets in global or branch inventory without exposing values', async () => {
+  const scenarios = [
+    { scope: 'global', key: 'GRH_DIRECTORY_ALLOWED_USER_IDS' },
+    { scope: 'branch', key: 'GRH_DIRECTORY_BOOTSTRAP_SECRET' },
   ];
-  for (const scenario of cases) {
+  for (const scenario of scenarios) {
     const fixture = await makePreviewFixture();
     try {
       const state = await readState(fixture.prepared.statePath);
       const calls = [];
+      const sentinel = `must-not-leak-${scenario.scope}`;
       const runner = (command, args, options = {}) => {
         calls.push({ command, args: [...args] });
         if (command === 'git') return previewPinnedGitCommand(args, options, { state });
         if (args[0] === 'link') return { stdout: '', stderr: '' };
-        if (args[0] === 'env' && args[1] === 'run') {
-          return {
-            stdout: args.includes('production')
-              ? scenario.stableOutput
-              : scenario.previewOutput,
-            stderr: '',
-          };
+        if (args[0] === 'env' && args[1] === 'ls') {
+          const global = args.length === 4;
+          const keys = global ? inheritedPreviewEnvironment : branchPreviewDatabaseEnvironment;
+          const gitBranch = global ? null : previewBranch;
+          const envs = keys.map(key => ({ key, gitBranch }));
+          if ((global && scenario.scope === 'global') || (!global && scenario.scope === 'branch')) {
+            envs.push({ key: scenario.key, gitBranch, value: sentinel });
+          }
+          return jsonResult({ envs });
         }
-        assert.fail(`${scenario.name} reached a command after fingerprint preflight`);
+        assert.fail(`${scenario.scope} temporary secret reached a mutating command`);
       };
       let rejection;
       await assert.rejects(
@@ -1089,19 +1275,16 @@ test('preview apply rejects effective database fingerprint drift or malformed ou
         }),
         error => {
           rejection = error;
-          return typeof error?.code === 'string' && error.code.startsWith('BOOTSTRAP_');
+          return error?.code === 'BOOTSTRAP_ENV_ALREADY_CONFIGURED';
         },
       );
-      assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'ls'), false);
-      assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'add'), false);
+      assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'run'), false);
+      assert.equal(calls.some(call =>
+        call.args[0] === 'env' && ['add', 'rm'].includes(call.args[1])), false);
       assert.equal(calls.some(call => call.args[0] === 'deploy'), false);
       assert.equal(calls.some(call => call.args[0] === 'curl'), false);
-      if (scenario.stableOutput.trim()) {
-        assert.equal(JSON.stringify(rejection).includes(scenario.stableOutput.trim()), false);
-      }
-      if (scenario.previewOutput.trim()) {
-        assert.equal(JSON.stringify(rejection).includes(scenario.previewOutput.trim()), false);
-      }
+      assert.equal(JSON.stringify(calls).includes(sentinel), false);
+      assert.equal(JSON.stringify(rejection).includes(sentinel), false);
       assert.equal((await readState(fixture.prepared.statePath)).status, 'prepared');
     } finally {
       await fixture.cleanup();

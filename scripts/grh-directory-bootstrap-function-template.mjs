@@ -13,6 +13,49 @@ export function bootstrapInternalDiagnostic(stage, error) {
   return Object.freeze(pgCode ? { code, pgCode } : { code });
 }
 
+export function inspectBootstrapDatabaseTargets({
+  expectedFingerprint,
+  directUrl,
+  databaseUrl,
+  fingerprintImpl,
+} = {}) {
+  if (expectedFingerprint === null) {
+    return Object.freeze({ ok: true, databaseTargetFingerprintSha256: null });
+  }
+  let directFingerprint;
+  let databaseFingerprint;
+  try {
+    directFingerprint = fingerprintImpl(directUrl);
+    databaseFingerprint = fingerprintImpl(databaseUrl);
+  } catch {
+    return Object.freeze({
+      ok: false,
+      code: 'BOOTSTRAP_DATABASE_TARGET_INVALID',
+      status: 503,
+    });
+  }
+  if (!/^[0-9a-f]{64}$/.test(directFingerprint || '') ||
+      !/^[0-9a-f]{64}$/.test(databaseFingerprint || '')) {
+    return Object.freeze({
+      ok: false,
+      code: 'BOOTSTRAP_DATABASE_TARGET_INVALID',
+      status: 503,
+    });
+  }
+  if (directFingerprint !== expectedFingerprint || databaseFingerprint !== expectedFingerprint ||
+      directFingerprint !== databaseFingerprint) {
+    return Object.freeze({
+      ok: false,
+      code: 'BOOTSTRAP_DATABASE_TARGET_MISMATCH',
+      status: 409,
+    });
+  }
+  return Object.freeze({
+    ok: true,
+    databaseTargetFingerprintSha256: directFingerprint,
+  });
+}
+
 const ENDPOINT_TEMPLATE = String.raw`import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import bcrypt from 'bcryptjs';
@@ -133,6 +176,18 @@ class BootstrapInternalError extends Error {
     this.code = diagnostic.code;
     this.pgCode = diagnostic.pgCode || null;
   }
+}
+__BOOTSTRAP_DATABASE_TARGET_INSPECTOR__
+
+function requireRuntimeDatabaseTargets() {
+  const inspected = inspectBootstrapDatabaseTargets({
+    expectedFingerprint: EXPECTED_DATABASE_TARGET_SHA256,
+    directUrl: process.env.DIRECT_URL,
+    databaseUrl: process.env.DATABASE_URL,
+    fingerprintImpl: fingerprintDatabaseTarget,
+  });
+  if (!inspected.ok) throw new BootstrapError(inspected.code, inspected.status);
+  return inspected.databaseTargetFingerprintSha256;
 }
 
 function exactKeys(value, expected) {
@@ -309,17 +364,7 @@ async function applyBootstrap(envelope, inspected) {
   if (!['ddl', 'encrypted_snapshot'].includes(BOOTSTRAP_MODE)) {
     throw new BootstrapError('BOOTSTRAP_RUNTIME_CONFIGURATION_INVALID', 503);
   }
-  let databaseTargetFingerprintSha256 = null;
-  if (EXPECTED_DATABASE_TARGET_SHA256 !== null) {
-    try {
-      databaseTargetFingerprintSha256 = fingerprintDatabaseTarget(process.env.DIRECT_URL);
-    } catch {
-      throw new BootstrapError('BOOTSTRAP_DATABASE_TARGET_INVALID', 503);
-    }
-    if (databaseTargetFingerprintSha256 !== EXPECTED_DATABASE_TARGET_SHA256) {
-      throw new BootstrapError('BOOTSTRAP_DATABASE_TARGET_MISMATCH', 409);
-    }
-  }
+  const databaseTargetFingerprintSha256 = requireRuntimeDatabaseTargets();
   let database;
   try {
     database = inspectDatabaseUrl(process.env.DIRECT_URL, {
@@ -526,12 +571,27 @@ export default async function handler(req, res) {
       configuredSecret.length < 32 || !constantTimeEqual(configuredSecret, suppliedSecret || '')) {
     return send(res, 404, 'NOT_FOUND');
   }
-  if (req.method !== 'POST' || headerValue(req, 'x-grh-bootstrap-action') !== 'apply' ||
-      headerValue(req, 'content-type')?.toLowerCase() !== 'application/gzip' ||
-      headerValue(req, 'content-encoding') !== null) {
+  if (req.method !== 'POST') {
     return send(res, 404, 'NOT_FOUND');
   }
   try {
+    const action = headerValue(req, 'x-grh-bootstrap-action');
+    if (action === 'preflight') {
+      if (headerValue(req, 'content-type') !== null || headerValue(req, 'content-encoding') !== null ||
+          headerValue(req, 'x-grh-body-sha256') !== null ||
+          ![null, '0'].includes(headerValue(req, 'content-length'))) {
+        return send(res, 404, 'NOT_FOUND');
+      }
+      const databaseTargetFingerprintSha256 = requireRuntimeDatabaseTargets();
+      return send(res, 200, 'GRH_DIRECTORY_BOOTSTRAP_PREFLIGHT_OK', {
+        databaseTargetFingerprintSha256,
+      });
+    }
+    if (action !== 'apply' ||
+        headerValue(req, 'content-type')?.toLowerCase() !== 'application/gzip' ||
+        headerValue(req, 'content-encoding') !== null) {
+      return send(res, 404, 'NOT_FOUND');
+    }
     const compressed = await readCompressedBody(req);
     const suppliedDigest = headerValue(req, 'x-grh-body-sha256');
     if (!/^[0-9a-f]{64}$/.test(suppliedDigest || '') || !constantTimeEqual(digest(compressed), suppliedDigest)) {
@@ -603,6 +663,7 @@ export function renderGrhDirectoryBootstrapFunction({
       `const BOOTSTRAP_INTERNAL_STAGES = Object.freeze(${literal(BOOTSTRAP_INTERNAL_STAGES)});`,
       bootstrapInternalDiagnostic.toString(),
     ].join('\n')],
+    ['__BOOTSTRAP_DATABASE_TARGET_INSPECTOR__', inspectBootstrapDatabaseTargets.toString()],
     ['__BOOTSTRAP_MODE__', literal(mode)],
     ['__EXPECTED_VERCEL_ENV__', literal(expectedVercelEnv)],
     ['__EXPECTED_DATABASE_TARGET_SHA256__', literal(databaseTargetFingerprintSha256)],

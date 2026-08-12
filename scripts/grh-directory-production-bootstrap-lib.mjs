@@ -56,8 +56,7 @@ const REQUIRED_PREVIEW_ENVIRONMENT_NAMES = Object.freeze([
   'DATABASE_URL', 'DIRECT_URL', 'JWT_SECRET', 'GRH_TENANT_ID',
   'GRH_SOURCE_SHA256', 'GRH_ARTIFACT_SOURCE',
 ]);
-const DATABASE_TARGET_FINGERPRINT_HELPER = 'scripts/print-database-target-fingerprint.mjs';
-const DATABASE_TARGET_FINGERPRINT_MARKER = '__MUNICTRL_DATABASE_TARGET__';
+const REQUIRED_PREVIEW_BRANCH_DATABASE_NAMES = Object.freeze(['DATABASE_URL', 'DIRECT_URL']);
 const BOOTSTRAP_STATE_STATUSES = new Set([
   'prepared', 'deployment_created', 'preapply_cleanup_required', 'deployed',
   'apply_started', 'apply_ambiguous', 'applied', 'verified', 'cleaned',
@@ -324,10 +323,7 @@ export async function prepareBootstrapBundle({
     const fingerprintLibraryPresent = await exists(
       path.join(worktree, 'api', 'lib', 'database-target-fingerprint.js'),
     );
-    const fingerprintHelperPresent = await exists(
-      path.join(worktree, DATABASE_TARGET_FINGERPRINT_HELPER),
-    );
-    if (!fingerprintLibraryPresent || !fingerprintHelperPresent) {
+    if (!fingerprintLibraryPresent) {
       fail('BOOTSTRAP_PREVIEW_WORKTREE_INVALID');
     }
   }
@@ -532,6 +528,34 @@ function collectEnvironmentNames(value, names = new Set()) {
     if (typeof value.name === 'string') names.add(value.name);
     if (typeof value.key === 'string') names.add(value.key);
     Object.values(value).forEach(item => collectEnvironmentNames(item, names));
+  }
+  return names;
+}
+
+function collectScopedEnvironmentNames(value, expectedGitBranch) {
+  const records = [];
+  const visit = candidate => {
+    if (Array.isArray(candidate)) {
+      candidate.forEach(visit);
+      return;
+    }
+    if (!candidate || typeof candidate !== 'object') return;
+    if (typeof candidate.name === 'string' || typeof candidate.key === 'string') {
+      records.push(candidate);
+      return;
+    }
+    Object.values(candidate).forEach(visit);
+  };
+  visit(value);
+  const names = new Set();
+  for (const record of records) {
+    const gitBranch = record.gitBranch;
+    const scopedCorrectly = expectedGitBranch === null
+      ? gitBranch === null || gitBranch === ''
+      : gitBranch === expectedGitBranch;
+    if (!scopedCorrectly) continue;
+    if (typeof record.name === 'string') names.add(record.name);
+    if (typeof record.key === 'string') names.add(record.key);
   }
   return names;
 }
@@ -782,41 +806,6 @@ function environmentTargetArgs(state) {
     : ['production'];
 }
 
-function parseDatabaseTargetFingerprintOutput(result) {
-  const output = result.stdout;
-  if (Buffer.byteLength(output, 'utf8') > 16 * 1024) {
-    fail('BOOTSTRAP_DATABASE_TARGET_PREFLIGHT_INVALID');
-  }
-  const matches = String(output).split(/\r?\n/u).filter(
-    line => line.startsWith(DATABASE_TARGET_FINGERPRINT_MARKER),
-  );
-  if (matches.length !== 1) fail('BOOTSTRAP_DATABASE_TARGET_PREFLIGHT_INVALID');
-  const fingerprint = matches[0].slice(DATABASE_TARGET_FINGERPRINT_MARKER.length);
-  if (!SHA256_PATTERN.test(fingerprint)) fail('BOOTSTRAP_DATABASE_TARGET_PREFLIGHT_INVALID');
-  return fingerprint;
-}
-
-function preflightPreviewDatabaseTargets(runner, state) {
-  if (state.target !== 'preview') return;
-  const stable = parseDatabaseTargetFingerprintOutput(run(
-    runner,
-    'vercel',
-    ['env', 'run', '-e', 'production', '--', 'node', DATABASE_TARGET_FINGERPRINT_HELPER],
-    { cwd: state.worktreePath },
-  ));
-  const candidate = parseDatabaseTargetFingerprintOutput(run(
-    runner,
-    'vercel',
-    ['env', 'run', '-e', 'preview', '--git-branch', state.previewBranch, '--',
-      'node', DATABASE_TARGET_FINGERPRINT_HELPER],
-    { cwd: state.worktreePath },
-  ));
-  if (stable !== state.stableDatabaseTargetFingerprintSha256 ||
-      candidate !== state.databaseTargetFingerprintSha256 || candidate === stable) {
-    fail('BOOTSTRAP_DATABASE_TARGET_PREFLIGHT_MISMATCH');
-  }
-}
-
 function inspectStableProduction(runner, state, code) {
   const inspection = parseJsonOutput(run(
     runner,
@@ -973,6 +962,25 @@ function inspectBootstrapApplyReceipt(receipt, state, code) {
   return 'applied';
 }
 
+function inspectBootstrapPreflightReceipt(receipt, state, code) {
+  if (receipt.contract !== BOOTSTRAP_CONTRACT) fail(code);
+  if (receipt.status === 503 && exactKeys(receipt.body, ['ok', 'code']) &&
+      receipt.body.ok === false && receipt.body.code === 'BOOTSTRAP_DATABASE_TARGET_INVALID') {
+    fail('BOOTSTRAP_DATABASE_TARGET_INVALID');
+  }
+  if (receipt.status === 409 && exactKeys(receipt.body, ['ok', 'code']) &&
+      receipt.body.ok === false && receipt.body.code === 'BOOTSTRAP_DATABASE_TARGET_MISMATCH') {
+    fail('BOOTSTRAP_DATABASE_TARGET_MISMATCH');
+  }
+  if (receipt.status !== 200 || !exactKeys(receipt.body, [
+    'ok', 'code', 'databaseTargetFingerprintSha256',
+  ]) || receipt.body.ok !== true ||
+      receipt.body.code !== 'GRH_DIRECTORY_BOOTSTRAP_PREFLIGHT_OK' ||
+      receipt.body.databaseTargetFingerprintSha256 !== state.databaseTargetFingerprintSha256) {
+    fail(code);
+  }
+}
+
 async function rollbackPreApplyResources({
   runner,
   state,
@@ -1033,23 +1041,46 @@ export async function applyPreparedBootstrap({
   run(runner, 'vercel', [
     'link', '--yes', '--project', VERCEL_PROJECT, '--scope', VERCEL_SCOPE,
   ], { cwd: state.worktreePath });
-  preflightPreviewDatabaseTargets(runner, state);
 
   const environmentArgs = environmentTargetArgs(state);
-  const environments = parseJsonOutput(run(
-    runner,
-    'vercel',
-    ['env', 'ls', ...environmentArgs, '--json'],
-    { cwd: state.worktreePath },
-  ), 'BOOTSTRAP_ENV_LIST_INVALID');
-  const names = collectEnvironmentNames(environments);
+  let names;
+  let previewBranchNames = null;
+  if (state.target === 'preview') {
+    const inheritedEnvironments = parseJsonOutput(run(
+      runner,
+      'vercel',
+      ['env', 'ls', 'preview', '--json'],
+      { cwd: state.worktreePath },
+    ), 'BOOTSTRAP_ENV_LIST_INVALID');
+    const branchEnvironments = parseJsonOutput(run(
+      runner,
+      'vercel',
+      ['env', 'ls', 'preview', state.previewBranch, '--json'],
+      { cwd: state.worktreePath },
+    ), 'BOOTSTRAP_ENV_LIST_INVALID');
+    names = collectScopedEnvironmentNames(inheritedEnvironments, null);
+    previewBranchNames = collectScopedEnvironmentNames(branchEnvironments, state.previewBranch);
+    previewBranchNames.forEach(name => names.add(name));
+  } else {
+    const environments = parseJsonOutput(run(
+      runner,
+      'vercel',
+      ['env', 'ls', ...environmentArgs, '--json'],
+      { cwd: state.worktreePath },
+    ), 'BOOTSTRAP_ENV_LIST_INVALID');
+    names = collectEnvironmentNames(environments);
+  }
   if (names.has('GRH_DIRECTORY_ALLOWED_USER_IDS') || names.has('GRH_DIRECTORY_BOOTSTRAP_SECRET') ||
       (state.mode === 'encrypted_snapshot' && names.has(SNAPSHOT_KEY_ENV))) {
     fail('BOOTSTRAP_ENV_ALREADY_CONFIGURED');
   }
-  if (state.target === 'preview' &&
-      REQUIRED_PREVIEW_ENVIRONMENT_NAMES.some(name => !names.has(name))) {
-    fail('BOOTSTRAP_PREVIEW_ENVIRONMENT_INCOMPLETE');
+  if (state.target === 'preview') {
+    if (REQUIRED_PREVIEW_BRANCH_DATABASE_NAMES.some(name => !previewBranchNames.has(name))) {
+      fail('BOOTSTRAP_PREVIEW_BRANCH_DATABASE_INCOMPLETE');
+    }
+    if (REQUIRED_PREVIEW_ENVIRONMENT_NAMES.some(name => !names.has(name))) {
+      fail('BOOTSTRAP_PREVIEW_ENVIRONMENT_INCOMPLETE');
+    }
   }
   const baseline = inspectStableProduction(runner, state, 'BOOTSTRAP_BASELINE_INSPECTION_INVALID');
 
@@ -1103,6 +1134,18 @@ export async function applyPreparedBootstrap({
       if (deployment.id !== inspectedDeployment.id) fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
       const stableAfter = inspectStableProduction(runner, state, 'BOOTSTRAP_ALIAS_INSPECTION_INVALID');
       if (stableAfter.id !== baseline.id || stableAfter.id === deployment.id) fail('BOOTSTRAP_ALIAS_MOVED');
+      const preflightReceipt = protectedCurlJson(runner, state, state.endpointRoute, {
+        method: 'POST',
+        headers: {
+          'X-GRH-Bootstrap-Action': 'preflight',
+          'X-GRH-Bootstrap-Secret': material.secret,
+        },
+      }, 'BOOTSTRAP_PREFLIGHT_RESPONSE_INVALID');
+      inspectBootstrapPreflightReceipt(
+        preflightReceipt,
+        state,
+        'BOOTSTRAP_PREFLIGHT_RESPONSE_INVALID',
+      );
     } else {
       const uniqueInspection = parseJsonOutput(run(
         runner,

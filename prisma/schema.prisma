@@ -235,6 +235,7 @@ model User {
 
   auditLogs                   AuditLog[]
   securityState               UserSecurityState?         @relation("UserSecurityStateSubject")
+  tenantSecurityStates        UserSecurityState[]        @relation("UserSecurityStateTenantSubject")
   securityStatesSuspended     UserSecurityState[]        @relation("UserSecurityStateSuspender")
   securityStatesRevoked       UserSecurityState[]        @relation("UserSecurityStateRevoker")
   orgUnitsCreated             OrgUnit[]                  @relation("OrgUnitCreator")
@@ -242,6 +243,7 @@ model User {
   roleDefinitionsCreated      RoleDefinition[]           @relation("RoleDefinitionCreator")
   authorizationScopesCreated  AuthorizationScope[]       @relation("AuthorizationScopeCreator")
   roleAssignmentsSubject      RoleAssignment[]           @relation("RoleAssignmentSubject")
+  tenantRoleAssignmentsSubject RoleAssignment[]          @relation("RoleAssignmentTenantSubject")
   roleAssignmentsRequested    RoleAssignment[]           @relation("RoleAssignmentRequester")
   roleAssignmentsRevoked      RoleAssignment[]           @relation("RoleAssignmentRevoker")
   grhActionCommitmentsCreated GrhActionCommitment[]      @relation("GrhActionCommitmentCreator")
@@ -468,10 +470,11 @@ model UserSecurityState {
   createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user        User    @relation("UserSecurityStateSubject", fields: [userId], references: [id], onDelete: Cascade)
+  user        User    @relation("UserSecurityStateSubject", fields: [userId], references: [id], onDelete: Cascade, map: "auth_user_security_states_user_id_fkey")
+  tenantUser  User?   @relation("UserSecurityStateTenantSubject", fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade, map: "auth_user_security_states_tenant_user_fkey")
   tenant      Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  suspendedBy User?   @relation("UserSecurityStateSuspender", fields: [suspendedByUserId], references: [id], onDelete: SetNull)
-  revokedBy   User?   @relation("UserSecurityStateRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+  suspendedBy User?   @relation("UserSecurityStateSuspender", fields: [suspendedByUserId], references: [id], onDelete: SetNull, map: "auth_user_security_states_suspender_fkey")
+  revokedBy   User?   @relation("UserSecurityStateRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull, map: "auth_user_security_states_revoker_fkey")
 
   @@index([tenantId, lifecycleStatus])
   @@index([accountExpiresAt])
@@ -494,9 +497,9 @@ model OrgUnit {
   updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  parent              OrgUnit?             @relation("OrgUnitHierarchy", fields: [tenantId, parentId], references: [tenantId, id], onDelete: Restrict)
+  parent              OrgUnit?             @relation("OrgUnitHierarchy", fields: [tenantId, parentId], references: [tenantId, id], onDelete: Restrict, map: "auth_org_units_parent_tenant_fkey")
   children            OrgUnit[]            @relation("OrgUnitHierarchy")
-  createdBy           User?                @relation("OrgUnitCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdBy           User?                @relation("OrgUnitCreator", fields: [createdByUserId], references: [id], onDelete: SetNull, map: "auth_org_units_creator_fkey")
   ancestorClosures    OrgUnitClosure[]     @relation("OrgUnitClosureAncestor")
   descendantClosures  OrgUnitClosure[]     @relation("OrgUnitClosureDescendant")
   authorizationScopes AuthorizationScope[]
@@ -516,11 +519,11 @@ model OrgUnitClosure {
   depth        Int
 
   tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ancestor   OrgUnit @relation("OrgUnitClosureAncestor", fields: [tenantId, ancestorId], references: [tenantId, id], onDelete: Cascade)
-  descendant OrgUnit @relation("OrgUnitClosureDescendant", fields: [tenantId, descendantId], references: [tenantId, id], onDelete: Cascade)
+  ancestor   OrgUnit @relation("OrgUnitClosureAncestor", fields: [tenantId, ancestorId], references: [tenantId, id], onDelete: Cascade, map: "auth_org_unit_closure_ancestor_tenant_fkey")
+  descendant OrgUnit @relation("OrgUnitClosureDescendant", fields: [tenantId, descendantId], references: [tenantId, id], onDelete: Cascade, map: "auth_org_unit_closure_descendant_tenant_fkey")
 
-  @@unique([tenantId, ancestorId, descendantId])
-  @@index([tenantId, descendantId, depth])
+  @@unique([tenantId, ancestorId, descendantId], map: "auth_org_unit_closure_tenant_ancestor_descendant_key")
+  @@index([tenantId, descendantId, depth], map: "auth_org_unit_closure_tenant_descendant_depth_idx")
   @@map("auth_org_unit_closure")
 }
 
@@ -541,7 +544,7 @@ model PolicyBundle {
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
 
   tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdBy       User?            @relation("PolicyBundleCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdBy       User?            @relation("PolicyBundleCreator", fields: [createdByUserId], references: [id], onDelete: SetNull, map: "auth_policy_bundles_creator_fkey")
   roleDefinitions RoleDefinition[]
 
   @@unique([namespace, version])
@@ -587,8 +590,8 @@ model RoleDefinition {
   createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
 
   tenant           Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  policyBundle     PolicyBundle     @relation(fields: [policyBundleId], references: [id], onDelete: Restrict)
-  createdBy        User?            @relation("RoleDefinitionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  policyBundle     PolicyBundle     @relation(fields: [policyBundleId], references: [id], onDelete: Restrict, map: "auth_role_definitions_policy_bundle_fkey")
+  createdBy        User?            @relation("RoleDefinitionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull, map: "auth_role_definitions_creator_fkey")
   roleCapabilities RoleCapability[]
   roleAssignments  RoleAssignment[]
 
@@ -608,10 +611,10 @@ model RoleCapability {
   constraints             Json?
   createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  roleDefinition RoleDefinition       @relation(fields: [roleDefinitionId], references: [id], onDelete: Cascade)
-  capability     CapabilityDefinition @relation(fields: [capabilityKey], references: [key], onDelete: Restrict)
+  roleDefinition RoleDefinition       @relation(fields: [roleDefinitionId], references: [id], onDelete: Cascade, map: "auth_role_capabilities_role_definition_fkey")
+  capability     CapabilityDefinition @relation(fields: [capabilityKey], references: [key], onDelete: Restrict, map: "auth_role_capabilities_capability_fkey")
 
-  @@unique([roleDefinitionId, capabilityKey])
+  @@unique([roleDefinitionId, capabilityKey], map: "auth_role_capabilities_role_definition_capability_key")
   @@index([capabilityKey, effect])
   @@map("auth_role_capabilities")
 }
@@ -634,9 +637,10 @@ model AuthorizationScope {
   retiredAt               DateTime?   @map("retired_at") @db.Timestamptz(6)
 
   tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  orgUnit         OrgUnit?         @relation(fields: [tenantId, orgUnitId], references: [tenantId, id], onDelete: Restrict)
-  createdBy       User?            @relation("AuthorizationScopeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  roleAssignments RoleAssignment[]
+  orgUnit               OrgUnit?         @relation(fields: [tenantId, orgUnitId], references: [tenantId, id], onDelete: Restrict, map: "auth_scopes_org_unit_tenant_fkey")
+  createdBy             User?            @relation("AuthorizationScopeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull, map: "auth_scopes_creator_fkey")
+  roleAssignments       RoleAssignment[] @relation("RoleAssignmentScope")
+  tenantRoleAssignments RoleAssignment[] @relation("RoleAssignmentTenantScope")
 
   @@unique([tenantId, id])
   @@unique([tenantId, normalizedDigest])
@@ -669,16 +673,18 @@ model RoleAssignment {
   updatedAt              DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   tenant               Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  subject              User               @relation("RoleAssignmentSubject", fields: [subjectUserId], references: [id], onDelete: Restrict)
-  roleDefinition       RoleDefinition     @relation(fields: [roleDefinitionId], references: [id], onDelete: Restrict)
-  scope                AuthorizationScope @relation(fields: [scopeId], references: [id], onDelete: Restrict)
-  requestedBy          User               @relation("RoleAssignmentRequester", fields: [requestedByUserId], references: [id], onDelete: Restrict)
-  revokedBy            User?              @relation("RoleAssignmentRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
-  supersedesAssignment RoleAssignment?    @relation("RoleAssignmentSupersession", fields: [supersedesAssignmentId], references: [id], onDelete: Restrict)
+  subject              User                @relation("RoleAssignmentSubject", fields: [subjectUserId], references: [id], onDelete: Restrict, map: "auth_role_assignments_subject_fkey")
+  tenantSubject        User?               @relation("RoleAssignmentTenantSubject", fields: [tenantId, subjectUserId], references: [tenantId, id], onDelete: Restrict, map: "auth_role_assignments_subject_tenant_fkey")
+  roleDefinition       RoleDefinition      @relation(fields: [roleDefinitionId], references: [id], onDelete: Restrict, map: "auth_role_assignments_role_definition_fkey")
+  scope                AuthorizationScope  @relation("RoleAssignmentScope", fields: [scopeId], references: [id], onDelete: Restrict, map: "auth_role_assignments_scope_fkey")
+  tenantScope          AuthorizationScope? @relation("RoleAssignmentTenantScope", fields: [tenantId, scopeId], references: [tenantId, id], onDelete: Restrict, map: "auth_role_assignments_scope_tenant_fkey")
+  requestedBy          User                @relation("RoleAssignmentRequester", fields: [requestedByUserId], references: [id], onDelete: Restrict, map: "auth_role_assignments_requester_fkey")
+  revokedBy            User?               @relation("RoleAssignmentRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull, map: "auth_role_assignments_revoker_fkey")
+  supersedesAssignment RoleAssignment?     @relation("RoleAssignmentSupersession", fields: [supersedesAssignmentId], references: [id], onDelete: Restrict, map: "auth_role_assignments_supersedes_fkey")
   supersededBy         RoleAssignment[]   @relation("RoleAssignmentSupersession")
 
-  @@index([subjectUserId, status, validUntil])
-  @@index([tenantId, roleDefinitionId, status])
+  @@index([subjectUserId, status, validUntil], map: "auth_role_assignments_subject_status_valid_until_idx")
+  @@index([tenantId, roleDefinitionId, status], map: "auth_role_assignments_tenant_role_status_idx")
   @@index([scopeId, status])
   @@index([approvalRequestId])
   @@map("auth_role_assignments")
@@ -711,7 +717,7 @@ model SecurityAuditEvent {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
-  @@unique([chainPartition, chainSequence])
+  @@unique([chainPartition, chainSequence], map: "security_audit_events_chain_partition_sequence_key")
   @@index([tenantId, occurredAt])
   @@index([principalHash, occurredAt])
   @@index([permission, purpose, occurredAt])
@@ -739,17 +745,17 @@ model GrhActionCommitment {
   outcomeCode        String?                   @map("outcome_code") @db.VarChar(80)
   createdByUserId    String                    @map("created_by_user_id")
   createdAt          DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt          DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   tenant    Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  createdBy User                       @relation("GrhActionCommitmentCreator", fields: [tenantId, createdByUserId], references: [tenantId, id], onDelete: Restrict)
-  owner     User?                      @relation("GrhActionCommitmentOwner", fields: [tenantId, ownerUserId], references: [tenantId, id], onDelete: Restrict)
+  createdBy User                       @relation("GrhActionCommitmentCreator", fields: [tenantId, createdByUserId], references: [tenantId, id], onDelete: Restrict, map: "grh_action_commitments_created_by_fkey")
+  owner     User?                      @relation("GrhActionCommitmentOwner", fields: [tenantId, ownerUserId], references: [tenantId, id], onDelete: Restrict, map: "grh_action_commitments_owner_fkey")
   events    GrhActionCommitmentEvent[]
 
   @@unique([tenantId, id])
   @@unique([tenantId, briefSchemaVersion, briefPolicyVersion, sourceSha256, snapshotAsOf, period, evidenceDigest, priorityCode], map: "grh_action_commitments_evidence_priority_key")
-  @@index([tenantId, state, dueOn])
-  @@index([tenantId, assigneeRole, state])
+  @@index([tenantId, state, dueOn], map: "grh_action_commitments_tenant_state_due_idx")
+  @@index([tenantId, assigneeRole, state], map: "grh_action_commitments_tenant_assignee_state_idx")
   @@map("grh_action_commitments")
 }
 
@@ -773,12 +779,12 @@ model GrhActionCommitmentEvent {
   occurredAt      DateTime                  @default(now()) @map("occurred_at") @db.Timestamptz(6)
 
   tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  commitment GrhActionCommitment @relation(fields: [tenantId, commitmentId], references: [tenantId, id], onDelete: Restrict)
-  actor      User                @relation("GrhActionCommitmentEventActor", fields: [tenantId, actorUserId], references: [tenantId, id], onDelete: Restrict)
+  commitment GrhActionCommitment @relation(fields: [tenantId, commitmentId], references: [tenantId, id], onDelete: Restrict, map: "grh_action_commitment_events_commitment_fkey")
+  actor      User                @relation("GrhActionCommitmentEventActor", fields: [tenantId, actorUserId], references: [tenantId, id], onDelete: Restrict, map: "grh_action_commitment_events_actor_fkey")
 
-  @@unique([tenantId, commandId])
-  @@index([tenantId, commitmentId, sequence])
-  @@index([tenantId, actorUserId, occurredAt])
+  @@unique([tenantId, commandId], map: "grh_action_commitment_events_tenant_command_key")
+  @@index([tenantId, commitmentId, sequence], map: "grh_action_commitment_events_commitment_sequence_idx")
+  @@index([tenantId, actorUserId, occurredAt], map: "grh_action_commitment_events_actor_occurred_idx")
   @@map("grh_action_commitment_events")
 }
 

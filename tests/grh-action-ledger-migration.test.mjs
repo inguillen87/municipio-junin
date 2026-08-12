@@ -22,9 +22,35 @@ test('Prisma schema exposes the tenant-bound GRH commitment and immutable event 
   assert.match(schema, /enum GrhActionLedgerCommand\s*\{\s*CREATE\s+CLAIM\s+BLOCK\s+RESUME\s+COMPLETE\s+RESCHEDULE\s+CANCEL\s*\}/u);
   assert.match(schema, /enum GrhActionCode\s*\{\s*REVIEW_CROSS_SOURCE_RECONCILIATION\s+REVIEW_TEMPORAL_QUARANTINE\s*\}/u);
   assert.match(schema, /model GrhActionCommitment\s*\{[\s\S]*?tenantId\s+String[\s\S]*?actionCode\s+GrhActionCode[\s\S]*?ownerUserId\s+String\?[\s\S]*?version\s+Int[\s\S]*?@@unique\(\[tenantId, briefSchemaVersion, briefPolicyVersion, sourceSha256, snapshotAsOf, period, evidenceDigest, priorityCode\], map: "grh_action_commitments_evidence_priority_key"\)[\s\S]*?@@map\("grh_action_commitments"\)/u);
-  assert.match(schema, /model GrhActionCommitmentEvent\s*\{[\s\S]*?commandId\s+String[\s\S]*?payloadDigest\s+String[\s\S]*?actorUserId\s+String[\s\S]*?expectedVersion\s+Int[\s\S]*?resultVersion\s+Int[\s\S]*?@@unique\(\[tenantId, commandId\]\)[\s\S]*?@@map\("grh_action_commitment_events"\)/u);
+  assert.match(schema, /model GrhActionCommitmentEvent\s*\{[\s\S]*?commandId\s+String[\s\S]*?payloadDigest\s+String[\s\S]*?actorUserId\s+String[\s\S]*?expectedVersion\s+Int[\s\S]*?resultVersion\s+Int[\s\S]*?@@unique\(\[tenantId, commandId\], map: "grh_action_commitment_events_tenant_command_key"\)[\s\S]*?@@map\("grh_action_commitment_events"\)/u);
   assert.match(schema, /fields: \[tenantId, ownerUserId\], references: \[tenantId, id\], onDelete: Restrict/u);
   assert.match(schema, /fields: \[tenantId, commitmentId\], references: \[tenantId, id\], onDelete: Restrict/u);
+});
+
+test('Prisma owns the exact ledger constraint, index, and updated-at defaults applied by SQL', async () => {
+  const [schema, sql] = await Promise.all([
+    readFile(schemaPath, 'utf8'),
+    readFile(migrationPath, 'utf8'),
+  ]);
+  const mappedDatabaseNames = [
+    'grh_action_commitments_created_by_fkey',
+    'grh_action_commitments_owner_fkey',
+    'grh_action_commitments_tenant_state_due_idx',
+    'grh_action_commitments_tenant_assignee_state_idx',
+    'grh_action_commitment_events_commitment_fkey',
+    'grh_action_commitment_events_actor_fkey',
+    'grh_action_commitment_events_tenant_command_key',
+    'grh_action_commitment_events_commitment_sequence_idx',
+    'grh_action_commitment_events_actor_occurred_idx',
+  ];
+
+  for (const name of mappedDatabaseNames) {
+    assert.ok(schema.includes(`map: "${name}"`), `schema must own ${name}`);
+    assert.ok(sql.includes(`"${name}"`), `migration must create ${name}`);
+  }
+
+  assert.match(schema, /updatedAt\s+DateTime\s+@default\(now\(\)\)\s+@updatedAt\s+@map\("updated_at"\)\s+@db\.Timestamptz\(6\)/u);
+  assert.match(sql, /"updated_at" TIMESTAMPTZ\(6\) NOT NULL DEFAULT CURRENT_TIMESTAMP/u);
 });
 
 test('migration is additive, seed-free and constrains the frozen workflow in PostgreSQL', async () => {

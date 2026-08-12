@@ -1,9 +1,9 @@
 # Procedimiento de baseline y drift Prisma
 
 **Versi\u00f3n:** 1.3.0
-**Fecha de corte:** 9 de agosto de 2026
-**Estado:** S14C `Unreleased`; baseline v2 reproducible y replay aprobado en branches hijos efímeros; cero escrituras Preview/Production; DDL estable bloqueado por target y atestación no gobernados
-**Alcance:** esquema core Prisma y futura migraci\u00f3n RBAC/ABAC
+**Fecha de corte:** 11 de agosto de 2026
+**Estado:** S14C mantiene el baseline v2 reproducible; el rehearsal conectado del ledger sigue `Unreleased`, con historia, catálogo y diff cero verificados en un child Neon schema-only; main, Preview y Production permanecen con cero DDL; release estable bloqueado por target/atestación/backup y configuración/identidades de Preview
+**Alcance:** esquema core Prisma, historia enterprise authz/ledger y gates conectados de drift/release
 
 ## 1. Decisi\u00f3n operativa
 
@@ -33,8 +33,10 @@ la base siga sin drift ni autoriza DDL. Por eso `--release` termina siempre con
 - `prisma/schema.prisma` valida est\u00e1ticamente.
 - `prisma/proposals/rbac-abac-v1.prisma` es una propuesta aislada; no es una
   migraci\u00f3n aplicable.
-- Existe `prisma/migrations/20260809220336_baseline/migration.sql`,
-  `migration_lock.toml` y `baseline-manifest.json` contract v2.
+- Existen el baseline `20260809220336_baseline` y las migraciones aditivas
+  `20260811122648_grh_directory_enterprise_authz` y
+  `20260811190000_grh_action_ledger`, además de `migration_lock.toml` y
+  `baseline-manifest.json` contract v2.
 - Prisma y `@prisma/client` están pineados exactamente a `5.22.0` en root y
   backend. El baseline normalizado tiene 20.134 bytes y 82 sentencias permitidas:
   3 enums, 25 tablas, 25 índices y 29 claves foráneas; cero DML, `DROP` o
@@ -96,7 +98,7 @@ Inspecci\u00f3n offline actual:
 
 ```powershell
 $env:PRISMA_BASELINE_ID='prisma-baseline-7c5f5aac9da1e72c6d2750110fba03944bdde6a6cb285f0d945ff84ce7be9fbb'
-$env:PRISMA_MIGRATION_SET_ID='prisma-set-075152dc94eadb7865ed91e952e17ef20cf0e21c5e91b5720277eb08c7b466be'
+$env:PRISMA_MIGRATION_SET_ID='prisma-set-a7bf1571b1dd7cdd00b5fba2f18a82e1ed980173c5c92406bbd7d9ea8081adcb'
 npm.cmd run db:baseline:manifest:check
 npm.cmd run db:baseline:status
 ```
@@ -367,6 +369,76 @@ para DDL estable, cuentas y release. La suite raíz S14C cerró 635 —634 aprob
 `v1.10.0` conserva tag `4108ca0` y 11/11 histórico, mientras el hotfix
 post-release `e74339c` cerró Production 12/12.
 
+### Corte conectado del ledger — child schema-only del 11 de agosto de 2026, no release
+
+La verificación conectada de este corte se limitó al child Neon descartable y
+schema-only `br-divine-feather-ac5byb1l`. No se aplicó ni marcó ninguna
+migración sobre main, Preview o Production, y tampoco se creó, promovió o
+modificó un deployment Vercel.
+
+En ese child se reprodujo la ruta B3 con alcance actualizado:
+
+1. `prisma migrate resolve --applied 20260809220336_baseline` registró el
+   baseline sobre el schema existente del child.
+2. `prisma migrate deploy` aplicó únicamente
+   `20260811122648_grh_directory_enterprise_authz` y
+   `20260811190000_grh_action_ledger`.
+3. `prisma migrate status` informó las tres migraciones y estado
+   **up-to-date**.
+4. El verificador de catálogo `grh-action-ledger-postgres-verification-v1`
+   terminó **PASS** dentro de `REPEATABLE READ READ ONLY` sobre PostgreSQL
+   `170010`. Observó la migración del ledger con SHA-256
+   `c5a3b63d7d64f1be4089df82c161f90707674ce73cc870764a225ee725bc455a`
+   y produjo el fingerprint saneado
+   `dbe339d045e5d09822eac514a528f96f8876f9517c318f6e5db3944026b1efaa`
+   a las `2026-08-12T00:01:22.274Z`.
+
+Los verdes de `migrate status` y del verificador prueban, respectivamente, la
+historia aplicada y la estructura exacta del ledger en ese child. El primer
+`prisma migrate diff` del schema completo sí detectó drift nominal y de
+relaciones/claves compound. Después de corregir maps, defaults y relaciones/FK
+en el schema y regenerar el manifest, la repetición conectada cerró
+`prisma migrate status` **up-to-date** y
+`prisma migrate diff ... --exit-code` con **No difference detected** y exit `0`.
+El gate de drift queda así cerrado para este rehearsal y este child.
+
+Ese cero drift no autoriza DDL estable. Todavía faltan identidad/propiedad
+gobernada del target, atestación institucional, backup/restore de la ventana y
+la configuración e identidades necesarias para los smokes de Preview. Main,
+Preview y Production siguen sin recibir DDL de este corte y no hay release
+estable.
+
+Después del PASS read-only se ejecutó, de forma separada, un probe funcional del
+store real contra Prisma/`pg` y exclusivamente con identidades/evidencia
+sintéticas en el mismo child. El flujo completó `create`, replay exacto del mismo
+comando, `claim` por `CONTADOR` y `complete`; cerró en versión 3, tres eventos y
+una fila en la lista, sin duplicar el compromiso. Pruebas SQL adversariales
+confirmaron además que los triggers append-only rechazaron `UPDATE` y `DELETE`
+directos sobre los eventos. Este probe sí mutó el child descartable y por eso no
+forma parte del verificador read-only. Después de capturar la evidencia, el child
+fue eliminado; el listado de control confirmó únicamente main y
+`municipio-junin-preview-s14b`. No fue un smoke HTTP, no tocó un target estable y
+no amplía la autorización de release. Este cleanup no prueba recoverability ni
+reemplaza un backup/restore ensayado.
+
+El comando read-only versionado y su contrato operativo están en
+[`GRH_ACTION_LEDGER_POSTGRES_GATE.md`](GRH_ACTION_LEDGER_POSTGRES_GATE.md):
+
+```powershell
+$env:GRH_ACTION_LEDGER_VERIFY_DATABASE_URL = '<secreto de lectura inyectado>'
+npm.cmd run db:grh-ledger:verify -- `
+  --connected `
+  --confirmation READ_ONLY_CATALOG `
+  --target-id target:<id-opaco-descartable>
+```
+
+Los smokes HTTP quedan en una fase posterior y separada. El recorrido
+`smoke:grh-ledger:candidate` es read-only respecto del ledger; el recorrido
+`smoke:grh-ledger:candidate:mutate` exige un Preview disposable, pines exactos y
+un fingerprint autorizado. Ninguno se ejecutó en este corte conectado. El
+runbook completo está en
+[`GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md`](GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md).
+
 El camino institucional completo que aún debe ejecutarse es:
 
 1. Congelar commit, digest del schema, target l\u00f3gico y ventana.
@@ -435,13 +507,21 @@ El manifest can\u00f3nico existe en
     "directory": "20260809220336_baseline",
     "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
   },
-  "schemaSha256": "1953c275cec5415a0508d77dcd433f65a7124bcc5c22c6ac7c52c61ccd9afb4d",
-  "migrationHistorySha256": "f42aa4107d44f4b9e8949187f099f0f1700bd100c346edfe900a0bfb4efb48ef",
-  "migrationSetId": "prisma-set-075152dc94eadb7865ed91e952e17ef20cf0e21c5e91b5720277eb08c7b466be",
+  "schemaSha256": "2b48a586f7e9f3bad618940860a0d01ab7551cd8054b4915db0635a1790e6a24",
+  "migrationHistorySha256": "4f173cdb25d013e53ee6e3c41b3138d7ef3a26592a4df2710413d5abb223ded7",
+  "migrationSetId": "prisma-set-a7bf1571b1dd7cdd00b5fba2f18a82e1ed980173c5c92406bbd7d9ea8081adcb",
   "migrations": [
     {
       "directory": "20260809220336_baseline",
       "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
+    },
+    {
+      "directory": "20260811122648_grh_directory_enterprise_authz",
+      "sha256": "3633447eefbca9e94b48e26a43fee1e6ea12e75fb1c300b6e6d3dc856f48a96e"
+    },
+    {
+      "directory": "20260811190000_grh_action_ledger",
+      "sha256": "c5a3b63d7d64f1be4089df82c161f90707674ce73cc870764a225ee725bc455a"
     }
   ]
 }
@@ -553,6 +633,14 @@ observación conectada separada, pero su estado `absent`, sus flags externos en
 Los fixtures prueban la lógica del gate; el artefacto S14B prueba únicamente la
 observación read-only realizada. Ninguno sustituye la atestación externa o la
 autorización institucional.
+
+`grh-action-ledger-postgres-verifier.test.mjs` fija la allowlist de catálogo, la
+transacción read-only, la migración y fingerprint saneado, y los fallos cerrados
+del comando `db:grh-ledger:verify`. `grh-action-ledger-candidate-smoke.test.mjs`
+fija la inspección doble del deployment, el gate read-only y el recorrido
+mutante disposable sin abrir red. Esas suites locales validan los verificadores;
+la única evidencia PostgreSQL real de este corte es el PASS conectado del child
+`br-divine-feather-ac5byb1l`, y no hubo smoke HTTP candidato.
 
 `prisma-schema-ownership.test.mjs` fija los 13 modelos, su clasificación 5/8,
 ambos clientes sin delegates y la proyección completa de campos, tipos, defaults,

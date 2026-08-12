@@ -247,9 +247,26 @@ npm run test:backend
 # Verdad de un preview/deployment candidato (GET anónimo, sin secretos)
 npm run release:truth:check -- --base-url https://preview-approved.example
 
+# Centro de decisiones en candidate Vercel: UI/login/GET, sin mutar el ledger
+npm run smoke:grh-ledger:candidate -- --candidate-url https://candidate-unique.vercel.app --deployment-id dpl_xxx --git-sha <40-hex>
+
+# Con GRH_ACTION_LEDGER_VERIFY_DATABASE_URL inyectada: validar configuración sin conectar
+npm run db:grh-ledger:verify -- --check-config --confirmation READ_ONLY_CATALOG --target-id target:<id-opaco-descartable>
+
 # Higiene del diff
 git diff --check
 ```
+
+El recorrido mutante `POST/replay/PATCH/history` está separado y sólo se habilita
+contra un Preview disposable pineado. Variables, ownership y receipt saneado:
+[`docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md`](docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md).
+El gate read-only también acepta el candidato final `--prod --skip-domain` por
+su URL única, sin mutarlo ni promover el alias estable.
+La ejecución conectada y read-only del catálogo PostgreSQL se documenta por
+separado en
+[`docs/GRH_ACTION_LEDGER_POSTGRES_GATE.md`](docs/GRH_ACTION_LEDGER_POSTGRES_GATE.md);
+un PASS en un child no sustituye un `migrate diff` sin drift ni autoriza DDL
+estable.
 
 Los tests dependientes de artefactos privados hacen `skip` explícito cuando no
 están provisionados; un `skip` no equivale a certificación de datos.

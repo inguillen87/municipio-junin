@@ -3,6 +3,10 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { createGrhActionLedgerHandler } from '../api/grh-action-ledger.js';
+import {
+  DATABASE_TARGET_FINGERPRINT_HEADER,
+  fingerprintDatabaseTarget,
+} from '../api/lib/database-target-fingerprint.js';
 import { GRH_ACTION_LEDGER_SCHEMA_VERSION, validateGrhActionLedgerContract } from
   '../api/lib/grh-action-ledger-contract.js';
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
@@ -17,6 +21,8 @@ process.env.GRH_TENANT_ID = 'tenant-junin-action-ledger-test';
 delete process.env.GRH_SOURCE_SHA256;
 
 const NOW = new Date('2026-08-11T12:00:00.000Z');
+const DATABASE_URL = 'postgresql://ledger-test:do-not-print@ep-ledger-main-a1b2c3-pooler.us-east-2.aws.neon.tech/municontrol?sslmode=verify-full';
+const DATABASE_TARGET_FINGERPRINT = fingerprintDatabaseTarget(DATABASE_URL);
 const CREATE_COMMAND_ID = '11111111-1111-4111-8111-111111111111';
 const COMMITMENT_ID = '22222222-2222-4222-8222-222222222222';
 const CREATE_EVENT_ID = '33333333-3333-4333-8333-333333333333';
@@ -180,7 +186,14 @@ function mutableStore(initial = []) {
   };
 }
 
-function handlerFor({ bundle, caller, store, requireCapabilityImpl, clock = () => NOW } = {}) {
+function handlerFor({
+  bundle,
+  caller,
+  store,
+  requireCapabilityImpl,
+  databaseUrlImpl = () => DATABASE_URL,
+  clock = () => NOW,
+} = {}) {
   return createGrhActionLedgerHandler({
     requireCapabilityImpl: requireCapabilityImpl || (async (_req, _res, resource, action) => {
       assert.equal(resource, routePolicy.RESOURCES.GRH_ACTION_LEDGER);
@@ -199,6 +212,7 @@ function handlerFor({ bundle, caller, store, requireCapabilityImpl, clock = () =
     },
     readArtifactBundleImpl: async () => bundle,
     storeImpl: store,
+    databaseUrlImpl,
     clock,
   });
 }
@@ -221,6 +235,7 @@ test('the ledger publishes one contract and allows only GET, POST and PATCH befo
   );
   assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
   assert.equal(response.headers.vary, 'Authorization');
+  assert.equal(response.headers[DATABASE_TARGET_FINGERPRINT_HEADER.toLowerCase()], undefined);
   assert.equal(authenticated, false);
 });
 
@@ -269,11 +284,45 @@ test('GET rebuilds the governed brief and returns a valid read-only published-de
   await handler(request(), response);
 
   assert.equal(response.statusCode, 200);
+  assert.equal(
+    response.headers[DATABASE_TARGET_FINGERPRINT_HEADER.toLowerCase()],
+    DATABASE_TARGET_FINGERPRINT,
+  );
   assert.equal(validateGrhActionLedgerContract(response.payload), true);
   assert.deepEqual(response.payload.permissions, {
     canRead: true, canCreate: false, canUpdate: false, canCancel: false, canReschedule: false,
   });
   assert.deepEqual(store.calls.list, [{ tenantId: process.env.GRH_TENANT_ID }]);
+});
+
+test('authenticated GET fails closed on an invalid database target without exposing or reading data', async () => {
+  const bundle = await artifactFixture();
+  const store = mutableStore();
+  let artifactReads = 0;
+  const secret = 'database-secret-must-not-escape';
+  const handler = createGrhActionLedgerHandler({
+    requireCapabilityImpl: async () => ({
+      id: 'private-user', email: 'private@example.test', role: 'INTENDENTE',
+      tenantId: process.env.GRH_TENANT_ID,
+    }),
+    requireDatasetTenantImpl: () => true,
+    databaseUrlImpl: () => `postgresql://ledger:${secret}@ep-main.neon.tech/db?host=ep-child.neon.tech`,
+    readArtifactBundleImpl: async () => { artifactReads += 1; return bundle; },
+    storeImpl: store,
+  });
+  const response = responseRecorder();
+  await handler(request('GET'), response);
+
+  assert.equal(response.statusCode, 503);
+  assert.deepEqual(response.payload, {
+    error: 'El registro operativo GRH no esta disponible.',
+    code: 'GRH_ACTION_LEDGER_UNAVAILABLE',
+  });
+  assert.equal(response.headers[DATABASE_TARGET_FINGERPRINT_HEADER.toLowerCase()], undefined);
+  assert.equal(artifactReads, 0);
+  assert.equal(store.calls.list.length, 0);
+  assert.doesNotMatch(JSON.stringify({ headers: response.headers, payload: response.payload }),
+    new RegExp(secret));
 });
 
 test('POST derives every evidence field server-side and returns the full created ledger', async () => {

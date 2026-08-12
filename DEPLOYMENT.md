@@ -85,6 +85,16 @@ lector GRH.
 9. Guardar evidencia: URL, deployment ID, commit, DB branch, fecha, operador y
    receipt del gate en el sistema externo de release; no commitear receipts.
 
+El Centro de decisiones tiene un gate externo separado, documentado en
+[`docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md`](docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md).
+`npm run smoke:grh-ledger:candidate` es read-only respecto del ledger. El script
+read-only admite un target `preview` o el candidato final `production` creado
+con `--prod --skip-domain`, pero siempre rechaza el alias estable. El script
+mutante se rechaza salvo que el deployment sea `READY`/`preview`, la URL única,
+el ID y Git SHA estén pineados y se aporte el fingerprint SHA-256 de un target
+disposable autorizado. Nunca debe ejecutarse el recorrido mutante contra el
+alias estable ni contra un deployment cuyo target sea Production.
+
 ### Replay descartable S14C: evidencia útil, no promoción
 
 S14C verificó el baseline sobre dos hijos Neon descartables creados en un LSN de
@@ -101,6 +111,47 @@ receipt externo saneado, pero no es un receipt gobernado de release ni una
 atestación institucional. Tampoco resuelve que el proyecto Neon observado se denomine
 `puntolimpio-staging-neon`: hasta documentar propiedad, municipio y alcance de
 ese target, queda prohibido aplicar o marcar migraciones en ramas estables.
+
+### Ledger conectado en child schema-only: gate parcial, no release
+
+El 11 de agosto de 2026 se usó exclusivamente el child Neon descartable
+`br-divine-feather-ac5byb1l`: se resolvió el baseline por la ruta B3 y se
+aplicaron las dos migraciones posteriores, incluida
+`20260811190000_grh_action_ledger`. `prisma migrate status` quedó up-to-date y
+`npm run db:grh-ledger:verify` terminó PASS en una transacción read-only sobre
+PostgreSQL `170010`, con fingerprint saneado
+`dbe339d045e5d09822eac514a528f96f8876f9517c318f6e5db3944026b1efaa`.
+
+Ese PASS acredita la historia y el catálogo del ledger sólo en ese child. El
+primer `prisma migrate diff` del schema completo detectó drift nominal y de
+relaciones/claves compound. Tras corregir maps, defaults y relaciones/FK en el
+schema y regenerar el manifest, la repetición conectada terminó con
+`prisma migrate status` up-to-date y
+`prisma migrate diff ... --exit-code` en **No difference detected**, exit `0`.
+El gate de drift quedó cerrado para ese rehearsal.
+
+Main, Preview y Production recibieron cero DDL; no hubo deployment, promoción
+ni smoke HTTP en este corte. El release estable sigue bloqueado por el target y
+su atestación, backup/restore gobernado, y la configuración e identidades de
+Preview. El cero drift del child no reemplaza ninguno de esos gates.
+
+Como prueba efímera adicional, el store real Prisma/`pg` recorrió con datos
+sintéticos `create → replay exacto → claim CONTADOR → complete`; terminó en
+versión 3, con tres eventos y una fila listada. Los triggers append-only
+bloquearon también `UPDATE` y `DELETE` directos. Esa mutación ocurrió sólo en el
+child descartable. Después de capturar la evidencia, el child fue eliminado y
+el control listó únicamente main y `municipio-junin-preview-s14b`; no fue un
+smoke HTTP, no alcanzó main/Preview/Production y no autoriza un release estable.
+El cleanup no demuestra recoverability ni sustituye backup/restore.
+
+El verificador PostgreSQL y los dos smokes candidatos quedan operables y
+separados en
+[`docs/GRH_ACTION_LEDGER_POSTGRES_GATE.md`](docs/GRH_ACTION_LEDGER_POSTGRES_GATE.md)
+y
+[`docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md`](docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md).
+El smoke mutante sólo puede seguir sobre un Preview realmente descartable, con
+configuración, identidades y pines/fingerprint registrados fuera del repo. El
+child ya eliminado no puede reutilizarse como target candidato.
 
 Comando manual, sólo con autorización de release:
 

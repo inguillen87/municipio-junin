@@ -8,6 +8,10 @@ import {
   buildGrhActionLedgerEvidence,
   buildGrhActionLedgerProjection,
 } from './lib/grh-action-ledger-projection.js';
+import {
+  DATABASE_TARGET_FINGERPRINT_HEADER,
+  fingerprintDatabaseTarget,
+} from './lib/database-target-fingerprint.js';
 import grhActionLedgerStore from './lib/grh-action-ledger-store.js';
 import { readGrhArtifactBundle } from './lib/grh-artifacts.js';
 import { buildGrhCloseProjection } from './lib/grh-close-projection.js';
@@ -228,6 +232,8 @@ export function createGrhActionLedgerHandler({
   buildLedgerProjectionImpl = buildGrhActionLedgerProjection,
   inspectLedgerImpl = inspectGrhActionLedgerContract,
   isPublishedDemoIdentityImpl = isPublishedDemoIdentity,
+  databaseTargetFingerprintImpl = fingerprintDatabaseTarget,
+  databaseUrlImpl = () => process.env.DATABASE_URL,
   clock = () => new Date(),
 } = {}) {
   return async function handler(req, res) {
@@ -252,6 +258,20 @@ export function createGrhActionLedgerHandler({
 
     const caller = await requireCapabilityImpl(req, res, RESOURCES.GRH_ACTION_LEDGER, action);
     if (!caller || !requireDatasetTenantImpl(res, caller, 'GRH_TENANT_ID')) return;
+
+    if (req.method === 'GET') {
+      try {
+        const databaseTargetFingerprint = databaseTargetFingerprintImpl(databaseUrlImpl());
+        if (!SHA256.test(databaseTargetFingerprint || '')) throw new Error('invalid fingerprint');
+        res.setHeader(DATABASE_TARGET_FINGERPRINT_HEADER, databaseTargetFingerprint);
+      } catch {
+        console.error('[GRH-ACTION-LEDGER] Database target identity unavailable');
+        return res.status(503).json({
+          error: 'El registro operativo GRH no esta disponible.',
+          code: 'GRH_ACTION_LEDGER_UNAVAILABLE',
+        });
+      }
+    }
 
     let brief;
     try {

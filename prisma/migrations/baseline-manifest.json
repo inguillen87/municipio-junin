@@ -12,9 +12,9 @@
     "directory": "20260809220336_baseline",
     "sha256": "a72524f69dc130209ae82d4b9bc736b76847b8a4f1536b4f05aaef41f4540dbd"
   },
-  "schemaSha256": "2912b35abfd570f4c3dd26c894073daafe4fc241abe06cec41389168c0a52069",
+  "schemaSha256": "2b48a586f7e9f3bad618940860a0d01ab7551cd8054b4915db0635a1790e6a24",
   "migrationHistorySha256": "4f173cdb25d013e53ee6e3c41b3138d7ef3a26592a4df2710413d5abb223ded7",
-  "migrationSetId": "prisma-set-4f6184b469a7381f8b874d478e509e527696f267385b43a339ace6302f124380",
+  "migrationSetId": "prisma-set-a7bf1571b1dd7cdd00b5fba2f18a82e1ed980173c5c92406bbd7d9ea8081adcb",
   "migrations": [
     {
       "directory": "20260809220336_baseline",

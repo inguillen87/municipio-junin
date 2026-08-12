@@ -117,9 +117,53 @@ test('the Prisma model exposes tenant-aware relations without replacing the lega
   assert.match(audit, /chainSequence\s+BigInt\s+@map\("chain_sequence"\)/u);
   assert.match(audit, /assignmentIds\s+String\[\]\s+@map\("assignment_ids"\)/u);
   assert.match(audit, /scopeIds\s+String\[\]\s+@map\("scope_ids"\)/u);
-  assert.match(audit, /@@unique\(\[chainPartition, chainSequence\]\)/u);
+  assert.match(audit, /@@unique\(\[chainPartition, chainSequence\], map: "security_audit_events_chain_partition_sequence_key"\)/u);
   assert.doesNotMatch(audit, /\b(?:actorUserId|actorSessionId|targetType|targetId|metadata|requestDigest|signerKeyId|actionKey|scopeId)\b/u);
   assert.match(schema, /^enum Role \{[\s\S]*?^\}/mu);
+});
+
+test('Prisma owns the exact enterprise constraint and index names applied by SQL', () => {
+  const mappedDatabaseNames = [
+    'auth_user_security_states_tenant_user_fkey',
+    'auth_user_security_states_suspender_fkey',
+    'auth_user_security_states_revoker_fkey',
+    'auth_org_units_parent_tenant_fkey',
+    'auth_org_units_creator_fkey',
+    'auth_org_unit_closure_ancestor_tenant_fkey',
+    'auth_org_unit_closure_descendant_tenant_fkey',
+    'auth_org_unit_closure_tenant_ancestor_descendant_key',
+    'auth_org_unit_closure_tenant_descendant_depth_idx',
+    'auth_policy_bundles_creator_fkey',
+    'auth_role_definitions_policy_bundle_fkey',
+    'auth_role_definitions_creator_fkey',
+    'auth_role_capabilities_role_definition_fkey',
+    'auth_role_capabilities_capability_fkey',
+    'auth_role_capabilities_role_definition_capability_key',
+    'auth_scopes_org_unit_tenant_fkey',
+    'auth_scopes_creator_fkey',
+    'auth_role_assignments_subject_fkey',
+    'auth_role_assignments_subject_tenant_fkey',
+    'auth_role_assignments_role_definition_fkey',
+    'auth_role_assignments_scope_fkey',
+    'auth_role_assignments_scope_tenant_fkey',
+    'auth_role_assignments_requester_fkey',
+    'auth_role_assignments_revoker_fkey',
+    'auth_role_assignments_supersedes_fkey',
+    'auth_role_assignments_subject_status_valid_until_idx',
+    'auth_role_assignments_tenant_role_status_idx',
+    'security_audit_events_chain_partition_sequence_key',
+  ];
+
+  for (const name of mappedDatabaseNames) {
+    assert.ok(schema.includes(`map: "${name}"`), `schema must own ${name}`);
+    assert.ok(migration.includes(`"${name}"`), `migration must create ${name}`);
+  }
+
+  const securityState = modelBlock(schema, 'UserSecurityState');
+  assert.match(securityState, /tenantUser\s+User\?\s+@relation\("UserSecurityStateTenantSubject", fields: \[tenantId, userId\], references: \[tenantId, id\]/u);
+  const assignment = modelBlock(schema, 'RoleAssignment');
+  assert.match(assignment, /tenantSubject\s+User\?\s+@relation\("RoleAssignmentTenantSubject", fields: \[tenantId, subjectUserId\], references: \[tenantId, id\]/u);
+  assert.match(assignment, /tenantScope\s+AuthorizationScope\?\s+@relation\("RoleAssignmentTenantScope", fields: \[tenantId, scopeId\], references: \[tenantId, id\]/u);
 });
 
 test('the migration is additive, creates exactly the authorized tables, and contains no seed data', () => {

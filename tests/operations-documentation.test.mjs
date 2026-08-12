@@ -938,6 +938,56 @@ test('Prisma baseline is reproducible offline while release stays blocked withou
   assert.match(runbook, /CI\/KMS\/OIDC/);
 });
 
+test('connected GRH ledger rehearsal closes child drift without authorizing stable release', () => {
+  const rootManifest = JSON.parse(read('package.json'));
+  const migrationManifest = JSON.parse(read('prisma/migrations/baseline-manifest.json'));
+  const runbook = read('docs/PRISMA_BASELINE_Y_DRIFT.md');
+  const deployment = read('DEPLOYMENT.md');
+  const readme = read('README.md');
+  const postgresGate = read('docs/GRH_ACTION_LEDGER_POSTGRES_GATE.md');
+  const candidateSmoke = read('docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md');
+
+  assert.equal(rootManifest.scripts['db:grh-ledger:verify'],
+    'node scripts/verify-grh-action-ledger-postgres.mjs');
+  assert.equal(rootManifest.scripts['smoke:grh-ledger:candidate'],
+    'node scripts/grh-action-ledger-candidate-smoke.mjs');
+  assert.equal(rootManifest.scripts['smoke:grh-ledger:candidate:mutate'],
+    'node scripts/grh-action-ledger-candidate-smoke.mjs --mutate-disposable');
+  assert.deepEqual(migrationManifest.migrations.map(entry => entry.directory), [
+    '20260809220336_baseline',
+    '20260811122648_grh_directory_enterprise_authz',
+    '20260811190000_grh_action_ledger',
+  ]);
+
+  for (const source of [runbook, deployment]) {
+    assert.match(source, /br-divine-feather-ac5byb1l/);
+    assert.match(source, /migrate status[\s\S]{0,100}up-to-date/i);
+    assert.match(source, /PostgreSQL[\s\S]{0,30}170010/i);
+    assert.match(source, /dbe339d045e5d09822eac514a528f96f8876f9517c318f6e5db3944026b1efaa/);
+    assert.match(source, /migrate diff[\s\S]{0,180}drift nominal[\s\S]{0,160}(?:compound|compuestas?)/i);
+    assert.match(source, /No difference detected[\s\S]{0,80}exit `0`/i);
+    assert.match(source, /(?:gate de drift[\s\S]{0,60}cerrado|cero drift)/i);
+    assert.match(source, /(?:cero DDL[^\n]{0,100}main,\s*Preview\s*y\s*Production|main,\s*Preview\s*(?:y|o)\s*Production[\s\S]{0,100}(?:cero DDL|no se aplic|permanecen|recibieron))/i);
+    assert.match(source, /(?:no hay release estable|no es (?:un )?release estable|release estable\s+(?:sigue\s+)?bloqueado|prohibido convertir[\s\S]{0,80}en un\s+release estable)/i);
+    assert.match(source, /target[\s\S]{0,180}atestaci[oó]n[\s\S]{0,180}backup[\s\S]{0,240}(?:Preview[\s\S]{0,120}(?:configuraci[oó]n|identidades)|(?:configuraci[oó]n|identidades)[\s\S]{0,120}Preview)/i);
+    assert.match(source, /store real[\s\S]{0,120}(?:Prisma\/`pg`|Prisma\/[`]?pg[`]?)[\s\S]{0,220}(?:replay exacto|replay)[\s\S]{0,100}CONTADOR[\s\S]{0,100}(?:complete|versi[oó]n 3)/i);
+    assert.match(source, /versi[oó]n 3[\s\S]{0,80}tres eventos[\s\S]{0,80}una (?:fila|fila en la lista|fila listada)/i);
+    assert.match(source, /triggers append-only[\s\S]{0,100}(?:rechazaron|bloquearon)[\s\S]{0,40}`UPDATE`[\s\S]{0,40}`DELETE`/i);
+    assert.match(source, /(?:datos|identidades\/evidencia)\s+sint[eé]tic/i);
+    assert.match(source, /no fue un\s+smoke HTTP/i);
+  }
+
+  assert.match(runbook, /20260809220336_baseline[\s\S]{0,500}20260811122648_grh_directory_enterprise_authz[\s\S]{0,180}20260811190000_grh_action_ledger/);
+  assert.match(runbook, /grh-action-ledger-postgres-verification-v1[\s\S]{0,120}(?:PASS|read only)/i);
+  assert.match(runbook, /2026-08-12T00:01:22\.274Z/);
+  assert.match(postgresGate, /REPEATABLE READ READ ONLY/);
+  assert.match(postgresGate, /no aplica migraciones[\s\S]{0,100}no autoriza DDL/i);
+  assert.match(candidateSmoke, /Candidate read-only, predeterminado/i);
+  assert.match(candidateSmoke, /Candidate mutante, s[oó]lo Preview disposable/i);
+  assert.match(readme, /db:grh-ledger:verify/);
+  assert.match(readme, /GRH_ACTION_LEDGER_POSTGRES_GATE\.md/i);
+});
+
 test('seed stays retired without secrets, environment inventory or database access', () => {
   const envExample = read('backend/.env.example');
   const seed = read('backend/seed.js');

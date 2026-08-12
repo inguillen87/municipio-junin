@@ -845,13 +845,15 @@ function classifyWorkforceFinanceIntent(message) {
   const dimensions = FINANCE_DIMENSIONS.filter(item => item.pattern.test(message));
   if (dimensions.length === 0) return null;
   const hasFinancialMetric = /costo (?:neto|salarial|de nomina)|importe|monto|finanz|neto|bruto|retencion|aporte patronal|masa salarial|nomina|\bcalculo\b/.test(message);
-  if (/compar| versus |\bvs\b/.test(message)) {
+  const hasComparisonConnector = /compar|contrast|\bversus\b|\bvs\b|\bcontra\b|\bfrente a\b/.test(message);
+  const hasExecutivePairChoice = /\b(?:cual|que)\b.{0,160}\b(?:tiene|presenta|registra|es)\b.{0,60}\b(?:mas|mayor)\b/.test(message);
+  if (hasComparisonConnector || hasExecutivePairChoice) {
     return hasFinancialMetric ? 'workforce_finance_compare' : null;
   }
   if (/componentes?|composicion|descomposicion|desglos|como se compone/.test(message)) {
     return hasFinancialMetric ? 'workforce_finance_composition' : null;
   }
-  if (/evolucion|tendencia|ultimos? \d{1,2} meses|serie (?:mensual|historica)/.test(message)) {
+  if (/evolucion|tendencia|(?:ultimos?\s+|durante\s+)\d+\s+meses|serie (?:mensual|historica)/.test(message)) {
     return hasFinancialMetric ? 'workforce_finance_trend' : null;
   }
   if (hasFinancialMetric) {
@@ -1692,11 +1694,21 @@ export function parseWorkforceFinanceQuery(rawMessage, projection, intent) {
     };
   }
 
-  const rawWindow = message.match(/ultimos?\s+(\d{1,2})\s+meses/);
+  const rawWindow = message.match(/(?:ultimos?\s+|durante\s+)(\d+)\s+meses/);
   const windowMonths = rawWindow ? Number(rawWindow[1]) : 12;
   if (intent === 'workforce_finance_trend' &&
       (!Number.isSafeInteger(windowMonths) || windowMonths < 2 || windowMonths > 12)) {
     return { ok: false, code: 'FINANCE_TREND_WINDOW_UNSUPPORTED' };
+  }
+  const comparisonWindowRequested = intent === 'workforce_finance_compare' && Boolean(rawWindow);
+  if (comparisonWindowRequested &&
+      (dimension.key !== 'costCenter' || windowMonths !== projection.cohort.publishedWindowMonths ||
+       period !== projection.cohort.lastPeriod)) {
+    return {
+      ok: false,
+      code: 'FINANCE_COMPARE_WINDOW_UNSUPPORTED',
+      supportedWindowMonths: projection.cohort.publishedWindowMonths,
+    };
   }
   return {
     ok: true,
@@ -1708,6 +1720,7 @@ export function parseWorkforceFinanceQuery(rawMessage, projection, intent) {
     view,
     categories,
     windowMonths,
+    comparisonWindowRequested,
     projection,
   };
 }
@@ -1767,7 +1780,10 @@ function workforceFinanceOverviewAnswer(context, query) {
       `¿Cómo evolucionó el neto de ${top.label} por ${query.dimension.label} en los últimos 12 meses?`,
       `Mostrá los componentes de ${top.label} por ${query.dimension.label} en ${query.period}`,
     ],
-    actions: financeActions(top, query.dimension),
+    actions: financeActions(top, query.dimension, {
+      period: query.period,
+      lastPeriod: query.projection.cohort.lastPeriod,
+    }),
     visual: selected
       ? workforceFinanceComponentsVisual(context, top, query)
       : workforceFinanceRankingVisual(context, rows, query),
@@ -1797,7 +1813,10 @@ function workforceFinanceCompositionAnswer(context, query) {
       `¿Cómo evolucionó el neto de ${selected.label} por ${query.dimension.label} en los últimos 12 meses?`,
       `¿Qué costo neto se concentra por ${query.dimension.label} en ${query.period}?`,
     ],
-    actions: financeActions(selected, query.dimension),
+    actions: financeActions(selected, query.dimension, {
+      period: query.period,
+      lastPeriod: query.projection.cohort.lastPeriod,
+    }),
     visual: workforceFinanceComponentsVisual(context, selected, query),
     resolvedPeriod: query.period,
   };
@@ -1834,7 +1853,10 @@ function workforceFinanceTrendAnswer(context, query) {
       `Mostrá los componentes de ${latest.cell.label} por ${query.dimension.label} en ${latest.row.period}`,
       `¿Qué costo neto se concentra por ${query.dimension.label} en ${latest.row.period}?`,
     ],
-    actions: financeActions(latest.cell, query.dimension),
+    actions: financeActions(latest.cell, query.dimension, {
+      period: latest.row.period,
+      lastPeriod: query.projection.cohort.lastPeriod,
+    }),
     visual: workforceFinanceTrendVisual(context, rows, query),
     resolvedPeriod: `${first.row.period}→${latest.row.period}`,
   };
@@ -1854,9 +1876,25 @@ function workforceFinanceCompareAnswer(context, query) {
   const absoluteDelta = Math.abs(delta);
   const smallerValue = smaller.components[query.component.key];
   const deltaPct = smallerValue === 0 ? null : absoluteDelta / smallerValue * 100;
+  const comparisonAction = structureCostCenterComparisonAction(context, cells, query);
+  const latestPeriod = query.projection.cohort.lastPeriod;
+  const periodRange = `${query.projection.cohort.firstPeriod}→${latestPeriod}`;
+  const levelSummary = delta === 0
+    ? `${left.label} y ${right.label} registran el mismo valor de ${query.component.label.toLowerCase()}: ${formatSourceAmount(leftValue, context.presentation)}.`
+    : `${larger.label} supera a ${smaller.label} por ${formatSourceAmount(absoluteDelta, context.presentation)}${deltaPct === null ? '' : ` (${formatPercent(deltaPct)})`}.`;
+  const summary = query.comparisonWindowRequested
+    ? `La ventana gobernada de ${query.windowMonths} meses está disponible en Estructura. Como referencia del último mes liberado (${latestPeriod}), ${levelSummary}`
+    : levelSummary;
+  const actions = cells.flatMap(cell => financeActions(cell, query.dimension, {
+    period: query.period,
+    lastPeriod: latestPeriod,
+  }));
+  if (comparisonAction) actions.push(comparisonAction);
   return {
-    title: `${query.component.label} comparado · ${query.period}`,
-    summary: `${larger.label} supera a ${smaller.label} por ${formatSourceAmount(absoluteDelta, context.presentation)}${deltaPct === null ? '' : ` (${formatPercent(deltaPct)})`}.`,
+    title: query.comparisonWindowRequested
+      ? `${query.component.label} comparado · ${query.windowMonths} meses`
+      : `${query.component.label} comparado · ${query.period}`,
+    summary,
     findings: cells.map(cell =>
       `${cell.label}: ${formatSourceAmount(cell.components[query.component.key], context.presentation)} (${formatPercent(cell.allocationSharePct)} de asignación).`),
     evidence: cells.map(cell => metric(
@@ -1864,12 +1902,17 @@ function workforceFinanceCompareAnswer(context, query) {
       formatSourceAmount(cell.components[query.component.key], context.presentation),
       `${query.dimension.label} · ${query.period}.`,
     )),
-    caveats: workforceFinanceCaveats(query.projection),
+    caveats: query.comparisonWindowRequested
+      ? [
+        `El gráfico compacto muestra sólo el nivel de ${latestPeriod}; la pantalla Estructura recorre la ventana de ${query.windowMonths} meses y distingue los huecos no publicados.`,
+        ...workforceFinanceCaveats(query.projection),
+      ]
+      : workforceFinanceCaveats(query.projection),
     nextQuestions: cells.map(cell =>
       `¿Cómo evolucionó el neto de ${cell.label} por ${query.dimension.label} en los últimos 12 meses?`),
-    actions: cells.flatMap(cell => financeActions(cell, query.dimension)).slice(0, 4),
+    actions: actions.slice(0, 4),
     visual: workforceFinanceComparisonVisual(context, cells, query),
-    resolvedPeriod: query.period,
+    resolvedPeriod: query.comparisonWindowRequested ? periodRange : query.period,
   };
 }
 
@@ -1884,15 +1927,9 @@ function financeCellIdentity(cell) {
   return `${cell?.companyCode}:${cell?.sourceCode}`;
 }
 
-function financeActions(cell, dimension) {
-  if (!Number.isSafeInteger(cell?.companyCode) || !Number.isSafeInteger(cell?.sourceCode)) {
-    return [{
-      id: 'open_hacienda_cohorts',
-      label: 'Abrir cohortes en Hacienda',
-      href: '/hacienda#cohortContext',
-      requiredCapability: 'navigation.hacienda',
-    }];
-  }
+function financeActions(cell, dimension, { period = null, lastPeriod = null } = {}) {
+  if (!Number.isSafeInteger(cell?.companyCode) || cell.companyCode <= 0 ||
+      !Number.isSafeInteger(cell?.sourceCode) || cell.sourceCode < 0) return [];
   const parameters = new URLSearchParams({
     cohort: dimension.key,
     company: String(cell.companyCode),
@@ -1900,10 +1937,46 @@ function financeActions(cell, dimension) {
   });
   return [{
     id: `open_hacienda_${dimension.key}_${cell.companyCode}_${cell.sourceCode}`,
-    label: `Abrir ${cell.label} en Hacienda`,
+    label: period && lastPeriod && period !== lastPeriod
+      ? `Abrir la última publicación de ${cell.label} en Hacienda`
+      : `Abrir ${cell.label} en Hacienda`,
     href: `/hacienda?${parameters.toString()}#cohortContext`,
     requiredCapability: 'navigation.hacienda',
   }];
+}
+
+function structureCostCenterComparisonAction(context, cells, query) {
+  if (query.dimension.key !== 'costCenter' || cells.length !== 2 ||
+      context.workforce?.referencePeriod !== query.projection.cohort.lastPeriod) return null;
+  const releasedRows = Array.isArray(context.workforce?.byCostCenter?.rows)
+    ? context.workforce.byCostCenter.rows.filter(row => row.privacyStatus === 'released')
+    : [];
+  const identities = cells.map(cell => {
+    if (!Number.isSafeInteger(cell?.companyCode) || cell.companyCode <= 0 ||
+        !Number.isSafeInteger(cell?.sourceCode) || cell.sourceCode < 0) return null;
+    const matches = releasedRows.filter(row =>
+      row.companyCode === cell.companyCode && row.sourceCode === cell.sourceCode &&
+      normalize(row.label) === normalize(cell.label));
+    return matches.length === 1
+      ? { companyCode: cell.companyCode, sourceCode: cell.sourceCode }
+      : null;
+  });
+  if (identities.some(identity => identity === null) ||
+      financeCellIdentity(identities[0]) === financeCellIdentity(identities[1])) return null;
+  const [left, right] = identities;
+  const parameters = new URLSearchParams({
+    compare: 'costCenter',
+    leftCompany: String(left.companyCode),
+    leftCode: String(left.sourceCode),
+    rightCompany: String(right.companyCode),
+    rightCode: String(right.sourceCode),
+  });
+  return {
+    id: 'open_structure_cost_center_comparison',
+    label: 'Comparar ambas áreas en Estructura',
+    href: `/estructura?${parameters.toString()}#costCenterComparator`,
+    requiredCapability: 'navigation.organization-analytics',
+  };
 }
 
 function workforceFinanceCaveats(projection) {
@@ -1928,6 +2001,7 @@ function workforceFinanceLimit(query) {
     FINANCE_CATEGORY_AMBIGUOUS: 'La consulta no identifica la cantidad exacta de categorías requerida.',
     FINANCE_CATEGORY_UNAVAILABLE: 'La categoría no está liberada para ese período.',
     FINANCE_TREND_WINDOW_UNSUPPORTED: 'La tendencia admite entre 2 y 12 meses observados.',
+    FINANCE_COMPARE_WINDOW_UNSUPPORTED: `La comparación histórica está disponible para dos áreas de costo, usa la ventana gobernada completa de ${query.supportedWindowMonths || 24} meses y termina en el último período publicado.`,
     FINANCE_TREND_UNAVAILABLE: 'No hay al menos dos meses liberados y comparables para esa categoría.',
   };
   return {

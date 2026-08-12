@@ -841,6 +841,43 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.match(finance.text, /no atribuye causas/i);
   assert.doesNotMatch(finance.text, /DNI|CUIL|legajo/i);
 
+  await page.getByRole('button', { name: 'Comparar áreas' }).click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Neto de control comparado · 2026-07')));
+  const comparison = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      actions: Array.from(card?.querySelectorAll('.answer-action') || [], link => ({
+        label: link.textContent.trim(),
+        href: link.getAttribute('href'),
+        capability: link.dataset.capability,
+      })),
+      visualLabels: Array.from(card?.querySelectorAll('.answer-visual-row') || [], row =>
+        row.querySelector('.answer-visual-label')?.textContent.trim()),
+      text: card?.textContent || '',
+    };
+  });
+  assert.deepEqual(comparison.actions, [
+    {
+      label: 'Abrir SERVICIOS PUBLICOS en Hacienda',
+      href: '/hacienda?cohort=costCenter&company=101&code=2#cohortContext',
+      capability: 'navigation.hacienda',
+    },
+    {
+      label: 'Abrir SECRETARIA DE GOBIERNO en Hacienda',
+      href: '/hacienda?cohort=costCenter&company=101&code=3#cohortContext',
+      capability: 'navigation.hacienda',
+    },
+    {
+      label: 'Comparar ambas áreas en Estructura',
+      href: '/estructura?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=3#costCenterComparator',
+      capability: 'navigation.organization-analytics',
+    },
+  ]);
+  assert.deepEqual(comparison.visualLabels, ['SERVICIOS PUBLICOS', 'SECRETARIA DE GOBIERNO']);
+  assert.match(comparison.text, /ARS\s*181\.563\.395,56/u);
+  assert.doesNotMatch(comparison.text, /DNI|CUIL|legajo/i);
+
   await page.getByRole('button', { name: 'Comparar movimientos' }).click();
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
     .some(title => title.textContent.includes('Movimientos GRH · 2024')));
@@ -861,8 +898,60 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.equal(movements.evidenceItems, 5);
   assert.match(movements.text, /eventos por participante observado/i);
   assert.match(movements.text, /no es una tasa de rotación/i);
-  assert.equal(requestLog.length, 3);
+  assert.equal(requestLog.length, 4);
   assert.equal(requestLog.every(item => item.purpose === 'AGGREGATE_ANALYSIS'), true);
+  await context.close();
+});
+
+test('assistant hides the structure comparator action without its exact navigation capability', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1280, height: 820 } });
+  await seedSession(context);
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+  const capabilities = await page.evaluate(() => {
+    const user = JSON.parse(sessionStorage.getItem('mjunin_user'));
+    user.capabilities = user.capabilities.filter(capability =>
+      capability !== 'navigation.organization-analytics');
+    sessionStorage.setItem('mjunin_user', JSON.stringify(user));
+    return user.capabilities;
+  });
+  assert.equal(capabilities.includes('navigation.ai-assistant'), true);
+  assert.equal(capabilities.includes('navigation.hacienda'), true);
+  assert.equal(capabilities.includes('navigation.organization-analytics'), false);
+
+  await page.getByRole('button', { name: 'Comparar áreas' }).click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Neto de control comparado · 2026-07')));
+  const actions = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return Array.from(card?.querySelectorAll('.answer-action') || [], link => ({
+      href: link.getAttribute('href'),
+      capability: link.dataset.capability,
+    }));
+  });
+  assert.deepEqual(actions, [
+    {
+      href: '/hacienda?cohort=costCenter&company=101&code=2#cohortContext',
+      capability: 'navigation.hacienda',
+    },
+    {
+      href: '/hacienda?cohort=costCenter&company=101&code=3#cohortContext',
+      capability: 'navigation.hacienda',
+    },
+  ]);
+  assert.equal(actions.some(action => action.href.startsWith('/estructura?compare=costCenter&')), false);
+  assert.equal(requestLog.length, 1);
+  assert.equal(requestLog[0].body.message,
+    'Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en 2026-07');
   await context.close();
 });
 

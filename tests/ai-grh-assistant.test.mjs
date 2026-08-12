@@ -1102,8 +1102,149 @@ test('decision brief and workforce-finance intents answer from the governed real
     'SERVICIOS PUBLICOS',
     'SECRETARIA DE GOBIERNO',
   ]);
-  assert.equal(comparison.answer.actions.length, 2);
+  assert.deepEqual(comparison.answer.actions, [
+    {
+      id: 'open_hacienda_costCenter_101_2',
+      label: 'Abrir SERVICIOS PUBLICOS en Hacienda',
+      href: '/hacienda?cohort=costCenter&company=101&code=2#cohortContext',
+      requiredCapability: 'navigation.hacienda',
+    },
+    {
+      id: 'open_hacienda_costCenter_101_3',
+      label: 'Abrir SECRETARIA DE GOBIERNO en Hacienda',
+      href: '/hacienda?cohort=costCenter&company=101&code=3#cohortContext',
+      requiredCapability: 'navigation.hacienda',
+    },
+    {
+      id: 'open_structure_cost_center_comparison',
+      label: 'Comparar ambas áreas en Estructura',
+      href: '/estructura?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=3#costCenterComparator',
+      requiredCapability: 'navigation.organization-analytics',
+    },
+  ]);
   assert.doesNotMatch(JSON.stringify(comparison), /dni|cuil|legajo|nombre|apellido/i);
+
+  const reversed = ask('Compará el neto de Secretaría de Gobierno y Servicios Públicos por centro de costo en 2026-07');
+  assert.equal(reversed.intent, 'workforce_finance_compare');
+  assert.equal(reversed.status, 'answered');
+  assert.deepEqual(reversed.answer.visual.items.map(item => item.label), [
+    'SECRETARIA DE GOBIERNO',
+    'SERVICIOS PUBLICOS',
+  ]);
+  assert.deepEqual(reversed.answer.actions.map(action => action.href), [
+    '/hacienda?cohort=costCenter&company=101&code=3#cohortContext',
+    '/hacienda?cohort=costCenter&company=101&code=2#cohortContext',
+    '/estructura?compare=costCenter&leftCompany=101&leftCode=3&rightCompany=101&rightCode=2#costCenterComparator',
+  ]);
+  assert.equal(reversed.answer.actions[2].requiredCapability, 'navigation.organization-analytics');
+
+  const comparatorHref =
+    '/estructura?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=3#costCenterComparator';
+  const windowed = ask('Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en los últimos 24 meses');
+  assert.equal(windowed.status, 'answered');
+  assert.equal(windowed.resolvedPeriod, '2024-08→2026-07');
+  assert.match(windowed.answer.title, /24 meses/i);
+  assert.match(windowed.answer.summary, /ventana gobernada de 24 meses.*Estructura/i);
+  assert.match(windowed.answer.caveats[0], /gráfico compacto muestra sólo el nivel de 2026-07/i);
+  assert.equal(windowed.answer.actions.at(-1)?.href, comparatorHref);
+
+  const duringWindow = ask('Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo durante 24 meses');
+  assert.equal(duringWindow.status, 'answered');
+  assert.equal(duringWindow.resolvedPeriod, '2024-08→2026-07');
+  assert.equal(duringWindow.answer.actions.at(-1)?.href, comparatorHref);
+
+  const windowWithGap = ask('Compará el neto de HACIENDA y COMPRAS por centro de costo en los últimos 24 meses');
+  assert.equal(windowWithGap.status, 'answered');
+  assert.match(windowWithGap.answer.summary, /ventana gobernada de 24 meses/i);
+  assert.doesNotMatch(windowWithGap.answer.summary, /serie completa|24 niveles/i);
+  assert.match(windowWithGap.answer.caveats[0], /distingue los huecos no publicados/i);
+
+  const unsupportedWindow = ask('Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en los últimos 6 meses');
+  assert.equal(unsupportedWindow.status, 'limited');
+  assert.equal(unsupportedWindow.httpStatus, 422);
+  assert.equal(unsupportedWindow.answer.code, 'FINANCE_COMPARE_WINDOW_UNSUPPORTED');
+  assert.match(unsupportedWindow.answer.summary, /ventana gobernada completa de 24 meses/i);
+
+  const oversizedWindow = ask('Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en los últimos 240 meses');
+  assert.equal(oversizedWindow.status, 'limited');
+  assert.equal(oversizedWindow.httpStatus, 422);
+  assert.equal(oversizedWindow.answer.code, 'FINANCE_COMPARE_WINDOW_UNSUPPORTED');
+
+  const unsupportedDimensionWindow = ask('Compará el neto de OBRERO y ADMINISTRATIVO por sector en los últimos 24 meses');
+  assert.equal(unsupportedDimensionWindow.status, 'limited');
+  assert.equal(unsupportedDimensionWindow.httpStatus, 422);
+  assert.equal(unsupportedDimensionWindow.answer.code, 'FINANCE_COMPARE_WINDOW_UNSUPPORTED');
+  assert.match(unsupportedDimensionWindow.answer.summary, /disponible para dos áreas de costo/i);
+
+  const historical = ask('Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en 2024-08');
+  assert.equal(historical.status, 'answered');
+  assert.equal(historical.resolvedPeriod, '2024-08');
+  assert.match(historical.answer.actions[0].label, /última publicación.*SERVICIOS PUBLICOS/i);
+  assert.match(historical.answer.actions[1].label, /última publicación.*SECRETARIA DE GOBIERNO/i);
+  assert.equal(historical.answer.actions.at(-1)?.href, comparatorHref);
+});
+
+test('cost-center comparison understands bounded executive phrasing and never invents comparator links', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const data = realAssistantData(views);
+  const ask = question => buildDeterministicAnswer(
+    question,
+    views.executive,
+    views.quality,
+    views.close,
+    JUNIN_PRESENTATION,
+    data,
+  );
+  const expectedComparatorHref =
+    '/estructura?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=3#costCenterComparator';
+
+  for (const question of [
+    'Neto de Servicios Públicos contra Secretaría de Gobierno por centro de costo en 2026-07',
+    'Neto de Servicios Públicos frente a Secretaría de Gobierno por centro de costo en 2026-07',
+    '¿Cuál tiene más neto por centro de costo en 2026-07: Servicios Públicos o Secretaría de Gobierno?',
+    '¿Cuál de Servicios Públicos y Secretaría de Gobierno tiene mayor neto por centro de costo en 2026-07?',
+    'Entre Servicios Públicos y Secretaría de Gobierno, ¿cuál tiene más neto por centro de costo en 2026-07?',
+  ]) {
+    assert.deepEqual(classifyIntent(question), {
+      intent: 'workforce_finance_compare',
+      policy: 'allowed',
+    }, question);
+    const result = ask(question);
+    assert.equal(result.status, 'answered', question);
+    assert.deepEqual(result.answer.visual.items.map(item => item.label), [
+      'SERVICIOS PUBLICOS',
+      'SECRETARIA DE GOBIERNO',
+    ], question);
+    assert.equal(result.answer.actions.at(-1)?.href, expectedComparatorHref, question);
+  }
+
+  for (const scenario of [
+    {
+      question: 'Compará el neto de OBRERO y ADMINISTRATIVO por sector en 2026-07',
+      expectedStatus: 'answered',
+    },
+    {
+      question: 'Compará el neto de PERSONAL INTERINO y PERSONAL TEMPORARIO por acuerdo en 2026-07',
+      expectedStatus: 'answered',
+    },
+    {
+      question: 'Compará el neto de Servicios Públicos por centro de costo en 2026-07',
+      expectedStatus: 'limited',
+    },
+  ]) {
+    const result = ask(scenario.question);
+    assert.equal(result.status, scenario.expectedStatus, scenario.question);
+    assert.equal(
+      (result.answer.actions || []).some(action => action.href.startsWith('/estructura?compare=costCenter&')),
+      false,
+      scenario.question,
+    );
+  }
+
+  const equalValues = ask('Compará el importe no contributivo de FUNCIONARIOS y H.C.D. SECRETARIOS por sector en 2026-07');
+  assert.equal(equalValues.status, 'answered');
+  assert.match(equalValues.answer.summary, /registran el mismo valor de ingresos no contributivos: ARS\s*0,00/i);
+  assert.doesNotMatch(equalValues.answer.summary, /supera/i);
 });
 
 test('workforce-finance parser is one-dimensional, released-only and period bounded', { skip: !HAS_PRIVATE_GRH }, () => {
@@ -1309,6 +1450,15 @@ test('intent classifier keeps deterministic allowlist boundaries', () => {
   assert.deepEqual(classifyIntent('Tendencia por sector'), { intent: 'trend', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Composición por sector'), { intent: 'workforce_distribution', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Compará el neto por centro de costo'), { intent: 'workforce_finance_compare', policy: 'allowed' });
+  for (const question of [
+    'Neto de Servicios Públicos contra Secretaría de Gobierno por centro de costo en 2026-07',
+    'Neto de Servicios Públicos frente a Secretaría de Gobierno por centro de costo en 2026-07',
+    '¿Cuál tiene más neto por centro de costo en 2026-07: Servicios Públicos o Secretaría de Gobierno?',
+    '¿Cuál de Servicios Públicos y Secretaría de Gobierno tiene mayor neto por centro de costo en 2026-07?',
+    'Entre Servicios Públicos y Secretaría de Gobierno, ¿cuál tiene más neto por centro de costo en 2026-07?',
+  ]) {
+    assert.deepEqual(classifyIntent(question), { intent: 'workforce_finance_compare', policy: 'allowed' }, question);
+  }
   assert.deepEqual(classifyIntent('Carrera desarrollo'), { intent: 'domain_catalog', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Beneficios descuentos'), { intent: 'domain_catalog', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Relaciones laborales'), { intent: 'domain_catalog', policy: 'allowed' });

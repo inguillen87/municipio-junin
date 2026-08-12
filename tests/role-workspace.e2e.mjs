@@ -313,6 +313,8 @@ test('published high roles discover the aggregate staffing room in navigation an
     if (expected) {
       assert.match(surface.navText, /Estructura y áreas de costo/);
       assert.match(surface.actionText, /Estructura y áreas de costo/);
+      assert.match(surface.actionText, /compará dos áreas de costo/i);
+      assert.match(surface.actionText, /24 meses de neto de control/i);
     }
     await context.close();
   }

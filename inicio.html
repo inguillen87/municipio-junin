@@ -611,6 +611,13 @@
         });
         return ordered;
       }
+      function actionCopy(capability, action, projection) {
+        if (capability === 'navigation.organization-analytics' &&
+            projection.capabilities.indexOf('navigation.hacienda') !== -1) {
+          return 'Explorá clasificaciones GRH y compará dos áreas de costo con participación del último cálculo válido y 24 meses de neto de control.';
+        }
+        return action.copy;
+      }
       function renderActions(projection) {
         var container = document.getElementById('workspaceActions');
         var capabilities = orderedActionCapabilities(projection);
@@ -634,7 +641,7 @@
           link.href = action.href;
           link.dataset.capability = capability;
           tag.className = 'ws-action-tag'; tag.textContent = action.tag;
-          title.textContent = action.label; copy.textContent = action.copy;
+          title.textContent = action.label; copy.textContent = actionCopy(capability, action, projection);
           go.className = 'ws-action-go'; go.setAttribute('aria-hidden', 'true'); go.textContent = '→';
           header.append(tag, title, copy); link.append(header, go); container.appendChild(link);
         });

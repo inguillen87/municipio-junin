@@ -75,31 +75,31 @@ const ABSENCE_PEOPLE = Object.freeze([40, 35, 30, 25, 20, 15, 10, 10]);
 const ABSENCE_EVENTS = Object.freeze([80, 70, 60, 50, 40, 30, 20, 20]);
 const PAYROLL_COUNTS = Object.freeze([180, 140, 120, 100, 90, 70, 60, 40]);
 
-function dimensionRows(labels) {
+function dimensionRows(labels, protectedCategoryCount = 0) {
   return labels.map((label, index) => ({
-    code: index + 1,
-    label,
+    ...(protectedCategoryCount > 0 && index === labels.length - 1
+      ? { code: null, label: 'Otros grupos protegidos', privacyStatus: 'protected_aggregate' }
+      : { code: index + 1, label, privacyStatus: 'released' }),
     registeredRecords: REGISTERED_COUNTS[index],
     sharePct: share(REGISTERED_COUNTS[index], 800),
     recordsWithAbsence: null,
     absenceEvents: null,
     eventsPerRegisteredRecord: null,
     absencePrivacyStatus: 'protected',
-    privacyStatus: 'released',
   }));
 }
 
 function absenceRows() {
   return ORGANIZATION_LABELS.map((label, index) => ({
-    code: index + 1,
-    label,
+    ...(index === ORGANIZATION_LABELS.length - 1
+      ? { code: null, label: 'Otros grupos protegidos', privacyStatus: 'protected_aggregate' }
+      : { code: index + 1, label, privacyStatus: 'released' }),
     registeredRecords: REGISTERED_COUNTS[index],
     sharePct: share(ABSENCE_EVENTS[index], 370),
     recordsWithAbsence: ABSENCE_PEOPLE[index],
     absenceEvents: ABSENCE_EVENTS[index],
     eventsPerRegisteredRecord: round4(ABSENCE_EVENTS[index] / REGISTERED_COUNTS[index]),
     absencePrivacyStatus: 'released',
-    privacyStatus: 'released',
   }));
 }
 
@@ -137,21 +137,24 @@ function activitySeries({ participantStart, valueStart, valueStep }) {
 function matrixFixture() {
   const rows = ORGANIZATION_LABELS.slice(0, 5).map((label, index) => ({ code: index + 1, label }));
   const columns = SECTOR_LABELS.slice(0, 5).map((label, index) => ({ code: index + 11, label }));
-  const cells = rows.flatMap((row, rowIndex) => columns.map((column, columnIndex) => ({
-    organizationCode: row.code,
-    sectorCode: column.code,
-    registeredRecords: 10 + rowIndex * 5 + columnIndex,
-    privacyStatus: 'released',
-  })));
+  const cells = rows.flatMap((row, rowIndex) => columns.map((column, columnIndex) => {
+    const notObserved = rowIndex === 4 && columnIndex === 4;
+    return {
+      organizationCode: row.code,
+      sectorCode: column.code,
+      registeredRecords: notObserved ? 0 : 10 + rowIndex * 5 + columnIndex,
+      privacyStatus: notObserved ? 'not_observed' : 'released',
+    };
+  }));
   return {
     rowDimension: 'organization',
     columnDimension: 'sector',
     rows,
     columns,
     cells,
-    releasedCellCount: 25,
+    releasedCellCount: 24,
     protectedCellCount: 0,
-    maxReleasedRecords: 34,
+    maxReleasedRecords: 33,
   };
 }
 
@@ -181,18 +184,18 @@ const PAYLOAD = Object.freeze({
   organizations: {
     dimension: 'organization',
     denominatorRecords: 800,
-    categoryCount: 8,
-    releasedCategoryCount: 8,
-    protectedCategoryCount: 0,
-    rows: dimensionRows(ORGANIZATION_LABELS),
+    categoryCount: 10,
+    releasedCategoryCount: 7,
+    protectedCategoryCount: 3,
+    rows: dimensionRows(ORGANIZATION_LABELS, 3),
   },
   sectors: {
     dimension: 'sector',
     denominatorRecords: 800,
-    categoryCount: 8,
-    releasedCategoryCount: 8,
-    protectedCategoryCount: 0,
-    rows: dimensionRows(SECTOR_LABELS),
+    categoryCount: 9,
+    releasedCategoryCount: 7,
+    protectedCategoryCount: 2,
+    rows: dimensionRows(SECTOR_LABELS, 2),
   },
   matrix: matrixFixture(),
   absenceRanking: {
@@ -320,6 +323,14 @@ function clonePayload() {
   return structuredClone(PAYLOAD);
 }
 
+function singleProtectedSectorPayload() {
+  const payload = clonePayload();
+  payload.sectors.categoryCount = 8;
+  payload.sectors.protectedCategoryCount = 1;
+  payload.sectors.rows.at(-1).privacyStatus = 'suppressed';
+  return payload;
+}
+
 function authorizedSession(role = 'INTENDENTE', includeCapability = true) {
   const access = accessPolicy.getSessionAccessForUser({ role, tenantId: TENANT_ID });
   const capabilities = includeCapability
@@ -412,7 +423,9 @@ function scenarioPlugin(scenario, apiLog) {
             });
             return;
           }
-          const payload = clonePayload();
+          const payload = scenario.analyticsPayload
+            ? structuredClone(scenario.analyticsPayload)
+            : clonePayload();
           CONTRACT_MUTATIONS[mode]?.(payload);
           send(response, 200, 'application/json; charset=utf-8', JSON.stringify(payload), {
             [CONTRACT_HEADER]: mode === 'wrong-header' ? 'grh-organization-analytics-v1' : ANALYTICS_CONTRACT,
@@ -484,6 +497,7 @@ async function seedTheme(context, theme) {
 
 async function waitReady(page) {
   await page.locator('[data-testid="workforce-panel"]').waitFor({ state: 'visible' });
+  await page.locator('[data-testid="organization-explorer"]').waitFor({ state: 'visible' });
   await page.waitForFunction(() => document.querySelectorAll('.structure-kpi').length === 6);
 }
 
@@ -510,8 +524,14 @@ async function readyDiagnostics(page) {
       kpis: document.querySelectorAll('.structure-kpi').length,
       workforceRows: document.querySelectorAll('[data-testid="workforce-sector-bars"] .structure-bar').length,
       absenceRows: document.querySelectorAll('[data-testid="absence-ranking"] > li').length,
-      organizationRows: document.querySelectorAll('[data-testid="registry-organization-bars"] .structure-bar').length,
-      sectorRows: document.querySelectorAll('[data-testid="registry-sector-bars"] .structure-bar').length,
+      explorerOptions: document.querySelectorAll('[data-testid="organization-explorer-list"] button').length,
+      explorerProtectedSummary: document.querySelector('[data-testid="organization-explorer-protected-organization"]')
+        ?.textContent?.replace(/\s+/g, ' ').trim() || '',
+      explorerTitle: document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() || '',
+      explorerMetrics: document.querySelectorAll('.structure-explorer__metrics > div').length,
+      explorerDirectoryHref: document.querySelector('[data-testid="organization-explorer-directory-action"]')?.getAttribute('href') || '',
+      explorerHaciendaAction: Boolean(document.querySelector('[data-testid="organization-explorer-hacienda-action"]')),
+      explorerAssistantAction: Boolean(document.querySelector('[data-testid="organization-explorer-assistant-action"]')),
       activityFigures: document.querySelectorAll('[data-testid^="activity-"]').length,
       activityPlots: document.querySelectorAll('.activity-plot').length,
       activityPoints: Array.from(document.querySelectorAll('[data-testid^="activity-"]')).map(figure =>
@@ -530,7 +550,7 @@ async function readyDiagnostics(page) {
       fixtureLeak: /display_name|company_code|grossCents|"amounts"|\bDNI\s*[:#-]\s*\d|\blegajo\s*[:#-]\s*\d|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(text),
       monetaryLeak: /\b(?:importe|monto|remuneraci[oó]n|salario|sueldo)\b/i.test(text),
       leaveLeak: /\b(?:leave|licencia individual)\b/i.test(text),
-      nominalDeepLinkLeak: /#peopleDirectory|hasAbsence=/i.test(document.documentElement.innerHTML),
+      unsafeNominalDeepLinkLeak: /(?:company|legajo)=|hasAbsence=/i.test(document.documentElement.innerHTML),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     };
   });
@@ -568,8 +588,6 @@ async function exerciseReadyControls(page) {
 
   const toggles = [
     ['workforce-sector-toggle', 'workforce-sector-bars', '.structure-bar'],
-    ['registry-organization-toggle', 'registry-organization-bars', '.structure-bar'],
-    ['registry-sector-toggle', 'registry-sector-bars', '.structure-bar'],
     ['absence-ranking-toggle', 'absence-ranking', 'li'],
   ];
   for (const [toggleId, collectionId, rowSelector] of toggles) {
@@ -596,12 +614,50 @@ async function exerciseReadyControls(page) {
   await right.selectOption(alternatives.at(-1));
   assert.notEqual(await page.locator('.structure-comparator__result').innerText(), resultBefore);
 
+  const explorerSearch = page.locator('[data-testid="organization-explorer-search"]');
+  await explorerSearch.fill('Cultura');
+  assert.equal(await page.locator('[data-testid="organization-explorer-list"] button').count(), 1);
+  assert.match(await page.locator('[data-testid="organization-explorer-list"]').innerText(), /Cultura y Educación/u);
+  await explorerSearch.fill('');
+  assert.equal(await page.locator('[data-testid="organization-explorer-list"] button').count(), 7);
+  assert.match(await page.locator('[data-testid="organization-explorer-protected-organization"]').innerText(),
+    /Otros grupos protegidos.*3 categorías.*60.*7,5%/isu);
+  assert.equal(await page.locator('[data-testid="organization-explorer-protected-organization"] button').count(), 0);
+
+  const fifthOrganization = page.locator('[data-testid="organization-explorer-option-organization-5"]');
+  await fifthOrganization.focus();
+  await fifthOrganization.press('Enter');
+  assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Cultura y Educación');
+  assert.equal(new URL(page.url()).search, '?dimension=organization&code=5');
+  assert.match(await page.locator('[data-testid="organization-explorer-cross"]').innerText(),
+    /Sin observación en este cruce/u);
+
+  await page.locator('[data-testid="organization-explorer-dimension-sector"]').click();
+  assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Servicios Públicos');
+  assert.equal(new URL(page.url()).search, '?dimension=sector&code=1');
+  assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').getAttribute('href'),
+    '/rrhh?sector=1#peopleDirectory');
+  assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').getAttribute('href'),
+    '/hacienda?cohort=sector&company=101&code=1#cohortContext');
+  const assistantHref = await page.locator('[data-testid="organization-explorer-assistant-action"]').getAttribute('href');
+  assert.ok(assistantHref);
+  const assistantUrl = new URL(assistantHref, page.url());
+  assert.equal(assistantUrl.pathname, '/ia.html');
+  assert.equal(assistantUrl.searchParams.get('question'), 'Mostrá el neto de Servicios Públicos por sector');
+
+  await page.locator('[data-testid="organization-explorer-option-sector-2"]').click();
+  assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Administración');
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() ===
+    'Servicios Públicos');
+  assert.equal(new URL(page.url()).search, '?dimension=sector&code=1');
+
   const buttons = await page.locator('button:visible').evaluateAll(nodes => nodes.map(node => ({
     testId: node.getAttribute('data-testid'),
     className: node.className,
     label: node.getAttribute('aria-label') || node.textContent.trim(),
   })));
-  assert.equal(buttons.length, 8, JSON.stringify(buttons));
+  assert.ok(buttons.length >= 14, JSON.stringify(buttons));
   assert.equal(buttons.every(button => button.label.length > 0), true, JSON.stringify(buttons));
 
   await page.locator('a.skip-link').focus();
@@ -720,6 +776,9 @@ async function visualAudit(page) {
       '.structure-disclosure',
       '.structure-comparator select',
       '.structure-action',
+      '.structure-explorer__dimension',
+      '.structure-explorer__search input',
+      '.structure-explorer__list button',
     ].join(','))).filter(visible);
     const boundaryViolations = controls.map(node => {
       const style = getComputedStyle(node);
@@ -767,7 +826,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
   const browser = await chromium.launch({ headless: true });
   t.after(async () => browser.close());
 
-  await t.test('renders six KPIs, four operational analysis blocks and every visible control acts', async () => {
+  await t.test('renders six KPIs, the operational explorer and every visible control acts locally', async () => {
     await withScenario({ name: 'ready-desktop', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
       const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
         viewport: { width: 1_440, height: 1_000 },
@@ -787,8 +846,13 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(ready.kpis, 6);
         assert.equal(ready.workforceRows, 6);
         assert.equal(ready.absenceRows, 6);
-        assert.equal(ready.organizationRows, 6);
-        assert.equal(ready.sectorRows, 6);
+        assert.equal(ready.explorerOptions, 7);
+        assert.match(ready.explorerProtectedSummary, /Otros grupos protegidos.*3 categorías.*60.*7,5%/iu);
+        assert.equal(ready.explorerTitle, 'Servicios Urbanos');
+        assert.equal(ready.explorerMetrics, 5);
+        assert.equal(ready.explorerDirectoryHref, '/rrhh?organization=1#peopleDirectory');
+        assert.equal(ready.explorerHaciendaAction, false);
+        assert.equal(ready.explorerAssistantAction, false);
         assert.equal(ready.activityFigures, 2);
         assert.equal(ready.activityPlots, 4);
         assert.deepEqual(ready.activityPoints, [[8, 8], [8, 8]]);
@@ -807,7 +871,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(ready.fixtureLeak, false);
         assert.equal(ready.monetaryLeak, false);
         assert.equal(ready.leaveLeak, false);
-        assert.equal(ready.nominalDeepLinkLeak, false);
+        assert.equal(ready.unsafeNominalDeepLinkLeak, false);
         assert.ok(ready.overflow <= 1, `desktop overflow=${ready.overflow}`);
 
         await exerciseReadyControls(page);
@@ -819,6 +883,108 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assertNoPrivateDirectory(apiLog, diagnostics);
         assertCleanDiagnostics(diagnostics, 'desktop ready');
         await page.screenshot({ path: SCREENSHOTS.desktop, fullPage: true });
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('resolves exact explorer deep links and never refetches when the selection changes', async () => {
+    await withScenario({ name: 'deep-link-sector', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 1_440, height: 900 },
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?dimension=sector&code=2#organizationExplorer`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Administración');
+        assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').getAttribute('href'),
+          '/rrhh?sector=2#peopleDirectory');
+        assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').getAttribute('href'),
+          '/hacienda?cohort=sector&company=101&code=2#cohortContext');
+        const assistantHref = await page.locator('[data-testid="organization-explorer-assistant-action"]').getAttribute('href');
+        assert.equal(new URL(assistantHref, baseUrl).searchParams.get('question'),
+          'Mostrá el neto de Administración por sector');
+        assert.match(await page.locator('[data-testid="organization-explorer-absence-unavailable"]').innerText(),
+          /Sin desglose publicado.*no publica ausencias por sector informado/isu);
+
+        await page.locator('[data-testid="organization-explorer-option-sector-3"]').click();
+        assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Atención Territorial');
+        assert.equal(new URL(page.url()).search, '?dimension=sector&code=3');
+        assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'deep link sector');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('keeps an unpublished deep link scoped and empty until an exact row is selected', async () => {
+    await withScenario({ name: 'deep-link-invalid', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+        reducedMotion: 'reduce',
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?dimension=organization&code=999#organizationExplorer`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        const invalid = page.locator('[data-testid="organization-explorer-invalid-link"]');
+        await invalid.waitFor({ state: 'visible' });
+        assert.match(await invalid.textContent() || '', /no identifica.*no se muestran cifras/isu);
+        assert.equal(await page.locator('.structure-explorer__metrics').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
+        assert.doesNotMatch(await page.locator('[data-testid="organization-explorer-detail"]').innerText(),
+          /Servicios Urbanos|800|160/u);
+
+        await page.locator('[data-testid="organization-explorer-option-organization-1"]').click();
+        assert.equal(await invalid.count(), 0);
+        assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Servicios Urbanos');
+        assert.equal(await page.locator('.structure-explorer__metrics > div').count(), 5);
+        assert.equal(new URL(page.url()).search, '?dimension=organization&code=1');
+        assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'invalid explorer link');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('keeps a single suppressed category visible as a non-selectable distribution summary', async () => {
+    const analyticsPayload = singleProtectedSectorPayload();
+    assert.equal(inspectGrhOrganizationAnalyticsContract(analyticsPayload, {
+      expectedSourceSha256: SOURCE_SHA,
+      expectedSnapshotAsOf: SNAPSHOT,
+    }).ok, true);
+    await withScenario({
+      name: 'single-protected-sector',
+      role: 'INTENDENTE',
+      analyticsPayload,
+    }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?dimension=sector&code=1#organizationExplorer`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        const summary = page.locator('[data-testid="organization-explorer-protected-sector"]');
+        assert.match(await summary.textContent(), /Grupo protegido.*1 categoría.*60.*7,5%/isu);
+        assert.equal(await summary.locator('button, a').count(), 0);
+        assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'single protected sector');
       } finally {
         await context.close();
       }

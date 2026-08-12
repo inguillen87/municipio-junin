@@ -81,6 +81,8 @@ function buildWorkforceRanking(
     protectedParticipants,
     rows: ranking.rows.map((row, index) => ({
       key: `${key}-${String(row.sourceCode ?? 'protected')}-${index}`,
+      companyCode: row.companyCode,
+      sourceCode: row.sourceCode,
       label: row.label,
       participants: row.participants,
       participantLabel: formatNumber(row.participants),
@@ -143,8 +145,12 @@ function buildRegistry(
     label,
     denominatorRecords: dimension.denominatorRecords,
     denominatorLabel: `${formatNumber(dimension.denominatorRecords)} registros con ${label.toLocaleLowerCase('es-AR')}`,
+    categoryCount: dimension.categoryCount,
+    releasedCategoryCount: dimension.releasedCategoryCount,
+    protectedCategoryCount: dimension.protectedCategoryCount,
     rows: dimension.rows.map((row, index) => ({
       key: `${key}-${row.code ?? 'protected'}-${index}`,
+      code: row.code,
       label: row.label,
       registeredRecords: row.registeredRecords,
       registeredLabel: formatNumber(row.registeredRecords),
@@ -291,11 +297,17 @@ export function buildOrganizationAnalyticsViewModel(
     matrix: buildMatrix(contract),
     absenceRanking: contract.absenceRanking.rows.map((row, index) => ({
       key: `absence-${row.code ?? 'protected'}-${index}`,
+      organizationCode: row.code,
       rank: index + 1,
       label: row.label,
       registeredRecords: row.registeredRecords,
       recordsWithAbsence: row.recordsWithAbsence ?? 0,
       absenceEvents: row.absenceEvents ?? 0,
+      eventsPerRegisteredRecord: row.eventsPerRegisteredRecord,
+      eventIntensityLabel: row.eventsPerRegisteredRecord === null
+        ? 'Protegido'
+        : `${percentageFormatter.format(row.eventsPerRegisteredRecord)} eventos por registro`,
+      absencePrivacyStatus: row.absencePrivacyStatus,
       eventShareLabel: row.sharePct === null ? 'Protegido' : formatPercentage(row.sharePct),
       privacyStatus: row.privacyStatus,
     })),

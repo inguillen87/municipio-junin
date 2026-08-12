@@ -36,6 +36,28 @@ describe('organization analytics view model', () => {
       privacyStatus: 'protected_aggregate',
     });
     expect(viewModel.registries[0]?.rows.reduce((sum, row) => sum + row.registeredRecords, 0)).toBe(80);
+    expect(viewModel.registries[0]).toMatchObject({
+      categoryCount: 2,
+      releasedCategoryCount: 2,
+      protectedCategoryCount: 0,
+    });
+    expect(viewModel.registries[0]?.rows[0]).toMatchObject({ code: 101, label: 'Servicios Urbanos' });
+    expect(viewModel.workforce.sector.rows[0]).toMatchObject({
+      companyCode: 101,
+      sourceCode: 11,
+      label: 'Servicios Públicos',
+    });
+    expect(viewModel.workforce.sector.rows.at(-1)).toMatchObject({
+      companyCode: null,
+      sourceCode: null,
+      privacyStatus: 'protected_aggregate',
+    });
+    expect(viewModel.absenceRanking[0]).toMatchObject({
+      organizationCode: 101,
+      eventsPerRegisteredRecord: 1,
+      eventIntensityLabel: '1,0 eventos por registro',
+      absencePrivacyStatus: 'released',
+    });
   });
 
   it('prepares event and participant scales independently for both activity domains', () => {
@@ -50,6 +72,30 @@ describe('organization analytics view model', () => {
       eventLabel: '90',
       participantLabel: '30',
     });
+  });
+
+  it('keeps source codes when different categories share the same label', () => {
+    const candidate = structuredClone(createOrganizationAnalyticsContract()) as unknown as {
+      organizations: { rows: Array<{ code: number | null; label: string }> };
+      absenceRanking: { rows: Array<{ code: number | null; label: string }> };
+    };
+    candidate.organizations.rows[0]!.label = 'Etiqueta repetida';
+    candidate.organizations.rows[1]!.label = 'Etiqueta repetida';
+    candidate.absenceRanking.rows[0]!.label = 'Etiqueta repetida';
+    candidate.absenceRanking.rows[1]!.label = 'Etiqueta repetida';
+
+    const viewModel = buildOrganizationAnalyticsViewModel(
+      candidate as unknown as OrganizationAnalyticsContract,
+    );
+
+    expect(viewModel.registries[0]?.rows.map(row => [row.label, row.code])).toEqual([
+      ['Etiqueta repetida', 101],
+      ['Etiqueta repetida', 202],
+    ]);
+    expect(viewModel.absenceRanking.map(row => [row.label, row.organizationCode])).toEqual([
+      ['Etiqueta repetida', 101],
+      ['Etiqueta repetida', 202],
+    ]);
   });
 
   it('does not claim a latest movement year when an unknown protected period exists', () => {

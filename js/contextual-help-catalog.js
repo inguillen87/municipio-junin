@@ -147,7 +147,7 @@ const PAGES = deepFreeze({
     manualAnchor: 'interpretacion',
     steps: [
       { id: 'confirm-organization-snapshot', selector: '#organizationSnapshotStatus', title: 'Confirmá fuente y corte', copy: 'Revisá la fuente, la fecha del snapshot y la cobertura antes de interpretar las comparaciones.' },
-      { id: 'explore-organization', selector: '#organizationExplorer', title: 'Compará el mapa de calor', copy: 'Contrastá niveles y áreas en el mapa de calor con una misma base agregada.' },
+      { id: 'explore-organization', selector: '#organizationExplorer', title: 'Explorá clasificaciones GRH', copy: 'Elegí una organización o sector informado, revisá su ficha agregada y abrí acciones compatibles.' },
       { id: 'review-absence-risk', selector: '#absenceRiskPanel', title: 'Priorizá una revisión', copy: 'Usá el ranking y las series históricas para elegir qué señal revisar en los tableros vinculados.' },
     ],
   },

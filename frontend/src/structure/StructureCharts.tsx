@@ -225,3 +225,82 @@ export function MatrixHeatmap({ matrix }: { readonly matrix: MatrixViewModel }) 
     </div>
   );
 }
+
+export function ExplorerCrossBreakdown({
+  code,
+  dimension,
+  matrix,
+}: {
+  readonly code: number;
+  readonly dimension: RegistryRankingViewModel['key'];
+  readonly matrix: MatrixViewModel;
+}) {
+  const axis = dimension === 'organization' ? matrix.rows : matrix.columns;
+  const selectedAxis = axis.find(item => item.code === code);
+  if (!selectedAxis) {
+    return (
+      <p className="structure-explorer__empty" data-testid="organization-explorer-cross-unavailable">
+        <strong>Sin cruce publicado.</strong> Esta categoría no integra los ejes acotados; eso no equivale a cero registros.
+      </p>
+    );
+  }
+
+  const labels = new Map(
+    (dimension === 'organization' ? matrix.columns : matrix.rows).map(item => [item.code, item.label]),
+  );
+  const cells = matrix.cells
+    .filter(cell => dimension === 'organization'
+      ? cell.organizationCode === code
+      : cell.sectorCode === code)
+    .map(cell => ({
+      ...cell,
+      label: labels.get(dimension === 'organization' ? cell.sectorCode : cell.organizationCode) ?? 'Categoría',
+    }));
+  const maximum = Math.max(0, ...cells
+    .filter(cell => cell.privacyStatus === 'released')
+    .map(cell => cell.registeredRecords ?? 0));
+
+  return (
+    <ol
+      className="structure-explorer__cross"
+      aria-label={dimension === 'organization'
+        ? 'Sectores informados publicados para la organización informada'
+        : 'Organizaciones informadas publicadas para el sector informado'}
+      data-testid="organization-explorer-cross"
+    >
+      {cells.map(cell => {
+        const released = cell.privacyStatus === 'released' && cell.registeredRecords !== null;
+        const notObserved = cell.privacyStatus === 'not_observed';
+        const width = released && maximum > 0 ? cell.registeredRecords! / maximum * 100 : 0;
+        return (
+          <li
+            key={cell.key}
+            data-protected={!released && !notObserved ? 'true' : 'false'}
+            data-status={cell.privacyStatus}
+          >
+            <div className="structure-explorer__cross-heading">
+              <span title={cell.label}>{cell.label}</span>
+              <strong>{cell.display}</strong>
+            </div>
+            {released ? (
+              <div
+                className="structure-explorer__cross-track"
+                role="meter"
+                aria-label={`${cell.label}: ${cell.display} registros`}
+                aria-valuemin={0}
+                aria-valuemax={maximum}
+                aria-valuenow={cell.registeredRecords ?? 0}
+              >
+                <span style={{ width: `${Math.max(0, Math.min(100, width))}%` }} />
+              </div>
+            ) : notObserved ? (
+              <span className="structure-explorer__not-observed">Sin observación en este cruce.</span>
+            ) : (
+              <span className="structure-explorer__protected">Dato protegido; no se interpreta como cero.</span>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}

@@ -190,6 +190,8 @@ export type WorkforceDimensionKey = 'sector' | 'costCenter' | 'agreement';
 
 export interface WorkforceRowViewModel {
   readonly key: string;
+  readonly companyCode: string | number | null;
+  readonly sourceCode: string | number | null;
   readonly label: string;
   readonly participants: number;
   readonly participantLabel: string;
@@ -232,6 +234,7 @@ export interface ActivityDomainViewModel {
 
 export interface RegistryRankingRowViewModel {
   readonly key: string;
+  readonly code: number | null;
   readonly label: string;
   readonly registeredRecords: number;
   readonly registeredLabel: string;
@@ -245,6 +248,9 @@ export interface RegistryRankingViewModel {
   readonly label: string;
   readonly denominatorRecords: number;
   readonly denominatorLabel: string;
+  readonly categoryCount: number;
+  readonly releasedCategoryCount: number;
+  readonly protectedCategoryCount: number;
   readonly rows: readonly RegistryRankingRowViewModel[];
 }
 
@@ -265,11 +271,15 @@ export interface MatrixViewModel {
 
 export interface AbsenceRankingRowViewModel {
   readonly key: string;
+  readonly organizationCode: number | null;
   readonly rank: number;
   readonly label: string;
   readonly registeredRecords: number;
   readonly recordsWithAbsence: number;
   readonly absenceEvents: number;
+  readonly eventsPerRegisteredRecord: number | null;
+  readonly eventIntensityLabel: string;
+  readonly absencePrivacyStatus: AbsencePrivacyStatus;
   readonly eventShareLabel: string;
   readonly privacyStatus: OrganizationRowPrivacyStatus;
 }

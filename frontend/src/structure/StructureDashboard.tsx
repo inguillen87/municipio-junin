@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type {
   OrganizationAnalyticsViewModel,
@@ -7,8 +7,8 @@ import type {
 } from '../domain/organization-analytics-types';
 import {
   ActivityTimeline,
+  ExplorerCrossBreakdown,
   MatrixHeatmap,
-  RegistryBars,
   WorkforceBars,
 } from './StructureCharts';
 
@@ -17,6 +17,89 @@ const WORKFORCE_KEYS: readonly WorkforceDimensionKey[] = ['sector', 'costCenter'
 interface StructureDashboardProps {
   readonly capabilities: readonly string[];
   readonly viewModel: OrganizationAnalyticsViewModel;
+}
+
+type ExplorerDimension = RegistryRankingViewModel['key'];
+
+interface ExplorerSelection {
+  readonly dimension: ExplorerDimension;
+  readonly code: number;
+}
+
+interface ExplorerDeepLink {
+  readonly invalid: boolean;
+  readonly dimension: ExplorerDimension;
+  readonly selection: ExplorerSelection | null;
+}
+
+function firstExplorerSelection(
+  registries: readonly RegistryRankingViewModel[],
+  preferredDimension: ExplorerDimension = 'organization',
+): ExplorerSelection {
+  const registry = registries.find(candidate => candidate.key === preferredDimension) ?? registries[0];
+  const row = registry?.rows.find(candidate => candidate.privacyStatus === 'released' && candidate.code !== null);
+  if (!registry || !row || row.code === null) {
+    throw new Error('ORGANIZATION_EXPLORER_WITHOUT_RELEASED_ROWS');
+  }
+  return { dimension: registry.key, code: row.code };
+}
+
+function readExplorerDeepLink(registries: readonly RegistryRankingViewModel[]): ExplorerDeepLink {
+  const fallback = firstExplorerSelection(registries);
+  const parameters = new URLSearchParams(window.location.search);
+  const keys = Array.from(parameters.keys());
+  if (keys.length === 0) {
+    return { invalid: false, dimension: fallback.dimension, selection: fallback };
+  }
+  const exactShape = keys.length === 2 &&
+    keys.every(key => key === 'dimension' || key === 'code') &&
+    parameters.getAll('dimension').length === 1 &&
+    parameters.getAll('code').length === 1 &&
+    window.location.hash === '#organizationExplorer';
+  const dimension = parameters.get('dimension');
+  const rawCode = parameters.get('code');
+  if (!exactShape || (dimension !== 'organization' && dimension !== 'sector') ||
+      !/^(?:0|[1-9]\d*)$/u.test(rawCode ?? '')) {
+    return { invalid: true, dimension: 'organization', selection: null };
+  }
+  const code = Number(rawCode);
+  const registry = registries.find(candidate => candidate.key === dimension);
+  const exists = Number.isSafeInteger(code) && registry?.rows.some(row => (
+    row.code === code && row.privacyStatus === 'released'
+  ));
+  return exists
+    ? { invalid: false, dimension, selection: { dimension, code } }
+    : { invalid: true, dimension, selection: null };
+}
+
+function pushExplorerDeepLink(selection: ExplorerSelection) {
+  const parameters = new URLSearchParams({
+    dimension: selection.dimension,
+    code: String(selection.code),
+  });
+  window.history.pushState(
+    window.history.state,
+    '',
+    `${window.location.pathname}?${parameters.toString()}#organizationExplorer`,
+  );
+}
+
+function filteredDirectoryHref(baseHref: string, selection: ExplorerSelection): string {
+  const basePath = baseHref.split(/[?#]/u)[0] || '/rrhh';
+  const parameters = new URLSearchParams({ [selection.dimension]: String(selection.code) });
+  return `${basePath}?${parameters.toString()}#peopleDirectory`;
+}
+
+function safeNumericIdentifier(value: string | number | null, { positive = false } = {}): number | null {
+  const normalized = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && /^(?:0|[1-9]\d*)$/u.test(value) ? Number(value) : Number.NaN;
+  if (!Number.isSafeInteger(normalized) || normalized < (positive ? 1 : 0)) return null;
+  return normalized;
+}
+
+function normalizedClassificationLabel(value: string): string {
+  return value.normalize('NFKC').replace(/\s+/gu, ' ').trim().toLocaleLowerCase('es-AR');
 }
 
 function PanelHeader({
@@ -127,11 +210,13 @@ function AbsenceRanking({ viewModel }: Pick<StructureDashboardProps, 'viewModel'
             <span className="structure-absence-ranking__rank">{row.rank}</span>
             <span className="structure-absence-ranking__label">
               <strong>{row.label}</strong>
-              <small>{row.recordsWithAbsence.toLocaleString('es-AR')} registros con historia</small>
+              <small>{row.recordsWithAbsence === null
+                ? 'Desglose protegido'
+                : `${row.recordsWithAbsence.toLocaleString('es-AR')} registros con historia`}</small>
             </span>
             <span className="structure-absence-ranking__value">
-              <strong>{row.absenceEvents.toLocaleString('es-AR')}</strong>
-              <small>{row.eventShareLabel} de eventos</small>
+              <strong>{row.absenceEvents === null ? 'Protegido' : row.absenceEvents.toLocaleString('es-AR')}</strong>
+              <small>{row.absenceEvents === null ? 'Sin cifra publicada' : `${row.eventShareLabel} de eventos`}</small>
             </span>
           </li>
         ))}
@@ -151,6 +236,294 @@ function AbsenceRanking({ viewModel }: Pick<StructureDashboardProps, 'viewModel'
   );
 }
 
+function OrganizationExplorer({
+  aiAssistantEnabled,
+  directoryActionHref,
+  haciendaEnabled,
+  viewModel,
+}: {
+  readonly aiAssistantEnabled: boolean;
+  readonly directoryActionHref: string | null;
+  readonly haciendaEnabled: boolean;
+  readonly viewModel: OrganizationAnalyticsViewModel;
+}) {
+  const initial = useMemo(() => readExplorerDeepLink(viewModel.registries), [viewModel.registries]);
+  const [dimension, setDimension] = useState<ExplorerDimension>(initial.dimension);
+  const [selection, setSelection] = useState<ExplorerSelection | null>(initial.selection);
+  const [invalidDeepLink, setInvalidDeepLink] = useState(initial.invalid);
+  const [query, setQuery] = useState('');
+  useEffect(() => {
+    const restoreFromLocation = () => {
+      const next = readExplorerDeepLink(viewModel.registries);
+      setDimension(next.dimension);
+      setSelection(next.selection);
+      setInvalidDeepLink(next.invalid);
+      setQuery('');
+    };
+    window.addEventListener('popstate', restoreFromLocation);
+    return () => window.removeEventListener('popstate', restoreFromLocation);
+  }, [viewModel.registries]);
+
+  const registry = viewModel.registries.find(candidate => candidate.key === dimension);
+  if (!registry) throw new Error('ORGANIZATION_EXPLORER_DIMENSION_INVALID');
+  const selected = selection
+    ? registry.rows.find(row => (
+      row.code === selection.code && row.privacyStatus === 'released'
+    ))
+    : null;
+  const normalizedQuery = query.normalize('NFKC').trim().toLocaleLowerCase('es-AR');
+  const selectableRows = registry.rows.filter(row => row.privacyStatus === 'released' && row.code !== null);
+  const protectedAggregate = registry.rows.find(row => (
+    row.code === null && row.privacyStatus !== 'released'
+  )) ?? null;
+  const visibleRows = selectableRows.filter(row => !normalizedQuery ||
+    row.label.toLocaleLowerCase('es-AR').includes(normalizedQuery) ||
+    String(row.code).includes(normalizedQuery));
+  const absence = selected && dimension === 'organization'
+    ? viewModel.absenceRanking.find(row => row.organizationCode === selected.code &&
+      row.privacyStatus === 'released' && row.absencePrivacyStatus === 'released' &&
+      row.recordsWithAbsence !== null && row.absenceEvents !== null)
+    : null;
+
+  const select = (next: ExplorerSelection) => {
+    setDimension(next.dimension);
+    setSelection(next);
+    setInvalidDeepLink(false);
+    pushExplorerDeepLink(next);
+  };
+  const changeDimension = (dimension: ExplorerDimension) => {
+    setQuery('');
+    select(firstExplorerSelection(viewModel.registries, dimension));
+  };
+  const effectiveSelection = selected?.code === null || !selected
+    ? null
+    : { dimension: registry.key, code: selected.code } as const;
+  const detailDirectoryHref = directoryActionHref && effectiveSelection
+    ? filteredDirectoryHref(directoryActionHref, effectiveSelection)
+    : null;
+  const matchingPayrollSectors = selected && registry.key === 'sector'
+    ? viewModel.workforce.sector.rows.filter(row => (
+      row.privacyStatus === 'released' &&
+      safeNumericIdentifier(row.sourceCode) === selected.code &&
+      normalizedClassificationLabel(row.label) === normalizedClassificationLabel(selected.label)
+    ))
+    : [];
+  const payrollSector = matchingPayrollSectors.length === 1 ? matchingPayrollSectors[0] : null;
+  const payrollCompanyCode = payrollSector ? safeNumericIdentifier(payrollSector.companyCode, { positive: true }) : null;
+  const payrollSectorCode = payrollSector ? safeNumericIdentifier(payrollSector.sourceCode) : null;
+  const haciendaHref = haciendaEnabled && payrollCompanyCode !== null && payrollSectorCode !== null
+    ? `/hacienda?cohort=sector&company=${payrollCompanyCode}&code=${payrollSectorCode}#cohortContext`
+    : null;
+  const assistantHref = aiAssistantEnabled && selected && payrollSector
+    ? `/ia.html?${new URLSearchParams({ question: `Mostrá el neto de ${selected.label} por sector` }).toString()}`
+    : null;
+
+  return (
+    <div className="structure-explorer" data-testid="organization-explorer">
+      <aside className="structure-explorer__master" aria-labelledby="organization-explorer-list-title">
+        <div className="structure-explorer__dimension" role="group" aria-label="Dimensión del explorador">
+          {viewModel.registries.map(candidate => (
+            <button
+              type="button"
+              aria-pressed={registry.key === candidate.key}
+              data-testid={`organization-explorer-dimension-${candidate.key}`}
+              key={candidate.key}
+              onClick={() => changeDimension(candidate.key)}
+            >
+              {candidate.label === 'Organización' ? 'Organización informada' : 'Sector informado'}
+            </button>
+          ))}
+        </div>
+        <label className="structure-explorer__search" htmlFor="organization-explorer-search">
+          <span id="organization-explorer-list-title">Buscar en {registry.label.toLocaleLowerCase('es-AR')}</span>
+          <input
+            id="organization-explorer-search"
+            type="search"
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder="Nombre o código"
+            autoComplete="off"
+            data-testid="organization-explorer-search"
+          />
+        </label>
+        <p className="structure-explorer__result-count" role="status">
+          {visibleRows.length} de {registry.releasedCategoryCount} clasificaciones seleccionables
+          {registry.protectedCategoryCount > 0
+            ? ` · ${registry.protectedCategoryCount} categorías agrupadas`
+            : ''}
+        </p>
+        {visibleRows.length > 0 ? (
+          <ul className="structure-explorer__list" data-testid="organization-explorer-list">
+            {visibleRows.map(row => (
+              <li key={row.key}>
+                <button
+                  type="button"
+                  aria-current={row.code === selected?.code ? 'true' : undefined}
+                  data-testid={`organization-explorer-option-${registry.key}-${row.code}`}
+                  onClick={() => row.code !== null && select({ dimension: registry.key, code: row.code })}
+                >
+                  <span>
+                    <strong>{row.label}</strong>
+                    <small>Código {row.code}</small>
+                  </span>
+                  <span>
+                    <b>{row.registeredLabel}</b>
+                    <small>{row.shareLabel}</small>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="structure-explorer__empty">No hay coincidencias en las categorías publicadas.</p>
+        )}
+        {protectedAggregate ? (
+          <section
+            className="structure-explorer__protected-summary"
+            aria-label="Resumen de categorías protegidas"
+            data-testid={`organization-explorer-protected-${registry.key}`}
+          >
+            <span>
+              <strong>{registry.protectedCategoryCount === 1 ? 'Grupo protegido' : 'Otros grupos protegidos'}</strong>
+              <small>
+                {registry.protectedCategoryCount}{' '}
+                {registry.protectedCategoryCount === 1 ? 'categoría de origen agrupada' : 'categorías de origen agrupadas'};
+                {' '}sin selección individual
+              </small>
+            </span>
+            <span>
+              <b>{protectedAggregate.registeredLabel}</b>
+              <small>{protectedAggregate.shareLabel}</small>
+            </span>
+          </section>
+        ) : null}
+      </aside>
+
+      <article
+        className="structure-explorer__detail"
+        aria-labelledby="organization-explorer-detail-title"
+        aria-live="polite"
+        data-testid="organization-explorer-detail"
+      >
+        {!selected || selected.code === null ? (
+          <div className="structure-explorer__invalid">
+            <p className="structure-eyebrow">Selección requerida</p>
+            <h3 id="organization-explorer-detail-title">Elegí una clasificación GRH publicada</h3>
+            <p role={invalidDeepLink ? 'alert' : undefined} data-testid={invalidDeepLink
+              ? 'organization-explorer-invalid-link'
+              : undefined}>
+              {invalidDeepLink
+                ? 'El enlace no identifica una clasificación GRH publicable. No se muestran cifras hasta que elijas una opción.'
+                : 'Seleccioná una opción para consultar su contexto agregado.'}
+            </p>
+          </div>
+        ) : (
+          <>
+            <header className="structure-explorer__detail-header">
+              <div>
+                <p className="structure-eyebrow">
+                  {registry.key === 'organization' ? 'Organización informada' : 'Sector informado'}
+                </p>
+                <h3 id="organization-explorer-detail-title">{selected.label}</h3>
+                <span>Código de origen {selected.code}</span>
+              </div>
+              <div className="structure-explorer__actions">
+                {detailDirectoryHref ? (
+                  <a
+                    className="structure-action structure-action--primary structure-explorer__action"
+                    href={detailDirectoryHref}
+                    data-testid="organization-explorer-directory-action"
+                  >
+                    Ver legajos filtrados
+                  </a>
+                ) : null}
+                {haciendaHref ? (
+                  <a
+                    className="structure-action structure-explorer__action"
+                    href={haciendaHref}
+                    data-testid="organization-explorer-hacienda-action"
+                  >
+                    Cruzar cohorte en Hacienda
+                  </a>
+                ) : null}
+                {assistantHref ? (
+                  <a
+                    className="structure-action structure-explorer__action"
+                    href={assistantHref}
+                    data-testid="organization-explorer-assistant-action"
+                  >
+                    Analizar sector con BOT IA
+                  </a>
+                ) : null}
+              </div>
+            </header>
+
+            <dl className="structure-explorer__metrics">
+              <div>
+                <dt>Legajos registrados</dt>
+                <dd>{selected.registeredLabel}</dd>
+                <small>Snapshot histórico</small>
+              </div>
+              <div>
+                <dt>Participación en la clasificación GRH</dt>
+                <dd>{selected.shareLabel}</dd>
+                <small>Base: {registry.denominatorLabel}</small>
+              </div>
+              {absence ? (
+                <>
+                  <div>
+                    <dt>Registros con historia de ausencias</dt>
+                    <dd>{absence.recordsWithAbsence?.toLocaleString('es-AR')}</dd>
+                    <small>Historia agregada; no dotación activa</small>
+                  </div>
+                  <div>
+                    <dt>Eventos históricos de ausencia</dt>
+                    <dd>{absence.absenceEvents?.toLocaleString('es-AR')}</dd>
+                    <small>{absence.eventShareLabel} de los eventos publicados</small>
+                  </div>
+                  <div>
+                    <dt>Eventos por legajo registrado</dt>
+                    <dd>{absence.eventIntensityLabel}</dd>
+                    <small>Intensidad histórica; no es una tasa de ausentismo</small>
+                  </div>
+                </>
+              ) : null}
+            </dl>
+
+            {!absence ? (
+              <p className="structure-explorer__context-note" data-testid="organization-explorer-absence-unavailable">
+                <strong>Sin desglose publicado.</strong>{' '}
+                {registry.key === 'sector'
+                  ? 'La proyección no publica ausencias por sector informado; no se deriva una tasa ni se cruzan universos.'
+                  : 'Esta organización informada no integra el ranking publicable de ausencias; esto no equivale a cero.'}
+              </p>
+            ) : null}
+
+            <section className="structure-explorer__breakdown" aria-labelledby="organization-explorer-cross-title">
+              <div>
+                <p className="structure-eyebrow">Cruce de clasificaciones publicado</p>
+                <h4 id="organization-explorer-cross-title">
+                  {registry.key === 'organization'
+                    ? 'Distribución por sector informado'
+                    : 'Distribución por organización informada'}
+                </h4>
+              </div>
+              <ExplorerCrossBreakdown
+                code={selected.code}
+                dimension={registry.key}
+                matrix={viewModel.matrix}
+              />
+            </section>
+            <p className="structure-panel__note">
+              Registros del snapshot: no certifican planta activa, puesto vigente ni jerarquía actual.
+            </p>
+          </>
+        )}
+      </article>
+    </div>
+  );
+}
+
 export function StructureDashboard({ capabilities, viewModel }: StructureDashboardProps) {
   const [workforceKey, setWorkforceKey] = useState<WorkforceDimensionKey>('sector');
   const workforceRanking = viewModel.workforce[workforceKey];
@@ -158,6 +531,9 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
     const capabilitySet = new Set(capabilities);
     return viewModel.actions.filter(action => capabilitySet.has(action.requiredCapability));
   }, [capabilities, viewModel.actions]);
+  const directoryActionHref = enabledActions.find(action => action.id === 'open_workforce_dashboard')?.href ?? null;
+  const haciendaEnabled = capabilities.includes('navigation.hacienda');
+  const aiAssistantEnabled = capabilities.includes('navigation.ai-assistant');
 
   return (
     <>
@@ -272,19 +648,17 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
       >
         <div className="structure-section__heading">
           <div>
-            <p className="structure-eyebrow">Cobertura del registro</p>
-            <h2 id="registry-title">Distribución de legajos registrados</h2>
+            <p className="structure-eyebrow">Explorador operativo</p>
+            <h2 id="registry-title">Clasificaciones informadas, del resumen al detalle</h2>
           </div>
-          <span>Universo distinto de la cohorte de cálculo</span>
+          <span>Selección local · sin nueva consulta</span>
         </div>
-        <div className="structure-two-column">
-          {viewModel.registries.map(registry => (
-            <article className="structure-panel" key={registry.key} data-testid={`registry-panel-${registry.key}`}>
-              <PanelHeader eyebrow="Registros GRH" title={`Por ${registry.label.toLocaleLowerCase('es-AR')}`} />
-              <RegistryBars registry={registry} />
-            </article>
-          ))}
-        </div>
+        <OrganizationExplorer
+          aiAssistantEnabled={aiAssistantEnabled}
+          directoryActionHref={directoryActionHref}
+          haciendaEnabled={haciendaEnabled}
+          viewModel={viewModel}
+        />
       </section>
 
       <section className="structure-two-column structure-two-column--uneven" aria-label="Cruces y ausencias">

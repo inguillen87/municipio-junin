@@ -224,7 +224,7 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.label, 'Dotación y ausencias');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.title),
-    ['Confirmá fuente y corte', 'Compará el mapa de calor', 'Priorizá una revisión'],
+    ['Confirmá fuente y corte', 'Explorá clasificaciones GRH', 'Priorizá una revisión'],
   );
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.movementOperations.steps.map((step) => step.selector),

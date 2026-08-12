@@ -392,6 +392,16 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       closeBriefText: document.querySelector('#monthlyCloseBrief')?.textContent.replace(/\s+/g, ' ').trim(),
       closeTechnicalOpen: document.querySelector('.exec-close-technical')?.open,
       closeTechnicalVisible: document.querySelector('.exec-close-technical-grid')?.getClientRects().length > 0,
+      analyticsOpen: document.querySelector('#analyticsExploration')?.open,
+      analyticsSummary: document.querySelector('#analyticsExploration > summary')?.textContent.trim(),
+      analyticsSummaryHeight: document.querySelector('#analyticsExploration > summary')?.getBoundingClientRect().height,
+      analyticsVisible: document.querySelector('#analyticsExplorationBody')?.getClientRects().length > 0,
+      chartVisible: document.querySelector('#calculationChart')?.getClientRects().length > 0,
+      dataOriginOpen: document.querySelector('#dataOriginDetails')?.open,
+      dataOriginSummary: document.querySelector('#dataOriginDetails > summary')?.textContent.trim(),
+      dataOriginSummaryHeight: document.querySelector('#dataOriginDetails > summary')?.getBoundingClientRect().height,
+      dataOriginVisible: document.querySelector('#dataOriginDetailsBody')?.getClientRects().length > 0,
+      sourceListVisible: document.querySelector('#sourceList')?.getClientRects().length > 0,
       globalLabels: Array.from(document.querySelectorAll('.exec-stat-label')).map(node => node.textContent.trim()),
       kpiCount: document.querySelectorAll('.exec-stat').length,
       chartCount: document.querySelectorAll('#calculationChart svg').length,
@@ -487,6 +497,16 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     ]);
     assert.equal(result.closeTechnicalOpen, false);
     assert.equal(result.closeTechnicalVisible, false, 'monthly technical metrics must stay collapsed by default');
+    assert.equal(result.analyticsOpen, false);
+    assert.equal(result.analyticsSummary, 'Explorar tendencias y áreas');
+    assert.ok(result.analyticsSummaryHeight >= 44, `${viewport.name} analytics disclosure target must be at least 44px tall`);
+    assert.equal(result.analyticsVisible, false, 'trends and area rankings must stay collapsed by default');
+    assert.equal(result.chartVisible, false, 'the trend chart must not lengthen the default mobile reading');
+    assert.equal(result.dataOriginOpen, false);
+    assert.equal(result.dataOriginSummary, 'Ver origen y límites de los datos');
+    assert.ok(result.dataOriginSummaryHeight >= 44, `${viewport.name} data-origin disclosure target must be at least 44px tall`);
+    assert.equal(result.dataOriginVisible, false, 'source, roadmap and definitions must stay collapsed by default');
+    assert.equal(result.sourceListVisible, false);
     assert.doesNotMatch(result.closeBriefText, /(?:\$|\bARS\b|\bCBU\b|\bCUIL\b|\bDNI\b|companyCode|sourceCode|\blabel\b|u\. fuente)/i);
     assert.equal(result.kpiCount, 4);
     assert.equal(result.chartCount, 1);
@@ -499,6 +519,7 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.doesNotMatch(result.sourceText, /material_differences_detected|\breconciled\b/);
     assert.doesNotMatch(result.defaultText, /score cross-source|cross-source|acuerdo de valores|corridas|snapshot|extracto|gobernad[oa]|k≥10|totpago/i);
     assert.doesNotMatch(result.defaultText, /285 de 589/i, 'technical reconciliation values must not appear in the default reading');
+    assert.doesNotMatch(result.defaultText, /Tendencia del control|Centros de costo con más|Sectores con más|Estado de los datos|Qué está disponible y qué falta/i);
     assert.equal(result.overflow, 0, `${viewport.name} must not overflow horizontally`);
     assert.equal(result.errorVisible, false);
     assert.deepEqual(consoleErrors, []);
@@ -520,6 +541,25 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.match(controlDetail.text, /no demuestra que un sueldo haya sido pagado, transferido o contabilizado/i);
     assert.equal(controlDetail.ctaHeights.every(height => height >= 44), true);
     assert.equal(controlDetail.overflow, 0, `${viewport.name} opened control detail must not overflow horizontally`);
+
+    await page.click('#analyticsExploration > summary');
+    await page.click('#dataOriginDetails > summary');
+    const secondaryDetails = await page.evaluate(() => ({
+      analyticsOpen: document.querySelector('#analyticsExploration')?.open,
+      analyticsVisible: document.querySelector('#analyticsExplorationBody')?.getClientRects().length > 0,
+      analyticsText: document.querySelector('#analyticsExplorationBody')?.innerText.replace(/\s+/g, ' ').trim(),
+      dataOriginOpen: document.querySelector('#dataOriginDetails')?.open,
+      dataOriginVisible: document.querySelector('#dataOriginDetailsBody')?.getClientRects().length > 0,
+      dataOriginText: document.querySelector('#dataOriginDetailsBody')?.innerText.replace(/\s+/g, ' ').trim(),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    assert.equal(secondaryDetails.analyticsOpen, true);
+    assert.equal(secondaryDetails.analyticsVisible, true);
+    assert.match(secondaryDetails.analyticsText, /Tendencia del control de cálculo.+Centros de costo con más personas incluidas.+Sectores con más personas incluidas/i);
+    assert.equal(secondaryDetails.dataOriginOpen, true);
+    assert.equal(secondaryDetails.dataOriginVisible, true);
+    assert.match(secondaryDetails.dataOriginText, /Estado de los datos.+Qué está disponible y qué falta.+Definiciones, alcance y límites de interpretación/i);
+    assert.equal(secondaryDetails.overflow, 0, `${viewport.name} opened secondary details must not overflow horizontally`);
 
     const firstCta = page.locator('#decisionPriorities .exec-decision-cta').first();
     await firstCta.focus();

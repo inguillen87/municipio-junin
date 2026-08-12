@@ -571,6 +571,38 @@
     .exec-close-delta strong { display: block; margin-top: 4px; color: var(--exec-text-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
     .exec-close-limit { margin: 11px 0 0; color: var(--exec-muted); font-size: 9.5px; line-height: 1.5; }
 
+    .exec-summary-disclosure {
+      margin-top: 14px;
+      border: 1px solid var(--exec-border);
+      border-radius: var(--exec-radius-md);
+      background: var(--exec-surface);
+      box-shadow: 0 14px 36px rgba(0,0,0,.06);
+    }
+    .exec-summary-disclosure > summary {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      padding: 0 18px;
+      color: var(--exec-text);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .exec-summary-disclosure > summary::marker { content: ""; }
+    .exec-summary-disclosure > summary::before {
+      content: "›";
+      margin-right: 8px;
+      color: var(--exec-blue);
+      font-size: 18px;
+      line-height: 1;
+      transform: rotate(0deg);
+      transition: transform .18s ease;
+    }
+    .exec-summary-disclosure[open] > summary::before { transform: rotate(90deg); }
+    .exec-summary-disclosure[open] > summary { border-bottom: 1px solid var(--exec-border); }
+    .exec-summary-disclosure:not([open]) > .exec-summary-disclosure-body { display: none; }
+    .exec-summary-disclosure-body { padding: 0 14px 14px; }
+
     .exec-layout {
       display: grid;
       grid-template-columns: minmax(0,1.7fr) minmax(310px,.78fr);
@@ -862,7 +894,7 @@
       text-transform: uppercase;
     }
     .exec-methodology { margin-top: 14px; border: 1px solid var(--exec-border); border-radius: var(--exec-radius-md); background: var(--exec-surface); }
-    .exec-methodology summary { padding: 15px 18px; color: var(--exec-text); cursor: pointer; font-size: 12px; font-weight: 790; }
+    .exec-methodology-title { margin: 0; padding: 15px 18px; color: var(--exec-text); font-size: 12px; font-weight: 790; }
     .exec-methodology-content { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; padding: 0 18px 18px; }
     .exec-methodology-content div { padding: 12px; border-radius: 10px; background: var(--exec-soft); color: var(--exec-muted); font-size: 10.5px; line-height: 1.52; }
     .exec-methodology-content strong { display: block; margin-bottom: 5px; color: var(--exec-text-soft); }
@@ -917,6 +949,7 @@
       .exec-loading,.exec-error { grid-template-columns: auto 1fr; }
       .exec-loading .exec-retry-btn,.exec-error .exec-retry-btn { grid-column: 1 / -1; width: 100%; }
       .exec-methodology-content { grid-template-columns: 1fr; }
+      .exec-summary-disclosure-body { padding: 0 10px 10px; }
       .exec-footer { align-items: flex-start; flex-direction: column; }
     }
     @media (max-width: 430px) {
@@ -935,7 +968,7 @@
     @media print {
       @page { size: A4 landscape; margin: 10mm; }
       html,body { background: #fff !important; color: #111 !important; }
-      .sidebar,.exec-topbar,.exec-loading,.exec-error,.exec-chart-controls,.exec-methodology summary { display: none !important; }
+      .sidebar,.exec-topbar,.exec-loading,.exec-error,.exec-chart-controls,.exec-summary-disclosure > summary { display: none !important; }
       html body > main#mainContent.main-content { width: 100vw !important; max-width: none !important; margin: 0 !important; margin-left: 0 !important; transform: none !important; transition: none !important; animation: none !important; }
       .exec-shell { width: 100%; max-width: none; padding: 0; }
       .exec-hero,.exec-stat,.exec-panel,.exec-access-card,.exec-methodology { box-shadow: none; break-inside: avoid; }
@@ -943,7 +976,7 @@
       .exec-decision-cta { display: none; }
       .exec-panel { contain: none; content-visibility: visible; }
       .exec-access-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
-      .exec-methodology[open] summary { display: block !important; }
+      .exec-summary-disclosure > .exec-summary-disclosure-body { display: block !important; }
       .exec-methodology-content { display: grid !important; }
     }
   </style>
@@ -1153,6 +1186,9 @@
           <p class="exec-close-limit">Las variaciones muestran cambios numéricos, pero no explican sus causas ni certifican pagos. No se muestran nombres, conceptos ni identificadores personales.</p>
         </section>
 
+        <details class="exec-summary-disclosure" id="analyticsExploration">
+          <summary>Explorar tendencias y áreas</summary>
+          <div class="exec-summary-disclosure-body" id="analyticsExplorationBody">
         <section class="exec-layout exec-layout-full" aria-label="Tendencia del control de cálculo">
           <article class="exec-panel">
             <div class="exec-panel-head">
@@ -1202,6 +1238,8 @@
             <p class="exec-drill-note">Abrir el análisis institucional en <a href="rrhh.html">Recursos Humanos →</a></p>
           </article>
         </section>
+          </div>
+        </details>
 
         <section aria-labelledby="accessTitle">
           <div class="exec-section-title">
@@ -1239,6 +1277,9 @@
           </div>
         </section>
 
+        <details class="exec-summary-disclosure" id="dataOriginDetails">
+          <summary>Ver origen y límites de los datos</summary>
+          <div class="exec-summary-disclosure-body" id="dataOriginDetailsBody">
         <section class="exec-layout exec-layout-balanced" aria-label="Fuentes y hoja de ruta">
           <article class="exec-panel">
             <div class="exec-panel-head">
@@ -1256,8 +1297,8 @@
           </article>
         </section>
 
-        <details class="exec-methodology">
-          <summary>Definiciones, alcance y límites de interpretación</summary>
+        <section class="exec-methodology" aria-labelledby="methodologyTitle">
+          <h3 class="exec-methodology-title" id="methodologyTitle">Definiciones, alcance y límites de interpretación</h3>
           <div class="exec-methodology-content">
             <div><strong>Participantes en liquidación</strong>Legajos distintos presentes en al menos una fila válida de <code>calculo</code> del período de referencia. No es un maestro contractual de altas, bajas o dotación activa.</div>
             <div><strong>Calidad gobernada</strong>Score del extracto agregado gobernado. No certifica cada una de las tablas crudas ni elimina los riesgos declarados por el contrato.</div>
@@ -1270,12 +1311,14 @@
             <div><strong>Alcance institucional</strong>Este panorama cubre GRH. Presupuesto, obras, reclamos y otros dominios no se agregan hasta contar con contratos gobernados equivalentes.</div>
             <div><strong>Comportamiento ante fallas</strong>Las proyecciones ejecutiva, de calidad, cierre mensual y brief decisional son obligatorias y deben compartir sistema, archivo, SHA y corte. Ante cualquier falla el panel oculta todas las métricas y permite reintentar.</div>
           </div>
-        </details>
+        </section>
 
         <footer class="exec-footer">
           <span>Fuente: <code id="sourceFile">—</code> · SHA-256 <code id="sourceHash">—</code></span>
           <span>Perfil generado: <time id="profileGeneratedAt">—</time> · Semántica generada: <time id="semanticGeneratedAt">—</time></span>
         </footer>
+          </div>
+        </details>
       </div>
     </div>
   </main>

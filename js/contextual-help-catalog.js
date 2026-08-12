@@ -237,7 +237,7 @@ const PAGES = deepFreeze({
     requiredCapability: 'navigation.ai-assistant',
     manualAnchor: 'superficies',
     steps: [
-      { id: 'confirm-evidence', selector: '#snapshotStatus', title: 'Confirmá la evidencia', copy: 'Verificá que el snapshot esté disponible antes de formular una pregunta.' },
+      { id: 'confirm-evidence', selector: '#assistantSourceStatus', title: 'Confirmá la evidencia', copy: 'Revisá el estado visible de la fuente antes de formular una pregunta.' },
       { id: 'choose-supported-question', selector: '#querySuggestions', title: 'Elegí un tema soportado', copy: 'Usá las sugerencias gobernadas; no ingreses PII, secretos ni pedidos fuera del contrato GRH.' },
       { id: 'ask-with-scope', selector: '#assistantForm', title: 'Preguntá con alcance', copy: 'Incluí período y métrica; tratá la respuesta como síntesis de evidencia, no como causalidad o acto administrativo.' },
     ],

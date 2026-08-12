@@ -10,6 +10,12 @@
   var DIRECTORY_SEARCH_LIMIT = 8;
   var DIRECTORY_DEBOUNCE_MS = 280;
   var DIRECTORY_TIMEOUT_MS = 10000;
+  var PRIMARY_QUERY_ORDER = {
+    INTENDENTE: ['priority', 'summary', 'absence-compare', 'cost-overview'],
+    CONTADOR: ['cost-overview', 'cost-components', 'calculation-control', 'reconciliation'],
+    TENANT_ADMIN: ['priority', 'catalog', 'quality', 'summary'],
+    SUPER_ADMIN: ['quality', 'catalog', 'summary', 'cost-overview'],
+  };
   var busy = false;
   var typingNode = null;
   var directoryTimer = null;
@@ -83,7 +89,7 @@
 
     var answer = payload && payload.answer;
     if (!answer || typeof answer !== 'object') {
-      appendUnavailable('Respuesta no verificable', 'El servidor no devolvió un contrato de respuesta válido.');
+      appendUnavailable('Respuesta no verificable', 'El servidor no devolvió un contrato de respuesta válido.', 'Fuente no disponible');
       return;
     }
 
@@ -102,6 +108,7 @@
     card.appendChild(header);
 
     var body = createElement('div', 'answer-body');
+    appendAnswerActions(body, answer.actions);
     appendAnswerVisual(body, answer.visual);
     var detailsContent = createElement('div', 'answer-details-content');
     var findings = safeArray(answer.findings);
@@ -129,7 +136,6 @@
     }
 
     appendDirectoryContract(body, answer.directory);
-    appendAnswerActions(body, answer.actions);
 
     var caveats = safeArray(answer.caveats);
     if (caveats.length) {
@@ -141,7 +147,7 @@
 
     if (detailsContent.childElementCount) {
       var details = createElement('details', 'answer-details');
-      details.appendChild(createElement('summary', '', 'Detalles y límites'));
+      details.appendChild(createElement('summary', '', 'Evidencia y límites'));
       details.appendChild(detailsContent);
       body.appendChild(details);
     }
@@ -154,6 +160,10 @@
     row.appendChild(stack);
     appendToLog(row, 'start');
     updateProvenance(payload.provenance);
+    setSourceStatus(
+      'verified',
+      payload.status === 'answered' ? 'Corte GRH verificado' : 'Corte GRH consultado'
+    );
   }
 
   function exactObjectKeys(value, expected) {
@@ -256,7 +266,7 @@
   }
 
   function appendNextQuestions(container, rawQuestions) {
-    var questions = validAnswerTextList(rawQuestions, 4, 300);
+    var questions = validAnswerTextList(rawQuestions, 3, 300);
     if (!questions.length) return;
     var section = createElement('section', 'answer-followups');
     section.setAttribute('aria-label', 'Preguntas siguientes');
@@ -272,7 +282,7 @@
     container.appendChild(section);
   }
 
-  function appendUnavailable(title, detail) {
+  function appendUnavailable(title, detail, sourceStatusText) {
     removeTyping();
     removeWelcome();
 
@@ -284,7 +294,7 @@
     var header = createElement('header', 'answer-header');
     var headingLine = createElement('div', 'answer-heading-line');
     headingLine.appendChild(createElement('h3', '', title));
-    headingLine.appendChild(createElement('span', 'answer-state refused', 'Sin fuente'));
+    headingLine.appendChild(createElement('span', 'answer-state refused', 'No disponible'));
     header.appendChild(headingLine);
     header.appendChild(createElement('p', 'answer-summary', detail));
     card.appendChild(header);
@@ -297,6 +307,7 @@
     card.appendChild(body);
     row.appendChild(card);
     appendToLog(row, 'start');
+    if (sourceStatusText) setSourceStatus('error', sourceStatusText);
   }
 
   function appendToLog(node, alignment) {
@@ -370,7 +381,11 @@
   function appendAnswerActions(body, actions) {
     var validActions = safeArray(actions).slice(0, 4);
     if (!validActions.length) return;
+    var section = createElement('section', 'answer-next-step');
+    section.setAttribute('aria-label', 'Próximo paso');
+    section.appendChild(createElement('h4', '', 'Próximo paso'));
     var row = createElement('div', 'answer-actions');
+    row.setAttribute('aria-label', 'Próximo paso');
     var capabilities = currentCapabilities();
     validActions.forEach(function(action) {
       if (!action || typeof action !== 'object') return;
@@ -381,12 +396,15 @@
           (typeof requiredCapability !== 'string' ||
             !/^[a-z0-9.-]{1,100}$/i.test(requiredCapability) ||
             capabilities.indexOf(requiredCapability) === -1)) return;
-      var link = createElement('a', 'answer-action', action.label.trim());
+      var link = createElement('a', 'answer-action' + (row.childElementCount === 0 ? ' answer-action--primary' : ''), action.label.trim());
       link.href = href;
       if (requiredCapability) link.dataset.capability = requiredCapability;
       row.appendChild(link);
     });
-    if (row.childElementCount) body.appendChild(row);
+    if (row.childElementCount) {
+      section.appendChild(row);
+      body.appendChild(section);
+    }
   }
 
   function safeInternalHref(value) {
@@ -551,7 +569,9 @@
   function openPersonSearch() {
     var panel = byId('personSearchPanel');
     var input = byId('personSearchInput');
+    var more = byId('queryMore');
     if (!panel || !input) return;
+    if (more) more.open = false;
     panel.hidden = false;
     if (!input.disabled) {
       setPersonSearchStatus('Escribí al menos 2 caracteres para consultar el directorio privado.');
@@ -566,6 +586,17 @@
     var input = byId('personSearchInput');
     if (panel) panel.hidden = true;
     if (input && !input.disabled) input.value = '';
+  }
+
+  function restorePersonSearchFocus(suggestions) {
+    var trigger = suggestions && suggestions.querySelector('[data-person-lookup]');
+    var more = byId('queryMore');
+    if (trigger && more && more.contains(trigger) && !more.open) {
+      var summary = byId('queryMoreSummary');
+      if (summary) summary.focus({ preventScroll: true });
+      return;
+    }
+    if (trigger) trigger.focus({ preventScroll: true });
   }
 
   function showDirectoryDenied() {
@@ -707,12 +738,33 @@
 
   function stateLabel(value) {
     var labels = {
-      answered: 'Verificado',
-      limited: 'Alcance limitado',
-      unsupported: 'Fuera de contrato',
-      refused: 'Consulta rechazada',
+      answered: 'Respuesta verificada',
+      limited: 'Datos parciales',
+      unsupported: 'No disponible',
+      refused: 'No disponible para este perfil',
     };
     return labels[value] || labels.answered;
+  }
+
+  function setSourceStatus(state, text) {
+    var status = byId('assistantSourceStatus');
+    if (!status) return;
+    status.dataset.state = state;
+    var label = status.querySelector('span');
+    if (label) label.textContent = text;
+    else status.textContent = text;
+  }
+
+  function configureRoleChip(user) {
+    var chip = byId('assistantRoleChip');
+    if (!chip || !user) return;
+    var labels = {
+      INTENDENTE: 'Intendencia',
+      CONTADOR: 'Contaduría',
+      TENANT_ADMIN: 'Administración municipal',
+      SUPER_ADMIN: 'Gobierno de plataforma',
+    };
+    chip.textContent = labels[user.role] || 'Perfil ejecutivo';
   }
 
   function updateProvenance(provenance) {
@@ -739,12 +791,18 @@
     var submit = byId('sendQuery');
     var input = byId('assistantInput');
     var suggestions = byId('querySuggestions');
+    var more = byId('queryMore');
     if (submit) submit.disabled = nextBusy;
     if (input) input.setAttribute('aria-busy', nextBusy ? 'true' : 'false');
+    if (nextBusy) setSourceStatus('busy', 'Consultando GRH…');
+    if (more) {
+      if (nextBusy) more.open = false;
+      more.inert = nextBusy;
+    }
     if (suggestions) {
       suggestions.setAttribute('aria-busy', nextBusy ? 'true' : 'false');
       suggestions.querySelectorAll('[data-question], [data-person-lookup]').forEach(function(button) {
-        button.disabled = nextBusy;
+        button.disabled = nextBusy || button.hidden;
       });
     }
     document.querySelectorAll('.answer-followup, .person-search-result').forEach(function(button) {
@@ -794,7 +852,7 @@
       return;
     }
     if (!global.MuniAuth || typeof global.MuniAuth.fetch !== 'function') {
-      appendUnavailable('Sesión no verificable', 'No se pudo iniciar el canal autenticado del asistente.');
+      appendUnavailable('Sesión no verificable', 'No se pudo iniciar el canal autenticado del asistente.', 'Fuente no disponible');
       return;
     }
 
@@ -826,18 +884,18 @@
       if (payload && payload.answer) {
         appendAnswer(payload);
       } else if (response.status === 503) {
-        appendUnavailable('Contrato GRH no disponible', payload.error || 'No se pudo leer el artefacto privado para este municipio.');
+        appendUnavailable('Contrato GRH no disponible', payload.error || 'No se pudo leer el artefacto privado para este municipio.', 'Fuente no disponible');
       } else if (response.status === 403) {
-        appendUnavailable('Acceso no habilitado', 'Tu perfil o municipio no está autorizado para consultar este contrato GRH.');
+        appendUnavailable('Acceso no habilitado', 'Tu perfil o municipio no está autorizado para consultar este contrato GRH.', 'No disponible para este perfil');
       } else {
-        appendUnavailable('Consulta no procesada', payload.error || 'No existe una respuesta verificable para esta consulta.');
+        appendUnavailable('Consulta no procesada', payload.error || 'No existe una respuesta verificable para esta consulta.', 'Fuente no disponible');
       }
     } catch (error) {
       if (global.MuniAuth && global.MuniAuth.isAuthError && global.MuniAuth.isAuthError(error)) return;
       var detail = error && error.name === 'AbortError'
         ? 'La validación del contrato excedió el tiempo disponible. Intentá nuevamente.'
         : 'No se pudo verificar el contrato GRH. La respuesta quedó bloqueada.';
-      appendUnavailable('Fuente no verificada', detail);
+      appendUnavailable('Fuente no verificada', detail, 'Fuente no disponible');
     } finally {
       global.clearTimeout(timeout);
       setBusy(false);
@@ -885,14 +943,35 @@
     var suggestions = byId('querySuggestions');
     var user = currentUser();
     if (!suggestions || !user || typeof user.role !== 'string') return;
-    suggestions.querySelectorAll('[data-roles]').forEach(function(button) {
-      var roles = String(button.dataset.roles || '').split(',').map(function(role) {
+    configureRoleChip(user);
+    var primary = byId('queryPrimary');
+    suggestions.querySelectorAll('[data-primary-roles]').forEach(function(button) {
+      if (!button.dataset.queryGroup) {
+        var owner = button.closest('[data-query-group]');
+        if (owner) button.dataset.queryGroup = owner.dataset.queryGroup;
+      }
+      var roles = String(button.dataset.primaryRoles || '').split(',').map(function(role) {
         return role.trim();
       }).filter(Boolean);
-      var visible = roles.indexOf(user.role) !== -1;
-      button.hidden = !visible;
-      button.disabled = !visible;
+      if (roles.indexOf(user.role) !== -1 && primary) {
+        primary.appendChild(button);
+      } else if (button.closest('#queryPrimary')) {
+        var group = suggestions.querySelector('[data-query-group="' + button.dataset.queryGroup + '"] .query-group-list');
+        if (group) group.appendChild(button);
+      }
+      button.hidden = false;
+      button.disabled = false;
     });
+    safeArray(PRIMARY_QUERY_ORDER[user.role]).forEach(function(queryId) {
+      var button = suggestions.querySelector('[data-query-id="' + queryId + '"]');
+      if (button && primary && button.parentNode === primary) primary.appendChild(button);
+    });
+    if (primary) primary.hidden = primary.childElementCount === 0;
+    suggestions.querySelectorAll('.query-group[data-query-group]').forEach(function(group) {
+      group.hidden = !group.querySelector('[data-query-id]');
+    });
+    var more = byId('queryMore');
+    if (more) more.hidden = !suggestions.querySelector('#queryMoreBody [data-query-id]');
   }
 
   function parseQuestionDeepLink() {
@@ -956,7 +1035,7 @@
       input.placeholder = 'Tu perfil no está habilitado para consultas ejecutivas GRH.';
     }
     if (submit) submit.disabled = true;
-    appendUnavailable('Perfil no habilitado', 'Esta vista requiere un rol ejecutivo autorizado. El servidor volverá a validar el rol y el tenant en cada solicitud.');
+    appendUnavailable('Perfil no habilitado', 'Esta vista requiere un rol ejecutivo autorizado. El servidor volverá a validar el rol y el tenant en cada solicitud.', 'No disponible para este perfil');
   }
 
   function bindInterface() {
@@ -969,10 +1048,12 @@
     var form = byId('assistantForm');
     var input = byId('assistantInput');
     var suggestions = byId('querySuggestions');
+    var more = byId('queryMore');
     var conversation = byId('conversationLog');
     var personInput = byId('personSearchInput');
     var personClose = byId('personSearchClose');
     configureSuggestionsForRole();
+    setSourceStatus('ready', 'Listo para consultar');
 
     if (form) {
       form.addEventListener('submit', async function(event) {
@@ -1006,7 +1087,14 @@
         var button = event.target.closest('[data-question]');
         if (!button || busy) return;
         closePersonSearch();
+        if (more) more.open = false;
         await ask(button.getAttribute('data-question'));
+      });
+    }
+
+    if (more) {
+      more.addEventListener('toggle', function() {
+        if (more.open) closePersonSearch();
       });
     }
 
@@ -1028,16 +1116,14 @@
         if (event.key === 'Escape') {
           event.preventDefault();
           closePersonSearch();
-          var trigger = suggestions && suggestions.querySelector('[data-person-lookup]');
-          if (trigger) trigger.focus({ preventScroll: true });
+          restorePersonSearchFocus(suggestions);
         }
       });
     }
     if (personClose) {
       personClose.addEventListener('click', function() {
         closePersonSearch();
-        var trigger = suggestions && suggestions.querySelector('[data-person-lookup]');
-        if (trigger) trigger.focus({ preventScroll: true });
+        restorePersonSearchFocus(suggestions);
       });
     }
   }
@@ -1051,7 +1137,7 @@
         await consumeQuestionDeepLink();
       })
       .catch(function() {
-        appendUnavailable('Sesión no verificable', 'No se pudo validar la sesión institucional.');
+        appendUnavailable('Sesión no verificable', 'No se pudo validar la sesión institucional.', 'Fuente no disponible');
       });
   }
 

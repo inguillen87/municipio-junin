@@ -218,6 +218,11 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   assert.equal(MUNIGUIA_CATALOG.pages.grhDecisions.requiredCapability, 'navigation.grh-decisions');
   assert.equal(MUNIGUIA_CATALOG.pages.grhDecisions.manualAnchor, 'decisiones-compromisos');
   assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.assistant.steps.map((step) => step.selector),
+    ['#assistantSourceStatus', '#querySuggestions', '#assistantForm'],
+  );
+  assert.equal(MUNIGUIA_CATALOG.pages.assistant.requiredCapability, 'navigation.ai-assistant');
+  assert.deepEqual(
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.selector),
     ['#organizationSnapshotStatus', '#organizationExplorer', '#costCenterComparator'],
   );

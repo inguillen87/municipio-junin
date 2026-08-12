@@ -1333,6 +1333,32 @@ function executiveSummary(context) {
       `totpago se usa sólo como diagnóstico; su acuerdo de valores global es ${formatPercent(context.reconciliation.valueAgreementPct)}.`,
     ],
     nextQuestions: ['¿Cómo se distribuyen los participantes por centro de costo?', '¿Qué muestra el control de cálculo?', '¿Qué registros quedaron en cuarentena?'],
+    actions: [
+      {
+        id: 'open_grh_decisions',
+        label: 'Abrir prioridades GRH',
+        href: '/decisiones-grh',
+        requiredCapability: 'navigation.grh-decisions',
+      },
+      {
+        id: 'open_hacienda_reconciliation',
+        label: 'Revisar conciliación en Hacienda',
+        href: '/hacienda#closeReconciliationTitle',
+        requiredCapability: 'navigation.hacienda',
+      },
+      {
+        id: 'open_absence_comparison',
+        label: 'Comparar ausencias históricas',
+        href: '/estructura#ausencias',
+        requiredCapability: 'navigation.organization-analytics',
+      },
+      {
+        id: 'open_movement_center',
+        label: 'Abrir movimientos históricos',
+        href: '/movimientos-grh.html?metric=events&window=all',
+        requiredCapability: 'navigation.organization-analytics',
+      },
+    ],
     visual: executiveConfidenceVisual(context),
   };
 }
@@ -1508,7 +1534,7 @@ function decisionBriefAnswer(context) {
       {
         id: 'open_organization_analytics',
         label: 'Abrir estructura y ausencias',
-        href: '/estructura#organizationExplorer',
+        href: '/estructura#ausencias',
         requiredCapability: 'navigation.organization-analytics',
       },
     ],
@@ -2055,6 +2081,30 @@ function distributionLimit(title, summary, code) {
 }
 
 function absenceAnswer(context, periodRequest) {
+  if (periodRequest.invalid) {
+    return periodLimit(
+      'Período inválido',
+      `“${periodRequest.invalid}” no es un período calendario válido.`,
+      'INVALID_PERIOD',
+    );
+  }
+  if (periodRequest.months.length) {
+    return periodLimit(
+      'Granularidad no disponible',
+      `El contrato de ausencias sólo contiene agregados anuales; no puede responder ${periodRequest.label} como si fuera un mes.`,
+      'PERIOD_GRANULARITY_UNAVAILABLE',
+    );
+  }
+  if (periodRequest.years.length === 2) {
+    return absenceComparisonAnswer(context, periodRequest.years);
+  }
+  if (periodRequest.years.length > 2) {
+    return periodLimit(
+      'Comparación de ausencias no disponible',
+      'Indicá exactamente dos años para comparar ausencias registradas.',
+      'ABSENCE_COMPARISON_REQUIRES_TWO_YEARS',
+    );
+  }
   const requested = resolveAnnualRequest(periodRequest, 'ausencias');
   if (requested.error) return requested.error;
   const year = requested.year || context.latestPeriod.slice(0, 4);
@@ -2062,24 +2112,106 @@ function absenceAnswer(context, periodRequest) {
   if (!row || row.privacyStatus !== 'released') {
     return protectedOrUnavailablePeriod('Ausencias', year, context.privacyThreshold);
   }
+  const partial = year === String(context.snapshot || '').slice(0, 4);
+  const periodTruth = partial
+    ? `hasta el corte ${context.snapshot}`
+    : `durante ${year}`;
   return {
-    title: `Ausencias GRH · ${year}`,
-    summary: `GRH registra ${formatInteger(row.value)} filas válidas de ausencia en ${year}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. Son eventos registrados, no una tasa de ausentismo.`,
+    title: `Ausencias GRH · ${year}${partial ? ' (parcial)' : ''}`,
+    summary: `GRH registra ${formatInteger(row.value)} filas válidas de ausencia ${periodTruth}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. Son eventos registrados, no una tasa de ausentismo.`,
     findings: [
       `El período supera el umbral portable k=${context.privacyThreshold}.`,
+      ...(partial ? [`${year} está incompleto al corte ${context.snapshot}; no se presenta como un año cerrado.`] : []),
       'No hay denominador de exposición ni estado activo contractual suficiente para calcular una tasa actual de ausentismo.',
     ],
     evidence: [
       metric(`Registros válidos ${year}`, formatInteger(row.value), 'Filas de ausencia, no empleados únicos.'),
       metric('Participantes distintos', formatInteger(row.participantCount), 'Cardinalidad usada para liberar el agregado portable.'),
     ],
-    caveats: ['No se informa “ausentismo actual” porque el contrato no permite construir una tasa comparable y gobernada.'],
-    nextQuestions: ['¿Qué registros quedaron en cuarentena?', '¿Qué cobertura tienen los cruces con legajo?'],
+    caveats: [
+      ...(partial ? ['El valor parcial no se anualiza ni se compara como si cubriera el año completo.'] : []),
+      'No se informa “ausentismo actual” porque el contrato no permite construir una tasa comparable y gobernada.',
+    ],
+    nextQuestions: ['Compará ausencias 2024 y 2025', '¿Qué registros quedaron en cuarentena?'],
+    actions: [absenceStructureAction()],
     visual: annualEventVisual(context.absence, {
       title: 'Ausencias registradas por año',
-      subtitle: 'Filas válidas de ausencia; sólo años liberados por privacidad.',
+      subtitle: `Filas válidas de ausencia; ${String(context.snapshot || '').slice(0, 4)} es parcial al corte ${context.snapshot}.`,
     }),
     resolvedPeriod: year,
+  };
+}
+
+function absenceComparisonAnswer(context, requestedYears) {
+  const years = requestedYears.slice().sort((left, right) => left.localeCompare(right));
+  const snapshotYear = String(context.snapshot || '').slice(0, 4);
+  if (years.some(year => year >= snapshotYear)) {
+    return periodLimit(
+      'Comparación anual incompleta',
+      `La comparación exige dos años completos anteriores al snapshot ${context.snapshot}. ${snapshotYear} es un año parcial y no se compara como si estuviera cerrado.`,
+      'ABSENCE_COMPARISON_REQUIRES_COMPLETE_YEARS',
+    );
+  }
+  const rows = years.map(year => context.absence.series.find(item => item.period === year));
+  if (rows.some(row => !row || row.privacyStatus !== 'released')) {
+    return periodLimit(
+      'Comparación de ausencias con publicación limitada',
+      `No se puede comparar ${years.join(' y ')}: uno de los años no está disponible o no alcanza el umbral portable k=${context.privacyThreshold}.`,
+      'PRIVACY_PROTECTED_OR_UNAVAILABLE',
+    );
+  }
+
+  const [from, to] = rows;
+  const fromIntensity = from.value / from.participantCount;
+  const toIntensity = to.value / to.participantCount;
+  const eventDelta = to.value - from.value;
+  const participantDelta = to.participantCount - from.participantCount;
+  const intensityDelta = toIntensity - fromIntensity;
+  const eventDeltaPct = eventDelta / from.value * 100;
+  const participantDeltaPct = participantDelta / from.participantCount * 100;
+  const intensityDeltaPct = intensityDelta / fromIntensity * 100;
+
+  return {
+    title: `Ausencias GRH · ${years[0]} → ${years[1]}`,
+    summary: `Entre ${years[0]} y ${years[1]}, los eventos de ausencia registrados cambiaron ${formatSignedInteger(eventDelta)} (${formatSignedFixedPercent(eventDeltaPct)}), mientras los participantes distintos cambiaron ${formatSignedInteger(participantDelta)} (${formatSignedFixedPercent(participantDeltaPct)}).`,
+    findings: [
+      `La intensidad descriptiva pasó de ${formatFixedNumber(fromIntensity, 2)} a ${formatFixedNumber(toIntensity, 2)} eventos por participante observado (${formatSignedFixedPercent(intensityDeltaPct)}).`,
+      'La comparación usa filas válidas de ausencia y participantes distintos de cada año completo.',
+    ],
+    evidence: [
+      metric(`Eventos ${years[0]}`, formatInteger(from.value), 'Ausencias registradas; no días perdidos ni empleados únicos.'),
+      metric(`Eventos ${years[1]}`, formatInteger(to.value), formatSignedFixedPercent(eventDeltaPct)),
+      metric(`Participantes ${years[0]}`, formatInteger(from.participantCount), 'Participantes distintos con al menos un evento válido.'),
+      metric(`Participantes ${years[1]}`, formatInteger(to.participantCount), formatSignedFixedPercent(participantDeltaPct)),
+      metric('Cambio de intensidad', formatSignedFixedNumber(intensityDelta, 2), `${formatSignedFixedPercent(intensityDeltaPct)} · eventos por participante observado.`),
+    ],
+    caveats: [
+      'La intensidad no es una tasa de ausentismo y no usa una planta activa contractual como denominador.',
+      'La variación es descriptiva: no prueba causas, desempeño ni impacto operativo.',
+    ],
+    nextQuestions: [`¿Cuántas ausencias válidas hubo en ${years[1]}?`, '¿Qué registros de ausencias quedaron en cuarentena?'],
+    actions: [absenceStructureAction({ comparison: true })],
+    visual: buildBarVisual({
+      title: `Ausencias registradas · ${years[0]} vs ${years[1]}`,
+      subtitle: 'Filas válidas de ausencia; comparación de dos años completos.',
+      order: 'chronological',
+      unit: 'records',
+      scaleMax: Math.max(from.value, to.value),
+      items: [
+        visualItem(years[0], from.value, formatInteger(from.value)),
+        visualItem(years[1], to.value, formatInteger(to.value)),
+      ],
+    }),
+    resolvedPeriod: `${years[0]}→${years[1]}`,
+  };
+}
+
+function absenceStructureAction({ comparison = false } = {}) {
+  return {
+    id: comparison ? 'open_absence_comparison' : 'open_absence_dashboard',
+    label: comparison ? 'Abrir comparación en Estructura' : 'Abrir ausencias en Estructura',
+    href: '/estructura#ausencias',
+    requiredCapability: 'navigation.organization-analytics',
   };
 }
 
@@ -3053,6 +3185,13 @@ function formatNumber(value, decimals = 2) {
   }).format(value);
 }
 
+function formatFixedNumber(value, decimals = 2) {
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}
+
 function formatPercent(value) {
   return `${formatNumber(value, 2)} %`;
 }
@@ -3060,6 +3199,11 @@ function formatPercent(value) {
 function formatSignedPercent(value) {
   const sign = value > 0 ? '+' : '';
   return `${sign}${formatNumber(value, 2)} %`;
+}
+
+function formatSignedFixedPercent(value) {
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${formatFixedNumber(value, 2)} %`;
 }
 
 function formatSignedInteger(value) {
@@ -3070,6 +3214,11 @@ function formatSignedInteger(value) {
 function formatSignedNumber(value, decimals = 2) {
   const sign = value > 0 ? '+' : '';
   return `${sign}${formatNumber(value, decimals)}`;
+}
+
+function formatSignedFixedNumber(value, decimals = 2) {
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${formatFixedNumber(value, decimals)}`;
 }
 
 function currencyDisclosure(context) {

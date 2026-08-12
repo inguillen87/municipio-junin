@@ -104,7 +104,20 @@
     .assistant-title-copy p { margin: 0 0 4px; color: var(--assistant-cyan); font-size: 12px; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
     .assistant-title-copy h1 { margin: 0; font-size: clamp(18px, 2vw, 24px); font-weight: 750; letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .assistant-topbar-actions { display: flex; align-items: center; gap: 10px; }
+    .assistant-topbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+    .assistant-role-chip {
+      display: inline-flex;
+      min-height: 34px;
+      align-items: center;
+      padding: 7px 11px;
+      border: 1px solid var(--assistant-line);
+      border-radius: 999px;
+      color: var(--assistant-text);
+      background: rgba(101, 167, 255, 0.07);
+      font-size: 12px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
     .assistant-theme {
       width: 44px;
       height: 44px;
@@ -143,6 +156,13 @@
       font-size: 12px;
       font-weight: 700;
     }
+
+    .engine-status[data-state="ready"] { color: var(--assistant-muted); background: rgba(148, 163, 184, 0.07); }
+    .engine-status[data-state="busy"] { color: var(--assistant-amber); background: rgba(247, 198, 108, 0.08); }
+    .engine-status[data-state="error"] { color: var(--assistant-danger); background: rgba(255, 139, 139, 0.08); }
+    .engine-status[data-state="ready"]::before { background: var(--assistant-muted); box-shadow: none; }
+    .engine-status[data-state="busy"]::before { background: var(--assistant-amber); box-shadow: 0 0 0 5px rgba(247, 198, 108, 0.08); }
+    .engine-status[data-state="error"]::before { background: var(--assistant-danger); box-shadow: 0 0 0 5px rgba(255, 139, 139, 0.08); }
 
     .engine-status::before {
       content: "";
@@ -345,8 +365,12 @@
     .directory-option { padding: 11px 12px; border: 1px solid var(--assistant-line); border-radius: 11px; color: var(--assistant-text); background: rgba(101, 167, 255, 0.04); text-decoration: none; }
     .directory-option strong, .directory-option span { display: block; }
     .directory-option span { margin-top: 4px; color: var(--assistant-muted); font-size: 12px; }
-    .answer-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
-    .answer-action { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; padding: 8px 12px; border: 1px solid currentColor; border-radius: 10px; color: #dcecff; background: rgba(101, 167, 255, 0.1); text-decoration: none; font-size: 12px; font-weight: 760; }
+    .answer-next-step { margin-bottom: 17px; padding: 12px; border: 1px solid rgba(101, 167, 255, 0.42); border-radius: 13px; background: rgba(101, 167, 255, 0.055); }
+    .answer-next-step h4 { margin: 0; color: var(--assistant-text); font-size: 12px; font-weight: 820; letter-spacing: 0.07em; text-transform: uppercase; }
+    .answer-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+    .answer-action { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 9px 12px; border: 1px solid currentColor; border-radius: 10px; color: #dcecff; background: rgba(101, 167, 255, 0.1); text-decoration: none; font-size: 12px; font-weight: 760; }
+    .answer-action--primary { color: #ffffff; border-color: #2563eb; background: #2563eb; }
+    .answer-action--primary:hover, .answer-action--primary:focus-visible { color: #ffffff; border-color: #76b3ff; background: #1d4ed8; }
     .answer-action:hover, .answer-action:focus-visible, .directory-option:hover, .directory-option:focus-visible { border-color: var(--assistant-blue); background: rgba(101, 167, 255, 0.14); outline: none; }
 
     .answer-limits { margin-top: 15px; padding: 12px 13px; border-left: 2px solid var(--assistant-amber); border-radius: 4px 10px 10px 4px; background: rgba(247, 198, 108, 0.055); }
@@ -396,17 +420,21 @@
     .person-search-denied p { margin: 5px 0 10px; color: var(--assistant-muted); font-size: 12px; line-height: 1.45; }
     .person-search-denied a { display: inline-flex; min-height: 44px; align-items: center; padding: 8px 11px; border: 1px solid currentColor; border-radius: 9px; color: var(--assistant-amber); font-size: 12px; font-weight: 760; text-decoration: none; }
 
-    .query-suggestions {
-      display: flex;
-      gap: 8px;
-      padding: 11px clamp(16px, 2.5vw, 28px);
-      overflow-x: auto;
-      border-top: 1px solid var(--assistant-line);
-      scrollbar-width: none;
-    }
-
-    .query-suggestions::-webkit-scrollbar { display: none; }
-    .query-chip { flex: 0 0 auto; min-height: 40px; padding: 8px 11px; border: 1px solid var(--assistant-line-strong); border-radius: 10px; color: #c2d1de; background: rgba(255, 255, 255, 0.025); cursor: pointer; font-size: 12px; font-weight: 650; transition: border-color 160ms ease, color 160ms ease, background 160ms ease; }
+    .query-suggestions { padding: 11px clamp(16px, 2.5vw, 28px); border-top: 1px solid var(--assistant-line); }
+    .query-primary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .query-primary:empty { display: none; }
+    .query-more { margin-top: 8px; border: 1px solid var(--assistant-line); border-radius: 11px; background: rgba(255, 255, 255, 0.018); }
+    .query-more[hidden] { display: none !important; }
+    .query-more summary { min-height: 44px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--assistant-text); cursor: pointer; font-size: 12px; font-weight: 760; }
+    .query-more summary::after { content: "+"; color: var(--assistant-blue); font-size: 18px; line-height: 1; }
+    .query-more[open] summary::after { content: "−"; }
+    .query-more summary:focus-visible { outline: 3px solid var(--assistant-blue); outline-offset: -3px; border-radius: 10px; }
+    .query-more-body { max-height: 280px; padding: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid var(--assistant-line); }
+    .query-group[hidden] { display: none !important; }
+    .query-group h3 { margin: 0 0 8px; color: var(--assistant-muted); font-size: 12px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
+    .query-group-list { display: grid; gap: 7px; }
+    .query-chip { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid var(--assistant-line-strong); border-radius: 10px; color: #c2d1de; background: rgba(255, 255, 255, 0.025); cursor: pointer; font-size: 12px; font-weight: 650; line-height: 1.35; text-align: left; transition: border-color 160ms ease, color 160ms ease, background 160ms ease; }
+    .query-primary .query-chip { text-align: center; }
     .query-chip:hover, .query-chip:focus-visible { border-color: var(--assistant-blue); color: #dcecff; background: rgba(101, 167, 255, 0.07); outline: none; }
 
     .composer-wrap { padding: 0 clamp(16px, 2.5vw, 28px) 18px; }
@@ -489,6 +517,10 @@
     html[data-theme="light"] .assistant-menu,
     html[data-theme="light"] .assistant-theme { color: #102a43; background: #ffffff; }
     html[data-theme="light"] .engine-status { color: #0f5f59; border-color: #2f8f83; background: #e6fffb; }
+    html[data-theme="light"] .engine-status[data-state="ready"] { color: #40566a; border-color: #7c8fa1; background: #f1f5f9; }
+    html[data-theme="light"] .engine-status[data-state="busy"] { color: #78350f; border-color: #92400e; background: #fff7ed; }
+    html[data-theme="light"] .engine-status[data-state="error"] { color: #991b1b; border-color: #b91c1c; background: #fee2e2; }
+    html[data-theme="light"] .assistant-role-chip { color: #102a43; background: #eaf2ff; }
     html[data-theme="light"] .conversation-panel { background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(241, 246, 251, 0.98)); }
     html[data-theme="light"] .welcome-mark { color: #1d4ed8; background: linear-gradient(145deg, #e7f0ff, #e6fffb); }
     html[data-theme="light"] .welcome-guardrails span { color: #334b60; background: #ffffff; }
@@ -514,6 +546,7 @@
     html[data-theme="light"] .directory-history-item,
     html[data-theme="light"] .directory-option { background: #f7fafc; }
     html[data-theme="light"] .answer-action { color: #123f82; background: #eaf2ff; }
+    html[data-theme="light"] .answer-action--primary { color: #ffffff; border-color: #2563eb; background: #2563eb; }
     html[data-theme="light"] .answer-followup:hover,
     html[data-theme="light"] .answer-followup:focus-visible,
     html[data-theme="light"] .person-search-result:hover,
@@ -542,6 +575,7 @@
       color: #40566a !important;
     }
     html[data-theme="light"] .query-chip,
+    html[data-theme="light"] .query-more,
     html[data-theme="light"] .composer,
     html[data-theme="light"] .rail-card,
     html[data-theme="light"] .rail-link { color: #334b60; background: #ffffff; }
@@ -606,8 +640,9 @@
     }
 
     @media (max-width: 560px) {
-      .engine-status span { display: none; }
-      .engine-status { width: 34px; height: 34px; padding: 0; justify-content: center; }
+      .assistant-role-chip { max-width: 96px; padding: 7px 9px; overflow: hidden; text-overflow: ellipsis; }
+      .engine-status { min-height: 34px; padding: 7px 9px; }
+      .engine-status span { max-width: 116px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .assistant-title-group { gap: 9px; }
       .welcome-card > p:not(.eyebrow) { font-size: 13px; line-height: 1.55; }
       .welcome-guardrails span:nth-child(3) { display: none; }
@@ -615,6 +650,8 @@
       .answer-state { display: inline-block; margin-top: 9px; }
       .answer-followups-list { display: grid; }
       .answer-followup { width: 100%; }
+      .query-primary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .query-more-body { max-height: min(26dvh, 220px); grid-template-columns: 1fr; }
       .composer-meta span:first-child { display: none; }
       .composer-meta { justify-content: flex-end; }
     }
@@ -634,7 +671,11 @@
       .answer-visual,
       .answer-details,
       .answer-followups,
+      .answer-next-step,
       .person-search-panel,
+      .assistant-role-chip,
+      .engine-status,
+      .query-more,
       .person-search-result,
       .query-chip,
       .rail-link {
@@ -670,8 +711,9 @@
         </div>
       </div>
       <div class="assistant-topbar-actions">
-        <div class="engine-status" title="Las respuestas usan el corte GRH verificado y conservan su fuente">
-          <span>Datos GRH verificados</span>
+        <span class="assistant-role-chip" id="assistantRoleChip">Perfil ejecutivo</span>
+        <div class="engine-status" id="assistantSourceStatus" data-state="ready" role="status" aria-live="polite" title="Estado de la consulta sobre el corte GRH">
+          <span>Listo para consultar</span>
         </div>
         <button class="theme-toggle-btn assistant-theme" id="themeToggleBtn" type="button" aria-label="Cambiar tema">🌙</button>
       </div>
@@ -688,8 +730,8 @@
               </svg>
             </div>
             <p class="eyebrow">Decisión con trazabilidad</p>
-            <h2>Preguntá sobre el corte real de GRH</h2>
-            <p>Consultá métricas GRH verificadas y abrí el tablero adecuado para actuar.</p>
+            <h2>¿Qué necesitás decidir hoy?</h2>
+            <p>Consultá evidencia del corte GRH y abrí el tablero correspondiente para profundizar.</p>
             <div class="welcome-guardrails" aria-label="Garantías del asistente">
               <span>Contrato privado</span>
               <span>Acceso según perfil</span>
@@ -719,38 +761,59 @@
           </div>
         </section>
 
-        <div class="query-suggestions" id="querySuggestions" aria-label="Consultas sugeridas">
-          <button class="query-chip" type="button" data-person-lookup="true">Buscar licencias por persona</button>
-          <button class="query-chip" type="button"
-                  data-roles="INTENDENTE,TENANT_ADMIN,SUPER_ADMIN"
-                  data-question="¿Qué requiere atención y qué acción sigue?">Prioridades para decidir</button>
-          <button class="query-chip" type="button"
-                  data-roles="INTENDENTE,CONTADOR,TENANT_ADMIN,SUPER_ADMIN"
-                  data-question="¿Qué costo neto se concentra por centro de costo en 2026-07?">Costo por área</button>
-          <button class="query-chip" type="button"
-                  data-roles="CONTADOR,INTENDENTE,TENANT_ADMIN,SUPER_ADMIN"
-                  data-question="¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?">Tendencia por cohorte</button>
-          <button class="query-chip" type="button"
-                  data-roles="CONTADOR,INTENDENTE,TENANT_ADMIN,SUPER_ADMIN"
-                  data-question="Mostrá los componentes del cálculo de Servicios Públicos por centro de costo en 2026-07">Componentes por área</button>
-          <button class="query-chip" type="button"
-                  data-roles="CONTADOR,INTENDENTE,TENANT_ADMIN,SUPER_ADMIN"
-                  data-question="Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en 2026-07">Comparar áreas</button>
-          <button class="query-chip" type="button"
-                  data-roles="INTENDENTE,CONTADOR,TENANT_ADMIN,SUPER_ADMIN"
-                  data-question="¿Qué áreas y datos hay?">Áreas y datos</button>
-          <button class="query-chip" type="button" data-question="Dame un resumen ejecutivo del último período">Resumen ejecutivo</button>
-          <button class="query-chip" type="button" data-question="¿Cuántas personas participaron en la liquidación del último período?">Participación</button>
-          <button class="query-chip" type="button" data-question="¿Cómo se distribuyen los participantes por centro de costo?">Centros de costo</button>
-          <button class="query-chip" type="button" data-question="¿Cómo se distribuyen los participantes por categoría de acuerdo de origen?">Categorías de acuerdo</button>
-          <button class="query-chip" type="button" data-question="¿Qué muestra el control de cálculo del último período?">Control de cálculo</button>
-          <button class="query-chip" type="button" data-question="Explicame el cierre GRH del último período">Cierre explicado</button>
-          <button class="query-chip" type="button" data-question="¿Cómo está la conciliación entre cálculo y totpago?">Conciliación</button>
-          <button class="query-chip" type="button" data-question="¿Qué datos de ausencias están disponibles?">Ausencias</button>
-          <button class="query-chip" type="button" data-question="¿Qué licencias históricas están disponibles?">Licencias históricas</button>
-          <button class="query-chip" type="button" data-question="Compará movimientos 2024 y 2025">Comparar movimientos</button>
-          <button class="query-chip" type="button" data-question="¿Cuál es la calidad del contrato GRH?">Calidad</button>
-        </div>
+        <section class="query-suggestions" id="querySuggestions" aria-labelledby="querySuggestionsTitle">
+          <h2 class="sr-only" id="querySuggestionsTitle">Consultas sugeridas para tu perfil</h2>
+          <div class="query-primary" id="queryPrimary"></div>
+
+          <details class="query-more" id="queryMore">
+            <summary id="queryMoreSummary">Más consultas</summary>
+            <div class="query-more-body" id="queryMoreBody">
+              <section class="query-group" data-query-group="decision">
+                <h3>Decisión</h3>
+                <div class="query-group-list">
+                  <button class="query-chip" type="button" data-query-id="priority" data-primary-roles="INTENDENTE,TENANT_ADMIN" data-question="¿Qué requiere atención y qué acción sigue?">Prioridades para decidir</button>
+                  <button class="query-chip" type="button" data-query-id="summary" data-primary-roles="INTENDENTE,TENANT_ADMIN,SUPER_ADMIN" data-question="Dame un resumen ejecutivo del último período">Resumen ejecutivo</button>
+                  <button class="query-chip" type="button" data-query-id="absence-compare" data-primary-roles="INTENDENTE" data-question="Compará ausencias 2024 y 2025">Comparar ausencias</button>
+                  <button class="query-chip" type="button" data-query-id="movement-compare" data-question="Compará movimientos 2024 y 2025">Comparar movimientos</button>
+                </div>
+              </section>
+
+              <section class="query-group" data-query-group="people">
+                <h3>Personas y estructura</h3>
+                <div class="query-group-list">
+                  <button class="query-chip" type="button" data-query-id="person-lookup" data-person-lookup="true">Buscar licencias por persona</button>
+                  <button class="query-chip" type="button" data-query-id="catalog" data-primary-roles="TENANT_ADMIN,SUPER_ADMIN" data-question="¿Qué áreas y datos hay?">Áreas y datos</button>
+                  <button class="query-chip" type="button" data-query-id="participation" data-question="¿Cuántas personas participaron en la liquidación del último período?">Participación</button>
+                  <button class="query-chip" type="button" data-query-id="cost-center-distribution" data-question="¿Cómo se distribuyen los participantes por centro de costo?">Centros de costo</button>
+                  <button class="query-chip" type="button" data-query-id="agreement-distribution" data-question="¿Cómo se distribuyen los participantes por categoría de acuerdo de origen?">Categorías de acuerdo</button>
+                  <button class="query-chip" type="button" data-query-id="absence-overview" data-question="¿Qué datos de ausencias están disponibles?">Ausencias</button>
+                  <button class="query-chip" type="button" data-query-id="leave-history" data-question="¿Qué licencias históricas están disponibles?">Licencias históricas</button>
+                </div>
+              </section>
+
+              <section class="query-group" data-query-group="payroll">
+                <h3>Nómina y costos</h3>
+                <div class="query-group-list">
+                  <button class="query-chip" type="button" data-query-id="cost-overview" data-primary-roles="INTENDENTE,CONTADOR,SUPER_ADMIN" data-question="¿Qué costo neto se concentra por centro de costo en 2026-07?">Costo por área</button>
+                  <button class="query-chip" type="button" data-query-id="cost-trend" data-question="¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?">Tendencia por cohorte</button>
+                  <button class="query-chip" type="button" data-query-id="cost-components" data-primary-roles="CONTADOR" data-question="Mostrá los componentes del cálculo de Servicios Públicos por centro de costo en 2026-07">Componentes por área</button>
+                  <button class="query-chip" type="button" data-query-id="cost-compare" data-question="Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en 2026-07">Comparar áreas</button>
+                  <button class="query-chip" type="button" data-query-id="calculation-control" data-primary-roles="CONTADOR" data-question="¿Qué muestra el control de cálculo del último período?">Control de cálculo</button>
+                  <button class="query-chip" type="button" data-query-id="close" data-question="Explicame el cierre GRH del último período">Cierre explicado</button>
+                  <button class="query-chip" type="button" data-query-id="reconciliation" data-primary-roles="CONTADOR" data-question="¿Cómo está la conciliación entre cálculo y totpago?">Conciliación</button>
+                </div>
+              </section>
+
+              <section class="query-group" data-query-group="traceability">
+                <h3>Datos y trazabilidad</h3>
+                <div class="query-group-list">
+                  <button class="query-chip" type="button" data-query-id="quality" data-primary-roles="TENANT_ADMIN,SUPER_ADMIN" data-question="¿Cuál es la calidad del contrato GRH?">Calidad</button>
+                  <button class="query-chip" type="button" data-query-id="source" data-question="¿Cuál es la fuente y el corte del contrato GRH?">Fuente y corte</button>
+                </div>
+              </section>
+            </div>
+          </details>
+        </section>
 
         <div class="composer-wrap">
           <form class="composer" id="assistantForm" novalidate>
@@ -807,9 +870,11 @@
         <section class="rail-card">
           <h2>Abrir tablero</h2>
           <div class="rail-links">
-            <a class="rail-link" href="/rrhh"><span class="rail-link-mark" aria-hidden="true">RH</span><span class="rail-link-copy"><strong>RRHH</strong><small>Cohortes y series</small></span><span aria-hidden="true">→</span></a>
+            <a class="rail-link" href="/estructura#organizationExplorer"><span class="rail-link-mark" aria-hidden="true">EST</span><span class="rail-link-copy"><strong>Estructura</strong><small>Áreas, ausencias y costos</small></span><span aria-hidden="true">→</span></a>
+            <a class="rail-link" href="/movimientos-grh.html?metric=events&amp;window=all"><span class="rail-link-mark" aria-hidden="true">MOV</span><span class="rail-link-copy"><strong>Movimientos</strong><small>Serie y comparación anual</small></span><span aria-hidden="true">→</span></a>
+            <a class="rail-link" href="/rrhh"><span class="rail-link-mark" aria-hidden="true">RH</span><span class="rail-link-copy"><strong>RRHH</strong><small>Directorio y fichas</small></span><span aria-hidden="true">→</span></a>
             <a class="rail-link" href="/hacienda"><span class="rail-link-mark" aria-hidden="true">ARS</span><span class="rail-link-copy"><strong>Hacienda</strong><small>Cálculo y cierre</small></span><span aria-hidden="true">→</span></a>
-            <a class="rail-link" href="/calidad"><span class="rail-link-mark" aria-hidden="true">QA</span><span class="rail-link-copy"><strong>Calidad</strong><small>Datos confiables y pendientes</small></span><span aria-hidden="true">→</span></a>
+            <a class="rail-link" href="/calidad"><span class="rail-link-mark" aria-hidden="true">QA</span><span class="rail-link-copy"><strong>Calidad</strong><small>Linaje y pendientes</small></span><span aria-hidden="true">→</span></a>
           </div>
         </section>
       </aside>

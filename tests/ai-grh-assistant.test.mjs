@@ -419,6 +419,32 @@ test('executive answers use protected portable rankings without labels or codes 
   assert.match(summary.response, /\bARS\b/);
   assert.match(summary.response, /GRH no declara moneda en la fuente/i);
   assert.doesNotMatch(summary.response, /\$|pago bancario|sourceCode|companyCode|unidades de origen/i);
+  assert.deepEqual(summary.answer.actions, [
+    {
+      id: 'open_grh_decisions',
+      label: 'Abrir prioridades GRH',
+      href: '/decisiones-grh',
+      requiredCapability: 'navigation.grh-decisions',
+    },
+    {
+      id: 'open_hacienda_reconciliation',
+      label: 'Revisar conciliación en Hacienda',
+      href: '/hacienda#closeReconciliationTitle',
+      requiredCapability: 'navigation.hacienda',
+    },
+    {
+      id: 'open_absence_comparison',
+      label: 'Comparar ausencias históricas',
+      href: '/estructura#ausencias',
+      requiredCapability: 'navigation.organization-analytics',
+    },
+    {
+      id: 'open_movement_center',
+      label: 'Abrir movimientos históricos',
+      href: '/movimientos-grh.html?metric=events&window=all',
+      requiredCapability: 'navigation.organization-analytics',
+    },
+  ]);
 
   const distribution = answer('Distribución por centro de costo', views);
   assert.equal(distribution.intent, 'workforce_distribution');
@@ -460,6 +486,76 @@ test('absence, leave and movement values are returned only for released years', 
   const absent = answer('Ausencias 1989', views);
   assert.equal(absent.answer.code, 'PRIVACY_PROTECTED_OR_UNAVAILABLE');
   assert.doesNotMatch(absent.response, /años disponibles|último año disponible/i);
+});
+
+test('absence comparisons keep complete-year events, participants and intensity separate', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+
+  for (const question of [
+    'Compará ausencias 2024 y 2025',
+    'Ausencias 2024 vs 2025',
+  ]) {
+    const result = answer(question, views);
+    assert.equal(result.intent, 'absence', question);
+    assert.equal(result.httpStatus, 200, question);
+    assert.equal(result.status, 'answered', question);
+    assert.equal(result.resolvedPeriod, '2024→2025', question);
+    assert.match(result.answer.title, /2024.*2025/, question);
+    assert.match(result.answer.summary, /-124 \(-5,71 %\)/, question);
+    assert.match(result.answer.summary, /\+4 \(\+0,66 %\)/, question);
+    assert.match(result.answer.findings.join(' '), /3,56.*3,34.*-6,32 %/, question);
+    assert.equal(result.answer.evidence[4].value, '-0,23', question);
+    assert.match(result.answer.caveats.join(' '), /no es una tasa de ausentismo/i, question);
+    assert.match(result.answer.caveats.join(' '), /no prueba causas/i, question);
+    assert.deepEqual(result.answer.actions, [{
+      id: 'open_absence_comparison',
+      label: 'Abrir comparación en Estructura',
+      href: '/estructura#ausencias',
+      requiredCapability: 'navigation.organization-analytics',
+    }], question);
+    assertBarVisual(result.answer.visual, { unit: 'records', order: 'chronological' });
+    assert.deepEqual(result.answer.visual.items.map(item => ({
+      label: item.label,
+      value: item.value,
+    })), [
+      { label: '2024', value: 2172 },
+      { label: '2025', value: 2048 },
+    ], question);
+  }
+
+  const partialComparison = answer('Compará ausencias 2025 y 2026', views);
+  assert.equal(partialComparison.httpStatus, 422);
+  assert.equal(partialComparison.answer.code, 'ABSENCE_COMPARISON_REQUIRES_COMPLETE_YEARS');
+  assert.match(partialComparison.answer.summary, /año parcial/i);
+
+  const tooMany = answer('Compará ausencias 2023, 2024 y 2025', views);
+  assert.equal(tooMany.httpStatus, 422);
+  assert.equal(tooMany.answer.code, 'ABSENCE_COMPARISON_REQUIRES_TWO_YEARS');
+
+  const unavailable = answer('Compará ausencias 1989 y 2025', views);
+  assert.equal(unavailable.httpStatus, 422);
+  assert.equal(unavailable.answer.code, 'PRIVACY_PROTECTED_OR_UNAVAILABLE');
+});
+
+test('absence answers label the snapshot year as partial and route to its comparator', { skip: !HAS_PRIVATE_GRH }, () => {
+  const views = realViews();
+  const snapshotYear = views.executive.source.snapshotAsOf.slice(0, 4);
+  const result = answer('Evolución ausencias', views);
+
+  assert.equal(result.intent, 'absence');
+  assert.equal(result.httpStatus, 200);
+  assert.equal(result.resolvedPeriod, snapshotYear);
+  assert.match(result.answer.title, /parcial/i);
+  assert.match(result.answer.summary, new RegExp(`hasta el corte ${views.executive.source.snapshotAsOf}`));
+  assert.match(result.answer.findings.join(' '), /incompleto/i);
+  assert.match(result.answer.caveats.join(' '), /no se anualiza/i);
+  assert.match(result.answer.visual.subtitle, new RegExp(`${snapshotYear} es parcial al corte ${views.executive.source.snapshotAsOf}`));
+  assert.deepEqual(result.answer.actions, [{
+    id: 'open_absence_dashboard',
+    label: 'Abrir ausencias en Estructura',
+    href: '/estructura#ausencias',
+    requiredCapability: 'navigation.organization-analytics',
+  }]);
 });
 
 test('movement comparisons keep events, participants and intensity separate', { skip: !HAS_PRIVATE_GRH }, () => {
@@ -1070,7 +1166,7 @@ test('decision brief and workforce-finance intents answer from the governed real
     '/decisiones-grh',
     '/hacienda#closeReconciliationTitle',
     '/calidad',
-    '/estructura#organizationExplorer',
+    '/estructura#ausencias',
   ]);
   assert.deepEqual(brief.answer.actions[0], {
     id: 'open_grh_decisions',

@@ -382,6 +382,10 @@ async function createServer(requestLog, options = {}) {
         body,
       });
 
+      if (Number.isSafeInteger(options.aiDelayMs) && options.aiDelayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, Math.min(options.aiDelayMs, 1000)));
+      }
+
       if (options.unavailable || !views) {
         response.writeHead(503, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
         response.end(JSON.stringify({
@@ -454,6 +458,20 @@ async function seedSession(context, themeState = {}) {
     legacyTheme: themeState.legacyTheme || null,
     versionedTheme: themeState.versionedTheme || null,
   });
+}
+
+async function clickPrimaryQuery(page, name) {
+  await page.waitForFunction(() => document.querySelectorAll('#queryPrimary [data-query-id]').length === 4);
+  const button = page.locator('#queryPrimary').getByRole('button', { name, exact: true });
+  await button.click();
+}
+
+async function clickMoreQuery(page, name) {
+  const more = page.locator('#queryMore');
+  if (!await more.evaluate(node => node.open)) {
+    await page.locator('#queryMoreSummary').click();
+  }
+  await page.locator('#queryMoreBody').getByRole('button', { name, exact: true }).click();
 }
 
 test('assistant guards start and every submit with the exact AI capability', async () => {
@@ -622,9 +640,62 @@ test('assistant theme control keeps operational copy readable on desktop and mob
   assert.deepEqual(requestLog, []);
 });
 
+test('assistant presents exactly four canonical primary queries for each executive role', async t => {
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => browser.close());
+
+  const scenarios = [
+    {
+      role: 'INTENDENTE',
+      labels: ['Prioridades para decidir', 'Resumen ejecutivo', 'Comparar ausencias', 'Costo por área'],
+    },
+    {
+      role: 'CONTADOR',
+      labels: ['Costo por área', 'Componentes por área', 'Control de cálculo', 'Conciliación'],
+    },
+    {
+      role: 'TENANT_ADMIN',
+      labels: ['Prioridades para decidir', 'Áreas y datos', 'Calidad', 'Resumen ejecutivo'],
+    },
+    {
+      role: 'SUPER_ADMIN',
+      labels: ['Calidad', 'Áreas y datos', 'Resumen ejecutivo', 'Costo por área'],
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    const requestLog = [];
+    const server = await createServer(requestLog, { authRole: scenario.role });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    try {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 820 } });
+      await seedSession(context);
+      const page = await context.newPage();
+      await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+      const menu = await page.evaluate(() => ({
+        primaryLabels: Array.from(document.querySelectorAll('#queryPrimary [data-query-id]'), node =>
+          node.textContent.trim()),
+        primaryIds: Array.from(document.querySelectorAll('#queryPrimary [data-query-id]'), node =>
+          node.dataset.queryId),
+        allIds: Array.from(document.querySelectorAll('#querySuggestions [data-query-id]'), node =>
+          node.dataset.queryId),
+      }));
+      assert.deepEqual(menu.primaryLabels, scenario.labels, scenario.role);
+      assert.equal(menu.primaryIds.length, 4, scenario.role);
+      assert.equal(new Set(menu.primaryIds).size, 4, `${scenario.role} primary queries must be unique`);
+      assert.equal(new Set(menu.allIds).size, menu.allIds.length,
+        `${scenario.role} must keep one canonical DOM instance per query`);
+      assert.deepEqual(requestLog, [], `${scenario.role} suggestions must not query private data`);
+      await context.close();
+    } finally {
+      await new Promise(resolve => server.close(resolve));
+    }
+  }
+});
+
 test('executive GRH assistant renders deterministic evidence on desktop and mobile', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
-  const server = await createServer(requestLog);
+  const server = await createServer(requestLog, { aiDelayMs: 100 });
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
   const browser = await chromium.launch({ headless: true });
 
@@ -650,8 +721,17 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     });
 
     await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Resumen ejecutivo' }).click();
+    assert.equal(await page.locator('#assistantSourceStatus span').textContent(), 'Listo para consultar');
+    await page.locator('#queryMoreSummary').click();
+    assert.equal(await page.locator('#queryMore').evaluate(node => node.open), true);
+    await clickPrimaryQuery(page, 'Resumen ejecutivo');
+    await page.waitForFunction(() => document.querySelector('#assistantInput')?.getAttribute('aria-busy') === 'true');
+    assert.deepEqual(await page.locator('#queryMore').evaluate(node => ({
+      open: node.open,
+      inert: node.inert,
+    })), { open: false, inert: true });
     await page.waitForSelector('.answer-card .answer-state');
+    assert.equal(await page.locator('#assistantSourceStatus span').textContent(), 'Corte GRH verificado');
 
     const result = await page.evaluate(() => {
       const answerText = document.querySelector('.answer-card')?.textContent || '';
@@ -667,6 +747,14 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
         visualRows: document.querySelectorAll('.answer-visual-row').length,
         visualScale: document.querySelector('.answer-visual-scale')?.textContent.trim(),
         visualValues: Array.from(document.querySelectorAll('.answer-visual-value'), node => node.textContent.trim()),
+        actions: Array.from(document.querySelectorAll('.answer-card .answer-action'), link => ({
+          label: link.textContent.trim(),
+          href: link.getAttribute('href'),
+          capability: link.dataset.capability,
+          primary: link.classList.contains('answer-action--primary'),
+        })),
+        nextStepLabel: document.querySelector('.answer-next-step')?.getAttribute('aria-label'),
+        nextStepHeading: document.querySelector('.answer-next-step')?.firstElementChild?.textContent.trim(),
         detailsOpen: document.querySelector('.answer-details')?.open,
         bodyOrder: Array.from(document.querySelector('.answer-body')?.children || [], node => node.className),
         followUps: Array.from(document.querySelectorAll('.answer-followup'), node => node.textContent.trim()),
@@ -685,7 +773,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     });
 
     assert.equal(result.title, 'Resumen ejecutivo GRH · 2026-07');
-    assert.equal(result.state, 'Verificado');
+    assert.equal(result.state, 'Respuesta verificada');
     assert.match(result.snapshot, /2026-08-06/);
     assert.match(result.period, /2026-07/);
     assert.equal(result.evidenceCount >= 4, true);
@@ -695,7 +783,41 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.equal(result.visualScale, 'Escala 0–100 %');
     assert.equal(result.visualValues.length, 4);
     assert.equal(result.detailsOpen, false);
-    assert.deepEqual(result.bodyOrder, ['answer-visual', 'evidence-grid', 'answer-details', 'answer-source']);
+    assert.deepEqual(result.actions, [
+      {
+        label: 'Abrir prioridades GRH',
+        href: '/decisiones-grh',
+        capability: 'navigation.grh-decisions',
+        primary: true,
+      },
+      {
+        label: 'Revisar conciliación en Hacienda',
+        href: '/hacienda#closeReconciliationTitle',
+        capability: 'navigation.hacienda',
+        primary: false,
+      },
+      {
+        label: 'Comparar ausencias históricas',
+        href: '/estructura#ausencias',
+        capability: 'navigation.organization-analytics',
+        primary: false,
+      },
+      {
+        label: 'Abrir movimientos históricos',
+        href: '/movimientos-grh.html?metric=events&window=all',
+        capability: 'navigation.organization-analytics',
+        primary: false,
+      },
+    ]);
+    assert.equal(result.nextStepLabel, 'Próximo paso');
+    assert.equal(result.nextStepHeading, 'Próximo paso');
+    assert.deepEqual(result.bodyOrder, [
+      'answer-next-step',
+      'answer-visual',
+      'evidence-grid',
+      'answer-details',
+      'answer-source',
+    ]);
     assert.equal(result.followUps.length, 3);
     assert.match(result.answerText, /856/);
     assert.match(result.answerText, /Fuente: GRH Junín/);
@@ -709,6 +831,8 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.equal(result.welcomePresent, false);
     assert.equal(result.railDisplay, viewport.name === 'mobile' ? 'none' : 'flex');
     assert.deepEqual(result.railLinks, [
+      { label: 'Estructura', href: '/estructura#organizationExplorer' },
+      { label: 'Movimientos', href: '/movimientos-grh.html?metric=events&window=all' },
       { label: 'RRHH', href: '/rrhh' },
       { label: 'Hacienda', href: '/hacienda' },
       { label: 'Calidad', href: '/calidad' },
@@ -721,7 +845,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.equal(requestLog.at(-1).body.message, followUpQuestion);
     assert.equal(await page.locator('.message-row.user .user-bubble').last().textContent(), followUpQuestion);
 
-    await page.getByRole('button', { name: 'Categorías de acuerdo' }).click();
+    await clickMoreQuery(page, 'Categorías de acuerdo');
     await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
       .some(title => title.textContent.includes('categoría de acuerdo')));
     const dimensionalResult = await page.evaluate(() => ({
@@ -734,7 +858,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.doesNotMatch(dimensionalResult.text, /\bARS\b|\$|DNI|CUIL/i);
     assert.equal(dimensionalResult.overflow, 0, `${viewport.name} dimensional answer must not overflow horizontally`);
 
-    await page.getByRole('button', { name: 'Cierre explicado' }).click();
+    await clickMoreQuery(page, 'Cierre explicado');
     await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
       .some(title => title.textContent.includes('Cierre GRH explicado')));
     const closeResult = await page.evaluate(() => ({
@@ -751,7 +875,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.doesNotMatch(closeResult.text, /63[,.]88|\$|DNI|CUIL|unidades de origen/i);
     assert.equal(closeResult.overflow, 0, `${viewport.name} close answer must not overflow horizontally`);
 
-    await page.getByRole('button', { name: 'Licencias históricas' }).click();
+    await clickMoreQuery(page, 'Licencias históricas');
     await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
       .some(title => title.textContent.includes('Licencias históricas · 2009')));
     const leaveResult = await page.evaluate(() => ({
@@ -803,7 +927,27 @@ test('assistant renders decision and workforce-finance answers with real deep li
   const page = await context.newPage();
   await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: 'Prioridades para decidir' }).click();
+  const queryMenu = await page.evaluate(() => ({
+    primaryLabels: Array.from(document.querySelectorAll('#queryPrimary [data-question]:not([hidden])'), node =>
+      node.textContent.trim()),
+    moreLabel: document.querySelector('#queryMoreSummary')?.textContent.trim(),
+    moreOpen: document.querySelector('#queryMore')?.open,
+    genericAbsenceInMore: Array.from(document.querySelectorAll('#queryMoreBody [data-question]'))
+      .some(node => node.textContent.trim() === 'Ausencias'),
+  }));
+  assert.deepEqual(queryMenu, {
+    primaryLabels: [
+      'Prioridades para decidir',
+      'Resumen ejecutivo',
+      'Comparar ausencias',
+      'Costo por área',
+    ],
+    moreLabel: 'Más consultas',
+    moreOpen: false,
+    genericAbsenceInMore: true,
+  });
+
+  await clickPrimaryQuery(page, 'Prioridades para decidir');
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
     .some(title => title.textContent.includes('Brief de decisión GRH')));
   const brief = await page.evaluate(() => {
@@ -820,11 +964,118 @@ test('assistant renders decision and workforce-finance answers with real deep li
     { href: '/decisiones-grh', capability: 'navigation.grh-decisions' },
     { href: '/hacienda#closeReconciliationTitle', capability: 'navigation.hacienda' },
     { href: '/calidad', capability: 'navigation.data-quality' },
-    { href: '/estructura#organizationExplorer', capability: 'navigation.organization-analytics' },
+    { href: '/estructura#ausencias', capability: 'navigation.organization-analytics' },
   ]);
   assert.equal(brief.visualItems, 4);
 
-  await page.getByRole('button', { name: 'Componentes por área' }).click();
+  const absenceComparisonChip = page.locator('#queryPrimary')
+    .getByRole('button', { name: 'Comparar ausencias', exact: true });
+  assert.equal(
+    await absenceComparisonChip.getAttribute('data-question'),
+    'Compará ausencias 2024 y 2025',
+  );
+  await absenceComparisonChip.click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Ausencias GRH · 2024 → 2025')));
+  const absenceComparison = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      title: card?.querySelector('.answer-heading-line h3')?.textContent.trim(),
+      actions: Array.from(card?.querySelectorAll('.answer-action') || [], link => ({
+        label: link.textContent.trim(),
+        href: link.getAttribute('href'),
+        capability: link.dataset.capability,
+        primary: link.classList.contains('answer-action--primary'),
+      })),
+      visualLabels: Array.from(card?.querySelectorAll('.answer-visual-label') || [], node =>
+        node.textContent.trim()),
+      visualValues: Array.from(card?.querySelectorAll('.answer-visual-value') || [], node =>
+        node.textContent.trim()),
+      evidence: Array.from(card?.querySelectorAll('.evidence-item') || [], item => ({
+        label: item.querySelector('.evidence-label')?.textContent.trim(),
+        value: item.querySelector('.evidence-value')?.textContent.trim(),
+      })),
+      bodyOrder: Array.from(card?.querySelector('.answer-body')?.children || [], node => node.className),
+      nextStepLabel: card?.querySelector('.answer-next-step')?.getAttribute('aria-label'),
+      nextStepHeading: card?.querySelector('.answer-next-step')?.firstElementChild?.textContent.trim(),
+      text: card?.textContent || '',
+    };
+  });
+  assert.equal(absenceComparison.title, 'Ausencias GRH · 2024 → 2025');
+  assert.deepEqual(absenceComparison.actions, [{
+    label: 'Abrir comparación en Estructura',
+    href: '/estructura#ausencias',
+    capability: 'navigation.organization-analytics',
+    primary: true,
+  }]);
+  assert.deepEqual(absenceComparison.visualLabels, ['2024', '2025']);
+  assert.deepEqual(absenceComparison.visualValues, ['2.172', '2.048']);
+  assert.deepEqual(absenceComparison.evidence, [
+    { label: 'Eventos 2024', value: '2.172' },
+    { label: 'Eventos 2025', value: '2.048' },
+    { label: 'Participantes 2024', value: '610' },
+    { label: 'Participantes 2025', value: '614' },
+    { label: 'Cambio de intensidad', value: '-0,23' },
+  ]);
+  assert.deepEqual(absenceComparison.bodyOrder, [
+    'answer-next-step',
+    'answer-visual',
+    'evidence-grid',
+    'answer-details',
+    'answer-source',
+  ]);
+  assert.equal(absenceComparison.nextStepLabel, 'Próximo paso');
+  assert.equal(absenceComparison.nextStepHeading, 'Próximo paso');
+  assert.match(absenceComparison.text, /-124 \(-5,71 %\)/);
+  assert.match(absenceComparison.text, /\+4 \(\+0,66 %\)/);
+  assert.match(absenceComparison.text, /3,56.*3,34.*-6,32 %/s);
+  assert.match(absenceComparison.text, /no es una tasa de ausentismo/i);
+  assert.match(absenceComparison.text, /no prueba causas/i);
+  assert.doesNotMatch(absenceComparison.text, /DNI|CUIL|legajo/i);
+  assert.equal(requestLog.at(-1).body.message, 'Compará ausencias 2024 y 2025');
+
+  await page.locator('#queryMoreSummary').click();
+  const genericAbsenceChip = page.locator('#queryMoreBody [data-query-id="absence-overview"]');
+  assert.equal(
+    await genericAbsenceChip.getAttribute('data-question'),
+    '¿Qué datos de ausencias están disponibles?',
+  );
+  await genericAbsenceChip.click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Ausencias GRH · 2026 (parcial)')));
+  const partialAbsence = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      title: card?.querySelector('.answer-heading-line h3')?.textContent.trim(),
+      actions: Array.from(card?.querySelectorAll('.answer-action') || [], link => ({
+        label: link.textContent.trim(),
+        href: link.getAttribute('href'),
+        capability: link.dataset.capability,
+      })),
+      evidence: Array.from(card?.querySelectorAll('.evidence-item') || [], item => ({
+        label: item.querySelector('.evidence-label')?.textContent.trim(),
+        value: item.querySelector('.evidence-value')?.textContent.trim(),
+      })),
+      text: card?.textContent || '',
+    };
+  });
+  assert.equal(partialAbsence.title, 'Ausencias GRH · 2026 (parcial)');
+  assert.deepEqual(partialAbsence.actions, [{
+    label: 'Abrir ausencias en Estructura',
+    href: '/estructura#ausencias',
+    capability: 'navigation.organization-analytics',
+  }]);
+  assert.deepEqual(partialAbsence.evidence, [
+    { label: 'Registros válidos 2026', value: '1.559' },
+    { label: 'Participantes distintos', value: '590' },
+  ]);
+  assert.match(partialAbsence.text, /hasta el corte 2026-08-06/i);
+  assert.match(partialAbsence.text, /no se anualiza/i);
+  assert.match(partialAbsence.text, /no una tasa|no es una tasa/i);
+  assert.doesNotMatch(partialAbsence.text, /DNI|CUIL|legajo/i);
+  assert.equal(requestLog.at(-1).body.message, '¿Qué datos de ausencias están disponibles?');
+
+  await clickMoreQuery(page, 'Componentes por área');
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
     .some(title => title.textContent.includes('Composición de SERVICIOS PUBLICOS')));
   const finance = await page.evaluate(() => {
@@ -841,7 +1092,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.match(finance.text, /no atribuye causas/i);
   assert.doesNotMatch(finance.text, /DNI|CUIL|legajo/i);
 
-  await page.getByRole('button', { name: 'Comparar áreas' }).click();
+  await clickMoreQuery(page, 'Comparar áreas');
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
     .some(title => title.textContent.includes('Neto de control comparado · 2026-07')));
   const comparison = await page.evaluate(() => {
@@ -878,7 +1129,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.match(comparison.text, /ARS\s*181\.563\.395,56/u);
   assert.doesNotMatch(comparison.text, /DNI|CUIL|legajo/i);
 
-  await page.getByRole('button', { name: 'Comparar movimientos' }).click();
+  await clickMoreQuery(page, 'Comparar movimientos');
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
     .some(title => title.textContent.includes('Movimientos GRH · 2024')));
   const movements = await page.evaluate(() => {
@@ -898,12 +1149,12 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.equal(movements.evidenceItems, 5);
   assert.match(movements.text, /eventos por participante observado/i);
   assert.match(movements.text, /no es una tasa de rotación/i);
-  assert.equal(requestLog.length, 4);
+  assert.equal(requestLog.length, 6);
   assert.equal(requestLog.every(item => item.purpose === 'AGGREGATE_ANALYSIS'), true);
   await context.close();
 });
 
-test('assistant hides the structure comparator action without its exact navigation capability', { skip: !HAS_PRIVATE_GRH }, async t => {
+test('assistant filters structure and summary actions by their exact navigation capabilities', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
   const server = await createServer(requestLog);
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -928,7 +1179,7 @@ test('assistant hides the structure comparator action without its exact navigati
   assert.equal(capabilities.includes('navigation.hacienda'), true);
   assert.equal(capabilities.includes('navigation.organization-analytics'), false);
 
-  await page.getByRole('button', { name: 'Comparar áreas' }).click();
+  await clickMoreQuery(page, 'Comparar áreas');
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
     .some(title => title.textContent.includes('Neto de control comparado · 2026-07')));
   const actions = await page.evaluate(() => {
@@ -949,9 +1200,37 @@ test('assistant hides the structure comparator action without its exact navigati
     },
   ]);
   assert.equal(actions.some(action => action.href.startsWith('/estructura?compare=costCenter&')), false);
-  assert.equal(requestLog.length, 1);
+
+  await clickPrimaryQuery(page, 'Resumen ejecutivo');
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Resumen ejecutivo GRH · 2026-07')));
+  const summaryActions = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return Array.from(card?.querySelectorAll('.answer-action') || [], link => ({
+      label: link.textContent.trim(),
+      href: link.getAttribute('href'),
+      capability: link.dataset.capability,
+    }));
+  });
+  assert.deepEqual(summaryActions, [
+    {
+      label: 'Abrir prioridades GRH',
+      href: '/decisiones-grh',
+      capability: 'navigation.grh-decisions',
+    },
+    {
+      label: 'Revisar conciliación en Hacienda',
+      href: '/hacienda#closeReconciliationTitle',
+      capability: 'navigation.hacienda',
+    },
+  ]);
+  assert.equal(summaryActions.some(action => action.href === '/estructura#ausencias'), false);
+  assert.equal(summaryActions.some(action => action.href.startsWith('/movimientos-grh.html')), false);
+
+  assert.equal(requestLog.length, 2);
   assert.equal(requestLog[0].body.message,
     'Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en 2026-07');
+  assert.equal(requestLog[1].body.message, 'Dame un resumen ejecutivo del último período');
   await context.close();
 });
 
@@ -1090,7 +1369,7 @@ test('assistant renders only the exact visual contract and ignores mutated visua
     widths: ['100%', '50%', '0%'],
     scale: 'Escala 0–10 participantes',
     nonBarGraphics: 0,
-    bodyOrder: ['answer-visual', 'evidence-grid', 'answer-actions', 'answer-details', 'answer-source'],
+    bodyOrder: ['answer-next-step', 'answer-visual', 'evidence-grid', 'answer-details', 'answer-source'],
     detailsOpen: false,
     overflow: 0,
   });
@@ -1212,10 +1491,15 @@ test('private person answers render leave cards, actions and bounded match optio
   await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
 
   assert.equal(await page.getByText('Acceso según perfil', { exact: true }).isVisible(), true);
-  assert.equal(await page.locator('.rail-link[href="/calidad"] small').textContent(), 'Datos confiables y pendientes');
+  assert.equal(await page.locator('.rail-link[href="/calidad"] small').textContent(), 'Linaje y pendientes');
   assert.equal(requestLog.length, 0, 'directory search must not run during page load');
-  await page.getByRole('button', { name: 'Buscar licencias por persona' }).click();
+  await clickMoreQuery(page, 'Buscar licencias por persona');
   assert.equal(await page.locator('#personSearchPanel').isVisible(), true);
+  assert.equal(await page.locator('#queryMore').evaluate(node => node.open), false);
+  await page.locator('#personSearchInput').press('Escape');
+  assert.equal(await page.locator('#personSearchPanel').isHidden(), true);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'queryMoreSummary');
+  await clickMoreQuery(page, 'Buscar licencias por persona');
   assert.equal(await page.locator('#assistantInput').inputValue(), '');
   assert.equal(requestLog.length, 0, 'opening the person search must not run a broad lookup');
   await page.locator('#personSearchInput').fill('Pe');
@@ -1285,7 +1569,7 @@ test('person typeahead is on-demand and fails closed for denied or mutated direc
       });
       await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
       assert.equal(requestLog.length, 0, `${scenario.name}: no directory request on load`);
-      await page.getByRole('button', { name: 'Buscar licencias por persona' }).click();
+      await clickMoreQuery(page, 'Buscar licencias por persona');
       assert.equal(requestLog.length, 0, `${scenario.name}: no directory request on open`);
       assert.equal(await page.locator('#personSearchInput').getAttribute('maxlength'), '80');
       if (scenario.name === 'wrong-header') {
@@ -1409,8 +1693,9 @@ test('assistant fails closed when the private GRH contract is unavailable', asyn
   await seedSession(context);
   const page = await context.newPage();
   await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: 'Resumen ejecutivo' }).click();
+  await clickPrimaryQuery(page, 'Resumen ejecutivo');
   await page.waitForSelector('.answer-state.refused');
+  assert.equal(await page.locator('#assistantSourceStatus span').textContent(), 'Fuente no disponible');
   const result = await page.evaluate(() => ({
     title: document.querySelector('.answer-heading-line h3')?.textContent.trim(),
     text: document.querySelector('.answer-card')?.textContent || '',

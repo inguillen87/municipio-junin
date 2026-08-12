@@ -148,7 +148,7 @@ const PAGES = deepFreeze({
     steps: [
       { id: 'confirm-organization-snapshot', selector: '#organizationSnapshotStatus', title: 'Confirmá fuente y corte', copy: 'Revisá la fuente, la fecha del snapshot y la cobertura antes de interpretar las comparaciones.' },
       { id: 'explore-organization', selector: '#organizationExplorer', title: 'Explorá estructura y áreas de costo', copy: 'Elegí una clasificación o área de costo observada, revisá su universo y abrí sólo las acciones compatibles.' },
-      { id: 'review-absence-risk', selector: '#absenceRiskPanel', title: 'Priorizá una revisión', copy: 'Usá el ranking y las series históricas para elegir qué señal revisar en los tableros vinculados.' },
+      { id: 'compare-cost-centers', selector: '#costCenterComparator', title: 'Compará dos áreas de costo', copy: 'Contrastá participación en la cohorte actual y 24 niveles mensuales de control de cálculo. Para componentes y evidencia detallada, abrí cada área en Hacienda.' },
     ],
   },
   movementOperations: {

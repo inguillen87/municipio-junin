@@ -156,7 +156,7 @@ async function createServer(users, requestLog) {
         body = Buffer.from(body.toString('utf8').replace('</main>', [
           '<section id="organizationSnapshotStatus" aria-label="Estado del snapshot"></section>',
           '<section id="organizationExplorer" aria-label="Explorador de dotación"></section>',
-          '<section id="absenceRiskPanel" aria-label="Historial de ausencias"></section>',
+          '<section id="costCenterComparator" aria-label="Comparador de áreas de costo"></section>',
           '</main>',
         ].join('')));
       }

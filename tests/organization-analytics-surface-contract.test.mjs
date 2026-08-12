@@ -97,13 +97,14 @@ test('release, build, clean route, navigation and contextual help stay aligned',
   assert.ok(GOVERNED_HTML_FILES.includes('estructura.html'));
   assert.ok(PUBLIC_LEGACY_HTML_FILES.includes('organigrama.html'));
 
-  const [vercelSource, viteSource, navSource, workspaceSource, pageSource, dashboardSource] = await Promise.all([
+  const [vercelSource, viteSource, navSource, workspaceSource, pageSource, dashboardSource, comparisonSource] = await Promise.all([
     readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/vite.config.ts', import.meta.url), 'utf8'),
     readFile(new URL('../js/nav.js', import.meta.url), 'utf8'),
     readFile(new URL('../inicio.html', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/estructura.html', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/src/structure/StructureDashboard.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../frontend/src/structure/CostCenterComparison.tsx', import.meta.url), 'utf8'),
   ]);
   const vercel = JSON.parse(vercelSource);
   assert.deepEqual(
@@ -131,9 +132,9 @@ test('release, build, clean route, navigation and contextual help stay aligned',
   assert.match(guide.objective, /sala de situación/i);
   assert.deepEqual(
     guide.steps.map((step) => step.selector),
-    ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],
+    ['#organizationSnapshotStatus', '#organizationExplorer', '#costCenterComparator'],
   );
   for (const selector of guide.steps.map((step) => step.selector.slice(1))) {
-    assert.match(`${pageSource}\n${dashboardSource}`, new RegExp(`id=["']${selector}["']`));
+    assert.match(`${pageSource}\n${dashboardSource}\n${comparisonSource}`, new RegExp(`id=["']${selector}["']`));
   }
 });

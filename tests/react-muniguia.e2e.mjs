@@ -29,6 +29,10 @@ const GUIDE_STYLES_PATH = '/css/contextual-help.css';
 const GUIDE_SOURCE = readFileSync(path.join(REPO, 'js', 'contextual-help.js'), 'utf8');
 const GUIDE_CATALOG_SOURCE = readFileSync(path.join(REPO, 'js', 'contextual-help-catalog.js'), 'utf8');
 const GUIDE_STYLES_SOURCE = readFileSync(path.join(REPO, 'css', 'contextual-help.css'), 'utf8');
+const WORKFORCE_FINANCE_CLIENT_SOURCE = readFileSync(
+  path.join(REPO, 'js', 'grh-workforce-finance-data.js'),
+  'utf8',
+);
 const PROFILE = JSON.parse(readFileSync(path.join(REPO, 'api', '_data', 'grh-profile.json'), 'utf8'));
 const SEMANTIC = JSON.parse(readFileSync(path.join(REPO, 'api', '_data', 'grh-semantic.json'), 'utf8'));
 const { createOrganizationAnalyticsContract } = await import(
@@ -247,6 +251,10 @@ function e2ePlugin(apiLog, assetLog) {
         }
         if (url.pathname === '/js/auth-fetch.js') {
           send(response, 200, 'text/javascript; charset=utf-8', AUTH_CLIENT_SOURCE);
+          return;
+        }
+        if (url.pathname === '/js/grh-workforce-finance-data.js') {
+          send(response, 200, 'text/javascript; charset=utf-8', WORKFORCE_FINANCE_CLIENT_SOURCE);
           return;
         }
         if (url.pathname === '/img/municontrol-icon.jpg') {

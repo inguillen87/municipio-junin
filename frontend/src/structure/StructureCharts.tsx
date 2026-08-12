@@ -9,6 +9,107 @@ import type {
 
 const DEFAULT_VISIBLE_ROWS = 6;
 
+export interface CostCenterComparisonPoint {
+  readonly period: string;
+  readonly periodLabel: string;
+  readonly leftNetCents: number | null;
+  readonly leftValueLabel: string;
+  readonly rightNetCents: number | null;
+  readonly rightValueLabel: string;
+}
+
+function scrollComparisonChart(
+  event: React.KeyboardEvent<HTMLDivElement>,
+) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+  event.preventDefault();
+  event.currentTarget.scrollBy({
+    left: event.key === 'ArrowRight' ? 240 : -240,
+    behavior: 'auto',
+  });
+}
+
+function comparisonBarHeight(value: number | null, maximum: number): number {
+  if (value === null || maximum <= 0) return 0;
+  return Math.max(2, value / maximum * 100);
+}
+
+export function CostCenterNetComparisonChart({
+  currencyCode,
+  leftLabel,
+  points,
+  rightLabel,
+  windowLabel,
+}: {
+  readonly currencyCode: string;
+  readonly leftLabel: string;
+  readonly points: readonly CostCenterComparisonPoint[];
+  readonly rightLabel: string;
+  readonly windowLabel: string;
+}) {
+  const descriptionId = useId();
+  const maximum = Math.max(0, ...points.flatMap(point => [
+    point.leftNetCents ?? 0,
+    point.rightNetCents ?? 0,
+  ]));
+
+  return (
+    <figure className="cost-comparison-chart" data-testid="cost-center-comparison-chart">
+      <div className="cost-comparison-chart__heading">
+        <div>
+          <h3>Neto de control mensual por área de costo</h3>
+          <p>{windowLabel} · {currencyCode} · niveles publicados independientes.</p>
+        </div>
+        <div className="cost-comparison-chart__legend" aria-label="Series del gráfico">
+          <span data-series="left">A · {leftLabel}</span>
+          <span data-series="right">B · {rightLabel}</span>
+        </div>
+      </div>
+      <div
+        className="cost-comparison-chart__scroll"
+        role="region"
+        aria-label="Comparación mensual desplazable; usá las flechas izquierda y derecha"
+        aria-describedby={descriptionId}
+        tabIndex={0}
+        onKeyDown={scrollComparisonChart}
+        data-testid="cost-center-comparison-chart-scroll"
+      >
+        <ol className="cost-comparison-chart__plot">
+          {points.map(point => (
+            <li key={point.period}>
+              <div
+                className="cost-comparison-chart__month"
+                role="img"
+                aria-label={`${point.periodLabel}: A ${point.leftValueLabel}; B ${point.rightValueLabel}`}
+              >
+                <span
+                  className="cost-comparison-chart__bar"
+                  data-series="left"
+                  data-published={point.leftNetCents === null ? 'false' : 'true'}
+                  style={{ height: `${comparisonBarHeight(point.leftNetCents, maximum)}%` }}
+                  title={`A · ${point.leftValueLabel}`}
+                />
+                <span
+                  className="cost-comparison-chart__bar"
+                  data-series="right"
+                  data-published={point.rightNetCents === null ? 'false' : 'true'}
+                  style={{ height: `${comparisonBarHeight(point.rightNetCents, maximum)}%` }}
+                  title={`B · ${point.rightValueLabel}`}
+                />
+              </div>
+              <time dateTime={point.period}>{point.periodLabel}</time>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <figcaption id={descriptionId}>
+        Las columnas parten de cero. “No publicado” representa una ausencia de cifra y nunca se reemplaza por cero;
+        no se infiere continuidad de membresía entre meses.
+      </figcaption>
+    </figure>
+  );
+}
+
 interface ExpandableBarsProps {
   readonly collection: string;
   readonly denominatorLabel: string;

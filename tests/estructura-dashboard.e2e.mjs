@@ -20,6 +20,7 @@ const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const CONTRACT_HEADER = 'x-municontrol-contract';
 const AUTH_CONTRACT = 'municontrol-auth-me-v1';
 const ANALYTICS_CONTRACT = GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION;
+const FINANCE_CONTRACT = 'grh-workforce-finance-v1';
 const MUNIGUIA_STUB_SOURCE = 'export async function mountMuniGuia(){return true} export function unmountMuniGuia(){}';
 const PAGE_CAPABILITY = 'navigation.organization-analytics';
 const TENANT_ID = 'tenant-structure-e2e';
@@ -43,6 +44,29 @@ const AUTH_CLIENT_SOURCE = `
       },
       getToken() { return 'governed-e2e-token'; },
       isAuthError() { return false; }
+    });
+  })();
+`;
+
+const FINANCE_CLIENT_SOURCE = `
+  (() => {
+    const CONTRACT = '${FINANCE_CONTRACT}';
+    window.MuniGrhWorkforceFinance = Object.freeze({
+      async load(options = {}) {
+        const response = await window.MuniAuth.fetch('/api/grh-workforce-finance', {
+          method: 'GET',
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+          redirect: 'error',
+          signal: options.signal,
+        });
+        if (response.status !== 200 || response.headers.get('x-municontrol-contract') !== CONTRACT ||
+            !/^application\\/json(?:;|$)/i.test(response.headers.get('content-type') || '')) {
+          throw new Error('WORKFORCE_FINANCE_RESPONSE_REJECTED');
+        }
+        return response.json();
+      },
     });
   })();
 `;
@@ -88,6 +112,7 @@ const COST_CENTER_LABELS = Object.freeze([
   'Abastecimiento',
   'Coordinación territorial',
 ]);
+const COST_CENTER_SOURCE_CODES = Object.freeze([2, 3, 6, 1, 9, 5, 29, 10, 4]);
 
 function dimensionRows(labels, protectedCategoryCount = 0) {
   return labels.map((label, index) => ({
@@ -136,7 +161,7 @@ function workforceRanking(labels, counts = PAYROLL_COUNTS, sourceCodes = null) {
 }
 
 function costCenterRanking() {
-  const ranking = workforceRanking(COST_CENTER_LABELS, COST_CENTER_COUNTS);
+  const ranking = workforceRanking(COST_CENTER_LABELS, COST_CENTER_COUNTS, COST_CENTER_SOURCE_CODES);
   ranking.privacyStatus = 'partially_suppressed';
   ranking.rows.push({
     companyCode: null,
@@ -148,6 +173,93 @@ function costCenterRanking() {
     privacyStatus: 'protected_aggregate',
   });
   return ranking;
+}
+
+function nextMonth(period) {
+  const [year, month] = period.split('-').map(Number);
+  return month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`;
+}
+
+function financeComponents(areaIndex, periodIndex) {
+  const netPayrollCents = 2_000_000_000 + areaIndex * 310_000_000 + periodIndex * 47_000_000;
+  const employeeWithholdingsCents = 420_000_000 + areaIndex * 31_000_000 + periodIndex * 4_000_000;
+  const familyAllowancesCents = 60_000_000 + areaIndex * 2_000_000;
+  const nonContributoryEarningsCents = 180_000_000 + areaIndex * 11_000_000;
+  const contributoryEarningsCents = netPayrollCents + employeeWithholdingsCents -
+    familyAllowancesCents - nonContributoryEarningsCents;
+  return {
+    grossWithFamilyAllowancesCents: netPayrollCents + employeeWithholdingsCents,
+    contributoryEarningsCents,
+    nonContributoryEarningsCents,
+    familyAllowancesCents,
+    employeeWithholdingsCents,
+    netPayrollCents,
+    netToPayCents: netPayrollCents,
+    employerContributionsCents: Math.round(contributoryEarningsCents * 0.18),
+  };
+}
+
+function financePayload() {
+  const periods = [];
+  let period = '2024-08';
+  for (let periodIndex = 0; periodIndex < 24; periodIndex += 1) {
+    periods.push({
+      period,
+      cells: COST_CENTER_LABELS.map((label, areaIndex) => {
+        const components = financeComponents(areaIndex, periodIndex);
+        const previousComponents = periodIndex > 0 ? financeComponents(areaIndex, periodIndex - 1) : null;
+        return {
+          companyCode: 101,
+          sourceCode: COST_CENTER_SOURCE_CODES[areaIndex],
+          label,
+          distinctParticipantsObserved: COST_CENTER_COUNTS[areaIndex],
+          participantDisplay: String(COST_CENTER_COUNTS[areaIndex]),
+          participantPrivacyStatus: 'released',
+          allocationSharePct: round4((35 - areaIndex * 2 + periodIndex * 0.01) / 3),
+          privacyStatus: 'released',
+          components,
+          control: {},
+          change: {
+            status: periodIndex === 0 ? 'unavailable' : 'released',
+            reason: periodIndex === 0 ? 'previous_period_missing' : 'both_consecutive_periods_released',
+            previousPeriod: periodIndex === 0 ? null : periods.at(-1).period,
+            distinctParticipantsDelta: periodIndex === 0 ? null : 0,
+            grossWithFamilyAllowancesDeltaCents: periodIndex === 0 ? null : 51_000_000,
+            employeeWithholdingsDeltaCents: periodIndex === 0 ? null : 4_000_000,
+            netPayrollDeltaCents: previousComponents === null
+              ? null : components.netPayrollCents - previousComponents.netPayrollCents,
+            employerContributionsDeltaCents: periodIndex === 0 ? null : 8_000_000,
+            netPayrollDeltaPct: previousComponents === null ? null
+              : round4((components.netPayrollCents - previousComponents.netPayrollCents) /
+                previousComponents.netPayrollCents * 100),
+          },
+        };
+      }),
+      privacyStatus: 'released',
+      participantAccounting: {},
+    });
+    period = nextMonth(period);
+  }
+  return {
+    schemaVersion: FINANCE_CONTRACT,
+    source: {
+      canonicalSystem: 'GRH Junín',
+      sourceFile: 'grh_junin.backup_2026080615_plataforma.sql.gz',
+      sourceSha256: SOURCE_SHA,
+      snapshotAsOf: SNAPSHOT,
+    },
+    metric: {
+      presentationCurrency: 'ARS',
+      presentationLocale: 'es-AR',
+      status: 'calculation_control_not_bank_disbursement',
+    },
+    cohort: {
+      firstPeriod: '2024-08',
+      lastPeriod: '2026-07',
+      publishedWindowMonths: 24,
+    },
+    dimensionViews: [{ dimension: 'costCenter', periods }],
+  };
 }
 
 function activitySeries({ participantStart, valueStart, valueStep }) {
@@ -410,6 +522,7 @@ function send(response, status, contentType, body = '', headers = {}) {
 
 function scenarioPlugin(scenario, apiLog) {
   let analyticsAttempt = 0;
+  let financeAttempt = 0;
   return {
     name: `estructura-react-e2e-${scenario.name}`,
     configureServer(server) {
@@ -422,6 +535,10 @@ function scenarioPlugin(scenario, apiLog) {
         }
         if (url.pathname === '/js/auth-fetch.js') {
           send(response, 200, 'text/javascript; charset=utf-8', AUTH_CLIENT_SOURCE);
+          return;
+        }
+        if (url.pathname === '/js/grh-workforce-finance-data.js') {
+          send(response, 200, 'text/javascript; charset=utf-8', FINANCE_CLIENT_SOURCE);
           return;
         }
         if (url.pathname === '/js/contextual-help.js') {
@@ -479,6 +596,38 @@ function scenarioPlugin(scenario, apiLog) {
           CONTRACT_MUTATIONS[mode]?.(payload);
           send(response, 200, 'application/json; charset=utf-8', JSON.stringify(payload), {
             [CONTRACT_HEADER]: mode === 'wrong-header' ? 'grh-organization-analytics-v1' : ANALYTICS_CONTRACT,
+          });
+          return;
+        }
+        if (url.pathname === '/api/grh-workforce-finance') {
+          apiLog.push({
+            path: url.pathname,
+            method: request.method,
+            accept: request.headers.accept,
+            authorization: request.headers.authorization,
+            cacheControl: request.headers['cache-control'],
+          });
+          const sequence = scenario.financeSequence ?? [scenario.financeMode ?? 'success'];
+          const mode = sequence[Math.min(financeAttempt, sequence.length - 1)];
+          financeAttempt += 1;
+          if (mode === 'forbidden') {
+            send(response, 403, 'application/json; charset=utf-8', JSON.stringify({ error: 'forbidden' }), {
+              [CONTRACT_HEADER]: FINANCE_CONTRACT,
+            });
+            return;
+          }
+          if (mode === 'unavailable') {
+            send(response, 503, 'application/json; charset=utf-8', JSON.stringify({ error: 'unavailable' }), {
+              [CONTRACT_HEADER]: FINANCE_CONTRACT,
+            });
+            return;
+          }
+          const payload = financePayload();
+          if (mode === 'source-mismatch') payload.source.sourceSha256 = 'f'.repeat(64);
+          if (mode === 'period-mismatch') payload.cohort.lastPeriod = '2026-06';
+          if (mode === 'invalid') payload.dimensionViews[0].periods.pop();
+          send(response, 200, 'application/json; charset=utf-8', JSON.stringify(payload), {
+            [CONTRACT_HEADER]: mode === 'wrong-header' ? 'grh-workforce-finance-v0' : FINANCE_CONTRACT,
           });
           return;
         }
@@ -591,7 +740,8 @@ async function readyDiagnostics(page) {
       heatmapRows: document.querySelectorAll('.structure-heatmap__row').length,
       heatmapColumns: document.querySelectorAll('.structure-heatmap__column').length,
       heatmapCells: document.querySelectorAll('.structure-heatmap__cell').length,
-      comparator: Boolean(document.querySelector('[data-testid="registry-comparator"]')),
+      comparison: Boolean(document.querySelector('[data-testid="cost-center-comparison"]')),
+      comparisonIdle: Boolean(document.querySelector('[data-testid="cost-center-comparison-idle"]')),
       actions: Array.from(document.querySelectorAll('a[data-testid^="structure-action-"]')).map(node => ({
         testId: node.getAttribute('data-testid'),
         href: node.getAttribute('href'),
@@ -600,7 +750,7 @@ async function readyDiagnostics(page) {
       duplicateIds: Array.from(document.querySelectorAll('[id]')).map(node => node.id)
         .filter((id, index, ids) => ids.indexOf(id) !== index),
       fixtureLeak: /display_name|company_code|grossCents|"amounts"|\bDNI\s*[:#-]\s*\d|\blegajo\s*[:#-]\s*\d|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(text),
-      monetaryLeak: /\b(?:importe|monto|remuneraci[oó]n|salario|sueldo)\b/i.test(text),
+      unexpectedFinanceFigures: Boolean(document.querySelector('[data-testid="cost-center-comparison-content"]')),
       leaveLeak: /\b(?:leave|licencia individual)\b/i.test(text),
       unsafeNominalDeepLinkLeak: /(?:company|legajo)=|hasAbsence=/i.test(document.documentElement.innerHTML),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -653,18 +803,9 @@ async function exerciseReadyControls(page) {
     assert.equal(await rows.count(), 6, `${toggleId} collapsed again`);
   }
 
-  const dimension = page.locator('[data-testid="comparator-dimension"]');
-  const before = await page.locator('.structure-comparator__result').innerText();
-  await dimension.selectOption('sector');
-  const afterDimension = await page.locator('.structure-comparator__result').innerText();
-  assert.notEqual(afterDimension, before);
-  const right = page.locator('[data-testid="comparator-right"]');
-  const alternatives = await right.locator('option:not([disabled])').evaluateAll(options =>
-    options.map(option => option.value));
-  assert.ok(alternatives.length >= 2);
-  const resultBefore = await page.locator('.structure-comparator__result').innerText();
-  await right.selectOption(alternatives.at(-1));
-  assert.notEqual(await page.locator('.structure-comparator__result').innerText(), resultBefore);
+  assert.equal(await page.locator('[data-testid="cost-center-comparison-idle"]').isVisible(), true);
+  assert.equal(await page.locator('[data-testid="cost-center-comparison-left"]').inputValue(), '101:2');
+  assert.equal(await page.locator('[data-testid="cost-center-comparison-right"]').inputValue(), '101:3');
 
   const explorerSearch = page.locator('[data-testid="organization-explorer-search"]');
   await explorerSearch.fill('Cultura');
@@ -709,7 +850,7 @@ async function exerciseReadyControls(page) {
   await costCenterDimension.press('Space');
   assert.equal(await costCenterDimension.getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Servicios operativos');
-  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=1');
+  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=2');
   assert.equal(new URL(page.url()).hash, '#organizationExplorer');
   assert.equal(await page.locator('.structure-explorer__metrics > div').count(), 3);
   assert.match(await page.locator('.structure-explorer__metrics').innerText(),
@@ -718,7 +859,7 @@ async function exerciseReadyControls(page) {
   assert.equal(await page.locator('[data-testid="organization-explorer-absence-unavailable"]').count(), 0);
   assert.equal(await page.locator('[data-testid="organization-explorer-cross"]').count(), 0);
   assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').getAttribute('href'),
-    '/hacienda?cohort=costCenter&company=101&code=1#cohortContext');
+    '/hacienda?cohort=costCenter&company=101&code=2#cohortContext');
   const costCenterAssistantHref = await page.locator(
     '[data-testid="organization-explorer-assistant-action"]',
   ).getAttribute('href');
@@ -735,16 +876,16 @@ async function exerciseReadyControls(page) {
   assert.match(await page.locator('[data-testid="organization-explorer-list"]').innerText(), /Coordinación territorial/u);
   await explorerSearch.fill('');
   assert.equal(await page.locator('[data-testid="organization-explorer-list"] button').count(), 9);
-  const secondCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-2"]');
+  const secondCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-3"]');
   await secondCostCenter.focus();
   await secondCostCenter.press('Enter');
   assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Gobierno municipal');
-  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=2');
+  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=3');
   assert.match(await page.locator('.structure-explorer__metrics').innerText(), /Posición entre áreas publicadas.*2 de 9/isu);
   await page.goBack();
   await page.waitForFunction(() => document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() ===
     'Servicios operativos');
-  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=1');
+  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=2');
 
   const buttons = await page.locator('button:visible').evaluateAll(nodes => nodes.map(node => ({
     testId: node.getAttribute('data-testid'),
@@ -783,9 +924,15 @@ async function visualAudit(page) {
     const parseColor = value => {
       if (!value || value === 'none' || value === 'transparent') return [0, 0, 0, 0];
       const match = String(value).match(/rgba?\(([^)]+)\)/i);
-      if (!match) return null;
-      const parts = match[1].replace('/', ' ').split(/[\s,]+/).filter(Boolean).map(Number);
-      return [parts[0], parts[1], parts[2], Number.isFinite(parts[3]) ? parts[3] : 1];
+      if (match) {
+        const parts = match[1].replace('/', ' ').split(/[\s,]+/).filter(Boolean).map(Number);
+        return [parts[0], parts[1], parts[2], Number.isFinite(parts[3]) ? parts[3] : 1];
+      }
+      const srgb = String(value).match(/color\(srgb\s+([^)]*)\)/i);
+      if (!srgb) return null;
+      const parts = srgb[1].replace('/', ' ').split(/\s+/).filter(Boolean).map(Number);
+      return [parts[0] * 255, parts[1] * 255, parts[2] * 255,
+        Number.isFinite(parts[3]) ? parts[3] : 1];
     };
     const composite = (front, back) => {
       const alpha = front[3] + back[3] * (1 - front[3]);
@@ -868,7 +1015,7 @@ async function visualAudit(page) {
       '.theme-toggle',
       '.structure-segmented',
       '.structure-disclosure',
-      '.structure-comparator select',
+      '.cost-comparison__controls select',
       '.structure-action',
       '.structure-explorer__dimension',
       '.structure-explorer__search input',
@@ -955,7 +1102,8 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(ready.heatmapRows, 5);
         assert.equal(ready.heatmapColumns, 5);
         assert.equal(ready.heatmapCells, 25);
-        assert.equal(ready.comparator, true);
+        assert.equal(ready.comparison, true);
+        assert.equal(ready.comparisonIdle, true);
         assert.deepEqual(ready.actions, [
           { testId: 'structure-action-open_workforce_dashboard', href: '/rrhh' },
           { testId: 'structure-action-open_executive_summary', href: '/ejecutivo' },
@@ -965,7 +1113,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(ready.hasSkipLink, true);
         assert.deepEqual(ready.duplicateIds, []);
         assert.equal(ready.fixtureLeak, false);
-        assert.equal(ready.monetaryLeak, false);
+        assert.equal(ready.unexpectedFinanceFigures, false);
         assert.equal(ready.leaveLeak, false);
         assert.equal(ready.unsafeNominalDeepLinkLeak, false);
         assert.ok(ready.overflow <= 1, `desktop overflow=${ready.overflow}`);
@@ -979,6 +1127,224 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assertNoPrivateDirectory(apiLog, diagnostics);
         assertCleanDiagnostics(diagnostics, 'desktop ready');
         await page.screenshot({ path: SCREENSHOTS.desktop, fullPage: true });
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('loads the executive cost-center comparison once, then changes, swaps and restores locally', async () => {
+    await withScenario({ name: 'cost-comparison-local', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 1_440, height: 1_000 },
+      });
+      try {
+        await page.goto(`${baseUrl}/estructura`, { waitUntil: 'domcontentloaded' });
+        await waitReady(page);
+        const comparison = page.locator('[data-testid="cost-center-comparison"]');
+        await comparison.scrollIntoViewIfNeeded();
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-idle"]').isVisible(), true);
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-left"]').inputValue(), '101:2');
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-right"]').inputValue(), '101:3');
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 0);
+
+        await page.locator('[data-testid="cost-center-comparison-load"]').click();
+        await page.locator('[data-testid="cost-center-comparison-content"]').waitFor({ state: 'visible' });
+        assert.deepEqual(apiPaths(apiLog), [
+          '/api/auth/me', '/api/grh-organization-analytics', '/api/grh-workforce-finance',
+        ]);
+        const financeRequest = apiLog.at(-1);
+        assert.equal(financeRequest.method, 'GET');
+        assert.equal(financeRequest.accept, 'application/json');
+        assert.match(financeRequest.authorization || '', /^Bearer /u);
+        assert.match(financeRequest.cacheControl || '', /no-cache|no-store/u);
+        assert.equal(new URL(page.url()).search,
+          '?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=3');
+        assert.equal(new URL(page.url()).hash, '#costCenterComparator');
+        assert.equal(await page.locator('.cost-comparison-kpi').count(), 4);
+        assert.match(await page.locator('.cost-comparison__kpis').innerText(),
+          /Participantes.*132.*110.*Brecha A.*22.*Participación.*Neto de control.*Asignación del neto global/isu);
+        assert.equal(await page.locator('.cost-comparison-chart__plot > li').count(), 24);
+        assert.equal(await page.locator('.cost-comparison-table tbody tr').count(), 6);
+        const disclosure = page.locator('.cost-comparison-table-block__heading button');
+        assert.equal(await disclosure.getAttribute('aria-expanded'), 'false');
+        await disclosure.click();
+        assert.equal(await disclosure.getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('.cost-comparison-table tbody tr').count(), 24);
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-hacienda-left"]').getAttribute('href'),
+          '/hacienda?cohort=costCenter&company=101&code=2#cohortContext');
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-hacienda-right"]').getAttribute('href'),
+          '/hacienda?cohort=costCenter&company=101&code=3#cohortContext');
+        assert.equal(await comparison.locator('[data-testid*="assistant"], a[href^="/ia"]').count(), 0);
+
+        const rightSelect = page.locator('[data-testid="cost-center-comparison-right"]');
+        await rightSelect.selectOption('101:6');
+        assert.equal(new URL(page.url()).search,
+          '?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=6');
+        assert.equal(await page.locator('.cost-comparison-table tbody tr').count(), 6);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 1);
+
+        await page.locator('[data-testid="cost-center-comparison-swap"]').click();
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-left"]').inputValue(), '101:6');
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-right"]').inputValue(), '101:2');
+        assert.equal(new URL(page.url()).search,
+          '?compare=costCenter&leftCompany=101&leftCode=6&rightCompany=101&rightCode=2');
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 1);
+
+        await page.goBack();
+        await page.waitForFunction(() => new URL(window.location.href).searchParams.get('rightCode') === '6');
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-left"]').inputValue(), '101:2');
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-right"]').inputValue(), '101:6');
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 1);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'cost comparison local');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('seeds and activates the comparison from the explorer without refetching organization analytics', async () => {
+    await withScenario({ name: 'cost-comparison-explorer-seed', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 1_440, height: 1_000 },
+        reducedMotion: 'reduce',
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=6#organizationExplorer`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-idle"]').count(), 1);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 0);
+        await page.locator('[data-testid="organization-explorer-compare-action"]').click();
+        await page.locator('[data-testid="cost-center-comparison-content"]').waitFor({ state: 'visible' });
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-left"]').inputValue(), '101:6');
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-right"]').inputValue(), '101:2');
+        assert.equal(new URL(page.url()).search,
+          '?compare=costCenter&leftCompany=101&leftCode=6&rightCompany=101&rightCode=2');
+        assert.equal(new URL(page.url()).hash, '#costCenterComparator');
+        assert.equal(await page.evaluate(() => document.activeElement?.id), 'cost-center-comparison-title');
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-organization-analytics').length, 1);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 1);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'cost comparison explorer seed');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('auto-loads exact comparator links and rejects invalid shapes without a finance request', async () => {
+    await withScenario({ name: 'cost-comparison-deep-links', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+        reducedMotion: 'reduce',
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=3#costCenterComparator`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        await page.locator('[data-testid="cost-center-comparison-content"]').waitFor({ state: 'visible' });
+        assert.equal(await page.locator('[data-testid="organization-explorer-invalid-link"]').count(), 0);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 1);
+
+        const financeBeforeInvalid = apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length;
+        await page.goto(
+          `${baseUrl}/estructura?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=2#costCenterComparator`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        const invalid = page.locator('[data-testid="cost-center-comparison-invalid"]');
+        await invalid.waitFor({ state: 'visible' });
+        assert.match(await invalid.textContent() || '', /Enlace de comparación no válido/iu);
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-content"]').count(), 0);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, financeBeforeInvalid);
+        assert.equal(await page.locator('[data-testid="workforce-panel"]').isVisible(), true);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'cost comparison deep links');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('keeps finance failures scoped, retries only the comparator and closes incompatible payloads', async () => {
+    await withScenario({
+      name: 'cost-comparison-retry',
+      role: 'INTENDENTE',
+      financeSequence: ['unavailable', 'success'],
+    }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 1_440, height: 900 },
+      });
+      try {
+        await page.goto(`${baseUrl}/estructura`, { waitUntil: 'domcontentloaded' });
+        await waitReady(page);
+        await page.locator('[data-testid="cost-center-comparison-load"]').click();
+        await page.locator('[data-testid="cost-center-comparison-error"]').waitFor({ state: 'visible' });
+        assert.equal(await page.locator('[data-testid="workforce-panel"]').isVisible(), true);
+        assert.equal(await page.locator('.structure-kpi').count(), 6);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 1);
+        await page.locator('[data-testid="cost-center-comparison-retry"]').click();
+        await page.locator('[data-testid="cost-center-comparison-content"]').waitFor({ state: 'visible' });
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 2);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-organization-analytics').length, 1);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assert.deepEqual(diagnostics.pageErrors, []);
+        assert.deepEqual(diagnostics.externalRequests, []);
+      } finally {
+        await context.close();
+      }
+    });
+
+    for (const financeMode of ['forbidden', 'invalid', 'source-mismatch', 'period-mismatch']) {
+      await withScenario({ name: `cost-comparison-${financeMode}`, role: 'INTENDENTE', financeMode },
+        async ({ apiLog, baseUrl }) => {
+          const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+            viewport: { width: 1_024, height: 768 },
+          });
+          try {
+            await page.goto(
+              `${baseUrl}/estructura?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=3#costCenterComparator`,
+              { waitUntil: 'domcontentloaded' },
+            );
+            await waitReady(page);
+            await page.locator('[data-testid="cost-center-comparison-error"]').waitFor({ state: 'visible' });
+            assert.equal(await page.locator('[data-testid="cost-center-comparison-content"]').count(), 0, financeMode);
+            assert.equal(await page.locator('[data-testid="workforce-panel"]').isVisible(), true, financeMode);
+            assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 1, financeMode);
+            assert.equal(apiLog.filter(entry => entry.path === '/api/grh-organization-analytics').length, 1, financeMode);
+            assertNoPrivateDirectory(apiLog, diagnostics);
+            assert.deepEqual(diagnostics.pageErrors, [], financeMode);
+            assert.deepEqual(diagnostics.externalRequests, [], financeMode);
+          } finally {
+            await context.close();
+          }
+        });
+    }
+  });
+
+  await t.test('gates comparator finance and Hacienda actions with the exact capability', async () => {
+    await withScenario({
+      name: 'cost-comparison-capability',
+      authPayload: authorizedSessionWithout('navigation.hacienda'),
+    }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+      });
+      try {
+        await page.goto(`${baseUrl}/estructura`, { waitUntil: 'domcontentloaded' });
+        await waitReady(page);
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-disabled"]').isVisible(), true);
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-load"]').count(), 0);
+        assert.equal(await page.locator('[data-testid^="cost-center-comparison-hacienda-"]').count(), 0);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-workforce-finance').length, 0);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'cost comparison capability');
       } finally {
         await context.close();
       }
@@ -1027,7 +1393,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
       });
       try {
         await page.goto(
-          `${baseUrl}/estructura?dimension=costCenter&company=101&code=2#organizationExplorer`,
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=3#organizationExplorer`,
           { waitUntil: 'domcontentloaded' },
         );
         await waitReady(page);
@@ -1042,7 +1408,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(await page.locator('[data-testid="organization-explorer-absence-unavailable"]').count(), 0);
         assert.equal(await page.locator('[data-testid="organization-explorer-cross"]').count(), 0);
         assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').getAttribute('href'),
-          '/hacienda?cohort=costCenter&company=101&code=2#cohortContext');
+          '/hacienda?cohort=costCenter&company=101&code=3#cohortContext');
         const assistantHref = await page.locator(
           '[data-testid="organization-explorer-assistant-action"]',
         ).getAttribute('href');
@@ -1060,16 +1426,16 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.ok(Math.abs(firstBox.x - secondBox.x) <= 1 && Math.abs(secondBox.x - thirdBox.x) <= 1);
         assert.ok(firstBox.y < secondBox.y && secondBox.y < thirdBox.y);
 
-        const thirdCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-3"]');
+        const thirdCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-6"]');
         await thirdCostCenter.focus();
         await thirdCostCenter.press('Enter');
         assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
           'Administración central');
-        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=3');
+        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=6');
         await page.goBack();
         await page.waitForFunction(() => document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() ===
           'Gobierno municipal');
-        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=2');
+        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=3');
         assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
         assert.ok((await readyDiagnostics(page)).overflow <= 1);
         assertNoPrivateDirectory(apiLog, diagnostics);
@@ -1116,6 +1482,10 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
         assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 0);
         assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
+        assert.match(await page.locator('[data-testid="cost-center-comparison"]').textContent() || '',
+          /No hay dos áreas publicadas con identidad suficiente/iu);
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-idle"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="cost-center-comparison-load"]').count(), 0);
 
         await page.locator('[data-testid="organization-explorer-dimension-sector"]').click();
         assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
@@ -1150,13 +1520,13 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
       });
       try {
         await page.goto(
-          `${baseUrl}/estructura?dimension=costCenter&company=101&code=1#organizationExplorer`,
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=2#organizationExplorer`,
           { waitUntil: 'domcontentloaded' },
         );
         await waitReady(page);
         assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Sector operativo');
         assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').getAttribute('href'),
-          '/hacienda?cohort=costCenter&company=101&code=1#cohortContext');
+          '/hacienda?cohort=costCenter&company=101&code=2#cohortContext');
         assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
         assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
         assertNoPrivateDirectory(apiLog, diagnostics);
@@ -1181,14 +1551,14 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
       });
       try {
         await page.goto(
-          `${baseUrl}/estructura?dimension=costCenter&company=101&code=1#organizationExplorer`,
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=2#organizationExplorer`,
           { waitUntil: 'domcontentloaded' },
         );
         await waitReady(page);
         assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Servicios operativos');
         assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 1);
         assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
-        await page.locator('[data-testid="organization-explorer-option-costCenter-101-2"]').click();
+        await page.locator('[data-testid="organization-explorer-option-costCenter-101-3"]').click();
         assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'SERVICIOS OPERATIVOS');
         assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 1);
         assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
@@ -1209,7 +1579,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
       });
       try {
         await page.goto(
-          `${baseUrl}/estructura?dimension=costCenter&company=101&code=1#organizationExplorer`,
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=2#organizationExplorer`,
           { waitUntil: 'domcontentloaded' },
         );
         await waitReady(page);
@@ -1297,13 +1667,13 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         }
 
         const requestsBeforeSelection = apiLog.length;
-        const firstCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-1"]');
+        const firstCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-2"]');
         await firstCostCenter.focus();
         await firstCostCenter.press('Enter');
         assert.equal(await page.locator('[data-testid="organization-explorer-invalid-link"]').count(), 0);
         assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
           'Servicios operativos');
-        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=1');
+        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=2');
         assert.equal(apiLog.length, requestsBeforeSelection);
         assert.equal(apiLog.filter(entry => entry.path === '/api/auth/me').length, invalidPaths.length);
         assert.equal(apiLog.filter(entry => entry.path === '/api/grh-organization-analytics').length,
@@ -1371,10 +1741,28 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         try {
           await seedTheme(context, viewport.theme);
           await page.goto(
-            `${baseUrl}/estructura?dimension=costCenter&company=101&code=1#organizationExplorer`,
+            `${baseUrl}/estructura?compare=costCenter&leftCompany=101&leftCode=2&rightCompany=101&rightCode=3#costCenterComparator`,
             { waitUntil: 'domcontentloaded' },
           );
           await waitReady(page);
+          await page.locator('[data-testid="cost-center-comparison-content"]').waitFor({ state: 'visible' });
+          const chartScroll = page.locator('[data-testid="cost-center-comparison-chart-scroll"]');
+          await chartScroll.scrollIntoViewIfNeeded();
+          const scrollState = await chartScroll.evaluate(node => ({
+            before: node.scrollLeft,
+            scrollable: node.scrollWidth > node.clientWidth + 1,
+          }));
+          await chartScroll.focus();
+          await chartScroll.press('ArrowRight');
+          if (scrollState.scrollable) {
+            await page.waitForFunction(({ before }) => {
+              const node = document.querySelector('[data-testid="cost-center-comparison-chart-scroll"]');
+              return node instanceof HTMLElement && node.scrollLeft > before;
+            }, { before: scrollState.before });
+          } else {
+            assert.equal(await chartScroll.evaluate(node => node.scrollLeft), scrollState.before);
+          }
+          assert.equal(await chartScroll.evaluate(node => document.activeElement === node), true);
           const audit = await visualAudit(page);
           assert.equal(audit.theme, viewport.theme, viewport.name);
           assert.equal(audit.canonicalTheme, viewport.theme, `${viewport.name} canonical`);
@@ -1385,7 +1773,9 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
           assert.deepEqual(audit.boundaryViolations, [], `${viewport.name} controls ${JSON.stringify(audit.boundaryViolations)}`);
           assert.equal(audit.reducedMotion, viewport.reducedMotion === 'reduce', viewport.name);
           assert.equal(audit.forcedColors, viewport.forcedColors === 'active', viewport.name);
-          assert.deepEqual(apiPaths(apiLog, start), ['/api/auth/me', '/api/grh-organization-analytics']);
+          assert.deepEqual(apiPaths(apiLog, start), [
+            '/api/auth/me', '/api/grh-organization-analytics', '/api/grh-workforce-finance',
+          ]);
           assertNoPrivateDirectory(apiLog.slice(start), diagnostics);
           assertCleanDiagnostics(diagnostics, viewport.name);
           const screenshot = viewport.name === 'desktop-dark'

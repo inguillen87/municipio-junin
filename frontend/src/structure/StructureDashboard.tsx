@@ -12,6 +12,10 @@ import {
   MatrixHeatmap,
   WorkforceBars,
 } from './StructureCharts';
+import {
+  CostCenterComparison,
+  type CostCenterComparisonSeed,
+} from './CostCenterComparison';
 
 const WORKFORCE_KEYS: readonly WorkforceDimensionKey[] = ['sector', 'costCenter', 'agreement'];
 const EXPLORER_DIMENSIONS: readonly ExplorerDimension[] = ['organization', 'sector', 'costCenter'];
@@ -94,6 +98,9 @@ function readExplorerDeepLink(viewModel: OrganizationAnalyticsViewModel): Explor
   const parameters = new URLSearchParams(window.location.search);
   const keys = Array.from(parameters.keys());
   if (keys.length === 0) {
+    return { invalid: false, dimension: fallback.dimension, selection: fallback };
+  }
+  if (parameters.has('compare')) {
     return { invalid: false, dimension: fallback.dimension, selection: fallback };
   }
   const dimension = parameters.get('dimension');
@@ -202,82 +209,6 @@ function PanelHeader({
   );
 }
 
-function RegistryComparator({ registries }: { readonly registries: readonly RegistryRankingViewModel[] }) {
-  const [dimensionKey, setDimensionKey] = useState<RegistryRankingViewModel['key']>('organization');
-  const registry = registries.find(candidate => candidate.key === dimensionKey) ?? registries[0];
-  const comparableRows = registry?.rows.filter(row => row.privacyStatus === 'released') ?? [];
-  const [leftKey, setLeftKey] = useState(comparableRows[0]?.key ?? '');
-  const [rightKey, setRightKey] = useState(comparableRows[1]?.key ?? comparableRows[0]?.key ?? '');
-  const effectiveLeftKey = comparableRows.some(row => row.key === leftKey) ? leftKey : comparableRows[0]?.key ?? '';
-  const effectiveRightKey = comparableRows.some(row => row.key === rightKey) && rightKey !== effectiveLeftKey
-    ? rightKey
-    : comparableRows.find(row => row.key !== effectiveLeftKey)?.key ?? effectiveLeftKey;
-  const left = comparableRows.find(row => row.key === effectiveLeftKey);
-  const right = comparableRows.find(row => row.key === effectiveRightKey);
-
-  const changeDimension = (key: RegistryRankingViewModel['key']) => {
-    const next = registries.find(candidate => candidate.key === key);
-    const released = next?.rows.filter(row => row.privacyStatus === 'released') ?? [];
-    setDimensionKey(key);
-    setLeftKey(released[0]?.key ?? '');
-    setRightKey(released[1]?.key ?? released[0]?.key ?? '');
-  };
-
-  return (
-    <div className="structure-comparator" data-testid="registry-comparator">
-      <div className="structure-comparator__controls">
-        <label>
-          Clasificación
-          <select
-            value={dimensionKey}
-            onChange={event => changeDimension(event.target.value as RegistryRankingViewModel['key'])}
-            data-testid="comparator-dimension"
-          >
-            {registries.map(candidate => (
-              <option value={candidate.key} key={candidate.key}>{candidate.label}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Primera categoría
-          <select
-            value={effectiveLeftKey}
-            onChange={event => setLeftKey(event.target.value)}
-            data-testid="comparator-left"
-          >
-            {comparableRows.map(row => <option value={row.key} key={row.key}>{row.label}</option>)}
-          </select>
-        </label>
-        <label>
-          Segunda categoría
-          <select
-            value={effectiveRightKey}
-            onChange={event => setRightKey(event.target.value)}
-            data-testid="comparator-right"
-          >
-            {comparableRows.map(row => (
-              <option value={row.key} disabled={row.key === effectiveLeftKey} key={row.key}>{row.label}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {left && right ? (
-        <div className="structure-comparator__result" aria-live="polite">
-          {[left, right].map(row => (
-            <article key={row.key}>
-              <strong>{row.label}</strong>
-              <b>{row.registeredLabel}</b>
-              <span>registros · {row.shareLabel} de la base</span>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <p className="structure-empty">No hay dos categorías publicables para comparar.</p>
-      )}
-    </div>
-  );
-}
-
 function AbsenceRanking({ viewModel }: Pick<StructureDashboardProps, 'viewModel'>) {
   const [expanded, setExpanded] = useState(false);
   const rows = expanded ? viewModel.absenceRanking : viewModel.absenceRanking.slice(0, 6);
@@ -320,11 +251,13 @@ function OrganizationExplorer({
   aiAssistantEnabled,
   directoryActionHref,
   haciendaEnabled,
+  onCompareCostCenter,
   viewModel,
 }: {
   readonly aiAssistantEnabled: boolean;
   readonly directoryActionHref: string | null;
   readonly haciendaEnabled: boolean;
+  readonly onCompareCostCenter: ((companyCode: number, sourceCode: number) => void) | null;
   readonly viewModel: OrganizationAnalyticsViewModel;
 }) {
   const initial = useMemo(() => readExplorerDeepLink(viewModel), [viewModel]);
@@ -635,6 +568,16 @@ function OrganizationExplorer({
                     Analizar cálculo con BOT IA
                   </a>
                 ) : null}
+                {onCompareCostCenter && costCenterCompany !== null && costCenterCode !== null ? (
+                  <button
+                    className="structure-action structure-explorer__action"
+                    type="button"
+                    onClick={() => onCompareCostCenter(costCenterCompany, costCenterCode)}
+                    data-testid="organization-explorer-compare-action"
+                  >
+                    Comparar esta área
+                  </button>
+                ) : null}
               </div>
             </header>
             <dl className="structure-explorer__metrics structure-explorer__metrics--cost-center">
@@ -769,6 +712,7 @@ function OrganizationExplorer({
 
 export function StructureDashboard({ capabilities, viewModel }: StructureDashboardProps) {
   const [workforceKey, setWorkforceKey] = useState<WorkforceDimensionKey>('sector');
+  const [comparisonSeed, setComparisonSeed] = useState<CostCenterComparisonSeed | null>(null);
   const workforceRanking = viewModel.workforce[workforceKey];
   const enabledActions = useMemo(() => {
     const capabilitySet = new Set(capabilities);
@@ -900,9 +844,23 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
           aiAssistantEnabled={aiAssistantEnabled}
           directoryActionHref={directoryActionHref}
           haciendaEnabled={haciendaEnabled}
+          onCompareCostCenter={haciendaEnabled
+            ? (companyCode, sourceCode) => setComparisonSeed(current => ({
+                companyCode,
+                sourceCode,
+                nonce: (current?.nonce ?? 0) + 1,
+              }))
+            : null}
           viewModel={viewModel}
         />
       </section>
+
+      <CostCenterComparison
+        financeEnabled={haciendaEnabled}
+        haciendaEnabled={haciendaEnabled}
+        seed={comparisonSeed}
+        viewModel={viewModel}
+      />
 
       <section className="structure-two-column structure-two-column--uneven" aria-label="Cruces y ausencias">
         <article className="structure-panel">
@@ -923,12 +881,7 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
         </article>
       </section>
 
-      <section className="structure-two-column" aria-label="Comparación y calidad">
-        <article className="structure-panel" id="organizationCompare">
-          <PanelHeader eyebrow="Comparador" title="Contrastar dos categorías" />
-          <RegistryComparator registries={viewModel.registries} />
-        </article>
-
+      <section className="structure-section" aria-label="Calidad del corte">
         <article className="structure-panel" data-testid="quality-facts">
           <PanelHeader eyebrow="Preparación de datos" title="Registros para revisar" />
           <dl className="structure-quality-facts">

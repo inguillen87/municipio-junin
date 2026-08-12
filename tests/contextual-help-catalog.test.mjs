@@ -81,6 +81,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
             readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
             readFile(path.join(ROOT, 'frontend', 'src', 'structure', 'StructureDashboard.tsx'), 'utf8'),
             readFile(path.join(ROOT, 'frontend', 'src', 'structure', 'StructureCharts.tsx'), 'utf8'),
+            readFile(path.join(ROOT, 'frontend', 'src', 'structure', 'CostCenterComparison.tsx'), 'utf8'),
           ])).join('\n')
         : pageId === 'grhExecutive'
           ? (await Promise.all([
@@ -218,13 +219,13 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   assert.equal(MUNIGUIA_CATALOG.pages.grhDecisions.manualAnchor, 'decisiones-compromisos');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.selector),
-    ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],
+    ['#organizationSnapshotStatus', '#organizationExplorer', '#costCenterComparator'],
   );
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.requiredCapability, 'navigation.organization-analytics');
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.label, 'Estructura y áreas de costo');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.title),
-    ['Confirmá fuente y corte', 'Explorá estructura y áreas de costo', 'Priorizá una revisión'],
+    ['Confirmá fuente y corte', 'Explorá estructura y áreas de costo', 'Compará dos áreas de costo'],
   );
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.movementOperations.steps.map((step) => step.selector),

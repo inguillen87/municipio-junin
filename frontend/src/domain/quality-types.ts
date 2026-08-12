@@ -148,12 +148,10 @@ export interface QualityContract {
 }
 
 export type QualityKpiKey =
-  | 'quality'
+  | 'temporalValidity'
   | 'quarantine'
   | 'reconciliation'
-  | 'referential'
-  | 'tables'
-  | 'rows';
+  | 'referential';
 
 export interface QualityKpiViewModel {
   readonly key: QualityKpiKey;
@@ -162,6 +160,19 @@ export interface QualityKpiViewModel {
   readonly note: string;
   readonly title?: string;
   readonly tone: 'green' | 'amber' | 'red' | 'cyan' | 'violet' | 'neutral';
+}
+
+export interface QualityExecutiveSummaryViewModel {
+  readonly tone: 'positive' | 'attention';
+  readonly statusLabel: string;
+  readonly headline: string;
+  readonly description: string;
+  readonly strengths: readonly string[];
+  readonly attentionTitle: string;
+  readonly attentionDetail: string;
+  readonly impact: string;
+  readonly nextActionTitle: string;
+  readonly nextActionDetail: string;
 }
 
 export interface QualityComponentViewModel {
@@ -270,6 +281,7 @@ export interface QualitySourceViewModel {
 
 export interface QualityViewModel {
   readonly source: QualitySourceViewModel;
+  readonly executive: QualityExecutiveSummaryViewModel;
   readonly kpis: readonly QualityKpiViewModel[];
   readonly quality: QualityCompositionViewModel;
   readonly reconciliation: ReconciliationViewModel;

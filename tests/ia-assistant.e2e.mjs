@@ -229,6 +229,7 @@ function directoryListPayload() {
   };
   const emptyFacets = {
     sectors: [], costCenters: [], organizations: [], positions: [], positionObservations: [], categories: [], agreements: [],
+    reportedStatuses: [], contractRegimes: [], serviceSituations: [],
   };
   const item = (legajo, displayName, sector) => ({
     companyCode: 1,
@@ -241,6 +242,17 @@ function directoryListPayload() {
     positionObservation: null,
     category: null,
     agreement: null,
+    contractRegime: null,
+    serviceSituation: null,
+    terminationReason: null,
+    employment: {
+      reportedIngressDate: '2004-02-01',
+      reportedExitDate: null,
+      reportedStatus: 'current_by_reported_dates',
+      asOf: source.snapshotAsOf,
+      basis: 'legajo_reported_dates',
+      referencePayrollParticipation: { period: '2026-07', observed: true, rowCount: 5 },
+    },
     events: {
       absenceCount: 0,
       latestAbsenceDate: null,
@@ -251,11 +263,11 @@ function directoryListPayload() {
     movement: { rowCount: 7, periodCount: 3, latestPeriod: '2026-07' },
   });
   return {
-    schemaVersion: 'grh-directory-v2',
+    schemaVersion: 'grh-directory-v3',
     source,
     privacy: {
       containsPersonalData: true,
-      excludedFields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'event_cause'],
+      excludedFields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'absence_leave_event_cause'],
     },
     query: { mode: 'list', page: 1, limit: 8, total: 2, hasNext: false, cursor: null, nextCursor: null },
     facets: emptyFacets,
@@ -345,7 +357,7 @@ async function createServer(requestLog, options = {}) {
         response.writeHead(403, {
           'Content-Type': CONTENT_TYPES['.json'],
           'Cache-Control': 'no-store, private',
-          'X-MuniControl-Contract': 'grh-directory-v2',
+          'X-MuniControl-Contract': 'grh-directory-v3',
         });
         response.end(JSON.stringify({ error: 'Acceso nominal no habilitado' }));
         return;
@@ -356,7 +368,7 @@ async function createServer(requestLog, options = {}) {
       response.writeHead(200, {
         'Content-Type': CONTENT_TYPES['.json'],
         'Cache-Control': 'no-store, private',
-        'X-MuniControl-Contract': options.directoryContract || 'grh-directory-v2',
+        'X-MuniControl-Contract': options.directoryContract || 'grh-directory-v3',
       });
       response.end(JSON.stringify(payload));
       return;
@@ -480,7 +492,7 @@ test('assistant guards start and every submit with the exact AI capability', asy
   const script = await readFile(path.join(REPO, 'js', 'ia-assistant.js'), 'utf8');
   assert.match(script, /await global\.requireCapability\('navigation\.ai-assistant'\)/);
   assert.match(script, /async function start\(\)[\s\S]*if \(!await requirePageCapability\(\)\) return;[\s\S]*bindInterface\(\)/);
-  assert.match(script, /async function ask\(question\)[\s\S]*if \(!await requirePageCapability\(\)\) return;[\s\S]*MuniAuth\.fetch\(ENDPOINT/);
+  assert.match(script, /async function ask\(question, options\)[\s\S]*if \(!await requirePageCapability\(\)\) return;[\s\S]*MuniAuth\.fetch\(ENDPOINT/);
   assert.match(script, /form\.addEventListener\('submit', async function\(event\)[\s\S]*await ask\(text\)/);
 });
 
@@ -1285,6 +1297,184 @@ test('question deep link is bounded, aggregate-only and sent after authenticated
   await context.close();
 });
 
+test('person handoff consumes one fresh private target, cleans the URL and never replays it', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog, {
+    answerFor: body => body?.target ? {
+      httpStatus: 200,
+      payload: {
+        status: 'answered',
+        engine: { id: 'grh-deterministic-v1', externalProvider: false, generated: false },
+        intent: 'person_lookup',
+        answer: {
+          title: 'Lectura asistida · ALONSO, ARIEL MAURICIO',
+          summary: 'Qué significa: se analizaron por separado 3 de 3 fuentes gobernadas asociadas a la ficha. La respuesta prioriza cobertura, recencia y señales para revisar; no repite la ficha técnica.',
+          findings: [
+            'Señal temporal: legamov llega a 2026-08; ausencia a 2026-02-09; licencia a 2008-01-25.',
+            'Qué conviene revisar: la observación de puesto posterior al corte antes de tratarla como vigente.',
+            'El detalle individual no trae denominadores de cohorte; no se inventan rankings.',
+          ],
+          evidence: [
+            { label: 'Cobertura de fuentes', value: '3 de 3', detail: 'Fuentes separadas con registros asociados.' },
+            { label: 'Ventana visible de ausencia', value: '24 de 41', detail: 'Días informados sólo en registros expuestos.' },
+            { label: 'Historia visible de licencia', value: '3 de 3', detail: '42 días informados en historia completa expuesta.' },
+            { label: 'Intensidad de legamov', value: '2,17 filas/período', detail: '439 filas en 202 períodos · último 2026-08.' },
+          ],
+          caveats: ['No son días únicos ni una situación laboral actual.'],
+          source: 'Fuente: GRH Junín · directorio privado.',
+          nextQuestions: [
+            '¿Cómo se distribuyen los participantes por sector?',
+            '¿Cómo se distribuyen por categoría de acuerdo de origen?',
+            '¿Qué registros de ausencias quedaron en cuarentena?',
+          ],
+          actions: [
+            {
+              id: 'open_rrhh_person',
+              label: 'Volver a esta ficha en RRHH',
+              href: '/rrhh?handoff=person#peopleDirectory',
+              requiredCapability: 'navigation.rrhh',
+            },
+            {
+              id: 'open_rrhh_aggregate',
+              label: 'Ver contexto agregado de RRHH',
+              href: '/rrhh#workforceDistribution',
+              requiredCapability: 'navigation.rrhh',
+            },
+          ],
+          directory: {
+            status: 'matched',
+            presentation: 'insight',
+            target: { companyCode: 101, legajo: 571 },
+          },
+        },
+        provenance: { snapshotAsOf: '2026-08-06', latestValidCalculationPeriod: '2026-07' },
+      },
+    } : null,
+  });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1280, height: 820 } });
+  await seedSession(context);
+  await context.addInitScript(() => {
+    sessionStorage.setItem('muni_grh_person_handoff_v1', JSON.stringify({
+      version: 'grh-person-handoff-v1',
+      kind: 'PERSON_OVERVIEW',
+      companyCode: 101,
+      legajo: 571,
+      createdAt: Date.now(),
+    }));
+  });
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/ia.html?handoff=person`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.answer-card');
+
+  assert.equal(requestLog.length, 1);
+  assert.equal(requestLog[0].method, 'POST');
+  assert.equal(requestLog[0].purpose, 'PERSON_LOOKUP');
+  assert.deepEqual(requestLog[0].body, {
+    mode: 'deterministic',
+    target: { kind: 'grh-person', companyCode: 101, legajo: 571 },
+  });
+  assert.equal(await page.locator('.answer-heading-line h3').textContent(), 'Lectura asistida · ALONSO, ARIEL MAURICIO');
+  assert.deepEqual(
+    await page.locator('.evidence-item').evaluateAll(nodes => nodes.map(node => node.textContent.trim())),
+    [
+      'Cobertura de fuentes3 de 3Fuentes separadas con registros asociados.',
+      'Ventana visible de ausencia24 de 41Días informados sólo en registros expuestos.',
+      'Historia visible de licencia3 de 342 días informados en historia completa expuesta.',
+      'Intensidad de legamov2,17 filas/período439 filas en 202 períodos · último 2026-08.',
+    ],
+  );
+  assert.equal(await page.locator('.directory-history').count(), 0, 'insight mode must not repaint raw ficha histories');
+  assert.equal(await page.locator('.answer-action').count(), 2);
+  assert.deepEqual(
+    await page.locator('.answer-action').evaluateAll(nodes => nodes.map(node => {
+      const url = new URL(node.href);
+      return url.pathname + url.search + url.hash;
+    })),
+    ['/rrhh?handoff=person#peopleDirectory', '/rrhh#workforceDistribution'],
+  );
+  const returnStartedAt = await page.evaluate(() => Date.now());
+  await page.locator('.answer-action').first().evaluate(link => {
+    link.addEventListener('click', event => event.preventDefault(), { once: true });
+    link.click();
+  });
+  const returnHandoff = await page.evaluate(() => JSON.parse(sessionStorage.getItem('muni_grh_person_return_v1')));
+  assert.deepEqual({ ...returnHandoff, createdAt: 0 }, {
+    version: 'grh-person-return-v1', kind: 'PERSON_RETURN', companyCode: 101, legajo: 571, createdAt: 0,
+  });
+  const returnCompletedAt = await page.evaluate(() => Date.now());
+  assert.ok(Number.isSafeInteger(returnHandoff.createdAt));
+  assert.ok(returnHandoff.createdAt >= returnStartedAt && returnHandoff.createdAt <= returnCompletedAt);
+  assert.equal(await page.locator('.answer-followup').count(), 3);
+  assert.equal(await page.locator('.evidence-label', { hasText: /^(Legajo|Puesto|Categoría|Convenio)$/ }).count(), 0);
+  assert.equal(new URL(page.url()).search, '');
+  assert.equal(await page.evaluate(() => sessionStorage.getItem('muni_grh_person_handoff_v1')), null);
+
+  await page.screenshot({
+    path: path.join(process.env.TEMP, 'municontrol-person-insight-1280.png'),
+    fullPage: false,
+  });
+
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(requestLog.length, 1, 'a consumed handoff must not replay after reload');
+  await context.close();
+});
+
+test('person handoff fails closed for stale, mutated and duplicate envelopes without a request', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => browser.close());
+  const scenarios = [
+    {
+      name: 'stale',
+      search: '?handoff=person',
+      value: { version: 'grh-person-handoff-v1', kind: 'PERSON_OVERVIEW', companyCode: 101, legajo: 571, createdAt: Date.now() - 120001 },
+    },
+    {
+      name: 'mutated',
+      search: '?handoff=person',
+      value: { version: 'grh-person-handoff-v1', kind: 'PERSON_OVERVIEW', companyCode: 101, legajo: 571, createdAt: Date.now(), displayName: 'ALONSO' },
+    },
+    {
+      name: 'duplicate-url',
+      search: '?handoff=person&handoff=person',
+      value: { version: 'grh-person-handoff-v1', kind: 'PERSON_OVERVIEW', companyCode: 101, legajo: 571, createdAt: Date.now() },
+    },
+    {
+      name: 'duplicate-json-key',
+      search: '?handoff=person',
+      raw: '{"version":"grh-person-handoff-v1","kind":"PERSON_OVERVIEW","companyCode":101,"legajo":570,"legajo":571,"createdAt":' + Date.now() + '}',
+    },
+  ];
+  for (const scenario of scenarios) {
+    const requestLog = [];
+    const server = await createServer(requestLog);
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    try {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 820 } });
+      await seedSession(context);
+      await context.addInitScript(raw => {
+        sessionStorage.setItem('muni_grh_person_handoff_v1', raw);
+      }, scenario.raw || JSON.stringify(scenario.value));
+      const page = await context.newPage();
+      await page.goto(`${baseUrl}/ia.html${scenario.search}`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('.answer-card');
+      assert.equal(requestLog.length, 0, scenario.name);
+      assert.equal(await page.locator('.answer-heading-line h3').textContent(), 'Ficha no transferida');
+      assert.equal(new URL(page.url()).search, '', scenario.name);
+      assert.equal(await page.evaluate(() => sessionStorage.getItem('muni_grh_person_handoff_v1')), null, scenario.name);
+      await context.close();
+    } finally {
+      await new Promise(resolve => server.close(resolve));
+    }
+  }
+});
+
 test('assistant renders only the exact visual contract and ignores mutated visuals', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
   const baseVisual = {
@@ -1398,7 +1588,7 @@ test('private person answers render leave cards, actions and bounded match optio
       ...provenance(views.executive, views.quality),
       aggregateOnly: false,
       containsPii: true,
-      directorySchemaVersion: 'grh-directory-v2',
+      directorySchemaVersion: 'grh-directory-v3',
     };
     if (body.message === 'Licencias del legajo 7001') {
       return {
@@ -1413,8 +1603,8 @@ test('private person answers render leave cards, actions and bounded match optio
             findings: ['Puesto observado: vigencia posterior al corte; no es cargo actual.'],
             evidence: [
               { label: 'Legajo', value: '7.001', detail: 'Empresa 1' },
-              { label: 'Ausencias', value: '2', detail: 'Última: 2026-07-10' },
-              { label: 'Licencias históricas', value: '2', detail: 'Última: 2009-04-01' },
+              { label: 'Registros de ausencia', value: '2', detail: 'Tabla ausencia · última fecha 2026-07-10' },
+              { label: 'Registros de licencia', value: '2', detail: 'Tabla licencia · último intervalo 2009-04-01' },
             ],
             caveats: [],
             source: 'Fuente: GRH Junín · directorio privado · snapshot 2026-08-06.',

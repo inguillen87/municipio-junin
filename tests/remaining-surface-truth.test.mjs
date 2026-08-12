@@ -158,20 +158,28 @@ test('remaining operational surfaces use authenticated APIs and fail closed with
 
   const audit = read('auditoria.html');
   assert.match(audit, /src="js\/auth-fetch\.js"/);
-  assert.match(audit, /MuniAuth\.fetch\('\/api\/audit\?action=overview'\)/);
-  assert.match(audit, /No se pudo verificar el inventario de datos/i);
-  assert.match(audit, /no es una auditoría institucional/i);
-  assert.match(audit, /Nueva conexión no habilitada/);
+  assert.match(audit, /src="js\/data-operations\.js"/);
+  assert.match(audit, /Fuentes de datos/i);
+  assert.match(audit, /no es un historial de cargas/i);
+  assert.doesNotMatch(audit, /\/api\/audit|Nueva conexión/);
   assert.doesNotMatch(audit, /Funcionalidad de nueva conexión en desarrollo/i);
 
   const exportsPage = read('exportar.html');
   assert.match(exportsPage, /src="js\/auth-fetch\.js"/);
-  assert.match(exportsPage, /MuniAuth\.fetch\('\/api\/pdf-report\?type=rrhh'/);
-  assert.match(exportsPage, /Exportación cruda retirada/);
+  assert.match(exportsPage, /src="js\/data-operations\.js"/);
+  assert.match(exportsPage, /Publicaciones/i);
+  assert.match(exportsPage, /CSV\/XLSX nominal no habilitado/i);
   assert.doesNotMatch(exportsPage, /MuniAuth\.(?:fetch|download)\('\/api\/(?:reports|export-data)/);
-  assert.match(exportsPage, /Entregado · validar contenido/);
+  assert.match(exportsPage, /no constituye un historial institucional/i);
   assert.doesNotMatch(exportsPage, /MuniDB|localStorage|innerHTML\s*=|generad[oa] exitosamente|>Completado</i);
   assert.doesNotMatch(exportsPage, /<script[^>]+src=["']https?:\/\//i);
+
+  const controller = read('js/data-operations.js');
+  assert.match(controller, /ENDPOINT = '\/api\/grh-domain-catalog'/);
+  assert.match(controller, /MuniAuth\.fetch\('\/api\/pdf-report\?type=rrhh'/);
+  assert.match(controller, /aggregateMetadataOnly !== true/);
+  assert.match(controller, /No mostramos ceros ni publicaciones/i);
+  assert.doesNotMatch(controller, /totalTables:\s*257|totalRows:\s*6573057|nonEmptyTables:\s*147/);
 });
 
 test('inline JavaScript on the audited surfaces parses', () => {

@@ -15,6 +15,10 @@ const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const PWA_REGISTER_SOURCE = readFileSync(path.join(REPO, 'js', 'pwa-register.js'), 'utf8');
 const PWA_TEST_WORKER_SOURCE = "self.addEventListener('install', () => self.skipWaiting()); self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));";
 const MUNIGUIA_STUB_SOURCE = 'export async function mountMuniGuia(){return true} export function unmountMuniGuia(){}';
+const SCREENSHOTS = Object.freeze({
+  desktop: path.join(tmpdir(), 'municontrol-calidad-executive-desktop.png'),
+  mobile: path.join(tmpdir(), 'municontrol-calidad-executive-mobile.png'),
+});
 
 function percentage(numerator, denominator) {
   return denominator === 0 ? 0 : Number(((numerator / denominator) * 100).toFixed(4));
@@ -599,8 +603,11 @@ test('React Calidad canary validates governed evidence and fails closed', async 
               busy: main?.getAttribute('aria-busy'),
               kpiValues: Array.from(document.querySelectorAll('.kpi-card__value'), element =>
                 normalize(element.textContent)),
-              kpiTitles: Array.from(document.querySelectorAll('.kpi-card'), element =>
-                element.getAttribute('title')),
+              executiveStatus: normalize(document.querySelector('.quality-status')?.textContent),
+              executiveHeadline: normalize(document.querySelector('#quality-decision-title')?.textContent),
+              visibleText: normalize(document.body.innerText),
+              disclosureCount: document.querySelectorAll('.quality-disclosure').length,
+              openDisclosures: document.querySelectorAll('.quality-disclosure[open]').length,
               sourceFile: normalize(document.querySelector('.source-status__details dd')?.textContent),
               sourceHash: normalize(document.querySelector('.source-status__hash')?.textContent),
               qualityComponents: document.querySelectorAll('.metric-stack > .metric-progress').length,
@@ -625,14 +632,17 @@ test('React Calidad canary validates governed evidence and fails closed', async 
 
           assert.equal(result.path, '/calidad');
           assert.equal(result.busy, 'false');
-          assert.deepEqual(result.kpiValues.slice(0, 5), [
-            '92,22/100',
-            '30',
-            '71,21/100',
+          assert.deepEqual(result.kpiValues, [
+            '99,3%',
             '98,75%',
-            '8',
+            '5 de 7',
+            '30',
           ]);
-          assert.ok(result.kpiTitles.includes('5.200 filas inventariadas'));
+          assert.equal(result.executiveStatus, 'Disponible con observaciones');
+          assert.match(result.executiveHeadline, /comparación de liquidaciones requiere revisión/i);
+          assert.doesNotMatch(result.visibleText, /\b(?:totpago|errorimportacion|score|cuarentena)\b/i);
+          assert.equal(result.disclosureCount, 6);
+          assert.equal(result.openDisclosures, 0);
           assert.equal(result.sourceFile, 'grh_junin.synthetic_quality.sql.gz');
           assert.equal(result.sourceHash, 'a'.repeat(64));
           assert.equal(result.qualityComponents, 4);
@@ -657,6 +667,21 @@ test('React Calidad canary validates governed evidence and fails closed', async 
           assert.deepEqual(apiPaths(apiLog, start), ['/api/auth/me', '/api/grh-quality']);
           assert.deepEqual(diagnostics.consoleErrors, []);
           assert.deepEqual(diagnostics.externalRequests, []);
+          await page.screenshot({
+            path: viewport.name === 'desktop' ? SCREENSHOTS.desktop : SCREENSHOTS.mobile,
+            fullPage: true,
+          });
+
+          const reconciliationDetails = page.locator('[data-testid="quality-reconciliation-details"]');
+          await reconciliationDetails.locator('summary').click();
+          assert.equal(await reconciliationDetails.getAttribute('open'), '', `${viewport.name} disclosure opened`);
+          const technicalEvidence = String(await reconciliationDetails.innerText()).replace(/\s+/g, ' ').trim();
+          assert.match(technicalEvidence, /nombre técnico totpago/i);
+          assert.match(technicalEvidence, /no acredita transferencia bancaria/i);
+          assert.ok(
+            await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth <= 1),
+            `${viewport.name} opened disclosure overflow`,
+          );
         } finally {
           await context.close();
         }
@@ -758,7 +783,7 @@ test('React Calidad canary validates governed evidence and fails closed', async 
           heading: document.querySelector('.blocked-state h1')?.textContent?.trim(),
           figuresMounted: Boolean(document.querySelector('.page-hero, .kpi-grid, .dashboard-grid')),
           kpis: document.querySelectorAll('.kpi-card').length,
-          fixtureValuesVisible: /92,22|71,21|98,75|5\.200/.test(document.querySelector('main')?.textContent || ''),
+          fixtureValuesVisible: /99,3|98,75|5 de 7|5\.200/.test(document.querySelector('main')?.textContent || ''),
         }));
         assert.match(blocked.heading || '', /Evidencia bloqueada/i);
         assert.equal(blocked.figuresMounted, false);
@@ -794,7 +819,7 @@ test('React Calidad canary validates governed evidence and fails closed', async 
         const blocked = await page.evaluate(() => ({
           figuresMounted: Boolean(document.querySelector('.page-hero, .kpi-grid, .dashboard-grid')),
           figureText: Array.from(document.querySelectorAll('.kpi-card__value'), node => node.textContent),
-          fixtureValuesVisible: /92,22|71,21|98,75|5\.200/.test(document.querySelector('main')?.textContent || ''),
+          fixtureValuesVisible: /99,3|98,75|5 de 7|5\.200/.test(document.querySelector('main')?.textContent || ''),
         }));
         assert.equal(blocked.figuresMounted, false);
         assert.deepEqual(blocked.figureText, []);

@@ -20,6 +20,17 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const ROLES = Object.values(accessPolicy.ROLES);
 const CAPABILITY = 'navigation.territory';
 const ROUTE_ID = 'serverless.municipal.territory.read';
+const TERRITORY_PRODUCTION_FILES = Object.freeze([
+  'api/lib/municipal-territory-contract.js',
+  'api/lib/municipal-territory-source.js',
+  'frontend/src/territory/territory-contract.ts',
+  'frontend/src/territory/TerritoryDashboard.tsx',
+  'frontend/src/territory/TerritoryMap.tsx',
+  'frontend/src/territory-main.tsx',
+  'frontend/territorio.html',
+  'js/contextual-help-catalog.js',
+  'scripts/diagnose-and-provision.mjs',
+]);
 
 test('territorial navigation is explicit for all roles and exact in low-role priorities', () => {
   assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.3');
@@ -58,7 +69,28 @@ test('territorial API is one exact GET resource and remains available to publish
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     assert.equal(publishedDemoPolicy.evaluatePublishedDemoRoute({ ...profile, routeId: ROUTE_ID }).allowed, true, profile.email);
   }
-  assert.equal(releaseTruth.API_CONTRACTS['/api/municipal-territory'], 'municipal-territory-v1');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/municipal-territory'], 'municipal-territory-v2');
+});
+
+test('territorial production code is pinned to Junín Mendoza and rejects the retired Buenos Aires identity', async () => {
+  const sources = await Promise.all(TERRITORY_PRODUCTION_FILES.map(async relativePath => ({
+    relativePath,
+    source: await readFile(path.join(ROOT, relativePath), 'utf8'),
+  })));
+  for (const { relativePath, source } of sources) {
+    assert.doesNotMatch(
+      source,
+      /municipal-territory-v1|Partido de Junín|Ajustar partido|ARBA|Agustín Roca|Agustina|Laguna de Gómez|Fortín Tiburcio|Laplacette|Saforcada/u,
+      relativePath,
+    );
+  }
+  const contract = sources.find(item => item.relativePath.endsWith('municipal-territory-contract.js'))?.source || '';
+  assert.match(contract, /MUNICIPAL_TERRITORY_DEPARTMENT_ID = '50035'/);
+  assert.match(contract, /province\?\.id === '50'/);
+  assert.match(contract, /province\?\.name === 'Mendoza'/);
+  const source = sources.find(item => item.relativePath.endsWith('municipal-territory-source.js'))?.source || '';
+  assert.match(source, /properties\.fna !== 'Departamento Junín'/);
+  assert.match(source, /properties\.fdc !== 'Oficina Provincial de Mendoza'/);
 });
 
 test('territorio is a governed Vite entry while the retired mapa file remains a legacy compatibility surface', async () => {

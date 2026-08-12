@@ -85,6 +85,15 @@ lector GRH.
 9. Guardar evidencia: URL, deployment ID, commit, DB branch, fecha, operador y
    receipt del gate en el sistema externo de release; no commitear receipts.
 
+El upgrade privado local `grh-directory-v3` tiene un ensayo DDL separado y
+fail-closed para una rama Preview con base realmente descartable. El flujo,
+los dos fingerprints obligatorios, el cleanup y la evidencia exigida están en
+[`docs/GRH_DIRECTORY_PREVIEW_REHEARSAL.md`](docs/GRH_DIRECTORY_PREVIEW_REHEARSAL.md).
+No debe ejecutarse mientras Preview y Producción resuelvan a la misma huella de
+base. En este corte la cadena aditiva `003 + 004 + 005` y el contrato v3 se
+validaron sólo en local: no se ejecutaron contra Preview, Production ni una DB
+remota y no autorizan deployment o promoción.
+
 El Centro de decisiones tiene un gate externo separado, documentado en
 [`docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md`](docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md).
 `npm run smoke:grh-ledger:candidate` es read-only respecto del ledger. El script

@@ -133,6 +133,31 @@ async function createServer(options = {}) {
       response.end('{}');
       return;
     }
+    if (url.pathname === '/api/grh-domain-catalog') {
+      response.writeHead(200, {
+        'Content-Type': contentTypes['.json'],
+        'Cache-Control': 'no-store',
+        'X-MuniControl-Contract': 'grh-domain-catalog-v1',
+      });
+      response.end(JSON.stringify({
+        schemaVersion: 'grh-domain-catalog-v1',
+        source: {
+          canonicalSystem: 'GRH Junín',
+          sourceFile: 'navigation-layout-fixture',
+          sourceSha256: 'a'.repeat(64),
+          snapshotAsOf: '2026-08-06',
+          realtime: false,
+        },
+        privacy: {
+          aggregateMetadataOnly: true,
+          containsPersonRecords: false,
+          containsFinancialAmounts: false,
+        },
+        counts: { totalTables: 0, nonEmptyTables: 0, emptyTables: 0, totalRows: 0, domainCount: 0 },
+        domains: [],
+      }));
+      return;
+    }
 
     const relative = decodeURIComponent(
       url.pathname === '/dashboard' ? 'dashboard.html' : (url.pathname.slice(1) || 'manuales.html'),

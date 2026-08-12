@@ -514,8 +514,8 @@ ruta raw. Esto no está desplegado ni certificado en remoto.
 | `api/grh-executive.js` + `api/lib/grh-executive-*` | proyección interactiva/portable `grh-executive-v2` con privacidad de celdas pequeñas |
 | `api/grh-quality.js` + `api/lib/grh-quality-*` | proyección minimizada `grh-quality-v1` para calidad y linaje |
 | `api/grh-close.js` + `api/lib/grh-close-*` | cierre mensual `grh-close-v1`, exact-key, tenant-bound, no-store y k=10 |
-| `api/grh-directory.js` + `api/lib/grh-directory-*` | directorio nominal privado `grh-directory-v2`, tenant-bound, exact-key, auditado y con equivalencia PostgreSQL/snapshot cifrado |
-| `migrations/003_grh_directory.sql` + `migrations/004_grh_directory_v2.sql` | materialización privada: base v1 y upgrade v2 para centro de costo, ausencias y períodos agregados de `legamov` |
+| `api/grh-directory.js` + `api/lib/grh-directory-*` | directorio nominal privado `grh-directory-v3`, tenant-bound, exact-key, auditado y con equivalencia PostgreSQL/snapshot cifrado; agrega situación laboral informada y señal de participación en cálculo de referencia |
+| `migrations/003_grh_directory.sql` + `migrations/004_grh_directory_v2.sql` + `migrations/005_grh_directory_v3.sql` | cadena aditiva privada: base v1, centro de costo/cronologías v2 y hechos laborales/catálogos/digest determinista v3; `005` no fue aplicada a una DB remota en este corte |
 | `js/grh-close-data.js` + `hacienda.html` | cliente gobernado y cierre mensual explicado; conciliación real por período |
 | `js/grh-secure-data.js` | cliente y validadores exact-key usados por Panel, GRH, Calidad, RRHH y Hacienda; cero referencias a la ruta raw |
 | `control.html` + `js/grh-control.js` | Centro de Calidad migrado localmente a `grh-quality-v1`; falta certificación remota |
@@ -532,6 +532,17 @@ ruta raw. Esto no está desplegado ni certificado en remoto.
 
 Los HTML de raíz son superficies de frontend estático. `js/nav.js` centraliza la
 navegación y `js/auth-fetch.js` el acceso autenticado desde navegador.
+
+`grh-directory-v3` deriva `reportedStatus` exclusivamente de las fechas de
+ingreso/egreso informadas en `legajo` y conserva `asOf` +
+`basis=legajo_reported_dates`; no certifica vigencia contractual. Expone como
+dimensiones gobernadas el régimen de contratación (`regcontr`) y la situación
+de revista (`revista`); el motivo de baja sólo se publica con etiqueta válida y
+un egreso informado. `referencePayrollParticipation` usa el período gobernado
+`2026-07` y separa `observed`/`rowCount` de la situación laboral: es presencia de
+filas en `calculo`, no evidencia bancaria, recibo o pago. El catálogo filtra por
+`reportedStatus`, `contractRegime` y `serviceSituation` bajo el mismo scope de
+autorización que la lista nominal.
 
 ## 6. Preparación local
 
@@ -1558,7 +1569,7 @@ Diagnóstico recomendado:
 | Proyecciones `grh-executive-v2` / `grh-quality-v1` | Operativo local de backend | contratos exactos, endpoints autenticados/tenant-bound/no-store y reglas k=5/k=10 |
 | Cierre mensual `grh-close-v1` | Operativo local de backend | GET-only, exact-key, k=10, componentes/control y conciliación por período; no PII/labels/codes, moneda no declarada, no pago ni causalidad |
 | Panel y Centro Ejecutivo GRH | Operativo local sobre proyecciones | consumen `grh-executive-v2` + `grh-quality-v1`; falta certificación remota |
-| RRHH | Operativo local sobre proyecciones y directorio privado v2 | consume `grh-executive-v2` + `grh-quality-v1`; `grh-directory-v2` agrega centro de costo y cronologías limitadas a 24 sin causas ni importes. Falta migración/publicación y certificación remota |
+| RRHH | Operativo local sobre proyecciones y directorio privado v3 | consume `grh-executive-v2` + `grh-quality-v1`; `grh-directory-v3` agrega situación laboral informada, catálogos de contrato/revista, participación en cálculo 2026-07, centro de costo y cronologías limitadas a 24 sin causas de eventos ni importes. Migración `005`, publicación y smokes remotos no ejecutados; Preview/Production siguen sin certificación v3 |
 | Hacienda | Operativo local sobre proyecciones | cierre mensual explicado y comparación sólo de meses consecutivos liberados; P1 global-como-mensual retirado; certificación remota pendiente |
 | Centro de Calidad y Linaje GRH | Operativo local sobre proyección | consume `grh-quality-v1`; la ruta raw ya responde `410` localmente y falta certificación remota |
 | Asistente ejecutivo determinista | Operativo local server-side | intents allowlisted; `close_explanation` construye `grh-close-v1` desde una lectura y exige un `YYYY-MM` liberado k=10; 422 sin sustitución; no desplegado |

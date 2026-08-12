@@ -8,6 +8,7 @@ import {
   buildDeterministicAnswer,
   classifyIntent,
   createAiAnalyzeHandler,
+  parsePersonTarget,
   parseWorkforceFinanceQuery,
   validateAssistantContracts,
   validateSemanticContract,
@@ -150,6 +151,17 @@ function fakeDirectoryItem(overrides = {}) {
     },
     category: { code: 30, label: 'CATEGORIA PRUEBA' },
     agreement: { code: 40, label: 'ACUERDO PRUEBA' },
+    contractRegime: { code: 113, label: 'PLANTA PERMANENTE' },
+    serviceSituation: { code: 1, label: 'NORMAL' },
+    terminationReason: null,
+    employment: {
+      reportedIngressDate: '2004-02-01',
+      reportedExitDate: null,
+      reportedStatus: 'current_by_reported_dates',
+      asOf: '2026-08-06',
+      basis: 'legajo_reported_dates',
+      referencePayrollParticipation: { period: '2026-07', observed: true, rowCount: 5 },
+    },
     events: {
       absenceCount: 2,
       latestAbsenceDate: '2026-07-10',
@@ -188,6 +200,9 @@ function fakeDirectoryResponse({ mode = 'list', items = [], total = items.length
       categories: [],
       agreements: [],
       costCenters: [],
+      reportedStatuses: [],
+      contractRegimes: [],
+      serviceSituations: [],
     },
     items,
   };
@@ -224,6 +239,69 @@ function fakeDirectoryDetail(item = fakeDirectoryItem(), source = fakeDirectoryS
           { period: '2025-12', rowCount: 2 },
         ].slice(0, item.movement.periodCount),
       },
+    }],
+  });
+}
+
+function fakePerson571Detail(source = fakeDirectorySource()) {
+  const absenceRows = [
+    ['2026-02-09', 1], ['2026-01-12', 2], ['2025-12-10', 1], ['2025-11-07', 3],
+    ['2025-10-02', 1], ['2025-09-15', 2], ['2025-08-06', 1], ['2025-07-01', 4],
+    ['2025-06-18', 1], ['2025-05-03', 2], ['2025-04-11', 1], ['2025-03-09', 3],
+    ['2025-02-05', 1], ['2025-01-03', 2], ['2024-12-12', 1], ['2024-11-08', 2],
+    ['2024-10-04', 1], ['2024-09-02', 2], ['2024-08-01', 1], ['2024-07-05', 3],
+    ['2024-06-03', 1], ['2024-05-02', 2], ['2024-04-01', 1], ['2024-03-01', 2],
+  ].map(([date, days]) => ({ date, days }));
+  const movementRows = [
+    '2026-08', '2026-07', '2026-06', '2026-05', '2026-04', '2026-03',
+    '2026-02', '2026-01', '2025-12', '2025-11', '2025-10', '2025-09',
+    '2025-08', '2025-07', '2025-06', '2025-05', '2025-04', '2025-03',
+    '2025-02', '2025-01', '2024-12', '2024-11', '2024-10', '2024-09',
+  ].map((period, index) => ({ period, rowCount: index % 4 + 1 }));
+  const item = fakeDirectoryItem({
+    companyCode: 101,
+    legajo: 571,
+    displayName: 'ALONSO, ARIEL MAURICIO',
+    sector: { code: 10, label: 'HCD CONCEJALES' },
+    costCenter: { code: 20, label: 'CONCEJALES Y VICEPRESIDENCIA' },
+    organization: { code: 30, label: 'CONCEJALES Y VICE- PRESIDENTE 1° Y 2°' },
+    category: { code: 40, label: 'CONCEJALES' },
+    agreement: { code: 50, label: 'CONCEJAL' },
+    contractRegime: null,
+    serviceSituation: { code: 1, label: 'NORMAL' },
+    employment: {
+      reportedIngressDate: '2004-02-01',
+      reportedExitDate: null,
+      reportedStatus: 'current_by_reported_dates',
+      asOf: '2026-08-06',
+      basis: 'legajo_reported_dates',
+      referencePayrollParticipation: { period: '2026-07', observed: true, rowCount: 25 },
+    },
+    events: {
+      absenceCount: 41,
+      latestAbsenceDate: '2026-02-09',
+      leaveCount: 3,
+      latestLeaveStartDate: '2008-01-25',
+      latestLeaveEndDate: '2008-02-07',
+    },
+    movement: { rowCount: 439, periodCount: 202, latestPeriod: '2026-08' },
+  });
+  return fakeDirectoryResponse({
+    mode: 'detail',
+    source,
+    items: [{
+      ...item,
+      absenceHistory: { total: 41, limit: 24, items: absenceRows },
+      leaveHistory: {
+        total: 3,
+        limit: 24,
+        items: [
+          { startDate: '2008-01-25', endDate: '2008-02-07', days: 14 },
+          { startDate: '2006-07-23', endDate: '2006-08-05', days: 14 },
+          { startDate: '2005-02-14', endDate: '2005-02-27', days: 14 },
+        ],
+      },
+      movementHistory: { total: 202, limit: 24, items: movementRows },
     }],
   });
 }
@@ -905,7 +983,7 @@ test('private allowlisted CONTADOR resolves a tenant-bound person and governed l
   assert.equal(response.payload.dataStatus.historyUsed, true);
   assert.equal(response.payload.provenance.aggregateOnly, false);
   assert.equal(response.payload.provenance.containsPii, true);
-  assert.equal(response.payload.provenance.directorySchemaVersion, 'grh-directory-v2');
+  assert.equal(response.payload.provenance.directorySchemaVersion, 'grh-directory-v3');
   assert.equal(calls.length, 2);
   assert.deepEqual(calls[0], {
     tenantId: 'tenant-grh-test',
@@ -921,6 +999,11 @@ test('private allowlisted CONTADOR resolves a tenant-bound person and governed l
   assert.equal(person.organization.label, 'ORGANIZACION PRUEBA');
   assert.equal(person.position, null);
   assert.deepEqual(person.positionObservation, item.positionObservation);
+  assert.deepEqual(person.category, item.category);
+  assert.deepEqual(person.agreement, item.agreement);
+  assert.deepEqual(person.contractRegime, item.contractRegime);
+  assert.deepEqual(person.serviceSituation, item.serviceSituation);
+  assert.deepEqual(person.employment, item.employment);
   assert.equal(person.events.absenceCount, 2);
   assert.equal(person.events.latestAbsenceDate, '2026-07-10');
   assert.equal(person.leaveHistory.total, 2);
@@ -935,8 +1018,215 @@ test('private allowlisted CONTADOR resolves a tenant-bound person and governed l
   }]);
   assert.match(response.payload.response, /PERSONA PRUEBA/);
   assert.match(response.payload.response, /no se presenta como cargo actual/i);
+  assert.deepEqual(
+    response.payload.answer.evidence.slice(1, 4).map(entry => entry.label),
+    ['Registros de ausencia', 'Registros de licencia', 'Filas fuente legamov'],
+  );
+  assert.match(response.payload.response, /tablas legacy separadas/i);
+  assert.match(response.payload.response, /no se suman/i);
   assert.doesNotMatch(JSON.stringify(response.payload), /\b(?:dni|cuil|contact|address|bank_account|salary|event_cause|sueldo|motivo)\b/i);
   assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
+});
+
+test('versioned person target is exact, immutable and rejects mutated identities', () => {
+  const target = parsePersonTarget({ kind: 'grh-person', companyCode: 1, legajo: 571 });
+  assert.deepEqual(target, { kind: 'grh-person', companyCode: 1, legajo: 571 });
+  assert.equal(Object.isFrozen(target), true);
+  for (const invalid of [
+    null,
+    [],
+    { kind: 'grh-person', companyCode: 1, legajo: 571, name: 'Persona' },
+    { kind: 'PERSON_OVERVIEW', companyCode: 1, legajo: 571 },
+    { kind: 'grh-person', companyCode: '1', legajo: 571 },
+    { kind: 'grh-person', companyCode: 1, legajo: 0 },
+  ]) assert.equal(parsePersonTarget(invalid), null);
+});
+
+test('person handoff reads one exact detail with tenant scope and sanitized audit', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const source = fakeDirectorySource();
+  const item = fakeDirectoryItem({ companyCode: 1, legajo: 571 });
+  const calls = [];
+  const decision = {
+    reason: 'DYNAMIC_ALLOWED',
+    scope: { tenantWide: false },
+    allowedOrganizationCodes: ['20'],
+  };
+  const handler = privateAssistantHandler({
+    authorizeDirectoryImpl: async (req, _res, options) => {
+      calls.push(['authorize', req.headers['x-municontrol-purpose'], options.operation]);
+      return {
+        decision,
+        commitAudit: async event => { calls.push(['audit', event]); return true; },
+      };
+    },
+    readDirectoryImpl: async input => {
+      calls.push(['read', input]);
+      return fakeDirectoryDetail(item, source);
+    },
+  });
+  const response = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: {
+      mode: 'deterministic',
+      target: { kind: 'grh-person', companyCode: 1, legajo: 571 },
+    },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.payload.engine.externalProvider, false);
+  assert.equal(response.payload.engine.generated, false);
+  assert.deepEqual(response.payload.answer.directory.target, { companyCode: 1, legajo: 571 });
+  assert.equal(Object.hasOwn(response.payload.answer.directory, 'person'), false);
+  assert.deepEqual(calls.map(([kind]) => kind), ['authorize', 'read', 'audit']);
+  assert.deepEqual(calls[0], ['authorize', 'PERSON_LOOKUP', 'detail']);
+  assert.deepEqual(calls[1][1], {
+    tenantId: 'tenant-grh-test',
+    scopeOrganizationCodes: ['20'],
+    query: { company: 1, legajo: 571 },
+  });
+  assert.deepEqual(calls[2][1], {
+    operation: 'detail',
+    outcome: 'ALLOWED',
+    reason: 'DYNAMIC_ALLOWED',
+    resultCount: 1,
+    decision,
+  });
+  assert.doesNotMatch(JSON.stringify(calls[2]), /571|PERSONA PRUEBA/i);
+});
+
+test('101/571 handoff adds deterministic insight instead of repeating the RRHH ficha', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const calls = [];
+  const handler = privateAssistantHandler({
+    authorizeDirectoryImpl: async (_req, _res, options) => ({
+      decision: {
+        reason: 'DYNAMIC_ALLOWED',
+        scope: { tenantWide: false },
+        allowedOrganizationCodes: ['30'],
+      },
+      commitAudit: async event => { calls.push(['audit', options.operation, event]); return true; },
+    }),
+    readDirectoryImpl: async input => {
+      calls.push(['read', input]);
+      return fakePerson571Detail();
+    },
+  });
+  const response = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: {
+      mode: 'deterministic',
+      target: { kind: 'grh-person', companyCode: 101, legajo: 571 },
+    },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.payload.engine, {
+    id: 'grh-deterministic-v1',
+    externalProvider: false,
+    generated: false,
+  });
+  assert.equal(response.payload.answer.title, 'Lectura asistida · ALONSO, ARIEL MAURICIO');
+  assert.match(response.payload.answer.summary, /Qué significa: se analizaron por separado 3 de 3 fuentes gobernadas/i);
+  assert.equal(response.payload.answer.directory.presentation, 'insight');
+  assert.deepEqual(response.payload.answer.directory.target, { companyCode: 101, legajo: 571 });
+  assert.equal(Object.hasOwn(response.payload.answer.directory, 'person'), false,
+    'insight transports only the minimum identity needed for the private return handoff');
+  assert.deepEqual(
+    response.payload.answer.evidence.slice(0, 4).map(item => [item.label, item.value]),
+    [
+      ['Cobertura de fuentes', '3 de 3'],
+      ['Ventana visible de ausencia', '24 de 41'],
+      ['Historia visible de licencia', '3 de 3'],
+      ['Intensidad de legamov', '2,17 filas/período'],
+    ],
+  );
+  assert.match(response.payload.answer.evidence[1].detail, /días informados en registros expuestos/i);
+  assert.match(response.payload.answer.evidence[2].detail, /2005-02-14 a 2008-01-25 · 42 días informados/i);
+  assert.match(response.payload.answer.evidence[3].detail, /439 filas en 202 períodos · último 2026-08/i);
+  assert.match(response.payload.answer.findings.join(' '), /Qué conviene revisar/i);
+  assert.match(response.payload.answer.findings.join(' '), /no trae denominadores de cohorte/i);
+  assert.match(response.payload.answer.caveats.join(' '), /no representan días únicos, días perdidos/i);
+  assert.deepEqual(
+    response.payload.answer.evidence.slice(-2).map(item => [item.label, item.value]),
+    [
+      ['Situaci\u00f3n laboral informada', 'Sin egreso informado al corte'],
+      ['Participaci\u00f3n en c\u00e1lculo 2026-07', 'Observada'],
+    ],
+  );
+  assert.match(response.payload.answer.evidence.at(-2).detail, /No equivale a certificar un v\u00ednculo activo/i);
+  assert.match(response.payload.answer.evidence.at(-1).detail, /25 filas v\u00e1lidas asociadas; no acredita pago/i);
+  assert.match(response.payload.answer.findings.join(' '), /revista NORMAL/i);
+  assert.deepEqual(response.payload.answer.actions, [
+    {
+      id: 'open_rrhh_person',
+      label: 'Volver a esta ficha en RRHH',
+      href: '/rrhh?handoff=person#peopleDirectory',
+      requiredCapability: 'navigation.rrhh',
+    },
+    {
+      id: 'open_rrhh_aggregate',
+      label: 'Ver contexto agregado de RRHH',
+      href: '/rrhh#workforceDistribution',
+      requiredCapability: 'navigation.rrhh',
+    },
+  ]);
+  assert.deepEqual(response.payload.answer.nextQuestions, [
+    '¿Cómo se distribuyen los participantes por sector?',
+    '¿Cómo se distribuyen por categoría de acuerdo de origen?',
+    '¿Qué registros de ausencias quedaron en cuarentena?',
+  ]);
+  assert.equal(response.payload.answer.evidence.some(item => (
+    ['Legajo', 'Puesto', 'Categoría', 'Convenio'].includes(item.label)
+  )), false, 'the handoff must not mirror the technical identity cards');
+  assert.equal(response.payload.answer.actions.some(action => /(?:company|legajo|571)/i.test(action.href)), false,
+    'handoff actions must not place person identifiers in URLs');
+  assert.deepEqual(calls[0], ['read', {
+    tenantId: 'tenant-grh-test',
+    scopeOrganizationCodes: ['30'],
+    query: { company: 101, legajo: 571 },
+  }]);
+  assert.equal(calls[1][0], 'audit');
+  assert.doesNotMatch(JSON.stringify(calls[1]), /571|ALONSO/i);
+  assert.doesNotMatch(JSON.stringify(response.payload), /\b(?:dni|cuil|contact|address|bank_account|salary|event_cause|sueldo|motivo)\b/i);
+});
+
+test('person handoff rejects altered body, purpose and mismatched detail before disclosure', { skip: !HAS_PRIVATE_GRH }, async () => {
+  let reads = 0;
+  const item = fakeDirectoryItem({ companyCode: 1, legajo: 572 });
+  const handler = privateAssistantHandler({
+    authorizeDirectoryImpl: async () => ({
+      decision: { reason: 'STATIC_ALLOWED', scope: { tenantWide: true }, allowedOrganizationCodes: [] },
+      commitAudit: async () => true,
+    }),
+    readDirectoryImpl: async () => { reads += 1; return fakeDirectoryDetail(item); },
+  });
+  for (const body of [
+    { mode: 'deterministic', target: { kind: 'grh-person', companyCode: 1, legajo: 571 }, message: 'legajo 571' },
+    { mode: 'deterministic', target: { kind: 'grh-person', companyCode: 1, legajo: 571, name: 'Persona' } },
+  ]) {
+    const response = responseRecorder();
+    await handler({ method: 'POST', body }, response);
+    assert.equal(response.statusCode, 422);
+  }
+  const wrongPurpose = responseRecorder();
+  await handler({
+    method: 'POST',
+    headers: { 'x-municontrol-purpose': 'AGGREGATE_ANALYSIS' },
+    body: { mode: 'deterministic', target: { kind: 'grh-person', companyCode: 1, legajo: 571 } },
+  }, wrongPurpose);
+  assert.equal(wrongPurpose.statusCode, 422);
+  assert.equal(wrongPurpose.payload.code, 'INVALID_PERSON_TARGET_CONTEXT');
+  assert.equal(reads, 0);
+
+  const mismatch = responseRecorder();
+  await handler({
+    method: 'POST',
+    body: { mode: 'deterministic', target: { kind: 'grh-person', companyCode: 1, legajo: 571 } },
+  }, mismatch);
+  assert.equal(mismatch.statusCode, 503);
+  assert.equal(mismatch.payload.code, 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE');
+  assert.doesNotMatch(JSON.stringify(mismatch.payload), /571|572|PERSONA/i);
 });
 
 test('person lookup shares enterprise authorization, enforces its scope and commits a sanitized audit before responding', { skip: !HAS_PRIVATE_GRH }, async () => {

@@ -163,24 +163,20 @@ function reconciledContract(): QualityContract {
 }
 
 describe('buildQualityViewModel', () => {
-  it('ports the six governed KPIs and every ordered dashboard collection', () => {
+  it('ports the four executive KPIs and every ordered evidence collection', () => {
     const model = buildQualityViewModel(validContract());
 
     expect(model.kpis.map(({ key }) => key)).toEqual([
-      'quality',
-      'quarantine',
-      'reconciliation',
+      'temporalValidity',
       'referential',
-      'tables',
-      'rows',
+      'reconciliation',
+      'quarantine',
     ]);
     expect(model.kpis.map(({ label }) => label)).toEqual([
-      'Calidad gobernada',
-      'Cuarentena temporal',
-      'Conciliación cruzada',
-      'Integridad referencial',
-      'Inventario de fuente',
-      'Filas inventariadas',
+      'Registros con período válido',
+      'Vínculos correctos con legajos',
+      'Controles que coinciden',
+      'Registros apartados para revisar',
     ]);
     expect(model.quality.components.map(({ key }) => key)).toEqual([
       'temporalValidity',
@@ -211,19 +207,20 @@ describe('buildQualityViewModel', () => {
     const model = buildQualityViewModel(contract);
     const kpis = Object.fromEntries(model.kpis.map((kpi) => [kpi.key, kpi]));
 
-    expect(kpis.quality?.value).toBe('93,21/100');
-    expect(kpis.quarantine?.value).toBe('4');
-    expect(kpis.reconciliation?.value).toBe('83,33/100');
+    expect(kpis.temporalValidity?.value).toBe('92,0%');
     expect(kpis.referential?.value).toBe('97,5%');
-    expect(kpis.tables?.value).toBe('3');
-    expect(kpis.rows?.title).toBe('100 filas inventariadas');
+    expect(kpis.reconciliation?.value).toBe('2 de 3');
+    expect(kpis.quarantine?.value).toBe('4');
     expect(model.source.sourceFile).toBe(contract.source.sourceFile);
     expect(model.source.sourceHash).toBe(contract.source.sourceSha256);
     expect(model.source.sourceSize).toBe('1,25 MB');
-    expect(model.reconciliation.context).toBe('2 de 3 corridas vinculadas conciliaron completamente.');
+    expect(model.reconciliation.context).toBe('2 de 3 controles comparados coinciden por completo entre las dos fuentes.');
     expect(model.temporal.domains[1]?.quarantineRows).toBe(contract.temporal.domains.calculo.quarantineRows);
     expect(model.coverage.rows[2]?.orphanRows).toBe(contract.referential.facts.ausencia.orphanRows);
-    expect(model.risks.items[2]?.title).toBe('4 filas en cuarentena');
+    expect(model.executive.statusLabel).toBe('Disponible con observaciones');
+    expect(model.executive.attentionTitle).toBe('1 de 3 controles comparados no coinciden por completo');
+    expect(model.executive.impact).toMatch(/no demuestra pagos faltantes/i);
+    expect(model.risks.items[2]?.title).toBe('4 registros apartados por fecha o período');
     expect(model.actions[0]?.detail).toContain('70,0%');
     expect(model.privacyStatus).toContain('no contiene PII');
     expect(model.privacyStatus).toContain('el contrato bruto no llega al DOM');
@@ -244,12 +241,12 @@ describe('buildQualityViewModel', () => {
     const model = buildQualityViewModel(reconciledContract());
     const reconciliationKpi = model.kpis.find(kpi => kpi.key === 'reconciliation');
 
-    expect(reconciliationKpi?.value).toBe('100/100');
+    expect(reconciliationKpi?.value).toBe('3 de 3');
     expect(reconciliationKpi?.tone).toBe('green');
-    expect(reconciliationKpi?.note).toMatch(/conciliadas/i);
+    expect(reconciliationKpi?.note).toMatch(/coinciden/i);
     expect(model.risks.items[1]?.level).toBe('guarded');
-    expect(model.risks.items[1]?.title).toMatch(/dentro del contrato/i);
-    expect(model.actions[0]?.title).toMatch(/Sostener la conciliación/i);
+    expect(model.risks.items[1]?.title).toMatch(/comparación de liquidaciones coincide/i);
+    expect(model.actions[0]?.title).toMatch(/Sostener la comparación/i);
     expect(model.risks.items.some(item => /diferencias materiales/i.test(item.title))).toBe(false);
   });
 

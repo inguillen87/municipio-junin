@@ -6,6 +6,7 @@ import type {
   QualityComponentKey,
   QualityComponentViewModel,
   QualityContract,
+  QualityExecutiveSummaryViewModel,
   QualityKpiViewModel,
   QualityViewModel,
   ReferentialFactKey,
@@ -34,7 +35,7 @@ const domainLabels: Readonly<Record<TemporalDomainKey, string>> = Object.freeze(
   calculo: 'Control de cálculo',
   legamov: 'Movimientos',
   licencia: 'Licencias históricas',
-  totpago: 'totpago diagnóstico',
+  totpago: 'Control de liquidaciones',
 });
 
 const componentLabels: Readonly<Record<QualityComponentKey, string>> = Object.freeze({
@@ -45,10 +46,6 @@ const componentLabels: Readonly<Record<QualityComponentKey, string>> = Object.fr
 });
 
 const numberFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
-const compactFormatter = new Intl.NumberFormat('es-AR', {
-  notation: 'compact',
-  maximumFractionDigits: 2,
-});
 const decimalFormatter = new Intl.NumberFormat('es-AR', {
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
@@ -74,10 +71,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('es-AR', {
 
 function formatNumber(value: number): string {
   return numberFormatter.format(value);
-}
-
-function formatCompact(value: number): string {
-  return compactFormatter.format(value);
 }
 
 function formatPercent(value: number): string {
@@ -115,51 +108,86 @@ function buildKpis(data: QualityContract): readonly QualityKpiViewModel[] {
   const reconciliationDiffers = hasMaterialReconciliationDifferences(data);
   return [
     {
-      key: 'quality',
-      label: 'Calidad gobernada',
-      value: `${decimalFormatter.format(data.quality.score)}/100`,
-      note: 'Extracto agregado gobernado; alcance explícito.',
+      key: 'temporalValidity',
+      label: 'Registros con período válido',
+      value: formatPercent(data.temporal.validRatePct),
+      note: `${formatNumber(data.temporal.validRows)} de ${formatNumber(data.temporal.rows)} registros evaluados.`,
       tone: 'green',
     },
     {
-      key: 'quarantine',
-      label: 'Cuarentena temporal',
-      value: formatNumber(data.temporal.quarantineRows),
-      note: 'Excluidas del universo válido por reglas temporales.',
-      tone: 'amber',
+      key: 'referential',
+      label: 'Vínculos correctos con legajos',
+      value: formatPercent(data.quality.components.referentialIntegrity.score),
+      note: 'Control agregado sobre las cuatro fuentes de personas priorizadas.',
+      tone: 'green',
     },
     {
       key: 'reconciliation',
-      label: 'Conciliación cruzada',
-      value: `${decimalFormatter.format(data.reconciliation.scorePct)}/100`,
+      label: 'Controles que coinciden',
+      value: `${formatNumber(data.reconciliation.fullyReconciledRuns)} de ${formatNumber(data.reconciliation.matchedRuns)}`,
       note: reconciliationDiffers
-        ? 'Diferencias materiales entre cálculo y totpago.'
-        : 'Corridas conciliadas dentro del contrato agregado.',
+        ? 'La comparación entre fuentes requiere revisión.'
+        : 'Todos los controles vinculados coinciden por completo.',
       tone: reconciliationDiffers ? 'red' : 'green',
     },
     {
-      key: 'referential',
-      label: 'Integridad referencial',
-      value: formatPercent(data.quality.components.referentialIntegrity.score),
-      note: 'Componente ponderado del extracto gobernado.',
-      tone: 'cyan',
-    },
-    {
-      key: 'tables',
-      label: 'Inventario de fuente',
-      value: formatNumber(data.inventory.all.totalTables),
-      note: `${formatNumber(data.inventory.all.nonEmptyTables)} con filas · ${formatNumber(data.inventory.all.emptyTables)} vacías.`,
-      tone: 'violet',
-    },
-    {
-      key: 'rows',
-      label: 'Filas inventariadas',
-      value: formatCompact(data.inventory.all.totalRows),
-      note: 'Diccionario semántico completo; no es la suma del subconjunto focal del perfil ni implica aptitud de cada tabla.',
-      title: `${formatNumber(data.inventory.all.totalRows)} filas inventariadas`,
-      tone: 'neutral',
+      key: 'quarantine',
+      label: 'Registros apartados para revisar',
+      value: formatNumber(data.temporal.quarantineRows),
+      note: 'No ingresan a los indicadores hasta resolver su fecha o período.',
+      tone: data.temporal.quarantineRows > 0 ? 'amber' : 'green',
     },
   ];
+}
+
+function buildExecutiveSummary(data: QualityContract): QualityExecutiveSummaryViewModel {
+  const reconciliationDiffers = hasMaterialReconciliationDifferences(data);
+  const incompleteRuns = data.reconciliation.matchedRuns - data.reconciliation.fullyReconciledRuns;
+  const hasTemporalReview = data.temporal.quarantineRows > 0;
+
+  if (reconciliationDiffers) {
+    return {
+      tone: 'attention',
+      statusLabel: 'Disponible con observaciones',
+      headline: 'El corte permite leer indicadores agregados, pero la comparación de liquidaciones requiere revisión.',
+      description: `Se verificaron ${formatNumber(data.inventory.all.totalTables)} tablas y ${formatNumber(data.inventory.all.totalRows)} filas del backup. Es una copia histórica, no información en tiempo real.`,
+      strengths: [
+        `${formatPercent(data.temporal.validRatePct)} de los registros evaluados tiene un período válido.`,
+        `El control agregado de vínculos con legajos alcanza ${formatPercent(data.quality.components.referentialIntegrity.score)}.`,
+        `${formatNumber(data.referential.legajo.uniqueKeys)} claves de legajo son únicas en el padrón evaluado.`,
+      ],
+      attentionTitle: `${formatNumber(incompleteRuns)} de ${formatNumber(data.reconciliation.matchedRuns)} controles comparados no coinciden por completo`,
+      attentionDetail: 'La diferencia surge al comparar el control de cálculo con la fuente auxiliar de control de liquidaciones.',
+      impact: 'Reduce la confianza de esa comparación. No demuestra pagos faltantes ni acredita transferencias bancarias, efectivo o asientos contables.',
+      nextActionTitle: 'Revisar primero los controles que no coinciden',
+      nextActionDetail: 'Documentar la causa de cada diferencia y mantenerla fuera de cualquier conclusión financiera hasta conciliar las fuentes.',
+    };
+  }
+
+  return {
+    tone: hasTemporalReview ? 'attention' : 'positive',
+    statusLabel: hasTemporalReview ? 'Disponible con observaciones' : 'Controles agregados completos',
+    headline: hasTemporalReview
+      ? 'La comparación de liquidaciones coincide; quedan registros con fechas o períodos para revisar.'
+      : 'Los controles agregados publicados no muestran observaciones pendientes.',
+    description: `Se verificaron ${formatNumber(data.inventory.all.totalTables)} tablas y ${formatNumber(data.inventory.all.totalRows)} filas del backup. Es una copia histórica, no información en tiempo real.`,
+    strengths: [
+      `${formatPercent(data.temporal.validRatePct)} de los registros evaluados tiene un período válido.`,
+      `Los ${formatNumber(data.reconciliation.matchedRuns)} controles comparados coinciden por completo.`,
+      `El control agregado de vínculos con legajos alcanza ${formatPercent(data.quality.components.referentialIntegrity.score)}.`,
+    ],
+    attentionTitle: hasTemporalReview
+      ? `${formatNumber(data.temporal.quarantineRows)} registros quedaron apartados por fecha o período`
+      : 'No hay registros apartados por las reglas temporales',
+    attentionDetail: hasTemporalReview
+      ? 'No ingresan a los indicadores válidos hasta que se documente su corrección o exclusión.'
+      : 'El universo temporal evaluado no presenta exclusiones pendientes.',
+    impact: 'La comparación es un control interno de consistencia. No acredita transferencias bancarias, efectivo ni asientos contables.',
+    nextActionTitle: hasTemporalReview ? 'Resolver los registros apartados' : 'Sostener el control en el próximo corte',
+    nextActionDetail: hasTemporalReview
+      ? 'Revisar las fechas en la fuente, documentar la decisión y volver a ejecutar el control sin reescribir el backup.'
+      : 'Repetir estas validaciones antes de publicar un nuevo snapshot.',
+  };
 }
 
 function buildComponents(data: QualityContract): readonly QualityComponentViewModel[] {
@@ -256,20 +284,20 @@ function buildRisks(data: QualityContract): readonly RiskViewModel[] {
       ? {
           level: 'high',
           mark: 'C',
-          title: 'Conciliación cruzada con diferencias materiales',
-          detail: `El score ${decimalFormatter.format(data.reconciliation.scorePct)}/100 exige revisión; totpago sigue siendo diagnóstico.`,
+          title: 'La comparación de liquidaciones tiene diferencias materiales',
+          detail: `${formatNumber(data.reconciliation.fullyReconciledRuns)} de ${formatNumber(data.reconciliation.matchedRuns)} controles comparados coinciden por completo. Fuente auxiliar técnica: totpago.`,
         }
       : {
           level: 'guarded',
           mark: 'C',
-          title: 'Conciliación cruzada dentro del contrato',
-          detail: 'Las corridas agregadas conciliaron; totpago continúa siendo diagnóstico y no acredita pago bancario.',
+          title: 'La comparación de liquidaciones coincide',
+          detail: 'Los controles agregados conciliaron. La fuente auxiliar técnica totpago no acredita pago bancario.',
         },
     {
       level: 'high',
       mark: 'Q',
-      title: `${formatNumber(risks.quarantinedTemporalRows)} filas en cuarentena`,
-      detail: 'No alimentan los universos válidos hasta revisar las reglas temporales.',
+      title: `${formatNumber(risks.quarantinedTemporalRows)} registros apartados por fecha o período`,
+      detail: 'No ingresan a los indicadores válidos hasta documentar su corrección o exclusión.',
     },
     {
       level: 'medium',
@@ -286,8 +314,8 @@ function buildRisks(data: QualityContract): readonly RiskViewModel[] {
     {
       level: 'medium',
       mark: 'L',
-      title: `${formatNumber(risks.legacyImportErrorRows)} filas en errorimportacion`,
-      detail: 'Es volumen histórico legacy; no equivale a errores activos de la plataforma.',
+      title: `${formatNumber(risks.legacyImportErrorRows)} registros heredados del proceso de importación`,
+      detail: 'Pertenecen al historial de la tabla técnica errorimportacion; no equivalen a errores activos de la plataforma.',
     },
     risks.latestCalculationControlWithinRoundingTolerance
       ? {
@@ -319,23 +347,23 @@ function buildActions(data: QualityContract): readonly ActionViewModel[] {
     reconciliationDiffers
       ? {
           index: '1',
-          title: 'Conciliar cálculo con totpago',
-          detail: `Priorizar corridas no conciliadas: acuerdo de valores ${formatPercent(reconciliation.valueAgreementPct)} y score ${decimalFormatter.format(reconciliation.scorePct)}/100.`,
+          title: 'Revisar las diferencias del control de liquidaciones',
+          detail: `Priorizar los controles que no coinciden entre el cálculo y la fuente auxiliar (tabla técnica: totpago). El acuerdo de valores observado es ${formatPercent(reconciliation.valueAgreementPct)}.`,
         }
       : {
           index: '1',
-          title: 'Sostener la conciliación entre fuentes',
-          detail: 'Conservar el control en cada nuevo corte y alertar ante cualquier regresión antes de publicar indicadores.',
+          title: 'Sostener la comparación entre fuentes',
+          detail: 'Repetir el control en cada nuevo corte y alertar ante cualquier diferencia antes de publicar indicadores.',
         },
     {
       index: '2',
-      title: 'Resolver cuarentena temporal',
-      detail: `Investigar ${formatNumber(risks.quarantinedTemporalRows)} filas sin alterar el backup histórico; documentar corrección o exclusión.`,
+      title: 'Resolver los registros apartados por fecha o período',
+      detail: `Investigar ${formatNumber(risks.quarantinedTemporalRows)} registros sin alterar el backup histórico; documentar corrección o exclusión.`,
     },
     {
       index: '3',
-      title: 'Clasificar el legado de importación',
-      detail: `Determinar origen y vigencia de ${formatNumber(risks.legacyImportErrorRows)} filas de errorimportacion antes de tratarlas como señal operativa.`,
+      title: 'Clasificar los registros del importador histórico',
+      detail: `Determinar origen y vigencia de ${formatNumber(risks.legacyImportErrorRows)} registros de la tabla técnica errorimportacion antes de tratarlos como señal operativa.`,
     },
     {
       index: '4',
@@ -365,7 +393,7 @@ export function buildQualityViewModel(contract: QualityContract): QualityViewMod
   return deepFreeze({
     source: {
       snapshotDate: formatDate(contract.source.snapshotAsOf),
-      snapshotMeta: 'Snapshot histórico validado mediante una proyección privada de calidad; no es tiempo real.',
+      snapshotMeta: 'Copia histórica del GRH verificada. Los cambios posteriores al corte no están incluidos.',
       profileSchema: contract.lineage.profileSchemaVersion,
       semanticSchema: contract.lineage.semanticSchemaVersion,
       sourceFile: contract.source.sourceFile,
@@ -375,6 +403,7 @@ export function buildQualityViewModel(contract: QualityContract): QualityViewMod
       profileGeneratedAt: formatDateTime(contract.lineage.profileGeneratedAt),
       semanticGeneratedAt: formatDateTime(contract.lineage.semanticGeneratedAt),
     },
+    executive: buildExecutiveSummary(contract),
     kpis: buildKpis(contract),
     quality: {
       badge: `${decimalFormatter.format(contract.quality.score)} / 100`,
@@ -383,11 +412,11 @@ export function buildQualityViewModel(contract: QualityContract): QualityViewMod
     },
     reconciliation: {
       score: decimalFormatter.format(contract.reconciliation.scorePct),
-      context: `${formatNumber(contract.reconciliation.fullyReconciledRuns)} de ${formatNumber(contract.reconciliation.matchedRuns)} corridas vinculadas conciliaron completamente.`,
+      context: `${formatNumber(contract.reconciliation.fullyReconciledRuns)} de ${formatNumber(contract.reconciliation.matchedRuns)} controles comparados coinciden por completo entre las dos fuentes.`,
       metrics: [
         {
           key: 'runCoverage',
-          label: 'Cobertura de corridas',
+          label: 'Cobertura de controles',
           value: formatPercent(contract.reconciliation.runCoveragePct),
         },
         {
@@ -401,12 +430,12 @@ export function buildQualityViewModel(contract: QualityContract): QualityViewMod
           value: formatPercent(contract.reconciliation.valueAgreementPct),
         },
       ],
-      warning: 'Este bloque es control de consistencia de GRH. No acredita transferencia bancaria, pago efectivo, asiento contable ni moneda.',
+      warning: 'Es un control interno de consistencia de GRH. No acredita transferencia bancaria, pago efectivo, asiento contable ni moneda.',
     },
     temporal: {
-      badge: `${formatNumber(contract.temporal.quarantineRows)} filas`,
+      badge: `${formatNumber(contract.temporal.quarantineRows)} registros`,
       domains: buildTemporalDomains(contract),
-      reasonNote: `Las razones registran ${formatNumber(contract.temporal.quarantineReasonOccurrences)} ocurrencias no excluyentes; no representan filas adicionales. Licencias termina en ${contract.temporal.domains.licencia.lastValidPeriod} y se presenta como historia, no como vigencia actual.`,
+      reasonNote: `Las reglas detectaron ${formatNumber(contract.temporal.quarantineReasonOccurrences)} motivos que pueden superponerse; no son registros adicionales. Licencias termina en ${contract.temporal.domains.licencia.lastValidPeriod} y se presenta como historia, no como vigencia actual.`,
     },
     coverage: {
       badge: `${formatNumber(contract.referential.legajo.uniqueKeys)} claves únicas`,

@@ -39,9 +39,10 @@
     .period-selector:disabled { opacity: .6; cursor: wait; }
 
     .executive-summary { margin-bottom: 18px; border: 1px solid rgba(59, 130, 246, .28); border-radius: 14px; background: linear-gradient(135deg, rgba(30, 64, 175, .16), rgba(30, 41, 59, .82)); padding: 22px 24px; }
-    .executive-summary h2 { margin: 0 0 13px; font-family: Outfit, Inter, sans-serif; font-size: 19px; }
-    .executive-summary h2 span { color: var(--text-muted); font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; }
-    .summary-list { display: grid; gap: 9px; margin: 0; padding-left: 20px; color: #dbeafe; font-size: 14px; line-height: 1.55; }
+    .executive-summary h2 { margin: 0 0 7px; font-family: Outfit, Inter, sans-serif; font-size: 21px; }
+    .executive-summary-intro { margin: 0 0 16px; color: #bfdbfe; font-size: 13px; line-height: 1.5; }
+    .summary-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; color: #e0f2fe; font-size: 13px; line-height: 1.5; }
+    .summary-list li { min-width: 0; border: 1px solid rgba(147, 197, 253, .22); border-radius: 10px; background: rgba(15, 23, 42, .42); padding: 13px 14px; }
 
     .status-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
     .data-status { flex: 1; min-width: 0; margin: 0; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 10px; background: rgba(15, 23, 42, .55); color: var(--text-muted); font-size: 13px; line-height: 1.45; }
@@ -71,6 +72,20 @@
     .report-subtitle { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
     .evidence-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr); gap: 18px; align-items: start; }
 
+    .metric-grid, .quality-signal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .metric-card, .quality-signal { min-width: 0; border: 1px solid var(--border-color); border-radius: 11px; background: rgba(15, 23, 42, .45); padding: 15px; }
+    .metric-card span, .quality-signal span { display: block; color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+    .metric-card strong { display: block; margin-top: 7px; font-size: clamp(18px, 2.3vw, 25px); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .quality-signal strong { display: block; margin-bottom: 6px; font-size: 15px; }
+    .quality-signal[data-state="attention"] { border-color: rgba(245, 158, 11, .45); }
+    .quality-signal[data-state="strong"] { border-color: rgba(16, 185, 129, .38); }
+    .plain-status { min-height: 190px; }
+
+    .technical-details { margin-top: 14px; border: 1px solid var(--border-color); border-radius: 11px; background: rgba(15, 23, 42, .35); }
+    .technical-details summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: #bfdbfe; padding: 11px 14px; font-size: 13px; font-weight: 750; }
+    .technical-details[open] summary { border-bottom: 1px solid var(--border-color); }
+    .technical-details .table-scroll, .technical-details > ul { margin: 0; padding: 12px 14px 14px; }
+
     .chart-container { width: 100%; min-height: 280px; position: relative; overflow: hidden; }
     .chart-container[data-chart-state="loading"], .chart-container[data-chart-state="empty"] { display: grid; place-items: center; }
     .chart-container svg { display: block; width: 100%; height: auto; max-width: 100%; overflow: visible; font-family: inherit; }
@@ -87,15 +102,21 @@
     td { color: #e2e8f0; font-variant-numeric: tabular-nums; }
     .empty-row td { padding: 28px 14px; color: var(--text-muted); text-align: center; }
 
-    .decision-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
+    .decision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
     .decision-card { min-width: 0; border: 1px solid var(--border-color); border-radius: 12px; background: var(--card-soft); padding: 18px; }
     .decision-card h2 { margin: 0 0 12px; font-family: Outfit, Inter, sans-serif; font-size: 16px; }
     .decision-card ul { display: grid; gap: 8px; margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 12px; line-height: 1.55; }
+    .decision-details { grid-column: 1 / -1; margin-top: 0; padding: 0; }
+    .decision-details summary { font-size: 14px; }
+    .workspace-links { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+    .workspace-link { min-height: 44px; display: inline-flex; align-items: center; border: 1px solid rgba(96, 165, 250, .45); border-radius: 9px; color: #dbeafe; padding: 9px 12px; text-decoration: none; font-size: 12px; font-weight: 750; }
+    .workspace-link:hover { background: rgba(59, 130, 246, .14); }
 
     @media (max-width: 1100px) {
       .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .evidence-grid { grid-template-columns: minmax(0, 1fr); }
       .decision-grid { grid-template-columns: minmax(0, 1fr); }
+      .decision-details { grid-column: auto; }
     }
     @media (max-width: 900px) {
       .main-content { padding: 68px 20px 88px; }
@@ -107,6 +128,7 @@
     @media (max-width: 600px) {
       .main-content { padding-inline: 14px; }
       .executive-summary, .report-card { padding: 18px; }
+      .summary-list, .metric-grid, .quality-signal-grid { grid-template-columns: minmax(0, 1fr); }
       .kpi-strip { grid-template-columns: minmax(0, 1fr); }
       .tabs { gap: 3px; }
       .tab-btn { padding-inline: 11px; }
@@ -126,20 +148,21 @@
     <main class="main-content" id="main-content" tabindex="-1">
       <header class="page-header">
         <div>
-          <h1 class="page-title">Informe Ejecutivo GRH</h1>
-          <p class="page-subtitle">Evidencia agregada del backup canónico GRH. La lectura distingue controles de cálculo, participación en liquidaciones y calidad de datos; no certifica pagos ni dotación contractual activa.</p>
+          <h1 class="page-title">Informe de gestión GRH</h1>
+          <p class="page-subtitle">Una lectura breve del período para decidir y derivar cada tema al tablero que corresponde. Usa datos agregados del respaldo GRH; no certifica pagos bancarios ni una dotación contractual activa.</p>
         </div>
         <div class="period-field">
-          <label for="period-selector">Período disponible en GRH</label>
+          <label for="period-selector">Mes a revisar</label>
           <select class="period-selector" id="period-selector" disabled aria-describedby="period-help">
             <option value="">Consultando períodos…</option>
           </select>
-          <small id="period-help">La lista se construye únicamente con períodos presentes en la serie validada; nunca se sustituye un período ausente.</small>
+          <small id="period-help">Sólo aparecen meses realmente disponibles y validados en la fuente.</small>
         </div>
       </header>
 
       <section class="executive-summary" aria-labelledby="executive-summary-title">
-        <h2 id="executive-summary-title">Executive Summary <span>· Resumen ejecutivo</span></h2>
+        <h2 id="executive-summary-title">Lo más importante del período</h2>
+        <p class="executive-summary-intro">Tres señales concretas para saber qué mirar antes de profundizar.</p>
         <ul class="summary-list" id="executive-summary-list">
           <li>Consultando evidencia agregada y validada de GRH…</li>
         </ul>
@@ -152,42 +175,42 @@
 
       <section class="kpi-strip" aria-label="Indicadores principales del informe">
         <article class="kpi-card">
-          <span class="kpi-label">Participantes en cálculo</span>
+          <span class="kpi-label">Personas con cálculo válido</span>
           <strong class="kpi-value" id="kpi-participants">—</strong>
           <span class="kpi-context" id="kpi-participants-context">No equivale a dotación activa.</span>
         </article>
         <article class="kpi-card">
-          <span class="kpi-label">Estado del control</span>
+          <span class="kpi-label">Período analizado</span>
           <strong class="kpi-value" id="kpi-control">—</strong>
-          <span class="kpi-context">Control de cálculo; no pago bancario.</span>
+          <span class="kpi-context" id="kpi-control-context">Mes seleccionado de la serie validada.</span>
         </article>
         <article class="kpi-card">
-          <span class="kpi-label">Calidad del extracto</span>
+          <span class="kpi-label">Confiabilidad del corte</span>
           <strong class="kpi-value" id="kpi-quality">—</strong>
-          <span class="kpi-context">Alcance: agregado gobernado.</span>
+          <span class="kpi-context" id="kpi-quality-context">Evaluación del conjunto de datos publicado.</span>
         </article>
         <article class="kpi-card">
-          <span class="kpi-label">Corte de fuente</span>
+          <span class="kpi-label">Fecha del respaldo</span>
           <strong class="kpi-value" id="kpi-snapshot">—</strong>
           <span class="kpi-context" id="kpi-snapshot-context">Snapshot histórico, no tiempo real.</span>
         </article>
       </section>
 
       <nav class="tabs" aria-label="Secciones del informe" role="tablist">
-        <button class="tab-btn active" id="tab-btn-resumen" type="button" role="tab" aria-selected="true" aria-controls="tab-resumen" data-tab="resumen" tabindex="0">Evolución</button>
-        <button class="tab-btn" id="tab-btn-dotacion" type="button" role="tab" aria-selected="false" aria-controls="tab-dotacion" data-tab="dotacion" tabindex="-1">Sectores</button>
-        <button class="tab-btn" id="tab-btn-control" type="button" role="tab" aria-selected="false" aria-controls="tab-control" data-tab="control" tabindex="-1">Control</button>
-        <button class="tab-btn" id="tab-btn-calidad" type="button" role="tab" aria-selected="false" aria-controls="tab-calidad" data-tab="calidad" tabindex="-1">Calidad</button>
+        <button class="tab-btn active" id="tab-btn-resumen" type="button" role="tab" aria-selected="true" aria-controls="tab-resumen" data-tab="resumen" tabindex="0">Personas en cálculo</button>
+        <button class="tab-btn" id="tab-btn-dotacion" type="button" role="tab" aria-selected="false" aria-controls="tab-dotacion" data-tab="dotacion" tabindex="-1">Distribución por sector</button>
+        <button class="tab-btn" id="tab-btn-control" type="button" role="tab" aria-selected="false" aria-controls="tab-control" data-tab="control" tabindex="-1">Control de liquidación</button>
+        <button class="tab-btn" id="tab-btn-calidad" type="button" role="tab" aria-selected="false" aria-controls="tab-calidad" data-tab="calidad" tabindex="-1">Confiabilidad de datos</button>
       </nav>
 
       <section id="tab-resumen" class="report-panel active" role="tabpanel" aria-labelledby="tab-btn-resumen">
-        <h2 class="report-panel-heading" id="trend-heading">Participación por período de cálculo</h2>
-        <p class="section-intro" id="trend-insight">La serie muestra participantes distintos en cálculos válidos. Es una medida operativa de liquidación, no un padrón contractual de personal activo.</p>
+        <h2 class="report-panel-heading" id="trend-heading">Personas incluidas en cálculos válidos</h2>
+        <p class="section-intro" id="trend-insight">Sirve para observar continuidad y cambios entre meses. No equivale al total de agentes activos del municipio.</p>
         <div class="evidence-grid">
           <article class="report-card">
             <header class="report-card-header">
-              <h3 class="report-title">Participantes por período</h3>
-              <p class="report-subtitle">Hasta 12 períodos observados, con escala desde cero.</p>
+              <h3 class="report-title">Evolución de los últimos meses</h3>
+              <p class="report-subtitle">Hasta 12 meses disponibles, comparados desde cero.</p>
             </header>
             <div class="chart-container" id="chart-participantes" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
               <p class="chart-empty">Esperando la serie GRH validada.</p>
@@ -195,8 +218,8 @@
           </article>
           <article class="report-card">
             <header class="report-card-header">
-              <h3 class="report-title">Detalle del período seleccionado</h3>
-              <p class="report-subtitle">Participación publicada bajo el umbral portable de privacidad.</p>
+              <h3 class="report-title">Mes seleccionado</h3>
+              <p class="report-subtitle">Conteo agregado publicado con protección de grupos pequeños.</p>
             </header>
             <div class="table-scroll" role="region" aria-label="Detalle del período GRH" tabindex="0">
               <table>
@@ -209,13 +232,13 @@
       </section>
 
       <section id="tab-dotacion" class="report-panel" role="tabpanel" aria-labelledby="tab-btn-dotacion" hidden>
-        <h2 class="report-panel-heading" id="sector-heading">Distribución sectorial de participantes</h2>
-        <p class="section-intro" id="sector-insight">La distribución sólo existe para el período de referencia de la capa semántica y no se extrapola a períodos históricos.</p>
+        <h2 class="report-panel-heading" id="sector-heading">Cómo se distribuyen las personas por sector informado</h2>
+        <p class="section-intro" id="sector-insight">Esta composición pertenece al mes de referencia publicado. No se usa para completar meses históricos que no traen ese desglose.</p>
         <div class="evidence-grid">
           <article class="report-card">
             <header class="report-card-header">
-              <h3 class="report-title">Participantes por sector</h3>
-              <p class="report-subtitle">Principales sectores y resto agrupado sobre el total del período de referencia.</p>
+              <h3 class="report-title">Peso de cada sector</h3>
+              <p class="report-subtitle">Principales sectores informados y grupos protegidos reunidos en “Otros”.</p>
             </header>
             <div class="chart-container" id="chart-sectores" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
               <p class="chart-empty">Esperando la distribución GRH validada.</p>
@@ -223,8 +246,8 @@
           </article>
           <article class="report-card">
             <header class="report-card-header">
-              <h3 class="report-title">Detalle sectorial</h3>
-              <p class="report-subtitle">Conteos agregados y participación sobre el total de cálculo.</p>
+              <h3 class="report-title">Valores exactos publicados</h3>
+              <p class="report-subtitle">Personas y participación sobre la cohorte de cálculo del mes de referencia.</p>
             </header>
             <div class="table-scroll" role="region" aria-label="Distribución sectorial agregada" tabindex="0">
               <table>
@@ -237,74 +260,88 @@
       </section>
 
       <section id="tab-control" class="report-panel" role="tabpanel" aria-labelledby="tab-btn-control" hidden>
-        <h2 class="report-panel-heading" id="control-heading">Control de cálculo del período</h2>
-        <p class="section-intro" id="control-insight">Componentes mensuales del cálculo salarial presentados en pesos argentinos (ARS).</p>
+        <h2 class="report-panel-heading" id="control-heading">Control agregado de la liquidación</h2>
+        <p class="section-intro" id="control-insight">Cuatro componentes del cálculo presentados en pesos argentinos (ARS). Son valores de control; no acreditan transferencias ni pagos bancarios.</p>
         <div class="evidence-grid">
           <article class="report-card">
             <header class="report-card-header">
-              <h3 class="report-title">Componentes del control</h3>
-              <p class="report-subtitle">Bruto, retenciones, neto y aportes en ARS.</p>
+              <h3 class="report-title">Valores del período</h3>
+              <p class="report-subtitle">Cada importe conserva su definición y no se interpreta como pago individual.</p>
             </header>
-            <div class="chart-container" id="chart-control" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
+            <div class="metric-grid plain-status" id="control-components" aria-live="polite">
               <p class="chart-empty">Esperando los componentes de cálculo validados.</p>
             </div>
           </article>
           <article class="report-card">
             <header class="report-card-header">
-              <h3 class="report-title">Estado del control portable</h3>
-              <p class="report-subtitle">Alcance, privacidad y tolerancia disponible sin publicar diferencias protegidas.</p>
+              <h3 class="report-title">Qué significa</h3>
+              <p class="report-subtitle">Lectura operativa y alcance del control.</p>
             </header>
-            <div class="table-scroll" role="region" aria-label="Control de identidad de cálculo" tabindex="0">
-              <table>
-                <thead><tr><th>Control</th><th>Valor</th></tr></thead>
-                <tbody id="control-table-body"><tr class="empty-row"><td colspan="2">Sin control GRH disponible.</td></tr></tbody>
-              </table>
-            </div>
+            <p class="section-intro" id="control-meaning">Esperando el estado del control validado.</p>
+            <details class="technical-details">
+              <summary>Ver evidencia técnica del control</summary>
+              <div class="table-scroll" role="region" aria-label="Evidencia técnica del control de cálculo" tabindex="0">
+                <table>
+                  <thead><tr><th>Control</th><th>Valor</th></tr></thead>
+                  <tbody id="control-table-body"><tr class="empty-row"><td colspan="2">Sin control GRH disponible.</td></tr></tbody>
+                </table>
+              </div>
+            </details>
           </article>
         </div>
       </section>
 
       <section id="tab-calidad" class="report-panel" role="tabpanel" aria-labelledby="tab-btn-calidad" hidden>
-        <h2 class="report-panel-heading" id="quality-heading">Calidad del extracto agregado</h2>
-        <p class="section-intro" id="quality-insight">El puntaje evalúa el extracto gobernado; no certifica la aptitud de cada tabla cruda ni elimina las diferencias diagnósticas entre fuentes de cálculo.</p>
+        <h2 class="report-panel-heading" id="quality-heading">Qué tan confiable es este corte</h2>
+        <p class="section-intro" id="quality-insight">La evaluación combina fechas válidas, vínculos entre tablas, consistencia del control de liquidación y claves de legajo. El detalle metodológico queda disponible sin dominar la lectura.</p>
         <div class="evidence-grid">
           <article class="report-card">
             <header class="report-card-header">
-              <h3 class="report-title">Componentes de calidad</h3>
-              <p class="report-subtitle">Puntajes porcentuales y pesos definidos por el contrato GRH.</p>
+              <h3 class="report-title">Señales de confiabilidad</h3>
+              <p class="report-subtitle">Estado comprensible de cada control aplicado al conjunto publicado.</p>
             </header>
-            <div class="chart-container" id="chart-calidad" data-source="grh-executive-portable" data-chart-state="loading" aria-live="polite">
+            <div class="quality-signal-grid plain-status" id="quality-signals" aria-live="polite">
               <p class="chart-empty">Esperando evidencia de calidad validada.</p>
             </div>
           </article>
           <article class="report-card">
             <header class="report-card-header">
-              <h3 class="report-title">Detalle de calidad</h3>
-              <p class="report-subtitle">Puntaje observado y peso en el score compuesto.</p>
+              <h3 class="report-title">Cómo usar esta señal</h3>
+              <p class="report-subtitle">El resultado orienta la revisión del respaldo; no reemplaza controles por tabla ni certifica una liquidación.</p>
             </header>
-            <div class="table-scroll" role="region" aria-label="Componentes de calidad GRH" tabindex="0">
-              <table>
-                <thead><tr><th>Componente</th><th>Puntaje</th><th>Peso</th></tr></thead>
-                <tbody id="quality-table-body"><tr class="empty-row"><td colspan="3">Sin evidencia de calidad disponible.</td></tr></tbody>
-              </table>
-            </div>
+            <p class="section-intro" id="quality-meaning">Esperando la evaluación del corte.</p>
+            <div class="workspace-links"><a class="workspace-link" href="/calidad">Abrir análisis completo de calidad</a></div>
+            <details class="technical-details">
+              <summary>Ver puntajes y pesos de la metodología</summary>
+              <div class="table-scroll" role="region" aria-label="Componentes técnicos de calidad GRH" tabindex="0">
+                <table>
+                  <thead><tr><th>Componente</th><th>Puntaje</th><th>Peso</th></tr></thead>
+                  <tbody id="quality-table-body"><tr class="empty-row"><td colspan="3">Sin evidencia de calidad disponible.</td></tr></tbody>
+                </table>
+              </div>
+            </details>
           </article>
         </div>
       </section>
 
       <section class="decision-grid" aria-label="Decisiones, preguntas y límites del informe">
         <article class="decision-card">
-          <h2>Próximos pasos recomendados</h2>
+          <h2>Qué conviene hacer ahora</h2>
           <ul id="next-steps-list"><li>Esperando evidencia validada.</li></ul>
+          <div class="workspace-links" aria-label="Tableros relacionados">
+            <a class="workspace-link" href="/estructura">Ver estructura y áreas</a>
+            <a class="workspace-link" href="/hacienda">Revisar nómina agregada</a>
+            <a class="workspace-link" href="/movimientos-grh.html?metric=events&amp;window=all">Ver actividad histórica</a>
+          </div>
         </article>
         <article class="decision-card">
-          <h2>Preguntas abiertas</h2>
+          <h2>Qué falta definir institucionalmente</h2>
           <ul id="further-questions-list"><li>Esperando evidencia validada.</li></ul>
         </article>
-        <article class="decision-card">
-          <h2>Supuestos y límites</h2>
+        <details class="decision-card technical-details decision-details">
+          <summary>Fuente, privacidad y límites de interpretación</summary>
           <ul id="caveats-list"><li>Esperando evidencia validada.</li></ul>
-        </article>
+        </details>
       </section>
     </main>
   </div>
@@ -316,14 +353,13 @@
   <script>
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const REPORT_SCHEMA_VERSION = 'grh-executive-report-v2';
-    const CHART_IDS = ['chart-participantes', 'chart-sectores', 'chart-control', 'chart-calidad'];
+    const CHART_IDS = ['chart-participantes', 'chart-sectores'];
     const TABLES = Object.freeze({
       'period-table-body': 3,
       'sector-table-body': 3,
       'control-table-body': 2,
       'quality-table-body': 3
     });
-    const CONTROL_COLORS = ['#3b82f6', '#f59e0b', '#84cc16', '#ec4899'];
     const BLUE_SHADES = ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#93c5fd', '#64748b', '#475569', '#334155'];
     let lastAvailableReport = null;
     let tenantPresentation = null;
@@ -461,6 +497,8 @@
       status.textContent = 'Consultando el contrato privado GRH…';
       document.getElementById('retry-report').classList.remove('visible');
       CHART_IDS.forEach(id => renderChartLoading(document.getElementById(id)));
+      setPanelLoading('control-components', 'Esperando los componentes de cálculo validados.');
+      setPanelLoading('quality-signals', 'Esperando evidencia de calidad validada.');
     }
 
     function isGovernedReport(report) {
@@ -515,17 +553,21 @@
       const quality = report.quality;
       const status = document.getElementById('data-status');
       status.className = 'data-status ok';
-      status.textContent = 'GRH canónico · corte ' + dateLabel(source.snapshotAsOf) + ' · período ' + periodLabel(report.period) + ' · linaje ' + shortSha(source.approvedSha256) + ' · agregado sin PII · no tiempo real · personas_junin excluida.';
+      status.textContent = 'Fuente GRH verificada · respaldo del ' + dateLabel(source.snapshotAsOf) + ' · mes analizado ' + periodLabel(report.period) + ' · datos agregados y sin identificación personal.';
       document.getElementById('retry-report').classList.remove('visible');
 
       setText('kpi-participants', formatNumber(control.distinctPayrollParticipants, 0));
-      setText('kpi-participants-context', 'Período ' + periodLabel(report.period) + ' · participación en cálculo.');
-      setText('kpi-control', control.identityWithinRoundingTolerance === null
-        ? 'No publicado'
-        : (control.identityWithinRoundingTolerance ? 'En tolerancia' : 'Fuera de tolerancia'));
-      setText('kpi-quality', formatNumber(quality.scorePct, 2) + '%');
+      setText('kpi-participants-context', 'Incluidas en cálculos válidos de ' + periodLabel(report.period) + '; no equivale a dotación activa.');
+      setText('kpi-control', periodLabel(report.period));
+      setText('kpi-control-context', control.identityWithinRoundingTolerance === null
+        ? 'La fuente no publica una comparación histórica de tolerancia para este mes.'
+        : (control.identityWithinRoundingTolerance
+          ? 'El control más reciente queda dentro de la tolerancia declarada.'
+          : 'El control más reciente requiere revisión.'));
+      setText('kpi-quality', qualityStatusLabel(quality));
+      setText('kpi-quality-context', 'Puntaje técnico ' + formatNumber(quality.scorePct, 2) + '/100; ver observaciones antes de certificar.');
       setText('kpi-snapshot', dateLabel(source.snapshotAsOf));
-      setText('kpi-snapshot-context', 'Linaje ' + shortSha(source.approvedSha256) + ' · snapshot, no tiempo real.');
+      setText('kpi-snapshot-context', 'Respaldo histórico; no se actualiza en tiempo real. Linaje ' + shortSha(source.approvedSha256) + '.');
 
       const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'resumen';
       renderReportPanel(report, activeTab);
@@ -550,15 +592,16 @@
         return;
       }
 
-      setText('trend-heading', 'El período ' + periodLabel(report.period) + ' registra ' + formatNumber(control.distinctPayrollParticipants, 0) + ' participantes en cálculo');
-      setText('trend-insight', 'La visual compara hasta 12 períodos válidos terminados en el período elegido. Describe participación en cálculos de liquidación y no una dotación contractual activa.');
+      const comparison = participantComparison(report.participantTrend);
+      setText('trend-heading', periodLabel(report.period) + ': ' + formatNumber(control.distinctPayrollParticipants, 0) + ' personas con cálculo válido');
+      setText('trend-insight', comparison + ' La serie compara hasta 12 meses disponibles y no representa una dotación contractual activa.');
       renderVerticalBars(document.getElementById('chart-participantes'), {
-        title: 'Participantes por período de cálculo',
-        description: 'Participantes distintos presentes en cálculos válidos de GRH.',
+        title: 'Personas con cálculo válido por mes',
+        description: 'Personas distintas presentes en cálculos válidos de GRH.',
         points: report.participantTrend.map(row => ({ label: row.period, value: row.participants })),
         period: report.period,
         source,
-        unit: 'participantes',
+        unit: 'personas',
         minimumPoints: 4,
         emptyMessage: 'La serie no reúne cuatro períodos previos para una comparación temporal honesta.'
       });
@@ -586,7 +629,7 @@
       appendCells(row, [
         periodLabel(control.period),
         formatNumber(control.distinctPayrollParticipants, 0),
-        'Liberado · k=' + lastAvailableReport.source.portableThreshold
+        'Publicado con protección k=' + lastAvailableReport.source.portableThreshold
       ]);
       body.appendChild(row);
     }
@@ -594,18 +637,18 @@
     function renderSectorEvidence(distribution, period, source) {
       const container = document.getElementById('chart-sectores');
       if (!distribution.available) {
-        setText('sector-heading', 'La distribución sectorial no se extrapola al período seleccionado');
-        setText('sector-insight', 'El contrato sólo publica esta distribución para ' + periodLabel(distribution.referencePeriod) + '; el período ' + periodLabel(period) + ' conserva sus otros controles sin inventar una composición histórica.');
-        renderChartEmpty(container, 'Distribución disponible únicamente para ' + periodLabel(distribution.referencePeriod) + '.');
+        setText('sector-heading', 'El desglose por sector no está disponible para este mes');
+        setText('sector-insight', 'La fuente publica la composición sectorial sólo para ' + periodLabel(distribution.referencePeriod) + '. No completamos meses anteriores con datos de otro período.');
+        renderChartEmpty(container, 'Elegí ' + periodLabel(distribution.referencePeriod) + ' para ver la distribución publicada.');
         setEmptyRow('sector-table-body', 3, 'Sin distribución sectorial aplicable a este período.');
         return;
       }
 
-      setText('sector-heading', 'La distribución sectorial corresponde al período de referencia ' + periodLabel(distribution.referencePeriod));
-      setText('sector-insight', 'Los principales sectores se muestran con conteos agregados; el resto se agrupa para conservar el denominador total sin exponer personas.');
+      setText('sector-heading', 'Distribución por sector informado en ' + periodLabel(distribution.referencePeriod));
+      setText('sector-insight', 'Los grupos publicados se muestran por separado; los grupos protegidos se reúnen en “Otros” para conservar el total sin exponer personas.');
       renderHorizontalBars(container, {
-        title: 'Participantes por sector',
-        description: 'Distribución agregada de participantes en cálculo por sector GRH.',
+        title: 'Personas con cálculo válido por sector',
+        description: 'Distribución agregada de personas en cálculo por sector informado en GRH.',
         points: distribution.participants.map((row, index) => ({
           label: row.label,
           value: row.participants,
@@ -614,7 +657,7 @@
         })),
         period: distribution.referencePeriod,
         source,
-        unit: 'participantes',
+        unit: 'personas',
         emptyMessage: 'No hay una distribución sectorial agregada disponible.'
       });
 
@@ -630,35 +673,31 @@
     function renderControlEvidence(control, source) {
       const tolerance = control.identityWithinRoundingTolerance;
       setText('control-heading', tolerance === null
-        ? 'El estado histórico de tolerancia no se publica para este período'
+        ? 'La fuente no publica una comparación histórica de tolerancia para este mes'
         : (tolerance
-          ? 'El control más reciente queda dentro de la tolerancia declarada'
-          : 'El control más reciente queda fuera de la tolerancia declarada'));
-      setText('control-insight', 'Componentes del cálculo salarial en pesos argentinos (ARS). El neto es una identidad de control y no acredita un pago bancario.');
-      renderHorizontalBars(document.getElementById('chart-control'), {
-        title: 'Componentes del control de cálculo',
-        description: 'Comparación de componentes agregados del control de liquidación.',
-        points: control.components.map((row, index) => ({
-          label: row.label,
-          value: row.valueCents,
-          displayValue: formatCurrencyCents(row.valueCents, true),
-          accessibleValue: formatCurrencyCents(row.valueCents, false),
-          color: CONTROL_COLORS[index]
-        })),
-        period: control.period,
-        source,
-        unit: 'pesos argentinos (ARS)',
-        emptyMessage: 'No hay componentes de control agregados para este período.'
-      });
+          ? 'El control agregado más reciente no presenta una diferencia fuera de tolerancia'
+          : 'El control agregado más reciente requiere revisión antes de certificar'));
+      setText('control-insight', 'Valores agregados del cálculo en pesos argentinos (ARS). Sirven para revisar la identidad de liquidación; no prueban una transferencia ni un pago bancario.');
+
+      const componentPanel = document.getElementById('control-components');
+      const componentFragment = document.createDocumentFragment();
+      control.components.forEach(item => componentFragment.appendChild(metricCard(item.label, formatCurrencyCents(item.valueCents, false))));
+      componentPanel.replaceChildren(componentFragment);
+      setText('control-meaning', tolerance === null
+        ? 'Podés revisar los importes del mes, pero la fuente portable no conserva un veredicto histórico de tolerancia. No completamos ese dato con el estado de otro período.'
+        : (tolerance
+          ? 'La identidad de control más reciente está dentro de la tolerancia declarada. Antes de aprobar, revisá también la conciliación entre fuentes en Calidad.'
+          : 'La identidad de control más reciente está fuera de tolerancia. Debe revisarse en Hacienda antes de cualquier certificación.'));
 
       const body = document.getElementById('control-table-body');
       body.replaceChildren();
       const rows = [
         ['Período', periodLabel(control.period)],
         ['Participantes', formatNumber(control.distinctPayrollParticipants, 0)],
-        ['Privacidad', 'Liberado · k=' + lastAvailableReport.source.portableThreshold],
-        ['Dentro de tolerancia', tolerance === null ? 'No publicado para este período' : (tolerance ? 'Sí' : 'No')],
-        ['Interpretación', 'Control de cálculo; no pago bancario']
+        ['Protección de grupos pequeños', 'Aplicada · k=' + lastAvailableReport.source.portableThreshold],
+        ['Comparación de tolerancia', tolerance === null ? 'No publicada para este mes' : (tolerance ? 'Dentro de tolerancia' : 'Fuera de tolerancia')],
+        ['Alcance', 'Control agregado de liquidación; no pago bancario'],
+        ['Fuente', source.canonicalSystem + ' · respaldo ' + dateLabel(source.snapshotAsOf)]
       ];
       rows.forEach(values => {
         const row = document.createElement('tr');
@@ -668,23 +707,27 @@
     }
 
     function renderQualityEvidence(quality, source) {
-      setText('quality-heading', 'La calidad del extracto agregado alcanza ' + formatNumber(quality.scorePct, 2) + '%');
-      setText('quality-insight', 'El score combina validez temporal, integridad referencial, conciliación de controles y unicidad. Su alcance es el extracto gobernado, no cada tabla cruda de GRH.');
-      renderHorizontalBars(document.getElementById('chart-calidad'), {
-        title: 'Componentes de calidad',
-        description: 'Puntajes porcentuales de los componentes del contrato semántico GRH.',
-        points: quality.components.map((row, index) => ({
-          label: row.label,
-          value: row.scorePct,
-          displayValue: formatNumber(row.scorePct, 2) + '% · peso ' + formatNumber(row.weightPct, 0) + '%',
-          color: BLUE_SHADES[index]
-        })),
-        period: lastAvailableReport.period,
-        source,
-        unit: 'puntaje porcentual',
-        maximum: 100,
-        emptyMessage: 'No hay componentes de calidad validados.'
+      const statusLabel = qualityStatusLabel(quality);
+      const attention = quality.components.filter(item => item.scorePct < 90);
+      const attentionLabels = attention.map(item => item.label.toLowerCase()).join(' y ');
+      setText('quality-heading', statusLabel + ': el corte obtiene ' + formatNumber(quality.scorePct, 2) + '/100');
+      setText('quality-insight', attention.length
+        ? 'La estructura general es sólida, pero ' + attentionLabels + (attention.length === 1 ? ' requiere' : ' requieren') + ' atención antes de certificar resultados.'
+        : 'Los cuatro controles del conjunto publicado superan el umbral de revisión. El detalle sigue disponible para auditoría.');
+
+      const signalPanel = document.getElementById('quality-signals');
+      const signalFragment = document.createDocumentFragment();
+      quality.components.forEach(item => {
+        const state = item.scorePct >= 95 ? 'strong' : 'attention';
+        const meaning = item.scorePct >= 95
+          ? 'Sin una señal material en este control.'
+          : 'Requiere revisión antes de usar el corte como evidencia final.';
+        signalFragment.appendChild(qualitySignal(item.label, item.scorePct, meaning, state));
       });
+      signalPanel.replaceChildren(signalFragment);
+      setText('quality-meaning', attention.length
+        ? 'La principal limitación está en ' + attentionLabels + '. El puntaje total no debe ocultar ' + (attention.length === 1 ? 'ese control' : 'esos controles') + ': abrí Calidad para ver causas, alcance y acciones.'
+        : 'No se detecta un componente por debajo del umbral de revisión, pero el respaldo sigue siendo histórico y no tiempo real.');
 
       const body = document.getElementById('quality-table-body');
       body.replaceChildren();
@@ -798,6 +841,10 @@
       setText('kpi-participants-context', 'No equivale a dotación activa.');
       setText('kpi-snapshot-context', 'Sin linaje GRH validado.');
       CHART_IDS.forEach(id => renderChartEmpty(document.getElementById(id), 'Sin evidencia GRH agregada y validada para esta visualización.'));
+      setPanelLoading('control-components', 'Sin evidencia agregada para mostrar importes de control.');
+      setPanelLoading('quality-signals', 'Sin evidencia validada para evaluar la confiabilidad del corte.');
+      setText('control-meaning', 'La fuente debe validarse antes de interpretar importes o estados de control.');
+      setText('quality-meaning', 'La fuente debe validarse antes de interpretar puntajes o señales de calidad.');
       Object.entries(TABLES).forEach(([id, columns]) => setEmptyRow(id, columns, 'Sin evidencia GRH validada para mostrar.'));
       setTextList('next-steps-list', ['Restablecer y validar el contrato privado GRH antes de tomar decisiones.']);
       setTextList('further-questions-list', ['¿Qué condición impide publicar el contrato agregado GRH?']);
@@ -821,6 +868,16 @@
       note.textContent = message || 'Sin evidencia GRH agregada y validada para esta visualización.';
       container.dataset.chartState = 'empty';
       container.replaceChildren(note);
+    }
+
+    function setPanelLoading(id, message) {
+      const panel = document.getElementById(id);
+      if (!panel) return;
+      const note = document.createElement('p');
+      note.className = 'chart-empty';
+      note.setAttribute('role', 'status');
+      note.textContent = message;
+      panel.replaceChildren(note);
     }
 
     function svgElement(name, attributes, text) {
@@ -883,6 +940,45 @@
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
+    }
+
+    function metricCard(label, value) {
+      const card = document.createElement('article');
+      card.className = 'metric-card';
+      const caption = document.createElement('span');
+      caption.textContent = label;
+      const strong = document.createElement('strong');
+      strong.textContent = value;
+      card.append(caption, strong);
+      return card;
+    }
+
+    function qualitySignal(label, score, meaning, state) {
+      const card = document.createElement('article');
+      card.className = 'quality-signal';
+      card.dataset.state = state;
+      const strong = document.createElement('strong');
+      strong.textContent = label + ' · ' + formatNumber(score, 2) + '/100';
+      const copy = document.createElement('span');
+      copy.textContent = meaning;
+      card.append(strong, copy);
+      return card;
+    }
+
+    function qualityStatusLabel(quality) {
+      const lowest = Math.min(...quality.components.map(item => item.scorePct));
+      if (lowest < 90) return 'Con observaciones';
+      return 'Confiable para análisis';
+    }
+
+    function participantComparison(trend) {
+      if (!Array.isArray(trend) || trend.length < 2) return 'No hay un mes anterior publicado para comparar.';
+      const current = trend.at(-1);
+      const previous = trend.at(-2);
+      const delta = current.participants - previous.participants;
+      if (delta === 0) return 'Sin cambio frente a ' + periodLabel(previous.period) + '.';
+      const rate = previous.participants === 0 ? null : (delta / previous.participants) * 100;
+      return (delta > 0 ? 'Aumentó ' : 'Disminuyó ') + formatNumber(Math.abs(delta), 0) + ' frente a ' + periodLabel(previous.period) + (rate === null ? '.' : ' (' + formatNumber(Math.abs(rate), 2) + '%).');
     }
     function shortSha(value) { return value.slice(0, 12) + '…' + value.slice(-8); }
     function compactPeriod(period) { return period.slice(5) + '/' + period.slice(2, 4); }

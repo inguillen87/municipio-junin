@@ -112,16 +112,34 @@ function qualityEvidence(quality) {
   };
 }
 
-function executiveSummary(selected, quality, latestReleasedPeriod) {
+function participantChangeSummary(selected, previous) {
+  if (!previous) {
+    return `${selected.participantCount.toLocaleString('es-AR')} personas aparecen en cálculos válidos de ${selected.period}; no equivale a dotación contractual activa.`;
+  }
+  const delta = selected.participantCount - previous.participantCount;
+  const rate = previous.participantCount === 0 ? null : rounded((delta / previous.participantCount) * 100, 2);
+  const direction = delta === 0 ? 'sin cambio' : `${delta > 0 ? '+' : ''}${delta.toLocaleString('es-AR')}`;
+  const rateText = rate === null ? '' : ` (${rate > 0 ? '+' : ''}${rate.toLocaleString('es-AR')}%)`;
+  return `${selected.participantCount.toLocaleString('es-AR')} personas aparecen en cálculos válidos de ${selected.period}: ${direction}${rateText} frente a ${previous.period}. No equivale a dotación contractual activa.`;
+}
+
+function executiveSummary(selected, previous, distribution, quality, latestReleasedPeriod) {
   const tolerance = selected.period === latestReleasedPeriod
     ? (quality.quality.risks.latestCalculationControlWithinRoundingTolerance
       ? 'queda dentro de la tolerancia de redondeo declarada'
       : 'queda fuera de la tolerancia de redondeo declarada')
     : 'no publica un estado histórico de tolerancia en la proyección portable';
+  const topSector = distribution.available
+    ? distribution.participants.find(row => row.privacyStatus === 'released')
+    : null;
+  const sectorSummary = topSector
+    ? `${topSector.label} es la clasificación sectorial con mayor participación publicada: ${topSector.participants.toLocaleString('es-AR')} personas (${topSector.sharePct.toLocaleString('es-AR')}%) en ${distribution.referencePeriod}.`
+    : `El desglose sectorial sólo está publicado para ${distribution.referencePeriod}; no se extrapola al período ${selected.period}.`;
+  const reconciliation = quality.quality.components.payrollReconciliation.score;
   return [
-    `${selected.participantCount.toLocaleString('es-AR')} participantes distintos aparecen en cálculos válidos del período ${selected.period}; no equivalen a una dotación contractual activa.`,
-    `El control de cálculo ${tolerance}; es un control de liquidación y no evidencia un pago bancario.`,
-    `La calidad del extracto agregado es ${rounded(quality.quality.score, 2).toLocaleString('es-AR')}%, con alcance limitado al contrato gobernado y al snapshot histórico.`,
+    participantChangeSummary(selected, previous),
+    sectorSummary,
+    `El control de liquidación ${tolerance}. La consistencia entre fuentes alcanza ${rounded(reconciliation, 2).toLocaleString('es-AR')}/100 y requiere revisión; no acredita un pago bancario.`,
   ];
 }
 
@@ -135,6 +153,7 @@ export function buildGrhExecutiveReport(bundle, requestedPeriod = null, generate
   if (selectedIndex === -1) throw new ReportPeriodUnavailableError(period, availablePeriods);
 
   const selected = series[selectedIndex];
+  const previous = selectedIndex > 0 ? series[selectedIndex - 1] : null;
   const trendStart = Math.max(0, selectedIndex - TREND_PERIODS + 1);
   const participantTrend = series.slice(trendStart, selectedIndex + 1).map(row => ({
     period: row.period,
@@ -183,7 +202,13 @@ export function buildGrhExecutiveReport(bundle, requestedPeriod = null, generate
       metricStatus: executive.compensation.metricStatus,
       totpagoStatus: quality.reconciliation.totpagoDiagnosticStatus,
     },
-    executiveSummary: executiveSummary(selected, quality, latestReleasedPeriod),
+    executiveSummary: executiveSummary(
+      selected,
+      previous,
+      sectorDistribution(executive, period),
+      quality,
+      latestReleasedPeriod,
+    ),
     participantTrend,
     workforce: {
       referencePeriod: executive.workforce.referencePeriod,
@@ -193,9 +218,9 @@ export function buildGrhExecutiveReport(bundle, requestedPeriod = null, generate
     calculationControl: calculationControl(selected, quality, latestReleasedPeriod),
     quality: qualityEvidence(quality),
     recommendedNextSteps: [
-      'Comparar la variación mensual y anual de nómina en ARS antes de definir medidas de gestión.',
-      'Revisar los períodos de control anómalos y la diferencia diagnóstica con totpago antes de certificar una liquidación.',
-      'Usar el maestro autorizado de personal para determinar dotación activa; este informe mide participación en cálculos.',
+      'Abrir Estructura para entender qué sectores y áreas explican la composición del período.',
+      'Revisar en Hacienda el control agregado y las diferencias entre fuentes antes de certificar una liquidación.',
+      'Usar Directorio y fichas para consultas nominales autorizadas; este informe sólo muestra agregados.',
     ],
     furtherQuestions: [
       '¿Qué maestro institucional definirá el estado contractual activo de cada agente?',

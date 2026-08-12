@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.build_grh_directory import build_directory, write_private_json
+from scripts.build_grh_directory import build_directory, employment_status, write_private_json
 
 
 FIXTURE = """\
@@ -29,10 +29,39 @@ CREATE TABLE `legajo` (\n
   `IDORGANIZA` int,\n
   `CODI_07` int,\n
   `CODI_06` int,\n
+  `FING_12` date,\n
+  `FEGR_12` date,\n
+  `CODI_03` int,\n
+  `IDREVISTA` int,\n
+  `CODI_29` int,\n
   `SUEL_12` decimal(10,2),\n
   PRIMARY KEY (`CODI_01`,`LEGA_12`)\n
 ) ENGINE=InnoDB;\n
-INSERT INTO `legajo` VALUES (1,100,9001,2,3,4,5,7,60,999.99),(1,101,9002,9,3,4,5,8,61,888.88),(1,0,9001,2,3,4,5,7,60,777.77);\n
+INSERT INTO `legajo` VALUES (1,100,9001,2,3,4,5,7,60,'2000-01-01',NULL,1,1,1,999.99),(1,101,9002,9,3,4,5,8,61,'2010-01-01','2020-01-01',2,2,1,888.88),(1,0,9001,2,3,4,5,7,60,'1111-11-11','1111-11-11',NULL,NULL,NULL,777.77);\n
+CREATE TABLE `regcontr` (\n
+  `CODI_03` int,\n
+  `DETA_03` varchar(200)\n
+) ENGINE=InnoDB;\n
+INSERT INTO `regcontr` VALUES (1,'PLANTA PERMANENTE'),(2,'PERSONAL CONTRATADO');\n
+CREATE TABLE `revista` (\n
+  `IDREVISTA` int,\n
+  `REVISTA` varchar(200)\n
+) ENGINE=InnoDB;\n
+INSERT INTO `revista` VALUES (1,'NORMAL'),(2,'LICENCIA');\n
+CREATE TABLE `motibaja` (\n
+  `CODI_29` int,\n
+  `DETA_29` varchar(200)\n
+) ENGINE=InnoDB;\n
+INSERT INTO `motibaja` VALUES (1,'RENUNCIA');\n
+CREATE TABLE `calculo` (\n
+  `CODI_01` int,\n
+  `PERI_31` int,\n
+  `MES_31` int,\n
+  `FECA_31` date,\n
+  `TIPO_31` varchar(1),\n
+  `LEGA_12` int\n
+) ENGINE=InnoDB;\n
+INSERT INTO `calculo` VALUES (1,2026,7,'2026-07-31','M',100),(1,2026,7,'2026-07-31','M',100),(1,2026,8,'2026-08-01','A',101),(1,2027,1,'2027-01-31','M',101);\n
 CREATE TABLE `sectores` (\n
   `CODI_01` int,\n
   `CODI_07` int,\n
@@ -143,11 +172,13 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
                 generated_at=dt.datetime(2026, 8, 10, 15, 0, tzinfo=dt.timezone.utc),
             )
 
-        self.assertEqual(result["schema_version"], "grh-directory-v2")
+        self.assertEqual(result["schema_version"], "grh-directory-v3")
         self.assertEqual(result["source"]["snapshot_as_of"], "2026-08-06")
         self.assertEqual(result["source"]["generated_at"], "2026-08-10T15:00:00.000Z")
         self.assertTrue(result["privacy"]["contains_personal_data"])
         self.assertTrue(result["privacy"]["private_storage_required"])
+        self.assertIn("absence_leave_event_cause", result["privacy"]["excluded_fields"])
+        self.assertNotIn("event_cause", result["privacy"]["excluded_fields"])
         self.assertEqual(result["counts"]["directory_records"], 2)
         self.assertEqual(result["counts"]["person_matches"], 2)
         self.assertEqual(result["counts"]["valid_absence_events"], 2)
@@ -162,6 +193,19 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
         self.assertEqual(result["counts"]["quarantined_position_observation_rows"], 0)
         self.assertEqual(result["counts"]["future_effective_position_observation_rows"], 1)
         self.assertEqual(result["counts"]["records_with_position_observation"], 1)
+        self.assertEqual(result["counts"]["valid_calculation_rows"], 3)
+        self.assertEqual(result["counts"]["quarantined_calculation_rows"], 1)
+        self.assertEqual(result["counts"]["reference_payroll_period"], "2026-07")
+        self.assertEqual(result["counts"]["reference_payroll_rows"], 2)
+        self.assertEqual(result["counts"]["records_observed_in_reference_payroll"], 1)
+        self.assertEqual(result["counts"]["employment_statuses"], {
+            "ended_by_reported_dates": 1,
+            "current_by_reported_dates": 1,
+            "unknown_missing_ingress": 0,
+            "unknown_sentinel_ingress": 0,
+            "unknown_implausible_active_tenure": 0,
+            "invalid_chronology": 0,
+        })
 
         first, second = result["records"]
         self.assertEqual((first["company_code"], first["legajo"], first["display_name"]), (1, 100, "ALFA ANA"))
@@ -176,6 +220,19 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
         })
         self.assertEqual(first["category"], {"code": 3, "label": "CATEGORIA"})
         self.assertEqual(first["agreement"], {"code": 2, "label": "CONVENIO"})
+        self.assertEqual(first["contract_regime"], {"code": 1, "label": "PLANTA PERMANENTE"})
+        self.assertEqual(first["service_situation"], {"code": 1, "label": "NORMAL"})
+        self.assertIsNone(first["termination_reason"])
+        self.assertEqual(first["employment"], {
+            "reported_ingress_date": "2000-01-01",
+            "reported_exit_date": None,
+            "reported_status": "current_by_reported_dates",
+            "as_of": "2026-08-06",
+            "basis": "legajo_reported_dates",
+            "reference_payroll_participation": {
+                "period": "2026-07", "observed": True, "row_count": 2,
+            },
+        })
         self.assertEqual(first["position_observation"], {
             "label": "PUESTO OBSERVADO",
             "observed_date": "2026-08-31",
@@ -186,6 +243,13 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
         self.assertIsNone(second["position_observation"])
         self.assertEqual(second["category"], {"code": 3, "label": "CATEGORIA NUEVE"})
         self.assertEqual(second["agreement"], {"code": 9, "label": "OTRO CONVENIO"})
+        self.assertEqual(second["contract_regime"], {"code": 2, "label": "PERSONAL CONTRATADO"})
+        self.assertEqual(second["service_situation"], {"code": 2, "label": "LICENCIA"})
+        self.assertEqual(second["termination_reason"], {"code": 1, "label": "RENUNCIA"})
+        self.assertEqual(second["employment"]["reported_status"], "ended_by_reported_dates")
+        self.assertEqual(second["employment"]["reference_payroll_participation"], {
+            "period": "2026-07", "observed": False, "row_count": 0,
+        })
         self.assertEqual(first["absence"], {"event_count": 2, "latest_date": "2026-07-01"})
         self.assertEqual(first["absence_history"], [
             {"date": "2026-07-01", "days": 1},
@@ -223,6 +287,14 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
             "tipo_30", "impo_30", "causa"
         ]:
             self.assertNotIn(forbidden, serialized)
+        self.assertTrue(all(
+            set(event) == {"date", "days"}
+            for record in result["records"] for event in record["absence_history"]
+        ))
+        self.assertTrue(all(
+            set(event) == {"start_date", "end_date", "days"}
+            for record in result["records"] for event in record["leave_history"]
+        ))
 
     def test_canonical_manifest_gate_fails_before_extraction(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -232,6 +304,26 @@ class GrhDirectoryBuilderTests(unittest.TestCase):
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "SHA-256"):
                 build_directory(source, manifest_path=manifest_path)
+
+    def test_employment_status_is_conservative_for_missing_sentinel_implausible_and_invalid_dates(self):
+        as_of = dt.date(2026, 8, 6)
+        self.assertEqual(employment_status(None, None, as_of=as_of)[0], "unknown_missing_ingress")
+        self.assertEqual(
+            employment_status("1111-11-11", "1111-11-11", as_of=as_of),
+            ("unknown_sentinel_ingress", None, None),
+        )
+        self.assertEqual(
+            employment_status("1966-08-05", None, as_of=as_of)[0],
+            "unknown_implausible_active_tenure",
+        )
+        self.assertEqual(
+            employment_status("2027-01-01", None, as_of=as_of)[0],
+            "invalid_chronology",
+        )
+        self.assertEqual(
+            employment_status("2020-01-02", "2020-01-01", as_of=as_of)[0],
+            "invalid_chronology",
+        )
 
     def test_private_writer_is_atomic_and_round_trips_utf8(self):
         with tempfile.TemporaryDirectory() as directory:

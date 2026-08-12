@@ -75,6 +75,11 @@ function initialBounds(contract: MunicipalTerritoryContract): LatLngBounds {
   return L.latLngBounds([south, west], [north, east]);
 }
 
+function initialCenter(contract: MunicipalTerritoryContract): [number, number] {
+  const [west, south, east, north] = contract.boundary.bbox;
+  return [(south + north) / 2, (west + east) / 2];
+}
+
 function tileStatusCopy(status: TileState): string {
   if (status === 'available') return 'Mapa base IGN disponible.';
   if (status === 'degraded') return 'Teselas IGN no disponibles; el límite y las localidades oficiales continúan visibles.';
@@ -141,7 +146,7 @@ export function TerritoryMap({ contract }: TerritoryMapProps) {
 
     const map = L.map(container, {
       attributionControl: false,
-      center: [-34.59, -60.95],
+      center: initialCenter(contract),
       keyboard: true,
       minZoom: 3,
       scrollWheelZoom: true,
@@ -256,7 +261,7 @@ export function TerritoryMap({ contract }: TerritoryMapProps) {
         <header className="territory-map-toolbar">
           <div>
             <p>Mapa institucional</p>
-            <h2 id="territory-map-title">Partido de Junín</h2>
+            <h2 id="territory-map-title">Departamento de Junín</h2>
           </div>
           <div className="territory-map-toolbar__controls" aria-label="Controles del mapa">
             <label className="territory-select">
@@ -288,7 +293,7 @@ export function TerritoryMap({ contract }: TerritoryMapProps) {
               />
               <span>Localidades</span>
             </label>
-            <button className="territory-map-button" type="button" onClick={fitBoundary}>Ajustar partido</button>
+            <button className="territory-map-button" type="button" onClick={fitBoundary}>Ajustar departamento</button>
             <button className="territory-map-button" type="button" onClick={resetMap}>Restablecer</button>
           </div>
         </header>
@@ -298,7 +303,7 @@ export function TerritoryMap({ contract }: TerritoryMapProps) {
             id="territoryMap"
             ref={mapContainerRef}
             role="region"
-            aria-label="Mapa interactivo del partido de Junín"
+            aria-label="Mapa interactivo del departamento de Junín, Mendoza"
             aria-describedby="territory-map-state"
           />
           <div id="territory-map-state" className="territory-map-state" aria-live="polite" data-state={tileState}>
@@ -319,7 +324,7 @@ export function TerritoryMap({ contract }: TerritoryMapProps) {
         <header>
           <p>Explorador local</p>
           <h2 id="territory-localities-title">Localidades</h2>
-          <span>{contract.localities.length} oficiales</span>
+          <span>{contract.localities.length} GeoRef</span>
         </header>
         <label className="territory-search" htmlFor="territory-locality-search">
           <span>Buscar localidad</span>

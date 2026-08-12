@@ -51,6 +51,7 @@ const MAX_DIRECTORY_ABSENCE_HISTORY = 24;
 const MAX_DIRECTORY_MOVEMENT_HISTORY = 24;
 const MAX_ANSWER_VISUAL_ITEMS = 13;
 const ENGINE_ID = 'grh-deterministic-v1';
+const PERSON_TARGET_KIND = 'grh-person';
 export const GRH_ANSWER_VISUAL_SCHEMA_VERSION = 'grh-answer-visual-v1';
 const FINANCE_INTENTS = new Set([
   'workforce_finance_overview',
@@ -172,8 +173,29 @@ export function createAiAnalyzeHandler({
     const caller = await requireRoleImpl(req, res, EXECUTIVE_ROLES);
     if (!caller || !requireDatasetTenantImpl(res, caller, 'GRH_TENANT_ID')) return;
 
+    const hasPersonTarget = Object.prototype.hasOwnProperty.call(req.body || {}, 'target');
+    const personTarget = hasPersonTarget ? parsePersonTarget(req.body.target) : null;
+    if (hasPersonTarget && !personTarget) {
+      return res.status(422).json({
+        error: 'El destino de ficha GRH no cumple el contrato permitido.',
+        code: 'INVALID_PERSON_TARGET',
+      });
+    }
+    if (personTarget) {
+      const bodyKeys = Object.keys(req.body).sort();
+      const purpose = Array.isArray(req.headers?.['x-municontrol-purpose'])
+        ? null
+        : req.headers?.['x-municontrol-purpose'];
+      if (bodyKeys.length !== 2 || bodyKeys[0] !== 'mode' || bodyKeys[1] !== 'target' ||
+          req.body.mode !== 'deterministic' || purpose !== 'PERSON_LOOKUP') {
+        return res.status(422).json({
+          error: 'El contexto de ficha GRH no cumple el contrato permitido.',
+          code: 'INVALID_PERSON_TARGET_CONTEXT',
+        });
+      }
+    }
     const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
-    if (!message) {
+    if (!message && !personTarget) {
       return res.status(400).json({ error: 'La consulta es requerida', code: 'MESSAGE_REQUIRED' });
     }
     if (message.length > MAX_MESSAGE_LENGTH) {
@@ -198,18 +220,21 @@ export function createAiAnalyzeHandler({
       return res.status(413).json({ error: 'El historial supera el límite permitido', code: 'HISTORY_TOO_LONG' });
     }
 
-    const classification = classifyIntent(message);
+    const classification = personTarget
+      ? { intent: 'person_lookup', policy: 'limited' }
+      : classifyIntent(message);
     let directoryAuthorization = null;
     let directoryReadAudit = null;
     if (classification.intent === 'person_lookup') {
+      const directoryOperation = personTarget ? 'detail' : 'list';
       directoryAuthorization = await authorizeDirectoryImpl(req, res, {
-        operation: 'list',
+        operation: directoryOperation,
         environment,
         requireCapabilityImpl: async () => caller,
         ...directoryAuthorizationDependencies,
       });
       if (!directoryAuthorization) return;
-      directoryReadAudit = createDirectoryReadAudit(directoryAuthorization);
+      directoryReadAudit = createDirectoryReadAudit(directoryAuthorization, directoryOperation);
     }
 
     try {
@@ -262,6 +287,7 @@ export function createAiAnalyzeHandler({
       const answer = classification.intent === 'person_lookup'
         ? await buildPrivateDirectoryResponse({
           message,
+          target: personTarget,
           caller,
           readDirectoryImpl: scopeDirectoryReader(readDirectoryImpl, directoryAuthorization),
           expectedSource: executive.source,
@@ -361,8 +387,8 @@ function scopeDirectoryReader(readDirectoryImpl, authorization) {
   });
 }
 
-function createDirectoryReadAudit(authorization) {
-  let pendingOperation = 'list';
+function createDirectoryReadAudit(authorization, initialOperation = 'list') {
+  let pendingOperation = initialOperation;
   let commitUnavailable = false;
 
   async function commit(operation, outcome, resultCount, reason, decision) {
@@ -494,11 +520,31 @@ function buildDirectoryRequiredResponse() {
 
 async function buildPrivateDirectoryResponse({
   message,
+  target,
   caller,
   readDirectoryImpl,
   expectedSource,
   readAudit,
 }) {
+  if (target) {
+    const detail = await readDirectoryImpl({
+      tenantId: String(caller.tenantId),
+      query: { company: target.companyCode, legajo: target.legajo },
+    });
+    assertPrivateDirectoryContract(detail, expectedSource, 'detail');
+    if (detail.query.total !== 1 || detail.items.length !== 1) {
+      throw new Error('directory target cardinality invalid');
+    }
+    if (detail.items[0].companyCode !== target.companyCode ||
+        detail.items[0].legajo !== target.legajo) {
+      throw new Error('directory target identity mismatch');
+    }
+    await readAudit.allowRead('detail', 1);
+    return buildDirectoryPersonAnswer(mapPrivateDirectoryPerson(detail.items[0]), detail.source, {
+      presentation: 'insight',
+    });
+  }
+
   const lookup = parsePersonLookup(message);
   if (!lookup) {
     return finalizeStandaloneAnswer({
@@ -551,6 +597,24 @@ async function buildPrivateDirectoryResponse({
   await readAudit.allowRead('detail', 1);
   const person = mapPrivateDirectoryPerson(detail.items[0]);
   return buildDirectoryPersonAnswer(person, detail.source);
+}
+
+export function parsePersonTarget(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const keys = Object.keys(value).sort();
+  if (keys.length !== 3 || keys[0] !== 'companyCode' || keys[1] !== 'kind' || keys[2] !== 'legajo') {
+    return null;
+  }
+  if (value.kind !== PERSON_TARGET_KIND ||
+      !Number.isSafeInteger(value.companyCode) || value.companyCode <= 0 ||
+      !Number.isSafeInteger(value.legajo) || value.legajo <= 0) {
+    return null;
+  }
+  return Object.freeze({
+    kind: PERSON_TARGET_KIND,
+    companyCode: value.companyCode,
+    legajo: value.legajo,
+  });
 }
 
 function parsePersonLookup(rawMessage) {
@@ -625,6 +689,8 @@ function mapPrivateDirectoryOption(item) {
     organization: mapPrivateDimension(item.organization),
     position: mapPrivatePosition(item.position),
     positionObservation: mapPrivatePositionObservation(item.positionObservation),
+    category: mapPrivateDimension(item.category),
+    agreement: mapPrivateDimension(item.agreement),
     movement: mapPrivateMovement(item.movement),
   };
 }
@@ -658,6 +724,12 @@ function mapPrivateDirectoryPerson(item) {
     organization: mapPrivateDimension(item.organization),
     position: mapPrivatePosition(item.position),
     positionObservation: mapPrivatePositionObservation(item.positionObservation),
+    category: mapPrivateDimension(item.category),
+    agreement: mapPrivateDimension(item.agreement),
+    contractRegime: mapPrivateDimension(item.contractRegime),
+    serviceSituation: mapPrivateDimension(item.serviceSituation),
+    terminationReason: mapPrivateDimension(item.terminationReason),
+    employment: mapPrivateEmployment(item.employment),
     events: {
       absenceCount: item.events.absenceCount,
       latestAbsenceDate: item.events.latestAbsenceDate,
@@ -715,7 +787,23 @@ function mapPrivateMovement(value) {
   } : { rowCount: 0, periodCount: 0, latestPeriod: null };
 }
 
-function buildDirectoryPersonAnswer(person, source) {
+function mapPrivateEmployment(value) {
+  return {
+    reportedIngressDate: value.reportedIngressDate,
+    reportedExitDate: value.reportedExitDate,
+    reportedStatus: value.reportedStatus,
+    asOf: value.asOf,
+    basis: value.basis,
+    referencePayrollParticipation: {
+      period: value.referencePayrollParticipation.period,
+      observed: value.referencePayrollParticipation.observed,
+      rowCount: value.referencePayrollParticipation.rowCount,
+    },
+  };
+}
+
+function buildDirectoryPersonAnswer(person, source, options = {}) {
+  const insightMode = options.presentation === 'insight';
   const identity = person.displayName || `Legajo ${formatInteger(person.legajo)}`;
   const location = [person.costCenter?.label, person.sector?.label, person.organization?.label]
     .filter(Boolean).join(' · ');
@@ -732,21 +820,34 @@ function buildDirectoryPersonAnswer(person, source) {
       : `La observación de puesto corresponde a ${person.positionObservation.observedDate}; no se presenta como cargo actual.`,
   ] : []);
   const href = `/rrhh?company=${encodeURIComponent(person.companyCode)}&legajo=${encodeURIComponent(person.legajo)}#peopleDirectory`;
+  if (insightMode) {
+    return buildDirectoryPersonInsight({
+      person,
+      source,
+      identity,
+      location,
+      positionFinding,
+      observationCaveat,
+    });
+  }
   return finalizeStandaloneAnswer({
     title: identity,
     summary: location || 'Ficha individual verificada en el directorio GRH privado.',
     findings: [positionFinding],
     evidence: [
       metric('Legajo', formatInteger(person.legajo), `Empresa ${person.companyCode}`),
-      metric('Ausencias', formatInteger(person.events.absenceCount), person.events.latestAbsenceDate ? `Última: ${person.events.latestAbsenceDate}` : 'Sin fecha registrada'),
-      metric('Licencias históricas', formatInteger(person.leaveHistory.total), latestLeave ? `Última: ${latestLeave.startDate}${latestLeave.endDate ? ` a ${latestLeave.endDate}` : ''}` : 'Sin eventos asociados'),
-      metric('Movimientos fuente', formatInteger(person.movement.rowCount), person.movement.latestPeriod ? `${formatInteger(person.movement.periodCount)} períodos · último ${person.movement.latestPeriod}` : 'Sin filas válidas asociadas'),
+      metric('Registros de ausencia', formatInteger(person.absenceHistory.total), person.events.latestAbsenceDate ? `Tabla ausencia · última fecha ${person.events.latestAbsenceDate}` : 'Tabla ausencia · sin fecha registrada'),
+      metric('Registros de licencia', formatInteger(person.leaveHistory.total), latestLeave ? `Tabla licencia · último intervalo ${latestLeave.startDate}${latestLeave.endDate ? ` a ${latestLeave.endDate}` : ''}` : 'Tabla licencia · sin registros asociados'),
+      metric('Filas fuente legamov', formatInteger(person.movement.rowCount), person.movement.latestPeriod ? `${formatInteger(person.movement.periodCount)} períodos · último ${person.movement.latestPeriod}` : 'Sin filas válidas asociadas'),
       metric('Puesto', person.position?.label || person.positionObservation?.label || 'Sin dato', person.position ? 'Cargo informado por GRH' : (person.positionObservation ? 'Observación histórica, no cargo actual' : 'No informado')),
+      metric('Categoría', person.category?.label || 'Sin dato', person.category ? `Código ${formatInteger(person.category.code)}` : 'No informada por la fuente'),
+      metric('Convenio', person.agreement?.label || 'Sin dato', person.agreement ? `Código ${formatInteger(person.agreement.code)}` : 'No informado por la fuente'),
     ],
     caveats: [
       ...observationCaveat,
-      'Las licencias son históricas y se limitan a fechas y días; no describen una situación actual.',
-      'Los movimientos son filas fuente agrupadas por período; no equivalen a altas, bajas, traslados ni rotación.',
+      'Ausencia y licencia son tablas legacy separadas, con taxonomías no conciliadas: sus registros no se suman ni equivalen a una situación actual.',
+      'Las historias se limitan a fechas y días informados por cada tabla; no exponen causas ni permiten inferir el estado vigente.',
+      'Legamov contiene filas fuente agrupadas por período; no equivalen a altas, bajas, traslados ni rotación.',
     ],
     nextQuestions: [],
     actions: [{ id: 'open_rrhh_person', label: 'Abrir ficha en RRHH', href }],
@@ -759,6 +860,201 @@ function buildDirectoryPersonAnswer(person, source) {
     },
     status: 'answered',
   }, privateDirectorySourceLine(source));
+}
+
+function buildDirectoryPersonInsight({
+  person,
+  source,
+  identity,
+  location,
+  positionFinding,
+  observationCaveat,
+}) {
+  const employment = employmentInsight(person);
+  const absence = summarizeDatedHistory(person.absenceHistory, 'date');
+  const leave = summarizeDatedHistory(person.leaveHistory, 'startDate');
+  const movementPeriods = person.movement.periodCount;
+  const coveredSources = [
+    person.absenceHistory.total > 0 ? 'ausencia' : null,
+    person.leaveHistory.total > 0 ? 'licencia' : null,
+    movementPeriods > 0 ? 'legamov' : null,
+  ].filter(Boolean);
+  const sourceCoverage = coveredSources.length;
+  const movementDensity = movementPeriods > 0
+    ? person.movement.rowCount / movementPeriods
+    : null;
+  const context = [
+    person.sector?.label ? `sector ${person.sector.label}` : null,
+    person.agreement?.label ? `convenio ${person.agreement.label}` : null,
+    person.category?.label ? `categoría ${person.category.label}` : null,
+  ].filter(Boolean);
+  const recencyFinding = person.movement.latestPeriod || absence.latest || leave.latest
+    ? `Señal temporal: ${[
+      person.movement.latestPeriod ? `legamov llega a ${person.movement.latestPeriod}` : null,
+      absence.latest ? `ausencia a ${absence.latest}` : null,
+      leave.latest ? `licencia a ${leave.latest}` : null,
+    ].filter(Boolean).join('; ')}. La diferencia de fechas describe fuentes distintas y no acredita por sí sola una situación laboral actual.`
+    : 'Señal temporal: las tres fuentes asociadas no publican registros para esta ficha.';
+  const reviewFinding = person.positionObservation
+    ? `Qué conviene revisar: ${positionFinding} Antes de usar esa observación como vigente, debe validarse contra el corte ${source?.snapshotAsOf || 'no disponible'}.`
+    : (person.position
+      ? `Qué conviene revisar: el cargo informado (${person.position.label}) no reemplaza una validación de vigencia fuera del corte publicado.`
+      : 'Qué conviene revisar: la fuente no informa cargo ni observación histórica de puesto; no corresponde completarlo por inferencia.');
+  const contextFinding = context.length
+    ? `Contexto habilitado: ${context.join(' · ')}. El detalle individual no trae denominadores de cohorte; por eso esta lectura no inventa rankings ni compara a la persona con sus pares.`
+    : 'Contexto habilitado: el detalle no publica sector, convenio o categoría suficientes para una comparación de cohorte; no se inventan equivalencias.';
+  const evidence = [
+    metric(
+      'Cobertura de fuentes',
+      `${sourceCoverage} de 3`,
+      coveredSources.length
+        ? `Fuentes separadas con registros asociados: ${coveredSources.join(', ')}.`
+        : 'Ninguna de las tres fuentes publica registros asociados.',
+    ),
+    metric(
+      'Ventana visible de ausencia',
+      `${formatInteger(absence.exposed)} de ${formatInteger(absence.total)}`,
+      historyWindowDetail(absence, 'registros expuestos'),
+    ),
+    metric(
+      'Historia visible de licencia',
+      `${formatInteger(leave.exposed)} de ${formatInteger(leave.total)}`,
+      historyWindowDetail(leave, leave.complete ? 'historia completa expuesta' : 'registros expuestos'),
+    ),
+    metric(
+      'Intensidad de legamov',
+      movementDensity === null ? 'Sin períodos' : `${formatNumber(movementDensity, 2)} filas/período`,
+      movementPeriods > 0
+        ? `${formatInteger(person.movement.rowCount)} filas en ${formatInteger(movementPeriods)} períodos · último ${person.movement.latestPeriod}`
+        : 'Sin filas fuente asociadas.',
+    ),
+    metric(
+      'Situaci\u00f3n laboral informada',
+      employment.label,
+      employment.detail,
+    ),
+    metric(
+      `Participaci\u00f3n en c\u00e1lculo ${person.employment.referencePayrollParticipation.period}`,
+      person.employment.referencePayrollParticipation.observed ? 'Observada' : 'No observada',
+      `${formatInteger(person.employment.referencePayrollParticipation.rowCount)} filas v\u00e1lidas asociadas; no acredita pago ni vigencia laboral.`,
+    ),
+  ];
+  return finalizeStandaloneAnswer({
+    title: `Lectura asistida · ${identity}`,
+    summary: `Qué significa: se analizaron por separado ${sourceCoverage} de 3 fuentes gobernadas asociadas a la ficha${location ? ` en ${location}` : ''}. La respuesta prioriza cobertura, recencia y señales para revisar; no repite la ficha técnica.`,
+    findings: [employment.finding, recencyFinding, reviewFinding, contextFinding],
+    evidence,
+    caveats: [
+      ...observationCaveat,
+      'Ausencia y licencia son tablas legacy separadas, con taxonomías no conciliadas: sus registros no se suman ni equivalen a una situación actual.',
+      'Los días mostrados son la suma del campo days explícitamente informado en los registros expuestos; no representan días únicos, días perdidos ni un intervalo laboral conciliado.',
+      'Legamov contiene filas fuente agrupadas por período; la densidad calculada no equivale a altas, bajas, traslados ni rotación.',
+      'Las comparaciones por sector, convenio o categoría requieren una consulta agregada separada y su propio control de privacidad.',
+    ],
+    nextQuestions: [
+      '¿Cómo se distribuyen los participantes por sector?',
+      '¿Cómo se distribuyen por categoría de acuerdo de origen?',
+      '¿Qué registros de ausencias quedaron en cuarentena?',
+    ],
+    actions: [
+      {
+        id: 'open_rrhh_person',
+        label: 'Volver a esta ficha en RRHH',
+        href: '/rrhh?handoff=person#peopleDirectory',
+        requiredCapability: 'navigation.rrhh',
+      },
+      {
+        id: 'open_rrhh_aggregate',
+        label: 'Ver contexto agregado de RRHH',
+        href: '/rrhh#workforceDistribution',
+        requiredCapability: 'navigation.rrhh',
+      },
+    ],
+    directory: {
+      status: 'matched',
+      presentation: 'insight',
+      enabled: true,
+      route: '/rrhh',
+      options: [],
+      target: {
+        companyCode: person.companyCode,
+        legajo: person.legajo,
+      },
+    },
+    status: 'answered',
+  }, privateDirectorySourceLine(source));
+}
+
+function employmentInsight(person) {
+  const employment = person.employment;
+  const ingress = employment.reportedIngressDate || 'no informado';
+  const exit = employment.reportedExitDate || 'no informado';
+  const classifications = [
+    person.contractRegime?.label ? `r\u00e9gimen ${person.contractRegime.label}` : null,
+    person.serviceSituation?.label ? `revista ${person.serviceSituation.label}` : null,
+    person.terminationReason?.label ? `motivo de egreso ${person.terminationReason.label}` : null,
+  ].filter(Boolean);
+  const presentations = {
+    ended_by_reported_dates: {
+      label: 'Egreso informado al corte',
+      detail: `Ingreso ${ingress} \u00b7 egreso ${exit}. Lectura de fechas reportadas, no certificaci\u00f3n contractual.`,
+    },
+    current_by_reported_dates: {
+      label: 'Sin egreso informado al corte',
+      detail: `Ingreso ${ingress} \u00b7 egreso no informado. No equivale a certificar un v\u00ednculo activo.`,
+    },
+    unknown_missing_ingress: {
+      label: 'Fecha de ingreso no informada',
+      detail: 'La situaci\u00f3n no puede determinarse y no se completa por inferencia.',
+    },
+    unknown_sentinel_ingress: {
+      label: 'Fecha de ingreso no utilizable',
+      detail: 'La fuente conten\u00eda un valor t\u00e9cnico de reemplazo que no se publica como fecha real.',
+    },
+    unknown_implausible_active_tenure: {
+      label: 'Antig\u00fcedad informada a revisar',
+      detail: `Ingreso ${ingress}; la combinaci\u00f3n supera el umbral de lectura conservadora.`,
+    },
+    invalid_chronology: {
+      label: 'Fechas informadas inconsistentes',
+      detail: `Ingreso ${ingress} \u00b7 egreso ${exit}; requiere revisi\u00f3n administrativa.`,
+    },
+  };
+  const presentation = presentations[employment.reportedStatus];
+  return {
+    ...presentation,
+    finding: `Situaci\u00f3n informada: ${presentation.label.toLowerCase()} al ${employment.asOf}${classifications.length ? `; ${classifications.join(' \u00b7 ')}` : ''}. La participaci\u00f3n en c\u00e1lculo se analiza por separado.`,
+  };
+}
+
+function summarizeDatedHistory(history, dateKey) {
+  const items = Array.isArray(history?.items) ? history.items : [];
+  const dates = items
+    .map(item => item?.[dateKey])
+    .filter(value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value))
+    .sort();
+  const reportedDays = items.reduce((total, item) => (
+    Number.isSafeInteger(item?.days) && item.days >= 0 ? total + item.days : total
+  ), 0);
+  const reportedDayRows = items.filter(item => Number.isSafeInteger(item?.days) && item.days >= 0).length;
+  return {
+    total: Number.isSafeInteger(history?.total) ? history.total : 0,
+    exposed: items.length,
+    complete: Number.isSafeInteger(history?.total) && history.total === items.length,
+    earliest: dates[0] || null,
+    latest: dates[dates.length - 1] || null,
+    reportedDays,
+    reportedDayRows,
+  };
+}
+
+function historyWindowDetail(summary, scopeLabel) {
+  if (!summary.exposed) return 'Sin registros expuestos.';
+  const range = summary.earliest && summary.latest
+    ? `${summary.earliest} a ${summary.latest}`
+    : 'Rango temporal no disponible';
+  if (!summary.reportedDayRows) return `${range} · campo days no informado en los registros expuestos.`;
+  return `${range} · ${formatInteger(summary.reportedDays)} días informados en ${scopeLabel}.`;
 }
 
 function privateDirectorySourceLine(source) {

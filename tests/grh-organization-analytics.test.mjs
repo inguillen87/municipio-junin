@@ -58,6 +58,21 @@ function record({ index, organization, sector, absenceEvents = 0 }) {
     movement: { row_count: 0, period_count: 0, latest_period: null },
     movement_history: [],
     position_observation: null,
+    contract_regime: null,
+    service_situation: null,
+    termination_reason: null,
+    employment: {
+      reported_ingress_date: '2010-01-01',
+      reported_exit_date: null,
+      reported_status: 'current_by_reported_dates',
+      as_of: '2026-08-06',
+      basis: 'legajo_reported_dates',
+      reference_payroll_participation: {
+        period: '2026-07',
+        observed: false,
+        row_count: 0,
+      },
+    },
   };
 }
 
@@ -98,7 +113,7 @@ function artifactFixture() {
 
   const absenceEvents = records.reduce((total, item) => total + item.absence.event_count, 0);
   return {
-    schema_version: 'grh-directory-v2',
+    schema_version: 'grh-directory-v3',
     source: {
       canonical_system: 'GRH Junín',
       file: 'grh_junin.backup_2026080615_plataforma.sql.gz',
@@ -115,6 +130,7 @@ function artifactFixture() {
     counts: {
       source_rows: {
         ausencia: absenceEvents,
+        calculo: 0,
         cargo: 0,
         catego: 1,
         convenio: 1,
@@ -123,8 +139,11 @@ function artifactFixture() {
         legajo: records.length,
         legamov: 0,
         licencia: 0,
+        motibaja: 0,
         organiza: 5,
         persona: records.length,
+        regcontr: 0,
+        revista: 0,
         sectores: 3,
       },
       directory_records: records.length,
@@ -144,6 +163,19 @@ function artifactFixture() {
       quarantined_position_observation_rows: 0,
       future_effective_position_observation_rows: 0,
       records_with_position_observation: 0,
+      valid_calculation_rows: 0,
+      quarantined_calculation_rows: 0,
+      reference_payroll_period: '2026-07',
+      reference_payroll_rows: 0,
+      records_observed_in_reference_payroll: 0,
+      employment_statuses: {
+        ended_by_reported_dates: 0,
+        current_by_reported_dates: records.length,
+        unknown_missing_ingress: 0,
+        unknown_sentinel_ingress: 0,
+        unknown_implausible_active_tenure: 0,
+        invalid_chronology: 0,
+      },
     },
     records,
   };
@@ -302,6 +334,10 @@ function matrixAxisPrivacyFixture({ smallIntersections = [] } = {}) {
     person_matches: records.length,
     records_with_name: records.length,
     valid_absence_events: 70,
+    employment_statuses: {
+      ...fixture.counts.employment_statuses,
+      current_by_reported_dates: records.length,
+    },
   };
   return fixture;
 }
@@ -345,6 +381,10 @@ function crossViewDifferencingFixture() {
     person_matches: records.length,
     records_with_name: records.length,
     valid_absence_events: 101,
+    employment_statuses: {
+      ...fixture.counts.employment_statuses,
+      current_by_reported_dates: records.length,
+    },
   };
   return fixture;
 }
@@ -839,7 +879,7 @@ test('current private snapshot reconciles the verified aggregate baseline withou
   const artifact = JSON.parse(await readFile(PRIVATE_ARTIFACT_PATH, 'utf8'));
   const artifactInspection = inspectGrhDirectoryArtifact(artifact);
   if (!artifactInspection.ok) {
-    context.skip('The installed private snapshot predates grh-directory-v2.');
+    context.skip('The installed private snapshot predates grh-directory-v3.');
     return;
   }
   const semantic = JSON.parse(await readFile(

@@ -56,8 +56,19 @@ except ImportError:  # Direct execution: python scripts/build_grh_directory.py
     from grh_source_manifest import load_and_validate_canonical_source
 
 
-SCHEMA_VERSION = "grh-directory-v2"
+SCHEMA_VERSION = "grh-directory-v3"
 DEFAULT_MIN_YEAR = 1979
+EMPLOYMENT_BASIS = "legajo_reported_dates"
+SENTINEL_DATE = "1111-11-11"
+MAX_PLAUSIBLE_ACTIVE_TENURE_YEARS = 60
+EMPLOYMENT_STATUSES = (
+    "ended_by_reported_dates",
+    "current_by_reported_dates",
+    "unknown_missing_ingress",
+    "unknown_sentinel_ingress",
+    "unknown_implausible_active_tenure",
+    "invalid_chronology",
+)
 TARGET_TABLES = {
     "persona",
     "legajo",
@@ -71,6 +82,10 @@ TARGET_TABLES = {
     "histolegajo",
     "ausencia",
     "licencia",
+    "calculo",
+    "regcontr",
+    "revista",
+    "motibaja",
 }
 
 # Only explicit aliases are accepted. A new source spelling must be reviewed
@@ -115,6 +130,9 @@ REFERENCE_SPECS = (
         scope_fields=("CODI_02",),
     ),
     ReferenceSpec("convenio", "agreement", ("CODI_02", "CONV_12"), ("CODI_02",), ("DETA_02", "ABRE_02", "NOMB_02"), False),
+    ReferenceSpec("regcontr", "contract_regime", ("CODI_03",), ("CODI_03",), ("DETA_03",), False),
+    ReferenceSpec("revista", "service_situation", ("IDREVISTA",), ("IDREVISTA",), ("REVISTA",), False),
+    ReferenceSpec("motibaja", "termination_reason", ("CODI_29",), ("CODI_29",), ("DETA_29",), False),
 )
 REFERENCE_BY_TABLE = {spec.table: spec for spec in REFERENCE_SPECS}
 
@@ -189,6 +207,36 @@ def positive_relation_code(row: dict[str, str | None], fields: Iterable[str]) ->
     return value if value is not None and value > 0 else None
 
 
+def employment_status(
+    ingress_raw: str | None,
+    exit_raw: str | None,
+    *,
+    as_of: dt.date,
+) -> tuple[str, dt.date | None, dt.date | None]:
+    ingress_text = normalized_text(ingress_raw, maximum=10)
+    exit_text = normalized_text(exit_raw, maximum=10)
+    ingress = None if ingress_text == SENTINEL_DATE else parse_date(ingress_text)
+    exit_date = None if exit_text == SENTINEL_DATE else parse_date(exit_text)
+    if ingress_text == SENTINEL_DATE:
+        return "unknown_sentinel_ingress", None, exit_date
+    if ingress is None:
+        return "unknown_missing_ingress", None, exit_date
+    if ingress > as_of or (exit_date is not None and exit_date < ingress):
+        return "invalid_chronology", ingress, exit_date
+    if exit_date is not None and exit_date <= as_of:
+        return "ended_by_reported_dates", ingress, exit_date
+    plausible_boundary = dt.date(as_of.year - MAX_PLAUSIBLE_ACTIVE_TENURE_YEARS, as_of.month, as_of.day)
+    if ingress < plausible_boundary:
+        return "unknown_implausible_active_tenure", ingress, exit_date
+    return "current_by_reported_dates", ingress, exit_date
+
+
+def governed_payroll_period(as_of: dt.date) -> str:
+    first_of_month = as_of.replace(day=1)
+    previous_month = first_of_month - dt.timedelta(days=1)
+    return f"{previous_month.year:04d}-{previous_month.month:02d}"
+
+
 def resolve_reference(
     references: dict[str, dict[tuple[int | None, int, int], dict[str, object]]],
     output: str,
@@ -250,11 +298,13 @@ def build_directory(
     leave_by_employee: dict[tuple[int, int], dict[str, object]] = collections.defaultdict(empty_event_summary)
     leave_history_by_employee: dict[tuple[int, int], list[dict[str, object]]] = collections.defaultdict(list)
     movement_periods_by_employee: dict[tuple[int, int], collections.Counter[str]] = collections.defaultdict(collections.Counter)
+    reference_payroll_rows_by_employee: collections.Counter[tuple[int, int]] = collections.Counter()
     position_observation_by_employee: dict[tuple[int, int], dict[str, object]] = {}
     source_counts = collections.Counter()
     valid_event_counts = collections.Counter()
     quarantine_event_counts = collections.Counter()
     directory_quality_counts = collections.Counter()
+    reference_period = governed_payroll_period(as_of)
 
     with gzip.open(source, "rt", encoding="utf-8", errors="replace", newline="") as stream:
         for line in stream:
@@ -324,7 +374,28 @@ def build_directory(
                         "source_name": display_name(row),
                         "person_links": person_links(row),
                         "assignments": assignments,
+                        "reported_ingress": row.get("FING_12"),
+                        "reported_exit": row.get("FEGR_12"),
                     }
+                    continue
+
+                if table_name == "calculo":
+                    company = company_code(row)
+                    employee = parse_int(first_value(row, LEGAJO_FIELDS))
+                    reasons, year, month, _ = period_reasons(
+                        row.get("PERI_31"),
+                        row.get("MES_31"),
+                        row.get("FECA_31"),
+                        min_year=min_year,
+                        as_of=as_of,
+                    )
+                    if reasons or not valid_employee_key((company, employee)):
+                        quarantine_event_counts[table_name] += 1
+                        continue
+                    valid_event_counts[table_name] += 1
+                    period = f"{year:04d}-{month:02d}"
+                    if period == reference_period:
+                        reference_payroll_rows_by_employee[(int(company), int(employee))] += 1
                     continue
 
                 if table_name == "histolegajo":
@@ -508,6 +579,27 @@ def build_directory(
             )
         ]
         movement_row_count = sum(item["row_count"] for item in movement_history)
+        reported_status, reported_ingress, reported_exit = employment_status(
+            raw["reported_ingress"],
+            raw["reported_exit"],
+            as_of=as_of,
+        )
+        reference_payroll_rows = reference_payroll_rows_by_employee[(company, employee)]
+        termination_candidate = (
+            resolve_reference(
+                references,
+                "termination_reason",
+                company,
+                assignments["termination_reason"],
+            )
+            if reported_status == "ended_by_reported_dates"
+            else None
+        )
+        termination_reason = (
+            termination_candidate
+            if termination_candidate and termination_candidate.get("label") is not None
+            else None
+        )
         records.append({
             "company_code": company,
             "legajo": employee,
@@ -521,6 +613,20 @@ def build_directory(
                     assignments["agreement"] if spec.output == "category" else 0,
                 )
                 for spec in REFERENCE_SPECS
+                if spec.output != "termination_reason"
+            },
+            "termination_reason": termination_reason,
+            "employment": {
+                "reported_ingress_date": reported_ingress.isoformat() if reported_ingress else None,
+                "reported_exit_date": reported_exit.isoformat() if reported_exit else None,
+                "reported_status": reported_status,
+                "as_of": as_of.isoformat(),
+                "basis": EMPLOYMENT_BASIS,
+                "reference_payroll_participation": {
+                    "period": reference_period,
+                    "observed": reference_payroll_rows > 0,
+                    "row_count": reference_payroll_rows,
+                },
             },
             "absence": {
                 "event_count": absence["count"],
@@ -542,6 +648,9 @@ def build_directory(
             "position_observation": position_observation_by_employee.get((company, employee)),
         })
 
+    employment_status_counts = collections.Counter(
+        record["employment"]["reported_status"] for record in records
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "source": {
@@ -556,7 +665,8 @@ def build_directory(
             "contains_personal_data": True,
             "private_storage_required": True,
             "excluded_fields": [
-                "dni", "cuil", "contact", "address", "bank_account", "salary", "event_cause"
+                "dni", "cuil", "contact", "address", "bank_account", "salary",
+                "absence_leave_event_cause"
             ],
         },
         "counts": {
@@ -581,6 +691,21 @@ def build_directory(
             "future_effective_position_observation_rows": directory_quality_counts[
                 "future_effective_position_observation_rows"
             ],
+            "valid_calculation_rows": valid_event_counts["calculo"],
+            "quarantined_calculation_rows": quarantine_event_counts["calculo"],
+            "reference_payroll_period": reference_period,
+            "reference_payroll_rows": sum(
+                record["employment"]["reference_payroll_participation"]["row_count"]
+                for record in records
+            ),
+            "records_observed_in_reference_payroll": sum(
+                1 for record in records
+                if record["employment"]["reference_payroll_participation"]["observed"]
+            ),
+            "employment_statuses": {
+                status: employment_status_counts[status]
+                for status in EMPLOYMENT_STATUSES
+            },
             "records_with_position_observation": sum(
                 1 for record in records if record["position_observation"] is not None
             ),

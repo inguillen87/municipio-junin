@@ -443,11 +443,12 @@
     .rrhh-directory-access-error[hidden], .rrhh-directory-access-retry[hidden] { display: none !important; }
     .rrhh-directory-tools {
       display: grid;
-      grid-template-columns: minmax(220px, 1.5fr) repeat(5, minmax(128px, .72fr)) auto auto;
+      grid-template-columns: repeat(6, minmax(128px, 1fr));
       gap: 10px;
       align-items: end;
       padding: 0 20px 17px;
     }
+    .rrhh-directory-tools .rrhh-field:first-child { grid-column: span 2; }
     .rrhh-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: var(--rrhh-soft); font-size: 12px; font-weight: 760; }
     .rrhh-field input, .rrhh-field select {
       width: 100%;
@@ -479,7 +480,7 @@
     .rrhh-directory-state .rrhh-directory-access { margin-top: 13px; }
     .rrhh-directory-results-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 20px 11px; color: var(--rrhh-soft); font-size: 12px; }
     .rrhh-directory-results-head strong { color: var(--rrhh-ink); }
-    .rrhh-directory-table { min-width: 1080px; }
+    .rrhh-directory-table { min-width: 1200px; }
     .rrhh-directory-table th, .rrhh-directory-table td { text-align: left; }
     .rrhh-directory-table tbody tr { cursor: pointer; }
     .rrhh-directory-table tbody tr:hover { background: color-mix(in srgb, var(--rrhh-card) 88%, var(--rrhh-blue) 12%); }
@@ -536,30 +537,58 @@
     .rrhh-person-dimension, .rrhh-event-card { min-width: 0; padding: 13px; border: 1px solid var(--rrhh-border); border-radius: 12px; background: color-mix(in srgb, var(--rrhh-card) 92%, var(--rrhh-blue) 8%); }
     .rrhh-person-dimension span, .rrhh-event-card span { display: block; color: var(--rrhh-muted); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
     .rrhh-person-dimension strong, .rrhh-event-card strong { display: block; overflow-wrap: anywhere; margin-top: 6px; color: var(--rrhh-ink); font-size: 13px; line-height: 1.4; }
+    .rrhh-employment { border-color: color-mix(in srgb, var(--rrhh-blue) 48%, var(--rrhh-border)); background: color-mix(in srgb, var(--rrhh-card) 90%, var(--rrhh-blue) 10%); }
+    .rrhh-employment-summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .rrhh-employment-summary-copy { min-width: 0; }
+    .rrhh-employment-status { display: block; overflow-wrap: anywhere; color: var(--rrhh-ink); font-size: clamp(17px, 2.2vw, 22px); line-height: 1.22; letter-spacing: -.015em; }
+    .rrhh-employment-status-detail { margin: 5px 0 0; color: var(--rrhh-soft); font-size: 12px; line-height: 1.5; }
+    .rrhh-employment-basis { display: inline-flex; flex: 0 0 auto; align-items: center; min-height: 29px; padding: 0 9px; border: 1px solid var(--rrhh-border); border-radius: 999px; color: var(--rrhh-soft); background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); font-size: 12px; font-weight: 800; }
+    .rrhh-employment[data-state="warning"] .rrhh-employment-status { color: var(--rrhh-amber); }
+    .rrhh-employment[data-state="invalid"] { border-color: color-mix(in srgb, var(--rrhh-red) 55%, var(--rrhh-border)); }
+    .rrhh-employment[data-state="invalid"] .rrhh-employment-status { color: var(--rrhh-red); }
+    .rrhh-employment-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .rrhh-employment-fact { min-width: 0; padding: 12px; border: 1px solid var(--rrhh-border); border-radius: 11px; background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); }
+    .rrhh-employment-fact span { display: block; color: var(--rrhh-muted); font-size: 12px; font-weight: 800; letter-spacing: .045em; text-transform: uppercase; }
+    .rrhh-employment-fact strong { display: block; overflow-wrap: anywhere; margin-top: 5px; color: var(--rrhh-ink); font-size: 13px; line-height: 1.4; }
+    .rrhh-payroll-signal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; margin-top: 10px; padding: 12px; border: 1px solid var(--rrhh-border); border-radius: 11px; background: color-mix(in srgb, var(--rrhh-card) 92%, var(--rrhh-green) 8%); }
+    .rrhh-payroll-signal span { color: var(--rrhh-soft); font-size: 12px; font-weight: 800; }
+    .rrhh-payroll-signal strong { color: var(--rrhh-ink); font-size: 14px; }
+    .rrhh-payroll-signal small { grid-column: 1 / -1; color: var(--rrhh-muted); font-size: 12px; line-height: 1.45; }
     .rrhh-person-events { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     .rrhh-timeline-tabs { display: flex; flex-wrap: wrap; gap: 7px; }
     .rrhh-timeline-tab { min-height: 44px; padding: 0 12px; border: 1px solid var(--rrhh-border); border-radius: 999px; color: var(--rrhh-soft); background: transparent; cursor: pointer; font-size: 12px; font-weight: 800; }
     .rrhh-timeline-tab[aria-selected="true"] { border-color: var(--rrhh-blue); color: var(--rrhh-action-text); background: var(--rrhh-action-bg); }
     .rrhh-timeline-tab:focus-visible { outline: 3px solid color-mix(in srgb, var(--rrhh-blue) 42%, transparent); outline-offset: 2px; }
-    .rrhh-person-timeline { display: grid; gap: 0; margin: 14px 0 0; padding: 0; list-style: none; }
-    .rrhh-person-timeline-item { position: relative; display: grid; grid-template-columns: 86px 1fr; gap: 14px; min-width: 0; padding: 0 0 16px 22px; color: var(--rrhh-soft); }
-    .rrhh-person-timeline-item::before { content: ""; position: absolute; left: 5px; top: 5px; width: 9px; height: 9px; border: 2px solid var(--rrhh-blue); border-radius: 50%; background: var(--rrhh-card); }
-    .rrhh-person-timeline-item::after { content: ""; position: absolute; left: 9px; top: 17px; bottom: 0; width: 1px; background: var(--rrhh-border); }
-    .rrhh-person-timeline-item:last-child::after { display: none; }
-    .rrhh-person-timeline-item[data-kind="leave"]::before { border-color: var(--rrhh-violet); }
-    .rrhh-person-timeline-item[data-kind="absence"]::before { border-color: var(--rrhh-amber); }
-    .rrhh-person-timeline-item[data-kind="movement"]::before { border-color: var(--rrhh-cyan); }
-    .rrhh-timeline-period { color: var(--rrhh-muted); font-size: 12px; font-weight: 780; font-variant-numeric: tabular-nums; }
-    .rrhh-timeline-copy { min-width: 0; }
-    .rrhh-timeline-copy strong { display: block; color: var(--rrhh-ink); font-size: 13px; line-height: 1.35; }
-    .rrhh-timeline-copy span { display: block; margin-top: 4px; color: var(--rrhh-muted); font-size: 12px; line-height: 1.45; }
-    .rrhh-timeline-empty { margin: 12px 0 0; padding: 13px; border-radius: 10px; color: var(--rrhh-soft); background: color-mix(in srgb, var(--rrhh-card) 90%, var(--rrhh-blue) 10%); font-size: 12px; }
+    .rrhh-person-record-panel { min-width: 0; margin-top: 14px; }
+    .rrhh-person-record-panel:focus-visible { outline: 3px solid color-mix(in srgb, var(--rrhh-blue) 42%, transparent); outline-offset: 4px; }
+    .rrhh-person-coverage { display: grid; gap: 9px; }
+    .rrhh-person-coverage-row { display: grid; grid-template-columns: minmax(110px, .8fr) repeat(3, minmax(110px, 1fr)) minmax(100px, .8fr); gap: 10px; align-items: center; min-width: 0; padding: 12px; border: 1px solid var(--rrhh-border); border-radius: 12px; background: color-mix(in srgb, var(--rrhh-card) 92%, var(--rrhh-blue) 8%); }
+    .rrhh-person-coverage-row > div { min-width: 0; }
+    .rrhh-person-coverage-label { color: var(--rrhh-ink); font-size: 13px; font-weight: 820; }
+    .rrhh-person-coverage-row span { display: block; color: var(--rrhh-muted); font-size: 12px; line-height: 1.3; }
+    .rrhh-person-coverage-row strong { display: block; overflow-wrap: anywhere; margin-top: 4px; color: var(--rrhh-soft); font-size: 12px; line-height: 1.35; }
+    .rrhh-person-coverage-status { display: inline-flex !important; width: fit-content; min-height: 28px; align-items: center; margin-top: 0 !important; padding: 0 9px; border: 1px solid var(--rrhh-border); border-radius: 999px; color: var(--rrhh-ink) !important; background: color-mix(in srgb, var(--rrhh-card) 88%, var(--rrhh-green) 12%); }
+    .rrhh-person-coverage-status[data-state="partial"] { background: color-mix(in srgb, var(--rrhh-card) 86%, var(--rrhh-amber) 14%); }
+    .rrhh-person-record-note { margin: 11px 0 0; color: var(--rrhh-muted); font-size: 12px; line-height: 1.5; }
+    .rrhh-person-record-table-wrap { width: 100%; overflow-x: auto; scrollbar-width: thin; }
+    .rrhh-person-record-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .rrhh-person-record-table caption { padding: 0 0 10px; color: var(--rrhh-soft); font-size: 12px; line-height: 1.45; text-align: left; }
+    .rrhh-person-record-table th, .rrhh-person-record-table td { overflow-wrap: anywhere; padding: 10px 8px; border-bottom: 1px solid var(--rrhh-border); color: var(--rrhh-soft); font-size: 12px; line-height: 1.4; text-align: left; font-variant-numeric: tabular-nums; }
+    .rrhh-person-record-table th { color: var(--rrhh-muted); font-size: 12px; font-weight: 800; letter-spacing: .045em; text-transform: uppercase; }
+    .rrhh-person-record-table th:last-child, .rrhh-person-record-table td:last-child { text-align: right; }
+    .rrhh-person-record-table tbody tr:last-child td { border-bottom: 0; }
+    .rrhh-person-record-empty { margin: 0; padding: 14px; border-radius: 10px; color: var(--rrhh-soft); background: color-mix(in srgb, var(--rrhh-card) 90%, var(--rrhh-blue) 10%); font-size: 12px; line-height: 1.5; }
     .rrhh-person-evidence { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 0; }
     .rrhh-person-evidence div { min-width: 0; padding-left: 10px; border-left: 2px solid var(--rrhh-border); }
     .rrhh-person-evidence dt { color: var(--rrhh-muted); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
     .rrhh-person-evidence dd { overflow-wrap: anywhere; margin: 5px 0 0; color: var(--rrhh-ink); font-size: 12px; line-height: 1.4; font-weight: 700; }
-    .rrhh-person-actions { z-index: 3; display: flex; flex-wrap: wrap; gap: 9px; padding: 14px 22px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--rrhh-border); background: color-mix(in srgb, var(--rrhh-card) 96%, transparent); backdrop-filter: blur(14px); }
+    .rrhh-person-cohort-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .rrhh-person-cohort-buttons .rrhh-action { min-height: 44px; text-align: center; }
+    .rrhh-person-actions { z-index: 3; display: grid; gap: 9px; padding: 14px 22px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--rrhh-border); background: color-mix(in srgb, var(--rrhh-card) 96%, transparent); backdrop-filter: blur(14px); }
+    .rrhh-person-action-buttons { display: flex; flex-wrap: wrap; gap: 9px; }
     .rrhh-person-actions .rrhh-action { min-height: 44px; }
+    .rrhh-person-action-help, .rrhh-person-action-status { margin: 0; color: var(--rrhh-muted); font-size: 12px; line-height: 1.4; }
+    .rrhh-person-action-status { color: var(--rrhh-amber); font-weight: 760; }
 
     .rrhh-source-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     .rrhh-source-item { min-width: 0; padding: 13px; border: 1px solid var(--rrhh-border); border-radius: 12px; background: color-mix(in srgb, var(--rrhh-card) 94%, var(--rrhh-blue) 6%); }
@@ -642,17 +671,24 @@
       .rrhh-person-dialog { width: 100vw; border-width: 0; border-radius: 0; }
       .rrhh-person-dialog-head { padding: 16px; }
       .rrhh-person-content { padding: 14px 14px 0; }
-      .rrhh-person-dimensions, .rrhh-person-events, .rrhh-person-evidence { grid-template-columns: 1fr; }
-      .rrhh-person-timeline-item { grid-template-columns: 72px 1fr; gap: 9px; padding-left: 19px; }
+      .rrhh-person-dimensions, .rrhh-person-events, .rrhh-person-evidence, .rrhh-employment-facts { grid-template-columns: 1fr; }
+      .rrhh-employment-summary { flex-direction: column; }
+      .rrhh-person-coverage-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .rrhh-person-coverage-label { grid-column: 1 / -1; }
       .rrhh-person-actions { padding-inline: 14px; }
-      .rrhh-person-actions .rrhh-action:first-child { flex: 1 0 100%; }
-      .rrhh-person-actions .rrhh-action--secondary { flex: 1 1 0; padding-inline: 9px; font-size: 12px; text-align: center; }
+      .rrhh-person-action-buttons .rrhh-action:first-child { flex: 1 0 100%; }
+      .rrhh-person-cohort-buttons { grid-template-columns: 1fr; }
     }
     @media (max-width: 390px) {
       .rrhh-kpis { grid-template-columns: 1fr; }
       .rrhh-kpi { min-height: 126px; }
       .rrhh-card-head { flex-direction: column; }
       .rrhh-toggle { width: 100%; }
+      .rrhh-person-coverage-row { grid-template-columns: 1fr; }
+      .rrhh-person-coverage-label { grid-column: auto; }
+      .rrhh-person-record-table th, .rrhh-person-record-table td { padding-inline: 5px; font-size: 12px; }
+      .rrhh-payroll-signal { grid-template-columns: 1fr; }
+      .rrhh-payroll-signal small { grid-column: auto; }
     }
     @media (prefers-reduced-motion: reduce) {
       .rrhh-loader, .rrhh-reveal, .rrhh-person-dialog[open] { animation: none !important; }
@@ -660,10 +696,9 @@
       .rrhh-button:hover { transform: none; }
     }
     @media (forced-colors: active) {
-      .rrhh-person-dialog, .rrhh-person-section, .rrhh-person-dimension, .rrhh-event-card,
-      .rrhh-timeline-tab, .rrhh-person-actions { border-color: CanvasText; }
+      .rrhh-person-dialog, .rrhh-person-section, .rrhh-person-dimension, .rrhh-event-card, .rrhh-employment-fact, .rrhh-payroll-signal,
+      .rrhh-timeline-tab, .rrhh-person-actions, .rrhh-person-coverage-row { border-color: CanvasText; }
       .rrhh-timeline-tab[aria-selected="true"], .rrhh-action { forced-color-adjust: none; color: HighlightText; background: Highlight; }
-      .rrhh-person-timeline-item::before { border-color: Highlight; background: Canvas; }
     }
   </style>
 </head>
@@ -839,6 +874,18 @@
                 <option value="both">Licencias y ausencias</option>
               </select>
             </label>
+            <label class="rrhh-field" for="directoryReportedStatus">
+              Estado informado
+              <select id="directoryReportedStatus" name="reportedStatus"><option value="">Todos</option></select>
+            </label>
+            <label class="rrhh-field" for="directoryContractRegime">
+              Régimen contractual
+              <select id="directoryContractRegime" name="contractRegime"><option value="">Todos</option></select>
+            </label>
+            <label class="rrhh-field" for="directoryServiceSituation">
+              Situación de revista
+              <select id="directoryServiceSituation" name="serviceSituation"><option value="">Todas</option></select>
+            </label>
             <button class="rrhh-button rrhh-directory-button" id="directorySubmit" type="submit">Buscar</button>
             <button class="rrhh-button rrhh-directory-button rrhh-directory-button--ghost" id="directoryReset" type="button">Limpiar</button>
           </form>
@@ -856,7 +903,7 @@
             </div>
             <div class="rrhh-table-wrap rrhh-directory-table-wrap">
               <table class="rrhh-table rrhh-directory-table">
-                <thead><tr><th>Persona</th><th>Legajo</th><th>Cargo informado</th><th>Organización</th><th>Centro de costo informado</th><th>Licencias</th><th>Ausencias</th><th>Filas legamov</th><th></th></tr></thead>
+                <thead><tr><th>Persona</th><th>Legajo</th><th>Estado informado</th><th>Cargo informado</th><th>Organización</th><th>Centro de costo informado</th><th>Licencias</th><th>Ausencias</th><th>Filas legamov</th><th></th></tr></thead>
                 <tbody id="directoryTableBody"></tbody>
               </table>
             </div>
@@ -1041,42 +1088,72 @@
     <div class="rrhh-person-dialog-body">
       <div class="rrhh-person-loading" id="personDialogLoading" role="status">Cargando ficha…</div>
       <div class="rrhh-person-content" id="personDialogContent" hidden>
+        <section class="rrhh-person-section rrhh-employment" id="personEmployment" aria-labelledby="personEmploymentTitle">
+          <div class="rrhh-person-section-head">
+            <div><h4 id="personEmploymentTitle">Situación laboral informada</h4><p class="rrhh-person-section-note">Lectura conservadora de las fechas y clasificaciones publicadas por GRH.</p></div>
+          </div>
+          <div class="rrhh-employment-summary">
+            <div class="rrhh-employment-summary-copy">
+              <strong class="rrhh-employment-status" id="personEmploymentStatus">Verificando situación informada</strong>
+              <p class="rrhh-employment-status-detail" id="personEmploymentStatusDetail">No certifica una relación laboral actual.</p>
+            </div>
+            <span class="rrhh-employment-basis" id="personEmploymentBasis">Base en verificación</span>
+          </div>
+          <div class="rrhh-employment-facts" id="personEmploymentFacts"></div>
+          <div class="rrhh-payroll-signal" id="personPayrollSignal">
+            <span id="personPayrollLabel">Participación observada en cálculo</span>
+            <strong id="personPayrollValue">Verificando</strong>
+            <small>Señal del cálculo gobernado, no acredita pago ni vigencia laboral.</small>
+          </div>
+        </section>
         <section class="rrhh-person-section" aria-labelledby="personAssignmentTitle">
           <div class="rrhh-person-section-head">
-            <div><h4 id="personAssignmentTitle">Adscripción informada</h4><p class="rrhh-person-section-note">Dimensiones disponibles en el corte; no presume vigencia fuera de la fuente.</p></div>
+            <div><h4 id="personAssignmentTitle">Ubicación y encuadre informados</h4><p class="rrhh-person-section-note">Clasificaciones disponibles en el corte; no certifican adscripción ni vigencia fuera de la fuente.</p></div>
           </div>
           <div class="rrhh-person-dimensions" id="personDimensions"></div>
         </section>
-        <section aria-label="Señales históricas">
+        <section aria-label="Resumen de registros válidos asociados">
           <div class="rrhh-person-events" id="personEvents"></div>
         </section>
         <section class="rrhh-person-section" id="personTimeline" aria-labelledby="personTimelineTitle">
           <div class="rrhh-person-section-head">
-            <div><h4 id="personTimelineTitle">Cronología publicada</h4><p class="rrhh-person-section-note" id="personTimelineCoverage">Hasta 24 registros por fuente.</p></div>
+            <div><h4 id="personTimelineTitle">Registros asociados en la fuente</h4><p class="rrhh-person-section-note" id="personTimelineCoverage">Verificando cobertura del detalle nominal.</p></div>
           </div>
-          <div class="rrhh-timeline-tabs" id="personTimelineTabs" role="tablist" aria-label="Filtrar cronología">
-            <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="true" data-timeline-filter="all">Todos</button>
-            <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="absence">Ausencias</button>
+          <div class="rrhh-timeline-tabs" id="personTimelineTabs" role="tablist" aria-label="Elegir tabla de registros">
+            <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="true" data-timeline-filter="summary">Resumen</button>
             <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="leave">Licencias</button>
-            <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="movement">Movimientos</button>
+            <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="absence">Ausencias</button>
+            <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="movement">legamov</button>
           </div>
-          <ul class="rrhh-person-timeline" id="personTimelineList" role="tabpanel" aria-label="Eventos de la cronología" aria-live="polite"></ul>
-          <p class="rrhh-timeline-empty" id="personTimelineEmpty" hidden>No hay registros publicados para este filtro.</p>
+          <div class="rrhh-person-record-panel" id="personTimelineList" role="tabpanel" aria-label="Resumen de cobertura" aria-live="polite" tabindex="0"></div>
         </section>
         <section class="rrhh-person-section" aria-labelledby="personEvidenceTitle">
           <div class="rrhh-person-section-head"><div><h4 id="personEvidenceTitle">Evidencia y corte</h4><p class="rrhh-person-section-note">Trazabilidad de la ficha consultada.</p></div></div>
           <dl class="rrhh-person-evidence">
             <div><dt>Corte GRH</dt><dd id="personEvidenceCutoff">—</dd></div>
             <div><dt>Sistema canónico</dt><dd id="personEvidenceSystem">—</dd></div>
-            <div><dt>Alcance</dt><dd>Máximo 24 registros por historial publicado</dd></div>
+            <div><dt>Contrato de detalle</dt><dd id="personEvidenceContract">grh-directory-v3</dd></div>
           </dl>
+        </section>
+        <section class="rrhh-person-section" id="personAggregateActions" aria-labelledby="personAggregateActionsTitle" hidden>
+          <div class="rrhh-person-section-head">
+            <div>
+              <h4 id="personAggregateActionsTitle">Profundizar en datos agregados</h4>
+              <p class="rrhh-person-section-note rrhh-person-action-help">Sector y convenio abren una cohorte agregada; no muestran remuneración individual.</p>
+            </div>
+          </div>
+          <div class="rrhh-person-cohort-buttons">
+            <a class="rrhh-action rrhh-action--secondary" id="personHaciendaSector" href="hacienda.html" hidden>Ver nómina agregada del sector</a>
+            <a class="rrhh-action rrhh-action--secondary" id="personHaciendaAgreement" href="hacienda.html" hidden>Ver nómina agregada del convenio</a>
+          </div>
         </section>
       </div>
     </div>
     <footer class="rrhh-person-actions" id="personActions" hidden>
-      <a class="rrhh-action" href="ia.html">Abrir BOT IA</a>
-      <a class="rrhh-action rrhh-action--secondary" id="personHaciendaSector" href="hacienda.html" hidden>Hacienda · sector</a>
-      <a class="rrhh-action rrhh-action--secondary" id="personHaciendaAgreement" href="hacienda.html" hidden>Hacienda · convenio</a>
+      <div class="rrhh-person-action-buttons">
+        <a class="rrhh-action" id="personAssistantAction" href="ia.html?handoff=person">Analizar esta ficha con Asistente GRH</a>
+      </div>
+      <p class="rrhh-person-action-status" id="personActionStatus" role="status" hidden></p>
     </footer>
   </dialog>
 

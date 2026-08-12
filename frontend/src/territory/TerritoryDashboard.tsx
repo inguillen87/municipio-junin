@@ -5,7 +5,7 @@ import { TerritoryMap } from './TerritoryMap';
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('es-AR', {
   dateStyle: 'short',
   timeStyle: 'short',
-  timeZone: 'America/Argentina/Buenos_Aires',
+  timeZone: 'America/Argentina/Mendoza',
 });
 
 function sourceCount(contract: MunicipalTerritoryContract): string {
@@ -23,8 +23,8 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
       <header className="territory-hero" aria-labelledby="page-title">
         <div>
           <p className="territory-hero__eyebrow">Inteligencia geográfica municipal</p>
-          <h1 id="page-title">Centro Territorial Junín</h1>
-          <p>Referencia oficial del partido y sus localidades para explorar el territorio, sin capas operativas inventadas.</p>
+          <h1 id="page-title">Centro Territorial Junín · Mendoza</h1>
+          <p>Referencia oficial del departamento y sus localidades GeoRef para explorar el territorio, sin capas operativas inventadas.</p>
         </div>
         <div className="territory-hero__status" data-state={partial ? 'partial' : 'ready'}>
           <span aria-hidden="true" />
@@ -38,7 +38,7 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
       {partial ? (
         <section className="territory-notice" role="status" aria-live="polite">
           <strong>Localidades temporalmente no disponibles.</strong>
-          <span> El límite oficial del partido continúa operativo; el buscador queda deshabilitado sin completar datos.</span>
+          <span> El límite oficial del departamento continúa operativo; el buscador queda deshabilitado sin completar datos.</span>
         </section>
       ) : null}
 
@@ -50,7 +50,7 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
           tone="cyan"
         />
         <KpiCard
-          label="Localidades oficiales"
+          label="Localidades GeoRef"
           value={String(contract.localities.length)}
           note={partial ? 'GeoRef no disponible; sin sustitución.' : 'Centroides incluidos en la respuesta oficial.'}
           tone={partial ? 'amber' : 'green'}

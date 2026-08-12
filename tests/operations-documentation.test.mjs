@@ -67,7 +67,9 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(user, /cardinalidad desconocida|cantidad de personas distintas.*protegida/is);
   assert.match(user, /close_explanation[\s\S]{0,180}Cierre explicado/i);
   assert.match(user, /close_explanation[\s\S]{0,420}422/i);
-  assert.match(user, /grh-directory-v2/);
+  assert.match(user, /grh-directory-v3/);
+  assert.match(user, /sin egreso informado[”"]? no certifica[\s\S]{0,80}vínculo activo/i);
+  assert.match(user, /Participación en cálculo 2026-07[\s\S]{0,260}no[\s\S]{0,80}pago efectivo/i);
   assert.match(user, /24 ausencias, licencias\s+y períodos|hasta 24 ausencias/i);
 
   const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
@@ -85,7 +87,9 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(technical, /GET \/api\/grh-decision-brief[\s\S]{0,240}grh-decision-brief-v1/i);
   assert.match(technical, /\/api\/grh-data[\s\S]{0,240}410[\s\S]{0,120}sin leer artefactos/i);
   assert.match(technical, /profile[\s\S]{0,100}semantic[\s\S]{0,120}exclusivamente en backend/i);
-  assert.match(technical, /004_grh_directory_v2\.sql/);
+  assert.match(technical, /004_grh_directory_v2\.sql[\s\S]{0,160}005_grh_directory_v3\.sql/);
+  assert.match(technical, /grh-directory-v3[\s\S]{0,500}legajo_reported_dates/);
+  assert.match(technical, /referencePayrollParticipation[\s\S]{0,260}no evidencia[\s\S]{0,100}pago/i);
   assert.match(read('manuales.html'), /filas fuente[\s\S]{0,180}legamov/i);
 
   const roadmap = read('docs/ENTERPRISE_PRODUCT_ROADMAP.md');
@@ -189,6 +193,25 @@ test('the living documentation package exists and distinguishes local, condition
   assert.match(rbacModel, /baseline[\s\S]*modo sombra[\s\S]*intersección restrictiva/i);
   assert.match(rbacModel, /no ejecutar `db push`, `migrate dev`, `migrate reset` ni `migrate deploy`/i);
   assert.match(rbacModel, /maker[\s\S]*checker/i);
+});
+
+test('GRH directory v3 documentation keeps the remote release gate closed', () => {
+  const deployment = read('DEPLOYMENT.md');
+  const readme = read('README.md');
+  const runbook = read('docs/GRH_DIRECTORY_PREVIEW_REHEARSAL.md');
+
+  assert.match(runbook, /^# Ensayo descartable del Directorio GRH v3$/m);
+  assert.match(runbook, /003 \+ 004 \+[\s\S]{0,20}005/);
+  assert.match(runbook, /005_grh_directory_v3\.sql/);
+  assert.match(runbook, /grh-directory-v3/);
+  assert.match(runbook, /reportedStatus[\s\S]{0,100}contractRegime[\s\S]{0,100}serviceSituation/);
+  assert.match(runbook, /no se[\s\S]{0,60}ejecutó DDL[\s\S]{0,120}Preview,[\s\S]{0,40}Production[\s\S]{0,80}base remota/i);
+  assert.match(runbook, /huella[\s\S]{0,120}diferente/i);
+  assert.match(runbook, /grh-directory-v3\.json/);
+  assert.match(deployment, /grh-directory-v3[\s\S]{0,500}003 \+ 004 \+ 005/);
+  assert.match(deployment, /no se ejecutaron contra Preview, Production ni una DB[\s\S]{0,20}remota/i);
+  assert.match(readme, /Directorio RRHH v3[\s\S]{0,120}003 \+ 004 \+ 005/);
+  assert.match(readme, /no se ejecutó la migración `005`[\s\S]{0,160}Preview, Production[\s\S]{0,80}DB remota/i);
 });
 
 test('O2A real-local evidence is documented without promoting O2B or production claims', () => {
@@ -400,7 +423,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
   assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 14);
-  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v2');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v3');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory-access'], 'grh-directory-access-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-domain-catalog'], 'grh-domain-catalog-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-workforce-finance'], 'grh-workforce-finance-v1');
@@ -408,7 +431,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-movement-operations'], 'grh-movement-operations-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-action-ledger'], 'grh-action-ledger-v1');
-  assert.equal(releaseTruth.API_CONTRACTS['/api/municipal-territory'], 'municipal-territory-v1');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/municipal-territory'], 'municipal-territory-v2');
 
   for (const relativePath of releasePaths) {
     const source = read(relativePath);

@@ -136,7 +136,7 @@ municipio y los contratos privados publicados.
 | [Inicio seguro](../inicio.html) | Orienta el recorrido de los siete roles técnicos vigentes con capabilities calculadas en servidor | Consulta sólo `/api/auth/me`; no carga GRH, no crea permisos/cuentas y no certifica despliegue |
 | [Panel Ejecutivo GRH](../dashboard.html) | Panorama transversal desde `grh-executive-v2` + `grh-quality-v1`; incorpora lectura de `grh-close-v1` | Superficie privada separada; no certifica despliegue, pago ni tiempo real |
 | [Centro Ejecutivo GRH](../grh-ejecutivo.html) | Estructura, control de cálculo y eventos desde proyecciones seguras | Consumidor migrado localmente; sin fichas individuales ni PII |
-| [Centro Ejecutivo RRHH](../rrhh.html) | Participación agregada y directorio privado gobernado `grh-directory-v2`, con centro de costo informado y cronología acotada | La ficha nominal exige rol, usuario, tenant y finalidad autorizados; las filas de `legamov` no equivalen a altas, bajas, traslados ni rotación |
+| [Centro Ejecutivo RRHH](../rrhh.html) | Participación agregada y directorio privado gobernado `grh-directory-v3`, con situación laboral informada, catálogos de contrato/revista, centro de costo y cronología acotada | La ficha nominal exige rol, usuario, tenant y finalidad autorizados; “sin egreso informado” no certifica vínculo activo y la participación en cálculo no prueba pago |
 | [Hacienda y Nómina](../hacienda.html) | Cierre mensual explicado: componentes de cálculo, controles y conciliación real por período desde importes protegidos | `grh-close-v1` local; sólo compara meses calendario consecutivos si ambos alcanzan k≥10; no certifica pago, presupuesto, causalidad, contabilidad ni deployment |
 | [Calidad y Linaje GRH](../control.html) | Inventario, procedencia, score, cuarentena, cobertura, conciliación y riesgos del snapshot | Consumidor migrado localmente a `grh-quality-v1`, que excluye categorías, códigos e importes |
 | [Centro de Reportes GRH](../reportes.html) | Informe local sobre proyección portable con umbral k=10 | Contrato v2 alineado localmente; no declarar deployment ni documento oficial |
@@ -149,7 +149,7 @@ municipio y los contratos privados publicados.
 
 Los endpoints seguros `GET /api/grh-executive` (`grh-executive-v2`),
 `GET /api/grh-quality` (`grh-quality-v1`), `GET /api/grh-close`
-(`grh-close-v1`) y `GET /api/grh-directory` (`grh-directory-v2`) están
+(`grh-close-v1`) y `GET /api/grh-directory` (`grh-directory-v3`) están
 implementados localmente. Panel,
 GRH, Calidad, RRHH y Hacienda no conservan referencias HTTP al contrato fuente.
 `GET /api/grh-data` autentica, verifica tenant y responde
@@ -457,9 +457,20 @@ efectivo, deuda o asiento contable sin una fuente adicional reconciliada.
 6. Abra [Calidad y Linaje GRH](../control.html) para distinguir cobertura,
    integridad de joins, cuarentena y riesgos antes de escalar una señal.
 7. Si su identidad privada está autorizada, abra la ficha individual desde el
-   directorio. Confirme adscripción, corte y alcance antes de interpretar sus
-   tres señales históricas.
-8. Use la cronología sólo como evidencia acotada: hasta 24 ausencias, licencias
+   directorio. Confirme ubicación informada, corte y alcance antes de interpretar
+   las señales históricas.
+8. Lea **Situación laboral informada** como una interpretación de las fechas de
+   ingreso y egreso declaradas en `legajo`: puede indicar egreso informado, falta
+   de egreso informado o una fecha faltante/inconsistente que debe revisarse.
+   Ninguno de esos estados certifica por sí solo un vínculo contractual activo o
+   inactivo.
+9. Lea **Participación en cálculo 2026-07** como una señal separada. “Observada”
+   significa que existen filas gobernadas de `calculo` para ese período; no
+   acredita liquidación correcta, transferencia, recibo ni pago efectivo.
+10. Use los filtros de estado informado, régimen contractual y situación de
+    revista para acotar el universo. Un código sin etiqueta oficial no debe
+    presentarse como una categoría entendible ni inferirse manualmente.
+11. Use la cronología sólo como evidencia acotada: hasta 24 ausencias, licencias
    y períodos de filas fuente por historial. El centro de costo es una
    clasificación informada; no equivale a departamento ni asignación exclusiva.
 
@@ -945,10 +956,11 @@ de ingeniería. No significa publicación en DB, API o producción.
 No. El control de cálculo no es evidencia bancaria.
 
 **¿Puede mostrar fichas individuales?**  
-Sí, únicamente en el directorio privado `grh-directory-v2` para identidades
+Sí, únicamente en el directorio privado `grh-directory-v3` para identidades
 autorizadas, tenant correcto y finalidad gobernada. La respuesta minimiza campos,
-limita cada historial a 24 registros y no publica causas, contacto, domicilio,
-cuenta bancaria ni importes salariales.
+limita cada historial a 24 registros y no publica causas de ausencias/licencias,
+contacto, domicilio, cuenta bancaria ni importes salariales. Las fechas laborales
+son valores informados por la fuente y la señal de cálculo no certifica pago.
 
 **¿Puede implementarse en otro municipio?**  
 La arquitectura puede adaptarse, pero cada municipio necesita una fuente

@@ -1,10 +1,12 @@
+import { createHash } from 'node:crypto';
+
 import { inspectGrhDirectoryArtifact } from './grh-directory-contract.js';
 
 const SOURCE_UPSERT_SQL = `INSERT INTO grh_directory_sources
   (tenant_id, schema_version, canonical_system, source_file, source_sha256,
    snapshot_as_of, artifact_generated_at, record_count, leave_record_count,
-   position_observation_count, absence_record_count, movement_period_count, published_at)
-VALUES ($1, $2, $3, $4, $5, $6::date, $7::timestamptz, $8, $9, $10, $11, $12, NOW())
+   position_observation_count, absence_record_count, movement_period_count, content_sha256, published_at)
+VALUES ($1, $2, $3, $4, $5, $6::date, $7::timestamptz, $8, $9, $10, $11, $12, $13, NOW())
 ON CONFLICT (tenant_id) DO UPDATE SET
   schema_version = EXCLUDED.schema_version,
   canonical_system = EXCLUDED.canonical_system,
@@ -17,6 +19,7 @@ ON CONFLICT (tenant_id) DO UPDATE SET
   position_observation_count = EXCLUDED.position_observation_count,
   absence_record_count = EXCLUDED.absence_record_count,
   movement_period_count = EXCLUDED.movement_period_count,
+  content_sha256 = EXCLUDED.content_sha256,
   published_at = NOW()`;
 
 const DIMENSION_INSERT_SQL = `INSERT INTO grh_directory_dimensions
@@ -46,7 +49,10 @@ const PEOPLE_INSERT_SQL = `INSERT INTO grh_directory_people
    position_observation_source, category_code, agreement_code,
    absence_event_count, latest_absence_date, leave_event_count,
    latest_leave_start_date, latest_leave_end_date, movement_row_count,
-   movement_period_count, latest_movement_period)
+    movement_period_count, latest_movement_period, reported_ingress_date,
+    reported_exit_date, reported_status, employment_as_of, employment_basis,
+    reference_payroll_period, reference_payroll_observed, reference_payroll_row_count,
+    contract_regime_code, service_situation_code, termination_reason_code, content_sha256)
 SELECT $1,
        item.company_code,
        item.legajo,
@@ -69,7 +75,19 @@ SELECT $1,
        item.latest_leave_end_date::date,
        item.movement_row_count,
        item.movement_period_count,
-       item.latest_movement_period
+       item.latest_movement_period,
+       item.reported_ingress_date::date,
+       item.reported_exit_date::date,
+       item.reported_status,
+       item.employment_as_of::date,
+       item.employment_basis,
+       item.reference_payroll_period,
+       item.reference_payroll_observed,
+       item.reference_payroll_row_count,
+       item.contract_regime_code,
+       item.service_situation_code,
+       item.termination_reason_code,
+       item.content_sha256
   FROM jsonb_to_recordset($2::jsonb) AS item(
     company_code INTEGER,
     legajo BIGINT,
@@ -92,7 +110,19 @@ SELECT $1,
     latest_leave_end_date TEXT,
     movement_row_count INTEGER,
     movement_period_count INTEGER,
-    latest_movement_period TEXT
+    latest_movement_period TEXT,
+    reported_ingress_date TEXT,
+    reported_exit_date TEXT,
+    reported_status TEXT,
+    employment_as_of TEXT,
+    employment_basis TEXT,
+    reference_payroll_period TEXT,
+    reference_payroll_observed BOOLEAN,
+    reference_payroll_row_count INTEGER,
+    contract_regime_code INTEGER,
+    service_situation_code INTEGER,
+    termination_reason_code INTEGER,
+    content_sha256 TEXT
   )`;
 
 const LEAVE_INSERT_SQL = `INSERT INTO grh_directory_leave_events
@@ -149,7 +179,10 @@ const DIMENSION_SPECS = Object.freeze([
   Object.freeze({ artifact: 'organization', storage: 'organization' }),
   Object.freeze({ artifact: 'position', storage: 'position' }),
   Object.freeze({ artifact: 'category', storage: 'category' }),
-  Object.freeze({ artifact: 'agreement', storage: 'agreement' }),
+  Object.freeze({ artifact: 'agreement', storage: 'agreement', global: true }),
+  Object.freeze({ artifact: 'contract_regime', storage: 'contractRegime', global: true }),
+  Object.freeze({ artifact: 'service_situation', storage: 'serviceSituation', global: true }),
+  Object.freeze({ artifact: 'termination_reason', storage: 'terminationReason', global: true }),
 ]);
 
 function publicationError(code) {
@@ -168,6 +201,38 @@ function chunks(values, size) {
     result.push(values.slice(index, index + size));
   }
   return result;
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return '{' + Object.keys(value).sort().map(key => (
+      JSON.stringify(key) + ':' + canonicalJson(value[key])
+    )).join(',') + '}';
+  }
+  return JSON.stringify(value);
+}
+
+function sha256(value) {
+  return createHash('sha256').update(canonicalJson(value)).digest('hex');
+}
+
+function governedDirectoryContent(artifact) {
+  return {
+    schemaVersion: artifact.schema_version,
+    canonicalSystem: artifact.source.canonical_system,
+    sourceFile: artifact.source.file,
+    sourceSha256: artifact.source.sha256,
+    snapshotAsOf: artifact.source.snapshot_as_of,
+    records: artifact.records,
+  };
+}
+
+export function grhDirectoryContentSha256(artifact) {
+  if (!inspectGrhDirectoryArtifact(artifact).ok) {
+    throw publicationError('GRH_DIRECTORY_ARTIFACT_INVALID');
+  }
+  return sha256(governedDirectoryContent(artifact));
 }
 
 export function flattenGrhDirectoryArtifact(artifact) {
@@ -196,7 +261,7 @@ export function flattenGrhDirectoryArtifact(artifact) {
       const dimension = spec.storage;
       const value = record[spec.artifact];
       if (!value) continue;
-      const companyCode = dimension === 'agreement' ? 0 : record.company_code;
+      const companyCode = spec.global ? 0 : record.company_code;
       const scopeCode = dimension === 'category' ? record.agreement?.code ?? 0 : 0;
       const key = [dimension, companyCode, scopeCode, value.code].join(':');
       const next = {
@@ -252,6 +317,7 @@ export function flattenGrhDirectoryArtifact(artifact) {
         row_count: event.row_count,
       });
     });
+    const employment = record.employment;
     return {
       company_code: record.company_code,
       legajo: record.legajo,
@@ -275,6 +341,18 @@ export function flattenGrhDirectoryArtifact(artifact) {
       movement_row_count: record.movement.row_count,
       movement_period_count: record.movement.period_count,
       latest_movement_period: record.movement.latest_period,
+      reported_ingress_date: employment.reported_ingress_date,
+      reported_exit_date: employment.reported_exit_date,
+      reported_status: employment.reported_status,
+      employment_as_of: employment.as_of,
+      employment_basis: employment.basis,
+      reference_payroll_period: employment.reference_payroll_participation.period,
+      reference_payroll_observed: employment.reference_payroll_participation.observed,
+      reference_payroll_row_count: employment.reference_payroll_participation.row_count,
+      contract_regime_code: record.contract_regime?.code ?? null,
+      service_situation_code: record.service_situation?.code ?? null,
+      termination_reason_code: record.termination_reason?.code ?? null,
+      content_sha256: sha256(record),
     };
   });
   return Object.freeze({
@@ -311,27 +389,33 @@ export async function publishGrhDirectory(
     throw publicationError('GRH_DIRECTORY_ARTIFACT_INVALID');
   }
   const flattened = flattenGrhDirectoryArtifact(artifact);
+  const contentSha256 = grhDirectoryContentSha256(artifact);
   const positionObservationCount = flattened.people.filter(
     person => person.position_observation_label !== null,
   ).length;
   if (transactionMode === 'managed') await client.query('BEGIN');
   try {
     await client.query(
-      "SELECT pg_advisory_xact_lock(hashtext('grh-directory-v2'), hashtext($1))",
+      "SELECT pg_advisory_xact_lock(hashtext('grh-directory-v3'), hashtext($1))",
       [tenantId],
     );
     const existing = await client.query(
       `SELECT schema_version, source_sha256, snapshot_as_of::text, record_count, leave_record_count,
-              position_observation_count, absence_record_count, movement_period_count
+               position_observation_count, absence_record_count, movement_period_count, content_sha256
          FROM grh_directory_sources
         WHERE tenant_id = $1
         FOR UPDATE`,
       [tenantId],
     );
     const current = existing.rows?.[0];
-    // Cardinality and source metadata cannot prove content identity. Always
-    // rebuild every tenant family inside the same transaction so equal-sized
-    // drift in names, dimensions or histories is repaired deterministically.
+    const sameContent = current?.schema_version === artifact.schema_version &&
+      current?.source_sha256 === artifact.source.sha256 &&
+      String(current?.snapshot_as_of) === artifact.source.snapshot_as_of &&
+      current?.content_sha256 === contentSha256;
+    // A digest stored beside the rows cannot prove that those rows were not
+    // changed out of band. Rebuild every materialized family transactionally,
+    // even for the same governed digest. This keeps replay idempotent while it
+    // also repairs equal-cardinality drift in people, dimensions and histories.
     await client.query('DELETE FROM grh_directory_people WHERE tenant_id = $1', [tenantId]);
     await client.query('DELETE FROM grh_directory_dimensions WHERE tenant_id = $1', [tenantId]);
     await client.query(SOURCE_UPSERT_SQL, [
@@ -347,6 +431,7 @@ export async function publishGrhDirectory(
       positionObservationCount,
       flattened.absenceEvents.length,
       flattened.movementPeriods.length,
+      contentSha256,
     ]);
     for (const batch of chunks(flattened.dimensions, chunkSize)) {
       await client.query(DIMENSION_INSERT_SQL, [tenantId, JSON.stringify(batch)]);
@@ -383,7 +468,10 @@ export async function publishGrhDirectory(
       throw publicationError('GRH_DIRECTORY_PUBLICATION_COUNT_MISMATCH');
     }
     if (transactionMode === 'managed') await client.query('COMMIT');
-    return Object.freeze({ status: current ? 'replaced' : 'published' });
+    return Object.freeze({
+      status: current ? (sameContent ? 'unchanged' : 'replaced') : 'published',
+      contentSha256,
+    });
   } catch (error) {
     if (transactionMode === 'managed') await client.query('ROLLBACK').catch(() => {});
     throw error;

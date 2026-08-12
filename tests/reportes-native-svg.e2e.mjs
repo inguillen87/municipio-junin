@@ -17,7 +17,7 @@ const contentTypes = {
   '.svg': 'image/svg+xml',
 };
 const availablePeriods = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
-const participants = [820, 830, 840, 850, 856];
+const participants = [834, 830, 851, 855, 856];
 const approvedSha256 = 'e7403da1d036c8d60eab26bcb3f97e6e7c3a70629090deac8cc4e5438250b3d9';
 const PRIVATE_DATA_PATHS = new Set([
   '/api/grh-executive',
@@ -101,9 +101,11 @@ function availableReport(requestedPeriod = '2026-07') {
       totpagoStatus: 'totpago_diagnostic_only',
     },
     executiveSummary: [
-      `${participantCount} participantes distintos aparecen en calculos validos del periodo ${period}.`,
-      'El control queda dentro de la tolerancia; no evidencia un pago bancario.',
-      'El score de calidad corresponde al extracto agregado gobernado.',
+      `${participantCount} personas aparecen en cálculos válidos de ${period}: +${participantCount - participants[Math.max(0, selectedIndex - 1)]} frente al mes anterior. No equivale a dotación activa.`,
+      distributionAvailable
+        ? 'OBRERO es la clasificación sectorial con mayor participación publicada: 220 personas (25,7%).'
+        : 'El desglose sectorial no se extrapola desde otro período.',
+      'El control está dentro de tolerancia, pero la consistencia entre fuentes alcanza 62/100 y requiere revisión; no acredita un pago bancario.',
     ],
     participantTrend: availablePeriods.slice(0, selectedIndex + 1).map((item, itemIndex) => ({
       period: item,
@@ -121,9 +123,17 @@ function availableReport(requestedPeriod = '2026-07') {
         privacyStatus: distributionAvailable ? 'partially_suppressed' : undefined,
         threshold: distributionAvailable ? 10 : undefined,
         participants: distributionAvailable ? [
-          { label: 'Servicios publicos', participants: 420, sharePct: 49.07, privacyStatus: 'released' },
-          { label: 'Administracion', participants: 300, sharePct: 35.05, privacyStatus: 'released' },
-          { label: 'Otros (celdas protegidas)', participants: 136, sharePct: 15.88, privacyStatus: 'protected_aggregate' },
+          { label: 'OBRERO', participants: 220, sharePct: 25.7, privacyStatus: 'released' },
+          { label: 'TEMPORARIOS', participants: 163, sharePct: 19.04, privacyStatus: 'released' },
+          { label: 'ADMINISTRATIVO', participants: 157, sharePct: 18.34, privacyStatus: 'released' },
+          { label: 'DOCENTES JARDINES MATERNALES', participants: 58, sharePct: 6.78, privacyStatus: 'released' },
+          { label: 'HS. CATEDRAS CULTURA', participants: 55, sharePct: 6.43, privacyStatus: 'released' },
+          { label: 'HS. CATEDRAS DEPORTES', participants: 42, sharePct: 4.91, privacyStatus: 'released' },
+          { label: 'FUNCIONARIOS', participants: 23, sharePct: 2.69, privacyStatus: 'released' },
+          { label: 'AMANECER', participants: 12, sharePct: 1.4, privacyStatus: 'released' },
+          { label: 'H.C.D. SECRETARIOS', participants: 12, sharePct: 1.4, privacyStatus: 'released' },
+          { label: 'MANITOS DE COLORES', participants: 12, sharePct: 1.4, privacyStatus: 'released' },
+          { label: 'Otros (celdas protegidas)', participants: 102, sharePct: 11.92, privacyStatus: 'protected_aggregate' },
         ] : [],
       },
     },
@@ -160,7 +170,10 @@ function availableReport(requestedPeriod = '2026-07') {
         calculationControlAnomalousPeriods: 4,
       },
     },
-    recommendedNextSteps: ['Declarar moneda y unidad antes de interpretar importes.'],
+    recommendedNextSteps: [
+      'Abrir Estructura para comprender la composición del período.',
+      'Revisar en Hacienda la consistencia entre fuentes antes de certificar.',
+    ],
     furtherQuestions: ['Que maestro definira el estado contractual activo?'],
     caveats: [
       'Snapshot historico; realtime=false.',
@@ -323,10 +336,10 @@ test('reportes renders accessible governed GRH SVG charts at their visible deskt
 
     assert.equal(result.selectedPeriod, '2026-07');
     assert.deepEqual([...result.periodOptions].sort(), [...availablePeriods].sort());
-    assert.match(result.status, /GRH canónico.*linaje e7403da1d036…8250b3d9.*agregado sin PII.*no tiempo real.*personas_junin excluida/i);
+    assert.match(result.status, /Fuente GRH verificada.*respaldo del 6 (?:de )?ago(?: de)? 2026.*mes analizado jul 2026.*datos agregados y sin identificación personal/i);
     assert.equal(result.skipTarget, '#main-content');
     assert.match(result.visibleText, /pesos argentinos|\bARS\b/i);
-    assert.match(result.visibleText, /no evidencia un pago bancario|ningún valor acredita .*pago bancario/i);
+    assert.match(result.visibleText, /no (?:evidencia|acredita) un pago bancario|no (?:prueban|acreditan) (?:una )?(?:transferencia|transferencias)/i);
     assert.match(result.visibleText, /e7403da1d036…8250b3d9/i);
     assert.doesNotMatch(result.visibleText, new RegExp(approvedSha256, 'i'));
     assert.doesNotMatch(result.visibleText, /Visualización no habilitada|\$\s*\d|data_points/i);
@@ -338,8 +351,6 @@ test('reportes renders accessible governed GRH SVG charts at their visible deskt
     const chartByTab = {
       resumen: 'chart-participantes',
       dotacion: 'chart-sectores',
-      control: 'chart-control',
-      calidad: 'chart-calidad',
     };
     const renderedCharts = [];
     for (const [tab, chartId] of Object.entries(chartByTab)) {
@@ -391,7 +402,41 @@ test('reportes renders accessible governed GRH SVG charts at their visible deskt
         `${tab} effective SVG label is too small at ${viewport.width}px: ${bounds.effectiveLabelPx}px`);
       renderedCharts.push(bounds);
     }
-    assert.equal(renderedCharts.length, 4);
+    assert.equal(renderedCharts.length, 2);
+
+    await page.locator('#tab-btn-control').click();
+    await page.waitForFunction(() => document.querySelectorAll('#control-components .metric-card').length === 4);
+    const controlReading = await page.evaluate(() => ({
+      metricCount: document.querySelectorAll('#control-components .metric-card').length,
+      text: document.querySelector('#tab-control')?.textContent,
+      svgCount: document.querySelectorAll('#tab-control svg').length,
+      detailsOpen: document.querySelector('#tab-control details')?.open,
+    }));
+    assert.equal(controlReading.metricCount, 4);
+    assert.equal(controlReading.svgCount, 0);
+    assert.equal(controlReading.detailsOpen, false);
+    assert.match(controlReading.text, /valores del período/i);
+    assert.match(controlReading.text, /no prueban una transferencia ni un pago bancario/i);
+    if (viewport.width === 1440) {
+      await page.screenshot({ path: path.join(process.env.TEMP, 'municontrol-reportes-control-1440.png'), fullPage: false });
+    }
+
+    await page.locator('#tab-btn-calidad').click();
+    await page.waitForFunction(() => document.querySelectorAll('#quality-signals .quality-signal').length === 4);
+    const qualityReading = await page.evaluate(() => ({
+      signalCount: document.querySelectorAll('#quality-signals .quality-signal').length,
+      text: document.querySelector('#tab-calidad')?.textContent,
+      svgCount: document.querySelectorAll('#tab-calidad svg').length,
+      detailsOpen: document.querySelector('#tab-calidad details')?.open,
+    }));
+    assert.equal(qualityReading.signalCount, 4);
+    assert.equal(qualityReading.svgCount, 0);
+    assert.equal(qualityReading.detailsOpen, false);
+    assert.match(qualityReading.text, /Con observaciones/i);
+    assert.match(qualityReading.text, /Abrir análisis completo de calidad/i);
+    if (viewport.width === 1440) {
+      await page.screenshot({ path: path.join(process.env.TEMP, 'municontrol-reportes-quality-1440.png'), fullPage: false });
+    }
 
     if (viewport.width === 1440) {
       await page.locator('#tab-btn-resumen').focus();
@@ -414,8 +459,32 @@ test('reportes renders accessible governed GRH SVG charts at their visible deskt
       await page.locator('#tab-btn-dotacion').click();
       await page.waitForFunction(() => document.querySelector('#chart-sectores')?.dataset.chartState === 'empty');
       assert.equal(await page.locator('#chart-sectores').getAttribute('data-chart-state'), 'empty');
-      assert.match(await page.locator('#sector-insight').textContent(), /sin inventar una composición histórica/i);
+      assert.match(await page.locator('#sector-insight').textContent(), /No completamos meses anteriores con datos de otro período/i);
     }
+
+    if (await page.locator('#period-selector option[value="2026-07"]').count()) {
+      await page.locator('#period-selector').selectOption('2026-07');
+      await page.waitForFunction(() => document.querySelector('#data-status')?.textContent.includes('jul 2026'));
+    }
+    await page.locator('#tab-btn-resumen').click();
+    const remainingScroll = await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.body.style.scrollBehavior = 'auto';
+      window.scrollTo(0, 0);
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+      const main = document.querySelector('.main-content');
+      if (main) main.scrollTop = 0;
+      return {
+        document: document.scrollingElement?.scrollTop || 0,
+        main: main?.scrollTop || 0,
+      };
+    });
+    assert.deepEqual(remainingScroll, { document: 0, main: 0 });
+    await page.screenshot({
+      path: path.join(process.env.TEMP, `municontrol-reportes-executive-${viewport.width}.png`),
+      fullPage: viewport.width > 600,
+    });
 
     assert.deepEqual(consoleErrors, []);
     await context.close();
@@ -468,7 +537,7 @@ test('reportes creates no SVG metrics and offers retry when the governed source 
   });
 
   const { context, page, consoleErrors } = await openAuthenticatedReport(browser, baseUrl, { width: 390, height: 844 });
-  await page.waitForFunction(() => document.querySelectorAll('.chart-container[data-chart-state="empty"]').length === 4);
+  await page.waitForFunction(() => document.querySelectorAll('.chart-container[data-chart-state="empty"]').length === 2);
   const result = await page.evaluate(() => ({
     status: document.querySelector('#data-status')?.textContent,
     svgCount: document.querySelectorAll('.chart-container svg').length,
@@ -481,8 +550,8 @@ test('reportes creates no SVG metrics and offers retry when the governed source 
 
   assert.match(result.status, /No hay evidencia GRH agregada y validada/i);
   assert.equal(result.svgCount, 0);
-  assert.deepEqual(result.states, ['empty', 'empty', 'empty', 'empty']);
-  assert.ok(result.emptyMessages.every(message => /Sin evidencia GRH agregada y validada/i.test(message)));
+  assert.deepEqual(result.states, ['empty', 'empty']);
+  assert.ok(result.emptyMessages.some(message => /Sin evidencia GRH agregada y validada/i.test(message)));
   assert.ok(result.tableMessages.every(message => /Sin evidencia GRH validada/i.test(message)));
   assert.equal(result.retryVisible, true);
   assert.ok(consoleErrors.every(message => /503 \(Service Unavailable\)/i.test(message)));

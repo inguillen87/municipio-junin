@@ -26,6 +26,7 @@ function usage() {
   return [
     'Uso:',
     '  node scripts/grh-directory-production-bootstrap.mjs prepare --mode encrypted_snapshot --worktree <path> --artifact <json> --state-dir <path>',
+    '  node scripts/grh-directory-production-bootstrap.mjs prepare --target preview --mode ddl --preview-branch <branch> --database-target-sha256 <64hex> --stable-database-target-sha256 <64hex> --worktree <path> --artifact <json> --state-dir <path>',
     '  node scripts/grh-directory-production-bootstrap.mjs apply --state <state.json> --confirm-production-one-shot ' + CONFIRMATION,
     '  node scripts/grh-directory-production-bootstrap.mjs resolve --state <state.json> --confirm-production-one-shot ' + CONFIRMATION,
     '  node scripts/grh-directory-production-bootstrap.mjs verify --state <state.json>',
@@ -35,6 +36,7 @@ function usage() {
     '',
     'Apply, resolve y verify usan `vercel curl` con bypass automatico de Deployment Protection.',
     'El modo recomendado `encrypted_snapshot` publica un snapshot AES-256-GCM sin DDL; `ddl` queda reservado para una credencial de release.',
+    'El target Preview es exclusivamente DDL, exige worktree attached a la rama remota exacta y dos fingerprints de base distintos.',
     'Resolve acepta apply_started o apply_ambiguous: 201 pasa a applied; 410 exige verify sin duplicar.',
     'El comando apply usa `vercel deploy --prod --skip-domain`; nunca promueve ni mueve el alias público.',
     'El worktree debe ser detached del SHA limpio de master; el comando lo vincula al proyecto Vercel exacto.',
@@ -60,6 +62,10 @@ export async function runBootstrapCli(args = process.argv.slice(2)) {
   if (command === 'prepare') {
     return prepareBootstrapBundle({
       mode: argument(args, '--mode'),
+      target: argument(args, '--target') || 'production',
+      previewBranch: argument(args, '--preview-branch'),
+      databaseTargetFingerprintSha256: argument(args, '--database-target-sha256'),
+      stableDatabaseTargetFingerprintSha256: argument(args, '--stable-database-target-sha256'),
       worktreePath: argument(args, '--worktree'),
       artifactPath: argument(args, '--artifact'),
       stateDirectory: argument(args, '--state-dir'),

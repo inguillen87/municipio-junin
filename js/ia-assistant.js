@@ -6,10 +6,16 @@
   var MAX_LENGTH = 1200;
   var REQUEST_TIMEOUT_MS = 18000;
   var DIRECTORY_ENDPOINT = '/api/grh-directory';
-  var DIRECTORY_SCHEMA = 'grh-directory-v2';
+  var DIRECTORY_SCHEMA = 'grh-directory-v3';
   var DIRECTORY_SEARCH_LIMIT = 8;
   var DIRECTORY_DEBOUNCE_MS = 280;
   var DIRECTORY_TIMEOUT_MS = 10000;
+  var PERSON_HANDOFF_KEY = 'muni_grh_person_handoff_v1';
+  var PERSON_HANDOFF_VERSION = 'grh-person-handoff-v1';
+  var PERSON_HANDOFF_KIND = 'PERSON_OVERVIEW';
+  var PERSON_HANDOFF_TTL_MS = 120000;
+  var PERSON_RETURN_KEY = 'muni_grh_person_return_v1';
+  var PERSON_RETURN_VERSION = 'grh-person-return-v1';
   var PRIMARY_QUERY_ORDER = {
     INTENDENTE: ['priority', 'summary', 'absence-compare', 'cost-overview'],
     CONTADOR: ['cost-overview', 'cost-components', 'calculation-control', 'reconciliation'],
@@ -108,7 +114,7 @@
     card.appendChild(header);
 
     var body = createElement('div', 'answer-body');
-    appendAnswerActions(body, answer.actions);
+    appendAnswerActions(body, answer.actions, answer.directory);
     appendAnswerVisual(body, answer.visual);
     var detailsContent = createElement('div', 'answer-details-content');
     var findings = safeArray(answer.findings);
@@ -338,6 +344,7 @@
   function appendDirectoryContract(body, directory) {
     if (!directory || typeof directory !== 'object') return;
     if (directory.status === 'matched' && directory.person && typeof directory.person === 'object') {
+      if (directory.presentation === 'insight') return;
       appendLeaveHistory(body, directory.person.leaveHistory);
       appendAbsenceHistory(body, directory.person.absenceHistory);
       appendMovementHistory(body, directory.person.movementHistory);
@@ -365,7 +372,7 @@
     var events = safeArray(leaveHistory.items).slice(0, 24);
     if (!events.length) return;
     var section = createElement('section', 'directory-history');
-    section.appendChild(createElement('h4', '', 'Licencias históricas · ' + String(leaveHistory.total || events.length)));
+    section.appendChild(createElement('h4', '', 'Registros de la tabla licencia · ' + String(leaveHistory.total || events.length)));
     var grid = createElement('div', 'directory-history-grid');
     events.forEach(function(event) {
       if (!event || typeof event !== 'object' || !dateValue(event.startDate)) return;
@@ -385,7 +392,7 @@
     var events = safeArray(history.items).slice(0, 6);
     if (!events.length) return;
     var section = createElement('section', 'directory-history');
-    section.appendChild(createElement('h4', '', 'Ausencias históricas · últimas ' + events.length + ' de ' + String(history.total || events.length)));
+    section.appendChild(createElement('h4', '', 'Registros de la tabla ausencia · últimos ' + events.length + ' de ' + String(history.total || events.length)));
     var grid = createElement('div', 'directory-history-grid');
     events.forEach(function(event) {
       if (!event || typeof event !== 'object' || !dateValue(event.date)) return;
@@ -404,7 +411,7 @@
     var periods = safeArray(history.items).slice(0, 6);
     if (!periods.length) return;
     var section = createElement('section', 'directory-history');
-    section.appendChild(createElement('h4', '', 'Movimientos fuente · últimos ' + periods.length + ' de ' + String(history.total || periods.length) + ' períodos'));
+    section.appendChild(createElement('h4', '', 'Filas fuente legamov · últimos ' + periods.length + ' de ' + String(history.total || periods.length) + ' períodos'));
     var grid = createElement('div', 'directory-history-grid');
     periods.forEach(function(event) {
       if (!event || typeof event !== 'object' || typeof event.period !== 'string' ||
@@ -419,7 +426,7 @@
     body.appendChild(section);
   }
 
-  function appendAnswerActions(body, actions) {
+  function appendAnswerActions(body, actions, directory) {
     var validActions = safeArray(actions).slice(0, 4);
     if (!validActions.length) return;
     var section = createElement('section', 'answer-next-step');
@@ -440,6 +447,25 @@
       var link = createElement('a', 'answer-action' + (row.childElementCount === 0 ? ' answer-action--primary' : ''), action.label.trim());
       link.href = href;
       if (requiredCapability) link.dataset.capability = requiredCapability;
+      if (action.id === 'open_rrhh_person' && href === '/rrhh?handoff=person#peopleDirectory' &&
+          directory && directory.presentation === 'insight' && directory.target &&
+          positiveInteger(directory.target.companyCode) && positiveInteger(directory.target.legajo)) {
+        link.addEventListener('click', function(event) {
+          var handoff = {
+            version: PERSON_RETURN_VERSION,
+            kind: 'PERSON_RETURN',
+            companyCode: directory.target.companyCode,
+            legajo: directory.target.legajo,
+            createdAt: Date.now(),
+          };
+          try {
+            global.sessionStorage.setItem(PERSON_RETURN_KEY, JSON.stringify(handoff));
+          } catch (_) {
+            event.preventDefault();
+            appendUnavailable('Ficha no transferida', 'No se pudo preparar el regreso privado a RRHH.', 'Fuente no consultada');
+          }
+        });
+      }
       row.appendChild(link);
     });
     if (row.childElementCount) {
@@ -471,7 +497,23 @@
   }
 
   function validDirectoryDate(value) {
-    return value === null || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value));
+    if (value === null) return true;
+    var match = typeof value === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return false;
+    var date = new Date(0);
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCFullYear(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    return date.getUTCFullYear() === Number(match[1]) && date.getUTCMonth() === Number(match[2]) - 1 &&
+      date.getUTCDate() === Number(match[3]);
+  }
+
+  function previousDirectoryPeriod(snapshotAsOf) {
+    if (!validDirectoryDate(snapshotAsOf) || snapshotAsOf === null) return null;
+    var year = Number(snapshotAsOf.slice(0, 4));
+    var month = Number(snapshotAsOf.slice(5, 7));
+    return month === 1
+      ? String(year - 1).padStart(4, '0') + '-12'
+      : String(year).padStart(4, '0') + '-' + String(month - 1).padStart(2, '0');
   }
 
   function validDirectoryDimension(value) {
@@ -532,10 +574,31 @@
       (value.rowCount === 0) === (value.periodCount === 0);
   }
 
+  var REPORTED_EMPLOYMENT_STATUSES = Object.freeze([
+    'ended_by_reported_dates', 'current_by_reported_dates', 'unknown_missing_ingress',
+    'unknown_sentinel_ingress', 'unknown_implausible_active_tenure', 'invalid_chronology'
+  ]);
+
+  function validDirectoryEmployment(value, snapshotAsOf) {
+    if (!exactObjectKeys(value, [
+      'reportedIngressDate', 'reportedExitDate', 'reportedStatus', 'asOf', 'basis',
+      'referencePayrollParticipation'
+    ]) || !validDirectoryDate(value.reportedIngressDate) || !validDirectoryDate(value.reportedExitDate) ||
+        !REPORTED_EMPLOYMENT_STATUSES.includes(value.reportedStatus) || value.asOf !== snapshotAsOf ||
+        value.basis !== 'legajo_reported_dates') return false;
+    var payroll = value.referencePayrollParticipation;
+    return exactObjectKeys(payroll, ['period', 'observed', 'rowCount']) &&
+      typeof payroll.period === 'string' && /^\d{4}-(?:0[1-9]|1[0-2])$/.test(payroll.period) &&
+      payroll.period === previousDirectoryPeriod(snapshotAsOf) && typeof payroll.observed === 'boolean' &&
+      Number.isSafeInteger(payroll.rowCount) && payroll.rowCount >= 0 &&
+      payroll.observed === (payroll.rowCount > 0);
+  }
+
   function validDirectoryItem(item, snapshotAsOf) {
     return exactObjectKeys(item, [
       'companyCode', 'legajo', 'displayName', 'sector', 'costCenter', 'organization', 'position',
-      'positionObservation', 'category', 'agreement', 'events', 'movement'
+      'positionObservation', 'category', 'agreement', 'contractRegime', 'serviceSituation',
+      'terminationReason', 'employment', 'events', 'movement'
     ]) && Number.isSafeInteger(item.companyCode) && item.companyCode > 0 &&
       Number.isSafeInteger(item.legajo) && item.legajo > 0 && safeText(item.displayName, 200, true) &&
       validDirectoryDimension(item.sector) && validDirectoryDimension(item.costCenter) &&
@@ -543,30 +606,42 @@
       validDirectoryPosition(item.position) &&
       validDirectoryPositionObservation(item.positionObservation, snapshotAsOf) &&
       validDirectoryDimension(item.category) && validDirectoryDimension(item.agreement) &&
+      validDirectoryDimension(item.contractRegime) && validDirectoryDimension(item.serviceSituation) &&
+      validDirectoryDimension(item.terminationReason) &&
+      (item.employment.reportedStatus === 'ended_by_reported_dates' || item.terminationReason === null) &&
+      validDirectoryEmployment(item.employment, snapshotAsOf) &&
       validDirectoryEvents(item.events, snapshotAsOf) && validDirectoryMovement(item.movement, snapshotAsOf);
   }
 
   function validDirectoryFacetRow(row, name) {
     var keys = name === 'categories' ? ['agreementCode', 'code', 'label', 'count'] :
-      name === 'positionObservations' ? ['label', 'count', 'status'] : ['code', 'label', 'count'];
+      name === 'positionObservations' ? ['label', 'count', 'status'] :
+        name === 'reportedStatuses' ? ['status', 'label', 'count'] : ['code', 'label', 'count'];
     if (!exactObjectKeys(row, keys) || !Number.isSafeInteger(row.count) || row.count < 1) return false;
     if (name === 'positionObservations') {
       return safeText(row.label, 200, false) &&
         ['historical_observation', 'source_future_effective'].includes(row.status);
+    }
+    if (name === 'reportedStatuses') {
+      return REPORTED_EMPLOYMENT_STATUSES.includes(row.status) && safeText(row.label, 200, false);
     }
     return Number.isSafeInteger(row.code) && row.code >= 0 && safeText(row.label, 200, true) &&
       (name !== 'categories' || (Number.isSafeInteger(row.agreementCode) && row.agreementCode >= 0));
   }
 
   function validDirectoryFacets(value) {
-    var names = ['sectors', 'costCenters', 'organizations', 'positions', 'positionObservations', 'categories', 'agreements'];
+    var names = [
+      'sectors', 'costCenters', 'organizations', 'positions', 'positionObservations', 'categories',
+      'agreements', 'reportedStatuses', 'contractRegimes', 'serviceSituations'
+    ];
     if (!exactObjectKeys(value, names)) return false;
     return names.every(function(name) {
       if (!Array.isArray(value[name]) || value[name].length > 5000) return false;
       var seen = new Set();
       return value[name].every(function(row) {
         var key = name === 'categories' ? String(row && row.agreementCode) + ':' + String(row && row.code) :
-          name === 'positionObservations' ? String(row && row.status) + ':' + String(row && row.label) :
+          ['positionObservations', 'reportedStatuses'].includes(name) ?
+            String(row && row.status) + ':' + String(row && row.label) :
             String(row && row.code);
         if (!validDirectoryFacetRow(row, name) || seen.has(key)) return false;
         seen.add(key);
@@ -585,7 +660,7 @@
         !validDirectoryDate(source.snapshotAsOf) || source.snapshotAsOf === null) return false;
     if (!exactObjectKeys(payload.privacy, ['containsPersonalData', 'excludedFields']) ||
         payload.privacy.containsPersonalData !== true || !Array.isArray(payload.privacy.excludedFields) ||
-        payload.privacy.excludedFields.join('|') !== 'dni|cuil|contact|address|bank_account|salary|event_cause') return false;
+        payload.privacy.excludedFields.join('|') !== 'dni|cuil|contact|address|bank_account|salary|absence_leave_event_cause') return false;
     var query = payload.query;
     if (!exactObjectKeys(query, ['mode', 'page', 'limit', 'total', 'hasNext', 'cursor', 'nextCursor']) ||
         query.mode !== 'list' || query.page !== 1 || query.limit !== DIRECTORY_SEARCH_LIMIT ||
@@ -892,11 +967,12 @@
     }
   }
 
-  async function ask(question) {
+  async function ask(question, options) {
     if (busy) return;
     if (!await requirePageCapability()) return;
+    var target = options && options.target;
     var text = String(question || '').trim();
-    if (!text) {
+    if (!text && !target) {
       var emptyInput = byId('assistantInput');
       if (emptyInput) emptyInput.focus();
       return;
@@ -923,9 +999,11 @@
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-MuniControl-Purpose': questionPurpose(text),
+          'X-MuniControl-Purpose': target ? 'PERSON_LOOKUP' : questionPurpose(text),
         },
-        body: JSON.stringify({ message: text, mode: 'deterministic' }),
+        body: JSON.stringify(target
+          ? { mode: 'deterministic', target: target }
+          : { message: text, mode: 'deterministic' }),
         signal: controller.signal,
       });
 
@@ -1052,20 +1130,89 @@
     return question;
   }
 
+  function cleanAssistantUrl() {
+    try {
+      global.history.replaceState(null, '', global.location.pathname + global.location.hash);
+    } catch (_) {}
+  }
+
+  function parsePersonHandoffUrl() {
+    if (!global.location.search) return false;
+    try {
+      var parameters = new URLSearchParams(global.location.search);
+      var keys = Array.from(parameters.keys());
+      return keys.length === 1 && keys[0] === 'handoff' &&
+        parameters.getAll('handoff').length === 1 && parameters.get('handoff') === 'person';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function hasPersonHandoffParameter() {
+    if (!global.location.search) return false;
+    try {
+      return new URLSearchParams(global.location.search).has('handoff');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function consumePersonHandoff() {
+    var validUrl = parsePersonHandoffUrl();
+    var raw = null;
+    try {
+      raw = global.sessionStorage.getItem(PERSON_HANDOFF_KEY);
+      global.sessionStorage.removeItem(PERSON_HANDOFF_KEY);
+    } catch (_) {
+      return null;
+    } finally {
+      cleanAssistantUrl();
+    }
+    if (!validUrl) return null;
+    if (!raw || raw.length > 500) return null;
+    var value;
+    try { value = JSON.parse(raw); } catch (_) { return null; }
+    if (raw !== JSON.stringify(value)) return null;
+    if (!exactObjectKeys(value, [
+      'version', 'kind', 'companyCode', 'legajo', 'createdAt'
+    ]) || value.version !== PERSON_HANDOFF_VERSION || value.kind !== PERSON_HANDOFF_KIND ||
+        !positiveInteger(value.companyCode) || !positiveInteger(value.legajo) ||
+        !Number.isSafeInteger(value.createdAt)) return null;
+    var age = Date.now() - value.createdAt;
+    if (age < 0 || age > PERSON_HANDOFF_TTL_MS) return null;
+    return {
+      kind: 'grh-person',
+      companyCode: value.companyCode,
+      legajo: value.legajo,
+    };
+  }
+
+  async function consumePersonHandoffDeepLink() {
+    var hadPersonHandoff = hasPersonHandoffParameter();
+    if (!hadPersonHandoff) return false;
+    var target = consumePersonHandoff();
+    if (!target) {
+      appendUnavailable(
+        'Ficha no transferida',
+        'El acceso desde RRHH venció o no cumple el contrato. Volvé a abrir la ficha para evitar consultar una identidad equivocada.',
+        'Fuente no consultada'
+      );
+      return true;
+    }
+    await ask('Ficha individual seleccionada en RRHH', { target: target });
+    return true;
+  }
+
   async function consumeQuestionDeepLink() {
     var hadSearch = Boolean(global.location.search);
     var question = parseQuestionDeepLink();
     if (!question) {
       if (hadSearch) {
-        try {
-          global.history.replaceState(null, '', global.location.pathname + global.location.hash);
-        } catch (_) {}
+        cleanAssistantUrl();
       }
       return;
     }
-    try {
-      global.history.replaceState(null, '', global.location.pathname + global.location.hash);
-    } catch (_) {}
+    cleanAssistantUrl();
     var input = byId('assistantInput');
     if (input) {
       input.value = question;
@@ -1188,7 +1335,7 @@
       .then(async function(valid) {
         if (valid === false) return;
         bindInterface();
-        await consumeQuestionDeepLink();
+        if (!await consumePersonHandoffDeepLink()) await consumeQuestionDeepLink();
       })
       .catch(function() {
         appendUnavailable('Sesión no verificable', 'No se pudo validar la sesión institucional.', 'Fuente no disponible');

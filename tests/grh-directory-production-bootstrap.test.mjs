@@ -29,6 +29,7 @@ import {
   prepareBootstrapBundle,
   resolveAmbiguousBootstrap,
   resolveBootstrapCommandInvocation,
+  safeCliResult,
   verifyAppliedBootstrap,
   verifyProductionBootstrap,
 } from '../scripts/grh-directory-production-bootstrap-lib.mjs';
@@ -36,6 +37,13 @@ import {
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const deterministicHash = '$2b$12$' + 'A'.repeat(53);
 const expectedGitSha = 'f'.repeat(40);
+const previewSourceGitSha = 'e'.repeat(40);
+const previewBranch = 'codex/grh-ledger-release-gates';
+const databaseTargetFingerprintSha256 = 'a'.repeat(64);
+const stableDatabaseTargetFingerprintSha256 = 'b'.repeat(64);
+const databaseTargetFingerprintMarker = '__MUNICTRL_DATABASE_TARGET__';
+const previewDeploymentId = 'dpl_preview_candidate';
+const previewDeploymentUrl = 'https://municipio-junin-preview-candidate.vercel.app';
 const uuids = Object.freeze([
   '11111111-1111-4111-8111-111111111111',
   '22222222-2222-4222-8222-222222222222',
@@ -44,7 +52,7 @@ const uuids = Object.freeze([
 
 function artifactFixture() {
   return {
-    schema_version: 'grh-directory-v2',
+    schema_version: 'grh-directory-v3',
     source: {
       canonical_system: EXPECTED_SOURCE_MANIFEST.canonical_system,
       file: EXPECTED_SOURCE_MANIFEST.source_file,
@@ -56,11 +64,12 @@ function artifactFixture() {
     privacy: {
       contains_personal_data: true,
       private_storage_required: true,
-      excluded_fields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'event_cause'],
+      excluded_fields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'absence_leave_event_cause'],
     },
     counts: {
       source_rows: {
         ausencia: 1,
+        calculo: 1,
         cargo: 1,
         catego: 1,
         convenio: 1,
@@ -69,8 +78,11 @@ function artifactFixture() {
         legajo: 1,
         legamov: 1,
         licencia: 1,
+        motibaja: 0,
         organiza: 1,
         persona: 1,
+        regcontr: 1,
+        revista: 1,
         sectores: 1,
       },
       directory_records: 1,
@@ -90,6 +102,19 @@ function artifactFixture() {
       quarantined_position_observation_rows: 0,
       future_effective_position_observation_rows: 1,
       records_with_position_observation: 1,
+      valid_calculation_rows: 1,
+      quarantined_calculation_rows: 0,
+      reference_payroll_period: '2026-07',
+      reference_payroll_rows: 1,
+      records_observed_in_reference_payroll: 1,
+      employment_statuses: {
+        ended_by_reported_dates: 0,
+        current_by_reported_dates: 1,
+        unknown_missing_ingress: 0,
+        unknown_sentinel_ingress: 0,
+        unknown_implausible_active_tenure: 0,
+        invalid_chronology: 0,
+      },
     },
     records: [{
       company_code: 101,
@@ -106,6 +131,17 @@ function artifactFixture() {
       },
       category: { code: 3, label: 'Categoría' },
       agreement: { code: 2, label: 'Convenio' },
+      contract_regime: { code: 1, label: 'Permanente' },
+      service_situation: { code: 2, label: 'Servicio activo' },
+      termination_reason: null,
+      employment: {
+        reported_ingress_date: '2010-01-01',
+        reported_exit_date: null,
+        reported_status: 'current_by_reported_dates',
+        as_of: '2026-08-06',
+        basis: 'legajo_reported_dates',
+        reference_payroll_participation: { period: '2026-07', observed: true, row_count: 1 },
+      },
       absence: { event_count: 1, latest_date: '2026-07-01' },
       absence_history: [{ date: '2026-07-01', days: 1 }],
       leave: { event_count: 1, latest_start_date: '2009-05-01', latest_end_date: '2009-05-10' },
@@ -125,7 +161,7 @@ function artifactFixture() {
 
 function responseFixture() {
   return {
-    schemaVersion: 'grh-directory-v2',
+    schemaVersion: 'grh-directory-v3',
     source: {
       canonicalSystem: EXPECTED_SOURCE_MANIFEST.canonical_system,
       sourceFile: EXPECTED_SOURCE_MANIFEST.source_file,
@@ -134,7 +170,7 @@ function responseFixture() {
     },
     privacy: {
       containsPersonalData: true,
-      excludedFields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'event_cause'],
+      excludedFields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'absence_leave_event_cause'],
     },
     query: {
       mode: 'list',
@@ -153,6 +189,11 @@ function responseFixture() {
       positionObservations: [{ label: 'Puesto observado', count: 1, status: 'source_future_effective' }],
       categories: [{ agreementCode: 2, code: 3, label: 'Categoría', count: 1 }],
       agreements: [{ code: 2, label: 'Convenio', count: 1 }],
+      reportedStatuses: [{
+        status: 'current_by_reported_dates', label: 'Sin egreso informado al corte', count: 1,
+      }],
+      contractRegimes: [{ code: 1, label: 'Permanente', count: 1 }],
+      serviceSituations: [{ code: 2, label: 'Servicio activo', count: 1 }],
     },
     items: [{
       companyCode: 101,
@@ -176,6 +217,17 @@ function responseFixture() {
       },
       category: { code: 3, label: 'Categoría' },
       agreement: { code: 2, label: 'Convenio' },
+      contractRegime: { code: 1, label: 'Permanente' },
+      serviceSituation: { code: 2, label: 'Servicio activo' },
+      terminationReason: null,
+      employment: {
+        reportedIngressDate: '2010-01-01',
+        reportedExitDate: null,
+        reportedStatus: 'current_by_reported_dates',
+        asOf: '2026-08-06',
+        basis: 'legajo_reported_dates',
+        referencePayrollParticipation: { period: '2026-07', observed: true, rowCount: 1 },
+      },
       events: {
         absenceCount: 1,
         latestAbsenceDate: '2026-07-01',
@@ -245,8 +297,10 @@ async function makeFixture({ mode = 'encrypted_snapshot' } = {}) {
     'api/lib/grh-directory-contract.js',
     'api/lib/grh-directory-publication.js',
     'api/lib/grh-directory-snapshot.js',
+    'api/lib/database-target-fingerprint.js',
     'shared/database-url-policy.cjs',
     'shared/published-demo-policy.cjs',
+    'scripts/print-database-target-fingerprint.mjs',
     'vercel.json',
   ]) {
     const target = path.join(worktree, relative);
@@ -287,6 +341,97 @@ async function makeFixture({ mode = 'encrypted_snapshot' } = {}) {
   };
 }
 
+async function makePreviewFixture({
+  mode = 'ddl',
+  target = 'preview',
+  branch = previewBranch,
+  databaseFingerprint = databaseTargetFingerprintSha256,
+  stableDatabaseFingerprint = stableDatabaseTargetFingerprintSha256,
+} = {}) {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'municontrol-grh-preview-bootstrap-test-'));
+  const worktree = path.join(root, 'worktree');
+  const stateDirectory = path.join(root, 'private-state');
+  const artifactPath = path.join(root, 'directory.json');
+  for (const relative of [
+    'api/lib/grh-directory-contract.js',
+    'api/lib/grh-directory-publication.js',
+    'api/lib/grh-directory-snapshot.js',
+    'api/lib/database-target-fingerprint.js',
+    'shared/database-url-policy.cjs',
+    'shared/published-demo-policy.cjs',
+    'scripts/print-database-target-fingerprint.mjs',
+    'vercel.json',
+  ]) {
+    const destination = path.join(worktree, relative);
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await fs.writeFile(destination, relative.endsWith('.json') ? '{}\n' : '// fixture\n');
+  }
+  await fs.writeFile(artifactPath, JSON.stringify(artifactFixture()));
+  let uuidIndex = 0;
+  const gitCalls = [];
+  const runner = (command, args, options = {}) => {
+    assert.equal(command, 'git');
+    gitCalls.push({ args: [...args], cwd: options.cwd });
+    if (args[0] === 'rev-parse' && args[1] === '--verify') {
+      const ref = args[2];
+      if (ref === 'HEAD') {
+        return {
+          stdout: (path.resolve(options.cwd) === path.resolve(repositoryRoot)
+            ? previewSourceGitSha
+            : expectedGitSha) + '\n',
+          stderr: '',
+        };
+      }
+      if (ref === `refs/remotes/origin/${branch}`) {
+        return { stdout: expectedGitSha + '\n', stderr: '' };
+      }
+      if (ref === 'refs/remotes/origin/master') {
+        return { stdout: previewSourceGitSha + '\n', stderr: '' };
+      }
+    }
+    if (args[0] === 'branch' && args[1] === '--show-current') {
+      return { stdout: branch + '\n', stderr: '' };
+    }
+    if (args[0] === 'status') return { stdout: '', stderr: '' };
+    assert.fail(`unexpected preview git command: ${args.join(' ')}`);
+  };
+  try {
+    const prepared = await prepareBootstrapBundle({
+      mode,
+      target,
+      previewBranch: branch,
+      databaseTargetFingerprintSha256: databaseFingerprint,
+      stableDatabaseTargetFingerprintSha256: stableDatabaseFingerprint,
+      worktreePath: worktree,
+      artifactPath,
+      stateDirectory,
+      repositoryRoot,
+      now: () => new Date('2026-08-12T15:00:00.000Z'),
+      randomUuidImpl: () => uuids[uuidIndex++],
+      randomBytesImpl: size => Buffer.alloc(size, 0xbc),
+      bcryptHashImpl: async () => deterministicHash,
+      securePathImpl: async () => {},
+      runner,
+    });
+    return {
+      root,
+      worktree,
+      stateDirectory,
+      artifactPath,
+      prepared,
+      gitCalls,
+      async cleanup() {
+        const resolved = path.resolve(root);
+        assert.ok(resolved.startsWith(path.resolve(os.tmpdir())));
+        await fs.rm(root, { recursive: true, force: true });
+      },
+    };
+  } catch (error) {
+    await fs.rm(root, { recursive: true, force: true });
+    throw error;
+  }
+}
+
 async function readState(statePath) {
   return JSON.parse(await fs.readFile(statePath, 'utf8'));
 }
@@ -316,11 +461,68 @@ function pinnedGitCommand(args, options = {}, { state = null, preparing = false 
   assert.fail(`unexpected git command in ${options.cwd || 'unknown cwd'}: ${args.join(' ')}`);
 }
 
-function bootstrapAppliedBody(state) {
+function previewPinnedGitCommand(args, options = {}, { state, preparing = false } = {}) {
+  if (args[0] === 'rev-parse' && args[1] === '--verify') {
+    const ref = args[2];
+    if (ref === 'HEAD') {
+      return {
+        stdout: (path.resolve(options.cwd) === path.resolve(state.repositoryRoot)
+          ? previewSourceGitSha
+          : state.expectedGitSha) + '\n',
+        stderr: '',
+      };
+    }
+    if (ref === `refs/remotes/origin/${state.previewBranch}`) {
+      return { stdout: state.expectedGitSha + '\n', stderr: '' };
+    }
+    if (ref === 'refs/remotes/origin/master') {
+      return { stdout: previewSourceGitSha + '\n', stderr: '' };
+    }
+  }
+  if (args[0] === 'branch' && args[1] === '--show-current') {
+    return { stdout: state.previewBranch + '\n', stderr: '' };
+  }
+  if (args[0] === 'status') {
+    return {
+      stdout: preparing ? '' : `?? ${state.endpointRelativePath}\n`,
+      stderr: '',
+    };
+  }
+  assert.fail(`unexpected preview git command in ${options.cwd || 'unknown cwd'}: ${args.join(' ')}`);
+}
+
+function previewDeploymentInspection() {
   return {
+    id: previewDeploymentId,
+    url: previewDeploymentUrl,
+    status: 'READY',
+    target: 'preview',
+    meta: {
+      githubCommitSha: expectedGitSha,
+      githubCommitRef: previewBranch,
+    },
+  };
+}
+
+function previewDeploymentList() {
+  return {
+    deployments: [{
+      url: previewDeploymentUrl,
+      state: 'READY',
+      target: 'preview',
+      meta: {
+        githubCommitSha: expectedGitSha,
+        githubCommitRef: previewBranch,
+      },
+    }],
+  };
+}
+
+function bootstrapAppliedBody(state) {
+  const body = {
     ok: true,
     code: 'GRH_DIRECTORY_BOOTSTRAP_APPLIED',
-    schemaVersion: 'grh-directory-v2',
+    schemaVersion: 'grh-directory-v3',
     snapshotAsOf: state.snapshotAsOf,
     recordCount: state.recordCount,
     absenceRecordCount: state.absenceRecordCount,
@@ -328,6 +530,10 @@ function bootstrapAppliedBody(state) {
     movementPeriodCount: state.movementPeriodCount,
     positionObservationCount: state.positionObservationCount,
   };
+  if (state.target === 'preview') {
+    body.databaseTargetFingerprintSha256 = state.databaseTargetFingerprintSha256;
+  }
+  return body;
 }
 
 test('prepare emits a private gzip envelope, snapshot key, and explicit encrypted-snapshot endpoint', async () => {
@@ -379,7 +585,7 @@ test('prepare emits a private gzip envelope, snapshot key, and explicit encrypte
     assert.equal((endpoint.match(/INSERT INTO audit_logs/g) || []).length, 2);
     assert.doesNotMatch(endpoint, /(?:UPDATE|DELETE FROM) audit_logs/i);
     assert.match(endpoint, /SET LOCAL statement_timeout = '25000ms'/);
-    assert.match(endpoint, /GRH_DIRECTORY_BOOTSTRAP_V2/);
+    assert.match(endpoint, /GRH_DIRECTORY_BOOTSTRAP_V3/);
     assert.match(endpoint, /process\.env\.DIRECT_URL/);
     assert.match(endpoint, /has_schema_privilege\(current_user, 'public', 'CREATE'\)/);
     assert.match(endpoint, /has_table_privilege\(current_user, 'public\.tenants', 'REFERENCES'\)/);
@@ -446,7 +652,7 @@ test('encrypted snapshot publication contract is exact and decrypts with the run
     'leaveRecordCount', 'movementPeriodCount', 'positionObservationCount',
     'nonce', 'ciphertext', 'authTag', 'aad',
   ]);
-  assert.equal(envelope.kind, 'grh.directory.snapshot.v2');
+  assert.equal(envelope.kind, 'grh.directory.snapshot.v3');
   assert.deepEqual(Object.keys(envelope.aad), [
     'tenantId', 'schemaVersion', 'sourceSha256', 'snapshotAsOf', 'keyVersion', 'compression',
     'absenceRecordCount', 'movementPeriodCount',
@@ -524,11 +730,403 @@ test('explicit ddl mode remains available without generating or requiring a snap
   try {
     const state = await readState(fixture.prepared.statePath);
     const endpoint = await fs.readFile(state.endpointPath, 'utf8');
+    await fs.access(path.join(fixture.worktree, 'api', 'lib', 'database-target-fingerprint.js'));
     assert.equal(state.mode, 'ddl');
     assert.equal(state.snapshotKeyPath, null);
     assert.equal(state.snapshotKeyVersion, null);
     assert.match(endpoint, /const BOOTSTRAP_MODE = "ddl"/);
     assert.match(endpoint, /await client\.query\(MIGRATION_SQL\)/);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('preview prepare is DDL-only and pins the attached worktree to the exact remote branch ref', async () => {
+  const fixture = await makePreviewFixture();
+  try {
+    const state = await readState(fixture.prepared.statePath);
+    const endpoint = await fs.readFile(state.endpointPath, 'utf8');
+    await fs.access(path.join(fixture.worktree, 'api', 'lib', 'database-target-fingerprint.js'));
+    assert.equal(state.status, 'prepared');
+    assert.equal(state.mode, 'ddl');
+    assert.equal(state.target, 'preview');
+    assert.equal(state.previewBranch, previewBranch);
+    assert.equal(state.expectedGitSha, expectedGitSha);
+    assert.equal(state.databaseTargetFingerprintSha256, databaseTargetFingerprintSha256);
+    assert.equal(
+      state.stableDatabaseTargetFingerprintSha256,
+      stableDatabaseTargetFingerprintSha256,
+    );
+    assert.notEqual(
+      state.databaseTargetFingerprintSha256,
+      state.stableDatabaseTargetFingerprintSha256,
+    );
+    assert.equal(state.snapshotKeyPath, null);
+    assert.equal(state.snapshotKeyVersion, null);
+    assert.equal(state.snapshotKeyFingerprintSha256, null);
+    assert.ok(fixture.gitCalls.some(call =>
+      call.args.join(' ') === `rev-parse --verify refs/remotes/origin/${previewBranch}`));
+    assert.ok(fixture.gitCalls.some(call =>
+      call.args.join(' ') === 'rev-parse --verify HEAD' &&
+      path.resolve(call.cwd) === path.resolve(fixture.worktree)));
+    assert.ok(fixture.gitCalls.some(call =>
+      call.args.join(' ') === 'branch --show-current' &&
+      path.resolve(call.cwd) === path.resolve(fixture.worktree)));
+    assert.equal(fixture.gitCalls.some(call =>
+      call.args.join(' ') === 'rev-parse --verify refs/remotes/origin/master' &&
+      path.resolve(call.cwd) === path.resolve(fixture.worktree)), false);
+
+    assert.match(endpoint, /import \{ fingerprintDatabaseTarget \} from '\.\/lib\/database-target-fingerprint\.js';/);
+    assert.match(endpoint, new RegExp(databaseTargetFingerprintSha256));
+    assert.match(endpoint, /process\.env\.DIRECT_URL/);
+    const fingerprintCheck = endpoint.indexOf('fingerprintDatabaseTarget(process.env.DIRECT_URL)');
+    const clientConstruction = endpoint.indexOf('new Client');
+    const connect = endpoint.indexOf('await client.connect()');
+    const migration = endpoint.indexOf('await client.query(MIGRATION_SQL)');
+    assert.ok(fingerprintCheck >= 0, 'the endpoint must fingerprint DIRECT_URL');
+    assert.ok(clientConstruction > fingerprintCheck, 'fingerprint must be checked before Client construction');
+    assert.ok(connect > fingerprintCheck, 'fingerprint must be checked before connecting');
+    assert.ok(migration > connect, 'migration remains after the verified connection');
+    assert.doesNotMatch(endpoint, /postgres(?:ql)?:\/\/[^'"\s]+/i);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('preview prepare rejects snapshot publication and requires branch plus distinct database fingerprints', async () => {
+  const invalid = [
+    { mode: 'encrypted_snapshot' },
+    { branch: null },
+    { branch: 'master' },
+    { branch: 'refs/heads/codex/unsafe' },
+    { databaseFingerprint: null },
+    { databaseFingerprint: '0'.repeat(63) },
+    { stableDatabaseFingerprint: null },
+    { stableDatabaseFingerprint: '0'.repeat(63) },
+    {
+      databaseFingerprint: databaseTargetFingerprintSha256,
+      stableDatabaseFingerprint: databaseTargetFingerprintSha256,
+    },
+  ];
+  for (const options of invalid) {
+    await assert.rejects(
+      () => makePreviewFixture(options),
+      error => typeof error?.code === 'string' && error.code.startsWith('BOOTSTRAP_'),
+    );
+  }
+});
+
+const requiredPreviewEnvironment = Object.freeze([
+  'DATABASE_URL',
+  'DIRECT_URL',
+  'JWT_SECRET',
+  'GRH_TENANT_ID',
+  'GRH_SOURCE_SHA256',
+  'GRH_ARTIFACT_SOURCE',
+]);
+
+test('preview apply, verify, and cleanup remain branch-scoped and never mutate Production', async () => {
+  const fixture = await makePreviewFixture();
+  try {
+    const initial = await readState(fixture.prepared.statePath);
+    const credential = await readState(initial.credentialPath);
+    const secret = await fs.readFile(initial.secretPath, 'utf8');
+    const calls = [];
+    const token = 'r'.repeat(64);
+    const smokeRunner = protectedVerificationRunner({
+      credential,
+      token,
+      deploymentUrl: previewDeploymentUrl,
+      calls,
+    });
+    const runner = (command, args, options = {}) => {
+      calls.push({
+        command,
+        args: [...args],
+        cwd: options.cwd,
+        hasInput: typeof options.input === 'string',
+      });
+      if (command === 'git') {
+        return previewPinnedGitCommand(args, options, { state: initial });
+      }
+      if (args[0] === 'link') return { stdout: '', stderr: '' };
+      if (args[0] === 'env' && args[1] === 'run') {
+        return {
+          stdout: databaseTargetFingerprintMarker + (args.includes('production')
+            ? stableDatabaseTargetFingerprintSha256
+            : databaseTargetFingerprintSha256) + '\n',
+          stderr: '',
+        };
+      }
+      if (args[0] === 'env' && args[1] === 'ls') {
+        return jsonResult({ envs: requiredPreviewEnvironment.map(key => ({ key })) });
+      }
+      if (args[0] === 'env' && ['add', 'rm'].includes(args[1])) {
+        return { stdout: '', stderr: '' };
+      }
+      if (args[0] === 'deploy') {
+        return jsonResult({ id: previewDeploymentId, url: previewDeploymentUrl });
+      }
+      if (args[0] === 'inspect' && args[1] === STABLE_PRODUCTION_URL) {
+        return jsonResult({
+          id: 'dpl_stable',
+          url: STABLE_PRODUCTION_URL,
+          status: 'READY',
+          target: 'production',
+        });
+      }
+      if (args[0] === 'inspect') return jsonResult(previewDeploymentInspection());
+      if (args[0] === 'ls') return jsonResult(previewDeploymentList());
+      if (args[0] === 'curl' && args[1] === initial.endpointRoute) {
+        assert.ok(options.input.includes(secret));
+        return protectedCurlResult(bootstrapAppliedBody(initial), 201, 'grh-directory-bootstrap-v3');
+      }
+      if (args[0] === 'curl') return smokeRunner(command, args, options);
+      if (args[0] === 'remove') return { stdout: '', stderr: '' };
+      assert.fail(`unexpected preview command: ${args.join(' ')}`);
+    };
+
+    const applied = await applyPreparedBootstrap({
+      statePath: fixture.prepared.statePath,
+      runner,
+      securePathImpl: async () => {},
+    });
+    assert.equal(applied.status, 'applied');
+    assert.equal(applied.stableAliasUnchanged, true);
+    assert.equal(applied.databaseTargetFingerprintSha256, databaseTargetFingerprintSha256);
+    assert.equal(applied.stableDatabaseTargetFingerprintSha256, stableDatabaseTargetFingerprintSha256);
+    assert.notEqual(applied.deploymentId, 'dpl_stable');
+
+    const fingerprintRuns = calls.filter(call =>
+      call.args[0] === 'env' && call.args[1] === 'run');
+    assert.deepEqual(fingerprintRuns.map(call => call.args), [
+      [
+        'env', 'run', '-e', 'production', '--', 'node',
+        'scripts/print-database-target-fingerprint.mjs',
+      ],
+      [
+        'env', 'run', '-e', 'preview', '--git-branch', previewBranch, '--', 'node',
+        'scripts/print-database-target-fingerprint.mjs',
+      ],
+    ]);
+    assert.ok(fingerprintRuns.every(call => !call.hasInput));
+
+    const envList = calls.find(call => call.args[0] === 'env' && call.args[1] === 'ls');
+    assert.deepEqual(envList.args, ['env', 'ls', 'preview', previewBranch, '--json']);
+    const envAdds = calls.filter(call => call.args[0] === 'env' && call.args[1] === 'add');
+    assert.deepEqual(envAdds.map(call => call.args), [
+      ['env', 'add', 'GRH_DIRECTORY_ALLOWED_USER_IDS', 'preview', previewBranch, '--sensitive', '--yes'],
+      ['env', 'add', 'GRH_DIRECTORY_BOOTSTRAP_SECRET', 'preview', previewBranch, '--sensitive', '--yes'],
+    ]);
+    assert.ok(envAdds.every(call => call.hasInput));
+    assert.equal(envAdds.some(call => call.args.includes('GRH_DIRECTORY_SNAPSHOT_KEY_V1')), false);
+    const deploy = calls.find(call => call.args[0] === 'deploy');
+    assert.deepEqual(deploy.args, ['deploy', '--target', 'preview', '--yes', '--json']);
+    assert.equal(deploy.args.includes('--prod'), false);
+    assert.equal(deploy.args.includes('--skip-domain'), false);
+    assert.ok(calls.some(call => call.args.join(' ') ===
+      `ls municipio-junin --environment preview --json`));
+
+    const firstHttp = calls.findIndex(call => call.args[0] === 'curl');
+    const firstMutation = calls.findIndex(call =>
+      (call.args[0] === 'env' && call.args[1] === 'add') || call.args[0] === 'deploy');
+    const lastFingerprint = calls.reduce((last, call, index) =>
+      call.args[0] === 'env' && call.args[1] === 'run' ? index : last, -1);
+    assert.ok(lastFingerprint >= 0 && lastFingerprint < firstMutation);
+    const candidateInspect = calls.findIndex(call =>
+      call.args[0] === 'inspect' && call.args[1] === previewDeploymentUrl);
+    const candidateList = calls.findIndex(call => call.args[0] === 'ls');
+    const postDeployStable = calls.reduce((indexes, call, index) => {
+      if (call.args[0] === 'inspect' && call.args[1] === STABLE_PRODUCTION_URL) indexes.push(index);
+      return indexes;
+    }, []);
+    assert.ok(candidateInspect >= 0 && candidateInspect < firstHttp);
+    assert.ok(candidateList >= 0 && candidateList < firstHttp);
+    assert.equal(postDeployStable.length >= 2, true);
+    assert.ok(postDeployStable[1] < firstHttp);
+
+    const safeApplied = safeCliResult(applied);
+    assert.equal(safeApplied.databaseTargetFingerprintSha256, databaseTargetFingerprintSha256);
+    assert.equal(
+      safeApplied.stableDatabaseTargetFingerprintSha256,
+      stableDatabaseTargetFingerprintSha256,
+    );
+    assert.equal(JSON.stringify(calls).includes(secret), false);
+    assert.equal(JSON.stringify(calls).includes(credential.password), false);
+    assert.equal(JSON.stringify(applied).includes(secret), false);
+
+    const verified = await verifyAppliedBootstrap({
+      statePath: fixture.prepared.statePath,
+      runner,
+      securePathImpl: async () => {},
+    });
+    assert.equal(verified.status, 'verified');
+    assert.equal(verified.stableAliasUnchanged, true);
+    assert.equal(verified.databaseTargetFingerprintSha256, databaseTargetFingerprintSha256);
+
+    const cleaned = await cleanupVerifiedBootstrap({
+      statePath: fixture.prepared.statePath,
+      runner,
+      securePathImpl: async () => {},
+    });
+    assert.equal(cleaned.status, 'cleaned');
+    const envRemovals = calls
+      .filter(call => call.args[0] === 'env' && call.args[1] === 'rm')
+      .map(call => call.args);
+    assert.deepEqual(envRemovals, [
+      ['env', 'rm', 'GRH_DIRECTORY_BOOTSTRAP_SECRET', 'preview', previewBranch, '--yes'],
+      ['env', 'rm', 'GRH_DIRECTORY_ALLOWED_USER_IDS', 'preview', previewBranch, '--yes'],
+    ]);
+    assert.ok(calls.some(call =>
+      call.args.join(' ') === `remove ${previewDeploymentId} --yes`));
+    assert.equal(calls.some(call =>
+      call.args[0] === 'env' && ['add', 'rm'].includes(call.args[1]) &&
+      call.args.includes('production')), false);
+    assert.equal(calls.some(call =>
+      call.args[0] === 'deploy' && call.args.includes('--prod')), false);
+    const persisted = await readState(fixture.prepared.statePath);
+    assert.equal(persisted.status, 'cleaned');
+    assert.equal(persisted.target, 'preview');
+    assert.equal(persisted.previewBranch, previewBranch);
+    assert.equal(JSON.stringify(persisted).includes(secret), false);
+    assert.equal(JSON.stringify(cleaned).includes(secret), false);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('preview apply requires every runtime env and stops before branch env mutation or deployment', async () => {
+  const fixture = await makePreviewFixture();
+  try {
+    const state = await readState(fixture.prepared.statePath);
+    const calls = [];
+    const runner = (command, args, options = {}) => {
+      calls.push({ command, args: [...args] });
+      if (command === 'git') return previewPinnedGitCommand(args, options, { state });
+      if (args[0] === 'link') return { stdout: '', stderr: '' };
+      if (args[0] === 'env' && args[1] === 'run') {
+        return {
+          stdout: databaseTargetFingerprintMarker + (args.includes('production')
+            ? stableDatabaseTargetFingerprintSha256
+            : databaseTargetFingerprintSha256) + '\n',
+          stderr: '',
+        };
+      }
+      if (args[0] === 'env' && args[1] === 'ls') {
+        return jsonResult({
+          envs: requiredPreviewEnvironment
+            .filter(key => key !== 'DIRECT_URL')
+            .map(key => ({ key })),
+        });
+      }
+      assert.fail('missing Preview runtime env reached a mutating command');
+    };
+    await assert.rejects(
+      () => applyPreparedBootstrap({
+        statePath: fixture.prepared.statePath,
+        runner,
+        securePathImpl: async () => {},
+      }),
+      error => typeof error?.code === 'string' && error.code.startsWith('BOOTSTRAP_'),
+    );
+    assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'add'), false);
+    assert.equal(calls.some(call => call.args[0] === 'deploy'), false);
+    assert.equal(calls.some(call => call.args[0] === 'curl'), false);
+    assert.equal((await readState(fixture.prepared.statePath)).status, 'prepared');
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('preview apply rejects effective database fingerprint drift or malformed output before mutation', async () => {
+  const cases = [
+    {
+      name: 'stable target drift',
+      stableOutput: databaseTargetFingerprintMarker + 'c'.repeat(64) + '\n',
+      previewOutput: databaseTargetFingerprintMarker + databaseTargetFingerprintSha256 + '\n',
+    },
+    {
+      name: 'candidate target drift',
+      stableOutput: databaseTargetFingerprintMarker + stableDatabaseTargetFingerprintSha256 + '\n',
+      previewOutput: databaseTargetFingerprintMarker + 'c'.repeat(64) + '\n',
+    },
+    {
+      name: 'malformed helper output',
+      stableOutput: databaseTargetFingerprintMarker + stableDatabaseTargetFingerprintSha256 + '\n' + databaseTargetFingerprintMarker + stableDatabaseTargetFingerprintSha256 + '\n',
+      previewOutput: databaseTargetFingerprintMarker + databaseTargetFingerprintSha256 + '\n',
+    },
+    {
+      name: 'empty helper output',
+      stableOutput: '',
+      previewOutput: databaseTargetFingerprintMarker + databaseTargetFingerprintSha256 + '\n',
+    },
+  ];
+  for (const scenario of cases) {
+    const fixture = await makePreviewFixture();
+    try {
+      const state = await readState(fixture.prepared.statePath);
+      const calls = [];
+      const runner = (command, args, options = {}) => {
+        calls.push({ command, args: [...args] });
+        if (command === 'git') return previewPinnedGitCommand(args, options, { state });
+        if (args[0] === 'link') return { stdout: '', stderr: '' };
+        if (args[0] === 'env' && args[1] === 'run') {
+          return {
+            stdout: args.includes('production')
+              ? scenario.stableOutput
+              : scenario.previewOutput,
+            stderr: '',
+          };
+        }
+        assert.fail(`${scenario.name} reached a command after fingerprint preflight`);
+      };
+      let rejection;
+      await assert.rejects(
+        () => applyPreparedBootstrap({
+          statePath: fixture.prepared.statePath,
+          runner,
+          securePathImpl: async () => {},
+        }),
+        error => {
+          rejection = error;
+          return typeof error?.code === 'string' && error.code.startsWith('BOOTSTRAP_');
+        },
+      );
+      assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'ls'), false);
+      assert.equal(calls.some(call => call.args[0] === 'env' && call.args[1] === 'add'), false);
+      assert.equal(calls.some(call => call.args[0] === 'deploy'), false);
+      assert.equal(calls.some(call => call.args[0] === 'curl'), false);
+      if (scenario.stableOutput.trim()) {
+        assert.equal(JSON.stringify(rejection).includes(scenario.stableOutput.trim()), false);
+      }
+      if (scenario.previewOutput.trim()) {
+        assert.equal(JSON.stringify(rejection).includes(scenario.previewOutput.trim()), false);
+      }
+      assert.equal((await readState(fixture.prepared.statePath)).status, 'prepared');
+    } finally {
+      await fixture.cleanup();
+    }
+  }
+});
+
+test('Preview state cannot enter Production verification or finalization', async () => {
+  const fixture = await makePreviewFixture();
+  try {
+    await assert.rejects(
+      () => verifyProductionBootstrap({
+        statePath: fixture.prepared.statePath,
+        runner: () => assert.fail('Preview must fail before Vercel Production inspection'),
+        securePathImpl: async () => {},
+      }),
+      error => typeof error?.code === 'string' && error.code.startsWith('BOOTSTRAP_'),
+    );
+    await assert.rejects(
+      () => finalizeProductionBootstrap({
+        statePath: fixture.prepared.statePath,
+        securePathImpl: async () => {},
+      }),
+      error => typeof error?.code === 'string' && error.code.startsWith('BOOTSTRAP_'),
+    );
   } finally {
     await fixture.cleanup();
   }
@@ -573,7 +1171,7 @@ test('apply uses a unique production deployment with skip-domain and leaves the 
         assert.match(options.input, /header = "X-GRH-Bootstrap-Secret: /);
         assert.ok(options.input.includes(secret));
         assert.match(options.input, /data-binary = "@.+grh-directory-bootstrap\.payload\.json\.gz"/);
-        return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v2');
+        return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v3');
       }
       assert.fail('unexpected command');
     };
@@ -872,7 +1470,7 @@ async function appliedFixture() {
     }
     if (args[0] === 'inspect') return jsonResult({ id: 'dpl_temp_unique', status: 'READY', target: 'production' });
     if (args[0] === 'curl') {
-      return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v2');
+      return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v3');
     }
     assert.fail('unexpected command');
   };
@@ -983,14 +1581,17 @@ function protectedVerificationRunner({
     }
     if (route === '/api/grh-directory?company=101&legajo=1001') {
       assert.ok(options.input.includes('X-MuniControl-Purpose: PERSON_LOOKUP'));
-      return protectedCurlResult(detailResponseFixture(), 200, 'grh-directory-v2');
+      return protectedCurlResult(detailResponseFixture(), 200, 'grh-directory-v3');
     }
     if (route === '/api/grh-directory?limit=1' ||
         route === '/api/grh-directory?limit=1&hasLeave=true' ||
         route === '/api/grh-directory?limit=1&hasAbsence=true' ||
-        route === '/api/grh-directory?limit=1&hasMovement=true') {
+        route === '/api/grh-directory?limit=1&hasMovement=true' ||
+        route === '/api/grh-directory?limit=1&reportedStatus=current_by_reported_dates' ||
+        route === '/api/grh-directory?limit=1&contractRegime=1' ||
+        route === '/api/grh-directory?limit=1&serviceSituation=2') {
       assert.ok(options.input.includes('X-MuniControl-Purpose: DIRECTORY_BROWSE'));
-      return protectedCurlResult(responseFixture(), 200, 'grh-directory-v2');
+      return protectedCurlResult(responseFixture(), 200, 'grh-directory-v3');
     }
     assert.fail('unexpected protected route');
   };
@@ -1000,7 +1601,7 @@ test('apply preserves a safe migration-stage diagnostic without persisting respo
   const fixture = await ambiguousFixture({
     receiptBody: { ok: false, code: 'BOOTSTRAP_INTERNAL_MIGRATION', pgCode: '42601' },
     receiptStatus: 500,
-    receiptContract: 'grh-directory-bootstrap-v2',
+    receiptContract: 'grh-directory-bootstrap-v3',
     expectedCode: 'BOOTSTRAP_INTERNAL_MIGRATION',
   });
   try {
@@ -1033,7 +1634,7 @@ test('resolve surfaces a safe publication-stage diagnostic and rejects all body 
         ok: false,
         code: 'BOOTSTRAP_INTERNAL_PUBLICATION',
         pgCode: 'XX000',
-      }, 500, 'grh-directory-bootstrap-v2');
+      }, 500, 'grh-directory-bootstrap-v3');
     };
     let diagnostic;
     await assert.rejects(() => resolveAmbiguousBootstrap({
@@ -1066,7 +1667,7 @@ test('resolve replays the protected one-shot exactly once and promotes a valid 2
       if (args[0] !== 'curl') assert.fail('unexpected command');
       calls.push({ args: [...args], hasInput: typeof options.input === 'string' });
       assert.ok(options.input.includes(secret));
-      return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v2');
+      return protectedCurlResult(bootstrapAppliedBody(state), 201, 'grh-directory-bootstrap-v3');
     };
     const result = await resolveAmbiguousBootstrap({
       statePath: fixture.prepared.statePath,
@@ -1097,7 +1698,7 @@ test('resolve treats 410 already-consumed as verification-only and never duplica
       if (args[0] === 'inspect') return jsonResult({ id: 'dpl_temp_unique', status: 'READY', target: 'production' });
       if (args[0] !== 'curl') assert.fail('unexpected command');
       oneShotCalls += 1;
-      return protectedCurlResult({ ok: false, code: 'BOOTSTRAP_ALREADY_CONSUMED' }, 410, 'grh-directory-bootstrap-v2');
+      return protectedCurlResult({ ok: false, code: 'BOOTSTRAP_ALREADY_CONSUMED' }, 410, 'grh-directory-bootstrap-v3');
     };
     const resolution = await resolveAmbiguousBootstrap({
       statePath: fixture.prepared.statePath,
@@ -1142,19 +1743,24 @@ test('verify keeps token and nominal rows in memory and emits only structural re
     assert.deepEqual(result, {
       status: 'verified',
       stableAliasUnchanged: true,
-      schemaVersion: 'grh-directory-v2',
+      schemaVersion: 'grh-directory-v3',
       snapshotAsOf: '2026-08-06',
       recordCount: 1,
       absenceAvailable: true,
       leaveAvailable: true,
       movementAvailable: true,
       positionObservationAvailable: true,
+      employmentAvailable: true,
       nominalAiVerified: true,
     });
-    assert.equal(calls.length, 9);
+    assert.equal(calls.length, 12);
     assert.ok(calls.some(call => call.args[1] === '/api/grh-directory?limit=1&hasLeave=true'));
     assert.ok(calls.some(call => call.args[1] === '/api/grh-directory?limit=1&hasAbsence=true'));
     assert.ok(calls.some(call => call.args[1] === '/api/grh-directory?limit=1&hasMovement=true'));
+    assert.ok(calls.some(call => call.args[1] ===
+      '/api/grh-directory?limit=1&reportedStatus=current_by_reported_dates'));
+    assert.ok(calls.some(call => call.args[1] === '/api/grh-directory?limit=1&contractRegime=1'));
+    assert.ok(calls.some(call => call.args[1] === '/api/grh-directory?limit=1&serviceSituation=2'));
     assert.equal(calls.filter(call => call.args[1] === '/api/grh-directory?company=101&legajo=1001').length, 3);
     assert.ok(calls.every(call => call.hasInput));
     assert.equal(JSON.stringify(calls).includes(token), false);
@@ -1293,7 +1899,7 @@ test('verify-production certifies the new stable deployment and finalize only se
     assert.equal(verified.productionDeploymentId, 'dpl_release_new');
     assert.equal(verified.productionGitSha, expectedGitSha);
     assert.equal(verified.snapshotKeyFingerprintSha256, state.snapshotKeyFingerprintSha256);
-    assert.equal(calls.length, 9);
+    assert.equal(calls.length, 12);
     assert.ok(calls.every(call => call.args.includes(STABLE_PRODUCTION_URL)));
 
     const finalized = await finalizeProductionBootstrap({
@@ -1433,6 +2039,11 @@ test('CLI help documents the skip-domain production workflow without executing e
   });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /--skip-domain/);
+  assert.match(result.stdout, /--target preview/);
+  assert.match(result.stdout, /--preview-branch/);
+  assert.match(result.stdout, /--database-target-sha256/);
+  assert.match(result.stdout, /--stable-database-target-sha256/);
+  assert.match(result.stdout, /DDL/i);
   assert.match(result.stdout, /--mode encrypted_snapshot/);
   assert.match(result.stdout, /AES-256-GCM/);
   assert.match(result.stdout, /apply/);
@@ -1443,6 +2054,23 @@ test('CLI help documents the skip-domain production workflow without executing e
   assert.match(result.stdout, /finalize/);
   assert.match(result.stdout, /vercel curl/);
   assert.doesNotMatch(result.stdout + result.stderr, /passwordHash|postgresql:\/\//i);
+});
+
+test('database fingerprint helper emits only one opaque hash and never the connection secret', () => {
+  const password = 'preview-database-password-must-never-print';
+  const directUrl =
+    `postgresql://preview_role:${password}` +
+    '@ep-preview-a1b2c3.us-east-2.aws.neon.tech/municontrol?sslmode=verify-full';
+  const result = spawnSync(process.execPath, ['scripts/print-database-target-fingerprint.mjs'], {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+    env: { ...process.env, DIRECT_URL: directUrl },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^__MUNICTRL_DATABASE_TARGET__[0-9a-f]{64}\n$/);
+  assert.equal(result.stderr, '');
+  assert.equal((result.stdout + result.stderr).includes(password), false);
+  assert.doesNotMatch(result.stdout + result.stderr, /postgres(?:ql)?:\/\//i);
 });
 
 test('the production runner quotes an ampersand route as one cmd.exe command on Windows', () => {

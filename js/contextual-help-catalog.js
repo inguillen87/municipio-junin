@@ -168,11 +168,11 @@ const PAGES = deepFreeze({
     href: 'territorio.html',
     aliases: ['/territorio', '/territorio.html'],
     label: 'Centro territorial',
-    objective: 'Ubicá el partido y sus localidades mediante referencias oficiales, con fuente y límites visibles.',
+    objective: 'Ubicá el Departamento Junín, Mendoza, y sus localidades GeoRef mediante referencias oficiales, con fuente y límites visibles.',
     requiredCapability: 'navigation.territory',
     manualAnchor: 'superficies',
     steps: [
-      { id: 'read-territory-map', selector: '#territoryMap', title: 'Ubicá la referencia', copy: 'Usá el mapa como referencia oficial del partido y sus localidades; no lo interpretes como una capa operativa municipal.' },
+      { id: 'read-territory-map', selector: '#territoryMap', title: 'Ubicá la referencia', copy: 'Usá el mapa como referencia oficial del departamento y sus localidades GeoRef; no lo interpretes como una capa operativa municipal.' },
       { id: 'review-localities', selector: '#territoryLocalities', title: 'Revisá las localidades', copy: 'Consultá nombres y ubicación publicados por la fuente sin inferir cobertura, población ni situación de servicios.' },
       { id: 'confirm-territory-sources', selector: '#territorySources', title: 'Confirmá las fuentes', copy: 'Verificá IGN, GeoRef, corte y límites antes de reutilizar una geometría o presentar el tablero a terceros.' },
     ],
@@ -225,7 +225,7 @@ const PAGES = deepFreeze({
     manualAnchor: 'seguridad',
     steps: [
       { id: 'wait-validation', selector: '#connectionStatus', title: 'Esperá la validación', copy: 'No interpretes la pantalla hasta que los contratos ejecutivo y de calidad estén conciliados.' },
-      { id: 'confirm-directory-mode', selector: '#peopleDirectory', title: 'Abrí una ficha verificable', copy: 'Una identidad privada habilita búsqueda y fichas con adscripción, señales y cronología de fuentes. Confirmá siempre el corte antes de actuar.' },
+      { id: 'confirm-directory-mode', selector: '#peopleDirectory', title: 'Abrí una ficha verificable', copy: 'Una identidad privada habilita búsqueda y fichas con ubicación informada, señales y cronología de fuentes. Confirmá siempre el corte antes de actuar.' },
       { id: 'review-coverage', selector: '#coverageTitle', title: 'Verificá la cobertura', copy: 'Confirmá años, períodos y celdas protegidas antes de comparar ausencias o movimientos.' },
     ],
   },

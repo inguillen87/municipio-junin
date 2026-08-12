@@ -1,318 +1,94 @@
-<!DOCTYPE html>
-<html class="muni-shell-v1" lang="es">
+<!doctype html>
+<html class="muni-shell-v1" lang="es-AR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Exportación - MuniControl</title>
-  <link rel="stylesheet" href="css/dashboard.css" />
-    <style>
-        body { margin: 0; font-family: 'Inter', sans-serif; background: #0d1526; color: #f0f4ff; }
-        
-        .container { padding: 40px; max-width: 1200px; margin: 0 auto; }
-        
-        .tabs { display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 32px; }
-        .tab { padding: 12px 24px; cursor: pointer; color: rgba(148,163,184,0.8); font-weight: 500; font-size: 14px; border-bottom: 2px solid transparent; transition: 0.2s; }
-        .tab:hover { color: #f0f4ff; }
-        .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
-        
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        .export-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; }
-        .export-card:hover { border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.02); }
-        .ec-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-        .ec-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-        
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-        .badge-pdf { background: rgba(239,68,68,0.2); color: #f87171; }
-        .badge-xls { background: rgba(16,185,129,0.2); color: #34d399; }
-        
-        .ec-title { font-family: 'Outfit', sans-serif; font-size: 18px; margin: 0 0 8px; }
-        .ec-desc { font-size: 13px; color: rgba(148,163,184,0.7); flex: 1; margin: 0 0 16px; line-height: 1.4; }
-        .ec-meta { font-size: 11px; color: rgba(148,163,184,0.5); margin-bottom: 16px; }
-        
-        button { padding: 10px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        button:disabled { cursor: not-allowed; opacity: .46; background: #334155; color: #94a3b8; }
-        .btn-primary { background: #3b82f6; color: white; }
-        .btn-primary:hover { background: #2563eb; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-success:hover { background: #059669; }
-
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
-        th { font-size: 11px; text-transform: uppercase; color: rgba(148,163,184,0.7); font-weight: 600; }
-        .table-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; }
-        .table-scroll table { min-width: 620px; }
-        .page-heading { margin: 0 0 4px; color: #60a5fa; font-family: 'Outfit', sans-serif; font-size: 18px; line-height: 1.25; }
-
-        .toast { position: fixed; bottom: 20px; right: 20px; max-width: min(440px, calc(100vw - 40px)); background: #172033; border: 1px solid rgba(148,163,184,.24); color: #fff; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; z-index: 100; font-size: 14px; font-weight: 500; }
-        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .container { padding: 22px 16px 90px; } .tabs { overflow-x: auto; } }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Publicaciones · MuniControl</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/data-operations.css">
 </head>
-<body>
+<body data-data-operations-page="publications">
+  <div id="sidebar-container"></div>
 
-<div id="sidebar"></div>
+  <main id="mainContent" class="main-content data-operations-main">
+    <header class="data-page-heading">
+      <div>
+        <p class="data-eyebrow">Datos listos para usar</p>
+        <h1>Publicaciones</h1>
+        <p class="data-lead">Informes y vistas que sí tienen fuente, alcance y formato definidos. No publicamos planillas crudas con datos personales.</p>
+      </div>
+      <a class="data-button data-button-secondary" href="auditoria.html">Revisar la fuente</a>
+    </header>
 
-<div id="mainContent" class="main-content"><div class="page-content">
-    <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:16px 20px;margin-bottom:24px">
-        <h1 class="page-heading">Centro de Exportación Municipal</h1>
-        <div style="font-size:13px;color:rgba(148,163,184,0.8)">El informe GRH usa el snapshot gobernado. La exportación cruda XLSX/CSV está retirada hasta contar con clasificación, permisos por finalidad y auditoría institucional.</div>
-    </div>
+    <section id="publicationStatus" class="data-status" data-state="loading" role="status" aria-live="polite">
+      <span class="data-status-dot" aria-hidden="true"></span>
+      <span>Verificando la fuente de las publicaciones…</span>
+    </section>
 
-    <div class="tabs">
-        <div class="tab active" onclick="switchTab('financiero', this)">FINANCIERO</div>
-        <div class="tab" onclick="switchTab('rrhh', this)">RRHH</div>
-        <div class="tab" onclick="switchTab('operacional', this)">OPERACIONAL</div>
-        <div class="tab" onclick="switchTab('auditoria', this)">AUDITORÍA</div>
-    </div>
+    <section id="publicationSummary" class="data-hero data-publication-hero" hidden>
+      <div class="data-hero-copy">
+        <span class="data-pill data-pill-ready">Fuente verificada</span>
+        <h2>Elegí el producto según la decisión</h2>
+        <p>Para presentar, usá el informe ejecutivo. Para investigar, abrí la vista interactiva o el catálogo de áreas. La calidad se consulta antes de circular resultados.</p>
+      </div>
+      <dl class="data-facts">
+        <div><dt>Corte utilizado</dt><dd id="publicationCut">—</dd></div>
+        <div><dt>Fuente</dt><dd id="publicationSource">—</dd></div>
+        <div><dt>Protección</dt><dd>Agregado · sin registros personales</dd></div>
+        <div><dt>Tiempo real</dt><dd>No · snapshot histórico</dd></div>
+      </dl>
+    </section>
 
-    <!-- FINANCIERO -->
-    <div id="tab-financiero" class="tab-content active">
-        <div class="grid">
-            <div class="export-card">
-                <div class="ec-header">
-                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-                    <span class="badge badge-pdf">PDF</span>
-                </div>
-                <h3 class="ec-title">Informe Ejecutivo GRH</h3>
-                <p class="ec-desc">Vista imprimible agregada con fuente, período y controles del contrato privado GRH.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-primary" onclick="exportPDF('Informe Ejecutivo GRH')">Abrir vista imprimible</button>
-            </div>
-            
-            <div class="export-card">
-                <div class="ec-header">
-                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg></div>
-                    <span class="badge badge-xls">XLSX</span>
-                </div>
-                <h3 class="ec-title">Registros cargados de Hacienda</h3>
-                <p class="ec-desc">Filas del módulo legacy Hacienda para el período. No acredita pagos emitidos ni transferencias bancarias.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-success" type="button" disabled>Exportación cruda retirada</button>
-            </div>
-            
-            <div class="export-card">
-                <div class="ec-header">
-                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg></div>
-                    <span class="badge badge-pdf">PDF</span>
-                </div>
-                <h3 class="ec-title">Ejecución presupuestaria</h3>
-                <p class="ec-desc">No existe todavía un informe server-side que certifique partidas, crédito vigente y devengado.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-primary" type="button" disabled>Informe no habilitado</button>
-            </div>
-            
-            <div class="export-card">
-                <div class="ec-header">
-                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
-                    <span class="badge badge-xls">XLSX</span>
-                </div>
-                <h3 class="ec-title">Registros cargados de Licitaciones</h3>
-                <p class="ec-desc">Filas del módulo legacy Licitaciones. No constituye un padrón vigente de proveedores.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-success" type="button" disabled>Exportación cruda retirada</button>
-            </div>
-            
-            <div class="export-card">
-                <div class="ec-header">
-                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
-                    <span class="badge badge-xls">XLSX</span>
-                </div>
-                <h3 class="ec-title">Proyección de caja</h3>
-                <p class="ec-desc">No se genera una proyección hasta disponer de una serie contable reconciliada y un modelo aprobado.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-success" type="button" disabled>Proyección no habilitada</button>
-            </div>
-            
-            <div class="export-card">
-                <div class="ec-header">
-                    <div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
-                    <span class="badge badge-pdf">PDF</span>
-                </div>
-                <h3 class="ec-title">Comparativo anual</h3>
-                <p class="ec-desc">Requiere historia homogénea, moneda y criterios contables declarados; todavía no está disponible.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-primary" type="button" disabled>Comparativo no habilitado</button>
-            </div>
+    <section id="tab-financiero" class="data-panel" aria-labelledby="publicationTitle">
+      <div class="data-panel-heading">
+        <div>
+          <p class="data-eyebrow">Productos disponibles</p>
+          <h2 id="publicationTitle">Qué podés abrir o compartir</h2>
+          <p>Un botón activo conduce a una salida real. Si la fuente no puede verificarse, las acciones se bloquean y explican por qué.</p>
         </div>
-    </div>
+      </div>
+      <div id="publicationCards" class="data-publication-grid" aria-live="polite">
+        <div class="data-empty">Esperando una fuente verificada.</div>
+      </div>
+    </section>
 
-    <!-- RRHH -->
-    <div id="tab-rrhh" class="tab-content">
-        <div class="grid">
-            <div class="export-card">
-                <div class="ec-header"><div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div><span class="badge badge-xls">XLSX</span></div>
-                <h3 class="ec-title">Registros RRHH importados</h3>
-                <p class="ec-desc">Filas legacy del período. Puede contener información personal y requiere autorización y manejo restringido.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-success" type="button" disabled>Exportación cruda retirada</button>
-            </div>
-            <div class="export-card">
-                <div class="ec-header"><div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div><span class="badge badge-xls">XLSX</span></div>
-                <h3 class="ec-title">Ausentismo y licencias</h3>
-                <p class="ec-desc">No hay una exportación filtrada y validada que distinga ausencias, licencias y universo de referencia.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-success" type="button" disabled>Exportación no habilitada</button>
-            </div>
-            <div class="export-card">
-                <div class="ec-header"><div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg></div><span class="badge badge-pdf">PDF</span></div>
-                <h3 class="ec-title">Evolución de planta</h3>
-                <p class="ec-desc">No se calcula hasta definir altas, bajas, vínculos y condición activa con semántica contractual.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-primary" type="button" disabled>Serie no habilitada</button>
-            </div>
+    <section class="data-panel data-decision-panel" aria-labelledby="shareTitle">
+      <div>
+        <p class="data-eyebrow">Guía rápida</p>
+        <h2 id="shareTitle">Antes de compartir</h2>
+      </div>
+      <ol class="data-checklist">
+        <li><strong>Confirmá el corte.</strong> La publicación refleja un respaldo histórico, no el estado de hoy.</li>
+        <li><strong>Elegí el formato correcto.</strong> Web para analizar; vista imprimible para circular una síntesis.</li>
+        <li><strong>Conservá la fuente visible.</strong> El informe incluye huella, período y límites de lectura.</li>
+      </ol>
+      <p class="data-boundary"><strong>CSV/XLSX nominal no habilitado.</strong> Una exportación de filas personales requiere clasificación de campos, finalidad, autorización y auditoría persistente.</p>
+    </section>
+
+    <section class="data-panel data-panel-compact" aria-labelledby="sessionTitle">
+      <details>
+        <summary id="sessionTitle">Actividad de esta sesión</summary>
+        <div class="data-disclosure-body">
+          <div class="data-table-scroll" tabindex="0" role="region" aria-label="Publicaciones generadas en esta sesión">
+            <table class="data-table">
+              <thead><tr><th>Producto</th><th>Formato</th><th>Hora</th><th>Resultado</th></tr></thead>
+              <tbody id="recentTable"><tr id="recentEmpty"><td colspan="4">Todavía no generaste una publicación en esta sesión.</td></tr></tbody>
+            </table>
+          </div>
+          <p class="data-boundary">Esta lista vive sólo en la página abierta y no constituye un historial institucional ni una constancia de entrega.</p>
         </div>
-    </div>
+      </details>
+    </section>
+  </main>
 
-    <!-- OPERACIONAL -->
-    <div id="tab-operacional" class="tab-content">
-        <div class="grid">
-            <div class="export-card">
-                <div class="ec-header"><div class="ec-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div><span class="badge badge-xls">XLSX</span></div>
-                <h3 class="ec-title">Registros vecinales importados</h3>
-                <p class="ec-desc">Filas del módulo legacy Vecinos para el período; no certifica estado operativo ni SLA.</p>
-                <div class="ec-meta">Historial persistido: no disponible</div>
-                <button class="btn-success" type="button" disabled>Exportación cruda retirada</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- AUDITORIA -->
-    <div id="tab-auditoria" class="tab-content">
-        <p style="color:rgba(148,163,184,0.7)">No hay reportes de auditoría configurados para su perfil.</p>
-    </div>
+  <div id="publicationToast" class="data-toast" role="status" aria-live="polite" hidden></div>
 
-    <!-- Recent Exports Table -->
-    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:24px;margin-top:40px">
-        <h3 style="margin:0 0 16px;font-family:'Outfit',sans-serif;font-size:18px">Descargas solicitadas en esta sesión</h3>
-        <div class="table-scroll" tabindex="0" role="region" aria-label="Descargas solicitadas en esta sesión">
-        <table>
-            <thead>
-                <tr>
-                    <th>Archivo</th>
-                    <th>Formato</th>
-                    <th>Generado por</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="recentTable">
-                <tr id="recentEmpty"><td colspan="5" style="color:rgba(148,163,184,.65);text-align:center">No hay descargas solicitadas en esta sesión. Este cuadro no es un historial institucional.</td></tr>
-            </tbody>
-        </table>
-        </div>
-    </div>
-
-</div>
-
-<!-- Progress Modal -->
-<div id="exportProgress" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#0d1526;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;text-align:center;min-width:320px;box-shadow:0 10px 25px rgba(0,0,0,0.5)">
-    <div style="font-size:14px;font-weight:700;color:#f0f4ff;margin-bottom:16px" id="exportProgressTitle">Solicitando descarga...</div>
-    <div style="background:rgba(255,255,255,0.06);border-radius:99px;height:6px;overflow:hidden">
-      <div id="exportProgressBar" style="height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:99px;transition:width 0.5s ease;width:0%"></div>
-    </div>
-    <div style="font-size:12px;color:rgba(148,163,184,0.5);margin-top:12px">Validando permisos, fuente y formato...</div>
-  </div>
-</div>
-
-<div id="toast" class="toast"></div>
-
-<script src="js/auth-fetch.js"></script>
-
-<script>
-function switchTab(tab, el) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    
-    el.classList.add('active');
-    document.getElementById('tab-' + tab).classList.add('active');
-}
-
-function showToast(msg) {
-    var toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.style.display = 'block';
-    setTimeout(function() { toast.style.display = 'none'; }, 3000);
-}
-
-function showExportProgress(title) {
-    var div = document.getElementById('exportProgress');
-    div.style.display = 'flex';
-    document.getElementById('exportProgressTitle').textContent = 'Solicitando: ' + title;
-    var bar = document.getElementById('exportProgressBar');
-    bar.style.width = '15%';
-}
-
-function hideExportProgress() {
-    var div = document.getElementById('exportProgress');
-    document.getElementById('exportProgressBar').style.width = '100%';
-    setTimeout(function(){ div.style.display = 'none'; }, 400);
-}
-
-function addRecent(title, type) {
-    var tbody = document.getElementById('recentTable');
-    var tr = document.createElement('tr');
-    var empty = document.getElementById('recentEmpty');
-    if (empty) empty.remove();
-    var ext = type === 'pdf' ? '_imprimible.html' : '.xlsx';
-    var safeTitle = String(title || 'descarga').replace(/[^a-z0-9_-]+/gi, '_').slice(0, 80);
-    var filename = safeTitle + '_' + new Date().toISOString().split('T')[0] + ext;
-    var fileCell = document.createElement('td');
-    fileCell.textContent = filename;
-    var typeCell = document.createElement('td');
-    var badge = document.createElement('span');
-    badge.className = 'badge ' + (type === 'pdf' ? 'badge-pdf' : 'badge-xls');
-    badge.textContent = type === 'pdf' ? 'VISTA' : 'XLSX';
-    typeCell.appendChild(badge);
-    var actorCell = document.createElement('td');
-    actorCell.textContent = 'Sesión actual';
-    var dateCell = document.createElement('td');
-    dateCell.textContent = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-    var statusCell = document.createElement('td');
-    statusCell.textContent = 'Entregado · validar contenido';
-    statusCell.style.color = '#fbbf24';
-    tr.append(fileCell, typeCell, actorCell, dateCell, statusCell);
-    tbody.insertBefore(tr, tbody.firstChild);
-}
-
-async function exportPDF(title) {
-    showExportProgress(title);
-    var normalized = title.toLowerCase();
-    if (!normalized.includes('grh') && !normalized.includes('rrhh')) {
-        hideExportProgress();
-        showToast('No hay una fuente gobernada para este informe. Disponible: Informe Ejecutivo GRH.');
-        return;
-    }
-
-    var preview = window.open('', '_blank');
-    if (preview) preview.opener = null;
-    try {
-        var response = await MuniAuth.fetch('/api/pdf-report?type=rrhh', { headers: { Accept: 'text/html' } });
-        if (!response.ok) throw new Error('Informe no disponible');
-        var contentType = response.headers.get('content-type') || '';
-        if (!contentType.toLowerCase().includes('text/html')) throw new Error('Formato de informe inesperado');
-        var blob = await response.blob();
-        var objectUrl = URL.createObjectURL(blob);
-        if (preview) preview.location.replace(objectUrl);
-        else window.location.href = objectUrl;
-        setTimeout(function() { URL.revokeObjectURL(objectUrl); }, 60000);
-        hideExportProgress();
-        addRecent(title, 'pdf');
-        showToast('Vista GRH entregada. Revisá fuente, período y advertencias antes de circularla.');
-    } catch (error) {
-        if (preview) preview.close();
-        hideExportProgress();
-        if (!MuniAuth.isAuthError(error)) showToast('No se pudo generar el informe gobernado.');
-    }
-}
-
-</script>
-</div>  <script src="js/theme-switcher.js"></script>
   <script src="js/navigation-catalog.js"></script>
   <script src="js/nav.js"></script>
-  <script src='js/bottom-nav.js'></script>
-  <script>if(typeof buildSidebar === 'function') buildSidebar('exportar');</script>
+  <script src="js/auth-fetch.js"></script>
+  <script src="js/theme-switcher.js"></script>
+  <script src="js/bottom-nav.js"></script>
+  <script src="js/data-operations.js"></script>
+  <script>if (typeof buildSidebar === 'function') buildSidebar('exportar');</script>
 </body>
 </html>

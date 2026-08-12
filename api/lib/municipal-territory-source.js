@@ -12,9 +12,9 @@ import {
 } from './municipal-territory-contract.js';
 
 export const MUNICIPAL_TERRITORY_IGN_URL =
-  'https://wms.ign.gob.ar/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=ign%3Adepartamento&CQL_FILTER=in1%3D%2706413%27&outputFormat=application%2Fjson&srsName=EPSG%3A4326';
+  'https://wms.ign.gob.ar/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=ign%3Adepartamento&CQL_FILTER=in1%3D%2750035%27&outputFormat=application%2Fjson&srsName=EPSG%3A4326';
 export const MUNICIPAL_TERRITORY_GEOREF_URL =
-  'https://apis.datos.gob.ar/georef/api/localidades?departamento=06413&campos=id,nombre,centroide&max=100&formato=json';
+  'https://apis.datos.gob.ar/georef/api/v2.0/localidades?departamento=50035&campos=id,nombre,centroide&max=100';
 export const MUNICIPAL_TERRITORY_FETCH_TIMEOUT_MS = 7_000;
 export const MUNICIPAL_TERRITORY_CACHE_TTL_MS = 180_000;
 
@@ -24,7 +24,8 @@ const JSON_CONTENT_TYPE = /^application\/(?:json|geo\+json)(?:\s*;|$)/i;
 const GEOREF_TOP_LEVEL_KEYS = Object.freeze(['cantidad', 'inicio', 'localidades', 'parametros', 'total']);
 const GEOREF_LOCALITY_KEYS = Object.freeze(['centroide', 'id', 'nombre']);
 const GEOREF_CENTROID_KEYS = Object.freeze(['lat', 'lon']);
-const GEOREF_PARAMETER_KEYS = Object.freeze(['campos', 'departamento', 'formato', 'max']);
+const GEOREF_PARAMETER_KEYS = Object.freeze(['campos', 'categoria', 'departamento', 'max']);
+const GEOREF_CATEGORY_FILTER = 'Localidad simple,Componente de localidad compuesta,entidad';
 
 export class MunicipalTerritorySourceError extends Error {
   constructor(code) {
@@ -236,10 +237,10 @@ export function projectIgnDepartmentBoundary(value) {
   const properties = feature?.properties;
   if (!plainObject(feature) || feature.type !== 'Feature' || !plainObject(properties) ||
       properties.in1 !== MUNICIPAL_TERRITORY_DEPARTMENT_ID ||
-      properties.nam !== 'Junín' || properties.fna !== 'Partido de Junín' ||
-      properties.objeto !== 'Departamento' || properties.gna !== 'Partido' ||
+      properties.nam !== 'Junín' || properties.fna !== 'Departamento Junín' ||
+      properties.objeto !== 'Departamento' || properties.gna !== 'Departamento' ||
       properties.sag !== 'IGN' ||
-      properties.fdc !== 'ARBA - Gerencia de Servicios Catastrales' ||
+      properties.fdc !== 'Oficina Provincial de Mendoza' ||
       feature?.geometry?.type !== 'MultiPolygon') {
     fail('IGN_BOUNDARY_INVALID');
   }
@@ -250,7 +251,7 @@ export function projectIgnDepartmentBoundary(value) {
     bbox: coordinatesBbox(coordinates),
     properties: {
       name: 'Junín',
-      sourceId: 'ign:departamento:06413',
+      sourceId: 'ign:departamento:50035',
     },
     geometry: { type: 'MultiPolygon', coordinates },
   };
@@ -263,9 +264,11 @@ export function projectGeorefLocalities(value) {
       value.inicio !== 0 || !Array.isArray(value.localidades) || value.localidades.length !== 7 ||
       !exactKeys(value.parametros, GEOREF_PARAMETER_KEYS) ||
       !Array.isArray(value.parametros.campos) ||
-      JSON.stringify(value.parametros.campos) !== JSON.stringify(['id', 'nombre', 'centroide.lat', 'centroide.lon']) ||
-      JSON.stringify(value.parametros.departamento) !== JSON.stringify(['06413']) ||
-      value.parametros.formato !== 'json' || value.parametros.max !== 100) {
+      value.parametros.campos.length !== 4 ||
+      !['id', 'nombre', 'centroide.lat', 'centroide.lon'].every(field => value.parametros.campos.includes(field)) ||
+      value.parametros.categoria !== GEOREF_CATEGORY_FILTER ||
+      JSON.stringify(value.parametros.departamento) !== JSON.stringify(['50035']) ||
+      value.parametros.max !== 100) {
     fail('GEOREF_LOCALITIES_INVALID');
   }
 
@@ -325,7 +328,7 @@ function territoryPayload({ queriedAt, boundary, localities, status }) {
     jurisdiction: {
       id: MUNICIPAL_TERRITORY_DEPARTMENT_ID,
       name: 'Junín',
-      province: { id: '06', name: 'Buenos Aires' },
+      province: { id: '50', name: 'Mendoza' },
       country: { code: 'AR', name: 'Argentina' },
     },
     boundary,

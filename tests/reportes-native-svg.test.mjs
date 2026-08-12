@@ -10,11 +10,16 @@ function inlineScripts(html) {
   return [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)].map(match => match[1]);
 }
 
-test('reportes ships four local source-backed SVG surfaces without a chart CDN', () => {
-  const chartIds = ['chart-participantes', 'chart-sectores', 'chart-control', 'chart-calidad'];
+test('reportes reserves charts for comparisons and renders control and quality as plain executive evidence', () => {
+  const chartIds = ['chart-participantes', 'chart-sectores'];
   for (const id of chartIds) {
     assert.match(source, new RegExp(`id="${id}"[^>]+data-source="grh-executive-portable"[^>]+data-chart-state="loading"`));
   }
+  assert.match(source, /id="control-components"/);
+  assert.match(source, /id="quality-signals"/);
+  assert.doesNotMatch(source, /id="chart-(?:control|calidad)"/);
+  assert.match(source, /<details class="technical-details">/);
+  assert.match(source, /Abrir análisis completo de calidad/);
 
   assert.match(source, /data-source-contract="grh-executive-report-v2"/);
   assert.match(source, /data-canonical-source="grh"/);
@@ -39,8 +44,8 @@ test('reportes ships four local source-backed SVG surfaces without a chart CDN',
   assert.match(source, /MuniAuth\.fetch\(endpoint\)/);
   assert.match(source, /<select class="period-selector" id="period-selector" disabled/);
   assert.match(source, /syncPeriodSelector\(report\.availablePeriods, report\.period\)/);
-  assert.match(source, /nunca se sustituye un período ausente/i);
-  assert.match(source, /Executive Summary/);
+  assert.match(source, /Sólo aparecen meses realmente disponibles y validados/i);
+  assert.match(source, /Lo más importante del período/);
   assert.match(source, /calculation_control_not_bank_disbursement/);
   assert.match(source, /not_declared_in_source/);
   assert.match(source, /source\?\.profileSchemaVersion === 'grh-profile-v1'/);

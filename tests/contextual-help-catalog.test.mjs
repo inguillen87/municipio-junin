@@ -207,7 +207,7 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   assert.equal(MUNIGUIA_CATALOG.pages.quality.label, 'Calidad de datos');
   assert.equal(MUNIGUIA_CATALOG.pages.rrhh.steps[1].selector, '#peopleDirectory');
   assert.equal(MUNIGUIA_CATALOG.pages.rrhh.steps[1].title, 'Abrí una ficha verificable');
-  assert.match(MUNIGUIA_CATALOG.pages.rrhh.steps[1].copy, /adscripción, señales y cronología de fuentes/);
+  assert.match(MUNIGUIA_CATALOG.pages.rrhh.steps[1].copy, /ubicación informada, señales y cronología de fuentes/);
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.grhDomains.steps.map((step) => step.selector),
     ['#grhSourceStatus', '#grhDomainGrid', '#grhEvidenceTitle'],

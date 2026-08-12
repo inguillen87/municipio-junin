@@ -36,20 +36,20 @@ const PNG = Buffer.from(
   'base64',
 );
 const LOCALITY_POINTS = Object.freeze([
-  [-60.86489881645, -34.5072540354127],
-  [-61.0664981031808, -34.457840917544],
-  [-61.018683323305, -34.6608964328808],
-  [-61.1285011823446, -34.3445360596629],
-  [-60.9464309692372, -34.5939417428353],
-  [-61.1582663957053, -34.7231287380653],
-  [-61.074208603857, -34.5728278659011],
+  [-68.4123885264046, -33.1278250293367],
+  [-68.4872690737808, -33.1465311500985],
+  [-68.4804995237419, -33.0989413692546],
+  [-68.5688059684624, -33.0996793533624],
+  [-68.615165408116, -33.1767732947655],
+  [-68.3774928550962, -33.2009807649662],
+  [-68.5951625639971, -33.1204426186256],
 ]);
 const BOUNDARY_RING = Object.freeze([
-  Object.freeze([-61.4, -34.9]),
-  Object.freeze([-60.6, -34.9]),
-  Object.freeze([-60.6, -34.2]),
-  Object.freeze([-61.4, -34.2]),
-  Object.freeze([-61.4, -34.9]),
+  Object.freeze([-68.75, -33.3]),
+  Object.freeze([-68.2, -33.3]),
+  Object.freeze([-68.2, -33.0]),
+  Object.freeze([-68.75, -33.0]),
+  Object.freeze([-68.75, -33.3]),
 ]);
 
 const AUTH_CLIENT_SOURCE = `
@@ -72,7 +72,7 @@ function createTerritoryFixture(status = 'ready') {
     status,
     query: {
       queriedAt: '2026-08-11T12:00:00.000Z',
-      departmentId: '06413',
+      departmentId: '50035',
       crs: 'EPSG:4326',
     },
     source: {
@@ -83,16 +83,16 @@ function createTerritoryFixture(status = 'ready') {
       },
     },
     jurisdiction: {
-      id: '06413',
+      id: '50035',
       name: 'Junín',
-      province: { id: '06', name: 'Buenos Aires' },
+      province: { id: '50', name: 'Mendoza' },
       country: { code: 'AR', name: 'Argentina' },
     },
     boundary: {
       type: 'Feature',
-      id: '06413',
-      bbox: [-61.4, -34.9, -60.6, -34.2],
-      properties: { name: 'Junín', sourceId: 'ign:departamento:06413' },
+      id: '50035',
+      bbox: [-68.75, -33.3, -68.2, -33.0],
+      properties: { name: 'Junín', sourceId: 'ign:departamento:50035' },
       geometry: { type: 'MultiPolygon', coordinates: [[BOUNDARY_RING.map(point => [...point])]] },
     },
     localities: status === 'ready' ? MUNICIPAL_TERRITORY_LOCALITIES.map((locality, index) => ({
@@ -363,6 +363,10 @@ test('Centro Territorial React is governed, interactive, responsive and fail-clo
         assert.equal(await page.locator('.territory-map-attribution a').last().textContent(), 'Instituto Geográfico Nacional · Argenmap');
         assert.match(await page.locator('#territorySources').textContent(), /GeoRef/);
         assert.match(await page.locator('main').textContent(), /no es tiempo real/i);
+        assert.match(await page.locator('main').textContent(), /Centro Territorial Junín · Mendoza/);
+        assert.match(await page.locator('main').textContent(), /Departamento de Junín/);
+        assert.match(await page.locator('main').textContent(), /Mendoza · Argentina/);
+        assert.doesNotMatch(await page.locator('main').textContent(), /Buenos Aires|Partido de Junín|Ajustar partido/i);
         assert.doesNotMatch(await page.locator('main').textContent(), /datos en tiempo real|obras ejecutadas|reclamos activos|dotación activa/i);
 
         const overlayCount = await page.locator('#territoryMap .leaflet-overlay-pane path').count();
@@ -373,11 +377,11 @@ test('Centro Territorial React is governed, interactive, responsive and fail-clo
         assert.equal(await page.locator('#territoryMap .leaflet-overlay-pane path').count(), 8);
 
         const search = page.locator('#territory-locality-search');
-        await search.fill('tiburcio');
+        await search.fill('barriales');
         assert.equal(await page.locator('#territoryLocalities [data-locality-id]').count(), 1);
         await page.locator('#territoryLocalities [data-locality-id]').press('Enter');
-        assert.match(await page.locator('.territory-locality-detail').textContent(), /Fortín Tiburcio/);
-        assert.equal(await page.locator('[data-locality-id="06413040"]').getAttribute('aria-pressed'), 'true');
+        assert.match(await page.locator('.territory-locality-detail').textContent(), /Los Barriales/);
+        assert.equal(await page.locator('[data-locality-id="50035040"]').getAttribute('aria-pressed'), 'true');
         assert.equal(await page.locator('#territoryMap path[fill="#f59e0b"]').count(), 1);
         await page.locator('button.theme-toggle').click();
         assert.equal(await page.locator('#territoryMap path[fill="#f59e0b"]').count(), 1, 'theme change preserves selected marker');
@@ -513,7 +517,7 @@ test('Centro Territorial React is governed, interactive, responsive and fail-clo
         assert.match(await page.locator('.territory-map-state').textContent(), /límite y las localidades oficiales continúan visibles/i);
         assert.equal(await page.locator('#territoryMap .leaflet-overlay-pane path').count(), 8);
         await page.locator('#territory-locality-search').fill('junín');
-        await page.locator('[data-locality-id="06413050"]').click();
+        await page.locator('[data-locality-id="50035020"]').click();
         assert.match(await page.locator('.territory-locality-detail').textContent(), /Junín/);
         await page.screenshot({ path: SCREENSHOTS.degraded, fullPage: true });
         assert.equal(diagnostics.consoleErrors.every(message => /ERR_FAILED|Failed to load resource/i.test(message)), true);
@@ -531,6 +535,8 @@ test('Centro Territorial React is governed, interactive, responsive and fail-clo
       { name: 'bbox', mutate: value => { value.boundary.bbox[0] += 0.01; } },
       { name: 'basemap-attribution', mutate: value => { value.basemaps[0].attribution = 'Fuente desconocida'; } },
       { name: 'source-endpoint', mutate: value => { value.source.boundary.endpoint = 'https://attacker.invalid/ows'; } },
+      { name: 'wrong-department', mutate: value => { value.query.departmentId = '06413'; } },
+      { name: 'wrong-province', mutate: value => { value.jurisdiction.province = { id: '06', name: 'Buenos Aires' }; } },
     ];
     for (const mutation of mutations) {
       await withScenario({ name: `mutated-${mutation.name}`, role: 'INTENDENTE', mutate: mutation.mutate }, async ({ baseUrl }) => {

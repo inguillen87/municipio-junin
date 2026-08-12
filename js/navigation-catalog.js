@@ -31,9 +31,9 @@
       { id: 'cuentas', href: 'cuentas-claras.html', label: 'Cuentas Claras', shortLabel: 'Cuentas', icon: 'eye', groupId: 'territory', placement: 'group', public: true, primary: false },
       { id: 'ciudadano', href: 'ciudadano.html', label: 'Portal Ciudadano', shortLabel: 'Ciudadanía', icon: 'home', groupId: 'territory', placement: 'group', public: true, primary: false },
       { id: 'importar', href: 'importar.html', label: 'Importar datos', shortLabel: 'Importar', icon: 'upload', groupId: 'data', placement: 'group', capability: 'navigation.import', primary: true },
-      { id: 'auditoria', href: 'auditoria.html', label: 'Inventario de cargas', shortLabel: 'Cargas', icon: 'shield', groupId: 'data', placement: 'group', capability: 'navigation.audit', primary: true },
+      { id: 'auditoria', href: 'auditoria.html', label: 'Fuentes de datos', shortLabel: 'Fuentes', icon: 'shield', groupId: 'data', placement: 'group', capability: 'navigation.audit', primary: true },
       { id: 'control', href: '/calidad', label: 'Calidad de datos', shortLabel: 'Calidad', icon: 'gauge', groupId: 'data', placement: 'group', capability: 'navigation.data-quality', primary: true },
-      { id: 'exportar', href: 'exportar.html', label: 'Salidas gobernadas', shortLabel: 'Salidas', icon: 'export', groupId: 'data', placement: 'group', capability: 'navigation.export', primary: true },
+      { id: 'exportar', href: 'exportar.html', label: 'Publicaciones', shortLabel: 'Publicar', icon: 'export', groupId: 'data', placement: 'group', capability: 'navigation.export', primary: true },
       { id: 'manuales', href: 'manuales.html', label: 'Manual y ayuda', shortLabel: 'Ayuda', icon: 'help', groupId: null, placement: 'footer', capability: 'navigation.help', primary: true }
     ]
   };

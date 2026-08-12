@@ -13,7 +13,7 @@ import {
 
 export const GRH_DIRECTORY_SNAPSHOT_ACTION = 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1';
 export const GRH_DIRECTORY_SNAPSHOT_ENTITY = 'GRH_DIRECTORY_SNAPSHOT';
-export const GRH_DIRECTORY_SNAPSHOT_KIND = 'grh.directory.snapshot.v2';
+export const GRH_DIRECTORY_SNAPSHOT_KIND = 'grh.directory.snapshot.v3';
 export const GRH_DIRECTORY_SNAPSHOT_KEY_VERSION = 'v1';
 
 const SNAPSHOT_CIPHER = 'aes-256-gcm';

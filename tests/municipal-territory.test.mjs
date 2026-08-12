@@ -25,22 +25,22 @@ import releaseTruthContract from '../shared/release-truth-contract.cjs';
 
 const QUERIED_AT = Date.parse('2026-08-11T12:00:00.000Z');
 const LOCALITIES = Object.freeze([
-  ['06413010', 'Agustín Roca', -60.86489881645, -34.5072540354127],
-  ['06413020', 'Agustina', -61.0664981031808, -34.457840917544],
-  ['06413030', 'Balneario Laguna de Gómez', -61.018683323305, -34.6608964328808],
-  ['06413040', 'Fortín Tiburcio', -61.1285011823446, -34.3445360596629],
-  ['06413050', 'Junín', -60.9464309692372, -34.5939417428353],
-  ['06413060', 'Laplacette', -61.1582663957053, -34.7231287380653],
-  ['06413080', 'Saforcada', -61.074208603857, -34.5728278659011],
+  ['50035010', 'Ingeniero Giagnoni', -68.4123885264046, -33.1278250293367],
+  ['50035020', 'Junín', -68.4872690737808, -33.1465311500985],
+  ['50035030', 'La Colonia', -68.4804995237419, -33.0989413692546],
+  ['50035040', 'Los Barriales', -68.5688059684624, -33.0996793533624],
+  ['50035050', 'Medrano', -68.615165408116, -33.1767732947655],
+  ['50035060', 'Phillips', -68.3774928550962, -33.2009807649662],
+  ['50035070', 'Rodríguez Peña', -68.5951625639971, -33.1204426186256],
 ]);
 
 function rectangleRing() {
   return [
-    [-61.4, -34.9],
-    [-60.6, -34.9],
-    [-60.6, -34.2],
-    [-61.4, -34.2],
-    [-61.4, -34.9],
+    [-68.75, -33.3],
+    [-68.2, -33.3],
+    [-68.2, -33.0],
+    [-68.75, -33.0],
+    [-68.75, -33.3],
   ];
 }
 
@@ -54,11 +54,11 @@ function ignFixture({ coordinates = [[rectangleRing()]] } = {}) {
       properties: {
         gid: 1222,
         objeto: 'Departamento',
-        fna: 'Partido de Junín',
-        gna: 'Partido',
+        fna: 'Departamento Junín',
+        gna: 'Departamento',
         nam: 'Junín',
-        in1: '06413',
-        fdc: 'ARBA - Gerencia de Servicios Catastrales',
+        in1: '50035',
+        fdc: 'Oficina Provincial de Mendoza',
         sag: 'IGN',
       },
       geometry: { type: 'MultiPolygon', coordinates },
@@ -76,9 +76,9 @@ function georefFixture() {
       nombre,
     })),
     parametros: {
-      campos: ['id', 'nombre', 'centroide.lat', 'centroide.lon'],
-      departamento: ['06413'],
-      formato: 'json',
+      campos: ['id', 'centroide.lat', 'nombre', 'centroide.lon'],
+      categoria: 'Localidad simple,Componente de localidad compuesta,entidad',
+      departamento: ['50035'],
       max: 100,
     },
     total: 7,
@@ -175,11 +175,11 @@ test('official fixed sources build the exact ready contract and start in paralle
   assert.equal(payload.schemaVersion, MUNICIPAL_TERRITORY_SCHEMA_VERSION);
   assert.equal(payload.status, 'ready');
   assert.equal(payload.query.queriedAt, '2026-08-11T12:00:00.000Z');
-  assert.equal(payload.query.departmentId, '06413');
+  assert.equal(payload.query.departmentId, '50035');
   assert.equal(payload.query.crs, 'EPSG:4326');
   assert.equal(payload.source.boundary.endpoint.includes('?'), false);
   assert.equal(payload.source.localities.endpoint.includes('?'), false);
-  assert.match(payload.source.boundary.custodian, /Instituto Geográfico Nacional.*ARBA/u);
+  assert.match(payload.source.boundary.custodian, /Instituto Geográfico Nacional.*Mendoza/u);
   assert.equal(payload.boundary.geometry.type, 'MultiPolygon');
   assert.equal(payload.localities.length, 7);
   assert.deepEqual(Object.keys(payload.localities[0]).sort(), ['centroid', 'id', 'name']);
@@ -232,11 +232,11 @@ test('GeoRef failure or invalidity degrades atomically to a valid partial contra
 
 test('a centroid in a MultiPolygon hole invalidates the whole optional locality source', async () => {
   const holeAroundJunin = [
-    [-60.97, -34.62],
-    [-60.92, -34.62],
-    [-60.92, -34.57],
-    [-60.97, -34.57],
-    [-60.97, -34.62],
+    [-68.51, -33.16],
+    [-68.46, -33.16],
+    [-68.46, -33.13],
+    [-68.51, -33.13],
+    [-68.51, -33.16],
   ];
   const payload = await loadReady({
     ign: ignFixture({ coordinates: [[rectangleRing(), holeAroundJunin]] }),
@@ -249,7 +249,7 @@ test('a centroid in a MultiPolygon hole invalidates the whole optional locality 
 
 test('required IGN boundary rejects identity, provenance, geometry and coordinate attacks', async () => {
   const mutations = [
-    value => { value.features[0].properties.in1 = '06411'; },
+    value => { value.features[0].properties.in1 = '06413'; },
     value => { value.features[0].properties.nam = 'Otro'; },
     value => { value.features[0].properties.sag = 'unknown'; },
     value => { value.features[0].properties.fdc = 'unknown'; },
@@ -272,7 +272,7 @@ test('required IGN boundary rejects identity, provenance, geometry and coordinat
 
   const ring = [];
   for (let index = 0; index <= MUNICIPAL_TERRITORY_MAX_VERTICES; index += 1) {
-    ring.push(index % 2 === 0 ? [-61.3, -34.8] : [-60.7, -34.3]);
+    ring.push(index % 2 === 0 ? [-68.7, -33.25] : [-68.3, -33.05]);
   }
   ring.push([...ring[0]]);
   assert.throws(
@@ -409,7 +409,7 @@ test('contract inspection rejects shape drift, arbitrary URLs, locality subsets 
   const payload = await loadReady();
   const mutations = [
     value => { value.extra = true; },
-    value => { value.query.departmentId = '06411'; },
+    value => { value.query.departmentId = '06413'; },
     value => { value.source.boundary.endpoint = 'https://attacker.invalid/ows'; },
     value => { value.boundary.geometry.coordinates[0][0][0] = [0, 0]; },
     value => { value.localities[0].dni = '123'; },

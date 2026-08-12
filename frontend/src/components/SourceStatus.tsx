@@ -20,22 +20,22 @@ export function SourceStatus({ source }: SourceStatusProps) {
     <aside id="snapshotMeta" className="source-status" aria-labelledby="source-status-title">
       <div className="source-status__heading">
         <span className="status-dot" aria-hidden="true" />
-        <p>Proyección validada</p>
+        <p>Corte verificado</p>
       </div>
       <h2 id="source-status-title">{source.snapshotDate}</h2>
       <p className="source-status__detail">{source.snapshotMeta}</p>
       <dl className="source-status__facts">
         <div>
-          <dt>Perfil</dt>
-          <dd>{source.profileSchema}</dd>
+          <dt>Estado</dt>
+          <dd>Validado</dd>
         </div>
         <div>
-          <dt>Semántica</dt>
-          <dd>{source.semanticSchema}</dd>
+          <dt>Actualización</dt>
+          <dd>Copia histórica</dd>
         </div>
         <div>
-          <dt>Tamaño</dt>
-          <dd>{source.sourceSize}</dd>
+          <dt>Alcance</dt>
+          <dd>Datos agregados</dd>
         </div>
       </dl>
       <details className="source-status__details">
@@ -43,6 +43,9 @@ export function SourceStatus({ source }: SourceStatusProps) {
         <dl>
           <div><dt>Archivo</dt><dd>{source.sourceFile}</dd></div>
           <div><dt>SHA-256</dt><dd className="source-status__hash">{source.sourceHash}</dd></div>
+          <div><dt>Perfil</dt><dd>{source.profileSchema}</dd></div>
+          <div><dt>Semántica</dt><dd>{source.semanticSchema}</dd></div>
+          <div><dt>Tamaño</dt><dd>{source.sourceSize}</dd></div>
           <div><dt>Corte de fuente</dt><dd>{source.sourceSnapshot}</dd></div>
           <div><dt>Perfil generado</dt><dd>{source.profileGeneratedAt}</dd></div>
           <div><dt>Semántica generada</dt><dd>{source.semanticGeneratedAt}</dd></div>

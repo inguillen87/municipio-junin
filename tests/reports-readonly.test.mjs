@@ -100,6 +100,9 @@ test('reports emits only portable k=10 rankings and released compensation period
   assert.equal(report.workforce.distributionBySector.threshold, 10);
   assert.equal(report.workforce.distributionBySector.participants.every(row =>
     row.participants >= 10 && !Object.hasOwn(row, 'sourceCode') && !Object.hasOwn(row, 'companyCode')), true);
+  assert.match(report.executiveSummary[0], /856 personas.*\+1 \(\+0,12%\).*2026-06/i);
+  assert.match(report.executiveSummary[1], /OBRERO.*220 personas.*25,7%/i);
+  assert.match(report.executiveSummary[2], /consistencia entre fuentes.*63,88\/100.*no acredita un pago bancario/i);
   assert.doesNotMatch(serialized, /"sourceCode"|"companyCode"|"dni"|"cuil"|data_points/i);
   assert.doesNotMatch(serialized, /calculationRows|controlRows|netIdentityVarianceCents|netToPayVarianceCents|roundingToleranceCents/i);
 });

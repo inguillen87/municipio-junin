@@ -54,7 +54,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Superficie | Estado local | Fuente y límite |
 |---|---|---|
 | Centro Ejecutivo GRH | Implementado | Contratos privados `profile` + `semantic`; snapshot histórico |
-| Centro Ejecutivo RRHH | Implementado | Dotación registrada, ausencias, movimientos, calidad y cuarentena agregadas |
+| Centro Ejecutivo RRHH | Implementado localmente | Directorio privado `grh-directory-v3`: situación laboral informada por fechas, catálogos de contrato/revista, señal separada de participación en cálculo de julio de 2026 y cronologías acotadas; no certifica vigencia contractual ni pago |
 | Estructura y áreas de costo | Validada localmente | React + TypeScript, seis KPI, exploradores de clasificaciones y centros de costo del cálculo, dos series históricas, matriz 5×5, comparador y acciones hacia Hacienda/BOT; contrato `grh-organization-analytics-v2`, k=10 y sin directorio nominal |
 | Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
@@ -64,7 +64,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Accesos demostrativos por rol | Verificado en Production | Seis perfiles gobernados para recorrer permisos y superficies; no habilitan datos inventados ni sustituyen identidades institucionales definitivas |
 | Calidad modular React + TypeScript | Canary `/calidad` | Primera vertical componible sobre el mismo contrato `grh-quality-v1`; `/control` permanece como reversión durante la adopción |
 | Centro Ejecutivo modular React + TypeScript | Canary `/ejecutivo` | Lectura summary-first de `grh-executive-v2`; `/grh-ejecutivo` permanece como reversión estable y no se reemplaza en este sprint |
-| Centro territorial Junín | Verificado en Production | Límite IGN, siete localidades GeoRef y cuatro mapas base oficiales; referencia territorial sin capas GRH, obras ni reclamos |
+| Centro territorial Junín, Mendoza | Corrección local pendiente de candidate | Límite departamental IGN `50035`, siete localidades GeoRef mendocinas y cuatro mapas base oficiales; Production observada aún contiene la jurisdicción bonaerense incorrecta |
 | PWA y shell móvil | Implementado | Manifest instalable, service worker network-first, fallback offline y navegación responsive; las APIs y respuestas privadas nunca se cachean |
 | WhatsApp | Condicionado | Webhooks informativos endurecidos; faltan proveedor, credenciales y E2E externo certificado |
 | Correo, cron y exportación cruda | Retirado | Responden 410 o no se programan hasta tener finalidad, auditoría e idempotencia |
@@ -260,6 +260,11 @@ git diff --check
 El recorrido mutante `POST/replay/PATCH/history` está separado y sólo se habilita
 contra un Preview disposable pineado. Variables, ownership y receipt saneado:
 [`docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md`](docs/GRH_ACTION_LEDGER_CANDIDATE_SMOKE.md).
+El ensayo DDL del Directorio RRHH v3 (`003 + 004 + 005`) exige una base Preview
+descartable, dos fingerprints efectivos distintos y cleanup verificable; su runbook está en
+[`docs/GRH_DIRECTORY_PREVIEW_REHEARSAL.md`](docs/GRH_DIRECTORY_PREVIEW_REHEARSAL.md).
+La implementación y sus pruebas son locales: no se ejecutó la migración `005`,
+publicación, smoke ni deployment sobre Preview, Production o una DB remota.
 El gate read-only también acepta el candidato final `--prod --skip-domain` por
 su URL única, sin mutarlo ni promover el alias estable.
 La ejecución conectada y read-only del catálogo PostgreSQL se documenta por

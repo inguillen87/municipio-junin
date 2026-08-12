@@ -8,7 +8,7 @@ import './styles/territory.css';
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
-  throw new Error('No se encontró el contenedor principal del Centro Territorial Junín.');
+  throw new Error('No se encontró el contenedor principal del Centro Territorial Junín, Mendoza.');
 }
 
 createRoot(rootElement).render(<TerritoryApp />);

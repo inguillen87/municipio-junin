@@ -41,7 +41,7 @@ superficie estable o posponer la parte privada de la demostración.
 | 2:25–3:30 | `/ejecutivo` | Fuente/corte, KPI, serie de control, sectores y eventos | “La lectura proviene de un backup GRH real. Los 856 corresponden a participantes de cálculo en julio, no a personal activo. Los importes se presentan en ARS por configuración de Junín; el control no acredita pago bancario.” |
 | 3:30–4:35 | `/hacienda` | Radar mensual, conciliación, componentes y comparación histórica | “El tablero permite abrir un período, comparar el mes anterior y localizar diferencias entre fuentes. Una diferencia es una señal de control, no prueba pérdida, fraude ni desembolso.” |
 | 4:35–5:35 | `/ia` | Consulta agregada de licencias o cierre, respuesta visual y preguntas siguientes | “El asistente determinista responde con el mismo contrato GRH, muestra gráficos y ofrece acciones. No inventa cifras ni atribuye causas que la fuente no prueba.” |
-| 5:35–6:20 | `/territorio` | Límite del Partido, localidades y mapas base oficiales | “La referencia territorial consume fuentes oficiales IGN y GeoRef. Todavía no superpone empleados, obras ni reclamos porque esas capas no están gobernadas.” |
+| 5:35–6:20 | `/territorio` | Límite del Departamento Junín, Mendoza, localidades GeoRef y mapas base oficiales | “La referencia territorial consume fuentes oficiales IGN y GeoRef. Todavía no superpone empleados, obras ni reclamos porque esas capas no están gobernadas.” |
 | 6:20–6:50 | cierre | Volver a `/inicio` | “Hoy demostramos lectura trazable, comparación y navegación accionable. El siguiente paso es conectar las bases autorizadas gradualmente, con migraciones, actualización y backups probados.” |
 
 ## Afirmaciones permitidas

@@ -86,6 +86,30 @@ function directoryItem(index, detail = false) {
     },
     category: { code: 7, label: 'CATEGORIA 7' },
     agreement: { code: 1, label: 'MUNICIPAL' },
+    contractRegime: { code: index % 2 ? 1 : 2, label: index % 2 ? 'PLANTA PERMANENTE' : 'TEMPORARIO' },
+    serviceSituation: { code: index % 2 ? 10 : 20, label: index % 2 ? 'NORMAL' : 'RESERVA DE CARGO' },
+    terminationReason: index === 2 ? { code: 5, label: 'RENUNCIA INFORMADA' } : null,
+    employment: (() => {
+      const asOf = projections.executive.source.snapshotAsOf;
+      const variants = {
+        2: { reportedIngressDate: '2004-02-01', reportedExitDate: '2025-01-31', reportedStatus: 'ended_by_reported_dates' },
+        3: { reportedIngressDate: null, reportedExitDate: null, reportedStatus: 'unknown_sentinel_ingress' },
+        4: { reportedIngressDate: null, reportedExitDate: null, reportedStatus: 'unknown_missing_ingress' },
+        5: { reportedIngressDate: '1950-01-01', reportedExitDate: null, reportedStatus: 'unknown_implausible_active_tenure' },
+        6: { reportedIngressDate: '2026-08-07', reportedExitDate: null, reportedStatus: 'invalid_chronology' },
+      };
+      return {
+        ...(variants[index] || {
+          reportedIngressDate: '2004-02-01', reportedExitDate: null,
+          reportedStatus: 'current_by_reported_dates',
+        }),
+        asOf,
+        basis: 'legajo_reported_dates',
+        referencePayrollParticipation: {
+          period: '2026-07', observed: index === 1, rowCount: index === 1 ? 5 : 0,
+        },
+      };
+    })(),
     events: {
       absenceCount: index === 1 ? 30 : (index % 3 === 0 ? 2 : 0),
       latestAbsenceDate: index === 1 ? '2026-07-24' : (index % 3 === 0 ? '2026-07-10' : null),
@@ -146,14 +170,14 @@ function directoryPayload(url) {
   };
   const privacy = {
     containsPersonalData: true,
-    excludedFields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'event_cause'],
+    excludedFields: ['dni', 'cuil', 'contact', 'address', 'bank_account', 'salary', 'absence_leave_event_cause'],
   };
   const detailLegajo = Number(url.searchParams.get('legajo'));
   if (Number.isSafeInteger(detailLegajo) && detailLegajo > 0) {
     const match = all.find(item => item.legajo === detailLegajo);
     const item = directoryItem(all.indexOf(match) + 1, true);
     const payload = {
-      schemaVersion: 'grh-directory-v2', source, privacy,
+      schemaVersion: 'grh-directory-v3', source, privacy,
       query: { mode: 'detail', page: 1, limit: 1, total: 1, hasNext: false, cursor: null, nextCursor: null },
       facets: null,
       items: [item],
@@ -169,6 +193,16 @@ function directoryPayload(url) {
   if (url.searchParams.get('hasLeave') === 'true') filtered = filtered.filter(item => item.events.leaveCount > 0);
   if (url.searchParams.get('hasAbsence') === 'true') filtered = filtered.filter(item => item.events.absenceCount > 0);
   if (url.searchParams.get('hasMovement') === 'true') filtered = filtered.filter(item => item.movement.rowCount > 0);
+  if (url.searchParams.get('reportedStatus')) {
+    filtered = filtered.filter(item => item.employment.reportedStatus === url.searchParams.get('reportedStatus'));
+  }
+  for (const [parameter, property] of [['contractRegime', 'contractRegime'], ['serviceSituation', 'serviceSituation']]) {
+    const rawCode = url.searchParams.get(parameter);
+    const code = Number(rawCode);
+    if (rawCode !== null && rawCode !== '' && Number.isSafeInteger(code) && code >= 0) {
+      filtered = filtered.filter(item => item[property]?.code === code);
+    }
+  }
   const positionObservation = url.searchParams.get('positionObservation');
   if (positionObservation) {
     filtered = filtered.filter(item => item.positionObservation?.label === positionObservation);
@@ -187,7 +221,7 @@ function directoryPayload(url) {
   const items = filtered.slice(offset, offset + limit);
   const hasNext = offset + limit < filtered.length;
   const payload = {
-    schemaVersion: 'grh-directory-v2', source, privacy,
+    schemaVersion: 'grh-directory-v3', source, privacy,
     query: {
       mode: 'list', page, limit, total: filtered.length, hasNext,
       cursor: cursor || null,
@@ -205,6 +239,23 @@ function directoryPayload(url) {
       ],
       categories: [{ agreementCode: 1, code: 7, label: 'CATEGORIA 7', count: 22 }],
       agreements: [{ code: 1, label: 'MUNICIPAL', count: 22 }],
+      reportedStatuses: [
+        { status: 'current_by_reported_dates', label: 'Sin egreso informado al corte', count: 17 },
+        { status: 'ended_by_reported_dates', label: 'Egreso informado al corte', count: 1 },
+        { status: 'unknown_sentinel_ingress', label: 'Fecha de ingreso no utilizable', count: 1 },
+        { status: 'unknown_missing_ingress', label: 'Ingreso no informado', count: 1 },
+        { status: 'unknown_implausible_active_tenure', label: 'Antigüedad informada a revisar', count: 1 },
+        { status: 'invalid_chronology', label: 'Fechas informadas inconsistentes', count: 1 },
+      ],
+      contractRegimes: [
+        { code: 1, label: 'PLANTA PERMANENTE', count: 11 },
+        { code: 2, label: 'TEMPORARIO', count: 11 },
+        { code: 99, label: null, count: 1 },
+      ],
+      serviceSituations: [
+        { code: 10, label: 'NORMAL', count: 11 },
+        { code: 20, label: 'RESERVA DE CARGO', count: 11 },
+      ],
     },
     items,
   };
@@ -302,12 +353,16 @@ async function createServer(requestLog, availability = { unavailable: false }, o
           payload.items[0].movement = { rowCount: 0, periodCount: 1, latestPeriod: '2026-07' };
         } else if (options.directoryMutation === 'impossible-period') {
           payload.items[0].movement.latestPeriod = '2025-99';
+        } else if (options.directoryMutation === 'impossible-employment-date') {
+          payload.items[0].employment.reportedIngressDate = '2025-02-31';
+        } else if (options.directoryMutation === 'stale-payroll-period') {
+          payload.items[0].employment.referencePayrollParticipation.period = '2026-06';
         }
         response.writeHead(200, {
           'Content-Type': CONTENT_TYPES['.json'],
           'Cache-Control': 'no-store, private',
           'X-Content-Type-Options': 'nosniff',
-          'X-MuniControl-Contract': options.directoryContract || 'grh-directory-v2',
+          'X-MuniControl-Contract': options.directoryContract || 'grh-directory-v3',
         });
         response.end(JSON.stringify(payload));
         return;
@@ -725,6 +780,8 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   await page.goto(`${baseUrl}/rrhh.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'ready');
+  assert.doesNotMatch(await page.locator('#directoryContractRegime').innerText(), /Código 99/,
+    'opaque employment codes without a governed label must stay hidden');
   await page.waitForFunction(() => document.querySelector('#directoryAccessPanel')?.dataset.state === 'static');
 
   let directory = await page.evaluate(() => ({
@@ -750,10 +807,10 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
     await page.screenshot({ path: path.join(tmpdir(), 'rrhh-directory-authorized-desktop.png'), fullPage: true });
   }
 
-  await page.click('#directoryNext');
+  await page.locator('#directoryNext').evaluate(button => button.click());
   await page.waitForFunction(() => document.querySelector('#directoryPageLabel')?.textContent.trim() === 'Página 2 de 2');
   assert.equal(await page.locator('#directoryTableBody tr').count(), 2);
-  await page.click('#directoryPrevious');
+  await page.locator('#directoryPrevious').evaluate(button => button.click());
   await page.waitForFunction(() => document.querySelector('#directoryPageLabel')?.textContent.trim() === 'Página 1 de 2');
 
   await page.selectOption('#directoryPosition', 'DIRECTORA DE PERSONAL');
@@ -761,6 +818,23 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '1');
   assert.match(await page.locator('#directoryTableBody .rrhh-position-cell').innerText(), /Cargo informado · histolegajo 2026-08/);
   assert.ok(requestLog.some(entry => entry.path === '/api/grh-directory' && entry.query?.positionObservation === 'DIRECTORA DE PERSONAL'));
+  await page.click('#directoryReset');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
+
+  await page.selectOption('#directoryReportedStatus', 'current_by_reported_dates');
+  await page.click('#directorySubmit');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '17');
+  assert.ok(requestLog.some(entry => entry.path === '/api/grh-directory' &&
+    entry.query?.reportedStatus === 'current_by_reported_dates'));
+  await page.click('#directoryReset');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
+
+  await page.selectOption('#directoryContractRegime', '1');
+  await page.selectOption('#directoryServiceSituation', '10');
+  await page.click('#directorySubmit');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '11');
+  assert.ok(requestLog.some(entry => entry.path === '/api/grh-directory' &&
+    entry.query?.contractRegime === '1' && entry.query?.serviceSituation === '10'));
   await page.click('#directoryReset');
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
 
@@ -787,12 +861,25 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   const person = await page.evaluate(() => ({
     title: document.querySelector('#personDialogTitle')?.textContent.trim(),
     subtitle: document.querySelector('#personDialogSubtitle')?.textContent.trim(),
+    assignmentTitle: document.querySelector('#personAssignmentTitle')?.textContent.trim(),
+    assignmentNote: document.querySelector('#personAssignmentTitle')?.nextElementSibling?.textContent.trim(),
     dimensions: document.querySelector('#personDimensions')?.textContent.replace(/\s+/g, ' ').trim(),
     events: document.querySelector('#personEvents')?.textContent.replace(/\s+/g, ' ').trim(),
+    employment: {
+      state: document.querySelector('#personEmployment')?.dataset.state,
+      status: document.querySelector('#personEmploymentStatus')?.textContent.trim(),
+      detail: document.querySelector('#personEmploymentStatusDetail')?.textContent.trim(),
+      basis: document.querySelector('#personEmploymentBasis')?.textContent.trim(),
+      facts: document.querySelector('#personEmploymentFacts')?.textContent.replace(/\s+/g, ' ').trim(),
+      payrollLabel: document.querySelector('#personPayrollLabel')?.textContent.trim(),
+      payrollValue: document.querySelector('#personPayrollValue')?.textContent.trim(),
+      position: Array.from(document.querySelector('#personDialogContent').children).indexOf(document.querySelector('#personEmployment')),
+    },
     timelineCoverage: document.querySelector('#personTimelineCoverage')?.textContent.trim(),
-    timeline: Array.from(document.querySelectorAll('#personTimelineList li'), item => ({
+    coverage: Array.from(document.querySelectorAll('#personTimelineList .rrhh-person-coverage-row'), item => ({
       kind: item.dataset.kind,
       text: item.textContent.replace(/\s+/g, ' ').trim(),
+      state: item.querySelector('.rrhh-person-coverage-status')?.dataset.state,
     })),
     tabs: Array.from(document.querySelectorAll('#personTimelineTabs [role="tab"]'), tab => ({
       text: tab.textContent.trim(), selected: tab.getAttribute('aria-selected'), tabIndex: tab.tabIndex,
@@ -813,9 +900,18 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
       href: document.querySelector('#personHaciendaAgreement')?.getAttribute('href'),
       text: document.querySelector('#personHaciendaAgreement')?.textContent.trim(),
     },
+    assistant: {
+      href: document.querySelector('#personAssistantAction')?.getAttribute('href'),
+      companyCode: document.querySelector('#personAssistantAction')?.dataset.companyCode,
+      legajo: document.querySelector('#personAssistantAction')?.dataset.legajo,
+      text: document.querySelector('#personAssistantAction')?.textContent.trim(),
+    },
+    actionHelp: document.querySelector('.rrhh-person-action-help')?.textContent.trim(),
     text: document.querySelector('#personDialog')?.textContent || '',
   }));
   assert.equal(person.title, 'ALVAREZ, ANA');
+  assert.equal(person.assignmentTitle, 'Ubicación y encuadre informados');
+  assert.match(person.assignmentNote, /no certifican adscripción ni vigencia/i);
   assert.match(person.subtitle, /Legajo 1\.001 · empresa 1/);
   assert.match(person.dimensions, /DIRECTORA DE PERSONAL/);
   assert.match(person.dimensions, /Cargo informado · histolegajo 2026-08/);
@@ -824,20 +920,30 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   assert.match(person.dimensions, /Jerarquía del cargo\s*No informada por histolegajo/);
   assert.match(person.dimensions, /Centro de costo informado\s*PERSONAL/);
   assert.doesNotMatch(person.dimensions, /SECRETARIA GENERAL|INTENDENCIA|cargo actual/i);
-  assert.match(person.events, /Ausencias históricas30 · última 24 de jul de 2026/);
-  assert.match(person.events, /2 · última 0?1 de may de 2009 a 0?5 de may de 2009/);
-  assert.match(person.events, /Filas fuente legamov7 filas · 3 períodos · último 2026-07/);
-  assert.match(person.timelineCoverage, /Ausencias: últimos 24 de 30 registros/);
-  assert.match(person.timelineCoverage, /Licencias: últimos 2 de 2 registros/);
-  assert.match(person.timelineCoverage, /legamov: últimos 3 de 3 períodos/);
-  assert.match(person.timelineCoverage, /Máximo 24 visibles por filtro/);
-  assert.equal(person.timeline.length, 24);
-  assert.deepEqual(person.tabs.map(tab => tab.text), ['Todos', 'Ausencias', 'Licencias', 'Movimientos']);
+  assert.match(person.events, /Registros válidos de ausencias30 · última 24 de jul de 2026/);
+  assert.match(person.events, /Registros válidos de licencias2 · última 0?1 de may de 2009 a 0?5 de may de 2009/);
+  assert.match(person.events, /Filas válidas de legamov7 filas · 3 períodos · último 2026-07/);
+  assert.deepEqual(person.employment, {
+    state: 'reported',
+    status: 'Sin egreso informado al corte',
+    detail: 'La fuente informa ingreso y no informa egreso. No equivale a una certificación de vínculo activo.',
+    basis: 'Según legajo · corte 06 de ago de 2026',
+    facts: 'Ingreso reportado01 de feb de 2004Egreso reportadoNo informadoRégimen contractualPLANTA PERMANENTESituación de revistaNORMAL',
+    payrollLabel: 'Participación observada en cálculo · jul 2026',
+    payrollValue: 'Sí',
+    position: 0,
+  });
+  assert.doesNotMatch(person.employment.status + person.employment.detail, /certifica(?:do|da)?\s+(?:activo|inactivo)/i);
+  assert.match(person.timelineCoverage, /separa total válido, detalle expuesto, rango y estado/i);
+  assert.match(person.timelineCoverage, /Máximo 24 registros o períodos expuestos/i);
+  assert.deepEqual(person.tabs.map(tab => tab.text), ['Resumen', 'Licencias', 'Ausencias', 'legamov']);
   assert.deepEqual(person.tabs.map(tab => tab.selected), ['true', 'false', 'false', 'false']);
   assert.deepEqual(person.tabs.map(tab => tab.tabIndex), [0, -1, -1, -1]);
-  assert.equal(person.timeline.every(item => item.kind === 'absence'), true);
-  assert.match(person.timeline[0].text, /24 de jul de 2026/);
-  assert.match(person.timeline.at(-1).text, /01 de jul de 2026/);
+  assert.deepEqual(person.coverage.map(row => row.kind), ['leave', 'absence', 'movement']);
+  assert.match(person.coverage[0].text, /Licencias.*Válidos asociados2.*Expuestos en ficha2 de máximo 24.*Detalle completo/);
+  assert.match(person.coverage[1].text, /Ausencias.*Válidos asociados30.*Expuestos en ficha24 de máximo 24.*Detalle parcial/);
+  assert.match(person.coverage[2].text, /legamov.*Períodos válidos3.*Expuestos en ficha3 de máximo 24.*Detalle completo/i);
+  assert.deepEqual(person.coverage.map(row => row.state), ['complete', 'partial', 'complete']);
   assert.match(person.evidence, /Evidencia y corte/);
   assert.match(person.cutoff, /Corte GRH/);
   assert.ok(person.rect.width >= 730 && person.rect.width <= 770, JSON.stringify(person.rect));
@@ -851,13 +957,18 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   assert.deepEqual(person.sectorCohort, {
     hidden: false,
     href: 'hacienda.html?cohort=sector&company=1&code=10#cohortContext',
-    text: 'Hacienda · sector',
+    text: 'Ver nómina agregada del sector',
   });
   assert.deepEqual(person.agreementCohort, {
     hidden: false,
     href: 'hacienda.html?cohort=agreement&company=1&code=1#cohortContext',
-    text: 'Hacienda · convenio',
+    text: 'Ver nómina agregada del convenio',
   });
+  assert.deepEqual(person.assistant, {
+    href: 'ia.html?handoff=person', companyCode: '1', legajo: '1001',
+    text: 'Analizar esta ficha con Asistente GRH',
+  });
+  assert.match(person.actionHelp, /cohorte agregada; no muestran remuneración individual/i);
   for (const [dimension, href] of [
     ['sector', person.sectorCohort.href],
     ['agreement', person.agreementCohort.href],
@@ -877,15 +988,44 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   await page.waitForTimeout(50);
   assert.equal(requestLog.length, requestsAfterPersonLoad, 'rendering cohort CTAs issues zero extra requests');
   await page.click('[data-timeline-filter="movement"]');
-  assert.equal(await page.locator('#personTimelineList li').count(), 3);
-  assert.equal(await page.locator('#personTimelineList li[data-kind="movement"]').count(), 3);
-  assert.match(await page.locator('#personTimelineList li').first().innerText(), /Filas fuente legamov/);
-  assert.match(await page.locator('#personTimelineList li').first().innerText(), /no describe altas, bajas ni rotación/i);
+  assert.equal(await page.locator('#personTimelineList tbody tr').count(), 3);
+  assert.deepEqual(await page.locator('#personTimelineList thead th').allTextContents(), ['Período', 'Filas válidas']);
+  assert.match(await page.locator('#personTimelineList caption').innerText(), /no describen altas, bajas ni rotación/i);
   await page.locator('[data-timeline-filter="movement"]').press('ArrowLeft');
-  assert.equal(await page.locator('[data-timeline-filter="leave"]').getAttribute('aria-selected'), 'true');
-  assert.equal(await page.locator('#personTimelineList li[data-kind="leave"]').count(), 2);
+  assert.equal(await page.locator('[data-timeline-filter="absence"]').getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('#personTimelineList tbody tr').count(), 24);
+  assert.deepEqual(await page.locator('#personTimelineList thead th').allTextContents(), ['Fecha', 'Días']);
+  await page.click('[data-timeline-filter="leave"]');
+  assert.equal(await page.locator('#personTimelineList tbody tr').count(), 2);
+  assert.deepEqual(await page.locator('#personTimelineList thead th').allTextContents(), ['Inicio', 'Fin', 'Días']);
   await page.click('#personDialogClose');
   assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('rrhh-person-open')), true);
+
+  await page.click('#directoryReset');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
+  await page.selectOption('#directoryReportedStatus', 'unknown_sentinel_ingress');
+  await page.click('#directorySubmit');
+  await page.waitForFunction(() => document.querySelector('#directoryTableBody .rrhh-person-open')?.dataset.legajo === '1003');
+  await page.click('#directoryTableBody .rrhh-person-open');
+  await page.waitForSelector('#personDialogContent:not([hidden])');
+  const sentinelEmployment = await page.locator('#personEmployment').innerText();
+  assert.match(sentinelEmployment, /Situación no determinada: fecha de ingreso no utilizable/i);
+  assert.match(sentinelEmployment, /Ingreso reportado\s*Dato no utilizable/i);
+  assert.doesNotMatch(sentinelEmployment, /1111-11-11|activo certificado|inactivo certificado/i);
+  await page.click('#personDialogClose');
+  await page.click('#directoryReset');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
+
+  await page.selectOption('#directoryReportedStatus', 'invalid_chronology');
+  await page.click('#directorySubmit');
+  await page.waitForFunction(() => document.querySelector('#directoryTableBody .rrhh-person-open')?.dataset.legajo === '1006');
+  await page.click('#directoryTableBody .rrhh-person-open');
+  await page.waitForSelector('#personDialogContent:not([hidden])');
+  assert.equal(await page.locator('#personEmployment').getAttribute('data-state'), 'invalid');
+  assert.match(await page.locator('#personEmployment').innerText(), /Fechas inconsistentes: revisión requerida/i);
+  await page.click('#personDialogClose');
+  await page.click('#directoryReset');
+  await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -906,7 +1046,7 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
     const close = document.querySelector('#personDialogClose').getBoundingClientRect();
     const footer = document.querySelector('#personActions').getBoundingClientRect();
     const controls = Array.from(document.querySelectorAll(
-      '#personDialogClose, #personTimelineTabs button, #personActions a',
+      '#personDialogClose, #personTimelineTabs button, #personDialogContent a, #personActions a',
     ), control => {
       const target = control.getBoundingClientRect();
       return { width: target.width, height: target.height };
@@ -914,7 +1054,7 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
     return {
       rect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
       close: { width: close.width, height: close.height },
-      footer: { top: footer.top, bottom: footer.bottom },
+      footer: { top: footer.top, bottom: footer.bottom, height: footer.height },
       controls,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     };
@@ -922,6 +1062,7 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   assert.deepEqual(mobileDrawer.rect, { left: 0, right: 390, top: 0, bottom: 844 });
   assert.ok(mobileDrawer.close.width >= 44 && mobileDrawer.close.height >= 44, JSON.stringify(mobileDrawer));
   assert.ok(Math.abs(mobileDrawer.footer.bottom - 844) <= 1, JSON.stringify(mobileDrawer));
+  assert.ok(mobileDrawer.footer.height <= 90, JSON.stringify(mobileDrawer));
   assert.equal(mobileDrawer.controls.every(control => control.width >= 44 && control.height >= 44), true,
     JSON.stringify(mobileDrawer));
   assert.ok(mobileDrawer.overflow <= 1, JSON.stringify(mobileDrawer));
@@ -946,6 +1087,33 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   if (process.env.RRHH_CAPTURE === '1') {
     await page.screenshot({ path: path.join(tmpdir(), 'rrhh-directory-authorized-mobile.png'), fullPage: true });
   }
+  await page.click('#directoryMobileList .rrhh-person-open');
+  await page.waitForSelector('#personDialogContent:not([hidden])');
+  await page.route('**/ia.html?handoff=person', route => route.fulfill({
+    status: 200,
+    contentType: 'text/html; charset=utf-8',
+    body: '<!doctype html><title>handoff target</title>',
+  }));
+  const handoffStartedAt = Date.now();
+  await Promise.all([
+    page.waitForURL(`${baseUrl}/ia.html?handoff=person`),
+    page.click('#personAssistantAction'),
+  ]);
+  const handoff = await page.evaluate(() => {
+    const raw = sessionStorage.getItem('muni_grh_person_handoff_v1');
+    return raw ? JSON.parse(raw) : null;
+  });
+  assert.deepEqual(Object.keys(handoff), ['version', 'kind', 'companyCode', 'legajo', 'createdAt']);
+  assert.deepEqual({ ...handoff, createdAt: 0 }, {
+    version: 'grh-person-handoff-v1',
+    kind: 'PERSON_OVERVIEW',
+    companyCode: 1,
+    legajo: 1001,
+    createdAt: 0,
+  });
+  assert.ok(Number.isSafeInteger(handoff.createdAt));
+  assert.ok(handoff.createdAt >= handoffStartedAt && handoff.createdAt <= Date.now());
+  assert.equal(page.url(), `${baseUrl}/ia.html?handoff=person`);
   assert.deepEqual(consoleErrors, []);
   const directoryRequests = requestLog.filter(entry => entry.path === '/api/grh-directory');
   assert.ok(directoryRequests.length >= 5);
@@ -956,6 +1124,23 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   assert.equal(accessRequests.length, 2);
   assert.equal(accessRequests.every(entry => Object.keys(entry.query).length === 0), true);
   assert.equal(requestLog.every(entry => entry.authorization.startsWith('Bearer ')), true);
+  const returnStartedAt = Date.now();
+  await page.evaluate(createdAt => {
+    sessionStorage.removeItem('muni_grh_person_handoff_v1');
+    sessionStorage.setItem('muni_grh_person_return_v1', JSON.stringify({
+      version: 'grh-person-return-v1', kind: 'PERSON_RETURN', companyCode: 1, legajo: 1001, createdAt,
+    }));
+  }, returnStartedAt);
+  await page.goto(`${baseUrl}/rrhh?handoff=person#peopleDirectory`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#personDialogContent:not([hidden])');
+  assert.equal(await page.locator('#personDialogTitle').textContent(), 'ALVAREZ, ANA');
+  assert.equal(new URL(page.url()).search, '');
+  assert.equal(new URL(page.url()).hash, '#peopleDirectory');
+  assert.equal(await page.evaluate(() => sessionStorage.getItem('muni_grh_person_return_v1')), null);
+  assert.equal(
+    requestLog.filter(entry => entry.path === '/api/grh-directory' && entry.query.legajo === '1001').at(-1)?.purpose,
+    'PERSON_LOOKUP',
+  );
   await context.close();
 });
 
@@ -1289,6 +1474,8 @@ test('RRHH fails closed on mutated movement identities or a stale directory cont
     { name: 'rows without a period', directoryMutation: 'rows-without-period' },
     { name: 'period without rows', directoryMutation: 'period-without-rows' },
     { name: 'impossible movement month', directoryMutation: 'impossible-period' },
+    { name: 'impossible employment calendar date', directoryMutation: 'impossible-employment-date' },
+    { name: 'payroll is not the prior governed month', directoryMutation: 'stale-payroll-period' },
     { name: 'stale v1 header', directoryContract: 'grh-directory-v1' },
   ]) {
     const requestLog = [];
@@ -1351,7 +1538,7 @@ test('RRHH source uses one secure experience and contains no raw contract access
   assert.doesNotMatch(source, /\/api\/grh-data|artifact=(?:profile|semantic)|grh-semantic-v[01]/);
   assert.doesNotMatch(script, /(?:^|[^\w.])fetch\s*\(|localStorage/);
   assert.match(script, /MuniAuth\.fetch\(DIRECTORY_ENDPOINT/);
-  assert.match(script, /var DIRECTORY_SCHEMA = 'grh-directory-v2'/);
+  assert.match(script, /var DIRECTORY_SCHEMA = 'grh-directory-v3'/);
   assert.match(script, /response\.headers\.get\('X-MuniControl-Contract'\) !== DIRECTORY_SCHEMA/);
   assert.match(script, /MuniAuth\.fetch\(DIRECTORY_ACCESS_ENDPOINT[\s\S]*cache: 'no-store'/);
   assert.match(script, /response\.headers\.get\('X-MuniControl-Contract'\) !== DIRECTORY_ACCESS_SCHEMA/);
@@ -1360,8 +1547,13 @@ test('RRHH source uses one secure experience and contains no raw contract access
   assert.match(script, /'X-MuniControl-Purpose': purpose/);
   assert.match(script, /state\.directory\.deepLink = parseDirectoryDeepLink\(\)[\s\S]*if \(!await requirePageCapability\(\)\) return/);
   assert.match(script, /var directoryReady = await loadDirectory\(1, null, true\)[\s\S]*await openDirectoryDeepLink\(\)/);
-  assert.equal((script.match(/sessionStorage/g) || []).length, 2, 'session storage is limited to preserving the denied-access notice');
+  assert.equal((script.match(/sessionStorage/g) || []).length, 5,
+    'session storage is limited to the denied-access notice and the two allowlisted person handoffs');
   assert.match(script, /sessionStorage\.getItem\('mjunin_access_notice'\)[\s\S]*sessionStorage\.setItem\('mjunin_access_notice'/);
+  assert.match(script, /var PERSON_HANDOFF_STORAGE_KEY = 'muni_grh_person_handoff_v1'/);
+  assert.match(script, /var handoff = \{[\s\S]*version: PERSON_HANDOFF_VERSION,[\s\S]*kind: 'PERSON_OVERVIEW',[\s\S]*companyCode: companyCode,[\s\S]*legajo: legajo,[\s\S]*createdAt: Date\.now\(\)[\s\S]*\};/);
+  assert.match(script, /sessionStorage\.setItem\(PERSON_HANDOFF_STORAGE_KEY, JSON\.stringify\(handoff\)\)/);
+  assert.match(script, /sessionStorage\.getItem\(PERSON_RETURN_STORAGE_KEY\)[\s\S]*sessionStorage\.removeItem\(PERSON_RETURN_STORAGE_KEY\)/);
   assert.doesNotMatch(source, /\b856\b|\b88[.,]99\b|\b2026-07\b|\b2\.450\b|\b20\.534\b/);
   assert.doesNotMatch(html, /https?:\/\//i);
 });

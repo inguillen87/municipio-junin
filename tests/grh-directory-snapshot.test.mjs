@@ -33,6 +33,17 @@ function artifactFixture() {
     },
     category: { code: 3, label: 'Categoría A' },
     agreement: { code: 2, label: 'Convenio municipal' },
+    contract_regime: { code: 1, label: 'Planta permanente' },
+    service_situation: { code: 1, label: 'Normal' },
+    termination_reason: null,
+    employment: {
+      reported_ingress_date: '2000-01-01',
+      reported_exit_date: null,
+      reported_status: 'current_by_reported_dates',
+      as_of: '2026-08-06',
+      basis: 'legajo_reported_dates',
+      reference_payroll_participation: { period: '2026-07', observed: true, row_count: 2 },
+    },
     absence: { event_count: 2, latest_date: '2026-07-01' },
     absence_history: [
       { date: '2026-07-01', days: 1 },
@@ -65,6 +76,17 @@ function artifactFixture() {
     position: { code: 8, label: 'Enfermero', parent: null, depends_on: null },
     category: { code: 4, label: 'Categoría B' },
     agreement: { code: 2, label: 'Convenio municipal' },
+    contract_regime: { code: 2, label: 'Personal contratado' },
+    service_situation: { code: 2, label: 'Licencia' },
+    termination_reason: { code: 1, label: 'Renuncia' },
+    employment: {
+      reported_ingress_date: '2010-01-01',
+      reported_exit_date: '2020-01-01',
+      reported_status: 'ended_by_reported_dates',
+      as_of: '2026-08-06',
+      basis: 'legajo_reported_dates',
+      reference_payroll_participation: { period: '2026-07', observed: false, row_count: 0 },
+    },
     absence: { event_count: 0, latest_date: null },
     absence_history: [],
     leave: { event_count: 0, latest_start_date: null, latest_end_date: null },
@@ -82,6 +104,17 @@ function artifactFixture() {
     position: null,
     category: null,
     agreement: null,
+    contract_regime: null,
+    service_situation: null,
+    termination_reason: null,
+    employment: {
+      reported_ingress_date: null,
+      reported_exit_date: null,
+      reported_status: 'unknown_missing_ingress',
+      as_of: '2026-08-06',
+      basis: 'legajo_reported_dates',
+      reference_payroll_participation: { period: '2026-07', observed: false, row_count: 0 },
+    },
     absence: { event_count: 1, latest_date: '2026-01-05' },
     absence_history: [{ date: '2026-01-05', days: null }],
     leave: { event_count: 1, latest_start_date: '2024-04-01', latest_end_date: '2024-04-01' },
@@ -91,7 +124,7 @@ function artifactFixture() {
     position_observation: null,
   }];
   return {
-    schema_version: 'grh-directory-v2',
+    schema_version: 'grh-directory-v3',
     source: {
       canonical_system: 'GRH Junín',
       file: 'grh_junin.backup_2026080615_plataforma.sql.gz',
@@ -108,6 +141,7 @@ function artifactFixture() {
     counts: {
       source_rows: {
         ausencia: 3,
+        calculo: 3,
         cargo: 2,
         catego: 2,
         convenio: 1,
@@ -116,8 +150,11 @@ function artifactFixture() {
         legajo: 3,
         legamov: 4,
         licencia: 3,
+        motibaja: 1,
         organiza: 2,
         persona: 3,
+        regcontr: 2,
+        revista: 2,
         sectores: 2,
       },
       directory_records: 3,
@@ -137,6 +174,19 @@ function artifactFixture() {
       quarantined_position_observation_rows: 0,
       future_effective_position_observation_rows: 1,
       records_with_position_observation: 1,
+      valid_calculation_rows: 3,
+      quarantined_calculation_rows: 0,
+      reference_payroll_period: '2026-07',
+      reference_payroll_rows: 2,
+      records_observed_in_reference_payroll: 1,
+      employment_statuses: {
+        current_by_reported_dates: 1,
+        ended_by_reported_dates: 1,
+        invalid_chronology: 0,
+        unknown_implausible_active_tenure: 0,
+        unknown_missing_ingress: 1,
+        unknown_sentinel_ingress: 0,
+      },
     },
     records,
   };
@@ -166,7 +216,7 @@ function snapshotQuery(envelope, expectedTenant = 'tenant-a') {
 
 test.beforeEach(() => clearGrhDirectorySnapshotCache());
 
-test('v2 artifact rejects shape, cutoff, ordering and count identity drift', () => {
+test('v3 artifact rejects shape, cutoff, ordering and count identity drift', () => {
   const missingV2Fields = artifactFixture();
   delete missingV2Fields.records[0].movement;
   delete missingV2Fields.records[0].movement_history;
@@ -220,6 +270,73 @@ test('v2 artifact rejects shape, cutoff, ordering and count identity drift', () 
   ));
 });
 
+test('v3 employment truth table rejects impossible dates, false statuses and ungovened payroll periods', () => {
+  const impossibleDate = artifactFixture();
+  impossibleDate.records[0].employment.reported_ingress_date = '2025-02-31';
+  assert.ok(inspectGrhDirectoryArtifact(impossibleDate).errors.includes(
+    'records.0.employment.reported_ingress_date',
+  ));
+
+  const falseCurrent = artifactFixture();
+  falseCurrent.records[0].employment.reported_ingress_date = '1960-01-01';
+  assert.ok(inspectGrhDirectoryArtifact(falseCurrent).errors.includes(
+    'records.0.employment.status_date_identity',
+  ));
+
+  const falseImplausible = artifactFixture();
+  falseImplausible.records[0].employment.reported_status = 'unknown_implausible_active_tenure';
+  assert.ok(inspectGrhDirectoryArtifact(falseImplausible).errors.includes(
+    'records.0.employment.status_date_identity',
+  ));
+
+  const falseInvalid = artifactFixture();
+  falseInvalid.records[0].employment.reported_status = 'invalid_chronology';
+  assert.ok(inspectGrhDirectoryArtifact(falseInvalid).errors.includes(
+    'records.0.employment.status_date_identity',
+  ));
+
+  const invalidChronology = artifactFixture();
+  invalidChronology.records[0].employment.reported_exit_date = '1999-12-31';
+  invalidChronology.records[0].employment.reported_status = 'invalid_chronology';
+  invalidChronology.counts.employment_statuses.current_by_reported_dates -= 1;
+  invalidChronology.counts.employment_statuses.invalid_chronology += 1;
+  assert.equal(inspectGrhDirectoryArtifact(invalidChronology).ok, true);
+
+  const wrongReference = artifactFixture();
+  wrongReference.records[0].employment.reference_payroll_participation.period = '2026-08';
+  assert.ok(inspectGrhDirectoryArtifact(wrongReference).errors.includes(
+    'records.0.employment.reference_payroll_participation.period',
+  ));
+
+  const falseParticipation = artifactFixture();
+  falseParticipation.records[0].employment.reference_payroll_participation.observed = false;
+  assert.ok(inspectGrhDirectoryArtifact(falseParticipation).errors.includes(
+    'records.0.employment.reference_payroll_participation.observed_identity',
+  ));
+
+  const currentWithTermination = artifactFixture();
+  currentWithTermination.records[0].termination_reason = { code: 1, label: 'Renuncia' };
+  assert.ok(inspectGrhDirectoryArtifact(currentWithTermination).errors.includes(
+    'records.0.termination_reason.status_identity',
+  ));
+
+  const unlabeledTermination = artifactFixture();
+  unlabeledTermination.records[1].termination_reason = { code: 99, label: null };
+  assert.equal(inspectGrhDirectoryArtifact(unlabeledTermination).ok, false);
+
+  const forbiddenAbsenceCause = artifactFixture();
+  forbiddenAbsenceCause.records[0].absence_history[0].cause = 'Privada';
+  assert.ok(inspectGrhDirectoryArtifact(forbiddenAbsenceCause).errors.includes(
+    'records.0.absence_history.0.shape',
+  ));
+
+  const forbiddenLeaveReason = artifactFixture();
+  forbiddenLeaveReason.records[0].leave_history[0].reason = 'Privada';
+  assert.ok(inspectGrhDirectoryArtifact(forbiddenLeaveReason).errors.includes(
+    'records.0.leave_history.0.shape',
+  ));
+});
+
 test('AES-256-GCM envelope is exact, opaque and round-trips a governed artifact', () => {
   const artifact = artifactFixture();
   assert.equal(inspectGrhDirectoryArtifact(artifact).ok, true);
@@ -231,10 +348,10 @@ test('AES-256-GCM envelope is exact, opaque and round-trips a governed artifact'
     'schemaVersion', 'snapshotAsOf', 'sourceSha256',
   ].sort());
   assert.equal(GRH_DIRECTORY_SNAPSHOT_ACTION, 'GRH_DIRECTORY_SNAPSHOT_PAYLOAD_V1');
-  assert.equal(envelope.kind, 'grh.directory.snapshot.v2');
+  assert.equal(envelope.kind, 'grh.directory.snapshot.v3');
   assert.deepEqual(envelope.aad, {
     tenantId: 'tenant-a',
-    schemaVersion: 'grh-directory-v2',
+    schemaVersion: 'grh-directory-v3',
     sourceSha256: 'a'.repeat(64),
     snapshotAsOf: '2026-08-06',
     keyVersion: 'v1',
@@ -328,7 +445,7 @@ test('JSONB key reordering is safe while cache entries remain tenant and key iso
     keyVersion: 'v1',
     snapshotAsOf: '2026-08-06',
     sourceSha256: 'a'.repeat(64),
-    schemaVersion: 'grh-directory-v2',
+    schemaVersion: 'grh-directory-v3',
     absenceRecordCount: 3,
     movementPeriodCount: 3,
     tenantId: 'tenant-a',
@@ -367,7 +484,31 @@ test('snapshot list mode supports accent-insensitive token search, facets and op
   assert.equal(first.facets.costCenters[0].code, 60);
   assert.equal(first.facets.costCenters[0].count, 2);
   assert.equal(first.facets.categories[0].agreementCode, 2);
+  assert.deepEqual(first.facets.reportedStatuses.find(row => (
+    row.status === 'current_by_reported_dates'
+  )), {
+    status: 'current_by_reported_dates',
+    label: 'Sin egreso informado al corte',
+    count: 1,
+  });
+  assert.deepEqual(first.facets.contractRegimes.find(row => row.code === 1), {
+    code: 1, label: 'Planta permanente', count: 1,
+  });
+  assert.deepEqual(first.facets.serviceSituations.find(row => row.code === 1), {
+    code: 1, label: 'Normal', count: 1,
+  });
   assert.deepEqual(first.items[0].costCenter, { code: 60, label: 'Hospital' });
+  assert.deepEqual(first.items[0].employment, {
+    reportedIngressDate: '2000-01-01',
+    reportedExitDate: null,
+    reportedStatus: 'current_by_reported_dates',
+    asOf: '2026-08-06',
+    basis: 'legajo_reported_dates',
+    referencePayrollParticipation: { period: '2026-07', observed: true, rowCount: 2 },
+  });
+  assert.deepEqual(first.items[0].contractRegime, { code: 1, label: 'Planta permanente' });
+  assert.deepEqual(first.items[0].serviceSituation, { code: 1, label: 'Normal' });
+  assert.equal(first.items[0].terminationReason, null);
   assert.deepEqual(first.items[0].movement, {
     rowCount: 3,
     periodCount: 2,
@@ -393,6 +534,28 @@ test('snapshot list mode supports accent-insensitive token search, facets and op
   assert.equal(searched.query.total, 1);
   assert.equal(searched.items[0].legajo, 1001);
   assert.doesNotMatch(JSON.stringify(searched.items), /dni|cuil|salary|address|bank_account/i);
+
+  const filtered = await readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: {
+      reportedStatus: 'ended_by_reported_dates',
+      contractRegime: '2',
+      serviceSituation: '2',
+    },
+    queryImpl: snapshotQuery(envelope),
+    environment,
+  });
+  assert.equal(inspectGrhDirectoryResponse(filtered).ok, true);
+  assert.equal(filtered.query.total, 1);
+  assert.equal(filtered.items[0].legajo, 1002);
+  assert.deepEqual(filtered.items[0].terminationReason, { code: 1, label: 'Renuncia' });
+
+  await assert.rejects(() => readGrhDirectory({
+    tenantId: 'tenant-a',
+    query: { reportedStatus: 'active' },
+    queryImpl: snapshotQuery(envelope),
+    environment,
+  }), error => error.code === 'GRH_DIRECTORY_QUERY_INVALID' && error.status === 400);
 });
 
 test('snapshot search normalizes compatibility characters on both query and stored names', async () => {

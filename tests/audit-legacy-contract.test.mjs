@@ -25,8 +25,8 @@ prisma.user.findUnique = async ({ where }) => ({
     slug: 'tenant-junin-test',
     name: 'Municipio de prueba',
     shortName: 'Prueba',
-    status: 'ACTIVE'
-  }
+    status: 'ACTIVE',
+  },
 });
 
 after(async () => {
@@ -41,7 +41,7 @@ function response() {
     headers: {},
     setHeader(name, value) { this.headers[name.toLowerCase()] = value; },
     status(code) { this.statusCode = code; return this; },
-    json(payload) { this.payload = payload; return this; }
+    json(payload) { this.payload = payload; return this; },
   };
 }
 
@@ -49,7 +49,7 @@ function authorization(userId) {
   const token = jwt.sign(
     { id: userId, role: 'TENANT_ADMIN', tenantId: 'tenant-junin-test' },
     jwtSecret,
-    { expiresIn: '5m' }
+    { expiresIn: '5m' },
   );
   return { authorization: `Bearer ${token}` };
 }
@@ -58,7 +58,7 @@ test('legacy connection reads and dataset deletion are authenticated 410 boundar
   const { default: handler } = await import('../api/audit.js');
   const requests = [
     { method: 'GET', query: { action: 'connections' }, headers: authorization('connections-user') },
-    { method: 'DELETE', query: { action: 'delete-dataset', id: '42' }, headers: authorization('delete-user') }
+    { method: 'DELETE', query: { action: 'delete-dataset', id: '42' }, headers: authorization('delete-user') },
   ];
 
   for (const request of requests) {
@@ -72,7 +72,7 @@ test('legacy connection reads and dataset deletion are authenticated 410 boundar
   }
 });
 
-test('remaining audit reads only use columns present in the legacy DDL contract', () => {
+test('retired audit API uses only legacy DDL columns while the UI uses the governed GRH catalog', () => {
   const source = readFileSync(path.join(root, 'api', 'audit.js'), 'utf8');
   const migration = readFileSync(path.join(root, 'migrations', '001_data_intelligence.sql'), 'utf8');
   const ui = readFileSync(path.join(root, 'auditoria.html'), 'utf8');
@@ -87,9 +87,9 @@ test('remaining audit reads only use columns present in the legacy DDL contract'
   assert.doesNotMatch(source, /blob_url|uploaded_by|ai_summary/);
   assert.doesNotMatch(source, /SELECT\s+id,\s*name,\s*type,\s*host,\s*port,\s*database/i);
   assert.doesNotMatch(source, /DELETE\s+FROM\s+(?:datasets|data_points)/i);
-  assert.doesNotMatch(ui, /MuniAuth\.fetch\('\/api\/audit\?action=connections'\)/);
-  assert.doesNotMatch(ui, /action=delete-dataset/);
-  assert.match(ui, /Borrado no habilitado/);
-  assert.match(ui, /no constituye auditoría institucional/i);
+  assert.doesNotMatch(ui, /\/api\/audit|action=delete-dataset/);
+  assert.match(ui, /src="js\/data-operations\.js"/);
+  assert.match(ui, /Fuentes de datos/i);
+  assert.match(ui, /no es un historial de cargas/i);
   assert.doesNotMatch(ui, /MuniAuth\.download|exportData\(/);
 });

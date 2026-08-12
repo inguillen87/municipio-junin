@@ -17,8 +17,8 @@ import {
   renderGrhDirectoryBootstrapFunction,
 } from './grh-directory-bootstrap-function-template.mjs';
 
-export const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v2';
-export const DIRECTORY_CONTRACT = 'grh-directory-v2';
+export const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v3';
+export const DIRECTORY_CONTRACT = 'grh-directory-v3';
 export const PILOT_ROLE = 'INTENDENTE';
 export const PILOT_NAME = 'Piloto privado GRH';
 export const BOOTSTRAP_MODES = Object.freeze(['ddl', 'encrypted_snapshot']);
@@ -31,7 +31,8 @@ export const MAX_COMPRESSED_BYTES = 4_000_000;
 export const MAX_UNCOMPRESSED_BYTES = 16 * 1024 * 1024;
 export const EXPECTED_MIGRATION_003_SHA256 = 'c33ef9e79c3960d26d377daae2a62b210a62be0733bb4480ec30fd48d1641b19';
 export const EXPECTED_MIGRATION_004_SHA256 = '0c4984cdfbe8a25b2f100925d0c3ca96702fa7a572587a6d830b8092c2c21a04';
-export const EXPECTED_MIGRATION_SHA256 = 'cf9d24f67190405271fc68e7d43e138f225c71109481a12a33f8cd53d0edf127';
+export const EXPECTED_MIGRATION_005_SHA256 = '87d87ed17a67a99e34c5a9b5a8dcdb37a4dc57e485d1e9516e5da78729c1d671';
+export const EXPECTED_MIGRATION_SHA256 = '8399ad200938250fd30538ddb102da1ea9507a97ac4f189185cc7af837e168c9';
 export const EXPECTED_MANIFEST_SHA256 = 'c19d48c256914124a160315243b4ddd0aa46ff0c8c6977f2955a9abb56c4b42a';
 export const EXPECTED_SOURCE_MANIFEST = Object.freeze({
   schema_version: 'grh-source-manifest-v1',
@@ -49,6 +50,14 @@ export const DEFAULT_REPOSITORY_ROOT = path.resolve(moduleDirectory, '..');
 const CURL_RECEIPT_MARKER = '__MUNICTRL_RECEIPT__';
 const MAX_PROTECTED_RESPONSE_BYTES = 2 * 1024 * 1024;
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
+const SHA256_PATTERN = /^[0-9a-f]{64}$/;
+const PREVIEW_BRANCH_PATTERN = /^(?!master$)(?!refs\/)[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/;
+const REQUIRED_PREVIEW_ENVIRONMENT_NAMES = Object.freeze([
+  'DATABASE_URL', 'DIRECT_URL', 'JWT_SECRET', 'GRH_TENANT_ID',
+  'GRH_SOURCE_SHA256', 'GRH_ARTIFACT_SOURCE',
+]);
+const DATABASE_TARGET_FINGERPRINT_HELPER = 'scripts/print-database-target-fingerprint.mjs';
+const DATABASE_TARGET_FINGERPRINT_MARKER = '__MUNICTRL_DATABASE_TARGET__';
 const BOOTSTRAP_STATE_STATUSES = new Set([
   'prepared', 'deployment_created', 'preapply_cleanup_required', 'deployed',
   'apply_started', 'apply_ambiguous', 'applied', 'verified', 'cleaned',
@@ -235,29 +244,26 @@ function assertPinnedGitState({
   expectedGitSha = null,
   endpointRelativePath = null,
   preparing = false,
+  target = 'production',
+  previewBranch = null,
 } = {}) {
   const code = preparing ? 'BOOTSTRAP_PREPARE_GIT_PIN_INVALID' : 'BOOTSTRAP_GIT_PIN_INVALID';
   const sourceHead = exactGitOutput(runner, repositoryRoot, ['rev-parse', '--verify', 'HEAD'], code);
-  const sourceOrigin = exactGitOutput(
-    runner,
-    repositoryRoot,
-    ['rev-parse', '--verify', 'refs/remotes/origin/master'],
-    code,
-  );
+  const pinnedRef = target === 'preview'
+    ? `refs/remotes/origin/${previewBranch}`
+    : 'refs/remotes/origin/master';
+  const sourceOrigin = exactGitOutput(runner, repositoryRoot, ['rev-parse', '--verify', pinnedRef], code);
   const worktreeHead = exactGitOutput(runner, worktreePath, ['rev-parse', '--verify', 'HEAD'], code);
-  const worktreeOrigin = exactGitOutput(
-    runner,
-    worktreePath,
-    ['rev-parse', '--verify', 'refs/remotes/origin/master'],
-    code,
-  );
+  const worktreeOrigin = exactGitOutput(runner, worktreePath, ['rev-parse', '--verify', pinnedRef], code);
   const branch = exactGitOutput(runner, worktreePath, ['branch', '--show-current'], code);
   const status = run(runner, 'git', ['status', '--porcelain', '--untracked-files=all'], {
     cwd: worktreePath,
   }).stdout;
-  const pinned = expectedGitSha || sourceHead;
-  if (!GIT_SHA_PATTERN.test(pinned) || sourceHead !== pinned || sourceOrigin !== pinned ||
-      worktreeHead !== pinned || worktreeOrigin !== pinned || branch !== '' ||
+  const pinned = expectedGitSha || (target === 'preview' ? sourceOrigin : sourceHead);
+  const sourcePinned = target === 'preview' ? true : sourceHead === pinned;
+  const expectedBranch = target === 'preview' ? previewBranch : '';
+  if (!GIT_SHA_PATTERN.test(pinned) || !sourcePinned || sourceOrigin !== pinned ||
+      worktreeHead !== pinned || worktreeOrigin !== pinned || branch !== expectedBranch ||
       (preparing ? String(status).trim() !== '' : !exactWorktreeStatus(status, endpointRelativePath))) {
     fail(code);
   }
@@ -266,6 +272,10 @@ function assertPinnedGitState({
 
 export async function prepareBootstrapBundle({
   mode,
+  target = 'production',
+  previewBranch = null,
+  databaseTargetFingerprintSha256 = null,
+  stableDatabaseTargetFingerprintSha256 = null,
   worktreePath,
   artifactPath,
   stateDirectory,
@@ -280,6 +290,19 @@ export async function prepareBootstrapBundle({
   uncompressedLimit = MAX_UNCOMPRESSED_BYTES,
 } = {}) {
   if (!BOOTSTRAP_MODES.includes(mode)) fail('BOOTSTRAP_MODE_REQUIRED');
+  if (!['production', 'preview'].includes(target)) fail('BOOTSTRAP_TARGET_INVALID');
+  if (target === 'preview') {
+    if (mode !== 'ddl') fail('BOOTSTRAP_PREVIEW_MODE_INVALID');
+    if (!PREVIEW_BRANCH_PATTERN.test(previewBranch || '')) fail('BOOTSTRAP_PREVIEW_BRANCH_INVALID');
+    if (!SHA256_PATTERN.test(databaseTargetFingerprintSha256 || '') ||
+        !SHA256_PATTERN.test(stableDatabaseTargetFingerprintSha256 || '') ||
+        databaseTargetFingerprintSha256 === stableDatabaseTargetFingerprintSha256) {
+      fail('BOOTSTRAP_PREVIEW_DATABASE_TARGET_INVALID');
+    }
+  } else if (previewBranch !== null || databaseTargetFingerprintSha256 !== null ||
+      stableDatabaseTargetFingerprintSha256 !== null) {
+    fail('BOOTSTRAP_PRODUCTION_TARGET_ARGUMENT_INVALID');
+  }
   if (!worktreePath || !artifactPath || !stateDirectory) fail('BOOTSTRAP_ARGUMENT_REQUIRED');
   const sourceRoot = path.resolve(repositoryRoot);
   const worktree = path.resolve(worktreePath);
@@ -297,6 +320,17 @@ export async function prepareBootstrapBundle({
       !(await exists(path.join(worktree, 'vercel.json')))) {
     fail('BOOTSTRAP_WORKTREE_INVALID');
   }
+  if (target === 'preview') {
+    const fingerprintLibraryPresent = await exists(
+      path.join(worktree, 'api', 'lib', 'database-target-fingerprint.js'),
+    );
+    const fingerprintHelperPresent = await exists(
+      path.join(worktree, DATABASE_TARGET_FINGERPRINT_HELPER),
+    );
+    if (!fingerprintLibraryPresent || !fingerprintHelperPresent) {
+      fail('BOOTSTRAP_PREVIEW_WORKTREE_INVALID');
+    }
+  }
   if (await exists(stateDir)) fail('BOOTSTRAP_STATE_DIRECTORY_EXISTS');
 
   const expectedGitSha = assertPinnedGitState({
@@ -304,21 +338,27 @@ export async function prepareBootstrapBundle({
     repositoryRoot: sourceRoot,
     worktreePath: worktree,
     preparing: true,
+    target,
+    previewBranch,
   });
 
   const baseMigrationPath = path.join(sourceRoot, 'migrations', '003_grh_directory.sql');
   const upgradeMigrationPath = path.join(sourceRoot, 'migrations', '004_grh_directory_v2.sql');
+  const employmentMigrationPath = path.join(sourceRoot, 'migrations', '005_grh_directory_v3.sql');
   const manifestPath = path.join(sourceRoot, 'config', 'grh-source-manifest.json');
   const baseMigrationSql = normalizeNewlines(await fs.readFile(baseMigrationPath, 'utf8'));
   const upgradeMigrationSql = normalizeNewlines(await fs.readFile(upgradeMigrationPath, 'utf8'));
-  const migrationSql = baseMigrationSql + '\n' + upgradeMigrationSql;
+  const employmentMigrationSql = normalizeNewlines(await fs.readFile(employmentMigrationPath, 'utf8'));
+  const migrationSql = baseMigrationSql + '\n' + upgradeMigrationSql + '\n' + employmentMigrationSql;
   const manifestText = normalizeNewlines(await fs.readFile(manifestPath, 'utf8'));
   const baseMigrationSha256 = sha256(Buffer.from(baseMigrationSql, 'utf8'));
   const upgradeMigrationSha256 = sha256(Buffer.from(upgradeMigrationSql, 'utf8'));
+  const employmentMigrationSha256 = sha256(Buffer.from(employmentMigrationSql, 'utf8'));
   const migrationSha256 = sha256(Buffer.from(migrationSql, 'utf8'));
   const manifestSha256 = sha256(Buffer.from(manifestText, 'utf8'));
   if (baseMigrationSha256 !== EXPECTED_MIGRATION_003_SHA256 ||
       upgradeMigrationSha256 !== EXPECTED_MIGRATION_004_SHA256 ||
+      employmentMigrationSha256 !== EXPECTED_MIGRATION_005_SHA256 ||
       migrationSha256 !== EXPECTED_MIGRATION_SHA256 ||
       manifestSha256 !== EXPECTED_MANIFEST_SHA256) {
     fail('BOOTSTRAP_SOURCE_CONTRACT_DRIFT');
@@ -371,6 +411,8 @@ export async function prepareBootstrapBundle({
   const endpointPath = path.join(worktree, 'api', endpointName);
   const endpointSource = renderGrhDirectoryBootstrapFunction({
     mode,
+    expectedVercelEnv: target,
+    databaseTargetFingerprintSha256,
     operationId,
     migrationSql,
     migrationSha256,
@@ -397,6 +439,10 @@ export async function prepareBootstrapBundle({
   const state = {
     schemaVersion: BOOTSTRAP_CONTRACT,
     mode,
+    target,
+    previewBranch,
+    databaseTargetFingerprintSha256,
+    stableDatabaseTargetFingerprintSha256,
     expectedGitSha,
     status: 'prepared',
     createdAt,
@@ -457,6 +503,10 @@ export async function prepareBootstrapBundle({
   return Object.freeze({
     statePath: paths.statePath,
     mode,
+    target,
+    previewBranch,
+    databaseTargetFingerprintSha256,
+    stableDatabaseTargetFingerprintSha256,
     expectedGitSha,
     endpointRelativePath,
     payloadBytes: compressed.length,
@@ -498,15 +548,15 @@ function deploymentIdentity(value) {
   return { id: typeof id === 'string' ? id : null, url };
 }
 
-function readyDeployment(value, expectedId) {
+function readyDeployment(value, expectedId, expectedTarget = 'production') {
   const identity = deploymentIdentity(value);
   const status = String(value?.readyState || value?.status || value?.state || '').toUpperCase();
   const target = String(value?.target || value?.environment || '').toLowerCase();
   return identity.id === expectedId && ['READY', 'READY_STATE_READY'].includes(status) &&
-    (!target || target === 'production');
+    (expectedTarget === 'production' ? (!target || target === 'production') : target === expectedTarget);
 }
 
-function productionDeploymentGitSha(value) {
+function deploymentGitSha(value) {
   const candidates = [
     value?.meta?.githubCommitSha,
     value?.meta?.gitCommitSha,
@@ -514,6 +564,21 @@ function productionDeploymentGitSha(value) {
     value?.source?.sha,
   ].filter(candidate => candidate !== undefined && candidate !== null);
   if (candidates.length === 0 || candidates.some(candidate => !GIT_SHA_PATTERN.test(candidate))) {
+    return null;
+  }
+  const unique = [...new Set(candidates)];
+  return unique.length === 1 ? unique[0] : null;
+}
+
+function deploymentGitRef(value) {
+  const candidates = [
+    value?.meta?.githubCommitRef,
+    value?.meta?.gitCommitRef,
+    value?.gitSource?.ref,
+    value?.source?.ref,
+  ].filter(candidate => candidate !== undefined && candidate !== null);
+  if (candidates.length === 0 || candidates.some(candidate =>
+    typeof candidate !== 'string' || !PREVIEW_BRANCH_PATTERN.test(candidate))) {
     return null;
   }
   const unique = [...new Set(candidates)];
@@ -562,7 +627,7 @@ function matchProductionListRelease(value, inspected, state) {
   const identity = deploymentIdentity(release);
   const status = String(release?.readyState || release?.status || release?.state || '').toUpperCase();
   const target = String(release?.target || release?.environment || '').toLowerCase();
-  const gitSha = productionDeploymentGitSha(release);
+  const gitSha = deploymentGitSha(release);
   // `vercel ls --json` currently omits deployment IDs. The alias inspection is
   // authoritative for the ID; the list entry supplies Git provenance by exact
   // immutable deployment URL. Reject a conflicting ID when the CLI does emit one.
@@ -572,6 +637,38 @@ function matchProductionListRelease(value, inspected, state) {
     fail('BOOTSTRAP_PRODUCTION_RELEASE_INVALID');
   }
   return Object.freeze({ id: inspected.id, url: inspected.url, gitSha });
+}
+
+function inspectPreviewCandidate(value, state) {
+  const identity = deploymentIdentity(value);
+  const url = canonicalDeploymentOrigin(identity.url);
+  if (!identity.id || !url || !readyDeployment(value, identity.id, 'preview') ||
+      deploymentGitSha(value) !== state.expectedGitSha ||
+      deploymentGitRef(value) !== state.previewBranch ||
+      identity.id === state.deployment?.baselineAliasDeploymentId) {
+    fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
+  }
+  return Object.freeze({ id: identity.id, url });
+}
+
+function matchPreviewListCandidate(value, inspected, state) {
+  const matches = productionListEntries(value).filter(entry =>
+    canonicalDeploymentOrigin(deploymentIdentity(entry).url) === inspected.url);
+  if (matches.length !== 1) fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
+  const candidate = matches[0];
+  const identity = deploymentIdentity(candidate);
+  if ((identity.id !== null && identity.id !== inspected.id) ||
+      !readyDeployment({ ...candidate, id: identity.id || inspected.id }, identity.id || inspected.id, 'preview') ||
+      deploymentGitSha(candidate) !== state.expectedGitSha ||
+      deploymentGitRef(candidate) !== state.previewBranch) {
+    fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
+  }
+  return Object.freeze({
+    id: inspected.id,
+    url: inspected.url,
+    gitSha: state.expectedGitSha,
+    gitRef: state.previewBranch,
+  });
 }
 
 function assertUniqueDeploymentUrl(url) {
@@ -590,9 +687,24 @@ function assertUniqueDeploymentUrl(url) {
 
 async function loadState(statePath) {
   const resolved = path.resolve(statePath || '');
-  const state = await readJson(resolved, 'BOOTSTRAP_STATE_UNREADABLE');
+  const persisted = await readJson(resolved, 'BOOTSTRAP_STATE_UNREADABLE');
+  const hasTargetContract = ['target', 'previewBranch', 'databaseTargetFingerprintSha256',
+    'stableDatabaseTargetFingerprintSha256'].some(key => Object.hasOwn(persisted, key));
+  if (hasTargetContract && !['target', 'previewBranch', 'databaseTargetFingerprintSha256',
+    'stableDatabaseTargetFingerprintSha256'].every(key => Object.hasOwn(persisted, key))) {
+    fail('BOOTSTRAP_STATE_INVALID');
+  }
+  const state = hasTargetContract ? persisted : {
+    ...persisted,
+    target: 'production',
+    previewBranch: null,
+    databaseTargetFingerprintSha256: null,
+    stableDatabaseTargetFingerprintSha256: null,
+  };
   if (!exactKeys(state, [
-    'schemaVersion', 'mode', 'expectedGitSha', 'status', 'createdAt', 'repositoryRoot', 'worktreePath',
+    'schemaVersion', 'mode', 'target', 'previewBranch', 'databaseTargetFingerprintSha256',
+    'stableDatabaseTargetFingerprintSha256', 'expectedGitSha', 'status', 'createdAt',
+    'repositoryRoot', 'worktreePath',
     'endpointRelativePath', 'endpointPath', 'endpointRoute', 'endpointSha256',
     'payloadPath', 'payloadSha256', 'payloadBytes', 'uncompressedBytes',
     'credentialPath', 'secretPath', 'snapshotKeyPath', 'snapshotKeyVersion',
@@ -603,6 +715,14 @@ async function loadState(statePath) {
     'positionObservationCount',
     'stableProductionUrl', 'deployment', 'productionVerification', 'finalizedAt',
   ]) || state.schemaVersion !== BOOTSTRAP_CONTRACT || !BOOTSTRAP_MODES.includes(state.mode) ||
+      !['production', 'preview'].includes(state.target) ||
+      (state.target === 'preview'
+        ? (state.mode !== 'ddl' || !PREVIEW_BRANCH_PATTERN.test(state.previewBranch || '') ||
+          !SHA256_PATTERN.test(state.databaseTargetFingerprintSha256 || '') ||
+          !SHA256_PATTERN.test(state.stableDatabaseTargetFingerprintSha256 || '') ||
+          state.databaseTargetFingerprintSha256 === state.stableDatabaseTargetFingerprintSha256)
+        : (state.previewBranch !== null || state.databaseTargetFingerprintSha256 !== null ||
+          state.stableDatabaseTargetFingerprintSha256 !== null)) ||
       !BOOTSTRAP_STATE_STATUSES.has(state.status) ||
       !GIT_SHA_PATTERN.test(state.expectedGitSha || '') ||
       state.stableProductionUrl !== STABLE_PRODUCTION_URL ||
@@ -654,6 +774,77 @@ function run(runner, command, args, options) {
   const result = runner(command, args, options);
   if (!result || typeof result.stdout !== 'string') fail('BOOTSTRAP_COMMAND_RESULT_INVALID');
   return result;
+}
+
+function environmentTargetArgs(state) {
+  return state.target === 'preview'
+    ? ['preview', state.previewBranch]
+    : ['production'];
+}
+
+function parseDatabaseTargetFingerprintOutput(result) {
+  const output = result.stdout;
+  if (Buffer.byteLength(output, 'utf8') > 16 * 1024) {
+    fail('BOOTSTRAP_DATABASE_TARGET_PREFLIGHT_INVALID');
+  }
+  const matches = String(output).split(/\r?\n/u).filter(
+    line => line.startsWith(DATABASE_TARGET_FINGERPRINT_MARKER),
+  );
+  if (matches.length !== 1) fail('BOOTSTRAP_DATABASE_TARGET_PREFLIGHT_INVALID');
+  const fingerprint = matches[0].slice(DATABASE_TARGET_FINGERPRINT_MARKER.length);
+  if (!SHA256_PATTERN.test(fingerprint)) fail('BOOTSTRAP_DATABASE_TARGET_PREFLIGHT_INVALID');
+  return fingerprint;
+}
+
+function preflightPreviewDatabaseTargets(runner, state) {
+  if (state.target !== 'preview') return;
+  const stable = parseDatabaseTargetFingerprintOutput(run(
+    runner,
+    'vercel',
+    ['env', 'run', '-e', 'production', '--', 'node', DATABASE_TARGET_FINGERPRINT_HELPER],
+    { cwd: state.worktreePath },
+  ));
+  const candidate = parseDatabaseTargetFingerprintOutput(run(
+    runner,
+    'vercel',
+    ['env', 'run', '-e', 'preview', '--git-branch', state.previewBranch, '--',
+      'node', DATABASE_TARGET_FINGERPRINT_HELPER],
+    { cwd: state.worktreePath },
+  ));
+  if (stable !== state.stableDatabaseTargetFingerprintSha256 ||
+      candidate !== state.databaseTargetFingerprintSha256 || candidate === stable) {
+    fail('BOOTSTRAP_DATABASE_TARGET_PREFLIGHT_MISMATCH');
+  }
+}
+
+function inspectStableProduction(runner, state, code) {
+  const inspection = parseJsonOutput(run(
+    runner,
+    'vercel',
+    ['inspect', STABLE_PRODUCTION_URL, '--json'],
+    { cwd: state.worktreePath },
+  ), code);
+  const identity = deploymentIdentity(inspection);
+  const target = String(inspection?.target || inspection?.environment || '').toLowerCase();
+  if (!identity.id || !readyDeployment(inspection, identity.id) || target !== 'production') fail(code);
+  return Object.freeze({ id: identity.id, url: identity.url });
+}
+
+function inspectPreviewDeploymentProvenance(runner, state, deploymentUrl) {
+  const inspection = parseJsonOutput(run(
+    runner,
+    'vercel',
+    ['inspect', deploymentUrl, '--json', '--wait', '--timeout', '3m'],
+    { cwd: state.worktreePath },
+  ), 'BOOTSTRAP_DEPLOYMENT_INSPECTION_INVALID');
+  const inspected = inspectPreviewCandidate(inspection, state);
+  const deployments = parseJsonOutput(run(
+    runner,
+    'vercel',
+    ['ls', VERCEL_PROJECT, '--environment', 'preview', '--json'],
+    { cwd: state.worktreePath },
+  ), 'BOOTSTRAP_PREVIEW_DEPLOYMENT_LIST_INVALID');
+  return matchPreviewListCandidate(deployments, inspected, state);
 }
 
 function exactWorktreeStatus(output, endpointRelativePath) {
@@ -761,17 +952,22 @@ function inspectBootstrapApplyReceipt(receipt, state, code) {
       receipt.body.ok === false && receipt.body.code === 'BOOTSTRAP_ALREADY_CONSUMED') {
     return 'already_consumed';
   }
-  if (receipt.status !== 201 || !exactKeys(receipt.body, [
+  const expectedReceiptKeys = [
     'ok', 'code', 'schemaVersion', 'snapshotAsOf', 'recordCount',
     'absenceRecordCount', 'leaveRecordCount', 'movementPeriodCount',
     'positionObservationCount',
-  ]) || receipt.body.ok !== true || receipt.body.code !== 'GRH_DIRECTORY_BOOTSTRAP_APPLIED' ||
+    ...(state.target === 'preview' ? ['databaseTargetFingerprintSha256'] : []),
+  ];
+  if (receipt.status !== 201 || !exactKeys(receipt.body, expectedReceiptKeys) ||
+      receipt.body.ok !== true || receipt.body.code !== 'GRH_DIRECTORY_BOOTSTRAP_APPLIED' ||
       receipt.body.schemaVersion !== DIRECTORY_CONTRACT || receipt.body.snapshotAsOf !== state.snapshotAsOf ||
       receipt.body.recordCount !== state.recordCount ||
       receipt.body.absenceRecordCount !== state.absenceRecordCount ||
       receipt.body.leaveRecordCount !== state.leaveRecordCount ||
       receipt.body.movementPeriodCount !== state.movementPeriodCount ||
-      receipt.body.positionObservationCount !== state.positionObservationCount) {
+      receipt.body.positionObservationCount !== state.positionObservationCount ||
+      (state.target === 'preview' &&
+        receipt.body.databaseTargetFingerprintSha256 !== state.databaseTargetFingerprintSha256)) {
     fail(code);
   }
   return 'applied';
@@ -798,14 +994,15 @@ async function rollbackPreApplyResources({
   if (deploymentRecorded && state.deployment?.id) {
     attempt(['remove', state.deployment.id, '--yes']);
   }
+  const environmentArgs = environmentTargetArgs(state);
   if (secretAttempted) {
-    attempt(['env', 'rm', 'GRH_DIRECTORY_BOOTSTRAP_SECRET', 'production', '--yes']);
+    attempt(['env', 'rm', 'GRH_DIRECTORY_BOOTSTRAP_SECRET', ...environmentArgs, '--yes']);
   }
   if (allowlistAttempted) {
-    attempt(['env', 'rm', 'GRH_DIRECTORY_ALLOWED_USER_IDS', 'production', '--yes']);
+    attempt(['env', 'rm', 'GRH_DIRECTORY_ALLOWED_USER_IDS', ...environmentArgs, '--yes']);
   }
   if (snapshotKeyAttempted) {
-    attempt(['env', 'rm', SNAPSHOT_KEY_ENV, 'production', '--yes']);
+    attempt(['env', 'rm', SNAPSHOT_KEY_ENV, ...environmentArgs, '--yes']);
   }
   if (deploymentRecorded) {
     state.status = cleanupFailed ? 'preapply_cleanup_required' : 'prepared';
@@ -830,15 +1027,19 @@ export async function applyPreparedBootstrap({
     worktreePath: state.worktreePath,
     expectedGitSha: state.expectedGitSha,
     endpointRelativePath: state.endpointRelativePath,
+    target: state.target,
+    previewBranch: state.previewBranch,
   });
   run(runner, 'vercel', [
     'link', '--yes', '--project', VERCEL_PROJECT, '--scope', VERCEL_SCOPE,
   ], { cwd: state.worktreePath });
+  preflightPreviewDatabaseTargets(runner, state);
 
+  const environmentArgs = environmentTargetArgs(state);
   const environments = parseJsonOutput(run(
     runner,
     'vercel',
-    ['env', 'ls', 'production', '--json'],
+    ['env', 'ls', ...environmentArgs, '--json'],
     { cwd: state.worktreePath },
   ), 'BOOTSTRAP_ENV_LIST_INVALID');
   const names = collectEnvironmentNames(environments);
@@ -846,20 +1047,11 @@ export async function applyPreparedBootstrap({
       (state.mode === 'encrypted_snapshot' && names.has(SNAPSHOT_KEY_ENV))) {
     fail('BOOTSTRAP_ENV_ALREADY_CONFIGURED');
   }
-  const baselineInspection = parseJsonOutput(run(
-    runner,
-    'vercel',
-    ['inspect', STABLE_PRODUCTION_URL, '--json'],
-    { cwd: state.worktreePath },
-  ), 'BOOTSTRAP_BASELINE_INSPECTION_INVALID');
-  const baseline = deploymentIdentity(baselineInspection);
-  const baselineTarget = String(
-    baselineInspection?.target || baselineInspection?.environment || '',
-  ).toLowerCase();
-  if (!baseline.id || !readyDeployment(baselineInspection, baseline.id) ||
-      baselineTarget !== 'production') {
-    fail('BOOTSTRAP_BASELINE_INSPECTION_INVALID');
+  if (state.target === 'preview' &&
+      REQUIRED_PREVIEW_ENVIRONMENT_NAMES.some(name => !names.has(name))) {
+    fail('BOOTSTRAP_PREVIEW_ENVIRONMENT_INCOMPLETE');
   }
+  const baseline = inspectStableProduction(runner, state, 'BOOTSTRAP_BASELINE_INSPECTION_INVALID');
 
   let allowlistAttempted = false;
   let secretAttempted = false;
@@ -870,58 +1062,69 @@ export async function applyPreparedBootstrap({
     if (state.mode === 'encrypted_snapshot') {
       snapshotKeyAttempted = true;
       run(runner, 'vercel', [
-        'env', 'add', SNAPSHOT_KEY_ENV, 'production', '--sensitive', '--yes',
+        'env', 'add', SNAPSHOT_KEY_ENV, ...environmentArgs, '--sensitive', '--yes',
       ], { cwd: state.worktreePath, input: material.snapshotKey });
     }
     allowlistAttempted = true;
     run(runner, 'vercel', [
-      'env', 'add', 'GRH_DIRECTORY_ALLOWED_USER_IDS', 'production', '--sensitive', '--yes',
+      'env', 'add', 'GRH_DIRECTORY_ALLOWED_USER_IDS', ...environmentArgs, '--sensitive', '--yes',
     ], { cwd: state.worktreePath, input: material.allowedUserId });
     secretAttempted = true;
     run(runner, 'vercel', [
-      'env', 'add', 'GRH_DIRECTORY_BOOTSTRAP_SECRET', 'production', '--sensitive', '--yes',
+      'env', 'add', 'GRH_DIRECTORY_BOOTSTRAP_SECRET', ...environmentArgs, '--sensitive', '--yes',
     ], { cwd: state.worktreePath, input: material.secret });
     const deploymentOutput = parseJsonOutput(run(
       runner,
       'vercel',
-      ['deploy', '--prod', '--skip-domain', '--yes', '--json'],
+      state.target === 'preview'
+        ? ['deploy', '--target', 'preview', '--yes', '--json']
+        : ['deploy', '--prod', '--skip-domain', '--yes', '--json'],
       { cwd: state.worktreePath },
     ), 'BOOTSTRAP_DEPLOYMENT_OUTPUT_INVALID');
     const deployment = deploymentIdentity(deploymentOutput);
     if (!deployment.id || !deployment.url) fail('BOOTSTRAP_DEPLOYMENT_OUTPUT_INVALID');
     deployment.url = assertUniqueDeploymentUrl(deployment.url);
+    if (deployment.id === baseline.id) fail('BOOTSTRAP_DEPLOYMENT_OUTPUT_INVALID');
     state.status = 'deployment_created';
     state.deployment = {
       id: deployment.id,
       url: deployment.url,
       baselineAliasDeploymentId: baseline.id,
-      skipDomain: true,
+      target: state.target,
+      skipDomain: state.target === 'production',
       appliedAt: null,
       verifiedAt: null,
       cleanedAt: null,
     };
     deploymentRecorded = true;
     await writeState(loaded.statePath, state, securePathImpl);
-    const uniqueInspection = parseJsonOutput(run(
-      runner,
-      'vercel',
-      ['inspect', deployment.url, '--json', '--wait', '--timeout', '3m'],
-      { cwd: state.worktreePath },
-    ), 'BOOTSTRAP_DEPLOYMENT_INSPECTION_INVALID');
-    const inspectedDeployment = deploymentIdentity(uniqueInspection);
-    if (!inspectedDeployment.id || (deployment.id && deployment.id !== inspectedDeployment.id) ||
-        !readyDeployment(uniqueInspection, inspectedDeployment.id)) {
-      fail('BOOTSTRAP_DEPLOYMENT_NOT_READY');
+    if (state.target === 'preview') {
+      const inspectedDeployment = inspectPreviewDeploymentProvenance(runner, state, deployment.url);
+      if (deployment.id !== inspectedDeployment.id) fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
+      const stableAfter = inspectStableProduction(runner, state, 'BOOTSTRAP_ALIAS_INSPECTION_INVALID');
+      if (stableAfter.id !== baseline.id || stableAfter.id === deployment.id) fail('BOOTSTRAP_ALIAS_MOVED');
+    } else {
+      const uniqueInspection = parseJsonOutput(run(
+        runner,
+        'vercel',
+        ['inspect', deployment.url, '--json', '--wait', '--timeout', '3m'],
+        { cwd: state.worktreePath },
+      ), 'BOOTSTRAP_DEPLOYMENT_INSPECTION_INVALID');
+      const inspectedDeployment = deploymentIdentity(uniqueInspection);
+      if (!inspectedDeployment.id || deployment.id !== inspectedDeployment.id ||
+          !readyDeployment(uniqueInspection, inspectedDeployment.id)) {
+        fail('BOOTSTRAP_DEPLOYMENT_NOT_READY');
+      }
+      deployment.id = inspectedDeployment.id;
+      state.deployment.id = inspectedDeployment.id;
+      const aliasInspection = parseJsonOutput(run(
+        runner,
+        'vercel',
+        ['inspect', STABLE_PRODUCTION_URL, '--json'],
+        { cwd: state.worktreePath },
+      ), 'BOOTSTRAP_ALIAS_INSPECTION_INVALID');
+      if (deploymentIdentity(aliasInspection).id !== baseline.id) fail('BOOTSTRAP_ALIAS_MOVED');
     }
-    deployment.id = inspectedDeployment.id;
-    state.deployment.id = inspectedDeployment.id;
-    const aliasInspection = parseJsonOutput(run(
-      runner,
-      'vercel',
-      ['inspect', STABLE_PRODUCTION_URL, '--json'],
-      { cwd: state.worktreePath },
-    ), 'BOOTSTRAP_ALIAS_INSPECTION_INVALID');
-    if (deploymentIdentity(aliasInspection).id !== baseline.id) fail('BOOTSTRAP_ALIAS_MOVED');
 
     state.status = 'deployed';
     await writeState(loaded.statePath, state, securePathImpl);
@@ -972,6 +1175,10 @@ export async function applyPreparedBootstrap({
       absenceRecordCount: state.absenceRecordCount,
       leaveRecordCount: state.leaveRecordCount,
       movementPeriodCount: state.movementPeriodCount,
+      ...(state.target === 'preview' ? {
+        databaseTargetFingerprintSha256: state.databaseTargetFingerprintSha256,
+        stableDatabaseTargetFingerprintSha256: state.stableDatabaseTargetFingerprintSha256,
+      } : {}),
     });
   } catch (error) {
     if (!applyStarted) {
@@ -991,10 +1198,21 @@ export async function applyPreparedBootstrap({
 }
 
 function assertRecordedDeployment(runner, state) {
-  if (!state.deployment?.id || !state.deployment?.skipDomain) {
+  const expectedSkipDomain = state.target === 'production';
+  if (!state.deployment?.id || state.deployment.skipDomain !== expectedSkipDomain ||
+      (state.deployment.target !== undefined && state.deployment.target !== state.target)) {
     fail('BOOTSTRAP_DEPLOYMENT_STATE_INVALID');
   }
   const deploymentUrl = assertUniqueDeploymentUrl(state.deployment.url);
+  if (state.target === 'preview') {
+    const candidate = inspectPreviewDeploymentProvenance(runner, state, deploymentUrl);
+    if (candidate.id !== state.deployment.id) fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
+    const stable = inspectStableProduction(runner, state, 'BOOTSTRAP_ALIAS_INSPECTION_INVALID');
+    if (stable.id !== state.deployment.baselineAliasDeploymentId || stable.id === candidate.id) {
+      fail('BOOTSTRAP_ALIAS_MOVED');
+    }
+    return deploymentUrl;
+  }
   const deploymentInspection = parseJsonOutput(run(
     runner,
     'vercel',
@@ -1057,6 +1275,10 @@ export async function resolveAmbiguousBootstrap({
     absenceRecordCount: state.absenceRecordCount,
     leaveRecordCount: state.leaveRecordCount,
     movementPeriodCount: state.movementPeriodCount,
+    ...(state.target === 'preview' ? {
+      databaseTargetFingerprintSha256: state.databaseTargetFingerprintSha256,
+      stableDatabaseTargetFingerprintSha256: state.stableDatabaseTargetFingerprintSha256,
+    } : {}),
   });
 }
 
@@ -1121,6 +1343,39 @@ function verifyBootstrapBehavior({ runner, state, credential, deploymentUrl, sta
     ? observedFacets.reduce((sum, item) => sum + Number(item?.count || 0), 0)
     : 0;
   if (observedTotal !== state.positionObservationCount) fail('BOOTSTRAP_VERIFY_POSITION_OBSERVATION_FAILED');
+  const statusFacet = directory.facets?.reportedStatuses?.[0];
+  const contractRegimeFacet = directory.facets?.contractRegimes?.[0];
+  const serviceSituationFacet = directory.facets?.serviceSituations?.[0];
+  if (typeof statusFacet?.status !== 'string' || !Number.isInteger(contractRegimeFacet?.code) ||
+      !Number.isInteger(serviceSituationFacet?.code)) {
+    fail('BOOTSTRAP_VERIFY_EMPLOYMENT_FAILED');
+  }
+  const employmentChecks = [
+    {
+      route: '/api/grh-directory?limit=1&reportedStatus=' + encodeURIComponent(statusFacet.status),
+      matches: item => item?.employment?.reportedStatus === statusFacet.status,
+    },
+    {
+      route: '/api/grh-directory?limit=1&contractRegime=' + contractRegimeFacet.code,
+      matches: item => item?.contractRegime?.code === contractRegimeFacet.code,
+    },
+    {
+      route: '/api/grh-directory?limit=1&serviceSituation=' + serviceSituationFacet.code,
+      matches: item => item?.serviceSituation?.code === serviceSituationFacet.code,
+    },
+  ];
+  for (const check of employmentChecks) {
+    const filtered = requireProtectedReceipt(protectedRequest(
+      check.route,
+      { method: 'GET', headers: browseHeaders },
+      'BOOTSTRAP_VERIFY_EMPLOYMENT_FAILED',
+    ), 'BOOTSTRAP_VERIFY_EMPLOYMENT_FAILED', DIRECTORY_CONTRACT);
+    if (!inspectGrhDirectoryResponse(filtered).ok || filtered.items?.length !== 1 ||
+        !check.matches(filtered.items[0])) {
+      fail('BOOTSTRAP_VERIFY_EMPLOYMENT_FAILED');
+    }
+    assertNoForbiddenKeys(filtered);
+  }
   if (state.leaveRecordCount <= 0) fail('BOOTSTRAP_VERIFY_LEAVE_FAILED');
   const leave = requireProtectedReceipt(protectedRequest(
     '/api/grh-directory?limit=1&hasLeave=true',
@@ -1236,6 +1491,7 @@ function verifyBootstrapBehavior({ runner, state, credential, deploymentUrl, sta
     leaveAvailable: true,
     movementAvailable: true,
     positionObservationAvailable: state.positionObservationCount > 0,
+    employmentAvailable: true,
     nominalAiVerified: true,
   });
 }
@@ -1248,7 +1504,7 @@ export async function verifyAppliedBootstrap({
   const loaded = await loadState(statePath);
   const { state } = loaded;
   if (!['applied', 'apply_started', 'apply_ambiguous'].includes(state.status) ||
-      !state.deployment?.skipDomain) {
+      !state.deployment?.id || state.deployment.skipDomain !== (state.target === 'production')) {
     fail('BOOTSTRAP_STATE_NOT_APPLIED');
   }
   assertRecordedDeployment(runner, state);
@@ -1265,6 +1521,10 @@ export async function verifyAppliedBootstrap({
   return Object.freeze({
     status: 'verified',
     stableAliasUnchanged: true,
+    ...(state.target === 'preview' ? {
+      databaseTargetFingerprintSha256: state.databaseTargetFingerprintSha256,
+      stableDatabaseTargetFingerprintSha256: state.stableDatabaseTargetFingerprintSha256,
+    } : {}),
     ...verified,
   });
 }
@@ -1293,22 +1553,33 @@ export async function cleanupVerifiedBootstrap({
 } = {}) {
   const loaded = await loadState(statePath);
   const { state } = loaded;
-  if (state.status !== 'verified' || !state.deployment?.id || !state.deployment?.skipDomain) {
+  if (state.status !== 'verified' || !state.deployment?.id ||
+      state.deployment.skipDomain !== (state.target === 'production')) {
     fail('BOOTSTRAP_CLEANUP_REQUIRES_VERIFICATION');
   }
   await assertSnapshotRecoveryMaterial(state);
-  const aliasInspection = parseJsonOutput(run(
-    runner,
-    'vercel',
-    ['inspect', STABLE_PRODUCTION_URL, '--json'],
-    { cwd: state.worktreePath },
-  ), 'BOOTSTRAP_ALIAS_INSPECTION_INVALID');
-  if (deploymentIdentity(aliasInspection).id !== state.deployment.baselineAliasDeploymentId) {
-    fail('BOOTSTRAP_ALIAS_MOVED');
+  if (state.target === 'preview') {
+    assertRecordedDeployment(runner, state);
+  } else {
+    const aliasInspection = parseJsonOutput(run(
+      runner,
+      'vercel',
+      ['inspect', STABLE_PRODUCTION_URL, '--json'],
+      { cwd: state.worktreePath },
+    ), 'BOOTSTRAP_ALIAS_INSPECTION_INVALID');
+    if (deploymentIdentity(aliasInspection).id !== state.deployment.baselineAliasDeploymentId) {
+      fail('BOOTSTRAP_ALIAS_MOVED');
+    }
   }
+  const environmentArgs = environmentTargetArgs(state);
   run(runner, 'vercel', [
-    'env', 'rm', 'GRH_DIRECTORY_BOOTSTRAP_SECRET', 'production', '--yes',
+    'env', 'rm', 'GRH_DIRECTORY_BOOTSTRAP_SECRET', ...environmentArgs, '--yes',
   ], { cwd: state.worktreePath });
+  if (state.target === 'preview') {
+    run(runner, 'vercel', [
+      'env', 'rm', 'GRH_DIRECTORY_ALLOWED_USER_IDS', ...environmentArgs, '--yes',
+    ], { cwd: state.worktreePath });
+  }
   run(runner, 'vercel', ['remove', state.deployment.id, '--yes'], { cwd: state.worktreePath });
 
   await removeIfExact(state.endpointPath, state.endpointSha256);
@@ -1322,7 +1593,7 @@ export async function cleanupVerifiedBootstrap({
     status: 'cleaned',
     deploymentRemoved: true,
     bootstrapSecretRemoved: true,
-    allowlistRetained: true,
+    allowlistRetained: state.target === 'production',
     snapshotKeyRetained: state.mode === 'encrypted_snapshot',
     snapshotKeyLocalRetained: state.mode === 'encrypted_snapshot',
     snapshotKeyVersion: state.snapshotKeyVersion,
@@ -1330,6 +1601,10 @@ export async function cleanupVerifiedBootstrap({
     recoverySourceSha256: state.sourceSha256,
     credentialPath: state.credentialPath,
     stableAliasUnchanged: true,
+    ...(state.target === 'preview' ? {
+      databaseTargetFingerprintSha256: state.databaseTargetFingerprintSha256,
+      stableDatabaseTargetFingerprintSha256: state.stableDatabaseTargetFingerprintSha256,
+    } : {}),
   });
 }
 
@@ -1359,6 +1634,7 @@ export async function verifyProductionBootstrap({
 } = {}) {
   const loaded = await loadState(statePath);
   const { state } = loaded;
+  if (state.target !== 'production') fail('BOOTSTRAP_PRODUCTION_VERIFY_TARGET_INVALID');
   if (state.status !== 'cleaned' || state.productionVerification !== null ||
       !state.deployment?.cleanedAt) {
     fail('BOOTSTRAP_PRODUCTION_VERIFY_REQUIRES_CLEANUP');
@@ -1404,6 +1680,7 @@ export async function finalizeProductionBootstrap({
 } = {}) {
   const loaded = await loadState(statePath);
   const { state } = loaded;
+  if (state.target !== 'production') fail('BOOTSTRAP_FINALIZE_TARGET_INVALID');
   if (!['production_verified', 'finalized'].includes(state.status) ||
       !state.productionVerification ||
       state.productionVerification.gitSha !== state.expectedGitSha ||
@@ -1435,12 +1712,14 @@ export async function finalizeProductionBootstrap({
 export function safeCliResult(result) {
   if (!result || typeof result !== 'object') return Object.freeze({ ok: true });
   const allowed = [
-    'statePath', 'mode', 'endpointRelativePath', 'payloadBytes', 'uncompressedBytes',
+    'statePath', 'mode', 'target', 'previewBranch', 'databaseTargetFingerprintSha256',
+    'stableDatabaseTargetFingerprintSha256', 'endpointRelativePath', 'payloadBytes', 'uncompressedBytes',
     'recordCount', 'absenceRecordCount', 'leaveRecordCount', 'movementPeriodCount',
     'positionObservationCount', 'status',
     'deploymentId', 'deploymentUrl', 'stableAliasUnchanged', 'schemaVersion',
     'snapshotAsOf', 'absenceAvailable', 'leaveAvailable', 'movementAvailable',
     'positionObservationAvailable', 'nominalAiVerified',
+    'employmentAvailable',
     'alreadyConsumed', 'verificationRequired',
     'deploymentRemoved', 'bootstrapSecretRemoved', 'allowlistRetained', 'snapshotKeyRetained',
     'snapshotKeyLocalRetained', 'snapshotKeyVersion', 'snapshotKeyFingerprintSha256',

@@ -4,13 +4,18 @@
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var COLLAPSED_RELEASED_ROWS = 8;
   var DIRECTORY_ENDPOINT = '/api/grh-directory';
-  var DIRECTORY_SCHEMA = 'grh-directory-v2';
+  var DIRECTORY_SCHEMA = 'grh-directory-v3';
   var DIRECTORY_ACCESS_ENDPOINT = '/api/grh-directory-access';
   var DIRECTORY_ACCESS_SCHEMA = 'grh-directory-access-v1';
   var DIRECTORY_ACCESS_PURPOSES = Object.freeze(['DIRECTORY_BROWSE', 'PERSON_LOOKUP', 'LEAVE_REVIEW']);
   var DIRECTORY_ACCESS_LIMITS = Object.freeze([
     'private_identity_required', 'purpose_required', 'tenant_bound', 'no_public_demo', 'no_raw_export'
   ]);
+  var PERSON_HANDOFF_STORAGE_KEY = 'muni_grh_person_handoff_v1';
+  var PERSON_HANDOFF_VERSION = 'grh-person-handoff-v1';
+  var PERSON_RETURN_STORAGE_KEY = 'muni_grh_person_return_v1';
+  var PERSON_RETURN_VERSION = 'grh-person-return-v1';
+  var PERSON_RETURN_TTL_MS = 120000;
   var DIRECTORY_PAGE_SIZE = 20;
   var numberFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
   var decimalFormatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -45,7 +50,7 @@
       items: [],
       facets: null,
       source: null,
-      timelineItems: [],
+      personDetail: null,
       timelineFilter: 'all',
       lastPersonTrigger: null,
       deepLink: { status: 'none', consumed: false }
@@ -73,14 +78,17 @@
       'directoryAccessPanel', 'directoryAccessStatus', 'directoryAccessScope', 'directoryAccessValidity',
       'directoryAccessAudit', 'directoryAccessLimits', 'directoryAccessError', 'directoryAccessRetry',
       'directoryStatusBadge', 'directoryForm', 'directorySearch', 'directorySector', 'directoryOrganization', 'directoryCostCenter',
-      'directoryPosition', 'directoryEvent', 'directorySubmit', 'directoryReset', 'directoryState',
+      'directoryPosition', 'directoryEvent', 'directoryReportedStatus', 'directoryContractRegime',
+      'directoryServiceSituation', 'directorySubmit', 'directoryReset', 'directoryState',
       'directoryStateTitle', 'directoryStateMessage', 'directoryPrivateAccess', 'directoryResults', 'directoryResultCount',
       'directoryResultLabel', 'directorySourceLabel', 'directoryTableBody', 'directoryMobileList',
       'directoryPrevious', 'directoryNext', 'directoryPageLabel', 'personDialog', 'personDialogTitle',
       'personDialogSubtitle', 'personDialogCutoff', 'personDialogClose', 'personDialogLoading', 'personDialogContent',
       'personDimensions', 'personEvents', 'personTimeline', 'personTimelineCoverage', 'personTimelineTabs',
-      'personTimelineList', 'personTimelineEmpty', 'personEvidenceCutoff', 'personEvidenceSystem', 'personActions',
-      'personHaciendaSector', 'personHaciendaAgreement'
+      'personTimelineList', 'personEmployment', 'personEmploymentStatus', 'personEmploymentStatusDetail',
+      'personEmploymentBasis', 'personEmploymentFacts', 'personPayrollLabel', 'personPayrollValue',
+      'personEvidenceCutoff', 'personEvidenceSystem', 'personEvidenceContract', 'personActions',
+      'personAssistantAction', 'personAggregateActions', 'personHaciendaSector', 'personHaciendaAgreement', 'personActionStatus'
     ].forEach(function (id) { elements[id] = byId(id); });
   }
 
@@ -689,7 +697,20 @@
   }
 
   function validDirectoryDate(value) {
-    return value === null || /^\d{4}-\d{2}-\d{2}$/.test(value || '');
+    if (value === null) return true;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+    var parts = value.split('-').map(Number);
+    var date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    return date.getUTCFullYear() === parts[0] && date.getUTCMonth() === parts[1] - 1 &&
+      date.getUTCDate() === parts[2];
+  }
+
+  function previousMonthPeriod(dateValue) {
+    if (!validDirectoryDate(dateValue) || dateValue === null) return null;
+    var parts = dateValue.split('-').map(Number);
+    var date = new Date(Date.UTC(parts[0], parts[1] - 2, 1));
+    return String(date.getUTCFullYear()).padStart(4, '0') + '-' +
+      String(date.getUTCMonth() + 1).padStart(2, '0');
   }
 
   function validDirectoryDimension(value) {
@@ -697,6 +718,25 @@
       exactObjectKeys(value, ['code', 'label']) && Number.isSafeInteger(value.code) && value.code >= 0 &&
       safeDirectoryText(value.label, 200)
     );
+  }
+
+  var REPORTED_EMPLOYMENT_STATUSES = Object.freeze([
+    'ended_by_reported_dates', 'current_by_reported_dates', 'unknown_missing_ingress',
+    'unknown_sentinel_ingress', 'unknown_implausible_active_tenure', 'invalid_chronology'
+  ]);
+
+  function validEmployment(value, snapshotAsOf) {
+    if (!exactObjectKeys(value, [
+      'reportedIngressDate', 'reportedExitDate', 'reportedStatus', 'asOf', 'basis',
+      'referencePayrollParticipation'
+    ]) || !validDirectoryDate(value.reportedIngressDate) || !validDirectoryDate(value.reportedExitDate) ||
+        !REPORTED_EMPLOYMENT_STATUSES.includes(value.reportedStatus) || value.asOf !== snapshotAsOf ||
+        value.basis !== 'legajo_reported_dates') return false;
+    var payroll = value.referencePayrollParticipation;
+    return exactObjectKeys(payroll, ['period', 'observed', 'rowCount']) &&
+      payroll.period === previousMonthPeriod(snapshotAsOf) && typeof payroll.observed === 'boolean' &&
+      Number.isSafeInteger(payroll.rowCount) && payroll.rowCount >= 0 &&
+      payroll.observed === (payroll.rowCount > 0);
   }
 
   function validDirectoryRelation(value) {
@@ -803,7 +843,8 @@
   function validDirectoryItem(item, snapshotAsOf, mode) {
     var keys = [
       'companyCode', 'legajo', 'displayName', 'sector', 'organization', 'position', 'positionObservation',
-      'costCenter', 'category', 'agreement', 'events', 'movement'
+      'costCenter', 'category', 'agreement', 'contractRegime', 'serviceSituation', 'terminationReason',
+      'employment', 'events', 'movement'
     ];
     if (mode === 'detail') keys.push('leaveHistory', 'absenceHistory', 'movementHistory');
     return exactObjectKeys(item, keys) && Number.isSafeInteger(item.companyCode) && item.companyCode > 0 &&
@@ -811,7 +852,9 @@
       validDirectoryDimension(item.sector) && validDirectoryDimension(item.organization) &&
       validDirectoryPosition(item.position) && validPositionObservation(item.positionObservation, snapshotAsOf) &&
       validDirectoryDimension(item.costCenter) && validDirectoryDimension(item.category) &&
-      validDirectoryDimension(item.agreement) && validDirectoryEvents(item.events, snapshotAsOf) &&
+      validDirectoryDimension(item.agreement) && validDirectoryDimension(item.contractRegime) &&
+      validDirectoryDimension(item.serviceSituation) && validDirectoryDimension(item.terminationReason) &&
+      validEmployment(item.employment, snapshotAsOf) && validDirectoryEvents(item.events, snapshotAsOf) &&
       validDirectoryMovement(item.movement, snapshotAsOf) &&
       (mode !== 'detail' || (
         validLeaveHistory(item.leaveHistory, item.events.leaveCount, snapshotAsOf) &&
@@ -822,12 +865,15 @@
 
   function validDirectoryFacetRow(row, name) {
     var keys = name === 'categories' ? ['agreementCode', 'code', 'label', 'count'] :
+      name === 'reportedStatuses' ? ['status', 'label', 'count'] :
       name === 'positionObservations' ? ['label', 'count', 'status'] : ['code', 'label', 'count'];
     return exactObjectKeys(row, keys) &&
-      (name === 'positionObservations' || (Number.isSafeInteger(row.code) && row.code >= 0)) &&
+      (['positionObservations', 'reportedStatuses'].includes(name) ||
+        (Number.isSafeInteger(row.code) && row.code >= 0)) &&
       (name !== 'categories' || (Number.isSafeInteger(row.agreementCode) && row.agreementCode >= 0)) &&
       (name !== 'positionObservations' || ['historical_observation', 'source_future_effective'].includes(row.status)) &&
-      (name === 'positionObservations'
+      (name !== 'reportedStatuses' || REPORTED_EMPLOYMENT_STATUSES.includes(row.status)) &&
+      (['positionObservations', 'reportedStatuses'].includes(name)
         ? typeof row.label === 'string' && safeDirectoryText(row.label, 200)
         : safeDirectoryText(row.label, 200)) &&
       Number.isSafeInteger(row.count) && row.count > 0;
@@ -836,13 +882,15 @@
   function validDirectoryFacets(facets, mode) {
     if (mode === 'detail') return facets === null;
     return exactObjectKeys(facets, [
-      'sectors', 'organizations', 'costCenters', 'positions', 'positionObservations', 'categories', 'agreements'
+      'sectors', 'organizations', 'costCenters', 'positions', 'positionObservations', 'categories', 'agreements',
+      'reportedStatuses', 'contractRegimes', 'serviceSituations'
     ]) &&
       Object.keys(facets).every(function (name) {
         if (!Array.isArray(facets[name]) || facets[name].length > 5000) return false;
         var seen = new Set();
         return facets[name].every(function (row) {
           var key = name === 'categories' ? String(row.agreementCode) + ':' + String(row.code) :
+            name === 'reportedStatuses' ? row.status :
             name === 'positionObservations' ? row.status + ':' + row.label : String(row.code);
           if (!validDirectoryFacetRow(row, name) || seen.has(key)) return false;
           seen.add(key);
@@ -863,7 +911,7 @@
     var privacy = payload.privacy;
     if (!exactObjectKeys(privacy, ['containsPersonalData', 'excludedFields']) ||
         privacy.containsPersonalData !== true || !Array.isArray(privacy.excludedFields) ||
-        privacy.excludedFields.join('|') !== 'dni|cuil|contact|address|bank_account|salary|event_cause') return false;
+        privacy.excludedFields.join('|') !== 'dni|cuil|contact|address|bank_account|salary|absence_leave_event_cause') return false;
     var query = payload.query;
     if (!exactObjectKeys(query, ['mode', 'page', 'limit', 'total', 'hasNext', 'cursor', 'nextCursor']) ||
         !['list', 'detail'].includes(query.mode) || !Number.isSafeInteger(query.page) || query.page < 1 ||
@@ -1003,6 +1051,30 @@
     }
     var keys = Array.from(params.keys());
     if (!keys.length) return { status: 'none', consumed: false };
+    if (keys.length === 1 && keys[0] === 'handoff' && params.getAll('handoff').length === 1 &&
+        params.get('handoff') === 'person' && global.location.hash === '#peopleDirectory') {
+      var raw = null;
+      try {
+        raw = global.sessionStorage.getItem(PERSON_RETURN_STORAGE_KEY);
+        global.sessionStorage.removeItem(PERSON_RETURN_STORAGE_KEY);
+      } catch (_) {
+        return { status: 'invalid', consumed: false };
+      } finally {
+        global.history.replaceState(global.history.state, '', global.location.pathname + '#peopleDirectory');
+      }
+      if (!raw || raw.length > 500) return { status: 'invalid', consumed: false };
+      var value;
+      try { value = JSON.parse(raw); } catch (_) { return { status: 'invalid', consumed: false }; }
+      if (raw !== JSON.stringify(value) || !exactObjectKeys(value, [
+        'version', 'kind', 'companyCode', 'legajo', 'createdAt'
+      ]) || value.version !== PERSON_RETURN_VERSION || value.kind !== 'PERSON_RETURN' ||
+          !Number.isSafeInteger(value.companyCode) || value.companyCode <= 0 ||
+          !Number.isSafeInteger(value.legajo) || value.legajo <= 0 || !Number.isSafeInteger(value.createdAt) ||
+          Date.now() - value.createdAt < 0 || Date.now() - value.createdAt > PERSON_RETURN_TTL_MS) {
+        return { status: 'invalid', consumed: false };
+      }
+      return { status: 'person', companyCode: value.companyCode, legajo: value.legajo, consumed: false };
+    }
     var exactPersonKeys = keys.length === 2 && ['company', 'legajo'].every(function (key) {
       return params.getAll(key).length === 1;
     }) && keys.every(function (key) { return key === 'company' || key === 'legajo'; });
@@ -1059,7 +1131,9 @@
   function setDirectoryControlsDisabled(disabled) {
     [
       elements.directorySearch, elements.directorySector, elements.directoryOrganization, elements.directoryCostCenter,
-      elements.directoryPosition, elements.directoryEvent, elements.directorySubmit, elements.directoryReset
+      elements.directoryPosition, elements.directoryEvent, elements.directoryReportedStatus,
+      elements.directoryContractRegime, elements.directoryServiceSituation,
+      elements.directorySubmit, elements.directoryReset
     ].forEach(function (element) { if (element) element.disabled = disabled; });
     if (elements.directoryForm) elements.directoryForm.dataset.locked = disabled ? 'true' : 'false';
   }
@@ -1102,6 +1176,9 @@
       if (entry[1].value) query[entry[0]] = Number(entry[1].value);
     });
     if (elements.directoryPosition.value) query.positionObservation = elements.directoryPosition.value;
+    if (elements.directoryReportedStatus.value) query.reportedStatus = elements.directoryReportedStatus.value;
+    if (elements.directoryContractRegime.value) query.contractRegime = Number(elements.directoryContractRegime.value);
+    if (elements.directoryServiceSituation.value) query.serviceSituation = Number(elements.directoryServiceSituation.value);
     var eventFilter = elements.directoryEvent.value;
     if (eventFilter === 'leave' || eventFilter === 'both') query.hasLeave = true;
     if (eventFilter === 'absence' || eventFilter === 'both') query.hasAbsence = true;
@@ -1173,8 +1250,10 @@
     all.value = '';
     select.appendChild(all);
     rows.forEach(function (row) {
+      if (['contractRegimes', 'serviceSituations'].includes(name) && !row.label) return;
       var option = createElement('option', '', facetLabel(row, name));
-      option.value = name === 'positionObservations' ? row.label : String(row.code);
+      option.value = name === 'positionObservations' ? row.label :
+        (name === 'reportedStatuses' ? row.status : String(row.code));
       select.appendChild(option);
     });
     if (Array.from(select.options).some(function (option) { return option.value === current; })) select.value = current;
@@ -1243,6 +1322,7 @@
       var row = document.createElement('tr');
       appendCell(row, personIdentity(item), 'rrhh-person-name');
       appendCell(row, numberFormatter.format(item.legajo));
+      appendCell(row, employmentPresentation(item.employment).label);
       appendPositionCell(row, item);
       appendCell(row, dimensionLabel(item.organization));
       appendCell(row, dimensionLabel(item.costCenter));
@@ -1266,6 +1346,7 @@
       card.append(
         head,
         createElement('strong', '', positionValue.label),
+        createElement('span', '', 'Estado informado: ' + employmentPresentation(item.employment).label),
         createElement('span', '', positionValue.context),
         createElement('span', '', 'Organización: ' + dimensionLabel(item.organization)),
         createElement('span', '', 'Centro de costo informado: ' + dimensionLabel(item.costCenter)),
@@ -1295,6 +1376,9 @@
     renderFacet(elements.directoryOrganization, payload.facets.organizations, 'Todas', 'organizations');
     renderFacet(elements.directoryCostCenter, payload.facets.costCenters, 'Todos', 'costCenters');
     renderFacet(elements.directoryPosition, payload.facets.positionObservations, 'Todos', 'positionObservations');
+    renderFacet(elements.directoryReportedStatus, payload.facets.reportedStatuses, 'Todos', 'reportedStatuses');
+    renderFacet(elements.directoryContractRegime, payload.facets.contractRegimes, 'Todos', 'contractRegimes');
+    renderFacet(elements.directoryServiceSituation, payload.facets.serviceSituations, 'Todas', 'serviceSituations');
     var deepLink = state.directory.deepLink;
     if (deepLink && deepLink.status === 'filter' && !deepLink.consumed) {
       var targetSelect = deepLink.dimension === 'organization'
@@ -1360,40 +1444,182 @@
     elements.personEvents.appendChild(item);
   }
 
-  function historyCoverageLabel(label, history, unit) {
-    var shown = history.items.length;
-    if (!history.total) return label + ': sin registros publicados';
-    return label + ': últimos ' + numberFormatter.format(shown) + ' de ' +
-      numberFormatter.format(history.total) + ' ' + unit;
+  function employmentPresentation(employment) {
+    var presentations = {
+      ended_by_reported_dates: {
+        state: 'reported',
+        label: 'Con egreso informado al corte',
+        detail: 'Las fechas de origen informan un egreso. No certifica la causa ni otros efectos administrativos.'
+      },
+      current_by_reported_dates: {
+        state: 'reported',
+        label: 'Sin egreso informado al corte',
+        detail: 'La fuente informa ingreso y no informa egreso. No equivale a una certificación de vínculo activo.'
+      },
+      unknown_missing_ingress: {
+        state: 'warning',
+        label: 'Situación no determinada: falta la fecha de ingreso',
+        detail: 'No se completa el dato ni se presume vigencia.'
+      },
+      unknown_sentinel_ingress: {
+        state: 'warning',
+        label: 'Situación no determinada: fecha de ingreso no utilizable',
+        detail: 'La fuente contenía un valor técnico de reemplazo; no se publica como fecha real.'
+      },
+      unknown_implausible_active_tenure: {
+        state: 'warning',
+        label: 'Situación no determinada: antigüedad a revisar',
+        detail: 'La combinación de fechas supera el umbral de lectura conservadora y requiere validación administrativa.'
+      },
+      invalid_chronology: {
+        state: 'invalid',
+        label: 'Fechas inconsistentes: revisión requerida',
+        detail: 'La cronología informada no permite presentar una situación laboral.'
+      }
+    };
+    return presentations[employment.reportedStatus];
   }
 
-  function personTimelineItems(item) {
-    var leaves = item.leaveHistory.items.map(function (event) {
-      return {
-        kind: 'leave', sortKey: event.startDate, period: formatEventDate(event.startDate),
-        title: 'Licencia histórica', detail: (event.endDate ? 'Hasta ' + formatEventDate(event.endDate) + ' · ' : '') +
-          (event.days === null ? 'días no informados' : numberFormatter.format(event.days) + ' días publicados')
-      };
+  function appendEmploymentFact(label, value) {
+    var fact = createElement('div', 'rrhh-employment-fact');
+    fact.append(createElement('span', '', label), createElement('strong', '', value));
+    elements.personEmploymentFacts.appendChild(fact);
+  }
+
+  function appendEmploymentDimension(label, value) {
+    if (!value || !value.label) return;
+    appendEmploymentFact(label, value.label);
+  }
+
+  function formatPayrollPeriod(value) {
+    if (!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(value || '')) return 'período no disponible';
+    return new Intl.DateTimeFormat('es-AR', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+      .format(new Date(value + '-01T00:00:00Z')).replace('.', '');
+  }
+
+  function renderPersonEmployment(item) {
+    var employment = item.employment;
+    var presentation = employmentPresentation(employment);
+    clearNode(elements.personEmploymentFacts);
+    elements.personEmployment.dataset.state = presentation.state;
+    setText(elements.personEmploymentStatus, presentation.label);
+    setText(elements.personEmploymentStatusDetail, presentation.detail);
+    setText(elements.personEmploymentBasis, 'Según legajo · corte ' + formatSnapshot(employment.asOf));
+    appendEmploymentFact('Ingreso reportado', employment.reportedIngressDate
+      ? formatEventDate(employment.reportedIngressDate)
+      : (employment.reportedStatus === 'unknown_sentinel_ingress' ? 'Dato no utilizable' : 'No informado'));
+    appendEmploymentFact('Egreso reportado', employment.reportedExitDate
+      ? formatEventDate(employment.reportedExitDate) : 'No informado');
+    appendEmploymentDimension('Régimen contractual', item.contractRegime);
+    appendEmploymentDimension('Situación de revista', item.serviceSituation);
+    if (employment.reportedStatus === 'ended_by_reported_dates' && employment.reportedExitDate) {
+      appendEmploymentDimension('Motivo de egreso informado', item.terminationReason);
+    }
+    var payroll = employment.referencePayrollParticipation;
+    setText(elements.personPayrollLabel, 'Participación observada en cálculo · ' + formatPayrollPeriod(payroll.period));
+    setText(elements.personPayrollValue, payroll.observed ? 'Sí' : 'No');
+  }
+
+  function historyRange(history, kind) {
+    if (!history.items.length) return 'Sin registros asociados';
+    if (kind === 'movement') {
+      return history.items.at(-1).period + ' a ' + history.items[0].period;
+    }
+    var first = kind === 'leave' ? history.items.at(-1).startDate : history.items.at(-1).date;
+    var last = kind === 'leave' ? history.items[0].startDate : history.items[0].date;
+    return formatEventDate(first) + ' a ' + formatEventDate(last);
+  }
+
+  function historyCoverageRows(item) {
+    return [
+      { kind: 'leave', label: 'Licencias', totalLabel: 'Válidos asociados', history: item.leaveHistory },
+      { kind: 'absence', label: 'Ausencias', totalLabel: 'Válidos asociados', history: item.absenceHistory },
+      { kind: 'movement', label: 'legamov', totalLabel: 'Períodos válidos', history: item.movementHistory }
+    ];
+  }
+
+  function historyStatus(history) {
+    return history.items.length === history.total
+      ? { state: 'complete', label: 'Detalle completo' }
+      : { state: 'partial', label: 'Detalle parcial' };
+  }
+
+  function appendCoverageDatum(row, label, value, className) {
+    var container = createElement('div');
+    container.append(createElement('span', '', label), createElement('strong', className || '', value));
+    row.appendChild(container);
+  }
+
+  function renderPersonCoverage(item) {
+    var container = createElement('div', 'rrhh-person-coverage');
+    historyCoverageRows(item).forEach(function (entry) {
+      var row = createElement('div', 'rrhh-person-coverage-row');
+      var status = historyStatus(entry.history);
+      row.dataset.kind = entry.kind;
+      row.appendChild(createElement('strong', 'rrhh-person-coverage-label', entry.label));
+      appendCoverageDatum(row, entry.totalLabel, numberFormatter.format(entry.history.total));
+      appendCoverageDatum(row, 'Expuestos en ficha', numberFormatter.format(entry.history.items.length) +
+        ' de máximo ' + numberFormatter.format(entry.history.limit));
+      appendCoverageDatum(row, 'Rango expuesto', historyRange(entry.history, entry.kind));
+      appendCoverageDatum(row, 'Estado', status.label, 'rrhh-person-coverage-status');
+      row.querySelector('.rrhh-person-coverage-status').dataset.state = status.state;
+      container.appendChild(row);
     });
-    var absences = item.absenceHistory.items.map(function (event) {
-      return {
-        kind: 'absence', sortKey: event.date, period: formatEventDate(event.date),
-        title: 'Ausencia registrada',
-        detail: event.days === null ? 'Duración no informada por la fuente' :
-          numberFormatter.format(event.days) + ' días publicados'
-      };
+    elements.personTimelineList.appendChild(container);
+    elements.personTimelineList.appendChild(createElement('p', 'rrhh-person-record-note',
+      'Los totales corresponden a registros válidos asociados al legajo en el contrato nominal. La ficha expone hasta 24 por tabla; no describe saldo, vigencia ni motivo.'));
+  }
+
+  function appendRecordTable(headers, rows, caption) {
+    var wrap = createElement('div', 'rrhh-person-record-table-wrap');
+    var table = createElement('table', 'rrhh-person-record-table');
+    table.appendChild(createElement('caption', '', caption));
+    var head = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    headers.forEach(function (header) {
+      var cell = createElement('th', '', header);
+      cell.scope = 'col';
+      headRow.appendChild(cell);
     });
-    var movements = item.movementHistory.items.map(function (event) {
-      return {
-        kind: 'movement', sortKey: event.period + '-01', period: event.period,
-        title: 'Filas fuente legamov', detail: numberFormatter.format(event.rowCount) +
-          (event.rowCount === 1 ? ' fila publicada' : ' filas publicadas') +
-          ' en el período; no describe altas, bajas ni rotación.'
-      };
+    head.appendChild(headRow);
+    var body = document.createElement('tbody');
+    rows.forEach(function (values) {
+      var row = document.createElement('tr');
+      values.forEach(function (value) { row.appendChild(createElement('td', '', value)); });
+      body.appendChild(row);
     });
-    return leaves.concat(absences, movements).sort(function (left, right) {
-      return right.sortKey.localeCompare(left.sortKey) || left.kind.localeCompare(right.kind);
-    });
+    table.append(head, body);
+    wrap.appendChild(table);
+    elements.personTimelineList.appendChild(wrap);
+  }
+
+  function renderPersonRecords(item, filter) {
+    var history = filter === 'leave' ? item.leaveHistory :
+      (filter === 'absence' ? item.absenceHistory : item.movementHistory);
+    if (!history.items.length) {
+      elements.personTimelineList.appendChild(createElement('p', 'rrhh-person-record-empty',
+        'No hay registros válidos asociados al legajo en esta tabla.'));
+      return;
+    }
+    if (filter === 'leave') {
+      appendRecordTable(['Inicio', 'Fin', 'Días'], history.items.map(function (event) {
+        return [formatEventDate(event.startDate), event.endDate ? formatEventDate(event.endDate) : 'No informado',
+          event.days === null ? 'No informado' : numberFormatter.format(event.days)];
+      }), 'Licencias válidas asociadas: ' + numberFormatter.format(history.items.length) + ' de ' +
+        numberFormatter.format(history.total) + ' expuestas.');
+      return;
+    }
+    if (filter === 'absence') {
+      appendRecordTable(['Fecha', 'Días'], history.items.map(function (event) {
+        return [formatEventDate(event.date), event.days === null ? 'No informado' : numberFormatter.format(event.days)];
+      }), 'Ausencias válidas asociadas: ' + numberFormatter.format(history.items.length) + ' de ' +
+        numberFormatter.format(history.total) + ' expuestas.');
+      return;
+    }
+    appendRecordTable(['Período', 'Filas válidas'], history.items.map(function (event) {
+      return [event.period, numberFormatter.format(event.rowCount)];
+    }), 'legamov: ' + numberFormatter.format(history.items.length) + ' de ' +
+      numberFormatter.format(history.total) + ' períodos expuestos. Las filas no describen altas, bajas ni rotación.');
   }
 
   function renderPersonTimeline(filter) {
@@ -1404,18 +1630,9 @@
       button.tabIndex = selected ? 0 : -1;
     });
     clearNode(elements.personTimelineList);
-    var visible = state.directory.timelineItems.filter(function (event) {
-      return filter === 'all' || event.kind === filter;
-    }).slice(0, 24);
-    visible.forEach(function (event) {
-      var item = createElement('li', 'rrhh-person-timeline-item');
-      item.dataset.kind = event.kind;
-      var copy = createElement('div', 'rrhh-timeline-copy');
-      copy.append(createElement('strong', '', event.title), createElement('span', '', event.detail));
-      item.append(createElement('time', 'rrhh-timeline-period', event.period), copy);
-      elements.personTimelineList.appendChild(item);
-    });
-    elements.personTimelineEmpty.hidden = visible.length > 0;
+    elements.personTimelineList.setAttribute('aria-label', filter === 'summary' ? 'Resumen de cobertura' : 'Tabla de ' + filter);
+    if (filter === 'summary') renderPersonCoverage(state.directory.personDetail);
+    else renderPersonRecords(state.directory.personDetail, filter);
   }
 
   function haciendaCohortHref(item, dimension) {
@@ -1437,12 +1654,53 @@
     else element.href = href;
   }
 
+  function configurePersonAssistantAction(item) {
+    if (!elements.personAssistantAction) return;
+    elements.personAssistantAction.dataset.companyCode = String(item.companyCode);
+    elements.personAssistantAction.dataset.legajo = String(item.legajo);
+    elements.personAssistantAction.href = 'ia.html?handoff=person';
+    elements.personAssistantAction.removeAttribute('aria-disabled');
+    if (elements.personActionStatus) {
+      elements.personActionStatus.hidden = true;
+      setText(elements.personActionStatus, '');
+    }
+  }
+
+  function preparePersonAssistantHandoff(event) {
+    event.preventDefault();
+    var companyCode = Number(elements.personAssistantAction.dataset.companyCode);
+    var legajo = Number(elements.personAssistantAction.dataset.legajo);
+    if (!Number.isSafeInteger(companyCode) || companyCode <= 0 ||
+        !Number.isSafeInteger(legajo) || legajo <= 0) {
+      setText(elements.personActionStatus, 'No se pudo identificar el legajo para iniciar el análisis.');
+      elements.personActionStatus.hidden = false;
+      return;
+    }
+    var handoff = {
+      version: PERSON_HANDOFF_VERSION,
+      kind: 'PERSON_OVERVIEW',
+      companyCode: companyCode,
+      legajo: legajo,
+      createdAt: Date.now()
+    };
+    try {
+      global.sessionStorage.setItem(PERSON_HANDOFF_STORAGE_KEY, JSON.stringify(handoff));
+    } catch (_) {
+      setText(elements.personActionStatus,
+        'No se pudo preparar la consulta en este navegador. La ficha permanece abierta.');
+      elements.personActionStatus.hidden = false;
+      return;
+    }
+    global.location.assign('ia.html?handoff=person');
+  }
+
   function renderPerson(item) {
     clearNode(elements.personDimensions);
     clearNode(elements.personEvents);
     setText(elements.personDialogTitle, personIdentity(item));
     setText(elements.personDialogSubtitle, 'Legajo ' + numberFormatter.format(item.legajo) + ' · empresa ' + item.companyCode);
     setText(elements.personDialogCutoff, 'Corte GRH ' + formatSnapshot(state.directory.source.snapshotAsOf));
+    renderPersonEmployment(item);
     var positionValue = positionPresentation(item);
     appendPersonDimension(positionValue.context, positionValue.label);
     if (positionValue.kind === 'position') {
@@ -1458,25 +1716,26 @@
     appendPersonDimension('Centro de costo informado', dimensionLabel(item.costCenter));
     appendPersonDimension('Categoría', dimensionLabel(item.category));
     appendPersonDimension('Convenio', dimensionLabel(item.agreement));
-    appendPersonEvent('Ausencias históricas', numberFormatter.format(item.events.absenceCount) +
+    appendPersonEvent('Registros válidos de ausencias', numberFormatter.format(item.events.absenceCount) +
       (item.events.latestAbsenceDate ? ' · última ' + formatEventDate(item.events.latestAbsenceDate) : ' · sin fecha publicada'));
-    appendPersonEvent('Licencias históricas', numberFormatter.format(item.events.leaveCount) +
+    appendPersonEvent('Registros válidos de licencias', numberFormatter.format(item.events.leaveCount) +
       (item.events.latestLeaveStartDate ? ' · última ' + formatEventDate(item.events.latestLeaveStartDate) +
         (item.events.latestLeaveEndDate ? ' a ' + formatEventDate(item.events.latestLeaveEndDate) : '') : ' · sin fecha publicada'));
-    appendPersonEvent('Filas fuente legamov', numberFormatter.format(item.movement.rowCount) + ' filas · ' +
+    appendPersonEvent('Filas válidas de legamov', numberFormatter.format(item.movement.rowCount) + ' filas · ' +
       numberFormatter.format(item.movement.periodCount) + ' períodos' +
       (item.movement.latestPeriod ? ' · último ' + item.movement.latestPeriod : ' · sin período publicado'));
+    configurePersonAssistantAction(item);
     configureHaciendaCohortAction(elements.personHaciendaSector, item, 'sector');
     configureHaciendaCohortAction(elements.personHaciendaAgreement, item, 'agreement');
-    setText(elements.personTimelineCoverage, [
-      historyCoverageLabel('Ausencias', item.absenceHistory, item.absenceHistory.total === 1 ? 'registro' : 'registros'),
-      historyCoverageLabel('Licencias', item.leaveHistory, item.leaveHistory.total === 1 ? 'registro' : 'registros'),
-      historyCoverageLabel('legamov', item.movementHistory, item.movementHistory.total === 1 ? 'período' : 'períodos')
-    ].join(' · ') + '. Máximo 24 visibles por filtro.');
+    elements.personAggregateActions.hidden = elements.personHaciendaSector.hidden && elements.personHaciendaAgreement.hidden;
+    setText(elements.personTimelineCoverage,
+      'El resumen separa total válido, detalle expuesto, rango y estado por tabla. Máximo ' +
+      numberFormatter.format(item.absenceHistory.limit) + ' registros o períodos expuestos en cada tabla.');
     setText(elements.personEvidenceCutoff, formatSnapshot(state.directory.source.snapshotAsOf));
     setText(elements.personEvidenceSystem, state.directory.source.canonicalSystem);
-    state.directory.timelineItems = personTimelineItems(item);
-    renderPersonTimeline('all');
+    setText(elements.personEvidenceContract, DIRECTORY_SCHEMA);
+    state.directory.personDetail = item;
+    renderPersonTimeline('summary');
     elements.personDialogLoading.hidden = true;
     elements.personDialogContent.hidden = false;
     elements.personActions.hidden = false;
@@ -1492,6 +1751,7 @@
     elements.personDialogLoading.hidden = false;
     elements.personDialogContent.hidden = true;
     elements.personActions.hidden = true;
+    elements.personAggregateActions.hidden = true;
     if (typeof elements.personDialog.showModal === 'function') elements.personDialog.showModal();
     else elements.personDialog.setAttribute('open', '');
     try {
@@ -1712,6 +1972,7 @@
       tabs[next].focus();
       tabs[next].click();
     });
+    elements.personAssistantAction.addEventListener('click', preparePersonAssistantHandoff);
   }
 
   async function init() {

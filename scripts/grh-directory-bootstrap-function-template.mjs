@@ -21,6 +21,7 @@ import pg from 'pg';
 import { inspectGrhDirectoryArtifact } from './lib/grh-directory-contract.js';
 import {
   flattenGrhDirectoryArtifact,
+  grhDirectoryContentSha256,
   publishGrhDirectory,
 } from './lib/grh-directory-publication.js';
 import {
@@ -29,6 +30,7 @@ import {
   GRH_DIRECTORY_SNAPSHOT_KEY_VERSION,
   createGrhDirectorySnapshotEnvelope,
 } from './lib/grh-directory-snapshot.js';
+import { fingerprintDatabaseTarget } from './lib/database-target-fingerprint.js';
 import databaseUrlPolicy from '../shared/database-url-policy.cjs';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 
@@ -38,9 +40,11 @@ const { Client } = pg;
 const { inspectDatabaseUrl } = databaseUrlPolicy;
 const { isPublishedDemoIdentity } = publishedDemoPolicy;
 
-const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v2';
-const DIRECTORY_CONTRACT = 'grh-directory-v2';
+const BOOTSTRAP_CONTRACT = 'grh-directory-bootstrap-v3';
+const DIRECTORY_CONTRACT = 'grh-directory-v3';
 const BOOTSTRAP_MODE = __BOOTSTRAP_MODE__;
+const EXPECTED_VERCEL_ENV = __EXPECTED_VERCEL_ENV__;
+const EXPECTED_DATABASE_TARGET_SHA256 = __EXPECTED_DATABASE_TARGET_SHA256__;
 const OPERATION_ID = __OPERATION_ID__;
 const MIGRATION_SQL = __MIGRATION_SQL__;
 const MIGRATION_SHA256 = __MIGRATION_SHA256__;
@@ -64,7 +68,7 @@ const EXPECTED_COLUMNS = Object.freeze({
     'tenant_id', 'schema_version', 'canonical_system', 'source_file', 'source_sha256',
     'snapshot_as_of', 'artifact_generated_at', 'record_count', 'leave_record_count',
     'position_observation_count', 'published_at', 'absence_record_count',
-    'movement_period_count',
+    'movement_period_count', 'content_sha256',
   ]),
   grh_directory_dimensions: Object.freeze([
     'tenant_id', 'dimension', 'company_code', 'scope_code', 'code', 'label',
@@ -78,6 +82,10 @@ const EXPECTED_COLUMNS = Object.freeze({
     'absence_event_count', 'latest_absence_date', 'leave_event_count',
     'latest_leave_start_date', 'latest_leave_end_date', 'cost_center_code',
     'movement_row_count', 'movement_period_count', 'latest_movement_period',
+    'reported_ingress_date', 'reported_exit_date', 'reported_status', 'employment_as_of',
+    'employment_basis', 'reference_payroll_period', 'reference_payroll_observed',
+    'reference_payroll_row_count', 'contract_regime_code', 'service_situation_code',
+    'termination_reason_code', 'content_sha256',
   ]),
   grh_directory_leave_events: Object.freeze([
     'tenant_id', 'company_code', 'legajo', 'event_order', 'start_date', 'end_date', 'days',
@@ -105,6 +113,9 @@ const EXPECTED_INDEXES = Object.freeze([
   'idx_grh_directory_people_movement',
   'idx_grh_directory_absence_events_recent',
   'idx_grh_directory_movement_periods_recent',
+  'idx_grh_directory_people_reported_status',
+  'idx_grh_directory_people_contract_regime',
+  'idx_grh_directory_people_service_situation',
 ]);
 
 class BootstrapError extends Error {
@@ -298,6 +309,17 @@ async function applyBootstrap(envelope, inspected) {
   if (!['ddl', 'encrypted_snapshot'].includes(BOOTSTRAP_MODE)) {
     throw new BootstrapError('BOOTSTRAP_RUNTIME_CONFIGURATION_INVALID', 503);
   }
+  let databaseTargetFingerprintSha256 = null;
+  if (EXPECTED_DATABASE_TARGET_SHA256 !== null) {
+    try {
+      databaseTargetFingerprintSha256 = fingerprintDatabaseTarget(process.env.DIRECT_URL);
+    } catch {
+      throw new BootstrapError('BOOTSTRAP_DATABASE_TARGET_INVALID', 503);
+    }
+    if (databaseTargetFingerprintSha256 !== EXPECTED_DATABASE_TARGET_SHA256) {
+      throw new BootstrapError('BOOTSTRAP_DATABASE_TARGET_MISMATCH', 409);
+    }
+  }
   let database;
   try {
     database = inspectDatabaseUrl(process.env.DIRECT_URL, {
@@ -343,7 +365,7 @@ async function applyBootstrap(envelope, inspected) {
     await client.query("SET LOCAL lock_timeout = '3000ms'");
     await client.query("SET LOCAL statement_timeout = '25000ms'");
     await client.query(
-      "SELECT pg_advisory_xact_lock(hashtext('grh-directory-bootstrap-v2'), hashtext($1))",
+      "SELECT pg_advisory_xact_lock(hashtext('grh-directory-bootstrap-v3'), hashtext($1))",
       [tenantId],
     );
     if (BOOTSTRAP_MODE === 'ddl') {
@@ -371,14 +393,15 @@ async function applyBootstrap(envelope, inspected) {
         'SELECT schema_version FROM grh_directory_sources WHERE tenant_id = $1 FOR UPDATE',
         [tenantId],
       );
-      if ((existingSource.rows || []).some(row => row.schema_version !== DIRECTORY_CONTRACT)) {
+      if ((existingSource.rows || []).some(row =>
+        !['grh-directory-v2', DIRECTORY_CONTRACT].includes(row.schema_version))) {
         throw new BootstrapError('BOOTSTRAP_DIRECTORY_VERSION_INVALID', 409);
       }
     }
     stage = 'consumed';
     const consumed = await client.query(
       'SELECT 1 FROM audit_logs WHERE "tenantId" = $1 AND action = $2 AND "entityId" = $3 LIMIT 1',
-      [tenantId, 'GRH_DIRECTORY_BOOTSTRAP_V2', OPERATION_ID],
+      [tenantId, 'GRH_DIRECTORY_BOOTSTRAP_V3', OPERATION_ID],
     );
     if ((consumed.rows || []).length > 0) {
       throw new BootstrapError('BOOTSTRAP_ALREADY_CONSUMED', 410);
@@ -428,6 +451,9 @@ async function applyBootstrap(envelope, inspected) {
         '(SELECT COUNT(*)::int FROM grh_directory_leave_events WHERE tenant_id = $1) AS leave_events, ' +
         '(SELECT COUNT(*)::int FROM grh_directory_movement_periods WHERE tenant_id = $1) AS movement_periods, ' +
         '(SELECT COUNT(*)::int FROM grh_directory_people WHERE tenant_id = $1 ' +
+        'AND content_sha256 IS NOT NULL) AS content_digests, ' +
+        '(SELECT content_sha256 FROM grh_directory_sources WHERE tenant_id = $1) AS content_sha256, ' +
+        '(SELECT COUNT(*)::int FROM grh_directory_people WHERE tenant_id = $1 ' +
         'AND position_observation_label IS NOT NULL) AS position_observations',
         [tenantId],
       );
@@ -436,6 +462,8 @@ async function applyBootstrap(envelope, inspected) {
           Number(counts.absence_events) !== inspected.flattened.absenceEvents.length ||
           Number(counts.leave_events) !== inspected.flattened.leaveEvents.length ||
           Number(counts.movement_periods) !== inspected.flattened.movementPeriods.length ||
+          Number(counts.content_digests) !== inspected.flattened.people.length ||
+          counts.content_sha256 !== grhDirectoryContentSha256(inspected.artifact) ||
           Number(counts.position_observations) !== inspected.positionObservationCount) {
         throw new BootstrapError('BOOTSTRAP_PUBLICATION_COUNT_MISMATCH', 409);
       }
@@ -461,7 +489,7 @@ async function applyBootstrap(envelope, inspected) {
     await client.query(
       'INSERT INTO audit_logs (id, "tenantId", "userId", action, entity, "entityId", details, "createdAt") ' +
       'VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, NOW())',
-      [randomUUID(), tenantId, inspected.pilot.id, 'GRH_DIRECTORY_BOOTSTRAP_V2',
+      [randomUUID(), tenantId, inspected.pilot.id, 'GRH_DIRECTORY_BOOTSTRAP_V3',
         'grh_directory', OPERATION_ID, JSON.stringify(auditDetails)],
     );
     stage = 'commit';
@@ -473,6 +501,7 @@ async function applyBootstrap(envelope, inspected) {
       leaveRecordCount: inspected.flattened.leaveEvents.length,
       movementPeriodCount: inspected.flattened.movementPeriods.length,
       positionObservationCount: inspected.positionObservationCount,
+      ...(databaseTargetFingerprintSha256 === null ? {} : { databaseTargetFingerprintSha256 }),
     };
   } catch (error) {
     if (transaction) await client.query('ROLLBACK').catch(() => {});
@@ -493,7 +522,7 @@ export default async function handler(req, res) {
   const requestHost = String(headerValue(req, 'host') || '').toLowerCase();
   const configuredSecret = String(process.env.GRH_DIRECTORY_BOOTSTRAP_SECRET || '');
   const suppliedSecret = headerValue(req, 'x-grh-bootstrap-secret');
-  if (process.env.VERCEL_ENV !== 'production' || !expectedHost || requestHost !== expectedHost ||
+  if (process.env.VERCEL_ENV !== EXPECTED_VERCEL_ENV || !expectedHost || requestHost !== expectedHost ||
       configuredSecret.length < 32 || !constantTimeEqual(configuredSecret, suppliedSecret || '')) {
     return send(res, 404, 'NOT_FOUND');
   }
@@ -548,6 +577,8 @@ function replaceTemplateToken(source, token, replacement) {
 
 export function renderGrhDirectoryBootstrapFunction({
   mode,
+  expectedVercelEnv = 'production',
+  databaseTargetFingerprintSha256 = null,
   operationId,
   migrationSql,
   migrationSha256,
@@ -555,6 +586,11 @@ export function renderGrhDirectoryBootstrapFunction({
   manifestSha256,
 } = {}) {
   if (!['ddl', 'encrypted_snapshot'].includes(mode) ||
+      !['production', 'preview'].includes(expectedVercelEnv) ||
+      (databaseTargetFingerprintSha256 !== null &&
+        !/^[0-9a-f]{64}$/.test(databaseTargetFingerprintSha256 || '')) ||
+      (expectedVercelEnv === 'preview' && databaseTargetFingerprintSha256 === null) ||
+      (expectedVercelEnv === 'production' && databaseTargetFingerprintSha256 !== null) ||
       typeof operationId !== 'string' || !/^[0-9a-f-]{36}$/.test(operationId) ||
       typeof migrationSql !== 'string' || !migrationSql.trim() ||
       !/^[0-9a-f]{64}$/.test(migrationSha256 || '') ||
@@ -568,6 +604,8 @@ export function renderGrhDirectoryBootstrapFunction({
       bootstrapInternalDiagnostic.toString(),
     ].join('\n')],
     ['__BOOTSTRAP_MODE__', literal(mode)],
+    ['__EXPECTED_VERCEL_ENV__', literal(expectedVercelEnv)],
+    ['__EXPECTED_DATABASE_TARGET_SHA256__', literal(databaseTargetFingerprintSha256)],
     ['__OPERATION_ID__', literal(operationId)],
     ['__MIGRATION_SQL__', literal(migrationSql)],
     ['__MIGRATION_SHA256__', literal(migrationSha256)],

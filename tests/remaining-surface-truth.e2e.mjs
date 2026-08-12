@@ -75,9 +75,9 @@ async function createServer() {
       }));
       return;
     }
-    if (url.pathname === '/api/audit') {
+    if (url.pathname === '/api/grh-domain-catalog') {
       response.writeHead(503, { 'Content-Type': contentTypes['.json'], 'Cache-Control': 'no-store' });
-      response.end(JSON.stringify({ error: 'Inventario no disponible' }));
+      response.end(JSON.stringify({ error: 'Catálogo GRH no disponible' }));
       return;
     }
 
@@ -152,7 +152,7 @@ test('blocked and retired surfaces stay honest and responsive', async (t) => {
   }
 });
 
-test('reports and audit remain empty when authenticated sources return 503', async (t) => {
+test('reports and sources remain empty when authenticated sources return 503', async (t) => {
   const server = await createServer();
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
   const browser = await chromium.launch({ headless: true });
@@ -184,16 +184,18 @@ test('reports and audit remain empty when authenticated sources return 503', asy
   {
     const { context, page } = await authenticatedPage(browser, baseUrl, { width: 390, height: 844 });
     await page.goto(`${baseUrl}/auditoria.html`, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => document.querySelector('#audit-status')?.textContent.includes('No se pudo verificar'));
+    await page.waitForFunction(() => document.querySelector('#audit-status')?.dataset.state === 'error');
     const auditState = await page.evaluate(() => ({
       status: document.querySelector('#audit-status').textContent,
-      kpis: [...document.querySelectorAll('[id^="kpi-"]')].map((node) => node.textContent.trim()),
-      connectionDisabled: document.querySelector('button[title*="contrato auditado"]')?.disabled,
+      summaryHidden: document.querySelector('#sourceSummary')?.hidden,
+      metricsHidden: document.querySelector('#sourceMetrics')?.hidden,
+      cards: document.querySelector('#domainCards')?.textContent,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
     }));
-    assert.match(auditState.status, /No se pudo verificar el inventario/i);
-    assert.ok(auditState.kpis.every((value) => value === '—'));
-    assert.equal(auditState.connectionDisabled, true);
+    assert.match(auditState.status, /No se pudo verificar la fuente GRH/i);
+    assert.equal(auditState.summaryHidden, true);
+    assert.equal(auditState.metricsHidden, true);
+    assert.match(auditState.cards, /fuente debe volver a estar disponible/i);
     assert.ok(auditState.overflow <= 1, `audit mobile overflow: ${auditState.overflow}px`);
     await context.close();
   }

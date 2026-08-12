@@ -1,11 +1,11 @@
 const ENDPOINT = '/api/municipal-territory';
 const CONTRACT_HEADER = 'x-municontrol-contract';
-export const TERRITORY_SCHEMA_VERSION = 'municipal-territory-v1';
+export const TERRITORY_SCHEMA_VERSION = 'municipal-territory-v2';
 const REQUEST_TIMEOUT_MS = 15_000;
 
 const BOUNDARY_SOURCE = Object.freeze({
   id: 'ign-department-boundary',
-  custodian: 'Instituto Geográfico Nacional (captura ARBA - Gerencia de Servicios Catastrales)',
+  custodian: 'Instituto Geográfico Nacional (captura Oficina Provincial de Mendoza)',
   endpoint: 'https://wms.ign.gob.ar/geoserver/ows',
   dataset: 'ign:departamento',
   required: true,
@@ -15,7 +15,7 @@ const BOUNDARY_SOURCE = Object.freeze({
 const LOCALITIES_SOURCE_BASE = Object.freeze({
   id: 'georef-localities',
   custodian: 'Servicio de Normalización de Direcciones y Unidades Territoriales de Argentina (Georef)',
-  endpoint: 'https://apis.datos.gob.ar/georef/api/localidades',
+  endpoint: 'https://apis.datos.gob.ar/georef/api/v2.0/localidades',
   dataset: 'localidades',
   required: false,
 } as const);
@@ -50,13 +50,13 @@ const BASEMAP_DEFINITIONS = Object.freeze([
 
 const BASEMAP_ATTRIBUTION = 'Instituto Geográfico Nacional · Argenmap';
 const OFFICIAL_LOCALITIES = Object.freeze([
-  Object.freeze({ id: '06413010', name: 'Agustín Roca' }),
-  Object.freeze({ id: '06413020', name: 'Agustina' }),
-  Object.freeze({ id: '06413030', name: 'Balneario Laguna de Gómez' }),
-  Object.freeze({ id: '06413040', name: 'Fortín Tiburcio' }),
-  Object.freeze({ id: '06413050', name: 'Junín' }),
-  Object.freeze({ id: '06413060', name: 'Laplacette' }),
-  Object.freeze({ id: '06413080', name: 'Saforcada' }),
+  Object.freeze({ id: '50035010', name: 'Ingeniero Giagnoni' }),
+  Object.freeze({ id: '50035020', name: 'Junín' }),
+  Object.freeze({ id: '50035030', name: 'La Colonia' }),
+  Object.freeze({ id: '50035040', name: 'Los Barriales' }),
+  Object.freeze({ id: '50035050', name: 'Medrano' }),
+  Object.freeze({ id: '50035060', name: 'Phillips' }),
+  Object.freeze({ id: '50035070', name: 'Rodríguez Peña' }),
 ] as const);
 
 const REQUIRED_LIMITS = Object.freeze([
@@ -130,7 +130,7 @@ export interface MunicipalTerritoryContract {
   readonly status: 'ready' | 'partial';
   readonly query: {
     readonly queriedAt: string;
-    readonly departmentId: '06413';
+    readonly departmentId: '50035';
     readonly crs: 'EPSG:4326';
   };
   readonly source: {
@@ -138,18 +138,18 @@ export interface MunicipalTerritoryContract {
     readonly localities: TerritorySourceDescriptor;
   };
   readonly jurisdiction: {
-    readonly id: '06413';
+    readonly id: '50035';
     readonly name: 'Junín';
-    readonly province: { readonly id: '06'; readonly name: 'Buenos Aires' };
+    readonly province: { readonly id: '50'; readonly name: 'Mendoza' };
     readonly country: { readonly code: 'AR'; readonly name: 'Argentina' };
   };
   readonly boundary: {
     readonly type: 'Feature';
-    readonly id: '06413';
+    readonly id: '50035';
     readonly bbox: readonly [number, number, number, number];
     readonly properties: {
       readonly name: 'Junín';
-      readonly sourceId: 'ign:departamento:06413';
+      readonly sourceId: 'ign:departamento:50035';
     };
     readonly geometry: {
       readonly type: 'MultiPolygon';
@@ -212,7 +212,7 @@ function readCoordinates(value: unknown): MultiPolygonCoordinates | null {
       const ring: Position[] = [];
       for (const positionValue of ringValue) {
         if (!Array.isArray(positionValue) || positionValue.length !== 2 ||
-            !finiteCoordinate(positionValue[0], -62, -60) || !finiteCoordinate(positionValue[1], -35.5, -33.5)) {
+            !finiteCoordinate(positionValue[0], -68.8, -68.1) || !finiteCoordinate(positionValue[1], -33.4, -32.9)) {
           return null;
         }
         ring.push([positionValue[0], positionValue[1]]);
@@ -298,8 +298,8 @@ function pointInMultiPolygon(point: Position, coordinates: MultiPolygonCoordinat
 }
 
 function validBoundary(value: unknown): value is MunicipalTerritoryContract['boundary'] {
-  if (!exactKeys(value, SHAPES.feature) || value.type !== 'Feature' || value.id !== '06413' ||
-      !exactRecord(value.properties, { name: 'Junín', sourceId: 'ign:departamento:06413' }) ||
+  if (!exactKeys(value, SHAPES.feature) || value.type !== 'Feature' || value.id !== '50035' ||
+      !exactRecord(value.properties, { name: 'Junín', sourceId: 'ign:departamento:50035' }) ||
       !exactKeys(value.geometry, SHAPES.geometry) || value.geometry.type !== 'MultiPolygon') return false;
   const coordinates = readCoordinates(value.geometry.coordinates);
   return coordinates !== null && validBbox(value.bbox, coordinates);
@@ -324,8 +324,8 @@ function validLocalities(
     const expected = OFFICIAL_LOCALITIES[index];
     if (!exactKeys(locality, SHAPES.locality) || !safeText(locality.id, 80) || !safeText(locality.name, 120) ||
         !exactKeys(locality.centroid, SHAPES.centroid) ||
-        !finiteCoordinate(locality.centroid.longitude, -62, -60) ||
-        !finiteCoordinate(locality.centroid.latitude, -35.5, -33.5)) return false;
+        !finiteCoordinate(locality.centroid.longitude, -68.8, -68.1) ||
+        !finiteCoordinate(locality.centroid.latitude, -33.4, -32.9)) return false;
     if (!expected || locality.id !== expected.id || locality.name !== expected.name ||
         !pointInMultiPolygon([locality.centroid.longitude, locality.centroid.latitude], coordinates)) return false;
   }
@@ -355,7 +355,7 @@ function validLimits(value: unknown): value is typeof REQUIRED_LIMITS {
 }
 
 function validQuery(value: unknown): boolean {
-  if (!exactKeys(value, SHAPES.query) || value.departmentId !== '06413' || value.crs !== 'EPSG:4326' ||
+  if (!exactKeys(value, SHAPES.query) || value.departmentId !== '50035' || value.crs !== 'EPSG:4326' ||
       typeof value.queriedAt !== 'string' ||
       !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value.queriedAt)) return false;
   try {
@@ -370,8 +370,8 @@ export function validateMunicipalTerritoryContract(value: unknown): value is Mun
     if (!exactKeys(value, SHAPES.contract) || value.schemaVersion !== TERRITORY_SCHEMA_VERSION ||
         (value.status !== 'ready' && value.status !== 'partial') || !validQuery(value.query) ||
         !validSource(value.source, value.status) ||
-        !exactKeys(value.jurisdiction, SHAPES.jurisdiction) || value.jurisdiction.id !== '06413' ||
-        value.jurisdiction.name !== 'Junín' || !exactRecord(value.jurisdiction.province, { id: '06', name: 'Buenos Aires' }) ||
+        !exactKeys(value.jurisdiction, SHAPES.jurisdiction) || value.jurisdiction.id !== '50035' ||
+        value.jurisdiction.name !== 'Junín' || !exactRecord(value.jurisdiction.province, { id: '50', name: 'Mendoza' }) ||
         !exactRecord(value.jurisdiction.country, { code: 'AR', name: 'Argentina' }) ||
         !validBoundary(value.boundary) || !validBasemaps(value.basemaps) ||
         !validIssues(value.accessIssues, value.status) || !validLimits(value.limits)) return false;

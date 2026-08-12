@@ -6,6 +6,8 @@ import {
   GRH_DIRECTORY_DETAIL_LEAVE_LIMIT,
   GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT,
   GRH_DIRECTORY_EXCLUDED_FIELDS,
+  GRH_DIRECTORY_REPORTED_STATUS_LABELS,
+  GRH_DIRECTORY_REPORTED_STATUSES,
   GRH_DIRECTORY_SCHEMA_VERSION,
 } from './grh-directory-contract.js';
 import {
@@ -24,6 +26,9 @@ const ALLOWED_QUERY_KEYS = new Set([
   'positionObservation',
   'category',
   'agreement',
+  'reportedStatus',
+  'contractRegime',
+  'serviceSituation',
   'hasAbsence',
   'hasLeave',
   'hasMovement',
@@ -38,6 +43,8 @@ const DIMENSION_FILTERS = Object.freeze({
   position: 'position_code',
   category: 'category_code',
   agreement: 'agreement_code',
+  contractRegime: 'contract_regime_code',
+  serviceSituation: 'service_situation_code',
 });
 const FACET_DIMENSIONS = Object.freeze({
   sectors: Object.freeze({ column: 'sector_code', dimension: 'sector' }),
@@ -47,7 +54,11 @@ const FACET_DIMENSIONS = Object.freeze({
   positionObservations: Object.freeze({ column: 'position_observation_label', dimension: null }),
   categories: Object.freeze({ column: 'category_code', dimension: 'category' }),
   agreements: Object.freeze({ column: 'agreement_code', dimension: 'agreement' }),
+  reportedStatuses: Object.freeze({ column: 'reported_status', dimension: null }),
+  contractRegimes: Object.freeze({ column: 'contract_regime_code', dimension: 'contractRegime' }),
+  serviceSituations: Object.freeze({ column: 'service_situation_code', dimension: 'serviceSituation' }),
 });
+const REPORTED_STATUSES = new Set(GRH_DIRECTORY_REPORTED_STATUSES);
 const MAX_SEARCH_TOKENS = 6;
 const MAX_CURSOR_OFFSET = 1_000_000;
 const CURSOR_ORDERING_VERSION = 'unicode-nfkc-es-v1';
@@ -162,6 +173,9 @@ function queryFingerprint(parsed) {
     positionObservation: parsed.positionObservation,
     category: parsed.category,
     agreement: parsed.agreement,
+    reportedStatus: parsed.reportedStatus,
+    contractRegime: parsed.contractRegime,
+    serviceSituation: parsed.serviceSituation,
     hasAbsence: parsed.hasAbsence,
     hasLeave: parsed.hasLeave,
     hasMovement: parsed.hasMovement,
@@ -221,6 +235,10 @@ export function parseGrhDirectoryQuery(query = {}, { cursorScope = 'materialized
     integer(query[name], { minimum: 0 }),
   ]));
   const positionObservation = mode === 'list' ? labelFilterValue(query.positionObservation) : null;
+  const reportedStatus = mode === 'list' ? labelFilterValue(query.reportedStatus) : null;
+  if (reportedStatus !== null && !REPORTED_STATUSES.has(reportedStatus)) {
+    throw directoryError('GRH_DIRECTORY_QUERY_INVALID', 400);
+  }
   const search = mode === 'list' ? searchValue(query.search) : null;
   const searchTokens = search
     ? [...new Set(search.split(' ').map(searchTokenValue))].sort((left, right) => left.localeCompare(right))
@@ -241,6 +259,7 @@ export function parseGrhDirectoryQuery(query = {}, { cursorScope = 'materialized
     hasLeave: mode === 'list' ? booleanValue(query.hasLeave) : null,
     hasMovement: mode === 'list' ? booleanValue(query.hasMovement) : null,
     positionObservation,
+    reportedStatus,
     ...filters,
   };
   const offset = requestedCursor
@@ -260,6 +279,21 @@ function escapeLike(value) {
 
 function facetExpression(scopeClause = '') {
   const pairs = Object.entries(FACET_DIMENSIONS).map(([name, spec]) => {
+    if (name === 'reportedStatuses') {
+      return `'reportedStatuses', COALESCE(
+      (SELECT jsonb_agg(to_jsonb(facet))
+         FROM (
+           SELECT people.reported_status AS status,
+                  COUNT(*)::int AS count
+             FROM grh_directory_people people
+            WHERE people.tenant_id = $1
+              ${scopeClause}
+              AND people.reported_status IS NOT NULL
+            GROUP BY people.reported_status
+            ORDER BY count DESC, status ASC
+         ) facet),
+      '[]'::jsonb)`;
+    }
     if (name === 'positionObservations') {
       return `'positionObservations', COALESCE(
       (SELECT jsonb_agg(to_jsonb(facet))
@@ -301,7 +335,7 @@ function facetExpression(scopeClause = '') {
          ) facet),
       '[]'::jsonb)`;
     }
-    const companyJoin = spec.dimension === 'agreement'
+    const companyJoin = ['agreement', 'contractRegime', 'serviceSituation'].includes(spec.dimension)
       ? 'dimension.company_code = 0'
       : 'dimension.company_code = people.company_code';
     return `'${name}', COALESCE(
@@ -351,6 +385,9 @@ export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes 
   }
   if (parsed.positionObservation) {
     where.push(`p.position_observation_label = ${parameter(parsed.positionObservation)}`);
+  }
+  if (parsed.reportedStatus) {
+    where.push(`p.reported_status = ${parameter(parsed.reportedStatus)}`);
   }
   if (parsed.hasAbsence !== null) {
     where.push(parsed.hasAbsence ? 'p.absence_event_count > 0' : 'p.absence_event_count = 0');
@@ -469,8 +506,22 @@ export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes 
            p.position_observation_source,
            p.category_code,
            category.label AS category_label,
-           p.agreement_code,
-           agreement.label AS agreement_label,
+            p.agreement_code,
+            agreement.label AS agreement_label,
+            p.reported_ingress_date,
+            p.reported_exit_date,
+            p.reported_status,
+            p.employment_as_of,
+            p.employment_basis,
+            p.reference_payroll_period,
+            p.reference_payroll_observed,
+            p.reference_payroll_row_count,
+            p.contract_regime_code,
+            contract_regime.label AS contract_regime_label,
+            p.service_situation_code,
+            service_situation.label AS service_situation_label,
+            p.termination_reason_code,
+            termination_reason.label AS termination_reason_label,
            p.absence_event_count,
            p.latest_absence_date,
            p.leave_event_count,
@@ -527,7 +578,25 @@ export function buildGrhDirectorySql(tenantId, parsed, { scopeOrganizationCodes 
        AND agreement.dimension = 'agreement'
        AND agreement.company_code = 0
        AND agreement.scope_code = 0
-       AND agreement.code = p.agreement_code
+        AND agreement.code = p.agreement_code
+      LEFT JOIN grh_directory_dimensions contract_regime
+        ON contract_regime.tenant_id = p.tenant_id
+       AND contract_regime.dimension = 'contractRegime'
+       AND contract_regime.company_code = 0
+       AND contract_regime.scope_code = 0
+       AND contract_regime.code = p.contract_regime_code
+      LEFT JOIN grh_directory_dimensions service_situation
+        ON service_situation.tenant_id = p.tenant_id
+       AND service_situation.dimension = 'serviceSituation'
+       AND service_situation.company_code = 0
+       AND service_situation.scope_code = 0
+       AND service_situation.code = p.service_situation_code
+      LEFT JOIN grh_directory_dimensions termination_reason
+        ON termination_reason.tenant_id = p.tenant_id
+       AND termination_reason.dimension = 'terminationReason'
+       AND termination_reason.company_code = 0
+       AND termination_reason.scope_code = 0
+       AND termination_reason.code = p.termination_reason_code
      WHERE ${where.join('\n       AND ')}
   ), page_rows AS (
     SELECT *
@@ -601,6 +670,25 @@ function positionObservation(row) {
   };
 }
 
+function employment(row) {
+  if (!REPORTED_STATUSES.has(row.reported_status) || row.employment_basis !== 'legajo_reported_dates' ||
+      typeof row.reference_payroll_observed !== 'boolean') {
+    throw directoryError('GRH_DIRECTORY_ROW_INVALID');
+  }
+  return {
+    reportedIngressDate: dateValue(row.reported_ingress_date),
+    reportedExitDate: dateValue(row.reported_exit_date),
+    reportedStatus: String(row.reported_status),
+    asOf: dateValue(row.employment_as_of),
+    basis: String(row.employment_basis),
+    referencePayrollParticipation: {
+      period: String(row.reference_payroll_period),
+      observed: row.reference_payroll_observed,
+      rowCount: safeInteger(row.reference_payroll_row_count),
+    },
+  };
+}
+
 function jsonValue(value) {
   if (typeof value !== 'string') return value;
   try {
@@ -662,6 +750,10 @@ function mapItem(row, mode) {
     positionObservation: positionObservation(row),
     category: dimension(row.category_code, row.category_label),
     agreement: dimension(row.agreement_code, row.agreement_label),
+    employment: employment(row),
+    contractRegime: dimension(row.contract_regime_code, row.contract_regime_label),
+    serviceSituation: dimension(row.service_situation_code, row.service_situation_label),
+    terminationReason: dimension(row.termination_reason_code, row.termination_reason_label),
     events: {
       absenceCount: safeInteger(row.absence_event_count),
       latestAbsenceDate: dateValue(row.latest_absence_date),
@@ -700,14 +792,18 @@ function mapFacets(value) {
           count: safeInteger(item.count),
           status: String(item.status),
         }
-        : {
+        : (name === 'reportedStatuses' ? {
+          status: String(item.status),
+          label: GRH_DIRECTORY_REPORTED_STATUS_LABELS[item.status],
+          count: safeInteger(item.count),
+        } : {
           ...(name === 'categories' ? {
             agreementCode: safeInteger(item.agreement_code ?? item.agreementCode),
           } : {}),
           code: safeInteger(item.code),
           label: item.label === null || item.label === undefined ? null : String(item.label),
           count: safeInteger(item.count),
-        }
+        })
     ))];
   }));
 }
@@ -788,6 +884,21 @@ function positionObservationFacets(records) {
   ));
 }
 
+function reportedStatusFacets(records) {
+  const grouped = new Map();
+  for (const record of records) {
+    const status = record.employment.reported_status;
+    grouped.set(status, (grouped.get(status) || 0) + 1);
+  }
+  return [...grouped].map(([status, count]) => ({
+    status,
+    label: GRH_DIRECTORY_REPORTED_STATUS_LABELS[status],
+    count,
+  })).sort((left, right) => (
+    right.count - left.count || left.status.localeCompare(right.status)
+  ));
+}
+
 function snapshotFacets(records) {
   return {
     sectors: dimensionFacets(records, 'sector'),
@@ -797,6 +908,9 @@ function snapshotFacets(records) {
     positionObservations: positionObservationFacets(records),
     categories: categoryFacets(records),
     agreements: dimensionFacets(records, 'agreement'),
+    reportedStatuses: reportedStatusFacets(records),
+    contractRegimes: dimensionFacets(records, 'contract_regime'),
+    serviceSituations: dimensionFacets(records, 'service_situation'),
   };
 }
 
@@ -826,6 +940,21 @@ function artifactPositionObservation(value) {
   };
 }
 
+function artifactEmployment(value) {
+  return {
+    reportedIngressDate: value.reported_ingress_date,
+    reportedExitDate: value.reported_exit_date,
+    reportedStatus: value.reported_status,
+    asOf: value.as_of,
+    basis: value.basis,
+    referencePayrollParticipation: {
+      period: value.reference_payroll_participation.period,
+      observed: value.reference_payroll_participation.observed,
+      rowCount: value.reference_payroll_participation.row_count,
+    },
+  };
+}
+
 function snapshotItem(record, mode) {
   const item = {
     companyCode: record.company_code,
@@ -838,6 +967,10 @@ function snapshotItem(record, mode) {
     positionObservation: artifactPositionObservation(record.position_observation),
     category: artifactDimension(record.category),
     agreement: artifactDimension(record.agreement),
+    employment: artifactEmployment(record.employment),
+    contractRegime: artifactDimension(record.contract_regime),
+    serviceSituation: artifactDimension(record.service_situation),
+    terminationReason: artifactDimension(record.termination_reason),
     events: {
       absenceCount: record.absence.event_count,
       latestAbsenceDate: record.absence.latest_date,
@@ -896,11 +1029,16 @@ function snapshotRecordMatches(record, parsed) {
   const legajo = String(record.legajo);
   if (!parsed.searchTokens.every(token => searchableName.includes(token) || legajo.startsWith(token))) return false;
   for (const name of Object.keys(DIMENSION_FILTERS)) {
-    const artifactName = name === 'costCenter' ? 'cost_center' : name;
+    const artifactName = ({
+      costCenter: 'cost_center',
+      contractRegime: 'contract_regime',
+      serviceSituation: 'service_situation',
+    })[name] || name;
     if (parsed[name] !== null && record[artifactName]?.code !== parsed[name]) return false;
   }
   if (parsed.positionObservation !== null &&
       record.position_observation?.label?.normalize('NFKC') !== parsed.positionObservation) return false;
+  if (parsed.reportedStatus !== null && record.employment.reported_status !== parsed.reportedStatus) return false;
   if (parsed.hasAbsence !== null && (record.absence.event_count > 0) !== parsed.hasAbsence) return false;
   if (parsed.hasLeave !== null && (record.leave.event_count > 0) !== parsed.hasLeave) return false;
   if (parsed.hasMovement !== null && (record.movement.row_count > 0) !== parsed.hasMovement) return false;

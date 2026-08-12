@@ -60,7 +60,7 @@ function pilotEnvironment(allowlist) {
 
 function artifactFixture() {
   return {
-    schema_version: 'grh-directory-v2',
+    schema_version: 'grh-directory-v3',
     source: {
       canonical_system: 'GRH Junín',
       file: 'grh_junin.backup_2026080615_plataforma.sql.gz',
@@ -77,6 +77,7 @@ function artifactFixture() {
     counts: {
       source_rows: {
         ausencia: 2,
+        calculo: 2,
         cargo: 1,
         catego: 1,
         convenio: 1,
@@ -85,8 +86,11 @@ function artifactFixture() {
         legajo: 1,
         legamov: 2,
         licencia: 1,
+        motibaja: 0,
         organiza: 1,
         persona: 1,
+        regcontr: 1,
+        revista: 1,
         sectores: 1,
       },
       directory_records: 1,
@@ -106,6 +110,19 @@ function artifactFixture() {
       quarantined_position_observation_rows: 0,
       future_effective_position_observation_rows: 1,
       records_with_position_observation: 1,
+      valid_calculation_rows: 2,
+      quarantined_calculation_rows: 0,
+      reference_payroll_period: '2026-07',
+      reference_payroll_rows: 2,
+      records_observed_in_reference_payroll: 1,
+      employment_statuses: {
+        ended_by_reported_dates: 0,
+        current_by_reported_dates: 1,
+        unknown_missing_ingress: 0,
+        unknown_sentinel_ingress: 0,
+        unknown_implausible_active_tenure: 0,
+        invalid_chronology: 0,
+      },
     },
     records: [{
       company_code: 101,
@@ -122,6 +139,17 @@ function artifactFixture() {
       },
       category: { code: 3, label: 'Categoría' },
       agreement: { code: 2, label: 'Convenio' },
+      contract_regime: { code: 1, label: 'Permanente' },
+      service_situation: { code: 2, label: 'Servicio activo' },
+      termination_reason: null,
+      employment: {
+        reported_ingress_date: '2010-01-01',
+        reported_exit_date: null,
+        reported_status: 'current_by_reported_dates',
+        as_of: '2026-08-06',
+        basis: 'legajo_reported_dates',
+        reference_payroll_participation: { period: '2026-07', observed: true, row_count: 2 },
+      },
       absence: { event_count: 2, latest_date: '2026-07-01' },
       absence_history: [
         { date: '2026-07-01', days: 2 },
@@ -151,6 +179,11 @@ function facetFixture() {
     positionObservations: [{ label: 'Puesto observado', count: 1, status: 'source_future_effective' }],
     categories: [{ agreementCode: 2, code: 3, label: 'Categoria', count: 1 }],
     agreements: [{ code: 2, label: 'Convenio', count: 1 }],
+    reportedStatuses: [{
+      status: 'current_by_reported_dates', label: 'Sin egreso informado al corte', count: 1,
+    }],
+    contractRegimes: [{ code: 1, label: 'Permanente', count: 1 }],
+    serviceSituations: [{ code: 2, label: 'Servicio activo', count: 1 }],
   };
 }
 
@@ -161,6 +194,20 @@ function v2RowFields({ detail = false } = {}) {
     movement_row_count: 2,
     movement_period_count: 1,
     latest_movement_period: '2026-07',
+    reported_ingress_date: '2010-01-01',
+    reported_exit_date: null,
+    reported_status: 'current_by_reported_dates',
+    employment_as_of: '2026-08-06',
+    employment_basis: 'legajo_reported_dates',
+    reference_payroll_period: '2026-07',
+    reference_payroll_observed: true,
+    reference_payroll_row_count: 2,
+    contract_regime_code: 1,
+    contract_regime_label: 'Permanente',
+    service_situation_code: 2,
+    service_situation_label: 'Servicio activo',
+    termination_reason_code: null,
+    termination_reason_label: null,
     ...(detail ? {
       absence_history: [
         { date: '2026-07-01', days: 2 },
@@ -173,7 +220,7 @@ function v2RowFields({ detail = false } = {}) {
 
 function responseFixture({ mode = 'list' } = {}) {
   return {
-    schemaVersion: 'grh-directory-v2',
+    schemaVersion: 'grh-directory-v3',
     source: {
       canonicalSystem: 'GRH Junín',
       sourceFile: 'grh_junin.backup_2026080615_plataforma.sql.gz',
@@ -216,6 +263,17 @@ function responseFixture({ mode = 'list' } = {}) {
       },
       category: { code: 3, label: 'Categoría' },
       agreement: { code: 2, label: 'Convenio' },
+      contractRegime: { code: 1, label: 'Permanente' },
+      serviceSituation: { code: 2, label: 'Servicio activo' },
+      terminationReason: null,
+      employment: {
+        reportedIngressDate: '2010-01-01',
+        reportedExitDate: null,
+        reportedStatus: 'current_by_reported_dates',
+        asOf: '2026-08-06',
+        basis: 'legajo_reported_dates',
+        referencePayrollParticipation: { period: '2026-07', observed: true, rowCount: 2 },
+      },
       events: {
         absenceCount: 2,
         latestAbsenceDate: '2026-07-01',
@@ -251,7 +309,7 @@ function withQuietErrors(callback) {
   return Promise.resolve().then(callback).finally(() => { console.error = original; });
 }
 
-test('the private artifact and API response use exact grh-directory-v2 contracts', () => {
+test('the private artifact and API response use exact grh-directory-v3 contracts', () => {
   const artifact = artifactFixture();
   const response = responseFixture();
   assert.equal(inspectGrhDirectoryArtifact(artifact).ok, true);
@@ -467,7 +525,7 @@ test('the endpoint is GET-only, no-store and does not authenticate non-GET reque
   assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
   assert.equal(response.headers['x-content-type-options'], 'nosniff');
   assert.equal(response.headers.vary, 'Authorization');
-  assert.equal(response.headers['x-municontrol-contract'], 'grh-directory-v2');
+  assert.equal(response.headers['x-municontrol-contract'], 'grh-directory-v3');
   assert.equal(authenticated, false);
 });
 
@@ -582,7 +640,7 @@ test('publication supports caller-owned transactions without committing or rolli
         if (text.includes('AS people') && text.includes('AS dimensions')) {
           return { rows: [{
             people: 1,
-            dimensions: 8,
+            dimensions: 10,
             absence_events: 2,
             leave_events: 1,
             movement_periods: 1,

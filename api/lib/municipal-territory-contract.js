@@ -1,5 +1,5 @@
-export const MUNICIPAL_TERRITORY_SCHEMA_VERSION = 'municipal-territory-v1';
-export const MUNICIPAL_TERRITORY_DEPARTMENT_ID = '06413';
+export const MUNICIPAL_TERRITORY_SCHEMA_VERSION = 'municipal-territory-v2';
+export const MUNICIPAL_TERRITORY_DEPARTMENT_ID = '50035';
 export const MUNICIPAL_TERRITORY_CRS = 'EPSG:4326';
 export const MUNICIPAL_TERRITORY_MAX_VERTICES = 20_000;
 
@@ -20,7 +20,7 @@ export const MUNICIPAL_TERRITORY_ACCESS_ISSUE = Object.freeze({
 export const MUNICIPAL_TERRITORY_SOURCE_DESCRIPTORS = Object.freeze({
   boundary: Object.freeze({
     id: 'ign-department-boundary',
-    custodian: 'Instituto Geográfico Nacional (captura ARBA - Gerencia de Servicios Catastrales)',
+    custodian: 'Instituto Geográfico Nacional (captura Oficina Provincial de Mendoza)',
     endpoint: 'https://wms.ign.gob.ar/geoserver/ows',
     dataset: 'ign:departamento',
     required: true,
@@ -29,7 +29,7 @@ export const MUNICIPAL_TERRITORY_SOURCE_DESCRIPTORS = Object.freeze({
   localities: Object.freeze({
     id: 'georef-localities',
     custodian: 'Servicio de Normalización de Direcciones y Unidades Territoriales de Argentina (Georef)',
-    endpoint: 'https://apis.datos.gob.ar/georef/api/localidades',
+    endpoint: 'https://apis.datos.gob.ar/georef/api/v2.0/localidades',
     dataset: 'localidades',
     required: false,
   }),
@@ -83,13 +83,13 @@ export const MUNICIPAL_TERRITORY_BASEMAPS = Object.freeze([
 ]);
 
 export const MUNICIPAL_TERRITORY_LOCALITIES = Object.freeze([
-  Object.freeze({ id: '06413010', name: 'Agustín Roca' }),
-  Object.freeze({ id: '06413020', name: 'Agustina' }),
-  Object.freeze({ id: '06413030', name: 'Balneario Laguna de Gómez' }),
-  Object.freeze({ id: '06413040', name: 'Fortín Tiburcio' }),
-  Object.freeze({ id: '06413050', name: 'Junín' }),
-  Object.freeze({ id: '06413060', name: 'Laplacette' }),
-  Object.freeze({ id: '06413080', name: 'Saforcada' }),
+  Object.freeze({ id: '50035010', name: 'Ingeniero Giagnoni' }),
+  Object.freeze({ id: '50035020', name: 'Junín' }),
+  Object.freeze({ id: '50035030', name: 'La Colonia' }),
+  Object.freeze({ id: '50035040', name: 'Los Barriales' }),
+  Object.freeze({ id: '50035050', name: 'Medrano' }),
+  Object.freeze({ id: '50035060', name: 'Phillips' }),
+  Object.freeze({ id: '50035070', name: 'Rodríguez Peña' }),
 ]);
 
 const TOP_LEVEL_KEYS = Object.freeze([
@@ -135,10 +135,10 @@ const BASEMAP_KEYS = Object.freeze([
 const ACCESS_ISSUE_KEYS = Object.freeze(['sourceId', 'code', 'message']);
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const JUNIN_COORDINATE_BOUNDS = Object.freeze({
-  minimumLongitude: -62,
-  maximumLongitude: -60,
-  minimumLatitude: -35.5,
-  maximumLatitude: -33.5,
+  minimumLongitude: -68.8,
+  maximumLongitude: -68.1,
+  minimumLatitude: -33.4,
+  maximumLatitude: -32.9,
 });
 const EPSILON = 1e-10;
 
@@ -295,7 +295,7 @@ export function inspectMunicipalTerritoryBoundary(boundary) {
   add(errors, exactKeys(boundary?.properties, FEATURE_PROPERTY_KEYS), 'boundary.properties.shape');
   add(errors, boundary?.properties?.name === 'Junín', 'boundary.properties.name');
   add(errors,
-    boundary?.properties?.sourceId === 'ign:departamento:06413',
+    boundary?.properties?.sourceId === 'ign:departamento:50035',
     'boundary.properties.sourceId');
   add(errors, exactKeys(boundary?.geometry, GEOMETRY_KEYS), 'boundary.geometry.shape');
   add(errors, boundary?.geometry?.type === 'MultiPolygon', 'boundary.geometry.type');
@@ -338,8 +338,8 @@ function validateJurisdiction(jurisdiction, errors) {
   add(errors, jurisdiction?.id === MUNICIPAL_TERRITORY_DEPARTMENT_ID, 'jurisdiction.id');
   add(errors, jurisdiction?.name === 'Junín', 'jurisdiction.name');
   add(errors, exactKeys(jurisdiction?.province, PROVINCE_KEYS), 'jurisdiction.province.shape');
-  add(errors, jurisdiction?.province?.id === '06', 'jurisdiction.province.id');
-  add(errors, jurisdiction?.province?.name === 'Buenos Aires', 'jurisdiction.province.name');
+  add(errors, jurisdiction?.province?.id === '50', 'jurisdiction.province.id');
+  add(errors, jurisdiction?.province?.name === 'Mendoza', 'jurisdiction.province.name');
   add(errors, exactKeys(jurisdiction?.country, COUNTRY_KEYS), 'jurisdiction.country.shape');
   add(errors, jurisdiction?.country?.code === 'AR', 'jurisdiction.country.code');
   add(errors, jurisdiction?.country?.name === 'Argentina', 'jurisdiction.country.name');

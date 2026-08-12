@@ -2,7 +2,7 @@ const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
-export const GRH_DIRECTORY_SCHEMA_VERSION = 'grh-directory-v2';
+export const GRH_DIRECTORY_SCHEMA_VERSION = 'grh-directory-v3';
 export const GRH_DIRECTORY_DETAIL_ABSENCE_LIMIT = 24;
 export const GRH_DIRECTORY_DETAIL_LEAVE_LIMIT = 24;
 export const GRH_DIRECTORY_DETAIL_MOVEMENT_LIMIT = 24;
@@ -13,7 +13,7 @@ export const GRH_DIRECTORY_EXCLUDED_FIELDS = Object.freeze([
   'address',
   'bank_account',
   'salary',
-  'event_cause',
+  'absence_leave_event_cause',
 ]);
 
 const ARTIFACT_KEYS = Object.freeze(['schema_version', 'source', 'privacy', 'counts', 'records']);
@@ -32,6 +32,7 @@ const ARTIFACT_PRIVACY_KEYS = Object.freeze([
 ]);
 const SOURCE_ROW_TABLES = Object.freeze([
   'ausencia',
+  'calculo',
   'cargo',
   'catego',
   'convenio',
@@ -40,8 +41,11 @@ const SOURCE_ROW_TABLES = Object.freeze([
   'legajo',
   'legamov',
   'licencia',
+  'motibaja',
   'organiza',
   'persona',
+  'regcontr',
+  'revista',
   'sectores',
 ]);
 const ARTIFACT_COUNT_KEYS = Object.freeze([
@@ -63,6 +67,12 @@ const ARTIFACT_COUNT_KEYS = Object.freeze([
   'quarantined_position_observation_rows',
   'future_effective_position_observation_rows',
   'records_with_position_observation',
+  'valid_calculation_rows',
+  'quarantined_calculation_rows',
+  'reference_payroll_period',
+  'reference_payroll_rows',
+  'records_observed_in_reference_payroll',
+  'employment_statuses',
 ]);
 const ARTIFACT_RECORD_KEYS = Object.freeze([
   'company_code',
@@ -81,6 +91,10 @@ const ARTIFACT_RECORD_KEYS = Object.freeze([
   'movement',
   'movement_history',
   'position_observation',
+  'contract_regime',
+  'service_situation',
+  'termination_reason',
+  'employment',
 ]);
 const DIMENSION_KEYS = Object.freeze(['code', 'label']);
 const POSITION_KEYS = Object.freeze(['code', 'label', 'parent', 'depends_on']);
@@ -100,6 +114,29 @@ const ARTIFACT_POSITION_OBSERVATION_KEYS = Object.freeze([
 ]);
 const POSITION_OBSERVATION_STATUSES = new Set(['historical_observation', 'source_future_effective']);
 const PERIOD_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])$/;
+const EMPLOYMENT_KEYS = Object.freeze([
+  'reported_ingress_date',
+  'reported_exit_date',
+  'reported_status',
+  'as_of',
+  'basis',
+  'reference_payroll_participation',
+]);
+const REFERENCE_PAYROLL_KEYS = Object.freeze(['period', 'observed', 'row_count']);
+export const GRH_DIRECTORY_EMPLOYMENT_BASIS = 'legajo_reported_dates';
+export const GRH_DIRECTORY_REPORTED_STATUS_LABELS = Object.freeze({
+  ended_by_reported_dates: 'Egreso informado al corte',
+  current_by_reported_dates: 'Sin egreso informado al corte',
+  unknown_missing_ingress: 'Ingreso no informado',
+  unknown_sentinel_ingress: 'Fecha de ingreso no utilizable',
+  unknown_implausible_active_tenure: 'Antigüedad informada a revisar',
+  invalid_chronology: 'Fechas informadas inconsistentes',
+});
+export const GRH_DIRECTORY_REPORTED_STATUSES = Object.freeze(
+  Object.keys(GRH_DIRECTORY_REPORTED_STATUS_LABELS),
+);
+const REPORTED_STATUS_SET = new Set(GRH_DIRECTORY_REPORTED_STATUSES);
+const EMPLOYMENT_STATUS_COUNT_KEYS = GRH_DIRECTORY_REPORTED_STATUSES;
 
 const API_KEYS = Object.freeze(['schemaVersion', 'source', 'privacy', 'query', 'facets', 'items']);
 const API_SOURCE_KEYS = Object.freeze([
@@ -129,6 +166,10 @@ const API_ITEM_KEYS = Object.freeze([
   'positionObservation',
   'category',
   'agreement',
+  'contractRegime',
+  'serviceSituation',
+  'terminationReason',
+  'employment',
   'events',
   'movement',
 ]);
@@ -162,10 +203,14 @@ const API_FACET_KEYS = Object.freeze([
   'positionObservations',
   'categories',
   'agreements',
+  'reportedStatuses',
+  'contractRegimes',
+  'serviceSituations',
 ]);
 const API_FACET_ITEM_KEYS = Object.freeze(['code', 'label', 'count']);
 const API_CATEGORY_FACET_ITEM_KEYS = Object.freeze(['agreementCode', 'code', 'label', 'count']);
 const API_POSITION_OBSERVATION_FACET_KEYS = Object.freeze(['label', 'count', 'status']);
+const API_REPORTED_STATUS_FACET_KEYS = Object.freeze(['status', 'label', 'count']);
 const API_LEAVE_HISTORY_KEYS = Object.freeze(['total', 'limit', 'items']);
 const API_LEAVE_HISTORY_ITEM_KEYS = Object.freeze(['startDate', 'endDate', 'days']);
 const API_ABSENCE_HISTORY_KEYS = Object.freeze(['total', 'limit', 'items']);
@@ -173,6 +218,15 @@ const API_ABSENCE_HISTORY_ITEM_KEYS = Object.freeze(['date', 'days']);
 const API_MOVEMENT_KEYS = Object.freeze(['rowCount', 'periodCount', 'latestPeriod']);
 const API_MOVEMENT_HISTORY_KEYS = Object.freeze(['total', 'limit', 'items']);
 const API_MOVEMENT_HISTORY_ITEM_KEYS = Object.freeze(['period', 'rowCount']);
+const API_EMPLOYMENT_KEYS = Object.freeze([
+  'reportedIngressDate',
+  'reportedExitDate',
+  'reportedStatus',
+  'asOf',
+  'basis',
+  'referencePayrollParticipation',
+]);
+const API_REFERENCE_PAYROLL_KEYS = Object.freeze(['period', 'observed', 'rowCount']);
 
 function exactKeys(value, expected) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -194,7 +248,32 @@ function positiveInteger(value) {
 }
 
 function nullableDate(value) {
-  return value === null || (typeof value === 'string' && DATE_PATTERN.test(value));
+  return value === null || validCalendarDate(value);
+}
+
+function validCalendarDate(value) {
+  if (typeof value !== 'string' || !DATE_PATTERN.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1];
+}
+
+function employmentStatusMatches(ingress, exit, status, snapshotAsOf) {
+  if (!validCalendarDate(snapshotAsOf)) return false;
+  if (ingress === null) {
+    return ['unknown_missing_ingress', 'unknown_sentinel_ingress'].includes(status);
+  }
+  if (!validCalendarDate(ingress) || (exit !== null && !validCalendarDate(exit))) return false;
+  if (ingress > snapshotAsOf || (exit !== null && exit < ingress)) {
+    return status === 'invalid_chronology';
+  }
+  if (exit !== null && exit <= snapshotAsOf) {
+    return status === 'ended_by_reported_dates';
+  }
+  const boundary = `${String(Number(snapshotAsOf.slice(0, 4)) - 60).padStart(4, '0')}${snapshotAsOf.slice(4)}`;
+  if (ingress < boundary) return status === 'unknown_implausible_active_tenure';
+  return status === 'current_by_reported_dates';
 }
 
 function nullableLabel(value) {
@@ -234,7 +313,7 @@ function validateArtifactPositionObservation(value, path, snapshotAsOf, errors) 
   if (value === null) return;
   add(errors, exactKeys(value, ARTIFACT_POSITION_OBSERVATION_KEYS), path + '.shape');
   add(errors, nullableLabel(value?.label) && value?.label !== null, path + '.label');
-  add(errors, typeof value?.observed_date === 'string' && DATE_PATTERN.test(value.observed_date),
+  add(errors, validCalendarDate(value?.observed_date),
     path + '.observed_date');
   add(errors, typeof value?.observed_period === 'string' && PERIOD_PATTERN.test(value.observed_period),
     path + '.observed_period');
@@ -251,6 +330,42 @@ function validateArtifactPositionObservation(value, path, snapshotAsOf, errors) 
     path + '.historical_status_identity');
 }
 
+function previousMonthPeriod(snapshotAsOf) {
+  if (!validCalendarDate(snapshotAsOf)) return null;
+  const [year, month] = snapshotAsOf.slice(0, 7).split('-').map(Number);
+  return month === 1
+    ? `${String(year - 1).padStart(4, '0')}-12`
+    : `${String(year).padStart(4, '0')}-${String(month - 1).padStart(2, '0')}`;
+}
+
+function validateArtifactEmployment(value, path, snapshotAsOf, errors) {
+  add(errors, exactKeys(value, EMPLOYMENT_KEYS), path + '.shape');
+  add(errors, nullableDate(value?.reported_ingress_date), path + '.reported_ingress_date');
+  add(errors, nullableDate(value?.reported_exit_date), path + '.reported_exit_date');
+  add(errors, REPORTED_STATUS_SET.has(value?.reported_status), path + '.reported_status');
+  add(errors, value?.as_of === snapshotAsOf, path + '.as_of');
+  add(errors, value?.basis === GRH_DIRECTORY_EMPLOYMENT_BASIS, path + '.basis');
+  add(errors, exactKeys(value?.reference_payroll_participation, REFERENCE_PAYROLL_KEYS),
+    path + '.reference_payroll_participation.shape');
+  add(errors,
+    value?.reference_payroll_participation?.period === previousMonthPeriod(snapshotAsOf),
+    path + '.reference_payroll_participation.period');
+  add(errors, typeof value?.reference_payroll_participation?.observed === 'boolean',
+    path + '.reference_payroll_participation.observed');
+  add(errors, nonNegativeInteger(value?.reference_payroll_participation?.row_count),
+    path + '.reference_payroll_participation.row_count');
+  add(errors,
+    Boolean(value?.reference_payroll_participation?.observed) ===
+      ((value?.reference_payroll_participation?.row_count || 0) > 0),
+    path + '.reference_payroll_participation.observed_identity');
+  add(errors, employmentStatusMatches(
+    value?.reported_ingress_date,
+    value?.reported_exit_date,
+    value?.reported_status,
+    snapshotAsOf,
+  ), path + '.status_date_identity');
+}
+
 function artifactAbsenceHistoryErrors(events, path, snapshotAsOf) {
   const errors = [];
   add(errors, Array.isArray(events), path + '.array');
@@ -259,7 +374,7 @@ function artifactAbsenceHistoryErrors(events, path, snapshotAsOf) {
   events.forEach((event, index) => {
     const itemPath = path + '.' + index;
     add(errors, exactKeys(event, ARTIFACT_ABSENCE_HISTORY_KEYS), itemPath + '.shape');
-    add(errors, typeof event?.date === 'string' && DATE_PATTERN.test(event.date), itemPath + '.date');
+    add(errors, validCalendarDate(event?.date), itemPath + '.date');
     add(errors, nullableNonNegativeInteger(event?.days), itemPath + '.days');
     add(errors, !event?.date || event.date <= snapshotAsOf, itemPath + '.after_snapshot');
     const key = [event?.date || '', String(event?.days ?? -1)].join(':');
@@ -278,7 +393,7 @@ function artifactLeaveHistoryErrors(events, path, snapshotAsOf) {
   events.forEach((event, index) => {
     const itemPath = path + '.' + index;
     add(errors, exactKeys(event, ARTIFACT_LEAVE_HISTORY_KEYS), itemPath + '.shape');
-    add(errors, typeof event?.start_date === 'string' && DATE_PATTERN.test(event.start_date),
+    add(errors, validCalendarDate(event?.start_date),
       itemPath + '.start_date');
     add(errors, nullableDate(event?.end_date), itemPath + '.end_date');
     add(errors, nullableNonNegativeInteger(event?.days), itemPath + '.days');
@@ -321,9 +436,19 @@ function artifactRecordErrors(record, index, snapshotAsOf) {
   add(errors, positiveInteger(record?.company_code), path + '.company_code');
   add(errors, positiveInteger(record?.legajo), path + '.legajo');
   add(errors, nullableLabel(record?.display_name), path + '.display_name');
-  for (const name of ['sector', 'cost_center', 'organization', 'category', 'agreement']) {
+  for (const name of [
+    'sector', 'cost_center', 'organization', 'category', 'agreement',
+    'contract_regime', 'service_situation', 'termination_reason',
+  ]) {
     validateDimension(record?.[name], path + '.' + name, errors);
   }
+  validateArtifactEmployment(record?.employment, path + '.employment', snapshotAsOf, errors);
+  add(errors,
+    record?.employment?.reported_status === 'ended_by_reported_dates' || record?.termination_reason === null,
+    path + '.termination_reason.status_identity');
+  add(errors,
+    record?.termination_reason === null || record?.termination_reason?.label !== null,
+    path + '.termination_reason.label_required');
   validatePosition(record?.position, path + '.position', errors);
   validateArtifactPositionObservation(
     record?.position_observation,
@@ -418,7 +543,7 @@ export function inspectGrhDirectoryArtifact(value) {
   add(errors, typeof value?.source?.file === 'string' && value.source.file.endsWith('.sql.gz'), 'source.file');
   add(errors, SHA256_PATTERN.test(value?.source?.sha256 || ''), 'source.sha256');
   add(errors, positiveInteger(value?.source?.compressed_size_bytes), 'source.compressed_size');
-  add(errors, DATE_PATTERN.test(value?.source?.snapshot_as_of || ''), 'source.snapshot');
+  add(errors, validCalendarDate(value?.source?.snapshot_as_of), 'source.snapshot');
   add(errors, TIMESTAMP_PATTERN.test(value?.source?.generated_at || ''), 'source.generated_at');
   add(errors, exactKeys(value?.privacy, ARTIFACT_PRIVACY_KEYS), 'privacy.shape');
   add(errors, value?.privacy?.contains_personal_data === true, 'privacy.personal_data');
@@ -431,8 +556,19 @@ export function inspectGrhDirectoryArtifact(value) {
   for (const table of SOURCE_ROW_TABLES) {
     add(errors, nonNegativeInteger(value?.counts?.source_rows?.[table]), 'counts.source_rows.' + table);
   }
-  for (const key of ARTIFACT_COUNT_KEYS.filter(key => key !== 'source_rows')) {
+  for (const key of ARTIFACT_COUNT_KEYS.filter(key => ![
+    'source_rows', 'reference_payroll_period', 'employment_statuses',
+  ].includes(key))) {
     add(errors, nonNegativeInteger(value?.counts?.[key]), 'counts.' + key);
+  }
+  add(errors,
+    value?.counts?.reference_payroll_period === previousMonthPeriod(value?.source?.snapshot_as_of),
+    'counts.reference_payroll_period');
+  add(errors, exactKeys(value?.counts?.employment_statuses, EMPLOYMENT_STATUS_COUNT_KEYS),
+    'counts.employment_statuses.shape');
+  for (const status of EMPLOYMENT_STATUS_COUNT_KEYS) {
+    add(errors, nonNegativeInteger(value?.counts?.employment_statuses?.[status]),
+      'counts.employment_statuses.' + status);
   }
   add(errors, Array.isArray(value?.records), 'records.array');
   const records = Array.isArray(value?.records) ? value.records : [];
@@ -469,6 +605,18 @@ export function inspectGrhDirectoryArtifact(value) {
     value?.counts?.valid_movement_rows + value?.counts?.quarantined_movement_rows ===
       value?.counts?.source_rows?.legamov,
     'counts.movement_source_identity');
+  add(errors,
+    value?.counts?.valid_calculation_rows + value?.counts?.quarantined_calculation_rows ===
+      value?.counts?.source_rows?.calculo,
+    'counts.calculation_source_identity');
+  add(errors,
+    value?.counts?.reference_payroll_rows <= value?.counts?.valid_calculation_rows,
+    'counts.reference_payroll_bound');
+  add(errors,
+    Object.values(value?.counts?.employment_statuses || {}).reduce(
+      (total, count) => total + (nonNegativeInteger(count) ? count : 0), 0,
+    ) === records.length,
+    'counts.employment_statuses_identity');
 
   let previousKey = null;
   const seen = new Set();
@@ -478,6 +626,9 @@ export function inspectGrhDirectoryArtifact(value) {
   let leaveEvents = 0;
   let movementRows = 0;
   let positionObservations = 0;
+  let referencePayrollRows = 0;
+  let recordsObservedInReferencePayroll = 0;
+  const employmentStatuses = Object.fromEntries(EMPLOYMENT_STATUS_COUNT_KEYS.map(status => [status, 0]));
   records.forEach((record, index) => {
     errors.push(...artifactRecordErrors(record, index, snapshotAsOf));
     const key = String(record?.company_code) + ':' + String(record?.legajo);
@@ -491,6 +642,15 @@ export function inspectGrhDirectoryArtifact(value) {
     if (nonNegativeInteger(record?.leave?.event_count)) leaveEvents += record.leave.event_count;
     if (nonNegativeInteger(record?.movement?.row_count)) movementRows += record.movement.row_count;
     if (record?.position_observation) positionObservations += 1;
+    if (nonNegativeInteger(record?.employment?.reference_payroll_participation?.row_count)) {
+      referencePayrollRows += record.employment.reference_payroll_participation.row_count;
+    }
+    if (record?.employment?.reference_payroll_participation?.observed === true) {
+      recordsObservedInReferencePayroll += 1;
+    }
+    if (REPORTED_STATUS_SET.has(record?.employment?.reported_status)) {
+      employmentStatuses[record.employment.reported_status] += 1;
+    }
   });
   add(errors, names === value?.counts?.records_with_name, 'counts.records_with_name_identity');
   add(errors, absenceEvents <= value?.counts?.valid_absence_events, 'counts.absence_bound');
@@ -502,6 +662,16 @@ export function inspectGrhDirectoryArtifact(value) {
   add(errors,
     positionObservations <= value?.counts?.valid_position_observation_rows,
     'counts.position_observation_bound');
+  add(errors, referencePayrollRows === value?.counts?.reference_payroll_rows,
+    'counts.reference_payroll_record_identity');
+  add(errors,
+    recordsObservedInReferencePayroll === value?.counts?.records_observed_in_reference_payroll,
+    'counts.reference_payroll_observed_identity');
+  add(errors,
+    EMPLOYMENT_STATUS_COUNT_KEYS.every(
+      status => employmentStatuses[status] === value?.counts?.employment_statuses?.[status],
+    ),
+    'counts.employment_statuses_record_identity');
   return Object.freeze({ ok: errors.length === 0, errors: Object.freeze([...new Set(errors)]) });
 }
 
@@ -539,7 +709,7 @@ function apiPositionObservationErrors(value, path, snapshotAsOf) {
   if (value === null) return errors;
   add(errors, exactKeys(value, API_POSITION_OBSERVATION_KEYS), path + '.shape');
   add(errors, nullableLabel(value?.label) && value?.label !== null, path + '.label');
-  add(errors, typeof value?.observedDate === 'string' && DATE_PATTERN.test(value.observedDate),
+  add(errors, validCalendarDate(value?.observedDate),
     path + '.observedDate');
   add(errors, typeof value?.observedPeriod === 'string' && PERIOD_PATTERN.test(value.observedPeriod),
     path + '.observedPeriod');
@@ -557,6 +727,35 @@ function apiPositionObservationErrors(value, path, snapshotAsOf) {
   return errors;
 }
 
+function apiEmploymentErrors(value, path, snapshotAsOf) {
+  const errors = [];
+  add(errors, exactKeys(value, API_EMPLOYMENT_KEYS), path + '.shape');
+  add(errors, nullableDate(value?.reportedIngressDate), path + '.reportedIngressDate');
+  add(errors, nullableDate(value?.reportedExitDate), path + '.reportedExitDate');
+  add(errors, REPORTED_STATUS_SET.has(value?.reportedStatus), path + '.reportedStatus');
+  add(errors, value?.asOf === snapshotAsOf, path + '.asOf');
+  add(errors, value?.basis === GRH_DIRECTORY_EMPLOYMENT_BASIS, path + '.basis');
+  add(errors, exactKeys(value?.referencePayrollParticipation, API_REFERENCE_PAYROLL_KEYS),
+    path + '.referencePayrollParticipation.shape');
+  add(errors, value?.referencePayrollParticipation?.period === previousMonthPeriod(snapshotAsOf),
+    path + '.referencePayrollParticipation.period');
+  add(errors, typeof value?.referencePayrollParticipation?.observed === 'boolean',
+    path + '.referencePayrollParticipation.observed');
+  add(errors, nonNegativeInteger(value?.referencePayrollParticipation?.rowCount),
+    path + '.referencePayrollParticipation.rowCount');
+  add(errors,
+    Boolean(value?.referencePayrollParticipation?.observed) ===
+      ((value?.referencePayrollParticipation?.rowCount || 0) > 0),
+    path + '.referencePayrollParticipation.observed_identity');
+  add(errors, employmentStatusMatches(
+    value?.reportedIngressDate,
+    value?.reportedExitDate,
+    value?.reportedStatus,
+    snapshotAsOf,
+  ), path + '.status_date_identity');
+  return errors;
+}
+
 function apiAbsenceHistoryErrors(value, path, snapshotAsOf, expectedTotal, expectedLatest) {
   const errors = [];
   add(errors, exactKeys(value, API_ABSENCE_HISTORY_KEYS), path + '.shape');
@@ -571,7 +770,7 @@ function apiAbsenceHistoryErrors(value, path, snapshotAsOf, expectedTotal, expec
   items.forEach((event, index) => {
     const itemPath = path + '.items.' + index;
     add(errors, exactKeys(event, API_ABSENCE_HISTORY_ITEM_KEYS), itemPath + '.shape');
-    add(errors, typeof event?.date === 'string' && DATE_PATTERN.test(event.date), itemPath + '.date');
+    add(errors, validCalendarDate(event?.date), itemPath + '.date');
     add(errors, nullableNonNegativeInteger(event?.days), itemPath + '.days');
     add(errors, !event?.date || event.date <= snapshotAsOf, itemPath + '.after_snapshot');
     const key = [event?.date || '', String(event?.days ?? -1)].join(':');
@@ -597,7 +796,7 @@ function apiLeaveHistoryErrors(value, path, snapshotAsOf, expectedTotal) {
   items.forEach((event, index) => {
     const itemPath = path + '.items.' + index;
     add(errors, exactKeys(event, API_LEAVE_HISTORY_ITEM_KEYS), itemPath + '.shape');
-    add(errors, typeof event?.startDate === 'string' && DATE_PATTERN.test(event.startDate),
+    add(errors, validCalendarDate(event?.startDate),
       itemPath + '.startDate');
     add(errors, nullableDate(event?.endDate), itemPath + '.endDate');
     add(errors, nullableNonNegativeInteger(event?.days), itemPath + '.days');
@@ -672,9 +871,19 @@ function apiItemErrors(item, index, snapshotAsOf, mode) {
   add(errors, positiveInteger(item?.companyCode), path + '.companyCode');
   add(errors, positiveInteger(item?.legajo), path + '.legajo');
   add(errors, nullableLabel(item?.displayName), path + '.displayName');
-  for (const name of ['sector', 'costCenter', 'organization', 'category', 'agreement']) {
+  for (const name of [
+    'sector', 'costCenter', 'organization', 'category', 'agreement',
+    'contractRegime', 'serviceSituation', 'terminationReason',
+  ]) {
     errors.push(...apiDimensionErrors(item?.[name], path + '.' + name));
   }
+  errors.push(...apiEmploymentErrors(item?.employment, path + '.employment', snapshotAsOf));
+  add(errors,
+    item?.employment?.reportedStatus === 'ended_by_reported_dates' || item?.terminationReason === null,
+    path + '.terminationReason.status_identity');
+  add(errors,
+    item?.terminationReason === null || item?.terminationReason?.label !== null,
+    path + '.terminationReason.label_required');
   errors.push(...apiPositionErrors(item?.position, path + '.position'));
   errors.push(...apiPositionObservationErrors(
     item?.positionObservation,
@@ -735,12 +944,17 @@ function apiFacetsErrors(value, mode) {
       const path = 'response.facets.' + name + '.' + index;
       const expectedKeys = name === 'categories'
         ? API_CATEGORY_FACET_ITEM_KEYS
-        : (name === 'positionObservations' ? API_POSITION_OBSERVATION_FACET_KEYS : API_FACET_ITEM_KEYS);
+        : (name === 'positionObservations'
+          ? API_POSITION_OBSERVATION_FACET_KEYS
+          : (name === 'reportedStatuses' ? API_REPORTED_STATUS_FACET_KEYS : API_FACET_ITEM_KEYS));
       add(errors, exactKeys(item, expectedKeys), path + '.shape');
       if (name === 'categories') {
         add(errors, nonNegativeInteger(item?.agreementCode), path + '.agreementCode');
       }
-      if (name === 'positionObservations') {
+      if (name === 'reportedStatuses') {
+        add(errors, REPORTED_STATUS_SET.has(item?.status), path + '.status');
+        add(errors, item?.label === GRH_DIRECTORY_REPORTED_STATUS_LABELS[item?.status], path + '.label');
+      } else if (name === 'positionObservations') {
         add(errors, POSITION_OBSERVATION_STATUSES.has(item?.status), path + '.status');
         add(errors, nullableLabel(item?.label) && item?.label !== null, path + '.label');
       } else {
@@ -750,7 +964,9 @@ function apiFacetsErrors(value, mode) {
       add(errors, positiveInteger(item?.count), path + '.count');
       const uniqueKey = name === 'categories'
         ? item?.agreementCode + ':' + item?.code
-        : (name === 'positionObservations' ? item?.status + ':' + item?.label : item?.code);
+        : (['positionObservations', 'reportedStatuses'].includes(name)
+          ? item?.status + ':' + item?.label
+          : item?.code);
       add(errors, !seen.has(uniqueKey), path + '.unique_code');
       seen.add(uniqueKey);
     }
@@ -768,7 +984,7 @@ export function inspectGrhDirectoryResponse(value) {
   add(errors, typeof value?.source?.sourceFile === 'string' && value.source.sourceFile.endsWith('.sql.gz'),
     'response.source.sourceFile');
   add(errors, SHA256_PATTERN.test(value?.source?.sourceSha256 || ''), 'response.source.sourceSha256');
-  add(errors, DATE_PATTERN.test(value?.source?.snapshotAsOf || ''), 'response.source.snapshotAsOf');
+  add(errors, validCalendarDate(value?.source?.snapshotAsOf), 'response.source.snapshotAsOf');
   add(errors, exactKeys(value?.privacy, API_PRIVACY_KEYS), 'response.privacy.shape');
   add(errors, value?.privacy?.containsPersonalData === true, 'response.privacy.personalData');
   add(errors,

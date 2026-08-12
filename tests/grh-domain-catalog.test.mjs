@@ -56,7 +56,12 @@ test('real GRH dictionary projects eight reconciled actionable domains', async (
     mappedRows: 6354042,
     domainCount: 8,
   });
-  assert.equal(projection.domains.find(domain => domain.id === 'nomina_control').counts.rows, 4528057);
+  const payroll = projection.domains.find(domain => domain.id === 'nomina_control');
+  const career = projection.domains.find(domain => domain.id === 'carrera_desarrollo');
+  assert.equal(payroll.counts.rows, 4528682);
+  assert.equal(career.counts.rows, 19394);
+  assert.equal(payroll.tables.some(table => table.name === 'histocal' && table.label === 'Histórico de cierres de cálculo'), true);
+  assert.equal(career.tables.some(table => table.name === 'histocal'), false);
   assert.deepEqual(projection.domains.find(domain => domain.id === 'licencias_salud').periods, {
     first: '1997-08',
     last: '2009-05',

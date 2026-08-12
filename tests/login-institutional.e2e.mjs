@@ -83,7 +83,7 @@ async function createServer(requestLog) {
         'Cache-Control': 'no-store, private',
         'Content-Type': 'application/json; charset=utf-8',
         'X-Content-Type-Options': 'nosniff',
-        'X-MuniControl-Contract': 'grh-directory-v2',
+        'X-MuniControl-Contract': 'grh-directory-v3',
       });
       response.end(JSON.stringify(privateAccess ? { probe: 'authorized' } : { code: 'GRH_DIRECTORY_ACCESS_DENIED' }));
       return;

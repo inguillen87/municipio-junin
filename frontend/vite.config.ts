@@ -1,14 +1,39 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 const frontendRoot = fileURLToPath(new URL('.', import.meta.url));
+const navigationCatalogPath = fileURLToPath(new URL('../js/navigation-catalog.js', import.meta.url));
+
+function serveNavigationCatalog() {
+  return {
+    name: 'municontrol-navigation-catalog',
+    configureServer(server: { middlewares: { use(handler: (
+      request: { url?: string },
+      response: { end(body: string): void; setHeader(name: string, value: string): void; statusCode: number },
+      next: () => void,
+    ) => void): void } }) {
+      server.middlewares.use((request, response, next) => {
+        const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
+        if (pathname !== '/js/navigation-catalog.js') {
+          next();
+          return;
+        }
+        response.statusCode = 200;
+        response.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+        response.setHeader('Cache-Control', 'no-store');
+        response.end(readFileSync(navigationCatalogPath, 'utf8'));
+      });
+    },
+  };
+}
 
 export default defineConfig({
   root: frontendRoot,
   base: '/',
   publicDir: false,
-  plugins: [react()],
+  plugins: [serveNavigationCatalog(), react()],
   build: {
     outDir: fileURLToPath(new URL('../dist', import.meta.url)),
     emptyOutDir: false,

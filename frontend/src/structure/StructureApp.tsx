@@ -2,19 +2,16 @@ import { AUTH_TIMEOUT_MS } from '../auth/session';
 import { useGovernedSurface } from '../auth/use-governed-surface';
 import { AppShell } from '../components/AppShell';
 import { GovernedBlocked, GovernedLoading } from '../components/GovernedStates';
-import type { TopbarLink } from '../components/Topbar';
 import { fetchOrganizationAnalyticsContract } from '../domain/organization-analytics-contract';
 import type { OrganizationAnalyticsViewModel } from '../domain/organization-analytics-types';
 import { buildOrganizationAnalyticsViewModel } from '../domain/organization-analytics-view-model';
 import { StructureDashboard } from './StructureDashboard';
 
 const REQUIRED_CAPABILITY = 'navigation.organization-analytics';
-const STRUCTURE_NAVIGATION: readonly TopbarLink[] = Object.freeze([
-  { href: '/inicio.html', label: 'Inicio' },
-  { href: '/ejecutivo', label: 'Resumen GRH' },
-  { href: '/estructura', label: 'Estructura y áreas de costo', current: true },
-  { href: '/calidad', label: 'Calidad' },
-]);
+const STRUCTURE_NAVIGATION = Object.freeze({
+  activeItemId: 'estructura',
+  itemIds: Object.freeze(['workspace', 'grh-ejecutivo', 'estructura', 'control']),
+});
 
 async function loadStructureViewModel(signal: AbortSignal): Promise<OrganizationAnalyticsViewModel> {
   const contract = await fetchOrganizationAnalyticsContract({ timeoutMs: AUTH_TIMEOUT_MS, signal });
@@ -30,7 +27,7 @@ export function StructureApp() {
   return (
     <AppShell
       identity={state.identity}
-      links={STRUCTURE_NAVIGATION}
+      navigation={STRUCTURE_NAVIGATION}
       busy={state.status === 'loading'}
     >
       {state.status === 'loading' ? (

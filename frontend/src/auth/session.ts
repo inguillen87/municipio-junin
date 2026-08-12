@@ -92,6 +92,10 @@ const KNOWN_CAPABILITIES = new Set([
   'navigation.help',
 ]);
 
+export function isKnownNavigationCapability(value: string): boolean {
+  return value.startsWith('navigation.') && KNOWN_CAPABILITIES.has(value);
+}
+
 interface AuthClient {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }

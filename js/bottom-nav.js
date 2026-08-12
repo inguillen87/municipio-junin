@@ -52,9 +52,8 @@
     if (!item || capabilities.indexOf(capability) === -1 || items.length >= 4) return;
     items.push(item);
   });
-  if (document.querySelector('#sidebar, #sidebar-container')) {
-    items.push({ icon: 'hamburger', label: 'Más', href: '#more' });
-  }
+  var sidebar = document.querySelector('#sidebar, #sidebar-container');
+  if (sidebar && !sidebar.id) sidebar.id = 'sidebar';
   if (items.length === 0) return;
 
   var nav = document.createElement('nav');
@@ -67,16 +66,30 @@
       'href="' + item.href + '" aria-label="' + item.label + '"' +
       (active ? ' aria-current="page"' : '') + '>' +
       '<span class="nav-icon" aria-hidden="true">' + renderIcon(item.icon) + '</span>' +
-      '<span class="bottom-nav-label">' + item.label + '</span></a>';
+      '<span class="bottom-nav-label">' + (item.shortLabel || item.label) + '</span></a>';
   }).join('');
+  if (sidebar) {
+    nav.insertAdjacentHTML('beforeend',
+      '<button class="bottom-nav-item bottom-nav-more" type="button" aria-label="Abrir navegación principal" ' +
+        'aria-controls="' + sidebar.id + '" aria-expanded="' +
+        (sidebar.classList.contains('mobile-open') ? 'true' : 'false') + '">' +
+        '<span class="nav-icon" aria-hidden="true">' + renderIcon('hamburger') + '</span>' +
+        '<span class="bottom-nav-label">Más</span></button>'
+    );
+  }
 
-  var more = nav.querySelector('[href="#more"]');
+  var more = nav.querySelector('.bottom-nav-more');
   if (more) {
     more.addEventListener('click', function(event) {
       event.preventDefault();
       var menuButton = document.getElementById('menuBtn');
       if (typeof window.openMobileSidebar === 'function') window.openMobileSidebar();
       else if (menuButton) menuButton.click();
+    });
+    window.addEventListener('muni:sidebar-state', function(event) {
+      if (!event.detail || event.detail.sidebarId !== sidebar.id) return;
+      more.setAttribute('aria-expanded', event.detail.open ? 'true' : 'false');
+      more.setAttribute('aria-label', event.detail.open ? 'Cerrar navegación principal' : 'Abrir navegación principal');
     });
   }
 

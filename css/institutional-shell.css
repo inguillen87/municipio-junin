@@ -57,6 +57,7 @@ html.muni-shell-v1 [data-muni-shell="primary-nav"] {
   z-index: 1200 !important;
   display: flex !important;
   flex-direction: column;
+  box-sizing: border-box;
   width: var(--muni-shell-rail-width) !important;
   height: 100vh !important;
   height: 100dvh !important;
@@ -196,18 +197,112 @@ html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav {
   scrollbar-color: #40556e transparent;
 }
 
-html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-section-label {
-  padding: 14px 10px 5px;
-  overflow: hidden;
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-list,
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-group-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-section-text {
-  display: block;
-  color: var(--muni-shell-subtle) !important;
-  font: 760 12px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
-  letter-spacing: .105em;
-  text-transform: uppercase;
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-list {
+  flex: 1 0 auto;
+  gap: 3px;
+  min-height: 100%;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-entry,
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-direct,
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-group {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-group {
+  border-radius: 8px;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-footer {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--muni-shell-border);
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-group-panel[hidden] {
+  display: none !important;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-group-panel {
+  gap: 2px;
+  padding: 2px 0 6px 14px;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-group-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 10px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muni-shell-muted);
+  background: transparent;
+  font: 720 13px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: left;
   white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--muni-shell-motion-fast) linear,
+    background-color var(--muni-shell-motion-fast) linear,
+    border-color var(--muni-shell-motion-fast) linear !important;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-group-trigger:hover,
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-group.is-open > .sb-group-trigger {
+  color: var(--muni-shell-text);
+  background: #10233a;
+  border-color: #28415e;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-group.has-active > .sb-group-trigger {
+  color: var(--muni-shell-text);
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-group-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-group-count {
+  /* The trigger's full aria-label carries the room name. The numerical badge
+     is secondary and would truncate that name in the governed 260px rail. */
+  display: none;
+  min-width: 22px;
+  padding: 3px 6px;
+  border: 1px solid #3b5878;
+  border-radius: 999px;
+  color: var(--muni-shell-subtle);
+  font: 750 12px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: center;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-group-chevron {
+  display: inline-flex;
+  flex: 0 0 16px;
+  transition: transform var(--muni-shell-motion) var(--muni-shell-ease);
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-nav-group.is-open > .sb-group-trigger .sb-group-chevron {
+  transform: rotate(180deg);
 }
 
 html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-item {
@@ -299,6 +394,11 @@ html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-item-label {
     opacity var(--muni-shell-motion-fast) linear;
 }
 
+html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-child-item {
+  min-height: 44px !important;
+  padding-block: 6px;
+}
+
 html.muni-shell-v1 [data-muni-shell="primary-nav"] .sb-user {
   display: flex;
   align-items: center;
@@ -366,8 +466,10 @@ html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-logo {
 }
 
 html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-logo-text,
-html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-section-label,
 html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item-label,
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-label,
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-count,
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-chevron,
 html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-user-info,
 html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-logout-btn {
   display: none !important;
@@ -386,10 +488,29 @@ html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav {
   padding-inline: 6px;
 }
 
-html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item {
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-list {
+  align-items: center;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-entry,
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-direct,
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-group {
+  width: 44px;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item,
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-trigger {
   justify-content: center;
   width: 44px;
   padding: 0;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-panel {
+  display: none !important;
+}
+
+html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-footer {
+  padding-top: 8px;
 }
 
 html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-user {
@@ -497,21 +618,24 @@ html.muni-shell-v1 .sb-floating-menu-btn {
   }
 
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-logo-text,
-  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-section-label,
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item-label,
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-label,
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-count,
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-chevron,
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-user-info,
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-logout-btn {
     display: initial !important;
   }
 
-  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-section-label,
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-user,
-  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item {
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item,
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-trigger {
     display: flex !important;
   }
 
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-logo-text,
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item-label,
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-label,
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-user-info {
     max-width: 164px;
     opacity: 1;
@@ -527,10 +651,25 @@ html.muni-shell-v1 .sb-floating-menu-btn {
     padding: 10px 8px;
   }
 
-  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item {
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-list {
+    align-items: stretch;
+  }
+
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-entry,
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-direct,
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-nav-group {
+    width: 100%;
+  }
+
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-item,
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-trigger {
     justify-content: flex-start;
     width: 100%;
     padding: 8px 11px;
+  }
+
+  html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-group-panel:not([hidden]) {
+    display: flex !important;
   }
 
   html.muni-shell-v1 [data-muni-shell="primary-nav"].collapsed .sb-user {

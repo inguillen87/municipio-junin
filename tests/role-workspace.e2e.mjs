@@ -226,7 +226,8 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
           .map(link => ({ height: link.getBoundingClientRect().height, width: link.getBoundingClientRect().width }));
         return {
           actionCapabilities: privateLinks.map(link => link.dataset.capability),
-          bottom: [...document.querySelectorAll('.bottom-nav a')].map(link => link.getAttribute('href')),
+          bottom: [...document.querySelectorAll('.bottom-nav a, .bottom-nav button')]
+            .map(item => item.matches('button.bottom-nav-more') ? '#more' : item.getAttribute('href')),
           busy: document.querySelector('#workspaceMain').getAttribute('aria-busy'),
           errorHidden: document.querySelector('#workspaceError').hidden,
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -344,7 +345,8 @@ test('tenantless SUPER_ADMIN receives only workspace and help in the authoritati
 
   const result = await page.evaluate(() => ({
     actions: [...document.querySelectorAll('#workspaceActions a[data-capability]')].map(link => link.dataset.capability),
-    bottom: [...document.querySelectorAll('.bottom-nav a')].map(link => link.getAttribute('href')),
+    bottom: [...document.querySelectorAll('.bottom-nav a, .bottom-nav button')]
+      .map(item => item.matches('button.bottom-nav-more') ? '#more' : item.getAttribute('href')),
     capabilities: JSON.parse(sessionStorage.getItem('mjunin_user')).capabilities,
     sidebar: [...document.querySelectorAll('.sidebar a.sb-item')].map(link => link.getAttribute('href')),
   }));

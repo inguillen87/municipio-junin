@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 const runbookUrl = new URL('../docs/DEMO_INTENDENCIA_5_7_MIN.md', import.meta.url);
 const workspaceUrl = new URL('../inicio.html', import.meta.url);
-const stableNavigationUrl = new URL('../js/nav.js', import.meta.url);
+const navigationCatalogUrl = new URL('../js/navigation-catalog.js', import.meta.url);
 
 test('el runbook de Intendencia conserva recorrido, verdad y rollback', async () => {
   const source = await readFile(runbookUrl, 'utf8');
@@ -36,19 +37,34 @@ test('el runbook no contiene identidades, correos ni secretos de acceso', async 
   assert.doesNotMatch(source, /(?:bearer|api[_-]?key|secret)\s+[A-Za-z0-9._~-]{12,}/i);
 });
 
-test('Inicio descubre el canary ejecutivo y la navegación conserva el retorno estable', async () => {
-  const [workspace, navigation] = await Promise.all([
+test('Inicio descubre el canary ejecutivo y el catálogo conserva el retorno estable', async () => {
+  const [workspace, navigationCatalog] = await Promise.all([
     readFile(workspaceUrl, 'utf8'),
-    readFile(stableNavigationUrl, 'utf8'),
+    readFile(navigationCatalogUrl, 'utf8'),
   ]);
 
   assert.match(
     workspace,
     /'navigation\.grh-executive':\s*Object\.freeze\(\{\s*href:\s*'\/ejecutivo'/,
   );
-  assert.match(
-    navigation,
-    /href:'\/ejecutivo'[\s\S]{0,160}capability:'navigation\.grh-executive'/,
+  const scope = {};
+  runInNewContext(navigationCatalog, { window: scope });
+  const navigationItems = Array.from(scope.MuniNavigationDefinition.items, item => ({ ...item }));
+  const executive = navigationItems.find(item => item.id === 'grh-ejecutivo');
+  assert.deepEqual(executive, {
+    id: 'grh-ejecutivo',
+    href: '/ejecutivo',
+    label: 'Resumen ejecutivo GRH',
+    shortLabel: 'Resumen GRH',
+    icon: 'people',
+    groupId: 'executive',
+    placement: 'group',
+    capability: 'navigation.grh-executive',
+    primary: true,
+  });
+  assert.equal(
+    navigationItems.some(item => ['/grh-ejecutivo', 'grh-ejecutivo.html', '/grh-ejecutivo.html'].includes(item.href)),
+    false,
+    'legacy executive aliases must stay outside canonical navigation',
   );
-  assert.doesNotMatch(navigation.match(/var NAV_ITEMS = \[[\s\S]*?\n\];/)?.[0] || '', /grh-ejecutivo\.html/);
 });

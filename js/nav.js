@@ -296,35 +296,94 @@ window.requireRole = function(allowedRoles) {
   } catch(e) { window.location.replace('login.html'); return false; }
 };
 
-// NAV ITEMS
-var NAV_ITEMS = [
-  { id:'workspace',     href:'inicio.html',         icon:'home',   label:'Inicio',                section:'PRINCIPAL',     capability:'navigation.workspace' },
-  { id:'dashboard',     href:'dashboard.html',      icon:'chart',  label:'Panorama municipal',    section:'PRINCIPAL',     capability:'navigation.dashboard' },
-  { id:'reportes',      href:'reportes.html',       icon:'doc',    label:'Reportes',              section:'PRINCIPAL',     capability:'navigation.reports' },
-  { id:'hacienda',      href:'hacienda.html',       icon:'bank',   label:'Hacienda y nómina',     section:'HACIENDA',      capability:'navigation.hacienda' },
-  { id:'grh-ejecutivo', href:'/ejecutivo',          icon:'people', label:'Resumen ejecutivo GRH', section:'DIRECCIÓN GRH', capability:'navigation.grh-executive' },
-  { id:'decisiones-grh',href:'decisiones-grh.html',  icon:'check',  label:'Centro de decisiones',  section:'DIRECCIÓN GRH', capability:'navigation.grh-decisions' },
-  { id:'ia',            href:'ia.html',             icon:'ai',     label:'Asistente GRH',         section:'DIRECCIÓN GRH', capability:'navigation.ai-assistant' },
-  { id:'estructura',    href:'/estructura',          icon:'chart',  label:'Estructura y áreas de costo', section:'PERSONAS Y ORGANIZACIÓN', capability:'navigation.organization-analytics' },
-  { id:'movimientos-grh',href:'movimientos-grh.html',icon:'chart',  label:'Movimientos y trazabilidad', section:'PERSONAS Y ORGANIZACIÓN', capability:'navigation.organization-analytics' },
-  { id:'rrhh',          href:'rrhh.html',            icon:'people', label:'Directorio y fichas',    section:'PERSONAS Y ORGANIZACIÓN', capability:'navigation.rrhh' },
-  { id:'areas-grh',     href:'areas-grh.html',       icon:'chart',  label:'Mapa de datos GRH',      section:'DATOS GRH',     capability:'navigation.rrhh' },
-  { id:'territorio',    href:'/territorio',          icon:'map',    label:'Centro territorial',     section:'TERRITORIO',    capability:'navigation.territory' },
-  { id:'control',       href:'/calidad',            icon:'gauge',  label:'Calidad de datos',      section:'DATOS',         capability:'navigation.data-quality' },
-  { id:'auditoria',     href:'auditoria.html',      icon:'shield', label:'Inventario de cargas', section:'DATOS',         capability:'navigation.audit' },
-  { id:'exportar',      href:'exportar.html',       icon:'export', label:'Salidas gobernadas',   section:'DATOS',         capability:'navigation.export' },
-  { id:'importar',      href:'importar.html',       icon:'upload', label:'Importar datos',        section:'DATOS',         capability:'navigation.import' },
-  { id:'cuentas',       href:'cuentas-claras.html', icon:'eye',    label:'Cuentas Claras',        section:'TRANSPARENCIA', public:true },
-  { id:'ciudadano',     href:'ciudadano.html',      icon:'home',   label:'Portal Ciudadano',      section:'TRANSPARENCIA', public:true },
-  { id:'manuales',      href:'manuales.html',       icon:'doc',    label:'Manual y ayuda',        section:'AYUDA',         capability:'navigation.help' },
-];
+// Shared navigation definition. A missing or malformed catalog deliberately
+// renders no private destinations; capability visibility never falls back to a
+// second, local menu.
+function validatedNavigationDefinition(definition) {
+  if (!definition || definition.version !== '2026-08-12.1' ||
+      !Array.isArray(definition.groups) || !Array.isArray(definition.items) ||
+      !Object.isFrozen(definition) || !Object.isFrozen(definition.groups) ||
+      !Object.isFrozen(definition.items) ||
+      !exactObjectKeys(definition, ['version', 'groups', 'items'])) return null;
 
+  var expectedGroups = ['executive', 'people', 'territory', 'data'];
+  var expectedItems = [
+    ['workspace', 'inicio.html', null, 'top', 'navigation.workspace', true],
+    ['dashboard', 'dashboard.html', 'executive', 'group', 'navigation.dashboard', true],
+    ['grh-ejecutivo', '/ejecutivo', 'executive', 'group', 'navigation.grh-executive', true],
+    ['decisiones-grh', 'decisiones-grh.html', 'executive', 'group', 'navigation.grh-decisions', true],
+    ['ia', 'ia.html', 'executive', 'group', 'navigation.ai-assistant', true],
+    ['reportes', 'reportes.html', 'executive', 'group', 'navigation.reports', true],
+    ['hacienda', 'hacienda.html', 'people', 'group', 'navigation.hacienda', true],
+    ['estructura', '/estructura', 'people', 'group', 'navigation.organization-analytics', true],
+    ['movimientos-grh', 'movimientos-grh.html', 'people', 'group', 'navigation.organization-analytics', false],
+    ['rrhh', 'rrhh.html', 'people', 'group', 'navigation.rrhh', true],
+    ['areas-grh', 'areas-grh.html', 'people', 'group', 'navigation.rrhh', false],
+    ['territorio', '/territorio', 'territory', 'group', 'navigation.territory', true],
+    ['cuentas', 'cuentas-claras.html', 'territory', 'group', 'public', false],
+    ['ciudadano', 'ciudadano.html', 'territory', 'group', 'public', false],
+    ['importar', 'importar.html', 'data', 'group', 'navigation.import', true],
+    ['auditoria', 'auditoria.html', 'data', 'group', 'navigation.audit', true],
+    ['control', '/calidad', 'data', 'group', 'navigation.data-quality', true],
+    ['exportar', 'exportar.html', 'data', 'group', 'navigation.export', true],
+    ['manuales', 'manuales.html', null, 'footer', 'navigation.help', true]
+  ];
+  if (definition.groups.length !== expectedGroups.length || definition.items.length !== expectedItems.length) return null;
+  var groupIds = [];
+  var itemIds = [];
+  var hrefs = [];
+  var primaryCapabilities = [];
+  for (var groupIndex = 0; groupIndex < definition.groups.length; groupIndex += 1) {
+    var group = definition.groups[groupIndex];
+    if (!group || !Object.isFrozen(group) || typeof group.id !== 'string' ||
+        typeof group.label !== 'string' || typeof group.shortLabel !== 'string' ||
+        typeof group.icon !== 'string' || !group.label || !group.shortLabel || !group.icon ||
+        !exactObjectKeys(group, ['id', 'label', 'shortLabel', 'icon']) ||
+        group.id !== expectedGroups[groupIndex] || groupIds.indexOf(group.id) !== -1) return null;
+    groupIds.push(group.id);
+  }
+  for (var itemIndex = 0; itemIndex < definition.items.length; itemIndex += 1) {
+    var item = definition.items[itemIndex];
+    var expected = expectedItems[itemIndex];
+    if (!item || !Object.isFrozen(item) || typeof item.id !== 'string' ||
+        typeof item.href !== 'string' || typeof item.label !== 'string' ||
+        typeof item.shortLabel !== 'string' || typeof item.icon !== 'string' ||
+        !item.label || !item.shortLabel || !item.icon || itemIds.indexOf(item.id) !== -1 ||
+        hrefs.indexOf(item.href) !== -1 || /^(?:[a-z]+:|\/\/)/i.test(item.href) || /\\/.test(item.href) ||
+        ['top', 'group', 'footer'].indexOf(item.placement) === -1) return null;
+    if (item.id !== expected[0] || item.href !== expected[1] || item.groupId !== expected[2] ||
+        item.placement !== expected[3] || item.primary !== expected[5]) return null;
+    if (item.placement === 'group') {
+      if (typeof item.groupId !== 'string' || groupIds.indexOf(item.groupId) === -1) return null;
+    } else if (item.groupId !== null) return null;
+    if (item.public === true) {
+      if (expected[4] !== 'public' || item.capability !== undefined || item.primary !== false ||
+          !exactObjectKeys(item, ['id', 'href', 'label', 'shortLabel', 'icon', 'groupId', 'placement', 'public', 'primary'])) return null;
+    } else if (typeof item.capability !== 'string' ||
+        item.capability !== expected[4] || KNOWN_CAPABILITIES.indexOf(item.capability) === -1 ||
+        !exactObjectKeys(item, ['id', 'href', 'label', 'shortLabel', 'icon', 'groupId', 'placement', 'capability', 'primary'])) return null;
+    if (item.primary === true && item.capability) {
+      if (primaryCapabilities.indexOf(item.capability) !== -1) return null;
+      primaryCapabilities.push(item.capability);
+    }
+    itemIds.push(item.id);
+    hrefs.push(item.href);
+  }
+  return definition;
+}
+
+var NAV_DEFINITION = validatedNavigationDefinition(window.MuniNavigationDefinition);
+var NAV_GROUPS = NAV_DEFINITION ? NAV_DEFINITION.groups : [];
+var NAV_ITEMS = NAV_DEFINITION ? NAV_DEFINITION.items : [];
 window.MuniNavigationCatalog = Object.freeze(NAV_ITEMS.reduce(function(catalog, item) {
-  if (item.capability && !Object.prototype.hasOwnProperty.call(catalog, item.capability)) {
+  if (item.capability && item.primary === true && !Object.prototype.hasOwnProperty.call(catalog, item.capability)) {
     catalog[item.capability] = Object.freeze({
+      id: item.id,
       href: item.href,
       icon: item.icon,
-      label: item.label
+      label: item.label,
+      shortLabel: item.shortLabel,
+      groupId: item.groupId
     });
   }
   return catalog;
@@ -352,6 +411,9 @@ var ICONS = {
   export:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
   upload:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
   shield:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  organization:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-5h14v5"/></svg>',
+  movement: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 7h13M16 3l4 4-4 4M17 17H4M8 13l-4 4 4 4"/></svg>',
+  database: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg>',
   settings: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
   help:     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 3.8 1.95c-.95.68-1.6 1.18-1.6 2.55"/><path d="M12 17h.01"/></svg>',
   logout:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
@@ -361,9 +423,11 @@ var ICONS = {
   arrowRight: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>',
   hamburger:  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
   close:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  chevronDown:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>',
 };
 
 var SIDEBAR_COLLAPSED_KEY = 'muni_sidebar_collapsed';
+var SIDEBAR_OPEN_GROUP_KEY = 'muni_nav_open_group_v1';
 
 function getIcon(name) { return ICONS[name] || ICONS.doc; }
 
@@ -392,11 +456,98 @@ function canAccess(item, capabilities) {
 }
 
 function isCollapsed() {
-  return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+  try { return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'; } catch (error) { return false; }
 }
 
 function setCollapsed(val) {
-  localStorage.setItem(SIDEBAR_COLLAPSED_KEY, val ? '1' : '0');
+  try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, val ? '1' : '0'); } catch (error) {}
+}
+
+function storedOpenGroup() {
+  try { return localStorage.getItem(SIDEBAR_OPEN_GROUP_KEY); } catch (error) { return null; }
+}
+
+function storeOpenGroup(groupId) {
+  try { localStorage.setItem(SIDEBAR_OPEN_GROUP_KEY, groupId); } catch (error) {}
+}
+
+function navigationItemMarkup(item, activeId, child) {
+  var isActive = item.id === activeId;
+  return '<li class="sb-nav-entry' + (child ? ' sb-child-entry' : '') + '">' +
+    '<a href="' + escapeHtml(item.href) + '" class="sb-item' + (child ? ' sb-child-item' : '') +
+      (isActive ? ' active' : '') + '" data-nav-item="' + escapeHtml(item.id) +
+      '" title="' + escapeHtml(item.label) + '" aria-label="' + escapeHtml(item.label) + '"' +
+      (isActive ? ' aria-current="page"' : '') + '>' +
+      '<span class="sb-item-icon">' + getIcon(item.icon) + '</span>' +
+      '<span class="sb-item-label">' + escapeHtml(item.label) + '</span>' +
+    '</a></li>';
+}
+
+function preferredOpenGroup(activeId, visibleGroups, visibleItems, homeProfile) {
+  var visibleIds = visibleGroups.map(function(entry) { return entry.group.id; });
+  var activeItem = visibleItems.find(function(item) { return item.id === activeId; });
+  if (activeItem && activeItem.groupId && visibleIds.indexOf(activeItem.groupId) !== -1) {
+    return activeItem.groupId;
+  }
+
+  var persisted = storedOpenGroup();
+  if (persisted && visibleIds.indexOf(persisted) !== -1) return persisted;
+
+  var priorities = homeProfile && Array.isArray(homeProfile.priorityCapabilities)
+    ? homeProfile.priorityCapabilities
+    : [];
+  for (var priorityIndex = 0; priorityIndex < priorities.length; priorityIndex += 1) {
+    var capability = priorities[priorityIndex];
+    if (capability === 'navigation.workspace') continue;
+    var priorityItem = visibleItems.find(function(item) {
+      return item.primary === true && item.capability === capability && item.groupId;
+    });
+    if (priorityItem && visibleIds.indexOf(priorityItem.groupId) !== -1) return priorityItem.groupId;
+  }
+  return visibleIds[0] || null;
+}
+
+function syncSidebarGroups(sidebarEl) {
+  if (!sidebarEl) return;
+  var visibleIds = sidebarEl.__muniVisibleGroupIds || [];
+  var openGroupId = sidebarEl.__muniOpenGroupId;
+  if (visibleIds.indexOf(openGroupId) === -1) openGroupId = visibleIds[0] || null;
+  sidebarEl.__muniOpenGroupId = openGroupId;
+  if (openGroupId) sidebarEl.setAttribute('data-open-group', openGroupId);
+  else sidebarEl.removeAttribute('data-open-group');
+
+  var compactDesktop = window.innerWidth > 900 && sidebarEl.classList.contains('collapsed');
+  sidebarEl.querySelectorAll('[data-nav-group-trigger]').forEach(function(trigger) {
+    var groupId = trigger.getAttribute('data-nav-group-trigger');
+    var expanded = !compactDesktop && groupId === openGroupId;
+    trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    var panel = sidebarEl.querySelector('[data-nav-group-panel="' + groupId + '"]');
+    if (panel) panel.hidden = !expanded;
+    var groupElement = trigger.closest('[data-nav-group]');
+    if (groupElement) groupElement.classList.toggle('is-open', expanded);
+  });
+}
+
+function openSidebarGroup(sidebarEl, groupId, persist) {
+  if (!sidebarEl || (sidebarEl.__muniVisibleGroupIds || []).indexOf(groupId) === -1) return;
+  sidebarEl.__muniOpenGroupId = groupId;
+  if (persist !== false) storeOpenGroup(groupId);
+  syncSidebarGroups(sidebarEl);
+}
+
+function wireSidebarGroups(sidebarEl) {
+  sidebarEl.querySelectorAll('[data-nav-group-trigger]').forEach(function(trigger) {
+    trigger.addEventListener('click', function() {
+      var groupId = trigger.getAttribute('data-nav-group-trigger');
+      if (window.innerWidth > 900 && sidebarEl.classList.contains('collapsed')) {
+        sidebarEl.classList.remove('collapsed');
+        setCollapsed(false);
+        adjustMainContent(false);
+        updateCollapseBtnIcon(sidebarEl);
+      }
+      openSidebarGroup(sidebarEl, groupId, true);
+    });
+  });
 }
 
 window.buildSidebar = function(activeId) {
@@ -418,6 +569,7 @@ window.buildSidebar = function(activeId) {
   sidebarEl.setAttribute('data-muni-shell', 'primary-nav');
   sidebarEl.setAttribute('aria-label', sidebarEl.getAttribute('aria-label') || 'Navegación principal');
 
+  var accessProjection = currentAccessProjection();
   var user = { name: 'Usuario', email: '', role: 'DEMO' };
   user = currentSessionUser() || user;
   var role = user.role || 'DEMO';
@@ -427,14 +579,25 @@ window.buildSidebar = function(activeId) {
   var roleColors = { SUPER_ADMIN:'#f59e0b', INTENDENTE:'#3b82f6', CONTADOR:'#06b6d4', TENANT_ADMIN:'#10b981', TENANT_USER:'#8b5cf6', INSPECTOR:'#f97316', DEMO:'#64748b' };
   var roleColor = roleColors[role] || '#64748b';
 
-  // Group items
-  var sections = {}, sectionOrder = [];
-  NAV_ITEMS.forEach(function(item) {
-    if (!canAccess(item, capabilities)) return;
-    var sec = item.section || 'GENERAL';
-    if (!sections[sec]) { sections[sec] = []; sectionOrder.push(sec); }
-    sections[sec].push(item);
-  });
+  var visibleItems = NAV_ITEMS.filter(function(item) { return canAccess(item, capabilities); });
+  var topItems = visibleItems.filter(function(item) { return item.placement === 'top'; });
+  var footerItems = visibleItems.filter(function(item) { return item.placement === 'footer'; });
+  var visibleGroups = NAV_GROUPS.map(function(group) {
+    return {
+      group: group,
+      items: visibleItems.filter(function(item) {
+        return item.placement === 'group' && item.groupId === group.id;
+      })
+    };
+  }).filter(function(entry) { return entry.items.length > 0; });
+  var openGroupId = preferredOpenGroup(
+    activeId,
+    visibleGroups,
+    visibleItems,
+    accessProjection && accessProjection.homeProfile
+  );
+  if (openGroupId) storeOpenGroup(openGroupId);
+  var compactDesktop = window.innerWidth > 900 && isCollapsed();
 
   var html = '';
 
@@ -442,23 +605,36 @@ window.buildSidebar = function(activeId) {
   html += '<div class="sb-logo">';
   html += '<span class="sb-brand-mark" aria-hidden="true">MC</span>';
   html += '<div class="sb-logo-text"><div class="sb-logo-name">MuniControl</div><div class="sb-logo-sub">Junín · gestión municipal</div></div>';
-  html += '<button class="sb-collapse-btn" id="sidebarCollapseBtn" title="Colapsar sidebar">' + getIcon('arrowLeft') + '</button>';
+  html += '<button class="sb-collapse-btn" id="sidebarCollapseBtn" type="button" title="Contraer navegación" aria-label="Contraer navegación">' + getIcon('arrowLeft') + '</button>';
   html += '</div>';
 
 
   // Nav
-  html += '<nav class="sb-nav" aria-label="Navegación principal">';
-  sectionOrder.forEach(function(sec) {
-    html += '<div class="sb-section-label"><span class="sb-section-text">' + sec + '</span></div>';
-    sections[sec].forEach(function(item) {
-      var isActive = (item.id === activeId);
-      html += '<a href="' + item.href + '" class="sb-item' + (isActive ? ' active' : '') + '" title="' + item.label + '"' + (isActive ? ' aria-current="page"' : '') + '>';
-      html += '<span class="sb-item-icon">' + getIcon(item.icon) + '</span>';
-      html += '<span class="sb-item-label">' + item.label + '</span>';
-      html += '</a>';
-    });
+  html += '<nav class="sb-nav" aria-label="Navegación principal"><ul class="sb-nav-list">';
+  topItems.forEach(function(item) {
+    html += '<li class="sb-nav-direct" data-nav-placement="top">' + navigationItemMarkup(item, activeId, false).replace(/^<li[^>]*>|<\/li>$/g, '') + '</li>';
   });
-  html += '</nav>';
+  visibleGroups.forEach(function(entry) {
+    var group = entry.group;
+    var groupHasActive = entry.items.some(function(item) { return item.id === activeId; });
+    var expanded = !compactDesktop && group.id === openGroupId;
+    var triggerId = 'muni-nav-trigger-' + group.id;
+    var panelId = 'muni-nav-panel-' + group.id;
+    html += '<li class="sb-nav-group' + (expanded ? ' is-open' : '') + (groupHasActive ? ' has-active' : '') + '" data-nav-group="' + escapeHtml(group.id) + '">';
+    html += '<button class="sb-group-trigger" id="' + triggerId + '" type="button" data-nav-group-trigger="' + escapeHtml(group.id) +
+      '" aria-expanded="' + (expanded ? 'true' : 'false') + '" aria-controls="' + panelId + '" title="' + escapeHtml(group.label) + '" aria-label="' + escapeHtml(group.label) + '">';
+    html += '<span class="sb-item-icon">' + getIcon(group.icon) + '</span>';
+    html += '<span class="sb-group-label">' + escapeHtml(group.label) + '</span>';
+    html += '<span class="sb-group-count" aria-hidden="true">' + entry.items.length + '</span>';
+    html += '<span class="sb-group-chevron" aria-hidden="true">' + getIcon('chevronDown') + '</span></button>';
+    html += '<ul class="sb-group-panel" id="' + panelId + '" data-nav-group-panel="' + escapeHtml(group.id) + '" aria-labelledby="' + triggerId + '"' + (expanded ? '' : ' hidden') + '>';
+    entry.items.forEach(function(item) { html += navigationItemMarkup(item, activeId, true); });
+    html += '</ul></li>';
+  });
+  footerItems.forEach(function(item) {
+    html += '<li class="sb-nav-direct sb-nav-footer" data-nav-placement="footer">' + navigationItemMarkup(item, activeId, false).replace(/^<li[^>]*>|<\/li>$/g, '') + '</li>';
+  });
+  html += '</ul></nav>';
 
   // User footer
   html += '<div class="sb-user">';
@@ -468,16 +644,23 @@ window.buildSidebar = function(activeId) {
   html += '</div>';
 
   sidebarEl.innerHTML = html;
+  sidebarEl.__muniVisibleGroupIds = visibleGroups.map(function(entry) { return entry.group.id; });
+  sidebarEl.__muniOpenGroupId = openGroupId;
   var sidebarAvatar = sidebarEl.querySelector('.sb-user-avatar');
   if (sidebarAvatar) sidebarAvatar.style.setProperty('--muni-role-color', roleColor);
 
   ensureInstitutionalShellStylesheet();
 
   // Apply collapsed state on desktop
+  sidebarEl.classList.remove('collapsed');
   if (window.innerWidth > 900 && isCollapsed()) {
     sidebarEl.classList.add('collapsed');
     adjustMainContent(true);
+  } else if (window.innerWidth > 900) {
+    adjustMainContent(false);
   }
+  syncSidebarGroups(sidebarEl);
+  wireSidebarGroups(sidebarEl);
 
   // Wire up collapse button (desktop)
   var collapseBtn = document.getElementById('sidebarCollapseBtn');
@@ -491,6 +674,8 @@ window.buildSidebar = function(activeId) {
       var collapsed = sidebarEl.classList.toggle('collapsed');
       setCollapsed(collapsed);
       adjustMainContent(collapsed);
+      updateCollapseBtnIcon(sidebarEl);
+      syncSidebarGroups(sidebarEl);
     });
   }
 
@@ -531,8 +716,17 @@ function updateCollapseBtnIcon(sidebarEl) {
   if (!btn) return;
   var isCol = sidebarEl.classList.contains('collapsed');
   btn.innerHTML = isCol ? getIcon('arrowRight') : getIcon('arrowLeft');
-  btn.title = isCol ? 'Expandir sidebar' : 'Colapsar sidebar';
+  btn.title = isCol ? 'Expandir navegación' : 'Contraer navegación';
   btn.setAttribute('aria-label', btn.title);
+}
+
+function notifySidebarState(sidebarEl) {
+  var open = window.innerWidth <= 900
+    ? sidebarEl.classList.contains('mobile-open')
+    : !sidebarEl.classList.contains('collapsed');
+  window.dispatchEvent(new CustomEvent('muni:sidebar-state', {
+    detail: { open: open, sidebarId: sidebarEl.id || 'sidebar' }
+  }));
 }
 
 function initMobileToggle(sidebarEl) {
@@ -669,6 +863,7 @@ function initMobileToggle(sidebarEl) {
       : null;
     setDrawerAvailability(true);
     sidebarEl.classList.add('mobile-open');
+    syncSidebarGroups(sidebarEl);
     ov.classList.add('is-visible');
     document.body.classList.add('muni-drawer-open');
     // Switch hamburger to X
@@ -678,6 +873,7 @@ function initMobileToggle(sidebarEl) {
       btn.setAttribute('aria-expanded', 'true');
       btn.setAttribute('aria-label', 'Cerrar navegación principal');
     }
+    notifySidebarState(sidebarEl);
     var drawerCloseButton = sidebarEl.querySelector('#sidebarCollapseBtn');
     if (drawerCloseButton) {
       drawerCloseButton.innerHTML = getIcon('close');
@@ -692,6 +888,7 @@ function initMobileToggle(sidebarEl) {
     var ov = getOrCreateOverlay();
     var wasOpen = sidebarEl.classList.contains('mobile-open');
     sidebarEl.classList.remove('mobile-open');
+    syncSidebarGroups(sidebarEl);
     ov.classList.remove('is-visible');
     document.body.classList.remove('muni-drawer-open');
     // Switch X back to hamburger
@@ -701,6 +898,7 @@ function initMobileToggle(sidebarEl) {
       btn.setAttribute('aria-expanded', 'false');
       btn.setAttribute('aria-label', 'Abrir navegación principal');
     }
+    notifySidebarState(sidebarEl);
     updateCollapseBtnIcon(sidebarEl);
     restoreBackground();
     if (wasOpen) {
@@ -771,6 +969,8 @@ function initMobileToggle(sidebarEl) {
         setCollapsed(collapsed);
         adjustMainContent(collapsed);
         updateCollapseBtnIcon(sidebarEl);
+        syncSidebarGroups(sidebarEl);
+        notifySidebarState(sidebarEl);
       }
     });
     fresh.innerHTML = getIcon('hamburger');
@@ -802,8 +1002,12 @@ function initMobileToggle(sidebarEl) {
         adjustMainContent(false);
       }
       setDrawerAvailability(true);
+      syncSidebarGroups(sidebarEl);
+      notifySidebarState(sidebarEl);
     } else if (!sidebarEl.classList.contains('mobile-open')) {
       setDrawerAvailability(false);
+      syncSidebarGroups(sidebarEl);
+      notifySidebarState(sidebarEl);
     }
   }
   if (sidebarEl.__muniDrawerResizeHandler) {
@@ -813,6 +1017,8 @@ function initMobileToggle(sidebarEl) {
   window.addEventListener('resize', handleDrawerResize);
 
   setDrawerAvailability(sidebarEl.classList.contains('mobile-open'));
+  syncSidebarGroups(sidebarEl);
+  notifySidebarState(sidebarEl);
 
   window.openMobileSidebar = openMobile;
   window.closeMobileSidebar = closeMobile;

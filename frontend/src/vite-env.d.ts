@@ -8,4 +8,5 @@ interface MuniAuthClient {
 
 interface Window {
   MuniAuth?: MuniAuthClient;
+  MuniNavigationDefinition?: unknown;
 }

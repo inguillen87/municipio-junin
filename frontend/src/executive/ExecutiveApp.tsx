@@ -2,18 +2,16 @@ import { AUTH_TIMEOUT_MS } from '../auth/session';
 import { useGovernedSurface } from '../auth/use-governed-surface';
 import { AppShell } from '../components/AppShell';
 import { GovernedBlocked, GovernedLoading } from '../components/GovernedStates';
-import type { TopbarLink } from '../components/Topbar';
 import { fetchExecutiveContract } from '../domain/executive-contract';
 import type { ExecutiveViewModel } from '../domain/executive-types';
 import { buildExecutiveViewModel } from '../domain/executive-view-model';
 import { ExecutiveDashboard } from './ExecutiveDashboard';
 
 const REQUIRED_CAPABILITY = 'navigation.grh-executive';
-const EXECUTIVE_NAVIGATION: readonly TopbarLink[] = Object.freeze([
-  { href: '/inicio.html', label: 'Inicio' },
-  { href: '/ejecutivo', label: 'Resumen ejecutivo GRH', current: true },
-  { href: '/calidad', label: 'Calidad de datos' },
-]);
+const EXECUTIVE_NAVIGATION = Object.freeze({
+  activeItemId: 'grh-ejecutivo',
+  itemIds: Object.freeze(['workspace', 'grh-ejecutivo', 'control']),
+});
 
 async function loadExecutiveViewModel(signal: AbortSignal): Promise<ExecutiveViewModel> {
   const contract = await fetchExecutiveContract({ timeoutMs: AUTH_TIMEOUT_MS, signal });
@@ -29,7 +27,7 @@ export function ExecutiveApp() {
   return (
     <AppShell
       identity={state.identity}
-      links={EXECUTIVE_NAVIGATION}
+      navigation={EXECUTIVE_NAVIGATION}
       busy={state.status === 'loading'}
     >
       {state.status === 'loading' ? (

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 import esmPolicy from '../shared/access-policy.cjs';
 
@@ -79,22 +80,22 @@ const EXPECTED_HOME_VARIANTS = {
 const EXPECTED_NAV_HREFS = [
   'inicio.html',
   'dashboard.html',
-  'reportes.html',
-  'hacienda.html',
   '/ejecutivo',
   'decisiones-grh.html',
   'ia.html',
+  'reportes.html',
+  'hacienda.html',
   '/estructura',
   'movimientos-grh.html',
   'rrhh.html',
   'areas-grh.html',
   '/territorio',
-  '/calidad',
-  'auditoria.html',
-  'exportar.html',
-  'importar.html',
   'cuentas-claras.html',
   'ciudadano.html',
+  'importar.html',
+  'auditoria.html',
+  '/calidad',
+  'exportar.html',
   'manuales.html',
 ];
 
@@ -112,11 +113,15 @@ const HIDDEN_UNGOVERNED_HREFS = [
   'configuracion.html',
 ];
 
-function extractSidebarItems(source) {
-  const block = source.match(/var NAV_ITEMS = \[([\s\S]*?)\n\];/);
-  assert.ok(block, 'js/nav.js must expose one literal NAV_ITEMS catalog');
-  return [...block[1].matchAll(/\{\s*id:'([^']+)',\s*href:'([^']+)',\s*icon:'[^']+',\s*label:'([^']+)',\s*section:'[^']+',\s*(?:capability:'([^']+)'|public:true)\s*\}/g)]
-    .map(match => ({ id: match[1], href: match[2], label: match[3], capability: match[4] || null }));
+async function readNavigationGlobals() {
+  const source = await readFile(new URL('../js/navigation-catalog.js', import.meta.url), 'utf8');
+  const window = {};
+  runInNewContext(source, { window });
+  return {
+    catalog: window.MuniNavigationCatalog,
+    definition: window.MuniNavigationDefinition,
+    source,
+  };
 }
 
 function extractRoleArray(source, constantName) {
@@ -392,12 +397,20 @@ test('capability snapshots cannot mutate the canonical policy', () => {
   assert.equal(Object.isFrozen(esmPolicy.ROLE_CAPABILITIES.TENANT_USER), true);
 });
 
-test('desktop and mobile catalogs expose one honest mapping without duplicates', async () => {
-  const source = await readFile(new URL('../js/nav.js', import.meta.url), 'utf8');
+test('desktop and mobile consume one authoritative hierarchical catalog without duplicates', async () => {
+  const [source, navigation] = await Promise.all([
+    readFile(new URL('../js/nav.js', import.meta.url), 'utf8'),
+    readNavigationGlobals(),
+  ]);
   const bottomSource = await readFile(new URL('../js/bottom-nav.js', import.meta.url), 'utf8');
-  const items = extractSidebarItems(source);
+  const items = Array.from(navigation.definition.items, item => ({ ...item }));
   const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
 
+  assert.equal(navigation.definition.version, '2026-08-12.1');
+  assert.deepEqual(
+    Array.from(navigation.definition.groups, group => group.id),
+    ['executive', 'people', 'territory', 'data'],
+  );
   assert.deepEqual(items.map(item => item.href), EXPECTED_NAV_HREFS);
   assert.equal(new Set(items.map(item => item.href)).size, items.length, 'sidebar hrefs must be unique');
   assert.equal(new Set(items.map(item => item.label)).size, items.length, 'sidebar labels must be unique');
@@ -410,33 +423,29 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
     'organization analytics exposes the situation room and the movement operations center');
   assert.equal(items.filter(item => item.capability === 'navigation.rrhh').length, 2,
     'RRHH exposes the governed domain explorer and the operational directory');
-  assert.match(source, /window\.MuniNavigationCatalog\s*=\s*Object\.freeze\(NAV_ITEMS\.reduce/);
-  assert.match(source, /!Object\.prototype\.hasOwnProperty\.call\(catalog, item\.capability\)/,
-    'the first governed route remains the canonical quick-navigation destination');
-  assert.equal(items.find(item => item.capability === 'navigation.rrhh').href, 'rrhh.html');
+  assert.equal(navigation.catalog['navigation.rrhh'].href, 'rrhh.html');
+  assert.equal(navigation.catalog['navigation.organization-analytics'].href, '/estructura');
+  assert.equal(navigation.catalog['navigation.workspace'].href, 'inicio.html');
+  assert.doesNotMatch(source, /var NAV_ITEMS\s*=\s*\[/,
+    'the runtime must not fork a second literal catalog');
+  assert.match(source, /MuniNavigationDefinition/);
   assert.match(bottomSource, /var CATALOG = window\.MuniNavigationCatalog;/);
   assert.doesNotMatch(bottomSource, /^\s*'navigation\.[^']+':\s*\{/m,
     'bottom navigation must not duplicate the authoritative catalog');
 
-  assert.match(source, /href:'\/calidad'[\s\S]*label:'Calidad de datos'[\s\S]*capability:'navigation\.data-quality'/);
-  assert.match(source, /href:'\/ejecutivo'[\s\S]*label:'Resumen ejecutivo GRH'[\s\S]*capability:'navigation\.grh-executive'/);
-  assert.match(source, /href:'\/estructura'[\s\S]*label:'Estructura y áreas de costo'[\s\S]*capability:'navigation\.organization-analytics'/);
-  assert.match(source, /href:'movimientos-grh\.html'[\s\S]*label:'Movimientos y trazabilidad'[\s\S]*capability:'navigation\.organization-analytics'/);
-  assert.match(source, /section:'DIRECCIÓN GRH'/);
-  assert.match(source, /section:'PERSONAS Y ORGANIZACIÓN'/);
-  assert.match(source, /section:'DATOS GRH'/);
-  assert.match(source, /href:'\/territorio'[\s\S]*label:'Centro territorial'[\s\S]*capability:'navigation\.territory'/);
-  assert.match(source, /label:'Panorama municipal'/);
-  assert.match(source, /label:'Hacienda y n(?:ó|Ã³)mina'/);
-  assert.match(source, /label:'Mapa de datos GRH'/);
-  assert.match(source, /label:'Directorio y fichas'/);
-  assert.match(source, /label:'Asistente GRH'/);
-  assert.match(source, /label:'Reportes'/);
-  assert.match(source, /href:'auditoria\.html'[\s\S]*label:'Inventario de cargas'[\s\S]*capability:'navigation\.audit'/);
-  assert.match(source, /href:'exportar\.html'[\s\S]*label:'Salidas gobernadas'[\s\S]*capability:'navigation\.export'/);
-  assert.match(source, /href:'manuales\.html'[\s\S]*capability:'navigation\.help'/);
+  assert.deepEqual(
+    items.filter(item => item.placement !== 'group').map(item => [item.id, item.placement]),
+    [['workspace', 'top'], ['manuales', 'footer']],
+  );
+  assert.ok(items.filter(item => item.placement === 'group').every(item => (
+    navigation.definition.groups.some(group => group.id === item.groupId)
+  )));
+  assert.equal(items.find(item => item.id === 'ia').label, 'BOT IA para GRH');
+  assert.equal(items.find(item => item.id === 'ia').shortLabel, 'BOT IA');
+  assert.equal(items.find(item => item.id === 'decisiones-grh').label, 'Decisiones GRH');
+  assert.equal(items.find(item => item.id === 'movimientos-grh').label, 'Movimientos de legajo');
   assert.equal(items.filter(item => item.href === 'reportes.html').length, 1);
-  assert.doesNotMatch(source, /access:\s*(?:'all'|\[)/);
+  assert.doesNotMatch(navigation.source, /access:\s*(?:'all'|\[)/);
 
   for (const hiddenHref of HIDDEN_UNGOVERNED_HREFS) {
     assert.equal(items.some(item => item.href === hiddenHref), false, hiddenHref);

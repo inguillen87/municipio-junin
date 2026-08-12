@@ -1,8 +1,9 @@
-import { useLayoutEffect, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 
 import type { SessionIdentity } from '../auth/session';
+import { contextualLinks, getNavigationDefinition } from '../navigation/catalog';
 import { MuniGuiaBridge } from './MuniGuiaBridge';
-import { Topbar, type TopbarLink } from './Topbar';
+import { Topbar } from './Topbar';
 
 const THEME_STORAGE_KEY = 'municontrol-color-theme:v1';
 const LEGACY_THEME_STORAGE_KEY = 'govtech_theme';
@@ -30,14 +31,22 @@ function initialThemePreference(): ThemePreference {
 interface AppShellProps {
   children: ReactNode;
   identity: SessionIdentity | null;
-  links: readonly TopbarLink[];
+  navigation: {
+    activeItemId: string;
+    itemIds: readonly string[];
+  };
   busy: boolean;
 }
 
-export function AppShell({ children, identity, links, busy }: AppShellProps) {
+export function AppShell({ children, identity, navigation, busy }: AppShellProps) {
   const [themePreference, setThemePreference] = useState<ThemePreference>(initialThemePreference);
   const [preferredSystemTheme, setPreferredSystemTheme] = useState<ResolvedTheme>(systemTheme);
   const theme = themePreference === 'auto' ? preferredSystemTheme : themePreference;
+  const definition = useMemo(getNavigationDefinition, []);
+  const links = useMemo(
+    () => contextualLinks(navigation.itemIds, definition, identity, navigation.activeItemId),
+    [definition, identity, navigation.activeItemId, navigation.itemIds],
+  );
 
   useLayoutEffect(() => {
     if (themePreference !== 'auto' || !window.matchMedia) return undefined;

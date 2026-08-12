@@ -1,8 +1,8 @@
-export interface TopbarIdentity {
-  name: string;
-  role: string;
-  tenant: string;
-}
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import type { SessionIdentity } from '../auth/session';
+import { GLOBAL_NAVIGATION_DIALOG_ID, GlobalNavigation } from './GlobalNavigation';
+import { getNavigationDefinition } from '../navigation/catalog';
 
 export interface TopbarLink {
   current?: boolean;
@@ -11,7 +11,7 @@ export interface TopbarLink {
 }
 
 interface TopbarProps {
-  identity: TopbarIdentity | null;
+  identity: SessionIdentity | null;
   links: readonly TopbarLink[];
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
@@ -32,6 +32,21 @@ function ThemeIcon({ theme }: Pick<TopbarProps, 'theme'>) {
 
 export function Topbar({ identity, links, theme, onToggleTheme }: TopbarProps) {
   const nextTheme = theme === 'dark' ? 'claro' : 'oscuro';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const menuAvailable = getNavigationDefinition() !== null;
+  const openMenu = () => {
+    const guide = (window as Window & {
+      MuniGuia?: { closeForNavigation?: () => void };
+    }).MuniGuia;
+    guide?.closeForNavigation?.();
+    setMenuOpen(true);
+  };
+
+  useEffect(() => {
+    if (!identity || !menuAvailable) setMenuOpen(false);
+  }, [identity, menuAvailable]);
 
   return (
     <header className="topbar">
@@ -57,6 +72,22 @@ export function Topbar({ identity, links, theme, onToggleTheme }: TopbarProps) {
         </nav>
 
         <div className="topbar__tools">
+          {identity && menuAvailable ? (
+            <button
+              aria-controls={GLOBAL_NAVIGATION_DIALOG_ID}
+              aria-expanded={menuOpen}
+              aria-haspopup="dialog"
+              className="global-menu-trigger"
+              ref={menuTriggerRef}
+              type="button"
+              onClick={openMenu}
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <span>Menú principal</span>
+            </button>
+          ) : null}
           {identity ? (
             <div className="identity" aria-label={`Sesión de ${identity.name}`}>
               <span className="identity__avatar" aria-hidden="true">
@@ -79,6 +110,9 @@ export function Topbar({ identity, links, theme, onToggleTheme }: TopbarProps) {
           </button>
         </div>
       </div>
+      {menuOpen && identity && menuAvailable ? (
+        <GlobalNavigation identity={identity} onClose={closeMenu} trigger={menuTriggerRef.current} />
+      ) : null}
     </header>
   );
 }

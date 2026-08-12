@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 import { chromium } from 'playwright';
 
@@ -426,9 +427,9 @@ async function waitReady(page) {
 }
 
 test('action ledger surface integrations stay discoverable and capability-bound', async () => {
-  const [html, nav, home, dashboard, guide, manual, webContract] = await Promise.all([
+  const [html, navigationCatalog, home, dashboard, guide, manual, webContract] = await Promise.all([
     readFile(path.join(ROOT, 'decisiones-grh.html'), 'utf8'),
-    readFile(path.join(ROOT, 'js/nav.js'), 'utf8'),
+    readFile(path.join(ROOT, 'js/navigation-catalog.js'), 'utf8'),
     readFile(path.join(ROOT, 'inicio.html'), 'utf8'),
     readFile(path.join(ROOT, 'dashboard.html'), 'utf8'),
     readFile(path.join(ROOT, 'js/contextual-help-catalog.js'), 'utf8'),
@@ -438,7 +439,22 @@ test('action ledger surface integrations stay discoverable and capability-bound'
   for (const id of ['decisionLedger', 'decisionSummary', 'decisionSuggestions', 'decisionCommitments', 'decisionFilters', 'decisionDrawer', 'decisionTimeline', 'decisionDialog', 'decisionAssigneeRole', 'decisionDueOn', 'decisionSubmit', 'decisionStatus', 'decisionRetry']) {
     assert.match(html, new RegExp(`id=["']${id}["']`));
   }
-  assert.match(nav, /decisiones-grh\.html[\s\S]{0,160}navigation\.grh-decisions/);
+  const scope = {};
+  runInNewContext(navigationCatalog, { window: scope });
+  const navigationItems = Array.from(scope.MuniNavigationDefinition.items, item => ({ ...item }));
+  const decisions = navigationItems.find(item => item.id === 'decisiones-grh');
+  assert.deepEqual(decisions, {
+    id: 'decisiones-grh',
+    href: 'decisiones-grh.html',
+    label: 'Decisiones GRH',
+    shortLabel: 'Decisiones',
+    icon: 'check',
+    groupId: 'executive',
+    placement: 'group',
+    capability: 'navigation.grh-decisions',
+    primary: true,
+  });
+  assert.equal(navigationItems.filter(item => item.href === 'decisiones-grh.html').length, 1);
   assert.match(home, /navigation\.grh-decisions[\s\S]{0,200}decisiones-grh\.html/);
   assert.match(dashboard, /id="decisionLedgerCta"[^>]+href="decisiones-grh\.html"/);
   assert.match(guide, /manualAnchor:\s*'decisiones-compromisos'/);

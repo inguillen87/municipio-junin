@@ -343,8 +343,12 @@ function monitorPage(page, baseUrl) {
   return { consoleErrors, externalRequests, pageErrors };
 }
 
-async function createPage(browser, baseUrl, { theme, viewport }) {
-  const context = await browser.newContext({ reducedMotion: 'reduce', viewport });
+async function createPage(browser, baseUrl, { forcedColors, theme, viewport }) {
+  const context = await browser.newContext({
+    reducedMotion: 'reduce',
+    viewport,
+    ...(forcedColors ? { forcedColors } : {}),
+  });
   await context.addInitScript(selectedTheme => {
     localStorage.setItem('municontrol-color-theme:v1', selectedTheme);
     localStorage.setItem('govtech_theme', selectedTheme);
@@ -732,4 +736,144 @@ test('MuniGuía on React is governed, local, responsive and disposable', { timeo
       await context.close();
     }
   });
+});
+
+test('global React navigation projects the catalog across all four governed rooms', { timeout: 120_000 }, async t => {
+  const harness = await createHarness();
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await harness.close();
+  });
+
+  for (const [index, route] of ROUTES.entries()) {
+    const viewport = index % 2 === 0 ? { width: 1440, height: 900 } : { width: 390, height: 844 };
+    const { context, diagnostics, page } = await createPage(browser, harness.baseUrl, {
+      theme: index % 2 === 0 ? 'dark' : 'light',
+      viewport,
+    });
+    try {
+      const startApi = harness.apiLog.length;
+      const startAssets = harness.assetLog.length;
+      await page.goto(
+        `${harness.baseUrl}${route.path}?role=${route.role}&trace=global-nav-${route.id}`,
+        { waitUntil: 'domcontentloaded' },
+      );
+      await page.locator(route.readySelector).waitFor({ state: 'visible' });
+      const trigger = page.locator('.global-menu-trigger');
+      await trigger.waitFor({ state: 'visible' });
+      assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+      assert.equal(await trigger.getAttribute('aria-haspopup'), 'dialog');
+
+      await trigger.focus();
+      await page.keyboard.press('Enter');
+      const dialog = page.locator('#muni-global-navigation-dialog');
+      await dialog.waitFor({ state: 'visible' });
+      assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+      assert.equal(await dialog.getAttribute('role'), 'dialog');
+      assert.equal(await dialog.getAttribute('aria-modal'), 'true');
+      assert.equal(
+        await page.locator('#contenido-principal').evaluate(element => Boolean(element.closest('[inert]'))),
+        true,
+      );
+
+      const access = accessPolicy.getSessionAccessForUser({
+        role: route.role,
+        tenantId: 'tenant-react-muniguia-e2e',
+      });
+      assert.ok(access);
+      const capabilities = new Set(access.capabilities);
+      const expectedGroupIds = [
+        ['executive', ['navigation.dashboard', 'navigation.grh-executive', 'navigation.grh-decisions', 'navigation.ai-assistant', 'navigation.reports']],
+        ['people', ['navigation.hacienda', 'navigation.organization-analytics', 'navigation.rrhh']],
+        ['territory', ['navigation.territory', 'public']],
+        ['data', ['navigation.import', 'navigation.audit', 'navigation.data-quality', 'navigation.export']],
+      ].filter(([, required]) => required.some(capability => capability === 'public' || capabilities.has(capability)))
+        .map(([groupId]) => groupId);
+      const groups = page.locator('.global-navigation__group');
+      assert.deepEqual(await groups.evaluateAll(elements => elements.map(element => element.dataset.groupId)), expectedGroupIds);
+      assert.equal(await page.locator('.global-navigation__group-toggle[aria-expanded="true"]').count(), 1);
+      assert.equal(await page.locator('.global-navigation__group-panel:not([hidden])').count(), 1);
+      assert.equal(await page.locator(`.global-navigation__link[data-nav-id="${route.id === 'organizationAnalytics' ? 'estructura' : route.id === 'grhExecutive' ? 'grh-ejecutivo' : route.id === 'quality' ? 'control' : 'territorio'}"]`).getAttribute('aria-current'), 'page');
+
+      if (expectedGroupIds.length > 1) {
+        const expandedGroup = await page.locator('.global-navigation__group-toggle[aria-expanded="true"]')
+          .evaluate(element => element.closest('[data-group-id]')?.getAttribute('data-group-id'));
+        const targetGroup = expectedGroupIds.find(groupId => groupId !== expandedGroup);
+        assert.ok(targetGroup);
+        const target = page.locator(`.global-navigation__group[data-group-id="${targetGroup}"] .global-navigation__group-toggle`);
+        await target.focus();
+        await page.keyboard.press('Space');
+        assert.equal(await target.getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('.global-navigation__group-toggle[aria-expanded="true"]').count(), 1);
+      }
+
+      await page.keyboard.press('Escape');
+      await page.locator('.global-navigation').waitFor({ state: 'detached' });
+      assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+      assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('global-menu-trigger')), true);
+      assert.equal(
+        await page.locator('#contenido-principal').evaluate(element => Boolean(element.closest('[inert]'))),
+        false,
+      );
+      assert.deepEqual(
+        harness.apiLog.slice(startApi).map(entry => entry.path),
+        ['/api/auth/me', route.dataPath],
+        `${route.id}: opening navigation does not fetch data`,
+      );
+      assert.deepEqual(
+        harness.assetLog.slice(startAssets).map(entry => entry.path),
+        [GUIDE_RUNTIME_PATH, GUIDE_CATALOG_PATH, GUIDE_STYLES_PATH],
+      );
+      assert.deepEqual(diagnostics.consoleErrors, []);
+      assert.deepEqual(diagnostics.pageErrors, []);
+      assert.deepEqual(diagnostics.externalRequests, []);
+    } finally {
+      await context.close();
+    }
+  }
+
+  const route = ROUTES.find(candidate => candidate.id === 'territory');
+  assert.ok(route);
+  const { context, diagnostics, page } = await createPage(browser, harness.baseUrl, {
+    forcedColors: 'active',
+    theme: 'light',
+    viewport: { width: 320, height: 720 },
+  });
+  try {
+    await page.goto(
+      `${harness.baseUrl}${route.path}?role=${route.role}&trace=global-nav-320-forced`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await page.locator(route.readySelector).waitFor({ state: 'visible' });
+    await page.locator('.global-menu-trigger').click();
+    await page.locator('#muni-global-navigation-dialog').waitFor({ state: 'visible' });
+    const compact = await page.evaluate(() => {
+      const targets = [...document.querySelectorAll([
+        '.global-navigation__close',
+        '.global-navigation__group-toggle',
+        '.global-navigation__link',
+      ].join(','))].filter(element => element.getClientRects().length > 0);
+      return {
+        forcedColors: matchMedia('(forced-colors: active)').matches,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        targets: targets.map(element => ({
+          height: element.getBoundingClientRect().height,
+          width: element.getBoundingClientRect().width,
+        })),
+      };
+    });
+    assert.equal(compact.forcedColors, true);
+    assert.ok(compact.overflow <= 1, `320 forced-colors overflow=${compact.overflow}`);
+    assert.ok(compact.targets.length > 0);
+    for (const target of compact.targets) {
+      assert.ok(target.height >= 44, `320 forced-colors target height=${target.height}`);
+      assert.ok(target.width >= 44, `320 forced-colors target width=${target.width}`);
+    }
+    assert.deepEqual(diagnostics.consoleErrors, []);
+    assert.deepEqual(diagnostics.pageErrors, []);
+    assert.deepEqual(diagnostics.externalRequests, []);
+  } finally {
+    await context.close();
+  }
 });

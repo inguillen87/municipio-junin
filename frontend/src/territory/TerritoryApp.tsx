@@ -2,16 +2,14 @@ import { AUTH_TIMEOUT_MS } from '../auth/session';
 import { useGovernedSurface } from '../auth/use-governed-surface';
 import { AppShell } from '../components/AppShell';
 import { GovernedBlocked, GovernedLoading } from '../components/GovernedStates';
-import type { TopbarLink } from '../components/Topbar';
 import { fetchMunicipalTerritory } from './territory-contract';
 import { TerritoryDashboard } from './TerritoryDashboard';
 
 const REQUIRED_CAPABILITY = 'navigation.territory';
-const TERRITORY_NAVIGATION: readonly TopbarLink[] = Object.freeze([
-  { href: '/inicio.html', label: 'Inicio' },
-  { href: '/territorio', label: 'Territorio', current: true },
-  { href: '/manuales.html', label: 'Manual' },
-]);
+const TERRITORY_NAVIGATION = Object.freeze({
+  activeItemId: 'territorio',
+  itemIds: Object.freeze(['workspace', 'territorio', 'manuales']),
+});
 
 async function loadTerritory(signal: AbortSignal) {
   return fetchMunicipalTerritory(signal);
@@ -26,7 +24,7 @@ export function TerritoryApp() {
   return (
     <AppShell
       identity={state.identity}
-      links={TERRITORY_NAVIGATION}
+      navigation={TERRITORY_NAVIGATION}
       busy={state.status === 'loading'}
     >
       {state.status === 'loading' ? (

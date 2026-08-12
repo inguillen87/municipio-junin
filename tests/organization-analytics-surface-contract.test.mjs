@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 import accessPolicy from '../shared/access-policy.cjs';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
@@ -97,10 +98,10 @@ test('release, build, clean route, navigation and contextual help stay aligned',
   assert.ok(GOVERNED_HTML_FILES.includes('estructura.html'));
   assert.ok(PUBLIC_LEGACY_HTML_FILES.includes('organigrama.html'));
 
-  const [vercelSource, viteSource, navSource, workspaceSource, pageSource, dashboardSource, comparisonSource] = await Promise.all([
+  const [vercelSource, viteSource, navigationCatalog, workspaceSource, pageSource, dashboardSource, comparisonSource] = await Promise.all([
     readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/vite.config.ts', import.meta.url), 'utf8'),
-    readFile(new URL('../js/nav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../js/navigation-catalog.js', import.meta.url), 'utf8'),
     readFile(new URL('../inicio.html', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/estructura.html', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/src/structure/StructureDashboard.tsx', import.meta.url), 'utf8'),
@@ -113,8 +114,26 @@ test('release, build, clean route, navigation and contextual help stay aligned',
   );
   assert.match(viteSource, /estructura:\s*fileURLToPath\(new URL\('\.\/estructura\.html'/);
   assert.match(pageSource, /src="\/src\/structure-main\.tsx"/);
-  assert.match(navSource, /id:'estructura'[\s\S]*href:'\/estructura'[\s\S]*label:'Estructura y áreas de costo'[\s\S]*capability:'navigation\.organization-analytics'/);
-  assert.doesNotMatch(navSource, /href:'(?:\/)?organigrama(?:\.html)?'/);
+  const scope = {};
+  runInNewContext(navigationCatalog, { window: scope });
+  const navigationItems = Array.from(scope.MuniNavigationDefinition.items, item => ({ ...item }));
+  const structure = navigationItems.find(item => item.id === 'estructura');
+  assert.deepEqual(structure, {
+    id: 'estructura',
+    href: '/estructura',
+    label: 'Estructura y áreas de costo',
+    shortLabel: 'Estructura',
+    icon: 'organization',
+    groupId: 'people',
+    placement: 'group',
+    capability: CAPABILITY,
+    primary: true,
+  });
+  assert.equal(
+    navigationItems.some(item => ['/organigrama', 'organigrama.html', '/organigrama.html'].includes(item.href)),
+    false,
+    'the retired organigram surface must never re-enter navigation',
+  );
   assert.match(
     workspaceSource,
     /'navigation\.organization-analytics':\s*Object\.freeze\(\{\s*href:\s*'\/estructura',\s*label:\s*'Estructura y áreas de costo'/,

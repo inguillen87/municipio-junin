@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 const file = relativePath => readFile(new URL(`../${relativePath}`, import.meta.url), 'utf8');
 
@@ -109,46 +110,68 @@ test('legacy operational copy has a 12px minimum on the dashboard, shell and GRH
 });
 
 test('desktop and mobile navigation share canonical labels and React canary routes', async () => {
-  const [navigation, bottomNavigation, executive, quality, territory] = await Promise.all([
+  const [catalogSource, navigation, bottomNavigation, appShell, globalNavigation, ...roomSources] = await Promise.all([
+    file('js/navigation-catalog.js'),
     file('js/nav.js'),
     file('js/bottom-nav.js'),
+    file('frontend/src/components/AppShell.tsx'),
+    file('frontend/src/components/GlobalNavigation.tsx'),
     file('frontend/src/executive/ExecutiveApp.tsx'),
+    file('frontend/src/structure/StructureApp.tsx'),
     file('frontend/src/app/App.tsx'),
     file('frontend/src/territory/TerritoryApp.tsx'),
+    file('frontend/ejecutivo.html'),
+    file('frontend/estructura.html'),
+    file('frontend/calidad.html'),
+    file('frontend/territorio.html'),
   ]);
-  const catalog = navigation.match(/var NAV_ITEMS = \[[\s\S]*?\n\];/)?.[0] || '';
+  const scope = {};
+  runInNewContext(catalogSource, { window: scope });
+  const definition = scope.MuniNavigationDefinition;
+  assert.ok(definition, 'the canonical browser definition must be published');
+  const items = Array.from(definition.items, item => ({
+    href: item.href,
+    id: item.id,
+    label: item.label,
+    shortLabel: item.shortLabel,
+  }));
+  const byId = new Map(items.map(item => [item.id, item]));
+  assert.deepEqual(
+    ['executive', 'people', 'territory', 'data'],
+    Array.from(definition.groups, group => group.id),
+  );
+  assert.deepEqual(
+    ['dashboard', 'grh-ejecutivo', 'estructura', 'territorio', 'control', 'ia', 'decisiones-grh', 'movimientos-grh']
+      .map(id => [id, byId.get(id)?.label, byId.get(id)?.shortLabel, byId.get(id)?.href]),
+    [
+      ['dashboard', 'Panorama municipal', 'Panorama', 'dashboard.html'],
+      ['grh-ejecutivo', 'Resumen ejecutivo GRH', 'Resumen GRH', '/ejecutivo'],
+      ['estructura', 'Estructura y áreas de costo', 'Estructura', '/estructura'],
+      ['territorio', 'Centro territorial', 'Territorio', '/territorio'],
+      ['control', 'Calidad de datos', 'Calidad', '/calidad'],
+      ['ia', 'BOT IA para GRH', 'BOT IA', 'ia.html'],
+      ['decisiones-grh', 'Decisiones GRH', 'Decisiones', 'decisiones-grh.html'],
+      ['movimientos-grh', 'Movimientos de legajo', 'Movimientos', 'movimientos-grh.html'],
+    ],
+  );
+  assert.equal(items.some(item => /(?:grh-ejecutivo|control)\.html/.test(item.href)), false);
 
-  for (const label of [
-    'Panorama municipal',
-    'Resumen ejecutivo GRH',
-    'Estructura y áreas de costo',
-    'Centro territorial',
-    'Hacienda y nómina',
-    'Mapa de datos GRH',
-    'Directorio y fichas',
-    'Calidad de datos',
-    'Asistente GRH',
-    'Reportes',
-  ]) {
-    assert.ok(catalog.includes(`label:'${label}'`), `Missing canonical label: ${label}`);
-  }
-
-  assert.match(catalog, /href:'\/ejecutivo'/);
-  assert.match(catalog, /href:'\/estructura'/);
-  assert.match(catalog, /href:'\/territorio'/);
-  assert.match(catalog, /href:'\/calidad'/);
-  assert.doesNotMatch(catalog, /(?:grh-ejecutivo|control)\.html/);
-  assert.match(navigation, /window\.MuniNavigationCatalog\s*=\s*Object\.freeze/);
+  assert.doesNotMatch(navigation, /var NAV_ITEMS\s*=\s*\[/);
+  assert.match(navigation, /window\.MuniNavigationDefinition/);
   assert.match(bottomNavigation, /var CATALOG = window\.MuniNavigationCatalog;/);
   assert.doesNotMatch(bottomNavigation, /^\s*'navigation\.[^']+':\s*\{/m);
 
-  for (const reactNavigation of [executive, quality]) {
-    assert.match(reactNavigation, /href: '\/ejecutivo', label: 'Resumen ejecutivo GRH'/);
-    assert.match(reactNavigation, /href: '\/calidad', label: 'Calidad de datos'/);
-    assert.doesNotMatch(reactNavigation, /grh-ejecutivo\.html/);
+  assert.match(appShell, /contextualLinks\(navigation\.itemIds, definition, identity, navigation\.activeItemId\)/);
+  assert.match(globalNavigation, /projectNavigation\(definition, identity\.capabilities\)/);
+  assert.match(globalNavigation, /className="global-navigation__group-toggle"/);
+  for (const roomSource of roomSources.slice(0, 4)) {
+    assert.match(roomSource, /activeItemId:/);
+    assert.match(roomSource, /itemIds: Object\.freeze\(/);
+    assert.doesNotMatch(roomSource, /href:\s*['"]\/(?:ejecutivo|estructura|territorio|calidad)['"]/);
   }
-  assert.match(territory, /href: '\/territorio', label: 'Territorio', current: true/);
-  assert.match(territory, /REQUIRED_CAPABILITY = 'navigation\.territory'/);
+  for (const roomHtml of roomSources.slice(4)) {
+    assert.match(roomHtml, /<script vite-ignore src="\/js\/navigation-catalog\.js"><\/script>/);
+  }
 });
 
 test('legacy and React theme controls read and persist both compatible keys', async () => {

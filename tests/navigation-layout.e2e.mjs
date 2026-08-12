@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 import { chromium } from 'playwright';
 import accessPolicy from '../shared/access-policy.cjs';
 
@@ -26,26 +28,19 @@ const pages = [
   'auditoria.html',
   'mapa.html',
 ];
-const privateNavCatalog = [
-  ['inicio.html', 'navigation.workspace'],
-  ['dashboard.html', 'navigation.dashboard'],
-  ['reportes.html', 'navigation.reports'],
-  ['hacienda.html', 'navigation.hacienda'],
-  ['/ejecutivo', 'navigation.grh-executive'],
-  ['decisiones-grh.html', 'navigation.grh-decisions'],
-  ['ia.html', 'navigation.ai-assistant'],
-  ['/estructura', 'navigation.organization-analytics'],
-  ['movimientos-grh.html', 'navigation.organization-analytics'],
-  ['rrhh.html', 'navigation.rrhh'],
-  ['areas-grh.html', 'navigation.rrhh'],
-  ['/territorio', 'navigation.territory'],
-  ['/calidad', 'navigation.data-quality'],
-  ['auditoria.html', 'navigation.audit'],
-  ['exportar.html', 'navigation.export'],
-  ['importar.html', 'navigation.import'],
-];
-const publicNavHrefs = ['cuentas-claras.html', 'ciudadano.html'];
-const manualNav = ['manuales.html', 'navigation.help'];
+const navigationScope = {};
+runInNewContext(
+  readFileSync(path.join(root, 'js', 'navigation-catalog.js'), 'utf8'),
+  { window: navigationScope },
+);
+const navigationDefinition = navigationScope.MuniNavigationDefinition;
+const navigationItems = Array.from(navigationDefinition.items, item => ({
+  capability: item.capability,
+  href: item.href,
+  id: item.id,
+  primary: item.primary,
+  public: item.public,
+}));
 const retiredNavHrefs = [
   'analytics.html',
   'inteligencia.html',
@@ -59,37 +54,19 @@ const retiredNavHrefs = [
   'admin.html',
   'configuracion.html',
 ];
-const bottomCatalog = [
-  ['inicio.html', 'navigation.workspace'],
-  ['dashboard.html', 'navigation.dashboard'],
-  ['reportes.html', 'navigation.reports'],
-  ['hacienda.html', 'navigation.hacienda'],
-  ['/ejecutivo', 'navigation.grh-executive'],
-  ['/estructura', 'navigation.organization-analytics'],
-  ['/territorio', 'navigation.territory'],
-  ['/calidad', 'navigation.data-quality'],
-  ['decisiones-grh.html', 'navigation.grh-decisions'],
-  ['rrhh.html', 'navigation.rrhh'],
-  ['ia.html', 'navigation.ai-assistant'],
-  ['auditoria.html', 'navigation.audit'],
-  ['exportar.html', 'navigation.export'],
-  ['importar.html', 'navigation.import'],
-  ['manuales.html', 'navigation.help'],
-];
-
 function expectedSidebarHrefs(role) {
   const capabilities = new Set(getCapabilitiesForRole(role));
-  return [
-    ...privateNavCatalog.filter(([, capability]) => capabilities.has(capability)).map(([href]) => href),
-    ...publicNavHrefs,
-    ...(capabilities.has(manualNav[1]) ? [manualNav[0]] : []),
-  ];
+  return navigationItems
+    .filter(item => item.public === true || capabilities.has(item.capability))
+    .map(item => item.href);
 }
 
 function expectedBottomHrefs(role) {
   const access = getSessionAccessForUser({ role, tenantId: 'tenant-junin-test' });
   if (!access) return ['#more'];
-  const byCapability = new Map(bottomCatalog.map(([href, capability]) => [capability, href]));
+  const byCapability = new Map(navigationItems
+    .filter(item => item.primary === true && item.capability)
+    .map(item => [item.capability, item.href]));
   const quick = access.homeProfile.priorityCapabilities
     .filter(capability => access.capabilities.includes(capability) && byCapability.has(capability))
     .map(capability => byCapability.get(capability));
@@ -338,22 +315,126 @@ test('enterprise navigation becomes an accessible mobile drawer without shrinkin
     assert.ok(Math.abs(opened.sidebarLeft) <= 1, `${file} opened drawer geometry=${JSON.stringify(opened)}`);
     assert.equal(opened.menuExpanded, 'true');
 
-    const moreButton = page.locator('.bottom-nav [href="#more"]');
+    const moreButton = page.locator('.bottom-nav button.bottom-nav-more');
     if (await moreButton.count()) {
+      assert.equal(await moreButton.getAttribute('type'), 'button');
+      assert.match(await moreButton.getAttribute('aria-controls'), /^sidebar(?:-container)?$/);
+      assert.equal(await moreButton.getAttribute('aria-expanded'), 'true');
       await page.locator('#sidebarCollapseBtn').click();
       await page.waitForFunction(() => {
         const sidebar = document.querySelector('.sidebar');
         return sidebar && !sidebar.classList.contains('mobile-open') && sidebar.getBoundingClientRect().left <= -250;
       });
+      assert.equal(await moreButton.getAttribute('aria-expanded'), 'false');
       await moreButton.click();
       await page.waitForFunction(() => {
         const sidebar = document.querySelector('.sidebar.mobile-open');
         return sidebar && Math.abs(sidebar.getBoundingClientRect().left) <= 1;
       });
       assert.equal(await page.locator('#menuBtn').getAttribute('aria-expanded'), 'true');
+      assert.equal(await moreButton.getAttribute('aria-expanded'), 'true');
     }
     await context.close();
   }
+});
+
+test('desktop disclosures keep one authorized group open, persist choice and expose active context', async t => {
+  const server = await createServer({ authRole: 'TENANT_ADMIN' });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const { context, page } = await newPage(browser, { width: 1440, height: 940 });
+  t.after(async () => context.close());
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => window.MuniAuthReady);
+  await page.waitForSelector('.sb-nav-group');
+
+  const groups = page.locator('.sb-group-trigger');
+  assert.equal(await groups.count(), 4, 'tenant admin sees the four catalog rooms');
+  const openGroups = async () => groups.evaluateAll(buttons => buttons
+    .filter(button => button.getAttribute('aria-expanded') === 'true')
+    .map(button => button.dataset.navGroupTrigger));
+  assert.deepEqual(await openGroups(), ['executive']);
+  assert.equal(await page.locator('[data-nav-item="dashboard"]').getAttribute('aria-current'), 'page');
+  assert.equal(await page.locator('[data-nav-group-panel="executive"]').isVisible(), true);
+
+  const people = page.locator('[data-nav-group-trigger="people"]');
+  await people.focus();
+  await page.keyboard.press('Enter');
+  assert.deepEqual(await openGroups(), ['people']);
+  assert.equal(await page.evaluate(() => localStorage.getItem('muni_nav_open_group_v1')), 'people');
+
+  const data = page.locator('[data-nav-group-trigger="data"]');
+  await data.focus();
+  await page.keyboard.press('Space');
+  assert.deepEqual(await openGroups(), ['data']);
+  assert.equal(await page.evaluate(() => localStorage.getItem('muni_nav_open_group_v1')), 'data');
+  assert.equal(await page.locator('.sb-group-panel:not([hidden])').count(), 1);
+
+  await page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => window.MuniAuthReady);
+  await page.waitForSelector('.sb-nav-group');
+  assert.equal(
+    await page.locator('[data-nav-group-trigger="data"]').getAttribute('aria-expanded'),
+    'true',
+    'a direct active route restores the last visible disclosure',
+  );
+});
+
+test('64px desktop rail hides every child and a room trigger expands it without a dead end', async t => {
+  const server = await createServer({ authRole: 'TENANT_ADMIN' });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const { context, page } = await newPage(browser, { width: 1440, height: 940 });
+  t.after(async () => context.close());
+  await page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => window.MuniAuthReady);
+  await page.waitForSelector('.sb-group-trigger');
+
+  await page.locator('#sidebarCollapseBtn').click();
+  await page.waitForFunction(() => {
+    const sidebar = document.querySelector('.sidebar');
+    return sidebar?.classList.contains('collapsed') && Math.abs(sidebar.getBoundingClientRect().width - 64) <= 1;
+  });
+  const compact = await page.evaluate(() => ({
+    childLinks: [...document.querySelectorAll('.sb-child-item')]
+      .filter(item => item.getClientRects().length > 0).length,
+    directVisible: [...document.querySelectorAll('.sb-nav-direct .sb-item')]
+      .filter(item => item.getClientRects().length > 0).map(item => item.dataset.navItem),
+    hiddenPanels: [...document.querySelectorAll('.sb-group-panel')].every(panel => panel.hidden),
+    stored: localStorage.getItem('muni_sidebar_collapsed'),
+    triggerCount: [...document.querySelectorAll('.sb-group-trigger')]
+      .filter(trigger => trigger.getClientRects().length > 0).length,
+    width: document.querySelector('.sidebar')?.getBoundingClientRect().width,
+  }));
+  assert.ok(Math.abs(compact.width - 64) <= 1, `compact rail width=${compact.width}`);
+  assert.equal(compact.hiddenPanels, true);
+  assert.equal(compact.childLinks, 0);
+  assert.deepEqual(compact.directVisible, ['workspace', 'manuales']);
+  assert.equal(compact.triggerCount, 4);
+  assert.equal(compact.stored, '1');
+
+  await page.locator('[data-nav-group-trigger="people"]').click();
+  await page.waitForFunction(() => {
+    const sidebar = document.querySelector('.sidebar');
+    return !sidebar?.classList.contains('collapsed') && Math.abs(sidebar.getBoundingClientRect().width - 260) <= 1;
+  });
+  const expandedWidth = await page.locator('.sidebar').evaluate(sidebar => sidebar.getBoundingClientRect().width);
+  assert.ok(Math.abs(expandedWidth - 260) <= 1, `expanded rail width=${expandedWidth}`);
+  assert.equal(await page.locator('[data-nav-group-trigger="people"]').getAttribute('aria-expanded'), 'true');
+  assert.equal(await page.locator('[data-nav-group-panel="people"]').isVisible(), true);
+  assert.deepEqual(await page.evaluate(() => ({
+    collapsed: localStorage.getItem('muni_sidebar_collapsed'),
+    group: localStorage.getItem('muni_nav_open_group_v1'),
+  })), { collapsed: '0', group: 'people' });
 });
 
 test('mobile drawer traps keyboard focus and restores the page on every close path', async t => {
@@ -479,10 +560,10 @@ test('administration mobile shell renders its rail and Más opens the governed d
   await page.goto(`${baseUrl}/admin.html`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => window.MuniAuthReady);
   await page.waitForSelector('[data-muni-shell="primary-nav"] .sb-item');
-  await page.waitForSelector('[data-muni-shell="bottom-nav"] [href="#more"]');
+  await page.waitForSelector('[data-muni-shell="bottom-nav"] button.bottom-nav-more');
   assert.equal(await page.locator('[data-muni-shell="primary-nav"]').count(), 1);
   assert.equal(await page.locator('nav[aria-label="Navegación principal"]').count(), 1);
-  await page.locator('[data-muni-shell="bottom-nav"] [href="#more"]').click();
+  await page.locator('[data-muni-shell="bottom-nav"] button.bottom-nav-more').click();
   await page.waitForSelector('[data-muni-shell="primary-nav"].mobile-open');
   assert.equal(await page.locator('#menuBtn').getAttribute('aria-expanded'), 'true');
 });
@@ -581,7 +662,7 @@ test('institutional shell is local, AA-readable and motion-safe at focal viewpor
         return part.trim().endsWith('ms') ? duration / 1000 : duration;
       }));
       const sidebar = document.querySelector('[data-muni-shell="primary-nav"]');
-      const sectionLabel = sidebar.querySelector('.sb-section-label');
+      const sectionLabel = sidebar.querySelector('.sb-group-trigger, .sb-item');
       const bottomNav = document.querySelector('[data-muni-shell="bottom-nav"]');
       const bottomItem = bottomNav?.querySelector('.bottom-nav-item');
       return {
@@ -659,24 +740,30 @@ test('institutional shell is local, AA-readable and motion-safe at focal viewpor
     await context.close();
   }
 
-  const { context, page } = await newPage(browser, { width: 1024, height: 768 }, {
-    theme: 'light',
-    colorScheme: 'light',
-    forcedColors: 'active',
-  });
-  await page.goto(`${baseUrl}/manuales.html`, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(() => window.MuniAuthReady);
-  const firstLink = page.locator('[data-muni-shell="primary-nav"] .sb-item').first();
-  await firstLink.focus();
-  const forcedFocus = await firstLink.evaluate(element => ({
-    matches: element.matches(':focus-visible'),
-    outlineStyle: getComputedStyle(element).outlineStyle,
-    outlineWidth: Number.parseFloat(getComputedStyle(element).outlineWidth),
-  }));
-  assert.equal(forcedFocus.matches, true, 'forced colors must retain keyboard focus visibility');
-  assert.notEqual(forcedFocus.outlineStyle, 'none', 'forced colors focus outline must remain visible');
-  assert.ok(forcedFocus.outlineWidth >= 2, `forced colors outline=${forcedFocus.outlineWidth}px`);
-  await context.close();
+  for (const width of [320, 390, 1440]) {
+    const { context, page } = await newPage(browser, { width, height: width > 900 ? 940 : 844 }, {
+      theme: 'light',
+      colorScheme: 'light',
+      forcedColors: 'active',
+    });
+    await page.goto(`${baseUrl}/manuales.html`, { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => window.MuniAuthReady);
+    const focusTarget = width > 900
+      ? page.locator('[data-muni-shell="primary-nav"] .sb-group-trigger').first()
+      : page.locator('[data-muni-shell="bottom-nav"] .bottom-nav-item').first();
+    await focusTarget.focus();
+    const forcedFocus = await focusTarget.evaluate(element => ({
+      matches: element.matches(':focus-visible'),
+      outlineStyle: getComputedStyle(element).outlineStyle,
+      outlineWidth: Number.parseFloat(getComputedStyle(element).outlineWidth),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    assert.equal(forcedFocus.matches, true, `${width}: forced colors keyboard focus`);
+    assert.notEqual(forcedFocus.outlineStyle, 'none', `${width}: forced colors focus outline`);
+    assert.ok(forcedFocus.outlineWidth >= 2, `${width}: forced colors outline=${forcedFocus.outlineWidth}px`);
+    assert.ok(forcedFocus.overflow <= 1, `${width}: forced colors overflow=${forcedFocus.overflow}`);
+    await context.close();
+  }
 });
 
 test('desktop and mobile navigation project the exact role matrix without duplicates', async t => {
@@ -711,10 +798,10 @@ test('desktop and mobile navigation project the exact role matrix without duplic
 
         if (viewport.width <= 900) {
           await page.waitForSelector('.bottom-nav');
-          const bottomItems = await page.locator('.bottom-nav a').evaluateAll(links =>
-            links.map(link => ({
-              href: link.getAttribute('href'),
-              label: link.getAttribute('aria-label') || '',
+          const bottomItems = await page.locator('.bottom-nav a, .bottom-nav button').evaluateAll(items =>
+            items.map(item => ({
+              href: item.matches('button.bottom-nav-more') ? '#more' : item.getAttribute('href'),
+              label: item.getAttribute('aria-label') || '',
             })),
           );
           const bottomHrefs = bottomItems.map(item => item.href);

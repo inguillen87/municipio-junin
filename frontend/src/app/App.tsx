@@ -18,14 +18,12 @@ import { Panel } from '../components/Panel';
 import { ResponsiveTable, type TableColumn } from '../components/ResponsiveTable';
 import { RiskList } from '../components/RiskList';
 import { SourceStatus } from '../components/SourceStatus';
-import type { TopbarLink } from '../components/Topbar';
 
 const REQUIRED_CAPABILITY = 'navigation.data-quality';
-const QUALITY_NAVIGATION: readonly TopbarLink[] = Object.freeze([
-  { href: '/inicio.html', label: 'Inicio' },
-  { href: '/ejecutivo', label: 'Resumen ejecutivo GRH' },
-  { href: '/calidad', label: 'Calidad de datos', current: true },
-]);
+const QUALITY_NAVIGATION = Object.freeze({
+  activeItemId: 'control',
+  itemIds: Object.freeze(['workspace', 'grh-ejecutivo', 'control']),
+});
 
 async function loadQualityViewModel(signal: AbortSignal): Promise<QualityViewModel> {
   const contract = await fetchQualityContract({ timeoutMs: AUTH_TIMEOUT_MS, signal });
@@ -218,7 +216,7 @@ export function App() {
   return (
     <AppShell
       identity={state.identity}
-      links={QUALITY_NAVIGATION}
+      navigation={QUALITY_NAVIGATION}
       busy={state.status === 'loading'}
     >
       {state.status === 'loading' ? (

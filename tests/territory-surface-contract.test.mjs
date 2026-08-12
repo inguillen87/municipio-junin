@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 import accessPolicy from '../shared/access-policy.cjs';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
@@ -92,13 +93,32 @@ test('clean territorial routing and legacy favorites have one canonical Vercel d
 });
 
 test('shell, workspace, role tour and MuniGuia use the same bounded territorial language', async () => {
-  const [navigation, workspace, roles, guide] = await Promise.all([
-    readFile(path.join(ROOT, 'js', 'nav.js'), 'utf8'),
+  const [navigationCatalog, workspace, roles, guide] = await Promise.all([
+    readFile(path.join(ROOT, 'js', 'navigation-catalog.js'), 'utf8'),
     readFile(path.join(ROOT, 'inicio.html'), 'utf8'),
     readFile(path.join(ROOT, 'roles.html'), 'utf8'),
     readFile(path.join(ROOT, 'js', 'contextual-help-catalog.js'), 'utf8'),
   ]);
-  assert.match(navigation, /href:'\/territorio'[\s\S]*label:'Centro territorial'[\s\S]*capability:'navigation\.territory'/);
+  const scope = {};
+  runInNewContext(navigationCatalog, { window: scope });
+  const navigationItems = Array.from(scope.MuniNavigationDefinition.items, item => ({ ...item }));
+  const territory = navigationItems.find(item => item.id === 'territorio');
+  assert.deepEqual(territory, {
+    id: 'territorio',
+    href: '/territorio',
+    label: 'Centro territorial',
+    shortLabel: 'Territorio',
+    icon: 'map',
+    groupId: 'territory',
+    placement: 'group',
+    capability: CAPABILITY,
+    primary: true,
+  });
+  assert.equal(
+    navigationItems.some(item => ['/mapa', 'mapa.html', '/mapa.html'].includes(item.href)),
+    false,
+    'the retired map surface must never re-enter navigation',
+  );
   assert.match(workspace, /'navigation\.territory':[\s\S]{0,220}href:\s*'\/territorio'[\s\S]{0,220}Límite y localidades oficiales/);
   for (const role of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
     assert.match(roles, new RegExp(`role: '${role}'[\\s\\S]{0,900}navigation\\.territory`));

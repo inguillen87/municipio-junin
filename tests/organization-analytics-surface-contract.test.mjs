@@ -112,11 +112,11 @@ test('release, build, clean route, navigation and contextual help stay aligned',
   );
   assert.match(viteSource, /estructura:\s*fileURLToPath\(new URL\('\.\/estructura\.html'/);
   assert.match(pageSource, /src="\/src\/structure-main\.tsx"/);
-  assert.match(navSource, /id:'estructura'[\s\S]*href:'\/estructura'[\s\S]*label:'Dotación y ausencias'[\s\S]*capability:'navigation\.organization-analytics'/);
+  assert.match(navSource, /id:'estructura'[\s\S]*href:'\/estructura'[\s\S]*label:'Estructura y áreas de costo'[\s\S]*capability:'navigation\.organization-analytics'/);
   assert.doesNotMatch(navSource, /href:'(?:\/)?organigrama(?:\.html)?'/);
   assert.match(
     workspaceSource,
-    /'navigation\.organization-analytics':\s*Object\.freeze\(\{\s*href:\s*'\/estructura',\s*label:\s*'Dotación y ausencias'/,
+    /'navigation\.organization-analytics':\s*Object\.freeze\(\{\s*href:\s*'\/estructura',\s*label:\s*'Estructura y áreas de costo'/,
   );
   assert.match(
     workspaceSource,
@@ -127,7 +127,7 @@ test('release, build, clean route, navigation and contextual help stay aligned',
   const guide = MUNIGUIA_CATALOG.pages.organizationAnalytics;
   assert.deepEqual(guide.aliases, ['/estructura', '/estructura.html']);
   assert.equal(guide.requiredCapability, CAPABILITY);
-  assert.equal(guide.label, 'Dotación y ausencias');
+  assert.equal(guide.label, 'Estructura y áreas de costo');
   assert.match(guide.objective, /sala de situación/i);
   assert.deepEqual(
     guide.steps.map((step) => step.selector),

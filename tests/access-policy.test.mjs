@@ -420,7 +420,7 @@ test('desktop and mobile catalogs expose one honest mapping without duplicates',
 
   assert.match(source, /href:'\/calidad'[\s\S]*label:'Calidad de datos'[\s\S]*capability:'navigation\.data-quality'/);
   assert.match(source, /href:'\/ejecutivo'[\s\S]*label:'Resumen ejecutivo GRH'[\s\S]*capability:'navigation\.grh-executive'/);
-  assert.match(source, /href:'\/estructura'[\s\S]*label:'Dotación y ausencias'[\s\S]*capability:'navigation\.organization-analytics'/);
+  assert.match(source, /href:'\/estructura'[\s\S]*label:'Estructura y áreas de costo'[\s\S]*capability:'navigation\.organization-analytics'/);
   assert.match(source, /href:'movimientos-grh\.html'[\s\S]*label:'Movimientos y trazabilidad'[\s\S]*capability:'navigation\.organization-analytics'/);
   assert.match(source, /section:'DIRECCIÓN GRH'/);
   assert.match(source, /section:'PERSONAS Y ORGANIZACIÓN'/);

@@ -55,7 +55,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 |---|---|---|
 | Centro Ejecutivo GRH | Implementado | Contratos privados `profile` + `semantic`; snapshot histórico |
 | Centro Ejecutivo RRHH | Implementado | Dotación registrada, ausencias, movimientos, calidad y cuarentena agregadas |
-| Sala de situación de dotación y ausencias | Validada localmente | React + TypeScript, seis KPI, cohortes de cálculo, dos series históricas, matriz 5×5, comparador y acciones; contrato `grh-organization-analytics-v2`, k=10 y sin directorio nominal |
+| Estructura y áreas de costo | Validada localmente | React + TypeScript, seis KPI, exploradores de clasificaciones y centros de costo del cálculo, dos series históricas, matriz 5×5, comparador y acciones hacia Hacienda/BOT; contrato `grh-organization-analytics-v2`, k=10 y sin directorio nominal |
 | Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |

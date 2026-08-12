@@ -468,7 +468,9 @@ function validateExecutiveRanking(value, path, totalParticipants, errors) {
         safeCode(row?.companyCode) && safeCode(row?.sourceCode) &&
           safeLabel(row?.label, 160) && row.label !== GRH_PROTECTED_BUCKET_LABEL,
         `${rowPath}.identity`);
-      const identity = `${String(row?.companyCode)}:${String(row?.sourceCode)}:${String(row?.label)}`;
+      // Downstream cohort routes address a released category by company + source code.
+      // A label change must not make the same route identity appear twice.
+      const identity = `${String(row?.companyCode)}:${String(row?.sourceCode)}`;
       add(errors, !identities.has(identity), `${rowPath}.unique`);
       identities.add(identity);
     } else if (row?.privacyStatus === 'protected_aggregate') {

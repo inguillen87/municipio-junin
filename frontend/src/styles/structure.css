@@ -780,7 +780,7 @@
 
 .structure-explorer__dimension {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.3rem;
   padding: 0.3rem;
   border: 1px solid var(--border);
@@ -983,6 +983,17 @@
 
 .structure-explorer__action {
   min-width: 9.5rem;
+}
+
+.structure-explorer__action:not(.structure-action--primary) {
+  border-color: var(--text-strong);
+  color: var(--text-strong);
+  background: var(--surface-tint);
+}
+
+.structure-explorer__action:not(.structure-action--primary):hover {
+  color: var(--text-strong);
+  background: color-mix(in srgb, var(--brand) 16%, var(--surface-raised));
 }
 
 .structure-explorer__action.structure-action--primary {

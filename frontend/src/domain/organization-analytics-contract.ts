@@ -406,7 +406,9 @@ function validWorkforceRanking(value: unknown, totalParticipants: number): boole
     if (row.privacyStatus === 'released') {
       if (!safeCode(row.companyCode) || !safeCode(row.sourceCode) || !shortText(row.label, 160) ||
           row.label === WORKFORCE_PROTECTED_LABEL) return false;
-      const identity = `${String(row.companyCode)}:${String(row.sourceCode)}:${row.label}`;
+      // Hacienda resolves cohort deep links with this exact compound identity.
+      // Labels remain presentation metadata and cannot disambiguate a route.
+      const identity = `${String(row.companyCode)}:${String(row.sourceCode)}`;
       if (identities.has(identity)) return false;
       identities.add(identity);
     } else if (row.privacyStatus === 'protected_aggregate') {

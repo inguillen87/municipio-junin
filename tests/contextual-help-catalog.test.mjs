@@ -221,10 +221,10 @@ test('related actions and runtime remain capability-bound, local, non-persistent
     ['#organizationSnapshotStatus', '#organizationExplorer', '#absenceRiskPanel'],
   );
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.requiredCapability, 'navigation.organization-analytics');
-  assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.label, 'Dotación y ausencias');
+  assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.label, 'Estructura y áreas de costo');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.title),
-    ['Confirmá fuente y corte', 'Explorá clasificaciones GRH', 'Priorizá una revisión'],
+    ['Confirmá fuente y corte', 'Explorá estructura y áreas de costo', 'Priorizá una revisión'],
   );
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.movementOperations.steps.map((step) => step.selector),

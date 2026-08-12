@@ -141,13 +141,13 @@ const PAGES = deepFreeze({
   organizationAnalytics: {
     href: 'estructura.html',
     aliases: ['/estructura', '/estructura.html'],
-    label: 'Dotación y ausencias',
-    objective: 'Usá la sala de situación para comparar la dotación observada y orientar revisiones agregadas de ausencias.',
+    label: 'Estructura y áreas de costo',
+    objective: 'Usá la sala de situación para explorar clasificaciones GRH, áreas de costo del cálculo y señales históricas con sus universos visibles.',
     requiredCapability: 'navigation.organization-analytics',
     manualAnchor: 'interpretacion',
     steps: [
       { id: 'confirm-organization-snapshot', selector: '#organizationSnapshotStatus', title: 'Confirmá fuente y corte', copy: 'Revisá la fuente, la fecha del snapshot y la cobertura antes de interpretar las comparaciones.' },
-      { id: 'explore-organization', selector: '#organizationExplorer', title: 'Explorá clasificaciones GRH', copy: 'Elegí una organización o sector informado, revisá su ficha agregada y abrí acciones compatibles.' },
+      { id: 'explore-organization', selector: '#organizationExplorer', title: 'Explorá estructura y áreas de costo', copy: 'Elegí una clasificación o área de costo observada, revisá su universo y abrí sólo las acciones compatibles.' },
       { id: 'review-absence-risk', selector: '#absenceRiskPanel', title: 'Priorizá una revisión', copy: 'Usá el ranking y las series históricas para elegir qué señal revisar en los tableros vinculados.' },
     ],
   },

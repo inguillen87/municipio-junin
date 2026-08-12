@@ -305,7 +305,7 @@ var NAV_ITEMS = [
   { id:'grh-ejecutivo', href:'/ejecutivo',          icon:'people', label:'Resumen ejecutivo GRH', section:'DIRECCIÓN GRH', capability:'navigation.grh-executive' },
   { id:'decisiones-grh',href:'decisiones-grh.html',  icon:'check',  label:'Centro de decisiones',  section:'DIRECCIÓN GRH', capability:'navigation.grh-decisions' },
   { id:'ia',            href:'ia.html',             icon:'ai',     label:'Asistente GRH',         section:'DIRECCIÓN GRH', capability:'navigation.ai-assistant' },
-  { id:'estructura',    href:'/estructura',          icon:'chart',  label:'Dotación y ausencias',   section:'PERSONAS Y ORGANIZACIÓN', capability:'navigation.organization-analytics' },
+  { id:'estructura',    href:'/estructura',          icon:'chart',  label:'Estructura y áreas de costo', section:'PERSONAS Y ORGANIZACIÓN', capability:'navigation.organization-analytics' },
   { id:'movimientos-grh',href:'movimientos-grh.html',icon:'chart',  label:'Movimientos y trazabilidad', section:'PERSONAS Y ORGANIZACIÓN', capability:'navigation.organization-analytics' },
   { id:'rrhh',          href:'rrhh.html',            icon:'people', label:'Directorio y fichas',    section:'PERSONAS Y ORGANIZACIÓN', capability:'navigation.rrhh' },
   { id:'areas-grh',     href:'areas-grh.html',       icon:'chart',  label:'Mapa de datos GRH',      section:'DATOS GRH',     capability:'navigation.rrhh' },

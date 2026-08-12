@@ -12,7 +12,7 @@ const REQUIRED_CAPABILITY = 'navigation.organization-analytics';
 const STRUCTURE_NAVIGATION: readonly TopbarLink[] = Object.freeze([
   { href: '/inicio.html', label: 'Inicio' },
   { href: '/ejecutivo', label: 'Resumen GRH' },
-  { href: '/estructura', label: 'Dotación y ausencias', current: true },
+  { href: '/estructura', label: 'Estructura y áreas de costo', current: true },
   { href: '/calidad', label: 'Calidad' },
 ]);
 

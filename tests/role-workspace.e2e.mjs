@@ -311,8 +311,8 @@ test('published high roles discover the aggregate staffing room in navigation an
     assert.equal(surface.nav, expected ? '/estructura' : null, `${profile.email}:navigation`);
     assert.equal(surface.action, expected ? '/estructura' : null, `${profile.email}:Inicio CTA`);
     if (expected) {
-      assert.match(surface.navText, /Dotación y ausencias/);
-      assert.match(surface.actionText, /Dotación y ausencias/);
+      assert.match(surface.navText, /Estructura y áreas de costo/);
+      assert.match(surface.actionText, /Estructura y áreas de costo/);
     }
     await context.close();
   }

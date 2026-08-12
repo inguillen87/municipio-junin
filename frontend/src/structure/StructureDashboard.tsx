@@ -4,6 +4,7 @@ import type {
   OrganizationAnalyticsViewModel,
   RegistryRankingViewModel,
   WorkforceDimensionKey,
+  WorkforceRowViewModel,
 } from '../domain/organization-analytics-types';
 import {
   ActivityTimeline,
@@ -13,18 +14,28 @@ import {
 } from './StructureCharts';
 
 const WORKFORCE_KEYS: readonly WorkforceDimensionKey[] = ['sector', 'costCenter', 'agreement'];
+const EXPLORER_DIMENSIONS: readonly ExplorerDimension[] = ['organization', 'sector', 'costCenter'];
 
 interface StructureDashboardProps {
   readonly capabilities: readonly string[];
   readonly viewModel: OrganizationAnalyticsViewModel;
 }
 
-type ExplorerDimension = RegistryRankingViewModel['key'];
+type RegistryExplorerDimension = RegistryRankingViewModel['key'];
+type ExplorerDimension = RegistryExplorerDimension | 'costCenter';
 
-interface ExplorerSelection {
-  readonly dimension: ExplorerDimension;
+interface RegistryExplorerSelection {
+  readonly dimension: RegistryExplorerDimension;
   readonly code: number;
 }
+
+interface CostCenterExplorerSelection {
+  readonly dimension: 'costCenter';
+  readonly company: string;
+  readonly code: string;
+}
+
+type ExplorerSelection = RegistryExplorerSelection | CostCenterExplorerSelection;
 
 interface ExplorerDeepLink {
   readonly invalid: boolean;
@@ -32,11 +43,12 @@ interface ExplorerDeepLink {
   readonly selection: ExplorerSelection | null;
 }
 
-function firstExplorerSelection(
-  registries: readonly RegistryRankingViewModel[],
-  preferredDimension: ExplorerDimension = 'organization',
-): ExplorerSelection {
-  const registry = registries.find(candidate => candidate.key === preferredDimension) ?? registries[0];
+function firstRegistryExplorerSelection(
+  viewModel: OrganizationAnalyticsViewModel,
+  preferredDimension: RegistryExplorerDimension = 'organization',
+): RegistryExplorerSelection {
+  const registry = viewModel.registries.find(candidate => candidate.key === preferredDimension) ??
+    viewModel.registries[0];
   const row = registry?.rows.find(candidate => candidate.privacyStatus === 'released' && candidate.code !== null);
   if (!registry || !row || row.code === null) {
     throw new Error('ORGANIZATION_EXPLORER_WITHOUT_RELEASED_ROWS');
@@ -44,26 +56,76 @@ function firstExplorerSelection(
   return { dimension: registry.key, code: row.code };
 }
 
-function readExplorerDeepLink(registries: readonly RegistryRankingViewModel[]): ExplorerDeepLink {
-  const fallback = firstExplorerSelection(registries);
+function firstCostCenterExplorerSelection(
+  viewModel: OrganizationAnalyticsViewModel,
+): CostCenterExplorerSelection | null {
+  const row = selectableCostCenters(viewModel.workforce.costCenter.rows)[0];
+  return row
+    ? { dimension: 'costCenter', company: String(row.companyCode), code: String(row.sourceCode) }
+    : null;
+}
+
+function safeIdentityToken(value: string | number | null): string | null {
+  if (typeof value === 'number') return Number.isSafeInteger(value) && value >= 0 ? String(value) : null;
+  return typeof value === 'string' && /^[A-Za-z0-9._/-]{1,64}$/u.test(value) ? value : null;
+}
+
+function costCenterIdentity(row: WorkforceRowViewModel): string | null {
+  const company = safeIdentityToken(row.companyCode);
+  const code = safeIdentityToken(row.sourceCode);
+  return company !== null && code !== null ? `${company}:${code}` : null;
+}
+
+function selectableCostCenters(rows: readonly WorkforceRowViewModel[]): readonly WorkforceRowViewModel[] {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (row.privacyStatus !== 'released') continue;
+    const identity = costCenterIdentity(row);
+    if (identity) counts.set(identity, (counts.get(identity) ?? 0) + 1);
+  }
+  return rows.filter(row => {
+    const identity = costCenterIdentity(row);
+    return row.privacyStatus === 'released' && identity !== null && counts.get(identity) === 1;
+  });
+}
+
+function readExplorerDeepLink(viewModel: OrganizationAnalyticsViewModel): ExplorerDeepLink {
+  const fallback = firstRegistryExplorerSelection(viewModel);
   const parameters = new URLSearchParams(window.location.search);
   const keys = Array.from(parameters.keys());
   if (keys.length === 0) {
     return { invalid: false, dimension: fallback.dimension, selection: fallback };
+  }
+  const dimension = parameters.get('dimension');
+  if (dimension === 'costCenter') {
+    const exactShape = keys.length === 3 &&
+      keys.every(key => key === 'dimension' || key === 'company' || key === 'code') &&
+      parameters.getAll('dimension').length === 1 &&
+      parameters.getAll('company').length === 1 &&
+      parameters.getAll('code').length === 1 &&
+      window.location.hash === '#organizationExplorer';
+    const company = parameters.get('company');
+    const code = parameters.get('code');
+    const exists = exactShape && safeIdentityToken(company) !== null && safeIdentityToken(code) !== null &&
+      selectableCostCenters(viewModel.workforce.costCenter.rows).some(row => (
+        String(row.companyCode) === company && String(row.sourceCode) === code
+      ));
+    return exists
+      ? { invalid: false, dimension, selection: { dimension, company: company!, code: code! } }
+      : { invalid: true, dimension, selection: null };
   }
   const exactShape = keys.length === 2 &&
     keys.every(key => key === 'dimension' || key === 'code') &&
     parameters.getAll('dimension').length === 1 &&
     parameters.getAll('code').length === 1 &&
     window.location.hash === '#organizationExplorer';
-  const dimension = parameters.get('dimension');
   const rawCode = parameters.get('code');
   if (!exactShape || (dimension !== 'organization' && dimension !== 'sector') ||
       !/^(?:0|[1-9]\d*)$/u.test(rawCode ?? '')) {
     return { invalid: true, dimension: 'organization', selection: null };
   }
   const code = Number(rawCode);
-  const registry = registries.find(candidate => candidate.key === dimension);
+  const registry = viewModel.registries.find(candidate => candidate.key === dimension);
   const exists = Number.isSafeInteger(code) && registry?.rows.some(row => (
     row.code === code && row.privacyStatus === 'released'
   ));
@@ -73,10 +135,9 @@ function readExplorerDeepLink(registries: readonly RegistryRankingViewModel[]): 
 }
 
 function pushExplorerDeepLink(selection: ExplorerSelection) {
-  const parameters = new URLSearchParams({
-    dimension: selection.dimension,
-    code: String(selection.code),
-  });
+  const parameters = selection.dimension === 'costCenter'
+    ? new URLSearchParams({ dimension: selection.dimension, company: selection.company, code: selection.code })
+    : new URLSearchParams({ dimension: selection.dimension, code: String(selection.code) });
   window.history.pushState(
     window.history.state,
     '',
@@ -84,10 +145,23 @@ function pushExplorerDeepLink(selection: ExplorerSelection) {
   );
 }
 
-function filteredDirectoryHref(baseHref: string, selection: ExplorerSelection): string {
+function filteredDirectoryHref(baseHref: string, selection: RegistryExplorerSelection): string {
   const basePath = baseHref.split(/[?#]/u)[0] || '/rrhh';
   const parameters = new URLSearchParams({ [selection.dimension]: String(selection.code) });
   return `${basePath}?${parameters.toString()}#peopleDirectory`;
+}
+
+function explorerDimensionLabel(dimension: ExplorerDimension): string {
+  if (dimension === 'organization') return 'Organización informada';
+  if (dimension === 'sector') return 'Sector informado';
+  return 'Área de costo observada';
+}
+
+function referencePeriodLabel(period: string): string {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/u.exec(period);
+  if (!match) return period;
+  return new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)));
 }
 
 function safeNumericIdentifier(value: string | number | null, { positive = false } = {}): number | null {
@@ -100,6 +174,12 @@ function safeNumericIdentifier(value: string | number | null, { positive = false
 
 function normalizedClassificationLabel(value: string): string {
   return value.normalize('NFKC').replace(/\s+/gu, ' ').trim().toLocaleLowerCase('es-AR');
+}
+
+function containsConflictingFinanceDimensionToken(value: string): boolean {
+  const normalized = value.normalize('NFKD').replace(/\p{M}+/gu, '')
+    .replace(/\s+/gu, ' ').trim().toLocaleLowerCase('es-AR');
+  return /\b(?:sector(?:es)?|convenio(?:s)?|acuerdo(?:s)?|categoria(?:s)?)\b/u.test(normalized);
 }
 
 function PanelHeader({
@@ -247,14 +327,14 @@ function OrganizationExplorer({
   readonly haciendaEnabled: boolean;
   readonly viewModel: OrganizationAnalyticsViewModel;
 }) {
-  const initial = useMemo(() => readExplorerDeepLink(viewModel.registries), [viewModel.registries]);
+  const initial = useMemo(() => readExplorerDeepLink(viewModel), [viewModel]);
   const [dimension, setDimension] = useState<ExplorerDimension>(initial.dimension);
   const [selection, setSelection] = useState<ExplorerSelection | null>(initial.selection);
   const [invalidDeepLink, setInvalidDeepLink] = useState(initial.invalid);
   const [query, setQuery] = useState('');
   useEffect(() => {
     const restoreFromLocation = () => {
-      const next = readExplorerDeepLink(viewModel.registries);
+      const next = readExplorerDeepLink(viewModel);
       setDimension(next.dimension);
       setSelection(next.selection);
       setInvalidDeepLink(next.invalid);
@@ -262,25 +342,40 @@ function OrganizationExplorer({
     };
     window.addEventListener('popstate', restoreFromLocation);
     return () => window.removeEventListener('popstate', restoreFromLocation);
-  }, [viewModel.registries]);
+  }, [viewModel]);
 
-  const registry = viewModel.registries.find(candidate => candidate.key === dimension);
-  if (!registry) throw new Error('ORGANIZATION_EXPLORER_DIMENSION_INVALID');
-  const selected = selection
-    ? registry.rows.find(row => (
-      row.code === selection.code && row.privacyStatus === 'released'
-    ))
+  const registry = dimension === 'costCenter'
+    ? null
+    : viewModel.registries.find(candidate => candidate.key === dimension) ?? null;
+  const registrySelection = selection?.dimension === 'organization' || selection?.dimension === 'sector'
+    ? selection
+    : null;
+  const selectedRegistry = registry && registrySelection
+    ? registry.rows.find(row => row.code === registrySelection.code && row.privacyStatus === 'released') ?? null
+    : null;
+  const costCenterRanking = viewModel.workforce.costCenter;
+  const costCenterRows = selectableCostCenters(costCenterRanking.rows);
+  const costCenterSelection = selection?.dimension === 'costCenter' ? selection : null;
+  const selectedCostCenter = costCenterSelection
+    ? costCenterRows.find(row => (
+      String(row.companyCode) === costCenterSelection.company &&
+      String(row.sourceCode) === costCenterSelection.code
+    )) ?? null
     : null;
   const normalizedQuery = query.normalize('NFKC').trim().toLocaleLowerCase('es-AR');
-  const selectableRows = registry.rows.filter(row => row.privacyStatus === 'released' && row.code !== null);
-  const protectedAggregate = registry.rows.find(row => (
+  const selectableRows = registry?.rows.filter(row => row.privacyStatus === 'released' && row.code !== null) ?? [];
+  const protectedAggregate = registry?.rows.find(row => (
     row.code === null && row.privacyStatus !== 'released'
   )) ?? null;
   const visibleRows = selectableRows.filter(row => !normalizedQuery ||
     row.label.toLocaleLowerCase('es-AR').includes(normalizedQuery) ||
     String(row.code).includes(normalizedQuery));
-  const absence = selected && dimension === 'organization'
-    ? viewModel.absenceRanking.find(row => row.organizationCode === selected.code &&
+  const visibleCostCenters = costCenterRows.filter(row => !normalizedQuery ||
+    normalizedClassificationLabel(row.label).includes(normalizedQuery) ||
+    String(row.companyCode).includes(normalizedQuery) || String(row.sourceCode).includes(normalizedQuery));
+  const protectedCostCenters = costCenterRanking.rows.find(row => row.privacyStatus === 'protected_aggregate') ?? null;
+  const absence = selectedRegistry && dimension === 'organization'
+    ? viewModel.absenceRanking.find(row => row.organizationCode === selectedRegistry.code &&
       row.privacyStatus === 'released' && row.absencePrivacyStatus === 'released' &&
       row.recordsWithAbsence !== null && row.absenceEvents !== null)
     : null;
@@ -293,19 +388,27 @@ function OrganizationExplorer({
   };
   const changeDimension = (dimension: ExplorerDimension) => {
     setQuery('');
-    select(firstExplorerSelection(viewModel.registries, dimension));
+    if (dimension === 'costCenter') {
+      const next = firstCostCenterExplorerSelection(viewModel);
+      setDimension(dimension);
+      setSelection(next);
+      setInvalidDeepLink(false);
+      if (next) pushExplorerDeepLink(next);
+      return;
+    }
+    select(firstRegistryExplorerSelection(viewModel, dimension));
   };
-  const effectiveSelection = selected?.code === null || !selected
+  const effectiveSelection = selectedRegistry?.code === null || !selectedRegistry || !registry
     ? null
-    : { dimension: registry.key, code: selected.code } as const;
+    : { dimension: registry.key, code: selectedRegistry.code } as const;
   const detailDirectoryHref = directoryActionHref && effectiveSelection
     ? filteredDirectoryHref(directoryActionHref, effectiveSelection)
     : null;
-  const matchingPayrollSectors = selected && registry.key === 'sector'
+  const matchingPayrollSectors = selectedRegistry && registry?.key === 'sector'
     ? viewModel.workforce.sector.rows.filter(row => (
       row.privacyStatus === 'released' &&
-      safeNumericIdentifier(row.sourceCode) === selected.code &&
-      normalizedClassificationLabel(row.label) === normalizedClassificationLabel(selected.label)
+      safeNumericIdentifier(row.sourceCode) === selectedRegistry.code &&
+      normalizedClassificationLabel(row.label) === normalizedClassificationLabel(selectedRegistry.label)
     ))
     : [];
   const payrollSector = matchingPayrollSectors.length === 1 ? matchingPayrollSectors[0] : null;
@@ -314,28 +417,52 @@ function OrganizationExplorer({
   const haciendaHref = haciendaEnabled && payrollCompanyCode !== null && payrollSectorCode !== null
     ? `/hacienda?cohort=sector&company=${payrollCompanyCode}&code=${payrollSectorCode}#cohortContext`
     : null;
-  const assistantHref = aiAssistantEnabled && selected && payrollSector
-    ? `/ia.html?${new URLSearchParams({ question: `Mostrá el neto de ${selected.label} por sector` }).toString()}`
+  const assistantHref = aiAssistantEnabled && selectedRegistry && payrollSector
+    ? `/ia.html?${new URLSearchParams({ question: `Mostrá el neto de ${selectedRegistry.label} por sector` }).toString()}`
     : null;
+  const costCenterCompany = selectedCostCenter
+    ? safeNumericIdentifier(selectedCostCenter.companyCode, { positive: true })
+    : null;
+  const costCenterCode = selectedCostCenter ? safeNumericIdentifier(selectedCostCenter.sourceCode) : null;
+  const costCenterHaciendaHref = haciendaEnabled && costCenterCompany !== null && costCenterCode !== null
+    ? `/hacienda?cohort=costCenter&company=${costCenterCompany}&code=${costCenterCode}#cohortContext`
+    : null;
+  const matchingCostCenterLabels = selectedCostCenter
+    ? costCenterRows.filter(row => (
+      normalizedClassificationLabel(row.label) === normalizedClassificationLabel(selectedCostCenter.label)
+    ))
+    : [];
+  const costCenterAssistantHref = aiAssistantEnabled && selectedCostCenter && matchingCostCenterLabels.length === 1 &&
+    !containsConflictingFinanceDimensionToken(selectedCostCenter.label)
+    ? `/ia.html?${new URLSearchParams({
+      question: `Mostrá los componentes del cálculo de ${selectedCostCenter.label} por centro de costo en ${viewModel.truth.referencePeriod}`,
+    }).toString()}`
+    : null;
+  const selectedCostCenterPosition = selectedCostCenter
+    ? costCenterRows.findIndex(row => row.key === selectedCostCenter.key) + 1
+    : 0;
+  const hasSelection = dimension === 'costCenter' ? selectedCostCenter !== null : selectedRegistry !== null;
 
   return (
     <div className="structure-explorer" data-testid="organization-explorer">
       <aside className="structure-explorer__master" aria-labelledby="organization-explorer-list-title">
         <div className="structure-explorer__dimension" role="group" aria-label="Dimensión del explorador">
-          {viewModel.registries.map(candidate => (
+          {EXPLORER_DIMENSIONS.map(candidate => (
             <button
               type="button"
-              aria-pressed={registry.key === candidate.key}
-              data-testid={`organization-explorer-dimension-${candidate.key}`}
-              key={candidate.key}
-              onClick={() => changeDimension(candidate.key)}
+              aria-pressed={dimension === candidate}
+              data-testid={`organization-explorer-dimension-${candidate}`}
+              key={candidate}
+              onClick={() => changeDimension(candidate)}
             >
-              {candidate.label === 'Organización' ? 'Organización informada' : 'Sector informado'}
+              {explorerDimensionLabel(candidate)}
             </button>
           ))}
         </div>
         <label className="structure-explorer__search" htmlFor="organization-explorer-search">
-          <span id="organization-explorer-list-title">Buscar en {registry.label.toLocaleLowerCase('es-AR')}</span>
+          <span id="organization-explorer-list-title">
+            Buscar en {dimension === 'costCenter' ? 'áreas de costo observadas' : registry?.label.toLocaleLowerCase('es-AR')}
+          </span>
           <input
             id="organization-explorer-search"
             type="search"
@@ -347,20 +474,50 @@ function OrganizationExplorer({
           />
         </label>
         <p className="structure-explorer__result-count" role="status">
-          {visibleRows.length} de {registry.releasedCategoryCount} clasificaciones seleccionables
-          {registry.protectedCategoryCount > 0
-            ? ` · ${registry.protectedCategoryCount} categorías agrupadas`
-            : ''}
+          {dimension === 'costCenter'
+            ? `${visibleCostCenters.length} de ${costCenterRows.length} áreas observadas seleccionables`
+            : `${visibleRows.length} de ${registry?.releasedCategoryCount ?? 0} clasificaciones seleccionables${
+              (registry?.protectedCategoryCount ?? 0) > 0
+                ? ` · ${registry?.protectedCategoryCount} categorías agrupadas`
+                : ''}`}
         </p>
-        {visibleRows.length > 0 ? (
+        {dimension === 'costCenter' && visibleCostCenters.length > 0 ? (
+          <ul className="structure-explorer__list" data-testid="organization-explorer-list">
+            {visibleCostCenters.map(row => {
+              const company = String(row.companyCode);
+              const code = String(row.sourceCode);
+              const current = selectedCostCenter &&
+                String(selectedCostCenter.companyCode) === company && String(selectedCostCenter.sourceCode) === code;
+              return (
+                <li key={row.key}>
+                  <button
+                    type="button"
+                    aria-current={current ? 'true' : undefined}
+                    data-testid={`organization-explorer-option-costCenter-${company}-${code}`}
+                    onClick={() => select({ dimension: 'costCenter', company, code })}
+                  >
+                    <span>
+                      <strong>{row.label}</strong>
+                      <small>Empresa {company} · código {code}</small>
+                    </span>
+                    <span>
+                      <b>{row.participantLabel}</b>
+                      <small>{row.shareLabel}</small>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : dimension !== 'costCenter' && visibleRows.length > 0 ? (
           <ul className="structure-explorer__list" data-testid="organization-explorer-list">
             {visibleRows.map(row => (
               <li key={row.key}>
                 <button
                   type="button"
-                  aria-current={row.code === selected?.code ? 'true' : undefined}
-                  data-testid={`organization-explorer-option-${registry.key}-${row.code}`}
-                  onClick={() => row.code !== null && select({ dimension: registry.key, code: row.code })}
+                  aria-current={row.code === selectedRegistry?.code ? 'true' : undefined}
+                  data-testid={`organization-explorer-option-${registry?.key}-${row.code}`}
+                  onClick={() => row.code !== null && registry && select({ dimension: registry.key, code: row.code })}
                 >
                   <span>
                     <strong>{row.label}</strong>
@@ -375,9 +532,28 @@ function OrganizationExplorer({
             ))}
           </ul>
         ) : (
-          <p className="structure-explorer__empty">No hay coincidencias en las categorías publicadas.</p>
+          <p className="structure-explorer__empty">
+            {dimension === 'costCenter' && costCenterRows.length === 0
+              ? 'No hay áreas de costo publicadas para seleccionar.'
+              : 'No hay coincidencias en las categorías publicadas.'}
+          </p>
         )}
-        {protectedAggregate ? (
+        {dimension === 'costCenter' && protectedCostCenters ? (
+          <section
+            className="structure-explorer__protected-summary"
+            aria-label="Resumen protegido de centros de costo"
+            data-testid="organization-explorer-protected-costCenter"
+          >
+            <span>
+              <strong>Otros centros protegidos</strong>
+              <small>Agrupado sin identidades ni cantidad de categorías</small>
+            </span>
+            <span>
+              <b>{protectedCostCenters.participantLabel}</b>
+              <small>{protectedCostCenters.shareLabel}</small>
+            </span>
+          </section>
+        ) : protectedAggregate && registry ? (
           <section
             className="structure-explorer__protected-summary"
             aria-label="Resumen de categorías protegidas"
@@ -405,27 +581,94 @@ function OrganizationExplorer({
         aria-live="polite"
         data-testid="organization-explorer-detail"
       >
-        {!selected || selected.code === null ? (
+        {!hasSelection ? (
           <div className="structure-explorer__invalid">
-            <p className="structure-eyebrow">Selección requerida</p>
-            <h3 id="organization-explorer-detail-title">Elegí una clasificación GRH publicada</h3>
+            <p className="structure-eyebrow">
+              {dimension === 'costCenter' && costCenterRows.length === 0 && !invalidDeepLink
+                ? 'Publicación protegida'
+                : 'Selección requerida'}
+            </p>
+            <h3 id="organization-explorer-detail-title">
+              {dimension === 'costCenter' && costCenterRows.length === 0 && !invalidDeepLink
+                ? 'Sin áreas de costo publicadas'
+                : `Elegí ${dimension === 'costCenter'
+                  ? 'un área de costo observada'
+                  : 'una clasificación GRH publicada'}`}
+            </h3>
             <p role={invalidDeepLink ? 'alert' : undefined} data-testid={invalidDeepLink
               ? 'organization-explorer-invalid-link'
               : undefined}>
               {invalidDeepLink
-                ? 'El enlace no identifica una clasificación GRH publicable. No se muestran cifras hasta que elijas una opción.'
+                ? `El enlace no identifica ${dimension === 'costCenter' ? 'un área de costo observada' : 'una clasificación GRH publicable'}. No se muestran cifras hasta que elijas una opción.`
+                : dimension === 'costCenter' && costCenterRows.length === 0
+                  ? 'La proyección sólo publica un resumen agregado protegido. No hay identidades seleccionables ni acciones disponibles.'
                 : 'Seleccioná una opción para consultar su contexto agregado.'}
             </p>
           </div>
-        ) : (
+        ) : dimension === 'costCenter' && selectedCostCenter ? (
+          <>
+            <header className="structure-explorer__detail-header">
+              <div>
+                <p className="structure-eyebrow">Área de costo observada</p>
+                <h3 id="organization-explorer-detail-title">{selectedCostCenter.label}</h3>
+                <span>
+                  Empresa {selectedCostCenter.companyCode} · código de origen {selectedCostCenter.sourceCode}
+                  {' '}· período {viewModel.truth.referencePeriod}
+                </span>
+              </div>
+              <div className="structure-explorer__actions">
+                {costCenterHaciendaHref ? (
+                  <a
+                    className="structure-action structure-action--primary structure-explorer__action"
+                    href={costCenterHaciendaHref}
+                    data-testid="organization-explorer-hacienda-action"
+                  >
+                    Cruzar cohorte en Hacienda
+                  </a>
+                ) : null}
+                {costCenterAssistantHref ? (
+                  <a
+                    className="structure-action structure-explorer__action"
+                    href={costCenterAssistantHref}
+                    data-testid="organization-explorer-assistant-action"
+                  >
+                    Analizar cálculo con BOT IA
+                  </a>
+                ) : null}
+              </div>
+            </header>
+            <dl className="structure-explorer__metrics structure-explorer__metrics--cost-center">
+              <div>
+                <dt>Participantes con cálculo válido en {referencePeriodLabel(viewModel.truth.referencePeriod)}</dt>
+                <dd>{selectedCostCenter.participantLabel}</dd>
+                <small>Área observada en la cohorte del período</small>
+              </div>
+              <div>
+                <dt>Participación en la cohorte</dt>
+                <dd>{selectedCostCenter.shareLabel}</dd>
+                <small>Sobre {costCenterRanking.denominatorLabel}</small>
+              </div>
+              <div>
+                <dt>Posición entre áreas publicadas</dt>
+                <dd>{selectedCostCenterPosition} de {costCenterRows.length}</dd>
+                <small>Orden de la proyección publicada</small>
+              </div>
+            </dl>
+            <p className="structure-explorer__context-note" data-testid="cost-center-scope-note">
+              Clasificación observada en el cálculo: no describe un departamento vigente, headcount/FTE, planta,
+              presupuesto ejecutado ni pago. Base: {costCenterRanking.denominatorLabel}; período{' '}
+              {viewModel.truth.referencePeriod}.
+            </p>
+          </>
+        ) : selectedRegistry && registry ? (
           <>
             <header className="structure-explorer__detail-header">
               <div>
                 <p className="structure-eyebrow">
-                  {registry.key === 'organization' ? 'Organización informada' : 'Sector informado'}
+                  {explorerDimensionLabel(registry.key)}
                 </p>
-                <h3 id="organization-explorer-detail-title">{selected.label}</h3>
-                <span>Código de origen {selected.code}</span>
+                <h3 id="organization-explorer-detail-title">{selectedRegistry.label}</h3>
+                <span>Código de origen {selectedRegistry.code}</span>
               </div>
               <div className="structure-explorer__actions">
                 {detailDirectoryHref ? (
@@ -461,12 +704,12 @@ function OrganizationExplorer({
             <dl className="structure-explorer__metrics">
               <div>
                 <dt>Legajos registrados</dt>
-                <dd>{selected.registeredLabel}</dd>
+                <dd>{selectedRegistry.registeredLabel}</dd>
                 <small>Snapshot histórico</small>
               </div>
               <div>
                 <dt>Participación en la clasificación GRH</dt>
-                <dd>{selected.shareLabel}</dd>
+                <dd>{selectedRegistry.shareLabel}</dd>
                 <small>Base: {registry.denominatorLabel}</small>
               </div>
               {absence ? (
@@ -509,7 +752,7 @@ function OrganizationExplorer({
                 </h4>
               </div>
               <ExplorerCrossBreakdown
-                code={selected.code}
+                code={selectedRegistry.code!}
                 dimension={registry.key}
                 matrix={viewModel.matrix}
               />
@@ -518,7 +761,7 @@ function OrganizationExplorer({
               Registros del snapshot: no certifican planta activa, puesto vigente ni jerarquía actual.
             </p>
           </>
-        )}
+        ) : null}
       </article>
     </div>
   );
@@ -544,7 +787,7 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
       <section className="structure-hero" aria-labelledby="structure-title">
         <div>
           <p className="structure-eyebrow">Centro Ejecutivo GRH</p>
-          <h1 id="structure-title">Sala de situación de dotación y ausencias</h1>
+          <h1 id="structure-title">Estructura, dotación y áreas de costo</h1>
           <p className="structure-hero__description">
             Participación en el cálculo, cobertura de registros y novedades históricas en una lectura operativa.
           </p>

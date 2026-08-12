@@ -73,7 +73,21 @@ const SECTOR_LABELS = Object.freeze([
 const REGISTERED_COUNTS = Object.freeze([160, 140, 120, 100, 90, 70, 60, 60]);
 const ABSENCE_PEOPLE = Object.freeze([40, 35, 30, 25, 20, 15, 10, 10]);
 const ABSENCE_EVENTS = Object.freeze([80, 70, 60, 50, 40, 30, 20, 20]);
-const PAYROLL_COUNTS = Object.freeze([180, 140, 120, 100, 90, 70, 60, 40]);
+const PAYROLL_TOTAL = 856;
+const PAYROLL_COUNTS = Object.freeze([160, 140, 120, 110, 100, 86, 75, 65]);
+const PAYROLL_SECTOR_CODES = Object.freeze([1, 2, 3, 104, 105, 106, 107, 108]);
+const COST_CENTER_COUNTS = Object.freeze([132, 110, 96, 88, 82, 74, 68, 62, 54]);
+const COST_CENTER_LABELS = Object.freeze([
+  'Servicios operativos',
+  'Gobierno municipal',
+  'Administración central',
+  'Obras y mantenimiento',
+  'Desarrollo comunitario',
+  'Educación y cultura',
+  'Deporte local',
+  'Abastecimiento',
+  'Coordinación territorial',
+]);
 
 function dimensionRows(labels, protectedCategoryCount = 0) {
   return labels.map((label, index) => ({
@@ -103,22 +117,37 @@ function absenceRows() {
   }));
 }
 
-function workforceRanking(labels, counts = PAYROLL_COUNTS) {
+function workforceRanking(labels, counts = PAYROLL_COUNTS, sourceCodes = null) {
   return {
     threshold: 10,
-    totalParticipants: 800,
-    participantDisplay: '800',
+    totalParticipants: PAYROLL_TOTAL,
+    participantDisplay: String(PAYROLL_TOTAL),
     privacyStatus: 'released',
     rows: labels.map((label, index) => ({
       companyCode: 101,
-      sourceCode: index + 1,
+      sourceCode: sourceCodes?.[index] ?? index + 1,
       label,
       participants: counts[index],
       participantDisplay: String(counts[index]),
-      sharePct: share(counts[index], 800),
+      sharePct: share(counts[index], PAYROLL_TOTAL),
       privacyStatus: 'released',
     })),
   };
+}
+
+function costCenterRanking() {
+  const ranking = workforceRanking(COST_CENTER_LABELS, COST_CENTER_COUNTS);
+  ranking.privacyStatus = 'partially_suppressed';
+  ranking.rows.push({
+    companyCode: null,
+    sourceCode: null,
+    label: 'Otros (celdas protegidas)',
+    participants: 90,
+    participantDisplay: '90',
+    sharePct: share(90, PAYROLL_TOTAL),
+    privacyStatus: 'protected_aggregate',
+  });
+  return ranking;
 }
 
 function activitySeries({ participantStart, valueStart, valueStep }) {
@@ -224,18 +253,9 @@ const PAYLOAD = Object.freeze({
   payrollCohort: {
     definition: 'Participantes distintos del último cálculo válido; no representa planta contractual activa.',
     referencePeriod: '2026-07',
-    payrollParticipants: 800,
-    bySector: workforceRanking(SECTOR_LABELS, REGISTERED_COUNTS),
-    byCostCenter: workforceRanking([
-      'Servicios operativos',
-      'Gobierno municipal',
-      'Administración central',
-      'Obras y mantenimiento',
-      'Desarrollo comunitario',
-      'Educación y cultura',
-      'Deporte local',
-      'Abastecimiento',
-    ]),
+    payrollParticipants: PAYROLL_TOTAL,
+    bySector: workforceRanking(SECTOR_LABELS, PAYROLL_COUNTS, PAYROLL_SECTOR_CODES),
+    byCostCenter: costCenterRanking(),
     byAgreement: workforceRanking([
       'Régimen municipal A',
       'Régimen municipal B',
@@ -272,16 +292,16 @@ const CONTRACT_MUTATIONS = Object.freeze({
     const last = payload.payrollCohort.byCostCenter.rows.at(-1);
     first.participants += 31;
     first.participantDisplay = String(first.participants);
-    first.sharePct = share(first.participants, 800);
+    first.sharePct = share(first.participants, PAYROLL_TOTAL);
     last.participants = 9;
     last.participantDisplay = '9';
-    last.sharePct = share(9, 800);
+    last.sharePct = share(9, PAYROLL_TOTAL);
   },
   'workforce-total-drift': payload => {
     const row = payload.payrollCohort.byCostCenter.rows[0];
     row.participants -= 1;
     row.participantDisplay = String(row.participants);
-    row.sharePct = share(row.participants, 800);
+    row.sharePct = share(row.participants, PAYROLL_TOTAL);
   },
   'cross-view-small-complement': payload => {
     const ranking = payload.payrollCohort.bySector;
@@ -289,13 +309,13 @@ const CONTRACT_MUTATIONS = Object.freeze({
     const protectedAggregate = ranking.rows[1];
     released.participants -= 9;
     released.participantDisplay = String(released.participants);
-    released.sharePct = share(released.participants, 800);
+    released.sharePct = share(released.participants, PAYROLL_TOTAL);
     protectedAggregate.companyCode = null;
     protectedAggregate.sourceCode = null;
     protectedAggregate.label = 'Otros (celdas protegidas)';
     protectedAggregate.participants += 9;
     protectedAggregate.participantDisplay = String(protectedAggregate.participants);
-    protectedAggregate.sharePct = share(protectedAggregate.participants, 800);
+    protectedAggregate.sharePct = share(protectedAggregate.participants, PAYROLL_TOTAL);
     protectedAggregate.privacyStatus = 'protected_aggregate';
     ranking.privacyStatus = 'partially_suppressed';
   },
@@ -331,6 +351,28 @@ function singleProtectedSectorPayload() {
   return payload;
 }
 
+function duplicateCostCenterLabelPayload() {
+  const payload = clonePayload();
+  payload.payrollCohort.byCostCenter.rows[1].label = 'SERVICIOS OPERATIVOS';
+  return payload;
+}
+
+function protectedOnlyCostCenterPayload() {
+  const payload = clonePayload();
+  const protectedAggregate = payload.payrollCohort.byCostCenter.rows.at(-1);
+  protectedAggregate.participants = PAYROLL_TOTAL;
+  protectedAggregate.participantDisplay = String(PAYROLL_TOTAL);
+  protectedAggregate.sharePct = 100;
+  payload.payrollCohort.byCostCenter.rows = [protectedAggregate];
+  return payload;
+}
+
+function reservedCostCenterLabelPayload() {
+  const payload = clonePayload();
+  payload.payrollCohort.byCostCenter.rows[0].label = 'Sector operativo';
+  return payload;
+}
+
 function authorizedSession(role = 'INTENDENTE', includeCapability = true) {
   const access = accessPolicy.getSessionAccessForUser({ role, tenantId: TENANT_ID });
   const capabilities = includeCapability
@@ -348,6 +390,14 @@ function authorizedSession(role = 'INTENDENTE', includeCapability = true) {
       tenant: { id: TENANT_ID, shortName: 'Junín QA' },
     },
   };
+}
+
+function authorizedSessionWithout(...removedCapabilities) {
+  const session = authorizedSession('INTENDENTE');
+  session.user.capabilities = session.user.capabilities.filter(capability => (
+    !removedCapabilities.includes(capability)
+  ));
+  return session;
 }
 
 function send(response, status, contentType, body = '', headers = {}) {
@@ -521,10 +571,12 @@ async function readyDiagnostics(page) {
   return page.evaluate(() => {
     const text = String(document.querySelector('main')?.textContent || '').replace(/\s+/g, ' ').trim();
     return {
+      heading: document.querySelector('#structure-title')?.textContent?.trim() || '',
       kpis: document.querySelectorAll('.structure-kpi').length,
       workforceRows: document.querySelectorAll('[data-testid="workforce-sector-bars"] .structure-bar').length,
       absenceRows: document.querySelectorAll('[data-testid="absence-ranking"] > li').length,
       explorerOptions: document.querySelectorAll('[data-testid="organization-explorer-list"] button').length,
+      explorerDimensions: document.querySelectorAll('.structure-explorer__dimension button').length,
       explorerProtectedSummary: document.querySelector('[data-testid="organization-explorer-protected-organization"]')
         ?.textContent?.replace(/\s+/g, ' ').trim() || '',
       explorerTitle: document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() || '',
@@ -651,6 +703,48 @@ async function exerciseReadyControls(page) {
   await page.waitForFunction(() => document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() ===
     'Servicios Públicos');
   assert.equal(new URL(page.url()).search, '?dimension=sector&code=1');
+
+  const costCenterDimension = page.locator('[data-testid="organization-explorer-dimension-costCenter"]');
+  await costCenterDimension.focus();
+  await costCenterDimension.press('Space');
+  assert.equal(await costCenterDimension.getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Servicios operativos');
+  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=1');
+  assert.equal(new URL(page.url()).hash, '#organizationExplorer');
+  assert.equal(await page.locator('.structure-explorer__metrics > div').count(), 3);
+  assert.match(await page.locator('.structure-explorer__metrics').innerText(),
+    /Participantes con cálculo válido en julio de 2026.*132.*Participación en la cohorte.*15,4%.*Posición entre áreas publicadas.*1 de 9/isu);
+  assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
+  assert.equal(await page.locator('[data-testid="organization-explorer-absence-unavailable"]').count(), 0);
+  assert.equal(await page.locator('[data-testid="organization-explorer-cross"]').count(), 0);
+  assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').getAttribute('href'),
+    '/hacienda?cohort=costCenter&company=101&code=1#cohortContext');
+  const costCenterAssistantHref = await page.locator(
+    '[data-testid="organization-explorer-assistant-action"]',
+  ).getAttribute('href');
+  assert.equal(new URL(costCenterAssistantHref, page.url()).searchParams.get('question'),
+    'Mostrá los componentes del cálculo de Servicios operativos por centro de costo en 2026-07');
+  const costCenterProtected = page.locator('[data-testid="organization-explorer-protected-costCenter"]');
+  assert.match(await costCenterProtected.innerText(),
+    /Otros centros protegidos.*sin identidades ni cantidad de categorías.*90.*10,5%/isu);
+  assert.doesNotMatch(await costCenterProtected.innerText(), /\b30\b|\b\d+\s+categorías\b/iu);
+  assert.equal(await costCenterProtected.locator('button, a').count(), 0);
+
+  await explorerSearch.fill('Coordinación');
+  assert.equal(await page.locator('[data-testid="organization-explorer-list"] button').count(), 1);
+  assert.match(await page.locator('[data-testid="organization-explorer-list"]').innerText(), /Coordinación territorial/u);
+  await explorerSearch.fill('');
+  assert.equal(await page.locator('[data-testid="organization-explorer-list"] button').count(), 9);
+  const secondCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-2"]');
+  await secondCostCenter.focus();
+  await secondCostCenter.press('Enter');
+  assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Gobierno municipal');
+  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=2');
+  assert.match(await page.locator('.structure-explorer__metrics').innerText(), /Posición entre áreas publicadas.*2 de 9/isu);
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() ===
+    'Servicios operativos');
+  assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=1');
 
   const buttons = await page.locator('button:visible').evaluateAll(nodes => nodes.map(node => ({
     testId: node.getAttribute('data-testid'),
@@ -843,10 +937,12 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         await waitReady(page);
 
         const ready = await readyDiagnostics(page);
+        assert.equal(ready.heading, 'Estructura, dotación y áreas de costo');
         assert.equal(ready.kpis, 6);
         assert.equal(ready.workforceRows, 6);
         assert.equal(ready.absenceRows, 6);
         assert.equal(ready.explorerOptions, 7);
+        assert.equal(ready.explorerDimensions, 3);
         assert.match(ready.explorerProtectedSummary, /Otros grupos protegidos.*3 categorías.*60.*7,5%/iu);
         assert.equal(ready.explorerTitle, 'Servicios Urbanos');
         assert.equal(ready.explorerMetrics, 5);
@@ -923,6 +1019,213 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
     });
   });
 
+  await t.test('explores exact payroll cost centers on mobile without deriving GRH or refetching', async () => {
+    await withScenario({ name: 'deep-link-cost-center', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+        reducedMotion: 'reduce',
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=2#organizationExplorer`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        await page.locator('[data-testid="organization-explorer"]').scrollIntoViewIfNeeded();
+        assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(), 'Gobierno municipal');
+        assert.equal(await page.locator('.structure-explorer__metrics > div').count(), 3);
+        assert.match(await page.locator('.structure-explorer__metrics').textContent() || '',
+          /Participantes con cálculo válido en julio de 2026.*110.*Participación en la cohorte.*12,9%.*Posición entre áreas publicadas.*2 de 9/isu);
+        assert.match(await page.locator('[data-testid="cost-center-scope-note"]').textContent() || '',
+          /no describe un departamento vigente.*Base: 856 participantes.*período 2026-07/isu);
+        assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-absence-unavailable"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-cross"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').getAttribute('href'),
+          '/hacienda?cohort=costCenter&company=101&code=2#cohortContext');
+        const assistantHref = await page.locator(
+          '[data-testid="organization-explorer-assistant-action"]',
+        ).getAttribute('href');
+        assert.equal(new URL(assistantHref, page.url()).searchParams.get('question'),
+          'Mostrá los componentes del cálculo de Gobierno municipal por centro de costo en 2026-07');
+        assert.match(await page.locator('[data-testid="organization-explorer-protected-costCenter"]').textContent() || '',
+          /Otros centros protegidos.*90.*10,5%/isu);
+
+        const dimensionButtons = page.locator('.structure-explorer__dimension button');
+        await dimensionButtons.first().scrollIntoViewIfNeeded();
+        const firstBox = await dimensionButtons.nth(0).boundingBox();
+        const secondBox = await dimensionButtons.nth(1).boundingBox();
+        const thirdBox = await dimensionButtons.nth(2).boundingBox();
+        assert.ok(firstBox && secondBox && thirdBox);
+        assert.ok(Math.abs(firstBox.x - secondBox.x) <= 1 && Math.abs(secondBox.x - thirdBox.x) <= 1);
+        assert.ok(firstBox.y < secondBox.y && secondBox.y < thirdBox.y);
+
+        const thirdCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-3"]');
+        await thirdCostCenter.focus();
+        await thirdCostCenter.press('Enter');
+        assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
+          'Administración central');
+        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=3');
+        await page.goBack();
+        await page.waitForFunction(() => document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() ===
+          'Gobierno municipal');
+        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=2');
+        assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
+        assert.ok((await readyDiagnostics(page)).overflow <= 1);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'deep link cost center');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('keeps protected-only cost centers empty while the other explorer dimensions remain usable', async () => {
+    const analyticsPayload = protectedOnlyCostCenterPayload();
+    assert.equal(inspectGrhOrganizationAnalyticsContract(analyticsPayload, {
+      expectedSourceSha256: SOURCE_SHA,
+      expectedSnapshotAsOf: SNAPSHOT,
+    }).ok, true);
+    await withScenario({
+      name: 'protected-only-cost-centers',
+      role: 'INTENDENTE',
+      analyticsPayload,
+    }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+        reducedMotion: 'reduce',
+      });
+      try {
+        await page.goto(`${baseUrl}/estructura`, { waitUntil: 'domcontentloaded' });
+        await waitReady(page);
+        const dimension = page.locator('[data-testid="organization-explorer-dimension-costCenter"]');
+        await dimension.focus();
+        await dimension.press('Space');
+        await page.locator('[data-testid="organization-explorer"]').scrollIntoViewIfNeeded();
+        assert.equal(await dimension.getAttribute('aria-pressed'), 'true');
+        assert.equal(await page.locator('[data-testid="organization-explorer-list"] button').count(), 0);
+        assert.match(await page.locator('.structure-explorer__empty').textContent() || '',
+          /No hay áreas de costo publicadas para seleccionar/u);
+        assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
+          'Sin áreas de costo publicadas');
+        assert.match(await page.locator('[data-testid="organization-explorer-detail"]').textContent() || '',
+          /Publicación protegida.*resumen agregado protegido.*No hay identidades seleccionables ni acciones disponibles/isu);
+        assert.match(await page.locator('[data-testid="organization-explorer-protected-costCenter"]').textContent() || '',
+          /Otros centros protegidos.*856.*100,0%/isu);
+        assert.equal(await page.locator('.structure-explorer__metrics').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
+
+        await page.locator('[data-testid="organization-explorer-dimension-sector"]').click();
+        assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
+          'Servicios Públicos');
+        assert.equal(new URL(page.url()).search, '?dimension=sector&code=1');
+        await page.locator('[data-testid="organization-explorer-dimension-organization"]').click();
+        assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
+          'Servicios Urbanos');
+        assert.equal(new URL(page.url()).search, '?dimension=organization&code=1');
+        assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'protected-only cost centers');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('gates cost-center actions by exact capabilities and a unique normalized BOT label', async () => {
+    const reservedLabelPayload = reservedCostCenterLabelPayload();
+    assert.equal(inspectGrhOrganizationAnalyticsContract(reservedLabelPayload, {
+      expectedSourceSha256: SOURCE_SHA,
+      expectedSnapshotAsOf: SNAPSHOT,
+    }).ok, true);
+    await withScenario({
+      name: 'cost-center-reserved-label',
+      role: 'INTENDENTE',
+      analyticsPayload: reservedLabelPayload,
+    }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 1_440, height: 900 },
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=1#organizationExplorer`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Sector operativo');
+        assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').getAttribute('href'),
+          '/hacienda?cohort=costCenter&company=101&code=1#cohortContext');
+        assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
+        assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'cost center reserved BOT label');
+      } finally {
+        await context.close();
+      }
+    });
+
+    const duplicateLabelPayload = duplicateCostCenterLabelPayload();
+    assert.equal(inspectGrhOrganizationAnalyticsContract(duplicateLabelPayload, {
+      expectedSourceSha256: SOURCE_SHA,
+      expectedSnapshotAsOf: SNAPSHOT,
+    }).ok, true);
+    await withScenario({
+      name: 'cost-center-duplicate-label',
+      role: 'INTENDENTE',
+      analyticsPayload: duplicateLabelPayload,
+    }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 1_440, height: 900 },
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=1#organizationExplorer`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Servicios operativos');
+        assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 1);
+        assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
+        await page.locator('[data-testid="organization-explorer-option-costCenter-101-2"]').click();
+        assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'SERVICIOS OPERATIVOS');
+        assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 1);
+        assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
+        assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'cost center duplicate BOT label');
+      } finally {
+        await context.close();
+      }
+    });
+
+    await withScenario({
+      name: 'cost-center-without-action-capabilities',
+      authPayload: authorizedSessionWithout('navigation.hacienda', 'navigation.ai-assistant'),
+    }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 1_440, height: 900 },
+      });
+      try {
+        await page.goto(
+          `${baseUrl}/estructura?dimension=costCenter&company=101&code=1#organizationExplorer`,
+          { waitUntil: 'domcontentloaded' },
+        );
+        await waitReady(page);
+        assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Servicios operativos');
+        assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 0);
+        assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
+        assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'cost center capability gates');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
   await t.test('keeps an unpublished deep link scoped and empty until an exact row is selected', async () => {
     await withScenario({ name: 'deep-link-invalid', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
       const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
@@ -953,6 +1256,60 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.deepEqual(apiPaths(apiLog), ['/api/auth/me', '/api/grh-organization-analytics']);
         assertNoPrivateDirectory(apiLog, diagnostics);
         assertCleanDiagnostics(diagnostics, 'invalid explorer link');
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('rejects malformed or unpublished cost-center query shapes without leaking selected detail', async () => {
+    await withScenario({ name: 'invalid-cost-center-links', role: 'INTENDENTE' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 320, height: 720 },
+        reducedMotion: 'reduce',
+      });
+      const invalidPaths = [
+        '/estructura?dimension=costCenter&code=1#organizationExplorer',
+        '/estructura?dimension=costCenter&company=101&code=1&extra=1#organizationExplorer',
+        '/estructura?dimension=costCenter&company=101&company=101&code=1#organizationExplorer',
+        '/estructura?dimension=costCenter&company=101&code=1',
+        '/estructura?dimension=costCenter&company=101&code=999#organizationExplorer',
+      ];
+      try {
+        for (const invalidPath of invalidPaths) {
+          await page.goto(`${baseUrl}${invalidPath}`, { waitUntil: 'domcontentloaded' });
+          await waitReady(page);
+          await page.locator('[data-testid="organization-explorer"]').scrollIntoViewIfNeeded();
+          const invalid = page.locator('[data-testid="organization-explorer-invalid-link"]');
+          await invalid.waitFor({ state: 'visible' });
+          assert.match(await invalid.textContent() || '',
+            /no identifica un área de costo observada.*no se muestran cifras/isu);
+          assert.equal(await page.locator(
+            '[data-testid="organization-explorer-dimension-costCenter"]',
+          ).getAttribute('aria-pressed'), 'true');
+          assert.equal(await page.locator('.structure-explorer__metrics').count(), 0);
+          assert.equal(await page.locator('[data-testid="cost-center-scope-note"]').count(), 0);
+          assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
+          assert.equal(await page.locator('[data-testid="organization-explorer-hacienda-action"]').count(), 0);
+          assert.equal(await page.locator('[data-testid="organization-explorer-assistant-action"]').count(), 0);
+          assert.doesNotMatch(await page.locator('[data-testid="organization-explorer-detail"]').textContent() || '',
+            /Servicios operativos|132|15,4%|856/u);
+        }
+
+        const requestsBeforeSelection = apiLog.length;
+        const firstCostCenter = page.locator('[data-testid="organization-explorer-option-costCenter-101-1"]');
+        await firstCostCenter.focus();
+        await firstCostCenter.press('Enter');
+        assert.equal(await page.locator('[data-testid="organization-explorer-invalid-link"]').count(), 0);
+        assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
+          'Servicios operativos');
+        assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=1');
+        assert.equal(apiLog.length, requestsBeforeSelection);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/auth/me').length, invalidPaths.length);
+        assert.equal(apiLog.filter(entry => entry.path === '/api/grh-organization-analytics').length,
+          invalidPaths.length);
+        assertNoPrivateDirectory(apiLog, diagnostics);
+        assertCleanDiagnostics(diagnostics, 'invalid cost center links');
       } finally {
         await context.close();
       }
@@ -1013,7 +1370,10 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         });
         try {
           await seedTheme(context, viewport.theme);
-          await page.goto(`${baseUrl}/estructura`, { waitUntil: 'domcontentloaded' });
+          await page.goto(
+            `${baseUrl}/estructura?dimension=costCenter&company=101&code=1#organizationExplorer`,
+            { waitUntil: 'domcontentloaded' },
+          );
           await waitReady(page);
           const audit = await visualAudit(page);
           assert.equal(audit.theme, viewport.theme, viewport.name);

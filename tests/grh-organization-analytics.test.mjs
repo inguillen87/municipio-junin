@@ -579,6 +579,14 @@ test('contract rejects shape drift, PII keys, bad denominators and protected abs
   cohortTotalDrift.payrollCohort.byCostCenter.rows[0].participants -= 1;
   assert.equal(inspectGrhOrganizationAnalyticsContract(cohortTotalDrift).ok, false);
 
+  const cohortRouteIdentityCollision = structuredClone(projection);
+  const firstCostCenter = cohortRouteIdentityCollision.payrollCohort.byCostCenter.rows[0];
+  const secondCostCenter = cohortRouteIdentityCollision.payrollCohort.byCostCenter.rows[1];
+  secondCostCenter.companyCode = firstCostCenter.companyCode;
+  secondCostCenter.sourceCode = firstCostCenter.sourceCode;
+  assert.notEqual(secondCostCenter.label, firstCostCenter.label);
+  assert.equal(inspectGrhOrganizationAnalyticsContract(cohortRouteIdentityCollision).ok, false);
+
   const cohortMatchDisclosure = structuredClone(projection);
   cohortMatchDisclosure.payrollCohort.matchedLegajoParticipants = 68;
   assert.equal(inspectGrhOrganizationAnalyticsContract(cohortMatchDisclosure).ok, false);

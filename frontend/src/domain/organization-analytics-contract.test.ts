@@ -38,6 +38,15 @@ describe('organization analytics contract v2', () => {
       const cohort = candidate.payrollCohort as { bySector: { threshold: number } };
       cohort.bySector.threshold = 5;
     }],
+    ['duplicate route identity with a different label', (candidate: Record<string, unknown>) => {
+      const cohort = candidate.payrollCohort as {
+        byCostCenter: { rows: { companyCode: string | number | null; sourceCode: string | number | null }[] };
+      };
+      const first = cohort.byCostCenter.rows[0]!;
+      const second = cohort.byCostCenter.rows[1]!;
+      second.companyCode = first.companyCode;
+      second.sourceCode = first.sourceCode;
+    }],
     ['coverage reconciliation drift', (candidate: Record<string, unknown>) => {
       const quality = candidate.dataQuality as { missingOrganizationRecords: number };
       quality.missingOrganizationRecords += 1;

@@ -1495,7 +1495,7 @@ function resolveAnnualRequest(periodRequest, metricName) {
 function protectedOrUnavailablePeriod(label, year, threshold) {
   return periodLimit(
     `${label} · ${year} con publicación limitada`,
-    `No se publica un valor para ${year}: el período no está disponible o no alcanza el umbral portable k=${threshold}. No se sustituyó por otro año.`,
+    `No se publica un valor para ${year}: el período no está disponible o reúne menos de ${threshold} personas. Ese mínimo protege identidades y no se sustituyó por otro año.`,
     'PRIVACY_PROTECTED_OR_UNAVAILABLE',
   );
 }
@@ -1527,7 +1527,7 @@ function resolveCalculationRequest(context, periodRequest) {
     return {
       error: periodLimit(
         `Control de cálculo · ${period} con publicación limitada`,
-        `No se publica ${period}: el período no está disponible o no alcanza el umbral portable k=${context.privacyThreshold}. No se sustituyó por ${context.latestPeriod}.`,
+        `No se publica ${period}: el período no está disponible o reúne menos de ${context.privacyThreshold} personas. Ese mínimo protege identidades y no se sustituyó por ${context.latestPeriod}.`,
         'PRIVACY_PROTECTED_OR_UNAVAILABLE'
       ),
     };
@@ -1577,7 +1577,7 @@ function resolveCloseRequest(context, periodRequest) {
     return {
       error: periodLimit(
         `Cierre GRH · ${period} con publicación limitada`,
-        `No se publica ${period}: no está disponible o no alcanza el umbral k=${context.closeProjection.privacy.threshold}. No se sustituyó por otro mes.`,
+        `No se publica ${period}: no está disponible o reúne menos de ${context.closeProjection.privacy.threshold} personas. Ese mínimo protege identidades y no se sustituyó por otro mes.`,
         'PRIVACY_PROTECTED_OR_UNAVAILABLE'
       ),
     };
@@ -1609,7 +1609,7 @@ function resolveTrendRequest(context, periodRequest) {
     return {
       error: periodLimit(
         'Período con publicación limitada',
-        `No se publica ${missing.join(', ')}: no está disponible o no alcanza el umbral portable k=${context.privacyThreshold}. No se sustituyó por otros períodos.`,
+        `No se publica ${missing.join(', ')}: no está disponible o reúne menos de ${context.privacyThreshold} personas. Ese mínimo protege identidades y no se sustituyó por otros períodos.`,
         'PRIVACY_PROTECTED_OR_UNAVAILABLE'
       ),
     };
@@ -1650,18 +1650,18 @@ function executiveSummary(context) {
     : 'está fuera de la tolerancia de redondeo';
   return {
     title: `Resumen ejecutivo GRH · ${context.latestPeriod}`,
-    summary: `El último período de cálculo liberado por la política portable registra ${formatInteger(context.workforce.payrollParticipants)} participantes. El control interno ${tolerance}, pero la conciliación con totpago presenta diferencias materiales.`,
+    summary: `En el último mes publicado participaron ${formatInteger(context.workforce.payrollParticipants)} legajos. El control interno ${tolerance}, pero la comparación con los totales informados en otra tabla requiere revisión.`,
     findings: [
       `${formatInteger(context.workforce.payrollParticipants)} claves de legajo participaron en al menos un cálculo válido; no equivalen a planta activa contractual.`,
       `El neto de control es ${formatSourceAmount(context.latestControl.amounts.netPayrollCents, context.presentation)}; no prueba una transferencia bancaria.`,
-      `Calidad del extracto gobernado: ${formatPercent(context.quality.score)}. Conciliación cross-source: ${formatPercent(context.reconciliation.scorePct)}.`,
+      `Confiabilidad general de los datos: ${formatPercent(context.quality.score)}. Coincidencia entre las dos fuentes de control: ${formatPercent(context.reconciliation.scorePct)}.`,
       top ? `${titleCase(top.label)} reúne ${formatInteger(top.participants)} participantes (${formatPercent(top.sharePct)}).` : null,
     ].filter(Boolean),
     evidence: [
       metric('Participación de liquidación', formatInteger(context.workforce.payrollParticipants), 'Claves distintas presentes en cálculo válido; no equivale a planta activa.'),
       metric('Neto de control', formatSourceAmount(context.latestControl.amounts.netPayrollCents, context.presentation), 'Control de liquidación; no desembolso acreditado.'),
-      metric('Calidad gobernada', formatPercent(context.quality.score), 'Score del extracto agregado gobernado; no certifica cada tabla cruda.'),
-      metric('Conciliación cross-source', formatPercent(context.reconciliation.scorePct), reconciliationLabel(context.reconciliation.status)),
+      metric('Confiabilidad de los datos', formatPercent(context.quality.score), 'Resultado general de los controles; no certifica cada tabla original.'),
+      metric('Coincidencia entre fuentes', formatPercent(context.reconciliation.scorePct), reconciliationLabel(context.reconciliation.status)),
     ],
     caveats: [
       currencyDisclosure(context),
@@ -1812,9 +1812,9 @@ function decisionBriefAnswer(context) {
     );
   }
   const priorityLabels = {
-    cross_source_material_difference: 'La conciliación cross-source presenta diferencias materiales.',
-    temporal_quarantine_present: `${formatInteger(brief.situation.temporalQuarantineRows)} filas temporales permanecen en cuarentena.`,
-    historical_snapshot: `El corte es histórico (${brief.source.snapshotAsOf}) y no opera en tiempo real.`,
+    cross_source_material_difference: 'Las dos fuentes de control presentan diferencias importantes.',
+    temporal_quarantine_present: `${formatInteger(brief.situation.temporalQuarantineRows)} registros quedaron apartados para revisión.`,
+    historical_snapshot: `La información corresponde a una copia histórica del ${brief.source.snapshotAsOf} y no se actualiza en tiempo real.`,
   };
   const statusLabels = {
     attention_required: 'requiere atención',
@@ -2455,7 +2455,7 @@ function absenceAnswer(context, periodRequest) {
     title: `Ausencias GRH · ${year}${partial ? ' (parcial)' : ''}`,
     summary: `GRH registra ${formatInteger(row.value)} filas válidas de ausencia ${periodTruth}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. Son eventos registrados, no una tasa de ausentismo.`,
     findings: [
-      `El período supera el umbral portable k=${context.privacyThreshold}.`,
+      `El dato reúne al menos ${context.privacyThreshold} personas y puede mostrarse sin exponer identidades.`,
       ...(partial ? [`${year} está incompleto al corte ${context.snapshot}; no se presenta como un año cerrado.`] : []),
       'No hay denominador de exposición ni estado activo contractual suficiente para calcular una tasa actual de ausentismo.',
     ],
@@ -2491,7 +2491,7 @@ function absenceComparisonAnswer(context, requestedYears) {
   if (rows.some(row => !row || row.privacyStatus !== 'released')) {
     return periodLimit(
       'Comparación de ausencias con publicación limitada',
-      `No se puede comparar ${years.join(' y ')}: uno de los años no está disponible o no alcanza el umbral portable k=${context.privacyThreshold}.`,
+      `No se puede comparar ${years.join(' y ')}: uno de los años no está disponible o reúne menos de ${context.privacyThreshold} personas.`,
       'PRIVACY_PROTECTED_OR_UNAVAILABLE',
     );
   }
@@ -2676,7 +2676,7 @@ function movementsAnswer(context, periodRequest) {
     title: `Movimientos GRH · ${year}${partial ? ' (parcial)' : ''}`,
     summary: `Se observan ${formatInteger(row.value)} filas válidas de movimiento ${periodTruth}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. Son eventos de legamov, no altas o bajas clasificadas.`,
     findings: [
-      `El período supera el umbral portable k=${context.privacyThreshold}.`,
+      `El dato reúne al menos ${context.privacyThreshold} personas y puede mostrarse sin exponer identidades.`,
       ...(partial ? [`${year} está incompleto al corte ${context.snapshot}; no se presenta como un año cerrado.`] : []),
       'El contrato actual no clasifica de forma gobernada los eventos como ingreso, egreso, ascenso o cambio de área.',
     ],
@@ -2713,7 +2713,7 @@ function movementComparisonAnswer(context, requestedYears) {
   if (rows.some(row => !row || row.privacyStatus !== 'released')) {
     return periodLimit(
       'Comparación de movimientos con publicación limitada',
-      `No se puede comparar ${years.join(' y ')}: uno de los años no está disponible o no alcanza el umbral portable k=${context.privacyThreshold}.`,
+      `No se puede comparar ${years.join(' y ')}: uno de los años no está disponible o reúne menos de ${context.privacyThreshold} personas.`,
       'PRIVACY_PROTECTED_OR_UNAVAILABLE',
     );
   }
@@ -2777,7 +2777,7 @@ function qualityAnswer(context) {
   const components = context.quality.components || {};
   return {
     title: 'Calidad del contrato GRH',
-    summary: `El extracto agregado obtiene ${formatPercent(context.quality.score)}. El principal riesgo cuantitativo es la conciliación entre calculo y totpago, no la integridad referencial.`,
+    summary: `La copia analizada obtiene ${formatPercent(context.quality.score)} de confiabilidad general. La principal atención está en las diferencias entre las dos fuentes de control, no en los vínculos entre registros.`,
     findings: [
       componentFinding('Validez temporal', components.temporalValidity),
       componentFinding('Integridad referencial', components.referentialIntegrity),
@@ -2785,11 +2785,11 @@ function qualityAnswer(context) {
       componentFinding('Unicidad de legajo', components.legajoKeyUniqueness),
     ].filter(Boolean),
     evidence: [
-      metric('Score gobernado', formatPercent(context.quality.score), context.quality.scope),
-      metric('Filas temporales en cuarentena', formatInteger(context.quality.risks.quarantinedTemporalRows), 'No alimentan KPIs ejecutivos.'),
-      metric('Conciliación cross-source', formatPercent(context.reconciliation.scorePct), reconciliationLabel(context.reconciliation.status)),
+      metric('Confiabilidad general', formatPercent(context.quality.score), 'Resume los controles aplicados a la copia recibida.'),
+      metric('Registros apartados', formatInteger(context.quality.risks.quarantinedTemporalRows), 'No se incluyen en los indicadores hasta ser revisados.'),
+      metric('Coincidencia entre fuentes', formatPercent(context.reconciliation.scorePct), reconciliationLabel(context.reconciliation.status)),
     ],
-    caveats: ['El score evalúa el extracto agregado gobernado; no certifica la aptitud de cada tabla cruda de GRH.'],
+    caveats: ['El resultado evalúa la copia preparada para análisis; no certifica por separado cada tabla original de GRH.'],
     nextQuestions: ['¿Por qué totpago es sólo diagnóstico?', '¿Cómo se compone la cuarentena?'],
     visual: qualityComponentsVisual(components),
   };
@@ -2802,11 +2802,11 @@ function quarantineAnswer(context) {
     rows: finite(context.temporal?.domains?.[source]?.quarantineRows) || 0,
   }));
   return {
-    title: 'Cuarentena temporal',
-    summary: `${formatInteger(context.quality.risks.quarantinedTemporalRows)} filas temporales fueron excluidas de los indicadores gobernados.`,
+    title: 'Registros apartados para revisión',
+    summary: `${formatInteger(context.quality.risks.quarantinedTemporalRows)} registros con fechas o períodos inválidos no se incluyeron en los indicadores.`,
     findings: breakdown.map(item => `${item.source}: ${formatInteger(item.rows)} filas.`),
-    evidence: breakdown.map(item => metric(item.source, formatInteger(item.rows), 'Excluidas por fecha o período inválido según la política del snapshot.')),
-    caveats: ['Las razones de cuarentena pueden superponerse; el total informado corresponde a filas únicas excluidas.'],
+    evidence: breakdown.map(item => metric(item.source, formatInteger(item.rows), 'Apartados por una fecha o período inválido en la copia recibida.')),
+    caveats: ['Un mismo registro puede presentar más de un problema; el total cuenta registros únicos apartados.'],
     nextQuestions: ['¿Cuál es el score de calidad?', '¿Qué período se considera válido?'],
     visual: quarantineVisual(breakdown),
   };
@@ -2835,7 +2835,7 @@ function calculationControlAnswer(context, periodRequest) {
       metric('Bruto de control', formatSourceAmount(amounts.grossWithFamilyAllowancesCents, context.presentation), 'Agregado de cálculo portable.'),
       metric('Retenciones', formatSourceAmount(amounts.employeeWithholdingsCents, context.presentation), 'Agregado de cálculo portable.'),
       metric('Neto de control', formatSourceAmount(amounts.netPayrollCents, context.presentation), 'No es una transferencia acreditada.'),
-      metric('Participantes', formatInteger(control.participantCount), `Período liberado con umbral k=${context.privacyThreshold}.`),
+      metric('Participantes', formatInteger(control.participantCount), `Publicado porque reúne al menos ${context.privacyThreshold} personas.`),
     ],
     caveats: [currencyDisclosure(context)],
     nextQuestions: ['¿Cómo concilia con totpago?', '¿Cómo cambió frente al período anterior?'],
@@ -2864,7 +2864,7 @@ function closeExplanationAnswer(context, periodRequest) {
       `Varianza absoluta mensual calculo/totpago: ${formatSourceAmount(reconciliation.absoluteVarianceCents, context.presentation)}.`,
     ],
     evidence: [
-      metric('Participantes', formatInteger(row.participantCount), `Agregado mensual liberado con k=${context.closeProjection.privacy.threshold}.`),
+      metric('Participantes', formatInteger(row.participantCount), `Publicado porque reúne al menos ${context.closeProjection.privacy.threshold} personas.`),
       metric('Neto de control', formatSourceAmount(components.netPayrollCents, context.presentation), 'Cálculo salarial agregado; no desembolso.'),
       metric('Cobertura mensual', formatPercent(reconciliation.runCoveragePct), `${formatInteger(reconciliation.matchedRuns)} de ${formatInteger(unionRuns)} corridas del universo combinado.`),
       metric('Acuerdo mensual de valores', formatPercent(reconciliation.valueAgreementPct), 'Proviene de period_series; no reutiliza el score global.'),
@@ -2932,7 +2932,7 @@ function trendAnswer(context, periodRequest, rawMessage = '') {
       metric('Cambio de neto de control', formatSourceAmountSigned(netDelta, context.presentation), netRate === null ? 'Sin tasa comparable.' : formatSignedPercent(netRate)),
     ],
     caveats: [currencyDisclosure(context), 'No se proyectan períodos futuros ni se explican causas sin variables y metodología adicionales.'],
-    nextQuestions: ['¿Qué compone el control del último período?', '¿Cómo está la conciliación cross-source?'],
+    nextQuestions: ['¿Qué compone el control del último período?', '¿Qué diferencias hay entre las fuentes de control?'],
     visual: trendVisual(context, previous, current),
     resolvedPeriod: `${previous.period}→${current.period}`,
   };
@@ -2980,17 +2980,17 @@ function dimensionalTrendLimit(dimension) {
 function sourceAnswer(context) {
   return {
     title: 'Fuente y alcance',
-    summary: `La fuente canónica es ${context.sourceName}, con snapshot ${context.snapshot}. El último período válido de cálculo es ${context.latestPeriod}.`,
+    summary: `Los datos provienen de ${context.sourceName}, en una copia histórica al ${context.snapshot}. El último mes de cálculo disponible es ${context.latestPeriod}.`,
     findings: [
       'personas_junin está explícitamente excluida del contrato y no se usa para cruzar, completar ni migrar datos.',
-      'Los artefactos son privados, vinculados al tenant municipal y agregados sin PII.',
+      'Los archivos de trabajo son privados, pertenecen al municipio y esta respuesta no incluye datos personales.',
       'No existe una conexión en tiempo real en este corte.',
       'totpago se conserva únicamente como contraste diagnóstico; los KPIs de liquidación provienen de conceptos de control de calculo.',
     ],
     evidence: [
-      metric('Snapshot', context.snapshot, 'Fecha máxima gobernada del backup.'),
-      metric('Último cálculo válido', context.latestPeriod, 'Último período de calculation_control_series.'),
-      metric('Fuente ejecutiva', 'calculo', 'Conceptos de control; totpago es diagnóstico.'),
+      metric('Fecha de la copia', context.snapshot, 'Última fecha incluida en el respaldo analizado.'),
+      metric('Último mes disponible', context.latestPeriod, 'Último mes de cálculo que superó los controles.'),
+      metric('Fuente principal', 'Cálculo', 'La otra tabla se usa sólo para detectar diferencias.'),
     ],
     caveats: ['La actualización futura requiere materializar un nuevo contrato privado y volver a validar calidad y conciliación.'],
     nextQuestions: ['¿Cuál es la calidad del extracto?', '¿Qué registros quedaron en cuarentena?'],
@@ -3016,7 +3016,7 @@ function limitedBankPayment(context) {
 function limitedForecast() {
   return {
     title: 'Proyección fuera del contrato',
-    summary: 'El snapshot GRH no contiene un modelo de pronóstico validado ni variables suficientes para atribuir causas o recomendar decisiones futuras.',
+    summary: 'La copia de GRH no contiene un método de proyección validado ni información suficiente para atribuir causas o recomendar decisiones futuras.',
     findings: [
       'Puedo comparar períodos observados de calculation_control_series.',
       'No genero predicciones, causas ni recomendaciones de recorte con datos insuficientes.',
@@ -3031,16 +3031,16 @@ function limitedForecast() {
 function helpAnswer() {
   return {
     title: 'Consultas ejecutivas disponibles',
-    summary: 'Puedo responder preguntas agregadas y deterministas sobre el contrato privado GRH.',
+    summary: 'Puedo responder preguntas verificables sobre la información privada de GRH disponible para tu perfil.',
     findings: [
       'Participación de liquidación y distribución por sector, centro de costo o categoría de acuerdo de origen.',
       'Ausencias, licencias históricas y movimientos dentro de su cobertura válida.',
-      'Calidad, cuarentena, control de cálculo y conciliación cross-source.',
+      'Confiabilidad, registros apartados, control de cálculo y diferencias entre fuentes.',
       'Cierre mensual explicado: componentes del neto y conciliación del mismo período.',
-      'Fuente, snapshot, período y límites de interpretación.',
+      'Origen, fecha de la copia, período y límites de interpretación.',
     ],
     evidence: [],
-    caveats: ['No respondo con PII, datos individuales, predicciones ni pagos bancarios no reconciliados.'],
+    caveats: ['No expongo datos personales, no invento predicciones y no afirmo pagos bancarios sin una fuente autorizada que los demuestre.'],
     nextQuestions: ['Dame un resumen ejecutivo', '¿Cuántas personas participaron en la liquidación?', '¿Cómo está la conciliación?'],
   };
 }
@@ -3083,7 +3083,7 @@ function executiveConfidenceVisual(context) {
     scaleMax: 100,
     items: [
       visualItem('Calidad gobernada', context.quality.score, formatPercent(context.quality.score)),
-      visualItem('Conciliación cross-source', data.scorePct, formatPercent(data.scorePct)),
+      visualItem('Coincidencia entre fuentes', data.scorePct, formatPercent(data.scorePct)),
       visualItem('Cobertura de corridas', data.runCoveragePct, formatPercent(data.runCoveragePct)),
       visualItem('Acuerdo de valores', data.valueAgreementPct, formatPercent(data.valueAgreementPct)),
     ],
@@ -3471,7 +3471,7 @@ function buildProvenance(executive, quality, close = null, presentation = null) 
 }
 
 function sourceCitation(context) {
-  return `Fuente: ${context.sourceName} · snapshot ${context.snapshot} · último período de cálculo liberado ${context.latestPeriod} · privacidad k=${context.privacyThreshold} · agregado sin PII · no tiempo real.`;
+  return `Fuente: ${context.sourceName} · respaldo al ${context.snapshot} · último mes de cálculo publicado ${context.latestPeriod} · grupos de menos de ${context.privacyThreshold} personas protegidos · sin datos personales · no se actualiza en tiempo real.`;
 }
 
 function renderTextAnswer(answer) {

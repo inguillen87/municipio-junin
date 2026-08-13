@@ -192,7 +192,7 @@
         <article class="kpi-card">
           <span class="kpi-label">Fecha del respaldo</span>
           <strong class="kpi-value" id="kpi-snapshot">—</strong>
-          <span class="kpi-context" id="kpi-snapshot-context">Snapshot histórico, no tiempo real.</span>
+          <span class="kpi-context" id="kpi-snapshot-context">Respaldo histórico; no se actualiza en tiempo real.</span>
         </article>
       </section>
 
@@ -629,7 +629,7 @@
       appendCells(row, [
         periodLabel(control.period),
         formatNumber(control.distinctPayrollParticipants, 0),
-        'Publicado con protección k=' + lastAvailableReport.source.portableThreshold
+        'Publicado porque reúne al menos ' + lastAvailableReport.source.portableThreshold + ' personas'
       ]);
       body.appendChild(row);
     }
@@ -684,7 +684,7 @@
       control.components.forEach(item => componentFragment.appendChild(metricCard(item.label, formatCurrencyCents(item.valueCents, false))));
       componentPanel.replaceChildren(componentFragment);
       setText('control-meaning', tolerance === null
-        ? 'Podés revisar los importes del mes, pero la fuente portable no conserva un veredicto histórico de tolerancia. No completamos ese dato con el estado de otro período.'
+        ? 'Podés revisar los importes del mes, pero la información publicada no conserva una conclusión histórica sobre esa diferencia. No completamos ese dato con el estado de otro período.'
         : (tolerance
           ? 'La identidad de control más reciente está dentro de la tolerancia declarada. Antes de aprobar, revisá también la conciliación entre fuentes en Calidad.'
           : 'La identidad de control más reciente está fuera de tolerancia. Debe revisarse en Hacienda antes de cualquier certificación.'));
@@ -694,7 +694,7 @@
       const rows = [
         ['Período', periodLabel(control.period)],
         ['Participantes', formatNumber(control.distinctPayrollParticipants, 0)],
-        ['Protección de grupos pequeños', 'Aplicada · k=' + lastAvailableReport.source.portableThreshold],
+        ['Protección de grupos pequeños', 'Aplicada · no se muestran grupos con menos de ' + lastAvailableReport.source.portableThreshold + ' personas'],
         ['Comparación de tolerancia', tolerance === null ? 'No publicada para este mes' : (tolerance ? 'Dentro de tolerancia' : 'Fuera de tolerancia')],
         ['Alcance', 'Control agregado de liquidación; no pago bancario'],
         ['Fuente', source.canonicalSystem + ' · respaldo ' + dateLabel(source.snapshotAsOf)]
@@ -713,7 +713,7 @@
       setText('quality-heading', statusLabel + ': el corte obtiene ' + formatNumber(quality.scorePct, 2) + '/100');
       setText('quality-insight', attention.length
         ? 'La estructura general es sólida, pero ' + attentionLabels + (attention.length === 1 ? ' requiere' : ' requieren') + ' atención antes de certificar resultados.'
-        : 'Los cuatro controles del conjunto publicado superan el umbral de revisión. El detalle sigue disponible para auditoría.');
+        : 'Los cuatro controles del conjunto publicado alcanzan el nivel esperado para revisar los datos. El detalle sigue disponible para auditoría.');
 
       const signalPanel = document.getElementById('quality-signals');
       const signalFragment = document.createDocumentFragment();
@@ -727,7 +727,7 @@
       signalPanel.replaceChildren(signalFragment);
       setText('quality-meaning', attention.length
         ? 'La principal limitación está en ' + attentionLabels + '. El puntaje total no debe ocultar ' + (attention.length === 1 ? 'ese control' : 'esos controles') + ': abrí Calidad para ver causas, alcance y acciones.'
-        : 'No se detecta un componente por debajo del umbral de revisión, pero el respaldo sigue siendo histórico y no tiempo real.');
+        : 'No se detecta un control con resultado bajo, pero el respaldo sigue siendo histórico y no se actualiza en tiempo real.');
 
       const body = document.getElementById('quality-table-body');
       body.replaceChildren();
@@ -827,7 +827,7 @@
     }
 
     function sourceLabel(source) {
-      return source.canonicalSystem + ', corte ' + dateLabel(source.snapshotAsOf) + ', linaje ' + shortSha(source.approvedSha256) + ', snapshot histórico no realtime';
+      return source.canonicalSystem + ', corte ' + dateLabel(source.snapshotAsOf) + ', control ' + shortSha(source.approvedSha256) + ', respaldo histórico sin actualización en tiempo real';
     }
 
     function setUnavailable(message) {

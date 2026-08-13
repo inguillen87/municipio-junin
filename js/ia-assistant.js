@@ -122,7 +122,7 @@
       var list = createElement('ul', 'finding-list');
       findings.forEach(function(finding) { list.appendChild(createElement('li', '', finding)); });
       var findingsSection = createElement('section', 'answer-findings');
-      findingsSection.appendChild(createElement('h4', '', 'Hallazgos'));
+      findingsSection.appendChild(createElement('h4', '', 'Lo que encontramos'));
       findingsSection.appendChild(list);
       detailsContent.appendChild(findingsSection);
     }
@@ -133,7 +133,7 @@
       evidence.slice(0, 8).forEach(function(item) {
         if (!item || typeof item !== 'object') return;
         var evidenceItem = createElement('div', 'evidence-item');
-        evidenceItem.appendChild(createElement('span', 'evidence-label', item.label || 'Métrica'));
+        evidenceItem.appendChild(createElement('span', 'evidence-label', item.label || 'Dato'));
         evidenceItem.appendChild(createElement('strong', 'evidence-value', item.value || 'Sin dato'));
         if (item.detail) evidenceItem.appendChild(createElement('span', 'evidence-detail', item.detail));
         evidenceGrid.appendChild(evidenceItem);
@@ -411,7 +411,7 @@
     var periods = safeArray(history.items).slice(0, 6);
     if (!periods.length) return;
     var section = createElement('section', 'directory-history');
-    section.appendChild(createElement('h4', '', 'Filas fuente legamov · últimos ' + periods.length + ' de ' + String(history.total || periods.length) + ' períodos'));
+    section.appendChild(createElement('h4', '', 'Movimientos registrados · últimos ' + periods.length + ' de ' + String(history.total || periods.length) + ' períodos'));
     var grid = createElement('div', 'directory-history-grid');
     periods.forEach(function(event) {
       if (!event || typeof event !== 'object' || typeof event.period !== 'string' ||
@@ -901,7 +901,7 @@
     var snapshot = byId('snapshotStatus');
     var period = byId('periodStatus');
     if (snapshot && /^\d{4}-\d{2}-\d{2}$/.test(provenance.snapshotAsOf || '')) {
-      snapshot.textContent = provenance.snapshotAsOf + ' · snapshot histórico';
+      snapshot.textContent = provenance.snapshotAsOf + ' · copia histórica';
       activateTrustDot('snapshotDot');
     }
     if (period && /^\d{4}-\d{2}$/.test(provenance.latestValidCalculationPeriod || '')) {

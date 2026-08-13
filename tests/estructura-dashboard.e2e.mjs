@@ -814,6 +814,7 @@ async function readyDiagnostics(page) {
       unexpectedFinanceFigures: Boolean(document.querySelector('[data-testid="cost-center-comparison-content"]')),
       leaveLeak: /\b(?:leave|licencia individual)\b/i.test(text),
       unsafeNominalDeepLinkLeak: /(?:company|legajo)=|hasAbsence=/i.test(document.documentElement.innerHTML),
+      privacyJargonVisible: /\bk\s*(?:=|≥|<|>)\s*\d|\bPII\b|umbral|celdas protegidas/i.test(text),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     };
   });
@@ -843,6 +844,15 @@ async function exerciseReadyControls(page) {
   for (const key of ['costCenter', 'agreement']) {
     await page.locator(`[data-testid="workforce-tab-${key}"]`).click();
     assert.equal(await page.locator(`[data-testid="workforce-${key}-bars"]`).isVisible(), true, key);
+    if (key === 'costCenter') {
+      const toggle = page.locator('[data-testid="workforce-costCenter-toggle"]');
+      await toggle.click();
+      assert.match(
+        await page.locator('[data-testid="workforce-costCenter-bars"]').innerText(),
+        /Otros grupos protegidos/u,
+      );
+      await toggle.click();
+    }
   }
   const sectorTab = page.locator('[data-testid="workforce-tab-sector"]');
   await sectorTab.focus();
@@ -1177,6 +1187,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(ready.unexpectedFinanceFigures, false);
         assert.equal(ready.leaveLeak, false);
         assert.equal(ready.unsafeNominalDeepLinkLeak, false);
+        assert.equal(ready.privacyJargonVisible, false);
         assert.ok(ready.overflow <= 1, `desktop overflow=${ready.overflow}`);
 
         await exerciseReadyControls(page);

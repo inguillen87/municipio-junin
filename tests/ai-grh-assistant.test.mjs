@@ -510,10 +510,10 @@ test('executive answers use protected portable rankings without labels or codes 
   const views = realViews();
   const summary = answer('Dame un resumen ejecutivo', views);
   assert.equal(summary.httpStatus, 200);
-  assert.match(summary.response, /856 participantes/);
+  assert.match(summary.response, /856 (?:participantes|legajos)/);
   assert.match(summary.response, /88,99 %/);
   assert.match(summary.response, /63,88 %/);
-  assert.match(summary.response, /privacidad k=10/i);
+  assert.match(summary.response, /grupos de menos de 10 personas protegidos/i);
   assert.match(summary.response, /\bARS\b/);
   assert.match(summary.response, /GRH no declara moneda en la fuente/i);
   assert.doesNotMatch(summary.response, /\$|pago bancario|sourceCode|companyCode|unidades de origen/i);
@@ -577,7 +577,7 @@ test('absence, leave and movement values are returned only for released years', 
     assert.equal(protectedAnswer.httpStatus, 422);
     assert.equal(protectedAnswer.status, 'limited');
     assert.equal(protectedAnswer.answer.code, 'PRIVACY_PROTECTED_OR_UNAVAILABLE');
-    assert.match(protectedAnswer.response, /umbral portable k=10/i);
+    assert.match(protectedAnswer.response, /menos de 10 personas.+protege identidades/i);
     assert.equal(protectedAnswer.answer.evidence.length, 0);
   }
 
@@ -859,7 +859,7 @@ test('policy attacks, PII, bank claims, forecasts and unknown questions fail clo
 
   const forecast = answer('Predecí el costo del próximo mes', views);
   assert.equal(forecast.status, 'limited');
-  assert.match(forecast.response, /no contiene un modelo de pronóstico validado/i);
+  assert.match(forecast.response, /no contiene un método de proyección validado/i);
 
   const unknown = answer('¿Qué temperatura hace hoy?', views);
   assert.equal(unknown.status, 'unsupported');

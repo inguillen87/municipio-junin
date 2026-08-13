@@ -53,12 +53,15 @@ test('printable report reads the bundle contract, not a raw semantic artifact', 
 test('A4 printable output contains only released compensation and safe quality evidence', { skip: !HAS_PRIVATE_GRH }, () => {
   const html = buildGrhPrintableHtml(realBundle(), { generatedAt: '08/08/2026 20:00' });
   assert.match(html, /@page\{size:A4/);
-  assert.match(html, /Privacidad: grh-small-cell-v1 · k=10/);
+  assert.match(html, /Privacidad: Grupos con menos de 10 personas protegidos/i);
   assert.match(html, /grh-semantic-v2/);
   assert.match(html, /Neto de control · ARS/i);
   assert.match(html, /dump original no declara un código de moneda/i);
   assert.match(html, /no acreditan pago bancario/i);
-  assert.match(html, /personas_junin: excluida/i);
+  assert.match(html, /Base separada de personas: no incluida/i);
+  assert.match(html, /Comparación entre fuentes/i);
+  assert.match(html, /Datos personales incluidos<\/td><td>No/i);
+  assert.doesNotMatch(html, /\bk\s*=\s*10\b|Conciliación cross-source|PII publicada/i);
   assert.doesNotMatch(html, /Ausencias\s*[·-]\s*\d|Licencias\s*[·-]\s*\d|Movimientos\s*[·-]\s*\d/i);
   assert.doesNotMatch(html, /sourceCode|companyCode|calculation_rows|control_rows|net_identity_variance/i);
 });

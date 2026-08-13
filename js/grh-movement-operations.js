@@ -299,7 +299,7 @@
     [
       'Movimientos registrados, no altas/bajas/rotación.',
       'La fuente no posee una taxonomía gobernada para ingresos, egresos, promociones o transferencias.',
-      'Los años protegidos no se reemplazan por cero. Umbral k=' + state.contract.limits.privacyThreshold + '.',
+      'Para proteger identidades, los años con menos de ' + state.contract.limits.privacyThreshold + ' personas no se muestran ni se reemplazan por cero.',
       'El año del corte es parcial y la serie es histórica, no información en tiempo real.'
     ].forEach(function(copy) { list.appendChild(element('li', '', copy)); });
   }

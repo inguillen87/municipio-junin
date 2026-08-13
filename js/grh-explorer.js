@@ -20,14 +20,14 @@
   var COVERAGE_STATUSES = Object.freeze(['verified', 'informational']);
   var COVERAGE_UNITS = Object.freeze(['percent', 'rows', 'tables']);
   var STATUS_LABELS = Object.freeze({
-    operational: 'Operativo',
-    partial: 'Cobertura parcial',
-    catalogued: 'Catalogado'
+    operational: 'Listo para usar',
+    partial: 'Disponible con límites',
+    catalogued: 'Detectado aún sin tablero'
   });
   var PERIOD_STATUS_LABELS = Object.freeze({
-    certified: 'Serie certificada',
-    historical: 'Serie histórica',
-    not_available: 'Sin período semántico'
+    certified: 'Período listo para consultar',
+    historical: 'Información histórica',
+    not_available: 'Sin fechas informadas'
   });
   var TOP_KEYS = Object.freeze(['schemaVersion', 'source', 'lineage', 'privacy', 'counts', 'domains']);
   var SOURCE_KEYS = Object.freeze([
@@ -267,7 +267,7 @@
   }
 
   function formatPeriodRange(period) {
-    if (!period || period.status === 'not_available') return 'Sin serie temporal';
+    if (!period || period.status === 'not_available') return 'Sin fechas informadas';
     if (period.first === period.last) return formatPeriod(period.first);
     return formatPeriod(period.first) + ' — ' + formatPeriod(period.last);
   }
@@ -282,12 +282,11 @@
 
   function renderSummary(contract) {
     var definitions = [
-      { label: 'Áreas GRH', value: contract.counts.domainCount },
-      { label: 'Tablas inventariadas', value: contract.counts.totalTables },
-      { label: 'Tablas con datos', value: contract.counts.nonEmptyTables },
-      { label: 'Filas inventariadas', value: contract.counts.totalRows },
-      { label: 'Tablas mapeadas', value: contract.counts.mappedTables },
-      { label: 'Filas en dominios', value: contract.counts.mappedRows }
+      { label: 'Tablas revisadas', value: contract.counts.totalTables },
+      { label: 'Tablas con información', value: contract.counts.nonEmptyTables },
+      { label: 'Registros revisados', value: contract.counts.totalRows },
+      { label: 'Tablas organizadas', value: contract.counts.mappedTables },
+      { label: 'Registros organizados', value: contract.counts.mappedRows }
     ];
     var container = byId('grhSummaryKpis');
     clear(container);
@@ -299,8 +298,8 @@
     byId('grhSnapshotDate').textContent = formatSnapshot(contract.source.snapshotAsOf);
     byId('grhSourceNote').textContent = contract.source.canonicalSystem + ' · ' +
       formatNumber(contract.counts.mappedTables) + ' de ' + formatNumber(contract.counts.totalTables) +
-      ' tablas organizadas en dominios · snapshot histórico.';
-    byId('grhContractChip').textContent = contract.schemaVersion;
+      ' tablas organizadas para consulta · copia histórica.';
+    byId('grhContractChip').textContent = 'Datos verificados';
   }
 
   function renderStatusOptions(contract) {
@@ -391,7 +390,7 @@
 
   function formatCoverage(value) {
     if (value.unit === 'percent') return formatPercentage(value.value);
-    return formatNumber(value.value) + (value.unit === 'tables' ? ' tablas' : ' filas');
+    return formatNumber(value.value) + (value.unit === 'tables' ? ' tablas' : ' registros');
   }
 
   function renderCoverage(domain) {
@@ -402,7 +401,7 @@
       card.append(
         element('span', '', item.label),
         element('strong', '', formatCoverage(item)),
-        element('small', '', item.status === 'verified' ? 'Verificado' : 'Informativo')
+        element('small', '', item.status === 'verified' ? 'Dato verificado' : 'Dato de referencia')
       );
       container.appendChild(card);
     });
@@ -422,7 +421,7 @@
       var stateCell = element('td');
       coverageCell.append(element('strong', '', table.label), element('small', '', formatNumber(table.columns) + ' columnas'));
       tableCell.append(element('strong', '', table.name));
-      stateCell.append(element('span', 'grh-table-state', table.status === 'available' ? 'Disponible' : 'Sin filas'));
+      stateCell.append(element('span', 'grh-table-state', table.status === 'available' ? 'Disponible' : 'Sin registros'));
       stateCell.firstChild.dataset.state = table.status === 'available' ? 'operational' : 'catalogued';
       row.append(coverageCell, tableCell, rowsCell, periodCell, stateCell);
       body.appendChild(row);
@@ -431,10 +430,10 @@
       var list = element('dl');
       card.append(element('strong', '', table.label), element('small', '', table.name));
       [
-        ['Filas', formatNumber(table.rows)],
-        ['Columnas', formatNumber(table.columns)],
+        ['Registros', formatNumber(table.rows)],
+        ['Campos', formatNumber(table.columns)],
         ['Período', formatPeriodRange(table.periods)],
-        ['Estado', table.status === 'available' ? 'Disponible' : 'Sin filas']
+        ['Estado', table.status === 'available' ? 'Disponible' : 'Sin registros']
       ].forEach(function(item) {
         var wrapper = element('div');
         wrapper.append(element('dt', '', item[0]), element('dd', '', item[1]));
@@ -444,7 +443,7 @@
       cards.appendChild(card);
     });
     byId('grhEvidenceSummary').textContent = formatNumber(domain.counts.nonEmptyTables) + ' de ' +
-      formatNumber(domain.counts.tables) + ' tablas con filas · ' + formatNumber(domain.counts.rows) + ' filas registradas.';
+      formatNumber(domain.counts.tables) + ' tablas con información · ' + formatNumber(domain.counts.rows) + ' registros.';
   }
 
   function renderQuestions(domain) {
@@ -495,7 +494,7 @@
       button.type = 'button';
       button.disabled = true;
       button.dataset.actionId = action.id;
-      button.title = 'El perfil actual no tiene ' + action.requiredCapability;
+      button.title = 'Tu perfil no permite abrir esta opción';
       container.appendChild(button);
     });
   }
@@ -511,7 +510,7 @@
     detail.hidden = false;
     var index = state.contract.domains.indexOf(domain) + 1;
     var title = byId('grhDomainTitle');
-    byId('grhDomainOrder').textContent = 'Dominio ' + String(index).padStart(2, '0') + ' de ' + state.contract.domains.length;
+    byId('grhDomainOrder').textContent = 'Área ' + String(index).padStart(2, '0') + ' de ' + state.contract.domains.length;
     byId('grhDomainStatus').textContent = statusLabel(domain.status);
     byId('grhDomainStatus').dataset.status = domain.status;
     title.textContent = domain.title;
@@ -524,16 +523,16 @@
     byId('grhDomainLimit').replaceChildren(
       element('strong', '', PERIOD_STATUS_LABELS[domain.periods.status] + '. '),
       documentRef.createTextNode(formatPeriodRange(domain.periods) + ' · ' + formatNumber(domain.counts.nonEmptyTables) +
-        ' tablas con datos · ' + formatNumber(domain.counts.rows) + ' filas en el dominio.')
+        ' tablas con información · ' + formatNumber(domain.counts.rows) + ' registros en el área.')
     );
   }
 
   function renderGlobalLimits() {
     var values = [
-      'El corte es histórico y no representa información en tiempo real.',
+      'La copia es histórica y no representa información en tiempo real.',
       'Una fila registrada no equivale automáticamente a una persona activa.',
-      'Estos dominios agrupan datos del GRH; no son departamentos ni certifican el organigrama vigente.',
-      'Las acciones disponibles respetan la capacidad confirmada para la sesión.'
+      'Estas áreas ordenan datos del respaldo de Recursos Humanos; no son departamentos ni certifican el organigrama vigente.',
+      'Las acciones disponibles respetan el permiso confirmado para la sesión.'
     ];
     var list = byId('grhGlobalLimits');
     clear(list);
@@ -555,7 +554,7 @@
     byId('grhErrorTitle').textContent = title;
     byId('grhErrorMessage').textContent = message;
     byId('grhErrorState').hidden = false;
-    setSourceState('error', 'Catálogo no disponible');
+    setSourceState('error', 'Datos no disponibles');
     byId('grhErrorState').focus();
   }
 
@@ -570,7 +569,7 @@
     byId('grhLoadingState').hidden = true;
     byId('grhErrorState').hidden = true;
     byId('grhExplorerContent').hidden = false;
-    setSourceState('ready', 'Catálogo verificado');
+    setSourceState('ready', 'Datos verificados');
   }
 
   async function loadCatalog() {
@@ -580,7 +579,7 @@
     byId('grhLoadingState').hidden = false;
     byId('grhErrorState').hidden = true;
     byId('grhExplorerContent').hidden = true;
-    setSourceState('loading', 'Verificando catálogo');
+    setSourceState('loading', 'Validando datos');
 
     try {
       var allowed = typeof global.requireCapability === 'function'
@@ -593,7 +592,7 @@
       var response = await global.MuniAuth.fetch(ENDPOINT, { headers: { Accept: 'application/json' } });
       if (!response.ok) {
         if (response.status === 403) {
-          showError('Acceso no habilitado', 'El perfil actual no tiene acceso al catálogo de áreas GRH.');
+          showError('Acceso no habilitado', 'El perfil actual no tiene acceso a las áreas de información de Recursos Humanos.');
           return;
         }
         throw new Error('CATALOG_REQUEST_FAILED');
@@ -607,7 +606,7 @@
       showContract(contract);
     } catch (error) {
       if (global.MuniAuth && typeof global.MuniAuth.isAuthError === 'function' && global.MuniAuth.isAuthError(error)) return;
-      showError('Catálogo GRH no verificable', 'No se muestran resultados parciales. Reintentá cuando la fuente y el contrato estén disponibles.');
+      showError('Áreas de información no disponibles', 'No pudimos verificar el origen de los datos. Reintentá cuando la fuente municipal esté disponible.');
     }
   }
 

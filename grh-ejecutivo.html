@@ -770,8 +770,8 @@
           <span class="grh-chip"><strong id="sourceCutChip">—</strong> corte declarado</span>
           <span class="grh-chip"><strong id="profileTablesChip">—</strong> tablas inventariadas</span>
           <span class="grh-chip"><strong id="quarantineChip">—</strong> filas en cuarentena</span>
-          <span class="grh-chip"><strong>k≥5 / k≥10</strong> privacidad por dominio</span>
-          <span class="grh-chip"><strong>PII</strong> excluida</span>
+          <span class="grh-chip"><strong>Privacidad aplicada</strong> grupos pequeños protegidos</span>
+          <span class="grh-chip"><strong>Sin datos personales</strong> en esta vista</span>
         </div>
         <div class="grh-controls" aria-label="Controles del tablero">
           <div class="grh-control">
@@ -893,7 +893,7 @@
           <div class="grh-panel-heading">
             <div>
               <h3>Distribución por sector</h3>
-              <p class="grh-panel-subtitle">Participantes de liquidación por denominación. Las categorías pequeñas se consolidan en un bucket protegido bajo k≥5.</p>
+              <p class="grh-panel-subtitle">Participantes del cálculo por denominación. Las categorías con menos de 5 personas se reúnen en “Otros grupos protegidos”.</p>
             </div>
             <span class="grh-panel-badge" id="sectorCountBadge">—</span>
           </div>
@@ -907,7 +907,7 @@
           <div class="grh-panel-heading">
             <div>
               <h3>Ritmo de movimientos de legajo</h3>
-              <p class="grh-panel-subtitle">Mapa temporal de intensidad relativa sobre años liberados por k≥10. No representa geografía ni estructura organizacional.</p>
+              <p class="grh-panel-subtitle">Comparación visual entre años con al menos 10 personas. No representa geografía ni estructura organizacional.</p>
             </div>
             <span class="grh-panel-badge">últimos 16 años</span>
           </div>
@@ -930,7 +930,7 @@
             <div class="grh-quality-row" data-status="ok"><span>Integridad referencial</span><strong id="qualityReferential">—</strong></div>
             <div class="grh-quality-row" data-status="warn"><span>Conciliación de liquidación</span><strong id="qualityReconciliation">—</strong></div>
             <div class="grh-quality-row" data-status="ok"><span>Base personas_junin</span><strong>Excluida</strong></div>
-            <div class="grh-quality-row" data-status="ok"><span>PII en este extracto</span><strong id="qualityPii">No exportada</strong></div>
+            <div class="grh-quality-row" data-status="ok"><span>Datos personales en esta vista</span><strong id="qualityPii">No incluidos</strong></div>
             <div class="grh-quality-row" data-status="warn"><span>Cuarentena temporal</span><strong id="qualityPeriods">Revisando…</strong></div>
             <div class="grh-quality-row" data-status="warn"><span>Moneda</span><strong id="qualityCurrency">No declarada</strong></div>
             <div class="grh-quality-row" data-status="warn"><span>Actualización</span><strong>Snapshot · no live</strong></div>
@@ -965,9 +965,9 @@
             <div><strong>Legajos registrados</strong>Conteo agregado de filas en <code>legajo</code> desde la proyección de calidad. No se presenta como personal activo.</div>
             <div><strong>Control de liquidación</strong>Concepto 998 agregado por período válido en <code>calculo</code>. Es cálculo de nómina, no acreditación bancaria; la moneda no está declarada.</div>
             <div><strong>Ausencias</strong>Conteo de eventos por año. Sin días expuestos ni denominador de dotación, no corresponde convertirlo en tasa de ausentismo.</div>
-            <div><strong>Privacidad sectorial</strong>Participantes cuyas categorías se publican individualmente sobre el total de liquidación. El remanente aparece sólo como <em>Otros (celdas protegidas)</em>.</div>
-            <div><strong>Conciliación global</strong>El control de cálculo usa <code>998 = 993 + 994 + 995 - 996</code>. El acuerdo compara el snapshot completo de <code>calculo</code> con campos equivalentes de <code>totpago</code>; esta vista no lo atribuye a meses individuales.</div>
-            <div><strong>Protección de celdas</strong>Categorías usan k≥5 y series sensibles k≥10. Los valores suprimidos se omiten por completo y nunca se reemplazan por cero.</div>
+            <div><strong>Privacidad por sector</strong>Las categorías con menos de 5 personas se reúnen en <em>Otros grupos protegidos</em>. Así se conserva el total sin exponer identidades.</div>
+            <div><strong>Comparación general entre fuentes</strong>El control usa información agregada de <code>calculo</code> y <code>totpago</code>. Sirve para detectar diferencias generales y no se atribuye a un mes ni acredita un pago.</div>
+            <div><strong>Protección de grupos pequeños</strong>Las categorías con menos de 5 personas se agrupan y las series sensibles con menos de 10 se ocultan. Esos valores nunca se reemplazan por cero.</div>
           </div>
         </details>
 
@@ -1311,15 +1311,15 @@
         setText(elements.kpiLegajos, numberFormatter.format(totalLegajos));
         setText(elements.kpiCoverage, new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(publicationCoverage));
         setText(elements.kpiCoverageNote, protectedBucket
-          ? protectedBucket.participantDisplay + ' participantes consolidados en el bucket k≥5.'
-          : 'Todas las categorías superan el umbral k≥5.');
+          ? protectedBucket.participantDisplay + ' participantes reunidos en “Otros grupos protegidos”.'
+          : 'Todas las categorías reúnen suficientes personas para mostrarse por separado.');
         setText(elements.kpiPayroll, latestPayroll ? formatAmountCompact(latestPayroll.value) : 'No publicable');
-        setText(elements.kpiPayrollNote, latestPayroll ? monthLabel(latestPayroll.period) + ' · período liberado k≥10; moneda no declarada.' : 'No hay período liberado por privacidad.');
+        setText(elements.kpiPayrollNote, latestPayroll ? monthLabel(latestPayroll.period) + ' · dato publicado con privacidad; moneda no declarada.' : 'No hay un mes que pueda mostrarse sin exponer grupos pequeños.');
         setText(elements.kpiAbsence, completeAbsence ? numberFormatter.format(completeAbsence.value) : 'No publicable');
-        setText(elements.kpiAbsenceNote, completeAbsence ? completeAbsence.year + ' · eventos liberados k≥10, no tasa.' : 'No hay año completo liberado por privacidad.');
+        setText(elements.kpiAbsenceNote, completeAbsence ? completeAbsence.year + ' · eventos agrupados; no es una tasa.' : 'No hay un año completo que pueda mostrarse sin exponer grupos pequeños.');
         setText(elements.kpiMovements, compactFormatter.format(quality.temporal.domains.legamov.validRows));
         setText(elements.kpiQuality, new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(quality.quality.score) + '/100');
-        setText(elements.kpiQualityNote, 'Extracto agregado · conciliación cross-source ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(quality.reconciliation.scorePct) + '%.');
+        setText(elements.kpiQualityNote, 'Calidad general de los datos · comparación entre fuentes ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(quality.reconciliation.scorePct) + '%.');
         clearSkeletons();
       }
 
@@ -1334,7 +1334,7 @@
           setText(elements.payrollSubtitle, 'Variación frente al mes publicado inmediato. Si existe un período protegido intermedio, no se calcula ni se imputa una variación.');
         } else {
           chartPoints = visible.map(function (point) { return Object.assign({}, point, { chartValue: point.value }); });
-          setText(elements.payrollSubtitle, 'Neto agregado del control de cálculo por período liberado k≥10. No es pago bancario; moneda no declarada y sin ajuste por inflación.');
+          setText(elements.payrollSubtitle, 'Neto agregado del control de cálculo. Sólo se muestran meses con al menos 10 personas. No es pago bancario; la moneda no está declarada y no se ajustó por inflación.');
         }
         renderLineChart(elements.payrollChart, chartPoints, { view: state.salaryView, includeZero: state.salaryView === 'change' });
 
@@ -1434,8 +1434,8 @@
         });
 
         var topShare = total > 0 ? released.slice(0, 3).reduce(function (sum, item) { return sum + item.participants; }, 0) / total : 0;
-        setText(elements.sectorCountBadge, 'k≥5 · ' + numberFormatter.format(total) + ' participantes');
-        setText(elements.sectorSummary, 'Los tres sectores publicados con mayor volumen concentran ' + new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(topShare) + ' de los participantes.' + (protectedBucket ? ' El resto permanece consolidado en “' + protectedBucket.label + '”.' : ' No hay celdas protegidas en esta distribución.'));
+        setText(elements.sectorCountBadge, numberFormatter.format(total) + ' participantes · grupos pequeños protegidos');
+        setText(elements.sectorSummary, 'Los tres sectores publicados con mayor volumen concentran ' + new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(topShare) + ' de los participantes.' + (protectedBucket ? ' El resto se reúne en “Otros grupos protegidos”.' : ' Todas las categorías pueden mostrarse por separado.'));
       }
 
       function renderMovementHeatmap() {
@@ -1496,12 +1496,12 @@
         elements.executiveInsights.replaceChildren();
         addInsight(elements.executiveInsights, 1,
           protectedBucket ? 'Privacidad sectorial aplicada' : 'Detalle sectorial completamente publicado',
-          new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(coverage) + ' de los participantes aparece en categorías individuales; ' + (protectedBucket ? protectedBucket.participantDisplay + ' se consolidan sin revelar celdas pequeñas.' : 'no se requirió bucket protegido.'));
+          new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(coverage) + ' de los participantes aparece en categorías individuales; ' + (protectedBucket ? protectedBucket.participantDisplay + ' se reúnen sin revelar grupos pequeños.' : 'todas las categorías pueden mostrarse por separado.'));
         addInsight(elements.executiveInsights, 2,
           'Concentración a monitorear',
           'Los tres sectores publicados principales reúnen ' + new Intl.NumberFormat('es-AR', { style: 'percent', maximumFractionDigits: 1 }).format(topShare) + ' de los participantes de liquidación.');
         addInsight(elements.executiveInsights, 3,
-          'Conciliación cross-source con brecha explícita',
+          'Diferencias entre las fuentes de cálculo',
           'calculo y totpago alcanzan ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(quality.reconciliation.valueAgreementPct) + '% de acuerdo de valor; el componente de calidad puntúa ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 }).format(quality.quality.components.payrollReconciliation.score) + '/100. No equivale a acreditación bancaria.');
         addInsight(elements.executiveInsights, 4,
           'Cuarentena separada de los indicadores',
@@ -1527,7 +1527,7 @@
         setText(elements.qualityCurrency, quality.reconciliation.currencyStatus === 'not_declared_in_source' ? 'No declarada' : 'En revisión');
         setText(elements.quarantineChip, numberFormatter.format(quality.temporal.quarantineRows));
         setText(elements.qualityNote,
-          'Cuarentena por dominio: cálculo ' + numberFormatter.format(quality.temporal.domains.calculo.quarantineRows) + ', totpago ' + numberFormatter.format(quality.temporal.domains.totpago.quarantineRows) + ', ausencias ' + numberFormatter.format(quality.temporal.domains.ausencia.quarantineRows) + ', licencias ' + numberFormatter.format(quality.temporal.domains.licencia.quarantineRows) + ' y movimientos ' + numberFormatter.format(quality.temporal.domains.legamov.quarantineRows) + '. El backup crudo contiene PII sensible; esta vista no la carga. La conciliación contra calculo permanece en ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(quality.reconciliation.scorePct) + '/100.');
+          'Registros apartados para revisión: cálculo ' + numberFormatter.format(quality.temporal.domains.calculo.quarantineRows) + ', totpago ' + numberFormatter.format(quality.temporal.domains.totpago.quarantineRows) + ', ausencias ' + numberFormatter.format(quality.temporal.domains.ausencia.quarantineRows) + ', licencias ' + numberFormatter.format(quality.temporal.domains.licencia.quarantineRows) + ' y movimientos ' + numberFormatter.format(quality.temporal.domains.legamov.quarantineRows) + '. La copia original contiene datos personales sensibles; esta vista no los carga. La comparación con calculo alcanza ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(quality.reconciliation.scorePct) + '/100.');
       }
 
       function renderSourceContext(quality) {

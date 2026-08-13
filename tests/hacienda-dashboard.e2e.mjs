@@ -1059,7 +1059,7 @@ function assertCohortSnapshot(snapshot, { dimension, period, selected }, label) 
   assert.equal(snapshot.contentHidden, false, `${label} content`);
   assert.equal(snapshot.title, `Análisis financiero · ${selected.label}`, `${label} title`);
   assert.match(snapshot.subtitle, new RegExp(`por ${dimensionLabel} observado.*no es estado contractual`, 'i'));
-  assert.equal(snapshot.badge, `${dimensionLabel} · grh-workforce-finance-v1 · k=10`, `${label} badge`);
+  assert.equal(snapshot.badge, `${dimensionLabel} · Privacidad aplicada`, `${label} badge`);
   assert.deepEqual(snapshot.dataset, {
     contract: WORKFORCE_PROJECTION.schemaVersion,
     sourceSha256: WORKFORCE_PROJECTION.source.sourceSha256,
@@ -1084,7 +1084,7 @@ function assertCohortSnapshot(snapshot, { dimension, period, selected }, label) 
   assert.equal(snapshot.net, formatArsCentsCompact(selected.components.netPayrollCents));
   assert.equal(snapshot.employer, formatArsCentsCompact(selected.components.employerContributionsCents));
   assert.match(snapshot.privacy, selected.participantPrivacyStatus === 'released'
-    ? /Importes y conteo agregados liberados · k=10/i
+    ? /Datos agregados publicados.*al menos 10 personas/i
     : /Importes agregados liberados; conteo protegido/i);
   assert.deepEqual(snapshot.composition.map(item => item.component), GRH_WORKFORCE_FINANCE_COMPONENT_KEYS);
   assert.deepEqual(
@@ -1138,7 +1138,7 @@ function assertCohortSnapshot(snapshot, { dimension, period, selected }, label) 
   }
   assert.match(snapshot.trend.caption, /24 meses.*niveles monetarios visibles.*aritméticamente comparables/i);
   assert.match(snapshot.evidence.assignment, /Dimensión observada.*no situación contractual/i);
-  assert.match(snapshot.evidence.release, /k=10.*supresión primaria.*coordinada entre vistas/i);
+  assert.match(snapshot.evidence.release, /grupos con menos de 10 personas.*otra vista.*deducirlos/i);
   assert.match(snapshot.evidence.presentation, /ARS por configuración municipal.*no declara moneda de origen/i);
   const total = WORKFORCE_PROJECTION.periodTotals.find(item => item.period === period);
   assert.deepEqual(snapshot.global, {
@@ -1822,7 +1822,7 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     assert.equal(result.sourceHash, PROJECTIONS.executive.source.sourceSha256);
     assert.equal(result.published, releasedRows.length.toLocaleString('es-AR'));
     assert.equal(result.protectedCount, suppressedRows.length.toLocaleString('es-AR'));
-    assert.match(result.protectedNote, new RegExp(`${suppressedRows.length} períodos.*k=10.*omiten`, 'i'));
+    assert.match(result.protectedNote, new RegExp(`${suppressedRows.length} períodos.*menos de 10 personas.*omiten`, 'i'));
     assert.equal(
       result.quality,
       `${PROJECTIONS.quality.quality.score.toLocaleString('es-AR', { maximumFractionDigits: 2 })}/100`,

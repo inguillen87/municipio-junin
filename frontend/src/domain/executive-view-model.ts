@@ -68,6 +68,10 @@ function formatWorkforceDefinition(): string {
   return 'Participación en liquidación del último período: legajos con al menos un cálculo válido; no equivale a un padrón contractual activo.';
 }
 
+function rankingLabel(label: string, privacyStatus: 'released' | 'protected_aggregate'): string {
+  return privacyStatus === 'protected_aggregate' ? 'Otros grupos protegidos' : label;
+}
+
 function periodIndex(period: string): number {
   const [year, month] = period.split('-').map(Number);
   return (year ?? 0) * 12 + (month ?? 0);
@@ -161,7 +165,7 @@ function buildSector(contract: ExecutiveContract): SectorRankingViewModel {
     individuallyPublishedCoverageLabel: `${percentageFormatter.format(coverage)}%`,
     protectedParticipants: protectedRow?.participants ?? 0,
     rows: ranking.rows.map((row) => ({
-      label: row.label,
+      label: rankingLabel(row.label, row.privacyStatus),
       participants: row.participants,
       participantDisplay: row.participantDisplay,
       sharePct: row.sharePct,
@@ -169,8 +173,8 @@ function buildSector(contract: ExecutiveContract): SectorRankingViewModel {
       privacyStatus: row.privacyStatus,
     })),
     note: protectedRow
-      ? `${formatNumber(protectedRow.participants)} participantes permanecen consolidados; la cobertura mide categorías individuales publicables, no personas activas.`
-      : 'Todas las categorías sectoriales superan el umbral interactivo; el universo representa participación en liquidación, no personas activas.',
+      ? `${formatNumber(protectedRow.participants)} participantes se reúnen en “Otros grupos protegidos” para cuidar identidades; no representan dotación activa.`
+      : 'Todas las categorías reúnen al menos 5 personas y pueden mostrarse por separado; no representan dotación activa.',
   };
 }
 
@@ -233,7 +237,7 @@ function latestPayrollKpi(
       label: 'Último control de cálculo',
       value: 'No publicable',
       note: period
-        ? `${period} está protegido por k<10; no se sustituye por un período anterior.`
+        ? `${period} reúne menos de 10 personas: no se muestra y no se sustituye por un período anterior.`
         : 'Existe un período protegido sin fecha publicable; no puede probarse cuál es el último valor.',
       status: 'protected',
       tone: 'amber',
@@ -361,7 +365,7 @@ export function buildExecutiveViewModel(contract: ExecutiveContract): ExecutiveV
       protectedRankingRows,
       suppressedMonetaryPeriods: payroll.suppressedPeriods,
       suppressedAnnualPeriods,
-      note: 'La forma exacta expone sólo agregados y no incluye campos individuales. k≥5 protege rankings y k≥10 importes o eventos sensibles; esto no implica que la fuente cruda carezca de PII.',
+      note: 'Esta vista sólo muestra datos agrupados, sin información personal. Las categorías con menos de 5 personas se reúnen en “Otros grupos protegidos”; los importes o eventos de grupos con menos de 10 personas no se muestran.',
     },
   });
 }

@@ -128,7 +128,7 @@ function executiveSummary(selected, previous, distribution, quality, latestRelea
     ? (quality.quality.risks.latestCalculationControlWithinRoundingTolerance
       ? 'queda dentro de la tolerancia de redondeo declarada'
       : 'queda fuera de la tolerancia de redondeo declarada')
-    : 'no publica un estado histórico de tolerancia en la proyección portable';
+    : 'no incluye una conclusión histórica sobre esa diferencia en la información publicada';
   const topSector = distribution.available
     ? distribution.participants.find(row => row.privacyStatus === 'released')
     : null;
@@ -192,7 +192,7 @@ export function buildGrhExecutiveReport(bundle, requestedPeriod = null, generate
       period,
       snapshotAsOf: executive.source.snapshotAsOf,
       realtime: false,
-      warning: 'Snapshot histórico GRH: no es una conexión en tiempo real.',
+      warning: 'Respaldo histórico GRH: no es una conexión en tiempo real.',
     },
     definitions: {
       workforce: executive.workforce.definition,
@@ -225,13 +225,13 @@ export function buildGrhExecutiveReport(bundle, requestedPeriod = null, generate
     furtherQuestions: [
       '¿Qué maestro institucional definirá el estado contractual activo de cada agente?',
       '¿Qué sectores y conceptos explican la mayor variación del período?',
-      '¿Cuándo se habilitará una ingesta GRH incremental auditada para reemplazar el snapshot?',
+      '¿Cuándo se habilitará una actualización GRH auditada para reemplazar el respaldo histórico?',
     ],
     caveats: [
-      `La fuente es un snapshot GRH al ${executive.source.snapshotAsOf}; realtime=false.`,
-      `La salida portable aplica supresión de celdas pequeñas k=${executive.privacy.portableThreshold}.`,
+      `La fuente es un respaldo GRH del ${executive.source.snapshotAsOf} y no se actualiza en tiempo real.`,
+      `Para proteger identidades, no se muestran grupos con menos de ${executive.privacy.portableThreshold} personas.`,
       'La respuesta contiene sólo agregados y no exporta identificadores personales.',
-      'personas_junin está excluida y no se cruza, integra ni usa como fallback.',
+      'La base separada de personas está excluida y no se usa para completar información.',
       'Los participantes de cálculo no son una dotación contractual activa.',
       'Los importes son controles de cálculo en centavos; Junín los presenta en ARS por configuración del tenant, aunque el dump original no incluía código de moneda.',
       'El control de cálculo no acredita pago bancario y totpago se conserva sólo como diagnóstico.',
@@ -290,7 +290,7 @@ export function createReportsHandler({
     } catch (error) {
       if (error instanceof ReportPeriodUnavailableError) {
         return res.status(404).json({
-          error: 'El período solicitado no existe en la serie GRH portable gobernada.',
+          error: 'El período solicitado no existe en la serie GRH publicada y protegida.',
           code: error.code,
           availablePeriodRange: {
             first: error.availablePeriods[0] || null,

@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#07111f">
   <meta name="description" content="Resumen ejecutivo de Recursos Humanos basado en el último respaldo disponible de la Municipalidad de Junín.">
   <meta name="municontrol-release-contract" content="snapshot gobernado de GRH">
+  <meta name="municontrol-excluded-source" content="personas_junin">
   <title>Panel ejecutivo GRH | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="css/dashboard.css">
@@ -1300,14 +1301,14 @@
         <section class="exec-methodology" aria-labelledby="methodologyTitle">
           <h3 class="exec-methodology-title" id="methodologyTitle">Definiciones, alcance y límites de interpretación</h3>
           <div class="exec-methodology-content">
-            <div><strong>Participantes en liquidación</strong>Legajos distintos presentes en al menos una fila válida de <code>calculo</code> del período de referencia. No es un maestro contractual de altas, bajas o dotación activa.</div>
-            <div><strong>Calidad gobernada</strong>Score del extracto agregado gobernado. No certifica cada una de las tablas crudas ni elimina los riesgos declarados por el contrato.</div>
-            <div><strong>Control cross-source global</strong>Compara conceptos de <code>calculo</code> frente a campos de <code>totpago</code> en todo el snapshot. El score, acuerdo de valores y cobertura globales no se atribuyen a un mes.</div>
-            <div><strong>Cierre mensual k≥10</strong>El brief usa la conciliación del período exacto y sólo compara meses calendario consecutivos publicados. Sus deltas son aritméticos y descriptivos.</div>
+            <div><strong>Personas incluidas en el cálculo</strong>Cuenta legajos distintos presentes en el mes seleccionado. No equivale al padrón actual de empleados ni confirma altas o bajas.</div>
+            <div><strong>Confiabilidad de los datos</strong>Resume los controles aplicados a la copia recibida. No significa que todas las tablas estén completas ni reemplaza una revisión administrativa.</div>
+            <div><strong>Comparación general entre fuentes</strong>Revisa si los resultados de cálculo coinciden con los totales informados en otra tabla. El resultado corresponde a toda la copia histórica, no a un solo mes.</div>
+            <div><strong>Cierre mensual protegido</strong>El resumen usa el mes exacto y sólo lo publica cuando reúne al menos 10 personas. Compara meses consecutivos disponibles y muestra cambios numéricos, no sus causas.</div>
             <div><strong>Tendencia de cálculo</strong>Usa la serie <code>calculation_control_series</code>. Los importes se expresan en unidades de fuente; la moneda no está declarada y no se infiere ningún símbolo.</div>
             <div><strong>Totpago</strong>Su serie histórica es sólo diagnóstica. No alimenta la curva ejecutiva ni se presenta como masa salarial o pago bancario confiable.</div>
-            <div><strong>Privacidad y procedencia</strong>La vista consume proyecciones gobernadas, excluye <code>personas_junin</code> y aplica k≥5 a categorías y k≥10 a métricas sensibles. Las celdas protegidas nunca se convierten en cero.</div>
-            <div><strong>Actualización</strong>El panel muestra un snapshot histórico. La ingesta incremental y la operación en tiempo real siguen pendientes y se rotulan como no operativas.</div>
+            <div><strong>Privacidad de grupos pequeños</strong>Las categorías con menos de 5 personas se agrupan y las cifras sensibles con menos de 10 se ocultan. Nunca se muestran como cero ni se usan para completar totales visibles.</div>
+            <div><strong>Actualización</strong>El panel muestra una copia histórica con fecha visible. La conexión automática con los sistemas municipales se incorporará en una etapa posterior.</div>
             <div><strong>Alcance institucional</strong>Este panorama cubre GRH. Presupuesto, obras, reclamos y otros dominios no se agregan hasta contar con contratos gobernados equivalentes.</div>
             <div><strong>Comportamiento ante fallas</strong>Las proyecciones ejecutiva, de calidad, cierre mensual y brief decisional son obligatorias y deben compartir sistema, archivo, SHA y corte. Ante cualquier falla el panel oculta todas las métricas y permite reintentar.</div>
           </div>
@@ -1404,7 +1405,7 @@
           return row.period === close.source.latestValidCalculationPeriod;
         });
         if(!latestClose || latestClose.privacyStatus !== 'released') {
-          fail('El panel integral exige el último período mensual publicado bajo k≥10; una celda actual protegida oculta toda la vista.');
+          fail('El panel necesita que el último mes reúna al menos 10 personas. Si el grupo es menor, se oculta toda la vista para proteger identidades.');
         }
         var situation = decisionBrief.situation;
         if(situation.participantCount !== latestClose.participantCount ||

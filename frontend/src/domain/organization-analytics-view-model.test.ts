@@ -30,7 +30,7 @@ describe('organization analytics view model', () => {
     expect(viewModel.workforce.agreement.rows).toHaveLength(2);
     expect(viewModel.workforce.agreement.protectedParticipants).toBe(20);
     expect(viewModel.workforce.agreement.rows[1]).toMatchObject({
-      label: 'Otros (celdas protegidas)',
+      label: 'Otros grupos protegidos',
       participants: 20,
       sharePct: 22.2222,
       privacyStatus: 'protected_aggregate',
@@ -50,6 +50,7 @@ describe('organization analytics view model', () => {
     expect(viewModel.workforce.sector.rows.at(-1)).toMatchObject({
       companyCode: null,
       sourceCode: null,
+      label: 'Otros grupos protegidos',
       privacyStatus: 'protected_aggregate',
     });
     expect(viewModel.absenceRanking[0]).toMatchObject({

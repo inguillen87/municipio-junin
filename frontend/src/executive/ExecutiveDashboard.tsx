@@ -138,28 +138,28 @@ export function ExecutiveDashboard({ viewModel }: ExecutiveDashboardProps) {
         <aside className="executive-privacy" aria-labelledby="privacy-title">
           <div>
             <p className="executive-eyebrow">Privacidad aplicada</p>
-            <h2 id="privacy-title">Los límites viajan con el indicador</h2>
+            <h2 id="privacy-title">Cómo cuidamos la identidad de las personas</h2>
             <p>{viewModel.privacy.note}</p>
           </div>
           <dl>
             <div>
-              <dt>Rankings</dt>
-              <dd>k ≥ {viewModel.privacy.rankingThreshold}</dd>
+              <dt>Categorías con menos de {viewModel.privacy.rankingThreshold} personas</dt>
+              <dd>Se agrupan</dd>
             </div>
             <div>
-              <dt>Datos sensibles</dt>
-              <dd>k ≥ {viewModel.privacy.sensitiveThreshold}</dd>
+              <dt>Importes o eventos con menos de {viewModel.privacy.sensitiveThreshold} personas</dt>
+              <dd>No se muestran</dd>
             </div>
             <div>
-              <dt>Filas de ranking protegidas</dt>
+              <dt>Grupos reunidos para proteger identidades</dt>
               <dd>{viewModel.privacy.protectedRankingRows}</dd>
             </div>
             <div>
-              <dt>Períodos monetarios protegidos</dt>
+              <dt>Meses con importes no mostrados</dt>
               <dd>{viewModel.privacy.suppressedMonetaryPeriods}</dd>
             </div>
             <div>
-              <dt>Períodos anuales protegidos</dt>
+              <dt>Años con eventos no mostrados</dt>
               <dd>{viewModel.privacy.suppressedAnnualPeriods}</dd>
             </div>
           </dl>

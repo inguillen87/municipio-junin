@@ -665,7 +665,7 @@ test('assistant presents exactly four canonical primary queries for each executi
     },
     {
       role: 'CONTADOR',
-      labels: ['Costo por área', 'Componentes por área', 'Control de cálculo', 'Conciliación'],
+      labels: ['Costo por área', 'Componentes por área', 'Control de cálculo', 'Comparar controles de liquidación'],
     },
     {
       role: 'TENANT_ADMIN',
@@ -1699,8 +1699,11 @@ test('private person answers render leave cards, actions and bounded match optio
   });
   await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
 
-  assert.equal(await page.getByText('Acceso según perfil', { exact: true }).isVisible(), true);
-  assert.equal(await page.locator('.rail-link[href="/calidad"] small').textContent(), 'Linaje y pendientes');
+  assert.equal(await page.getByText('Respuestas según tu perfil', { exact: true }).isVisible(), true);
+  assert.equal(await page.getByText('Datos municipales verificados', { exact: true }).isVisible(), true);
+  assert.equal(await page.locator('.welcome-card .eyebrow').textContent(), 'Ayuda para decidir');
+  assert.equal(await page.locator('.rail-link[href="/calidad"] .rail-link-mark').textContent(), 'DATOS');
+  assert.equal(await page.locator('.rail-link[href="/calidad"] small').textContent(), 'Origen y pendientes');
   assert.equal(requestLog.length, 0, 'directory search must not run during page load');
   await clickMoreQuery(page, 'Buscar licencias por persona');
   assert.equal(await page.locator('#personSearchPanel').isVisible(), true);
@@ -1858,7 +1861,7 @@ test('assistant rejects attacks and routes person lookups without echoing the se
 
   assert.match(answerText, /Consulta rechazada|Datos personales fuera de alcance/);
   assert.doesNotMatch(answerText, /12345678|legajo 42/i);
-  assert.match(answerText, /snapshot 2026-08-06/);
+  assert.match(answerText, /respaldo al 2026-08-06/);
 
   await page.locator('#assistantInput').fill('luciana prueba');
   await page.locator('#assistantForm').evaluate(form => form.requestSubmit());

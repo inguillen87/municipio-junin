@@ -635,6 +635,7 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
         containsSuppressedDisplay: mainText.includes('<10'),
         containsCurrency: /\$|\bARS\b|\bUSD\b/.test(mainText),
         containsEmployeeDirectory: /Directorio de Empleados|Sueldo|Salario|Documento|Domicilio/.test(mainText),
+        privacyJargonVisible: /\bk\s*(?:=|≥|<|>)\s*\d|\bPII\b|umbral|celdas protegidas/i.test(mainText),
         suppressedChartPoints: document.querySelectorAll('.rrhh-chart-point:not([data-privacy-status="released"])').length,
         unsafeHistoricalPoint: document.querySelectorAll('.rrhh-chart-point[data-period="1991"]').length,
         accessibleCharts: document.querySelectorAll('.rrhh-chart-wrap svg[role="img"][aria-label]').length,
@@ -678,9 +679,10 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
     assert.equal(collapsed.costRows, 9);
     assert.equal(collapsed.agreementRows, 8);
     assert.deepEqual(collapsed.protectedLabels, [
-      projections.executive.privacy.protectedBucketLabel,
-      projections.executive.privacy.protectedBucketLabel,
+      'Otros grupos protegidos',
+      'Otros grupos protegidos',
     ]);
+    assert.equal(collapsed.privacyJargonVisible, false);
     assert.equal(collapsed.topSectorLabel, expectedWorkforce.bySector.rows[0].label);
     assert.equal(collapsed.topCostLabel, expectedWorkforce.byCostCenter.rows[0].label);
     assert.equal(collapsed.topAgreementLabel, expectedWorkforce.byAgreement.rows[0].label);

@@ -144,9 +144,12 @@ describe('buildExecutiveViewModel', () => {
     expect(model.payroll.points[3]?.changeStatus).toBe('available');
     expect(model.payroll.warning).toMatch(/nunca se imputan como cero/i);
     expect(model.sector.protectedParticipants).toBe(8);
+    expect(model.sector.rows[1]?.label).toBe('Otros grupos protegidos');
     expect(model.annual.map((domain) => domain.key)).toEqual(['absence', 'leave', 'movements']);
     expect(model.annual[1]?.note).toMatch(/termina en 2009/i);
-    expect(model.privacy.note).toMatch(/fuente cruda/i);
+    expect(model.privacy.note).toMatch(/menos de 5 personas/i);
+    expect(model.privacy.note).toMatch(/menos de 10 personas/i);
+    expect(model.privacy.note).not.toMatch(/\bk\s*(?:=|≥|<|>)|\bPII\b|umbral/i);
   });
 
   it('does not silently fall back when the latest known payroll period is suppressed', () => {
@@ -162,6 +165,8 @@ describe('buildExecutiveViewModel', () => {
     expect(model.payroll.latestStatus).toBe('protected');
     expect(latest).toMatchObject({ value: 'No publicable', status: 'protected' });
     expect(latest?.note).toMatch(/no se sustituye/i);
+    expect(latest?.note).toMatch(/menos de 10 personas/i);
+    expect(latest?.note).not.toMatch(/\bk\s*</i);
     expect(latest?.value).not.toContain('1.800');
   });
 

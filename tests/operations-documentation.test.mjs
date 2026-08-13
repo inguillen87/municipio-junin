@@ -283,12 +283,15 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
       'Personas must remain absolutely excluded');
   }
 
-  for (const source of [integral, user, technical, master, enterprise, privacy, inApp]) {
+  for (const source of [integral, user, technical, master, enterprise, privacy]) {
     assert.match(source, /grh-close-v1/);
     assert.match(source, /(?:meses? calendario )?consecutiv[oa]s?[\s\S]{0,180}k≥10|k≥10[\s\S]{0,180}consecutiv[oa]s?/i);
     assert.match(source, /(?:moneda no (?:está )?declarada|moneda no disponible|no afirma moneda)/i);
     assert.match(source, /(?:no (?:prueba|certifica|afirma)[\s\S]{0,100}pago|no pago)/i);
   }
+  assert.match(inApp, /grh-close-v1/);
+  assert.match(inApp, /meses consecutivos[\s\S]{0,180}al menos 10 personas/i);
+  assert.match(inApp, /no (?:demuestran|prueban|certifican)[\s\S]{0,100}(?:pago|transferencia bancaria)/i);
   assert.match(technical, /conciliación real por período/i);
   assert.match(master, /P1[\s\S]{0,120}global como mensual|global-como-mensual/i);
   assert.match(user, /close_explanation[\s\S]{0,420}422/i);
@@ -332,7 +335,7 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     assert.match(source, /79\s+firmas/i);
     assert.match(source, /37\s+Serverless[\s\S]{0,60}42\s+Express/i);
   }
-  assert.match(inApp, /estado local[\s\S]{0,120}todavía no desplegado/i);
+  assert.match(inApp, /estado local[\s\S]{0,120}no desplegado/i);
   assert.match(inApp, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos/i);
   assert.match(inApp, /89\s+(?:rutas|firmas)/i);
   assert.match(inApp, /47\s+Serverless[\s\S]{0,60}42\s+Express/i);
@@ -441,15 +444,24 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     assert.match(source, /grh-decision-brief-v1/i, relativePath);
     assert.match(source, /agregados del snapshot\s+aprobado[\s\S]{0,180}validación local/i, relativePath);
     assert.match(source, /se(?:para|paración)[\s\S]{0,100}global[\s\S]{0,100}mensual/i, relativePath);
-    assert.match(source, /temporalQuarantineRows/, relativePath);
-    assert.match(source, /k=10/, relativePath);
-    assert.match(source, /PII[\s\S]{0,100}importes[\s\S]{0,100}códigos de fuente\/celda[\s\S]{0,100}(?:labels|etiquetas)/i, relativePath);
-    assert.match(source, /CTA[\s\S]{0,100}capability/i, relativePath);
-    assert.match(source, /503[\s\S]{0,160}reintento\s+manual/i, relativePath);
-    assert.match(source, /celda[\s\S]{0,80}(?:<10|&lt;10)[\s\S]{0,100}(?:falla|fallar) cerrado/i, relativePath);
+    if (relativePath === 'manuales.html') {
+      assert.match(source, /registros apartados para revisar/i, relativePath);
+      assert.match(source, /menos de 10 personas[\s\S]{0,100}(?:no (?:se )?muestran|se ocultan)/i, relativePath);
+      assert.match(source, /(?:no|ni) (?:incluye|publica|muestra) datos personales/i, relativePath);
+      assert.match(source, /(?:acción|acciones)[\s\S]{0,120}(?:perfil|permiso)/i, relativePath);
+      assert.match(source, /503[\s\S]{0,180}(?:reintento manual|reintentar)/i, relativePath);
+      assert.match(source, /dato protegido[\s\S]{0,100}nunca[\s\S]{0,80}(?:cero|deducir)/i, relativePath);
+    } else {
+      assert.match(source, /temporalQuarantineRows/, relativePath);
+      assert.match(source, /k=10/, relativePath);
+      assert.match(source, /PII[\s\S]{0,100}importes[\s\S]{0,100}códigos de fuente\/celda[\s\S]{0,100}(?:labels|etiquetas)/i, relativePath);
+      assert.match(source, /CTA[\s\S]{0,100}capability/i, relativePath);
+      assert.match(source, /503[\s\S]{0,160}reintento\s+manual/i, relativePath);
+      assert.match(source, /celda[\s\S]{0,80}(?:<10|&lt;10)[\s\S]{0,100}(?:falla|fallar) cerrado/i, relativePath);
+    }
     assert.match(source, /#decisionBrief/, relativePath);
     if (relativePath === 'manuales.html') {
-      assert.match(source, /estado local[\s\S]{0,120}todavía no desplegado/i, relativePath);
+      assert.match(source, /estado local[\s\S]{0,120}no desplegado/i, relativePath);
       assert.match(source, /2026-08-11\.6[\s\S]{0,100}2026-08-11\.3/, relativePath);
       assert.match(source, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos[\s\S]{0,80}89\s+(?:rutas|firmas)/i, relativePath);
       assert.match(source, /47 Serverless[\s\S]{0,60}42 Express/i, relativePath);
@@ -1121,8 +1133,8 @@ test('the in-app manual exposes a semantic version and its truth contract separa
   assert.match(source, /grh-executive-v2/);
   assert.match(source, /grh-quality-v1/);
   assert.match(source, /grh-movement-operations-v1/);
-  assert.match(source, /GET \/api\/grh-movement-operations/);
-  assert.match(source, /no deben interpretarse como altas, bajas o rotación/i);
+  assert.match(source, /Registros históricos de movimientos/i);
+  assert.match(source, /no (?:deben interpretarse|permiten afirmar)[\s\S]{0,40}altas, bajas[\s\S]{0,40}rotación/i);
   assert.match(source, /\/api\/grh-data[\s\S]{0,180}410 GRH_RAW_CONTRACT_RETIRED[\s\S]{0,100}sin leer artefactos/i);
   assert.match(source, /O2A[\s\S]{0,180}105,5 s[\s\S]{0,180}294 ms/i);
   assert.match(source, /PUBLISHED[\s\S]{0,120}no significa DB, API ni producción/i);

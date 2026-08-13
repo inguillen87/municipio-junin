@@ -60,8 +60,8 @@ test('GRH dashboard never presents snapshot reconciliation as a monthly metric',
 
   assert.doesNotMatch(source, /reconciliationRate/);
   assert.doesNotMatch(source, /<th[^>]*>Conciliación<\/th>/);
-  assert.match(source, /Conciliación global/);
-  assert.match(source, /esta vista no lo atribuye a meses individuales/);
+  assert.match(source, /Comparación general entre fuentes/);
+  assert.match(source, /no se atribuye a un mes/);
   assert.match(source, /quality\.reconciliation\.valueAgreementPct/);
   assert.match(source, /await window\.requireCapability\('navigation\.grh-executive'\)/);
   assert.match(source, /async function init\(\)[\s\S]*if \(!await requirePageCapability\(\)\) return;[\s\S]*await loadContracts\(\)/);

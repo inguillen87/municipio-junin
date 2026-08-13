@@ -867,7 +867,7 @@ test('a protected current close keeps the integral dashboard fail-closed without
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
   }));
   assert.equal(result.dataHidden, true);
-  assert.match(result.error, /panel integral.+k≥10.+protegida/i);
+  assert.match(result.error, /último mes.+al menos 10 personas.+proteger identidades/i);
   assert.equal(result.sourceCount, '—/4');
   assert.equal(result.decisionStatus, '—');
   assert.equal(result.agreement, '—');

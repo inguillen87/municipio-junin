@@ -78,7 +78,7 @@ test('reports is GET-only, reads one governed bundle and has no SQL or artifact 
   assert.equal(response.payload.code, 'METHOD_NOT_ALLOWED');
 });
 
-test('reports emits only portable k=10 rankings and released compensation periods', { skip: !HAS_PRIVATE_GRH }, () => {
+test('reports protects small groups and emits only released compensation periods', { skip: !HAS_PRIVATE_GRH }, () => {
   const bundle = realBundle();
   const views = buildPortableGrhViews(bundle);
   const report = buildGrhExecutiveReport(bundle, null, '2026-08-08T15:00:00.000Z');
@@ -118,7 +118,8 @@ test('reports preserves approved provenance and honest financial definitions', {
   assert.equal(report.calculationControl.currency, 'not_declared_in_source');
   assert.equal(report.calculationControl.amountUnit, 'source_currency_cents');
   assert.equal(report.calculationControl.metricStatus, 'calculation_control_not_bank_disbursement');
-  assert.match(report.caveats.join(' '), /k=10/);
+  assert.match(report.caveats.join(' '), /no se muestran grupos con menos de 10 personas/i);
+  assert.doesNotMatch(report.caveats.join(' '), /\bk\s*=\s*10\b|\bPII\b|cross-source/i);
   assert.match(report.caveats.join(' '), /no acredita pago bancario/i);
 });
 

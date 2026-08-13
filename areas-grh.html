@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="Mapa gobernado de los dominios de datos disponibles en el snapshot GRH de Junín.">
-  <title>Mapa de datos GRH | MuniControl</title>
+  <meta name="description" content="Fuentes y áreas de información disponibles en la copia histórica de Recursos Humanos de Junín.">
+  <title>Fuentes y áreas de información | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/grh-explorer.css">
@@ -21,14 +21,14 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <div class="page-title">
-          <h1>Mapa de datos GRH</h1>
-          <span class="breadcrumb">Fuentes y dominios · evidencia disponible</span>
+          <h1>Fuentes y áreas de información</h1>
+          <span class="breadcrumb">Datos disponibles · copia histórica</span>
         </div>
       </div>
       <div class="topbar-right">
         <div class="grh-source-status" id="grhSourceStatus" data-state="loading" role="status" aria-live="polite">
           <span class="grh-source-dot" aria-hidden="true"></span>
-          <span id="grhSourceStatusText">Verificando catálogo</span>
+          <span id="grhSourceStatusText">Validando datos</span>
         </div>
         <div class="topbar-avatar" aria-label="Módulo GRH">GRH</div>
       </div>
@@ -37,33 +37,33 @@
     <div class="content-wrapper grh-explorer-shell">
       <section class="grh-hero" aria-labelledby="grhExplorerTitle">
         <div class="grh-hero-copy">
-          <p class="grh-eyebrow">Explorador gobernado · snapshot histórico</p>
-          <h2 id="grhExplorerTitle">Entender cada dominio desde la fuente, no desde una plantilla.</h2>
-          <p>Recorré los dominios reales del GRH, su cobertura, período y evidencia disponible. Una categoría observada no equivale por sí sola a estructura orgánica, planta activa ni información en tiempo real.</p>
-          <div class="grh-chips" aria-label="Garantías del catálogo">
-            <span class="grh-chip grh-chip--verified">Fuente GRH</span>
+          <p class="grh-eyebrow">Datos disponibles · copia histórica</p>
+          <h2 id="grhExplorerTitle">Encontrá qué información ya puede consultar el municipio</h2>
+          <p>Recorré la información del respaldo de Recursos Humanos, el período disponible y qué podés consultar. Estas áreas ordenan los datos para analizarlos: no representan por sí solas el organigrama municipal vigente ni información en tiempo real.</p>
+          <div class="grh-chips" aria-label="Garantías de los datos">
+            <span class="grh-chip grh-chip--verified">Respaldo GRH</span>
             <span class="grh-chip grh-chip--verified">Acceso según perfil</span>
-            <span class="grh-chip">Lectura agregada</span>
-            <span class="grh-chip" id="grhContractChip">Contrato en verificación</span>
+            <span class="grh-chip">Información resumida</span>
+            <span class="grh-chip" id="grhContractChip">Validando datos</span>
           </div>
         </div>
-        <aside class="grh-hero-context" aria-label="Contexto del catálogo">
-          <span>Corte publicado</span>
+        <aside class="grh-hero-context" aria-label="Contexto de los datos">
+          <span>Fecha del respaldo</span>
           <strong id="grhSnapshotDate">—</strong>
-          <p id="grhSourceNote">Validando fuente, contrato y alcance antes de mostrar indicadores.</p>
+          <p id="grhSourceNote">Validando origen, fecha y alcance antes de mostrar información.</p>
         </aside>
-        <div class="grh-kpi-strip" id="grhSummaryKpis" aria-label="Resumen del catálogo"></div>
+        <div class="grh-kpi-strip" id="grhSummaryKpis" aria-label="Resumen de los datos disponibles"></div>
       </section>
 
       <section class="grh-state" id="grhLoadingState" aria-live="polite">
         <span class="grh-loader" aria-hidden="true"></span>
-        <h2>Validando áreas y evidencia GRH</h2>
-        <p>La pantalla permanece cerrada hasta confirmar el contrato completo y su procedencia.</p>
+        <h2>Validando áreas y datos de Recursos Humanos</h2>
+        <p>Confirmamos el origen y la integridad de la información antes de mostrarla.</p>
       </section>
 
       <section class="grh-state grh-state--error" id="grhErrorState" role="alert" tabindex="-1" hidden>
         <span class="grh-state-mark" aria-hidden="true">!</span>
-        <h2 id="grhErrorTitle">Catálogo GRH no disponible</h2>
+        <h2 id="grhErrorTitle">Áreas de información no disponibles</h2>
         <p id="grhErrorMessage">No se muestran resultados parciales ni datos de reemplazo.</p>
         <button class="grh-button" id="grhRetryButton" type="button">Reintentar validación</button>
       </section>
@@ -71,12 +71,12 @@
       <div id="grhExplorerContent" hidden>
         <section class="grh-toolbar" aria-labelledby="grhCatalogTitle">
           <div>
-            <p class="grh-eyebrow">Catálogo de dominios</p>
-            <h2 id="grhCatalogTitle">Elegí qué evidencia necesitás entender</h2>
+            <p class="grh-eyebrow">Áreas de información</p>
+            <h2 id="grhCatalogTitle">Elegí qué información necesitás consultar</h2>
           </div>
           <div class="grh-filters" role="search">
             <label class="grh-field" for="grhDomainSearch">
-              <span>Buscar área o evidencia</span>
+              <span>Buscar área o información</span>
               <input id="grhDomainSearch" type="search" maxlength="80" placeholder="Ej.: ausencias, cálculo o sector" autocomplete="off">
             </label>
             <label class="grh-field" for="grhStatusFilter">
@@ -91,9 +91,9 @@
         <p class="grh-results-line" id="grhResultsLine" role="status" aria-live="polite"></p>
 
         <div class="grh-workspace">
-          <nav class="grh-domain-nav" aria-label="Áreas y dominios GRH">
+          <nav class="grh-domain-nav" aria-label="Áreas de información de Recursos Humanos">
             <div class="grh-domain-grid" id="grhDomainGrid"></div>
-            <p class="grh-domain-empty" id="grhDomainEmpty" hidden>No hay dominios que coincidan con los filtros.</p>
+            <p class="grh-domain-empty" id="grhDomainEmpty" hidden>No hay áreas que coincidan con los filtros.</p>
           </nav>
 
           <article class="grh-domain-detail" id="grhDomainDetail" aria-labelledby="grhDomainTitle">
@@ -103,8 +103,8 @@
                   <span class="grh-domain-order" id="grhDomainOrder"></span>
                   <span class="grh-status-pill" id="grhDomainStatus"></span>
                 </div>
-                <h2 id="grhDomainTitle">Seleccioná un dominio</h2>
-                <p id="grhDomainDescription">La evidencia validada aparecerá en este panel.</p>
+                <h2 id="grhDomainTitle">Seleccioná un área</h2>
+                <p id="grhDomainDescription">La información disponible aparecerá en este panel.</p>
               </div>
               <div class="grh-domain-actions" id="grhDomainActions" aria-label="Acciones autorizadas del dominio"></div>
             </header>
@@ -112,8 +112,8 @@
             <section class="grh-evidence-section" aria-labelledby="grhEvidenceTitle">
               <div class="grh-section-heading">
                 <div>
-                  <p class="grh-eyebrow">Cobertura verificable</p>
-                  <h3 id="grhEvidenceTitle">Tablas, filas y período</h3>
+                  <p class="grh-eyebrow">Datos disponibles</p>
+                  <h3 id="grhEvidenceTitle">Tablas, registros y período</h3>
                 </div>
                 <p id="grhEvidenceSummary"></p>
               </div>
@@ -124,7 +124,7 @@
                     <tr>
                       <th scope="col">Descripción</th>
                       <th scope="col">Tabla</th>
-                      <th scope="col" class="grh-numeric">Filas</th>
+                      <th scope="col" class="grh-numeric">Registros</th>
                       <th scope="col">Período</th>
                       <th scope="col">Estado</th>
                     </tr>
@@ -138,10 +138,10 @@
             <section class="grh-questions-section" aria-labelledby="grhQuestionsTitle">
               <div class="grh-section-heading">
                 <div>
-                  <p class="grh-eyebrow">Preguntas habilitadas</p>
-                  <h3 id="grhQuestionsTitle">Qué puede responder este dominio</h3>
+                  <p class="grh-eyebrow">Consultas disponibles</p>
+                  <h3 id="grhQuestionsTitle">Qué puede responder esta área</h3>
                 </div>
-                <p>Las preguntas provienen del contrato y no amplían el dato disponible.</p>
+                <p>Las preguntas usan únicamente la información municipal disponible.</p>
               </div>
               <ul class="grh-question-list" id="grhQuestionList"></ul>
             </section>
@@ -153,7 +153,7 @@
         <section class="grh-global-limits" aria-labelledby="grhLimitsTitle">
           <div>
             <p class="grh-eyebrow">Límites de interpretación</p>
-            <h2 id="grhLimitsTitle">Lo que este catálogo no afirma</h2>
+            <h2 id="grhLimitsTitle">Lo que estos datos no permiten afirmar</h2>
           </div>
           <ul id="grhGlobalLimits"></ul>
         </section>

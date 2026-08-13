@@ -582,6 +582,11 @@ async function readyDiagnostics(page) {
       exposesRawContract: /netPayrollCents|sourceSha256|participantCount|privacyStatus/.test(mainText),
       containsEmail: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(mainText),
       containsDni: /\bDNI\s*[:#-]?\s*\d/i.test(mainText),
+      privacyJargonVisible: /\bk\s*(?:=|≥|<|>)\s*\d|\bPII\b|umbral|celdas protegidas/i.test(mainText),
+      protectedLabels: Array.from(
+        document.querySelectorAll('.executive-sector__list [data-privacy="protected"] strong'),
+        element => normalize(element.textContent),
+      ),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
       reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -667,6 +672,8 @@ test('React Ejecutivo validates the governed synthetic contract and fails closed
           assert.equal(result.exposesRawContract, false);
           assert.equal(result.containsEmail, false);
           assert.equal(result.containsDni, false);
+          assert.equal(result.privacyJargonVisible, false);
+          assert.deepEqual(result.protectedLabels, ['Otros grupos protegidos']);
           assert.ok(result.overflow <= 1, `${viewport.name} overflow=${result.overflow}`);
           assert.deepEqual(result.duplicateIds, []);
           assert.equal(result.hasSkipLink, true);

@@ -24,7 +24,7 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
         <div>
           <p className="territory-hero__eyebrow">Inteligencia geográfica municipal</p>
           <h1 id="page-title">Centro Territorial Junín · Mendoza</h1>
-          <p>Referencia oficial del departamento y sus localidades GeoRef para explorar el territorio, sin capas operativas inventadas.</p>
+          <p>Referencia oficial del departamento y sus localidades oficiales para explorar el territorio, sin capas operativas inventadas.</p>
         </div>
         <div className="territory-hero__status" data-state={partial ? 'partial' : 'ready'}>
           <span aria-hidden="true" />
@@ -50,15 +50,15 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
           tone="cyan"
         />
         <KpiCard
-          label="Localidades GeoRef"
+          label="Localidades oficiales"
           value={String(contract.localities.length)}
-          note={partial ? 'GeoRef no disponible; sin sustitución.' : 'Centroides incluidos en la respuesta oficial.'}
+          note={partial ? 'La fuente de localidades no está disponible; no se muestran ubicaciones.' : 'Puntos de ubicación provistos por fuente oficial.'}
           tone={partial ? 'amber' : 'green'}
         />
         <KpiCard
-          label="Sistema de referencia"
-          value={contract.query.crs}
-          note="Geometría de intercambio; las teselas se presentan en Web Mercator."
+          label="Coordenadas del mapa"
+          value="Oficiales"
+          note={`Formato técnico ${contract.query.crs}; el mapa se adapta.`}
           tone="violet"
         />
         <KpiCard
@@ -74,7 +74,7 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
       <section id="territorySources" className="territory-sources" aria-labelledby="territory-sources-title">
         <header>
           <div>
-            <p>Proveniencia</p>
+            <p>Origen de datos</p>
             <h2 id="territory-sources-title">Fuentes y alcance</h2>
           </div>
           <span>Consulta {queriedAt}</span>
@@ -104,7 +104,7 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
             <ul>
               <li>Sin datos de RRHH, obras o reclamos.</li>
               <li>Sin seguimiento operativo ni actualización en vivo.</li>
-              <li>El corte indica la consulta a las fuentes, no vigencia catastral.</li>
+              <li>La fecha de consulta no asegura la actualización catastral.</li>
             </ul>
           </article>
         </div>

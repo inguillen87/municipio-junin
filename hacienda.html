@@ -1188,7 +1188,7 @@
       <div class="hac-topbar-right">
         <div class="hac-source-state" id="topbarSourceState" aria-live="polite">
           <span class="hac-source-dot" aria-hidden="true"></span>
-          <span id="topbarSourceText">Validando snapshot GRH</span>
+          <span id="topbarSourceText">Validando respaldo GRH</span>
         </div>
         <button class="hac-icon-btn theme-toggle-btn" id="themeToggleBtn" data-muni-theme-control type="button" aria-label="Cambiar tema" aria-pressed="false">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
@@ -1202,12 +1202,12 @@
         <div class="hac-eyebrow">Hacienda y nómina · GRH Junín</div>
         <h2 id="haciendaTitle">Nómina, costos y conciliación en pesos.</h2>
         <p class="hac-hero-copy">Evolución mensual del cálculo salarial real, componentes del cierre y diferencias entre fuentes. Presentación configurada en ARS para Junín.</p>
-        <div class="hac-chips" aria-label="Contexto del snapshot">
+        <div class="hac-chips" aria-label="Contexto del respaldo de datos">
           <span class="hac-chip"><strong id="snapshotChip">—</strong> corte GRH</span>
           <span class="hac-chip"><strong id="periodCountChip">—</strong> períodos publicados</span>
           <span class="hac-chip"><strong id="protectedPeriodChip">—</strong> períodos protegidos</span>
           <span class="hac-chip"><strong>Moneda</strong> ARS</span>
-          <span class="hac-chip"><strong id="crossScoreChip">—</strong> score cross-source global</span>
+          <span class="hac-chip"><strong id="crossScoreChip">—</strong> comparación general entre fuentes</span>
         </div>
         <div class="hac-controls" aria-label="Controles de liquidación">
           <div class="hac-control">
@@ -1249,7 +1249,7 @@
           <p class="hac-stat-note" id="kpiNetNote">Pesos argentinos · período seleccionado.</p>
         </article>
         <article class="hac-stat hac-stat-risk">
-          <div class="hac-stat-label">Score cross-source global</div>
+          <div class="hac-stat-label">Comparación general entre fuentes</div>
           <div class="hac-stat-value hac-skeleton" id="kpiReconciliation">Cargando</div>
           <p class="hac-stat-note" id="kpiReconciliationNote">Cálculo frente a totpago · no certifica pago.</p>
         </article>
@@ -1261,7 +1261,7 @@
             <h3 id="cohortTitle" tabindex="-1">Análisis financiero por dimensión observada</h3>
             <p class="hac-panel-subtitle" id="cohortSubtitle">Bruto, retenciones, neto y aportes por una dimensión a la vez, sobre corridas reales de cálculo.</p>
           </div>
-          <span class="hac-panel-badge" id="cohortBadge">grh-workforce-finance-v1 · k=10</span>
+          <span class="hac-panel-badge" id="cohortBadge">Privacidad aplicada</span>
         </div>
         <div class="hac-cohort-state" id="cohortState">
           <span id="cohortStateText" role="status" aria-live="polite">Validando la proyección financiera agregada…</span>
@@ -1332,7 +1332,7 @@
           </div>
           <div class="hac-cohort-evidence" aria-label="Evidencia y alcance de la proyección">
             <div><span>Observación dimensional</span><strong id="cohortAssignmentEvidence">—</strong></div>
-            <div><span>Umbral y publicación</span><strong id="cohortReleaseEvidence">—</strong></div>
+            <div><span>Privacidad y publicación</span><strong id="cohortReleaseEvidence">—</strong></div>
             <div><span>Presentación monetaria</span><strong id="cohortPresentationEvidence">—</strong></div>
             <div><span>Cruce con totpago</span><strong>Sólo total global del período</strong></div>
           </div>
@@ -1386,7 +1386,7 @@
         </div>
         <article class="hac-radar-visual" aria-labelledby="radarHeatmapTitle">
           <h4 id="radarHeatmapTitle">Matriz mensual de acuerdo</h4>
-          <p>Seleccioná un mes publicado para abrir su cierre. Los umbrales son focos de exploración, no un dictamen de calidad.</p>
+          <p>Seleccioná un mes publicado para abrir su cierre. Los filtros ayudan a encontrar meses para revisar; no determinan por sí solos la calidad.</p>
           <div class="hac-radar-scroll" id="reconciliationHeatmap" tabindex="0" role="region" aria-label="Matriz histórica desplazable" aria-describedby="radarSummary"></div>
         </article>
         <div class="hac-radar-detail-grid">
@@ -1416,14 +1416,14 @@
             <h3 id="closeTitle" tabindex="-1">Cierre GRH explicado</h3>
             <p class="hac-panel-subtitle">Cómo se compone el neto y cuánto concilian cálculo y totpago en el período.</p>
           </div>
-          <span class="hac-panel-badge">grh-close-v1 · k=10</span>
+          <span class="hac-panel-badge">Cierre con privacidad aplicada</span>
         </div>
         <div class="hac-close-toolbar">
           <div class="hac-close-control">
             <label for="closePeriodSelect">Período mensual liberado</label>
             <select class="hac-select" id="closePeriodSelect" aria-describedby="closePrivacyNote"></select>
           </div>
-          <span class="hac-view-status" id="closePrivacyNote" role="status" aria-live="polite">Validando períodos k=10…</span>
+          <span class="hac-view-status" id="closePrivacyNote" role="status" aria-live="polite">Validando la privacidad de los períodos…</span>
         </div>
         <div class="hac-close-grid">
           <figure class="hac-close-figure" aria-labelledby="closeBridgeTitle closeBridgeCaption">
@@ -1483,7 +1483,7 @@
         <article class="hac-panel">
           <div class="hac-panel-head"><div><h3>Alertas para revisar</h3><p class="hac-panel-subtitle">Diferencias, huecos y controles que requieren atención.</p></div></div>
           <div class="hac-alerts" id="alertsList" aria-live="polite">
-            <div class="hac-alert"><span class="hac-alert-icon">01</span><div><strong>Validando contexto</strong><p>Comprobando snapshot, conciliación y cuarentenas.</p></div></div>
+            <div class="hac-alert"><span class="hac-alert-icon">01</span><div><strong>Validando contexto</strong><p>Comprobando el respaldo, la comparación entre fuentes y los registros apartados para revisión.</p></div></div>
           </div>
         </article>
       </section>
@@ -1518,7 +1518,7 @@
       </section>
 
       <section class="hac-panel" style="margin-top:14px" aria-labelledby="periodTableTitle">
-        <div class="hac-panel-head"><div><h3 id="periodTableTitle">Períodos publicados del control de cálculo</h3><p class="hac-panel-subtitle" id="protectedPeriodsNote">Sólo se muestran períodos liberados por la política de privacidad. No contiene legajos, nombres ni identificadores de empleados.</p></div><span class="hac-panel-badge">k=10 · sin PII</span></div>
+        <div class="hac-panel-head"><div><h3 id="periodTableTitle">Períodos publicados del control de cálculo</h3><p class="hac-panel-subtitle" id="protectedPeriodsNote">Sólo se muestran períodos que protegen la identidad de las personas. No contiene legajos, nombres ni identificadores de empleados.</p></div><span class="hac-panel-badge">Grupos pequeños protegidos · sin datos personales</span></div>
         <div class="hac-table-wrap">
           <table class="hac-table">
             <caption class="hac-visually-hidden">Períodos liberados del control de cálculo con participantes, bruto, retenciones, neto y aportes patronales de control</caption>
@@ -1532,10 +1532,10 @@
           <div class="hac-methodology-content">
             <div><strong>Importes publicados</strong>La proyección entrega bruto, retenciones, neto y aportes en centavos. Junín configura su presentación en pesos argentinos (ARS); el dump original no incluía un código de moneda.</div>
             <div><strong>Control de cálculo</strong>Los importes sirven para analizar el cálculo salarial. No prueban una transferencia bancaria, un asiento contable, un saldo de tesorería ni la efectiva percepción por una persona.</div>
-            <div><strong>Conciliación</strong>La proyección de calidad conserva el diagnóstico global. El contrato grh-close-v1 publica cobertura, exactitud, acuerdo y varianza de cada período liberado, sin reutilizar ese score global.</div>
-            <div><strong>Totpago</strong>Permanece como diagnóstico cross-source global. No alimenta los importes mensuales ni se presenta como evidencia de pago.</div>
-            <div><strong>Snapshot</strong>La fuente es histórica y no representa operación en tiempo real. El corte visible controla el horizonte válido.</div>
-            <div><strong>Privacidad</strong>La serie monetaria aplica umbral k=10: todo período suprimido se omite por completo y nunca se reemplaza por cero. La proyección de calidad no contiene PII, filas crudas, códigos de celda ni etiquetas categóricas.</div>
+            <div><strong>Comparación entre fuentes</strong>La vista de calidad conserva el resultado general. El cierre muestra cobertura, exactitud, coincidencia y diferencia de cada período publicado sin mezclarlo con ese resultado general.</div>
+            <div><strong>Totpago</strong>Se usa únicamente para comparar los totales generales entre fuentes. No alimenta los importes mensuales ni se presenta como evidencia de pago.</div>
+            <div><strong>Respaldo de datos</strong>La fuente es histórica y no representa operación en tiempo real. El corte visible controla el horizonte válido.</div>
+            <div><strong>Privacidad</strong>Los períodos con menos de 10 personas no se muestran. Nunca se reemplazan por cero y esta vista no incluye datos personales, filas crudas, códigos internos ni etiquetas de origen.</div>
             <div><strong>Escenario de paritaria</strong>Multiplicación lineal del bruto de cálculo observado. No modela reglas salariales, retenciones, inflación, vigencias, pago bancario ni efecto presupuestario.</div>
           </div>
         </details>
@@ -1783,7 +1783,7 @@
         elements.cohortContent.hidden = true;
         elements.cohortState.hidden = false;
         setText(elements.cohortTitle, title);
-        setText(elements.cohortBadge, config.badge || 'grh-workforce-finance-v1 · k=10');
+        setText(elements.cohortBadge, config.badge || 'Privacidad aplicada');
         setText(elements.cohortStateText, message);
         elements.cohortRetry.hidden = config.retry !== true;
       }
@@ -2155,7 +2155,7 @@
         setText(elements.cohortSubtitle,
           'Bruto, retenciones, neto y aportes por ' + dimensionLabel +
           ' observado en la corrida; no es estado contractual de una persona.');
-        setText(elements.cohortBadge, dimensionLabel + ' · grh-workforce-finance-v1 · k=' + finance.privacy.threshold);
+        setText(elements.cohortBadge, dimensionLabel + ' · Privacidad aplicada');
         setText(elements.cohortParticipants, selected.participantDisplay);
         setText(elements.cohortShare, percentFormatter.format(selected.allocationSharePct) + '%');
         setText(elements.cohortRank, (cells.indexOf(selected) + 1) + ' de ' + cells.length + ' liberadas');
@@ -2169,7 +2169,7 @@
         setText(elements.cohortParticipantAccounting, cohortAccountingText(row.participantAccounting));
         setText(elements.cohortPrivacy,
           selected.participantPrivacyStatus === 'released'
-            ? 'Importes y conteo agregados liberados · k=' + finance.privacy.threshold
+            ? 'Datos agregados publicados · el grupo reúne al menos ' + finance.privacy.threshold + ' personas.'
             : 'Importes agregados liberados; conteo protegido contra diferencias.');
         renderCohortComposition(selected);
         renderCohortTrend(view, selected);
@@ -2178,7 +2178,7 @@
         setText(elements.cohortAssignmentEvidence,
           'Dimensión observada en cada corrida de cálculo; no situación contractual ni asignación histórica inferida.');
         setText(elements.cohortReleaseEvidence,
-          'k=' + finance.privacy.threshold + ' · supresión primaria, complementaria, temporal y coordinada entre vistas.');
+          'Se ocultan los grupos con menos de ' + finance.privacy.threshold + ' personas, incluso cuando otra vista podría permitir deducirlos.');
         setText(elements.cohortPresentationEvidence,
           finance.metric.presentationCurrency + ' por configuración municipal; GRH no declara moneda de origen.');
         setText(elements.cohortGlobalParticipants, numberFormatter.format(total.participantCount));
@@ -2780,7 +2780,7 @@
             elements.closeComparisonCopy,
             comparison.reason === 'period_missing'
               ? 'No existe el mes calendario anterior dentro del contrato gobernado.'
-              : 'Uno de los dos meses no supera el umbral k=10; no se calculan ni se imputan deltas.'
+              : 'Uno de los dos meses reúne menos de 10 personas. Para proteger identidades, no se muestra la comparación ni se completan valores.'
           );
           setText(elements.closeComparisonReconciliation, 'Sin comparación liberada.');
           return;
@@ -2878,7 +2878,7 @@
         setText(
           elements.closePrivacyNote,
           numberFormatter.format(released.length) + ' meses liberados · ' +
-            numberFormatter.format(protectedCount) + ' protegidos · sin PII'
+            numberFormatter.format(protectedCount) + ' protegidos · sin datos personales'
         );
         renderClosePeriod();
         renderCloseComparison();
@@ -3090,7 +3090,7 @@
         addAlert(
           4,
           'warn',
-          'Snapshot, no operación en vivo',
+          'Respaldo histórico, no operación en vivo',
           'Corte ' + dateFormatter.format(snapshot) +
             '. No usar esta vista como saldo ni ejecución en tiempo real.'
         );
@@ -3113,14 +3113,14 @@
             'ok',
             'Privacidad aplicada a ' +
               numberFormatter.format(state.protectedPeriods) + ' períodos',
-            'Los períodos por debajo del umbral k=10 se omiten por completo; sus participantes e importes no se muestran ni se imputan como cero.'
+            'Los períodos con menos de 10 personas se omiten por completo para proteger identidades; sus participantes e importes no se muestran ni se completan con cero.'
           );
         } else if (risk.rawSourceContainsSensitivePii) {
           addAlert(
             7,
             'ok',
             'Frontera de privacidad activa',
-            'La fuente contiene PII, pero esta vista recibe sólo proyecciones agregadas sin filas crudas ni identificadores.'
+            'La fuente original contiene datos personales, pero esta vista recibe sólo información agrupada, sin filas crudas ni identificadores.'
           );
         }
       }
@@ -3260,8 +3260,8 @@
           elements.protectedPeriodsNote,
           state.protectedPeriods > 0
             ? numberFormatter.format(state.protectedPeriods) +
-                ' períodos fueron protegidos por el umbral k=10 y se omiten por completo. La tabla muestra únicamente períodos liberados, sin PII.'
-            : 'Todos los períodos recibidos superan el umbral k=10. La tabla muestra únicamente datos agregados liberados, sin PII.'
+                ' períodos reúnen menos de 10 personas y se omiten por completo para proteger identidades. La tabla sólo muestra información agrupada, sin datos personales.'
+            : 'Todos los períodos recibidos reúnen al menos 10 personas. La tabla sólo muestra información agrupada, sin datos personales.'
         );
       }
 

@@ -30,13 +30,13 @@ export function TerritoryApp() {
       {state.status === 'loading' ? (
         <GovernedLoading
           title="Validando Centro Territorial"
-          description={`Confirmamos sesión, capacidad territorial y fuentes oficiales antes de montar el mapa. Tiempo máximo de validación: ${AUTH_TIMEOUT_MS / 1_000} segundos.`}
+          description={`Confirmamos sesión, permiso de acceso y fuentes oficiales antes de mostrar el mapa. Tiempo máximo de validación: ${AUTH_TIMEOUT_MS / 1_000} segundos.`}
         />
       ) : null}
       {state.status === 'blocked' ? (
         <GovernedBlocked
           title="Cartografía no disponible"
-          description="La fuente territorial requerida no está disponible o su contrato fue rechazado. No se dibuja ninguna geometría alternativa."
+          description="No pudimos verificar la fuente territorial necesaria. Por seguridad, el mapa no muestra datos alternativos."
           onRetry={retry}
         />
       ) : null}

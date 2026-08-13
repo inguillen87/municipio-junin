@@ -135,7 +135,11 @@ test('movement center renders the real contract and changes metrics, window and 
   assert.equal(await page.locator('#movementValidRows').textContent(), PROJECTION.coverage.validRows.toLocaleString('es-AR'));
   assert.equal(await page.locator('#movementLatestYear').textContent(), PROJECTION.summary.latestCompleteYear);
   assert.equal(await page.locator('#movementTableBody tr').count(), PROJECTION.series.length);
-  assert.match(await page.locator('#movementOperations').innerText(), /movimientos registrados, no altas\/bajas\/rotación/i);
+  const movementCopy = await page.locator('#movementOperations').innerText();
+  assert.match(movementCopy, /movimientos registrados, no altas\/bajas\/rotación/i);
+  const movementLimits = await page.locator('#movementLimits').textContent();
+  assert.match(movementLimits, /años con menos de 10 personas no se muestran/i);
+  assert.doesNotMatch(movementLimits, /\bk\s*=\s*10\b|umbral/i);
   assert.deepEqual(await page.locator('#movementActions a').evaluateAll(nodes => nodes.map(node => node.getAttribute('href'))), [
     '/ia.html?question=Compar%C3%A1%20movimientos%202024%20y%202025', '/estructura', '/calidad',
   ]);

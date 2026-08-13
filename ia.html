@@ -729,13 +729,13 @@
                 <path d="M3 21h18"></path>
               </svg>
             </div>
-            <p class="eyebrow">Decisión con trazabilidad</p>
+            <p class="eyebrow">Ayuda para decidir</p>
             <h2>¿Qué necesitás decidir hoy?</h2>
-            <p>Consultá evidencia del corte GRH y abrí el tablero correspondiente para profundizar.</p>
+            <p>Consultá los datos disponibles de Recursos Humanos y abrí el tablero correspondiente para profundizar.</p>
             <div class="welcome-guardrails" aria-label="Garantías del asistente">
-              <span>Contrato privado</span>
-              <span>Acceso según perfil</span>
-              <span>Sin cifras demo</span>
+              <span>Datos municipales verificados</span>
+              <span>Respuestas según tu perfil</span>
+              <span>Sin datos inventados</span>
             </div>
           </section>
         </div>
@@ -795,20 +795,20 @@
                 <h3>Nómina y costos</h3>
                 <div class="query-group-list">
                   <button class="query-chip" type="button" data-query-id="cost-overview" data-primary-roles="INTENDENTE,CONTADOR,SUPER_ADMIN" data-question="¿Qué costo neto se concentra por centro de costo en 2026-07?">Costo por área</button>
-                  <button class="query-chip" type="button" data-query-id="cost-trend" data-question="¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?">Tendencia por cohorte</button>
+                  <button class="query-chip" type="button" data-query-id="cost-trend" data-question="¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?">Evolución de un área</button>
                   <button class="query-chip" type="button" data-query-id="cost-components" data-primary-roles="CONTADOR" data-question="Mostrá los componentes del cálculo de Servicios Públicos por centro de costo en 2026-07">Componentes por área</button>
                   <button class="query-chip" type="button" data-query-id="cost-compare" data-question="Compará el neto de Servicios Públicos y Secretaría de Gobierno por centro de costo en 2026-07">Comparar áreas</button>
                   <button class="query-chip" type="button" data-query-id="calculation-control" data-primary-roles="CONTADOR" data-question="¿Qué muestra el control de cálculo del último período?">Control de cálculo</button>
                   <button class="query-chip" type="button" data-query-id="close" data-question="Explicame el cierre GRH del último período">Cierre explicado</button>
-                  <button class="query-chip" type="button" data-query-id="reconciliation" data-primary-roles="CONTADOR" data-question="¿Cómo está la conciliación entre cálculo y totpago?">Conciliación</button>
+                  <button class="query-chip" type="button" data-query-id="reconciliation" data-primary-roles="CONTADOR" data-question="¿Qué diferencias hay entre las dos fuentes de control de liquidación?">Comparar controles de liquidación</button>
                 </div>
               </section>
 
               <section class="query-group" data-query-group="traceability">
                 <h3>Datos y trazabilidad</h3>
                 <div class="query-group-list">
-                  <button class="query-chip" type="button" data-query-id="quality" data-primary-roles="TENANT_ADMIN,SUPER_ADMIN" data-question="¿Cuál es la calidad del contrato GRH?">Calidad</button>
-                  <button class="query-chip" type="button" data-query-id="source" data-question="¿Cuál es la fuente y el corte del contrato GRH?">Fuente y corte</button>
+                  <button class="query-chip" type="button" data-query-id="quality" data-primary-roles="TENANT_ADMIN,SUPER_ADMIN" data-question="¿Cómo está la calidad de los datos y qué requiere revisión?">Calidad</button>
+                  <button class="query-chip" type="button" data-query-id="source" data-question="¿Cuál es el origen y la fecha de los datos?">Origen y fecha</button>
                 </div>
               </section>
             </div>
@@ -818,7 +818,7 @@
         <div class="composer-wrap">
           <form class="composer" id="assistantForm" novalidate>
             <label class="sr-only" for="assistantInput">Consulta ejecutiva GRH</label>
-            <textarea id="assistantInput" name="message" rows="1" maxlength="1200" placeholder="Ej.: ¿Cómo está la conciliación del control de cálculo?" aria-describedby="composerHelp"></textarea>
+            <textarea id="assistantInput" name="message" rows="1" maxlength="1200" placeholder="Ej.: ¿Qué información necesita revisión?" aria-describedby="composerHelp"></textarea>
             <button class="send-query" id="sendQuery" type="submit" aria-label="Enviar consulta">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
                 <path d="m5 12 14-7-4 14-3-6-7-1Z"></path>
@@ -838,11 +838,11 @@
           <div class="trust-list">
             <div class="trust-row">
               <span class="trust-dot" aria-hidden="true"></span>
-              <div><strong>Fuente canónica</strong><span>GRH Junín · contratos según perfil</span></div>
+              <div><strong>Origen de los datos</strong><span>GRH Junín · contratos según perfil</span></div>
             </div>
             <div class="trust-row">
               <span class="trust-dot pending" id="snapshotDot" aria-hidden="true"></span>
-              <div><strong>Snapshot</strong><span id="snapshotStatus">Se confirma al responder</span></div>
+              <div><strong>Copia disponible</strong><span id="snapshotStatus">Se confirma al responder</span></div>
             </div>
             <div class="trust-row">
               <span class="trust-dot pending" id="periodDot" aria-hidden="true"></span>
@@ -874,7 +874,7 @@
             <a class="rail-link" href="/movimientos-grh.html?metric=events&amp;window=all"><span class="rail-link-mark" aria-hidden="true">MOV</span><span class="rail-link-copy"><strong>Movimientos</strong><small>Serie y comparación anual</small></span><span aria-hidden="true">→</span></a>
             <a class="rail-link" href="/rrhh"><span class="rail-link-mark" aria-hidden="true">RH</span><span class="rail-link-copy"><strong>RRHH</strong><small>Directorio y fichas</small></span><span aria-hidden="true">→</span></a>
             <a class="rail-link" href="/hacienda"><span class="rail-link-mark" aria-hidden="true">ARS</span><span class="rail-link-copy"><strong>Hacienda</strong><small>Cálculo y cierre</small></span><span aria-hidden="true">→</span></a>
-            <a class="rail-link" href="/calidad"><span class="rail-link-mark" aria-hidden="true">QA</span><span class="rail-link-copy"><strong>Calidad</strong><small>Linaje y pendientes</small></span><span aria-hidden="true">→</span></a>
+            <a class="rail-link" href="/calidad"><span class="rail-link-mark" aria-hidden="true">DATOS</span><span class="rail-link-copy"><strong>Calidad</strong><small>Origen y pendientes</small></span><span aria-hidden="true">→</span></a>
           </div>
         </section>
       </aside>

@@ -274,7 +274,8 @@
       item.dataset.sharePct = String(row.sharePct);
       item.dataset.privacyStatus = row.privacyStatus;
 
-      var label = createElement('span', 'rrhh-bar-label', row.label);
+      var displayLabel = protectedAggregate ? 'Otros grupos protegidos' : row.label;
+      var label = createElement('span', 'rrhh-bar-label', displayLabel);
       var track = createElement('span', 'rrhh-bar-track');
       track.setAttribute('aria-hidden', 'true');
       var fill = createElement('span', 'rrhh-bar-fill');
@@ -296,8 +297,8 @@
     var releasedCount = ranking.rows.filter(function (row) { return row.privacyStatus === 'released'; }).length;
     var protectedCount = ranking.rows.filter(function (row) { return row.privacyStatus === 'protected_aggregate'; }).length;
     var privacyCopy = protectedCount
-      ? 'Incluye Otros (celdas protegidas); no permite reconstruir categorías pequeñas.'
-      : 'Todas las categorías publicadas superan el umbral interactivo.';
+      ? 'Las categorías con menos de 5 personas se reúnen en “Otros grupos protegidos”.'
+      : 'Todas las categorías reúnen al menos 5 personas y pueden mostrarse por separado.';
     return ranking.participantDisplay + ' participantes · ' + releasedCount + ' ' + noun +
       ' liberadas · ' + referencePeriod + '. ' + privacyCopy;
   }
@@ -615,7 +616,7 @@
       movement: true
     });
     setText(elements.absencePartialNote, snapshotYear +
-      ' puede ser parcial al corte. Los períodos bajo umbral se omiten y nunca se representan como cero.');
+      ' puede ser parcial al corte. Los períodos con menos de 10 personas no se muestran ni se representan como cero.');
     setText(elements.leaveRangeNote, leaveSeries.length
       ? 'Cobertura histórica publicada: ' + leaveSeries[0].year + '–' + leaveSeries[leaveSeries.length - 1].year +
         '. No describe licencias vigentes en ' + snapshotYear + '.'
@@ -1469,7 +1470,7 @@
       unknown_implausible_active_tenure: {
         state: 'warning',
         label: 'Situación no determinada: antigüedad a revisar',
-        detail: 'La combinación de fechas supera el umbral de lectura conservadora y requiere validación administrativa.'
+        detail: 'Las fechas informadas darían una antigüedad inusual y requieren validación administrativa.'
       },
       invalid_chronology: {
         state: 'invalid',

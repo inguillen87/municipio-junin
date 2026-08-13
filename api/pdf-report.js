@@ -55,7 +55,7 @@ export function buildGrhPrintableHtml(bundle, {
   const netControlCents = latestControl.amounts.netPayrollCents;
   const reconciliation = quality.reconciliation.scorePct;
   const tolerance = quality.quality.risks.latestCalculationControlWithinRoundingTolerance;
-  const policyLabel = `${executive.policyVersion} · k=${executive.privacy.portableThreshold}`;
+  const policyLabel = `Grupos con menos de ${executive.privacy.portableThreshold} personas protegidos`;
 
   return `<!doctype html>
 <html lang="es">
@@ -68,11 +68,11 @@ export function buildGrhPrintableHtml(bundle, {
   </style>
 </head>
 <body>
-  <div class="toolbar"><span>Vista imprimible · Informe portable gobernado</span><button type="button" onclick="window.print()">Imprimir / Guardar PDF</button></div>
+  <div class="toolbar"><span>Vista imprimible · Informe protegido y listo para compartir</span><button type="button" onclick="window.print()">Imprimir / Guardar PDF</button></div>
   <main class="sheet">
     <header>
       <div><div class="eyebrow">Municipalidad de Junín · MuniControl</div><h1>Informe Ejecutivo GRH</h1><div class="muted">Generado ${escapeHtml(generatedAt)}</div></div>
-      <div class="status">Snapshot · no tiempo real</div>
+      <div class="status">Respaldo histórico · no se actualiza en tiempo real</div>
     </header>
     <section class="grid" aria-label="Indicadores principales">
       <div class="metric"><span>Legajos registrados</span><strong>${formatNumber(quality.referential.legajo.rows)}</strong></div>
@@ -80,7 +80,7 @@ export function buildGrhPrintableHtml(bundle, {
       <div class="metric"><span>Neto de control · ARS</span><strong>${formatCurrencyCents(netControlCents)}</strong></div>
       <div class="metric"><span>Calidad del extracto</span><strong>${formatNumber(quality.quality.score, 2)}/100</strong></div>
       <div class="metric"><span>Cuarentena temporal</span><strong>${formatNumber(quality.quality.risks.quarantinedTemporalRows)}</strong></div>
-      <div class="metric"><span>Conciliación cross-source</span><strong>${formatNumber(reconciliation, 2)}%</strong></div>
+      <div class="metric"><span>Comparación entre fuentes</span><strong>${formatNumber(reconciliation, 2)}%</strong></div>
     </section>
     <div class="note"><strong>Lectura responsable.</strong> “Legajos registrados” no equivale a empleados activos. Junín configura la presentación en pesos argentinos (ARS), aunque el dump original no declara un código de moneda. Los importes son controles agregados de períodos con al menos ${executive.privacy.portableThreshold} participantes y no acreditan pago bancario.</div>
     <h2>Controles de calidad</h2>
@@ -92,10 +92,10 @@ export function buildGrhPrintableHtml(bundle, {
         <tr><td>Conciliación cálculo ↔ totpago</td><td>${formatNumber(reconciliation, 2)}/100</td></tr>
         <tr><td>Estado de la serie totpago</td><td>Sólo diagnóstica · no ejecutiva</td></tr>
         <tr><td>Control más reciente dentro de tolerancia</td><td>${tolerance ? 'Sí' : 'No'}</td></tr>
-        <tr><td>PII publicada</td><td>No · salida agregada portable</td></tr>
+        <tr><td>Datos personales incluidos</td><td>No</td></tr>
       </tbody>
     </table>
-    <div class="source">Fuente canónica: ${escapeHtml(quality.source.sourceFile)}<br>Corte: ${escapeHtml(quality.source.snapshotAsOf)}<br>SHA-256: ${escapeHtml(quality.source.sourceSha256)}<br>Contratos: ${escapeHtml(quality.lineage.profileSchemaVersion)} + ${escapeHtml(quality.lineage.semanticSchemaVersion)} + ${escapeHtml(executive.schemaVersion)} + ${escapeHtml(quality.schemaVersion)}<br>Privacidad: ${escapeHtml(policyLabel)}<br>personas_junin: excluida</div>
+    <div class="source">Fuente canónica: ${escapeHtml(quality.source.sourceFile)}<br>Corte: ${escapeHtml(quality.source.snapshotAsOf)}<br>SHA-256: ${escapeHtml(quality.source.sourceSha256)}<br>Controles técnicos: ${escapeHtml(quality.lineage.profileSchemaVersion)} + ${escapeHtml(quality.lineage.semanticSchemaVersion)} + ${escapeHtml(executive.schemaVersion)} + ${escapeHtml(quality.schemaVersion)}<br>Privacidad: ${escapeHtml(policyLabel)}<br>Base separada de personas: no incluida</div>
   </main>
 </body>
 </html>`;

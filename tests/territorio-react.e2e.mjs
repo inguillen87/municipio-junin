@@ -356,6 +356,13 @@ test('Centro Territorial React is governed, interactive, responsive and fail-clo
         await page.waitForSelector('#territoryMap.leaflet-container');
         await page.waitForFunction(() => document.querySelector('.territory-map-state')?.getAttribute('data-state') === 'available');
         assert.equal(await page.locator('.territory-kpis .kpi-card').count(), 4);
+        assert.deepEqual(await page.locator('.territory-kpis .kpi-card__label').allTextContents(), [
+          'Jurisdicción',
+          'Localidades oficiales',
+          'Coordenadas del mapa',
+          'Fuentes disponibles',
+        ]);
+        assert.equal(await page.locator('.territory-kpis .kpi-card').nth(2).locator('.kpi-card__value').textContent(), 'Oficiales');
         assert.equal(await page.locator('#territoryMap').getAttribute('role'), 'region');
         assert.equal(await page.locator('#territoryLocalities [data-locality-id]').count(), 7);
         assert.equal(await page.locator('#territorySources article').count(), 3);
@@ -546,6 +553,7 @@ test('Centro Territorial React is governed, interactive, responsive and fail-clo
           await page.waitForSelector('.blocked-state[role="alert"]');
           assert.equal(await page.locator('#territoryMap, .territory-kpis').count(), 0, mutation.name);
           assert.equal(await page.locator('.blocked-state h1').textContent(), 'Cartografía no disponible');
+          assert.match(await page.locator('.blocked-state').textContent(), /No pudimos verificar la fuente territorial necesaria/i);
           assert.deepEqual(diagnostics.externalRequests, []);
           assert.deepEqual(diagnostics.consoleErrors, []);
         } finally {

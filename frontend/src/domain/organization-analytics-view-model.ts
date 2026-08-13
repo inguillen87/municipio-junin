@@ -38,6 +38,10 @@ const WORKFORCE_LABELS: Record<WorkforceDimensionKey, string> = {
   agreement: 'Convenio',
 };
 
+function protectedGroupLabel(label: string, privacyStatus: string): string {
+  return privacyStatus === 'released' ? label : 'Otros grupos protegidos';
+}
+
 function deepFreeze<T>(value: T, seen = new Set<object>()): T {
   if (!value || typeof value !== 'object') return value;
   const objectValue = value as object;
@@ -83,7 +87,7 @@ function buildWorkforceRanking(
       key: `${key}-${String(row.sourceCode ?? 'protected')}-${index}`,
       companyCode: row.companyCode,
       sourceCode: row.sourceCode,
-      label: row.label,
+      label: protectedGroupLabel(row.label, row.privacyStatus),
       participants: row.participants,
       participantLabel: formatNumber(row.participants),
       sharePct: row.sharePct,
@@ -151,7 +155,7 @@ function buildRegistry(
     rows: dimension.rows.map((row, index) => ({
       key: `${key}-${row.code ?? 'protected'}-${index}`,
       code: row.code,
-      label: row.label,
+      label: protectedGroupLabel(row.label, row.privacyStatus),
       registeredRecords: row.registeredRecords,
       registeredLabel: formatNumber(row.registeredRecords),
       sharePct: row.sharePct ?? 0,
@@ -210,7 +214,7 @@ function buildMovementKpi(domain: SensitiveActivityDomain): StructureKpiViewMode
       key: 'latestMovementParticipants',
       label: 'Participantes · movimientos',
       value: 'Protegido',
-      note: 'El último año observado no supera el umbral de publicación.',
+      note: 'El último año observado reúne menos de 10 personas y no se muestra.',
       tone: 'amber',
     };
   }
@@ -299,7 +303,7 @@ export function buildOrganizationAnalyticsViewModel(
       key: `absence-${row.code ?? 'protected'}-${index}`,
       organizationCode: row.code,
       rank: index + 1,
-      label: row.label,
+      label: protectedGroupLabel(row.label, row.privacyStatus),
       registeredRecords: row.registeredRecords,
       recordsWithAbsence: row.recordsWithAbsence ?? 0,
       absenceEvents: row.absenceEvents ?? 0,

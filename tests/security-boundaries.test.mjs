@@ -190,7 +190,7 @@ test('dataset tenant binding never gives SUPER_ADMIN ambient municipal data acce
   assert.equal(boundResponse.statusCode, 200);
 });
 
-test('GRH printable report uses portable k=10 controls without publishing sensitive annual counts', async () => {
+test('GRH printable report protects small groups without publishing sensitive annual counts', async () => {
   const { default: handler } = await import('../api/pdf-report.js');
   setAuthoritativeUser('pdf-report-user', { role: 'INTENDENTE', tenantId: 'tenant-junin-test' });
   const token = jwt.sign(
@@ -207,8 +207,9 @@ test('GRH printable report uses portable k=10 controls without publishing sensit
 
   assert.equal(response.statusCode, 200);
   assert.match(response.payload, /Participantes · 2026-07/);
-  assert.match(response.payload, /grh-small-cell-v1 · k=10/);
-  assert.match(response.payload, /Conciliación cross-source/);
+  assert.match(response.payload, /Grupos con menos de 10 personas protegidos/);
+  assert.match(response.payload, /Comparación entre fuentes/);
+  assert.doesNotMatch(response.payload, /\bk\s*=\s*10\b|Conciliación cross-source|PII publicada/i);
   assert.match(response.payload, /Sólo diagnóstica · no ejecutiva/);
   assert.doesNotMatch(response.payload, /Ausencias\s*·\s*\d|Licencias\s*·\s*\d|Movimientos\s*·\s*\d/i);
   assert.match(response.payload, /Neto de control · ARS/);

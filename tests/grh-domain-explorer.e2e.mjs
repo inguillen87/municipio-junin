@@ -193,8 +193,17 @@ test('enterprise explorer renders the real governed projection and keeps filter 
   assert.match(fixture.apiRequests[0].accept, /application\/json/);
   assert.deepEqual(
     await page.locator('.grh-kpi strong').allTextContents(),
-    ['8', '257', '147', '6.573.057', '53', '6.354.042'],
+    ['257', '147', '6.573.057', '53', '6.354.042'],
   );
+  assert.deepEqual(await page.locator('.grh-kpi span').allTextContents(), [
+    'Tablas revisadas',
+    'Tablas con información',
+    'Registros revisados',
+    'Tablas organizadas',
+    'Registros organizados',
+  ]);
+  assert.equal(await page.locator('#grhContractChip').textContent(), 'Datos verificados');
+  assert.match(await page.locator('.grh-domain-card').first().textContent(), /Listo para usar|Disponible con límites|Detectado aún sin tablero/);
   assert.equal(await page.locator('.grh-domain-card').count(), 8);
   assert.equal(await page.locator('.grh-domain-card[aria-current="true"]').count(), 1);
   assert.equal(await page.locator('.grh-domain-card[tabindex="0"]').count(), 1);
@@ -285,11 +294,11 @@ test('explorer fails closed for authorization, availability, header and unsafe a
 
   const scenarios = [
     { id: 'forbidden', title: 'Acceso no habilitado' },
-    { id: 'unavailable', title: 'Catálogo GRH no verificable' },
-    { id: 'bad-header', title: 'Catálogo GRH no verificable' },
-    { id: 'protocol-relative', title: 'Catálogo GRH no verificable' },
-    { id: 'backslash-relative', title: 'Catálogo GRH no verificable' },
-    { id: 'unknown-capability', title: 'Catálogo GRH no verificable' },
+    { id: 'unavailable', title: 'Áreas de información no disponibles' },
+    { id: 'bad-header', title: 'Áreas de información no disponibles' },
+    { id: 'protocol-relative', title: 'Áreas de información no disponibles' },
+    { id: 'backslash-relative', title: 'Áreas de información no disponibles' },
+    { id: 'unknown-capability', title: 'Áreas de información no disponibles' },
   ];
   for (const scenario of scenarios) {
     fixture.setScenario(scenario.id);

@@ -173,10 +173,10 @@ describe('buildQualityViewModel', () => {
       'quarantine',
     ]);
     expect(model.kpis.map(({ label }) => label)).toEqual([
-      'Registros con período válido',
-      'Vínculos correctos con legajos',
-      'Controles que coinciden',
-      'Registros apartados para revisar',
+      'Registros con fechas correctas',
+      'Registros vinculados a legajos',
+      'Liquidaciones que coinciden',
+      'Registros pendientes de revisión',
     ]);
     expect(model.quality.components.map(({ key }) => key)).toEqual([
       'temporalValidity',
@@ -214,16 +214,16 @@ describe('buildQualityViewModel', () => {
     expect(model.source.sourceFile).toBe(contract.source.sourceFile);
     expect(model.source.sourceHash).toBe(contract.source.sourceSha256);
     expect(model.source.sourceSize).toBe('1,25 MB');
-    expect(model.reconciliation.context).toBe('2 de 3 controles comparados coinciden por completo entre las dos fuentes.');
+    expect(model.reconciliation.context).toBe('2 de 3 liquidaciones revisadas coinciden por completo.');
     expect(model.temporal.domains[1]?.quarantineRows).toBe(contract.temporal.domains.calculo.quarantineRows);
     expect(model.coverage.rows[2]?.orphanRows).toBe(contract.referential.facts.ausencia.orphanRows);
     expect(model.executive.statusLabel).toBe('Disponible con observaciones');
-    expect(model.executive.attentionTitle).toBe('1 de 3 controles comparados no coinciden por completo');
-    expect(model.executive.impact).toMatch(/no demuestra pagos faltantes/i);
+    expect(model.executive.attentionTitle).toBe('1 de 3 liquidaciones revisadas no coinciden por completo');
+    expect(model.executive.impact).toMatch(/no significan por sí solas que falte un pago/i);
     expect(model.risks.items[2]?.title).toBe('4 registros apartados por fecha o período');
     expect(model.actions[0]?.detail).toContain('70,0%');
-    expect(model.privacyStatus).toContain('no contiene PII');
-    expect(model.privacyStatus).toContain('el contrato bruto no llega al DOM');
+    expect(model.privacyStatus).toContain('No descarga datos personales');
+    expect(model.privacyStatus).toContain('La tabla personas_junin está excluida');
   });
 
   it('returns an immutable projection and refuses callers that bypass the contract type', () => {
@@ -246,7 +246,7 @@ describe('buildQualityViewModel', () => {
     expect(reconciliationKpi?.note).toMatch(/coinciden/i);
     expect(model.risks.items[1]?.level).toBe('guarded');
     expect(model.risks.items[1]?.title).toMatch(/comparación de liquidaciones coincide/i);
-    expect(model.actions[0]?.title).toMatch(/Sostener la comparación/i);
+    expect(model.actions[0]?.title).toMatch(/Repetir la revisión/i);
     expect(model.risks.items.some(item => /diferencias materiales/i.test(item.title))).toBe(false);
   });
 

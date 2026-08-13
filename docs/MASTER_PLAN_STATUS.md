@@ -361,7 +361,7 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.8`
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.9`
 contiene 31 recursos, 12 acciones, 53 permisos y 91 firmas protegidas exactas:
 49 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.

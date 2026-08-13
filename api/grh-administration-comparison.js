@@ -1,6 +1,7 @@
 import { noStore, requireCapability, requireDatasetTenant } from './lib/auth.js';
 import { assertPrismaDatabaseTransport, prisma } from './lib/db.js';
 import {
+  GRH_ADMINISTRATION_COMPARISON_PERIODS,
   GRH_ADMINISTRATION_COMPARISON_SCHEMA_VERSION,
   inspectGrhAdministrationComparisonContract,
 } from './lib/grh-administration-comparison-contract.js';
@@ -10,6 +11,8 @@ import {
 import routePolicy from '../shared/route-policy.cjs';
 import releaseTruthContract from '../shared/release-truth-contract.cjs';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
+import { loadGrhDirectorySnapshotArtifact } from './lib/grh-directory-snapshot.js';
+import { grhDirectoryContentSha256 } from './lib/grh-directory-publication.js';
 
 const { ACTIONS, RESOURCES } = routePolicy;
 const { HEADER_NAME } = releaseTruthContract;
@@ -142,6 +145,110 @@ async function defaultAggregateQuery(sql, values) {
   return { rows };
 }
 
+async function defaultSnapshotQuery(sql, values) {
+  if (!assertPrismaDatabaseTransport()) throw new Error('GRH directory snapshot unavailable');
+  const rows = await prisma.$queryRawUnsafe(sql, ...values);
+  return { rows };
+}
+
+function metricsFromArtifact(records, startDate, endDate) {
+  const participants = new Set();
+  let eventRows = 0;
+  let reportedDays = 0;
+  let knownEventRows = 0;
+  let missingEventRows = 0;
+  let reportedIngressDates = 0;
+  let reportedExitDates = 0;
+  for (const record of records) {
+    const employment = record.employment;
+    if (employment.reported_ingress_date !== null &&
+        employment.reported_ingress_date >= startDate && employment.reported_ingress_date <= endDate) {
+      reportedIngressDates += 1;
+    }
+    if (employment.reported_exit_date !== null &&
+        employment.reported_exit_date >= startDate && employment.reported_exit_date <= endDate) {
+      reportedExitDates += 1;
+    }
+    for (const event of record.absence_history) {
+      if (event.date < startDate || event.date > endDate) continue;
+      eventRows += 1;
+      participants.add(`${record.company_code}:${record.legajo}`);
+      if (event.days === null) {
+        missingEventRows += 1;
+      } else {
+        knownEventRows += 1;
+        reportedDays += event.days;
+      }
+    }
+  }
+  return {
+    eventRows,
+    distinctPeople: participants.size,
+    reportedDays,
+    knownEventRows,
+    missingEventRows,
+    reportedIngressDates,
+    reportedExitDates,
+  };
+}
+
+export function buildGrhAdministrationComparisonAggregateFromArtifact(artifact) {
+  const records = artifact?.records;
+  if (!Array.isArray(records)) throw new Error('GRH administration comparison snapshot invalid');
+  const recordCount = records.length;
+  const absenceEventCount = records.reduce(
+    (total, record) => total + record.absence_history.length,
+    0,
+  );
+  const employmentPeople = records.filter(record => {
+    const employment = record?.employment;
+    const payroll = employment?.reference_payroll_participation;
+    return employment?.basis === 'legajo_reported_dates' &&
+      typeof employment?.reported_status === 'string' &&
+      typeof payroll?.period === 'string' &&
+      typeof payroll?.observed === 'boolean' &&
+      Number.isSafeInteger(payroll?.row_count) && payroll.row_count >= 0 &&
+      payroll.observed === (payroll.row_count > 0);
+  }).length;
+  return {
+    source: {
+      schemaVersion: artifact.schema_version,
+      canonicalSystem: artifact.source.canonical_system,
+      sourceSha256: artifact.source.sha256,
+      contentSha256: grhDirectoryContentSha256(artifact),
+      snapshotAsOf: artifact.source.snapshot_as_of,
+      recordCount,
+      absenceEventCount,
+    },
+    identity: {
+      materializedPeople: recordCount,
+      uniquePeople: new Set(records.map(record => `${record.company_code}:${record.legajo}`)).size,
+      employmentPeople,
+      digestedPeople: recordCount,
+      materializedAbsenceEvents: absenceEventCount,
+    },
+    current: metricsFromArtifact(
+      records,
+      GRH_ADMINISTRATION_COMPARISON_PERIODS.current.startDate,
+      GRH_ADMINISTRATION_COMPARISON_PERIODS.current.endDate,
+    ),
+    prior: metricsFromArtifact(
+      records,
+      GRH_ADMINISTRATION_COMPARISON_PERIODS.prior.startDate,
+      GRH_ADMINISTRATION_COMPARISON_PERIODS.prior.endDate,
+    ),
+  };
+}
+
+export async function readGrhAdministrationComparisonSnapshot({
+  tenantId,
+  key,
+  queryImpl = defaultSnapshotQuery,
+}) {
+  const artifact = await loadGrhDirectorySnapshotArtifact({ tenantId, key, queryImpl });
+  return buildGrhAdministrationComparisonAggregateFromArtifact(artifact);
+}
+
 function periodFromRow(row, prefix) {
   return {
     eventRows: nonNegativeInteger(row[`${prefix}_event_rows`]),
@@ -199,6 +306,7 @@ export function createGrhAdministrationComparisonHandler({
   requireCapabilityImpl = requireCapability,
   requireDatasetTenantImpl = requireDatasetTenant,
   readAggregateImpl = readGrhAdministrationComparisonAggregate,
+  readSnapshotAggregateImpl = readGrhAdministrationComparisonSnapshot,
   buildProjectionImpl = buildGrhAdministrationComparisonProjection,
   inspectContractImpl = inspectGrhAdministrationComparisonContract,
   isPublishedDemoIdentityImpl = isPublishedDemoIdentity,
@@ -236,10 +344,16 @@ export function createGrhAdministrationComparisonHandler({
     try {
       const sourceSha256 = environment.GRH_SOURCE_SHA256;
       if (!HEX_64.test(sourceSha256 || '')) throw new Error('GRH source pin unavailable');
-      const aggregate = await readAggregateImpl({
-        tenantId: String(caller.tenantId),
-        sourceSha256,
-      });
+      const snapshotKey = environment.GRH_DIRECTORY_SNAPSHOT_KEY_V1;
+      const aggregate = typeof snapshotKey === 'string' && snapshotKey.length > 0
+        ? await readSnapshotAggregateImpl({
+          tenantId: String(caller.tenantId),
+          key: snapshotKey,
+        })
+        : await readAggregateImpl({
+          tenantId: String(caller.tenantId),
+          sourceSha256,
+        });
       if (aggregate?.source?.sourceSha256 !== sourceSha256) {
         throw new Error('GRH administration comparison source invalid');
       }

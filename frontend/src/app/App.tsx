@@ -62,12 +62,12 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
 
   return (
     <>
-      <p className="sr-only" role="status" aria-live="polite">Proyección de calidad validada y disponible.</p>
+      <p className="sr-only" role="status" aria-live="polite">La revisión de los datos está disponible.</p>
       <section className="page-hero page-hero--quality" aria-labelledby="page-title">
         <div className="page-hero__intro">
-          <p className="page-hero__eyebrow">Lectura simple · evidencia GRH</p>
-          <h1 id="page-title">Calidad del corte GRH</h1>
-          <p>Una respuesta clara sobre qué datos se pueden leer, qué necesita atención y cuál es el próximo paso.</p>
+          <p className="page-hero__eyebrow">Control de datos de RR.HH.</p>
+          <h1 id="page-title">Estado de los datos</h1>
+          <p>Qué información está lista para usar, qué necesita revisión y cuál es el próximo paso.</p>
         </div>
         <SourceStatus source={viewModel.source} />
       </section>
@@ -133,22 +133,22 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
           <div>
             <p className="panel__eyebrow">Evidencia disponible</p>
             <h2 id="quality-evidence-title">Abrí el detalle sólo cuando lo necesites</h2>
-            <p>La lectura ejecutiva queda arriba. Las tablas, la metodología y los nombres técnicos se conservan para auditoría.</p>
+            <p>El resumen está arriba. Abrí estos apartados sólo si necesitás revisar cómo se obtuvo cada resultado.</p>
           </div>
         </header>
 
         <div className="quality-disclosures">
           <details className="quality-disclosure" data-testid="quality-reconciliation-details">
             <summary>
-              <span><strong>Comparación del control de liquidaciones</strong><small>Por qué algunos controles no coinciden entre fuentes</small></span>
+              <span><strong>Revisión de liquidaciones</strong><small>Por qué algunos importes o conceptos no coinciden</small></span>
               <span>{viewModel.reconciliation.context}</span>
             </summary>
             <div className="quality-disclosure__body">
               <div className="reconciliation-score">
                 <strong>{viewModel.reconciliation.score}</strong>
-                <span>Puntaje técnico del control agregado sobre 100</span>
+                <span>Resultado general de la revisión sobre 100</span>
               </div>
-              <dl className="source-status__facts" aria-label="Métricas técnicas de comparación">
+              <dl className="source-status__facts" aria-label="Resultados de la revisión de liquidaciones">
                 {viewModel.reconciliation.metrics.map(metric => (
                   <div key={metric.key}>
                     <dt>{metric.label}</dt>
@@ -156,7 +156,7 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
                   </div>
                 ))}
               </dl>
-              <p className="table-note">La fuente auxiliar figura en el backup con el nombre técnico <strong>totpago</strong>.</p>
+              <p className="table-note">Detalle técnico: en el respaldo, la tabla auxiliar se llama <strong>totpago</strong>.</p>
               <p className="warning-note">{viewModel.reconciliation.warning}</p>
             </div>
           </details>
@@ -195,12 +195,12 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
 
           <details className="quality-disclosure" data-testid="quality-method-details">
             <summary id="riskTitle">
-              <span><strong>Metodología y límites</strong><small>Cómo se armó el indicador y qué no demuestra</small></span>
-              <span>Ver cálculo técnico</span>
+              <span><strong>Cómo se obtuvo el resultado</strong><small>Qué se revisó y qué no demuestra este indicador</small></span>
+              <span>Ver detalle</span>
             </summary>
             <div className="quality-disclosure__body quality-disclosure__body--split">
               <div>
-                <h3>Componentes del indicador técnico</h3>
+                <h3>Aspectos revisados</h3>
                 <div className="metric-stack">
                   {viewModel.quality.components.map(component => (
                     <MetricProgress
@@ -224,7 +224,7 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
 
           <details className="quality-disclosure" data-testid="quality-lineage-details">
             <summary id="lineageTitle">
-              <span><strong>Origen y trazabilidad</strong><small>Controles aplicados desde el backup hasta esta pantalla</small></span>
+              <span><strong>Origen de la información</strong><small>Pasos aplicados desde el respaldo hasta esta pantalla</small></span>
               <span>4 controles</span>
             </summary>
             <div className="quality-disclosure__body">

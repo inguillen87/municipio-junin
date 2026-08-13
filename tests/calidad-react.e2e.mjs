@@ -664,8 +664,11 @@ test('React Calidad canary validates governed evidence and fails closed', async 
             '30',
           ]);
           assert.equal(result.executiveStatus, 'Disponible con observaciones');
-          assert.match(result.executiveHeadline, /comparación de liquidaciones requiere revisión/i);
-          assert.doesNotMatch(result.visibleText, /\b(?:totpago|errorimportacion|score|cuarentena)\b/i);
+          assert.match(result.executiveHeadline, /algunas liquidaciones necesitan revisión/i);
+          assert.doesNotMatch(
+            result.visibleText,
+            /\b(?:totpago|errorimportacion|score|cuarentena|snapshot|semántica|conciliación|extracto|cross-source)\b|\bk\s*(?:=|≥)\s*\d/i,
+          );
           assert.equal(result.disclosureCount, 6);
           assert.equal(result.openDisclosures, 0);
           assert.equal(result.sourceFile, 'grh_junin.synthetic_quality.sql.gz');
@@ -701,7 +704,7 @@ test('React Calidad canary validates governed evidence and fails closed', async 
           await reconciliationDetails.locator('summary').click();
           assert.equal(await reconciliationDetails.getAttribute('open'), '', `${viewport.name} disclosure opened`);
           const technicalEvidence = String(await reconciliationDetails.innerText()).replace(/\s+/g, ' ').trim();
-          assert.match(technicalEvidence, /nombre técnico totpago/i);
+          assert.match(technicalEvidence, /tabla auxiliar se llama totpago/i);
           assert.match(technicalEvidence, /no acredita transferencia bancaria/i);
           assert.ok(
             await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth <= 1),

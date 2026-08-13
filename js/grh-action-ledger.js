@@ -4,6 +4,8 @@
   var SCHEMA_VERSION = 'grh-action-ledger-v1';
   var BRIEF_SCHEMA_VERSION = 'grh-decision-brief-v1';
   var ENDPOINT = '/api/grh-action-ledger';
+  var STATUS_HEADER = 'x-municontrol-ledger-status';
+  var SETUP_PENDING = 'setup-pending';
   var REQUIRED_CAPABILITY = 'navigation.grh-decisions';
   var MAX_DUE_DAYS = 180;
   var STATES = Object.freeze(['open', 'in_progress', 'blocked', 'completed', 'canceled']);
@@ -107,6 +109,7 @@
     loading: false,
     mutating: false,
     dialog: null,
+    setupPending: false,
     selectedCommitmentId: null,
     drawerReturnFocus: null
   };
@@ -345,11 +348,22 @@
     byId('decisionPeriodChip').textContent = 'Período ' + formatMonth(contract.currentBrief.period);
     byId('decisionSnapshotChip').textContent = 'Corte ' + formatDay(contract.currentBrief.snapshotAsOf);
     var permissions = contract.permissions;
-    byId('decisionPermissionChip').textContent = permissions.canCreate ? 'Creación habilitada' : 'Consulta habilitada';
+    byId('decisionPermissionChip').textContent = state.setupPending
+      ? 'Registro pendiente · solo consulta'
+      : permissions.canCreate ? 'Creación habilitada' : 'Consulta habilitada';
   }
   function renderSuggestions(contract) {
     var root = byId('decisionSuggestions');
     clear(root);
+    if (state.setupPending) {
+      var pending = element('div', 'decision-empty');
+      pending.append(
+        element('strong', '', 'Las prioridades se pueden consultar, pero el registro de acciones todavía no está habilitado.'),
+        element('span', '', 'No se crean compromisos automáticos ni se muestran acciones inventadas.')
+      );
+      root.appendChild(pending);
+      return;
+    }
     if (contract.suggestions.length === 0) {
       var empty = element('div', 'decision-empty');
       empty.append(element('strong', '', 'El brief vigente no contiene prioridades accionables.'), element('span', '', 'El registro permanece disponible para consultar compromisos existentes.'));
@@ -420,7 +434,15 @@
       button.append(title, status, assignee, due, chevron);
       root.appendChild(button);
     });
-    byId('decisionEmpty').hidden = rows.length !== 0;
+    var emptyState = byId('decisionEmpty');
+    if (state.setupPending) {
+      emptyState.querySelector('strong').textContent = 'El registro de compromisos todavía no está habilitado.';
+      emptyState.querySelector('span').textContent = 'La información GRH sigue disponible para consulta; crear o modificar acciones permanece cerrado.';
+    } else {
+      emptyState.querySelector('strong').textContent = 'No hay compromisos para este filtro.';
+      emptyState.querySelector('span').textContent = 'Elegí otra vista o creá uno desde una sugerencia disponible.';
+    }
+    emptyState.hidden = rows.length !== 0;
   }
   function renderLimits(limits) {
     var root = byId('decisionLimits');
@@ -683,6 +705,7 @@
     }
     var contract = inspectContract(payload);
     if (!contract) throw markMutationAmbiguous(new Error('LEDGER_CONTRACT_INVALID'), method);
+    if (method === 'GET') state.setupPending = response.headers.get(STATUS_HEADER) === SETUP_PENDING;
     return contract;
   }
   async function loadLedger() {
@@ -692,7 +715,8 @@
     try {
       var allowed = typeof global.requireCapability === 'function' ? await global.requireCapability(REQUIRED_CAPABILITY) : false;
       if (!allowed) { showLoadError(403); return; }
-      renderContract(await requestContract('GET'), 'Registro verificado');
+      var contract = await requestContract('GET');
+      renderContract(contract, state.setupPending ? 'Registro de acciones pendiente · consulta disponible' : 'Registro verificado');
     } catch (error) {
       if (global.MuniAuth && typeof global.MuniAuth.isAuthError === 'function' && global.MuniAuth.isAuthError(error)) return;
       showLoadError(error && error.status);

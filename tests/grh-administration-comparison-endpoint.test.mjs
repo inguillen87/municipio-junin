@@ -190,6 +190,37 @@ test('endpoint publishes private exact and portable governed projections with no
   }
 });
 
+test('endpoint reads the encrypted v3 snapshot when its retained key is configured', async () => {
+  const deps = dependencies();
+  let databaseReads = 0;
+  let snapshotReads = 0;
+  deps.environment = {
+    GRH_SOURCE_SHA256: SOURCE_SHA,
+    GRH_DIRECTORY_SNAPSHOT_KEY_V1: 'retained-production-key',
+  };
+  deps.readAggregateImpl = async () => {
+    databaseReads += 1;
+    throw new Error('materialized tables must not be used');
+  };
+  deps.readSnapshotAggregateImpl = async options => {
+    snapshotReads += 1;
+    assert.deepEqual(options, {
+      tenantId: 'tenant-junin',
+      key: 'retained-production-key',
+    });
+    return aggregate();
+  };
+  const response = responseRecorder();
+  await createGrhAdministrationComparisonHandler(deps)(
+    { method: 'GET', query: {}, headers: {} },
+    response,
+  );
+  assert.equal(response.statusCode, 200);
+  assert.equal(snapshotReads, 1);
+  assert.equal(databaseReads, 0);
+  assert.equal(response.payload.comparison.absence.eventRows.values.current, 5936);
+});
+
 test('endpoint is fixed GET-only and fails closed on query, source or contract drift', async t => {
   await t.test('write rejected before authentication', async () => {
     let authCalls = 0;
@@ -288,7 +319,7 @@ test('route authorization and release truth reuse organization analytics exactly
       applies: true,
       allowed: true,
       code: publishedDemoPolicy.PUBLISHED_DEMO_DECISION_CODES.ALLOWED,
-      policyVersion: '2026-08-13.8',
+      policyVersion: '2026-08-13.9',
     },
   );
 });

@@ -3,7 +3,7 @@
 Versión documental: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
 Estado: release público `v1.10.0` verificado; producto S13 en commit `d11fd39`
-Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.8` y
+Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.9` y
 access policy `2026-08-11.3`, sin nuevo release
 
 La sesión privada positiva y S13 privado conservan validación local sobre el

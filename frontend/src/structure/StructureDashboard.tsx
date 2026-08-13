@@ -410,7 +410,7 @@ function OrganizationExplorer({
         <p className="structure-explorer__result-count" role="status">
           {dimension === 'costCenter'
             ? `${visibleCostCenters.length} de ${costCenterRows.length} áreas observadas seleccionables`
-            : `${visibleRows.length} de ${registry?.releasedCategoryCount ?? 0} clasificaciones seleccionables${
+            : `${visibleRows.length} de ${registry?.releasedCategoryCount ?? 0} opciones disponibles${
               (registry?.protectedCategoryCount ?? 0) > 0
                 ? ` · ${registry?.protectedCategoryCount} categorías agrupadas`
                 : ''}`}
@@ -469,7 +469,7 @@ function OrganizationExplorer({
           <p className="structure-explorer__empty">
             {dimension === 'costCenter' && costCenterRows.length === 0
               ? 'No hay áreas de costo publicadas para seleccionar.'
-              : 'No hay coincidencias en las categorías publicadas.'}
+              : 'No hay coincidencias en las opciones disponibles.'}
           </p>
         )}
         {dimension === 'costCenter' && protectedCostCenters ? (
@@ -527,16 +527,16 @@ function OrganizationExplorer({
                 ? 'Sin áreas de costo publicadas'
                 : `Elegí ${dimension === 'costCenter'
                   ? 'un área de costo observada'
-                  : 'una clasificación GRH publicada'}`}
+                  : 'una opción de RR.HH.'}`}
             </h3>
             <p role={invalidDeepLink ? 'alert' : undefined} data-testid={invalidDeepLink
               ? 'organization-explorer-invalid-link'
               : undefined}>
               {invalidDeepLink
-                ? `El enlace no identifica ${dimension === 'costCenter' ? 'un área de costo observada' : 'una clasificación GRH publicable'}. No se muestran cifras hasta que elijas una opción.`
+                ? `El enlace no identifica ${dimension === 'costCenter' ? 'un área de costo' : 'una opción de RR.HH.'}. No se muestran cifras hasta que elijas una opción.`
                 : dimension === 'costCenter' && costCenterRows.length === 0
-                  ? 'La proyección sólo publica un resumen agregado protegido. No hay identidades seleccionables ni acciones disponibles.'
-                : 'Seleccioná una opción para consultar su contexto agregado.'}
+                  ? 'Esta vista sólo muestra un total general. No hay personas ni acciones individuales disponibles.'
+                  : 'Seleccioná una opción para consultar su resumen.'}
             </p>
           </div>
         ) : dimension === 'costCenter' && selectedCostCenter ? (
@@ -557,7 +557,7 @@ function OrganizationExplorer({
                     href={costCenterHaciendaHref}
                     data-testid="organization-explorer-hacienda-action"
                   >
-                    Cruzar cohorte en Hacienda
+                    Ver este grupo en Hacienda
                   </a>
                 ) : null}
                 {costCenterAssistantHref ? (
@@ -585,22 +585,22 @@ function OrganizationExplorer({
               <div>
                 <dt>Participantes con cálculo válido en {referencePeriodLabel(viewModel.truth.referencePeriod)}</dt>
                 <dd>{selectedCostCenter.participantLabel}</dd>
-                <small>Área observada en la cohorte del período</small>
+                <small>Área registrada en este período</small>
               </div>
               <div>
-                <dt>Participación en la cohorte</dt>
+                <dt>Participación en el total del período</dt>
                 <dd>{selectedCostCenter.shareLabel}</dd>
                 <small>Sobre {costCenterRanking.denominatorLabel}</small>
               </div>
               <div>
-                <dt>Posición entre áreas publicadas</dt>
+                <dt>Posición entre las áreas disponibles</dt>
                 <dd>{selectedCostCenterPosition} de {costCenterRows.length}</dd>
-                <small>Orden de la proyección publicada</small>
+                <small>Orden según la cantidad de participantes</small>
               </div>
             </dl>
             <p className="structure-explorer__context-note" data-testid="cost-center-scope-note">
-              Clasificación observada en el cálculo: no describe un departamento vigente, headcount/FTE, planta,
-              presupuesto ejecutado ni pago. Base: {costCenterRanking.denominatorLabel}; período{' '}
+              Este dato proviene del cálculo del período: no confirma la estructura vigente, la planta,
+              el presupuesto ejecutado ni un pago realizado. Total usado: {costCenterRanking.denominatorLabel}; período{' '}
               {viewModel.truth.referencePeriod}.
             </p>
           </>
@@ -630,7 +630,7 @@ function OrganizationExplorer({
                     href={haciendaHref}
                     data-testid="organization-explorer-hacienda-action"
                   >
-                    Cruzar cohorte en Hacienda
+                    Ver este grupo en Hacienda
                   </a>
                 ) : null}
                 {assistantHref ? (
@@ -649,19 +649,19 @@ function OrganizationExplorer({
               <div>
                 <dt>Legajos registrados</dt>
                 <dd>{selectedRegistry.registeredLabel}</dd>
-                <small>Snapshot histórico</small>
+                <small>Según el último respaldo disponible</small>
               </div>
               <div>
-                <dt>Participación en la clasificación GRH</dt>
+                <dt>Participación en el total registrado</dt>
                 <dd>{selectedRegistry.shareLabel}</dd>
-                <small>Base: {registry.denominatorLabel}</small>
+                <small>Total usado: {registry.denominatorLabel}</small>
               </div>
               {absence ? (
                 <>
                   <div>
                     <dt>Registros con historia de ausencias</dt>
                     <dd>{absence.recordsWithAbsence?.toLocaleString('es-AR')}</dd>
-                    <small>Historia agregada; no dotación activa</small>
+                    <small>Antecedentes registrados; no indica personal activo</small>
                   </div>
                   <div>
                     <dt>Eventos históricos de ausencia</dt>
@@ -681,14 +681,14 @@ function OrganizationExplorer({
               <p className="structure-explorer__context-note" data-testid="organization-explorer-absence-unavailable">
                 <strong>Sin desglose publicado.</strong>{' '}
                 {registry.key === 'sector'
-                  ? 'La proyección no publica ausencias por sector informado; no se deriva una tasa ni se cruzan universos.'
+                  ? 'No hay un detalle de ausencias para este sector; por eso no se calcula una tasa.'
                   : 'Esta organización informada no integra el ranking publicable de ausencias; esto no equivale a cero.'}
               </p>
             ) : null}
 
             <section className="structure-explorer__breakdown" aria-labelledby="organization-explorer-cross-title">
               <div>
-                <p className="structure-eyebrow">Cruce de clasificaciones publicado</p>
+                <p className="structure-eyebrow">Distribución disponible</p>
                 <h4 id="organization-explorer-cross-title">
                   {registry.key === 'organization'
                     ? 'Distribución por sector informado'
@@ -702,7 +702,7 @@ function OrganizationExplorer({
               />
             </section>
             <p className="structure-panel__note">
-              Registros del snapshot: no certifican planta activa, puesto vigente ni jerarquía actual.
+              Estos registros son históricos: no confirman planta activa, puesto vigente ni jerarquía actual.
             </p>
           </>
         ) : null}
@@ -732,19 +732,19 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
 
       <section className="structure-hero" aria-labelledby="structure-title">
         <div>
-          <p className="structure-eyebrow">Centro Ejecutivo GRH</p>
-          <h1 id="structure-title">Estructura, dotación y áreas de costo</h1>
+          <p className="structure-eyebrow">Resumen de personal</p>
+          <h1 id="structure-title">Personal, sectores y áreas de costo</h1>
           <p className="structure-hero__description">
-            Participación en el cálculo, cobertura de registros y novedades históricas en una lectura operativa.
+            Una vista simple de las personas incluidas en la liquidación y de sus antecedentes registrados.
           </p>
           <div
             className="structure-hero__chips"
             id="organizationSnapshotStatus"
             aria-label="Corte de la información"
           >
-            <span>Corte {viewModel.truth.snapshotLabel}</span>
-            <span>Cálculo {viewModel.truth.referencePeriod}</span>
-            <span>Corte histórico</span>
+            <span>Datos hasta {viewModel.truth.snapshotLabel}</span>
+            <span>Liquidación {viewModel.truth.referencePeriod}</span>
+            <span>No se actualiza en tiempo real</span>
           </div>
         </div>
         <aside className="structure-hero__decisions" aria-label="Acciones disponibles">
@@ -787,8 +787,8 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
       >
         <div className="structure-panel__header structure-panel__header--controls">
           <div>
-            <p className="structure-eyebrow">Cohorte de cálculo</p>
-            <h2 id="workforce-title">Participación en el último cálculo válido</h2>
+            <p className="structure-eyebrow">Personas incluidas en la liquidación</p>
+            <h2 id="workforce-title">Distribución del último período disponible</h2>
           </div>
           <div className="structure-segmented" role="group" aria-label="Clasificar participantes del cálculo">
             {WORKFORCE_KEYS.map(key => (
@@ -812,9 +812,9 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
         <div className="structure-section__heading">
           <div>
             <p className="structure-eyebrow">Novedades históricas</p>
-            <h2 id="activity-title">Eventos y participantes, con escalas separadas</h2>
+            <h2 id="activity-title">Ausencias y movimientos registrados</h2>
           </div>
-          <span>Fuente GRH · corte {viewModel.truth.snapshotLabel}</span>
+          <span>Datos de RR.HH. hasta {viewModel.truth.snapshotLabel}</span>
         </div>
         <div className="structure-two-column">
           {viewModel.activity.map(domain => (
@@ -845,7 +845,7 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
         <div className="structure-section__heading">
           <div>
             <p className="structure-eyebrow">Explorador operativo</p>
-            <h2 id="registry-title">Clasificaciones informadas, del resumen al detalle</h2>
+            <h2 id="registry-title">Organizaciones, sectores y áreas de costo</h2>
           </div>
           <span>Selección local · sin nueva consulta</span>
         </div>
@@ -914,7 +914,7 @@ export function StructureDashboard({ capabilities, viewModel }: StructureDashboa
           <div><dt>Archivo</dt><dd>{viewModel.truth.sourceFile}</dd></div>
           <div><dt>SHA-256</dt><dd><code>{viewModel.truth.sourceHash}</code></dd></div>
         </dl>
-        <p>Snapshot histórico con agregados de registro, cálculo y actividad; cada universo conserva su denominador.</p>
+        <p>Respaldo histórico con totales de personal, liquidaciones y novedades. Cada indicador informa qué total utiliza.</p>
       </details>
     </>
   );

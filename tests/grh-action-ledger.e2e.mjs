@@ -110,6 +110,20 @@ function baseContract({ readOnly = false } = {}) {
   return contract;
 }
 
+function setupPendingContract() {
+  const contract = baseContract({ readOnly: true });
+  contract.commitments = [];
+  contract.summary = {
+    total: 0, open: 0, inProgress: 0, blocked: 0, completed: 0, canceled: 0, overdue: 0,
+  };
+  contract.suggestions.forEach((suggestion) => {
+    suggestion.available = false;
+    suggestion.existingCommitmentId = null;
+  });
+  assert.equal(validateGrhActionLedgerContract(contract), true);
+  return contract;
+}
+
 function capacityContract() {
   const contract = baseContract();
   const template = contract.commitments[0];
@@ -288,6 +302,7 @@ async function createFixture() {
   ]);
   let contract = baseContract();
   let getStatus = 0;
+  let getLedgerStatus = null;
   let postUnavailableOnce = true;
   let replayCommandId = null;
   const seenPostCommands = new Set();
@@ -370,6 +385,9 @@ async function createFixture() {
       response.writeHead(successStatus, {
         'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store',
         'X-MuniControl-Contract': CONTRACT, 'X-Content-Type-Options': 'nosniff', Vary: 'Authorization',
+        ...(request.method === 'GET' && getLedgerStatus
+          ? { 'X-MuniControl-Ledger-Status': getLedgerStatus }
+          : {}),
       });
       response.end(JSON.stringify(contract));
       return;
@@ -392,6 +410,7 @@ async function createFixture() {
     setContract(value) { contract = clone(value); },
     getContract() { return clone(contract); },
     setGetStatus(value) { getStatus = value; },
+    setGetLedgerStatus(value) { getLedgerStatus = value; },
     setPostUnavailableOnce(value) { postUnavailableOnce = value; },
     queuePatchStatuses(...values) { patchStatuses.push(...values); },
     queuePatchFaults(...values) { patchFaults.push(...values); },
@@ -462,6 +481,32 @@ test('action ledger surface integrations stay discoverable and capability-bound'
   assert.match(manual, /GET \/api\/grh-action-ledger<\/code> consulta[\s\S]{0,180}<code>POST<\/code> crea[\s\S]{0,120}<code>PATCH<\/code> registra/);
   assert.equal((html.match(/type="button" data-close-dialog/g) || []).length, 2);
   assert.match(webContract, /'decisiones-grh\.html'/);
+});
+
+test('missing ledger tables render a truthful municipal read-only state without invented actions', async (t) => {
+  const fixture = await createFixture();
+  fixture.setContract(setupPendingContract());
+  fixture.setGetLedgerStatus('setup-pending');
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise((resolve) => fixture.server.close(resolve));
+  });
+  const { context, page } = await openPage(browser, fixture, 'executive');
+  t.after(() => context.close());
+  await waitReady(page);
+
+  assert.match(await page.locator('#decisionStatusText').textContent(),
+    /registro de acciones pendiente/i);
+  assert.match(await page.locator('#decisionPermissionChip').textContent(),
+    /solo consulta/i);
+  assert.match(await page.locator('#decisionSuggestions').textContent(),
+    /todavía no está habilitado[\s\S]*no se crean compromisos automáticos/i);
+  assert.match(await page.locator('#decisionEmpty').textContent(),
+    /registro de compromisos todavía no está habilitado[\s\S]*crear o modificar acciones permanece cerrado/i);
+  assert.equal(await page.locator('[data-create-priority], [data-transition]').count(), 0);
+  assert.deepEqual(await page.locator('#decisionSummary strong').allTextContents(),
+    ['0', '0', '0', '0', '0', '0', '0']);
 });
 
 test('enterprise ledger creates idempotently, exposes evidence and timeline, and maps mutation failures without replacing state', async (t) => {

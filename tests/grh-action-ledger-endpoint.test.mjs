@@ -3,7 +3,12 @@ import crypto from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { createGrhActionLedgerHandler } from '../api/grh-action-ledger.js';
+import {
+  createGrhActionLedgerHandler,
+  GRH_ACTION_LEDGER_SETUP_PENDING,
+  GRH_ACTION_LEDGER_STATUS_HEADER,
+  inspectGrhActionLedgerStorage,
+} from '../api/grh-action-ledger.js';
 import {
   DATABASE_TARGET_FINGERPRINT_HEADER,
   fingerprintDatabaseTarget,
@@ -198,6 +203,7 @@ function handlerFor({
   store,
   requireCapabilityImpl,
   databaseUrlImpl = () => DATABASE_URL,
+  inspectLedgerStorageImpl,
   clock = () => NOW,
 } = {}) {
   return createGrhActionLedgerHandler({
@@ -219,6 +225,7 @@ function handlerFor({
     readArtifactBundleImpl: async () => bundle,
     storeImpl: store,
     databaseUrlImpl,
+    ...(inspectLedgerStorageImpl ? { inspectLedgerStorageImpl } : {}),
     clock,
   });
 }
@@ -329,6 +336,103 @@ test('authenticated GET fails closed on an invalid database target without expos
   assert.equal(store.calls.list.length, 0);
   assert.doesNotMatch(JSON.stringify({ headers: response.headers, payload: response.payload }),
     new RegExp(secret));
+});
+
+test('storage inspection distinguishes a missing ledger from ready, partial and unavailable storage', async () => {
+  const inspect = rows => inspectGrhActionLedgerStorage({
+    assertTransport: () => ({ valid: true }),
+    client: { async $queryRaw() { return rows; } },
+  });
+  assert.equal(await inspect([{
+    hasCommitmentsTable: false,
+    hasEventsTable: false,
+  }]), 'missing');
+  assert.equal(await inspect([{
+    hasCommitmentsTable: true,
+    hasEventsTable: true,
+  }]), 'ready');
+  assert.equal(await inspect([{
+    hasCommitmentsTable: true,
+    hasEventsTable: false,
+  }]), 'inconsistent');
+  assert.equal(await inspect([]), 'unavailable');
+  assert.equal(await inspectGrhActionLedgerStorage({
+    assertTransport: () => null,
+    client: { async $queryRaw() { throw new Error('must not run'); } },
+  }), 'unavailable');
+});
+
+test('GET publishes an explicit read-only empty contract only when both ledger tables are confirmed missing', async () => {
+  const bundle = await artifactFixture();
+  const store = {
+    calls: 0,
+    async listCommitments() {
+      this.calls += 1;
+      const error = new Error('database unavailable');
+      error.code = 'GRH_ACTION_LEDGER_DATABASE_UNAVAILABLE';
+      throw error;
+    },
+  };
+  const caller = {
+    id: 'private-intendente', email: 'private@example.test', role: 'INTENDENTE',
+    tenantId: process.env.GRH_TENANT_ID,
+  };
+  const response = responseRecorder();
+  await handlerFor({
+    bundle,
+    caller,
+    store,
+    inspectLedgerStorageImpl: async () => 'missing',
+  })(request('GET'), response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.headers[GRH_ACTION_LEDGER_STATUS_HEADER.toLowerCase()],
+    GRH_ACTION_LEDGER_SETUP_PENDING);
+  assert.match(response.headers.warning, /registro de compromisos aun no esta habilitado/i);
+  assert.equal(validateGrhActionLedgerContract(response.payload), true);
+  assert.deepEqual(response.payload.commitments, []);
+  assert.deepEqual(response.payload.summary, {
+    total: 0, open: 0, inProgress: 0, blocked: 0, completed: 0, canceled: 0, overdue: 0,
+  });
+  assert.deepEqual(response.payload.permissions, {
+    canRead: true, canCreate: false, canUpdate: false, canCancel: false, canReschedule: false,
+  });
+  assert.ok(response.payload.suggestions.every(suggestion => suggestion.available === false &&
+    suggestion.existingCommitmentId === null));
+  assert.equal(store.calls, 1);
+});
+
+test('GET keeps failing closed when ledger storage is ready, partial or cannot be inspected', async () => {
+  const bundle = await artifactFixture();
+  const caller = {
+    id: 'private-intendente', email: 'private@example.test', role: 'INTENDENTE',
+    tenantId: process.env.GRH_TENANT_ID,
+  };
+  for (const storageStatus of ['ready', 'inconsistent', 'unavailable']) {
+    const response = responseRecorder();
+    const original = console.error;
+    console.error = () => {};
+    try {
+      await handlerFor({
+        bundle,
+        caller,
+        store: {
+          async listCommitments() {
+            const error = new Error('database unavailable');
+            error.code = 'GRH_ACTION_LEDGER_DATABASE_UNAVAILABLE';
+            throw error;
+          },
+        },
+        inspectLedgerStorageImpl: async () => storageStatus,
+      })(request('GET'), response);
+    } finally {
+      console.error = original;
+    }
+    assert.equal(response.statusCode, 503, storageStatus);
+    assert.equal(response.payload.code, 'GRH_ACTION_LEDGER_UNAVAILABLE', storageStatus);
+    assert.equal(response.headers[GRH_ACTION_LEDGER_STATUS_HEADER.toLowerCase()], undefined,
+      storageStatus);
+  }
 });
 
 test('POST derives every evidence field server-side and returns the full created ledger', async () => {

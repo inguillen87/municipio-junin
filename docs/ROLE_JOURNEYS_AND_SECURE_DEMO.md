@@ -408,7 +408,7 @@ Las fuentes técnicas actuales son
 [`../shared/access-policy.cjs`](../shared/access-policy.cjs), para capacidades de
 navegación y sesión, y [`../shared/route-policy.cjs`](../shared/route-policy.cjs),
 como techo exacto de autorización server-side por `recurso:acción`, runtime,
-método y ruta. Al corte, ese techo `2026-08-13.8` registra 31 recursos, 12
+método y ruta. Al corte, ese techo `2026-08-13.9` registra 31 recursos, 12
 acciones, 53 permisos y 91 firmas exactas: 49 Serverless y 42 Express. El modelo de datos
 propuesto, todavía inactivo, está en
 [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md); sus fases de producto se

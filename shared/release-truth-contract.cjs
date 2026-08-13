@@ -2,6 +2,14 @@
 
 const HEADER_NAME = 'X-MuniControl-Contract';
 
+// These POST-only contracts issue sessions and therefore must never be added
+// to API_CONTRACTS: the deployment-truth gate probes API_CONTRACTS with
+// anonymous GET requests and is intentionally unable to mint credentials.
+const SESSION_EXCHANGE_CONTRACTS = Object.freeze({
+  '/api/auth/evaluation-session': 'municontrol-evaluation-session-v1',
+  '/api/auth/private-link-session': 'municontrol-private-link-session-v1',
+});
+
 const API_CONTRACTS = Object.freeze({
   '/api/auth/me': 'municontrol-auth-me-v1',
   '/api/grh-executive': 'grh-executive-v2',
@@ -24,4 +32,5 @@ const API_CONTRACTS = Object.freeze({
 module.exports = Object.freeze({
   HEADER_NAME,
   API_CONTRACTS,
+  SESSION_EXCHANGE_CONTRACTS,
 });

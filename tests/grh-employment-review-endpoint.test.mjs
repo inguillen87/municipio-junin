@@ -93,6 +93,41 @@ test('employment review publishes private exact or portable protected audiences 
   }
 });
 
+test('employment review reads the encrypted v3 snapshot when its retained key is configured', async () => {
+  const deps = dependencies();
+  let aggregateReads = 0;
+  let snapshotReads = 0;
+  deps.environment = {
+    GRH_SOURCE_SHA256: SOURCE_SHA,
+    GRH_DIRECTORY_SNAPSHOT_KEY_V1: 'retained-production-key',
+  };
+  deps.readAggregateImpl = async () => {
+    aggregateReads += 1;
+    throw new Error('materialized tables must not be used');
+  };
+  deps.readSnapshotImpl = async options => {
+    snapshotReads += 1;
+    assert.deepEqual(options, {
+      tenantId: 'tenant-junin',
+      key: 'retained-production-key',
+    });
+    return { source: { sha256: SOURCE_SHA } };
+  };
+  deps.buildSnapshotProjectionImpl = (_artifact, options) => ({
+    schemaVersion: GRH_EMPLOYMENT_REVIEW_SCHEMA_VERSION,
+    audience: options.audience,
+  });
+  const response = responseRecorder();
+  await createGrhEmploymentReviewHandler(deps)(
+    { method: 'GET', headers: {}, query: {} },
+    response,
+  );
+  assert.equal(response.statusCode, 200);
+  assert.equal(snapshotReads, 1);
+  assert.equal(aggregateReads, 0);
+  assert.equal(response.payload.audience, 'private');
+});
+
 test('employment review fails closed on source pin or contract drift and rejects writes', async t => {
   await t.test('source mismatch', async () => {
     const response = responseRecorder();

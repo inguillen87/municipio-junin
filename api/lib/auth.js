@@ -21,6 +21,7 @@ const { evaluateTenantAccess } = tenantLifecycle;
 const {
   PUBLISHED_DEMO_DECISION_CODES,
   evaluatePublishedDemoRoute,
+  resolvePublishedDemoProfile,
 } = publishedDemoPolicy;
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -82,15 +83,31 @@ function enforceCurrentRoutePermission(req, res, user) {
   const pathname = requestRoutePath(req);
   if (!pathname) return enforcePublishedDemoRoute(res, user, null);
   const route = resolveProtectedRoute(RUNTIMES.SERVERLESS, req?.method, pathname);
-  if (!route || !authorizeRoute(user?.role, RUNTIMES.SERVERLESS, req?.method, pathname)) {
+  if (!route) {
     return denyRoutePermission(res);
   }
-  return enforcePublishedDemoRoute(res, user, route.id);
+  const publishedDecision = evaluatePublishedDemoRoute({
+    email: user?.email,
+    role: user?.role,
+    tenantSlug: user?.tenant?.slug,
+    routeId: route.id,
+  });
+  if (publishedDecision.applies) {
+    return publishedDecision.allowed ? true : denyPublishedDemoRoute(res);
+  }
+  return authorizeRoute(user?.role, RUNTIMES.SERVERLESS, req?.method, pathname)
+    ? true
+    : denyRoutePermission(res);
 }
 
 export async function requireRole(req, res, allowedRoles) {
   const user = await requireAuth(req, res);
   if (!user) return null;
+  // Published evaluation sessions are granted by the exact read-only route
+  // allowlist already enforced in requireAuth. Their underlying database role
+  // must not make a route shown by the evaluation workspace fail a second,
+  // broader role check.
+  if (user.authMethod === 'published-evaluation-jwt-db') return user;
   if (!hasAnyRole(user.role, allowedRoles)) {
     res.status(403).json({ error: 'Permisos insuficientes' });
     return null;
@@ -101,6 +118,7 @@ export async function requireRole(req, res, allowedRoles) {
 export async function requireCapability(req, res, resource, action) {
   const user = await requireAuth(req, res);
   if (!user) return null;
+  if (user.authMethod === 'published-evaluation-jwt-db') return user;
   if (!hasResourceAction(user.role, resource, action)) {
     denyRoutePermission(res);
     return null;
@@ -190,10 +208,25 @@ async function resolveAuthoritativeUser(req) {
     return { status: 401, error: 'No autorizado' };
   }
 
+  let publishedProfile = null;
+  if (tokenUser.authMode === 'published-evaluation') {
+    publishedProfile = resolvePublishedDemoProfile(tokenUser.profileId);
+    const expectedSubject = publishedProfile
+      ? `published-evaluation:${publishedProfile.profileId}`
+      : null;
+    if (!publishedProfile || tokenUser.id !== expectedSubject ||
+        tokenUser.role !== publishedProfile.role || typeof tokenUser.tenantId !== 'string' ||
+        !tokenUser.tenantId.trim()) {
+      return { status: 401, error: 'Sesión no vigente' };
+    }
+  } else if (tokenUser.authMode && tokenUser.authMode !== 'private-intendente-link') {
+    return { status: 401, error: 'Sesión no vigente' };
+  }
+
   try {
     assertPrismaDatabaseTransport();
     const user = await prisma.user.findUnique({
-      where: { id: tokenUser.id },
+      where: publishedProfile ? { email: publishedProfile.email } : { id: tokenUser.id },
       select: {
         id: true,
         email: true,
@@ -217,6 +250,13 @@ async function resolveAuthoritativeUser(req) {
     if (!user || !user.active) {
       return { status: 401, error: 'Sesión no vigente' };
     }
+    if (publishedProfile && (
+      user.email !== publishedProfile.email || user.role !== publishedProfile.role ||
+      user.tenantId !== tokenUser.tenantId || user.tenant?.id !== tokenUser.tenantId ||
+      user.tenant?.slug !== publishedProfile.tenantSlug
+    )) {
+      return { status: 401, error: 'Sesión no vigente' };
+    }
     if (!isKnownRole(user.role)) {
       return { status: 403, error: 'Rol no habilitado' };
     }
@@ -235,7 +275,7 @@ async function resolveAuthoritativeUser(req) {
         role: user.role,
         tenantId: user.tenantId,
         tenant: user.tenant,
-        authMethod: 'jwt-db',
+        authMethod: publishedProfile ? 'published-evaluation-jwt-db' : 'jwt-db',
       },
     };
   } catch (error) {

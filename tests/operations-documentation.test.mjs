@@ -347,7 +347,7 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.8');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.9');
   assert.equal(routePolicy.PROTECTED_ROUTES.length, 91);
   assert.deepEqual(runtimeCounts, { serverless: 49, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 31);
@@ -441,7 +441,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.8');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.9');
   assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.3');
   assert.equal(routePolicy.PROTECTED_ROUTES.length, 91);
   assert.deepEqual(runtimeCounts, { serverless: 49, express: 42 });
@@ -449,6 +449,14 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
   assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 16);
+  assert.equal(
+    releaseTruth.SESSION_EXCHANGE_CONTRACTS['/api/auth/evaluation-session'],
+    'municontrol-evaluation-session-v1',
+  );
+  assert.equal(
+    releaseTruth.SESSION_EXCHANGE_CONTRACTS['/api/auth/private-link-session'],
+    'municontrol-private-link-session-v1',
+  );
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v3');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory-access'], 'grh-directory-access-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-domain-catalog'], 'grh-domain-catalog-v1');
@@ -486,7 +494,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     assert.match(source, /#decisionBrief/, relativePath);
     if (relativePath === 'manuales.html') {
       assert.match(source, /estado local[\s\S]{0,120}no desplegado/i, relativePath);
-      assert.match(source, /2026-08-13\.8[\s\S]{0,100}2026-08-11\.3/, relativePath);
+      assert.match(source, /2026-08-13\.9[\s\S]{0,100}2026-08-11\.3/, relativePath);
       assert.match(source, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos[\s\S]{0,80}91\s+(?:rutas|firmas)/i, relativePath);
       assert.match(source, /49 Serverless[\s\S]{0,60}42 Express/i, relativePath);
       assert.match(source, /Centro de decisiones[\s\S]{0,1000}Estado local, no desplegado/i, relativePath);

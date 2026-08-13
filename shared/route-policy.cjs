@@ -14,7 +14,7 @@
 
 const { ROLES, isKnownRole } = require('./access-policy.cjs');
 
-const ROUTE_POLICY_VERSION = '2026-08-13.8';
+const ROUTE_POLICY_VERSION = '2026-08-13.9';
 
 const RUNTIMES = Object.freeze({
   SERVERLESS: 'serverless',
@@ -212,6 +212,27 @@ function route(id, runtime, method, path, permission, internalSecrets = []) {
   });
 }
 
+// These two POST routes exchange an already-governed one-click selector for a
+// session. They are intentionally outside PROTECTED_ROUTES because no JWT
+// exists yet. Their handlers must enforce the exact body, identity, tenant,
+// expiry and rate-limit policies before issuing a token.
+const SESSION_EXCHANGE_ROUTES = Object.freeze([
+  Object.freeze({
+    id: 'serverless.auth.evaluation-session.exchange',
+    runtime: RUNTIMES.SERVERLESS,
+    method: 'POST',
+    path: '/auth/evaluation-session',
+    mode: 'published-profile',
+  }),
+  Object.freeze({
+    id: 'serverless.auth.private-link-session.exchange',
+    runtime: RUNTIMES.SERVERLESS,
+    method: 'POST',
+    path: '/auth/private-link-session',
+    mode: 'opaque-link',
+  }),
+]);
+
 // Canonical paths omit the common /api prefix. The resolver accepts exactly
 // one optional /api prefix so production mounts and isolated route harnesses
 // exercise the same policy.
@@ -399,6 +420,18 @@ function resolveProtectedRoute(runtime, method, pathname) {
   ) || null;
 }
 
+function resolveSessionExchangeRoute(runtime, method, pathname) {
+  if (!KNOWN_RUNTIMES.has(runtime) || typeof method !== 'string') return null;
+  const normalizedMethod = method.toUpperCase();
+  const normalizedPath = normalizePath(pathname);
+  if (!normalizedPath) return null;
+  return SESSION_EXCHANGE_ROUTES.find(candidate =>
+    candidate.runtime === runtime &&
+    candidate.method === normalizedMethod &&
+    candidate.path === normalizedPath
+  ) || null;
+}
+
 function authorizeRoute(role, runtime, method, pathname) {
   const routePolicy = resolveProtectedRoute(runtime, method, pathname);
   return routePolicy !== null && routePolicy.permission !== null &&
@@ -455,6 +488,16 @@ function validatePolicy() {
     if (routeSignatures.has(signature)) throw new Error(`Duplicate route policy ${signature}`);
     routeSignatures.add(signature);
   }
+
+
+  for (const exchangeRoute of SESSION_EXCHANGE_ROUTES) {
+    if (routeIds.has(exchangeRoute.id)) throw new Error(`Duplicate route id ${exchangeRoute.id}`);
+    routeIds.add(exchangeRoute.id);
+    if (exchangeRoute.runtime !== RUNTIMES.SERVERLESS || exchangeRoute.method !== 'POST' ||
+        !exchangeRoute.path.startsWith('/auth/') || !['published-profile', 'opaque-link'].includes(exchangeRoute.mode)) {
+      throw new Error(`Invalid session exchange route ${exchangeRoute.id}`);
+    }
+  }
 }
 
 validatePolicy();
@@ -467,6 +510,7 @@ module.exports = Object.freeze({
   PERMISSIONS,
   PERMISSION_GRANTS,
   PROTECTED_ROUTES,
+  SESSION_EXCHANGE_ROUTES,
   isKnownPermission,
   permissionFor,
   getAllowedRoles,
@@ -474,6 +518,7 @@ module.exports = Object.freeze({
   hasPermission,
   hasResourceAction,
   resolveProtectedRoute,
+  resolveSessionExchangeRoute,
   authorizeRoute,
   isInternalRouteAllowed,
 });

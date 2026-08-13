@@ -19,7 +19,11 @@ const publishedDemoPolicy = (await import('../shared/published-demo-policy.cjs')
 const originalFindUnique = prisma.user.findUnique;
 const users = new Map();
 
-prisma.user.findUnique = async ({ where }) => users.get(where.id) || null;
+prisma.user.findUnique = async ({ where }) => {
+  if (where.id) return users.get(where.id) || null;
+  if (where.email) return [...users.values()].find(user => user.email === where.email) || null;
+  return null;
+};
 
 after(async () => {
   prisma.user.findUnique = originalFindUnique;
@@ -57,6 +61,17 @@ function requestFor(id, method, url) {
     url,
     headers: { authorization: `Bearer ${tokenFor(id)}` },
   };
+}
+
+function publishedRequestFor(profile, method, url, tenantId = 'tenant-current') {
+  const token = jwt.sign({
+    id: `published-evaluation:${profile.profileId}`,
+    profileId: profile.profileId,
+    role: profile.role,
+    tenantId,
+    authMode: 'published-evaluation',
+  }, process.env.JWT_SECRET, { expiresIn: '5m' });
+  return { method, url, headers: { authorization: `Bearer ${token}` } };
 }
 
 function responseRecorder() {
@@ -138,7 +153,6 @@ test('unknown routes, resource/actions and methods fail closed after DB-authorit
 });
 
 test('Serverless published identities are constrained by identity, role, tenant and exact route', async () => {
-  const privilegedRoles = new Set(['INTENDENTE', 'TENANT_ADMIN', 'CONTADOR']);
   const aggregateRoutes = [
     ['GET', '/api/grh-executive'],
     ['GET', '/api/grh-quality'],
@@ -156,8 +170,8 @@ test('Serverless published identities are constrained by identity, role, tenant 
     TENANT_ADMIN: ['POST', '/api/data/import'],
     CONTADOR: ['GET', '/api/export-data'],
     INSPECTOR: ['POST', '/api/data/reclamos'],
-    TENANT_USER: ['GET', '/api/grh-executive'],
-    DEMO: ['GET', '/api/grh-executive'],
+    TENANT_USER: ['POST', '/api/data/reclamos'],
+    DEMO: ['POST', '/api/data/reclamos'],
   });
 
   for (const [index, profile] of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.entries()) {
@@ -168,23 +182,35 @@ test('Serverless published identities are constrained by identity, role, tenant 
     });
 
     const meResponse = responseRecorder();
-    const me = await requireAuth(requestFor(id, 'GET', '/api/auth/me'), meResponse);
+    const me = await requireAuth(publishedRequestFor(profile, 'GET', '/api/auth/me'), meResponse);
     assert.equal(me?.email, profile.email, `${profile.email} auth/me`);
 
     for (const [method, url] of aggregateRoutes) {
       const response = responseRecorder();
-      const user = await requireAuth(requestFor(id, method, url), response);
-      if (privilegedRoles.has(profile.role)) {
-        assert.equal(user?.email, profile.email, `${profile.email} ${method} ${url}`);
-      } else {
-        assert.equal(user, null, `${profile.email} must not gain ${method} ${url}`);
-        assert.equal(response.payload.code, 'ROUTE_PERMISSION_DENIED');
-      }
+      const user = await requireAuth(publishedRequestFor(profile, method, url), response);
+      assert.equal(user?.email, profile.email, `${profile.email} aggregate ${method} ${url}`);
     }
+
+    const roleGrantResponse = responseRecorder();
+    const roleGrant = await requireRole(
+      publishedRequestFor(profile, 'GET', '/api/grh-executive'),
+      roleGrantResponse,
+      ['INTENDENTE'],
+    );
+    assert.equal(roleGrant?.email, profile.email, `${profile.email} exact-route role grant`);
+
+    const capabilityGrantResponse = responseRecorder();
+    const capabilityGrant = await requireCapability(
+      publishedRequestFor(profile, 'GET', '/api/grh-quality'),
+      capabilityGrantResponse,
+      routePolicy.RESOURCES.GRH_CONTRACT,
+      routePolicy.ACTIONS.READ,
+    );
+    assert.equal(capabilityGrant?.email, profile.email, `${profile.email} exact-route capability grant`);
 
     const directoryResponse = responseRecorder();
     const directory = await requireAuth(
-      requestFor(id, 'GET', '/api/grh-directory?limit=20'),
+      publishedRequestFor(profile, 'GET', '/api/grh-directory?limit=20'),
       directoryResponse,
     );
     assert.equal(directory, null, `${profile.email} must not gain nominal GRH directory access`);
@@ -193,13 +219,11 @@ test('Serverless published identities are constrained by identity, role, tenant 
     const [sensitiveMethod, sensitiveUrl] = sensitiveRouteForRole[profile.role];
     const sensitiveResponse = responseRecorder();
     const sensitive = await requireAuth(
-      requestFor(id, sensitiveMethod, sensitiveUrl),
+      publishedRequestFor(profile, sensitiveMethod, sensitiveUrl),
       sensitiveResponse,
     );
     assert.equal(sensitive, null, `${profile.email} ${sensitiveMethod} ${sensitiveUrl}`);
-    if (privilegedRoles.has(profile.role) || profile.role === 'INSPECTOR') {
-      assert.equal(sensitiveResponse.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
-    }
+    assert.equal(sensitiveResponse.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
   }
 
   setUser('published-drift', 'SUPER_ADMIN', 'tenant-current', {
@@ -212,6 +236,17 @@ test('Serverless published identities are constrained by identity, role, tenant 
     null,
   );
   assert.equal(driftResponse.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
+
+  const stalePublicTenant = publishedDemoPolicy.resolvePublishedDemoProfile('intendente');
+  const stalePublicResponse = responseRecorder();
+  assert.equal(
+    await requireAuth(
+      publishedRequestFor(stalePublicTenant, 'GET', '/api/auth/me', 'other-tenant'),
+      stalePublicResponse,
+    ),
+    null,
+  );
+  assert.equal(stalePublicResponse.statusCode, 401);
 
   setUser('ordinary-tenant-admin', 'TENANT_ADMIN');
   const ordinaryResponse = responseRecorder();

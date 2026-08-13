@@ -815,6 +815,7 @@ async function readyDiagnostics(page) {
       leaveLeak: /\b(?:leave|licencia individual)\b/i.test(text),
       unsafeNominalDeepLinkLeak: /(?:company|legajo)=|hasAbsence=/i.test(document.documentElement.innerHTML),
       privacyJargonVisible: /\bk\s*(?:=|≥|<|>)\s*\d|\bPII\b|umbral|celdas protegidas/i.test(text),
+      technicalJargonVisible: /\b(?:snapshot|totpago|score|cuarentena|semántica|conciliación|extracto|cross-source)\b/i.test(text),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     };
   });
@@ -925,7 +926,7 @@ async function exerciseReadyControls(page) {
   assert.equal(new URL(page.url()).hash, '#organizationExplorer');
   assert.equal(await page.locator('.structure-explorer__metrics > div').count(), 3);
   assert.match(await page.locator('.structure-explorer__metrics').innerText(),
-    /Participantes con cálculo válido en julio de 2026.*132.*Participación en la cohorte.*15,4%.*Posición entre áreas publicadas.*1 de 9/isu);
+    /Participantes con cálculo válido en julio de 2026.*132.*Participación en el total del período.*15,4%.*Posición entre las áreas disponibles.*1 de 9/isu);
   assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
   assert.equal(await page.locator('[data-testid="organization-explorer-absence-unavailable"]').count(), 0);
   assert.equal(await page.locator('[data-testid="organization-explorer-cross"]').count(), 0);
@@ -952,7 +953,7 @@ async function exerciseReadyControls(page) {
   await secondCostCenter.press('Enter');
   assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Gobierno municipal');
   assert.equal(new URL(page.url()).search, '?dimension=costCenter&company=101&code=3');
-  assert.match(await page.locator('.structure-explorer__metrics').innerText(), /Posición entre áreas publicadas.*2 de 9/isu);
+  assert.match(await page.locator('.structure-explorer__metrics').innerText(), /Posición entre las áreas disponibles.*2 de 9/isu);
   await page.goBack();
   await page.waitForFunction(() => document.querySelector('#organization-explorer-detail-title')?.textContent?.trim() ===
     'Servicios operativos');
@@ -1155,7 +1156,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         await waitReady(page);
 
         const ready = await readyDiagnostics(page);
-        assert.equal(ready.heading, 'Estructura, dotación y áreas de costo');
+        assert.equal(ready.heading, 'Personal, sectores y áreas de costo');
         assert.equal(ready.kpis, 6);
         assert.equal(ready.workforceRows, 6);
         assert.equal(ready.absenceRows, 6);
@@ -1188,6 +1189,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(ready.leaveLeak, false);
         assert.equal(ready.unsafeNominalDeepLinkLeak, false);
         assert.equal(ready.privacyJargonVisible, false);
+        assert.equal(ready.technicalJargonVisible, false);
         assert.ok(ready.overflow <= 1, `desktop overflow=${ready.overflow}`);
 
         await exerciseReadyControls(page);
@@ -1533,7 +1535,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal(new URL(assistantHref, baseUrl).searchParams.get('question'),
           'Mostrá el neto de Administración por sector');
         assert.match(await page.locator('[data-testid="organization-explorer-absence-unavailable"]').innerText(),
-          /Sin desglose publicado.*no publica ausencias por sector informado/isu);
+          /Sin desglose publicado.*no hay un detalle de ausencias para este sector/isu);
 
         await page.locator('[data-testid="organization-explorer-option-sector-3"]').click();
         assert.equal(await page.locator('#organization-explorer-detail-title').innerText(), 'Atención Territorial');
@@ -1563,9 +1565,9 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(), 'Gobierno municipal');
         assert.equal(await page.locator('.structure-explorer__metrics > div').count(), 3);
         assert.match(await page.locator('.structure-explorer__metrics').textContent() || '',
-          /Participantes con cálculo válido en julio de 2026.*110.*Participación en la cohorte.*12,9%.*Posición entre áreas publicadas.*2 de 9/isu);
+          /Participantes con cálculo válido en julio de 2026.*110.*Participación en el total del período.*12,9%.*Posición entre las áreas disponibles.*2 de 9/isu);
         assert.match(await page.locator('[data-testid="cost-center-scope-note"]').textContent() || '',
-          /no describe un departamento vigente.*Base: 856 participantes.*período 2026-07/isu);
+          /no confirma la estructura vigente.*Total usado: 856 participantes.*período 2026-07/isu);
         assert.equal(await page.locator('[data-testid="organization-explorer-directory-action"]').count(), 0);
         assert.equal(await page.locator('[data-testid="organization-explorer-absence-unavailable"]').count(), 0);
         assert.equal(await page.locator('[data-testid="organization-explorer-cross"]').count(), 0);
@@ -1637,7 +1639,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
         assert.equal((await page.locator('#organization-explorer-detail-title').textContent())?.trim(),
           'Sin áreas de costo publicadas');
         assert.match(await page.locator('[data-testid="organization-explorer-detail"]').textContent() || '',
-          /Publicación protegida.*resumen agregado protegido.*No hay identidades seleccionables ni acciones disponibles/isu);
+          /Publicación protegida.*sólo muestra un total general.*No hay personas ni acciones individuales disponibles/isu);
         assert.match(await page.locator('[data-testid="organization-explorer-protected-costCenter"]').textContent() || '',
           /Otros centros protegidos.*856.*100,0%/isu);
         assert.equal(await page.locator('.structure-explorer__metrics').count(), 0);
@@ -1815,7 +1817,7 @@ test('Sala de situación GRH React v2 is governed, actionable and fail-closed', 
           const invalid = page.locator('[data-testid="organization-explorer-invalid-link"]');
           await invalid.waitFor({ state: 'visible' });
           assert.match(await invalid.textContent() || '',
-            /no identifica un área de costo observada.*no se muestran cifras/isu);
+            /no identifica un área de costo.*no se muestran cifras/isu);
           assert.equal(await page.locator(
             '[data-testid="organization-explorer-dimension-costCenter"]',
           ).getAttribute('aria-pressed'), 'true');

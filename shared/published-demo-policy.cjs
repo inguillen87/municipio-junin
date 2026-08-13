@@ -1,17 +1,17 @@
 'use strict';
 
 // Temporary containment for the six role-preview identities that were
-// previously published. This is an authorization ceiling, never a grant:
-// callers must still pass the canonical role/route policy first.
-const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-13.8';
+// previously published. The exact read-only route list is both their grant
+// and their ceiling; no base-role permission can widen it.
+const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-13.9';
 
 const PUBLISHED_DEMO_PROFILES = Object.freeze([
-  Object.freeze({ email: 'admin@junin.gov.ar', role: 'TENANT_ADMIN', tenantSlug: 'junin' }),
-  Object.freeze({ email: 'contador@junin.gov.ar', role: 'CONTADOR', tenantSlug: 'junin' }),
-  Object.freeze({ email: 'demo@junin.gov.ar', role: 'DEMO', tenantSlug: 'junin' }),
-  Object.freeze({ email: 'inspector@junin.gov.ar', role: 'INSPECTOR', tenantSlug: 'junin' }),
-  Object.freeze({ email: 'intendente@junin.gov.ar', role: 'INTENDENTE', tenantSlug: 'junin' }),
-  Object.freeze({ email: 'rrhh@junin.gov.ar', role: 'TENANT_USER', tenantSlug: 'junin' }),
+  Object.freeze({ profileId: 'administrador', label: 'Administrador', email: 'admin@junin.gov.ar', role: 'TENANT_ADMIN', tenantSlug: 'junin' }),
+  Object.freeze({ profileId: 'contador', label: 'Contador', email: 'contador@junin.gov.ar', role: 'CONTADOR', tenantSlug: 'junin' }),
+  Object.freeze({ profileId: 'vista-demo', label: 'Vista demo', email: 'demo@junin.gov.ar', role: 'DEMO', tenantSlug: 'junin' }),
+  Object.freeze({ profileId: 'inspector', label: 'Inspector', email: 'inspector@junin.gov.ar', role: 'INSPECTOR', tenantSlug: 'junin' }),
+  Object.freeze({ profileId: 'intendente', label: 'Intendente', email: 'intendente@junin.gov.ar', role: 'INTENDENTE', tenantSlug: 'junin' }),
+  Object.freeze({ profileId: 'usuario-municipal', label: 'Usuario municipal', email: 'rrhh@junin.gov.ar', role: 'TENANT_USER', tenantSlug: 'junin' }),
 ]);
 
 const PUBLISHED_DEMO_IDENTITIES = Object.freeze(PUBLISHED_DEMO_PROFILES.map(profile => profile.email));
@@ -36,6 +36,26 @@ const PUBLISHED_DEMO_ALLOWED_ROUTE_IDS = Object.freeze([
   'express.auth.me.read',
 ]);
 
+// Public evaluation sessions expose the complete aggregate municipal journey.
+// This is a UI/session projection only; route access remains bounded by the
+// exact read-only route allowlist above and never includes import, export,
+// audit administration or nominal directory access.
+const PUBLISHED_DEMO_CAPABILITIES = Object.freeze([
+  'session.read',
+  'navigation.workspace',
+  'navigation.dashboard',
+  'navigation.reports',
+  'navigation.hacienda',
+  'navigation.grh-executive',
+  'navigation.grh-decisions',
+  'navigation.organization-analytics',
+  'navigation.territory',
+  'navigation.data-quality',
+  'navigation.rrhh',
+  'navigation.ai-assistant',
+  'navigation.help',
+]);
+
 const PUBLISHED_DEMO_DECISION_CODES = Object.freeze({
   NOT_APPLICABLE: 'PUBLISHED_DEMO_NOT_APPLICABLE',
   ALLOWED: 'PUBLISHED_DEMO_ROUTE_ALLOWED',
@@ -44,6 +64,7 @@ const PUBLISHED_DEMO_DECISION_CODES = Object.freeze({
 });
 
 const profileByEmail = new Map(PUBLISHED_DEMO_PROFILES.map(profile => [profile.email, profile]));
+const profileById = new Map(PUBLISHED_DEMO_PROFILES.map(profile => [profile.profileId, profile]));
 const allowedRouteIdSet = new Set(PUBLISHED_DEMO_ALLOWED_ROUTE_IDS);
 
 function canonicalEmail(value) {
@@ -55,6 +76,16 @@ function canonicalEmail(value) {
 function isPublishedDemoIdentity(email) {
   const normalized = canonicalEmail(email);
   return normalized !== null && profileByEmail.has(normalized);
+}
+
+function resolvePublishedDemoProfile(profileId) {
+  if (typeof profileId !== 'string' || !/^[a-z][a-z-]{2,31}$/.test(profileId)) return null;
+  return profileById.get(profileId) || null;
+}
+
+function resolvePublishedDemoProfileByEmail(email) {
+  const normalized = canonicalEmail(email);
+  return normalized === null ? null : (profileByEmail.get(normalized) || null);
 }
 
 function evaluatePublishedDemoRoute({ email, role, tenantSlug, routeId } = {}) {
@@ -94,7 +125,10 @@ module.exports = Object.freeze({
   PUBLISHED_DEMO_PROFILES,
   PUBLISHED_DEMO_IDENTITIES,
   PUBLISHED_DEMO_ALLOWED_ROUTE_IDS,
+  PUBLISHED_DEMO_CAPABILITIES,
   PUBLISHED_DEMO_DECISION_CODES,
   isPublishedDemoIdentity,
+  resolvePublishedDemoProfile,
+  resolvePublishedDemoProfileByEmail,
   evaluatePublishedDemoRoute,
 });

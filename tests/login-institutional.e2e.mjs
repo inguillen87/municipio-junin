@@ -6,19 +6,19 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import accessPolicy from '../shared/access-policy.cjs';
+import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LOGIN_PATH = path.join(REPO, 'login.html');
 const SUCCESS_EMAIL = 'success@junin.gob.ar';
 const TEST_PASSWORD = 'Institutional-test-only';
-const EVALUATION_PASSWORD = 'Junin2026!';
 const PUBLISHED_EVALUATION_IDENTITIES = Object.freeze([
-  Object.freeze({ email: 'intendente@junin.gov.ar', role: 'INTENDENTE' }),
-  Object.freeze({ email: 'admin@junin.gov.ar', role: 'TENANT_ADMIN' }),
-  Object.freeze({ email: 'contador@junin.gov.ar', role: 'CONTADOR' }),
-  Object.freeze({ email: 'rrhh@junin.gov.ar', role: 'TENANT_USER' }),
-  Object.freeze({ email: 'inspector@junin.gov.ar', role: 'INSPECTOR' }),
-  Object.freeze({ email: 'demo@junin.gov.ar', role: 'DEMO' }),
+  Object.freeze({ profileId: 'intendente', role: 'INTENDENTE' }),
+  Object.freeze({ profileId: 'administrador', role: 'TENANT_ADMIN' }),
+  Object.freeze({ profileId: 'contador', role: 'CONTADOR' }),
+  Object.freeze({ profileId: 'usuario-municipal', role: 'TENANT_USER' }),
+  Object.freeze({ profileId: 'inspector', role: 'INSPECTOR' }),
+  Object.freeze({ profileId: 'vista-demo', role: 'DEMO' }),
 ]);
 const SUCCESS_ACCESS = accessPolicy.getSessionAccessForUser({
   role: 'INTENDENTE',
@@ -89,6 +89,66 @@ async function createServer(requestLog) {
       return;
     }
 
+    if (url.pathname === '/api/auth/evaluation-session' && request.method === 'POST') {
+      let body;
+      try {
+        body = await readJsonBody(request);
+      } catch {
+        json(response, 400, { error: 'invalid body' });
+        return;
+      }
+      requestLog.push({ body, contentType: request.headers['content-type'] || '', method: request.method, path: url.pathname });
+      const evaluationIdentity = PUBLISHED_EVALUATION_IDENTITIES.find(identity => identity.profileId === body.profileId);
+      if (!evaluationIdentity) {
+        json(response, 400, { error: 'invalid profile' });
+        return;
+      }
+      const access = accessPolicy.getSessionAccessForUser({ role: evaluationIdentity.role, tenantId: 'tenant-junin-e2e' });
+      json(response, 200, {
+        token: `signed-evaluation-token-${evaluationIdentity.role.toLowerCase()}`,
+        user: {
+          email: '',
+          id: '',
+          name: `Evaluación ${evaluationIdentity.role}`,
+          role: evaluationIdentity.role,
+          tenantId: 'tenant-junin-e2e',
+          capabilities: [...publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES],
+          accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+          homeProfile: access.homeProfile,
+        },
+      });
+      return;
+    }
+
+    if (url.pathname === '/api/auth/private-link-session' && request.method === 'POST') {
+      let body;
+      try {
+        body = await readJsonBody(request);
+      } catch {
+        json(response, 400, { error: 'invalid body' });
+        return;
+      }
+      requestLog.push({ body, contentType: request.headers['content-type'] || '', method: request.method, path: url.pathname, referer: request.headers.referer || '' });
+      if (body.token !== 'opaque-private-link-token-for-login-e2e') {
+        json(response, 401, { error: 'invalid link' });
+        return;
+      }
+      json(response, 200, {
+        token: 'signed-private-link-token-for-login-e2e',
+        user: {
+          email: SUCCESS_EMAIL,
+          id: 'qa-private-intendente',
+          name: 'Autoridad municipal',
+          role: 'INTENDENTE',
+          tenantId: 'tenant-junin-e2e',
+          capabilities: SUCCESS_ACCESS.capabilities,
+          accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+          homeProfile: SUCCESS_ACCESS.homeProfile,
+        },
+      });
+      return;
+    }
+
     if (url.pathname === '/api/auth/login' && request.method === 'POST') {
       let body;
       try {
@@ -103,28 +163,6 @@ async function createServer(requestLog) {
         contentType: request.headers['content-type'] || '',
         method: request.method,
       });
-
-      const evaluationIdentity = PUBLISHED_EVALUATION_IDENTITIES.find(identity => identity.email === body.email);
-      if (evaluationIdentity && body.password === EVALUATION_PASSWORD) {
-        const access = accessPolicy.getSessionAccessForUser({
-          role: evaluationIdentity.role,
-          tenantId: 'tenant-junin-e2e',
-        });
-        json(response, 200, {
-          token: `signed-evaluation-token-${evaluationIdentity.role.toLowerCase()}`,
-          user: {
-            email: evaluationIdentity.email,
-            id: `qa-evaluation-${evaluationIdentity.role.toLowerCase()}`,
-            name: `Evaluación ${evaluationIdentity.role}`,
-            role: evaluationIdentity.role,
-            tenantId: 'tenant-junin-e2e',
-            capabilities: access.capabilities,
-            accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
-            homeProfile: access.homeProfile,
-          },
-        });
-        return;
-      }
 
       const statusByEmail = {
         'unauthorized@junin.gob.ar': 401,
@@ -215,6 +253,8 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /class="tour-link"\s+href="\/roles"/);
   assert.match(source, /No inicia sesi.n ni accede a datos/i);
   assert.match(source, /fetch\('\/api\/auth\/login'/);
+  assert.match(source, /fetch\('\/api\/auth\/evaluation-session'/);
+  assert.match(source, /body: JSON\.stringify\(\{ profileId: profileId \}\)/);
   assert.match(source, /JSON\.stringify\(\{ email: email, password: password \}\)/);
   assert.match(source, /sessionStorage\.setItem\('mjunin_user'/);
   assert.match(source, /sessionStorage\.setItem\('mjunin_token'/);
@@ -229,12 +269,15 @@ test('login source is institutional, self-contained and preserves the auth contr
 
   assert.doesNotMatch(source, /gradient|@keyframes|\bfloat\b|\bglow\b|kpi-card|data-count/i);
   assert.match(source, /data-demo-contract="published-evaluation-readonly-v1"/);
-  assert.match(source, /información histórica resumida/i);
-  assert.match(source, /no permite realizar cambios/i);
+  assert.match(source, /recorrer toda la plataforma/i);
+  assert.match(source, /datos reales disponibles según el perfil/i);
+  assert.match(source, /no muestra fichas personales/i);
+  assert.match(source, /<details class="institutional-access" id="institutionalAccess">[\s\S]*?<summary>Ingresar con cuenta institucional<\/summary>[\s\S]*?<form class="login-form"/i);
   const visibleShell = source.slice(source.indexOf('<body'), source.indexOf('<script>'));
   assert.doesNotMatch(visibleShell, /\b(?:snapshot|capabilities|datasets?|contrato|PII|gobernado|cross-source)\b/i);
-  const publishedEmails = [...source.matchAll(/data-evaluation-email="([^"]+)"/g)].map(match => match[1]);
-  assert.deepEqual(publishedEmails, PUBLISHED_EVALUATION_IDENTITIES.map(identity => identity.email));
+  const publishedProfiles = [...source.matchAll(/data-evaluation-profile="([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(publishedProfiles, PUBLISHED_EVALUATION_IDENTITIES.map(identity => identity.profileId));
+  assert.doesNotMatch(source, /data-evaluation-email|EVALUATION_PASSWORD|Junin2026!/);
   assert.doesNotMatch(source, /\/api\/auth\/seed-demo|ensureSeeded|fillUser\s*\(/i);
   assert.doesNotMatch(source, /AES-256|JWT firmado|HTTPS requerido/i);
   assert.doesNotMatch(source, /<img\b|<canvas\b|<video\b|<link\b[^>]*rel=["']stylesheet/i);
@@ -288,8 +331,7 @@ test('login is responsive, reduced-motion safe and has no external requests', as
       });
       return {
         access: bounds('#accessPanel'),
-        button: bounds('#btnLogin'),
-        email: bounds('#emailInput'),
+        evaluationButtons: Array.from(document.querySelectorAll('.evaluation-button')).map(node => bounds('#' + (node.id || (node.id = 'metric-' + Math.random().toString(36).slice(2))))),
         h1: document.querySelectorAll('h1').length,
         heavyAssets: document.querySelectorAll('img, canvas, video, link[rel="stylesheet"], script[src]:not([src="/js/pwa-register.js"])').length,
         main: document.querySelectorAll('main').length,
@@ -300,9 +342,8 @@ test('login is responsive, reduced-motion safe and has no external requests', as
           return value.trim().endsWith('ms') ? numeric : numeric * 1000;
         })),
         pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        password: bounds('#passInput'),
         pwaRegisterScripts: document.querySelectorAll('script[src="/js/pwa-register.js"]').length,
-        toggle: bounds('#togglePassBtn'),
+        institutionalOpen: document.querySelector('#institutionalAccess').open,
       };
     });
 
@@ -313,7 +354,8 @@ test('login is responsive, reduced-motion safe and has no external requests', as
     assert.ok(metrics.pageOverflow <= 1, `${viewport.name}: page must not overflow horizontally`);
     assert.ok(metrics.mainOverflow <= 1, `${viewport.name}: main must not overflow horizontally`);
     assert.ok(metrics.access.left >= -1 && metrics.access.right <= viewport.width + 1, `${viewport.name}: access panel fits viewport`);
-    for (const [name, box] of Object.entries({ button: metrics.button, email: metrics.email, password: metrics.password, toggle: metrics.toggle })) {
+    assert.equal(metrics.institutionalOpen, false, `${viewport.name}: institutional form stays closed by default`);
+    for (const [name, box] of metrics.evaluationButtons.entries()) {
       assert.ok(box.height >= 44, `${viewport.name}: ${name} target height is at least 44px`);
       assert.ok(box.width >= 44, `${viewport.name}: ${name} target width is at least 44px`);
     }
@@ -343,20 +385,20 @@ test('the six published evaluation buttons authenticate their exact role without
     await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
     await Promise.all([
       page.waitForURL(`${baseUrl}/inicio.html`),
-      page.click(`[data-evaluation-email="${identity.email}"]`),
+      page.click(`[data-evaluation-profile="${identity.profileId}"]`),
     ]);
     const stored = await page.evaluate(() => ({
       token: sessionStorage.getItem('mjunin_token'),
       user: JSON.parse(sessionStorage.getItem('mjunin_user')),
     }));
-    assert.equal(stored.user.email, identity.email);
+    assert.equal(stored.user.email, '');
     assert.equal(stored.user.role, identity.role);
+    assert.deepEqual(stored.user.capabilities, publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES);
     assert.match(stored.token, /^signed-evaluation-token-/);
   }
 
   assert.deepEqual(requestLog.map(entry => entry.body), PUBLISHED_EVALUATION_IDENTITIES.map(identity => ({
-    email: identity.email,
-    password: EVALUATION_PASSWORD,
+    profileId: identity.profileId,
   })));
 });
 
@@ -384,6 +426,8 @@ test('login keyboard flow, guarded errors and successful session remain accessib
   await page.keyboard.press('Enter');
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'accessPanel');
 
+  await page.locator('#institutionalAccess').evaluate(node => { node.open = true; });
+  await page.waitForTimeout(20);
   await page.focus('#togglePassBtn');
   const focusStyle = await page.$eval('#togglePassBtn', node => {
     const style = getComputedStyle(node);
@@ -510,6 +554,7 @@ test('login rejects a server-supplied external default path and falls back to in
     if (!request.url().startsWith(baseUrl)) externalRequests.push(request.url());
   });
   await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
+  await page.click('#institutionalAccess summary');
   await page.fill('#emailInput', 'unsafe-path@junin.gob.ar');
   await page.fill('#passInput', TEST_PASSWORD);
   await Promise.all([
@@ -538,6 +583,7 @@ test('login accepts only a capability-bound private return and rejects hostile r
   });
 
   await page.goto(`${baseUrl}/login.html?return=rrhh.html%23peopleDirectory`, { waitUntil: 'networkidle' });
+  await page.click('#institutionalAccess summary');
   await page.fill('#emailInput', SUCCESS_EMAIL);
   await page.fill('#passInput', TEST_PASSWORD);
   await Promise.all([
@@ -547,6 +593,7 @@ test('login accepts only a capability-bound private return and rejects hostile r
   assert.equal(await page.textContent('#peopleDirectory'), 'Directorio privado');
 
   await page.goto(`${baseUrl}/login.html?return=https%3A%2F%2Fattacker.example%2F`, { waitUntil: 'networkidle' });
+  await page.click('#institutionalAccess summary');
   await page.fill('#emailInput', SUCCESS_EMAIL);
   await page.fill('#passInput', TEST_PASSWORD);
   await Promise.all([
@@ -557,7 +604,7 @@ test('login accepts only a capability-bound private return and rejects hostile r
   assert.deepEqual(externalRequests, []);
 });
 
-test('private GRH login explains the handoff, rejects public profiles and returns an authorized identity to the directory', async t => {
+test('private GRH login explains the handoff and returns an authorized identity to the directory', async t => {
   const requestLog = [];
   const server = await createServer(requestLog);
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -587,14 +634,6 @@ test('private GRH login explains the handoff, rejects public profiles and return
   assert.equal(await page.textContent('#accessKicker'), 'Directorio privado de RRHH');
   assert.equal(await page.textContent('#btnLogin'), 'Ingresar al directorio de RRHH');
 
-  await page.fill('#emailInput', PUBLISHED_EVALUATION_IDENTITIES[0].email);
-  await page.fill('#passInput', EVALUATION_PASSWORD);
-  await page.click('#btnLogin');
-  await page.waitForSelector('#errorMsg:not([hidden])');
-  assert.match(await page.textContent('#errorMsg'), /perfiles de evaluación no abren fichas personales/i);
-  assert.equal(page.url(), privateLogin);
-  assert.equal(await page.evaluate(() => sessionStorage.getItem('mjunin_token')), null);
-
   await page.fill('#emailInput', SUCCESS_EMAIL);
   await page.fill('#passInput', TEST_PASSWORD);
   await Promise.all([
@@ -608,4 +647,44 @@ test('private GRH login explains the handoff, rejects public profiles and return
     { authorization: 'Bearer signed-token-for-login-e2e', limit: '1', purpose: 'DIRECTORY_BROWSE' },
   ]);
   assert.deepEqual(externalRequests, []);
+});
+
+test('opaque private link clears its fragment before exchange and opens the full nominal INTENDENTE session', async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  t.after(async () => context.close());
+  const page = await context.newPage();
+  const fragmentSeenByRequest = [];
+  page.on('request', request => {
+    if (request.url().includes('/api/auth/private-link-session')) {
+      fragmentSeenByRequest.push(new URL(request.url()).hash);
+    }
+  });
+  await Promise.all([
+    page.waitForURL(`${baseUrl}/inicio.html`),
+    page.goto(`${baseUrl}/login.html#access=opaque-private-link-token-for-login-e2e`, { waitUntil: 'networkidle' }),
+  ]);
+  const stored = await page.evaluate(() => ({
+    token: sessionStorage.getItem('mjunin_token'),
+    user: JSON.parse(sessionStorage.getItem('mjunin_user')),
+  }));
+  assert.equal(stored.token, 'signed-private-link-token-for-login-e2e');
+  assert.equal(stored.user.id, 'qa-private-intendente');
+  assert.equal(stored.user.email, SUCCESS_EMAIL);
+  assert.equal(stored.user.role, 'INTENDENTE');
+  assert.deepEqual(fragmentSeenByRequest, ['']);
+  assert.deepEqual(requestLog, [{
+    body: { token: 'opaque-private-link-token-for-login-e2e' },
+    contentType: 'application/json',
+    method: 'POST',
+    path: '/api/auth/private-link-session',
+    referer: `${baseUrl}/login.html`,
+  }]);
 });

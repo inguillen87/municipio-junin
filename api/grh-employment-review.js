@@ -3,8 +3,10 @@ import { assertPrismaDatabaseTransport, prisma } from './lib/db.js';
 import { inspectGrhEmploymentReviewContract } from './lib/grh-employment-review-contract.js';
 import {
   buildGrhEmploymentReviewAggregateProjection,
+  buildGrhEmploymentReviewProjection,
   GRH_EMPLOYMENT_REVIEW_SCHEMA_VERSION,
 } from './lib/grh-employment-review-projection.js';
+import { loadGrhDirectorySnapshotArtifact } from './lib/grh-directory-snapshot.js';
 import routePolicy from '../shared/route-policy.cjs';
 import releaseTruthContract from '../shared/release-truth-contract.cjs';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
@@ -66,6 +68,20 @@ async function defaultAggregateQuery(sql, values) {
   return { rows };
 }
 
+async function defaultSnapshotQuery(sql, values) {
+  if (!assertPrismaDatabaseTransport()) throw new Error('GRH directory snapshot unavailable');
+  const rows = await prisma.$queryRawUnsafe(sql, ...values);
+  return { rows };
+}
+
+export async function readGrhEmploymentReviewSnapshot({
+  tenantId,
+  key,
+  queryImpl = defaultSnapshotQuery,
+}) {
+  return loadGrhDirectorySnapshotArtifact({ tenantId, key, queryImpl });
+}
+
 export async function readGrhEmploymentReviewAggregate({
   tenantId,
   queryImpl = defaultAggregateQuery,
@@ -108,6 +124,8 @@ export function createGrhEmploymentReviewHandler({
   requireDatasetTenantImpl = requireDatasetTenant,
   readAggregateImpl = readGrhEmploymentReviewAggregate,
   buildProjectionImpl = buildGrhEmploymentReviewAggregateProjection,
+  readSnapshotImpl = readGrhEmploymentReviewSnapshot,
+  buildSnapshotProjectionImpl = buildGrhEmploymentReviewProjection,
   inspectContractImpl = inspectGrhEmploymentReviewContract,
   isPublishedDemoIdentityImpl = isPublishedDemoIdentity,
   environment = process.env,
@@ -134,14 +152,27 @@ export function createGrhEmploymentReviewHandler({
     try {
       const expectedSha = environment.GRH_SOURCE_SHA256;
       if (!SOURCE_SHA256_PATTERN.test(expectedSha || '')) throw new Error('GRH source pin unavailable');
-      const aggregate = await readAggregateImpl({
-        tenantId: String(caller.tenantId),
-      });
-      if (aggregate?.source?.sourceSha256 !== expectedSha) {
-        throw new Error('GRH employment review source invalid');
-      }
       const audience = isPublishedDemoIdentityImpl(caller.email) ? 'portable' : 'private';
-      const projection = buildProjectionImpl(aggregate, { audience });
+      let projection;
+      if (typeof environment.GRH_DIRECTORY_SNAPSHOT_KEY_V1 === 'string' &&
+          environment.GRH_DIRECTORY_SNAPSHOT_KEY_V1.length > 0) {
+        const artifact = await readSnapshotImpl({
+          tenantId: String(caller.tenantId),
+          key: environment.GRH_DIRECTORY_SNAPSHOT_KEY_V1,
+        });
+        if (artifact?.source?.sha256 !== expectedSha) {
+          throw new Error('GRH employment review source invalid');
+        }
+        projection = buildSnapshotProjectionImpl(artifact, { audience });
+      } else {
+        const aggregate = await readAggregateImpl({
+          tenantId: String(caller.tenantId),
+        });
+        if (aggregate?.source?.sourceSha256 !== expectedSha) {
+          throw new Error('GRH employment review source invalid');
+        }
+        projection = buildProjectionImpl(aggregate, { audience });
+      }
       if (!inspectContractImpl(projection)?.ok) throw new Error('GRH employment review contract invalid');
       return res.status(200).json(projection);
     } catch {

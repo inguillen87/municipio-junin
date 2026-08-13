@@ -229,7 +229,22 @@
     }
 
     .login-form {
-      margin-top: 30px;
+      margin-top: 18px;
+    }
+
+    .institutional-access {
+      margin-top: 18px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+
+    .institutional-access summary {
+      min-height: 44px;
+      padding: 12px 4px;
+      color: var(--accent-strong);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
     }
 
     .form-field + .form-field { margin-top: 20px; }
@@ -495,8 +510,6 @@
 
     .evaluation-access {
       margin-top: 24px;
-      padding-top: 22px;
-      border-top: 1px solid var(--border);
     }
 
     .private-access-notice {
@@ -660,9 +673,42 @@
           <a href="/login.html">Volver a los accesos de evaluación</a>
         </section>
 
-        <form class="login-form" id="loginForm" autocomplete="on" novalidate>
-          <div class="error-message" id="errorMsg" role="alert" aria-live="assertive" tabindex="-1" hidden>No pudimos completar el acceso.</div>
+        <div class="error-message" id="errorMsg" role="alert" aria-live="assertive" tabindex="-1" hidden>No pudimos completar el acceso.</div>
 
+        <section
+          class="evaluation-access"
+          id="evaluationAccess"
+          data-demo-contract="published-evaluation-readonly-v1"
+          aria-labelledby="evaluationTitle"
+        >
+          <h3 id="evaluationTitle">Elegí qué función querés probar</h3>
+          <p class="evaluation-copy">Entrá con un clic para recorrer toda la plataforma y consultar los datos reales disponibles según el perfil. La evaluación es de sólo lectura y no muestra fichas personales.</p>
+          <div class="evaluation-grid" id="evaluationGrid">
+            <button class="evaluation-button" type="button" data-evaluation-profile="intendente">
+              <span class="evaluation-mark">IN</span><span class="evaluation-label">Entrar como Intendente</span><span class="evaluation-detail">Prioridades e información general</span>
+            </button>
+            <button class="evaluation-button" type="button" data-evaluation-profile="administrador">
+              <span class="evaluation-mark">AD</span><span class="evaluation-label">Entrar como Administrador</span><span class="evaluation-detail">Cargas y calidad</span>
+            </button>
+            <button class="evaluation-button" type="button" data-evaluation-profile="contador">
+              <span class="evaluation-mark">CO</span><span class="evaluation-label">Entrar como Contador</span><span class="evaluation-detail">Liquidaciones y control</span>
+            </button>
+            <button class="evaluation-button" type="button" data-evaluation-profile="usuario-municipal">
+              <span class="evaluation-mark">UM</span><span class="evaluation-label">Entrar como Usuario municipal</span><span class="evaluation-detail">Consulta acotada</span>
+            </button>
+            <button class="evaluation-button" type="button" data-evaluation-profile="inspector">
+              <span class="evaluation-mark">IS</span><span class="evaluation-label">Entrar como Inspector</span><span class="evaluation-detail">Territorio y ayuda</span>
+            </button>
+            <button class="evaluation-button" type="button" data-evaluation-profile="vista-demo">
+              <span class="evaluation-mark">DE</span><span class="evaluation-label">Entrar a la Vista demo</span><span class="evaluation-detail">Recorrido básico</span>
+            </button>
+          </div>
+          <p class="evaluation-status" id="evaluationStatus" role="status" aria-live="polite"></p>
+        </section>
+
+        <details class="institutional-access" id="institutionalAccess">
+          <summary>Ingresar con cuenta institucional</summary>
+        <form class="login-form" id="loginForm" autocomplete="on" novalidate>
           <div class="form-field">
             <label class="form-label" for="emailInput">Correo institucional</label>
             <input
@@ -708,37 +754,7 @@
 
           <button class="submit-button" id="btnLogin" type="submit">Ingresar al sistema</button>
         </form>
-
-        <section
-          class="evaluation-access"
-          id="evaluationAccess"
-          data-demo-contract="published-evaluation-readonly-v1"
-          aria-labelledby="evaluationTitle"
-        >
-          <h3 id="evaluationTitle">Elegí qué función querés probar</h3>
-          <p class="evaluation-copy">La evaluación es de sólo lectura: muestra información histórica resumida y no permite realizar cambios.</p>
-          <div class="evaluation-grid" id="evaluationGrid">
-            <button class="evaluation-button" type="button" data-evaluation-email="intendente@junin.gov.ar">
-              <span class="evaluation-mark">IN</span><span class="evaluation-label">Intendente</span><span class="evaluation-detail">Prioridades y personal</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-email="admin@junin.gov.ar">
-              <span class="evaluation-mark">AD</span><span class="evaluation-label">Administrador</span><span class="evaluation-detail">Cargas y calidad</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-email="contador@junin.gov.ar">
-              <span class="evaluation-mark">CO</span><span class="evaluation-label">Contador</span><span class="evaluation-detail">Liquidaciones y control</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-email="rrhh@junin.gov.ar">
-              <span class="evaluation-mark">UM</span><span class="evaluation-label">Usuario municipal</span><span class="evaluation-detail">Consulta acotada</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-email="inspector@junin.gov.ar">
-              <span class="evaluation-mark">IS</span><span class="evaluation-label">Inspector</span><span class="evaluation-detail">Territorio y ayuda</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-email="demo@junin.gov.ar">
-              <span class="evaluation-mark">DE</span><span class="evaluation-label">Vista demo</span><span class="evaluation-detail">Recorrido básico</span>
-            </button>
-          </div>
-          <p class="evaluation-status" id="evaluationStatus" role="status" aria-live="polite"></p>
-        </section>
+        </details>
 
         <a class="tour-link" id="privateGrhLoginLink" href="/login.html?access=private-grh&amp;return=rrhh.html%23peopleDirectory">
           <span>Ingresar al directorio privado de RRHH<span class="tour-link-note">Requiere la cuenta privada asignada y no usa los perfiles de evaluación.</span></span>
@@ -775,15 +791,11 @@
       var accessTitle = document.getElementById('accessTitle');
       var accessIntro = document.getElementById('accessIntro');
       var privateAccessNotice = document.getElementById('privateAccessNotice');
+      var institutionalAccess = document.getElementById('institutionalAccess');
       var evaluationAccess = document.getElementById('evaluationAccess');
       var evaluationGrid = document.getElementById('evaluationGrid');
       var evaluationStatus = document.getElementById('evaluationStatus');
       var privateGrhLoginLink = document.getElementById('privateGrhLoginLink');
-      var EVALUATION_PASSWORD = 'Junin2026!';
-      var PUBLISHED_EVALUATION_EMAILS = Object.freeze(Array.from(
-        evaluationGrid.querySelectorAll('[data-evaluation-email]'),
-        function (button) { return String(button.dataset.evaluationEmail || '').toLowerCase(); }
-      ));
       var SAFE_DEFAULT_PATHS = Object.freeze(['inicio.html']);
       var SAFE_RETURN_PATHS = Object.freeze({
         'rrhh.html#peopleDirectory': 'navigation.rrhh',
@@ -812,6 +824,7 @@
         accessIntro.textContent = 'Usá la cuenta privada que te asignaron. El sistema confirmará si tu función permite esta consulta.';
         privateAccessNotice.hidden = false;
         evaluationAccess.hidden = true;
+        institutionalAccess.open = true;
         privateGrhLoginLink.hidden = true;
         submitButton.textContent = 'Ingresar al directorio de RRHH';
         emailInput.focus({ preventScroll: true });
@@ -921,13 +934,6 @@
 
         var email = emailInput.value.trim().toLowerCase();
         var password = passInput.value;
-        if (privateGrhMode && PUBLISHED_EVALUATION_EMAILS.indexOf(email) !== -1) {
-          passInput.value = '';
-          emailInput.setAttribute('aria-invalid', 'true');
-          passInput.setAttribute('aria-invalid', 'true');
-          showError('Los perfiles de evaluación no abren fichas personales. Ingresá la cuenta privada de RRHH que te asignaron.', emailInput);
-          return;
-        }
         if (!email || !password) {
           var missing = failureForStatus(400);
           emailInput.setAttribute('aria-invalid', 'true');
@@ -980,14 +986,97 @@
             }
           }
 
-          var session = Object.assign({}, payload.user, { loginAt: new Date().toISOString() });
-          sessionStorage.setItem('mjunin_user', JSON.stringify(session));
-          sessionStorage.setItem('mjunin_token', payload.token);
-          submitButton.textContent = 'Accediendo…';
-          window.location.href = validatedReturnPath(session) || validatedDefaultPath(session);
+          persistSession(payload);
         } catch (error) {
           setSubmitting(false);
           showError('El servicio de acceso no está disponible en este momento. Intentá nuevamente más tarde.', errorMessage);
+        }
+      }
+
+      function persistSession(payload) {
+        var session = Object.assign({}, payload.user, { loginAt: new Date().toISOString() });
+        sessionStorage.setItem('mjunin_user', JSON.stringify(session));
+        sessionStorage.setItem('mjunin_token', payload.token);
+        submitButton.textContent = 'Accediendo…';
+        window.location.href = validatedReturnPath(session) || validatedDefaultPath(session);
+      }
+
+      async function exchangeEvaluation(profileId, label) {
+        resetError();
+        evaluationStatus.textContent = 'Abriendo ' + label + '…';
+        setSubmitting(true);
+        try {
+          var response = await fetch('/api/auth/evaluation-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profileId: profileId })
+          });
+          var payload = await response.json().catch(function () { return {}; });
+          if (!response.ok || !payload.token || !payload.user) {
+            setSubmitting(false);
+            evaluationStatus.textContent = '';
+            showError(
+              response.status === 429
+                ? 'Se alcanzó el límite de accesos. Esperá antes de volver a intentar.'
+                : 'No pudimos abrir este perfil en este momento. Intentá nuevamente.',
+              errorMessage
+            );
+            return;
+          }
+          persistSession(payload);
+        } catch (error) {
+          setSubmitting(false);
+          evaluationStatus.textContent = '';
+          showError('El acceso de evaluación no está disponible en este momento.', errorMessage);
+        }
+      }
+
+      function readAndClearPrivateLinkToken() {
+        var raw = String(window.location.hash || '');
+        if (!raw.startsWith('#access=')) return null;
+        var params = new URLSearchParams(raw.slice(1));
+        var token = params.getAll('access').length === 1 && Array.from(params.keys()).length === 1
+          ? params.get('access')
+          : null;
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        return token;
+      }
+
+      async function exchangePrivateLink(token) {
+        institutionalAccess.hidden = true;
+        evaluationAccess.hidden = true;
+        privateGrhLoginLink.hidden = true;
+        accessKicker.textContent = 'Acceso institucional';
+        accessTitle.textContent = 'Confirmando tu enlace seguro';
+        accessIntro.textContent = 'El enlace ya fue retirado de la barra del navegador.';
+        setSubmitting(true);
+        try {
+          var response = await fetch('/api/auth/private-link-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token })
+          });
+          token = '';
+          var payload = await response.json().catch(function () { return {}; });
+          if (!response.ok || !payload.token || !payload.user) {
+            setSubmitting(false);
+            institutionalAccess.hidden = false;
+            institutionalAccess.open = true;
+            showError(
+              response.status === 429
+                ? 'Se alcanzó el límite de accesos. Esperá antes de volver a intentar.'
+                : 'El enlace institucional no es válido o ya venció.',
+              errorMessage
+            );
+            return;
+          }
+          persistSession(payload);
+        } catch (error) {
+          token = '';
+          setSubmitting(false);
+          institutionalAccess.hidden = false;
+          institutionalAccess.open = true;
+          showError('No pudimos confirmar el enlace institucional en este momento.', errorMessage);
         }
       }
 
@@ -996,12 +1085,14 @@
       evaluationGrid.addEventListener('click', function (event) {
         var button = event.target.closest('.evaluation-button');
         if (!button) return;
-        emailInput.value = button.dataset.evaluationEmail;
-        passInput.value = EVALUATION_PASSWORD;
-        evaluationStatus.textContent = 'Validando el perfil ' + button.querySelector('.evaluation-label').textContent + '…';
-        form.requestSubmit();
+        exchangeEvaluation(
+          String(button.dataset.evaluationProfile || ''),
+          button.querySelector('.evaluation-label').textContent
+        );
       });
       applyAccessContext();
+      var privateLinkToken = readAndClearPrivateLinkToken();
+      if (privateLinkToken) exchangePrivateLink(privateLinkToken);
       window.togglePass = togglePass;
       window.doLogin = doLogin;
     })();

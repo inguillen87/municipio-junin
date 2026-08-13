@@ -32,17 +32,17 @@ const COMPONENT_ORDER: readonly QualityComponentKey[] = [
 
 const domainLabels: Readonly<Record<TemporalDomainKey, string>> = Object.freeze({
   ausencia: 'Ausencias',
-  calculo: 'Control de cálculo',
+  calculo: 'Liquidaciones calculadas',
   legamov: 'Movimientos',
   licencia: 'Licencias históricas',
-  totpago: 'Control de liquidaciones',
+  totpago: 'Resumen de liquidaciones',
 });
 
 const componentLabels: Readonly<Record<QualityComponentKey, string>> = Object.freeze({
-  temporalValidity: 'Validez temporal',
-  referentialIntegrity: 'Integridad referencial',
-  payrollReconciliation: 'Conciliación entre fuentes',
-  legajoKeyUniqueness: 'Unicidad de clave de legajo',
+  temporalValidity: 'Fechas y períodos correctos',
+  referentialIntegrity: 'Registros vinculados a legajos',
+  payrollReconciliation: 'Coincidencia de liquidaciones',
+  legajoKeyUniqueness: 'Legajos sin duplicados',
 });
 
 const numberFormatter = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
@@ -109,30 +109,30 @@ function buildKpis(data: QualityContract): readonly QualityKpiViewModel[] {
   return [
     {
       key: 'temporalValidity',
-      label: 'Registros con período válido',
+      label: 'Registros con fechas correctas',
       value: formatPercent(data.temporal.validRatePct),
       note: `${formatNumber(data.temporal.validRows)} de ${formatNumber(data.temporal.rows)} registros evaluados.`,
       tone: 'green',
     },
     {
       key: 'referential',
-      label: 'Vínculos correctos con legajos',
+      label: 'Registros vinculados a legajos',
       value: formatPercent(data.quality.components.referentialIntegrity.score),
-      note: 'Control agregado sobre las cuatro fuentes de personas priorizadas.',
+      note: 'Revisión de los cuatro conjuntos de datos que usan el número de legajo.',
       tone: 'green',
     },
     {
       key: 'reconciliation',
-      label: 'Controles que coinciden',
+      label: 'Liquidaciones que coinciden',
       value: `${formatNumber(data.reconciliation.fullyReconciledRuns)} de ${formatNumber(data.reconciliation.matchedRuns)}`,
       note: reconciliationDiffers
-        ? 'La comparación entre fuentes requiere revisión.'
-        : 'Todos los controles vinculados coinciden por completo.',
+        ? 'Hay diferencias entre el cálculo y el resumen de liquidaciones.'
+        : 'El cálculo y el resumen de liquidaciones coinciden.',
       tone: reconciliationDiffers ? 'red' : 'green',
     },
     {
       key: 'quarantine',
-      label: 'Registros apartados para revisar',
+      label: 'Registros pendientes de revisión',
       value: formatNumber(data.temporal.quarantineRows),
       note: 'No ingresan a los indicadores hasta resolver su fecha o período.',
       tone: data.temporal.quarantineRows > 0 ? 'amber' : 'green',
@@ -149,44 +149,44 @@ function buildExecutiveSummary(data: QualityContract): QualityExecutiveSummaryVi
     return {
       tone: 'attention',
       statusLabel: 'Disponible con observaciones',
-      headline: 'El corte permite leer indicadores agregados, pero la comparación de liquidaciones requiere revisión.',
-      description: `Se verificaron ${formatNumber(data.inventory.all.totalTables)} tablas y ${formatNumber(data.inventory.all.totalRows)} filas del backup. Es una copia histórica, no información en tiempo real.`,
+      headline: 'Los datos se pueden consultar, pero algunas liquidaciones necesitan revisión.',
+      description: `Se revisaron ${formatNumber(data.inventory.all.totalTables)} tablas y ${formatNumber(data.inventory.all.totalRows)} registros del respaldo municipal. La información está actualizada hasta el ${formatDate(data.source.snapshotAsOf)}.`,
       strengths: [
-        `${formatPercent(data.temporal.validRatePct)} de los registros evaluados tiene un período válido.`,
-        `El control agregado de vínculos con legajos alcanza ${formatPercent(data.quality.components.referentialIntegrity.score)}.`,
-        `${formatNumber(data.referential.legajo.uniqueKeys)} claves de legajo son únicas en el padrón evaluado.`,
+        `${formatPercent(data.temporal.validRatePct)} de los registros tiene fechas correctas.`,
+        `${formatPercent(data.quality.components.referentialIntegrity.score)} de los registros se pudo vincular correctamente con un legajo.`,
+        `Los ${formatNumber(data.referential.legajo.uniqueKeys)} legajos revisados no están duplicados.`,
       ],
-      attentionTitle: `${formatNumber(incompleteRuns)} de ${formatNumber(data.reconciliation.matchedRuns)} controles comparados no coinciden por completo`,
-      attentionDetail: 'La diferencia surge al comparar el control de cálculo con la fuente auxiliar de control de liquidaciones.',
-      impact: 'Reduce la confianza de esa comparación. No demuestra pagos faltantes ni acredita transferencias bancarias, efectivo o asientos contables.',
-      nextActionTitle: 'Revisar primero los controles que no coinciden',
-      nextActionDetail: 'Documentar la causa de cada diferencia y mantenerla fuera de cualquier conclusión financiera hasta conciliar las fuentes.',
+      attentionTitle: `${formatNumber(incompleteRuns)} de ${formatNumber(data.reconciliation.matchedRuns)} liquidaciones revisadas no coinciden por completo`,
+      attentionDetail: 'El importe o alguno de sus conceptos difiere entre el cálculo y el resumen de liquidaciones.',
+      impact: 'Esas diferencias deben aclararse antes de usar este control para una decisión financiera. No significan por sí solas que falte un pago.',
+      nextActionTitle: 'Revisar primero las liquidaciones con diferencias',
+      nextActionDetail: 'Identificar el concepto que difiere, registrar el motivo y corregirlo o justificarlo antes del próximo informe.',
     };
   }
 
   return {
     tone: hasTemporalReview ? 'attention' : 'positive',
-    statusLabel: hasTemporalReview ? 'Disponible con observaciones' : 'Controles agregados completos',
+    statusLabel: hasTemporalReview ? 'Disponible con observaciones' : 'Datos revisados',
     headline: hasTemporalReview
-      ? 'La comparación de liquidaciones coincide; quedan registros con fechas o períodos para revisar.'
-      : 'Los controles agregados publicados no muestran observaciones pendientes.',
-    description: `Se verificaron ${formatNumber(data.inventory.all.totalTables)} tablas y ${formatNumber(data.inventory.all.totalRows)} filas del backup. Es una copia histórica, no información en tiempo real.`,
+      ? 'Las liquidaciones coinciden; sólo quedan registros con fechas para revisar.'
+      : 'Los datos revisados no muestran diferencias pendientes.',
+    description: `Se revisaron ${formatNumber(data.inventory.all.totalTables)} tablas y ${formatNumber(data.inventory.all.totalRows)} registros del respaldo municipal. La información está actualizada hasta el ${formatDate(data.source.snapshotAsOf)}.`,
     strengths: [
-      `${formatPercent(data.temporal.validRatePct)} de los registros evaluados tiene un período válido.`,
-      `Los ${formatNumber(data.reconciliation.matchedRuns)} controles comparados coinciden por completo.`,
-      `El control agregado de vínculos con legajos alcanza ${formatPercent(data.quality.components.referentialIntegrity.score)}.`,
+      `${formatPercent(data.temporal.validRatePct)} de los registros tiene fechas correctas.`,
+      `Las ${formatNumber(data.reconciliation.matchedRuns)} liquidaciones revisadas coinciden por completo.`,
+      `${formatPercent(data.quality.components.referentialIntegrity.score)} de los registros se pudo vincular correctamente con un legajo.`,
     ],
     attentionTitle: hasTemporalReview
       ? `${formatNumber(data.temporal.quarantineRows)} registros quedaron apartados por fecha o período`
       : 'No hay registros apartados por las reglas temporales',
     attentionDetail: hasTemporalReview
       ? 'No ingresan a los indicadores válidos hasta que se documente su corrección o exclusión.'
-      : 'El universo temporal evaluado no presenta exclusiones pendientes.',
-    impact: 'La comparación es un control interno de consistencia. No acredita transferencias bancarias, efectivo ni asientos contables.',
-    nextActionTitle: hasTemporalReview ? 'Resolver los registros apartados' : 'Sostener el control en el próximo corte',
+      : 'No hay registros excluidos por problemas de fecha.',
+    impact: 'Esta revisión confirma que los datos son consistentes entre sí. No confirma que una transferencia o un pago se haya realizado.',
+    nextActionTitle: hasTemporalReview ? 'Resolver los registros pendientes' : 'Repetir la revisión con la próxima actualización',
     nextActionDetail: hasTemporalReview
       ? 'Revisar las fechas en la fuente, documentar la decisión y volver a ejecutar el control sin reescribir el backup.'
-      : 'Repetir estas validaciones antes de publicar un nuevo snapshot.',
+      : 'Repetir estas validaciones antes de publicar la próxima actualización.',
   };
 }
 
@@ -251,20 +251,20 @@ function buildLineage(data: QualityContract): readonly LineageStepViewModel[] {
     },
     {
       index: '02',
-      title: 'Inventario focal reconciliado',
+      title: 'Inventario de datos revisado',
       detail: `${formatNumber(data.inventory.focal.totalTables)} tablas de foco y ${formatNumber(data.inventory.focal.totalRows)} filas coinciden con el diccionario completo.`,
       state: 'Validado',
     },
     {
       index: '03',
-      title: 'Calidad agregada validada',
-      detail: `Contrato ${data.schemaVersion} derivado de ${data.lineage.semanticSchemaVersion}; personas_junin permanece excluida.`,
+      title: 'Reglas de calidad aplicadas',
+      detail: `Se aplicó la versión ${data.schemaVersion} de las reglas de calidad. La tabla personas_junin no forma parte de esta pantalla.`,
       state: 'Validado',
     },
     {
       index: '04',
       title: 'Entrega mínima al navegador',
-      detail: 'La sesión recibió sólo /api/grh-quality, sin profile, semantic, filas crudas, etiquetas, códigos ni series monetarias.',
+      detail: 'La pantalla recibe sólo los resultados necesarios; no descarga filas originales, identificadores ni importes individuales.',
       state: 'Validado',
     },
   ];
@@ -277,21 +277,21 @@ function buildRisks(data: QualityContract): readonly RiskViewModel[] {
     {
       level: 'guarded',
       mark: 'P',
-      title: 'PII contenida en la frontera del servidor',
-      detail: 'Esta proyección no exporta identificadores, etiquetas, códigos, filas crudas ni personas_junin.',
+      title: 'Los datos personales no se descargan en esta pantalla',
+      detail: 'Esta vista muestra resultados generales y no envía identificadores ni filas originales al navegador.',
     },
     reconciliationDiffers
       ? {
           level: 'high',
           mark: 'C',
           title: 'La comparación de liquidaciones tiene diferencias materiales',
-          detail: `${formatNumber(data.reconciliation.fullyReconciledRuns)} de ${formatNumber(data.reconciliation.matchedRuns)} controles comparados coinciden por completo. Fuente auxiliar técnica: totpago.`,
+          detail: `${formatNumber(data.reconciliation.fullyReconciledRuns)} de ${formatNumber(data.reconciliation.matchedRuns)} liquidaciones revisadas coinciden por completo. En el respaldo, la tabla auxiliar se llama «totpago».`,
         }
       : {
           level: 'guarded',
           mark: 'C',
           title: 'La comparación de liquidaciones coincide',
-          detail: 'Los controles agregados conciliaron. La fuente auxiliar técnica totpago no acredita pago bancario.',
+          detail: 'El cálculo y el resumen coinciden. En el respaldo, la tabla auxiliar «totpago» no representa un comprobante bancario.',
         },
     {
       level: 'high',
@@ -302,7 +302,7 @@ function buildRisks(data: QualityContract): readonly RiskViewModel[] {
     {
       level: 'medium',
       mark: 'H',
-      title: 'Snapshot histórico, no tiempo real',
+      title: 'Información actualizada hasta una fecha determinada',
       detail: `El corte es ${formatDate(data.source.snapshotAsOf)}; los cambios posteriores no están incluidos.`,
     },
     {
@@ -348,12 +348,12 @@ function buildActions(data: QualityContract): readonly ActionViewModel[] {
       ? {
           index: '1',
           title: 'Revisar las diferencias del control de liquidaciones',
-          detail: `Priorizar los controles que no coinciden entre el cálculo y la fuente auxiliar (tabla técnica: totpago). El acuerdo de valores observado es ${formatPercent(reconciliation.valueAgreementPct)}.`,
+          detail: `Priorizar las liquidaciones cuyos importes o conceptos no coinciden. El ${formatPercent(reconciliation.valueAgreementPct)} de los valores revisados coincide.`,
         }
       : {
           index: '1',
-          title: 'Sostener la comparación entre fuentes',
-          detail: 'Repetir el control en cada nuevo corte y alertar ante cualquier diferencia antes de publicar indicadores.',
+          title: 'Repetir la revisión con cada actualización',
+          detail: 'Alertar cualquier diferencia antes de publicar nuevos indicadores.',
         },
     {
       index: '2',
@@ -372,8 +372,8 @@ function buildActions(data: QualityContract): readonly ActionViewModel[] {
     },
     {
       index: '5',
-      title: 'Preparar el siguiente corte gobernado',
-      detail: 'Diseñar ingesta incremental, backup propio y restore probado antes de anunciar actualización diaria o tiempo real.',
+      title: 'Preparar la próxima actualización',
+      detail: 'Definir cómo se incorporarán los nuevos datos y probar su recuperación antes de anunciar una actualización diaria.',
     },
   ];
 }
@@ -393,7 +393,7 @@ export function buildQualityViewModel(contract: QualityContract): QualityViewMod
   return deepFreeze({
     source: {
       snapshotDate: formatDate(contract.source.snapshotAsOf),
-      snapshotMeta: 'Copia histórica del GRH verificada. Los cambios posteriores al corte no están incluidos.',
+      snapshotMeta: 'Datos del sistema de RR.HH. revisados. Los cambios posteriores a esta fecha todavía no están incluidos.',
       profileSchema: contract.lineage.profileSchemaVersion,
       semanticSchema: contract.lineage.semanticSchemaVersion,
       sourceFile: contract.source.sourceFile,
@@ -408,25 +408,25 @@ export function buildQualityViewModel(contract: QualityContract): QualityViewMod
     quality: {
       badge: `${decimalFormatter.format(contract.quality.score)} / 100`,
       components,
-      formula: `Puntaje = suma de cada componente × su peso (${formula}). Evalúa el extracto agregado gobernado, no la aptitud de cada tabla cruda.`,
+      formula: `El resultado combina cuatro revisiones: ${formula}. Describe los datos usados por esta pantalla y no reemplaza la revisión de cada tabla original.`,
     },
     reconciliation: {
       score: decimalFormatter.format(contract.reconciliation.scorePct),
-      context: `${formatNumber(contract.reconciliation.fullyReconciledRuns)} de ${formatNumber(contract.reconciliation.matchedRuns)} controles comparados coinciden por completo entre las dos fuentes.`,
+      context: `${formatNumber(contract.reconciliation.fullyReconciledRuns)} de ${formatNumber(contract.reconciliation.matchedRuns)} liquidaciones revisadas coinciden por completo.`,
       metrics: [
         {
           key: 'runCoverage',
-          label: 'Cobertura de controles',
+          label: 'Liquidaciones revisadas',
           value: formatPercent(contract.reconciliation.runCoveragePct),
         },
         {
           key: 'metricExactness',
-          label: 'Exactitud de métricas',
+          label: 'Conceptos que coinciden',
           value: formatPercent(contract.reconciliation.metricExactRatePct),
         },
         {
           key: 'valueAgreement',
-          label: 'Acuerdo de valores',
+          label: 'Importes que coinciden',
           value: formatPercent(contract.reconciliation.valueAgreementPct),
         },
       ],
@@ -447,6 +447,6 @@ export function buildQualityViewModel(contract: QualityContract): QualityViewMod
       items: risks,
     },
     actions: buildActions(contract),
-    privacyStatus: `La proyección ${contract.schemaVersion} es sólo agregada: no contiene PII, identificadores, filas crudas, etiquetas de categorías, códigos de celdas ni series monetarias. personas_junin está excluida y el contrato bruto no llega al DOM.`,
+    privacyStatus: `Esta pantalla muestra resultados generales. No descarga datos personales, identificadores, filas originales ni importes individuales. La tabla personas_junin está excluida.`,
   });
 }

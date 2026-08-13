@@ -13,6 +13,7 @@ import {
   fingerprintDatabaseTarget,
 } from './lib/database-target-fingerprint.js';
 import grhActionLedgerStore from './lib/grh-action-ledger-store.js';
+import { assertPrismaDatabaseTransport, prisma } from './lib/db.js';
 import { readGrhArtifactBundle } from './lib/grh-artifacts.js';
 import { buildGrhCloseProjection } from './lib/grh-close-projection.js';
 import { inspectGrhDecisionBriefContract } from './lib/grh-decision-brief-contract.js';
@@ -37,6 +38,10 @@ const COMMANDS = new Set(['claim', 'block', 'resume', 'complete', 'reschedule', 
 const BLOCK_REASONS = new Set(['dependency_pending', 'source_review_required', 'owner_unavailable']);
 const CANCEL_REASONS = new Set(['priority_withdrawn', 'duplicate_commitment']);
 const OUTCOME_CODES = new Set(['review_completed', 'correction_requested', 'no_change_required']);
+export const GRH_ACTION_LEDGER_STATUS_HEADER = 'X-MuniControl-Ledger-Status';
+export const GRH_ACTION_LEDGER_SETUP_PENDING = 'setup-pending';
+const GRH_ACTION_LEDGER_SETUP_WARNING =
+  '299 MuniControl "El registro de compromisos aun no esta habilitado; no se publican acciones ni se permiten cambios."';
 const CREATE_KEYS = Object.freeze(['commandId', 'brief', 'assigneeRole', 'dueOn']);
 const CREATE_BRIEF_KEYS = Object.freeze([
   'schemaVersion', 'sourceSha256', 'snapshotAsOf', 'period', 'priorityCode',
@@ -219,6 +224,32 @@ function respondStoreError(res, error) {
   });
 }
 
+export async function inspectGrhActionLedgerStorage({
+  client = prisma,
+  assertTransport = assertPrismaDatabaseTransport,
+} = {}) {
+  try {
+    if (typeof assertTransport !== 'function' || !assertTransport() ||
+        !client || typeof client.$queryRaw !== 'function') return 'unavailable';
+    const rows = await client.$queryRaw`
+      SELECT
+        to_regclass('public.grh_action_commitments') IS NOT NULL AS "hasCommitmentsTable",
+        to_regclass('public.grh_action_commitment_events') IS NOT NULL AS "hasEventsTable"
+    `;
+    if (!Array.isArray(rows) || rows.length !== 1) return 'unavailable';
+    const hasCommitmentsTable = rows[0]?.hasCommitmentsTable;
+    const hasEventsTable = rows[0]?.hasEventsTable;
+    if (typeof hasCommitmentsTable !== 'boolean' || typeof hasEventsTable !== 'boolean') {
+      return 'unavailable';
+    }
+    if (!hasCommitmentsTable && !hasEventsTable) return 'missing';
+    if (hasCommitmentsTable && hasEventsTable) return 'ready';
+    return 'inconsistent';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 export function createGrhActionLedgerHandler({
   requireCapabilityImpl = requireCapability,
   requireDatasetTenantImpl = requireDatasetTenant,
@@ -231,6 +262,7 @@ export function createGrhActionLedgerHandler({
   storeImpl = grhActionLedgerStore,
   buildLedgerProjectionImpl = buildGrhActionLedgerProjection,
   inspectLedgerImpl = inspectGrhActionLedgerContract,
+  inspectLedgerStorageImpl = inspectGrhActionLedgerStorage,
   isPublishedDemoIdentityImpl = isPublishedDemoIdentity,
   databaseTargetFingerprintImpl = fingerprintDatabaseTarget,
   databaseUrlImpl = () => process.env.DATABASE_URL,
@@ -307,7 +339,27 @@ export function createGrhActionLedgerHandler({
 
     try {
       if (req.method === 'GET') {
-        return res.status(200).json((await listAndProject()).projection);
+        try {
+          return res.status(200).json((await listAndProject()).projection);
+        } catch (error) {
+          const storageStatus = error?.code === 'GRH_ACTION_LEDGER_DATABASE_UNAVAILABLE'
+            ? await inspectLedgerStorageImpl()
+            : 'unavailable';
+          if (storageStatus !== 'missing') throw error;
+          const projection = buildLedgerProjectionImpl({
+            brief,
+            commitments: [],
+            caller,
+            publishedDemo: true,
+            now: clock,
+          });
+          if (!inspectLedgerImpl(projection)?.ok) {
+            throw new Error('GRH ledger setup projection invalid');
+          }
+          res.setHeader(GRH_ACTION_LEDGER_STATUS_HEADER, GRH_ACTION_LEDGER_SETUP_PENDING);
+          res.setHeader('Warning', GRH_ACTION_LEDGER_SETUP_WARNING);
+          return res.status(200).json(projection);
+        }
       }
 
       if (req.method === 'POST') {

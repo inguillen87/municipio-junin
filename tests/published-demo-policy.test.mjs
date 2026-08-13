@@ -81,7 +81,7 @@ function deployedRuntimeSourceFiles() {
 }
 
 test('the temporary containment identifies exactly the six previously published emails', () => {
-  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.8');
+  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.9');
   assert.deepEqual(PUBLISHED_DEMO_IDENTITIES, EXPECTED_IDENTITIES);
   assert.equal(new Set(PUBLISHED_DEMO_IDENTITIES).size, 6);
 
@@ -189,7 +189,7 @@ test('published profiles can inspect but never mutate the GRH action ledger', ()
   }
 });
 
-test('public evaluation access contains exactly six identities, one named credential and no seed path', () => {
+test('public evaluation access contains exactly six identities, no client credential and no seed path', () => {
   assert.equal(fs.existsSync(path.join(root, 'api', 'auth', 'seed-demo.js')), false);
 
   const publishedEmails = new Set();
@@ -225,5 +225,5 @@ test('public evaluation access contains exactly six identities, one named creden
   }
 
   assert.deepEqual([...publishedEmails].sort(), [...EXPECTED_IDENTITIES]);
-  assert.equal(evaluationCredentialDeclarations, 1, 'only the named evaluation credential may be published');
+  assert.equal(evaluationCredentialDeclarations, 0, 'one-click evaluation must not publish a credential');
 });

@@ -497,10 +497,6 @@ function previewDeploymentInspection() {
     url: previewDeploymentUrl,
     status: 'READY',
     target: 'preview',
-    meta: {
-      githubCommitSha: expectedGitSha,
-      githubCommitRef: previewBranch,
-    },
   };
 }
 
@@ -1144,6 +1140,74 @@ test('preview remote target mismatch rolls back deployment and temporary envs be
     assert.equal(persisted.deployment, null);
   } finally {
     await fixture.cleanup();
+  }
+});
+
+test('preview provenance comes from one exact list entry and rejects drift before preflight', async () => {
+  const valid = previewDeploymentList().deployments[0];
+  const scenarios = [
+    {
+      name: 'wrong SHA',
+      deployments: [{ ...valid, meta: { ...valid.meta, githubCommitSha: 'e'.repeat(40) } }],
+    },
+    {
+      name: 'wrong ref',
+      deployments: [{ ...valid, meta: { ...valid.meta, githubCommitRef: 'codex/other-preview' } }],
+    },
+    { name: 'missing exact URL', deployments: [] },
+    { name: 'duplicate exact URL', deployments: [valid, { ...valid }] },
+    { name: 'conflicting optional ID', deployments: [{ ...valid, id: 'dpl_other_preview' }] },
+  ];
+
+  for (const scenario of scenarios) {
+    const fixture = await makePreviewFixture();
+    try {
+      const state = await readState(fixture.prepared.statePath);
+      const calls = [];
+      const runner = (command, args, options = {}) => {
+        calls.push({ command, args: [...args] });
+        if (command === 'git') return previewPinnedGitCommand(args, options, { state });
+        if (args[0] === 'link') return { stdout: '', stderr: '' };
+        if (args[0] === 'env' && args[1] === 'ls') {
+          const global = args.length === 4;
+          const keys = global ? inheritedPreviewEnvironment : branchPreviewDatabaseEnvironment;
+          const gitBranch = global ? null : previewBranch;
+          return jsonResult({ envs: keys.map(key => ({ key, gitBranch })) });
+        }
+        if (args[0] === 'env' && ['add', 'rm'].includes(args[1])) {
+          return { stdout: '', stderr: '' };
+        }
+        if (args[0] === 'deploy') {
+          return jsonResult({ id: previewDeploymentId, url: previewDeploymentUrl });
+        }
+        if (args[0] === 'inspect' && args[1] === STABLE_PRODUCTION_URL) {
+          return jsonResult({
+            id: 'dpl_stable',
+            url: STABLE_PRODUCTION_URL,
+            status: 'READY',
+            target: 'production',
+          });
+        }
+        if (args[0] === 'inspect') return jsonResult(previewDeploymentInspection());
+        if (args[0] === 'ls') return jsonResult({ deployments: scenario.deployments });
+        if (args[0] === 'remove') return { stdout: '', stderr: '' };
+        assert.fail(`unexpected ${scenario.name} command: ${args.join(' ')}`);
+      };
+
+      await assert.rejects(() => applyPreparedBootstrap({
+        statePath: fixture.prepared.statePath,
+        runner,
+        securePathImpl: async () => {},
+      }), error => error?.code === 'BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
+      assert.equal(calls.some(call => call.args[0] === 'curl'), false);
+      assert.ok(calls.some(call =>
+        call.args.join(' ') === `remove ${previewDeploymentId} --yes`));
+      const persisted = await readState(fixture.prepared.statePath);
+      assert.equal(persisted.status, 'prepared');
+      assert.equal(persisted.deployment, null);
+    } finally {
+      await fixture.cleanup();
+    }
   }
 });
 

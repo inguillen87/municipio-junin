@@ -667,11 +667,13 @@ function inspectPreviewCandidate(value, state) {
   const identity = deploymentIdentity(value);
   const url = canonicalDeploymentOrigin(identity.url);
   if (!identity.id || !url || !readyDeployment(value, identity.id, 'preview') ||
-      deploymentGitSha(value) !== state.expectedGitSha ||
-      deploymentGitRef(value) !== state.previewBranch ||
       identity.id === state.deployment?.baselineAliasDeploymentId) {
     fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
   }
+  // `vercel inspect --json` 58.x is authoritative for immutable deployment
+  // identity, READY state, and target, but omits Git metadata. The exact-URL
+  // list match below supplies SHA/ref provenance and rejects missing,
+  // duplicate, or conflicting candidates.
   return Object.freeze({ id: identity.id, url });
 }
 

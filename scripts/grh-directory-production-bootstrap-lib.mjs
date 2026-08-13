@@ -829,6 +829,9 @@ function inspectPreviewDeploymentProvenance(runner, state, deploymentUrl) {
     { cwd: state.worktreePath },
   ), 'BOOTSTRAP_DEPLOYMENT_INSPECTION_INVALID');
   const inspected = inspectPreviewCandidate(inspection, state);
+  if (inspected.id !== state.deployment?.id || inspected.url !== deploymentUrl) {
+    fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
+  }
   const deployments = parseJsonOutput(run(
     runner,
     'vercel',

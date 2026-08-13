@@ -1211,6 +1211,84 @@ test('preview provenance comes from one exact list entry and rejects drift befor
   }
 });
 
+test('preview inspect is bound to the exact deployment output before list provenance', async () => {
+  const alternateUrl = 'https://municipio-junin-preview-other.vercel.app';
+  const scenarios = [
+    {
+      name: 'different deployment ID',
+      inspection: { ...previewDeploymentInspection(), id: 'dpl_other_preview' },
+    },
+    {
+      name: 'different immutable URL',
+      inspection: { ...previewDeploymentInspection(), url: alternateUrl },
+    },
+    {
+      name: 'not ready',
+      inspection: { ...previewDeploymentInspection(), status: 'BUILDING' },
+    },
+    {
+      name: 'wrong target',
+      inspection: { ...previewDeploymentInspection(), target: 'production' },
+    },
+    {
+      name: 'stable baseline substitution',
+      inspection: { ...previewDeploymentInspection(), id: 'dpl_stable' },
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    const fixture = await makePreviewFixture();
+    try {
+      const state = await readState(fixture.prepared.statePath);
+      const calls = [];
+      const runner = (command, args, options = {}) => {
+        calls.push({ command, args: [...args] });
+        if (command === 'git') return previewPinnedGitCommand(args, options, { state });
+        if (args[0] === 'link') return { stdout: '', stderr: '' };
+        if (args[0] === 'env' && args[1] === 'ls') {
+          const global = args.length === 4;
+          const keys = global ? inheritedPreviewEnvironment : branchPreviewDatabaseEnvironment;
+          const gitBranch = global ? null : previewBranch;
+          return jsonResult({ envs: keys.map(key => ({ key, gitBranch })) });
+        }
+        if (args[0] === 'env' && ['add', 'rm'].includes(args[1])) {
+          return { stdout: '', stderr: '' };
+        }
+        if (args[0] === 'deploy') {
+          return jsonResult({ id: previewDeploymentId, url: previewDeploymentUrl });
+        }
+        if (args[0] === 'inspect' && args[1] === STABLE_PRODUCTION_URL) {
+          return jsonResult({
+            id: 'dpl_stable',
+            url: STABLE_PRODUCTION_URL,
+            status: 'READY',
+            target: 'production',
+          });
+        }
+        if (args[0] === 'inspect') return jsonResult(scenario.inspection);
+        if (args[0] === 'remove') return { stdout: '', stderr: '' };
+        assert.notEqual(args[0], 'ls', `${scenario.name} must fail before list provenance`);
+        assert.fail(`unexpected ${scenario.name} command: ${args.join(' ')}`);
+      };
+
+      await assert.rejects(() => applyPreparedBootstrap({
+        statePath: fixture.prepared.statePath,
+        runner,
+        securePathImpl: async () => {},
+      }), error => error?.code === 'BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
+      assert.equal(calls.some(call => call.args[0] === 'ls'), false);
+      assert.equal(calls.some(call => call.args[0] === 'curl'), false);
+      assert.ok(calls.some(call =>
+        call.args.join(' ') === `remove ${previewDeploymentId} --yes`));
+      const persisted = await readState(fixture.prepared.statePath);
+      assert.equal(persisted.status, 'prepared');
+      assert.equal(persisted.deployment, null);
+    } finally {
+      await fixture.cleanup();
+    }
+  }
+});
+
 test('preview apply accepts inherited runtime envs but fails closed when one is absent everywhere', async () => {
   const fixture = await makePreviewFixture();
   try {

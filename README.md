@@ -19,6 +19,9 @@ si fueran reales.
   Permanece **excluido de los contratos y artefactos GRH actuales**; su futura
   integración requiere un `crosswalk_persona` versionado y nunca puede unir
   ambos sistemas por igualdad de `IDPERSONA`.
+- La Fase 1A ya genera localmente un diagnóstico agregado y reproducible:
+  1.699 vínculos posibles, 157 casos para revisión humana y 493 sin coincidencia.
+  No modifica fichas, no publica identificadores y no es un crosswalk productivo.
 - El corte del backup es 6 de agosto de 2026. Los cambios posteriores no están
   representados.
 - Los artefactos servidos al frontend son agregados sin nombres, documentos,
@@ -64,6 +67,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
 | Comparación de gestiones | Verificada en Production | Compara dos tramos históricos de 972 días con la misma duración; contrato, privacidad y recorrido autenticado verificados sobre el alias estable |
+| Preparación GRH + PERSONAS | Implementada localmente | Manifiesto auxiliar, matcher versionado, contrato agregado `grh-personas-linkage-readiness-v1` y lectura municipal; no mezcla fichas ni cambia KPI GRH |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
 | Cargas analíticas y conectores | Condicionado | Upload/Sheets escriben tablas legacy ligadas por entorno; no hay ingesta unificada ni sincronización |
 | Reportes ejecutivos GRH | Verificado en Production | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto, períodos gobernados y smoke autenticado |

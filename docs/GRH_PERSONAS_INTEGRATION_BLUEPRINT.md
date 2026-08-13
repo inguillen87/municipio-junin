@@ -2,8 +2,8 @@
 
 **Versión:** `grh-personas-integration-blueprint-v1`
 **Corte de fuentes:** 6 de agosto de 2026
-**Estado:** diagnóstico reproducible de ingeniería local; tabla puente y uso
-productivo pendientes
+**Estado:** Fase 1A implementada localmente como diagnóstico agregado;
+tabla puente, revisión institucional y uso productivo pendientes
 
 ## Decisión
 
@@ -30,8 +30,9 @@ La inspección read-only de los respaldos exactos confirmó:
 
 En PERSONAS también se observaron 21 tablas vacías, 90.365 personas con al menos
 un domicilio, 44.333 filas con CUIL que supera el dígito verificador, 41.376 CUIL
-válidos distintos, 183 domicilios con latitud y longitud utilizables y 350
-registros de contacto. Estos conteos describen el respaldo; no certifican
+válidos distintos, 183 filas de domicilio con latitud y longitud no cero y 350
+registros de contacto. Esas 183 filas no tienen un vínculo verificable a una
+persona y no habilitan un mapa individual. Estos conteos describen el respaldo; no certifican
 vigencia, exactitud de domicilio ni autorización de uso operativo.
 
 El diagnóstico de vinculación produjo esta línea de base:
@@ -49,6 +50,13 @@ duplicado resueltas por nombre, 203 por DNI único y 6 con DNI duplicado resuelt
 por nombre. El informe recibido no incluye un algoritmo ejecutable que permita
 certificar su desglose interno; por eso la plataforma conserva esta reproducción
 como evidencia de ingeniería y no como decisión de identidad.
+
+La Fase 1A fija esas reglas como `grh-personas-linkage-matcher-v1`. El algoritmo
+no usa sexo como evidencia, no promueve coincidencias basadas sólo en nombre y
+no crea enlaces. Los 157 casos ambiguos incluyen candidatos documentales no
+resueltos y tres señales de nombre/fecha que sirven únicamente para formar la
+futura cola de revisión humana. El resultado agregado reconcilia las 2.349
+personas GRH sin colisiones de destino.
 
 ## Reglas de vinculación
 
@@ -90,11 +98,23 @@ campos permitidos, auditoría y política de retención propios.
   artefactos GRH, del frontend, de Neon y de Production.
 - Los 1.699 enlaces son una línea de base reproducible, no datos productivos.
 
-### Fase 1 — staging aislado
+### Fase 1A — diagnóstico agregado local
 
 - manifiesto propio de PERSONAS con archivo, SHA-256, tamaño y corte exactos;
+- matcher versionado y determinista sobre los dos respaldos aprobados;
+- artefacto agregado sin nombres, documentos, domicilios ni identificadores;
+- contrato `grh-personas-linkage-readiness-v1` y una lectura municipal que
+  explican 1.699 candidatos, 157 casos para revisar y 493 sin coincidencia;
+- `IDPERSONA` prohibido como llave entre sistemas y cero cambios en los KPI o
+  fichas GRH actuales.
+
+Esta fase permite evaluar la preparación de la integración. No publica un
+crosswalk ni habilita datos de PERSONAS dentro del directorio laboral.
+
+### Fase 1B — staging privado y revisión reproducible
+
 - staging inmutable de ambas fuentes, sin sobrescribir sus identificadores;
-- algoritmo versionado, pruebas deterministas y export de evidencia sin PII;
+- export privado de evidencia y muestreo sin exponer PII en el navegador;
 - reconciliación exacta de 1.699 candidatos, 157 ambiguos y 493 pendientes, o
   explicación documentada de cada variación.
 

@@ -127,10 +127,12 @@ se convierte en fuente por tener columnas plausibles o un nombre municipal.
 - Fuente laboral central: GRH. `personas_junin` es una fuente auxiliar de
   identidad, domicilios y territorio, todavía excluida de los contratos y
   publicaciones GRH actuales.
-- Integración PERSONAS: diagnóstico local reproducible con 1.432 candidatos
-  automáticos, 267 asistidos, 157 ambiguos y 493 sin coincidencia. Los 1.699
-  candidatos totales no son un crosswalk productivo; la futura tabla puente será
-  versionada y nunca unirá sistemas por igualdad de `IDPERSONA`.
+- Integración PERSONAS: Fase 1A local con manifiesto propio, matcher
+  `grh-personas-linkage-matcher-v1`, contrato agregado y lectura municipal. El
+  diagnóstico reconcilia 1.432 candidatos automáticos, 267 asistidos, 157
+  ambiguos y 493 sin coincidencia. Los 1.699 candidatos totales no son un
+  crosswalk productivo; la futura tabla puente será versionada y nunca unirá
+  sistemas por igualdad de `IDPERSONA`.
 - Alcance prioritario: evidencia agregada para Intendencia, Hacienda y RRHH.
 - PII y fichas individuales: diferidas hasta diseñar la frontera de acceso y
   auditoría correspondiente. El techo exacto `recurso:acción` ya existe en local;
@@ -173,7 +175,7 @@ Estado: **completo en código local; falta despliegue**.
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
 - techo compartido y fail-closed vigente de 31 recursos, 12 acciones, 53
-  permisos y 92 firmas de ruta exactas (50 Serverless y 42 Express), sin
+  permisos y 93 firmas de ruta exactas (51 Serverless y 42 Express), sin
   wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
@@ -370,9 +372,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.10`
-contiene 31 recursos, 12 acciones, 53 permisos y 92 firmas protegidas exactas:
-50 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.11`
+contiene 31 recursos, 12 acciones, 53 permisos y 93 firmas protegidas exactas:
+51 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -666,6 +668,21 @@ estable**.
 - La salida quedó integrada, probada en escritorio y móvil y verificada de forma
   autenticada sobre el alias estable; esto no convierte el respaldo en una
   fuente en tiempo real ni habilita presupuesto.
+
+### S16A — preparación de la integración GRH + PERSONAS
+
+Estado: **implementado localmente; publicación y crosswalk privado pendientes**.
+
+- PERSONAS conserva un manifiesto independiente y GRH sigue siendo la autoridad
+  laboral central.
+- El matcher versionado reproduce 1.699 vínculos posibles, 157 casos para
+  revisión humana y 493 sin coincidencia, con cero colisiones de destino.
+- La API y la pantalla publican únicamente el diagnóstico agregado, la cobertura
+  de domicilios y sus límites; no exponen nombres, DNI, CUIL, domicilios ni IDs.
+- `IDPERSONA` está prohibido como llave entre sistemas y la Fase 1A no altera
+  fichas, estados laborales ni indicadores GRH.
+- La próxima fase debe crear staging y crosswalk privados, aprobar finalidad,
+  responsables y retención, y resolver los ambiguos con revisión humana.
 
 ## Funciones que no deben “completarse” todavía
 

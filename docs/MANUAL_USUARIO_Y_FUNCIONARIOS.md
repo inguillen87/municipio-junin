@@ -173,8 +173,8 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local `2026-08-13.10` cubre 31 recursos, 12 acciones,
-53 permisos y 92 firmas exactas: 50 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local `2026-08-13.11` cubre 31 recursos, 12 acciones,
+53 permisos y 93 firmas exactas: 51 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
 La política de acceso local `2026-08-11.3` entrega

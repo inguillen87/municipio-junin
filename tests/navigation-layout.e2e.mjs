@@ -54,6 +54,10 @@ const retiredNavHrefs = [
   'admin.html',
   'configuracion.html',
 ];
+const linkageReadinessFixture = readFileSync(
+  path.join(root, 'api', '_data', 'grh-personas-linkage-readiness.json'),
+  'utf8',
+);
 function expectedSidebarHrefs(role) {
   const capabilities = new Set(getCapabilitiesForRole(role));
   return navigationItems
@@ -156,6 +160,15 @@ async function createServer(options = {}) {
         counts: { totalTables: 0, nonEmptyTables: 0, emptyTables: 0, totalRows: 0, domainCount: 0 },
         domains: [],
       }));
+      return;
+    }
+    if (url.pathname === '/api/grh-personas-linkage-readiness') {
+      response.writeHead(200, {
+        'Content-Type': contentTypes['.json'],
+        'Cache-Control': 'no-store',
+        'X-MuniControl-Contract': 'grh-personas-linkage-readiness-v1',
+      });
+      response.end(linkageReadinessFixture);
       return;
     }
 

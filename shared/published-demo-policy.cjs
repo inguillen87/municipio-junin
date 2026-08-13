@@ -3,7 +3,7 @@
 // Temporary containment for the six role-preview identities that were
 // previously published. The exact read-only route list is both their grant
 // and their ceiling; no base-role permission can widen it.
-const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-13.10';
+const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-13.11';
 
 const PUBLISHED_DEMO_PROFILES = Object.freeze([
   Object.freeze({ profileId: 'administrador', label: 'Administrador', email: 'admin@junin.gov.ar', role: 'TENANT_ADMIN', tenantSlug: 'junin' }),
@@ -29,6 +29,7 @@ const PUBLISHED_DEMO_ALLOWED_ROUTE_IDS = Object.freeze([
   'serverless.grh.administration-comparison.read',
   'serverless.grh.employment-review.read',
   'serverless.grh.absence-insights.read',
+  'serverless.grh.personas-linkage-readiness.read',
   'serverless.grh.movement-operations.read',
   'serverless.grh.workforce-finance.read',
   'serverless.grh.report.read',

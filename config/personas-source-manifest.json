@@ -1,0 +1,11 @@
+{
+  "schema_version": "personas-source-manifest-v1",
+  "source_system": "PERSONAS Junín",
+  "source_role": "auxiliary_identity_address_territory",
+  "source_file": "personas_junin.backup_2026080615_plataforma.sql.gz",
+  "sha256": "11bf15764488e4fe8a053255f503404f6bca24a1ac47c90647649e2c41d8e39c",
+  "compressed_size_bytes": 7550947,
+  "snapshot_as_of": "2026-08-06",
+  "canonical_labor_system": "GRH Junín",
+  "approval_basis": "Backup PERSONAS provisto por el usuario como padrón municipal auxiliar; no reemplaza la autoridad laboral de GRH."
+}

@@ -3,6 +3,7 @@
 
   var CONTRACT = 'grh-domain-catalog-v1';
   var ENDPOINT = '/api/grh-domain-catalog';
+  var LINKAGE_CONTRACT = 'grh-personas-linkage-readiness-v1';
   var NUMBER_FORMAT = new Intl.NumberFormat('es-AR');
   var STATUS_LABELS = Object.freeze({
     operational: 'Disponible para consultar',
@@ -96,8 +97,8 @@
     return period.first + ' a ' + period.last;
   }
 
-  function shortHash(value) {
-    return value.slice(0, 12) + '…' + value.slice(-8);
+  function percentage(value) {
+    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value) + '%';
   }
 
   function setStatus(id, state, text) {
@@ -178,7 +179,6 @@
     setStatus('audit-status', 'ready', 'Fuente verificada · corte ' + humanDate(catalog.source.snapshotAsOf) + ' · no tiempo real.');
     setText('sourceName', catalog.source.canonicalSystem);
     setText('sourceCut', humanDate(catalog.source.snapshotAsOf));
-    setText('sourceHash', shortHash(catalog.source.sourceSha256));
     setText('metricNonEmpty', NUMBER_FORMAT.format(catalog.counts.nonEmptyTables));
     setText('metricTablesContext', 'de ' + NUMBER_FORMAT.format(catalog.counts.totalTables) + ' tablas catalogadas');
     setText('metricRows', NUMBER_FORMAT.format(catalog.counts.totalRows));
@@ -188,6 +188,82 @@
     renderDomainCards(catalog);
     renderDomainTable(catalog);
     renderLineage(catalog);
+  }
+
+  function buildTechnicalItem(label, value, useCode) {
+    var item = element('div', 'data-lineage-item');
+    item.appendChild(element('span', '', label));
+    item.appendChild(element(useCode ? 'code' : 'strong', '', value));
+    return item;
+  }
+
+  function renderLinkageTechnical(linkage) {
+    var methods = documentRef.getElementById('linkageMethodList');
+    var methodItems = linkage.algorithm.tiers.map(function buildMethod(tier) {
+      var item = element('div', 'data-linkage-method');
+      item.append(element('span', '', tier.label), element('strong', '', NUMBER_FORMAT.format(tier.count) + ' posibles vínculos'));
+      return item;
+    });
+    methods.replaceChildren.apply(methods, methodItems);
+
+    var sources = documentRef.getElementById('linkageSourceList');
+    sources.replaceChildren(
+      buildTechnicalItem('Base laboral', linkage.source.grh.sourceFile, false),
+      buildTechnicalItem('Verificación base laboral', linkage.source.grh.sourceSha256, true),
+      buildTechnicalItem('Padrón auxiliar', linkage.source.personas.sourceFile, false),
+      buildTechnicalItem('Verificación padrón auxiliar', linkage.source.personas.sourceSha256, true),
+      buildTechnicalItem('Método aplicado', linkage.algorithm.version, true),
+      buildTechnicalItem('Fecha de los respaldos', humanDate(linkage.source.snapshotAsOf), false)
+    );
+
+    var limits = documentRef.getElementById('linkageLimitList');
+    var limitItems = linkage.limits.map(function buildLimit(limit) { return element('li', '', limit.text); });
+    limits.replaceChildren.apply(limits, limitItems);
+  }
+
+  function renderLinkage(linkage) {
+    setStatus('linkageStatus', 'ready', 'Diagnóstico disponible. La integración todavía necesita revisión y aprobación.');
+    var statePill = documentRef.getElementById('linkageStatePill');
+    statePill.className = 'data-pill data-pill-partial';
+    statePill.textContent = 'En preparación';
+    setText('linkageGrhPeople', NUMBER_FORMAT.format(linkage.reconciliation.grhPersons));
+    setText('linkageGrhPeopleFlow', NUMBER_FORMAT.format(linkage.reconciliation.grhPersons) + ' personas');
+    setText('linkageCandidates', NUMBER_FORMAT.format(linkage.reconciliation.candidates));
+    setText('linkageCoverage', percentage(linkage.reconciliation.coveragePct) + ' del universo laboral podría vincularse.');
+    setText('linkageAmbiguous', NUMBER_FORMAT.format(linkage.reconciliation.ambiguous));
+    setText('linkageUnmatched', NUMBER_FORMAT.format(linkage.reconciliation.unmatched));
+    setText('linkagePeopleWithAddress', NUMBER_FORMAT.format(linkage.source.personas.counts.personsWithAddress));
+    setText('linkageAddresses', NUMBER_FORMAT.format(linkage.source.personas.counts.addresses));
+    setText('linkageGeocoded', NUMBER_FORMAT.format(linkage.source.personas.counts.geocodedAddresses));
+    setText('linkageContacts', NUMBER_FORMAT.format(linkage.source.personas.counts.contacts));
+    renderLinkageTechnical(linkage);
+    documentRef.getElementById('linkageContent').hidden = false;
+  }
+
+  function renderLinkageUnavailable() {
+    setStatus('linkageStatus', 'error', 'La integración entre las dos bases no está disponible. No mostramos cifras ni ceros como si estuvieran verificados.');
+    var statePill = documentRef.getElementById('linkageStatePill');
+    if (statePill) {
+      statePill.className = 'data-pill data-pill-partial';
+      statePill.textContent = 'No disponible';
+    }
+    var content = documentRef.getElementById('linkageContent');
+    if (content) content.hidden = true;
+  }
+
+  async function loadLinkage() {
+    if (documentRef.body.dataset.dataOperationsPage !== 'sources') return;
+    try {
+      var client = windowRef.MuniGrhPersonasLinkageReadiness;
+      if (!client || client.SCHEMA_VERSION !== LINKAGE_CONTRACT || typeof client.load !== 'function') {
+        throw new Error('LINKAGE_CLIENT_UNAVAILABLE');
+      }
+      var linkage = await client.load();
+      renderLinkage(linkage);
+    } catch (error) {
+      console.error('[DATA-OPERATIONS] Diagnóstico de integración no disponible');
+      renderLinkageUnavailable();
+    }
   }
 
   function publicationDefinitions(catalog) {
@@ -332,5 +408,8 @@
     }
   }
 
-  documentRef.addEventListener('DOMContentLoaded', loadCatalog);
+  documentRef.addEventListener('DOMContentLoaded', function loadDataOperations() {
+    loadCatalog();
+    loadLinkage();
+  });
 })(window, document);

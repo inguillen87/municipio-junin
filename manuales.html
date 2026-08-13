@@ -273,9 +273,9 @@
   data-doc-version="1.10.0"
   data-doc-contract="operational-truth-v1"
   data-primary-source="grh"
-  data-secondary-source-policy="personas-excluded"
+  data-secondary-source-policy="personas-auxiliary-diagnostic"
   data-realtime="false"
-  data-route-policy-version="2026-08-13.10"
+  data-route-policy-version="2026-08-13.11"
   data-access-policy-version="2026-08-11.3"
 >
   <div id="sidebar"></div>
@@ -411,7 +411,7 @@
         <section id="fuente">
           <p class="section-kicker">03 · Linaje</p>
           <h2>GRH es la fuente municipal prioritaria</h2>
-          <p class="section-intro">El snapshot de trabajo proviene del backup GRH fechado el 6 de agosto de 2026. GRH es la fuente laboral. <code>personas_junin</code> es un padrón auxiliar para identidad, domicilios y territorio, pero todavía no alimenta estas pantallas ni los contratos GRH.</p>
+          <p class="section-intro">La copia de trabajo proviene del respaldo GRH fechado el 6 de agosto de 2026. GRH es la fuente laboral. <code>personas_junin</code> es un padrón auxiliar para identidad, domicilios y territorio. Hoy sólo alimenta en Fuentes de datos un diagnóstico general de preparación: todavía no modifica fichas, estados laborales ni indicadores GRH.</p>
 
           <div class="callout"><span aria-hidden="true">!</span><div><strong>No unir por el número interno de persona.</strong> <code>IDPERSONA</code> significa algo distinto en cada base. La futura integración usará una tabla puente versionada, coincidencias verificables y revisión de los casos dudosos. Los 1.699 candidatos detectados son una línea de base técnica, no vínculos productivos certificados.</div></div>
 
@@ -528,7 +528,7 @@
             <li>Los contratos fuente GRH son privados y quedan sólo en backend. El navegador recibe proyecciones gobernadas como <code>grh-executive-v2</code>, <code>grh-quality-v1</code>, <code>grh-close-v1</code> o <code>grh-movement-operations-v1</code>; los consumidores de servidor proyectan antes de responder.</li>
             <li>Para proteger identidades, las categorías con menos de 5 personas se agrupan y las cifras sensibles con menos de 10 se ocultan. Un dato protegido nunca se publica como cero ni permite deducir el valor oculto.</li>
             <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
-            <li>El techo vigente contiene 31 recursos, 12 acciones, 53 permisos y 92 firmas exactas: 50 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>El techo vigente contiene 31 recursos, 12 acciones, 53 permisos y 93 firmas exactas: 51 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
             <li>La política de acceso local <code>2026-08-11.3</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
             <li>Excel, CSV y Google Sheets se tratan como contenido no confiable: formato, límites, encabezados y persistencia se validan antes de declarar éxito.</li>
             <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>

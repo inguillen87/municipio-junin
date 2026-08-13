@@ -13,7 +13,7 @@
   <main id="mainContent" class="main-content data-operations-main">
     <header class="data-page-heading">
       <div>
-        <p class="data-eyebrow">Datos GRH · trazabilidad</p>
+        <p class="data-eyebrow">Origen de la información</p>
         <h1>Fuentes de datos</h1>
         <p class="data-lead">Qué respaldo usa la plataforma, hasta qué fecha llega y qué áreas están listas para consultar.</p>
       </div>
@@ -29,13 +29,13 @@
       <div class="data-hero-copy">
         <span class="data-pill data-pill-ready">Fuente reconocida</span>
         <h2 id="sourceSummaryTitle">El respaldo está disponible para análisis</h2>
-        <p>Los números de esta pantalla provienen del catálogo validado en este momento. Son metadatos agregados: no exponen fichas personales ni importes.</p>
+        <p>Los números de esta pantalla provienen del respaldo validado en este momento. Son datos generales: no muestran fichas personales ni importes.</p>
       </div>
       <dl class="data-facts" aria-label="Identidad del respaldo">
         <div><dt>Fuente</dt><dd id="sourceName">—</dd></div>
         <div><dt>Corte del respaldo</dt><dd id="sourceCut">—</dd></div>
-        <div><dt>Huella de verificación</dt><dd><code id="sourceHash">—</code></dd></div>
-        <div><dt>Actualización</dt><dd>Snapshot histórico · no tiempo real</dd></div>
+        <div><dt>Actualización</dt><dd>Respaldo histórico · no se actualiza en tiempo real</dd></div>
+        <div><dt>Alcance</dt><dd>Información general · sin fichas personales</dd></div>
       </dl>
     </section>
 
@@ -55,6 +55,96 @@
         <strong id="metricDomains">—</strong>
         <small>Con acceso directo a la vista que las explica.</small>
       </article>
+    </section>
+
+    <section id="linkageSection" class="data-panel data-linkage-panel" aria-labelledby="linkageTitle">
+      <div class="data-panel-heading">
+        <div>
+          <p class="data-eyebrow">Personas y territorio</p>
+          <h2 id="linkageTitle">Dos bases, una integración en preparación</h2>
+          <p>GRH organiza la relación laboral. El padrón municipal puede sumar identidad, domicilios y territorio cuando cada vínculo haya sido revisado.</p>
+        </div>
+        <span id="linkageStatePill" class="data-pill data-pill-catalogued">Verificando información</span>
+      </div>
+
+      <div id="linkageStatus" class="data-status data-status-inline" data-state="loading" role="status" aria-live="polite">
+        <span class="data-status-dot" aria-hidden="true"></span>
+        <span>Verificando el diagnóstico de integración…</span>
+      </div>
+
+      <div id="linkageContent" hidden>
+        <div class="data-linkage-flow" aria-label="Camino previsto para integrar las dos bases">
+          <div class="data-linkage-flow-step">
+            <span class="data-linkage-flow-number">1</span>
+            <div><strong>Base laboral GRH</strong><span id="linkageGrhPeopleFlow">—</span></div>
+          </div>
+          <span class="data-linkage-flow-arrow" aria-hidden="true">→</span>
+          <div class="data-linkage-flow-step">
+            <span class="data-linkage-flow-number">2</span>
+            <div><strong>Comparación controlada</strong><span>Coincidencias y casos para revisar</span></div>
+          </div>
+          <span class="data-linkage-flow-arrow" aria-hidden="true">→</span>
+          <div class="data-linkage-flow-step">
+            <span class="data-linkage-flow-number">3</span>
+            <div><strong>Fichas enriquecidas</strong><span>Pendiente de revisión y aprobación</span></div>
+          </div>
+        </div>
+
+        <div class="data-linkage-metric-grid" aria-label="Estado de la posible vinculación">
+          <article class="data-linkage-metric data-linkage-metric-primary">
+            <span>Personas en la base laboral</span>
+            <strong id="linkageGrhPeople">—</strong>
+            <small>Es el universo de personas laborales que se busca enriquecer.</small>
+          </article>
+          <article class="data-linkage-metric data-linkage-metric-positive">
+            <span>Vínculos posibles</span>
+            <strong id="linkageCandidates">—</strong>
+            <small id="linkageCoverage">—</small>
+          </article>
+          <article class="data-linkage-metric data-linkage-metric-review">
+            <span>Necesitan revisión humana</span>
+            <strong id="linkageAmbiguous">—</strong>
+            <small>No se incorporan automáticamente.</small>
+          </article>
+          <article class="data-linkage-metric">
+            <span>Sin coincidencia suficiente</span>
+            <strong id="linkageUnmatched">—</strong>
+            <small>Quedan pendientes de saneamiento o nueva evidencia.</small>
+          </article>
+        </div>
+
+        <div class="data-linkage-callout" role="note">
+          <strong>Todavía no se incorporó información del padrón a las fichas laborales.</strong>
+          <span>Primero deben resolverse los casos dudosos, aprobar las reglas y dejar registro de cada decisión.</span>
+        </div>
+
+        <div class="data-linkage-readiness">
+          <div class="data-linkage-readiness-copy">
+            <p class="data-eyebrow">Domicilios y contacto</p>
+            <h3>Hay información territorial útil, pero aún requiere preparación</h3>
+            <p>El padrón auxiliar amplía la cobertura de domicilios. La ubicación en mapa y los datos de contacto todavía son muy limitados para usarlos como cobertura municipal completa.</p>
+          </div>
+          <div class="data-linkage-readiness-grid" aria-label="Preparación de domicilios y contactos">
+            <article><span>Personas con algún domicilio</span><strong id="linkagePeopleWithAddress">—</strong></article>
+            <article><span>Registros de domicilio</span><strong id="linkageAddresses">—</strong></article>
+            <article><span>Registros con coordenadas</span><strong id="linkageGeocoded">—</strong><small>Aún no están vinculados de forma verificable a personas.</small></article>
+            <article><span>Registros de contacto</span><strong id="linkageContacts">—</strong><small>No representa un directorio completo.</small></article>
+          </div>
+        </div>
+
+        <p class="data-linkage-context"><strong>Cómo leer estos datos:</strong> provienen de respaldos históricos y no se actualizan en tiempo real. Un domicilio puede estar repetido, incompleto o haber quedado antiguo. Los 183 registros con coordenadas no están vinculados de forma verificable a personas y no permiten armar un mapa individual.</p>
+
+        <p class="data-linkage-warning"><strong>Regla obligatoria:</strong> el número interno de persona de una base nunca se usa para unirla con la otra. Los números coincidentes no acreditan que sean la misma persona.</p>
+
+        <details class="data-linkage-technical">
+          <summary>Ver método, fuentes y límites técnicos</summary>
+          <div class="data-disclosure-body">
+            <div id="linkageMethodList" class="data-linkage-methods" aria-label="Métodos de coincidencia"></div>
+            <div id="linkageSourceList" class="data-lineage-list" aria-label="Fuentes del diagnóstico"></div>
+            <ul id="linkageLimitList" class="data-checklist"></ul>
+          </div>
+        </details>
+      </div>
     </section>
 
     <section class="data-panel" aria-labelledby="areasTitle">
@@ -92,6 +182,7 @@
   <script src="js/auth-fetch.js"></script>
   <script src="js/theme-switcher.js"></script>
   <script src="js/bottom-nav.js"></script>
+  <script src="js/grh-personas-linkage-data.js"></script>
   <script src="js/data-operations.js"></script>
   <script>if (typeof buildSidebar === 'function') buildSidebar('auditoria');</script>
 </body>

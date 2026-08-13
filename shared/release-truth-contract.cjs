@@ -23,6 +23,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-administration-comparison': 'grh-administration-comparison-v1',
   '/api/grh-employment-review': 'grh-employment-review-v2',
   '/api/grh-absence-insights': 'grh-absence-insights-v1',
+  '/api/grh-personas-linkage-readiness': 'grh-personas-linkage-readiness-v1',
   '/api/grh-domain-catalog': 'grh-domain-catalog-v1',
   '/api/grh-organization-analytics': 'grh-organization-analytics-v2',
   '/api/grh-movement-operations': 'grh-movement-operations-v1',

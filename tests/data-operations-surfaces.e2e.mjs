@@ -36,6 +36,10 @@ async function realCatalog() {
   });
 }
 
+async function realLinkage() {
+  return readFile(path.join(root, 'api', '_data', 'grh-personas-linkage-readiness.json'), 'utf8').then(JSON.parse);
+}
+
 function authorizedUser() {
   const base = { id: 'data-operations-qa', name: 'QA Institucional', role: 'TENANT_ADMIN', tenantId: 'tenant-junin-test' };
   const access = accessPolicy.getSessionAccessForUser(base);
@@ -55,7 +59,7 @@ function fakeToken() {
   return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: user.id, role: user.role, tenantId: user.tenantId, exp: Math.floor(Date.now() / 1000) + 600 })}.qa`;
 }
 
-async function createServer(catalog) {
+async function createServer(catalog, linkage) {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
     if (url.pathname === '/api/auth/me') {
@@ -70,6 +74,15 @@ async function createServer(catalog) {
         'X-MuniControl-Contract': 'grh-domain-catalog-v1',
       });
       response.end(JSON.stringify(catalog));
+      return;
+    }
+    if (url.pathname === '/api/grh-personas-linkage-readiness') {
+      response.writeHead(200, {
+        'Content-Type': contentTypes['.json'],
+        'Cache-Control': 'no-store',
+        'X-MuniControl-Contract': 'grh-personas-linkage-readiness-v1',
+      });
+      response.end(JSON.stringify(linkage));
       return;
     }
     if (url.pathname === '/api/pdf-report') {
@@ -96,7 +109,7 @@ async function createServer(catalog) {
   return server;
 }
 
-async function createContractServer({ catalog, catalogStatus = 200, catalogContract = 'grh-domain-catalog-v1', reportStatus = 200, reportContentType = 'text/html; charset=utf-8' }) {
+async function createContractServer({ catalog, catalogStatus = 200, catalogContract = 'grh-domain-catalog-v1', linkage = null, linkageStatus = 503, linkageContract = 'grh-personas-linkage-readiness-v1', reportStatus = 200, reportContentType = 'text/html; charset=utf-8' }) {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
     if (url.pathname === '/api/auth/me') {
@@ -111,6 +124,18 @@ async function createContractServer({ catalog, catalogStatus = 200, catalogContr
         'X-MuniControl-Contract': catalogContract,
       });
       response.end(JSON.stringify(catalogStatus === 200 ? catalog : { code: catalogStatus === 403 ? 'FORBIDDEN' : 'UNAVAILABLE' }));
+      return;
+    }
+    if (url.pathname === '/api/grh-personas-linkage-readiness') {
+      response.writeHead(linkageStatus, {
+        'Content-Type': contentTypes['.json'],
+        'Cache-Control': 'no-store',
+        'X-MuniControl-Contract': linkageContract,
+      });
+      response.end(JSON.stringify(linkageStatus === 200 ? linkage : {
+        error: 'La revisión de vinculación entre GRH y PERSONAS no está disponible.',
+        code: 'GRH_PERSONAS_LINKAGE_UNAVAILABLE',
+      }));
       return;
     }
     if (url.pathname === '/api/pdf-report') {
@@ -135,8 +160,8 @@ async function createContractServer({ catalog, catalogStatus = 200, catalogContr
   return server;
 }
 
-async function pageFor(browser, viewport) {
-  const context = await browser.newContext({ viewport, colorScheme: 'dark' });
+async function pageFor(browser, viewport, forcedColors = 'none') {
+  const context = await browser.newContext({ viewport, colorScheme: 'dark', forcedColors });
   await context.addInitScript(({ token, currentUser }) => {
     sessionStorage.setItem('mjunin_token', token);
     sessionStorage.setItem('mjunin_user', JSON.stringify(currentUser));
@@ -146,8 +171,8 @@ async function pageFor(browser, viewport) {
 }
 
 test('real governed catalog drives useful sources and publications at desktop and mobile widths', async t => {
-  const catalog = await realCatalog();
-  const server = await createServer(catalog);
+  const [catalog, linkage] = await Promise.all([realCatalog(), realLinkage()]);
+  const server = await createServer(catalog, linkage);
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
   const browser = await chromium.launch({ headless: true });
   t.after(async () => {
@@ -155,12 +180,18 @@ test('real governed catalog drives useful sources and publications at desktop an
     await new Promise(resolve => server.close(resolve));
   });
 
-  {
-    const { context, page } = await pageFor(browser, { width: 1440, height: 980 });
+  for (const scenario of [
+    { name: 'desktop', viewport: { width: 1440, height: 980 }, columns: 4 },
+    { name: 'tablet', viewport: { width: 800, height: 900 }, columns: 2 },
+    { name: 'mobile', viewport: { width: 390, height: 844 }, columns: 1 },
+    { name: 'compact forced colors', viewport: { width: 320, height: 720 }, columns: 1, forcedColors: 'active' },
+  ]) {
+    const { context, page } = await pageFor(browser, scenario.viewport, scenario.forcedColors);
     const consoleErrors = [];
     page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
     await page.goto(`${baseUrl}/auditoria.html`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.querySelector('#audit-status')?.dataset.state === 'ready');
+    await page.waitForFunction(() => document.querySelector('#linkageStatus')?.dataset.state === 'ready');
     const state = await page.evaluate(() => ({
       status: document.querySelector('#audit-status')?.textContent,
       source: document.querySelector('#sourceName')?.textContent,
@@ -173,6 +204,25 @@ test('real governed catalog drives useful sources and publications at desktop an
       domainCards: document.querySelectorAll('.data-domain-card').length,
       domainRows: document.querySelectorAll('#datasets-table tbody tr').length,
       rawControls: document.querySelectorAll('input, select, textarea, [download]').length,
+      linkage: {
+        figures: [
+          document.querySelector('#linkageGrhPeople')?.textContent,
+          document.querySelector('#linkageCandidates')?.textContent,
+          document.querySelector('#linkageAmbiguous')?.textContent,
+          document.querySelector('#linkageUnmatched')?.textContent,
+          document.querySelector('#linkagePeopleWithAddress')?.textContent,
+          document.querySelector('#linkageAddresses')?.textContent,
+          document.querySelector('#linkageGeocoded')?.textContent,
+          document.querySelector('#linkageContacts')?.textContent,
+        ],
+        coverage: document.querySelector('#linkageCoverage')?.textContent,
+        defaultText: document.querySelector('#linkageSection')?.innerText,
+        technicalText: document.querySelector('.data-linkage-technical')?.textContent,
+        detailsOpen: document.querySelector('.data-linkage-technical')?.open,
+        columns: getComputedStyle(document.querySelector('.data-linkage-metric-grid')).gridTemplateColumns.split(' ').length,
+        summaryHeight: document.querySelector('.data-linkage-technical summary')?.getBoundingClientRect().height,
+      },
+      forcedColors: matchMedia('(forced-colors: active)').matches,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     }));
     assert.match(state.status, /Fuente verificada/i);
@@ -186,9 +236,32 @@ test('real governed catalog drives useful sources and publications at desktop an
     assert.equal(state.domainCards, catalog.domains.length);
     assert.equal(state.domainRows, catalog.domains.length);
     assert.equal(state.rawControls, 0);
-    assert.ok(state.overflow <= 1, `sources desktop overflow: ${state.overflow}px`);
+    assert.deepEqual(state.linkage.figures, [
+      linkage.reconciliation.grhPersons,
+      linkage.reconciliation.candidates,
+      linkage.reconciliation.ambiguous,
+      linkage.reconciliation.unmatched,
+      linkage.source.personas.counts.personsWithAddress,
+      linkage.source.personas.counts.addresses,
+      linkage.source.personas.counts.geocodedAddresses,
+      linkage.source.personas.counts.contacts,
+    ].map(value => new Intl.NumberFormat('es-AR').format(value)));
+    assert.equal(state.linkage.coverage, `${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(linkage.reconciliation.coveragePct)}% del universo laboral podría vincularse.`);
+    assert.match(state.linkage.defaultText, /Dos bases, una integración en preparación/i);
+    assert.match(state.linkage.defaultText, /Todavía no se incorporó información del padrón a las fichas laborales/i);
+    assert.match(state.linkage.defaultText, /respaldos históricos y no se actualizan en tiempo real/i);
+    assert.match(state.linkage.defaultText, /domicilio puede estar repetido, incompleto o haber quedado antiguo/i);
+    assert.match(state.linkage.defaultText, /183 registros con coordenadas no están vinculados de forma verificable a personas/i);
+    assert.match(state.linkage.defaultText, /número interno de persona de una base nunca se usa para unirla con la otra/i);
+    assert.doesNotMatch(state.linkage.defaultText, /snapshot|cross-source|\bPII\b|\bhash\b|\bk\s*=/i);
+    assert.match(state.linkage.technicalText, /[0-9a-f]{64}/i);
+    assert.equal(state.linkage.detailsOpen, false);
+    assert.equal(state.linkage.columns, scenario.columns, `${scenario.name}: card columns`);
+    assert.ok(state.linkage.summaryHeight >= 44, `${scenario.name}: technical disclosure target`);
+    assert.equal(state.forcedColors, scenario.forcedColors === 'active');
+    assert.ok(state.overflow <= 1, `${scenario.name} sources overflow: ${state.overflow}px`);
     assert.deepEqual(consoleErrors, []);
-    await page.screenshot({ path: path.join(os.tmpdir(), 'municontrol-fuentes-desktop.png'), fullPage: true });
+    await page.screenshot({ path: path.join(os.tmpdir(), `municontrol-fuentes-${scenario.name.replaceAll(' ', '-')}.png`), fullPage: true });
     await context.close();
   }
 
@@ -225,6 +298,32 @@ test('real governed catalog drives useful sources and publications at desktop an
     assert.deepEqual(consoleErrors, []);
     await context.close();
   }
+});
+
+test('linkage failure publishes no figures and does not disable the GRH catalog', async t => {
+  const catalog = await realCatalog();
+  const server = await createContractServer({ catalog, linkageStatus: 503 });
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const { context, page } = await pageFor(browser, { width: 390, height: 844 });
+  t.after(() => context.close());
+  await page.goto(`http://127.0.0.1:${server.address().port}/auditoria.html`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#audit-status')?.dataset.state === 'ready');
+  await page.waitForFunction(() => document.querySelector('#linkageStatus')?.dataset.state === 'error');
+  const state = await page.evaluate(() => ({
+    catalogCards: document.querySelectorAll('.data-domain-card').length,
+    linkageHidden: document.querySelector('#linkageContent')?.hidden,
+    linkageText: document.querySelector('#linkageSection')?.innerText,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  assert.equal(state.catalogCards, catalog.domains.length);
+  assert.equal(state.linkageHidden, true);
+  assert.match(state.linkageText, /no está disponible/i);
+  assert.doesNotMatch(state.linkageText, /2\.349|1\.699|157|493|90\.365|273\.314|183|350/);
+  assert.ok(state.overflow <= 1, `unavailable linkage overflow: ${state.overflow}px`);
 });
 
 test('invalid catalog periods, denied or unavailable sources and invalid report content publish nothing', async t => {

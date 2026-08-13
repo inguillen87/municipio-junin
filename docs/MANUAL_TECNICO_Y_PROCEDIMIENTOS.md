@@ -159,8 +159,8 @@ Reglas de verdad:
 - `shared/route-policy.cjs` actúa como techo de autorización exacto por
   runtime, método, ruta y permiso `recurso:acción`. Una ruta, método, rol,
   capacidad o secreto interno no registrado se deniega.
-- La versión local `2026-08-13.10` del manifiesto contiene 31 recursos, 12
-  acciones, 53 permisos y 92 firmas de ruta protegidas: 50 Serverless y 42
+- La versión local `2026-08-13.11` del manifiesto contiene 31 recursos, 12
+  acciones, 53 permisos y 93 firmas de ruta protegidas: 51 Serverless y 42
   Express. Es un techo ejecutable exacto, no persistencia RBAC/ABAC por área.
 - `.vercelignore` excluye backend, evidencia, scripts, SQL, tests, documentos y
   artefactos JSON privados. `api/**` y `prisma/**` permanecen desplegables.
@@ -1376,8 +1376,8 @@ APIs privadas → analítica / mapas / alertas / asistente
 - La autorización actual combina identidad, rol vigente, tenant y estado
   consultados en DB con un manifiesto exacto de rutas y permisos
   `recurso:acción`. Las listas legacy sólo pueden restringir ese techo, nunca
-  ampliarlo. La versión local cubre 31 recursos, 12 acciones, 53 permisos y 91
-  firmas exactas (50 Serverless y 42 Express). Todavía no existe persistencia de
+  ampliarlo. La versión local cubre 31 recursos, 12 acciones, 53 permisos y 93
+  firmas exactas (51 Serverless y 42 Express). Todavía no existe persistencia de
   asignaciones por área, fila, campo, vigencia ni reglas de segregación de
   funciones.
 
@@ -1473,7 +1473,7 @@ municipal ni ejecutar una decisión administrativa por sí sola.
 
 **Actual local:** existen `Tenant`, siete roles técnicos, estado del tenant,
 controles tenant-bound y una política compartida que registra de forma literal
-31 recursos, 12 acciones, 53 permisos y 92 firmas protegidas (50 Serverless y 42
+31 recursos, 12 acciones, 53 permisos y 93 firmas protegidas (51 Serverless y 42
 Express). No hay wildcard, jerarquía ni autorización por nombre de pantalla. Los
 adaptadores de ambos runtimes usan ese mismo techo y deniegan lo desconocido.
 Algunas tablas analíticas legacy aún dependen de un CUID ambiental y no ofrecen
@@ -1594,7 +1594,7 @@ Diagnóstico recomendado:
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
-| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.10`: 31 recursos, 12 acciones, 53 permisos y 92 firmas exactas, 50 Serverless + 42 Express; desconocidos fallan cerrados |
+| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.11`: 31 recursos, 12 acciones, 53 permisos y 93 firmas exactas, 51 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |

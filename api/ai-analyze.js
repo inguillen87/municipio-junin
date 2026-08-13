@@ -1072,6 +1072,12 @@ function periodMonthLabel(period) {
   return months[Number(match[2]) - 1];
 }
 
+function periodMonthYearLabel(period) {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(String(period || ''));
+  if (!match) return String(period || 'mes no disponible');
+  return `${periodMonthLabel(period)} de ${match[1]}`;
+}
+
 function privateDirectorySourceLine(source) {
   return `Fuente: ${source?.canonicalSystem || 'GRH Junín'} · directorio privado · copia al ${source?.snapshotAsOf || 'no disponible'} · acceso según perfil · no tiempo real.`;
 }
@@ -1135,7 +1141,7 @@ export function classifyIntent(rawMessage) {
   if (/cierre\s+(?:grh|mensual|de\s+(?:nomina|calculo))|explic.{0,20}(?:cierre|neto)|descomposici.{0,20}(?:neto|calculo)|composici.{0,20}(?:neto|calculo)|concili.{0,30}(?:mes|periodo|(?:19|20)\d{2}[-/]\d{1,2})/.test(message)) {
     return { intent: 'close_explanation', policy: 'allowed' };
   }
-  if (/concili|cross.?source|totpago|diferencia.{0,20}(calculo|fuente)|compar.{0,20}(calculo|totpago)/.test(message)) {
+  if (/concili|cross.?source|totpago|diferencia.{0,45}(calculo|fuentes?|control(?:es)? de liquidacion)|compar.{0,30}(calculo|totpago|fuentes? de control)/.test(message)) {
     return { intent: 'reconciliation', policy: 'allowed' };
   }
   const financeIntent = classifyWorkforceFinanceIntent(message);
@@ -1146,7 +1152,7 @@ export function classifyIntent(rawMessage) {
   if (/catalogo (?:de )?(?:areas|datos|dominios)|que (?:areas(?: y datos)?|datos|dominios)(?: grh)? (?:hay|cubre|estan disponibles)|mapa de datos|que (?:datos|evidencia) de (?:carrera(?: y formacion)?|formacion|estudios?|beneficios?(?: y descuentos?)?|descuentos?|gremios?|relacion(?:es)? laboral(?:es)?) (?:hay|existe(?:n)?(?: en la base)?|estan disponibles)|que convenios? y gremios? (?:hay|existen|estan representados|estan disponibles)/.test(message)) {
     return { intent: 'domain_catalog', policy: 'allowed' };
   }
-  if (/cuarenten|registro.{0,15}(invalido|excluido)|fecha.{0,15}(anomala|futura|corrupta)/.test(message)) {
+  if (/cuarenten|registro.{0,30}(invalido|excluido|apartado)|fecha.{0,30}(anomala|futura|corrupta|revisar)/.test(message)) {
     return { intent: 'quarantine', policy: 'allowed' };
   }
   if (/calidad|confiab|integridad|cobertura|score|puntaje/.test(message)) {
@@ -1821,8 +1827,8 @@ function decisionBriefAnswer(context) {
   const brief = context.decisionBrief;
   if (!brief) {
     return assistantContractUnavailable(
-      'Brief de decisión no disponible',
-      'El contrato ejecutivo no está disponible para esta consulta.',
+      'Resumen para decidir no disponible',
+      'No pudimos verificar la información necesaria para preparar este resumen.',
       'GRH_DECISION_BRIEF_UNAVAILABLE',
     );
   }
@@ -1837,53 +1843,53 @@ function decisionBriefAnswer(context) {
     context_only: 'aporta contexto',
   };
   const findings = brief.priorities.map(priority =>
-    priorityLabels[priority.code] || `Prioridad gobernada: ${priority.code}.`);
+    priorityLabels[priority.code] || 'Hay un punto adicional que necesita revisión.');
   if (brief.change.status === 'released') {
     findings.push(
-      `Frente a ${brief.change.previousPeriod}, la participación cambió ${formatSignedInteger(brief.change.participantDelta)} y el acuerdo mensual de valores cambió ${formatSignedPercent(brief.change.valueAgreementDeltaPctPoints)} puntos porcentuales.`,
+      `Frente a ${brief.change.previousPeriod}, la cantidad de personas cambió ${formatSignedInteger(brief.change.participantDelta)} y la coincidencia de importes cambió ${formatSignedPercent(brief.change.valueAgreementDeltaPctPoints)} puntos porcentuales.`,
     );
   }
   return {
-    title: `Brief de decisión GRH · ${brief.period}`,
-    summary: `El corte ${statusLabels[brief.status] || 'requiere lectura contextual'}. La primera acción es revisar la diferencia entre cálculo y totpago sin convertir el control en una afirmación de pago.`,
+    title: `Prioridades para decidir · ${periodMonthYearLabel(brief.period)}`,
+    summary: `La información del mes ${statusLabels[brief.status] || 'necesita contexto'}. Primero conviene revisar las diferencias entre las dos fuentes de control. Esta comparación no confirma que un pago esté bien o mal.`,
     findings,
     evidence: [
-      metric('Participantes', brief.situation.participantDisplay, 'Participación de cálculo; no planta activa.'),
-      metric('Calidad gobernada', formatPercent(brief.situation.qualityScorePct), 'Score del extracto agregado.'),
-      metric('Cobertura mensual de corridas', formatPercent(brief.situation.runCoveragePct), 'No implica acuerdo de importes.'),
-      metric('Acuerdo mensual de valores', formatPercent(brief.situation.valueAgreementPct), 'Comparación cálculo/totpago del mismo período.'),
+      metric('Personas incluidas en la liquidación', brief.situation.participantDisplay, 'Aparecen en los cálculos del mes; no es la cantidad actual de personal.'),
+      metric('Resultado de la revisión de datos', `${formatFixedNumber(brief.situation.qualityScorePct)} de 100`, 'Combina revisiones de fechas, vínculos y comparación entre fuentes.'),
+      metric('Cálculos presentes en ambas fuentes', formatPercent(brief.situation.runCoveragePct), 'Indica presencia en ambas fuentes; no que los importes coincidan.'),
+      metric('Importes que coinciden', formatPercent(brief.situation.valueAgreementPct), 'Comparación del mismo mes entre las dos fuentes de control.'),
     ],
     caveats: [
-      'El brief prioriza señales verificadas; no asigna responsables, plazos ni causas.',
-      'El cálculo de nómina no certifica transferencia bancaria ni asiento contable.',
+      'Este resumen ordena señales verificadas; no asigna responsables, plazos ni causas.',
+      'Los cálculos de liquidación no confirman una transferencia bancaria ni un registro contable.',
     ],
     nextQuestions: [
       '¿Cómo evolucionó el neto de Servicios Públicos por centro de costo en los últimos 12 meses?',
-      '¿Cómo está la conciliación entre cálculo y totpago?',
-      '¿Qué registros quedaron en cuarentena?',
+      '¿Qué diferencias hay entre las dos fuentes de control de liquidación?',
+      '¿Qué registros fueron apartados por fechas para revisar?',
     ],
     actions: [
       {
         id: 'open_grh_decisions',
-        label: 'Convertir prioridades en compromisos',
+        label: 'Registrar próximos pasos',
         href: '/decisiones-grh',
         requiredCapability: 'navigation.grh-decisions',
       },
       {
         id: 'open_hacienda_reconciliation',
-        label: 'Revisar conciliación en Hacienda',
+        label: 'Revisar diferencias en Hacienda',
         href: '/hacienda#closeReconciliationTitle',
         requiredCapability: 'navigation.hacienda',
       },
       {
         id: 'open_data_quality',
-        label: 'Revisar cuarentena y calidad',
+        label: 'Revisar registros apartados',
         href: '/calidad',
         requiredCapability: 'navigation.data-quality',
       },
       {
         id: 'open_organization_analytics',
-        label: 'Abrir estructura y ausencias',
+        label: 'Revisar ausencias por área',
         href: '/estructura#ausencias',
         requiredCapability: 'navigation.organization-analytics',
       },
@@ -2899,22 +2905,22 @@ function closeExplanationAnswer(context, periodRequest) {
 function reconciliationAnswer(context) {
   const data = context.reconciliation;
   return {
-    title: 'Conciliación calculo vs totpago',
-    summary: `La conciliación obtiene ${formatPercent(data.scorePct)} y su estado es “${reconciliationLabel(data.status)}”. totpago queda limitado a diagnóstico y no gobierna los importes ejecutivos.`,
+    title: 'Comparación entre las dos fuentes de control',
+    summary: `El resultado general es ${formatFixedNumber(data.scorePct)} de 100 y ${reconciliationLabel(data.status)}. Esta comparación ayuda a encontrar diferencias; no confirma pagos ni reemplaza los importes del informe ejecutivo.`,
     findings: [
-      `${formatInteger(data.matchedRuns)} corridas emparejadas sobre ${formatInteger(data.calculationRuns)} de calculo y ${formatInteger(data.totpagoRuns)} de totpago.`,
-      `${formatInteger(data.fullyReconciledRuns)} corridas completamente conciliadas.`,
-      `Cobertura de corridas: ${formatPercent(data.runCoveragePct)}; exactitud de métricas: ${formatPercent(data.metricExactRatePct)}.`,
-      `Acuerdo de valores: ${formatPercent(data.valueAgreementPct)}.`,
+      `${formatInteger(data.matchedRuns)} cálculos aparecen en ambas fuentes, sobre ${formatInteger(data.calculationRuns)} de la fuente principal y ${formatInteger(data.totpagoRuns)} de la fuente de contraste.`,
+      `${formatInteger(data.fullyReconciledRuns)} cálculos coinciden completamente dentro del margen permitido.`,
+      `Cálculos presentes en ambas fuentes: ${formatPercent(data.runCoveragePct)}; controles que coinciden: ${formatPercent(data.metricExactRatePct)}.`,
+      `Importes que coinciden: ${formatPercent(data.valueAgreementPct)}.`,
     ],
     evidence: [
-      metric('Score de conciliación', formatPercent(data.scorePct), reconciliationLabel(data.status)),
-      metric('Cobertura de corridas', formatPercent(data.runCoveragePct), `${formatInteger(data.matchedRuns)} corridas emparejadas.`),
-      metric('Acuerdo de valores', formatPercent(data.valueAgreementPct), 'Comparación agregada entre fuentes.'),
-      metric('Corridas conciliadas', `${formatInteger(data.fullyReconciledRuns)} / ${formatInteger(data.matchedRuns)}`, 'Conciliación completa dentro de tolerancia.'),
+      metric('Resultado general', `${formatFixedNumber(data.scorePct)} de 100`, reconciliationLabel(data.status)),
+      metric('Cálculos presentes en ambas fuentes', formatPercent(data.runCoveragePct), `${formatInteger(data.matchedRuns)} cálculos encontrados en las dos fuentes.`),
+      metric('Importes que coinciden', formatPercent(data.valueAgreementPct), 'Comparación agregada entre las dos fuentes.'),
+      metric('Cálculos que coinciden por completo', `${formatInteger(data.fullyReconciledRuns)} / ${formatInteger(data.matchedRuns)}`, 'Coincidencia completa dentro del margen permitido.'),
     ],
-    caveats: ['Una alta cobertura de corridas no implica acuerdo de importes; ambas medidas deben leerse juntas.'],
-    nextQuestions: ['¿Qué muestra el control de cálculo?', '¿Cuál es el principal riesgo de calidad?'],
+    caveats: ['Que un cálculo aparezca en ambas fuentes no significa que sus importes coincidan; ambas medidas deben leerse juntas.'],
+    nextQuestions: ['¿Qué muestra el control de liquidación?', '¿Qué información necesita revisión?'],
     visual: reconciliationVisual(data),
   };
 }
@@ -3236,16 +3242,16 @@ function closeComponentsVisual(context, row) {
 
 function reconciliationVisual(data) {
   return buildBarVisual({
-    title: 'Conciliación global calculo vs totpago',
-    subtitle: 'Indicadores globales independientes; cobertura alta no implica acuerdo de importes.',
+    title: 'Comparación completa entre fuentes',
+    subtitle: 'Son controles diferentes: que un cálculo aparezca en ambas fuentes no significa que sus importes coincidan.',
     order: 'defined',
     unit: 'percent',
     scaleMax: 100,
     items: [
-      visualItem('Score de conciliación', data.scorePct, formatPercent(data.scorePct)),
-      visualItem('Cobertura de corridas', data.runCoveragePct, formatPercent(data.runCoveragePct)),
-      visualItem('Exactitud de métricas', data.metricExactRatePct, formatPercent(data.metricExactRatePct)),
-      visualItem('Acuerdo de valores', data.valueAgreementPct, formatPercent(data.valueAgreementPct)),
+      visualItem('Resultado general', data.scorePct, `${formatFixedNumber(data.scorePct)} de 100`),
+      visualItem('Cálculos presentes en ambas fuentes', data.runCoveragePct, formatPercent(data.runCoveragePct)),
+      visualItem('Controles que coinciden', data.metricExactRatePct, formatPercent(data.metricExactRatePct)),
+      visualItem('Importes que coinciden', data.valueAgreementPct, formatPercent(data.valueAgreementPct)),
     ],
   });
 }
@@ -3268,16 +3274,16 @@ function trendVisual(context, previous, current) {
 
 function decisionBriefVisual(brief) {
   return buildBarVisual({
-    title: 'Señales para decidir',
-    subtitle: 'Indicadores independientes del último período; no deben sumarse entre sí.',
+    title: 'Datos que ayudan a decidir',
+    subtitle: 'Cada dato responde una pregunta distinta y no debe sumarse con los demás.',
     order: 'defined',
     unit: 'percent',
     scaleMax: 100,
     items: [
-      visualItem('Calidad gobernada', brief.situation.qualityScorePct, formatPercent(brief.situation.qualityScorePct)),
-      visualItem('Cobertura de corridas', brief.situation.runCoveragePct, formatPercent(brief.situation.runCoveragePct)),
-      visualItem('Exactitud de métricas', brief.situation.metricExactRatePct, formatPercent(brief.situation.metricExactRatePct)),
-      visualItem('Acuerdo mensual de valores', brief.situation.valueAgreementPct, formatPercent(brief.situation.valueAgreementPct)),
+      visualItem('Resultado de la revisión de datos', brief.situation.qualityScorePct, `${formatFixedNumber(brief.situation.qualityScorePct)} de 100`),
+      visualItem('Cálculos presentes en ambas fuentes', brief.situation.runCoveragePct, formatPercent(brief.situation.runCoveragePct)),
+      visualItem('Controles que coinciden', brief.situation.metricExactRatePct, formatPercent(brief.situation.metricExactRatePct)),
+      visualItem('Importes que coinciden', brief.situation.valueAgreementPct, formatPercent(brief.situation.valueAgreementPct)),
     ],
   });
 }

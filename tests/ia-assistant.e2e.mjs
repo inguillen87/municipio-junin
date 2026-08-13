@@ -969,7 +969,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
 
   await clickPrimaryQuery(page, 'Prioridades para decidir');
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
-    .some(title => title.textContent.includes('Brief de decisión GRH')));
+    .some(title => title.textContent.includes('Prioridades para decidir')));
   const brief = await page.evaluate(() => {
     const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
     return {
@@ -978,6 +978,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
         capability: link.dataset.capability,
       })),
       visualItems: card?.querySelectorAll('.answer-visual-row').length,
+      visibleText: card?.innerText || '',
     };
   });
   assert.deepEqual(brief.actions, [
@@ -987,6 +988,9 @@ test('assistant renders decision and workforce-finance answers with real deep li
     { href: '/estructura#ausencias', capability: 'navigation.organization-analytics' },
   ]);
   assert.equal(brief.visualItems, 4);
+  assert.doesNotMatch(brief.visibleText, /\bbrief\b|score|corridas|totpago|conciliaci[oó]n/i);
+  assert.match(brief.visibleText, /Personas incluidas en la liquidación/i);
+  assert.match(brief.visibleText, /Importes que coinciden/i);
 
   const absenceComparisonChip = page.locator('#queryPrimary')
     .getByRole('button', { name: 'Comparar ausencias', exact: true });

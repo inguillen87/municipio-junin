@@ -1496,11 +1496,46 @@ test('decision brief and workforce-finance intents answer from the governed real
   ]);
   assert.deepEqual(brief.answer.actions[0], {
     id: 'open_grh_decisions',
-    label: 'Convertir prioridades en compromisos',
+    label: 'Registrar próximos pasos',
     href: '/decisiones-grh',
     requiredCapability: 'navigation.grh-decisions',
   });
+  assert.equal(brief.answer.title, 'Prioridades para decidir · julio de 2026');
+  assert.deepEqual(brief.answer.evidence.map(item => item.label), [
+    'Personas incluidas en la liquidación',
+    'Resultado de la revisión de datos',
+    'Cálculos presentes en ambas fuentes',
+    'Importes que coinciden',
+  ]);
+  assert.deepEqual(brief.answer.visual.items.map(item => item.label), [
+    'Resultado de la revisión de datos',
+    'Cálculos presentes en ambas fuentes',
+    'Controles que coinciden',
+    'Importes que coinciden',
+  ]);
+  assert.doesNotMatch(
+    JSON.stringify({
+      title: brief.answer.title,
+      summary: brief.answer.summary,
+      findings: brief.answer.findings,
+      evidence: brief.answer.evidence,
+      caveats: brief.answer.caveats,
+      nextQuestions: brief.answer.nextQuestions,
+      visual: brief.answer.visual,
+      actionLabels: brief.answer.actions.map(action => action.label),
+    }),
+    /\bbrief\b|score|corridas|totpago|conciliaci[oó]n/i,
+  );
   assertBarVisual(brief.answer.visual, { unit: 'percent', order: 'defined' });
+
+  assert.equal(
+    ask('¿Qué diferencias hay entre las dos fuentes de control de liquidación?').intent,
+    'reconciliation',
+  );
+  assert.equal(
+    ask('¿Qué registros fueron apartados por fechas para revisar?').intent,
+    'quarantine',
+  );
 
   const overview = ask('¿Qué costo neto se concentra por centro de costo en 2026-07?');
   assert.equal(overview.intent, 'workforce_finance_overview');

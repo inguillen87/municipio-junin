@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
@@ -21,7 +22,12 @@ process.env.GRH_TENANT_ID = 'tenant-junin-action-ledger-test';
 delete process.env.GRH_SOURCE_SHA256;
 
 const NOW = new Date('2026-08-11T12:00:00.000Z');
-const DATABASE_URL = 'postgresql://ledger-test:do-not-print@ep-ledger-main-a1b2c3-pooler.us-east-2.aws.neon.tech/municontrol?sslmode=verify-full';
+const DATABASE_URL = (() => {
+  const url = new URL('postgresql://ep-ledger-main-a1b2c3-pooler.us-east-2.aws.neon.tech/municontrol?sslmode=verify-full');
+  url.username = 'ledger-test';
+  url.password = crypto.randomUUID();
+  return url.toString();
+})();
 const DATABASE_TARGET_FINGERPRINT = fingerprintDatabaseTarget(DATABASE_URL);
 const CREATE_COMMAND_ID = '11111111-1111-4111-8111-111111111111';
 const COMMITMENT_ID = '22222222-2222-4222-8222-222222222222';

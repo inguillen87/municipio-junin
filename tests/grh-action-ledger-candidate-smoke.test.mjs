@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
@@ -32,9 +33,9 @@ const fingerprint = 'b'.repeat(64);
 const privateIntendenteEmail = 'ledger-intendente@private.example';
 const privateContadorEmail = 'ledger-contador@private.example';
 const demoEmail = 'admin@junin.gov.ar';
-const intendentePassword = 'intendente-secret-not-for-output';
-const contadorPassword = 'contador-secret-not-for-output';
-const demoPassword = 'demo-secret-not-for-output';
+const intendentePassword = crypto.randomUUID();
+const contadorPassword = crypto.randomUUID();
+const demoPassword = crypto.randomUUID();
 const now = new Date('2026-08-11T18:00:00.000Z');
 
 function environment(overrides = {}) {

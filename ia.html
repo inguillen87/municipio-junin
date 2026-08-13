@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="Asistente ejecutivo gobernado por el contrato privado GRH de la Municipalidad de Junín.">
+  <meta name="description" content="Asistente de consultas de Recursos Humanos de la Municipalidad de Junín.">
   <meta name="theme-color" content="#07111f">
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <script src="js/theme-switcher.js"></script>
   <link rel="stylesheet" href="css/dashboard.css">
-  <title>BOT IA · Asistente GRH | MuniControl</title>
+  <title>Asistente de consultas GRH | MuniControl</title>
   <style>
     html.muni-shell-v1[data-theme="dark"] {
       --assistant-bg: #07111f;
@@ -706,14 +706,14 @@
           </svg>
         </button>
         <div class="assistant-title-copy">
-          <p>Inteligencia ejecutiva</p>
-          <h1>BOT IA · Asistente GRH</h1>
+          <p>Recursos Humanos municipal</p>
+          <h1>Asistente de consultas GRH</h1>
         </div>
       </div>
       <div class="assistant-topbar-actions">
         <span class="assistant-role-chip" id="assistantRoleChip">Perfil ejecutivo</span>
-        <div class="engine-status" id="assistantSourceStatus" data-state="ready" role="status" aria-live="polite" title="Estado de la consulta sobre el corte GRH">
-          <span>Listo para consultar</span>
+        <div class="engine-status" id="assistantSourceStatus" data-state="ready" role="status" aria-live="polite" title="Estado de las fuentes usadas en la consulta">
+          <span>Las fuentes se verifican con cada consulta</span>
         </div>
         <button class="theme-toggle-btn assistant-theme" id="themeToggleBtn" type="button" aria-label="Cambiar tema">🌙</button>
       </div>
@@ -731,9 +731,9 @@
             </div>
             <p class="eyebrow">Ayuda para decidir</p>
             <h2>¿Qué necesitás decidir hoy?</h2>
-            <p>Consultá los datos disponibles de Recursos Humanos y abrí el tablero correspondiente para profundizar.</p>
+            <p>Respuestas calculadas sobre datos autorizados. No inventa ni completa registros.</p>
             <div class="welcome-guardrails" aria-label="Garantías del asistente">
-              <span>Datos municipales verificados</span>
+              <span>Las fuentes se verifican con cada consulta</span>
               <span>Respuestas según tu perfil</span>
               <span>Sin datos inventados</span>
             </div>
@@ -834,19 +834,19 @@
 
       <aside class="context-rail" aria-label="Alcance y trazabilidad del asistente">
         <section class="rail-card">
-          <h2>Estado de confianza</h2>
+          <h2>Estado de la información</h2>
           <div class="trust-list">
             <div class="trust-row">
               <span class="trust-dot" aria-hidden="true"></span>
-              <div><strong>Origen de los datos</strong><span>GRH Junín · contratos según perfil</span></div>
+              <div><strong>Origen de los datos</strong><span>GRH Junín · acceso según tu perfil</span></div>
             </div>
             <div class="trust-row">
               <span class="trust-dot pending" id="snapshotDot" aria-hidden="true"></span>
-              <div><strong>Copia disponible</strong><span id="snapshotStatus">Se confirma al responder</span></div>
+              <div><strong>Fecha de los datos</strong><span id="snapshotStatus">Se verifica con cada consulta</span></div>
             </div>
             <div class="trust-row">
               <span class="trust-dot pending" id="periodDot" aria-hidden="true"></span>
-              <div><strong>Período de cálculo</strong><span id="periodStatus">Se confirma al responder</span></div>
+              <div><strong>Mes de cálculo</strong><span id="periodStatus">Se verifica con cada consulta</span></div>
             </div>
             <div class="trust-row">
               <span class="trust-dot" aria-hidden="true"></span>

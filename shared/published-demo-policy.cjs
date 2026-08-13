@@ -3,7 +3,7 @@
 // Temporary containment for the six role-preview identities that were
 // previously published. This is an authorization ceiling, never a grant:
 // callers must still pass the canonical role/route policy first.
-const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-11.6';
+const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-13.7';
 
 const PUBLISHED_DEMO_PROFILES = Object.freeze([
   Object.freeze({ email: 'admin@junin.gov.ar', role: 'TENANT_ADMIN', tenantSlug: 'junin' }),
@@ -26,6 +26,7 @@ const PUBLISHED_DEMO_ALLOWED_ROUTE_IDS = Object.freeze([
   'serverless.grh.domain-catalog.read',
   'serverless.grh.analysis.execute',
   'serverless.grh.organization-analytics.read',
+  'serverless.grh.employment-review.read',
   'serverless.grh.movement-operations.read',
   'serverless.grh.workforce-finance.read',
   'serverless.grh.report.read',

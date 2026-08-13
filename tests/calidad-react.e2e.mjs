@@ -341,6 +341,10 @@ function testApiPlugin(scenario, apiLog, pwaLog) {
 
           const payload = structuredClone(QUALITY_FIXTURE);
           if (scenario.qualityMode === 'mutated') payload.quality.score = 99;
+          if (scenario.qualityMode === 'slow') {
+            setTimeout(() => send(response, 200, 'application/json; charset=utf-8', JSON.stringify(payload)), 750);
+            return;
+          }
           send(response, 200, 'application/json; charset=utf-8', JSON.stringify(payload));
           return;
         }
@@ -570,6 +574,27 @@ test('React Calidad canary validates governed evidence and fails closed', async 
   const browser = await chromium.launch({ headless: true });
   t.after(async () => browser.close());
 
+  await t.test('explains the temporary check without internal vocabulary', async () => {
+    await withScenario({ name: 'slow-loading', qualityMode: 'slow' }, async ({ baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+        reducedMotion: 'reduce',
+      });
+      try {
+        await page.goto(`${baseUrl}/calidad`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('.loading-state[role="status"]');
+        const loadingText = String(await page.locator('.loading-state').innerText()).replace(/\s+/g, ' ').trim();
+        assert.match(loadingText, /Comprobando datos y permisos/i);
+        assert.doesNotMatch(loadingText, /contrato|capacidad|evidencia gobernada|timeout|segundos/i);
+        await page.waitForSelector('#page-title');
+        assert.deepEqual(diagnostics.consoleErrors, []);
+        assert.deepEqual(diagnostics.externalRequests, []);
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
   await t.test('renders the authorized synthetic contract on desktop and mobile', async () => {
     await withScenario({ name: 'authorized' }, async ({ apiLog, baseUrl, pwaLog }) => {
       for (const viewport of [
@@ -785,7 +810,11 @@ test('React Calidad canary validates governed evidence and fails closed', async 
           kpis: document.querySelectorAll('.kpi-card').length,
           fixtureValuesVisible: /99,3|98,75|5 de 7|5\.200/.test(document.querySelector('main')?.textContent || ''),
         }));
-        assert.match(blocked.heading || '', /Evidencia bloqueada/i);
+        assert.match(blocked.heading || '', /No pudimos mostrar los datos/i);
+        assert.match(
+          await page.locator('.blocked-state').innerText(),
+          /No pudimos validar el respaldo; no mostramos cifras para evitar errores\./i,
+        );
         assert.equal(blocked.figuresMounted, false);
         assert.equal(blocked.kpis, 0);
         assert.equal(blocked.fixtureValuesVisible, false);

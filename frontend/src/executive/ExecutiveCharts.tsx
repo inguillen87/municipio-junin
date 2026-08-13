@@ -20,9 +20,9 @@ interface PositionedPoint {
 }
 
 const ANNUAL_QUALIFIERS: Record<AnnualDomainViewModel['key'], string> = {
-  absence: 'Eventos agregados: no es una tasa de ausentismo.',
-  leave: 'Historia publicada: no prueba vigencia actual.',
-  movements: 'Volumen agregado: no explica causa ni responsabilidad.',
+  absence: 'Son registros acumulados; no representan una tasa de ausentismo.',
+  leave: 'Es información histórica; no indica una licencia vigente.',
+  movements: 'La cantidad registrada no explica la causa ni asigna responsabilidad.',
 };
 
 function clampPercentage(value: number): number {
@@ -90,12 +90,12 @@ export function PayrollChart({ payroll }: { payroll: PayrollSeriesViewModel }) {
   const positioned = positionPayrollPoints(timelinePoints);
   const segments = contiguousSegments(positioned);
   const visibleLabels = labelIndexes(positioned.length);
-  const publishedLabel = `${payroll.releasedPeriods} de ${payroll.totalPeriods} períodos publicables`;
+  const publishedLabel = `${payroll.releasedPeriods} de ${payroll.totalPeriods} meses con importes visibles`;
   const latestStateLabel = payroll.latestPeriod === null
-    ? 'Último valor no determinable'
+    ? 'Sin último mes visible'
     : payroll.latestStatus === 'released'
-      ? 'Publicado'
-      : 'Protegido';
+      ? 'Disponible'
+      : 'No mostrado';
 
   return (
     <figure
@@ -106,11 +106,11 @@ export function PayrollChart({ payroll }: { payroll: PayrollSeriesViewModel }) {
     >
       <div className="executive-chart__summary">
         <div>
-          <span>Serie gobernada</span>
+          <span>Meses con información disponible</span>
           <strong>{publishedLabel}</strong>
         </div>
         <div>
-          <span>Último estado</span>
+          <span>Último mes</span>
           <strong>{latestStateLabel}</strong>
         </div>
       </div>
@@ -127,9 +127,9 @@ export function PayrollChart({ payroll }: { payroll: PayrollSeriesViewModel }) {
           aria-labelledby="payroll-chart-title payroll-chart-description"
           preserveAspectRatio="xMidYMid meet"
         >
-          <title id="payroll-chart-title">Línea temporal del control de cálculo</title>
+          <title id="payroll-chart-title">Evolución mensual de los importes de control</title>
           <desc id="payroll-chart-description">
-            Los puntos publicados se unen solamente cuando son consecutivos en la serie. Los períodos protegidos aparecen como huecos y nunca como cero.
+            Los meses disponibles se unen solamente cuando son consecutivos. Los meses no mostrados aparecen como espacios vacíos y nunca como cero.
           </desc>
           <g className="executive-chart__grid" aria-hidden="true">
             {[0, 1, 2, 3].map(index => {
@@ -171,25 +171,25 @@ export function PayrollChart({ payroll }: { payroll: PayrollSeriesViewModel }) {
       </div>
 
       <div className="executive-chart__legend" aria-hidden="true">
-        <span><i className="executive-chart__legend-line" />Valor publicado</span>
-        <span><i className="executive-chart__legend-gap" />Período protegido</span>
+        <span><i className="executive-chart__legend-line" />Importe disponible</span>
+        <span><i className="executive-chart__legend-gap" />Mes no mostrado para cuidar identidades</span>
       </div>
       <figcaption id="payroll-chart-heading">{payroll.warning}</figcaption>
       {unknownProtectedPeriods > 0 ? (
         <p className="executive-chart__unknown">
-          {unknownProtectedPeriods} período(s) protegido(s) no declaran fecha y quedan fuera del eje; por eso el último valor no puede determinarse.
+          {unknownProtectedPeriods} registro(s) reservado(s) no incluyen fecha y quedan fuera de la línea; por eso no se puede determinar el último importe.
         </p>
       ) : null}
       <details className="executive-text-alternative">
-        <summary>Ver alternativa textual por período declarado</summary>
+        <summary>Ver importes por mes</summary>
         <div className="executive-table-region" tabIndex={0} role="region" aria-label="Serie del control de cálculo en tabla">
           <table>
             <thead>
               <tr>
                 <th scope="col">Período</th>
-                <th scope="col">Control</th>
-                <th scope="col">Participantes</th>
-                <th scope="col">Variación</th>
+                <th scope="col">Importe de control</th>
+                <th scope="col">Personas incluidas</th>
+                <th scope="col">Cambio mensual</th>
               </tr>
             </thead>
             <tbody>
@@ -218,11 +218,11 @@ export function SectorChart({ sector }: { sector: SectorRankingViewModel }) {
     >
       <div className="executive-sector__summary">
         <div>
-          <span>Universo del ranking</span>
+          <span>Personas incluidas</span>
           <strong>{sector.totalLabel}</strong>
         </div>
         <div>
-          <span>Detalle individual publicable</span>
+          <span>Con sector identificado</span>
           <strong>{sector.individuallyPublishedCoverageLabel}</strong>
         </div>
       </div>
@@ -257,10 +257,9 @@ export function AnnualCollection({ domain }: { domain: AnnualDomainViewModel }) 
     >
       <header>
         <div>
-          <p>Fuente <code>{domain.sourceTable}</code></p>
           <h3 id={`annual-${domain.key}-title`}>{domain.label}</h3>
         </div>
-        <span>{domain.releasedPeriods} períodos publicados</span>
+        <span>{domain.releasedPeriods} años disponibles</span>
       </header>
       <ul
         className="executive-annual-card__values"

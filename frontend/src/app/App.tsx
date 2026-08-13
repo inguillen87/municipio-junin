@@ -272,11 +272,11 @@ export function App() {
       busy={state.status === 'loading'}
     >
       {state.status === 'loading' ? (
-        <GovernedLoading description="Confirmamos la sesión, el municipio, las capacidades y el contrato antes de presentar cualquier indicador." />
+        <GovernedLoading description="Estamos verificando que la información esté disponible para este municipio." />
       ) : null}
       {state.status === 'blocked' ? (
         <GovernedBlocked
-          description="La proyección privada no está disponible o no supera su contrato. No se muestra ninguna cifra."
+          description="No pudimos validar el respaldo; no mostramos cifras para evitar errores."
           onRetry={retry}
         />
       ) : null}

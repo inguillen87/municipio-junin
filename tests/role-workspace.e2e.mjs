@@ -186,13 +186,14 @@ function expectedWorkspaceActions(access) {
     .filter(capability => capability !== 'navigation.workspace' && ACTION_CAPABILITIES.has(capability));
   if (access.capabilities.includes('navigation.organization-analytics') &&
       !capabilities.includes('navigation.organization-analytics')) {
-    capabilities.push('navigation.organization-analytics');
+    const dataQualityIndex = capabilities.indexOf('navigation.data-quality');
+    capabilities.splice(dataQualityIndex === -1 ? capabilities.length : dataQualityIndex, 0, 'navigation.organization-analytics');
   }
   if (access.capabilities.includes('navigation.grh-decisions') &&
       !capabilities.includes('navigation.grh-decisions')) {
     capabilities.push('navigation.grh-decisions');
   }
-  return capabilities;
+  return capabilities.slice(0, 4);
 }
 
 test('safe workspace renders the exact seven role variants at 390 and 1440 without data requests', async t => {
@@ -226,6 +227,10 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
           .map(link => ({ height: link.getBoundingClientRect().height, width: link.getBoundingClientRect().width }));
         return {
           actionCapabilities: privateLinks.map(link => link.dataset.capability),
+          actionsBeforeGuide: Boolean(
+            document.querySelector('#workspaceActions').compareDocumentPosition(document.querySelector('#journeyList')) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+          ),
           bottom: [...document.querySelectorAll('.bottom-nav a, .bottom-nav button')]
             .map(item => item.matches('button.bottom-nav-more') ? '#more' : item.getAttribute('href')),
           busy: document.querySelector('#workspaceMain').getAttribute('aria-busy'),
@@ -241,6 +246,7 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
             : null,
           targets,
           text: document.querySelector('#workspaceViews').textContent,
+          title: document.querySelector('#workspaceTitle').textContent,
           variant: document.body.dataset.roleVariant,
         };
       });
@@ -250,15 +256,19 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
       assert.equal(result.role, role, `${role}:${viewport.width}:server role must replace stale browser role`);
       assert.equal(result.busy, 'false');
       assert.equal(result.errorHidden, true);
+      assert.equal(result.actionsBeforeGuide, true, `${role}:${viewport.width}:primary actions appear before guidance`);
+      assert.match(result.title, /^Hola(?:[,.]|$)/, `${role}:${viewport.width}:role greeting`);
       assert.ok(result.overflow <= 1, `${role}:${viewport.width}:overflow=${result.overflow}`);
       assert.deepEqual([...result.actionCapabilities].sort(), [...expectedActions].sort(), `${role}:${viewport.width}:actions`);
       if (['TENANT_USER', 'INSPECTOR', 'DEMO'].includes(role)) {
         assert.equal(result.territoryAction?.href, '/territorio', `${role}:${viewport.width}:territory href`);
-        assert.match(result.territoryAction?.text || '', /Límite y localidades oficiales/i, `${role}:${viewport.width}:territory copy`);
+        assert.match(result.territoryAction?.text || '', /Junín, Mendoza, con sus localidades/i, `${role}:${viewport.width}:territory copy`);
       }
       assert.ok(result.actionCapabilities.every(capability => expectedAccess.capabilities.includes(capability)));
       assert.match(result.policy, new RegExp(accessPolicy.ACCESS_POLICY_VERSION.replaceAll('.', '\\.')));
       assert.doesNotMatch(result.text, /@internal\.invalid|tenant-junin-e2e|personas_junin/i);
+      assert.doesNotMatch(result.text, /\b(?:snapshot|capabilities|datasets?|contrato|PII|gobernado|cross-source|tenant)\b/i);
+      assert.ok(result.actionCapabilities.length <= 4, `${role}:${viewport.width}:summary-first actions`);
       assert.ok(result.targets.every(target => target.height >= 44 && target.width >= 44), `${role}:${viewport.width}:touch targets`);
       if (viewport.width <= 900) assert.deepEqual(result.bottom, expectedBottom(expectedAccess), `${role}:bottom priorities`);
       else assert.deepEqual(result.bottom, [], `${role}:desktop has no bottom nav`);
@@ -313,9 +323,9 @@ test('published high roles discover the aggregate staffing room in navigation an
     assert.equal(surface.action, expected ? '/estructura' : null, `${profile.email}:Inicio CTA`);
     if (expected) {
       assert.match(surface.navText, /Estructura y áreas de costo/);
-      assert.match(surface.actionText, /Estructura y áreas de costo/);
-      assert.match(surface.actionText, /compará dos áreas de costo/i);
-      assert.match(surface.actionText, /24 meses de neto de control/i);
+      assert.match(surface.actionText, /Estructura y áreas/);
+      assert.match(surface.actionText, /Compará dos áreas/i);
+      assert.match(surface.actionText, /últimos 24 meses/i);
     }
     await context.close();
   }

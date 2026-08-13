@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07111f">
   <meta name="robots" content="noindex,nofollow">
-  <meta name="description" content="Inicio institucional de MuniControl adaptado a las capacidades vigentes del perfil.">
+  <meta name="description" content="Inicio de MuniControl con accesos simples según la función municipal de cada persona.">
   <title>Inicio institucional | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="css/dashboard.css">
@@ -156,9 +156,9 @@
     .ws-hero h1 {
       max-width: 900px;
       margin: 0;
-      font-size: clamp(32px, 5vw, 60px);
-      line-height: 1.02;
-      letter-spacing: -.045em;
+      font-size: clamp(32px, 4.2vw, 50px);
+      line-height: 1.06;
+      letter-spacing: -.04em;
     }
     .ws-lead {
       max-width: 820px;
@@ -250,7 +250,7 @@
     .ws-section-heading p { max-width: 620px; margin: 0; color: var(--ws-muted); font-size: 13px; line-height: 1.5; }
     .ws-actions {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
       margin-top: 16px;
     }
@@ -309,7 +309,16 @@
     .ws-truth div { padding: 16px 18px; background: var(--ws-surface); }
     .ws-truth span { display: block; color: var(--ws-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
     .ws-truth strong { display: block; margin-top: 6px; font-size: 13px; line-height: 1.45; }
-    .ws-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 20px; color: var(--ws-muted); font-size: 10px; }
+    .ws-footer { margin-top: 20px; color: var(--ws-muted); font-size: 11px; }
+    .ws-footer details { width: fit-content; max-width: 100%; }
+    .ws-footer summary {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 750;
+    }
+    .ws-footer details[open] span { display: block; max-width: 760px; margin: 5px 0 0; line-height: 1.55; }
 
     [hidden] { display: none !important; }
     @media (max-width: 1040px) {
@@ -356,7 +365,7 @@
     <header class="topbar ws-topbar">
       <div class="ws-topbar-left">
         <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir o cerrar navegación"></button>
-        <div class="ws-title-block"><strong>Inicio institucional</strong><span>Experiencia confirmada por el servidor</span></div>
+        <div class="ws-title-block"><strong>Inicio</strong><span>Herramientas según tu función</span></div>
       </div>
       <div class="ws-topbar-right">
         <span class="ws-session-state" id="sessionState">Validando perfil</span>
@@ -367,8 +376,8 @@
     <div class="ws-shell" id="workspaceMain" aria-busy="true" tabindex="-1">
       <div class="ws-notice" id="accessNotice" role="status" tabindex="-1" hidden></div>
       <section class="ws-error" id="workspaceError" role="alert" tabindex="-1" hidden>
-        <strong>No se pudo validar el espacio de trabajo.</strong>
-        <div>La sesión no contiene una política y un perfil de inicio íntegros. No se muestran accesos privados ni datos de respaldo.</div>
+        <strong>No pudimos confirmar tu acceso.</strong>
+        <div>Por seguridad no mostramos herramientas privadas. Volvé a ingresar o pedí ayuda al responsable municipal.</div>
       </section>
 
       <div id="workspaceViews" hidden>
@@ -377,7 +386,7 @@
             <p class="ws-eyebrow" id="workspaceEyebrow">Espacio de trabajo</p>
             <h1 id="workspaceTitle">Inicio institucional</h1>
             <p class="ws-lead" id="workspaceLead"></p>
-            <div class="ws-context" aria-label="Contexto de acceso">
+            <div class="ws-context" aria-label="Tu acceso">
               <span class="ws-chip" id="roleChip"></span>
               <span class="ws-chip" id="tenantChip"></span>
               <span class="ws-chip" id="capabilityChip"></span>
@@ -385,26 +394,15 @@
             </div>
           </div>
           <aside class="ws-question" aria-labelledby="questionLabel">
-            <span id="questionLabel">Pregunta de entrada</span>
+            <span id="questionLabel">Para empezar</span>
             <strong id="workspaceQuestion"></strong>
           </aside>
         </section>
 
-        <div class="ws-grid">
-          <section class="ws-panel" aria-labelledby="journeyTitle">
-            <div class="ws-panel-head"><span>Recorrido recomendado</span><h2 id="journeyTitle">Qué revisar primero</h2></div>
-            <ol class="ws-journey" id="journeyList"></ol>
-          </section>
-          <section class="ws-panel" aria-labelledby="limitsTitle">
-            <div class="ws-panel-head"><span>Frontera vigente</span><h2 id="limitsTitle">Qué no habilita este perfil</h2></div>
-            <ul class="ws-limits" id="limitsList"></ul>
-          </section>
-        </div>
-
         <section class="ws-actions-section" aria-labelledby="actionsTitle">
           <div class="ws-section-heading">
-            <h2 id="actionsTitle">Accesos habilitados</h2>
-            <p>La lista se construye únicamente con capabilities confirmadas por <code>/api/auth/me</code>. Un enlace no sustituye la autorización del endpoint.</p>
+            <h2 id="actionsTitle">Tus accesos principales</h2>
+            <p>Mostramos hasta cuatro herramientas útiles para tu función. El menú conserva el resto de los accesos autorizados.</p>
           </div>
           <div class="ws-actions" id="workspaceActions"></div>
           <nav class="ws-public" aria-label="Servicios públicos">
@@ -413,21 +411,35 @@
           </nav>
         </section>
 
-        <section class="ws-truth" aria-label="Límites de la portada">
-          <div><span>Datos</span><strong>Esta portada no consulta GRH ni otros datasets.</strong></div>
-          <div><span>Autorización</span><strong>Rol y capacidades se revalidan en servidor en cada sesión.</strong></div>
-          <div><span>Estado</span><strong>La operación conectada y la producción requieren evidencia propia.</strong></div>
+        <div class="ws-grid">
+          <section class="ws-panel" aria-labelledby="journeyTitle">
+            <div class="ws-panel-head"><span>Recorrido recomendado</span><h2 id="journeyTitle">Tres pasos para avanzar</h2></div>
+            <ol class="ws-journey" id="journeyList"></ol>
+          </section>
+          <section class="ws-panel" aria-labelledby="limitsTitle">
+            <div class="ws-panel-head"><span>Antes de avanzar</span><h2 id="limitsTitle">Qué tenés que tener en cuenta</h2></div>
+            <ul class="ws-limits" id="limitsList"></ul>
+          </section>
+        </div>
+
+        <section class="ws-truth" aria-label="Cómo funciona este inicio">
+          <div><span>Privacidad</span><strong>Esta portada no muestra fichas ni datos personales.</strong></div>
+          <div><span>Acceso</span><strong>El sistema confirma tu función antes de mostrar cada herramienta.</strong></div>
+          <div><span>Información</span><strong>Cada pantalla informa la fecha y el alcance de sus datos.</strong></div>
         </section>
 
         <footer class="ws-footer">
-          <span id="policyVersion">Política de acceso —</span>
-          <span>Sin fallback de datos, perfiles inferidos ni elevación por interfaz.</span>
+          <details>
+            <summary>Información de seguridad</summary>
+            <span id="policyVersion">Versión de seguridad —</span>
+            <span>La interfaz no inventa información ni amplía permisos.</span>
+          </details>
         </footer>
       </div>
     </div>
   </main>
 
-  <noscript><div class="ws-error">Esta superficie necesita JavaScript para revalidar la sesión y sus capacidades.</div></noscript>
+  <noscript><div class="ws-error">Esta pantalla necesita JavaScript para confirmar tu acceso.</div></noscript>
   <script src="js/theme-switcher.js"></script>
   <script src="js/navigation-catalog.js"></script>
   <script src="js/nav.js"></script>
@@ -447,140 +459,133 @@
       });
       var EXPERIENCES = Object.freeze({
         'platform-governance': Object.freeze({
-          eyebrow: 'Plataforma · gobierno y mínima exposición',
-          title: 'Goberná el servicio sin convertir soporte en acceso ambiental.',
-          lead: 'Este inicio prioriza política, fuentes y gates técnicos. No carga evidencia GRH automáticamente y no supone un municipio cuando la identidad no tiene tenant asignado.',
-          question: '¿Qué frontera técnica requiere atención antes de habilitar una operación?',
+          eyebrow: 'Administración general',
+          title: 'Hola, Administración general.',
+          lead: 'Acá tenés las herramientas autorizadas para revisar cargas, calidad y funcionamiento. La información municipal permanece cerrada cuando no corresponde a tu función.',
+          question: 'Revisá primero qué información necesita control antes de habilitar un nuevo uso.',
           journey: Object.freeze([
-            'Confirmá identidad, tenant y versión de política antes de intervenir.',
-            'Revisá inventario, calidad o ingesta sólo cuando la capability esté asignada.',
-            'Usá accesos excepcionales con alcance, vencimiento y evidencia institucional.'
+            'Confirmá el municipio y la función con la que estás trabajando.',
+            'Revisá cargas y calidad antes de habilitar información a otros equipos.',
+            'Si necesitás un acceso especial, dejá responsable, motivo y fecha de vencimiento.'
           ]),
           limits: Object.freeze([
-            'No concede lectura rutinaria de información municipal.',
-            'No crea cuentas, tenants ni permisos desde esta interfaz.',
-            'No presenta un estado local como producción certificada.'
+            'Una cuenta general no permite consultar información municipal cotidiana.',
+            'No se pueden crear usuarios ni ampliar permisos desde esta pantalla.',
+            'Una prueba no equivale a una puesta en funcionamiento oficial.'
           ])
         }),
         'municipal-operations': Object.freeze({
-          eyebrow: 'Municipio · operación técnica gobernada',
-          title: 'Prepará fuentes confiables antes de ampliar la operación.',
-          lead: 'El recorrido comienza por ingesta condicionada, inventario y calidad. Cada resultado debe conservar período, tenant y estado de validación.',
-          question: '¿La fuente está identificada, validada y trazable para este municipio?',
+          eyebrow: 'Administración municipal',
+          title: 'Hola, Administración municipal.',
+          lead: 'Desde acá podés cargar información, revisar qué llegó y resolver problemas antes de que los equipos la usen.',
+          question: 'Empezá por Calidad de datos: confirmá qué está listo y qué necesita corrección.',
           journey: Object.freeze([
-            'Elegí una fuente y un período explícitos; nunca cargues un backup completo por comodidad.',
-            'Validá rechazos, esquema, cobertura y contrato antes de publicar.',
-            'Revisá el inventario y documentá el resultado sin alterar evidencia para hacerla coincidir.'
+            'Elegí el archivo y el mes que vas a cargar; evitá subir copias completas si no hace falta.',
+            'Revisá los registros aceptados y los que necesitan corrección.',
+            'Dejá anotado qué se cargó, cuándo y quién revisó el resultado.'
           ]),
           limits: Object.freeze([
-            'Administrar el tenant no equivale a aprobar una decisión institucional.',
-            'Importar no autoriza divulgar ni cruzar información personal.',
-            'La interfaz no habilita lifecycle de cuentas ni configuración sensible.'
+            'Administrar la plataforma no equivale a aprobar una decisión institucional.',
+            'Cargar información no autoriza a divulgar datos personales.',
+            'Los usuarios y permisos se gestionan por el canal institucional.'
           ])
         }),
         'executive-leadership': Object.freeze({
-          eyebrow: 'Conducción · panorama agregado',
-          title: 'Entrá por la prioridad, verificá la evidencia y recién después decidí.',
-          lead: 'El Panel ejecutivo resume el snapshot GRH autorizado. La fecha, la calidad y los límites de cada indicador forman parte de la decisión.',
-          question: '¿Qué desvío agregado merece revisión y qué evidencia lo sostiene?',
+          eyebrow: 'Intendencia · resumen para decidir',
+          title: 'Hola, Intendencia.',
+          lead: 'Empezá por el panorama municipal. Vas a ver prioridades, personal e informes resumidos para decidir qué revisar con cada área.',
+          question: 'Abrí Panorama de personal para ver la prioridad principal y la información que la respalda.',
           journey: Object.freeze([
-            'Abrí el Panel ejecutivo y verificá corte, calidad y alertas.',
-            'Profundizá en GRH, Hacienda o Reportes sin transformar cálculo en pago.',
-            'Usá el Asistente sólo para preguntas respaldadas por el contrato disponible.'
+            'Revisá el último mes disponible, las alertas y qué necesita atención.',
+            'Profundizá en Personal, Hacienda o Reportes según el tema.',
+            'Registrá la decisión, el responsable y la fecha de seguimiento.'
           ]),
           limits: Object.freeze([
-            'No muta fuentes ni corrige registros desde una vista ejecutiva.',
-            'No certifica presupuesto, asiento contable, pago ni causalidad.',
-            'No presenta snapshots históricos como información en tiempo real.'
+            'El resumen no modifica los registros de origen.',
+            'Una liquidación calculada no confirma que el pago se haya realizado.',
+            'La información histórica siempre muestra su fecha.'
           ])
         }),
         'financial-control': Object.freeze({
-          eyebrow: 'Contaduría · control y conciliación',
-          title: 'Separá cálculo, conciliación y evidencia contable vinculante.',
-          lead: 'Hacienda organiza el cálculo mensual en pesos argentinos (ARS). Reportes y Calidad permiten comparar componentes, detectar diferencias y conservar la evidencia del cierre.',
-          question: '¿Qué período y qué fuente complementaria faltan para cerrar la diferencia?',
+          eyebrow: 'Contaduría · liquidaciones y control',
+          title: 'Hola, Contaduría.',
+          lead: 'Compará liquidaciones por mes, revisá diferencias y dejá claro qué falta confirmar antes de cerrar.',
+          question: 'Elegí el último mes y revisá primero las diferencias que necesitan comprobante.',
           journey: Object.freeze([
-            'Abrí Hacienda y elegí un período liberado por la política de privacidad.',
-            'Contrastá componentes, conciliación mensual y calidad de la fuente.',
-            'Documentá la diferencia y exigí evidencia contable antes de un cierre vinculante.'
+            'Abrí Hacienda y elegí el mes que querés revisar.',
+            'Compará conceptos, totales y calidad de la información.',
+            'Documentá cada diferencia y pedí el comprobante antes de cerrar.'
           ]),
           limits: Object.freeze([
-            'El neto de cálculo no demuestra transferencia o acreditación bancaria.',
-            'Una variación aritmética no explica por sí sola la causa.',
-            'El nombre del rol no convierte la fuente GRH en libro contable.'
+            'El neto calculado no demuestra una transferencia bancaria.',
+            'Una diferencia numérica no explica por sí sola la causa.',
+            'La información de personal no reemplaza los registros contables.'
           ])
         }),
         'municipal-limited': Object.freeze({
-          eyebrow: 'Municipio · acceso acotado',
-          title: 'Tu sesión está vigente; no hay módulos operativos asignados.',
-          lead: 'La plataforma muestra únicamente el manual y los servicios públicos disponibles. Las capacidades adicionales requieren asignación institucional y validación server-side.',
-          question: '¿Necesitás orientación o solicitar un acceso por el canal autorizado?',
+          eyebrow: 'Usuario municipal · acceso acotado',
+          title: 'Hola, Usuario municipal.',
+          lead: 'Tu cuenta tiene un acceso acotado. Podés usar el territorio, la ayuda y los servicios públicos disponibles.',
+          question: 'Elegí una herramienta disponible o consultá la ayuda para continuar.',
           journey: Object.freeze([
-            'Consultá el Manual para conocer alcances y estados de error.',
-            'Usá sólo los servicios públicos publicados para la ciudadanía.',
-            'Solicitá una asignación formal si tu función requiere otro módulo.'
+            'Consultá el Manual para conocer qué podés hacer.',
+            'Usá los servicios públicos disponibles para la ciudadanía.',
+            'Pedí un acceso formal si tu tarea requiere otra herramienta.'
           ]),
           limits: Object.freeze([
-            'No existe acceso implícito por pertenecer al municipio.',
-            'No se muestran indicadores ejecutivos ni datos GRH.',
-            'La interfaz no permite autoasignarse permisos.'
+            'Pertenecer al municipio no habilita automáticamente toda la información.',
+            'Esta función no muestra información ejecutiva ni fichas de personas.',
+            'No podés asignarte permisos desde la interfaz.'
           ])
         }),
         'territorial-unassigned': Object.freeze({
-          eyebrow: 'Inspección · alcance pendiente de asignación',
-          title: 'No hay casos territoriales gobernados asignados a este perfil.',
-          lead: 'La plataforma no inventa agenda, expedientes ni ubicaciones. La operación territorial se habilitará cuando existan asignación por caso, minimización y auditoría.',
-          question: '¿La tarea territorial fue asignada formalmente y con alcance verificable?',
+          eyebrow: 'Inspección · territorio y ayuda',
+          title: 'Hola, Inspección.',
+          lead: 'Podés consultar la referencia territorial y la ayuda. Los casos operativos aparecerán sólo cuando hayan sido asignados.',
+          question: 'Empezá por el Centro territorial para ubicar Junín, Mendoza, y sus localidades.',
           journey: Object.freeze([
-            'Revisá el Manual y el procedimiento institucional vigente.',
-            'Confirmá la asignación del caso por el canal operativo autorizado.',
-            'No recopiles ni transportes información personal fuera de una superficie gobernada.'
+            'Revisá el Centro territorial y el procedimiento vigente.',
+            'Confirmá la asignación de cada caso por el canal municipal.',
+            'Cuidá la información personal y usala sólo para la tarea asignada.'
           ]),
           limits: Object.freeze([
-            'No muestra listado global de personas, domicilios o reclamos.',
-            'No habilita casos de terceros ni ámbitos inferidos.',
-            'No reemplaza una futura asignación server-side por caso.'
+            'No muestra listados generales de personas, domicilios o reclamos.',
+            'No permite abrir casos de otros equipos.',
+            'La vista territorial no reemplaza una asignación formal.'
           ])
         }),
         'controlled-preview': Object.freeze({
-          eyebrow: 'Preview · demostración controlada',
-          title: 'Explorá el alcance documentado sin simular capacidades ausentes.',
-          lead: 'Este perfil se limita a la portada, el manual y superficies públicas. No recibe acceso ejecutivo, datos municipales ni credenciales compartidas.',
-          question: '¿Qué capacidad está operativa, condicionada o todavía en hoja de ruta?',
+          eyebrow: 'Evaluación · recorrido de sólo lectura',
+          title: 'Hola. Bienvenido a la evaluación.',
+          lead: 'Recorré las pantallas habilitadas y conocé qué resuelve la plataforma. Esta vista no permite cambios ni muestra fichas personales.',
+          question: 'Abrí Centro territorial o Manual y ayuda para comenzar.',
           journey: Object.freeze([
-            'Comenzá por el Manual y verificá el estado declarado de cada superficie.',
-            'Usá los servicios públicos sin ingresar información sensible.',
-            'Pedí evidencia separada para local, preview y producción.'
+            'Comenzá por el Manual y revisá qué ofrece cada pantalla.',
+            'Usá los servicios públicos sin ingresar información personal.',
+            'Para una demostración oficial, confirmá antes el entorno que se va a mostrar.'
           ]),
           limits: Object.freeze([
-            'No contiene datos municipales reales ni accesos rápidos por rol.',
-            'No demuestra un entorno productivo o una integración conectada.',
-            'No habilita módulos por query string, storage o apariencia visual.'
+            'No muestra fichas personales ni información municipal privada.',
+            'No permite realizar cambios ni cargas.',
+            'La apariencia de un botón no reemplaza una autorización.'
           ])
         })
       });
       var ACTIONS = Object.freeze({
-        'navigation.dashboard': Object.freeze({ href: 'dashboard.html', label: 'Panorama municipal', copy: 'Panorama agregado, alertas y límites del snapshot GRH.', tag: 'Decisión' }),
-        'navigation.grh-decisions': Object.freeze({ href: 'decisiones-grh.html', label: 'Centro de decisiones', copy: 'Convertí prioridades del brief vigente en compromisos con responsable, vencimiento, versión y línea de tiempo.', tag: 'Seguimiento' }),
-        'navigation.reports': Object.freeze({ href: 'reportes.html', label: 'Reportes', copy: 'Salidas agregadas con período, fuente y controles explícitos.', tag: 'Evidencia' }),
-        'navigation.hacienda': Object.freeze({ href: 'hacienda.html', label: 'Hacienda y nómina', copy: 'Evolución del cálculo, componentes y conciliación mensual en ARS.', tag: 'Control' }),
-        'navigation.grh-executive': Object.freeze({ href: '/ejecutivo', label: 'Resumen ejecutivo GRH', copy: 'Personal, nómina, sectores y alertas del último corte GRH.', tag: 'Decisión' }),
-        'navigation.organization-analytics': Object.freeze({ href: '/estructura', label: 'Estructura y áreas de costo', copy: 'Clasificaciones GRH, áreas de costo del cálculo y señales históricas en una sola sala.', tag: 'Gestión' }),
-        'navigation.territory': Object.freeze({ href: '/territorio', label: 'Centro territorial', copy: 'Límite y localidades oficiales.', tag: 'Territorio' }),
-        'navigation.data-quality': Object.freeze({ href: '/calidad', label: 'Calidad de datos', copy: 'Inventario, cuarentena, procedencia y riesgos del snapshot.', tag: 'Confianza' }),
-        'navigation.rrhh': Object.freeze({ href: 'areas-grh.html', label: 'Mapa de datos GRH', copy: 'Ocho dominios reales para explorar tablas, cobertura, filas, períodos, preguntas disponibles y próximos pasos según el estado de cada fuente.', tag: 'Explorar' }),
-        'navigation.ai-assistant': Object.freeze({ href: 'ia.html', label: 'Asistente GRH', copy: 'Preguntas sobre nómina, personas, licencias, ausencias y calidad.', tag: 'Consulta' }),
-        'navigation.audit': Object.freeze({ href: 'auditoria.html', label: 'Inventario de cargas', copy: 'Metadatos permitidos; todavía no es auditoría institucional.', tag: 'Datos' }),
-        'navigation.export': Object.freeze({ href: 'exportar.html', label: 'Salidas gobernadas', copy: 'Informes protegidos, no exportación cruda ni publicación automática.', tag: 'Salida' }),
-        'navigation.import': Object.freeze({ href: 'importar.html', label: 'Importar datos', copy: 'Carga condicionada con validación y período explícito.', tag: 'Ingesta' }),
-        'navigation.help': Object.freeze({ href: 'manuales.html', label: 'Manual y ayuda', copy: 'Alcance, procedimientos, límites y respuesta ante incidentes.', tag: 'Ayuda' })
-      });
-      var MOVEMENT_ACTION = Object.freeze({
-        capability: 'navigation.organization-analytics',
-        href: 'movimientos-grh.html',
-        label: 'Movimientos y trazabilidad',
-        copy: 'Evolución anual, participantes, intensidad, comparación y calidad de enlace sobre movimientos registrados.',
-        tag: 'Operación'
+        'navigation.dashboard': Object.freeze({ href: 'dashboard.html', label: 'Panorama de personal', copy: 'Indicadores clave, alertas y qué necesita atención.', tag: 'Decidir' }),
+        'navigation.grh-decisions': Object.freeze({ href: 'decisiones-grh.html', label: 'Centro de decisiones', copy: 'Registrá qué se decidió, quién es responsable y cuándo se revisa.', tag: 'Seguir' }),
+        'navigation.reports': Object.freeze({ href: 'reportes.html', label: 'Reportes', copy: 'Informes por mes y fuente, listos para revisar.', tag: 'Informar' }),
+        'navigation.hacienda': Object.freeze({ href: 'hacienda.html', label: 'Hacienda y nómina', copy: 'Evolución de liquidaciones, conceptos y comparaciones mensuales.', tag: 'Controlar' }),
+        'navigation.grh-executive': Object.freeze({ href: '/ejecutivo', label: 'Resumen ejecutivo de personal', copy: 'Personal, liquidaciones, áreas y alertas del último mes disponible.', tag: 'Decidir' }),
+        'navigation.organization-analytics': Object.freeze({ href: '/estructura', label: 'Estructura y áreas', copy: 'Cómo se distribuyen el personal y las liquidaciones entre las áreas.', tag: 'Gestionar' }),
+        'navigation.territory': Object.freeze({ href: '/territorio', label: 'Centro territorial', copy: 'Mapa oficial de Junín, Mendoza, con sus localidades.', tag: 'Ubicar' }),
+        'navigation.data-quality': Object.freeze({ href: '/calidad', label: 'Calidad de datos', copy: 'Qué información está completa, qué falta revisar y de dónde proviene.', tag: 'Revisar' }),
+        'navigation.rrhh': Object.freeze({ href: 'areas-grh.html', label: 'Información de personal', copy: 'Personas, ausencias, licencias, liquidaciones y movimientos disponibles.', tag: 'Consultar' }),
+        'navigation.ai-assistant': Object.freeze({ href: 'ia.html', label: 'Asistente de personal', copy: 'Hacé preguntas concretas sobre personas, licencias, ausencias y calidad.', tag: 'Preguntar' }),
+        'navigation.audit': Object.freeze({ href: 'auditoria.html', label: 'Registro de cargas', copy: 'Qué archivos se cargaron, cuándo y con cuántos registros.', tag: 'Revisar' }),
+        'navigation.export': Object.freeze({ href: 'exportar.html', label: 'Descargas autorizadas', copy: 'Informes preparados para descargar según tu función.', tag: 'Descargar' }),
+        'navigation.import': Object.freeze({ href: 'importar.html', label: 'Cargar información', copy: 'Subí un archivo, elegí el mes y revisá los errores antes de continuar.', tag: 'Cargar' }),
+        'navigation.help': Object.freeze({ href: 'manuales.html', label: 'Manual y ayuda', copy: 'Guías simples, límites de uso y qué hacer ante un problema.', tag: 'Ayuda' })
       });
 
       function setText(id, value) { document.getElementById(id).textContent = value; }
@@ -600,22 +605,25 @@
       }
       function orderedActionCapabilities(projection) {
         var ordered = [];
-        var candidates = projection.homeProfile.priorityCapabilities.concat([
-          'navigation.grh-decisions',
-          'navigation.organization-analytics'
-        ]);
+        var candidates = projection.homeProfile.priorityCapabilities.slice();
+        var organizationIndex = candidates.indexOf('navigation.data-quality');
+        if (projection.capabilities.indexOf('navigation.organization-analytics') !== -1 &&
+            candidates.indexOf('navigation.organization-analytics') === -1) {
+          candidates.splice(organizationIndex === -1 ? candidates.length : organizationIndex, 0, 'navigation.organization-analytics');
+        }
+        candidates.push('navigation.grh-decisions');
         candidates.forEach(function(capability) {
           if (capability !== 'navigation.workspace' && ACTIONS[capability] &&
               projection.capabilities.indexOf(capability) !== -1 && ordered.indexOf(capability) === -1) {
             ordered.push(capability);
           }
         });
-        return ordered;
+        return ordered.slice(0, 4);
       }
       function actionCopy(capability, action, projection) {
         if (capability === 'navigation.organization-analytics' &&
             projection.capabilities.indexOf('navigation.hacienda') !== -1) {
-          return 'Explorá clasificaciones GRH y compará dos áreas de costo con participación del último cálculo válido y 24 meses de neto de control.';
+          return 'Compará dos áreas por cantidad de personas, liquidaciones y evolución de los últimos 24 meses.';
         }
         return action.copy;
       }
@@ -646,22 +654,6 @@
           go.className = 'ws-action-go'; go.setAttribute('aria-hidden', 'true'); go.textContent = '→';
           header.append(tag, title, copy); link.append(header, go); container.appendChild(link);
         });
-        if (projection.capabilities.indexOf(MOVEMENT_ACTION.capability) !== -1) {
-          var movementLink = document.createElement('a');
-          var movementHeader = document.createElement('div');
-          var movementTag = document.createElement('span');
-          var movementTitle = document.createElement('strong');
-          var movementCopy = document.createElement('p');
-          var movementGo = document.createElement('span');
-          movementLink.className = 'ws-action'; movementLink.href = MOVEMENT_ACTION.href;
-          movementLink.dataset.requiredCapability = MOVEMENT_ACTION.capability;
-          movementLink.dataset.action = 'movimientos-grh';
-          movementTag.className = 'ws-action-tag'; movementTag.textContent = MOVEMENT_ACTION.tag;
-          movementTitle.textContent = MOVEMENT_ACTION.label; movementCopy.textContent = MOVEMENT_ACTION.copy;
-          movementGo.className = 'ws-action-go'; movementGo.setAttribute('aria-hidden', 'true'); movementGo.textContent = '→';
-          movementHeader.append(movementTag, movementTitle, movementCopy); movementLink.append(movementHeader, movementGo);
-          container.appendChild(movementLink);
-        }
       }
       function showNotice() {
         var notice = '';
@@ -698,9 +690,9 @@
         setText('workspaceQuestion', experience.question);
         setText('roleChip', ROLE_LABELS[projection.user.role] || 'Perfil institucional');
         setText('tenantChip', tenantLabel(projection.user));
-        setText('capabilityChip', projection.capabilities.length + ' capacidades vigentes');
-        setText('sessionState', 'Perfil confirmado');
-        setText('policyVersion', 'Política de acceso ' + projection.user.accessPolicyVersion);
+        setText('capabilityChip', 'Acceso verificado');
+        setText('sessionState', 'Acceso confirmado');
+        setText('policyVersion', 'Versión de seguridad ' + projection.user.accessPolicyVersion + '.');
         appendItems(document.getElementById('journeyList'), experience.journey);
         appendItems(document.getElementById('limitsList'), experience.limits);
         renderActions(projection);

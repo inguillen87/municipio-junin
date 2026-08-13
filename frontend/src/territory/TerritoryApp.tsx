@@ -1,4 +1,3 @@
-import { AUTH_TIMEOUT_MS } from '../auth/session';
 import { useGovernedSurface } from '../auth/use-governed-surface';
 import { AppShell } from '../components/AppShell';
 import { GovernedBlocked, GovernedLoading } from '../components/GovernedStates';
@@ -29,8 +28,8 @@ export function TerritoryApp() {
     >
       {state.status === 'loading' ? (
         <GovernedLoading
-          title="Validando Centro Territorial"
-          description={`Confirmamos sesión, permiso de acceso y fuentes oficiales antes de mostrar el mapa. Tiempo máximo de validación: ${AUTH_TIMEOUT_MS / 1_000} segundos.`}
+          title="Comprobando el mapa oficial"
+          description="Estamos verificando los permisos y las fuentes necesarias para mostrar el departamento."
         />
       ) : null}
       {state.status === 'blocked' ? (

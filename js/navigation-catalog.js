@@ -17,7 +17,7 @@
     ],
     items: [
       { id: 'workspace', href: 'inicio.html', label: 'Inicio', shortLabel: 'Inicio', icon: 'home', groupId: null, placement: 'top', capability: 'navigation.workspace', primary: true },
-      { id: 'dashboard', href: 'dashboard.html', label: 'Panorama municipal', shortLabel: 'Panorama', icon: 'chart', groupId: 'executive', placement: 'group', capability: 'navigation.dashboard', primary: true },
+      { id: 'dashboard', href: 'dashboard.html', label: 'Panorama de personal', shortLabel: 'Panorama', icon: 'chart', groupId: 'executive', placement: 'group', capability: 'navigation.dashboard', primary: true },
       { id: 'grh-ejecutivo', href: '/ejecutivo', label: 'Resumen ejecutivo GRH', shortLabel: 'Resumen GRH', icon: 'people', groupId: 'executive', placement: 'group', capability: 'navigation.grh-executive', primary: true },
       { id: 'decisiones-grh', href: 'decisiones-grh.html', label: 'Decisiones GRH', shortLabel: 'Decisiones', icon: 'check', groupId: 'executive', placement: 'group', capability: 'navigation.grh-decisions', primary: true },
       { id: 'ia', href: 'ia.html', label: 'BOT IA para GRH', shortLabel: 'BOT IA', icon: 'ai', groupId: 'executive', placement: 'group', capability: 'navigation.ai-assistant', primary: true },

@@ -166,10 +166,7 @@
     row.appendChild(stack);
     appendToLog(row, 'start');
     updateProvenance(payload.provenance);
-    setSourceStatus(
-      'verified',
-      payload.status === 'answered' ? 'Corte GRH verificado' : 'Corte GRH consultado'
-    );
+    setSourceStatus('verified', 'Datos del corte verificados');
   }
 
   function exactObjectKeys(value, expected) {
@@ -372,7 +369,7 @@
     var events = safeArray(leaveHistory.items).slice(0, 24);
     if (!events.length) return;
     var section = createElement('section', 'directory-history');
-    section.appendChild(createElement('h4', '', 'Registros de la tabla licencia · ' + String(leaveHistory.total || events.length)));
+    section.appendChild(createElement('h4', '', 'Licencias disponibles · ' + String(leaveHistory.total || events.length)));
     var grid = createElement('div', 'directory-history-grid');
     events.forEach(function(event) {
       if (!event || typeof event !== 'object' || !dateValue(event.startDate)) return;
@@ -392,7 +389,7 @@
     var events = safeArray(history.items).slice(0, 6);
     if (!events.length) return;
     var section = createElement('section', 'directory-history');
-    section.appendChild(createElement('h4', '', 'Registros de la tabla ausencia · últimos ' + events.length + ' de ' + String(history.total || events.length)));
+    section.appendChild(createElement('h4', '', 'Ausencias disponibles · últimas ' + events.length + ' de ' + String(history.total || events.length)));
     var grid = createElement('div', 'directory-history-grid');
     events.forEach(function(event) {
       if (!event || typeof event !== 'object' || !dateValue(event.date)) return;
@@ -418,7 +415,7 @@
           !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(event.period) || !Number.isSafeInteger(event.rowCount) || event.rowCount < 1) return;
       var item = createElement('div', 'directory-history-item');
       item.appendChild(createElement('strong', '', event.period));
-      item.appendChild(createElement('span', '', event.rowCount + ' filas de legamov'));
+      item.appendChild(createElement('span', '', event.rowCount + (event.rowCount === 1 ? ' registro de movimiento' : ' registros de movimientos')));
       grid.appendChild(item);
     });
     if (!grid.childElementCount) return;
@@ -901,11 +898,11 @@
     var snapshot = byId('snapshotStatus');
     var period = byId('periodStatus');
     if (snapshot && /^\d{4}-\d{2}-\d{2}$/.test(provenance.snapshotAsOf || '')) {
-      snapshot.textContent = provenance.snapshotAsOf + ' · copia histórica';
+      snapshot.textContent = provenance.snapshotAsOf + ' · fecha de la copia';
       activateTrustDot('snapshotDot');
     }
     if (period && /^\d{4}-\d{2}$/.test(provenance.latestValidCalculationPeriod || '')) {
-      period.textContent = provenance.latestValidCalculationPeriod + ' · último válido';
+      period.textContent = provenance.latestValidCalculationPeriod + ' · último mes disponible';
       activateTrustDot('periodDot');
     }
   }
@@ -1254,7 +1251,7 @@
     var personInput = byId('personSearchInput');
     var personClose = byId('personSearchClose');
     configureSuggestionsForRole();
-    setSourceStatus('ready', 'Listo para consultar');
+    setSourceStatus('ready', 'Las fuentes se verifican con cada consulta');
 
     if (form) {
       form.addEventListener('submit', async function(event) {

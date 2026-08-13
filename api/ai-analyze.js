@@ -836,18 +836,18 @@ function buildDirectoryPersonAnswer(person, source, options = {}) {
     findings: [positionFinding],
     evidence: [
       metric('Legajo', formatInteger(person.legajo), `Empresa ${person.companyCode}`),
-      metric('Registros de ausencia', formatInteger(person.absenceHistory.total), person.events.latestAbsenceDate ? `Tabla ausencia · última fecha ${person.events.latestAbsenceDate}` : 'Tabla ausencia · sin fecha registrada'),
-      metric('Registros de licencia', formatInteger(person.leaveHistory.total), latestLeave ? `Tabla licencia · último intervalo ${latestLeave.startDate}${latestLeave.endDate ? ` a ${latestLeave.endDate}` : ''}` : 'Tabla licencia · sin registros asociados'),
-      metric('Filas fuente legamov', formatInteger(person.movement.rowCount), person.movement.latestPeriod ? `${formatInteger(person.movement.periodCount)} períodos · último ${person.movement.latestPeriod}` : 'Sin filas válidas asociadas'),
+      metric('Ausencias disponibles', formatInteger(person.absenceHistory.total), person.events.latestAbsenceDate ? `Última fecha informada: ${person.events.latestAbsenceDate}` : 'Sin fecha registrada'),
+      metric('Licencias disponibles', formatInteger(person.leaveHistory.total), latestLeave ? `Último intervalo informado: ${latestLeave.startDate}${latestLeave.endDate ? ` a ${latestLeave.endDate}` : ''}` : 'Sin licencias asociadas'),
+      metric('Historia de movimientos', formatInteger(person.movement.rowCount), person.movement.latestPeriod ? `${formatInteger(person.movement.periodCount)} meses con información · último ${person.movement.latestPeriod}` : 'Sin movimientos asociados'),
       metric('Puesto', person.position?.label || person.positionObservation?.label || 'Sin dato', person.position ? 'Cargo informado por GRH' : (person.positionObservation ? 'Observación histórica, no cargo actual' : 'No informado')),
       metric('Categoría', person.category?.label || 'Sin dato', person.category ? `Código ${formatInteger(person.category.code)}` : 'No informada por la fuente'),
       metric('Convenio', person.agreement?.label || 'Sin dato', person.agreement ? `Código ${formatInteger(person.agreement.code)}` : 'No informado por la fuente'),
     ],
     caveats: [
       ...observationCaveat,
-      'Ausencia y licencia son tablas legacy separadas, con taxonomías no conciliadas: sus registros no se suman ni equivalen a una situación actual.',
+      'Ausencias y licencias provienen de registros separados: no se suman ni describen por sí solos una situación actual.',
       'Las historias se limitan a fechas y días informados por cada tabla; no exponen causas ni permiten inferir el estado vigente.',
-      'Legamov contiene filas fuente agrupadas por período; no equivalen a altas, bajas, traslados ni rotación.',
+      'Los movimientos se muestran agrupados por mes; no permiten afirmar altas, bajas, traslados ni rotación.',
     ],
     nextQuestions: [],
     actions: [{ id: 'open_rrhh_person', label: 'Abrir ficha en RRHH', href }],
@@ -880,76 +880,73 @@ function buildDirectoryPersonInsight({
     movementPeriods > 0 ? 'legamov' : null,
   ].filter(Boolean);
   const sourceCoverage = coveredSources.length;
-  const movementDensity = movementPeriods > 0
-    ? person.movement.rowCount / movementPeriods
-    : null;
   const context = [
     person.sector?.label ? `sector ${person.sector.label}` : null,
     person.agreement?.label ? `convenio ${person.agreement.label}` : null,
     person.category?.label ? `categoría ${person.category.label}` : null,
   ].filter(Boolean);
-  const recencyFinding = person.movement.latestPeriod || absence.latest || leave.latest
-    ? `Señal temporal: ${[
-      person.movement.latestPeriod ? `legamov llega a ${person.movement.latestPeriod}` : null,
-      absence.latest ? `ausencia a ${absence.latest}` : null,
-      leave.latest ? `licencia a ${leave.latest}` : null,
-    ].filter(Boolean).join('; ')}. La diferencia de fechas describe fuentes distintas y no acredita por sí sola una situación laboral actual.`
-    : 'Señal temporal: las tres fuentes asociadas no publican registros para esta ficha.';
+  const latestInformationFinding = person.movement.latestPeriod || absence.latest || leave.latest
+    ? `Última información disponible: ${[
+      person.movement.latestPeriod ? `movimientos hasta ${person.movement.latestPeriod}` : null,
+      absence.latest ? `ausencias hasta ${absence.latest}` : null,
+      leave.latest ? `licencias hasta ${leave.latest}` : null,
+    ].filter(Boolean).join('; ')}. Son registros distintos y no prueban por sí solos la situación laboral actual.`
+    : 'No hay ausencias, licencias ni movimientos asociados a esta ficha.';
   const reviewFinding = person.positionObservation
     ? `Qué conviene revisar: ${positionFinding} Antes de usar esa observación como vigente, debe validarse contra el corte ${source?.snapshotAsOf || 'no disponible'}.`
     : (person.position
       ? `Qué conviene revisar: el cargo informado (${person.position.label}) no reemplaza una validación de vigencia fuera del corte publicado.`
       : 'Qué conviene revisar: la fuente no informa cargo ni observación histórica de puesto; no corresponde completarlo por inferencia.');
   const contextFinding = context.length
-    ? `Contexto habilitado: ${context.join(' · ')}. El detalle individual no trae denominadores de cohorte; por eso esta lectura no inventa rankings ni compara a la persona con sus pares.`
-    : 'Contexto habilitado: el detalle no publica sector, convenio o categoría suficientes para una comparación de cohorte; no se inventan equivalencias.';
+    ? `Contexto disponible: ${context.join(' · ')}. La ficha no incluye una comparación con otras personas; por eso no mostramos rankings ni afirmamos si los valores son altos o bajos.`
+    : 'La ficha no informa suficiente contexto para compararla con otras personas; no se completan equivalencias por inferencia.';
   const evidence = [
     metric(
-      'Cobertura de fuentes',
+      'Fuentes con información',
       `${sourceCoverage} de 3`,
       coveredSources.length
-        ? `Fuentes separadas con registros asociados: ${coveredSources.join(', ')}.`
-        : 'Ninguna de las tres fuentes publica registros asociados.',
+        ? `Secciones con datos asociados: ${coveredSources.map(sourceLabel).join(', ')}.`
+        : 'Ninguna de las tres secciones tiene registros asociados.',
     ),
     metric(
-      'Ventana visible de ausencia',
-      `${formatInteger(absence.exposed)} de ${formatInteger(absence.total)}`,
-      historyWindowDetail(absence, 'registros expuestos'),
+      'Ausencias disponibles',
+      formatInteger(absence.total),
+      `${formatInteger(absence.exposed)} mostradas · ${historyWindowDetail(absence, 'registros mostrados')}`,
     ),
     metric(
-      'Historia visible de licencia',
-      `${formatInteger(leave.exposed)} de ${formatInteger(leave.total)}`,
-      historyWindowDetail(leave, leave.complete ? 'historia completa expuesta' : 'registros expuestos'),
+      'Licencias disponibles',
+      formatInteger(leave.total),
+      `${formatInteger(leave.exposed)} mostradas · ${historyWindowDetail(leave, leave.complete ? 'historia completa' : 'registros mostrados')}`,
     ),
     metric(
-      'Intensidad de legamov',
-      movementDensity === null ? 'Sin períodos' : `${formatNumber(movementDensity, 2)} filas/período`,
+      'Historia de movimientos',
+      movementPeriods > 0 ? `${formatInteger(movementPeriods)} meses` : 'Sin registros',
       movementPeriods > 0
-        ? `${formatInteger(person.movement.rowCount)} filas en ${formatInteger(movementPeriods)} períodos · último ${person.movement.latestPeriod}`
-        : 'Sin filas fuente asociadas.',
+        ? `${formatInteger(person.movement.rowCount)} registros · último mes ${person.movement.latestPeriod}`
+        : 'Sin movimientos asociados.',
     ),
     metric(
-      'Situaci\u00f3n laboral informada',
+      'Situaci\u00f3n informada',
       employment.label,
       employment.detail,
     ),
     metric(
-      `Participaci\u00f3n en c\u00e1lculo ${person.employment.referencePayrollParticipation.period}`,
-      person.employment.referencePayrollParticipation.observed ? 'Observada' : 'No observada',
-      `${formatInteger(person.employment.referencePayrollParticipation.rowCount)} filas v\u00e1lidas asociadas; no acredita pago ni vigencia laboral.`,
+      `Particip\u00f3 en c\u00e1lculo de ${periodMonthLabel(person.employment.referencePayrollParticipation.period)}`,
+      person.employment.referencePayrollParticipation.observed ? 'Sí' : 'No',
+      `${formatInteger(person.employment.referencePayrollParticipation.rowCount)} registros asociados. Participar en el cálculo no acredita pago ni vigencia laboral.`,
     ),
   ];
   return finalizeStandaloneAnswer({
-    title: `Lectura asistida · ${identity}`,
-    summary: `Qué significa: se analizaron por separado ${sourceCoverage} de 3 fuentes gobernadas asociadas a la ficha${location ? ` en ${location}` : ''}. La respuesta prioriza cobertura, recencia y señales para revisar; no repite la ficha técnica.`,
-    findings: [employment.finding, recencyFinding, reviewFinding, contextFinding],
+    title: `Análisis de la ficha · ${identity}`,
+    summary: `Consulté por separado ausencias, licencias y movimientos asociados a la ficha${location ? ` en ${location}` : ''}. Hay información en ${sourceCoverage} de esas 3 secciones. La situación informada y la participación en cálculo se muestran por separado para no confundirlas.`,
+    findings: [employment.finding, latestInformationFinding, reviewFinding, contextFinding],
     evidence,
     caveats: [
       ...observationCaveat,
-      'Ausencia y licencia son tablas legacy separadas, con taxonomías no conciliadas: sus registros no se suman ni equivalen a una situación actual.',
-      'Los días mostrados son la suma del campo days explícitamente informado en los registros expuestos; no representan días únicos, días perdidos ni un intervalo laboral conciliado.',
-      'Legamov contiene filas fuente agrupadas por período; la densidad calculada no equivale a altas, bajas, traslados ni rotación.',
-      'Las comparaciones por sector, convenio o categoría requieren una consulta agregada separada y su propio control de privacidad.',
+      'Ausencias y licencias provienen de registros separados: no se suman ni describen por sí solos una situación actual.',
+      'Los días son valores informados en los registros mostrados; pueden superponerse y no equivalen a días únicos ni días perdidos.',
+      'Los movimientos se agrupan por mes y no permiten afirmar altas, bajas, traslados ni rotación.',
+      'Para comparar con otras personas del sector, convenio o categoría se usa una consulta general con protección de privacidad.',
     ],
     nextQuestions: [
       '¿Cómo se distribuyen los participantes por sector?',
@@ -1057,8 +1054,26 @@ function historyWindowDetail(summary, scopeLabel) {
   return `${range} · ${formatInteger(summary.reportedDays)} días informados en ${scopeLabel}.`;
 }
 
+function sourceLabel(value) {
+  return {
+    ausencia: 'ausencias',
+    licencia: 'licencias',
+    legamov: 'movimientos',
+  }[value] || value;
+}
+
+function periodMonthLabel(period) {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(String(period || ''));
+  if (!match) return 'el mes informado';
+  const months = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  ];
+  return months[Number(match[2]) - 1];
+}
+
 function privateDirectorySourceLine(source) {
-  return `Fuente: ${source?.canonicalSystem || 'GRH Junín'} · directorio privado · snapshot ${source?.snapshotAsOf || 'no disponible'} · acceso según perfil · no tiempo real.`;
+  return `Fuente: ${source?.canonicalSystem || 'GRH Junín'} · directorio privado · copia al ${source?.snapshotAsOf || 'no disponible'} · acceso según perfil · no tiempo real.`;
 }
 
 function positionObservationStatusLabel(status) {
@@ -2674,26 +2689,26 @@ function movementsAnswer(context, periodRequest) {
     : `durante ${year}`;
   return {
     title: `Movimientos GRH · ${year}${partial ? ' (parcial)' : ''}`,
-    summary: `Se observan ${formatInteger(row.value)} filas válidas de movimiento ${periodTruth}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. Son eventos de legamov, no altas o bajas clasificadas.`,
+    summary: `Se observan ${formatInteger(row.value)} registros de origen de movimientos ${periodTruth}, sobre al menos ${formatInteger(row.participantCount)} participantes distintos. No equivalen automáticamente a altas o bajas.`,
     findings: [
       `El dato reúne al menos ${context.privacyThreshold} personas y puede mostrarse sin exponer identidades.`,
       ...(partial ? [`${year} está incompleto al corte ${context.snapshot}; no se presenta como un año cerrado.`] : []),
       'El contrato actual no clasifica de forma gobernada los eventos como ingreso, egreso, ascenso o cambio de área.',
     ],
     evidence: [
-      metric(`Movimientos válidos ${year}`, formatInteger(row.value), 'Filas de legamov; no personas únicas.'),
+      metric(`Movimientos válidos ${year}`, formatInteger(row.value), 'Registros de origen de movimientos; no personas únicas.'),
       metric('Participantes distintos', formatInteger(row.participantCount), 'Cardinalidad usada para liberar el agregado portable.'),
       metric('Eventos por participante observado', formatNumber(row.value / row.participantCount, 2), 'Intensidad descriptiva del año; no es una tasa de rotación.'),
     ],
     caveats: [
       ...(partial ? ['El valor parcial no se anualiza ni se compara como si cubriera el año completo.'] : []),
-      'No se derivan rotación, altas o bajas sin una taxonomía validada de tipos de movimiento.',
+      'Los registros no equivalen automáticamente a altas o bajas. Para calcular rotación se necesita una clasificación validada de los tipos de movimiento.',
     ],
     nextQuestions: ['Compará movimientos 2024 y 2025', '¿Cuál es la cobertura del cruce con legajo?'],
     actions: [movementCenterAction()],
     visual: annualEventVisual(context.movements, {
       title: 'Movimientos registrados por año',
-      subtitle: 'Filas válidas de legamov; no representan altas, bajas ni personas únicas.',
+      subtitle: 'Registros de origen de movimientos; no representan altas, bajas ni personas únicas.',
     }),
     resolvedPeriod: year,
   };
@@ -2728,27 +2743,27 @@ function movementComparisonAnswer(context, requestedYears) {
   const intensityDeltaPct = intensityDelta / fromIntensity * 100;
   return {
     title: `Movimientos GRH · ${years[0]} → ${years[1]}`,
-    summary: `Entre ${years[0]} y ${years[1]}, los movimientos registrados cambiaron ${formatSignedInteger(eventDelta)} (${formatSignedPercent(eventDeltaPct)}), mientras los participantes distintos cambiaron ${formatSignedInteger(participantDelta)} (${formatSignedPercent(participantDeltaPct)}).`,
+    summary: `Entre ${years[0]} y ${years[1]}, los registros de origen de movimientos cambiaron ${formatSignedInteger(eventDelta)} (${formatSignedPercent(eventDeltaPct)}), mientras los participantes distintos cambiaron ${formatSignedInteger(participantDelta)} (${formatSignedPercent(participantDeltaPct)}). No equivalen automáticamente a altas o bajas.`,
     findings: [
       `La intensidad descriptiva pasó de ${formatNumber(fromIntensity, 2)} a ${formatNumber(toIntensity, 2)} eventos por participante observado (${formatSignedPercent(intensityDeltaPct)}).`,
-      'La comparación usa filas válidas de legamov y participantes distintos de cada año completo.',
+      'La comparación usa registros de origen de movimientos y participantes distintos de cada año completo.',
     ],
     evidence: [
       metric(`Eventos ${years[0]}`, formatInteger(from.value), 'Movimientos registrados; no altas o bajas clasificadas.'),
       metric(`Eventos ${years[1]}`, formatInteger(to.value), formatSignedPercent(eventDeltaPct)),
-      metric(`Participantes ${years[0]}`, formatInteger(from.participantCount), 'Participantes distintos observados en legamov.'),
+      metric(`Participantes ${years[0]}`, formatInteger(from.participantCount), 'Participantes distintos asociados a los registros de movimientos.'),
       metric(`Participantes ${years[1]}`, formatInteger(to.participantCount), formatSignedPercent(participantDeltaPct)),
       metric('Cambio de intensidad', formatSignedNumber(intensityDelta, 2), `${formatSignedPercent(intensityDeltaPct)} · eventos por participante observado.`),
     ],
     caveats: [
       'La intensidad no es una tasa de rotación y no demuestra ingresos, egresos, ascensos ni cambios de área.',
-      'No se atribuyen causas: la fuente todavía no tiene una taxonomía de tipos de movimiento validada.',
+      'No se atribuyen causas: la fuente todavía no tiene una clasificación validada de tipos de movimiento.',
     ],
     nextQuestions: [`¿Cuántos movimientos válidos hubo en ${years[1]}?`, '¿Qué registros de movimientos quedaron en cuarentena?'],
     actions: [movementCenterAction({ from: years[0], to: years[1] })],
     visual: buildBarVisual({
       title: `Movimientos registrados · ${years[0]} vs ${years[1]}`,
-      subtitle: 'Filas válidas de legamov; comparación de dos años completos.',
+      subtitle: 'Registros de origen de movimientos; comparación de dos años completos.',
       order: 'chronological',
       unit: 'records',
       scaleMax: Math.max(from.value, to.value),

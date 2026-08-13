@@ -85,10 +85,11 @@ test('no HTML file references the retired demo assets', () => {
 
 test('institutional login exposes only the controlled read-only evaluation identities', () => {
   const source = fs.readFileSync(path.join(root, 'login.html'), 'utf8');
-  assert.match(source, /Identidad emitida por la Municipalidad/);
+  assert.match(source, /Acceso cuidado por la Municipalidad/);
+  assert.match(source, /El sistema confirma tu cuenta en cada ingreso/);
   assert.match(source, /data-demo-contract="published-evaluation-readonly-v1"/);
   assert.equal((source.match(/data-evaluation-email=/g) || []).length, 6);
-  assert.match(source, /escrituras bloqueadas por el servidor/i);
+  assert.match(source, /evaluación es de sólo lectura.+no permite realizar cambios/i);
   assert.doesNotMatch(source, /\/api\/auth\/seed-demo|ensureSeeded|fillUser\s*\(/i);
   assert.doesNotMatch(source, /href=["']#["'][^>]*Olvid/i);
 });

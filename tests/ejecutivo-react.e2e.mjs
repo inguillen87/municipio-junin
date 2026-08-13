@@ -551,7 +551,7 @@ async function readyDiagnostics(page) {
   return page.evaluate(expectedCollections => {
     const normalize = value => String(value || '').replace(/\s+/g, ' ').trim();
     const main = document.querySelector('main');
-    const mainText = normalize(main?.textContent);
+    const mainText = normalize(main?.innerText);
     const ids = Array.from(document.querySelectorAll('[id]'), element => element.id);
     const collections = Array.from(
       document.querySelectorAll('[data-executive-collection]'),
@@ -569,11 +569,17 @@ async function readyDiagnostics(page) {
       expectedCollections,
       sourceVisible: mainText.includes('grh_junin.synthetic_executive.sql.gz'),
       sourceHashVisible: mainText.includes('c'.repeat(64)),
-      noRealtimeQualifier: /no es tiempo real/i.test(mainText),
+      sourceTablesVisible: ['ausencia', 'licencia', 'legamov'].every(table => mainText.includes(table)),
+      technicalSummaryVisible: /Ver respaldo técnico/i.test(mainText),
+      technicalEvidenceOpen: Boolean(document.querySelector('[data-executive-technical-evidence][open]')),
+      technicalJargonVisible: /SHA-256|Archivo de origen|Tablas de eventos|\bgobernad[oa]\b/i.test(mainText),
+      noRealtimeQualifier: /no (?:es|se actualiza en) (?:información en )?tiempo real/i.test(mainText),
       positiveRealtimeClaim: /datos en tiempo real|actualizaci\u00f3n en vivo|conexi\u00f3n en vivo/i.test(mainText),
       hasArsClaim: /\bARS\b|pesos argentinos/i.test(mainText),
-      noPaymentQualifier: /no (?:equivale|acredita)[^.]{0,80}pago bancario/i.test(mainText),
-      noActiveQualifier: /no (?:implica|representa)[^.]{0,100}(?:dotaci\u00f3n|personas?) activ/i.test(mainText),
+      currencyPresentationNotice: /Importes mostrados en ARS por configuración municipal/i.test(mainText),
+      sourceCurrencyCaveat: /El respaldo original no declara moneda/i.test(mainText),
+      noPaymentQualifier: /control de liquidación[^.]{0,100}no confirman pagos/i.test(mainText),
+      noActiveQualifier: /no (?:implica|representa|indica)[^.]{0,100}(?:dotaci\u00f3n|personas?|personal|vínculo)[^.]{0,50}(?:activ|vigente)/i.test(mainText),
       noRateQualifier: /no (?:es |son )?(?:una |un |las )?tasas?\b/i.test(mainText),
       noCauseQualifier: /no (?:explican?|demuestra)[^.]{0,50}causa/i.test(mainText),
       positivePaymentClaim: /sueldos? pagados?|pago (?:realizado|efectuado|acreditado)/i.test(mainText),
@@ -595,6 +601,21 @@ async function readyDiagnostics(page) {
       hasThemeToggle: Boolean(document.querySelector('button.theme-toggle')),
     };
   }, EXPECTED_COLLECTIONS);
+}
+
+async function technicalEvidenceDiagnostics(page) {
+  return page.evaluate(() => {
+    const normalize = value => String(value || '').replace(/\s+/g, ' ').trim();
+    const details = document.querySelector('[data-executive-technical-evidence]');
+    const visibleText = normalize(details?.innerText);
+    return {
+      open: details instanceof HTMLDetailsElement && details.open,
+      sourceVisible: visibleText.includes('grh_junin.synthetic_executive.sql.gz'),
+      sourceHashVisible: visibleText.includes('c'.repeat(64)),
+      sourceTablesVisible: ['ausencia', 'licencia', 'legamov'].every(table => visibleText.includes(table)),
+      labelsVisible: /Sistema de origen.*Archivo de origen.*Tablas de eventos.*SHA-256/is.test(visibleText),
+    };
+  });
 }
 
 async function blockedDiagnostics(page) {
@@ -657,11 +678,17 @@ test('React Ejecutivo validates the governed synthetic contract and fails closed
           assert.equal(result.kpiValues.length, 5);
           assert.deepEqual(result.collections, EXPECTED_COLLECTIONS);
           assert.deepEqual(result.expectedCollections, EXPECTED_COLLECTIONS);
-          assert.equal(result.sourceVisible, true);
-          assert.equal(result.sourceHashVisible, true);
+          assert.equal(result.sourceVisible, false);
+          assert.equal(result.sourceHashVisible, false);
+          assert.equal(result.sourceTablesVisible, false);
+          assert.equal(result.technicalSummaryVisible, true);
+          assert.equal(result.technicalEvidenceOpen, false);
+          assert.equal(result.technicalJargonVisible, false);
           assert.equal(result.noRealtimeQualifier, true);
           assert.equal(result.positiveRealtimeClaim, false);
           assert.equal(result.hasArsClaim, true);
+          assert.equal(result.currencyPresentationNotice, true);
+          assert.equal(result.sourceCurrencyCaveat, true);
           assert.equal(result.noPaymentQualifier, true);
           assert.equal(result.noActiveQualifier, true);
           assert.equal(result.noRateQualifier, true);
@@ -680,6 +707,14 @@ test('React Ejecutivo validates the governed synthetic contract and fails closed
           assert.equal(result.hasThemeToggle, true);
           assert.equal(result.reducedMotion, viewport.context.reducedMotion === 'reduce');
           assert.equal(result.forcedColors, viewport.context.forcedColors === 'active');
+          await page.locator('[data-executive-technical-evidence] > summary').click();
+          assert.deepEqual(await technicalEvidenceDiagnostics(page), {
+            open: true,
+            sourceVisible: true,
+            sourceHashVisible: true,
+            sourceTablesVisible: true,
+            labelsVisible: true,
+          });
           assert.deepEqual(apiPaths(apiLog, start), ['/api/auth/me', '/api/grh-executive']);
           assert.deepEqual(diagnostics.consoleErrors, []);
           assert.deepEqual(diagnostics.externalRequests, []);

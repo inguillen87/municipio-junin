@@ -125,9 +125,9 @@ describe('buildExecutiveViewModel', () => {
     expect(kpis.lastCompleteAbsence?.value).toBe('50');
     expect(kpis.lastCompleteAbsence?.note).toMatch(/no una tasa/i);
     expect(kpis.publishedMovements?.value).toBe('330');
-    expect(kpis.latestPayrollControl?.note).toMatch(/no equivale a pago bancario/i);
-    expect(model.truth.workforceDefinition).toMatch(/participación en liquidación/i);
-    expect(model.truth.workforceDefinition).toMatch(/no equivale a un padrón contractual activo/i);
+    expect(kpis.latestPayrollControl?.note).toMatch(/no confirma pagos/i);
+    expect(model.truth.workforceDefinition).toMatch(/personas con al menos un cálculo válido/i);
+    expect(model.truth.workforceDefinition).toMatch(/no indica.*vínculo laboral vigente/i);
     expect(model.truth.workforceDefinition).not.toMatch(/payroll participation/i);
 
     expect(model.payroll.points).toHaveLength(4);
@@ -135,14 +135,18 @@ describe('buildExecutiveViewModel', () => {
       period: '2024-02',
       privacyStatus: 'suppressed',
       valueSourceUnits: null,
-      valueLabel: 'No publicable',
+      valueLabel: 'No mostrado',
       changePct: null,
       changeStatus: 'protected_current',
     });
     expect(model.payroll.points[2]).toMatchObject({ changePct: null, changeStatus: 'protected_previous' });
     expect(model.payroll.points[3]?.changePct).toBeCloseTo(0.2, 12);
     expect(model.payroll.points[3]?.changeStatus).toBe('available');
-    expect(model.payroll.warning).toMatch(/nunca se imputan como cero/i);
+    expect(model.payroll.warning).toMatch(/Importes mostrados en ARS por configuración municipal/i);
+    expect(model.payroll.warning).toMatch(/El respaldo original no declara moneda/i);
+    expect(model.payroll.warning).toMatch(/control de liquidación.*no confirman pagos/i);
+    expect(model.payroll.warning).toMatch(/nunca se reemplazan por cero/i);
+    expect(model.payroll.warning).not.toMatch(/tenant|moneda declarada por la fuente/i);
     expect(model.sector.protectedParticipants).toBe(8);
     expect(model.sector.rows[1]?.label).toBe('Otros grupos protegidos');
     expect(model.annual.map((domain) => domain.key)).toEqual(['absence', 'leave', 'movements']);
@@ -163,8 +167,8 @@ describe('buildExecutiveViewModel', () => {
 
     expect(model.payroll.latestPeriod).toBe('2024-05');
     expect(model.payroll.latestStatus).toBe('protected');
-    expect(latest).toMatchObject({ value: 'No publicable', status: 'protected' });
-    expect(latest?.note).toMatch(/no se sustituye/i);
+    expect(latest).toMatchObject({ value: 'No mostrado', status: 'protected' });
+    expect(latest?.note).toMatch(/no se reemplaza/i);
     expect(latest?.note).toMatch(/menos de 10 personas/i);
     expect(latest?.note).not.toMatch(/\bk\s*</i);
     expect(latest?.value).not.toContain('1.800');
@@ -180,7 +184,7 @@ describe('buildExecutiveViewModel', () => {
     expect(model.payroll.points[1]).toMatchObject({
       period: '2024-03',
       changePct: null,
-      changeLabel: 'No consecutivo',
+      changeLabel: 'Sin mes anterior',
       changeStatus: 'non_consecutive',
     });
   });
@@ -196,8 +200,8 @@ describe('buildExecutiveViewModel', () => {
 
     expect(model.payroll.latestPeriod).toBeNull();
     expect(model.payroll.latestStatus).toBe('protected');
-    expect(latest?.value).toBe('No publicable');
-    expect(latest?.note).toMatch(/no puede probarse/i);
+    expect(latest?.value).toBe('No mostrado');
+    expect(latest?.note).toMatch(/no se puede determinar/i);
   });
 
   it('never backfills a protected complete absence year or presents partial movements as an exact total', () => {
@@ -227,11 +231,11 @@ describe('buildExecutiveViewModel', () => {
     const absence = model.kpis.find((kpi) => kpi.key === 'lastCompleteAbsence');
     const movements = model.kpis.find((kpi) => kpi.key === 'publishedMovements');
 
-    expect(absence).toMatchObject({ value: 'No publicable', status: 'protected' });
-    expect(absence?.note).toMatch(/no se retrocede/i);
+    expect(absence).toMatchObject({ value: 'No mostrado', status: 'protected' });
+    expect(absence?.note).toMatch(/no se reemplaza/i);
     expect(absence?.value).not.toBe('40');
-    expect(movements).toMatchObject({ value: 'Lectura parcial', status: 'partial' });
-    expect(movements?.note).toContain('330 eventos liberados');
+    expect(movements).toMatchObject({ value: 'Información parcial', status: 'partial' });
+    expect(movements?.note).toContain('330 registros disponibles');
   });
 
   it('returns an immutable projection and rejects callers that bypass the contract type', () => {

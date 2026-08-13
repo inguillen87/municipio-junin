@@ -61,12 +61,12 @@ if (HAS_PRIVATE_GRH) {
 }
 
 function directoryItem(index, detail = false) {
-  const legajo = 1000 + index;
-  const leaveCount = index === 1 ? 2 : index % 5 === 0 ? 1 : 0;
+  const legajo = index === 1 ? 571 : 1000 + index;
+  const leaveCount = index === 1 ? 3 : index % 5 === 0 ? 1 : 0;
   const item = {
     companyCode: 1,
     legajo,
-    displayName: index === 1 ? 'ALVAREZ, ANA' : `PERSONA PRUEBA ${String(index).padStart(2, '0')}`,
+    displayName: index === 1 ? 'ALONSO, ARIEL MAURICIO' : `PERSONA PRUEBA ${String(index).padStart(2, '0')}`,
     sector: { code: index % 2 ? 10 : 20, label: index % 2 ? 'ADMINISTRACION' : 'SERVICIOS' },
     organization: { code: index % 2 ? 100 : 200, label: index % 2 ? 'SECRETARIA DE GOBIERNO' : 'SECRETARIA DE SERVICIOS' },
     costCenter: { code: index % 2 ? 30 : 40, label: index % 2 ? 'PERSONAL' : 'SERVICIOS URBANOS' },
@@ -111,11 +111,11 @@ function directoryItem(index, detail = false) {
       };
     })(),
     events: {
-      absenceCount: index === 1 ? 30 : (index % 3 === 0 ? 2 : 0),
-      latestAbsenceDate: index === 1 ? '2026-07-24' : (index % 3 === 0 ? '2026-07-10' : null),
+      absenceCount: index === 1 ? 41 : (index % 3 === 0 ? 2 : 0),
+      latestAbsenceDate: index === 1 ? '2026-02-09' : (index % 3 === 0 ? '2026-07-10' : null),
       leaveCount,
-      latestLeaveStartDate: leaveCount ? '2009-05-01' : null,
-      latestLeaveEndDate: leaveCount ? '2009-05-05' : null,
+      latestLeaveStartDate: index === 1 ? '2008-01-25' : (leaveCount ? '2009-05-01' : null),
+      latestLeaveEndDate: index === 1 ? '2008-02-07' : (leaveCount ? '2009-05-05' : null),
     },
     movement: index === 1
       ? { rowCount: 7, periodCount: 3, latestPeriod: '2026-07' }
@@ -127,10 +127,11 @@ function directoryItem(index, detail = false) {
     item.absenceHistory = {
       total: item.events.absenceCount,
       limit: 24,
-      items: index === 1 ? Array.from({ length: 24 }, (_, offset) => ({
-        date: `2026-07-${String(24 - offset).padStart(2, '0')}`,
-        days: offset % 4 === 0 ? null : 1,
-      })) : item.events.absenceCount === 2 ? [
+      items: index === 1 ? Array.from({ length: 24 }, (_, offset) => {
+        const date = new Date(Date.UTC(2026, 1, 9));
+        date.setUTCDate(date.getUTCDate() - offset);
+        return { date: date.toISOString().slice(0, 10), days: offset % 4 === 0 ? null : 1 };
+      }) : item.events.absenceCount === 2 ? [
         { date: '2026-07-10', days: 1 },
         { date: '2025-11-03', days: null },
       ] : [],
@@ -138,9 +139,10 @@ function directoryItem(index, detail = false) {
     item.leaveHistory = {
       total: leaveCount,
       limit: 24,
-      items: leaveCount === 2 ? [
-        { startDate: '2009-05-01', endDate: '2009-05-05', days: 5 },
-        { startDate: '2008-03-10', endDate: '2008-03-12', days: 3 },
+      items: leaveCount === 3 ? [
+        { startDate: '2008-01-25', endDate: '2008-02-07', days: 14 },
+        { startDate: '2006-07-23', endDate: '2006-08-05', days: 14 },
+        { startDate: '2005-02-14', endDate: '2005-02-27', days: 14 },
       ] : leaveCount === 1 ? [
         { startDate: '2009-05-01', endDate: '2009-05-05', days: 5 },
       ] : [],
@@ -605,7 +607,7 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
     await page.waitForFunction(() => document.querySelector('#directoryAccessPanel')?.dataset.state === 'static');
     const collapsed = await page.evaluate(() => {
       const dashboard = document.querySelector('#rrhhDashboard');
-      const mainText = document.querySelector('main')?.textContent || '';
+      const mainText = document.querySelector('main')?.innerText || '';
       const ids = Array.from(document.querySelectorAll('[id]'), node => node.id);
       const protectedLabels = Array.from(
         document.querySelectorAll('.rrhh-bar-row--protected .rrhh-bar-label'),
@@ -623,6 +625,7 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
         sourceStatus: document.querySelector('#connectionStatusText')?.textContent.trim(),
         schema: document.querySelector('#schemaChip')?.textContent.trim(),
         sourceText: document.querySelector('#sourceMetadata')?.textContent.replace(/\s+/g, ' ').trim(),
+        technicalOpen: document.querySelector('main .rrhh-technical-details')?.open,
         errorVisible: !document.querySelector('#loadError')?.hidden,
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         sectorRows: document.querySelectorAll('#sectorBars .rrhh-bar-row').length,
@@ -662,17 +665,20 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
 
     assert.equal(collapsed.legajos, formatNumber(expectedQuality.referential.legajo.rows));
     assert.equal(collapsed.participants, expectedWorkforce.bySector.participantDisplay);
-    assert.match(collapsed.workforceContext, new RegExp(`^${expectedWorkforce.referencePeriod} .* legajos que participaron en cálculo válido\\.$`));
+    assert.match(collapsed.workforceContext, new RegExp(`^${expectedWorkforce.referencePeriod} .* legajos incluidos en el cálculo del mes\\.$`));
     assert.equal(collapsed.quality, `${formatDecimal(expectedQuality.quality.score)}/100`);
     assert.equal(collapsed.quarantine, formatNumber(expectedQuality.temporal.quarantineRows));
     const latestLeave = projections.executive.leave.series.filter(row => row.privacyStatus === 'released').at(-1);
     assert.equal(collapsed.leaves, formatNumber(latestLeave.value));
     assert.match(collapsed.leaveContext, new RegExp(`^${latestLeave.period} .* histórico\\.$`));
     assert.match(collapsed.leaveRange, /Cobertura histórica publicada:/);
-    assert.equal(collapsed.sourceStatus, 'Proyecciones verificadas');
-    assert.equal(collapsed.schema, 'grh-executive-v2 · grh-quality-v1');
+    assert.equal(collapsed.sourceStatus, 'Datos verificados');
+    assert.equal(collapsed.schema, 'Datos listos para consultar');
     assert.match(collapsed.sourceText, /grh-profile-v1 · grh-semantic-v2/);
     assert.match(collapsed.sourceText, /Diferencias materiales detectadas/);
+    assert.equal(collapsed.technicalOpen, false);
+    assert.doesNotMatch(await page.locator('main').innerText(), /snapshot|linaje|SHA-256|cuarentena|gobernad|legamov/i);
+    assert.match(await page.locator('main').innerText(), /Datos del respaldo municipal|Ver detalle técnico/);
     assert.equal(collapsed.errorVisible, false);
     assert.equal(collapsed.overflow, 0, `${viewport.name} must not overflow horizontally`);
     assert.equal(collapsed.sectorRows, 9);
@@ -705,7 +711,7 @@ test('RRHH renders only governed GRH projections on desktop and mobile', { skip:
     assert.equal(collapsed.accessLimits, '5 controles activos');
     assert.equal(collapsed.accessErrorHidden, true);
     assert.equal(collapsed.accessRetryHidden, true);
-    assert.doesNotMatch(collapsed.accessPanelText, /tenant-junin-test|grh\.directory|DIRECTORY_BROWSE|PERSON_LOOKUP|LEAVE_REVIEW|\b100\b|ALVAREZ/i);
+    assert.doesNotMatch(collapsed.accessPanelText, /tenant-junin-test|grh\.directory|DIRECTORY_BROWSE|PERSON_LOOKUP|LEAVE_REVIEW|\b100\b|ALONSO/i);
     assert.equal(collapsed.actionCount, 5);
     assert.equal(collapsed.busy, 'false');
     assert.deepEqual(collapsed.duplicateIds, []);
@@ -801,7 +807,7 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   });
   const initialPositions = await page.locator('#directoryTableBody .rrhh-position-cell').allTextContents();
   assert.match(initialPositions[0], /DIRECTORA DE PERSONAL/);
-  assert.match(initialPositions[0], /Cargo informado · histolegajo 2026-08/);
+  assert.match(initialPositions[0], /Cargo informado para 2026-08/);
   assert.match(initialPositions[1], /AGENTE MUNICIPAL CODIFICADO/);
   assert.doesNotMatch(initialPositions[1], /OBSERVACION NO PRIORIZADA/);
   assert.doesNotMatch(await page.locator('body').innerText(), /cargo actual/i);
@@ -818,7 +824,7 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   await page.selectOption('#directoryPosition', 'DIRECTORA DE PERSONAL');
   await page.click('#directorySubmit');
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '1');
-  assert.match(await page.locator('#directoryTableBody .rrhh-position-cell').innerText(), /Cargo informado · histolegajo 2026-08/);
+  assert.match(await page.locator('#directoryTableBody .rrhh-position-cell').innerText(), /Cargo informado para 2026-08/);
   assert.ok(requestLog.some(entry => entry.path === '/api/grh-directory' && entry.query?.positionObservation === 'DIRECTORA DE PERSONAL'));
   await page.click('#directoryReset');
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
@@ -850,11 +856,11 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   await page.click('#directoryReset');
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '22');
 
-  await page.fill('#directorySearch', 'ALVAREZ');
+  await page.fill('#directorySearch', 'ALONSO');
   await page.click('#directorySubmit');
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '1');
   assert.equal(await page.locator('#directoryTableBody tr').count(), 1);
-  assert.equal(await page.locator('#directoryTableBody .rrhh-person-name').textContent(), 'ALVAREZ, ANA');
+  assert.equal(await page.locator('#directoryTableBody .rrhh-person-name').textContent(), 'ALONSO, ARIEL MAURICIO');
 
   await page.click('#directoryTableBody .rrhh-person-open');
   await page.waitForSelector('#personDialogContent:not([hidden])');
@@ -909,22 +915,24 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
       text: document.querySelector('#personAssistantAction')?.textContent.trim(),
     },
     actionHelp: document.querySelector('.rrhh-person-action-help')?.textContent.trim(),
+    visibleText: document.querySelector('#personDialog')?.innerText || '',
+    technicalOpen: document.querySelector('#personDialog .rrhh-person-technical')?.open,
     text: document.querySelector('#personDialog')?.textContent || '',
   }));
-  assert.equal(person.title, 'ALVAREZ, ANA');
+  assert.equal(person.title, 'ALONSO, ARIEL MAURICIO');
   assert.equal(person.assignmentTitle, 'Ubicación y encuadre informados');
   assert.match(person.assignmentNote, /no certifican adscripción ni vigencia/i);
-  assert.match(person.subtitle, /Legajo 1\.001 · empresa 1/);
+  assert.match(person.subtitle, /Legajo 571 · empresa 1/);
   assert.match(person.dimensions, /DIRECTORA DE PERSONAL/);
-  assert.match(person.dimensions, /Cargo informado · histolegajo 2026-08/);
-  assert.match(person.dimensions, /Vigencia futura informada por la fuente/);
+  assert.match(person.dimensions, /Cargo informado para 2026-08/);
+  assert.match(person.dimensions, /Fecha posterior al respaldo municipal/);
   assert.match(person.dimensions, /31 de ago de 2026/);
-  assert.match(person.dimensions, /Jerarquía del cargo\s*No informada por histolegajo/);
+  assert.match(person.dimensions, /Jerarquía del cargo\s*No informada en la fuente/);
   assert.match(person.dimensions, /Centro de costo informado\s*PERSONAL/);
   assert.doesNotMatch(person.dimensions, /SECRETARIA GENERAL|INTENDENCIA|cargo actual/i);
-  assert.match(person.events, /Registros válidos de ausencias30 · última 24 de jul de 2026/);
-  assert.match(person.events, /Registros válidos de licencias2 · última 0?1 de may de 2009 a 0?5 de may de 2009/);
-  assert.match(person.events, /Filas válidas de legamov7 filas · 3 períodos · último 2026-07/);
+  assert.match(person.events, /Ausencias encontradas en la fuente41 · última 0?9 de feb de 2026/);
+  assert.match(person.events, /Licencias encontradas en la fuente3 · última 25 de ene de 2008 a 0?7 de feb de 2008/);
+  assert.match(person.events, /Historia de cambios del legajo7 registros de origen · 3 períodos · último 2026-07/);
   assert.deepEqual(person.employment, {
     state: 'reported',
     status: 'Sin egreso informado al corte',
@@ -936,18 +944,21 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
     position: 0,
   });
   assert.doesNotMatch(person.employment.status + person.employment.detail, /certifica(?:do|da)?\s+(?:activo|inactivo)/i);
-  assert.match(person.timelineCoverage, /separa total válido, detalle expuesto, rango y estado/i);
-  assert.match(person.timelineCoverage, /Máximo 24 registros o períodos expuestos/i);
-  assert.deepEqual(person.tabs.map(tab => tab.text), ['Resumen', 'Licencias', 'Ausencias', 'legamov']);
+  assert.match(person.timelineCoverage, /cuántos registros encontró la fuente y cuántos se muestran/i);
+  assert.match(person.timelineCoverage, /hasta 24 registros o períodos por sección/i);
+  assert.deepEqual(person.tabs.map(tab => tab.text), ['Resumen', 'Licencias', 'Ausencias', 'Historia de cambios del legajo']);
   assert.deepEqual(person.tabs.map(tab => tab.selected), ['true', 'false', 'false', 'false']);
   assert.deepEqual(person.tabs.map(tab => tab.tabIndex), [0, -1, -1, -1]);
   assert.deepEqual(person.coverage.map(row => row.kind), ['leave', 'absence', 'movement']);
-  assert.match(person.coverage[0].text, /Licencias.*Válidos asociados2.*Expuestos en ficha2 de máximo 24.*Detalle completo/);
-  assert.match(person.coverage[1].text, /Ausencias.*Válidos asociados30.*Expuestos en ficha24 de máximo 24.*Detalle parcial/);
-  assert.match(person.coverage[2].text, /legamov.*Períodos válidos3.*Expuestos en ficha3 de máximo 24.*Detalle completo/i);
+  assert.match(person.coverage[0].text, /Licencias.*Encontradas en la fuente3.*Mostrados en la ficha3 de 3.*Historia completa/);
+  assert.match(person.coverage[1].text, /Ausencias.*Encontradas en la fuente41.*Mostrados en la ficha24 de 41.*Vista parcial/);
+  assert.match(person.coverage[2].text, /Historia de cambios del legajo.*Períodos encontrados3.*Mostrados en la ficha3 de 3.*Historia completa/i);
   assert.deepEqual(person.coverage.map(row => row.state), ['complete', 'partial', 'complete']);
-  assert.match(person.evidence, /Evidencia y corte/);
-  assert.match(person.cutoff, /Corte GRH/);
+  assert.match(person.evidence, /Datos técnicos de la consulta/);
+  assert.match(person.cutoff, /Información al/);
+  assert.equal(person.technicalOpen, false);
+  assert.doesNotMatch(person.visibleText, /snapshot|linaje|SHA-256|cuarentena|gobernad|legamov|histolegajo/i);
+  assert.match(person.visibleText, /Ver detalle técnico/);
   assert.ok(person.rect.width >= 730 && person.rect.width <= 770, JSON.stringify(person.rect));
   assert.ok(Math.abs(person.rect.right - 1440) <= 1, JSON.stringify(person.rect));
   assert.ok(person.rect.top <= 1 && Math.abs(person.rect.bottom - 1000) <= 1, JSON.stringify(person.rect));
@@ -967,7 +978,7 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
     text: 'Ver nómina agregada del convenio',
   });
   assert.deepEqual(person.assistant, {
-    href: 'ia.html?handoff=person', companyCode: '1', legajo: '1001',
+    href: 'ia.html?handoff=person', companyCode: '1', legajo: '571',
     text: 'Analizar esta ficha con Asistente GRH',
   });
   assert.match(person.actionHelp, /cohorte agregada; no muestran remuneración individual/i);
@@ -991,15 +1002,17 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   assert.equal(requestLog.length, requestsAfterPersonLoad, 'rendering cohort CTAs issues zero extra requests');
   await page.click('[data-timeline-filter="movement"]');
   assert.equal(await page.locator('#personTimelineList tbody tr').count(), 3);
-  assert.deepEqual(await page.locator('#personTimelineList thead th').allTextContents(), ['Período', 'Filas válidas']);
-  assert.match(await page.locator('#personTimelineList caption').innerText(), /no describen altas, bajas ni rotación/i);
+  assert.deepEqual(await page.locator('#personTimelineList thead th').allTextContents(), ['Período', 'Registros de origen']);
+  assert.match(await page.locator('#personTimelineList caption').innerText(), /no equivalen automáticamente a altas, bajas ni traslados/i);
   await page.locator('[data-timeline-filter="movement"]').press('ArrowLeft');
   assert.equal(await page.locator('[data-timeline-filter="absence"]').getAttribute('aria-selected'), 'true');
   assert.equal(await page.locator('#personTimelineList tbody tr').count(), 24);
   assert.deepEqual(await page.locator('#personTimelineList thead th').allTextContents(), ['Fecha', 'Días']);
+  assert.match(await page.locator('#personTimelineList caption').innerText(), /Ausencias encontradas en la fuente: 41\. Se muestran 24 de 41\./);
   await page.click('[data-timeline-filter="leave"]');
-  assert.equal(await page.locator('#personTimelineList tbody tr').count(), 2);
+  assert.equal(await page.locator('#personTimelineList tbody tr').count(), 3);
   assert.deepEqual(await page.locator('#personTimelineList thead th').allTextContents(), ['Inicio', 'Fin', 'Días']);
+  assert.match(await page.locator('#personTimelineList caption').innerText(), /Licencias encontradas en la fuente: 3\. Se muestran 3 de 3\./);
   await page.click('#personDialogClose');
   assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('rrhh-person-open')), true);
 
@@ -1110,7 +1123,7 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
     version: 'grh-person-handoff-v1',
     kind: 'PERSON_OVERVIEW',
     companyCode: 1,
-    legajo: 1001,
+    legajo: 571,
     createdAt: 0,
   });
   assert.ok(Number.isSafeInteger(handoff.createdAt));
@@ -1130,17 +1143,17 @@ test('RRHH authorized directory searches, filters, paginates and opens a real-co
   await page.evaluate(createdAt => {
     sessionStorage.removeItem('muni_grh_person_handoff_v1');
     sessionStorage.setItem('muni_grh_person_return_v1', JSON.stringify({
-      version: 'grh-person-return-v1', kind: 'PERSON_RETURN', companyCode: 1, legajo: 1001, createdAt,
+      version: 'grh-person-return-v1', kind: 'PERSON_RETURN', companyCode: 1, legajo: 571, createdAt,
     }));
   }, returnStartedAt);
   await page.goto(`${baseUrl}/rrhh?handoff=person#peopleDirectory`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#personDialogContent:not([hidden])');
-  assert.equal(await page.locator('#personDialogTitle').textContent(), 'ALVAREZ, ANA');
+  assert.equal(await page.locator('#personDialogTitle').textContent(), 'ALONSO, ARIEL MAURICIO');
   assert.equal(new URL(page.url()).search, '');
   assert.equal(new URL(page.url()).hash, '#peopleDirectory');
   assert.equal(await page.evaluate(() => sessionStorage.getItem('muni_grh_person_return_v1')), null);
   assert.equal(
-    requestLog.filter(entry => entry.path === '/api/grh-directory' && entry.query.legajo === '1001').at(-1)?.purpose,
+    requestLog.filter(entry => entry.path === '/api/grh-directory' && entry.query.legajo === '571').at(-1)?.purpose,
     'PERSON_LOOKUP',
   );
   await context.close();
@@ -1227,7 +1240,7 @@ test('RRHH opens an authorized IA deep-link only after the initial directory aut
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await seedSession(context);
   const page = await context.newPage();
-  const target = `${baseUrl}/rrhh?company=1&legajo=1001#peopleDirectory`;
+  const target = `${baseUrl}/rrhh?company=1&legajo=571#peopleDirectory`;
   await page.goto(target, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#personDialog[open] #personDialogContent:not([hidden])');
 
@@ -1247,8 +1260,8 @@ test('RRHH opens an authorized IA deep-link only after the initial directory aut
     directoryState: 'ready',
     directoryRows: 20,
     dialogOpen: true,
-    title: 'ALVAREZ, ANA',
-    subtitle: 'Legajo 1.001 · empresa 1',
+    title: 'ALONSO, ARIEL MAURICIO',
+    subtitle: 'Legajo 571 · empresa 1',
     search: '', sector: '', organization: '', position: '', event: '',
   });
   assert.equal(page.url(), target);
@@ -1256,18 +1269,18 @@ test('RRHH opens an authorized IA deep-link only after the initial directory aut
   let directoryRequests = requestLog.filter(entry => entry.path === '/api/grh-directory');
   assert.equal(directoryRequests.length, 2);
   assert.deepEqual(directoryRequests[0].query, { page: '1', limit: '20' });
-  assert.deepEqual(directoryRequests[1].query, { legajo: '1001', company: '1' });
+  assert.deepEqual(directoryRequests[1].query, { legajo: '571', company: '1' });
   assert.equal(directoryRequests[0].purpose, 'DIRECTORY_BROWSE');
   assert.equal(directoryRequests[1].purpose, 'PERSON_LOOKUP');
 
   await page.click('#personDialogClose');
-  await page.fill('#directorySearch', 'ALVAREZ');
+  await page.fill('#directorySearch', 'ALONSO');
   await page.click('#directorySubmit');
   await page.waitForFunction(() => document.querySelector('#directoryResultCount')?.textContent.trim() === '1');
-  assert.equal(await page.inputValue('#directorySearch'), 'ALVAREZ');
+  assert.equal(await page.inputValue('#directorySearch'), 'ALONSO');
   assert.equal(page.url(), target);
   directoryRequests = requestLog.filter(entry => entry.path === '/api/grh-directory');
-  assert.deepEqual(directoryRequests.at(-1).query, { page: '1', limit: '20', search: 'ALVAREZ' });
+  assert.deepEqual(directoryRequests.at(-1).query, { page: '1', limit: '20', search: 'ALONSO' });
   assert.equal(directoryRequests.at(-1).purpose, 'DIRECTORY_BROWSE');
   await context.close();
 });
@@ -1385,7 +1398,7 @@ test('RRHH does not follow an IA person deep-link after the directory returns 40
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await seedSession(context);
   const page = await context.newPage();
-  const target = `${baseUrl}/rrhh?company=1&legajo=1001#peopleDirectory`;
+  const target = `${baseUrl}/rrhh?company=1&legajo=571#peopleDirectory`;
   await page.goto(target, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.querySelector('#directoryStatusBadge')?.dataset.state === 'denied');
   await page.waitForTimeout(50);
@@ -1403,7 +1416,7 @@ test('RRHH does not follow an IA person deep-link after the directory returns 40
     dialogVisible: denied.dialogVisible,
     resultsHidden: denied.resultsHidden,
   }, { rows: 0, dialogOpen: false, dialogVisible: false, resultsHidden: true });
-  assert.doesNotMatch(denied.visibleMain, /ALVAREZ, ANA|1\.001/);
+  assert.doesNotMatch(denied.visibleMain, /ALONSO, ARIEL MAURICIO|571/);
   assert.equal(page.url(), target);
   const directoryRequests = requestLog.filter(entry => entry.path === '/api/grh-directory');
   assert.equal(directoryRequests.length, 1);
@@ -1424,10 +1437,10 @@ test('RRHH rejects malformed or extended person deep-links before every nominal 
 
   for (const pathAndQuery of [
     '/rrhh?company=1&legajo=0#peopleDirectory',
-    '/rrhh?company=1&legajo=1001&scope=all#peopleDirectory',
-    '/rrhh?company=1&company=2&legajo=1001#peopleDirectory',
+    '/rrhh?company=1&legajo=571&scope=all#peopleDirectory',
+    '/rrhh?company=1&company=2&legajo=571#peopleDirectory',
     '/rrhh?company=1&legajo=9007199254740992#peopleDirectory',
-    '/rrhh?company=1&legajo=1001#otroDestino',
+    '/rrhh?company=1&legajo=571#otroDestino',
     '/rrhh?organization=00&hasAbsence=true#peopleDirectory',
     '/rrhh?organization=100&sector=10#peopleDirectory',
     '/rrhh?organization=100&hasAbsence=false#peopleDirectory',
@@ -1613,8 +1626,8 @@ test('RRHH fails closed on 503 and retry recovers only after both projections re
     publishedRows: document.querySelectorAll('.rrhh-bar-row, .rrhh-chart-point, #quarantineTableBody tr').length,
   }));
   assert.equal(failed.dashboardHidden, true);
-  assert.equal(failed.title, 'Snapshot GRH no disponible');
-  assert.match(failed.message, /No se muestran valores de ejemplo, datos crudos ni un corte anterior/);
+  assert.equal(failed.title, 'Respaldo municipal no disponible');
+  assert.match(failed.message, /No se muestran valores de ejemplo ni datos anteriores/);
   assert.equal(failed.displayedNumbers.every(value => value === '—'), true);
   assert.equal(failed.publishedRows, 0);
   assert.deepEqual(requestLog.map(item => item.path).sort(), ['/api/grh-executive', '/api/grh-quality']);
@@ -1627,7 +1640,7 @@ test('RRHH fails closed on 503 and retry recovers only after both projections re
     errorHidden: document.querySelector('#loadError')?.hidden,
     participants: document.querySelector('#kpiWorkforceParticipants')?.textContent.trim(),
   }));
-  assert.equal(recovered.status, 'Proyecciones verificadas');
+  assert.equal(recovered.status, 'Datos verificados');
   assert.equal(recovered.errorHidden, true);
   assert.equal(recovered.participants, projections.executive.workforce.bySector.participantDisplay);
   assert.equal(requestLog.length, 6);

@@ -33,7 +33,7 @@ test('movement operations reuses the exact organization analytics permission and
 });
 
 test('published ceiling contains movement operations while canonical RBAC preserves high-role parity', () => {
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.6');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.7');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     const ceiling = publishedDemoPolicy.evaluatePublishedDemoRoute({ ...profile, routeId: ROUTE_ID });

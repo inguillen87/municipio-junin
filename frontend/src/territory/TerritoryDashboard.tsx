@@ -22,7 +22,7 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
     <div className="territory-dashboard" data-territory-status={contract.status}>
       <header className="territory-hero" aria-labelledby="page-title">
         <div>
-          <p className="territory-hero__eyebrow">Inteligencia geográfica municipal</p>
+          <p className="territory-hero__eyebrow">Mapa oficial del departamento · límite y localidades</p>
           <h1 id="page-title">Centro Territorial Junín · Mendoza</h1>
           <p>Referencia oficial del departamento y sus localidades oficiales para explorar el territorio, sin capas operativas inventadas.</p>
         </div>
@@ -54,12 +54,6 @@ export function TerritoryDashboard({ contract }: { contract: MunicipalTerritoryC
           value={String(contract.localities.length)}
           note={partial ? 'La fuente de localidades no está disponible; no se muestran ubicaciones.' : 'Puntos de ubicación provistos por fuente oficial.'}
           tone={partial ? 'amber' : 'green'}
-        />
-        <KpiCard
-          label="Coordenadas del mapa"
-          value="Oficiales"
-          note={`Formato técnico ${contract.query.crs}; el mapa se adapta.`}
-          tone="violet"
         />
         <KpiCard
           label="Fuentes disponibles"

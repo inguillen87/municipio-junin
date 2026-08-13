@@ -31,7 +31,7 @@ const CURRENT_ENTRY = `<!doctype html>
 </html>`;
 const CURRENT_ROOT = `<!doctype html>
 <html>
-  <head><title>Panel ejecutivo GRH | MuniControl</title></head>
+  <head><title>Panorama de personal | MuniControl</title></head>
   <body>
     <p>Panorama ejecutivo del snapshot gobernado de GRH.</p>
     <p>Las proyecciones excluyen personas_junin.</p>
@@ -840,6 +840,7 @@ test('valid Vercel topology passes exact clean document paths without redirects'
     '/api/grh-data',
     '/api/grh-directory',
     '/api/grh-directory-access',
+    '/api/grh-employment-review',
     '/api/grh-domain-catalog',
     '/api/grh-organization-analytics',
     '/api/grh-movement-operations',

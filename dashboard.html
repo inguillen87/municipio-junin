@@ -7,7 +7,7 @@
   <meta name="description" content="Resumen ejecutivo de Recursos Humanos basado en el último respaldo disponible de la Municipalidad de Junín.">
   <meta name="municontrol-release-contract" content="snapshot gobernado de GRH">
   <meta name="municontrol-excluded-source" content="personas_junin">
-  <title>Panel ejecutivo GRH | MuniControl</title>
+  <title>Panorama de personal | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="css/dashboard.css">
   <script>
@@ -993,7 +993,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
         <div class="exec-page-title">
-          <h1>Panel ejecutivo GRH</h1>
+          <h1>Panorama de personal</h1>
           <span class="exec-breadcrumb">Datos de personal · último respaldo disponible</span>
         </div>
       </div>
@@ -1013,7 +1013,7 @@
       <section class="exec-hero" aria-labelledby="executiveTitle">
         <div class="exec-eyebrow">Resumen para autoridades · Recursos Humanos</div>
         <h2 id="executiveTitle">Lo importante del último respaldo de personal.</h2>
-        <p class="exec-hero-copy">Cuántas personas aparecen en el cálculo de julio, qué parte de la base está lista para analizar y qué diferencias necesitan revisión. Los datos provienen del respaldo recibido el 6 de agosto de 2026 y no se actualizan en tiempo real.</p>
+        <p class="exec-hero-copy">Cuántas personas aparecen en el cálculo de julio, qué controles superó el respaldo y qué diferencias necesitan revisión. Los datos provienen del respaldo recibido el 6 de agosto de 2026 y no se actualizan en tiempo real.</p>
         <div class="exec-chips" aria-label="Contexto de los datos">
           <span class="exec-chip">Respaldo del <strong id="snapshotChip">—</strong></span>
           <span class="exec-chip">Período analizado <strong id="referencePeriodChip">—</strong></span>
@@ -1057,7 +1057,7 @@
               <dd><strong id="decisionChange">—</strong><span id="decisionChangeNote">—</span></dd>
             </div>
             <div class="exec-decision-proof">
-              <dt>Datos listos para analizar</dt>
+              <dt>Resultado de los controles de calidad</dt>
               <dd><strong id="decisionQuality">—</strong><span id="decisionQualityNote">—</span></dd>
             </div>
           </dl>
@@ -1070,6 +1070,35 @@
           <a class="exec-decision-ledger-cta" id="decisionLedgerCta" href="decisiones-grh.html">Gestionar compromisos <span aria-hidden="true">→</span></a>
         </div>
 
+        <section class="exec-decision-brief" id="employmentReview" aria-labelledby="employmentReviewTitle" data-contract="grh-employment-review-v1" hidden>
+          <div class="exec-decision-head">
+            <div>
+              <p class="exec-decision-eyebrow">Control de legajos</p>
+              <h3 id="employmentReviewTitle">Situaciones para revisar</h3>
+              <p class="exec-decision-headline" id="employmentReviewHeadline">Comprobando la información del respaldo…</p>
+            </div>
+            <div class="exec-decision-meta">
+              <span class="exec-decision-tag" id="employmentReviewPeriod">—</span>
+            </div>
+          </div>
+          <dl class="exec-decision-evidence" aria-label="Resumen de legajos para revisar">
+            <div class="exec-decision-proof">
+              <dt>Legajos para verificar</dt>
+              <dd><strong id="employmentReviewTotal">—</strong><span>No son errores: son situaciones que conviene confirmar.</span></dd>
+            </div>
+            <div class="exec-decision-proof">
+              <dt>Alcance</dt>
+              <dd><strong id="employmentReviewCoverage">—</strong><span id="employmentReviewPrivacy">—</span></dd>
+            </div>
+          </dl>
+          <ol class="exec-decision-priorities" id="employmentReviewCategories" aria-label="Tipos de situaciones para revisar"></ol>
+          <p class="exec-decision-limit" id="employmentReviewStatus" role="status" aria-live="polite"></p>
+          <div class="exec-control-actions">
+            <a class="exec-control-action" id="employmentReviewCta" href="/rrhh#peopleDirectory" hidden>Revisar en Directorio y fichas</a>
+            <button class="exec-retry-btn" id="employmentReviewRetry" type="button" hidden>Reintentar este control</button>
+          </div>
+        </section>
+
         <section class="exec-kpis" aria-label="Datos principales del respaldo de Recursos Humanos">
           <article class="exec-stat">
             <div class="exec-stat-label">Personas incluidas en el cálculo de julio</div>
@@ -1078,10 +1107,10 @@
             <span class="exec-stat-context">No es el padrón actual de personal</span>
           </article>
           <article class="exec-stat" data-tone="teal">
-            <div class="exec-stat-label">Datos listos para analizar</div>
+            <div class="exec-stat-label">Resultado de los controles de calidad</div>
             <div class="exec-stat-value" id="kpiQuality">—</div>
             <p class="exec-stat-note" id="kpiQualityNote">—</p>
-            <span class="exec-stat-context">El resto quedó separado para revisión</span>
+            <span class="exec-stat-context">No es el porcentaje de la base que está completa</span>
           </article>
           <article class="exec-stat" id="sourceComparisonCard" data-tone="amber">
             <div class="exec-stat-label">Comparación entre las dos fuentes</div>
@@ -1125,8 +1154,8 @@
               <div><dt>Registro apartado</dt><dd>Un dato que no se mezcla con el análisis hasta que una persona lo revise.</dd></div>
             </dl>
             <div class="exec-control-actions" aria-label="Acciones para revisar el control">
-              <a class="exec-control-action" id="controlQualityCta" href="control.html" hidden>Abrir Calidad de datos</a>
-              <a class="exec-control-action" id="controlHaciendaCta" href="hacienda.html" hidden>Revisar en Hacienda</a>
+              <a class="exec-control-action" id="controlQualityCta" href="/calidad" hidden>Abrir Calidad de datos</a>
+              <a class="exec-control-action" id="controlHaciendaCta" href="/hacienda" hidden>Revisar en Hacienda</a>
             </div>
           </div>
         </details>
@@ -1228,7 +1257,7 @@
               <span class="exec-panel-badge" id="costCenterBadge">—</span>
             </div>
             <div class="exec-ranks" id="costCenterRanks"></div>
-            <p class="exec-drill-note">La distribución completa y su metodología están en <a href="grh-ejecutivo.html">GRH Ejecutivo →</a></p>
+            <p class="exec-drill-note">La distribución completa y su explicación están en <a href="/ejecutivo">Detalle ejecutivo de personal →</a></p>
           </article>
           <article class="exec-panel">
             <div class="exec-panel-head">
@@ -1248,7 +1277,7 @@
             <p>Abrí el módulo correspondiente según la revisión que necesites hacer.</p>
           </div>
           <div class="exec-access-grid">
-            <a class="exec-access-card" href="grh-ejecutivo.html">
+            <a class="exec-access-card" href="/ejecutivo">
               <div class="exec-access-head">
                 <span class="exec-access-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9m8 10V5m8 14V2M2 19h20"/></svg></span>
                 <span class="exec-capability">Fuente operativa</span>
@@ -1257,7 +1286,7 @@
               <p>Detalle de la base recibida, su estructura, controles y fecha de respaldo. No expone información personal en esta pantalla.</p>
               <span class="exec-access-action">Abrir panorama GRH →</span>
             </a>
-            <a class="exec-access-card" href="hacienda.html">
+            <a class="exec-access-card" href="/hacienda">
               <div class="exec-access-head">
                 <span class="exec-access-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M5 7V4h14v3M5 11v8m5-8v8m4-8v8m5-8v8M3 21h18"/></svg></span>
                 <span class="exec-capability">Control disponible</span>
@@ -1331,6 +1360,7 @@
   <script src="js/grh-secure-data.js"></script>
   <script src="js/grh-close-data.js"></script>
   <script src="js/grh-decision-brief-data.js"></script>
+  <script src="js/grh-employment-review-data.js"></script>
   <script>
     (function () {
       'use strict';
@@ -1344,7 +1374,7 @@
       var civilDateFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeZone:'UTC'});
       var dateTimeFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Argentina/Buenos_Aires'});
       var monthFormatter = new Intl.DateTimeFormat('es-AR',{month:'short',year:'numeric',timeZone:'UTC'});
-      var state = { executive:null, quality:null, monthlyClose:null, decisionBrief:null, series:[], range:'12', loadSequence:0 };
+      var state = { executive:null, quality:null, monthlyClose:null, decisionBrief:null, employmentReview:null, series:[], range:'12', loadSequence:0 };
       var elements = {};
 
       function byId(id) { return document.getElementById(id); }
@@ -1358,6 +1388,8 @@
           'monthlyCloseBrief','closePeriodBadge','closeParticipants','closeControlMetric','closeControlStatus','closeControlNote',
           'closeCoverage','closeExactness','closeAgreement','closeComparison','closeComparisonTitle','closeComparisonNote',
           'closeParticipantDelta','closeCoverageDelta','closeExactnessDelta','closeAgreementDelta','decisionBrief','decisionLedgerActions','decisionLedgerCta',
+          'employmentReview','employmentReviewHeadline','employmentReviewPeriod','employmentReviewTotal','employmentReviewCoverage',
+          'employmentReviewPrivacy','employmentReviewCategories','employmentReviewStatus','employmentReviewCta','employmentReviewRetry',
           'decisionBriefHeadline','decisionBriefStatus','decisionBriefBoundary','decisionAgreement','decisionAgreementNote',
           'decisionChange','decisionChangeNote','decisionQuality','decisionQualityNote','decisionPriorities','decisionBriefLimits'
         ].forEach(function (id) { elements[id] = byId(id); });
@@ -1572,6 +1604,14 @@
           projection.capabilities.indexOf('navigation.grh-decisions') !== -1);
       }
 
+      function hasNavigationCapability(capability) {
+        var projection = window.MuniAccess && typeof window.MuniAccess.getValidatedSession === 'function'
+          ? window.MuniAccess.getValidatedSession()
+          : null;
+        return Boolean(projection && Array.isArray(projection.capabilities) &&
+          projection.capabilities.indexOf(capability) !== -1);
+      }
+
       function appendDecisionPriority(priority,capabilities) {
         var copy = DECISION_PRIORITY_COPY[priority.code];
         if(!copy) fail('El brief decisional contiene una prioridad desconocida.');
@@ -1588,7 +1628,8 @@
         if(canOpen) {
           var link = document.createElement('a');
           link.className = 'exec-decision-cta';
-          link.href = priority.href;
+          link.href = priority.href === 'control.html' ? '/calidad' :
+            (priority.href === 'hacienda.html' ? '/hacienda' : priority.href);
           link.textContent = copy.action;
           item.appendChild(link);
         }
@@ -1624,8 +1665,8 @@
         } else {
           fail('El brief decisional contiene un cambio desconocido.');
         }
-        setText(elements.decisionQuality,qualityFormatter.format(situation.qualityScorePct)+'%');
-        setText(elements.decisionQualityNote,'Todo el respaldo · '+numberFormatter.format(situation.temporalQuarantineRows)+' registros apartados para revisión.');
+        setText(elements.decisionQuality,qualityFormatter.format(situation.qualityScorePct)+' de 100');
+        setText(elements.decisionQualityNote,'Combina fechas, relaciones entre registros y comparación de fuentes; no mide cuánto de la base está completo.');
 
         elements.decisionPriorities.replaceChildren();
         var capabilities = currentDecisionCapabilities();
@@ -1635,6 +1676,84 @@
           return DECISION_LIMIT_COPY[limit];
         });
         setText(elements.decisionBriefLimits,'Límites: '+limits.join(' · ')+'.');
+      }
+
+      function resetEmploymentReview() {
+        state.employmentReview = null;
+        elements.employmentReview.hidden = false;
+        setText(elements.employmentReviewHeadline,'Comprobando la información del respaldo…');
+        setText(elements.employmentReviewPeriod,'—');
+        setText(elements.employmentReviewTotal,'—');
+        setText(elements.employmentReviewCoverage,'—');
+        setText(elements.employmentReviewPrivacy,'—');
+        setText(elements.employmentReviewStatus,'Este control se carga por separado y no bloquea el resto del panorama.');
+        elements.employmentReviewCategories.replaceChildren();
+        elements.employmentReviewCta.hidden = true;
+        elements.employmentReviewRetry.hidden = true;
+      }
+
+      function appendEmploymentReviewCategory(row) {
+        var item = document.createElement('li');
+        var heading = document.createElement('strong');
+        var paragraph = document.createElement('p');
+        item.className = 'exec-decision-priority';
+        heading.textContent = row.display+' · '+row.label;
+        paragraph.textContent = row.meaning;
+        item.append(heading,paragraph);
+        elements.employmentReviewCategories.appendChild(item);
+      }
+
+      function renderEmploymentReview(review) {
+        state.employmentReview = review;
+        setText(elements.employmentReviewHeadline,'Comparamos la situación informada en cada legajo con su participación en el cálculo de '+formatMonth(review.referencePeriod)+'.');
+        setText(elements.employmentReviewPeriod,formatMonth(review.referencePeriod));
+        setText(elements.employmentReviewTotal,numberFormatter.format(review.totalToReview));
+        setText(elements.employmentReviewCoverage,numberFormatter.format(review.totalDirectoryPeople)+' legajos');
+        setText(elements.employmentReviewPrivacy,review.privacyStatus === 'partially_protected'
+          ? 'El total está disponible; el detalle se reúne para proteger grupos pequeños.'
+          : 'Detalle disponible según el perfil autorizado.');
+        elements.employmentReviewCategories.replaceChildren();
+        if(review.privacyStatus === 'partially_protected') {
+          var protectedItem = document.createElement('li');
+          var protectedHeading = document.createElement('strong');
+          var protectedCopy = document.createElement('p');
+          protectedItem.className = 'exec-decision-priority';
+          protectedHeading.textContent = 'Detalle protegido';
+          protectedCopy.textContent = 'Algunos grupos tienen menos de 10 personas. No se muestran por separado para evitar identificaciones.';
+          protectedItem.append(protectedHeading,protectedCopy);
+          elements.employmentReviewCategories.appendChild(protectedItem);
+        } else {
+          review.categories.forEach(appendEmploymentReviewCategory);
+        }
+        setText(elements.employmentReviewStatus,'Situaciones para confirmar administrativamente; no son errores automáticos ni prueban altas, bajas o pagos.');
+        elements.employmentReviewCta.hidden = !hasNavigationCapability('navigation.rrhh');
+        elements.employmentReviewRetry.hidden = true;
+      }
+
+      function showEmploymentReviewError() {
+        state.employmentReview = null;
+        setText(elements.employmentReviewHeadline,'No pudimos completar este control.');
+        setText(elements.employmentReviewTotal,'—');
+        setText(elements.employmentReviewCoverage,'—');
+        setText(elements.employmentReviewPrivacy,'No se reemplazan datos faltantes por cero.');
+        elements.employmentReviewCategories.replaceChildren();
+        setText(elements.employmentReviewStatus,'El resto del panorama sigue disponible. Podés reintentar sólo esta revisión.');
+        elements.employmentReviewCta.hidden = true;
+        elements.employmentReviewRetry.hidden = false;
+      }
+
+      async function loadEmploymentReview(sequence) {
+        resetEmploymentReview();
+        try {
+          if(!window.MuniGrhEmploymentReview || typeof window.MuniGrhEmploymentReview.load !== 'function') throw new Error('Cliente no disponible');
+          var review = await window.MuniGrhEmploymentReview.load({ timeoutMs:10000 });
+          if(sequence !== state.loadSequence) return;
+          renderEmploymentReview(review);
+        } catch(error) {
+          if(sequence !== state.loadSequence) return;
+          showEmploymentReviewError();
+          console.error('[Panel ejecutivo GRH] Revisión de legajos no disponible:',error);
+        }
       }
 
       function renderRanking(container,rows,color) {
@@ -1755,8 +1874,8 @@
         setText(elements.sourceCountChip,'4/4');
         setText(elements.kpiParticipants,numberFormatter.format(contract.participants));
         setText(elements.kpiParticipantsNote,'Legajos que aparecen al menos una vez en los cálculos de '+formatMonth(workforce.referencePeriod)+'.');
-        setText(elements.kpiQuality,qualityFormatter.format(quality.score)+'%');
-        setText(elements.kpiQualityNote,numberFormatter.format(quarantined)+' registros apartados para revisión.');
+        setText(elements.kpiQuality,qualityFormatter.format(quality.score)+' de 100');
+        setText(elements.kpiQualityNote,'Combina fechas válidas, relación con legajos y comparación entre fuentes.');
         var requiresSourceReview = cross.status === 'material_differences_detected';
         elements.sourceComparisonCard.dataset.state = requiresSourceReview ? 'review' : 'ready';
         setText(elements.kpiCrossStatus,requiresSourceReview ? 'Requiere revisión' : 'Sin diferencias relevantes');
@@ -1796,8 +1915,9 @@
       }
 
       function resetView() {
-        state.executive = null; state.quality = null; state.monthlyClose = null; state.decisionBrief = null; state.series = [];
+        state.executive = null; state.quality = null; state.monthlyClose = null; state.decisionBrief = null; state.employmentReview = null; state.series = [];
         elements.dataViews.hidden = true;
+        elements.employmentReview.hidden = true;
         elements.loadError.hidden = true;
         elements.loadStatus.hidden = false;
         elements.executiveDashboard.setAttribute('aria-busy','true');
@@ -1858,6 +1978,7 @@
           ]);
           if(sequence !== state.loadSequence) return;
           renderAll(normalizeExperience(projections[0],projections[1],projections[2]));
+          void loadEmploymentReview(sequence);
         } catch(error) {
           if(sequence !== state.loadSequence) return;
           showError(error);
@@ -1882,6 +2003,7 @@
       function bindEvents() {
         elements.trendRange.addEventListener('change',function (event) { state.range = event.target.value; if(state.executive) renderChart(); });
         elements.retryLoad.addEventListener('click',loadAuthorizedDashboard);
+        elements.employmentReviewRetry.addEventListener('click',function () { void loadEmploymentReview(state.loadSequence); });
         elements.execThemeToggle.addEventListener('click',toggleTheme);
         var light = document.documentElement.getAttribute('data-theme') === 'light';
         elements.execThemeToggle.setAttribute('aria-pressed',light ? 'true' : 'false');

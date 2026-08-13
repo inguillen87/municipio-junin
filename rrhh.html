@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="Centro ejecutivo de Recursos Humanos basado en agregados privados del snapshot GRH Junín.">
+  <meta name="description" content="Centro de Recursos Humanos con información real del respaldo municipal de Junín, Mendoza.">
   <title>Gestión de personas | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="css/dashboard.css">
@@ -617,6 +617,35 @@
     .rrhh-methodology strong { color: var(--rrhh-ink); }
     .rrhh-methodology-mark { color: var(--rrhh-blue); font-size: 16px; font-weight: 900; }
 
+    .rrhh-technical-details {
+      overflow: hidden;
+      border: 1px solid var(--rrhh-border);
+      border-radius: var(--rrhh-radius);
+      background: color-mix(in srgb, var(--rrhh-card) 96%, var(--rrhh-blue) 4%);
+      box-shadow: var(--rrhh-shadow);
+    }
+    .rrhh-technical-details > summary {
+      display: flex;
+      min-height: 58px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 20px;
+      color: var(--rrhh-ink);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 800;
+      list-style: none;
+    }
+    .rrhh-technical-details > summary::-webkit-details-marker { display: none; }
+    .rrhh-technical-details > summary::after { content: "+"; color: var(--rrhh-blue); font-size: 20px; }
+    .rrhh-technical-details[open] > summary { border-bottom: 1px solid var(--rrhh-border); }
+    .rrhh-technical-details[open] > summary::after { content: "−"; }
+    .rrhh-technical-content { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
+    .rrhh-person-technical { border: 1px solid var(--rrhh-border); border-radius: 12px; }
+    .rrhh-person-technical > summary { min-height: 46px; padding: 0 14px; font-size: 12px; }
+    .rrhh-person-technical .rrhh-person-section { margin: 0; border: 0; border-top: 1px solid var(--rrhh-border); border-radius: 0; }
+
     .rrhh-reveal { animation: rrhh-reveal .48s both; }
     .rrhh-reveal:nth-child(2) { animation-delay: .035s; }
     .rrhh-reveal:nth-child(3) { animation-delay: .07s; }
@@ -728,14 +757,14 @@
     <div class="content-wrapper rrhh-shell">
       <section class="rrhh-hero" aria-labelledby="rrhhHeroTitle">
         <div>
-          <p class="rrhh-eyebrow">Centro operativo GRH</p>
+          <p class="rrhh-eyebrow">Recursos Humanos municipal</p>
           <h2 id="rrhhHeroTitle">Personas, cargos y licencias para decidir</h2>
-          <p class="rrhh-hero-copy">Indicadores reales del backup GRH Junín y, para perfiles habilitados, búsqueda nominal por legajo, organización y cargo.</p>
+          <p class="rrhh-hero-copy">Información real del respaldo municipal de Junín, Mendoza. Los perfiles habilitados pueden buscar por persona, legajo, área o cargo.</p>
           <div class="rrhh-chips" aria-label="Garantías del tablero">
-            <span class="rrhh-chip rrhh-chip--verified">Fuente GRH real</span>
-            <span class="rrhh-chip rrhh-chip--verified">Agregados verificados</span>
-            <span class="rrhh-chip rrhh-chip--historic">Snapshot histórico</span>
-            <span class="rrhh-chip" id="schemaChip">Contrato en verificación</span>
+            <span class="rrhh-chip rrhh-chip--verified">Datos municipales reales</span>
+            <span class="rrhh-chip rrhh-chip--verified">Privacidad aplicada</span>
+            <span class="rrhh-chip rrhh-chip--historic">Información histórica</span>
+            <span class="rrhh-chip" id="schemaChip">Datos en verificación</span>
           </div>
           <div class="rrhh-actions" aria-label="Acciones de Recursos Humanos">
             <button class="rrhh-action" id="openDirectoryAction" type="button">Buscar persona</button>
@@ -745,11 +774,11 @@
             <a class="rrhh-action rrhh-action--secondary" href="/calidad">Calidad de datos</a>
           </div>
         </div>
-        <aside class="rrhh-hero-aside" aria-label="Contexto del snapshot">
+        <aside class="rrhh-hero-aside" aria-label="Fecha del respaldo municipal">
           <div>
             <span class="rrhh-snapshot-label">Corte de información</span>
             <strong class="rrhh-snapshot-date" id="snapshotDate">—</strong>
-            <p class="rrhh-snapshot-note" id="snapshotNote">Verificando el corte publicado.</p>
+            <p class="rrhh-snapshot-note" id="snapshotNote">Verificando el respaldo municipal.</p>
           </div>
           <div class="rrhh-privacy-line">
             <span class="rrhh-lock" aria-hidden="true">✓</span>
@@ -760,8 +789,8 @@
 
       <section class="rrhh-state" id="loadingState" aria-live="polite">
         <div class="rrhh-state-mark" aria-hidden="true"><span class="rrhh-loader"></span></div>
-        <h3>Validando la fuente GRH</h3>
-        <p>Estamos comprobando origen, privacidad, snapshot y reconciliación de agregados antes de habilitar los indicadores.</p>
+        <h3>Preparando la información de Recursos Humanos</h3>
+        <p>Estamos comprobando el respaldo municipal y los permisos antes de mostrar los resultados.</p>
       </section>
 
       <section class="rrhh-state rrhh-state--error" id="loadError" hidden role="alert">
@@ -776,7 +805,7 @@
           <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-blue)">
             <span class="rrhh-kpi-label">Legajos registrados</span>
             <strong class="rrhh-kpi-value" id="kpiLegajos">—</strong>
-            <span class="rrhh-kpi-context" id="kpiLegajosContext">Registro maestro del snapshot.</span>
+            <span class="rrhh-kpi-context" id="kpiLegajosContext">Personas identificadas por número de legajo.</span>
           </article>
           <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-cyan)">
             <span class="rrhh-kpi-label">Participantes de liquidación</span>
@@ -799,14 +828,14 @@
             <span class="rrhh-kpi-context" id="kpiMovementsContext">Serie protegida de eventos históricos.</span>
           </article>
           <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-green)">
-            <span class="rrhh-kpi-label">Calidad del extracto</span>
+            <span class="rrhh-kpi-label">Qué tan confiable es este respaldo</span>
             <strong class="rrhh-kpi-value" id="kpiQuality">—</strong>
-            <span class="rrhh-kpi-context">Alcance gobernado; no toda la base cruda.</span>
+            <span class="rrhh-kpi-context">Resultado general de las comprobaciones realizadas.</span>
           </article>
           <article class="rrhh-kpi rrhh-reveal" style="--kpi-accent:var(--rrhh-amber)">
-            <span class="rrhh-kpi-label">Filas en cuarentena</span>
+            <span class="rrhh-kpi-label">Registros con fecha para revisar</span>
             <strong class="rrhh-kpi-value" id="kpiQuarantine">—</strong>
-            <span class="rrhh-kpi-context">Excluidas de las series temporales válidas.</span>
+            <span class="rrhh-kpi-context">No se incluyen en los totales históricos hasta ser revisados.</span>
           </article>
         </section>
 
@@ -814,7 +843,7 @@
           <header class="rrhh-card-head">
             <div>
               <h3 class="rrhh-card-title" id="directoryTitle">Directorio GRH</h3>
-              <p class="rrhh-card-subtitle">Buscar por apellido, nombre o legajo. Filtros operativos del snapshot.</p>
+              <p class="rrhh-card-subtitle">Buscá por apellido, nombre o legajo y usá los filtros sólo cuando los necesites.</p>
             </div>
             <span class="rrhh-directory-status" id="directoryStatusBadge" data-state="loading">Verificando acceso</span>
           </header>
@@ -870,7 +899,7 @@
                 <option value="">Todos</option>
                 <option value="leave">Con licencias</option>
                 <option value="absence">Con ausencias</option>
-                <option value="movement">Con filas fuente legamov</option>
+                <option value="movement">Con historia de cambios</option>
                 <option value="both">Licencias y ausencias</option>
               </select>
             </label>
@@ -903,7 +932,7 @@
             </div>
             <div class="rrhh-table-wrap rrhh-directory-table-wrap">
               <table class="rrhh-table rrhh-directory-table">
-                <thead><tr><th>Persona</th><th>Legajo</th><th>Estado informado</th><th>Cargo informado</th><th>Organización</th><th>Centro de costo informado</th><th>Licencias</th><th>Ausencias</th><th>Filas legamov</th><th></th></tr></thead>
+                <thead><tr><th>Persona</th><th>Legajo</th><th>Estado informado</th><th>Cargo informado</th><th>Organización</th><th>Centro de costo informado</th><th>Licencias</th><th>Ausencias</th><th>Registros de cambios</th><th></th></tr></thead>
                 <tbody id="directoryTableBody"></tbody>
               </table>
             </div>
@@ -916,17 +945,17 @@
           </div>
         </section>
 
-        <section class="rrhh-grid" id="workforceDistribution" aria-label="Participación en la última liquidación válida">
+        <section class="rrhh-grid" id="workforceDistribution" aria-label="Personas incluidas en el cálculo del último mes disponible">
           <article class="rrhh-card rrhh-reveal">
             <header class="rrhh-card-head">
               <div>
                 <h3 class="rrhh-card-title">Participantes por sector</h3>
                 <p class="rrhh-card-subtitle">Principales categorías liberadas; el resto se agrupa para impedir inferencias individuales.</p>
               </div>
-              <button class="rrhh-toggle" id="sectorToggle" type="button" aria-expanded="false">Ver proyección completa</button>
+              <button class="rrhh-toggle" id="sectorToggle" type="button" aria-expanded="false">Ver todos los grupos</button>
             </header>
             <div class="rrhh-card-body"><div class="rrhh-bars" id="sectorBars"></div></div>
-            <footer class="rrhh-card-footer" id="sectorSummary">El ranking permanece cerrado hasta reconciliar con el universo del período.</footer>
+            <footer class="rrhh-card-footer" id="sectorSummary">La información permanece cerrada hasta completar las verificaciones.</footer>
           </article>
 
           <article class="rrhh-card rrhh-reveal">
@@ -935,10 +964,10 @@
                 <h3 class="rrhh-card-title">Participantes por centro de costo</h3>
                 <p class="rrhh-card-subtitle">Distribución operativa protegida, sin importes ni celdas pequeñas identificables.</p>
               </div>
-              <button class="rrhh-toggle" id="costToggle" type="button" aria-expanded="false">Ver proyección completa</button>
+              <button class="rrhh-toggle" id="costToggle" type="button" aria-expanded="false">Ver todos los grupos</button>
             </header>
             <div class="rrhh-card-body"><div class="rrhh-bars" id="costBars"></div></div>
-            <footer class="rrhh-card-footer" id="costSummary">El ranking permanece cerrado hasta reconciliar con el universo del período.</footer>
+            <footer class="rrhh-card-footer" id="costSummary">La información permanece cerrada hasta completar las verificaciones.</footer>
           </article>
 
           <article class="rrhh-card rrhh-card--wide rrhh-reveal">
@@ -947,14 +976,14 @@
                 <h3 class="rrhh-card-title">Participantes por categoría de acuerdo de origen</h3>
                 <p class="rrhh-card-subtitle">Clasificación declarada por GRH para la liquidación del período; no define por sí sola vínculo vigente, planta ni situación contractual.</p>
               </div>
-              <button class="rrhh-toggle" id="agreementToggle" type="button" aria-expanded="false">Ver proyección completa</button>
+              <button class="rrhh-toggle" id="agreementToggle" type="button" aria-expanded="false">Ver todos los grupos</button>
             </header>
             <div class="rrhh-card-body"><div class="rrhh-bars" id="agreementBars"></div></div>
-            <footer class="rrhh-card-footer" id="agreementSummary">El ranking permanece cerrado hasta reconciliar con el universo del período.</footer>
+            <footer class="rrhh-card-footer" id="agreementSummary">La información permanece cerrada hasta completar las verificaciones.</footer>
           </article>
         </section>
 
-        <section class="rrhh-grid rrhh-grid--trends" id="historicalTrends" aria-label="Evolución temporal válida">
+        <section class="rrhh-grid rrhh-grid--trends" id="historicalTrends" aria-label="Historia anual disponible">
           <article class="rrhh-card rrhh-reveal">
             <header class="rrhh-card-head">
               <div>
@@ -987,7 +1016,7 @@
             <header class="rrhh-card-head">
               <div>
                 <h3 class="rrhh-card-title">Movimientos de legajo por año</h3>
-                <p class="rrhh-card-subtitle">Sólo años liberados de legamov, separados de filas en cuarentena.</p>
+                <p class="rrhh-card-subtitle">Son registros de origen agrupados por año. No equivalen automáticamente a altas, bajas ni traslados.</p>
               </div>
             </header>
             <div class="rrhh-card-body">
@@ -998,31 +1027,34 @@
           </article>
         </section>
 
-        <section class="rrhh-grid rrhh-grid--quality" aria-label="Calidad y cuarentena">
+        <details class="rrhh-technical-details rrhh-reveal">
+          <summary>Ver detalle técnico</summary>
+          <div class="rrhh-technical-content">
+        <section class="rrhh-grid rrhh-grid--quality" aria-label="Comprobaciones técnicas del respaldo">
           <article class="rrhh-card rrhh-reveal">
             <header class="rrhh-card-head">
               <div>
-                <h3 class="rrhh-card-title">Índice de calidad gobernado</h3>
-                <p class="rrhh-card-subtitle">Componentes y ponderaciones de la proyección de calidad gobernada.</p>
+                <h3 class="rrhh-card-title">Qué tan confiable es este respaldo</h3>
+                <p class="rrhh-card-subtitle">Detalle de las comprobaciones y de cómo se calcula el puntaje general.</p>
               </div>
             </header>
             <div class="rrhh-card-body">
               <div class="rrhh-quality-score"><strong id="qualityScore">—</strong><span>/ 100</span></div>
               <div class="rrhh-quality-components" id="qualityComponents"></div>
             </div>
-            <footer class="rrhh-card-footer" id="qualityScope">La puntuación sólo describe el extracto agregado gobernado.</footer>
+            <footer class="rrhh-card-footer" id="qualityScope">La puntuación resume este respaldo y no reemplaza los controles administrativos.</footer>
           </article>
 
           <article class="rrhh-card rrhh-reveal">
             <header class="rrhh-card-head">
               <div>
-                <h3 class="rrhh-card-title">Control de validez temporal</h3>
-                <p class="rrhh-card-subtitle">Fuente = filas válidas + cuarentena, dominio por dominio.</p>
+                <h3 class="rrhh-card-title">Registros con fecha para revisar</h3>
+                <p class="rrhh-card-subtitle">Detalle por conjunto de datos. La fuente se divide entre registros incluidos y registros pendientes de revisión.</p>
               </div>
             </header>
             <div class="rrhh-card-body rrhh-table-wrap">
               <table class="rrhh-table">
-                <thead><tr><th>Dominio</th><th>Fuente</th><th>Válidas</th><th>Cuarentena</th><th>Validez</th><th>Último período</th></tr></thead>
+                <thead><tr><th>Conjunto de datos</th><th>Total</th><th>Incluidos</th><th>Para revisar</th><th>Incluidos</th><th>Último período</th></tr></thead>
                 <tbody id="quarantineTableBody"></tbody>
               </table>
             </div>
@@ -1032,25 +1064,25 @@
         <section class="rrhh-card rrhh-reveal" aria-labelledby="coverageTitle">
           <header class="rrhh-card-head">
             <div>
-              <h3 class="rrhh-card-title" id="coverageTitle">Cobertura e integridad de vínculos</h3>
-              <p class="rrhh-card-subtitle">Qué proporción de claves de legajo aparece en cada hecho y cuántos vínculos reconcilian.</p>
+              <h3 class="rrhh-card-title" id="coverageTitle">Registros relacionados correctamente con cada legajo</h3>
+              <p class="rrhh-card-subtitle">Muestra cuántos registros pudieron asociarse con un legajo y cuántos necesitan revisión.</p>
             </div>
           </header>
           <div class="rrhh-card-body rrhh-table-wrap">
             <table class="rrhh-table">
-              <thead><tr><th>Hecho</th><th>Filas</th><th>Claves con hecho</th><th>Cobertura legajos</th><th>Huérfanas</th><th>Integridad vínculo</th></tr></thead>
+              <thead><tr><th>Conjunto de datos</th><th>Registros</th><th>Legajos encontrados</th><th>Legajos cubiertos</th><th>Sin legajo asociado</th><th>Relación correcta</th></tr></thead>
               <tbody id="coverageTableBody"></tbody>
             </table>
           </div>
-          <footer class="rrhh-card-footer">Cobertura no significa actividad laboral actual: mide presencia histórica de la clave de legajo en cada tabla de hechos.</footer>
+          <footer class="rrhh-card-footer">Esta relación no indica actividad laboral actual: sólo confirma que el registro de origen pudo asociarse con un legajo.</footer>
         </section>
 
         <section class="rrhh-grid rrhh-grid--source" aria-label="Trazabilidad y límites">
           <article class="rrhh-card rrhh-reveal">
             <header class="rrhh-card-head">
               <div>
-                <h3 class="rrhh-card-title">Trazabilidad del snapshot</h3>
-                <p class="rrhh-card-subtitle">Origen, corte y contrato que sostienen esta lectura ejecutiva.</p>
+                <h3 class="rrhh-card-title">Datos del respaldo municipal</h3>
+                <p class="rrhh-card-subtitle">Origen, fecha y verificaciones técnicas que sostienen esta lectura.</p>
               </div>
             </header>
             <div class="rrhh-card-body"><dl class="rrhh-source-grid" id="sourceMetadata"></dl></div>
@@ -1061,7 +1093,7 @@
               <h3>Lectura correcta</h3>
               <ul class="rrhh-guardrail-list">
                 <li>Las categorías con menos de 5 personas se agrupan y los períodos con menos de 10 personas no se muestran.</li>
-                <li class="rrhh-caution">El corte es histórico; ausencias, licencias y movimientos son eventos, no tasas.</li>
+                <li class="rrhh-caution">Las ausencias y licencias son registros históricos. Los movimientos son registros de origen y no equivalen automáticamente a altas, bajas ni traslados.</li>
                 <li class="rrhh-caution">«Participó en cálculo» describe el período; no acredita situación contractual.</li>
               </ul>
             </div>
@@ -1072,6 +1104,8 @@
           <span class="rrhh-methodology-mark" aria-hidden="true">i</span>
           <span><strong>Definición:</strong> legajos registrados y participación en cálculo son universos distintos. Series y calidad siguen <span id="methodSchema">—</span>.</span>
         </aside>
+          </div>
+        </details>
       </div>
     </div>
   </main>
@@ -1103,7 +1137,7 @@
           <div class="rrhh-payroll-signal" id="personPayrollSignal">
             <span id="personPayrollLabel">Participación observada en cálculo</span>
             <strong id="personPayrollValue">Verificando</strong>
-            <small>Señal del cálculo gobernado, no acredita pago ni vigencia laboral.</small>
+            <small>Indica si aparece en el cálculo de ese mes; no confirma pago ni vigencia laboral.</small>
           </div>
         </section>
         <section class="rrhh-person-section" aria-labelledby="personAssignmentTitle">
@@ -1112,7 +1146,7 @@
           </div>
           <div class="rrhh-person-dimensions" id="personDimensions"></div>
         </section>
-        <section aria-label="Resumen de registros válidos asociados">
+        <section aria-label="Resumen de registros encontrados para este legajo">
           <div class="rrhh-person-events" id="personEvents"></div>
         </section>
         <section class="rrhh-person-section" id="personTimeline" aria-labelledby="personTimelineTitle">
@@ -1123,18 +1157,21 @@
             <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="true" data-timeline-filter="summary">Resumen</button>
             <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="leave">Licencias</button>
             <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="absence">Ausencias</button>
-            <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="movement">legamov</button>
+            <button class="rrhh-timeline-tab" type="button" role="tab" aria-controls="personTimelineList" aria-selected="false" data-timeline-filter="movement">Historia de cambios del legajo</button>
           </div>
           <div class="rrhh-person-record-panel" id="personTimelineList" role="tabpanel" aria-label="Resumen de cobertura" aria-live="polite" tabindex="0"></div>
         </section>
-        <section class="rrhh-person-section" aria-labelledby="personEvidenceTitle">
-          <div class="rrhh-person-section-head"><div><h4 id="personEvidenceTitle">Evidencia y corte</h4><p class="rrhh-person-section-note">Trazabilidad de la ficha consultada.</p></div></div>
-          <dl class="rrhh-person-evidence">
-            <div><dt>Corte GRH</dt><dd id="personEvidenceCutoff">—</dd></div>
-            <div><dt>Sistema canónico</dt><dd id="personEvidenceSystem">—</dd></div>
-            <div><dt>Contrato de detalle</dt><dd id="personEvidenceContract">grh-directory-v3</dd></div>
-          </dl>
-        </section>
+        <details class="rrhh-technical-details rrhh-person-technical">
+          <summary>Ver detalle técnico</summary>
+          <section class="rrhh-person-section" aria-labelledby="personEvidenceTitle">
+            <div class="rrhh-person-section-head"><div><h4 id="personEvidenceTitle">Datos técnicos de la consulta</h4><p class="rrhh-person-section-note">Origen y versión usados para construir esta ficha.</p></div></div>
+            <dl class="rrhh-person-evidence">
+              <div><dt>Fecha del respaldo</dt><dd id="personEvidenceCutoff">—</dd></div>
+              <div><dt>Sistema de origen</dt><dd id="personEvidenceSystem">—</dd></div>
+              <div><dt>Versión del detalle</dt><dd id="personEvidenceContract">grh-directory-v3</dd></div>
+            </dl>
+          </section>
+        </details>
         <section class="rrhh-person-section" id="personAggregateActions" aria-labelledby="personAggregateActionsTitle" hidden>
           <div class="rrhh-person-section-head">
             <div>

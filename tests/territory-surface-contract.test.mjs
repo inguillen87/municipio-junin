@@ -50,7 +50,7 @@ test('territorial navigation is explicit for all roles and exact in low-role pri
 });
 
 test('territorial API is one exact GET resource and remains available to published demo identities', () => {
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.6');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.7');
   assert.equal(routePolicy.RESOURCES.MUNICIPAL_TERRITORY, 'municipal.territory');
   assert.equal(routePolicy.PERMISSIONS.MUNICIPAL_TERRITORY_READ, 'municipal.territory:read');
   const routes = routePolicy.PROTECTED_ROUTES.filter(route => route.id === ROUTE_ID);
@@ -64,7 +64,7 @@ test('territorial API is one exact GET resource and remains available to publish
   }
   assert.equal(routePolicy.authorizeRoute('DEMO', 'serverless', 'POST', '/api/municipal-territory'), false);
   assert.equal(routePolicy.authorizeRoute('DEMO', 'serverless', 'GET', '/api/municipal-territory/future'), false);
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.6');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.7');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     assert.equal(publishedDemoPolicy.evaluatePublishedDemoRoute({ ...profile, routeId: ROUTE_ID }).allowed, true, profile.email);
@@ -151,7 +151,7 @@ test('shell, workspace, role tour and MuniGuia use the same bounded territorial 
     false,
     'the retired map surface must never re-enter navigation',
   );
-  assert.match(workspace, /'navigation\.territory':[\s\S]{0,220}href:\s*'\/territorio'[\s\S]{0,220}Límite y localidades oficiales/);
+  assert.match(workspace, /'navigation\.territory':[\s\S]{0,220}href:\s*'\/territorio'[\s\S]{0,220}Mapa oficial de Junín, Mendoza, con sus localidades/);
   for (const role of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
     assert.match(roles, new RegExp(`role: '${role}'[\\s\\S]{0,900}navigation\\.territory`));
   }

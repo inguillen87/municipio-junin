@@ -735,7 +735,13 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     });
 
     await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
-    assert.equal(await page.locator('#assistantSourceStatus span').textContent(), 'Listo para consultar');
+    assert.equal(await page.locator('#assistantSourceStatus span').textContent(), 'Las fuentes se verifican con cada consulta');
+    assert.equal(await page.locator('.assistant-title-copy h1').textContent(), 'Asistente de consultas GRH');
+    assert.equal(
+      await page.locator('.welcome-card > p:not(.eyebrow)').textContent(),
+      'Respuestas calculadas sobre datos autorizados. No inventa ni completa registros.',
+    );
+    assert.equal(await page.getByText('Datos del corte verificados', { exact: true }).count(), 0);
     await page.locator('#queryMoreSummary').click();
     assert.equal(await page.locator('#queryMore').evaluate(node => node.open), true);
     await clickPrimaryQuery(page, 'Resumen ejecutivo');
@@ -745,7 +751,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
       inert: node.inert,
     })), { open: false, inert: true });
     await page.waitForSelector('.answer-card .answer-state');
-    assert.equal(await page.locator('#assistantSourceStatus span').textContent(), 'Corte GRH verificado');
+    assert.equal(await page.locator('#assistantSourceStatus span').textContent(), 'Datos del corte verificados');
 
     const result = await page.evaluate(() => {
       const answerText = document.querySelector('.answer-card')?.textContent || '';
@@ -1153,6 +1159,8 @@ test('assistant renders decision and workforce-finance answers with real deep li
       actionCapability: card?.querySelector('.answer-action')?.dataset.capability,
       visualItems: card?.querySelectorAll('.answer-visual-row').length,
       evidenceItems: card?.querySelectorAll('.evidence-item').length,
+      summary: card?.querySelector('.answer-summary')?.textContent || '',
+      visualSubtitle: card?.querySelector('.answer-visual-header p')?.textContent || '',
       text: card?.textContent || '',
     };
   });
@@ -1161,8 +1169,11 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.equal(movements.actionCapability, 'navigation.organization-analytics');
   assert.equal(movements.visualItems, 2);
   assert.equal(movements.evidenceItems, 5);
+  assert.match(movements.summary, /registros de origen de movimientos/i);
+  assert.match(movements.visualSubtitle, /registros de origen de movimientos/i);
   assert.match(movements.text, /eventos por participante observado/i);
   assert.match(movements.text, /no es una tasa de rotación/i);
+  assert.doesNotMatch(movements.text, /legamov/i);
   assert.equal(requestLog.length, 6);
   assert.equal(requestLog.every(item => item.purpose === 'AGGREGATE_ANALYSIS'), true);
   await context.close();
@@ -1307,20 +1318,22 @@ test('person handoff consumes one fresh private target, cleans the URL and never
         engine: { id: 'grh-deterministic-v1', externalProvider: false, generated: false },
         intent: 'person_lookup',
         answer: {
-          title: 'Lectura asistida · ALONSO, ARIEL MAURICIO',
-          summary: 'Qué significa: se analizaron por separado 3 de 3 fuentes gobernadas asociadas a la ficha. La respuesta prioriza cobertura, recencia y señales para revisar; no repite la ficha técnica.',
+          title: 'Análisis de la ficha · ALONSO, ARIEL MAURICIO',
+          summary: 'Consulté por separado ausencias, licencias y movimientos asociados a la ficha. Hay información en 3 de esas 3 secciones. La situación informada y la participación en cálculo se muestran por separado para no confundirlas.',
           findings: [
-            'Señal temporal: legamov llega a 2026-08; ausencia a 2026-02-09; licencia a 2008-01-25.',
+            'Última información disponible: movimientos hasta 2026-08; ausencias hasta 2026-02-09; licencias hasta 2008-01-25.',
             'Qué conviene revisar: la observación de puesto posterior al corte antes de tratarla como vigente.',
-            'El detalle individual no trae denominadores de cohorte; no se inventan rankings.',
+            'La ficha no incluye una comparación con otras personas; no se inventan rankings.',
           ],
           evidence: [
-            { label: 'Cobertura de fuentes', value: '3 de 3', detail: 'Fuentes separadas con registros asociados.' },
-            { label: 'Ventana visible de ausencia', value: '24 de 41', detail: 'Días informados sólo en registros expuestos.' },
-            { label: 'Historia visible de licencia', value: '3 de 3', detail: '42 días informados en historia completa expuesta.' },
-            { label: 'Intensidad de legamov', value: '2,17 filas/período', detail: '439 filas en 202 períodos · último 2026-08.' },
+            { label: 'Fuentes con información', value: '3 de 3', detail: 'Secciones con datos asociados: ausencias, licencias, movimientos.' },
+            { label: 'Ausencias disponibles', value: '41', detail: '24 mostradas · 24 días informados.' },
+            { label: 'Licencias disponibles', value: '3', detail: '3 mostradas · 42 días informados.' },
+            { label: 'Historia de movimientos', value: '202 meses', detail: '439 registros · último mes 2026-08.' },
+            { label: 'Situación informada', value: 'Sin egreso informado al corte', detail: 'No equivale a certificar un vínculo activo.' },
+            { label: 'Participó en cálculo de julio', value: 'Sí', detail: '25 registros asociados. No acredita pago ni vigencia laboral.' },
           ],
-          caveats: ['No son días únicos ni una situación laboral actual.'],
+          caveats: ['Los días pueden superponerse y no describen por sí solos una situación laboral actual.'],
           source: 'Fuente: GRH Junín · directorio privado.',
           nextQuestions: [
             '¿Cómo se distribuyen los participantes por sector?',
@@ -1380,14 +1393,16 @@ test('person handoff consumes one fresh private target, cleans the URL and never
     mode: 'deterministic',
     target: { kind: 'grh-person', companyCode: 101, legajo: 571 },
   });
-  assert.equal(await page.locator('.answer-heading-line h3').textContent(), 'Lectura asistida · ALONSO, ARIEL MAURICIO');
+  assert.equal(await page.locator('.answer-heading-line h3').textContent(), 'Análisis de la ficha · ALONSO, ARIEL MAURICIO');
   assert.deepEqual(
     await page.locator('.evidence-item').evaluateAll(nodes => nodes.map(node => node.textContent.trim())),
     [
-      'Cobertura de fuentes3 de 3Fuentes separadas con registros asociados.',
-      'Ventana visible de ausencia24 de 41Días informados sólo en registros expuestos.',
-      'Historia visible de licencia3 de 342 días informados en historia completa expuesta.',
-      'Intensidad de legamov2,17 filas/período439 filas en 202 períodos · último 2026-08.',
+      'Fuentes con información3 de 3Secciones con datos asociados: ausencias, licencias, movimientos.',
+      'Ausencias disponibles4124 mostradas · 24 días informados.',
+      'Licencias disponibles33 mostradas · 42 días informados.',
+      'Historia de movimientos202 meses439 registros · último mes 2026-08.',
+      'Situación informadaSin egreso informado al corteNo equivale a certificar un vínculo activo.',
+      'Participó en cálculo de julioSí25 registros asociados. No acredita pago ni vigencia laboral.',
     ],
   );
   assert.equal(await page.locator('.directory-history').count(), 0, 'insight mode must not repaint raw ficha histories');
@@ -1700,7 +1715,7 @@ test('private person answers render leave cards, actions and bounded match optio
   await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
 
   assert.equal(await page.getByText('Respuestas según tu perfil', { exact: true }).isVisible(), true);
-  assert.equal(await page.getByText('Datos municipales verificados', { exact: true }).isVisible(), true);
+  assert.equal(await page.getByText('Las fuentes se verifican con cada consulta', { exact: true }).first().isVisible(), true);
   assert.equal(await page.locator('.welcome-card .eyebrow').textContent(), 'Ayuda para decidir');
   assert.equal(await page.locator('.rail-link[href="/calidad"] .rail-link-mark').textContent(), 'DATOS');
   assert.equal(await page.locator('.rail-link[href="/calidad"] small').textContent(), 'Origen y pendientes');
@@ -1739,9 +1754,9 @@ test('private person answers render leave cards, actions and bounded match optio
     '2008-03-02 → 2008-03-032 días',
     '2026-07-101 días informados',
     '2025-03-032 días informados',
-    '2026-073 filas de legamov',
-    '2026-062 filas de legamov',
-    '2025-122 filas de legamov',
+    '2026-073 registros de movimientos',
+    '2026-062 registros de movimientos',
+    '2025-122 registros de movimientos',
   ]);
   assert.equal(matched.action, 'Abrir ficha en RRHH');
   assert.equal(matched.actionHref, '/rrhh?company=1&legajo=7001#peopleDirectory');
@@ -1925,7 +1940,7 @@ test('assistant fails closed when the private GRH contract is unavailable', asyn
 
   assert.equal(result.title, 'Contrato GRH no disponible');
   assert.match(result.text, /No se usaron cifras demo, caché pública ni un proveedor externo/i);
-  assert.equal(result.snapshot, 'Se confirma al responder');
+  assert.equal(result.snapshot, 'Se verifica con cada consulta');
   assert.equal(result.evidence, 0);
   assert.doesNotMatch(result.text, /856|88,99|63,88/);
   assert.equal(requestLog.length, 1);

@@ -32,6 +32,39 @@ const PROJECTIONS = HAS_PRIVATE_GRH ? await (async () => {
     quality,
     close,
     decision: buildGrhDecisionBriefProjection(executive, quality, close),
+    employment: {
+      schemaVersion: 'grh-employment-review-v1',
+      source: {
+        canonicalSystem: executive.source.canonicalSystem,
+        sourceSha256: executive.source.sourceSha256,
+        snapshotAsOf: executive.source.snapshotAsOf,
+      },
+      audience: 'private',
+      referencePeriod: executive.workforce.referencePeriod,
+      totalDirectoryPeople: 2449,
+      totalToReview: 27,
+      privacyStatus: 'released',
+      categories: [
+        {
+          key: 'reported_current_without_reference_payroll',
+          label: 'Sin participación en el cálculo del mes',
+          meaning: 'El legajo no informa egreso al corte, pero no aparece en el cálculo de referencia.',
+          count: 19, display: '19', privacyStatus: 'released',
+        },
+        {
+          key: 'reported_ended_with_reference_payroll',
+          label: 'Con egreso informado y participación en el cálculo',
+          meaning: 'El legajo informa egreso al corte y también aparece en el cálculo de referencia.',
+          count: 7, display: '7', privacyStatus: 'released',
+        },
+        {
+          key: 'uncertain_status_with_reference_payroll',
+          label: 'Con fechas a revisar y participación en el cálculo',
+          meaning: 'Las fechas del legajo no permiten determinar la situación informada y la persona aparece en el cálculo de referencia.',
+          count: 1, display: '1', privacyStatus: 'released',
+        },
+      ],
+    },
   };
 })() : null;
 const CONTENT_TYPES = {
@@ -214,6 +247,7 @@ async function createServer(requestLog, options = {}) {
       '/api/grh-quality': 'quality',
       '/api/grh-close': 'close',
       '/api/grh-decision-brief': 'decision',
+      '/api/grh-employment-review': 'employment',
     };
     const contract = governedContracts[url.pathname];
     if (contract) {
@@ -241,6 +275,16 @@ async function createServer(requestLog, options = {}) {
         if (contract === 'quality') payload = reconciledQualityProjection();
         if (contract === 'decision') payload = reconciledDecisionProjection();
       }
+      if (contract === 'employment' && options.employmentPortable) {
+        payload = cloneProjection(payload);
+        payload.audience = 'portable';
+        payload.privacyStatus = 'partially_protected';
+        payload.categories.forEach(row => {
+          row.count = null;
+          row.display = 'Detalle protegido';
+          row.privacyStatus = 'protected';
+        });
+      }
       if (contract === 'close' && options.closeSourceMismatch) {
         payload = cloneProjection(payload);
         payload.source.sourceSha256 = 'f'.repeat(64);
@@ -256,6 +300,7 @@ async function createServer(requestLog, options = {}) {
         quality: 'grh-quality-v1',
         close: 'grh-close-v1',
         decision: options.decisionContractMismatch ? 'grh-decision-brief-v0' : 'grh-decision-brief-v1',
+        employment: options.employmentContractMismatch ? 'grh-employment-review-v0' : 'grh-employment-review-v1',
       };
       response.writeHead(200, {
         'Content-Type': CONTENT_TYPES['.json'],
@@ -347,10 +392,16 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       controlDetailsOpen: document.querySelector('#sourceControlDetails')?.open,
       controlDetailsSummary: document.querySelector('#sourceControlDetails summary')?.textContent.trim(),
       technicalDetailVisible: document.querySelector('.exec-control-details-body')?.getClientRects().length > 0,
-      controlCtas: Array.from(document.querySelectorAll('.exec-control-action:not([hidden])')).map(node => ({
+      controlCtas: Array.from(document.querySelectorAll('#sourceControlDetails .exec-control-action:not([hidden])')).map(node => ({
         href: node.getAttribute('href'),
         text: node.textContent.trim(),
       })),
+      employmentTotal: document.querySelector('#employmentReviewTotal')?.textContent.trim(),
+      employmentPeriod: document.querySelector('#employmentReviewPeriod')?.textContent.trim(),
+      employmentHeadline: document.querySelector('#employmentReviewHeadline')?.textContent.replace(/\s+/g, ' ').trim(),
+      employmentCategories: Array.from(document.querySelectorAll('#employmentReviewCategories strong')).map(node => node.textContent.trim()),
+      employmentStatus: document.querySelector('#employmentReviewStatus')?.textContent.replace(/\s+/g, ' ').trim(),
+      employmentCta: document.querySelector('#employmentReviewCta:not([hidden])')?.getAttribute('href') || null,
       sourceCount: document.querySelector('#sourceCountChip')?.textContent.trim(),
       decisionTitle: document.querySelector('#decisionBriefTitle')?.textContent.trim(),
       decisionStatus: document.querySelector('#decisionBriefStatus')?.textContent.trim(),
@@ -419,8 +470,8 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.equal(result.snapshot, '6 ago 2026');
     assert.equal(result.participants, '856');
     assert.equal(result.participantsNote, 'Legajos que aparecen al menos una vez en los cálculos de jul 2026.');
-    assert.equal(result.quality, '88,99%');
-    assert.equal(result.qualityNote, '20.534 registros apartados para revisión.');
+    assert.equal(result.quality, '88,99 de 100');
+    assert.equal(result.qualityNote, 'Combina fechas válidas, relación con legajos y comparación entre fuentes.');
     assert.equal(result.comparisonStatus, 'Requiere revisión');
     assert.match(result.comparisonStatusNote, /encontró diferencias.+antes de decidir/i);
     assert.equal(result.cross, '63,9%');
@@ -433,24 +484,34 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.equal(result.controlDetailsSummary, 'Cómo se controlaron los datos');
     assert.equal(result.technicalDetailVisible, false, 'technical reconciliation metrics must stay collapsed by default');
     assert.deepEqual(result.controlCtas, [
-      { href: 'control.html', text: 'Abrir Calidad de datos' },
-      { href: 'hacienda.html', text: 'Revisar en Hacienda' },
+      { href: '/calidad', text: 'Abrir Calidad de datos' },
+      { href: '/hacienda', text: 'Revisar en Hacienda' },
     ]);
+    assert.equal(result.employmentTotal, '27');
+    assert.equal(result.employmentPeriod, 'jul 2026');
+    assert.match(result.employmentHeadline, /situación informada.+participación.+jul 2026/i);
+    assert.deepEqual(result.employmentCategories, [
+      '19 · Sin participación en el cálculo del mes',
+      '7 · Con egreso informado y participación en el cálculo',
+      '1 · Con fechas a revisar y participación en el cálculo',
+    ]);
+    assert.match(result.employmentStatus, /no son errores automáticos.+altas, bajas o pagos/i);
+    assert.equal(result.employmentCta, '/rrhh#peopleDirectory');
     assert.equal(result.sourceCount, '4/4');
     assert.equal(result.decisionTitle, 'Revisiones recomendadas');
     assert.equal(result.decisionStatus, 'Revisión prioritaria');
     assert.equal(result.decisionBoundary, 'Datos protegidos · respaldo del 6 ago 2026');
     assert.equal(result.decisionAgreement, '6,5%');
     assert.equal(result.decisionChange, '+5,8 pp');
-    assert.equal(result.decisionQuality, '88,99%');
-    assert.equal(result.decisionQualityNote, 'Todo el respaldo · 20.534 registros apartados para revisión.');
+    assert.equal(result.decisionQuality, '88,99 de 100');
+    assert.match(result.decisionQualityNote, /combina fechas.+no mide cuánto.+completo/i);
     assert.equal(result.decisionPriorityCount, 3);
     assert.deepEqual(result.decisionPriorityTitles, [
       'Hay diferencias entre las dos fuentes',
       'Hay registros con fechas para revisar',
       'Los datos no se actualizan en tiempo real',
     ]);
-    assert.deepEqual(result.decisionCtas, ['hacienda.html', 'control.html']);
+    assert.deepEqual(result.decisionCtas, ['/hacienda', '/calidad']);
     assert.equal(result.decisionContract, 'grh-decision-brief-v1');
     assert.equal(result.decisionLabelledBy, 'decisionBriefTitle');
     assert.equal(result.decisionDescribedBy, 'decisionBriefHeadline');
@@ -491,7 +552,7 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.equal(result.closeAgreementDelta, '+5,8 pp');
     assert.deepEqual(result.globalLabels, [
       'Personas incluidas en el cálculo de julio',
-      'Datos listos para analizar',
+      'Resultado de los controles de calidad',
       'Comparación entre las dos fuentes',
       'Base analizada',
     ]);
@@ -568,14 +629,14 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       height: document.activeElement?.getBoundingClientRect().height,
       outlineStyle: getComputedStyle(document.activeElement).outlineStyle,
     }));
-    assert.equal(firstFocus.href, 'hacienda.html');
+    assert.equal(firstFocus.href, '/hacienda');
     assert.ok(firstFocus.height >= 44, `${viewport.name} CTA target must be at least 44px tall`);
     await page.keyboard.press('Tab');
     const keyboardFocus = await page.evaluate(() => ({
       href: document.activeElement?.getAttribute('href'),
       focused: document.activeElement?.matches(':focus'),
     }));
-    assert.equal(keyboardFocus.href, 'control.html');
+    assert.equal(keyboardFocus.href, '/calidad');
     assert.equal(keyboardFocus.focused, true);
 
     await page.click('#execThemeToggle');
@@ -697,17 +758,98 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     await context.close();
   }
 
-  assert.equal(requestLog.length, 8);
-  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['close', 'close', 'decision', 'decision', 'executive', 'executive', 'quality', 'quality']);
+  assert.equal(requestLog.length, 10);
+  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['close', 'close', 'decision', 'decision', 'employment', 'employment', 'executive', 'executive', 'quality', 'quality']);
   assert.deepEqual([...new Set(requestLog.map(item => item.pathname))].sort(), [
     '/api/grh-close',
     '/api/grh-decision-brief',
+    '/api/grh-employment-review',
     '/api/grh-executive',
     '/api/grh-quality',
   ]);
   assert.equal(requestLog.every(item => item.requestTarget === item.pathname), true, 'governed requests must use exact endpoints without query variants');
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
   assert.equal(requestLog.some(item => /grh-data|profile|semantic/i.test(item.pathname)), false);
+});
+
+test('employment review protects small groups and never blocks the municipal panorama', { skip: !HAS_PRIVATE_GRH }, async t => {
+  await t.test('portable detail', async t => {
+    const requestLog = [];
+    const server = await createServer(requestLog, { employmentPortable: true });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await new Promise(resolve => server.close(resolve));
+    });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
+    const result = await page.evaluate(() => ({
+      total: document.querySelector('#employmentReviewTotal')?.textContent.trim(),
+      rows: Array.from(document.querySelectorAll('#employmentReviewCategories strong')).map(node => node.textContent.trim()),
+      text: document.querySelector('#employmentReview')?.textContent.replace(/\s+/g, ' ').trim(),
+      coreVisible: !document.querySelector('#dataViews')?.hidden,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    assert.equal(result.total, '27');
+    assert.deepEqual(result.rows, ['Detalle protegido']);
+    assert.match(result.text, /grupos tienen menos de 10 personas.+evitar identificaciones/i);
+    assert.doesNotMatch(result.text, /19 ·|7 ·|1 ·/);
+    assert.equal(result.coreVisible, true);
+    assert.equal(result.overflow, 0);
+    await context.close();
+  });
+
+  await t.test('scoped failure and retry', async t => {
+    const requestLog = [];
+    const server = await createServer(requestLog, { employmentUnavailable: true });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await new Promise(resolve => server.close(resolve));
+    });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#employmentReviewRetry:not([hidden])');
+    assert.equal(await page.locator('#dataViews').getAttribute('hidden'), null);
+    assert.equal(await page.locator('#kpiParticipants').textContent(), '856');
+    assert.equal(await page.locator('#employmentReviewRetry').isVisible(), true);
+    assert.match(await page.locator('#employmentReviewStatus').textContent(), /resto del panorama sigue disponible/i);
+    await Promise.all([
+      page.waitForResponse(response => new URL(response.url()).pathname === '/api/grh-employment-review' && response.status() === 503),
+      page.locator('#employmentReviewRetry').click(),
+    ]);
+    assert.equal(requestLog.filter(item => item.contract === 'employment').length, 2);
+    assert.equal(requestLog.filter(item => item.contract !== 'employment').length, 4);
+    await context.close();
+  });
+
+  await t.test('contract drift stays scoped', async t => {
+    const requestLog = [];
+    const server = await createServer(requestLog, { employmentContractMismatch: true });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await new Promise(resolve => server.close(resolve));
+    });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#employmentReviewRetry:not([hidden])');
+    assert.equal(await page.locator('#kpiParticipants').textContent(), '856');
+    assert.equal(await page.locator('#employmentReviewTotal').textContent(), '—');
+    assert.equal(await page.locator('#employmentReviewCategories').locator('li').count(), 0);
+    assert.equal(await page.locator('#employmentReviewCta').isVisible(), false);
+    assert.equal(requestLog.filter(item => item.contract === 'employment').length, 1);
+    await context.close();
+  });
 });
 
 test('main executive dashboard performs zero GRH requests for a role without dashboard capability', { skip: !HAS_PRIVATE_GRH }, async t => {
@@ -944,7 +1086,7 @@ test('global reconciliation copy stays independent from a monthly agreement diff
   assert.equal(result.monthlyAgreement, '6,5%');
   assert.equal(result.decisionStatus, 'Revisión recomendada');
   assert.equal(result.priorityTitles.includes('Hay diferencias entre las dos fuentes'), false);
-  assert.deepEqual(result.ctas, ['control.html']);
+  assert.deepEqual(result.ctas, ['/calidad']);
   assert.equal(result.sourceTitles.includes('Comparación entre fuentes sin diferencias relevantes'), true);
   assert.equal(result.sourceTitles.includes('Comparación entre fuentes con diferencias'), false);
   assert.match(result.sourceText, /no encontró diferencias relevantes/i);
@@ -995,8 +1137,8 @@ test('main executive dashboard rejects malformed, unknown, header-drifted and SH
 
 test('decision brief CTAs are derived only from the current validated navigation capabilities', { skip: !HAS_PRIVATE_GRH }, async t => {
   const cases = [
-    ['Hacienda denied', ['navigation.hacienda'], ['control.html']],
-    ['data quality denied', ['navigation.data-quality'], ['hacienda.html']],
+    ['Hacienda denied', ['navigation.hacienda'], ['/calidad']],
+    ['data quality denied', ['navigation.data-quality'], ['/hacienda']],
     ['both destinations denied', ['navigation.hacienda', 'navigation.data-quality'], []],
   ];
 
@@ -1016,7 +1158,7 @@ test('decision brief CTAs are derived only from the current validated navigation
           nodes.map(node => node.getAttribute('href'))
         );
         assert.deepEqual(hrefs, expectedHrefs, name);
-        const controlHrefs = await page.locator('.exec-control-action:not([hidden])').evaluateAll(nodes =>
+        const controlHrefs = await page.locator('#sourceControlDetails .exec-control-action:not([hidden])').evaluateAll(nodes =>
           nodes.map(node => node.getAttribute('href')).sort()
         );
         assert.deepEqual(controlHrefs, [...expectedHrefs].sort(), `${name} control detail`);

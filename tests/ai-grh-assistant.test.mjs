@@ -667,8 +667,11 @@ test('movement comparisons keep events, participants and intensity separate', { 
   assert.match(result.answer.title, /2024.*2025/);
   assert.match(result.answer.summary, /-1\.176/);
   assert.match(result.answer.summary, /\+64/);
+  assert.match(result.answer.findings.join(' '), /registros de origen de movimientos/i);
   assert.match(result.answer.findings.join(' '), /42,6.*38,42/);
   assert.match(result.answer.caveats.join(' '), /no es una tasa de rotación/i);
+  assert.match(result.answer.visual.subtitle, /registros de origen de movimientos/i);
+  assert.doesNotMatch(JSON.stringify(result.answer), /legamov/i);
   assert.deepEqual(result.answer.actions, [{
     id: 'open_movement_center',
     label: 'Abrir Centro de movimientos',
@@ -697,8 +700,11 @@ test('movement answer labels the snapshot year as partial and preserves the exac
   assert.equal(result.httpStatus, 200);
   assert.match(result.answer.title, /parcial/i);
   assert.match(result.answer.summary, new RegExp(`hasta el corte ${views.executive.source.snapshotAsOf}`));
+  assert.match(result.answer.summary, /registros de origen de movimientos/i);
+  assert.match(result.answer.summary, /no equivalen automáticamente a altas o bajas/i);
   assert.match(result.answer.findings.join(' '), /incompleto/i);
   assert.match(result.answer.caveats.join(' '), /no se anualiza/i);
+  assert.doesNotMatch(JSON.stringify(result.answer), /legamov/i);
 });
 
 test('generic leave overview resolves the latest released historical year and exposes its real range', { skip: !HAS_PRIVATE_GRH }, () => {
@@ -1020,9 +1026,9 @@ test('private allowlisted CONTADOR resolves a tenant-bound person and governed l
   assert.match(response.payload.response, /no se presenta como cargo actual/i);
   assert.deepEqual(
     response.payload.answer.evidence.slice(1, 4).map(entry => entry.label),
-    ['Registros de ausencia', 'Registros de licencia', 'Filas fuente legamov'],
+    ['Ausencias disponibles', 'Licencias disponibles', 'Historia de movimientos'],
   );
-  assert.match(response.payload.response, /tablas legacy separadas/i);
+  assert.match(response.payload.response, /registros separados/i);
   assert.match(response.payload.response, /no se suman/i);
   assert.doesNotMatch(JSON.stringify(response.payload), /\b(?:dni|cuil|contact|address|bank_account|salary|event_cause|sueldo|motivo)\b/i);
   assert.equal(response.headers['cache-control'], 'no-store, private, max-age=0');
@@ -1126,8 +1132,9 @@ test('101/571 handoff adds deterministic insight instead of repeating the RRHH f
     externalProvider: false,
     generated: false,
   });
-  assert.equal(response.payload.answer.title, 'Lectura asistida · ALONSO, ARIEL MAURICIO');
-  assert.match(response.payload.answer.summary, /Qué significa: se analizaron por separado 3 de 3 fuentes gobernadas/i);
+  assert.equal(response.payload.answer.title, 'Análisis de la ficha · ALONSO, ARIEL MAURICIO');
+  assert.match(response.payload.answer.summary, /Consulté por separado ausencias, licencias y movimientos/i);
+  assert.match(response.payload.answer.summary, /información en 3 de esas 3 secciones/i);
   assert.equal(response.payload.answer.directory.presentation, 'insight');
   assert.deepEqual(response.payload.answer.directory.target, { companyCode: 101, legajo: 571 });
   assert.equal(Object.hasOwn(response.payload.answer.directory, 'person'), false,
@@ -1135,27 +1142,27 @@ test('101/571 handoff adds deterministic insight instead of repeating the RRHH f
   assert.deepEqual(
     response.payload.answer.evidence.slice(0, 4).map(item => [item.label, item.value]),
     [
-      ['Cobertura de fuentes', '3 de 3'],
-      ['Ventana visible de ausencia', '24 de 41'],
-      ['Historia visible de licencia', '3 de 3'],
-      ['Intensidad de legamov', '2,17 filas/período'],
+      ['Fuentes con información', '3 de 3'],
+      ['Ausencias disponibles', '41'],
+      ['Licencias disponibles', '3'],
+      ['Historia de movimientos', '202 meses'],
     ],
   );
-  assert.match(response.payload.answer.evidence[1].detail, /días informados en registros expuestos/i);
+  assert.match(response.payload.answer.evidence[1].detail, /24 mostradas.*días informados en registros mostrados/i);
   assert.match(response.payload.answer.evidence[2].detail, /2005-02-14 a 2008-01-25 · 42 días informados/i);
-  assert.match(response.payload.answer.evidence[3].detail, /439 filas en 202 períodos · último 2026-08/i);
+  assert.match(response.payload.answer.evidence[3].detail, /439 registros · último mes 2026-08/i);
   assert.match(response.payload.answer.findings.join(' '), /Qué conviene revisar/i);
-  assert.match(response.payload.answer.findings.join(' '), /no trae denominadores de cohorte/i);
-  assert.match(response.payload.answer.caveats.join(' '), /no representan días únicos, días perdidos/i);
+  assert.match(response.payload.answer.findings.join(' '), /no incluye una comparación con otras personas/i);
+  assert.match(response.payload.answer.caveats.join(' '), /pueden superponerse/i);
   assert.deepEqual(
     response.payload.answer.evidence.slice(-2).map(item => [item.label, item.value]),
     [
-      ['Situaci\u00f3n laboral informada', 'Sin egreso informado al corte'],
-      ['Participaci\u00f3n en c\u00e1lculo 2026-07', 'Observada'],
+      ['Situaci\u00f3n informada', 'Sin egreso informado al corte'],
+      ['Particip\u00f3 en c\u00e1lculo de julio', 'Sí'],
     ],
   );
   assert.match(response.payload.answer.evidence.at(-2).detail, /No equivale a certificar un v\u00ednculo activo/i);
-  assert.match(response.payload.answer.evidence.at(-1).detail, /25 filas v\u00e1lidas asociadas; no acredita pago/i);
+  assert.match(response.payload.answer.evidence.at(-1).detail, /25 registros asociados.*no acredita pago/i);
   assert.match(response.payload.answer.findings.join(' '), /revista NORMAL/i);
   assert.deepEqual(response.payload.answer.actions, [
     {
@@ -1189,6 +1196,15 @@ test('101/571 handoff adds deterministic insight instead of repeating the RRHH f
   assert.equal(calls[1][0], 'audit');
   assert.doesNotMatch(JSON.stringify(calls[1]), /571|ALONSO/i);
   assert.doesNotMatch(JSON.stringify(response.payload), /\b(?:dni|cuil|contact|address|bank_account|salary|event_cause|sueldo|motivo)\b/i);
+  assert.doesNotMatch(
+    JSON.stringify({
+      summary: response.payload.answer.summary,
+      findings: response.payload.answer.findings,
+      evidence: response.payload.answer.evidence,
+      caveats: response.payload.answer.caveats,
+    }),
+    /legamov|recencia|taxonomías|densidad|fuentes gobernadas/i,
+  );
 });
 
 test('person handoff rejects altered body, purpose and mismatched detail before disclosure', { skip: !HAS_PRIVATE_GRH }, async () => {

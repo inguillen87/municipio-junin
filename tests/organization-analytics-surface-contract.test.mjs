@@ -49,7 +49,7 @@ test('organization analytics has one exact private capability and route boundary
 });
 
 test('published route ceiling opens only aggregate organization analytics and canonical RBAC still denies low roles', () => {
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-11.6');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.7');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
 
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
@@ -136,12 +136,10 @@ test('release, build, clean route, navigation and contextual help stay aligned',
   );
   assert.match(
     workspaceSource,
-    /'navigation\.organization-analytics':\s*Object\.freeze\(\{\s*href:\s*'\/estructura',\s*label:\s*'Estructura y áreas de costo'/,
+    /'navigation\.organization-analytics':\s*Object\.freeze\(\{\s*href:\s*'\/estructura',\s*label:\s*'Estructura y áreas'/,
   );
-  assert.match(
-    workspaceSource,
-    /priorityCapabilities\.concat\(\[\s*'navigation\.grh-decisions',\s*'navigation\.organization-analytics'\s*\]\)/,
-  );
+  assert.match(workspaceSource, /candidates\.splice\([\s\S]{0,160}'navigation\.organization-analytics'/);
+  assert.match(workspaceSource, /candidates\.push\('navigation\.grh-decisions'\)/);
   assert.match(workspaceSource, /projection\.capabilities\.indexOf\(capability\) !== -1/);
 
   const guide = MUNIGUIA_CATALOG.pages.organizationAnalytics;

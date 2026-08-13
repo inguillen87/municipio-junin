@@ -204,14 +204,14 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /<main\b[^>]*>/i);
   assert.match(source, /class="skip-link"\s+href="#accessPanel"/i);
   assert.match(source, /id="togglePassBtn"[\s\S]*?aria-controls="passInput"[\s\S]*?aria-label="Mostrar contraseña"[\s\S]*?aria-pressed="false"/i);
-  assert.match(source, /Snapshot GRH gobernado/);
-  assert.match(source, /No es tiempo real/);
-  assert.match(source, /Sin PII/);
-  assert.match(source, /Identidad emitida por la Municipalidad/);
+  assert.match(source, /Municipalidad de Junín, Mendoza/);
+  assert.match(source, /La información que necesitás, sin vueltas/);
+  assert.match(source, /Herramientas según tu función/);
+  assert.match(source, /La vista pública no muestra datos personales/);
+  assert.match(source, /Acceso cuidado por la Municipalidad/);
   assert.match(source, /id="privateGrhLoginLink"\s+href="\/login\.html\?access=private-grh&amp;return=rrhh\.html%23peopleDirectory"/);
-  assert.match(source, /Tengo una credencial privada GRH/i);
-  assert.match(source, /Abre el formulario privado; no inicia sesión automáticamente/i);
-  assert.match(source, /AD · MÁS OPCIONES/);
+  assert.match(source, /Ingresar al directorio privado de RRHH/i);
+  assert.match(source, /Requiere la cuenta privada asignada/i);
   assert.match(source, /class="tour-link"\s+href="\/roles"/);
   assert.match(source, /No inicia sesi.n ni accede a datos/i);
   assert.match(source, /fetch\('\/api\/auth\/login'/);
@@ -223,14 +223,16 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /params\.get\('access'\) === 'private-grh'/);
   assert.match(source, /fetch\('\/api\/grh-directory\?limit=1'/);
   assert.match(source, /'X-MuniControl-Purpose': 'DIRECTORY_BROWSE'/);
-  assert.match(source, /Ese perfil .* no tiene acceso al directorio nominal/i);
+  assert.match(source, /Ese perfil .* no puede abrir fichas personales/i);
   assert.match(source, /window\.location\.href = validatedReturnPath\(session\) \|\| validatedDefaultPath\(session\)/);
   assert.doesNotMatch(source, /window\.location\.href = 'index\.html'/);
 
   assert.doesNotMatch(source, /gradient|@keyframes|\bfloat\b|\bglow\b|kpi-card|data-count/i);
   assert.match(source, /data-demo-contract="published-evaluation-readonly-v1"/);
-  assert.match(source, /snapshot GRH hist[oó]rico y agregado/i);
-  assert.match(source, /escrituras bloqueadas por el servidor/i);
+  assert.match(source, /información histórica resumida/i);
+  assert.match(source, /no permite realizar cambios/i);
+  const visibleShell = source.slice(source.indexOf('<body'), source.indexOf('<script>'));
+  assert.doesNotMatch(visibleShell, /\b(?:snapshot|capabilities|datasets?|contrato|PII|gobernado|cross-source)\b/i);
   const publishedEmails = [...source.matchAll(/data-evaluation-email="([^"]+)"/g)].map(match => match[1]);
   assert.deepEqual(publishedEmails, PUBLISHED_EVALUATION_IDENTITIES.map(identity => identity.email));
   assert.doesNotMatch(source, /\/api\/auth\/seed-demo|ensureSeeded|fillUser\s*\(/i);
@@ -582,14 +584,14 @@ test('private GRH login explains the handoff, rejects public profiles and return
   assert.equal(await page.locator('#privateAccessNotice').isVisible(), true);
   assert.equal(await page.locator('#evaluationAccess').isHidden(), true);
   assert.equal(await page.locator('#privateGrhLoginLink').isHidden(), true);
-  assert.equal(await page.textContent('#accessKicker'), 'Acceso privado GRH');
-  assert.equal(await page.textContent('#btnLogin'), 'Ingresar al directorio GRH');
+  assert.equal(await page.textContent('#accessKicker'), 'Directorio privado de RRHH');
+  assert.equal(await page.textContent('#btnLogin'), 'Ingresar al directorio de RRHH');
 
   await page.fill('#emailInput', PUBLISHED_EVALUATION_IDENTITIES[0].email);
   await page.fill('#passInput', EVALUATION_PASSWORD);
   await page.click('#btnLogin');
   await page.waitForSelector('#errorMsg:not([hidden])');
-  assert.match(await page.textContent('#errorMsg'), /perfiles públicos no abren el directorio/i);
+  assert.match(await page.textContent('#errorMsg'), /perfiles de evaluación no abren fichas personales/i);
   assert.equal(page.url(), privateLogin);
   assert.equal(await page.evaluate(() => sessionStorage.getItem('mjunin_token')), null);
 

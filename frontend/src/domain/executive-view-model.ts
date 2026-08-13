@@ -65,7 +65,7 @@ function formatNumber(value: number): string {
 }
 
 function formatWorkforceDefinition(): string {
-  return 'Participación en liquidación del último período: legajos con al menos un cálculo válido; no equivale a un padrón contractual activo.';
+  return 'Personas con al menos un cálculo válido en el mes analizado. Esta cifra no indica cuántas personas tienen un vínculo laboral vigente.';
 }
 
 function rankingLabel(label: string, privacyStatus: 'released' | 'protected_aggregate'): string {
@@ -95,14 +95,14 @@ function changeForPoint(
   previous: ExecutiveMonetaryRow | undefined,
 ): { changePct: number | null; changeLabel: string; changeStatus: PayrollChangeStatus } {
   if (current.privacyStatus === 'suppressed') {
-    return { changePct: null, changeLabel: 'Protegido', changeStatus: 'protected_current' };
+    return { changePct: null, changeLabel: 'No mostrado', changeStatus: 'protected_current' };
   }
   if (!previous) return { changePct: null, changeLabel: '—', changeStatus: 'first_period' };
   if (previous.privacyStatus === 'suppressed') {
-    return { changePct: null, changeLabel: 'No calculable', changeStatus: 'protected_previous' };
+    return { changePct: null, changeLabel: 'Sin comparación', changeStatus: 'protected_previous' };
   }
   if (!isConsecutiveMonth(previous.period, current.period)) {
-    return { changePct: null, changeLabel: 'No consecutivo', changeStatus: 'non_consecutive' };
+    return { changePct: null, changeLabel: 'Sin mes anterior', changeStatus: 'non_consecutive' };
   }
   if (previous.amounts.netPayrollCents === 0) {
     return { changePct: null, changeLabel: 'Sin base', changeStatus: 'zero_baseline' };
@@ -121,12 +121,12 @@ function buildPayroll(contract: ExecutiveContract): PayrollSeriesViewModel {
     const change = changeForPoint(row, ordered[index - 1]);
     return {
       period: row.period,
-      periodLabel: row.period === null ? 'Período protegido' : formatMonth(row.period),
+      periodLabel: row.period === null ? 'Mes no mostrado' : formatMonth(row.period),
       privacyStatus: row.privacyStatus,
       valueSourceUnits: row.privacyStatus === 'released' ? row.amounts.netPayrollCents / 100 : null,
       valueLabel: row.privacyStatus === 'released'
         ? formatJuninCurrency(row.amounts.netPayrollCents)
-        : 'No publicable',
+        : 'No mostrado',
       participantDisplay: row.participantDisplay,
       ...change,
     };
@@ -147,7 +147,7 @@ function buildPayroll(contract: ExecutiveContract): PayrollSeriesViewModel {
     latestPeriod: hasUnknownProtectedPeriod ? null : latestKnown?.period ?? null,
     latestStatus,
     points,
-    warning: 'Importes presentados en pesos argentinos (ARS), según la configuración del tenant Junín. El control de cálculo no acredita pago bancario. Los huecos protegidos permanecen nulos y nunca se imputan como cero.',
+    warning: 'Importes mostrados en ARS por configuración municipal. El respaldo original no declara moneda: son importes de control de liquidación y no confirman pagos. Los meses no mostrados permanecen vacíos y nunca se reemplazan por cero.',
   };
 }
 
@@ -195,25 +195,25 @@ function buildAnnualDomain(
   const ordered = annualRowsInDisplayOrder(domain);
   const points: AnnualPointViewModel[] = ordered.map((row) => ({
     period: row.period,
-    periodLabel: row.period ?? 'Año protegido',
+    periodLabel: row.period ?? 'Año no mostrado',
     value: row.value,
-    valueLabel: row.privacyStatus === 'released' ? formatNumber(row.value) : 'No publicable',
+    valueLabel: row.privacyStatus === 'released' ? formatNumber(row.value) : 'No mostrado',
     participantDisplay: row.participantDisplay,
     privacyStatus: row.privacyStatus,
   }));
   const releasedPeriods = ordered.filter((row) => row.privacyStatus === 'released').length;
   const suppressedPeriods = ordered.length - releasedPeriods;
   const latestReleased = ordered.filter((row) => row.privacyStatus === 'released').at(-1);
-  let note = 'Los valores son eventos agregados, no tasas por persona.';
+  let note = 'Las cantidades corresponden a registros acumulados; no son tasas por persona.';
   if (key === 'leave') {
     note = latestReleased?.period
-      ? `La historia publicada termina en ${latestReleased.period}; no debe interpretarse como vigencia actual.`
-      : 'No existe un año de licencias publicable; no se reemplaza con estimaciones.';
+      ? `La información disponible termina en ${latestReleased.period}; no indica una licencia vigente.`
+      : 'No hay un año de licencias que pueda mostrarse; no se reemplaza con estimaciones.';
   } else if (key === 'movements') {
-    note = 'Movimientos de legajo agregados por año; el volumen no explica causa ni responsabilidad.';
+    note = 'Cambios de legajo registrados por año; la cantidad no explica la causa ni asigna responsabilidad.';
   }
   if (suppressedPeriods > 0) {
-    note += ` ${formatNumber(suppressedPeriods)} período(s) permanecen protegidos y no se contabilizan como cero.`;
+    note += ` ${formatNumber(suppressedPeriods)} año(s) no se muestran para cuidar identidades y no se contabilizan como cero.`;
   }
   return {
     key,
@@ -234,11 +234,11 @@ function latestPayrollKpi(
     const period = payroll.latestPeriod;
     return {
       key: 'latestPayrollControl',
-      label: 'Último control de cálculo',
-      value: 'No publicable',
+      label: 'Importe de control del último mes',
+      value: 'No mostrado',
       note: period
-        ? `${period} reúne menos de 10 personas: no se muestra y no se sustituye por un período anterior.`
-        : 'Existe un período protegido sin fecha publicable; no puede probarse cuál es el último valor.',
+        ? `${period} reúne menos de 10 personas: no se muestra y no se reemplaza con un mes anterior.`
+        : 'Existe un registro reservado sin fecha visible; no se puede determinar cuál es el último importe.',
       status: 'protected',
       tone: 'amber',
     };
@@ -249,9 +249,9 @@ function latestPayrollKpi(
   }
   return {
     key: 'latestPayrollControl',
-    label: 'Último control de cálculo',
+    label: 'Importe de control del último mes',
     value: formatJuninCurrency(latest.amounts.netPayrollCents),
-    note: `${latest.period} · ${latest.participantDisplay} participantes · ARS; no equivale a pago bancario.`,
+    note: `${latest.period} · ${latest.participantDisplay} personas incluidas · ARS por configuración municipal; no confirma pagos.`,
     status: 'released',
     tone: 'violet',
   };
@@ -264,18 +264,18 @@ function absenceKpi(contract: ExecutiveContract): ExecutiveKpiViewModel {
   if (!row || row.privacyStatus === 'suppressed') {
     return {
       key: 'lastCompleteAbsence',
-      label: `Ausencias · ${targetYear}`,
-      value: 'No publicable',
-      note: `El último año completo está ausente o protegido; no se retrocede a otro año ni se estima.`,
+      label: `Ausencias registradas en ${targetYear}`,
+      value: 'No mostrado',
+      note: `El último año completo no está disponible o debe reservarse; no se reemplaza con otro año ni se estima.`,
       status: 'protected',
       tone: 'amber',
     };
   }
   return {
     key: 'lastCompleteAbsence',
-    label: `Ausencias · ${targetYear}`,
+    label: `Ausencias registradas en ${targetYear}`,
     value: formatNumber(row.value),
-    note: `${row.participantDisplay} participantes distintos; son eventos, no una tasa de ausentismo.`,
+    note: `${row.participantDisplay} personas distintas; son registros acumulados, no una tasa de ausentismo.`,
     status: 'released',
     tone: 'amber',
   };
@@ -287,11 +287,11 @@ function movementsKpi(contract: ExecutiveContract): ExecutiveKpiViewModel {
   const suppressedPeriods = contract.movements.series.length - releasedRows.length;
   return {
     key: 'publishedMovements',
-    label: 'Movimientos históricos',
-    value: suppressedPeriods === 0 ? formatNumber(releasedTotal) : 'Lectura parcial',
+    label: 'Cambios registrados en legajos',
+    value: suppressedPeriods === 0 ? formatNumber(releasedTotal) : 'Información parcial',
     note: suppressedPeriods === 0
-      ? 'Eventos válidos publicados en legamov; no explican causa ni vigencia laboral.'
-      : `${formatNumber(releasedTotal)} eventos liberados y ${formatNumber(suppressedPeriods)} período(s) protegidos; no se presenta un total incompleto como exacto.`,
+      ? 'Registros históricos disponibles; no explican la causa ni indican vigencia laboral.'
+      : `${formatNumber(releasedTotal)} registros disponibles y ${formatNumber(suppressedPeriods)} año(s) reservados; no se presenta un total incompleto como exacto.`,
     status: suppressedPeriods === 0 ? 'released' : 'partial',
     tone: 'green',
   };
@@ -305,16 +305,16 @@ function buildKpis(
   return [
     {
       key: 'payrollParticipants',
-      label: 'Participantes de liquidación',
+      label: 'Personas incluidas en el cálculo',
       value: formatNumber(contract.workforce.payrollParticipants),
-      note: `${contract.workforce.referencePeriod} · claves de legajo con cálculo válido; no implica dotación activa.`,
+      note: `${contract.workforce.referencePeriod} · personas con al menos un cálculo válido; no indica personal con vínculo vigente.`,
       status: 'released',
       tone: 'cyan',
     },
     latestPayrollKpi(contract, payroll),
     {
       key: 'sectorCoverage',
-      label: 'Detalle sectorial individual',
+      label: 'Personas con sector identificado',
       value: sector.individuallyPublishedCoverageLabel,
       note: sector.note,
       status: sector.protectedParticipants > 0 ? 'partial' : 'released',
@@ -332,9 +332,9 @@ export function buildExecutiveViewModel(contract: ExecutiveContract): ExecutiveV
   const payroll = buildPayroll(contract);
   const sector = buildSector(contract);
   const annual = [
-    buildAnnualDomain('absence', 'Eventos de ausencia', contract.absence),
+    buildAnnualDomain('absence', 'Ausencias registradas', contract.absence),
     buildAnnualDomain('leave', 'Licencias históricas', contract.leave),
-    buildAnnualDomain('movements', 'Movimientos de legajo', contract.movements),
+    buildAnnualDomain('movements', 'Cambios registrados en legajos', contract.movements),
   ] as const;
   const protectedRankingRows = [
     contract.workforce.bySector,
@@ -351,7 +351,7 @@ export function buildExecutiveViewModel(contract: ExecutiveContract): ExecutiveV
       snapshotAsOf: contract.source.snapshotAsOf,
       snapshotLabel: formatDate(contract.source.snapshotAsOf),
       referencePeriod: contract.workforce.referencePeriod,
-      freshnessLabel: `Snapshot histórico al ${formatDate(contract.source.snapshotAsOf)} · no es tiempo real.`,
+      freshnessLabel: `Respaldo histórico del ${formatDate(contract.source.snapshotAsOf)} · no es tiempo real.`,
       workforceDefinition: formatWorkforceDefinition(),
     },
     kpis: buildKpis(contract, payroll, sector),

@@ -144,7 +144,7 @@ test('desktop and mobile navigation share canonical labels and React canary rout
     ['dashboard', 'grh-ejecutivo', 'estructura', 'territorio', 'control', 'ia', 'decisiones-grh', 'movimientos-grh']
       .map(id => [id, byId.get(id)?.label, byId.get(id)?.shortLabel, byId.get(id)?.href]),
     [
-      ['dashboard', 'Panorama municipal', 'Panorama', 'dashboard.html'],
+      ['dashboard', 'Panorama de personal', 'Panorama', 'dashboard.html'],
       ['grh-ejecutivo', 'Resumen ejecutivo GRH', 'Resumen GRH', '/ejecutivo'],
       ['estructura', 'Estructura y áreas de costo', 'Estructura', '/estructura'],
       ['territorio', 'Centro territorial', 'Territorio', '/territorio'],

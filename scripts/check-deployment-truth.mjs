@@ -42,7 +42,7 @@ const PROXY_ENV_NAMES = new Set(['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY']);
 const { API_CONTRACTS, HEADER_NAME: API_CONTRACT_HEADER } = releaseTruthContract;
 
 const ROOT_REQUIRED_MARKERS = Object.freeze([
-  /<title>\s*Panel ejecutivo GRH\s*\|\s*MuniControl\s*<\/title>/i,
+  /<title>\s*Panorama de personal\s*\|\s*MuniControl\s*<\/title>/i,
   /snapshot gobernado de GRH/i,
   /personas_junin/i,
   /js\/grh-secure-data\.js/i,

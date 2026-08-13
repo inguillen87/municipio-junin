@@ -324,9 +324,9 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.6');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 89);
-  assert.deepEqual(runtimeCounts, { serverless: 47, express: 42 });
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.7');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 90);
+  assert.deepEqual(runtimeCounts, { serverless: 48, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 31);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
@@ -337,8 +337,8 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
   }
   assert.match(inApp, /estado local[\s\S]{0,120}no desplegado/i);
   assert.match(inApp, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos/i);
-  assert.match(inApp, /89\s+(?:rutas|firmas)/i);
-  assert.match(inApp, /47\s+Serverless[\s\S]{0,60}42\s+Express/i);
+  assert.match(inApp, /90\s+(?:rutas|firmas)/i);
+  assert.match(inApp, /48\s+Serverless[\s\S]{0,60}42\s+Express/i);
 });
 
 test('documentation 1.10.0 records the exact role workspace without claiming accounts from visual guidance', () => {
@@ -418,14 +418,14 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-11.6');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.7');
   assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.3');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 89);
-  assert.deepEqual(runtimeCounts, { serverless: 47, express: 42 });
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 90);
+  assert.deepEqual(runtimeCounts, { serverless: 48, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 31);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
-  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 14);
+  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 15);
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory'], 'grh-directory-v3');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-directory-access'], 'grh-directory-access-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-domain-catalog'], 'grh-domain-catalog-v1');
@@ -462,9 +462,9 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     assert.match(source, /#decisionBrief/, relativePath);
     if (relativePath === 'manuales.html') {
       assert.match(source, /estado local[\s\S]{0,120}no desplegado/i, relativePath);
-      assert.match(source, /2026-08-11\.6[\s\S]{0,100}2026-08-11\.3/, relativePath);
-      assert.match(source, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos[\s\S]{0,80}89\s+(?:rutas|firmas)/i, relativePath);
-      assert.match(source, /47 Serverless[\s\S]{0,60}42 Express/i, relativePath);
+      assert.match(source, /2026-08-13\.7[\s\S]{0,100}2026-08-11\.3/, relativePath);
+      assert.match(source, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos[\s\S]{0,80}90\s+(?:rutas|firmas)/i, relativePath);
+      assert.match(source, /48 Serverless[\s\S]{0,60}42 Express/i, relativePath);
       assert.match(source, /Centro de decisiones[\s\S]{0,1000}Estado local, no desplegado/i, relativePath);
     } else {
       assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);

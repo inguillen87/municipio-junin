@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07111f">
-  <meta name="description" content="Acceso institucional a MuniControl de la Municipalidad de Junín.">
+  <meta name="description" content="Acceso simple y seguro a MuniControl de la Municipalidad de Junín, Mendoza.">
   <link rel="manifest" href="/manifest.json">
-  <title>Acceso institucional | MuniControl Junín</title>
+  <title>Acceso institucional | MuniControl Junín, Mendoza</title>
   <style>
     :root {
       color-scheme: dark;
@@ -552,8 +552,8 @@
 
     .evaluation-button {
       min-width: 0;
-      min-height: 68px;
-      padding: 10px 7px;
+      min-height: 84px;
+      padding: 11px 12px;
       border: 1px solid var(--border);
       border-radius: 11px;
       background: var(--surface);
@@ -588,11 +588,20 @@
     .evaluation-label {
       display: block;
       overflow: hidden;
-      font-size: 11px;
-      font-weight: 720;
+      font-size: 12px;
+      font-weight: 780;
       line-height: 1.25;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .evaluation-detail {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 620;
+      line-height: 1.3;
     }
 
     .evaluation-status {
@@ -614,40 +623,40 @@
 
   <main class="login-shell" id="mainContent">
     <section class="institutional-context" aria-labelledby="platformTitle">
-      <div class="brand" aria-label="MuniControl Junín">
+      <div class="brand" aria-label="MuniControl Junín, Mendoza">
         <span class="brand-mark" aria-hidden="true">MC</span>
-        <span class="brand-copy"><strong>MuniControl</strong><span>Municipalidad de Junín</span></span>
+        <span class="brand-copy"><strong>MuniControl</strong><span>Municipalidad de Junín, Mendoza</span></span>
       </div>
 
       <div class="context-body">
-        <p class="eyebrow">Gobierno municipal · acceso restringido</p>
-        <h1 id="platformTitle">Gestión municipal con evidencia verificable.</h1>
-        <p class="context-lead">MuniControl organiza el acceso a las capacidades habilitadas para cada perfil. La información disponible depende de la fuente, el corte y los permisos confirmados por el servidor.</p>
+        <p class="eyebrow">Municipalidad de Junín · Mendoza</p>
+        <h1 id="platformTitle">La información que necesitás, sin vueltas.</h1>
+        <p class="context-lead">Ingresá con tu usuario y vas a ver únicamente las herramientas disponibles para tu función. Cada pantalla explica qué información usa y cuándo fue actualizada.</p>
 
         <dl class="source-brief" aria-label="Alcance actual de la plataforma">
-          <div><dt>Fuente actual</dt><dd>Snapshot GRH gobernado</dd></div>
-          <div><dt>Temporalidad</dt><dd>No es tiempo real</dd></div>
-          <div><dt>Acceso público</dt><dd>Sin PII</dd></div>
+          <div><dt>Tu espacio</dt><dd>Herramientas según tu función</dd></div>
+          <div><dt>Actualización</dt><dd>La fecha aparece en cada pantalla</dd></div>
+          <div><dt>Privacidad</dt><dd>La vista pública no muestra datos personales</dd></div>
         </dl>
-        <p class="context-note">Esta pantalla no expone información municipal ni completa capacidades ausentes con datos de demostración.</p>
+        <p class="context-note">MuniControl no inventa información ni habilita herramientas sin autorización.</p>
       </div>
 
-      <footer class="context-footer">MuniControl · Entorno institucional de la Municipalidad de Junín</footer>
+      <footer class="context-footer">MuniControl · Municipalidad de Junín, Mendoza</footer>
     </section>
 
     <section class="access-region" id="accessPanel" tabindex="-1" aria-labelledby="accessTitle">
       <div class="access-card">
-        <div class="mobile-wordmark" aria-hidden="true">MuniControl · Junín</div>
+        <div class="mobile-wordmark" aria-hidden="true">MuniControl · Junín, Mendoza</div>
 
         <header class="access-header">
           <p class="access-kicker" id="accessKicker">Acceso institucional</p>
-          <h2 id="accessTitle">Ingresá a tu espacio de trabajo</h2>
-          <p class="access-intro" id="accessIntro">Usá las credenciales asignadas por la administración municipal.</p>
+          <h2 id="accessTitle">Hola. Entrá a tu espacio de trabajo</h2>
+          <p class="access-intro" id="accessIntro">Usá tu cuenta municipal o elegí un perfil de evaluación para conocer la plataforma.</p>
         </header>
 
         <section class="private-access-notice" id="privateAccessNotice" aria-labelledby="privateAccessTitle" hidden>
-          <strong id="privateAccessTitle">Acceso privado al directorio GRH</strong>
-          <p>La sesión de evaluación ya se cerró. Ingresá con la credencial privada asignada; los perfiles públicos no habilitan nombres, legajos ni licencias individuales.</p>
+          <strong id="privateAccessTitle">Acceso privado al directorio de RRHH</strong>
+          <p>La evaluación no muestra fichas personales. Para consultar nombres, legajos o licencias individuales, ingresá con la cuenta privada que te asignaron.</p>
           <a href="/login.html">Volver a los accesos de evaluación</a>
         </section>
 
@@ -706,33 +715,33 @@
           data-demo-contract="published-evaluation-readonly-v1"
           aria-labelledby="evaluationTitle"
         >
-          <h3 id="evaluationTitle">Probar la plataforma por perfil</h3>
-          <p class="evaluation-copy">Accesos de evaluación sobre el snapshot GRH histórico y agregado. Sin PII, sin tiempo real y con escrituras bloqueadas por el servidor.</p>
+          <h3 id="evaluationTitle">Elegí qué función querés probar</h3>
+          <p class="evaluation-copy">La evaluación es de sólo lectura: muestra información histórica resumida y no permite realizar cambios.</p>
           <div class="evaluation-grid" id="evaluationGrid">
             <button class="evaluation-button" type="button" data-evaluation-email="intendente@junin.gov.ar">
-              <span class="evaluation-mark">IN</span><span class="evaluation-label">Intendente</span>
+              <span class="evaluation-mark">IN</span><span class="evaluation-label">Intendente</span><span class="evaluation-detail">Prioridades y personal</span>
             </button>
             <button class="evaluation-button" type="button" data-evaluation-email="admin@junin.gov.ar">
-              <span class="evaluation-mark">AD · MÁS OPCIONES</span><span class="evaluation-label">Administrador</span>
+              <span class="evaluation-mark">AD</span><span class="evaluation-label">Administrador</span><span class="evaluation-detail">Cargas y calidad</span>
             </button>
             <button class="evaluation-button" type="button" data-evaluation-email="contador@junin.gov.ar">
-              <span class="evaluation-mark">CO</span><span class="evaluation-label">Contador</span>
+              <span class="evaluation-mark">CO</span><span class="evaluation-label">Contador</span><span class="evaluation-detail">Liquidaciones y control</span>
             </button>
             <button class="evaluation-button" type="button" data-evaluation-email="rrhh@junin.gov.ar">
-              <span class="evaluation-mark">EM</span><span class="evaluation-label">Empleado</span>
+              <span class="evaluation-mark">UM</span><span class="evaluation-label">Usuario municipal</span><span class="evaluation-detail">Consulta acotada</span>
             </button>
             <button class="evaluation-button" type="button" data-evaluation-email="inspector@junin.gov.ar">
-              <span class="evaluation-mark">IS</span><span class="evaluation-label">Inspector</span>
+              <span class="evaluation-mark">IS</span><span class="evaluation-label">Inspector</span><span class="evaluation-detail">Territorio y ayuda</span>
             </button>
             <button class="evaluation-button" type="button" data-evaluation-email="demo@junin.gov.ar">
-              <span class="evaluation-mark">DE</span><span class="evaluation-label">Vista demo</span>
+              <span class="evaluation-mark">DE</span><span class="evaluation-label">Vista demo</span><span class="evaluation-detail">Recorrido básico</span>
             </button>
           </div>
           <p class="evaluation-status" id="evaluationStatus" role="status" aria-live="polite"></p>
         </section>
 
         <a class="tour-link" id="privateGrhLoginLink" href="/login.html?access=private-grh&amp;return=rrhh.html%23peopleDirectory">
-          <span>Tengo una credencial privada GRH<span class="tour-link-note">Abre el formulario privado; no inicia sesión automáticamente ni usa los accesos públicos.</span></span>
+          <span>Ingresar al directorio privado de RRHH<span class="tour-link-note">Requiere la cuenta privada asignada y no usa los perfiles de evaluación.</span></span>
         </a>
 
         <a class="tour-link" href="/roles">
@@ -743,8 +752,8 @@
         <p class="pwa-install-status" data-pwa-install-status role="status" aria-live="polite"></p>
 
         <section class="access-policy" aria-labelledby="accessPolicyTitle">
-          <h3 id="accessPolicyTitle">Identidad emitida por la Municipalidad</h3>
-          <p>La identidad se revalida en la base en cada request. Estas seis cuentas no pueden escribir, importar, conectar fuentes ni enviar acciones.</p>
+          <h3 id="accessPolicyTitle">Acceso cuidado por la Municipalidad</h3>
+          <p>El sistema confirma tu cuenta en cada ingreso. Los perfiles de evaluación sólo permiten recorrer y consultar.</p>
         </section>
 
         <footer class="access-footer">Si no reconocés este acceso o necesitás asistencia, contactá al responsable institucional por el canal interno autorizado.</footer>
@@ -798,13 +807,13 @@
 
       function applyAccessContext() {
         if (!privateGrhMode) return;
-        accessKicker.textContent = 'Acceso privado GRH';
-        accessTitle.textContent = 'Ingresá al directorio de personas';
-        accessIntro.textContent = 'Usá la credencial privada asignada para consultar el snapshot nominal autorizado.';
+        accessKicker.textContent = 'Directorio privado de RRHH';
+        accessTitle.textContent = 'Ingresá para consultar fichas de personas';
+        accessIntro.textContent = 'Usá la cuenta privada que te asignaron. El sistema confirmará si tu función permite esta consulta.';
         privateAccessNotice.hidden = false;
         evaluationAccess.hidden = true;
         privateGrhLoginLink.hidden = true;
-        submitButton.textContent = 'Ingresar al directorio GRH';
+        submitButton.textContent = 'Ingresar al directorio de RRHH';
         emailInput.focus({ preventScroll: true });
       }
 
@@ -833,7 +842,7 @@
         submitButton.disabled = submitting;
         submitButton.textContent = submitting
           ? 'Verificando acceso…'
-          : privateGrhMode ? 'Ingresar al directorio GRH' : 'Ingresar al sistema';
+          : privateGrhMode ? 'Ingresar al directorio de RRHH' : 'Ingresar al sistema';
         evaluationGrid.querySelectorAll('.evaluation-button').forEach(function (button) {
           button.disabled = submitting;
         });
@@ -916,7 +925,7 @@
           passInput.value = '';
           emailInput.setAttribute('aria-invalid', 'true');
           passInput.setAttribute('aria-invalid', 'true');
-          showError('Administrador, Intendente y los demás perfiles públicos no abren el directorio. Ingresá el usuario privado GRH asignado.', emailInput);
+          showError('Los perfiles de evaluación no abren fichas personales. Ingresá la cuenta privada de RRHH que te asignaron.', emailInput);
           return;
         }
         if (!email || !password) {
@@ -963,8 +972,8 @@
               setSubmitting(false);
               showError(
                 privateAccess.status === 403
-                  ? 'Ese perfil es de evaluación y no tiene acceso al directorio nominal. Usá la credencial privada GRH asignada.'
-                  : 'No pudimos confirmar el acceso privado GRH en este momento. Intentá nuevamente.',
+                  ? 'Ese perfil es de evaluación y no puede abrir fichas personales. Usá la cuenta privada de RRHH que te asignaron.'
+                  : 'No pudimos confirmar el acceso al directorio de RRHH en este momento. Intentá nuevamente.',
                 privateAccess.status === 403 ? emailInput : errorMessage
               );
               return;

@@ -8,9 +8,10 @@ const read = relative => readFile(path.join(root, relative), 'utf8');
 
 test('login markets only implemented, source-governed capabilities', async () => {
   const source = await read('login.html');
-  assert.match(source, /Snapshot GRH gobernado/);
-  assert.match(source, /No es tiempo real/);
-  assert.match(source, /Sin PII/);
+  assert.match(source, /Municipalidad de Junín, Mendoza/);
+  assert.match(source, /Cada pantalla explica qué información usa y cuándo fue actualizada/);
+  assert.match(source, /La vista pública no muestra datos personales/);
+  assert.match(source, /no inventa información ni habilita herramientas sin autorización/i);
   assert.doesNotMatch(source, /data-count=|Analytics en tiempo real|predicciones|permisos granulares/i);
   assert.doesNotMatch(source, /1[.,]204|94\s*%|67\s*%/);
 });

@@ -143,7 +143,7 @@
   function resetToggle(toggle) {
     if (!toggle) return;
     toggle.setAttribute('aria-expanded', 'false');
-    toggle.textContent = 'Ver proyección completa';
+    toggle.textContent = 'Ver todos los grupos';
     toggle.hidden = false;
   }
 
@@ -154,15 +154,15 @@
       elements.absenceCompleteValue, elements.absenceDelta, elements.leaveCompleteValue, elements.leaveDelta,
       elements.movementCompleteValue, elements.movementDelta, elements.qualityScore, elements.methodSchema
     ].forEach(function (element) { setText(element, '—'); });
-    setText(elements.kpiLegajosContext, 'Registro maestro del snapshot.');
+    setText(elements.kpiLegajosContext, 'Personas identificadas por número de legajo.');
     setText(elements.kpiWorkforceContext, 'Período y definición en verificación.');
     setText(elements.kpiAbsencesContext, 'Serie protegida; no es una tasa.');
     setText(elements.kpiLeavesContext, 'Serie histórica en verificación.');
-    setText(elements.kpiMovementsContext, 'Serie protegida de eventos históricos.');
-    setText(elements.sectorSummary, 'La proyección permanece cerrada hasta verificar privacidad e identidad de corte.');
-    setText(elements.costSummary, 'La proyección permanece cerrada hasta verificar privacidad e identidad de corte.');
-    setText(elements.agreementSummary, 'La proyección permanece cerrada hasta verificar privacidad e identidad de corte.');
-    setText(elements.qualityScope, 'La puntuación sólo describe el extracto agregado gobernado.');
+    setText(elements.kpiMovementsContext, 'Registros históricos de origen; no equivalen a altas, bajas ni traslados.');
+    setText(elements.sectorSummary, 'La información permanece cerrada hasta completar las verificaciones.');
+    setText(elements.costSummary, 'La información permanece cerrada hasta completar las verificaciones.');
+    setText(elements.agreementSummary, 'La información permanece cerrada hasta completar las verificaciones.');
+    setText(elements.qualityScope, 'La puntuación resume este respaldo y no reemplaza los controles administrativos.');
     [
       elements.sectorBars, elements.costBars, elements.agreementBars, elements.absenceChart, elements.leaveChart,
       elements.movementChart, elements.qualityComponents, elements.quarantineTableBody,
@@ -177,7 +177,7 @@
   function showLoading() {
     resetOutputs();
     showDirectoryState('loading', 'Verificando acceso al directorio',
-      'El buscador nominal se habilita sólo después de validar la sesión y la fuente GRH.');
+      'El buscador nominal se habilita sólo después de validar la sesión y el respaldo municipal.');
     if (elements.loadingState) elements.loadingState.hidden = false;
     if (elements.loadError) elements.loadError.hidden = true;
     if (elements.rrhhDashboard) {
@@ -185,10 +185,10 @@
       elements.rrhhDashboard.setAttribute('aria-busy', 'true');
     }
     setText(elements.snapshotDate, '—');
-    setText(elements.snapshotNote, 'La vista permanecerá cerrada hasta verificar las dos proyecciones privadas.');
-    setText(elements.schemaChip, 'Contrato en verificación');
-    setText(elements.privacyLine, 'Acceso autenticado; ninguna celda se publica antes de aplicar la política de privacidad.');
-    setConnection('loading', 'Verificando proyecciones');
+    setText(elements.snapshotNote, 'La vista permanecerá cerrada hasta verificar los datos y los permisos.');
+    setText(elements.schemaChip, 'Datos en verificación');
+    setText(elements.privacyLine, 'Acceso autenticado; la información personal se muestra sólo a perfiles habilitados.');
+    setConnection('loading', 'Verificando datos');
   }
 
   function describeError(error) {
@@ -197,37 +197,37 @@
     if (status === 401 || code === 'AUTH_REQUIRED' || code === 'AUTH_EXPIRED') {
       return {
         title: 'Sesión requerida',
-        message: 'No se cargó ningún indicador. Iniciá sesión para consultar las proyecciones privadas de GRH.'
+        message: 'No se cargó ningún indicador. Iniciá sesión para consultar la información privada de Recursos Humanos.'
       };
     }
     if (status === 403) {
       return {
         title: 'Acceso no autorizado',
-        message: 'Tu sesión no tiene el rol o tenant habilitado para esta lectura ejecutiva de RRHH.'
+        message: 'Tu sesión no tiene permiso para consultar esta información de Recursos Humanos.'
       };
     }
     if (status === 404 || status === 503) {
       return {
-        title: 'Snapshot GRH no disponible',
-        message: 'Una de las proyecciones gobernadas no está disponible. No se muestran valores de ejemplo, datos crudos ni un corte anterior como reemplazo.'
+        title: 'Respaldo municipal no disponible',
+        message: 'Una parte de la información no está disponible. No se muestran valores de ejemplo ni datos anteriores como reemplazo.'
       };
     }
     if (code === 'GRH_EXECUTIVE_CONTRACT_INVALID' || code === 'GRH_QUALITY_CONTRACT_INVALID' ||
         code === 'GRH_SOURCE_IDENTITY_MISMATCH') {
       return {
-        title: 'Contrato GRH no verificable',
-        message: 'La proyección fue rechazada por contrato, privacidad o identidad de corte. El tablero permanece cerrado y no expone resultados parciales.'
+        title: 'Información GRH no verificable',
+        message: 'No se pudieron comprobar el origen, la privacidad o la fecha del respaldo. El tablero permanece cerrado y no muestra resultados parciales.'
       };
     }
     if (code === 'GRH_REQUEST_TIMEOUT') {
       return {
         title: 'Tiempo de consulta agotado',
-        message: 'Las proyecciones no respondieron dentro del límite seguro. El tablero permanece cerrado; podés reintentar.'
+        message: 'La consulta no respondió dentro del tiempo previsto. El tablero permanece cerrado; podés reintentar.'
       };
     }
     return {
       title: 'Datos no verificables',
-      message: 'No fue posible validar las proyecciones privadas de GRH. No hay fallback local, datos sintéticos ni valores parciales.'
+      message: 'No fue posible validar la información privada de GRH. No se muestran datos de ejemplo ni resultados parciales.'
     };
   }
 
@@ -244,9 +244,9 @@
     setText(elements.errorTitle, detail.title);
     setText(elements.errorMessage, detail.message);
     setText(elements.snapshotDate, '—');
-    setText(elements.snapshotNote, 'Sin contrato completo no se afirma ningún indicador.');
-    setText(elements.schemaChip, 'Contrato cerrado');
-    setText(elements.privacyLine, 'Fallo cerrado: no se cargaron categorías, series ni valores de calidad.');
+    setText(elements.snapshotNote, 'Sin verificar la información completa no se muestra ningún indicador.');
+    setText(elements.schemaChip, 'Datos no disponibles');
+    setText(elements.privacyLine, 'No se cargaron resultados parciales ni valores de ejemplo.');
     setConnection('error', 'Fuente no disponible');
   }
 
@@ -307,7 +307,7 @@
     var releasedCount = ranking.rows.filter(function (row) { return row.privacyStatus === 'released'; }).length;
     toggle.hidden = releasedCount <= COLLAPSED_RELEASED_ROWS;
     toggle.setAttribute('aria-expanded', String(expanded));
-    toggle.textContent = expanded ? 'Ver principales' : 'Ver proyección completa';
+    toggle.textContent = expanded ? 'Ver principales' : 'Ver todos los grupos';
   }
 
   function releasedSeries(domain) {
@@ -440,10 +440,10 @@
     var movements = latestReleased(releasedSeries(executive.movements));
     setText(elements.kpiLegajos, numberFormatter.format(legajo.rows));
     setText(elements.kpiLegajosContext, numberFormatter.format(legajo.uniqueKeys) +
-      ' claves únicas · unicidad ' + formatPercent(legajo.uniquenessPct, 2) + '.');
+      ' legajos distintos · ' + formatPercent(legajo.uniquenessPct, 2) + ' sin duplicados.');
     setText(elements.kpiWorkforceParticipants, executive.workforce.bySector.participantDisplay);
     setText(elements.kpiWorkforceContext, executive.workforce.referencePeriod +
-      ' · legajos que participaron en cálculo válido.');
+      ' · legajos incluidos en el cálculo del mes.');
     setText(elements.kpiAbsences, absence ? numberFormatter.format(absence.value) : '—');
     setText(elements.kpiAbsencesContext, absence
       ? absence.year + ' · ' + numberFormatter.format(absence.participantCount) + ' participantes agregados · no es tasa.'
@@ -454,7 +454,8 @@
       : 'Sin período liberado; no se imputa cero.');
     setText(elements.kpiMovements, movements ? numberFormatter.format(movements.value) : '—');
     setText(elements.kpiMovementsContext, movements
-      ? movements.year + ' · ' + numberFormatter.format(movements.participantCount) + ' participantes agregados.'
+      ? movements.year + ' · ' + numberFormatter.format(movements.participantCount) +
+        ' personas. Son registros de origen; no equivalen a altas, bajas ni traslados.'
       : 'Sin período liberado; no se imputa cero.');
     setText(elements.kpiQuality, decimalFormatter.format(quality.quality.score) + '/100');
     setText(elements.kpiQuarantine, numberFormatter.format(quality.temporal.quarantineRows));
@@ -491,7 +492,7 @@
       });
     });
     setText(elements.qualityScope,
-      'Alcance: extracto agregado gobernado. No certifica aptitud de cada tabla cruda ni reemplaza controles administrativos.');
+      'Este puntaje resume las comprobaciones del respaldo municipal y no reemplaza los controles administrativos.');
   }
 
   function appendCell(row, value, className) {
@@ -563,9 +564,9 @@
     elements.sourceMetadata.appendChild(fragment);
 
     setText(elements.snapshotDate, formatSnapshot(source.snapshotAsOf));
-    setText(elements.snapshotNote, 'Backup canónico GRH verificado.');
-    setText(elements.schemaChip, executive.schemaVersion + ' · ' + quality.schemaVersion);
-    setText(elements.privacyLine, 'Agregados protegidos; el directorio nominal exige autorización adicional.');
+    setText(elements.snapshotNote, 'Respaldo municipal verificado.');
+    setText(elements.schemaChip, 'Datos listos para consultar');
+    setText(elements.privacyLine, 'Los totales protegen la identidad; las fichas personales requieren autorización adicional.');
     setText(elements.methodSchema, executive.schemaVersion + ', ' + quality.schemaVersion + ' y ' + executive.policyVersion);
   }
 
@@ -628,7 +629,7 @@
     renderTemporal(quality);
     renderCoverage(quality);
     renderSource(executive, quality);
-    setConnection('ready', 'Proyecciones verificadas');
+    setConnection('ready', 'Datos verificados');
     if (elements.loadingState) elements.loadingState.hidden = true;
     if (elements.loadError) elements.loadError.hidden = true;
     elements.rrhhDashboard.hidden = false;
@@ -1240,7 +1241,7 @@
 
   function facetLabel(row, name) {
     var label = row.label || 'Código ' + row.code;
-    if (name === 'positionObservations') label += ' · histolegajo';
+    if (name === 'positionObservations') label += ' · cargo informado';
     return label + ' (' + numberFormatter.format(row.count) + ')';
   }
 
@@ -1277,7 +1278,7 @@
       return {
         kind: 'observation',
         label: item.positionObservation.label,
-        context: 'Cargo informado · histolegajo ' + item.positionObservation.observedPeriod
+        context: 'Cargo informado para ' + item.positionObservation.observedPeriod
       };
     }
     return { kind: 'missing', label: 'Sin cargo informado', context: 'Sin observación publicada' };
@@ -1285,8 +1286,8 @@
 
   function positionObservationStatus(value) {
     return value.status === 'source_future_effective'
-      ? 'Vigencia futura informada por la fuente'
-      : 'Observación histórica de la fuente';
+      ? 'Fecha posterior al respaldo municipal'
+      : 'Cargo histórico informado';
   }
 
   function appendPositionCell(row, item) {
@@ -1353,7 +1354,7 @@
         createElement('span', '', 'Centro de costo informado: ' + dimensionLabel(item.costCenter)),
         createElement('span', '', numberFormatter.format(item.events.leaveCount) + ' licencias · ' +
           numberFormatter.format(item.events.absenceCount) + ' ausencias · ' +
-          numberFormatter.format(item.movement.rowCount) + ' filas fuente legamov')
+          numberFormatter.format(item.movement.rowCount) + ' registros en la historia de cambios')
       );
       elements.directoryMobileList.appendChild(card);
     });
@@ -1397,7 +1398,7 @@
     renderDirectoryRows(payload.items);
     setText(elements.directoryResultCount, numberFormatter.format(payload.query.total));
     setText(elements.directoryResultLabel, payload.query.total === 1 ? 'resultado' : 'resultados');
-    setText(elements.directorySourceLabel, 'Corte ' + formatSnapshot(payload.source.snapshotAsOf));
+    setText(elements.directorySourceLabel, 'Información al ' + formatSnapshot(payload.source.snapshotAsOf));
     setText(elements.directoryPageLabel, 'Página ' + payload.query.page + ' de ' +
       Math.max(1, Math.ceil(payload.query.total / payload.query.limit)));
     elements.directoryPrevious.disabled = payload.query.page <= 1;
@@ -1414,7 +1415,7 @@
     if (resetCursors) state.directory.cursors = { 1: null };
     var sequence = state.directory.sequence + 1;
     state.directory.sequence = sequence;
-    showDirectoryState('loading', 'Consultando directorio', 'Aplicando búsqueda y filtros sobre el snapshot GRH.');
+    showDirectoryState('loading', 'Consultando directorio', 'Aplicando la búsqueda y los filtros sobre el respaldo municipal.');
     try {
       var payload = await requestDirectory(directoryQuery(page, cursor), 'DIRECTORY_BROWSE');
       if (sequence !== state.directory.sequence) return false;
@@ -1533,16 +1534,16 @@
 
   function historyCoverageRows(item) {
     return [
-      { kind: 'leave', label: 'Licencias', totalLabel: 'Válidos asociados', history: item.leaveHistory },
-      { kind: 'absence', label: 'Ausencias', totalLabel: 'Válidos asociados', history: item.absenceHistory },
-      { kind: 'movement', label: 'legamov', totalLabel: 'Períodos válidos', history: item.movementHistory }
+      { kind: 'leave', label: 'Licencias', totalLabel: 'Encontradas en la fuente', history: item.leaveHistory },
+      { kind: 'absence', label: 'Ausencias', totalLabel: 'Encontradas en la fuente', history: item.absenceHistory },
+      { kind: 'movement', label: 'Historia de cambios del legajo', totalLabel: 'Períodos encontrados', history: item.movementHistory }
     ];
   }
 
   function historyStatus(history) {
     return history.items.length === history.total
-      ? { state: 'complete', label: 'Detalle completo' }
-      : { state: 'partial', label: 'Detalle parcial' };
+      ? { state: 'complete', label: 'Historia completa' }
+      : { state: 'partial', label: 'Vista parcial' };
   }
 
   function appendCoverageDatum(row, label, value, className) {
@@ -1559,16 +1560,16 @@
       row.dataset.kind = entry.kind;
       row.appendChild(createElement('strong', 'rrhh-person-coverage-label', entry.label));
       appendCoverageDatum(row, entry.totalLabel, numberFormatter.format(entry.history.total));
-      appendCoverageDatum(row, 'Expuestos en ficha', numberFormatter.format(entry.history.items.length) +
-        ' de máximo ' + numberFormatter.format(entry.history.limit));
-      appendCoverageDatum(row, 'Rango expuesto', historyRange(entry.history, entry.kind));
-      appendCoverageDatum(row, 'Estado', status.label, 'rrhh-person-coverage-status');
+      appendCoverageDatum(row, 'Mostrados en la ficha', numberFormatter.format(entry.history.items.length) +
+        ' de ' + numberFormatter.format(entry.history.total));
+      appendCoverageDatum(row, 'Período mostrado', historyRange(entry.history, entry.kind));
+      appendCoverageDatum(row, 'Cobertura', status.label, 'rrhh-person-coverage-status');
       row.querySelector('.rrhh-person-coverage-status').dataset.state = status.state;
       container.appendChild(row);
     });
     elements.personTimelineList.appendChild(container);
     elements.personTimelineList.appendChild(createElement('p', 'rrhh-person-record-note',
-      'Los totales corresponden a registros válidos asociados al legajo en el contrato nominal. La ficha expone hasta 24 por tabla; no describe saldo, vigencia ni motivo.'));
+      'Los totales son los registros encontrados para este legajo. La ficha muestra hasta 24 por sección; no describe saldo, vigencia ni motivo.'));
   }
 
   function appendRecordTable(headers, rows, caption) {
@@ -1599,28 +1600,28 @@
       (filter === 'absence' ? item.absenceHistory : item.movementHistory);
     if (!history.items.length) {
       elements.personTimelineList.appendChild(createElement('p', 'rrhh-person-record-empty',
-        'No hay registros válidos asociados al legajo en esta tabla.'));
+        'No se encontraron registros para este legajo en esta sección.'));
       return;
     }
     if (filter === 'leave') {
       appendRecordTable(['Inicio', 'Fin', 'Días'], history.items.map(function (event) {
         return [formatEventDate(event.startDate), event.endDate ? formatEventDate(event.endDate) : 'No informado',
           event.days === null ? 'No informado' : numberFormatter.format(event.days)];
-      }), 'Licencias válidas asociadas: ' + numberFormatter.format(history.items.length) + ' de ' +
-        numberFormatter.format(history.total) + ' expuestas.');
+      }), 'Licencias encontradas en la fuente: ' + numberFormatter.format(history.total) +
+        '. Se muestran ' + numberFormatter.format(history.items.length) + ' de ' + numberFormatter.format(history.total) + '.');
       return;
     }
     if (filter === 'absence') {
       appendRecordTable(['Fecha', 'Días'], history.items.map(function (event) {
         return [formatEventDate(event.date), event.days === null ? 'No informado' : numberFormatter.format(event.days)];
-      }), 'Ausencias válidas asociadas: ' + numberFormatter.format(history.items.length) + ' de ' +
-        numberFormatter.format(history.total) + ' expuestas.');
+      }), 'Ausencias encontradas en la fuente: ' + numberFormatter.format(history.total) +
+        '. Se muestran ' + numberFormatter.format(history.items.length) + ' de ' + numberFormatter.format(history.total) + '.');
       return;
     }
-    appendRecordTable(['Período', 'Filas válidas'], history.items.map(function (event) {
+    appendRecordTable(['Período', 'Registros de origen'], history.items.map(function (event) {
       return [event.period, numberFormatter.format(event.rowCount)];
-    }), 'legamov: ' + numberFormatter.format(history.items.length) + ' de ' +
-      numberFormatter.format(history.total) + ' períodos expuestos. Las filas no describen altas, bajas ni rotación.');
+    }), 'Historia de cambios del legajo: se muestran ' + numberFormatter.format(history.items.length) + ' de ' +
+      numberFormatter.format(history.total) + ' períodos. Son registros de origen y no equivalen automáticamente a altas, bajas ni traslados.');
   }
 
   function renderPersonTimeline(filter) {
@@ -1631,7 +1632,8 @@
       button.tabIndex = selected ? 0 : -1;
     });
     clearNode(elements.personTimelineList);
-    elements.personTimelineList.setAttribute('aria-label', filter === 'summary' ? 'Resumen de cobertura' : 'Tabla de ' + filter);
+    var filterLabels = { leave: 'licencias', absence: 'ausencias', movement: 'historia de cambios del legajo' };
+    elements.personTimelineList.setAttribute('aria-label', filter === 'summary' ? 'Resumen de registros encontrados' : 'Tabla de ' + filterLabels[filter]);
     if (filter === 'summary') renderPersonCoverage(state.directory.personDetail);
     else renderPersonRecords(state.directory.personDetail, filter);
   }
@@ -1700,7 +1702,7 @@
     clearNode(elements.personEvents);
     setText(elements.personDialogTitle, personIdentity(item));
     setText(elements.personDialogSubtitle, 'Legajo ' + numberFormatter.format(item.legajo) + ' · empresa ' + item.companyCode);
-    setText(elements.personDialogCutoff, 'Corte GRH ' + formatSnapshot(state.directory.source.snapshotAsOf));
+    setText(elements.personDialogCutoff, 'Información al ' + formatSnapshot(state.directory.source.snapshotAsOf));
     renderPersonEmployment(item);
     var positionValue = positionPresentation(item);
     appendPersonDimension(positionValue.context, positionValue.label);
@@ -1710,19 +1712,19 @@
     } else if (positionValue.kind === 'observation') {
       appendPersonDimension('Estado de la observación', positionObservationStatus(item.positionObservation));
       appendPersonDimension('Fecha informada', formatEventDate(item.positionObservation.observedDate));
-      appendPersonDimension('Jerarquía del cargo', 'No informada por histolegajo');
+      appendPersonDimension('Jerarquía del cargo', 'No informada en la fuente');
     }
     appendPersonDimension('Organización', dimensionLabel(item.organization));
     appendPersonDimension('Sector', dimensionLabel(item.sector));
     appendPersonDimension('Centro de costo informado', dimensionLabel(item.costCenter));
     appendPersonDimension('Categoría', dimensionLabel(item.category));
     appendPersonDimension('Convenio', dimensionLabel(item.agreement));
-    appendPersonEvent('Registros válidos de ausencias', numberFormatter.format(item.events.absenceCount) +
+    appendPersonEvent('Ausencias encontradas en la fuente', numberFormatter.format(item.events.absenceCount) +
       (item.events.latestAbsenceDate ? ' · última ' + formatEventDate(item.events.latestAbsenceDate) : ' · sin fecha publicada'));
-    appendPersonEvent('Registros válidos de licencias', numberFormatter.format(item.events.leaveCount) +
+    appendPersonEvent('Licencias encontradas en la fuente', numberFormatter.format(item.events.leaveCount) +
       (item.events.latestLeaveStartDate ? ' · última ' + formatEventDate(item.events.latestLeaveStartDate) +
         (item.events.latestLeaveEndDate ? ' a ' + formatEventDate(item.events.latestLeaveEndDate) : '') : ' · sin fecha publicada'));
-    appendPersonEvent('Filas válidas de legamov', numberFormatter.format(item.movement.rowCount) + ' filas · ' +
+    appendPersonEvent('Historia de cambios del legajo', numberFormatter.format(item.movement.rowCount) + ' registros de origen · ' +
       numberFormatter.format(item.movement.periodCount) + ' períodos' +
       (item.movement.latestPeriod ? ' · último ' + item.movement.latestPeriod : ' · sin período publicado'));
     configurePersonAssistantAction(item);
@@ -1730,8 +1732,8 @@
     configureHaciendaCohortAction(elements.personHaciendaAgreement, item, 'agreement');
     elements.personAggregateActions.hidden = elements.personHaciendaSector.hidden && elements.personHaciendaAgreement.hidden;
     setText(elements.personTimelineCoverage,
-      'El resumen separa total válido, detalle expuesto, rango y estado por tabla. Máximo ' +
-      numberFormatter.format(item.absenceHistory.limit) + ' registros o períodos expuestos en cada tabla.');
+      'El resumen indica cuántos registros encontró la fuente y cuántos se muestran. La ficha presenta hasta ' +
+      numberFormatter.format(item.absenceHistory.limit) + ' registros o períodos por sección.');
     setText(elements.personEvidenceCutoff, formatSnapshot(state.directory.source.snapshotAsOf));
     setText(elements.personEvidenceSystem, state.directory.source.canonicalSystem);
     setText(elements.personEvidenceContract, DIRECTORY_SCHEMA);
@@ -1747,7 +1749,7 @@
     state.directory.sequence = sequence;
     setText(elements.personDialogTitle, 'Ficha de persona');
     setText(elements.personDialogSubtitle, 'Consultando legajo ' + numberFormatter.format(legajo) + '…');
-    setText(elements.personDialogCutoff, 'Corte en verificación');
+    setText(elements.personDialogCutoff, 'Fecha de información en verificación');
     setText(elements.personDialogLoading, 'Cargando ficha…');
     elements.personDialogLoading.hidden = false;
     elements.personDialogContent.hidden = true;

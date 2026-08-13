@@ -1145,7 +1145,7 @@
     if (elements.directoryStatusBadge) {
       elements.directoryStatusBadge.dataset.state = status;
       elements.directoryStatusBadge.textContent = status === 'ready' ? 'Directorio habilitado' :
-        status === 'denied' ? 'Acceso nominal no habilitado' :
+        status === 'denied' ? 'Búsqueda por persona no habilitada' :
           status === 'invalid' ? 'Enlace nominal inválido' :
             status === 'unavailable' ? 'Directorio no disponible' : 'Verificando acceso';
     }

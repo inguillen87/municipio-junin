@@ -63,6 +63,11 @@ test('employment review reads only tenant-bound aggregate counts from the v3 pub
         employment_people: 2449,
         reference_period_count: 1,
         reference_period: '2026-07',
+        reported_current_people: 867,
+        reported_ended_people: 1560,
+        uncertain_people: 22,
+        reference_payroll_participants: 856,
+        reported_current_with_reference_payroll: 848,
         reported_current_without_reference_payroll: 19,
         reported_ended_with_reference_payroll: 7,
         uncertain_status_with_reference_payroll: 1,
@@ -70,7 +75,16 @@ test('employment review reads only tenant-bound aggregate counts from the v3 pub
     },
   });
   assert.equal(aggregate.totalDirectoryPeople, 2449);
-  assert.deepEqual(Object.values(aggregate.counts), [19, 7, 1]);
+  assert.deepEqual(aggregate.counts, {
+    reported_current_people: 867,
+    reported_ended_people: 1560,
+    uncertain_people: 22,
+    reference_payroll_participants: 856,
+    reported_current_with_reference_payroll: 848,
+    reported_current_without_reference_payroll: 19,
+    reported_ended_with_reference_payroll: 7,
+    uncertain_status_with_reference_payroll: 1,
+  });
   assert.doesNotMatch(JSON.stringify(aggregate), /display_name|legajo|company_code/i);
 });
 

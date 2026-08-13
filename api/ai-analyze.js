@@ -22,6 +22,12 @@ import {
   readGrhWorkforceFinanceArtifact,
 } from './lib/grh-workforce-finance-artifact.js';
 import {
+  readGrhAbsenceInsightsArtifact,
+} from './grh-absence-insights.js';
+import {
+  inspectGrhAbsenceInsightsContract,
+} from './lib/grh-absence-insights-contract.js';
+import {
   inspectGrhWorkforceFinanceContract,
 } from './lib/grh-workforce-finance-contract.js';
 import {
@@ -149,6 +155,7 @@ export function createAiAnalyzeHandler({
   readArtifactBundleImpl = readGrhArtifactBundle,
   readDirectoryImpl = readGrhDirectory,
   readWorkforceFinanceArtifactImpl = readGrhWorkforceFinanceArtifact,
+  readAbsenceInsightsArtifactImpl = readGrhAbsenceInsightsArtifact,
   buildDecisionBriefProjectionImpl = buildGrhDecisionBriefProjection,
   inspectDecisionBriefContractImpl = inspectGrhDecisionBriefContract,
   buildDomainCatalogProjectionImpl = buildGrhDomainCatalogProjection,
@@ -156,6 +163,7 @@ export function createAiAnalyzeHandler({
   inspectWorkforceFinanceSourceImpl = inspectGrhWorkforceFinanceSourceContract,
   buildWorkforceFinanceProjectionImpl = buildGrhWorkforceFinanceProjection,
   inspectWorkforceFinanceContractImpl = inspectGrhWorkforceFinanceContract,
+  inspectAbsenceInsightsContractImpl = inspectGrhAbsenceInsightsContract,
   authorizeDirectoryImpl = authorizeGrhDirectoryRequest,
   directoryAuthorizationDependencies = {},
   environment = process.env,
@@ -223,6 +231,8 @@ export function createAiAnalyzeHandler({
     const classification = personTarget
       ? { intent: 'person_lookup', policy: 'limited' }
       : classifyIntent(message);
+    const useAbsenceInsights = classification.intent === 'absence' &&
+      !parsePeriodRequest(message).explicit;
     let directoryAuthorization = null;
     let directoryReadAudit = null;
     if (classification.intent === 'person_lookup') {
@@ -247,6 +257,7 @@ export function createAiAnalyzeHandler({
         decisionBrief: null,
         domainCatalog: null,
         workforceFinance: null,
+        absenceInsights: null,
       };
       if (classification.intent === 'decision_brief') {
         const decisionBrief = buildDecisionBriefProjectionImpl(executive, quality, close);
@@ -284,6 +295,19 @@ export function createAiAnalyzeHandler({
         }
         assistantData.workforceFinance = workforceFinance;
       }
+      if (useAbsenceInsights) {
+        const absenceInsights = await readAbsenceInsightsArtifactImpl({
+          environment,
+          expectedSourceSha256: provenance.sourceSha256,
+        });
+        if (!inspectAbsenceInsightsContractImpl(absenceInsights)?.ok ||
+            !projectionMatchesAssistantSource(absenceInsights, provenance, {
+              requireLatestPeriod: false,
+            })) {
+          throw new Error('GRH absence-insights projection invalid');
+        }
+        assistantData.absenceInsights = absenceInsights;
+      }
       const answer = classification.intent === 'person_lookup'
         ? await buildPrivateDirectoryResponse({
           message,
@@ -309,12 +333,19 @@ export function createAiAnalyzeHandler({
           containsPii: true,
           directorySchemaVersion: GRH_DIRECTORY_SCHEMA_VERSION,
         }
-        : provenance;
+        : (useAbsenceInsights
+          ? {
+            ...provenance,
+            absenceInsightsSchemaVersion: assistantData.absenceInsights.schemaVersion,
+          }
+          : provenance);
       const payload = buildAssistantPayload(answer, responseProvenance, {
         available: true,
         source: nominal
           ? 'grh_directory_private_contract'
-          : (FINANCE_INTENTS.has(answer.intent)
+          : (useAbsenceInsights
+            ? 'grh_absence_insights_governed_contract'
+            : (FINANCE_INTENTS.has(answer.intent)
             ? 'grh_workforce_finance_governed_contract'
             : (['domain_catalog', 'data_inventory'].includes(answer.intent)
               ? 'grh_domain_catalog_governed_contract'
@@ -322,7 +353,7 @@ export function createAiAnalyzeHandler({
               ? 'grh_decision_brief_governed_contract'
               : (answer.intent === 'close_explanation'
                 ? 'grh_close_governed_contract'
-                : 'grh_executive_portable_contract')))),
+                : 'grh_executive_portable_contract'))))),
         snapshotAsOf: provenance.snapshotAsOf,
         historyUsed: nominal && answer.answer?.directory?.status === 'matched',
       });
@@ -330,17 +361,24 @@ export function createAiAnalyzeHandler({
       return res.status(answer.httpStatus).json(payload);
     } catch (error) {
       const directoryFailure = classification.intent === 'person_lookup';
+      const absenceInsightsFailure = useAbsenceInsights;
       if (directoryFailure && directoryReadAudit) {
         await directoryReadAudit.denyPendingRead();
       }
       console.error(directoryFailure
         ? '[GRH-ASSISTANT] Directorio privado no disponible'
-        : '[GRH-ASSISTANT] Proyección portable no disponible');
+        : (absenceInsightsFailure
+          ? '[GRH-ASSISTANT] Lectura agregada de ausencias no disponible'
+          : '[GRH-ASSISTANT] Proyección portable no disponible'));
       return res.status(503).json({
         error: directoryFailure
           ? 'El directorio GRH privado no está disponible. No se generó una respuesta alternativa.'
-          : 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.',
-        code: directoryFailure ? 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE' : 'GRH_CONTRACT_UNAVAILABLE',
+          : (absenceInsightsFailure
+            ? 'La lectura explicada de ausencias no está disponible. No se reutilizó otra fuente.'
+            : 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.'),
+        code: directoryFailure
+          ? 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE'
+          : (absenceInsightsFailure ? 'GRH_ABSENCE_INSIGHTS_UNAVAILABLE' : 'GRH_CONTRACT_UNAVAILABLE'),
         engine: { id: ENGINE_ID, externalProvider: false, generated: false },
       });
     }
@@ -1452,6 +1490,10 @@ function semanticContext(
       assistantData?.workforceFinance,
       executive.source,
     ),
+    absenceInsights: validAssistantAbsenceInsights(
+      assistantData?.absenceInsights,
+      executive.source,
+    ),
     baseCaveats: [],
   };
 }
@@ -1481,6 +1523,16 @@ function validAssistantWorkforceFinance(value, source) {
   if (!inspectGrhWorkforceFinanceContract(value)?.ok || !sameAssistantSource(value.source, source)) {
     const error = new Error('El contrato workforce-finance GRH no es válido.');
     error.code = 'GRH_WORKFORCE_FINANCE_CONTRACT_INVALID';
+    throw error;
+  }
+  return value;
+}
+
+function validAssistantAbsenceInsights(value, source) {
+  if (value === undefined || value === null) return null;
+  if (!inspectGrhAbsenceInsightsContract(value)?.ok || !sameAssistantSource(value.source, source)) {
+    const error = new Error('El contrato absence-insights GRH no es válido.');
+    error.code = 'GRH_ABSENCE_INSIGHTS_CONTRACT_INVALID';
     throw error;
   }
   return value;
@@ -2461,6 +2513,9 @@ function absenceAnswer(context, periodRequest) {
       'ABSENCE_COMPARISON_REQUIRES_TWO_YEARS',
     );
   }
+  if (!periodRequest.explicit) {
+    return absenceInsightsAnswer(context);
+  }
   const requested = resolveAnnualRequest(periodRequest, 'ausencias');
   if (requested.error) return requested.error;
   const year = requested.year || context.latestPeriod.slice(0, 4);
@@ -2495,6 +2550,80 @@ function absenceAnswer(context, periodRequest) {
       subtitle: `Filas válidas de ausencia; ${String(context.snapshot || '').slice(0, 4)} es parcial al corte ${context.snapshot}.`,
     }),
     resolvedPeriod: year,
+  };
+}
+
+function absenceInsightsAnswer(context) {
+  const insights = context.absenceInsights;
+  if (!insights) {
+    return assistantContractUnavailable(
+      'Ausencias explicadas no disponibles',
+      'La lectura agregada de ausencias no superó la validación del contrato y del corte.',
+      'GRH_ABSENCE_INSIGHTS_UNAVAILABLE',
+    );
+  }
+
+  const current = insights.comparison.current;
+  const prior = insights.comparison.prior;
+  const deltas = insights.comparison.deltas;
+  const topReasons = insights.categories
+    .filter(category => category.current.privacyStatus === 'released')
+    .slice()
+    .sort((left, right) => right.current.events - left.current.events ||
+      left.label.localeCompare(right.label, 'es'))
+    .slice(0, 5);
+  if (topReasons.length < 2) {
+    return assistantContractUnavailable(
+      'Motivos de ausencia no disponibles',
+      'El contrato validado no contiene suficientes motivos agregados para una lectura comparativa.',
+      'GRH_ABSENCE_INSIGHTS_CATEGORIES_UNAVAILABLE',
+    );
+  }
+
+  const currentPeriod = insights.periods.current;
+  const priorPeriod = insights.periods.prior;
+  return {
+    title: 'Ausencias explicadas · mismo tiempo de cada gestión',
+    summary: `En los ${formatInteger(currentPeriod.days)} días observados de la gestión actual se registraron ${formatInteger(current.events)} eventos de ausencia de ${formatInteger(current.people)} personas y ${formatInteger(current.days)} días informados. En el mismo tramo de la gestión anterior fueron ${formatInteger(prior.events)} eventos, ${formatInteger(prior.people)} personas y ${formatInteger(prior.days)} días informados.`,
+    findings: [
+      `Los cinco motivos con más registros en el período actual son: ${topReasons.map(reason => `${reason.label} (${formatInteger(reason.current.events)})`).join('; ')}.`,
+      `La diferencia entre ambos períodos es de ${formatSignedInteger(deltas.events)} eventos, ${formatSignedInteger(deltas.people)} personas y ${formatSignedInteger(deltas.days)} días informados.`,
+      `La gestión actual comprende ${currentPeriod.startDate} a ${currentPeriod.endDate}; la comparación anterior usa ${priorPeriod.startDate} a ${priorPeriod.endDate}. Ambos tramos tienen ${formatInteger(currentPeriod.days)} días.`,
+    ],
+    evidence: [
+      metric('Registros · gestión actual', formatInteger(current.events), `${formatInteger(current.people)} personas con al menos un registro.`),
+      metric('Registros · período anterior', formatInteger(prior.events), `${formatInteger(prior.people)} personas con al menos un registro.`),
+      metric('Días informados · gestión actual', formatInteger(current.days), 'Suma informada en los registros; no días únicos.'),
+      metric('Días informados · período anterior', formatInteger(prior.days), 'Suma informada en los registros; no días únicos.'),
+    ],
+    caveats: insights.limits.map(limit => limit.text),
+    nextQuestions: [
+      '¿Cuáles son los principales motivos de ausencia?',
+      'Compará ausencias 2024 y 2025',
+      '¿Qué período abarca la comparación de ausencias?',
+    ],
+    actions: [absenceInsightsAction()],
+    visual: buildBarVisual({
+      title: 'Principales motivos de ausencia · gestión actual',
+      subtitle: 'Cantidad de registros en el período actual; no representa personas únicas ni todas las licencias.',
+      order: 'ranked',
+      unit: 'records',
+      scaleMax: topReasons[0].current.events,
+      items: topReasons.map(reason => visualItem(
+        reason.label,
+        reason.current.events,
+        formatInteger(reason.current.events),
+      )),
+    }),
+  };
+}
+
+function absenceInsightsAction() {
+  return {
+    id: 'open_absence_insights',
+    label: 'Ver ausencias explicadas',
+    href: '/dashboard#absenceInsights',
+    requiredCapability: 'navigation.dashboard',
   };
 }
 

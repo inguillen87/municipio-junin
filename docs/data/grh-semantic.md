@@ -2,8 +2,9 @@
 
 `api/_data/grh-semantic.json` es la salida agregada, reproducible y sin PII del
 snapshot GRH. Su fuente canónica es únicamente `grh_junin`; `personas_junin`
-queda excluida porque es una base de ejemplo y sus identificadores no deben
-cruzarse con el dominio GRH.
+queda excluida de este artefacto porque es una fuente auxiliar con un espacio de
+identificadores propio. `IDPERSONA` no puede usarse para unir ambos sistemas; la
+integración futura requiere un `crosswalk_persona` versionado y auditado.
 
 Los JSON generados son artefactos privados ignorados por Git y Vercel.
 Producción debe leerlos desde `grh_artifacts`, vinculados al CUID del tenant

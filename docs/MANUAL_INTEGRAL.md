@@ -3,7 +3,7 @@
 Versión documental: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
 Estado: release público `v1.10.0` verificado; producto S13 en commit `d11fd39`
-Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.9` y
+Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.10` y
 access policy `2026-08-11.3`, sin nuevo release
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
@@ -101,8 +101,15 @@ licitaciones, capacitación y futuras entregas a otros municipios.
 ## Estado que debe leerse antes de una demostración
 
 - La fuente canónica actual es GRH Junín, snapshot del 6 de agosto de 2026.
-- `personas_junin` está excluida de manera absoluta: no se analiza, perfila,
-  cruza, migra, publica ni se usa como fallback.
+- GRH conserva la autoridad sobre personas laborales, legajos, liquidaciones,
+  movimientos y ausencias. `personas_junin` es un padrón auxiliar de identidad,
+  domicilios y territorio, pero permanece fuera de los contratos, artefactos y
+  tableros GRH actuales.
+- La futura integración sólo puede usar una tabla puente versionada; nunca un
+  `JOIN` por igualdad de `IDPERSONA` entre sistemas. La línea de base local de
+  1.699 candidatos, 157 ambiguos y 493 sin coincidencia no es un crosswalk
+  productivo certificado. Véase
+  [`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
 - El contrato fuente vigente es `grh-semantic-v2`. Agrega
   `distinct_participants_by_year` para ausencias, licencias y movimientos: las
   claves compuestas se usan sólo durante el cálculo y nunca se exportan.
@@ -177,7 +184,7 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   no se repitió el replay real de 44 MB, no se usó DB y no se desplegó. Un host
   completamente comprometido permanece fuera de la garantía.
 - El techo exacto de permisos por ruta está implementado localmente con 31
-  recursos, 12 acciones, 53 permisos y 91 firmas protegidas: 49 Serverless y 42
+  recursos, 12 acciones, 53 permisos y 92 firmas protegidas: 50 Serverless y 42
   Express. La propuesta de
   ámbitos RBAC/ABAC está aislada y no migrada: todavía no hay persistencia fina,
   lifecycle de cuentas ni cuentas por cada rol.

@@ -275,7 +275,7 @@
   data-primary-source="grh"
   data-secondary-source-policy="personas-excluded"
   data-realtime="false"
-  data-route-policy-version="2026-08-13.9"
+  data-route-policy-version="2026-08-13.10"
   data-access-policy-version="2026-08-11.3"
 >
   <div id="sidebar"></div>
@@ -411,9 +411,9 @@
         <section id="fuente">
           <p class="section-kicker">03 · Linaje</p>
           <h2>GRH es la fuente municipal prioritaria</h2>
-          <p class="section-intro">El snapshot de trabajo proviene del backup GRH fechado el 6 de agosto de 2026. El backup de Personas queda fuera del contrato analítico. <code>personas_junin</code>, recibida sólo como ejemplo, queda excluida de forma absoluta: no se analiza, perfila, cruza, migra, publica ni usa como fallback.</p>
+          <p class="section-intro">El snapshot de trabajo proviene del backup GRH fechado el 6 de agosto de 2026. GRH es la fuente laboral. <code>personas_junin</code> es un padrón auxiliar para identidad, domicilios y territorio, pero todavía no alimenta estas pantallas ni los contratos GRH.</p>
 
-          <div class="callout"><span aria-hidden="true">!</span><div><strong>No compatibilizar bases por aproximación.</strong> Si en el futuro se incorpora otra fuente, debe existir una clave de enlace aprobada, reglas de reconciliación, tasas de cobertura y tratamiento explícito de conflictos.</div></div>
+          <div class="callout"><span aria-hidden="true">!</span><div><strong>No unir por el número interno de persona.</strong> <code>IDPERSONA</code> significa algo distinto en cada base. La futura integración usará una tabla puente versionada, coincidencias verificables y revisión de los casos dudosos. Los 1.699 candidatos detectados son una línea de base técnica, no vínculos productivos certificados.</div></div>
 
           <ul class="truth-list">
             <li><code>grh-semantic-v2</code> agrega participantes distintos por año en ausencias, licencias y movimientos; las claves se usan sólo para contar y nunca se exportan.</li>
@@ -471,7 +471,7 @@
               <thead><tr><th>Superficie</th><th>Fuente</th><th>Comportamiento esperado</th></tr></thead>
               <tbody>
                 <tr><td><strong>Tablero ejecutivo / GRH</strong></td><td><code>grh-executive-v2</code> + <code>grh-quality-v1</code></td><td>Consumidores migrados localmente; 503 o estado no disponible si falla una proyección. No certifica despliegue.</td></tr>
-                <tr><td><strong>Comparación de gestiones</strong><br><small>Local · no desplegado</small></td><td><code>grh-administration-comparison-v1</code></td><td>Compara 972 días desde el 9 de diciembre de 2023 con el mismo tramo iniciado cuatro años antes. Muestra registros históricos agregados; no es una tasa, no prueba altas o bajas y no califica una gestión. Si faltan días informados o no puede proteger grupos pequeños, falla sin mostrar cifras.</td></tr>
+                <tr><td><strong>Comparación de gestiones</strong><br><small>Verificada en Production</small></td><td><code>grh-administration-comparison-v1</code></td><td>Compara 972 días desde el 9 de diciembre de 2023 con el mismo tramo iniciado cuatro años antes. Muestra registros históricos agregados; no es una tasa, no prueba altas o bajas y no califica una gestión. Si faltan días informados o no puede proteger grupos pequeños, falla sin mostrar cifras.</td></tr>
                 <tr><td><strong>Centro de decisiones GRH</strong><br><small>Local · condicionado</small></td><td><code>grh-action-ledger-v1</code> sobre <code>grh-decision-brief-v1</code></td><td><code>GET</code> consulta; <code>POST</code> crea compromisos humanos y <code>PATCH</code> registra transiciones versionadas. Incluye compromisos vigentes e históricos; no aprueba ni ejecuta decisiones. No está incluido en <code>v1.10.0</code>: falta migración gobernada y Preview autenticado.</td></tr>
                 <tr><td><strong>RRHH / Hacienda</strong><br><small>Local · no desplegado</small></td><td><code>grh-directory-v3</code> en RRHH + contratos agregados + <code>grh-close-v1</code> en Hacienda</td><td>RRHH incorpora situación laboral informada por fechas, participación separada en el cálculo gobernado de julio de 2026, centro de costo y hasta 24 ausencias, licencias y períodos de filas fuente por historial. Exige identidad autorizada, tenant y finalidad; no certifica vínculo activo ni pago, no publica causas de ausencias/licencias y no interpreta <code>legamov</code> como altas, bajas, traslados o rotación. Hacienda mantiene el cierre mensual explicado. Falta migración/publicación y certificación remota.</td></tr>
                 <tr><td><strong>Centro de movimientos GRH</strong><br><small>Local · no desplegado</small></td><td>Registros históricos de movimientos</td><td>Muestra series anuales, personas participantes, intensidad y comparación entre los dos últimos años completos disponibles. Los años con menos de 10 personas se ocultan. Estos registros todavía no permiten afirmar altas, bajas ni rotación.</td></tr>
@@ -528,7 +528,7 @@
             <li>Los contratos fuente GRH son privados y quedan sólo en backend. El navegador recibe proyecciones gobernadas como <code>grh-executive-v2</code>, <code>grh-quality-v1</code>, <code>grh-close-v1</code> o <code>grh-movement-operations-v1</code>; los consumidores de servidor proyectan antes de responder.</li>
             <li>Para proteger identidades, las categorías con menos de 5 personas se agrupan y las cifras sensibles con menos de 10 se ocultan. Un dato protegido nunca se publica como cero ni permite deducir el valor oculto.</li>
             <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
-            <li>El techo local no desplegado contiene 31 recursos, 12 acciones, 53 permisos y 91 firmas exactas: 49 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>El techo vigente contiene 31 recursos, 12 acciones, 53 permisos y 92 firmas exactas: 50 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
             <li>La política de acceso local <code>2026-08-11.3</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
             <li>Excel, CSV y Google Sheets se tratan como contenido no confiable: formato, límites, encabezados y persistencia se validan antes de declarar éxito.</li>
             <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>

@@ -801,6 +801,93 @@
     .exec-decision-ledger-cta { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 7px; color: var(--exec-blue); font-size: 11px; font-weight: 850; text-decoration: none; }
     .exec-decision-ledger-cta:hover { text-decoration: underline; }
     .exec-decision-limit { margin: 12px 0 0; color: var(--exec-muted); font-size: 9.5px; line-height: 1.55; }
+    .exec-employment-bridge {
+      border-color: rgba(var(--exec-blue-rgb),.28);
+      background:
+        linear-gradient(118deg,rgba(var(--exec-blue-rgb),.09),transparent 48%),
+        var(--exec-surface);
+    }
+    .exec-employment-bridge::before { background: var(--exec-blue); }
+    .exec-employment-bridge .exec-decision-eyebrow { color: var(--exec-blue); }
+    .exec-employment-flow {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+      gap: 12px;
+      align-items: stretch;
+      margin-top: 20px;
+    }
+    .exec-employment-step,
+    .exec-employment-result {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--exec-border);
+      border-radius: 13px;
+      background: rgba(0,0,0,.075);
+    }
+    [data-theme="light"] .exec-employment-step,
+    [data-theme="light"] .exec-employment-result { background: rgba(var(--exec-blue-rgb),.025); }
+    .exec-employment-step span,
+    .exec-employment-result span {
+      display: block;
+      color: var(--exec-muted);
+      font-size: 9px;
+      font-weight: 820;
+      letter-spacing: .055em;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+    .exec-employment-step strong,
+    .exec-employment-result strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--exec-text);
+      font-size: clamp(27px,3vw,40px);
+      font-weight: 850;
+      letter-spacing: -.045em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .exec-employment-step p,
+    .exec-employment-result p { margin: 8px 0 0; color: var(--exec-text-soft); font-size: 10.5px; line-height: 1.5; }
+    .exec-employment-arrow {
+      display: grid;
+      min-width: 42px;
+      place-items: center;
+      color: var(--exec-blue);
+      font-size: 24px;
+      font-weight: 820;
+    }
+    .exec-employment-results {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .exec-employment-result[data-tone="attention"] {
+      border-color: rgba(var(--exec-amber-rgb),.28);
+      background: rgba(var(--exec-amber-rgb),.055);
+    }
+    .exec-employment-result[data-tone="attention"] strong { color: var(--exec-amber); }
+    .exec-employment-technical {
+      margin-top: 12px;
+      border: 1px solid var(--exec-border);
+      border-radius: 12px;
+      background: var(--exec-soft);
+    }
+    .exec-employment-technical summary {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      padding: 12px 14px;
+      color: var(--exec-text-soft);
+      cursor: pointer;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+    .exec-employment-technical:not([open]) > div { display: none; }
+    .exec-employment-technical > div { padding: 0 14px 14px; }
+    .exec-employment-technical p { margin: 6px 0 0; color: var(--exec-muted); font-size: 10px; line-height: 1.55; }
+    .exec-employment-technical strong { color: var(--exec-text-soft); }
     .exec-administration-comparison {
       border-color: rgba(var(--exec-teal-rgb),.28);
       background:
@@ -899,9 +986,60 @@
       font-weight: 800;
       cursor: pointer;
     }
-    .exec-administration-technical div { padding: 0 14px 14px; }
+    .exec-administration-technical > div { padding: 0 14px 14px; }
     .exec-administration-technical:not([open]) > div { display: none; }
     .exec-administration-technical p { margin: 7px 0 0; color: var(--exec-muted); font-size: 10px; line-height: 1.55; }
+    .exec-absence-insights {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--exec-border);
+      scroll-margin-top: 84px;
+    }
+    .exec-absence-insights-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .exec-absence-insights-head h4 { margin: 0; color: var(--exec-text); font-size: 15px; letter-spacing: -.02em; }
+    .exec-absence-insights-head p { max-width: 760px; margin: 6px 0 0; color: var(--exec-muted); font-size: 10.5px; line-height: 1.55; }
+    .exec-absence-reasons { display: grid; gap: 9px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .exec-absence-reason {
+      display: grid;
+      grid-template-columns: minmax(180px,.8fr) minmax(0,1.7fr);
+      gap: 16px;
+      align-items: center;
+      padding: 13px;
+      border: 1px solid var(--exec-border);
+      border-radius: 11px;
+      background: var(--exec-soft);
+    }
+    .exec-absence-reason-title strong { display: block; color: var(--exec-text); font-size: 11px; line-height: 1.4; }
+    .exec-absence-reason-title span { display: block; margin-top: 4px; color: var(--exec-muted); font-size: 9.5px; line-height: 1.45; }
+    .exec-absence-bars { display: grid; gap: 8px; }
+    .exec-absence-bar-line {
+      display: grid;
+      grid-template-columns: minmax(96px,.42fr) minmax(90px,1fr) auto;
+      gap: 9px;
+      align-items: center;
+      min-width: 0;
+    }
+    .exec-absence-bar-line > span { color: var(--exec-muted); font-size: 9px; font-weight: 750; }
+    .exec-absence-bar-line > strong { min-width: 74px; color: var(--exec-text-soft); font-size: 10px; text-align: right; font-variant-numeric: tabular-nums; }
+    .exec-absence-bar-track { height: 8px; overflow: hidden; border-radius: 99px; background: rgba(var(--exec-blue-rgb),.09); }
+    .exec-absence-bar-track i {
+      display: block;
+      width: var(--bar-width);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--exec-teal);
+      transform-origin: left;
+      animation: exec-grow .62s var(--exec-ease) both;
+    }
+    .exec-absence-bar-line[data-period="prior"] .exec-absence-bar-track i { background: var(--exec-blue); opacity: .7; }
+    .exec-absence-loading { margin: 12px 0 0; color: var(--exec-muted); font-size: 10px; line-height: 1.5; }
+    .exec-absence-loading[data-state="error"] { color: var(--exec-amber); }
+    .exec-absence-insights .exec-administration-technical { margin-top: 10px; }
     .exec-layout-full { grid-template-columns: minmax(0,1fr); }
 
     .exec-ranks { display: grid; gap: 13px; }
@@ -1043,6 +1181,9 @@
       .exec-close-grid,.exec-close-technical-grid { grid-template-columns: 1fr; }
       .exec-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .exec-decision-evidence,.exec-decision-priorities { grid-template-columns: 1fr; }
+      .exec-employment-flow { grid-template-columns: 1fr; }
+      .exec-employment-arrow { min-height: 28px; transform: rotate(90deg); }
+      .exec-employment-results { grid-template-columns: 1fr; }
       .exec-administration-periods { grid-template-columns: 1fr; }
       .exec-administration-columns { display: none; }
       .exec-administration-row { grid-template-columns: repeat(3,minmax(0,1fr)); }
@@ -1058,6 +1199,9 @@
         letter-spacing: .04em;
         text-transform: uppercase;
       }
+      .exec-absence-insights-head { flex-direction: column; }
+      .exec-absence-reason { grid-template-columns: 1fr; gap: 10px; }
+      .exec-absence-bar-line { grid-template-columns: minmax(82px,.42fr) minmax(70px,1fr) auto; }
       .exec-panel { padding: 17px; border-radius: 16px; }
       .exec-panel-head { align-items: flex-start; flex-direction: column; }
       .exec-chart-controls { width: 100%; justify-content: space-between; }
@@ -1186,31 +1330,54 @@
           <a class="exec-decision-ledger-cta" id="decisionLedgerCta" href="decisiones-grh.html">Gestionar compromisos <span aria-hidden="true">→</span></a>
         </div>
 
-        <section class="exec-decision-brief" id="employmentReview" aria-labelledby="employmentReviewTitle" data-contract="grh-employment-review-v1" hidden>
+        <section class="exec-decision-brief exec-employment-bridge" id="employmentReview" aria-labelledby="employmentReviewTitle" data-contract="grh-employment-review-v2" hidden>
           <div class="exec-decision-head">
             <div>
-              <p class="exec-decision-eyebrow">Control de legajos</p>
-              <h3 id="employmentReviewTitle">Situaciones para revisar</h3>
+              <p class="exec-decision-eyebrow">Personal y cálculo de julio</p>
+              <h3 id="employmentReviewTitle">Situaciones para confirmar</h3>
               <p class="exec-decision-headline" id="employmentReviewHeadline">Comprobando la información del respaldo…</p>
             </div>
             <div class="exec-decision-meta">
               <span class="exec-decision-tag" id="employmentReviewPeriod">—</span>
             </div>
           </div>
-          <dl class="exec-decision-evidence" aria-label="Resumen de legajos para revisar">
-            <div class="exec-decision-proof">
-              <dt>Legajos para verificar</dt>
-              <dd><strong id="employmentReviewTotal">—</strong><span>No son errores: son situaciones que conviene confirmar.</span></dd>
-            </div>
-            <div class="exec-decision-proof">
-              <dt>Alcance</dt>
-              <dd><strong id="employmentReviewCoverage">—</strong><span id="employmentReviewPrivacy">—</span></dd>
-            </div>
-          </dl>
+          <div class="exec-employment-flow" aria-label="Relación entre los legajos y el cálculo del mes">
+            <article class="exec-employment-step">
+              <span>Legajos sin egreso informado</span>
+              <strong id="employmentReviewCurrent">—</strong>
+              <p>Según las fechas guardadas en cada legajo al momento del respaldo.</p>
+            </article>
+            <div class="exec-employment-arrow" aria-hidden="true">→</div>
+            <article class="exec-employment-step">
+              <span>También aparecen en el cálculo de julio</span>
+              <strong id="employmentReviewMatched">—</strong>
+              <p>Es el grupo que coincide en ambas lecturas.</p>
+            </article>
+          </div>
+          <div class="exec-employment-results" aria-label="Resultado de la comparación">
+            <article class="exec-employment-result">
+              <span>Personas incluidas en el cálculo de julio</span>
+              <strong id="employmentReviewPayroll">—</strong>
+              <p id="employmentReviewPayrollNote">Incluye el grupo anterior y otros legajos cuya situación conviene confirmar.</p>
+            </article>
+            <article class="exec-employment-result" data-tone="attention">
+              <span>Situaciones para confirmar</span>
+              <strong id="employmentReviewTotal">—</strong>
+              <p>No son errores automáticos: requieren una revisión administrativa.</p>
+            </article>
+          </div>
           <ol class="exec-decision-priorities" id="employmentReviewCategories" aria-label="Tipos de situaciones para revisar"></ol>
           <p class="exec-decision-limit" id="employmentReviewStatus" role="status" aria-live="polite"></p>
+          <details class="exec-employment-technical" id="employmentReviewTechnical">
+            <summary>Ver cómo se obtiene el resultado</summary>
+            <div>
+              <p><strong id="employmentReviewCoverage">—</strong> fueron comparados en total.</p>
+              <p id="employmentReviewPrivacy">—</p>
+              <p>La comparación usa las fechas informadas en los legajos y la presencia en el cálculo de julio. Por sí sola no determina la situación laboral de una persona.</p>
+            </div>
+          </details>
           <div class="exec-control-actions">
-            <a class="exec-control-action" id="employmentReviewCta" href="/rrhh#peopleDirectory" hidden>Revisar en Directorio y fichas</a>
+            <a class="exec-control-action" id="employmentReviewCta" href="/rrhh#peopleDirectory" hidden>Revisar las situaciones en Directorio y fichas</a>
             <button class="exec-retry-btn" id="employmentReviewRetry" type="button" hidden>Reintentar este control</button>
           </div>
         </section>
@@ -1218,8 +1385,8 @@
         <section class="exec-decision-brief exec-administration-comparison" id="administrationComparison" aria-labelledby="administrationComparisonTitle" data-contract="grh-administration-comparison-v1" data-privacy-threshold="10" hidden>
           <div class="exec-decision-head">
             <div>
-              <p class="exec-decision-eyebrow">Comparación histórica</p>
-              <h3 id="administrationComparisonTitle">Mismo tiempo de cada gestión</h3>
+              <p class="exec-decision-eyebrow">Personal y ausentismo</p>
+              <h3 id="administrationComparisonTitle">Ausencias informadas: mismo tiempo de cada gestión</h3>
               <p class="exec-decision-headline" id="administrationComparisonHeadline">Comprobando los períodos comparables…</p>
             </div>
             <div class="exec-decision-meta">
@@ -1237,12 +1404,46 @@
             </article>
           </div>
           <div class="exec-administration-columns" aria-hidden="true">
-            <span>Dato del respaldo</span>
+            <span>Qué se cuenta</span>
             <span>Gestión actual</span>
             <span>Gestión anterior</span>
             <span>Diferencia</span>
           </div>
           <dl class="exec-administration-matrix" id="administrationComparisonMetrics" aria-label="Comparación de datos históricos"></dl>
+          <section class="exec-absence-insights" id="absenceInsights" aria-labelledby="absenceInsightsTitle" data-contract="grh-absence-insights-v1" hidden>
+            <div class="exec-absence-insights-head">
+              <div>
+                <h4 id="absenceInsightsTitle">Motivos informados en los registros</h4>
+                <p>Estos motivos provienen de los registros de ausencia. La tabla histórica de licencias es otra fuente y no reúne todas las ausencias.</p>
+              </div>
+              <span class="exec-decision-tag" id="absenceInsightsPeriod">Mismos períodos</span>
+            </div>
+            <ol class="exec-absence-reasons" id="absenceInsightsCategories" aria-label="Comparación de ausencias por motivo"></ol>
+            <p class="exec-absence-loading" id="absenceInsightsStatus" role="status" aria-live="polite">Comprobando los motivos informados…</p>
+            <details class="exec-administration-technical" id="absenceInsightsAll">
+              <summary>Ver todos los demás motivos</summary>
+              <div>
+                <div class="exec-administration-columns" aria-hidden="true">
+                  <span>Motivo informado</span>
+                  <span>Gestión actual</span>
+                  <span>Gestión anterior</span>
+                  <span>Diferencia</span>
+                </div>
+                <dl class="exec-administration-matrix" id="absenceInsightsAllCategories" aria-label="Otros motivos informados"></dl>
+              </div>
+            </details>
+            <details class="exec-administration-technical" id="absenceInsightsTechnical">
+              <summary>Qué significan estas cifras</summary>
+              <div>
+                <p id="absenceInsightsCoverage">—</p>
+                <p><strong>Días informados</strong> es la suma del campo de días de cada registro. No equivale automáticamente a jornadas de trabajo perdidas.</p>
+                <p id="absenceInsightsLimits">La vista describe lo guardado en el respaldo y no atribuye causas.</p>
+              </div>
+            </details>
+            <div class="exec-control-actions">
+              <button class="exec-retry-btn" id="absenceInsightsRetry" type="button" hidden>Reintentar motivos</button>
+            </div>
+          </section>
           <p class="exec-decision-limit" id="administrationComparisonStatus" role="status" aria-live="polite">Esta comparación se carga por separado y no bloquea el resto del panorama.</p>
           <details class="exec-administration-technical" id="administrationComparisonTechnical">
             <summary>Ver fechas informadas y límites</summary>
@@ -1522,6 +1723,7 @@
   <script src="js/grh-decision-brief-data.js"></script>
   <script src="js/grh-employment-review-data.js"></script>
   <script src="js/grh-administration-comparison-data.js"></script>
+  <script src="js/grh-absence-insights-data.js"></script>
   <script>
     (function () {
       'use strict';
@@ -1535,7 +1737,7 @@
       var civilDateFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeZone:'UTC'});
       var dateTimeFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Argentina/Buenos_Aires'});
       var monthFormatter = new Intl.DateTimeFormat('es-AR',{month:'short',year:'numeric',timeZone:'UTC'});
-      var state = { executive:null, quality:null, monthlyClose:null, decisionBrief:null, employmentReview:null, administrationComparison:null, series:[], range:'12', loadSequence:0 };
+      var state = { executive:null, quality:null, monthlyClose:null, decisionBrief:null, employmentReview:null, administrationComparison:null, absenceInsights:null, series:[], range:'12', loadSequence:0 };
       var elements = {};
 
       function byId(id) { return document.getElementById(id); }
@@ -1549,11 +1751,14 @@
           'monthlyCloseBrief','closePeriodBadge','closeParticipants','closeControlMetric','closeControlStatus','closeControlNote',
           'closeCoverage','closeExactness','closeAgreement','closeComparison','closeComparisonTitle','closeComparisonNote',
           'closeParticipantDelta','closeCoverageDelta','closeExactnessDelta','closeAgreementDelta','decisionBrief','decisionLedgerActions','decisionLedgerCta',
-          'employmentReview','employmentReviewHeadline','employmentReviewPeriod','employmentReviewTotal','employmentReviewCoverage',
-          'employmentReviewPrivacy','employmentReviewCategories','employmentReviewStatus','employmentReviewCta','employmentReviewRetry',
+          'employmentReview','employmentReviewTitle','employmentReviewHeadline','employmentReviewPeriod','employmentReviewCurrent','employmentReviewMatched',
+          'employmentReviewPayroll','employmentReviewPayrollNote','employmentReviewTotal','employmentReviewCoverage','employmentReviewPrivacy',
+          'employmentReviewCategories','employmentReviewStatus','employmentReviewTechnical','employmentReviewCta','employmentReviewRetry',
           'administrationComparison','administrationComparisonHeadline','administrationComparisonDays','administrationCurrentLabel','administrationCurrentDates',
           'administrationPriorLabel','administrationPriorDates','administrationComparisonMetrics','administrationComparisonAdditionalMetrics','administrationComparisonStatus',
           'administrationComparisonTechnical','administrationComparisonCoverage','administrationComparisonCta','administrationComparisonRetry',
+          'absenceInsights','absenceInsightsTitle','absenceInsightsPeriod','absenceInsightsCategories','absenceInsightsStatus','absenceInsightsTechnical',
+          'absenceInsightsAll','absenceInsightsAllCategories','absenceInsightsCoverage','absenceInsightsLimits','absenceInsightsRetry',
           'decisionBriefHeadline','decisionBriefStatus','decisionBriefBoundary','decisionAgreement','decisionAgreementNote',
           'decisionChange','decisionChangeNote','decisionQuality','decisionQualityNote','decisionPriorities','decisionBriefLimits'
         ].forEach(function (id) { elements[id] = byId(id); });
@@ -1845,12 +2050,18 @@
       function resetEmploymentReview() {
         state.employmentReview = null;
         elements.employmentReview.hidden = false;
+        setText(elements.employmentReviewTitle,'Situaciones para confirmar');
         setText(elements.employmentReviewHeadline,'Comprobando la información del respaldo…');
         setText(elements.employmentReviewPeriod,'—');
+        setText(elements.employmentReviewCurrent,'—');
+        setText(elements.employmentReviewMatched,'—');
+        setText(elements.employmentReviewPayroll,'—');
+        setText(elements.employmentReviewPayrollNote,'Incluye el grupo anterior y otros legajos cuya situación conviene confirmar.');
         setText(elements.employmentReviewTotal,'—');
         setText(elements.employmentReviewCoverage,'—');
         setText(elements.employmentReviewPrivacy,'—');
         setText(elements.employmentReviewStatus,'Este control se carga por separado y no bloquea el resto del panorama.');
+        elements.employmentReviewTechnical.open = false;
         elements.employmentReviewCategories.replaceChildren();
         elements.employmentReviewCta.hidden = true;
         elements.employmentReviewRetry.hidden = true;
@@ -1867,39 +2078,71 @@
         elements.employmentReviewCategories.appendChild(item);
       }
 
+      function appendProtectedEmploymentReviewCategory() {
+        var item = document.createElement('li');
+        var heading = document.createElement('strong');
+        var paragraph = document.createElement('p');
+        item.className = 'exec-decision-priority';
+        heading.textContent = 'Otros casos · detalle protegido';
+        paragraph.textContent = 'Se agrupan porque son muy pocas personas y mostrarlas por separado podría permitir identificarlas.';
+        item.append(heading,paragraph);
+        elements.employmentReviewCategories.appendChild(item);
+      }
+
       function renderEmploymentReview(review) {
         state.employmentReview = review;
-        setText(elements.employmentReviewHeadline,'Comparamos la situación informada en cada legajo con su participación en el cálculo de '+formatMonth(review.referencePeriod)+'.');
+        var matchedDisplay = review.reportedCurrentWithReferencePayroll === null
+          ? 'Grupo pequeño'
+          : numberFormatter.format(review.reportedCurrentWithReferencePayroll);
+        setText(elements.employmentReviewTitle,numberFormatter.format(review.totalToReview)+' situaciones para confirmar');
+        setText(elements.employmentReviewHeadline,
+          'De '+numberFormatter.format(review.reportedCurrentPeople)+' legajos sin egreso informado, '+
+          matchedDisplay+' también aparecen en el cálculo de '+formatMonth(review.referencePeriod)+'.');
         setText(elements.employmentReviewPeriod,formatMonth(review.referencePeriod));
+        setText(elements.employmentReviewCurrent,numberFormatter.format(review.reportedCurrentPeople));
+        setText(elements.employmentReviewMatched,matchedDisplay);
+        setText(elements.employmentReviewPayroll,numberFormatter.format(review.referencePayrollParticipants));
+        setText(elements.employmentReviewPayrollNote,
+          'Incluye '+(review.reportedCurrentWithReferencePayroll === null
+            ? 'el grupo coincidente anterior'
+            : 'las '+numberFormatter.format(review.reportedCurrentWithReferencePayroll)+' coincidencias anteriores')+
+          ' y otros legajos cuya situación conviene confirmar.');
         setText(elements.employmentReviewTotal,numberFormatter.format(review.totalToReview));
         setText(elements.employmentReviewCoverage,numberFormatter.format(review.totalDirectoryPeople)+' legajos');
-        setText(elements.employmentReviewPrivacy,review.privacyStatus === 'partially_protected'
-          ? 'El total está disponible; el detalle se reúne para proteger grupos pequeños.'
-          : 'Detalle disponible según el perfil autorizado.');
+        setText(elements.employmentReviewPrivacy,
+          'Del total, '+numberFormatter.format(review.reportedCurrentPeople)+' no informan egreso, '+
+          numberFormatter.format(review.reportedEndedPeople)+' informan egreso y '+
+          numberFormatter.format(review.uncertainPeople)+' tienen fechas para revisar. '+
+          (review.privacyStatus === 'partially_protected'
+            ? 'Los grupos muy pequeños se muestran reunidos.'
+            : 'El detalle está disponible para este perfil.'));
         elements.employmentReviewCategories.replaceChildren();
-        if(review.privacyStatus === 'partially_protected') {
-          var protectedItem = document.createElement('li');
-          var protectedHeading = document.createElement('strong');
-          var protectedCopy = document.createElement('p');
-          protectedItem.className = 'exec-decision-priority';
-          protectedHeading.textContent = 'Detalle protegido';
-          protectedCopy.textContent = 'Algunos grupos tienen menos de 10 personas. No se muestran por separado para evitar identificaciones.';
-          protectedItem.append(protectedHeading,protectedCopy);
-          elements.employmentReviewCategories.appendChild(protectedItem);
-        } else {
-          review.categories.forEach(appendEmploymentReviewCategory);
-        }
-        setText(elements.employmentReviewStatus,'Situaciones para confirmar administrativamente; no son errores automáticos ni prueban altas, bajas o pagos.');
+        var protectedRows = 0;
+        review.categories.forEach(function (row) {
+          if(row.privacyStatus === 'released') appendEmploymentReviewCategory(row);
+          else protectedRows += 1;
+        });
+        if(protectedRows > 0) appendProtectedEmploymentReviewCategory();
+        setText(elements.employmentReviewStatus,
+          'La cifra de '+numberFormatter.format(review.totalToReview)+
+          ' reúne las diferencias que conviene confirmar. Esta comparación orienta la revisión y no reemplaza el legajo administrativo.');
+        elements.employmentReviewTechnical.open = false;
         elements.employmentReviewCta.hidden = !hasNavigationCapability('navigation.rrhh');
         elements.employmentReviewRetry.hidden = true;
       }
 
       function showEmploymentReviewError() {
         state.employmentReview = null;
+        setText(elements.employmentReviewTitle,'No pudimos completar la comparación');
         setText(elements.employmentReviewHeadline,'No pudimos completar este control.');
+        setText(elements.employmentReviewCurrent,'—');
+        setText(elements.employmentReviewMatched,'—');
+        setText(elements.employmentReviewPayroll,'—');
+        setText(elements.employmentReviewPayrollNote,'No se muestran cifras sin verificar.');
         setText(elements.employmentReviewTotal,'—');
         setText(elements.employmentReviewCoverage,'—');
         setText(elements.employmentReviewPrivacy,'No se reemplazan datos faltantes por cero.');
+        elements.employmentReviewTechnical.open = false;
         elements.employmentReviewCategories.replaceChildren();
         setText(elements.employmentReviewStatus,'El resto del panorama sigue disponible. Podés reintentar sólo esta revisión.');
         elements.employmentReviewCta.hidden = true;
@@ -1926,7 +2169,9 @@
 
       function resetAdministrationComparison() {
         state.administrationComparison = null;
+        state.absenceInsights = null;
         elements.administrationComparison.hidden = false;
+        elements.absenceInsights.hidden = true;
         setText(elements.administrationComparisonHeadline,'Comprobando los períodos comparables…');
         setText(elements.administrationComparisonDays,'972 días por período');
         setText(elements.administrationCurrentLabel,'Gestión actual');
@@ -2016,6 +2261,8 @@
 
       function showAdministrationComparisonError() {
         state.administrationComparison = null;
+        state.absenceInsights = null;
+        elements.absenceInsights.hidden = true;
         setText(elements.administrationComparisonHeadline,'No pudimos completar esta comparación.');
         setText(elements.administrationCurrentDates,'—');
         setText(elements.administrationPriorDates,'—');
@@ -2034,10 +2281,156 @@
           var comparison = await window.MuniGrhAdministrationComparison.load({ timeoutMs:10000 });
           if(sequence !== state.loadSequence) return;
           renderAdministrationComparison(comparison);
+          void loadAbsenceInsights(sequence);
         } catch(error) {
           if(sequence !== state.loadSequence) return;
           showAdministrationComparisonError();
           console.error('[Panel ejecutivo GRH] Comparación de gestiones no disponible:',error);
+        }
+      }
+
+      function resetAbsenceInsights() {
+        state.absenceInsights = null;
+        elements.absenceInsights.hidden = false;
+        setText(elements.absenceInsightsPeriod,'Mismos períodos');
+        elements.absenceInsightsCategories.replaceChildren();
+        elements.absenceInsightsAllCategories.replaceChildren();
+        setText(elements.absenceInsightsStatus,'Comprobando los motivos informados…');
+        elements.absenceInsightsStatus.removeAttribute('data-state');
+        setText(elements.absenceInsightsCoverage,'Comprobando el alcance de los motivos.');
+        setText(elements.absenceInsightsLimits,'La vista describe lo guardado en el respaldo y no atribuye causas.');
+        elements.absenceInsightsTechnical.open = false;
+        elements.absenceInsightsAll.open = false;
+        elements.absenceInsightsRetry.hidden = true;
+      }
+
+      function assertAbsenceInsightsReconcile(insights) {
+        var administration = state.administrationComparison;
+        if(!administration) fail('La comparación de gestiones no está disponible.');
+        var absence = administration.comparison.absence;
+        [
+          ['events',absence.eventRows],
+          ['people',absence.distinctPeople],
+          ['days',absence.reportedDays],
+        ].forEach(function (entry) {
+          var key = entry[0];
+          var metric = entry[1];
+          if(insights.comparison.current[key] !== metric.values.current ||
+            insights.comparison.prior[key] !== metric.values.prior) {
+            fail('Los motivos de ausencia no coinciden con el resumen por gestión.');
+          }
+        });
+      }
+
+      function appendAbsenceReason(row,maxEvents) {
+        var item = document.createElement('li');
+        var heading = document.createElement('div');
+        var title = document.createElement('strong');
+        var meaning = document.createElement('span');
+        var bars = document.createElement('div');
+        item.className = 'exec-absence-reason';
+        heading.className = 'exec-absence-reason-title';
+        title.textContent = row.label;
+        meaning.textContent = 'Registros informados en cada período.';
+        heading.append(title,meaning);
+        bars.className = 'exec-absence-bars';
+        [
+          {key:'current',label:'Gestión actual'},
+          {key:'prior',label:'Mismo tramo anterior'},
+        ].forEach(function (period) {
+          var line = document.createElement('div');
+          var label = document.createElement('span');
+          var track = document.createElement('div');
+          var fill = document.createElement('i');
+          var value = document.createElement('strong');
+          var observation = row[period.key];
+          var released = observation.privacyStatus === 'released';
+          line.className = 'exec-absence-bar-line';
+          line.dataset.period = period.key;
+          label.textContent = period.label;
+          track.className = 'exec-absence-bar-track';
+          fill.style.setProperty('--bar-width',!released || maxEvents === 0 ? '0%' : ((observation.events/maxEvents)*100).toFixed(2)+'%');
+          fill.setAttribute('aria-hidden','true');
+          track.appendChild(fill);
+          value.textContent = released ? numberFormatter.format(observation.events)+' registros' : 'Grupo pequeño';
+          line.title = released
+            ? numberFormatter.format(observation.events)+' registros · '+
+              numberFormatter.format(observation.people)+' personas · '+
+              numberFormatter.format(observation.days)+' días informados'
+            : 'El valor no se muestra porque corresponde a un grupo muy pequeño.';
+          line.append(label,track,value);
+          bars.appendChild(line);
+        });
+        item.append(heading,bars);
+        elements.absenceInsightsCategories.appendChild(item);
+      }
+
+      function renderAbsenceInsights(insights) {
+        assertAbsenceInsightsReconcile(insights);
+        state.absenceInsights = insights;
+        setText(elements.absenceInsightsPeriod,numberFormatter.format(insights.periods.current.days)+' días por período');
+        var ordered = insights.categories.slice().sort(function (left,right) {
+          return (right.current.events || 0)-(left.current.events || 0) || left.label.localeCompare(right.label,'es');
+        });
+        var rows = ordered.slice(0,6);
+        if(insights.protectedBucket &&
+          (insights.protectedBucket.current.events > 0 || insights.protectedBucket.prior.events > 0)) rows.push(insights.protectedBucket);
+        var maxEvents = rows.reduce(function (maximum,row) {
+          return Math.max(maximum,row.current.events || 0,row.prior.events || 0);
+        },0);
+        elements.absenceInsightsCategories.replaceChildren();
+        rows.forEach(function (row) { appendAbsenceReason(row,maxEvents); });
+        elements.absenceInsightsAllCategories.replaceChildren();
+        ordered.slice(6).forEach(function (row) {
+          appendAdministrationMetric(elements.absenceInsightsAllCategories,{
+            label:row.label,
+            values:{current:row.current.events,prior:row.prior.events,difference:row.deltas.events},
+          },'Cantidad de registros informados con este motivo.');
+        });
+        var currentCoverage = insights.coverage.current;
+        var priorCoverage = insights.coverage.prior;
+        setText(elements.absenceInsightsStatus,
+          'Se muestran los motivos con más registros. El catálogo cubre los '+numberFormatter.format(currentCoverage.totalEvents)+
+          ' registros de la gestión actual y los '+numberFormatter.format(priorCoverage.totalEvents)+
+          ' del mismo tramo anterior; los grupos pequeños se reúnen en Otros motivos.');
+        elements.absenceInsightsStatus.removeAttribute('data-state');
+        setText(elements.absenceInsightsCoverage,
+          'El respaldo contiene '+numberFormatter.format(insights.summary.validAbsenceRows)+
+          ' registros de ausencia con fecha válida y '+numberFormatter.format(insights.summary.validReportedDays)+
+          ' días informados.');
+        setText(elements.absenceInsightsLimits,
+          numberFormatter.format(insights.summary.quarantinedRows)+
+          ' registros tienen fechas para revisar y se mantienen fuera de esta comparación. Los motivos describen lo informado; no explican por sí solos por qué ocurrió una ausencia.');
+        elements.absenceInsightsTechnical.open = false;
+        elements.absenceInsightsAll.open = false;
+        elements.absenceInsightsRetry.hidden = true;
+      }
+
+      function showAbsenceInsightsError() {
+        state.absenceInsights = null;
+        elements.absenceInsights.hidden = false;
+        elements.absenceInsightsCategories.replaceChildren();
+        elements.absenceInsightsAllCategories.replaceChildren();
+        setText(elements.absenceInsightsStatus,'No pudimos mostrar los motivos. La comparación general sigue disponible.');
+        elements.absenceInsightsStatus.dataset.state = 'error';
+        setText(elements.absenceInsightsCoverage,'No se muestran cifras sin verificar ni se reemplazan datos faltantes por cero.');
+        setText(elements.absenceInsightsLimits,'Podés reintentar sólo esta parte.');
+        elements.absenceInsightsTechnical.open = false;
+        elements.absenceInsightsAll.open = false;
+        elements.absenceInsightsRetry.hidden = false;
+      }
+
+      async function loadAbsenceInsights(sequence) {
+        resetAbsenceInsights();
+        try {
+          if(!window.MuniGrhAbsenceInsights || typeof window.MuniGrhAbsenceInsights.load !== 'function') throw new Error('Cliente no disponible');
+          var insights = await window.MuniGrhAbsenceInsights.load({ timeoutMs:10000 });
+          if(sequence !== state.loadSequence) return;
+          renderAbsenceInsights(insights);
+        } catch(error) {
+          if(sequence !== state.loadSequence) return;
+          showAbsenceInsightsError();
+          console.error('[Panel ejecutivo GRH] Motivos de ausencia no disponibles:',error);
         }
       }
 
@@ -2200,10 +2593,11 @@
       }
 
       function resetView() {
-        state.executive = null; state.quality = null; state.monthlyClose = null; state.decisionBrief = null; state.employmentReview = null; state.administrationComparison = null; state.series = [];
+        state.executive = null; state.quality = null; state.monthlyClose = null; state.decisionBrief = null; state.employmentReview = null; state.administrationComparison = null; state.absenceInsights = null; state.series = [];
         elements.dataViews.hidden = true;
         elements.employmentReview.hidden = true;
         elements.administrationComparison.hidden = true;
+        elements.absenceInsights.hidden = true;
         elements.loadError.hidden = true;
         elements.loadStatus.hidden = false;
         elements.executiveDashboard.setAttribute('aria-busy','true');
@@ -2292,6 +2686,7 @@
         elements.retryLoad.addEventListener('click',loadAuthorizedDashboard);
         elements.employmentReviewRetry.addEventListener('click',function () { void loadEmploymentReview(state.loadSequence); });
         elements.administrationComparisonRetry.addEventListener('click',function () { void loadAdministrationComparison(state.loadSequence); });
+        elements.absenceInsightsRetry.addEventListener('click',function () { void loadAbsenceInsights(state.loadSequence); });
         elements.execThemeToggle.addEventListener('click',toggleTheme);
         var light = document.documentElement.getAttribute('data-theme') === 'light';
         elements.execThemeToggle.setAttribute('aria-pressed',light ? 'true' : 'false');

@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Versión | 1.10.0 |
-| Incremento local | S15 `Unreleased` |
+| Incremento productivo | S15 verificado en Production |
 | Fecha de corte documental | 13 de agosto de 2026 |
-| Estado | Release público histórico `v1.10.0` verificado; comparación de gestiones S15 en desarrollo local, sin Preview ni Production |
+| Estado | Release público histórico `v1.10.0` verificado; comparación de gestiones S15 verificada en Production el 13 de agosto de 2026 |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -103,9 +103,12 @@ vinculante.
   `e7403da1d036c8d60eab26bcb3f97e6e7c3a70629090deac8cc4e5438250b3d9`.
 - El sistema trabaja con un **snapshot histórico**, no con una conexión en tiempo
   real. Los cambios posteriores al corte mostrado en pantalla no están incluidos.
-- `personas_junin` fue recibida sólo como ejemplo y está excluida de forma
-  absoluta: no se analiza, perfila, cruza, enriquece, migra, publica ni se usa
-  como fallback.
+- GRH es la fuente laboral central. `personas_junin` es un padrón auxiliar para
+  identidad, domicilios y territorio, pero todavía no alimenta los contratos,
+  tableros ni fichas GRH actuales.
+- Los números `IDPERSONA` de ambas bases no identifican a la misma persona. Una
+  integración futura debe usar una tabla puente versionada, con coincidencias
+  verificadas y casos dudosos revisados por una persona responsable.
 - El contrato fuente actual es `grh-semantic-v2`. Para ausencias, licencias y
   movimientos calcula participantes distintos por año sin exportar legajos,
   empresas ni las claves usadas durante la agregación.
@@ -170,8 +173,8 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local `2026-08-13.9` cubre 31 recursos, 12 acciones,
-53 permisos y 91 firmas exactas: 49 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local `2026-08-13.10` cubre 31 recursos, 12 acciones,
+53 permisos y 92 firmas exactas: 50 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
 La política de acceso local `2026-08-11.3` entrega
@@ -906,7 +909,9 @@ Este manual no establece SLA ni tiempos de recuperación.
 - No suba backups GRH crudos a repositorios, planillas públicas, correo o chats.
 - No pegue PII en el Asistente.
 - No publique nombres, DNI, domicilios, teléfonos, salarios o información médica.
-- No mezcle `personas_junin` con GRH.
+- No una directamente `personas_junin` con GRH ni use `IDPERSONA` como llave
+  entre sistemas. La integración futura sólo puede usar el proceso de tabla
+  puente auditada definido para ese fin.
 - No comparta credenciales, tokens, cadenas de conexión ni secretos de webhooks.
 - Antes de compartir una captura, verifique que sólo contenga agregados permitidos.
 - Use únicamente canales institucionales y reglas de retención aprobadas. Este
@@ -951,7 +956,9 @@ vender como terminadas funciones que siguen condicionadas o en roadmap.
 
 ### 17.3 Recorrido sugerido
 
-1. Explique la fuente canónica GRH y la exclusión de `personas_junin`.
+1. Explique que GRH es la fuente laboral y que PERSONAS sólo podrá enriquecer
+   identidad o territorio cuando exista una tabla puente verificada; hoy no
+   alimenta las pantallas GRH.
 2. Muestre el Inicio correspondiente al rol y explique que no consulta GRH.
 3. Si la capability está autorizada, muestre corte, calidad y límites en el
    Panel Ejecutivo GRH.

@@ -1,8 +1,9 @@
-# Los artefactos GRH locales no se empaquetan como assets del deployment.
-# Producción debe leerlos desde un runtime privado gobernado (sellado transitorio o grh_artifacts).
+# Los artefactos GRH quedan fuera del deployment por defecto. Sólo se incluye
+# una excepción agregada y validada que no contiene fichas ni identificadores.
 dist/**
 frontend/node_modules/**
 api/_data/*.json
+!api/_data/grh-absence-insights.json
 docs/data/*.json
 
 # Componentes y evidencia que no forman parte del runtime Serverless.

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
+import { buildGrhAbsenceInsightsProjection } from '../api/lib/grh-absence-insights-projection.js';
 import { buildGrhAdministrationComparisonProjection } from '../api/lib/grh-administration-comparison-projection.js';
 import { buildGrhDecisionBriefProjection } from '../api/lib/grh-decision-brief-projection.js';
 import { buildGrhExecutiveProjection } from '../api/lib/grh-executive-projection.js';
@@ -22,9 +23,10 @@ const HAS_PRIVATE_GRH = ['profile', 'semantic'].every(name =>
   existsSync(path.join(REPO, 'api', '_data', `grh-${name}.json`))
 );
 const PROJECTIONS = HAS_PRIVATE_GRH ? await (async () => {
-  const [profile, semantic] = await Promise.all([
+  const [profile, semantic, absenceArtifact] = await Promise.all([
     readFile(path.join(REPO, 'api', '_data', 'grh-profile.json'), 'utf8').then(JSON.parse),
     readFile(path.join(REPO, 'api', '_data', 'grh-semantic.json'), 'utf8').then(JSON.parse),
+    readFile(path.join(REPO, 'api', '_data', 'grh-absence-insights.json'), 'utf8').then(JSON.parse),
   ]);
   const executive = buildGrhExecutiveProjection(semantic, { audience: 'interactive' });
   const quality = buildGrhQualityProjection(profile, semantic);
@@ -69,10 +71,13 @@ const PROJECTIONS = HAS_PRIVATE_GRH ? await (async () => {
     executive,
     quality,
     close,
+    absence: buildGrhAbsenceInsightsProjection(absenceArtifact, {
+      expectedSourceSha256: executive.source.sourceSha256,
+    }),
     decision: buildGrhDecisionBriefProjection(executive, quality, close),
     administration,
     employment: {
-      schemaVersion: 'grh-employment-review-v1',
+      schemaVersion: 'grh-employment-review-v2',
       source: {
         canonicalSystem: executive.source.canonicalSystem,
         sourceSha256: executive.source.sourceSha256,
@@ -81,6 +86,14 @@ const PROJECTIONS = HAS_PRIVATE_GRH ? await (async () => {
       audience: 'private',
       referencePeriod: executive.workforce.referencePeriod,
       totalDirectoryPeople: 2449,
+      reportedCurrentPeople: 867,
+      reportedEndedPeople: 1560,
+      uncertainPeople: 22,
+      referencePayrollParticipants: 856,
+      reportedCurrentWithReferencePayroll: 848,
+      currentWithoutPayroll: 19,
+      endedWithPayroll: 7,
+      uncertainWithPayroll: 1,
       totalToReview: 27,
       privacyStatus: 'released',
       categories: [
@@ -288,6 +301,7 @@ async function createServer(requestLog, options = {}) {
       '/api/grh-decision-brief': 'decision',
       '/api/grh-employment-review': 'employment',
       '/api/grh-administration-comparison': 'administration',
+      '/api/grh-absence-insights': 'absence',
     };
     const contract = governedContracts[url.pathname];
     if (contract) {
@@ -319,7 +333,9 @@ async function createServer(requestLog, options = {}) {
         payload = cloneProjection(payload);
         payload.audience = 'portable';
         payload.privacyStatus = 'partially_protected';
-        payload.categories.forEach(row => {
+        payload.endedWithPayroll = null;
+        payload.uncertainWithPayroll = null;
+        payload.categories.slice(1).forEach(row => {
           row.count = null;
           row.display = 'Detalle protegido';
           row.privacyStatus = 'protected';
@@ -346,8 +362,9 @@ async function createServer(requestLog, options = {}) {
         quality: 'grh-quality-v1',
         close: 'grh-close-v1',
         decision: options.decisionContractMismatch ? 'grh-decision-brief-v0' : 'grh-decision-brief-v1',
-        employment: options.employmentContractMismatch ? 'grh-employment-review-v0' : 'grh-employment-review-v1',
+        employment: options.employmentContractMismatch ? 'grh-employment-review-v0' : 'grh-employment-review-v2',
         administration: options.administrationContractMismatch ? 'grh-administration-comparison-v0' : 'grh-administration-comparison-v1',
+        absence: options.absenceContractMismatch ? 'grh-absence-insights-v0' : 'grh-absence-insights-v1',
       };
       response.writeHead(200, {
         'Content-Type': CONTENT_TYPES['.json'],
@@ -444,10 +461,17 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
         text: node.textContent.trim(),
       })),
       employmentTotal: document.querySelector('#employmentReviewTotal')?.textContent.trim(),
+      employmentTitle: document.querySelector('#employmentReviewTitle')?.textContent.trim(),
       employmentPeriod: document.querySelector('#employmentReviewPeriod')?.textContent.trim(),
       employmentHeadline: document.querySelector('#employmentReviewHeadline')?.textContent.replace(/\s+/g, ' ').trim(),
+      employmentCurrent: document.querySelector('#employmentReviewCurrent')?.textContent.trim(),
+      employmentMatched: document.querySelector('#employmentReviewMatched')?.textContent.trim(),
+      employmentPayroll: document.querySelector('#employmentReviewPayroll')?.textContent.trim(),
+      employmentPayrollNote: document.querySelector('#employmentReviewPayrollNote')?.textContent.replace(/\s+/g, ' ').trim(),
       employmentCategories: Array.from(document.querySelectorAll('#employmentReviewCategories strong')).map(node => node.textContent.trim()),
       employmentStatus: document.querySelector('#employmentReviewStatus')?.textContent.replace(/\s+/g, ' ').trim(),
+      employmentTechnicalOpen: document.querySelector('#employmentReviewTechnical')?.open,
+      employmentTechnicalVisible: document.querySelector('#employmentReviewTechnical > div')?.getClientRects().length > 0,
       employmentCta: document.querySelector('#employmentReviewCta:not([hidden])')?.getAttribute('href') || null,
       administrationContract: document.querySelector('#administrationComparison')?.dataset.contract,
       administrationThreshold: document.querySelector('#administrationComparison')?.dataset.privacyThreshold,
@@ -470,6 +494,22 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       administrationTechnicalOpen: document.querySelector('#administrationComparisonTechnical')?.open,
       administrationTechnicalVisible: document.querySelector('#administrationComparisonTechnical div')?.getClientRects().length > 0,
       administrationCta: document.querySelector('#administrationComparisonCta:not([hidden])')?.getAttribute('href') || null,
+      absenceContract: document.querySelector('#absenceInsights')?.dataset.contract,
+      absenceTitle: document.querySelector('#absenceInsightsTitle')?.textContent.trim(),
+      absenceTopRows: Array.from(document.querySelectorAll('#absenceInsightsCategories .exec-absence-reason')).map(row => ({
+        label: row.querySelector('.exec-absence-reason-title strong')?.textContent.trim(),
+        values: Array.from(row.querySelectorAll('.exec-absence-bar-line > strong')).map(node => node.textContent.trim()),
+      })),
+      absenceStatus: document.querySelector('#absenceInsightsStatus')?.textContent.replace(/\s+/g, ' ').trim(),
+      absenceAllOpen: document.querySelector('#absenceInsightsAll')?.open,
+      absenceAllVisible: document.querySelector('#absenceInsightsAll > div')?.getClientRects().length > 0,
+      absenceAllRows: Array.from(document.querySelectorAll('#absenceInsightsAllCategories .exec-administration-row')).map(row => ({
+        label: row.querySelector('dt strong')?.textContent.trim(),
+        values: Array.from(row.querySelectorAll('dd')).map(node => node.textContent.trim()),
+      })),
+      absenceTechnicalOpen: document.querySelector('#absenceInsightsTechnical')?.open,
+      absenceTechnicalVisible: document.querySelector('#absenceInsightsTechnical > div')?.getClientRects().length > 0,
+      absenceText: document.querySelector('#absenceInsights')?.textContent.replace(/\s+/g, ' ').trim(),
       sourceCount: document.querySelector('#sourceCountChip')?.textContent.trim(),
       decisionTitle: document.querySelector('#decisionBriefTitle')?.textContent.trim(),
       decisionStatus: document.querySelector('#decisionBriefStatus')?.textContent.trim(),
@@ -556,14 +596,21 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       { href: '/hacienda', text: 'Revisar en Hacienda' },
     ]);
     assert.equal(result.employmentTotal, '27');
+    assert.equal(result.employmentTitle, '27 situaciones para confirmar');
     assert.equal(result.employmentPeriod, 'jul 2026');
-    assert.match(result.employmentHeadline, /situación informada.+participación.+jul 2026/i);
+    assert.equal(result.employmentHeadline, 'De 867 legajos sin egreso informado, 848 también aparecen en el cálculo de jul 2026.');
+    assert.equal(result.employmentCurrent, '867');
+    assert.equal(result.employmentMatched, '848');
+    assert.equal(result.employmentPayroll, '856');
+    assert.match(result.employmentPayrollNote, /848 coincidencias anteriores.+conviene confirmar/i);
     assert.deepEqual(result.employmentCategories, [
       '19 · Sin participación en el cálculo del mes',
       '7 · Con egreso informado y participación en el cálculo',
       '1 · Con fechas a revisar y participación en el cálculo',
     ]);
-    assert.match(result.employmentStatus, /no son errores automáticos.+altas, bajas o pagos/i);
+    assert.match(result.employmentStatus, /27.+orienta la revisión.+no reemplaza el legajo/i);
+    assert.equal(result.employmentTechnicalOpen, false);
+    assert.equal(result.employmentTechnicalVisible, false);
     assert.equal(result.employmentCta, '/rrhh#peopleDirectory');
     assert.equal(result.administrationContract, 'grh-administration-comparison-v1');
     assert.equal(result.administrationThreshold, '10');
@@ -585,6 +632,28 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.equal(result.administrationTechnicalOpen, false);
     assert.equal(result.administrationTechnicalVisible, false);
     assert.equal(result.administrationCta, '/estructura#novedades-historicas');
+    assert.equal(result.absenceContract, 'grh-absence-insights-v1');
+    assert.equal(result.absenceTitle, 'Motivos informados en los registros');
+    assert.deepEqual(result.absenceTopRows, [
+      { label: 'Descanso anual con régimen de riesgo', values: ['1.871 registros', '1.093 registros'] },
+      { label: 'Descanso anual', values: ['1.478 registros', '1.252 registros'] },
+      { label: 'Salud con familiar a cargo · antigüedad mayor a 5 años', values: ['677 registros', '237 registros'] },
+      { label: 'Compensación de horas trabajadas', values: ['424 registros', '68 registros'] },
+      { label: 'Razones particulares', values: ['418 registros', '182 registros'] },
+      { label: 'Cuidado de familiar enfermo', values: ['231 registros', '102 registros'] },
+      { label: 'Otros motivos', values: ['51 registros', '27 registros'] },
+    ]);
+    assert.match(result.absenceStatus, /motivos con más registros.+5\.936.+3\.395.+grupos pequeños.+Otros motivos/i);
+    assert.equal(result.absenceAllOpen, false);
+    assert.equal(result.absenceAllVisible, false);
+    assert.equal(result.absenceAllRows.length, 11);
+    assert.deepEqual(result.absenceAllRows.find(row => row.label === 'Fallecimiento de familiar')?.values, ['23', 'Protegido', 'Protegido']);
+    assert.deepEqual(result.absenceAllRows.find(row => row.label === 'Períodos inactivos')?.values, ['Protegido', '11', 'Protegido']);
+    assert.equal(result.absenceAllRows.flatMap(row => row.values).includes('0'), false, 'protected motives must never become false zeroes');
+    assert.equal(result.absenceTechnicalOpen, false);
+    assert.equal(result.absenceTechnicalVisible, false);
+    assert.match(result.absenceText, /licencias.+otra fuente.+no reúne todas las ausencias/i);
+    assert.match(result.absenceText, /días informados.+no equivale automáticamente a jornadas/i);
     assert.equal(result.sourceCount, '4/4');
     assert.equal(result.decisionTitle, 'Revisiones recomendadas');
     assert.equal(result.decisionStatus, 'Revisión prioritaria');
@@ -850,9 +919,10 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     await context.close();
   }
 
-  assert.equal(requestLog.length, 12);
-  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['administration', 'administration', 'close', 'close', 'decision', 'decision', 'employment', 'employment', 'executive', 'executive', 'quality', 'quality']);
+  assert.equal(requestLog.length, 14);
+  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['absence', 'absence', 'administration', 'administration', 'close', 'close', 'decision', 'decision', 'employment', 'employment', 'executive', 'executive', 'quality', 'quality']);
   assert.deepEqual([...new Set(requestLog.map(item => item.pathname))].sort(), [
+    '/api/grh-absence-insights',
     '/api/grh-administration-comparison',
     '/api/grh-close',
     '/api/grh-decision-brief',
@@ -954,15 +1024,24 @@ test('employment review protects small groups and never blocks the municipal pan
     await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
     const result = await page.evaluate(() => ({
       total: document.querySelector('#employmentReviewTotal')?.textContent.trim(),
+      current: document.querySelector('#employmentReviewCurrent')?.textContent.trim(),
+      matched: document.querySelector('#employmentReviewMatched')?.textContent.trim(),
+      payroll: document.querySelector('#employmentReviewPayroll')?.textContent.trim(),
       rows: Array.from(document.querySelectorAll('#employmentReviewCategories strong')).map(node => node.textContent.trim()),
       text: document.querySelector('#employmentReview')?.textContent.replace(/\s+/g, ' ').trim(),
       coreVisible: !document.querySelector('#dataViews')?.hidden,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     }));
     assert.equal(result.total, '27');
-    assert.deepEqual(result.rows, ['Detalle protegido']);
-    assert.match(result.text, /grupos tienen menos de 10 personas.+evitar identificaciones/i);
-    assert.doesNotMatch(result.text, /19 ·|7 ·|1 ·/);
+    assert.equal(result.current, '867');
+    assert.equal(result.matched, '848');
+    assert.equal(result.payroll, '856');
+    assert.deepEqual(result.rows, [
+      '19 · Sin participación en el cálculo del mes',
+      'Otros casos · detalle protegido',
+    ]);
+    assert.match(result.text, /muy pocas personas.+permitir identificarlas/i);
+    assert.doesNotMatch(result.text, /7 ·|1 ·/);
     assert.equal(result.coreVisible, true);
     assert.equal(result.overflow, 0);
     await context.close();
@@ -991,7 +1070,7 @@ test('employment review protects small groups and never blocks the municipal pan
       page.locator('#employmentReviewRetry').click(),
     ]);
     assert.equal(requestLog.filter(item => item.contract === 'employment').length, 2);
-    assert.equal(requestLog.filter(item => item.contract !== 'employment').length, 5);
+    assert.equal(requestLog.filter(item => item.contract !== 'employment').length, 6);
     await context.close();
   });
 
@@ -1082,6 +1161,88 @@ test('administration comparison protects small differences and fails independent
     ]);
     assert.equal(requestLog.filter(item => item.contract === 'administration').length, 2);
     assert.equal(requestLog.filter(item => item.contract !== 'administration').length, 5);
+    await context.close();
+  });
+});
+
+test('absence motive detail fails independently and keeps verified totals visible', { skip: !HAS_PRIVATE_GRH }, async t => {
+  await t.test('scoped failure and retry', async t => {
+    const requestLog = [];
+    const server = await createServer(requestLog, { absenceUnavailable: true });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await new Promise(resolve => server.close(resolve));
+    });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#absenceInsightsRetry:not([hidden])');
+    assert.equal(await page.locator('#dataViews').getAttribute('hidden'), null);
+    assert.equal(await page.locator('#administrationComparisonMetrics .exec-administration-row').count(), 3);
+    assert.equal(await page.locator('#absenceInsightsCategories').locator('li').count(), 0);
+    assert.match(await page.locator('#absenceInsightsStatus').textContent(), /comparación general sigue disponible/i);
+    await Promise.all([
+      page.waitForResponse(response => new URL(response.url()).pathname === '/api/grh-absence-insights' && response.status() === 503),
+      page.locator('#absenceInsightsRetry').click(),
+    ]);
+    assert.equal(requestLog.filter(item => item.contract === 'absence').length, 2);
+    assert.equal(requestLog.filter(item => item.contract !== 'absence').length, 6);
+    await context.close();
+  });
+
+  await t.test('contract drift never clears the comparison', async t => {
+    const requestLog = [];
+    const server = await createServer(requestLog, { absenceContractMismatch: true });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await new Promise(resolve => server.close(resolve));
+    });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#absenceInsightsRetry:not([hidden])');
+    assert.equal(await page.locator('#administrationComparisonMetrics .exec-administration-row').count(), 3);
+    assert.equal(await page.locator('#absenceInsightsCategories').locator('li').count(), 0);
+    assert.equal(await page.locator('#absenceInsightsRetry').isVisible(), true);
+    assert.equal(requestLog.filter(item => item.contract === 'absence').length, 1);
+    await context.close();
+  });
+
+  await t.test('protected motive cells never render as zero', async t => {
+    const requestLog = [];
+    const server = await createServer(requestLog);
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await new Promise(resolve => server.close(resolve));
+    });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => document.querySelectorAll('#absenceInsightsAllCategories .exec-administration-row').length === 11);
+    await page.locator('#absenceInsightsAll > summary').click();
+    const protectedRows = await page.evaluate(() => ['Fallecimiento de familiar', 'Períodos inactivos'].map(label => {
+      const row = Array.from(document.querySelectorAll('#absenceInsightsAllCategories .exec-administration-row'))
+        .find(candidate => candidate.querySelector('dt strong')?.textContent.trim() === label);
+      return {
+        label,
+        values: Array.from(row?.querySelectorAll('dd') || [], node => node.textContent.trim()),
+      };
+    }));
+    assert.deepEqual(protectedRows, [
+      { label: 'Fallecimiento de familiar', values: ['23', 'Protegido', 'Protegido'] },
+      { label: 'Períodos inactivos', values: ['Protegido', '11', 'Protegido'] },
+    ]);
+    assert.equal(protectedRows.flatMap(row => row.values).includes('0'), false);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 0);
     await context.close();
   });
 });

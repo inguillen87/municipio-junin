@@ -31,9 +31,10 @@ __pycache__/
 .vercel
 .env*
 
-# Salidas analíticas reales GRH: contienen agregados institucionales y nunca
-# deben publicarse en el repositorio. Se materializan en storage/DB privado.
+# Las salidas GRH quedan privadas por defecto. Sólo se versionan excepciones
+# agregadas, minimizadas y validadas explícitamente para el runtime municipal.
 api/_data/*.json
+!api/_data/grh-absence-insights.json
 docs/data/*.json
 
 # Cliente Prisma reproducible del backend Express (generado en postinstall).

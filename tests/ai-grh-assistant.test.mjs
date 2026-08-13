@@ -30,7 +30,9 @@ const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ 
 const PROFILE_URL = new URL('../api/_data/grh-profile.json', import.meta.url);
 const SEMANTIC_URL = new URL('../api/_data/grh-semantic.json', import.meta.url);
 const WORKFORCE_FINANCE_URL = new URL('../api/_data/grh-workforce-finance.json', import.meta.url);
-const HAS_PRIVATE_GRH = existsSync(PROFILE_URL) && existsSync(SEMANTIC_URL);
+const ABSENCE_INSIGHTS_URL = new URL('../api/_data/grh-absence-insights.json', import.meta.url);
+const HAS_PRIVATE_GRH = existsSync(PROFILE_URL) && existsSync(SEMANTIC_URL) &&
+  existsSync(ABSENCE_INSIGHTS_URL);
 
 function realBundle() {
   const profile = JSON.parse(readFileSync(PROFILE_URL, 'utf8'));
@@ -72,11 +74,19 @@ function realAssistantData(views = realViews(), bundle = realBundle()) {
     domainCatalog: buildGrhDomainCatalogProjection(bundle),
     workforceFinance: buildGrhWorkforceFinanceProjection(source, { presentation }),
     workforceFinanceSource: source,
+    absenceInsights: JSON.parse(readFileSync(ABSENCE_INSIGHTS_URL, 'utf8')),
   };
 }
 
 function answer(question, views = realViews(), presentation = JUNIN_PRESENTATION) {
-  return buildDeterministicAnswer(question, views.executive, views.quality, views.close, presentation);
+  return buildDeterministicAnswer(
+    question,
+    views.executive,
+    views.quality,
+    views.close,
+    presentation,
+    { absenceInsights: JSON.parse(readFileSync(ABSENCE_INSIGHTS_URL, 'utf8')) },
+  );
 }
 
 function assertBarVisual(visual, { unit, order }) {
@@ -635,25 +645,40 @@ test('absence comparisons keep complete-year events, participants and intensity 
   assert.equal(unavailable.answer.code, 'PRIVACY_PROTECTED_OR_UNAVAILABLE');
 });
 
-test('absence answers label the snapshot year as partial and route to its comparator', { skip: !HAS_PRIVATE_GRH }, () => {
+test('general absence questions use the explained equal-period contract and bounded reasons', { skip: !HAS_PRIVATE_GRH }, () => {
   const views = realViews();
-  const snapshotYear = views.executive.source.snapshotAsOf.slice(0, 4);
-  const result = answer('Evolución ausencias', views);
+  for (const question of [
+    'Evolución ausencias',
+    '¿Qué datos de ausencias están disponibles?',
+    '¿Cuáles son los principales motivos de ausencia?',
+  ]) {
+    const result = answer(question, views);
 
-  assert.equal(result.intent, 'absence');
-  assert.equal(result.httpStatus, 200);
-  assert.equal(result.resolvedPeriod, snapshotYear);
-  assert.match(result.answer.title, /parcial/i);
-  assert.match(result.answer.summary, new RegExp(`hasta el corte ${views.executive.source.snapshotAsOf}`));
-  assert.match(result.answer.findings.join(' '), /incompleto/i);
-  assert.match(result.answer.caveats.join(' '), /no se anualiza/i);
-  assert.match(result.answer.visual.subtitle, new RegExp(`${snapshotYear} es parcial al corte ${views.executive.source.snapshotAsOf}`));
-  assert.deepEqual(result.answer.actions, [{
-    id: 'open_absence_dashboard',
-    label: 'Abrir ausencias en Estructura',
-    href: '/estructura#ausencias',
-    requiredCapability: 'navigation.organization-analytics',
-  }]);
+    assert.equal(result.intent, 'absence', question);
+    assert.equal(result.httpStatus, 200, question);
+    assert.equal(result.resolvedPeriod, null, question);
+    assert.equal(result.answer.title, 'Ausencias explicadas · mismo tiempo de cada gestión', question);
+    assert.match(result.answer.summary, /5\.936 eventos.+752 personas.+65\.847 días informados/i, question);
+    assert.match(result.answer.summary, /3\.395 eventos.+662 personas.+52\.190 días informados/i, question);
+    assert.match(result.answer.findings.join(' '), /\+2\.541 eventos.+\+90 personas.+\+13\.657 días/i, question);
+    assert.match(result.answer.findings.join(' '), /Descanso anual con régimen de riesgo \(1\.871\)/i, question);
+    assert.match(result.answer.caveats.join(' '), /No todos representan una licencia/i, question);
+    assert.match(result.answer.caveats.join(' '), /tabla histórica de licencias se mantiene separada/i, question);
+    assert.deepEqual(result.answer.actions, [{
+      id: 'open_absence_insights',
+      label: 'Ver ausencias explicadas',
+      href: '/dashboard#absenceInsights',
+      requiredCapability: 'navigation.dashboard',
+    }], question);
+    assertBarVisual(result.answer.visual, { unit: 'records', order: 'ranked' });
+    assert.equal(result.answer.visual.items.length, 5, question);
+    assert.deepEqual(result.answer.visual.items.map(item => item.value), [1871, 1478, 677, 424, 418], question);
+    assert.doesNotMatch(JSON.stringify(result), /DNI|CUIL|legajo|sourceCauseLabels/i, question);
+  }
+
+  const explicitYear = answer('Ausencias 2026', views);
+  assert.match(explicitYear.answer.title, /2026 \(parcial\)/i);
+  assert.equal(explicitYear.resolvedPeriod, '2026');
 });
 
 test('movement comparisons keep events, participants and intensity separate', { skip: !HAS_PRIVATE_GRH }, () => {
@@ -933,6 +958,85 @@ test('assistant endpoint authorizes tenant then reads exactly one bundle', { ski
     if (originalTenant === undefined) delete process.env.GRH_TENANT_ID;
     else process.env.GRH_TENANT_ID = originalTenant;
   }
+});
+
+test('assistant loads absence insights only for general absence questions and fails closed', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const artifact = JSON.parse(readFileSync(ABSENCE_INSIGHTS_URL, 'utf8'));
+  const calls = [];
+  const dependencies = {
+    requireRoleImpl: async () => ({
+      id: 'official',
+      role: 'INTENDENTE',
+      tenantId: 'tenant-grh-test',
+      tenant: { slug: 'junin' },
+    }),
+    requireDatasetTenantImpl: () => true,
+    readArtifactBundleImpl: async () => realBundle(),
+    readAbsenceInsightsArtifactImpl: async options => {
+      calls.push(options);
+      return artifact;
+    },
+    environment: {
+      GRH_TENANT_ID: 'tenant-grh-test',
+      GRH_SOURCE_SHA256: artifact.source.sourceSha256,
+    },
+  };
+  const handler = createAiAnalyzeHandler(dependencies);
+
+  const general = responseRecorder();
+  await handler({
+    method: 'POST',
+    headers: {},
+    body: { message: '¿Cuáles son los principales motivos de ausencia?', mode: 'deterministic' },
+  }, general);
+  assert.equal(general.statusCode, 200);
+  assert.equal(general.payload.intent, 'absence');
+  assert.equal(general.payload.dataStatus.source, 'grh_absence_insights_governed_contract');
+  assert.equal(general.payload.provenance.absenceInsightsSchemaVersion, 'grh-absence-insights-v1');
+  assert.deepEqual(general.payload.engine, {
+    id: 'grh-deterministic-v1',
+    externalProvider: false,
+    generated: false,
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].expectedSourceSha256, artifact.source.sourceSha256);
+
+  const annualComparison = responseRecorder();
+  await handler({
+    method: 'POST',
+    headers: {},
+    body: { message: 'Compará ausencias 2024 y 2025', mode: 'deterministic' },
+  }, annualComparison);
+  assert.equal(annualComparison.statusCode, 200);
+  assert.equal(annualComparison.payload.dataStatus.source, 'grh_executive_portable_contract');
+  assert.equal(calls.length, 1, 'the equal-year legacy comparison must not read absence insights');
+
+  const unavailableHandler = createAiAnalyzeHandler({
+    ...dependencies,
+    readAbsenceInsightsArtifactImpl: async () => {
+      throw new Error('artifact unavailable');
+    },
+  });
+  const unavailable = responseRecorder();
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    await unavailableHandler({
+      method: 'POST',
+      headers: {},
+      body: { message: '¿Qué datos de ausencias están disponibles?', mode: 'deterministic' },
+    }, unavailable);
+  } finally {
+    console.error = originalConsoleError;
+  }
+  assert.equal(unavailable.statusCode, 503);
+  assert.equal(unavailable.payload.code, 'GRH_ABSENCE_INSIGHTS_UNAVAILABLE');
+  assert.deepEqual(unavailable.payload.engine, {
+    id: 'grh-deterministic-v1',
+    externalProvider: false,
+    generated: false,
+  });
+  assert.doesNotMatch(JSON.stringify(unavailable.payload), /5\.936|3\.395|2024|2025|stack|sha256/i);
 });
 
 test('assistant endpoint rejects provider mode before reading and fails closed on provenance drift', { skip: !HAS_PRIVATE_GRH }, async () => {
@@ -1922,6 +2026,7 @@ test('intent classifier keeps deterministic allowlist boundaries', () => {
   assert.deepEqual(classifyIntent('¿Qué áreas y datos GRH hay disponibles?'), { intent: 'domain_catalog', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Buen día'), { intent: 'help', policy: 'allowed' });
   assert.deepEqual(classifyIntent('¿Qué datos de ausencias hay?'), { intent: 'absence', policy: 'allowed' });
+  assert.deepEqual(classifyIntent('¿Cuáles son los principales motivos de ausencia?'), { intent: 'absence', policy: 'allowed' });
   assert.deepEqual(classifyIntent('¿Cuánto se pagó por transferencia?'), { intent: 'bank_payment_limit', policy: 'limited' });
 });
 

@@ -17,7 +17,7 @@
   var PERSON_RETURN_KEY = 'muni_grh_person_return_v1';
   var PERSON_RETURN_VERSION = 'grh-person-return-v1';
   var PRIMARY_QUERY_ORDER = {
-    INTENDENTE: ['priority', 'summary', 'absence-compare', 'cost-overview'],
+    INTENDENTE: ['priority', 'summary', 'absence-reasons', 'cost-overview'],
     CONTADOR: ['cost-overview', 'cost-components', 'calculation-control', 'reconciliation'],
     TENANT_ADMIN: ['priority', 'catalog', 'quality', 'summary'],
     SUPER_ADMIN: ['quality', 'catalog', 'summary', 'cost-overview'],

@@ -76,9 +76,9 @@ Las ausencias son eventos, no una tasa. Las licencias llegan sólo hasta 2009 y
 no deben presentarse como una tendencia vigente. Una variación mensual puede ser
 una señal para revisar, nunca una explicación causal.
 
-La comparación de gestiones está en desarrollo local y permanece `Unreleased`.
-No incluirla en una demostración remota hasta que el candidato exacto supere sus
-pruebas autenticadas de contrato, privacidad y navegador. Presupuesto contra
+La comparación de gestiones fue verificada en Production el 13 de agosto de
+2026 y puede incluirse en el recorrido remoto, conservando sus límites visibles.
+Presupuesto contra
 ejecución continúa cerrado mientras no exista una fuente real autorizada.
 Para responder una consulta de auditoría, las ventanas exactas son
 `2023-12-09..2026-08-06` y `2019-12-09..2022-08-06`.

@@ -35,7 +35,7 @@ function recordsForCanonicalCounts() {
 
 function contractProjection(summary) {
   return {
-    schemaVersion: 'grh-employment-review-v1',
+    schemaVersion: 'grh-employment-review-v2',
     source: {
       canonicalSystem: 'GRH Junín',
       sourceSha256: 'a'.repeat(64),
@@ -49,6 +49,14 @@ test('canonical employment review separates 27 review situations without calling
   const summary = summarizeGrhEmploymentReviewRecords(recordsForCanonicalCounts(), { audience: 'private' });
   assert.equal(summary.referencePeriod, '2026-07');
   assert.equal(summary.totalDirectoryPeople, 29);
+  assert.equal(summary.reportedCurrentPeople, 20);
+  assert.equal(summary.reportedEndedPeople, 8);
+  assert.equal(summary.uncertainPeople, 1);
+  assert.equal(summary.referencePayrollParticipants, 9);
+  assert.equal(summary.reportedCurrentWithReferencePayroll, 1);
+  assert.equal(summary.currentWithoutPayroll, 19);
+  assert.equal(summary.endedWithPayroll, 7);
+  assert.equal(summary.uncertainWithPayroll, 1);
   assert.equal(summary.totalToReview, 27);
   assert.deepEqual(summary.categories.map(row => row.count), [19, 7, 1]);
   assert.equal(summary.privacyStatus, 'released');
@@ -57,12 +65,16 @@ test('canonical employment review separates 27 review situations without calling
   assert.equal(inspectGrhEmploymentReviewContract(contractProjection(summary)).ok, true);
 });
 
-test('portable presentation protects the complete breakdown against difference attacks', () => {
+test('portable presentation publishes safe headlines and protects only the 7 and 1 cells', () => {
   const summary = summarizeGrhEmploymentReviewRecords(recordsForCanonicalCounts(), { audience: 'portable' });
   assert.equal(summary.totalToReview, 27);
   assert.equal(summary.privacyStatus, 'partially_protected');
+  assert.equal(summary.reportedCurrentWithReferencePayroll, null);
+  assert.equal(summary.currentWithoutPayroll, 19);
+  assert.equal(summary.endedWithPayroll, null);
+  assert.equal(summary.uncertainWithPayroll, null);
   assert.deepEqual(summary.categories.map(row => [row.count, row.display, row.privacyStatus]), [
-    [null, 'Detalle protegido', 'protected'],
+    [19, '19', 'released'],
     [null, 'Detalle protegido', 'protected'],
     [null, 'Detalle protegido', 'protected'],
   ]);
@@ -83,13 +95,28 @@ test('materialized aggregate produces the same protected 27 without reading nomi
     materializedPeople: 2449,
     employmentPeople: 2449,
     counts: {
+      reported_current_people: 867,
+      reported_ended_people: 1560,
+      uncertain_people: 22,
+      reference_payroll_participants: 856,
+      reported_current_with_reference_payroll: 848,
       reported_current_without_reference_payroll: 19,
       reported_ended_with_reference_payroll: 7,
       uncertain_status_with_reference_payroll: 1,
     },
   }, { audience: 'portable' });
+  assert.equal(projection.schemaVersion, 'grh-employment-review-v2');
+  assert.equal(projection.totalDirectoryPeople, 2449);
+  assert.equal(projection.reportedCurrentPeople, 867);
+  assert.equal(projection.reportedEndedPeople, 1560);
+  assert.equal(projection.uncertainPeople, 22);
+  assert.equal(projection.referencePayrollParticipants, 856);
+  assert.equal(projection.reportedCurrentWithReferencePayroll, 848);
+  assert.equal(projection.currentWithoutPayroll, 19);
+  assert.equal(projection.endedWithPayroll, null);
+  assert.equal(projection.uncertainWithPayroll, null);
   assert.equal(projection.totalToReview, 27);
-  assert.deepEqual(projection.categories.map(row => row.count), [null, null, null]);
+  assert.deepEqual(projection.categories.map(row => row.count), [19, null, null]);
   assert.equal(inspectGrhEmploymentReviewContract(projection).ok, true);
 
   const drifted = structuredClone(projection);
@@ -102,6 +129,11 @@ test('materialized aggregate produces the same protected 27 without reading nomi
       materializedPeople: 2448,
       employmentPeople: 2449,
       counts: {
+        reported_current_people: 867,
+        reported_ended_people: 1560,
+        uncertain_people: 22,
+        reference_payroll_participants: 856,
+        reported_current_with_reference_payroll: 848,
         reported_current_without_reference_payroll: 19,
         reported_ended_with_reference_payroll: 7,
         uncertain_status_with_reference_payroll: 1,
@@ -147,6 +179,16 @@ test('contract rejects reordered definitions, leaked protected counts and invent
   const leaked = structuredClone(base);
   leaked.categories[1].count = 7;
   assert.equal(inspectGrhEmploymentReviewContract(leaked).ok, false);
+
+  const hiddenHeadline = structuredClone(base);
+  hiddenHeadline.currentWithoutPayroll = null;
+  hiddenHeadline.categories[0] = {
+    ...hiddenHeadline.categories[0],
+    count: null,
+    display: 'Detalle protegido',
+    privacyStatus: 'protected',
+  };
+  assert.equal(inspectGrhEmploymentReviewContract(hiddenHeadline).ok, false);
 
   const invented = structuredClone(base);
   invented.totalToReview = 50;

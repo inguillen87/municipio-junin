@@ -1,6 +1,6 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.10.0 + S15 `Unreleased`.
+Versión documental: 1.10.0 + S15 verificado en Production.
 Fecha de corte: 13 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
@@ -27,14 +27,13 @@ etiquetas/labels. Las CTA requieren capability; un 503 admite sólo reintento
 manual y una celda actual `<10` hace fallar cerrado el Panel. MuniGuía apunta a
 `#decisionBrief`.
 
-El sprint S15, **comparación histórica de gestiones**, está en desarrollo local
-y permanece `Unreleased`. Compara dos ventanas equivalentes de 972 días:
+El sprint S15, **comparación histórica de gestiones**, fue verificado en
+Production el 13 de agosto de 2026 sobre el alias estable. Compara dos ventanas equivalentes de 972 días:
 2023-12-09..2026-08-06 frente a 2019-12-09..2022-08-06. La lectura validada del
 backup contiene, respectivamente, 5.936/3.395 registros de ausencia, 752/662
 personas presentes en esos registros, 65.847/52.190 días informados, 281/216
 fechas de ingreso informadas y 232/173 fechas de egreso informadas. Este
-incremento no está certificado en Preview ni Production y no mueve ningún
-release. Son datos históricos, no tiempo real; no son una tasa ni una medición
+incremento no mueve el tag histórico `v1.10.0`. Son datos históricos, no tiempo real; no son una tasa ni una medición
 de desempeño; las fechas informadas no equivalen a altas o bajas; y las
 diferencias no prueban causa ni evaluación de gestión. Presupuesto contra
 ejecución sigue cerrado por falta de una fuente real autorizada.
@@ -125,8 +124,13 @@ se convierte en fuente por tener columnas plausibles o un nombre municipal.
 - Fuente canónica: backup GRH Junín con corte 6 de agosto de 2026, tamaño
   44.537.741 bytes y SHA-256
   `e7403da1d036c8d60eab26bcb3f97e6e7c3a70629090deac8cc4e5438250b3d9`.
-- Fuente excluida absoluta: `personas_junin`, recibida sólo como ejemplo; no se
-  analiza, perfila, cruza, migra, publica ni usa como fallback.
+- Fuente laboral central: GRH. `personas_junin` es una fuente auxiliar de
+  identidad, domicilios y territorio, todavía excluida de los contratos y
+  publicaciones GRH actuales.
+- Integración PERSONAS: diagnóstico local reproducible con 1.432 candidatos
+  automáticos, 267 asistidos, 157 ambiguos y 493 sin coincidencia. Los 1.699
+  candidatos totales no son un crosswalk productivo; la futura tabla puente será
+  versionada y nunca unirá sistemas por igualdad de `IDPERSONA`.
 - Alcance prioritario: evidencia agregada para Intendencia, Hacienda y RRHH.
 - PII y fichas individuales: diferidas hasta diseñar la frontera de acceso y
   auditoría correspondiente. El techo exacto `recurso:acción` ya existe en local;
@@ -156,6 +160,11 @@ Estado: **completo localmente**.
 - hallazgo crítico de diferencias `calculo`/`totpago`;
 - exclusión explícita de `personas_junin`.
 
+Esa exclusión describe el bundle GRH de S0 y permanece vigente para sus
+artefactos. La fuente PERSONAS sólo podrá incorporarse mediante la fase separada
+definida en
+[`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
+
 ### S1 — Seguridad y aislamiento
 
 Estado: **completo en código local; falta despliegue**.
@@ -164,7 +173,7 @@ Estado: **completo en código local; falta despliegue**.
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
 - techo compartido y fail-closed vigente de 31 recursos, 12 acciones, 53
-  permisos y 91 firmas de ruta exactas (49 Serverless y 42 Express), sin
+  permisos y 92 firmas de ruta exactas (50 Serverless y 42 Express), sin
   wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
@@ -361,9 +370,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.9`
-contiene 31 recursos, 12 acciones, 53 permisos y 91 firmas protegidas exactas:
-49 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.10`
+contiene 31 recursos, 12 acciones, 53 permisos y 92 firmas protegidas exactas:
+50 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -637,8 +646,8 @@ bloqueados por gobierno del target**.
 
 ### S15 — comparación histórica de gestiones
 
-Estado: **en desarrollo local; `Unreleased`; sin evidencia Preview o
-Production**.
+Estado: **verificado en Production el 13 de agosto de 2026 sobre el alias
+estable**.
 
 - La comparación usa el corte canónico del 6 de agosto de 2026 y enfrenta la
   ventana actual 9 de diciembre de 2023–6 de agosto de 2026 con el mismo tramo
@@ -654,10 +663,9 @@ Production**.
   causalidad, mérito, responsabilidad ni evaluación política de una gestión.
 - Presupuesto contra ejecución queda fuera de S15 y bloqueado hasta incorporar
   una fuente presupuestaria real, autorizada, conciliada y con período comparable.
-- Antes de presentar S15 como disponible se requieren integración completa,
-  focales de contrato/privacidad/UI, prueba responsive autenticada en Preview y
-  gate del candidato exacto. Ninguna de esas condiciones se sustituye con esta
-  actualización documental.
+- La salida quedó integrada, probada en escritorio y móvil y verificada de forma
+  autenticada sobre el alias estable; esto no convierte el respaldo en una
+  fuente en tiempo real ni habilita presupuesto.
 
 ## Funciones que no deben “completarse” todavía
 

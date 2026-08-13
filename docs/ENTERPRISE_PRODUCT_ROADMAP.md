@@ -1,6 +1,6 @@
 # Roadmap de producto enterprise — MuniControl
 
-Versión: 1.10.0 + S15 `Unreleased`
+Versión: 1.10.0 + S15 verificado en Production
 Fecha de corte: 13 de agosto de 2026
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 
@@ -12,10 +12,9 @@ en Preview —5 sensibles y 8 de referencia— sin exponerlas en Prisma Client,
 incorpora un baseline v2 reproducible y lo prueba en dos branches hijos efímeros
 de Preview. No escribe Preview o Production, no habilita DDL estable, cuentas,
 lifecycle, tag ni `v1.11.0`.
-S15 es un incremento funcional **en desarrollo local** para comparar la gestión
+S15 es un incremento funcional **verificado en Production el 13 de agosto de 2026** para comparar la gestión
 actual con el mismo tramo de la gestión anterior. Usa dos ventanas de 972 días
-(2023-12-09..2026-08-06 y 2019-12-09..2022-08-06), permanece `Unreleased` y no
-tiene evidencia Preview o Production. Su salida es descriptiva: registros de
+(2023-12-09..2026-08-06 y 2019-12-09..2022-08-06). Su salida es descriptiva: registros de
 ausencia, personas presentes en esos registros, días y fechas informadas. No
 publica una tasa, desempeño, altas, bajas, causalidad ni evaluación de gestión.
 Presupuesto contra ejecución sigue bloqueado hasta contar con una fuente real y
@@ -28,8 +27,8 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-El estado local vigente usa route policy `2026-08-13.9` y access policy
-`2026-08-11.3`: 31 recursos, 12 acciones, 53 permisos y 91 rutas exactas, 49
+El estado local vigente usa route policy `2026-08-13.10` y access policy
+`2026-08-11.3`: 31 recursos, 12 acciones, 53 permisos y 92 rutas exactas, 50
 Serverless + 42 Express. Para el release histórico `v1.10.0`, route policy
 `2026-08-09.2` y access policy `2026-08-09.1` cubrían 26 recursos, 12 acciones,
 46 permisos y 79 firmas de ruta: 37 Serverless + 42 Express. El commit/tag de ese release apunta a
@@ -86,10 +85,16 @@ operativos.
 La fuente real disponible hoy es el backup histórico **GRH Junín** con corte 6
 de agosto de 2026, 44.537.741 bytes y SHA-256
 `e7403da1d036c8d60eab26bcb3f97e6e7c3a70629090deac8cc4e5438250b3d9`.
-`personas_junin` queda excluida de forma absoluta: no se analiza, perfila,
-cruza, migra, publica ni usa como fallback. O2A ya probó su replay idempotente local; la
-conexión continua, los otros dominios y los mapas operativos son evolución
-planificada y no deben presentarse como activos hasta superar sus gates.
+GRH conserva la autoridad laboral. `personas_junin` es una fuente auxiliar de
+identidad, domicilios y territorio y permanece fuera de los contratos GRH
+actuales. Su diagnóstico local produjo 1.699 candidatos de vinculación, 157
+ambiguos y 493 sin coincidencia, pero no existe todavía un crosswalk productivo.
+La incorporación futura usará una tabla puente versionada y nunca igualdad de
+`IDPERSONA`; su contrato está en
+[`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
+O2A ya probó el replay idempotente local de GRH; la conexión continua, el
+crosswalk, los otros dominios y los mapas operativos son evolución planificada y
+no deben presentarse como activos hasta superar sus gates.
 
 ## Principios de producto
 
@@ -158,7 +163,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | `grh-workforce-finance-v1` | Artefacto reproducible de 24 meses con 639 celdas financieras liberadas en tres vistas de una dimensión, ocho componentes, k=10, protección cross-view y release content-addressed; sin PII ni afirmación de pago | Publicar el snapshot cifrado, probar el deployment candidato exacto y documentar retención/restore antes de llamarlo almacenamiento enterprise definitivo |
 | Centro de Calidad y Linaje GRH | Consumidor migrado localmente a `grh-quality-v1`; frontera remota observada en 401 sin sesión | Captura de red autenticada y smoke por tenant/rol con artefactos privados |
 | Panel y Centro Ejecutivo GRH | Consumidores locales de `grh-executive-v2` + `grh-quality-v1`; el Panel suma el brief único `grh-decision-brief-v1` y reemplaza alertas sueltas por prioridades gobernadas | Prueba por tenant/rol, datos materializados y certificación remota |
-| Comparación histórica de gestiones S15 | En desarrollo local: dos períodos equivalentes de 972 días y cinco lecturas agregadas del snapshot; sin tasa, desempeño, altas/bajas o causalidad | Completar integración y focales, luego verificar contrato, privacidad y UI autenticada en un Preview aislado antes de cualquier presentación remota |
+| Comparación histórica de gestiones S15 | Verificada en Production: dos períodos equivalentes de 972 días y cinco lecturas agregadas del respaldo; sin tasa, desempeño, altas/bajas o causalidad | Mantener la reconciliación y la prueba autenticada en cada cambio de fuente o contrato |
 | Brief ejecutivo S13 | `GET /api/grh-decision-brief`, agregado del snapshot aprobado, separación global/mensual, `temporalQuarantineRows`, k=10, CTA por capability, 503/retry manual y small-cell actual fail-closed; focal 135/135, QA 104/104 con 0 P1/P2 y raíz 591 totales —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20 | Completar sesión privada positiva y certificación sobre datos GRH remotos; el gate público 11/11 ya cerró |
 | RRHH y Hacienda | RRHH incorpora estado de acceso nominal gobernado y Hacienda agrega análisis financiero por sector, centro de costo y convenio sobre proyecciones seguras; el cruce ya no atribuye importes globales a una cohorte | Completar smokes autenticados por rol/tenant y certificar el snapshot cifrado en el deployment objetivo |
 | Bot, Reportes y PDF | Consumidores server-side; Bot suma “Cierre explicado” sobre `grh-close-v1` y Reportes mantiene proyección portable k=10 | Materializar el par y hacer smokes por tenant/rol |
@@ -180,7 +185,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
-| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-13.9`: 31 recursos, 12 acciones, 53 permisos y 91 firmas de ruta (49 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
+| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-13.10`: 31 recursos, 12 acciones, 53 permisos y 92 firmas de ruta (50 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | Release histórico `v1.10.0`: tag `4108ca0`, product commit `d11fd39`, deployment `READY`, gate 11/11 y GitHub Release live. Hotfix post-release `e74339c`: `/prisma/schema.prisma` 404 seguro y gate 12/12 | No mover el tag ni inferir DB, cuentas, autorización positiva o datos GRH remotos; cada deployment posterior requiere repetir el gate actual de 12 probes |
@@ -317,7 +322,7 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
 exacto por `runtime + método + ruta + recurso:acción` (31 recursos, 12 acciones,
-53 permisos y 91 firmas: 49 Serverless y 42 Express). No hay wildcard, jerarquía
+53 permisos y 92 firmas: 50 Serverless y 42 Express). No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
@@ -398,7 +403,7 @@ existe certificación remota.
 El focal Bot + E2E cerró 13/13 localmente. Sus respuestas de cierre no afirman
 causalidad, moneda, pago o PII y todavía no están certificadas en un deployment.
 
-Incremento S15 en desarrollo local:
+Incremento S15 verificado en Production:
 
 - compara 9 de diciembre de 2023–6 de agosto de 2026 con 9 de diciembre de
   2019–6 de agosto de 2022; ambos períodos tienen 972 días;
@@ -411,9 +416,8 @@ Incremento S15 en desarrollo local:
 - deja presupuesto contra ejecución fuera de alcance hasta recibir una fuente
   presupuestaria real, autorizada y reconciliada.
 
-S15 no tiene todavía evidencia Preview o Production. Su gate de salida exige
-integración local completa, contrato exacto, privacidad adversarial, prueba
-responsive autenticada y verificación del candidato remoto exacto.
+S15 superó contrato exacto, privacidad, prueba responsive autenticada y
+verificación remota sobre el alias estable el 13 de agosto de 2026.
 
 - diccionario completo de tablas/columnas/conceptos y linaje;
 - dotación, altas/bajas/movimientos, ausencias, licencias y antigüedad por

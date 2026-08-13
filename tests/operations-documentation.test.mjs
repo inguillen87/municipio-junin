@@ -26,6 +26,7 @@ const livingManuals = [
   'docs/PRISMA_BASELINE_Y_DRIFT.md',
   'docs/GRH_PRIVACY_AGGREGATION_POLICY.md',
   'docs/GRH_GEOSPATIAL_READINESS.md',
+  'docs/GRH_PERSONAS_INTEGRATION_BLUEPRINT.md',
   'docs/DATA_SOURCE_REGISTER.md',
   'docs/data/grh-semantic.md',
 ];
@@ -35,7 +36,8 @@ test('the living documentation package exists and distinguishes local, condition
     assert.equal(existsSync(path.join(root, relativePath)), true, `${relativePath} must exist`);
     const source = read(relativePath);
     assert.match(source, /^#\s+/m, `${relativePath} needs a title`);
-    assert.doesNotMatch(source, /personas_junin.*(?:cruzad[ao]|integrada|migrada)/i, `${relativePath} must not authorize Personas merging`);
+    assert.doesNotMatch(source, /personas_junin[\s\S]{0,180}(?:excluida de forma absoluta|no se analiza[\s\S]{0,120}fallback)/i,
+      `${relativePath} must not preserve the obsolete absolute exclusion`);
   }
 
   const integral = read('docs/MANUAL_INTEGRAL.md');
@@ -127,10 +129,12 @@ test('the living documentation package exists and distinguishes local, condition
   assert.doesNotMatch(geoReadiness, /ready_for_aggregate_layer[\s\S]{0,120}(?:actual|operativ[oa]|disponible)/i);
 
   const sourceRegister = read('docs/DATA_SOURCE_REGISTER.md');
-  assert.match(sourceRegister, /data-source-register-v1/);
+  assert.match(sourceRegister, /data-source-register-v2/);
   assert.match(sourceRegister, /grh-junin[\s\S]{0,260}Aprobada para ingeniería local/i);
-  assert.match(sourceRegister, /personas-junin[\s\S]{0,160}Excluida/i);
-  assert.match(sourceRegister, /personas-junin[\s\S]{0,520}Ninguno:[\s\S]{0,120}no analizar[\s\S]{0,120}perfilar[\s\S]{0,120}cruzar[\s\S]{0,120}migrar[\s\S]{0,120}publicar[\s\S]{0,120}fallback/i);
+  assert.match(sourceRegister, /personas-junin[\s\S]{0,180}Auxiliar aislada para ingenier[ií]a local/i);
+  assert.match(sourceRegister, /7\.550\.947[\s\S]{0,120}11bf15764488e4fe8a053255f503404f6bca24a1ac47c90647649e2c41d8e39c[\s\S]{0,80}2026-08-06/i);
+  assert.match(sourceRegister, /1\.699[\s\S]{0,120}157[\s\S]{0,120}493/i);
+  assert.match(sourceRegister, /igualdad de `IDPERSONA`[\s\S]{0,100}prohibida/i);
   assert.match(sourceRegister, /cuentas-claras-candidate-2026[\s\S]{0,220}Cuarentena/i);
   assert.match(sourceRegister, /Encontrar un archivo[\s\S]{0,180}no autoriza/i);
   assert.match(sourceRegister, /hash del payload GZIP[\s\S]{0,100}sin extraerlo a disco/i);
@@ -214,7 +218,7 @@ test('GRH directory v3 documentation keeps the remote release gate closed', () =
   assert.match(readme, /no se ejecutó la migración `005`[\s\S]{0,160}Preview, Production[\s\S]{0,80}DB remota/i);
 });
 
-test('S15 documents the equal management comparison without claiming a remote release', () => {
+test('S15 documents the equal management comparison and its Production verification', () => {
   const evidencePaths = [
     'README.md',
     'docs/MASTER_PLAN_STATUS.md',
@@ -229,12 +233,12 @@ test('S15 documents the equal management comparison without claiming a remote re
     assert.match(source, /2019(?:-12-09|[\s\S]{0,40}9 (?:de )?diciembre de 2019)/i, relativePath);
     assert.match(source, /5\.936[\s\S]{0,80}3\.395/i, relativePath);
     assert.match(source, /(?:no (?:prueban?|demuestran?|constituyen?)|sin)[\s\S]{0,100}(?:causa|desempeño|evaluación|tasa)/i, relativePath);
-    assert.match(source, /(?:Unreleased|sin (?:evidencia|certificación)[\s\S]{0,60}(?:Preview|Production)|no (?:fue|está)[\s\S]{0,60}(?:Preview|Production))/i, relativePath);
+    assert.match(source, /verificad[oa][\s\S]{0,80}Production|Production[\s\S]{0,80}verificad[oa]/i, relativePath);
   }
   const inAppManual = read('manuales.html');
   assert.match(inAppManual, /grh-administration-comparison-v1/);
   assert.match(inAppManual, /972 días[\s\S]{0,160}no (?:es una tasa|prueba altas o bajas|califica una gestión)/i);
-  assert.match(inAppManual, /Local · no desplegado/i);
+  assert.match(inAppManual, /Verificada en Production/i);
 });
 
 test('O2A real-local evidence is documented without promoting O2B or production claims', () => {
@@ -302,9 +306,18 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
   }
 
   for (const source of [integral, user, technical, master, enterprise, operations, pipeline, privacy, inApp]) {
-    assert.match(source, /personas_junin[\s\S]{0,260}(?:no se\s+analiza|no analizar)[\s\S]{0,260}fallback/i,
-      'Personas must remain absolutely excluded');
+    assert.match(source, /personas_junin/i, 'each core manual must name the auxiliary source boundary');
+    assert.doesNotMatch(source, /personas_junin[\s\S]{0,180}(?:excluida de forma absoluta|no se analiza[\s\S]{0,120}fallback)/i,
+      'Personas must not remain globally excluded after the auxiliary-source decision');
   }
+
+  const integration = read('docs/GRH_PERSONAS_INTEGRATION_BLUEPRINT.md');
+  assert.match(integration, /grh-personas-integration-blueprint-v1/i);
+  assert.match(integration, /GRH es la fuente laboral central/i);
+  assert.match(integration, /PERSONAS es una fuente auxiliar/i);
+  assert.match(integration, /Nunca se unen GRH y[\s\S]{0,80}PERSONAS por igualdad de `IDPERSONA`/i);
+  assert.match(integration, /1\.432[\s\S]{0,160}267[\s\S]{0,220}1\.699[\s\S]{0,220}157[\s\S]{0,160}493/i);
+  assert.match(integration, /no es un crosswalk productivo certificado/i);
 
   for (const source of [integral, user, technical, master, enterprise, privacy]) {
     assert.match(source, /grh-close-v1/);
@@ -347,9 +360,9 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.9');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 91);
-  assert.deepEqual(runtimeCounts, { serverless: 49, express: 42 });
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.10');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 92);
+  assert.deepEqual(runtimeCounts, { serverless: 50, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 31);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
@@ -360,8 +373,8 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
   }
   assert.match(inApp, /estado local[\s\S]{0,120}no desplegado/i);
   assert.match(inApp, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos/i);
-  assert.match(inApp, /91\s+(?:rutas|firmas)/i);
-  assert.match(inApp, /49\s+Serverless[\s\S]{0,60}42\s+Express/i);
+  assert.match(inApp, /92\s+(?:rutas|firmas)/i);
+  assert.match(inApp, /50\s+Serverless[\s\S]{0,60}42\s+Express/i);
 });
 
 test('documentation 1.10.0 records the exact role workspace without claiming accounts from visual guidance', () => {
@@ -441,14 +454,14 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.9');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.10');
   assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-11.3');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 91);
-  assert.deepEqual(runtimeCounts, { serverless: 49, express: 42 });
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 92);
+  assert.deepEqual(runtimeCounts, { serverless: 50, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 31);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 53);
-  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 16);
+  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 17);
   assert.equal(
     releaseTruth.SESSION_EXCHANGE_CONTRACTS['/api/auth/evaluation-session'],
     'municontrol-evaluation-session-v1',
@@ -466,6 +479,8 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-action-ledger'], 'grh-action-ledger-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-administration-comparison'], 'grh-administration-comparison-v1');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-employment-review'], 'grh-employment-review-v2');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-absence-insights'], 'grh-absence-insights-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/municipal-territory'], 'municipal-territory-v2');
 
   for (const relativePath of releasePaths) {
@@ -494,9 +509,9 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     assert.match(source, /#decisionBrief/, relativePath);
     if (relativePath === 'manuales.html') {
       assert.match(source, /estado local[\s\S]{0,120}no desplegado/i, relativePath);
-      assert.match(source, /2026-08-13\.9[\s\S]{0,100}2026-08-11\.3/, relativePath);
-      assert.match(source, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos[\s\S]{0,80}91\s+(?:rutas|firmas)/i, relativePath);
-      assert.match(source, /49 Serverless[\s\S]{0,60}42 Express/i, relativePath);
+      assert.match(source, /2026-08-13\.10[\s\S]{0,100}2026-08-11\.3/, relativePath);
+      assert.match(source, /31\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}53\s+permisos[\s\S]{0,80}92\s+(?:rutas|firmas)/i, relativePath);
+      assert.match(source, /50 Serverless[\s\S]{0,60}42 Express/i, relativePath);
       assert.match(source, /Centro de decisiones[\s\S]{0,1000}Estado local, no desplegado/i, relativePath);
     } else {
       assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);

@@ -3,7 +3,7 @@
 > Versión documental: 1.6.0  
 > Estado: implementada y migrada localmente; producción no desplegada ni certificada  
 > Fuente canónica: GRH Junín  
-> Fuente excluida: `personas_junin`
+> Fuente auxiliar excluida de esta capa: `personas_junin`
 
 ## 1. Propósito
 
@@ -20,8 +20,9 @@ plataforma aplica minimización también sobre datos agregados.
 ## 2. Alcance y límites actuales
 
 - GRH es la única fuente canónica de esta capa.
-- `personas_junin` no se analiza, perfila, cruza, migra, publica ni se usa como
-  fallback.
+- `personas_junin` no entra a los artefactos, agregados ni consumidores de esta
+  capa GRH. Su futura integración debe usar una tabla puente versionada en una
+  capa separada; nunca igualdad de `IDPERSONA` entre sistemas.
 - El corte corresponde al snapshot histórico aprobado; `realtime=false`.
 - La moneda no está declarada; la unidad monetaria permanece como unidad de
   origen.

@@ -173,9 +173,10 @@ test('login offers the public tour without changing the authentication path', as
   });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await page.goto(`${baseUrl}/login`, { waitUntil: 'networkidle' });
+  await page.locator('#evaluationAccess summary').click();
   const tourLink = page.locator('a.tour-link[href="/roles"]');
   assert.equal(await tourLink.getAttribute('href'), '/roles');
-  assert.match(await tourLink.textContent(), /Ver recorrido p[uú]blico por perfiles/);
+  assert.match(await tourLink.textContent(), /Conocer qu[eé] puede ver cada perfil/);
   await Promise.all([
     page.waitForURL(`${baseUrl}/roles`),
     tourLink.click(),

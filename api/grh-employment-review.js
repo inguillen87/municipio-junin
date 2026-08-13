@@ -34,6 +34,27 @@ const EMPLOYMENT_REVIEW_SQL = `SELECT source.schema_version,
        MIN(people.reference_payroll_period) AS reference_period,
        COUNT(*) FILTER (
          WHERE people.reported_status = 'current_by_reported_dates'
+       )::int AS reported_current_people,
+       COUNT(*) FILTER (
+         WHERE people.reported_status = 'ended_by_reported_dates'
+       )::int AS reported_ended_people,
+       COUNT(*) FILTER (
+         WHERE people.reported_status IN (
+           'unknown_missing_ingress',
+           'unknown_sentinel_ingress',
+           'unknown_implausible_active_tenure',
+           'invalid_chronology'
+         )
+       )::int AS uncertain_people,
+       COUNT(*) FILTER (
+         WHERE people.reference_payroll_observed = TRUE
+       )::int AS reference_payroll_participants,
+       COUNT(*) FILTER (
+         WHERE people.reported_status = 'current_by_reported_dates'
+           AND people.reference_payroll_observed = TRUE
+       )::int AS reported_current_with_reference_payroll,
+       COUNT(*) FILTER (
+         WHERE people.reported_status = 'current_by_reported_dates'
            AND people.reference_payroll_observed = FALSE
        )::int AS reported_current_without_reference_payroll,
        COUNT(*) FILTER (
@@ -102,6 +123,12 @@ export async function readGrhEmploymentReviewAggregate({
     materializedPeople: nonNegativeInteger(row.materialized_people),
     employmentPeople: nonNegativeInteger(row.employment_people),
     counts: {
+      reported_current_people: nonNegativeInteger(row.reported_current_people),
+      reported_ended_people: nonNegativeInteger(row.reported_ended_people),
+      uncertain_people: nonNegativeInteger(row.uncertain_people),
+      reference_payroll_participants: nonNegativeInteger(row.reference_payroll_participants),
+      reported_current_with_reference_payroll:
+        nonNegativeInteger(row.reported_current_with_reference_payroll),
       reported_current_without_reference_payroll:
         nonNegativeInteger(row.reported_current_without_reference_payroll),
       reported_ended_with_reference_payroll:

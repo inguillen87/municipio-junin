@@ -1,6 +1,6 @@
 import { inspectGrhDirectoryArtifact } from './grh-directory-contract.js';
 
-export const GRH_EMPLOYMENT_REVIEW_SCHEMA_VERSION = 'grh-employment-review-v1';
+export const GRH_EMPLOYMENT_REVIEW_SCHEMA_VERSION = 'grh-employment-review-v2';
 export const GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD = 10;
 const GRH_DIRECTORY_SOURCE_SCHEMA_VERSION = 'grh-directory-v3';
 
@@ -45,23 +45,9 @@ function deepFreeze(value, seen = new Set()) {
   return Object.freeze(value);
 }
 
-function categoryFor(record) {
-  const employment = record.employment;
-  const observed = employment.reference_payroll_participation.observed;
-  if (employment.reported_status === 'current_by_reported_dates' && !observed) {
-    return GRH_EMPLOYMENT_REVIEW_CATEGORIES[0].key;
-  }
-  if (employment.reported_status === 'ended_by_reported_dates' && observed) {
-    return GRH_EMPLOYMENT_REVIEW_CATEGORIES[1].key;
-  }
-  if (UNKNOWN_REPORTED_STATUSES.has(employment.reported_status) && observed) {
-    return GRH_EMPLOYMENT_REVIEW_CATEGORIES[2].key;
-  }
-  return null;
-}
-
-function categoryRow(definition, count, protectBreakdown) {
-  const protectedCell = protectBreakdown;
+function categoryRow(definition, count, audience) {
+  const protectedCell = audience === PORTABLE_AUDIENCE &&
+    count > 0 && count < GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD;
   return {
     ...definition,
     count: protectedCell ? null : count,
@@ -74,6 +60,24 @@ function nonNegativeInteger(value) {
   return Number.isSafeInteger(value) && value >= 0;
 }
 
+const COUNT_KEYS = Object.freeze([
+  'reported_current_people',
+  'reported_ended_people',
+  'uncertain_people',
+  'reference_payroll_participants',
+  'reported_current_with_reference_payroll',
+  'reported_current_without_reference_payroll',
+  'reported_ended_with_reference_payroll',
+  'uncertain_status_with_reference_payroll',
+]);
+
+function protectedValue(count, audience) {
+  return audience === PORTABLE_AUDIENCE &&
+    count > 0 && count < GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD
+    ? null
+    : count;
+}
+
 function summaryFromCounts(counts, {
   audience,
   referencePeriod,
@@ -82,7 +86,7 @@ function summaryFromCounts(counts, {
   if (![PRIVATE_AUDIENCE, PORTABLE_AUDIENCE].includes(audience) ||
       !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(referencePeriod || '') ||
       !nonNegativeInteger(totalDirectoryPeople) ||
-      !GRH_EMPLOYMENT_REVIEW_CATEGORIES.every(row => nonNegativeInteger(counts?.[row.key]))) {
+      !COUNT_KEYS.every(key => nonNegativeInteger(counts?.[key]))) {
     throw projectionError(
       'GRH_EMPLOYMENT_REVIEW_AGGREGATE_INVALID',
       'El resumen de situaciones laborales no supera los controles requeridos.',
@@ -92,24 +96,58 @@ function summaryFromCounts(counts, {
     (sum, row) => sum + counts[row.key],
     0,
   );
-  if (totalToReview > totalDirectoryPeople) {
+  const identitiesHold =
+    counts.reported_current_people + counts.reported_ended_people + counts.uncertain_people ===
+      totalDirectoryPeople &&
+    counts.reported_current_with_reference_payroll +
+      counts.reported_current_without_reference_payroll === counts.reported_current_people &&
+    counts.reported_current_with_reference_payroll +
+      counts.reported_ended_with_reference_payroll +
+      counts.uncertain_status_with_reference_payroll === counts.reference_payroll_participants &&
+    totalToReview === counts.reported_current_without_reference_payroll +
+      counts.reported_ended_with_reference_payroll +
+      counts.uncertain_status_with_reference_payroll &&
+    counts.reference_payroll_participants <= totalDirectoryPeople;
+  if (totalToReview > totalDirectoryPeople || !identitiesHold) {
     throw projectionError(
       'GRH_EMPLOYMENT_REVIEW_AGGREGATE_INVALID',
       'El resumen de situaciones laborales no supera los controles requeridos.',
     );
   }
-  const protectBreakdown = audience === PORTABLE_AUDIENCE &&
-    GRH_EMPLOYMENT_REVIEW_CATEGORIES.some(row => (
-      counts[row.key] > 0 && counts[row.key] < GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD
-    ));
+  const privacyStatus = audience === PORTABLE_AUDIENCE &&
+    [
+      counts.reported_current_with_reference_payroll,
+      counts.reported_current_without_reference_payroll,
+      counts.reported_ended_with_reference_payroll,
+      counts.uncertain_status_with_reference_payroll,
+    ].some(count => count > 0 && count < GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD)
+    ? 'partially_protected'
+    : 'released';
   return deepFreeze({
     audience,
     referencePeriod,
     totalDirectoryPeople,
+    reportedCurrentPeople: counts.reported_current_people,
+    reportedEndedPeople: counts.reported_ended_people,
+    uncertainPeople: counts.uncertain_people,
+    referencePayrollParticipants: counts.reference_payroll_participants,
+    reportedCurrentWithReferencePayroll: protectedValue(
+      counts.reported_current_with_reference_payroll,
+      audience,
+    ),
+    currentWithoutPayroll: protectedValue(
+      counts.reported_current_without_reference_payroll,
+      audience,
+    ),
+    endedWithPayroll: protectedValue(counts.reported_ended_with_reference_payroll, audience),
+    uncertainWithPayroll: protectedValue(
+      counts.uncertain_status_with_reference_payroll,
+      audience,
+    ),
     totalToReview,
-    privacyStatus: protectBreakdown ? 'partially_protected' : 'released',
+    privacyStatus,
     categories: GRH_EMPLOYMENT_REVIEW_CATEGORIES.map(
-      definition => categoryRow(definition, counts[definition.key], protectBreakdown),
+      definition => categoryRow(definition, counts[definition.key], audience),
     ),
   });
 }
@@ -124,7 +162,7 @@ export function summarizeGrhEmploymentReviewRecords(records, {
     );
   }
 
-  const counts = Object.fromEntries(GRH_EMPLOYMENT_REVIEW_CATEGORIES.map(row => [row.key, 0]));
+  const counts = Object.fromEntries(COUNT_KEYS.map(key => [key, 0]));
   let referencePeriod = null;
   for (const record of records) {
     const employment = record?.employment;
@@ -144,8 +182,26 @@ export function summarizeGrhEmploymentReviewRecords(records, {
         'Los registros no comparten el mismo período de cálculo.',
       );
     }
-    const key = categoryFor(record);
-    if (key) counts[key] += 1;
+    const status = employment.reported_status;
+    const observed = payroll.observed;
+    if (status === 'current_by_reported_dates') {
+      counts.reported_current_people += 1;
+      counts[observed
+        ? 'reported_current_with_reference_payroll'
+        : 'reported_current_without_reference_payroll'] += 1;
+    } else if (status === 'ended_by_reported_dates') {
+      counts.reported_ended_people += 1;
+      if (observed) counts.reported_ended_with_reference_payroll += 1;
+    } else if (UNKNOWN_REPORTED_STATUSES.has(status)) {
+      counts.uncertain_people += 1;
+      if (observed) counts.uncertain_status_with_reference_payroll += 1;
+    } else {
+      throw projectionError(
+        'GRH_EMPLOYMENT_REVIEW_RECORD_INVALID',
+        'La situación laboral informada no supera los controles requeridos.',
+      );
+    }
+    if (observed) counts.reference_payroll_participants += 1;
   }
 
   return summaryFromCounts(counts, {

@@ -2,7 +2,7 @@
   'use strict';
 
   var ENDPOINT = '/api/grh-employment-review';
-  var SCHEMA_VERSION = 'grh-employment-review-v1';
+  var SCHEMA_VERSION = 'grh-employment-review-v2';
   var DEFINITIONS = Object.freeze([
     Object.freeze({
       key: 'reported_current_without_reference_payroll',
@@ -20,7 +20,13 @@
       meaning: 'Las fechas del legajo no permiten determinar la situación informada y la persona aparece en el cálculo de referencia.'
     })
   ]);
-  var TOP_KEYS = Object.freeze(['schemaVersion', 'source', 'audience', 'referencePeriod', 'totalDirectoryPeople', 'totalToReview', 'privacyStatus', 'categories']);
+  var TOP_KEYS = Object.freeze([
+    'schemaVersion', 'source', 'audience', 'referencePeriod', 'totalDirectoryPeople',
+    'reportedCurrentPeople', 'reportedEndedPeople', 'uncertainPeople',
+    'referencePayrollParticipants', 'reportedCurrentWithReferencePayroll',
+    'currentWithoutPayroll', 'endedWithPayroll', 'uncertainWithPayroll',
+    'totalToReview', 'privacyStatus', 'categories'
+  ]);
   var SOURCE_KEYS = Object.freeze(['canonicalSystem', 'sourceSha256', 'snapshotAsOf']);
   var CATEGORY_KEYS = Object.freeze(['key', 'label', 'meaning', 'count', 'display', 'privacyStatus']);
 
@@ -47,6 +53,17 @@
     return actual.length === expected.length && actual.every(function (key, index) { return key === expected[index]; });
   }
   function nonNegativeInteger(value) { return Number.isSafeInteger(value) && value >= 0; }
+  function releasedOrProtectedCount(value, audience) {
+    if (value === null) return audience === 'portable';
+    return nonNegativeInteger(value) && (audience === 'private' || value === 0 || value >= 10);
+  }
+  function protectedPairMatchesTotal(total, left, right) {
+    if (!nonNegativeInteger(total)) return false;
+    if (nonNegativeInteger(left) && nonNegativeInteger(right)) return left + right === total;
+    if (left === null && nonNegativeInteger(right)) return total - right > 0 && total - right < 10;
+    if (right === null && nonNegativeInteger(left)) return total - left > 0 && total - left < 10;
+    return left === null && right === null && total >= 2 && total <= 18;
+  }
   function validDate(value) {
     var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
     if (!match) return false;
@@ -58,9 +75,20 @@
         !exactKeys(value.source, SOURCE_KEYS) || typeof value.source.canonicalSystem !== 'string' ||
         !/^[0-9a-f]{64}$/.test(value.source.sourceSha256 || '') || !validDate(value.source.snapshotAsOf) ||
         !['private', 'portable'].includes(value.audience) || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(value.referencePeriod || '') ||
-        !nonNegativeInteger(value.totalDirectoryPeople) || !nonNegativeInteger(value.totalToReview) ||
+        !nonNegativeInteger(value.totalDirectoryPeople) ||
+        !nonNegativeInteger(value.reportedCurrentPeople) ||
+        !nonNegativeInteger(value.reportedEndedPeople) ||
+        !nonNegativeInteger(value.uncertainPeople) ||
+        !nonNegativeInteger(value.referencePayrollParticipants) ||
+        !releasedOrProtectedCount(value.reportedCurrentWithReferencePayroll, value.audience) ||
+        !releasedOrProtectedCount(value.currentWithoutPayroll, value.audience) ||
+        !releasedOrProtectedCount(value.endedWithPayroll, value.audience) ||
+        !releasedOrProtectedCount(value.uncertainWithPayroll, value.audience) ||
+        !nonNegativeInteger(value.totalToReview) ||
         value.totalToReview > value.totalDirectoryPeople || !['released', 'partially_protected'].includes(value.privacyStatus) ||
         !Array.isArray(value.categories) || value.categories.length !== DEFINITIONS.length) return false;
+    if (value.reportedCurrentPeople + value.reportedEndedPeople + value.uncertainPeople !== value.totalDirectoryPeople ||
+        value.referencePayrollParticipants > value.totalDirectoryPeople) return false;
     var releasedTotal = 0;
     var protectedRows = 0;
     for (var index = 0; index < DEFINITIONS.length; index += 1) {
@@ -75,9 +103,55 @@
         protectedRows += 1;
       } else return false;
     }
-    if (value.audience === 'private') return protectedRows === 0 && value.privacyStatus === 'released' && releasedTotal === value.totalToReview;
-    if (protectedRows === 0) return value.privacyStatus === 'released' && releasedTotal === value.totalToReview && value.categories.every(function (row) { return row.count >= 10; });
-    return protectedRows === DEFINITIONS.length && value.privacyStatus === 'partially_protected' && value.totalToReview >= 10;
+    var hiddenReviewTotal = value.totalToReview - releasedTotal;
+    if (protectedRows === 0 ? hiddenReviewTotal !== 0 :
+        hiddenReviewTotal < protectedRows || hiddenReviewTotal > protectedRows * 9) return false;
+    if (value.categories[0].count !== value.currentWithoutPayroll ||
+        value.categories[1].count !== value.endedWithPayroll ||
+        value.categories[2].count !== value.uncertainWithPayroll) return false;
+    if (!protectedPairMatchesTotal(
+      value.reportedCurrentPeople,
+      value.reportedCurrentWithReferencePayroll,
+      value.currentWithoutPayroll
+    )) return false;
+    var effectiveCurrentWith = nonNegativeInteger(value.reportedCurrentWithReferencePayroll)
+      ? value.reportedCurrentWithReferencePayroll
+      : (nonNegativeInteger(value.currentWithoutPayroll)
+        ? value.reportedCurrentPeople - value.currentWithoutPayroll
+        : null);
+    var effectiveCurrentWithout = nonNegativeInteger(value.currentWithoutPayroll)
+      ? value.currentWithoutPayroll
+      : (nonNegativeInteger(value.reportedCurrentWithReferencePayroll)
+        ? value.reportedCurrentPeople - value.reportedCurrentWithReferencePayroll
+        : null);
+    if (nonNegativeInteger(effectiveCurrentWith) && nonNegativeInteger(effectiveCurrentWithout)) {
+      var referenceRemainder = value.referencePayrollParticipants - effectiveCurrentWith;
+      var reviewRemainder = value.totalToReview - effectiveCurrentWithout;
+      if (referenceRemainder !== reviewRemainder || !protectedPairMatchesTotal(
+        referenceRemainder,
+        value.endedWithPayroll,
+        value.uncertainWithPayroll
+      )) return false;
+    }
+    if (nonNegativeInteger(value.reportedCurrentWithReferencePayroll) &&
+        nonNegativeInteger(value.currentWithoutPayroll) &&
+        value.reportedCurrentWithReferencePayroll + value.currentWithoutPayroll !== value.reportedCurrentPeople) return false;
+    if ([value.reportedCurrentWithReferencePayroll, value.endedWithPayroll, value.uncertainWithPayroll].every(nonNegativeInteger) &&
+        value.reportedCurrentWithReferencePayroll + value.endedWithPayroll + value.uncertainWithPayroll !== value.referencePayrollParticipants) return false;
+    if ([value.currentWithoutPayroll, value.endedWithPayroll, value.uncertainWithPayroll].every(nonNegativeInteger) &&
+        value.currentWithoutPayroll + value.endedWithPayroll + value.uncertainWithPayroll !== value.totalToReview) return false;
+    if (nonNegativeInteger(value.reportedCurrentWithReferencePayroll) && nonNegativeInteger(value.currentWithoutPayroll) &&
+        value.referencePayrollParticipants - value.reportedCurrentWithReferencePayroll !== value.totalToReview - value.currentWithoutPayroll) return false;
+    var protectedTopCount = [
+      value.reportedCurrentWithReferencePayroll, value.currentWithoutPayroll,
+      value.endedWithPayroll, value.uncertainWithPayroll
+    ].filter(function (count) { return count === null; }).length;
+    if (value.privacyStatus !== (protectedTopCount === 0 ? 'released' : 'partially_protected')) return false;
+    if (value.audience === 'private' && (protectedRows !== 0 || protectedTopCount !== 0)) return false;
+    if (value.audience === 'portable' && !value.categories.every(function (row) {
+      return row.privacyStatus === 'protected' || row.count === 0 || row.count >= 10;
+    })) return false;
+    return true;
   }
   function deepFreeze(value) {
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;

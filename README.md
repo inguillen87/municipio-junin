@@ -6,17 +6,19 @@ Intendencia, Hacienda y RRHH, sin publicar PII ni presentar datos simulados como
 si fueran reales.
 
 > Estado de esta documentación: el release `v1.10.0` conserva su evidencia
-> productiva histórica; S15 está en desarrollo local al 13 de agosto de 2026 y no
-> fue certificado en Preview ni Production. Los indicadores describen el snapshot
+> productiva histórica; S15 fue verificado en Production el 13 de agosto de 2026
+> sobre el alias estable. Los indicadores describen el snapshot
 > GRH del 6 de agosto de 2026; no constituyen conexión en tiempo real ni pago
 > bancario conciliado.
 
 ## Decisiones de datos
 
-- La única fuente canónica del dominio de personal es
+- La fuente canónica del dominio **laboral** es
   `grh_junin.backup_2026080615_plataforma.sql.gz`.
-- `personas_junin` fue recibido como ejemplo y está **excluido** del perfilado,
-  cruces y migraciones de GRH.
+- `personas_junin` es un padrón auxiliar de identidad, domicilios y territorio.
+  Permanece **excluido de los contratos y artefactos GRH actuales**; su futura
+  integración requiere un `crosswalk_persona` versionado y nunca puede unir
+  ambos sistemas por igualdad de `IDPERSONA`.
 - El corte del backup es 6 de agosto de 2026. Los cambios posteriores no están
   representados.
 - Los artefactos servidos al frontend son agregados sin nombres, documentos,
@@ -31,6 +33,8 @@ si fueran reales.
 
 El contrato y sus definiciones están documentados en
 [`docs/data/grh-semantic.md`](docs/data/grh-semantic.md).
+La frontera y las fases de integración con PERSONAS están documentadas en
+[`docs/GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](docs/GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
 La evolución desde snapshot hacia ingesta diaria, CDC y backups recuperables se
 define en [`docs/GRH_OPERATIONS_ROADMAP.md`](docs/GRH_OPERATIONS_ROADMAP.md).
 La reconciliación entre el plan heredado y lo realmente comprobado en el repo se
@@ -59,7 +63,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Estructura y áreas de costo | Validada localmente | React + TypeScript, seis KPI, exploradores de clasificaciones y centros de costo del cálculo, dos series históricas, matriz 5×5, comparador y acciones hacia Hacienda/BOT; contrato `grh-organization-analytics-v2`, k=10 y sin directorio nominal |
 | Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
-| Comparación de gestiones | En desarrollo local (`Unreleased`) | Compara dos tramos históricos de 972 días con la misma duración; todavía no fue verificada en Preview ni Production |
+| Comparación de gestiones | Verificada en Production | Compara dos tramos históricos de 972 días con la misma duración; contrato, privacidad y recorrido autenticado verificados sobre el alias estable |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
 | Cargas analíticas y conectores | Condicionado | Upload/Sheets escriben tablas legacy ligadas por entorno; no hay ingesta unificada ni sincronización |
 | Reportes ejecutivos GRH | Verificado en Production | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto, períodos gobernados y smoke autenticado |
@@ -76,8 +80,8 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 
 ### S15 — comparación histórica de gestiones
 
-El incremento S15 está **en desarrollo local** y permanece `Unreleased`. Su
-objetivo es ofrecer en el Panel una comparación fácil de leer entre la gestión
+El incremento S15 está **verificado en Production** desde el 13 de agosto de
+2026. Ofrece en el Panel una comparación fácil de leer entre la gestión
 actual y el mismo tramo de la gestión anterior, sin enfrentar un período parcial
 contra una gestión completa:
 
@@ -222,7 +226,8 @@ python -B scripts/build_grh_semantic.py `
   --out api/_data/grh-semantic.json
 ```
 
-No agregue `personas_junin` a esos comandos.
+No agregue `personas_junin` a esos comandos GRH. Su futura corrida tendrá un
+manifiesto, staging y proceso de vinculación independientes.
 
 ## Desarrollo local
 

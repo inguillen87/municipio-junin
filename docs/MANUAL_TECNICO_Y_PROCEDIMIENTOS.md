@@ -115,8 +115,10 @@ Reglas de verdad:
    datos, credenciales ni proveedores externos.
 6. No ejecutar comandos destructivos de Prisma o SQL contra una base municipal
    sin backup restaurado, revisión de drift y autorización de cambio.
-7. `personas_junin` está excluida de forma absoluta: no analizar, perfilar,
-   cruzar, migrar, publicar ni usar como fallback.
+7. GRH es la autoridad laboral. `personas_junin` permanece excluida de los
+   pipelines, artefactos y consumidores GRH actuales; cualquier integración
+   futura debe usar un pipeline auxiliar y una tabla puente versionada, nunca
+   igualdad de `IDPERSONA` entre sistemas.
 
 ## 2. Arquitectura vigente
 
@@ -157,8 +159,8 @@ Reglas de verdad:
 - `shared/route-policy.cjs` actúa como techo de autorización exacto por
   runtime, método, ruta y permiso `recurso:acción`. Una ruta, método, rol,
   capacidad o secreto interno no registrado se deniega.
-- La versión local `2026-08-13.9` del manifiesto contiene 31 recursos, 12
-  acciones, 53 permisos y 91 firmas de ruta protegidas: 49 Serverless y 42
+- La versión local `2026-08-13.10` del manifiesto contiene 31 recursos, 12
+  acciones, 53 permisos y 92 firmas de ruta protegidas: 50 Serverless y 42
   Express. Es un techo ejecutable exacto, no persistencia RBAC/ABAC por área.
 - `.vercelignore` excluye backend, evidencia, scripts, SQL, tests, documentos y
   artefactos JSON privados. `api/**` y `prisma/**` permanecen desplegables.
@@ -237,11 +239,25 @@ La fuente canónica es el backup privado:
 Su corte es histórico. El nombre del archivo indica el snapshot recibido; no
 implica sincronización posterior ni conexión diaria.
 
-### 3.2 Fuente expresamente excluida
+### 3.2 Fuente auxiliar y frontera de integración
 
-`personas_junin.backup_2026080615_plataforma.sql.gz` fue entregada como ejemplo y
-está excluida de perfilado, cruces, enriquecimiento y migración de RRHH. No debe
-agregarse a los comandos GRH ni usarse para “completar” faltantes.
+`personas_junin.backup_2026080615_plataforma.sql.gz` es un padrón transversal de
+identidad, domicilios y territorio. No reemplaza a GRH ni decide relaciones
+laborales. Su respaldo de 7.550.947 bytes, SHA-256
+`11bf15764488e4fe8a053255f503404f6bca24a1ac47c90647649e2c41d8e39c` y corte
+2026-08-06 fue perfilado de forma read-only en un diagnóstico aislado.
+
+La fuente permanece excluida de los comandos, manifiesto, artefactos, APIs,
+tableros y publicaciones GRH actuales. No debe usarse para “completar” faltantes
+ni unirse por `IDPERSONA`: ese campo pertenece a espacios de identidad distintos
+en cada sistema.
+
+El diagnóstico reprodujo 1.432 candidatos automáticos por CUIL válido y único,
+267 candidatos asistidos, 157 casos ambiguos y 493 sin coincidencia. Los 1.699
+candidatos totales no constituyen un crosswalk productivo. Su eventual promoción
+requiere manifiesto propio, staging inmutable, algoritmo versionado, evidencia,
+revisión y una migración privada auditada. El contrato está en
+[`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
 
 La exclusión está codificada en:
 
@@ -1337,9 +1353,9 @@ APIs privadas → analítica / mapas / alertas / asistente
 
 ### 16.1 Fase 0: base gobernada — Actual local
 
-- GRH es la única fuente canónica de personal y `personas_junin` permanece
-  excluida de forma absoluta: no analizar, perfilar, cruzar, migrar, publicar ni
-  usar como fallback.
+- GRH es la fuente canónica laboral. `personas_junin` permanece excluida de los
+  contratos GRH actuales y sólo puede incorporarse mediante un pipeline auxiliar
+  y un `crosswalk_persona` versionado; nunca por igualdad de `IDPERSONA`.
 - El snapshot histórico se transforma en artefactos privados `profile` y
   `grh-semantic-v2`, con calidad, cuarentena, conciliación, cardinalidades
   anuales sin claves y fecha de corte.
@@ -1361,7 +1377,7 @@ APIs privadas → analítica / mapas / alertas / asistente
   consultados en DB con un manifiesto exacto de rutas y permisos
   `recurso:acción`. Las listas legacy sólo pueden restringir ese techo, nunca
   ampliarlo. La versión local cubre 31 recursos, 12 acciones, 53 permisos y 91
-  firmas exactas (49 Serverless y 42 Express). Todavía no existe persistencia de
+  firmas exactas (50 Serverless y 42 Express). Todavía no existe persistencia de
   asignaciones por área, fila, campo, vigencia ni reglas de segregación de
   funciones.
 
@@ -1457,7 +1473,7 @@ municipal ni ejecutar una decisión administrativa por sí sola.
 
 **Actual local:** existen `Tenant`, siete roles técnicos, estado del tenant,
 controles tenant-bound y una política compartida que registra de forma literal
-31 recursos, 12 acciones, 53 permisos y 91 firmas protegidas (49 Serverless y 42
+31 recursos, 12 acciones, 53 permisos y 92 firmas protegidas (50 Serverless y 42
 Express). No hay wildcard, jerarquía ni autorización por nombre de pantalla. Los
 adaptadores de ambos runtimes usan ese mismo techo y deniegan lo desconocido.
 Algunas tablas analíticas legacy aún dependen de un CUID ambiental y no ofrecen
@@ -1578,7 +1594,7 @@ Diagnóstico recomendado:
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
-| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.9`: 31 recursos, 12 acciones, 53 permisos y 91 firmas exactas, 49 Serverless + 42 Express; desconocidos fallan cerrados |
+| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.10`: 31 recursos, 12 acciones, 53 permisos y 92 firmas exactas, 50 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |

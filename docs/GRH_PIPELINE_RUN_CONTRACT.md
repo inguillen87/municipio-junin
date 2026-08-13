@@ -16,10 +16,14 @@ locks y promueve un last-known-good dentro de `LOCAL_STATE`; fue probado con el
 snapshot canónico y su repetición duplicada. Ninguna de esas dos piezas activa
 el adapter conectado ni demuestra una operación externa.
 
-La fuente sigue siendo GRH Junín. `personas_junin` está rechazada de forma
-absoluta: no se analiza, perfila, cruza, migra, publica ni usa como fallback. El contrato
-acepta sólo identificadores ASCII opacos y metadatos/digests; no admite payloads
-raw, PII, rutas, correos, credenciales, tokens ni secretos.
+La fuente de este pipeline sigue siendo GRH Junín. `personas_junin` es auxiliar,
+pero está rechazada como entrada, fallback o material de este contrato O2A. Su
+futura integración debe ejecutarse en un pipeline independiente y producir una
+tabla puente versionada; la igualdad de `IDPERSONA` entre sistemas no es una
+regla válida. El contrato acepta sólo identificadores ASCII opacos y
+metadatos/digests; no admite payloads raw, PII, rutas, correos, credenciales,
+tokens ni secretos. Véase
+[`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
 
 ## Alcances de ejecución
 

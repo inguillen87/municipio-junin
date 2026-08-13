@@ -10,6 +10,14 @@ const TOP_KEYS = Object.freeze([
   'audience',
   'referencePeriod',
   'totalDirectoryPeople',
+  'reportedCurrentPeople',
+  'reportedEndedPeople',
+  'uncertainPeople',
+  'referencePayrollParticipants',
+  'reportedCurrentWithReferencePayroll',
+  'currentWithoutPayroll',
+  'endedWithPayroll',
+  'uncertainWithPayroll',
   'totalToReview',
   'privacyStatus',
   'categories',
@@ -32,6 +40,27 @@ function nonNegativeInteger(value) {
   return Number.isSafeInteger(value) && value >= 0;
 }
 
+function releasedOrProtectedCount(value, audience) {
+  if (value === null) return audience === 'portable';
+  if (!nonNegativeInteger(value)) return false;
+  return audience === 'private' || value === 0 || value >= GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD;
+}
+
+function protectedPairMatchesTotal(total, left, right) {
+  if (!nonNegativeInteger(total)) return false;
+  if (nonNegativeInteger(left) && nonNegativeInteger(right)) return left + right === total;
+  if (left === null && nonNegativeInteger(right)) {
+    const hidden = total - right;
+    return hidden > 0 && hidden < GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD;
+  }
+  if (right === null && nonNegativeInteger(left)) {
+    const hidden = total - left;
+    return hidden > 0 && hidden < GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD;
+  }
+  return left === null && right === null && total >= 2 &&
+    total <= 2 * (GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD - 1);
+}
+
 export function inspectGrhEmploymentReviewContract(value) {
   const errors = [];
   add(errors, exactKeys(value, TOP_KEYS), 'employment_review.structure');
@@ -44,11 +73,31 @@ export function inspectGrhEmploymentReviewContract(value) {
   add(errors, ['private', 'portable'].includes(value?.audience), 'audience');
   add(errors, /^\d{4}-(?:0[1-9]|1[0-2])$/.test(value?.referencePeriod || ''), 'reference_period');
   add(errors, nonNegativeInteger(value?.totalDirectoryPeople), 'total_directory_people');
+  add(errors, nonNegativeInteger(value?.reportedCurrentPeople), 'reported_current_people');
+  add(errors, nonNegativeInteger(value?.reportedEndedPeople), 'reported_ended_people');
+  add(errors, nonNegativeInteger(value?.uncertainPeople), 'uncertain_people');
+  add(errors, nonNegativeInteger(value?.referencePayrollParticipants),
+    'reference_payroll_participants');
+  add(errors, releasedOrProtectedCount(value?.reportedCurrentWithReferencePayroll, value?.audience),
+    'reported_current_with_reference_payroll');
+  add(errors, releasedOrProtectedCount(value?.currentWithoutPayroll, value?.audience),
+    'current_without_payroll');
+  add(errors, releasedOrProtectedCount(value?.endedWithPayroll, value?.audience),
+    'ended_with_payroll');
+  add(errors, releasedOrProtectedCount(value?.uncertainWithPayroll, value?.audience),
+    'uncertain_with_payroll');
   add(errors, nonNegativeInteger(value?.totalToReview) && value.totalToReview <= value.totalDirectoryPeople,
     'total_to_review');
   add(errors, ['released', 'partially_protected'].includes(value?.privacyStatus), 'privacy_status');
   add(errors, Array.isArray(value?.categories) &&
     value.categories.length === GRH_EMPLOYMENT_REVIEW_CATEGORIES.length, 'categories');
+
+  add(errors,
+    value?.reportedCurrentPeople + value?.reportedEndedPeople + value?.uncertainPeople ===
+      value?.totalDirectoryPeople,
+    'reported_status_identity');
+  add(errors, value?.referencePayrollParticipants <= value?.totalDirectoryPeople,
+    'reference_payroll_bound');
 
   let releasedTotal = 0;
   let protectedCount = 0;
@@ -70,16 +119,80 @@ export function inspectGrhEmploymentReviewContract(value) {
       add(errors, false, `categories.${index}.privacy_status`);
     }
   });
+  const hiddenReviewTotal = value?.totalToReview - releasedTotal;
   add(errors, protectedCount === 0
-    ? releasedTotal === value?.totalToReview
-    : protectedCount === GRH_EMPLOYMENT_REVIEW_CATEGORIES.length &&
-      value?.totalToReview >= GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD,
-  'total_identity');
-  add(errors, value?.privacyStatus === (protectedCount === 0 ? 'released' : 'partially_protected'),
+    ? hiddenReviewTotal === 0
+    : hiddenReviewTotal >= protectedCount &&
+      hiddenReviewTotal <= protectedCount * (GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD - 1),
+  'review_total_identity');
+  add(errors, rows[0]?.count === value?.currentWithoutPayroll, 'current_category_identity');
+  add(errors, rows[1]?.count === value?.endedWithPayroll, 'ended_category_identity');
+  add(errors, rows[2]?.count === value?.uncertainWithPayroll, 'uncertain_category_identity');
+  add(errors, protectedPairMatchesTotal(
+    value?.reportedCurrentPeople,
+    value?.reportedCurrentWithReferencePayroll,
+    value?.currentWithoutPayroll,
+  ), 'reported_current_identity');
+  const effectiveCurrentWith = nonNegativeInteger(value?.reportedCurrentWithReferencePayroll)
+    ? value.reportedCurrentWithReferencePayroll
+    : (nonNegativeInteger(value?.currentWithoutPayroll)
+      ? value.reportedCurrentPeople - value.currentWithoutPayroll
+      : null);
+  const effectiveCurrentWithout = nonNegativeInteger(value?.currentWithoutPayroll)
+    ? value.currentWithoutPayroll
+    : (nonNegativeInteger(value?.reportedCurrentWithReferencePayroll)
+      ? value.reportedCurrentPeople - value.reportedCurrentWithReferencePayroll
+      : null);
+  if (nonNegativeInteger(effectiveCurrentWith) && nonNegativeInteger(effectiveCurrentWithout)) {
+    const referenceRemainder = value.referencePayrollParticipants - effectiveCurrentWith;
+    const reviewRemainder = value.totalToReview - effectiveCurrentWithout;
+    add(errors, referenceRemainder === reviewRemainder, 'protected_remainder_identity');
+    add(errors, protectedPairMatchesTotal(
+      referenceRemainder,
+      value?.endedWithPayroll,
+      value?.uncertainWithPayroll,
+    ), 'reference_payroll_identity');
+  }
+  if (nonNegativeInteger(value?.reportedCurrentWithReferencePayroll) &&
+      nonNegativeInteger(value?.currentWithoutPayroll)) {
+    add(errors,
+      value.reportedCurrentWithReferencePayroll + value.currentWithoutPayroll ===
+        value.reportedCurrentPeople,
+      'reported_current_identity');
+  }
+  if ([
+    value?.reportedCurrentWithReferencePayroll,
+    value?.endedWithPayroll,
+    value?.uncertainWithPayroll,
+  ].every(nonNegativeInteger)) {
+    add(errors,
+      value.reportedCurrentWithReferencePayroll + value.endedWithPayroll +
+        value.uncertainWithPayroll === value.referencePayrollParticipants,
+      'reference_payroll_identity');
+  }
+  if ([
+    value?.currentWithoutPayroll,
+    value?.endedWithPayroll,
+    value?.uncertainWithPayroll,
+  ].every(nonNegativeInteger)) {
+    add(errors,
+      value.currentWithoutPayroll + value.endedWithPayroll + value.uncertainWithPayroll ===
+        value.totalToReview,
+      'total_to_review_identity');
+  }
+  const protectedTopCount = [
+    value?.reportedCurrentWithReferencePayroll,
+    value?.currentWithoutPayroll,
+    value?.endedWithPayroll,
+    value?.uncertainWithPayroll,
+  ].filter(count => count === null).length;
+  add(errors, value?.privacyStatus === (protectedTopCount === 0 ? 'released' : 'partially_protected'),
     'privacy_identity');
-  add(errors, value?.audience !== 'private' || protectedCount === 0, 'private_exact_counts');
+  add(errors, value?.audience !== 'private' || (protectedCount === 0 && protectedTopCount === 0),
+    'private_exact_counts');
   add(errors, value?.audience !== 'portable' || rows.every(row => (
-    row.privacyStatus === 'protected' || row.count >= GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD
+    row.privacyStatus === 'protected' || row.count === 0 ||
+      row.count >= GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD
   )), 'portable_small_cells');
 
   return Object.freeze({ ok: errors.length === 0, errors: Object.freeze([...new Set(errors)]) });

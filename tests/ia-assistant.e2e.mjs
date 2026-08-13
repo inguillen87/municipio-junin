@@ -20,8 +20,9 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROFILE_PATH = path.join(REPO, 'api', '_data', 'grh-profile.json');
 const SEMANTIC_PATH = path.join(REPO, 'api', '_data', 'grh-semantic.json');
 const WORKFORCE_FINANCE_PATH = path.join(REPO, 'api', '_data', 'grh-workforce-finance.json');
+const ABSENCE_INSIGHTS_PATH = path.join(REPO, 'api', '_data', 'grh-absence-insights.json');
 const HAS_PRIVATE_GRH = existsSync(PROFILE_PATH) && existsSync(SEMANTIC_PATH) &&
-  existsSync(WORKFORCE_FINANCE_PATH);
+  existsSync(WORKFORCE_FINANCE_PATH) && existsSync(ABSENCE_INSIGHTS_PATH);
 const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' });
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -321,6 +322,7 @@ async function createServer(requestLog, options = {}) {
       workforceFinance: buildGrhWorkforceFinanceProjection(workforceFinanceSource, {
         presentation: financePresentation,
       }),
+      absenceInsights: JSON.parse(await readFile(ABSENCE_INSIGHTS_PATH, 'utf8')),
     };
   }
 
@@ -661,7 +663,7 @@ test('assistant presents exactly four canonical primary queries for each executi
   const scenarios = [
     {
       role: 'INTENDENTE',
-      labels: ['Prioridades para decidir', 'Resumen ejecutivo', 'Comparar ausencias', 'Costo por área'],
+      labels: ['Prioridades para decidir', 'Resumen ejecutivo', 'Motivos de ausencia', 'Costo por área'],
     },
     {
       role: 'CONTADOR',
@@ -959,7 +961,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
     primaryLabels: [
       'Prioridades para decidir',
       'Resumen ejecutivo',
-      'Comparar ausencias',
+      'Motivos de ausencia',
       'Costo por área',
     ],
     moreLabel: 'Más consultas',
@@ -992,7 +994,48 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.match(brief.visibleText, /Personas incluidas en la liquidación/i);
   assert.match(brief.visibleText, /Importes que coinciden/i);
 
-  const absenceComparisonChip = page.locator('#queryPrimary')
+  const absenceReasonsChip = page.locator('#queryPrimary')
+    .getByRole('button', { name: 'Motivos de ausencia', exact: true });
+  assert.equal(
+    await absenceReasonsChip.getAttribute('data-question'),
+    '¿Cuáles son los principales motivos de ausencia?',
+  );
+  await absenceReasonsChip.click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Ausencias explicadas · mismo tiempo de cada gestión')));
+  const absenceReasons = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+    return {
+      title: card?.querySelector('.answer-heading-line h3')?.textContent.trim(),
+      action: {
+        label: card?.querySelector('.answer-action')?.textContent.trim(),
+        href: card?.querySelector('.answer-action')?.getAttribute('href'),
+        capability: card?.querySelector('.answer-action')?.dataset.capability,
+      },
+      visualLabels: Array.from(card?.querySelectorAll('.answer-visual-label') || [], node =>
+        node.textContent.trim()),
+      visualValues: Array.from(card?.querySelectorAll('.answer-visual-value') || [], node =>
+        node.textContent.trim()),
+      text: card?.textContent || '',
+    };
+  });
+  assert.equal(absenceReasons.title, 'Ausencias explicadas · mismo tiempo de cada gestión');
+  assert.deepEqual(absenceReasons.action, {
+    label: 'Ver ausencias explicadas',
+    href: '/dashboard#absenceInsights',
+    capability: 'navigation.dashboard',
+  });
+  assert.deepEqual(absenceReasons.visualValues, ['1.871', '1.478', '677', '424', '418']);
+  assert.equal(absenceReasons.visualLabels.length, 5);
+  assert.match(absenceReasons.text, /5\.936 eventos.+752 personas.+65\.847 días informados/i);
+  assert.match(absenceReasons.text, /3\.395 eventos.+662 personas.+52\.190 días informados/i);
+  assert.match(absenceReasons.text, /No todos representan una licencia/i);
+  assert.match(absenceReasons.text, /tabla histórica de licencias se mantiene separada/i);
+  assert.doesNotMatch(absenceReasons.text, /DNI|CUIL|legajo/i);
+  assert.equal(requestLog.at(-1).body.message, '¿Cuáles son los principales motivos de ausencia?');
+
+  await page.locator('#queryMoreSummary').click();
+  const absenceComparisonChip = page.locator('#queryMoreBody')
     .getByRole('button', { name: 'Comparar ausencias', exact: true });
   assert.equal(
     await absenceComparisonChip.getAttribute('data-question'),
@@ -1066,7 +1109,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
   );
   await genericAbsenceChip.click();
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
-    .some(title => title.textContent.includes('Ausencias GRH · 2026 (parcial)')));
+    .filter(title => title.textContent.includes('Ausencias explicadas · mismo tiempo de cada gestión')).length >= 2);
   const partialAbsence = await page.evaluate(() => {
     const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
     return {
@@ -1083,19 +1126,21 @@ test('assistant renders decision and workforce-finance answers with real deep li
       text: card?.textContent || '',
     };
   });
-  assert.equal(partialAbsence.title, 'Ausencias GRH · 2026 (parcial)');
+  assert.equal(partialAbsence.title, 'Ausencias explicadas · mismo tiempo de cada gestión');
   assert.deepEqual(partialAbsence.actions, [{
-    label: 'Abrir ausencias en Estructura',
-    href: '/estructura#ausencias',
-    capability: 'navigation.organization-analytics',
+    label: 'Ver ausencias explicadas',
+    href: '/dashboard#absenceInsights',
+    capability: 'navigation.dashboard',
   }]);
   assert.deepEqual(partialAbsence.evidence, [
-    { label: 'Registros válidos 2026', value: '1.559' },
-    { label: 'Participantes distintos', value: '590' },
+    { label: 'Registros · gestión actual', value: '5.936' },
+    { label: 'Registros · período anterior', value: '3.395' },
+    { label: 'Días informados · gestión actual', value: '65.847' },
+    { label: 'Días informados · período anterior', value: '52.190' },
   ]);
-  assert.match(partialAbsence.text, /hasta el corte 2026-08-06/i);
-  assert.match(partialAbsence.text, /no se anualiza/i);
-  assert.match(partialAbsence.text, /no una tasa|no es una tasa/i);
+  assert.match(partialAbsence.text, /ambos tramos tienen 972 días/i);
+  assert.match(partialAbsence.text, /No todos representan una licencia/i);
+  assert.match(partialAbsence.text, /tabla histórica de licencias se mantiene separada/i);
   assert.doesNotMatch(partialAbsence.text, /DNI|CUIL|legajo/i);
   assert.equal(requestLog.at(-1).body.message, '¿Qué datos de ausencias están disponibles?');
 
@@ -1178,7 +1223,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.match(movements.text, /eventos por participante observado/i);
   assert.match(movements.text, /no es una tasa de rotación/i);
   assert.doesNotMatch(movements.text, /legamov/i);
-  assert.equal(requestLog.length, 6);
+  assert.equal(requestLog.length, 7);
   assert.equal(requestLog.every(item => item.purpose === 'AGGREGATE_ANALYSIS'), true);
   await context.close();
 });

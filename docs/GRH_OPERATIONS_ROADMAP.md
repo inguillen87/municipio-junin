@@ -4,9 +4,11 @@ Versión documental: 1.6.0
 Fecha de corte: 9 de agosto de 2026
 
 Este documento define la evolución operativa de MuniControl sobre la fuente
-canónica **GRH Junín**. `personas_junin` queda fuera del dominio de forma
-absoluta: no se analiza, perfila, cruza, enriquece, migra, publica ni usa como
-fallback.
+laboral canónica **GRH Junín**. `personas_junin` es una fuente auxiliar separada
+y queda fuera de este pipeline, sus artefactos y sus publicaciones. Su futura
+integración tendrá manifiesto, staging y tabla puente versionada propios; nunca
+usará igualdad de `IDPERSONA` entre sistemas. Véase
+[`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
 
 ## Estado actual
 

@@ -2,6 +2,7 @@ import { inspectGrhDirectoryArtifact } from './grh-directory-contract.js';
 
 export const GRH_EMPLOYMENT_REVIEW_SCHEMA_VERSION = 'grh-employment-review-v1';
 export const GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD = 10;
+const GRH_DIRECTORY_SOURCE_SCHEMA_VERSION = 'grh-directory-v3';
 
 const PRIVATE_AUDIENCE = 'private';
 const PORTABLE_AUDIENCE = 'portable';
@@ -69,6 +70,50 @@ function categoryRow(definition, count, protectBreakdown) {
   };
 }
 
+function nonNegativeInteger(value) {
+  return Number.isSafeInteger(value) && value >= 0;
+}
+
+function summaryFromCounts(counts, {
+  audience,
+  referencePeriod,
+  totalDirectoryPeople,
+} = {}) {
+  if (![PRIVATE_AUDIENCE, PORTABLE_AUDIENCE].includes(audience) ||
+      !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(referencePeriod || '') ||
+      !nonNegativeInteger(totalDirectoryPeople) ||
+      !GRH_EMPLOYMENT_REVIEW_CATEGORIES.every(row => nonNegativeInteger(counts?.[row.key]))) {
+    throw projectionError(
+      'GRH_EMPLOYMENT_REVIEW_AGGREGATE_INVALID',
+      'El resumen de situaciones laborales no supera los controles requeridos.',
+    );
+  }
+  const totalToReview = GRH_EMPLOYMENT_REVIEW_CATEGORIES.reduce(
+    (sum, row) => sum + counts[row.key],
+    0,
+  );
+  if (totalToReview > totalDirectoryPeople) {
+    throw projectionError(
+      'GRH_EMPLOYMENT_REVIEW_AGGREGATE_INVALID',
+      'El resumen de situaciones laborales no supera los controles requeridos.',
+    );
+  }
+  const protectBreakdown = audience === PORTABLE_AUDIENCE &&
+    GRH_EMPLOYMENT_REVIEW_CATEGORIES.some(row => (
+      counts[row.key] > 0 && counts[row.key] < GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD
+    ));
+  return deepFreeze({
+    audience,
+    referencePeriod,
+    totalDirectoryPeople,
+    totalToReview,
+    privacyStatus: protectBreakdown ? 'partially_protected' : 'released',
+    categories: GRH_EMPLOYMENT_REVIEW_CATEGORIES.map(
+      definition => categoryRow(definition, counts[definition.key], protectBreakdown),
+    ),
+  });
+}
+
 export function summarizeGrhEmploymentReviewRecords(records, {
   audience = PORTABLE_AUDIENCE,
 } = {}) {
@@ -103,22 +148,43 @@ export function summarizeGrhEmploymentReviewRecords(records, {
     if (key) counts[key] += 1;
   }
 
-  const totalToReview = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  const protectBreakdown = audience === PORTABLE_AUDIENCE && Object.values(counts).some(
-    count => count > 0 && count < GRH_EMPLOYMENT_REVIEW_PRIVACY_THRESHOLD,
-  );
-  const categories = GRH_EMPLOYMENT_REVIEW_CATEGORIES.map(
-    definition => categoryRow(definition, counts[definition.key], protectBreakdown),
-  );
-  return deepFreeze({
+  return summaryFromCounts(counts, {
     audience,
     referencePeriod,
     totalDirectoryPeople: records.length,
-    totalToReview,
-    privacyStatus: protectBreakdown
-      ? 'partially_protected'
-      : 'released',
-    categories,
+  });
+}
+
+export function buildGrhEmploymentReviewAggregateProjection(aggregate, {
+  audience = PORTABLE_AUDIENCE,
+} = {}) {
+  const source = aggregate?.source;
+  if (source?.schemaVersion !== GRH_DIRECTORY_SOURCE_SCHEMA_VERSION ||
+      typeof source?.canonicalSystem !== 'string' || source.canonicalSystem.length === 0 ||
+      !/^[0-9a-f]{64}$/.test(source?.sourceSha256 || '') ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(source?.snapshotAsOf || '') ||
+      !nonNegativeInteger(aggregate?.totalDirectoryPeople) ||
+      aggregate?.materializedPeople !== aggregate.totalDirectoryPeople ||
+      aggregate?.employmentPeople !== aggregate.totalDirectoryPeople ||
+      aggregate?.referencePeriodCount !== 1) {
+    throw projectionError(
+      'GRH_EMPLOYMENT_REVIEW_AGGREGATE_INVALID',
+      'La publicación laboral no supera los controles requeridos.',
+    );
+  }
+  const summary = summaryFromCounts(aggregate.counts, {
+    audience,
+    referencePeriod: aggregate.referencePeriod,
+    totalDirectoryPeople: aggregate.totalDirectoryPeople,
+  });
+  return deepFreeze({
+    schemaVersion: GRH_EMPLOYMENT_REVIEW_SCHEMA_VERSION,
+    source: {
+      canonicalSystem: source.canonicalSystem,
+      sourceSha256: source.sourceSha256,
+      snapshotAsOf: source.snapshotAsOf,
+    },
+    ...summary,
   });
 }
 

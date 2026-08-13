@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { inspectGrhEmploymentReviewContract } from '../api/lib/grh-employment-review-contract.js';
 import {
+  buildGrhEmploymentReviewAggregateProjection,
   GRH_EMPLOYMENT_REVIEW_CATEGORIES,
   summarizeGrhEmploymentReviewRecords,
 } from '../api/lib/grh-employment-review-projection.js';
@@ -66,6 +67,48 @@ test('portable presentation protects the complete breakdown against difference a
     [null, 'Detalle protegido', 'protected'],
   ]);
   assert.equal(inspectGrhEmploymentReviewContract(contractProjection(summary)).ok, true);
+});
+
+test('materialized aggregate produces the same protected 27 without reading nominal records', () => {
+  const projection = buildGrhEmploymentReviewAggregateProjection({
+    source: {
+      schemaVersion: 'grh-directory-v3',
+      canonicalSystem: 'GRH Junín',
+      sourceSha256: 'a'.repeat(64),
+      snapshotAsOf: '2026-08-06',
+    },
+    referencePeriod: '2026-07',
+    referencePeriodCount: 1,
+    totalDirectoryPeople: 2449,
+    materializedPeople: 2449,
+    employmentPeople: 2449,
+    counts: {
+      reported_current_without_reference_payroll: 19,
+      reported_ended_with_reference_payroll: 7,
+      uncertain_status_with_reference_payroll: 1,
+    },
+  }, { audience: 'portable' });
+  assert.equal(projection.totalToReview, 27);
+  assert.deepEqual(projection.categories.map(row => row.count), [null, null, null]);
+  assert.equal(inspectGrhEmploymentReviewContract(projection).ok, true);
+
+  const drifted = structuredClone(projection);
+  assert.throws(
+    () => buildGrhEmploymentReviewAggregateProjection({
+      source: { ...drifted.source, schemaVersion: 'grh-directory-v3' },
+      referencePeriod: '2026-07',
+      referencePeriodCount: 1,
+      totalDirectoryPeople: 2449,
+      materializedPeople: 2448,
+      employmentPeople: 2449,
+      counts: {
+        reported_current_without_reference_payroll: 19,
+        reported_ended_with_reference_payroll: 7,
+        uncertain_status_with_reference_payroll: 1,
+      },
+    }),
+    error => error?.code === 'GRH_EMPLOYMENT_REVIEW_AGGREGATE_INVALID',
+  );
 });
 
 test('classification is mutually exclusive and rejects mixed periods or participation drift', () => {

@@ -26,7 +26,7 @@ test('el runbook de Intendencia conserva recorrido, verdad y rollback', async ()
   assert.match(source, /63,88\/100/i);
   assert.match(source, /\/grh-ejecutivo/);
   assert.match(source, /canary cerr[oó] sin cifras/i);
-  assert.match(source, /6:20[–-]6:50/);
+  assert.match(source, /6:00[–-]6:40/);
 });
 
 test('el runbook no contiene identidades, correos ni secretos de acceso', async () => {

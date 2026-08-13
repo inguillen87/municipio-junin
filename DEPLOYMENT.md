@@ -239,6 +239,9 @@ Promover sólo el preview certificado. Después, verificar como mínimo:
 - Roadmap: CDC/ingesta diaria, backups automatizados propios, rate limiting
   distribuido y permisos finos.
 
-No se certifica instalación PWA ni modo offline: actualmente no existe un
-registro activo del service worker. Esa capacidad debe volver con contrato y E2E
-propios antes de anunciarse.
+El checkout local contiene `manifest.json`, registro activo de `/sw.js`, shell
+offline y pruebas E2E propias. Las APIs y respuestas privadas quedan fuera del
+cache. Esta evidencia local reconcilia la capacidad PWA del repositorio, pero no
+certifica instalación ni funcionamiento offline en Preview o Production: el
+candidato exacto debe repetir el E2E PWA y el gate remoto antes de anunciar esa
+capacidad como desplegada.

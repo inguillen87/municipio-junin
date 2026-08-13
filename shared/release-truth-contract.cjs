@@ -12,6 +12,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-data': 'grh-raw-retired-v1',
   '/api/grh-directory': 'grh-directory-v3',
   '/api/grh-directory-access': 'grh-directory-access-v1',
+  '/api/grh-administration-comparison': 'grh-administration-comparison-v1',
   '/api/grh-employment-review': 'grh-employment-review-v1',
   '/api/grh-domain-catalog': 'grh-domain-catalog-v1',
   '/api/grh-organization-analytics': 'grh-organization-analytics-v2',

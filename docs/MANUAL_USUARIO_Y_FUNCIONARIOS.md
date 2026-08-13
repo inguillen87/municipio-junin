@@ -5,8 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Versión | 1.10.0 |
-| Fecha de corte documental | 9 de agosto de 2026 |
-| Estado | Release público `v1.10.0` verificado; producto S13 en commit `d11fd39` |
+| Incremento local | S15 `Unreleased` |
+| Fecha de corte documental | 13 de agosto de 2026 |
+| Estado | Release público histórico `v1.10.0` verificado; comparación de gestiones S15 en desarrollo local, sin Preview ni Production |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -25,13 +26,24 @@ con su capability; un 503 habilita únicamente reintento manual y una celda actu
 `<10` hace fallar cerrado el Panel integral. MuniGuía usa el anchor
 `#decisionBrief`.
 
-Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El commit/tag
-release `v1.10.0` apunta a
+S15 incorpora en desarrollo local una comparación entre la gestión actual y el
+mismo tramo de la gestión anterior. Usa dos períodos de 972 días y muestra sólo
+registros históricos agregados. No es tiempo real, no mide desempeño, no
+convierte fechas informadas en altas o bajas y no atribuye una causa. Este
+incremento permanece `Unreleased`: todavía no fue certificado en Preview ni
+Production. Presupuesto contra ejecución continúa cerrado porque no existe una
+fuente presupuestaria real autorizada en el alcance actual.
+
+Para el release histórico `v1.10.0`, route policy `2026-08-09.2` y access
+policy `2026-08-09.1` cubrían 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta
+—37 Serverless + 42 Express—. El commit/tag de ese release apunta a
 `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
 `07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
 `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
 no draft y no prerelease.
+
+El producto S13 está en el commit `d11fd39`; esta referencia es evidencia
+histórica y no afirma que el incremento local S15 esté desplegado.
 
 El deployment Production `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` quedó `READY`,
 alias `https://municipio-junin.vercel.app`, con `gitSource master/4108ca0`. El
@@ -134,7 +146,7 @@ municipio y los contratos privados publicados.
 | Capacidad | Uso actual | Límite obligatorio |
 |---|---|---|
 | [Inicio seguro](../inicio.html) | Orienta el recorrido de los siete roles técnicos vigentes con capabilities calculadas en servidor | Consulta sólo `/api/auth/me`; no carga GRH, no crea permisos/cuentas y no certifica despliegue |
-| [Panel Ejecutivo GRH](../dashboard.html) | Panorama transversal desde `grh-executive-v2` + `grh-quality-v1`; incorpora lectura de `grh-close-v1` | Superficie privada separada; no certifica despliegue, pago ni tiempo real |
+| [Panel Ejecutivo GRH](../dashboard.html) | Panorama transversal y comparación S15 entre dos tramos históricos de igual duración | S15 está en desarrollo local; los cambios no prueban causa, desempeño ni evaluación de gestión y no certifican despliegue, pago o tiempo real |
 | [Centro Ejecutivo GRH](../grh-ejecutivo.html) | Estructura, control de cálculo y eventos desde proyecciones seguras | Consumidor migrado localmente; sin fichas individuales ni PII |
 | [Centro Ejecutivo RRHH](../rrhh.html) | Participación agregada y directorio privado gobernado `grh-directory-v3`, con situación laboral informada, catálogos de contrato/revista, centro de costo y cronología acotada | La ficha nominal exige rol, usuario, tenant y finalidad autorizados; “sin egreso informado” no certifica vínculo activo y la participación en cálculo no prueba pago |
 | [Hacienda y Nómina](../hacienda.html) | Cierre mensual explicado: componentes de cálculo, controles y conciliación real por período desde importes protegidos | `grh-close-v1` local; sólo compara meses calendario consecutivos si ambos alcanzan k≥10; no certifica pago, presupuesto, causalidad, contabilidad ni deployment |
@@ -158,11 +170,11 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local cubre 26 recursos, 12 acciones, 46 permisos y 79
-firmas exactas: 37 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local `2026-08-13.8` cubre 31 recursos, 12 acciones,
+53 permisos y 91 firmas exactas: 49 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
-La política de acceso local `2026-08-09.1` entrega
+La política de acceso local `2026-08-11.3` entrega
 `navigation.workspace` a los siete roles vigentes: `SUPER_ADMIN`,
 `TENANT_ADMIN`, `INTENDENTE`, `CONTADOR`, `TENANT_USER`, `INSPECTOR` y `DEMO`.
 Login y `/api/auth/me` calculan las capabilities y el perfil de inicio en el
@@ -351,11 +363,48 @@ reutilizando permisos más amplios.
    - calidad y filas en cuarentena;
    - acuerdo y cobertura de conciliación entre fuentes;
    - distribución agregada por sector y centro de costo;
-   - brief decisional: señal global separada de evidencia mensual, cuarentena y límites.
+   - brief decisional: señal global separada de evidencia mensual, cuarentena y límites;
+   - comparación de gestiones: mismo número de días, fechas visibles y límites de interpretación.
 5. Use sólo una CTA que aparezca para su capability; abra GRH, RRHH,
    [Calidad y Linaje](../control.html) o Hacienda para entender la procedencia.
 6. Use el Asistente para formular una pregunta acotada y comprobar la evidencia.
 7. Registre la decisión y la validación complementaria necesaria.
+
+### 6.1.1 Cómo leer la comparación de gestiones
+
+La comparación evita enfrentar una gestión actual incompleta con los cuatro
+años completos de la gestión anterior. Usa exactamente **972 días** en cada
+lado:
+
+Para auditoría, el contrato identifica las ventanas como
+`2023-12-09..2026-08-06` y `2019-12-09..2022-08-06`.
+
+| Qué muestra | Gestión actual<br>9 de diciembre de 2023–6 de agosto de 2026 | Mismo tramo anterior<br>9 de diciembre de 2019–6 de agosto de 2022 | Diferencia |
+|---|---:|---:|---:|
+| Registros de ausencia | 5.936 | 3.395 | +2.541 |
+| Personas que aparecen en esos registros | 752 | 662 | +90 |
+| Días informados | 65.847 | 52.190 | +13.657 |
+| Fechas de ingreso informadas | 281 | 216 | +65 |
+| Fechas de egreso informadas | 232 | 173 | +59 |
+
+Para usarla correctamente:
+
+1. Confirme primero las dos fechas y que ambos lados indiquen 972 días.
+2. Lea “registros de ausencia” como cantidad de registros históricos, no como
+   una tasa ni una evaluación del desempeño de las personas.
+3. Lea “personas” como personas que aparecen al menos una vez en esos registros;
+   no es dotación activa.
+4. Lea ingreso y egreso sólo como **fechas informadas en la fuente**. No son
+   altas, bajas ni prueba de un vínculo laboral vigente.
+5. Use la diferencia para formular una pregunta a RRHH y revisar contexto. La
+   pantalla no demuestra por qué cambió un valor ni permite calificar una gestión.
+6. No intente completar presupuesto o ejecución con valores de GRH. Esa lectura
+   seguirá bloqueada hasta contar con una fuente presupuestaria real,
+   autorizada y conciliada.
+
+Si el bloque no puede validar su fuente o aplicar la protección de grupos
+pequeños, debe ocultar todas sus cifras y permitir un reintento manual. No copie
+valores de una captura anterior.
 
 ### 6.2 Decisiones permitidas
 

@@ -1,6 +1,6 @@
 # Demostración de Intendencia en 5–7 minutos
 
-Fecha de corte del guion: 11 de agosto de 2026. Este recorrido usa información
+Fecha de corte del guion: 13 de agosto de 2026. Este recorrido usa información
 agregada derivada del snapshot GRH del 6 de agosto de 2026. No demuestra una
 conexión en tiempo real, una nómina pagada ni la dotación activa del municipio.
 
@@ -19,8 +19,8 @@ Realizarlo con la misma URL y el mismo dispositivo que se usarán en la reunión
    para la demostración.
 2. Iniciar sesión con el perfil de evaluación `INTENDENTE`; no proyectar ni
    copiar contraseñas.
-3. Abrir una vez `/inicio`, `/estructura`, `/ejecutivo`, `/hacienda`, `/calidad`,
-   `/reportes`, `/ia` y `/territorio`.
+3. Abrir una vez `/inicio`, `/dashboard`, `/estructura`, `/ejecutivo`,
+   `/hacienda`, `/calidad`, `/reportes`, `/ia` y `/territorio`.
 4. Verificar que Ejecutivo y Calidad declaren corte 6 de agosto de 2026 y estado
    histórico, no tiempo real.
 5. Confirmar que no haya errores de consola, overflow, requests externos ni
@@ -37,12 +37,13 @@ superficie estable o posponer la parte privada de la demostración.
 |---|---|---|---|
 | 0:00–0:35 | `/login` | Los seis perfiles de evaluación y el acceso Intendente | “Cada perfil permite recorrer una experiencia distinta. El servidor revalida usuario, municipio, rol y capacidades; estas identidades no reemplazan el acceso institucional definitivo.” |
 | 0:35–1:05 | `/inicio` | Portada específica de Intendencia y accesos prioritarios | “No hay un dashboard universal. Intendencia entra por decisiones, evidencia y reportes; esta portada no inventa indicadores.” |
-| 1:05–2:25 | `/estructura` | Seis KPI, cohorte de cálculo, series de ausencias y movimientos, matriz organización×sector, comparador y botones de acción | “Esta sala separa tres universos: legajos registrados, participantes del cálculo y eventos históricos. No los mezcla ni llama personal activo. Las celdas menores a diez permanecen protegidas.” |
-| 2:25–3:30 | `/ejecutivo` | Fuente/corte, KPI, serie de control, sectores y eventos | “La lectura proviene de un backup GRH real. Los 856 corresponden a participantes de cálculo en julio, no a personal activo. Los importes se presentan en ARS por configuración de Junín; el control no acredita pago bancario.” |
-| 3:30–4:35 | `/hacienda` | Radar mensual, conciliación, componentes y comparación histórica | “El tablero permite abrir un período, comparar el mes anterior y localizar diferencias entre fuentes. Una diferencia es una señal de control, no prueba pérdida, fraude ni desembolso.” |
-| 4:35–5:35 | `/ia` | Consulta agregada de licencias o cierre, respuesta visual y preguntas siguientes | “El asistente determinista responde con el mismo contrato GRH, muestra gráficos y ofrece acciones. No inventa cifras ni atribuye causas que la fuente no prueba.” |
-| 5:35–6:20 | `/territorio` | Límite del Departamento Junín, Mendoza, localidades GeoRef y mapas base oficiales | “La referencia territorial consume fuentes oficiales IGN y GeoRef. Todavía no superpone empleados, obras ni reclamos porque esas capas no están gobernadas.” |
-| 6:20–6:50 | cierre | Volver a `/inicio` | “Hoy demostramos lectura trazable, comparación y navegación accionable. El siguiente paso es conectar las bases autorizadas gradualmente, con migraciones, actualización y backups probados.” |
+| 1:05–1:50 | `/dashboard` | Bloque “Comparación de gestiones”: dos períodos de 972 días y cinco lecturas simples | “Comparamos la gestión actual con el mismo tramo de la anterior, no con cuatro años completos. Son registros históricos del respaldo: describen diferencias, pero no prueban causas ni califican una gestión.” |
+| 1:50–2:45 | `/estructura` | Cohorte de cálculo, series de ausencias y movimientos y distribución organizativa | “Esta sala separa legajos registrados, participantes del cálculo y eventos históricos. No los mezcla ni los llama personal activo. Los grupos pequeños permanecen protegidos.” |
+| 2:45–3:35 | `/ejecutivo` | Fuente/corte, indicadores principales, sectores y eventos | “La lectura proviene de un backup GRH real. Los 856 corresponden a participantes de cálculo en julio, no a personal activo. El control no acredita pago bancario.” |
+| 3:35–4:25 | `/hacienda` | Conciliación, componentes y comparación mensual | “El tablero permite abrir un período y localizar diferencias entre fuentes. Una diferencia es una señal de control, no prueba pérdida, fraude ni desembolso. Presupuesto contra ejecución aún no está disponible porque falta esa fuente real.” |
+| 4:25–5:15 | `/ia` | Consulta agregada, respuesta visual y preguntas siguientes | “El asistente determinista responde con el mismo contrato GRH y ofrece acciones. No inventa cifras ni atribuye causas que la fuente no prueba.” |
+| 5:15–6:00 | `/territorio` | Límite del Departamento Junín, Mendoza, localidades GeoRef y mapas base oficiales | “La referencia territorial consume fuentes oficiales IGN y GeoRef. Todavía no superpone empleados, obras ni reclamos porque esas capas no están gobernadas.” |
+| 6:00–6:40 | cierre | Volver a `/inicio` | “Hoy demostramos una lectura trazable y comparable. El siguiente paso es conectar gradualmente las bases autorizadas, con migraciones, actualización y backups probados.” |
 
 ## Afirmaciones permitidas
 
@@ -56,17 +57,31 @@ superficie estable o posponer la parte privada de la demostración.
 - “Calidad 88,99/100, conciliación 63,88/100 y 20.534 filas en cuarentena”.
 - “489.455 movimientos históricos temporalmente válidos”.
 - “Seis accesos de evaluación de sólo lectura para recorrer roles”.
+- “Dos períodos equivalentes de 972 días: 9 de diciembre de 2023–6 de agosto de
+  2026 frente a 9 de diciembre de 2019–6 de agosto de 2022”.
+- “5.936 frente a 3.395 registros de ausencia; 752 frente a 662 personas
+  presentes en esos registros; 65.847 frente a 52.190 días informados”.
+- “281 frente a 216 fechas de ingreso informadas y 232 frente a 173 fechas de
+  egreso informadas”; no altas, bajas ni dotación activa.
 
 ## Afirmaciones prohibidas
 
 No usar “tiempo real”, “sueldos pagados”, “transferencia”, “planta
-activa”, “tasa de ausentismo”, “ahorro”, “fraude”, “causa comprobada”, “backup
+activa”, “tasa de ausentismo”, “mejor gestión”, “peor gestión”, “ahorro”,
+“fraude”, “causa comprobada”, “altas”, “bajas”, “ejecución presupuestaria”, “backup
 operativo certificado”, “permisos finos por área terminados” ni “integración
 automática con todos los sistemas municipales”.
 
 Las ausencias son eventos, no una tasa. Las licencias llegan sólo hasta 2009 y
 no deben presentarse como una tendencia vigente. Una variación mensual puede ser
 una señal para revisar, nunca una explicación causal.
+
+La comparación de gestiones está en desarrollo local y permanece `Unreleased`.
+No incluirla en una demostración remota hasta que el candidato exacto supere sus
+pruebas autenticadas de contrato, privacidad y navegador. Presupuesto contra
+ejecución continúa cerrado mientras no exista una fuente real autorizada.
+Para responder una consulta de auditoría, las ventanas exactas son
+`2023-12-09..2026-08-06` y `2019-12-09..2022-08-06`.
 
 ## Contingencia
 

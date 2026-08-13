@@ -5,10 +5,11 @@ actual es convertir el último backup de **GRH Junín** en indicadores trazables
 Intendencia, Hacienda y RRHH, sin publicar PII ni presentar datos simulados como
 si fueran reales.
 
-> Estado de esta documentación: código `master` y corte productivo verificados el
-> 10 de agosto de 2026. Los indicadores continúan describiendo el snapshot GRH del
-> 6 de agosto de 2026; no constituyen conexión en tiempo real ni pago bancario
-> conciliado.
+> Estado de esta documentación: el release `v1.10.0` conserva su evidencia
+> productiva histórica; S15 está en desarrollo local al 13 de agosto de 2026 y no
+> fue certificado en Preview ni Production. Los indicadores describen el snapshot
+> GRH del 6 de agosto de 2026; no constituyen conexión en tiempo real ni pago
+> bancario conciliado.
 
 ## Decisiones de datos
 
@@ -58,6 +59,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Estructura y áreas de costo | Validada localmente | React + TypeScript, seis KPI, exploradores de clasificaciones y centros de costo del cálculo, dos series históricas, matriz 5×5, comparador y acciones hacia Hacienda/BOT; contrato `grh-organization-analytics-v2`, k=10 y sin directorio nominal |
 | Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
+| Comparación de gestiones | En desarrollo local (`Unreleased`) | Compara dos tramos históricos de 972 días con la misma duración; todavía no fue verificada en Preview ni Production |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
 | Cargas analíticas y conectores | Condicionado | Upload/Sheets escriben tablas legacy ligadas por entorno; no hay ingesta unificada ni sincronización |
 | Reportes ejecutivos GRH | Verificado en Production | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto, períodos gobernados y smoke autenticado |
@@ -71,6 +73,31 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Presupuesto, obras, compras y trámites | Sin fuente gobernada | No deben exhibir bases sintéticas como datos municipales |
 | Roles finos y permisos por acción | Roadmap | Se mantiene RBAC grueso mientras se prioriza la evidencia ejecutiva |
 | CDC, backups propios y actualización diaria | Roadmap | El sistema actual no es tiempo real |
+
+### S15 — comparación histórica de gestiones
+
+El incremento S15 está **en desarrollo local** y permanece `Unreleased`. Su
+objetivo es ofrecer en el Panel una comparación fácil de leer entre la gestión
+actual y el mismo tramo de la gestión anterior, sin enfrentar un período parcial
+contra una gestión completa:
+
+| Lectura del respaldo GRH | Gestión actual<br>9 de diciembre de 2023–6 de agosto de 2026 | Mismo tramo anterior<br>9 de diciembre de 2019–6 de agosto de 2022 | Diferencia observada |
+|---|---:|---:|---:|
+| Registros de ausencia | 5.936 | 3.395 | +2.541 |
+| Personas que aparecen en esos registros | 752 | 662 | +90 |
+| Días informados en esos registros | 65.847 | 52.190 | +13.657 |
+| Fechas de ingreso informadas | 281 | 216 | +65 |
+| Fechas de egreso informadas | 232 | 173 | +59 |
+
+Para auditoría, las ventanas exactas son `2023-12-09..2026-08-06` y
+`2019-12-09..2022-08-06`.
+
+Ambos períodos tienen exactamente **972 días**. Son datos históricos del
+snapshot, no información en tiempo real. Los registros de ausencia no forman
+una tasa ni miden desempeño; las fechas informadas no prueban altas o bajas; y
+las diferencias no demuestran una causa ni permiten evaluar una gestión. La
+comparación de presupuesto contra ejecución continúa cerrada porque todavía no
+existe una fuente presupuestaria real, autorizada y reconciliada.
 
 ## Snapshot GRH analizado
 

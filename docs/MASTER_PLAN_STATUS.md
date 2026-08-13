@@ -1,7 +1,7 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.10.0.
-Fecha de corte: 9 de agosto de 2026.
+Versión documental: 1.10.0 + S15 `Unreleased`.
+Fecha de corte: 13 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
 implementación. Ese plan declaraba fases completas y archivos que no existen en
@@ -27,9 +27,21 @@ etiquetas/labels. Las CTA requieren capability; un 503 admite sólo reintento
 manual y una celda actual `<10` hace fallar cerrado el Panel. MuniGuía apunta a
 `#decisionBrief`.
 
-Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El commit/tag
-release `v1.10.0` apunta a
+El sprint S15, **comparación histórica de gestiones**, está en desarrollo local
+y permanece `Unreleased`. Compara dos ventanas equivalentes de 972 días:
+2023-12-09..2026-08-06 frente a 2019-12-09..2022-08-06. La lectura validada del
+backup contiene, respectivamente, 5.936/3.395 registros de ausencia, 752/662
+personas presentes en esos registros, 65.847/52.190 días informados, 281/216
+fechas de ingreso informadas y 232/173 fechas de egreso informadas. Este
+incremento no está certificado en Preview ni Production y no mueve ningún
+release. Son datos históricos, no tiempo real; no son una tasa ni una medición
+de desempeño; las fechas informadas no equivalen a altas o bajas; y las
+diferencias no prueban causa ni evaluación de gestión. Presupuesto contra
+ejecución sigue cerrado por falta de una fuente real autorizada.
+
+Para el release histórico `v1.10.0`, route policy `2026-08-09.2` y access
+policy `2026-08-09.1` cubrían 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta
+—37 Serverless + 42 Express—. El commit/tag de ese release apunta a
 `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
 `07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
 `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
@@ -151,8 +163,9 @@ Estado: **completo en código local; falta despliegue**.
 - autorización revalidada contra DB en funciones Serverless y backend Express;
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
-- techo compartido y fail-closed de 26 recursos, 12 acciones, 46 permisos y 79
-  firmas de ruta exactas (37 Serverless y 42 Express), sin wildcard ni jerarquía;
+- techo compartido y fail-closed vigente de 31 recursos, 12 acciones, 53
+  permisos y 91 firmas de ruta exactas (49 Serverless y 42 Express), sin
+  wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
 - XSS y caché de APIs autenticadas corregidos;
@@ -348,9 +361,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local contiene 26
-recursos, 12 acciones, 46 permisos y 79 firmas protegidas exactas: 37 Serverless
-y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.8`
+contiene 31 recursos, 12 acciones, 53 permisos y 91 firmas protegidas exactas:
+49 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -423,7 +436,7 @@ y datos privados no certificados**.
 
 - `inicio.html` es el destino seguro después del login y exige
   `navigation.workspace`;
-- la política compartida `2026-08-09.1` define una variante de inicio para cada
+- la política compartida `2026-08-11.3` define una variante de inicio para cada
   uno de los siete roles técnicos vigentes y deniega roles, capabilities o
   perfiles desconocidos;
 - login y `/api/auth/me` calculan en servidor `capabilities`,
@@ -500,8 +513,8 @@ snapshot aprobado**.
   vista y falla cerrado;
 - MuniGuía reemplaza la antigua lectura de alertas del Panel por el anchor real
   `#decisionBrief`, sin agregar requests GRH ni ampliar permisos;
-- route policy `2026-08-09.2`: 79 rutas exactas, 37 Serverless + 42 Express; la
-  access policy permanece `2026-08-09.1`. El gate productivo verificó seis APIs y
+- route policy histórica de S13 `2026-08-09.2`: 79 rutas exactas, 37 Serverless
+  + 42 Express; la access policy de ese release fue `2026-08-09.1`. El gate productivo verificó seis APIs y
   11 checks con exit `0` sobre el deployment release.
 
 La evidencia local disponible es focal raíz S13 135/135, QA adversarial 104/104
@@ -621,6 +634,30 @@ bloqueados por gobierno del target**.
   opt-in omitido— y backend 20/20. El incremento sigue `Unreleased`, sin bump,
   tag, GitHub Release o `v1.11.0`. `v1.10.0` conserva el tag `4108ca0` y su 11/11
   histórico; `e74339c` es el hotfix post-release con gate productivo 12/12.
+
+### S15 — comparación histórica de gestiones
+
+Estado: **en desarrollo local; `Unreleased`; sin evidencia Preview o
+Production**.
+
+- La comparación usa el corte canónico del 6 de agosto de 2026 y enfrenta la
+  ventana actual 9 de diciembre de 2023–6 de agosto de 2026 con el mismo tramo
+  iniciado cuatro años antes: 9 de diciembre de 2019–6 de agosto de 2022.
+- Cada ventana contiene exactamente 972 días. No se enfrenta la gestión actual
+  parcial contra los cuatro años completos de la gestión anterior.
+- En la ventana actual/anterior se observaron 5.936/3.395 registros de ausencia,
+  752/662 personas presentes en esos registros y 65.847/52.190 días informados.
+- La fuente registra 281/216 fechas de ingreso informadas y 232/173 fechas de
+  egreso informadas. Son campos históricos reportados: no acreditan altas,
+  bajas, vínculo vigente ni dotación activa.
+- Los cambios son descriptivos. No constituyen tasa de ausencia, desempeño,
+  causalidad, mérito, responsabilidad ni evaluación política de una gestión.
+- Presupuesto contra ejecución queda fuera de S15 y bloqueado hasta incorporar
+  una fuente presupuestaria real, autorizada, conciliada y con período comparable.
+- Antes de presentar S15 como disponible se requieren integración completa,
+  focales de contrato/privacidad/UI, prueba responsive autenticada en Preview y
+  gate del candidato exacto. Ninguna de esas condiciones se sustituye con esta
+  actualización documental.
 
 ## Funciones que no deben “completarse” todavía
 

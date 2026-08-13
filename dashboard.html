@@ -801,6 +801,107 @@
     .exec-decision-ledger-cta { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 7px; color: var(--exec-blue); font-size: 11px; font-weight: 850; text-decoration: none; }
     .exec-decision-ledger-cta:hover { text-decoration: underline; }
     .exec-decision-limit { margin: 12px 0 0; color: var(--exec-muted); font-size: 9.5px; line-height: 1.55; }
+    .exec-administration-comparison {
+      border-color: rgba(var(--exec-teal-rgb),.28);
+      background:
+        linear-gradient(118deg,rgba(var(--exec-teal-rgb),.085),transparent 48%),
+        var(--exec-surface);
+    }
+    .exec-administration-comparison::before { background: var(--exec-teal); }
+    .exec-administration-comparison .exec-decision-eyebrow { color: var(--exec-teal); }
+    .exec-administration-periods {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .exec-administration-period {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--exec-border);
+      border-radius: 12px;
+      background: rgba(0,0,0,.075);
+    }
+    [data-theme="light"] .exec-administration-period { background: rgba(var(--exec-teal-rgb),.025); }
+    .exec-administration-period span {
+      display: block;
+      color: var(--exec-muted);
+      font-size: 9px;
+      font-weight: 820;
+      letter-spacing: .055em;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+    .exec-administration-period strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--exec-text);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .exec-administration-matrix { margin-top: 12px; }
+    .exec-administration-row {
+      display: grid;
+      grid-template-columns: minmax(210px,1.55fr) repeat(3,minmax(100px,.6fr));
+      gap: 8px;
+      align-items: stretch;
+      margin-top: 8px;
+    }
+    .exec-administration-row:first-child { margin-top: 0; }
+    .exec-administration-row dt,
+    .exec-administration-row dd {
+      min-width: 0;
+      margin: 0;
+      padding: 12px;
+      border: 1px solid var(--exec-border);
+      border-radius: 10px;
+      background: var(--exec-soft);
+    }
+    .exec-administration-row dt { display: flex; justify-content: center; flex-direction: column; }
+    .exec-administration-row dt strong { color: var(--exec-text); font-size: 11px; line-height: 1.4; }
+    .exec-administration-row dt span { margin-top: 4px; color: var(--exec-muted); font-size: 9.5px; line-height: 1.45; }
+    .exec-administration-row dd {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      color: var(--exec-text);
+      font-size: 16px;
+      font-weight: 830;
+      font-variant-numeric: tabular-nums;
+    }
+    .exec-administration-row dd[data-column="difference"] { color: var(--exec-teal); }
+    .exec-administration-columns {
+      display: grid;
+      grid-template-columns: minmax(210px,1.55fr) repeat(3,minmax(100px,.6fr));
+      gap: 8px;
+      margin: 16px 0 0;
+      color: var(--exec-muted);
+      font-size: 9px;
+      font-weight: 820;
+      letter-spacing: .045em;
+      text-transform: uppercase;
+    }
+    .exec-administration-columns span { padding: 0 12px; text-align: right; }
+    .exec-administration-columns span:first-child { text-align: left; }
+    .exec-administration-technical {
+      margin-top: 12px;
+      border: 1px solid var(--exec-border);
+      border-radius: 12px;
+      background: var(--exec-soft);
+    }
+    .exec-administration-technical summary {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 12px 14px;
+      color: var(--exec-text-soft);
+      font-size: 10.5px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .exec-administration-technical div { padding: 0 14px 14px; }
+    .exec-administration-technical:not([open]) > div { display: none; }
+    .exec-administration-technical p { margin: 7px 0 0; color: var(--exec-muted); font-size: 10px; line-height: 1.55; }
     .exec-layout-full { grid-template-columns: minmax(0,1fr); }
 
     .exec-ranks { display: grid; gap: 13px; }
@@ -942,6 +1043,21 @@
       .exec-close-grid,.exec-close-technical-grid { grid-template-columns: 1fr; }
       .exec-close-deltas { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .exec-decision-evidence,.exec-decision-priorities { grid-template-columns: 1fr; }
+      .exec-administration-periods { grid-template-columns: 1fr; }
+      .exec-administration-columns { display: none; }
+      .exec-administration-row { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .exec-administration-row dt { grid-column: 1 / -1; }
+      .exec-administration-row dd { display: block; padding: 10px; text-align: right; }
+      .exec-administration-row dd::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 5px;
+        color: var(--exec-muted);
+        font-size: 8px;
+        font-weight: 820;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+      }
       .exec-panel { padding: 17px; border-radius: 16px; }
       .exec-panel-head { align-items: flex-start; flex-direction: column; }
       .exec-chart-controls { width: 100%; justify-content: space-between; }
@@ -1096,6 +1212,50 @@
           <div class="exec-control-actions">
             <a class="exec-control-action" id="employmentReviewCta" href="/rrhh#peopleDirectory" hidden>Revisar en Directorio y fichas</a>
             <button class="exec-retry-btn" id="employmentReviewRetry" type="button" hidden>Reintentar este control</button>
+          </div>
+        </section>
+
+        <section class="exec-decision-brief exec-administration-comparison" id="administrationComparison" aria-labelledby="administrationComparisonTitle" data-contract="grh-administration-comparison-v1" data-privacy-threshold="10" hidden>
+          <div class="exec-decision-head">
+            <div>
+              <p class="exec-decision-eyebrow">Comparación histórica</p>
+              <h3 id="administrationComparisonTitle">Mismo tiempo de cada gestión</h3>
+              <p class="exec-decision-headline" id="administrationComparisonHeadline">Comprobando los períodos comparables…</p>
+            </div>
+            <div class="exec-decision-meta">
+              <span class="exec-decision-tag" id="administrationComparisonDays">972 días por período</span>
+            </div>
+          </div>
+          <div class="exec-administration-periods" aria-label="Períodos comparados">
+            <article class="exec-administration-period">
+              <span id="administrationCurrentLabel">Gestión actual</span>
+              <strong id="administrationCurrentDates">—</strong>
+            </article>
+            <article class="exec-administration-period">
+              <span id="administrationPriorLabel">Mismo tramo de la gestión anterior</span>
+              <strong id="administrationPriorDates">—</strong>
+            </article>
+          </div>
+          <div class="exec-administration-columns" aria-hidden="true">
+            <span>Dato del respaldo</span>
+            <span>Gestión actual</span>
+            <span>Gestión anterior</span>
+            <span>Diferencia</span>
+          </div>
+          <dl class="exec-administration-matrix" id="administrationComparisonMetrics" aria-label="Comparación de datos históricos"></dl>
+          <p class="exec-decision-limit" id="administrationComparisonStatus" role="status" aria-live="polite">Esta comparación se carga por separado y no bloquea el resto del panorama.</p>
+          <details class="exec-administration-technical" id="administrationComparisonTechnical">
+            <summary>Ver fechas informadas y límites</summary>
+            <div>
+              <dl class="exec-administration-matrix" id="administrationComparisonAdditionalMetrics" aria-label="Fechas informadas en los legajos"></dl>
+              <p id="administrationComparisonCoverage">—</p>
+              <p>Las diferencias describen registros del respaldo municipal. No evalúan una gestión, no explican causas y no representan la dotación activa.</p>
+              <p>Las fechas de ingreso y egreso son las informadas en los legajos; no prueban por sí solas altas o bajas administrativas.</p>
+            </div>
+          </details>
+          <div class="exec-control-actions">
+            <a class="exec-control-action" id="administrationComparisonCta" href="/estructura#novedades-historicas" hidden>Ver ausencias por año</a>
+            <button class="exec-retry-btn" id="administrationComparisonRetry" type="button" hidden>Reintentar esta comparación</button>
           </div>
         </section>
 
@@ -1361,6 +1521,7 @@
   <script src="js/grh-close-data.js"></script>
   <script src="js/grh-decision-brief-data.js"></script>
   <script src="js/grh-employment-review-data.js"></script>
+  <script src="js/grh-administration-comparison-data.js"></script>
   <script>
     (function () {
       'use strict';
@@ -1374,7 +1535,7 @@
       var civilDateFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeZone:'UTC'});
       var dateTimeFormatter = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Argentina/Buenos_Aires'});
       var monthFormatter = new Intl.DateTimeFormat('es-AR',{month:'short',year:'numeric',timeZone:'UTC'});
-      var state = { executive:null, quality:null, monthlyClose:null, decisionBrief:null, employmentReview:null, series:[], range:'12', loadSequence:0 };
+      var state = { executive:null, quality:null, monthlyClose:null, decisionBrief:null, employmentReview:null, administrationComparison:null, series:[], range:'12', loadSequence:0 };
       var elements = {};
 
       function byId(id) { return document.getElementById(id); }
@@ -1390,6 +1551,9 @@
           'closeParticipantDelta','closeCoverageDelta','closeExactnessDelta','closeAgreementDelta','decisionBrief','decisionLedgerActions','decisionLedgerCta',
           'employmentReview','employmentReviewHeadline','employmentReviewPeriod','employmentReviewTotal','employmentReviewCoverage',
           'employmentReviewPrivacy','employmentReviewCategories','employmentReviewStatus','employmentReviewCta','employmentReviewRetry',
+          'administrationComparison','administrationComparisonHeadline','administrationComparisonDays','administrationCurrentLabel','administrationCurrentDates',
+          'administrationPriorLabel','administrationPriorDates','administrationComparisonMetrics','administrationComparisonAdditionalMetrics','administrationComparisonStatus',
+          'administrationComparisonTechnical','administrationComparisonCoverage','administrationComparisonCta','administrationComparisonRetry',
           'decisionBriefHeadline','decisionBriefStatus','decisionBriefBoundary','decisionAgreement','decisionAgreementNote',
           'decisionChange','decisionChangeNote','decisionQuality','decisionQualityNote','decisionPriorities','decisionBriefLimits'
         ].forEach(function (id) { elements[id] = byId(id); });
@@ -1756,6 +1920,127 @@
         }
       }
 
+      function formatAdministrationDate(value) {
+        return civilDateFormatter.format(new Date(value+'T00:00:00Z'));
+      }
+
+      function resetAdministrationComparison() {
+        state.administrationComparison = null;
+        elements.administrationComparison.hidden = false;
+        setText(elements.administrationComparisonHeadline,'Comprobando los períodos comparables…');
+        setText(elements.administrationComparisonDays,'972 días por período');
+        setText(elements.administrationCurrentLabel,'Gestión actual');
+        setText(elements.administrationCurrentDates,'—');
+        setText(elements.administrationPriorLabel,'Mismo tramo de la gestión anterior');
+        setText(elements.administrationPriorDates,'—');
+        elements.administrationComparisonMetrics.replaceChildren();
+        elements.administrationComparisonAdditionalMetrics.replaceChildren();
+        setText(elements.administrationComparisonStatus,'Esta comparación se carga por separado y no bloquea el resto del panorama.');
+        setText(elements.administrationComparisonCoverage,'Comprobando si los registros tienen los días informados.');
+        elements.administrationComparisonTechnical.open = false;
+        elements.administrationComparisonCta.hidden = true;
+        elements.administrationComparisonRetry.hidden = true;
+      }
+
+      function formatAdministrationValue(value,isDifference) {
+        if(value === null) return 'Protegido';
+        if(!Number.isSafeInteger(value)) fail('La comparación histórica contiene un valor inválido.');
+        if(isDifference && value > 0) return '+'+numberFormatter.format(value);
+        return numberFormatter.format(value);
+      }
+
+      function appendAdministrationMetric(container,metric,meaning) {
+        var row = document.createElement('div');
+        var term = document.createElement('dt');
+        var heading = document.createElement('strong');
+        var description = document.createElement('span');
+        row.className = 'exec-administration-row';
+        heading.textContent = metric.label;
+        description.textContent = meaning;
+        term.append(heading,description);
+        row.appendChild(term);
+        [
+          {key:'current',label:'Gestión actual'},
+          {key:'prior',label:'Gestión anterior'},
+          {key:'difference',label:'Diferencia'},
+        ].forEach(function (column) {
+          var value = document.createElement('dd');
+          value.dataset.column = column.key;
+          value.dataset.label = column.label;
+          value.textContent = formatAdministrationValue(metric.values[column.key],column.key === 'difference');
+          row.appendChild(value);
+        });
+        container.appendChild(row);
+      }
+
+      function renderAdministrationComparison(comparison) {
+        state.administrationComparison = comparison;
+        var current = comparison.periods.current;
+        var prior = comparison.periods.prior;
+        var absence = comparison.comparison.absence;
+        setText(elements.administrationComparisonHeadline,
+          'Comparamos el mismo tiempo transcurrido en ambas gestiones con la información disponible hasta '+
+          formatAdministrationDate(comparison.source.snapshotAsOf)+'.');
+        setText(elements.administrationComparisonDays,numberFormatter.format(current.days)+' días por período');
+        setText(elements.administrationCurrentLabel,current.label);
+        setText(elements.administrationCurrentDates,formatAdministrationDate(current.startDate)+' a '+formatAdministrationDate(current.endDate));
+        setText(elements.administrationPriorLabel,prior.label);
+        setText(elements.administrationPriorDates,formatAdministrationDate(prior.startDate)+' a '+formatAdministrationDate(prior.endDate));
+        elements.administrationComparisonMetrics.replaceChildren();
+        elements.administrationComparisonAdditionalMetrics.replaceChildren();
+        appendAdministrationMetric(elements.administrationComparisonMetrics,absence.eventRows,'Registros de ausencia encontrados en cada período.');
+        appendAdministrationMetric(elements.administrationComparisonMetrics,absence.distinctPeople,'Personas diferentes con al menos un registro de ausencia.');
+        appendAdministrationMetric(elements.administrationComparisonMetrics,absence.reportedDays,'Suma de días informados; no son días laborables perdidos.');
+        appendAdministrationMetric(elements.administrationComparisonAdditionalMetrics,comparison.comparison.reportedIngressDates,comparison.comparison.reportedIngressDates.meaning);
+        appendAdministrationMetric(elements.administrationComparisonAdditionalMetrics,comparison.comparison.reportedExitDates,comparison.comparison.reportedExitDates.meaning);
+
+        if(absence.privacyStatus === 'protected') {
+          setText(elements.administrationComparisonCoverage,'Los valores de ausencias no se muestran porque podrían permitir identificar grupos pequeños.');
+        } else {
+          var currentMissing = absence.dayCoverage.missingEventRows.values.current;
+          var priorMissing = absence.dayCoverage.missingEventRows.values.prior;
+          if(currentMissing === 0 && priorMissing === 0) {
+            setText(elements.administrationComparisonCoverage,'Todos los registros de ausencia de ambos períodos incluyen días informados.');
+          } else {
+            setText(elements.administrationComparisonCoverage,
+              'Registros sin días informados: '+numberFormatter.format(currentMissing)+' en la gestión actual y '+
+              numberFormatter.format(priorMissing)+' en el período anterior.');
+          }
+        }
+        setText(elements.administrationComparisonStatus,comparison.privacy.status === 'released'
+          ? 'Diferencia = gestión actual menos gestión anterior. Describe registros del respaldo; no califica una gestión ni explica causas.'
+          : 'Algunos valores no se muestran para proteger grupos pequeños. No se reemplazan por cero.');
+        elements.administrationComparisonCta.hidden = !hasNavigationCapability('navigation.organization-analytics');
+        elements.administrationComparisonRetry.hidden = true;
+      }
+
+      function showAdministrationComparisonError() {
+        state.administrationComparison = null;
+        setText(elements.administrationComparisonHeadline,'No pudimos completar esta comparación.');
+        setText(elements.administrationCurrentDates,'—');
+        setText(elements.administrationPriorDates,'—');
+        elements.administrationComparisonMetrics.replaceChildren();
+        elements.administrationComparisonAdditionalMetrics.replaceChildren();
+        setText(elements.administrationComparisonCoverage,'No se muestran cifras sin verificar ni se reemplazan datos faltantes por cero.');
+        setText(elements.administrationComparisonStatus,'El resto del panorama sigue disponible. Podés reintentar sólo esta comparación.');
+        elements.administrationComparisonCta.hidden = true;
+        elements.administrationComparisonRetry.hidden = false;
+      }
+
+      async function loadAdministrationComparison(sequence) {
+        resetAdministrationComparison();
+        try {
+          if(!window.MuniGrhAdministrationComparison || typeof window.MuniGrhAdministrationComparison.load !== 'function') throw new Error('Cliente no disponible');
+          var comparison = await window.MuniGrhAdministrationComparison.load({ timeoutMs:10000 });
+          if(sequence !== state.loadSequence) return;
+          renderAdministrationComparison(comparison);
+        } catch(error) {
+          if(sequence !== state.loadSequence) return;
+          showAdministrationComparisonError();
+          console.error('[Panel ejecutivo GRH] Comparación de gestiones no disponible:',error);
+        }
+      }
+
       function renderRanking(container,rows,color) {
         container.replaceChildren();
         var released = rows.filter(function (row) { return row.privacyStatus === 'released'; });
@@ -1915,9 +2200,10 @@
       }
 
       function resetView() {
-        state.executive = null; state.quality = null; state.monthlyClose = null; state.decisionBrief = null; state.employmentReview = null; state.series = [];
+        state.executive = null; state.quality = null; state.monthlyClose = null; state.decisionBrief = null; state.employmentReview = null; state.administrationComparison = null; state.series = [];
         elements.dataViews.hidden = true;
         elements.employmentReview.hidden = true;
+        elements.administrationComparison.hidden = true;
         elements.loadError.hidden = true;
         elements.loadStatus.hidden = false;
         elements.executiveDashboard.setAttribute('aria-busy','true');
@@ -1979,6 +2265,7 @@
           if(sequence !== state.loadSequence) return;
           renderAll(normalizeExperience(projections[0],projections[1],projections[2]));
           void loadEmploymentReview(sequence);
+          void loadAdministrationComparison(sequence);
         } catch(error) {
           if(sequence !== state.loadSequence) return;
           showError(error);
@@ -2004,6 +2291,7 @@
         elements.trendRange.addEventListener('change',function (event) { state.range = event.target.value; if(state.executive) renderChart(); });
         elements.retryLoad.addEventListener('click',loadAuthorizedDashboard);
         elements.employmentReviewRetry.addEventListener('click',function () { void loadEmploymentReview(state.loadSequence); });
+        elements.administrationComparisonRetry.addEventListener('click',function () { void loadAdministrationComparison(state.loadSequence); });
         elements.execThemeToggle.addEventListener('click',toggleTheme);
         var light = document.documentElement.getAttribute('data-theme') === 'light';
         elements.execThemeToggle.setAttribute('aria-pressed',light ? 'true' : 'false');

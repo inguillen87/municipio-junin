@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
+import { buildGrhAdministrationComparisonProjection } from '../api/lib/grh-administration-comparison-projection.js';
 import { buildGrhDecisionBriefProjection } from '../api/lib/grh-decision-brief-projection.js';
 import { buildGrhExecutiveProjection } from '../api/lib/grh-executive-projection.js';
 import { buildGrhQualityProjection } from '../api/lib/grh-quality-projection.js';
@@ -27,11 +29,48 @@ const PROJECTIONS = HAS_PRIVATE_GRH ? await (async () => {
   const executive = buildGrhExecutiveProjection(semantic, { audience: 'interactive' });
   const quality = buildGrhQualityProjection(profile, semantic);
   const close = buildGrhCloseProjection(semantic);
+  const administration = buildGrhAdministrationComparisonProjection({
+    source: {
+      schemaVersion: 'grh-directory-v3',
+      canonicalSystem: executive.source.canonicalSystem,
+      sourceSha256: executive.source.sourceSha256,
+      contentSha256: 'a'.repeat(64),
+      snapshotAsOf: executive.source.snapshotAsOf,
+      recordCount: 2449,
+      absenceEventCount: 31553,
+    },
+    identity: {
+      materializedPeople: 2449,
+      uniquePeople: 2449,
+      employmentPeople: 2449,
+      digestedPeople: 2449,
+      materializedAbsenceEvents: 31553,
+    },
+    current: {
+      eventRows: 5936,
+      distinctPeople: 752,
+      reportedDays: 65847,
+      knownEventRows: 5936,
+      missingEventRows: 0,
+      reportedIngressDates: 281,
+      reportedExitDates: 232,
+    },
+    prior: {
+      eventRows: 3395,
+      distinctPeople: 662,
+      reportedDays: 52190,
+      knownEventRows: 3395,
+      missingEventRows: 0,
+      reportedIngressDates: 216,
+      reportedExitDates: 173,
+    },
+  }, { audience: 'portable' });
   return {
     executive,
     quality,
     close,
     decision: buildGrhDecisionBriefProjection(executive, quality, close),
+    administration,
     employment: {
       schemaVersion: 'grh-employment-review-v1',
       source: {
@@ -248,6 +287,7 @@ async function createServer(requestLog, options = {}) {
       '/api/grh-close': 'close',
       '/api/grh-decision-brief': 'decision',
       '/api/grh-employment-review': 'employment',
+      '/api/grh-administration-comparison': 'administration',
     };
     const contract = governedContracts[url.pathname];
     if (contract) {
@@ -285,6 +325,12 @@ async function createServer(requestLog, options = {}) {
           row.privacyStatus = 'protected';
         });
       }
+      if (contract === 'administration' && options.administrationProtected) {
+        payload = cloneProjection(payload);
+        payload.privacy.status = 'partially_protected';
+        payload.comparison.reportedIngressDates.privacyStatus = 'protected';
+        payload.comparison.reportedIngressDates.values = { current: null, prior: null, difference: null };
+      }
       if (contract === 'close' && options.closeSourceMismatch) {
         payload = cloneProjection(payload);
         payload.source.sourceSha256 = 'f'.repeat(64);
@@ -301,6 +347,7 @@ async function createServer(requestLog, options = {}) {
         close: 'grh-close-v1',
         decision: options.decisionContractMismatch ? 'grh-decision-brief-v0' : 'grh-decision-brief-v1',
         employment: options.employmentContractMismatch ? 'grh-employment-review-v0' : 'grh-employment-review-v1',
+        administration: options.administrationContractMismatch ? 'grh-administration-comparison-v0' : 'grh-administration-comparison-v1',
       };
       response.writeHead(200, {
         'Content-Type': CONTENT_TYPES['.json'],
@@ -402,6 +449,27 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
       employmentCategories: Array.from(document.querySelectorAll('#employmentReviewCategories strong')).map(node => node.textContent.trim()),
       employmentStatus: document.querySelector('#employmentReviewStatus')?.textContent.replace(/\s+/g, ' ').trim(),
       employmentCta: document.querySelector('#employmentReviewCta:not([hidden])')?.getAttribute('href') || null,
+      administrationContract: document.querySelector('#administrationComparison')?.dataset.contract,
+      administrationThreshold: document.querySelector('#administrationComparison')?.dataset.privacyThreshold,
+      administrationHeadline: document.querySelector('#administrationComparisonHeadline')?.textContent.replace(/\s+/g, ' ').trim(),
+      administrationDays: document.querySelector('#administrationComparisonDays')?.textContent.trim(),
+      administrationCurrentDates: document.querySelector('#administrationCurrentDates')?.textContent.trim(),
+      administrationPriorDates: document.querySelector('#administrationPriorDates')?.textContent.trim(),
+      administrationRows: Array.from(document.querySelectorAll('#administrationComparisonMetrics .exec-administration-row')).map(row => ({
+        label: row.querySelector('dt strong')?.textContent.trim(),
+        meaning: row.querySelector('dt span')?.textContent.replace(/\s+/g, ' ').trim(),
+        values: Array.from(row.querySelectorAll('dd')).map(node => node.textContent.trim()),
+      })),
+      administrationAdditionalRows: Array.from(document.querySelectorAll('#administrationComparisonAdditionalMetrics .exec-administration-row')).map(row => ({
+        label: row.querySelector('dt strong')?.textContent.trim(),
+        meaning: row.querySelector('dt span')?.textContent.replace(/\s+/g, ' ').trim(),
+        values: Array.from(row.querySelectorAll('dd')).map(node => node.textContent.trim()),
+      })),
+      administrationStatus: document.querySelector('#administrationComparisonStatus')?.textContent.replace(/\s+/g, ' ').trim(),
+      administrationCoverage: document.querySelector('#administrationComparisonCoverage')?.textContent.replace(/\s+/g, ' ').trim(),
+      administrationTechnicalOpen: document.querySelector('#administrationComparisonTechnical')?.open,
+      administrationTechnicalVisible: document.querySelector('#administrationComparisonTechnical div')?.getClientRects().length > 0,
+      administrationCta: document.querySelector('#administrationComparisonCta:not([hidden])')?.getAttribute('href') || null,
       sourceCount: document.querySelector('#sourceCountChip')?.textContent.trim(),
       decisionTitle: document.querySelector('#decisionBriefTitle')?.textContent.trim(),
       decisionStatus: document.querySelector('#decisionBriefStatus')?.textContent.trim(),
@@ -497,6 +565,26 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     ]);
     assert.match(result.employmentStatus, /no son errores automáticos.+altas, bajas o pagos/i);
     assert.equal(result.employmentCta, '/rrhh#peopleDirectory');
+    assert.equal(result.administrationContract, 'grh-administration-comparison-v1');
+    assert.equal(result.administrationThreshold, '10');
+    assert.match(result.administrationHeadline, /mismo tiempo transcurrido.+6 ago 2026/i);
+    assert.equal(result.administrationDays, '972 días por período');
+    assert.equal(result.administrationCurrentDates, '9 dic 2023 a 6 ago 2026');
+    assert.equal(result.administrationPriorDates, '9 dic 2019 a 6 ago 2022');
+    assert.deepEqual(result.administrationRows, [
+      { label: 'Registros de ausencia', meaning: 'Registros de ausencia encontrados en cada período.', values: ['5.936', '3.395', '+2.541'] },
+      { label: 'Personas distintas con ausencias', meaning: 'Personas diferentes con al menos un registro de ausencia.', values: ['752', '662', '+90'] },
+      { label: 'Días informados en los registros', meaning: 'Suma de días informados; no son días laborables perdidos.', values: ['65.847', '52.190', '+13.657'] },
+    ]);
+    assert.deepEqual(result.administrationAdditionalRows, [
+      { label: 'Fechas de ingreso informadas', meaning: 'Cuenta legajos cuya fecha de ingreso informada cae dentro de cada tramo; no prueba altas de personal.', values: ['281', '216', '+65'] },
+      { label: 'Fechas de egreso informadas', meaning: 'Cuenta legajos cuya fecha de egreso informada cae dentro de cada tramo; no prueba bajas de personal.', values: ['232', '173', '+59'] },
+    ]);
+    assert.match(result.administrationStatus, /no califica una gestión ni explica causas/i);
+    assert.equal(result.administrationCoverage, 'Todos los registros de ausencia de ambos períodos incluyen días informados.');
+    assert.equal(result.administrationTechnicalOpen, false);
+    assert.equal(result.administrationTechnicalVisible, false);
+    assert.equal(result.administrationCta, '/estructura#novedades-historicas');
     assert.equal(result.sourceCount, '4/4');
     assert.equal(result.decisionTitle, 'Revisiones recomendadas');
     assert.equal(result.decisionStatus, 'Revisión prioritaria');
@@ -586,6 +674,10 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     assert.deepEqual(consoleErrors, []);
     assert.deepEqual(externalRequests, []);
     assert.deepEqual(rawContractRequests, []);
+    await page.screenshot({
+      path: path.join(os.tmpdir(), `municontrol-administration-comparison-${viewport.name}.png`),
+      fullPage: true,
+    });
 
     await page.click('#sourceControlDetails summary');
     const controlDetail = await page.evaluate(() => ({
@@ -758,9 +850,10 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
     await context.close();
   }
 
-  assert.equal(requestLog.length, 10);
-  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['close', 'close', 'decision', 'decision', 'employment', 'employment', 'executive', 'executive', 'quality', 'quality']);
+  assert.equal(requestLog.length, 12);
+  assert.deepEqual(requestLog.map(item => item.contract).sort(), ['administration', 'administration', 'close', 'close', 'decision', 'decision', 'employment', 'employment', 'executive', 'executive', 'quality', 'quality']);
   assert.deepEqual([...new Set(requestLog.map(item => item.pathname))].sort(), [
+    '/api/grh-administration-comparison',
     '/api/grh-close',
     '/api/grh-decision-brief',
     '/api/grh-employment-review',
@@ -770,6 +863,79 @@ test('main executive dashboard renders only source-backed GRH contracts', { skip
   assert.equal(requestLog.every(item => item.requestTarget === item.pathname), true, 'governed requests must use exact endpoints without query variants');
   assert.equal(requestLog.every(item => item.authorization.startsWith('Bearer ')), true);
   assert.equal(requestLog.some(item => /grh-data|profile|semantic/i.test(item.pathname)), false);
+});
+
+test('administration comparison remains operable at 320px with forced colors', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const context = await browser.newContext({
+    viewport: { width: 320, height: 720 },
+    reducedMotion: 'reduce',
+    forcedColors: 'active',
+  });
+  await seedSession(context);
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('#administrationComparison:not([hidden])');
+
+  const compact = await page.evaluate(() => {
+    const section = document.querySelector('#administrationComparison');
+    const matrix = document.querySelector('#administrationComparisonMetrics');
+    const summary = document.querySelector('#administrationComparisonTechnical > summary');
+    const cta = document.querySelector('#administrationComparisonCta:not([hidden])');
+    return {
+      sectionVisible: Boolean(section?.getClientRects().length),
+      matrixVisible: Boolean(matrix?.getClientRects().length),
+      rows: matrix?.querySelectorAll('.exec-administration-row').length,
+      values: Array.from(matrix?.querySelectorAll('dd') || [], node => node.textContent.trim()),
+      summaryHeight: summary?.getBoundingClientRect().height || 0,
+      ctaHeight: cta?.getBoundingClientRect().height || 0,
+      ctaHref: cta?.getAttribute('href'),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      sectionOverflow: Math.max(0, (section?.scrollWidth || 0) - (section?.clientWidth || 0)),
+      matrixOverflow: Math.max(0, (matrix?.scrollWidth || 0) - (matrix?.clientWidth || 0)),
+    };
+  });
+  assert.equal(compact.sectionVisible, true);
+  assert.equal(compact.matrixVisible, true);
+  assert.equal(compact.rows, 3);
+  assert.deepEqual(compact.values, ['5.936', '3.395', '+2.541', '752', '662', '+90', '65.847', '52.190', '+13.657']);
+  assert.ok(compact.summaryHeight >= 44);
+  assert.ok(compact.ctaHeight >= 44);
+  assert.equal(compact.ctaHref, '/estructura#novedades-historicas');
+  assert.equal(compact.overflow, 0);
+  assert.equal(compact.sectionOverflow, 0);
+  assert.equal(compact.matrixOverflow, 0);
+
+  await page.click('#administrationComparisonTechnical > summary');
+  await page.focus('#administrationComparisonTechnical > summary');
+  await page.keyboard.press('Tab');
+  const opened = await page.evaluate(() => {
+    const active = document.activeElement;
+    const outline = active ? getComputedStyle(active) : null;
+    return {
+      open: document.querySelector('#administrationComparisonTechnical')?.open,
+      additionalRows: document.querySelectorAll('#administrationComparisonAdditionalMetrics .exec-administration-row').length,
+      focused: active?.id,
+      outlineStyle: outline?.outlineStyle,
+      outlineWidth: Number.parseFloat(outline?.outlineWidth || '0'),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  assert.equal(opened.open, true);
+  assert.equal(opened.additionalRows, 2);
+  assert.equal(opened.focused, 'administrationComparisonCta');
+  assert.notEqual(opened.outlineStyle, 'none');
+  assert.ok(opened.outlineWidth >= 1);
+  assert.equal(opened.overflow, 0);
+  await context.close();
 });
 
 test('employment review protects small groups and never blocks the municipal panorama', { skip: !HAS_PRIVATE_GRH }, async t => {
@@ -825,7 +991,7 @@ test('employment review protects small groups and never blocks the municipal pan
       page.locator('#employmentReviewRetry').click(),
     ]);
     assert.equal(requestLog.filter(item => item.contract === 'employment').length, 2);
-    assert.equal(requestLog.filter(item => item.contract !== 'employment').length, 4);
+    assert.equal(requestLog.filter(item => item.contract !== 'employment').length, 5);
     await context.close();
   });
 
@@ -848,6 +1014,74 @@ test('employment review protects small groups and never blocks the municipal pan
     assert.equal(await page.locator('#employmentReviewCategories').locator('li').count(), 0);
     assert.equal(await page.locator('#employmentReviewCta').isVisible(), false);
     assert.equal(requestLog.filter(item => item.contract === 'employment').length, 1);
+    await context.close();
+  });
+});
+
+test('administration comparison protects small differences and fails independently', { skip: !HAS_PRIVATE_GRH }, async t => {
+  await t.test('protected row never leaks the hidden counts', async t => {
+    const requestLog = [];
+    const server = await createServer(requestLog, { administrationProtected: true });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await new Promise(resolve => server.close(resolve));
+    });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'networkidle' });
+    const result = await page.evaluate(() => ({
+      rows: Array.from(document.querySelectorAll('#administrationComparisonMetrics .exec-administration-row')).map(row => ({
+        label: row.querySelector('dt strong')?.textContent.trim(),
+        values: Array.from(row.querySelectorAll('dd')).map(node => node.textContent.trim()),
+      })),
+      additionalRows: Array.from(document.querySelectorAll('#administrationComparisonAdditionalMetrics .exec-administration-row')).map(row => ({
+        label: row.querySelector('dt strong')?.textContent.trim(),
+        values: Array.from(row.querySelectorAll('dd')).map(node => node.textContent.trim()),
+      })),
+      status: document.querySelector('#administrationComparisonStatus')?.textContent.replace(/\s+/g, ' ').trim(),
+      text: document.querySelector('#administrationComparison')?.textContent.replace(/\s+/g, ' ').trim(),
+      coreVisible: !document.querySelector('#dataViews')?.hidden,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    assert.deepEqual(result.additionalRows.at(0), {
+      label: 'Fechas de ingreso informadas',
+      values: ['Protegido', 'Protegido', 'Protegido'],
+    });
+    assert.match(result.status, /no se muestran para proteger grupos pequeños/i);
+    assert.doesNotMatch(result.text, /\b281\b|\b216\b|\+65\b/);
+    assert.equal(result.coreVisible, true);
+    assert.equal(result.overflow, 0);
+    assert.equal(requestLog.filter(item => item.contract === 'administration').length, 1);
+    await context.close();
+  });
+
+  await t.test('scoped failure and retry', async t => {
+    const requestLog = [];
+    const server = await createServer(requestLog, { administrationUnavailable: true });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await new Promise(resolve => server.close(resolve));
+    });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/dashboard.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#administrationComparisonRetry:not([hidden])');
+    assert.equal(await page.locator('#dataViews').getAttribute('hidden'), null);
+    assert.equal(await page.locator('#kpiParticipants').textContent(), '856');
+    assert.equal(await page.locator('#administrationComparisonMetrics').locator('.exec-administration-row').count(), 0);
+    assert.match(await page.locator('#administrationComparisonStatus').textContent(), /resto del panorama sigue disponible/i);
+    await Promise.all([
+      page.waitForResponse(response => new URL(response.url()).pathname === '/api/grh-administration-comparison' && response.status() === 503),
+      page.locator('#administrationComparisonRetry').click(),
+    ]);
+    assert.equal(requestLog.filter(item => item.contract === 'administration').length, 2);
+    assert.equal(requestLog.filter(item => item.contract !== 'administration').length, 5);
     await context.close();
   });
 });

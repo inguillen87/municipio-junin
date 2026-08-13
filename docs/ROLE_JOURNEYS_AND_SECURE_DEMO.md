@@ -3,6 +3,8 @@
 **Versión:** 1.10.0
 **Fecha de corte:** 9 de agosto de 2026  
 **Estado:** release público `v1.10.0` verificado; producto S13 en commit `d11fd39`
+**Estado local revisado:** 13 de agosto de 2026; políticas locales actualizadas,
+sin nuevo release
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
 snapshot aprobado. S13 entrega localmente `GET /api/grh-decision-brief` y
@@ -13,9 +15,9 @@ etiquetas/labels. Cada CTA exige su capability; un 503 permite sólo reintento
 manual y una celda actual `<10` hace fallar cerrado el Panel. MuniGuía suma el
 anchor real `#decisionBrief`.
 
-Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El commit/tag
-release `v1.10.0` apunta a
+Para el release histórico `v1.10.0`, route policy `2026-08-09.2` y access
+policy `2026-08-09.1` cubrían 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta
+—37 Serverless + 42 Express—. El commit/tag de ese release apunta a
 `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
 `07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
 `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
@@ -105,7 +107,7 @@ Cuando una capacidad no está en la política versionada, la respuesta correcta 
 denegarla. No existe herencia por jerarquía, wildcard ni la regla “un rol alto
 puede hacer todo”.
 
-La política local `2026-08-09.1` concede `navigation.workspace` a los siete
+La política local `2026-08-11.3` concede `navigation.workspace` a los siete
 identificadores y proyecta en servidor un perfil mínimo. Si una cuenta
 institucional vigente posee uno de esos roles, login y `/api/auth/me` emiten
 `capabilities`, `accessPolicyVersion` y exactamente `variant`, `defaultPath` y
@@ -406,8 +408,8 @@ Las fuentes técnicas actuales son
 [`../shared/access-policy.cjs`](../shared/access-policy.cjs), para capacidades de
 navegación y sesión, y [`../shared/route-policy.cjs`](../shared/route-policy.cjs),
 como techo exacto de autorización server-side por `recurso:acción`, runtime,
-método y ruta. Al corte, ese techo registra 26 recursos, 12 acciones, 46
-permisos y 79 firmas exactas: 37 Serverless y 42 Express. El modelo de datos
+método y ruta. Al corte, ese techo `2026-08-13.8` registra 31 recursos, 12
+acciones, 53 permisos y 91 firmas exactas: 49 Serverless y 42 Express. El modelo de datos
 propuesto, todavía inactivo, está en
 [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md); sus fases de producto se
 mantienen en [`ENTERPRISE_PRODUCT_ROADMAP.md`](ENTERPRISE_PRODUCT_ROADMAP.md) y

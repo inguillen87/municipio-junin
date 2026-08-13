@@ -1,7 +1,8 @@
 # Benchmark GovTech para MuniControl
 
 - Versión: 1.10.0
-- Fecha de consulta: 8 de agosto de 2026
+- Fecha de consulta externa: 8 de agosto de 2026
+- Estado local revisado: 13 de agosto de 2026
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
 
@@ -16,9 +17,9 @@ etiquetas/labels. Las CTA se habilitan sólo por capability; un 503 admite sólo
 reintento manual y una celda actual `<10` hace fallar cerrado el Panel integral.
 MuniGuía usa el nuevo anchor real `#decisionBrief`.
 
-Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-acciones, 46 permisos y 79 rutas exactas —37 Serverless + 42 Express—. El
-commit/tag release `v1.10.0` apunta a
+Para el release histórico `v1.10.0`, route policy `2026-08-09.2` y access
+policy `2026-08-09.1` cubrían 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta
+exactas —37 Serverless + 42 Express—. El commit/tag de ese release apunta a
 `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
 `07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
 `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
@@ -614,9 +615,9 @@ El menú sólo guía la UX; API y base deciden. La evolución debe incorporar SS
 sesiones revocables, ámbitos versionados, acceso excepcional a PII con vencimiento,
 rate limiting distribuido y alertas de abuso.
 
-La base local vigente no es sólo diseño: `shared/route-policy.cjs` fija 26
-recursos, 12 acciones, 46 permisos y 79 firmas exactas, 37 Serverless y 42
-Express. `shared/access-policy.cjs` `2026-08-09.1` proyecta el workspace de siete
+La base local vigente no es sólo diseño: `shared/route-policy.cjs`
+`2026-08-13.8` fija 31 recursos, 12 acciones, 53 permisos y 91 firmas exactas,
+49 Serverless y 42 Express. `shared/access-policy.cjs` `2026-08-11.3` proyecta el workspace de siete
 roles. Las asignaciones finas, SoD, lifecycle y auditoría persistida permanecen
 como propuesta aislada y no migrada.
 

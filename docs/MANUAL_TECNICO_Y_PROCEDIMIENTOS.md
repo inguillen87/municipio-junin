@@ -4,7 +4,7 @@
 
 **Tipo:** documento vivo
 
-**Última verificación contra el checkout local:** 2026-08-09
+**Última verificación contra el checkout local:** 2026-08-13
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
 > Release público `v1.10.0` verificado; producto S13 en commit `d11fd39`. La
@@ -23,9 +23,9 @@
 > hace fallar cerrado el Panel.
 > MuniGuía incorpora el anchor real `#decisionBrief`.
 >
-> Route policy `2026-08-09.2`, access policy `2026-08-09.1`: 26 recursos, 12
-> acciones, 46 permisos y 79 rutas —37 Serverless + 42 Express—. El commit/tag
-> release `v1.10.0` apunta a
+> Para el release histórico `v1.10.0`, route policy `2026-08-09.2` y access
+> policy `2026-08-09.1` cubrían 26 recursos, 12 acciones, 46 permisos y 79 firmas de ruta
+> —37 Serverless + 42 Express—. El commit/tag de ese release apunta a
 > `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
 > `07ac9eacf8bd89f27f5c437b99e713e8497b8934`. La GitHub Release
 > `https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0` está live,
@@ -157,8 +157,8 @@ Reglas de verdad:
 - `shared/route-policy.cjs` actúa como techo de autorización exacto por
   runtime, método, ruta y permiso `recurso:acción`. Una ruta, método, rol,
   capacidad o secreto interno no registrado se deniega.
-- La versión local `2026-08-09.2` del manifiesto contiene 26 recursos, 12
-  acciones, 46 permisos y 79 firmas de ruta protegidas: 37 Serverless y 42
+- La versión local `2026-08-13.8` del manifiesto contiene 31 recursos, 12
+  acciones, 53 permisos y 91 firmas de ruta protegidas: 49 Serverless y 42
   Express. Es un techo ejecutable exacto, no persistencia RBAC/ABAC por área.
 - `.vercelignore` excluye backend, evidencia, scripts, SQL, tests, documentos y
   artefactos JSON privados. `api/**` y `prisma/**` permanecen desplegables.
@@ -179,13 +179,13 @@ Reglas de verdad:
 
 ### 2.3 Inicio seguro y proyección de acceso
 
-`shared/access-policy.cjs` versión `2026-08-09.1` reconoce siete roles exactos y
+`shared/access-policy.cjs` versión `2026-08-11.3` reconoce siete roles exactos y
 la capability `navigation.workspace`. `api/auth/login.js`, `api/auth/me.js` y el
 router Express calculan desde el usuario autoritativo y emiten dentro de `user`:
 
 ```text
 capabilities: string[]
-accessPolicyVersion: "2026-08-09.1"
+accessPolicyVersion: "2026-08-11.3"
 homeProfile: {
   variant,
   defaultPath: "inicio.html",
@@ -1360,8 +1360,8 @@ APIs privadas → analítica / mapas / alertas / asistente
 - La autorización actual combina identidad, rol vigente, tenant y estado
   consultados en DB con un manifiesto exacto de rutas y permisos
   `recurso:acción`. Las listas legacy sólo pueden restringir ese techo, nunca
-  ampliarlo. La versión local cubre 26 recursos, 12 acciones, 46 permisos y 79
-  firmas exactas (37 Serverless y 42 Express). Todavía no existe persistencia de
+  ampliarlo. La versión local cubre 31 recursos, 12 acciones, 53 permisos y 91
+  firmas exactas (49 Serverless y 42 Express). Todavía no existe persistencia de
   asignaciones por área, fila, campo, vigencia ni reglas de segregación de
   funciones.
 
@@ -1457,13 +1457,13 @@ municipal ni ejecutar una decisión administrativa por sí sola.
 
 **Actual local:** existen `Tenant`, siete roles técnicos, estado del tenant,
 controles tenant-bound y una política compartida que registra de forma literal
-  26 recursos, 12 acciones, 46 permisos y 79 firmas protegidas (37 Serverless y 42
+31 recursos, 12 acciones, 53 permisos y 91 firmas protegidas (49 Serverless y 42
 Express). No hay wildcard, jerarquía ni autorización por nombre de pantalla. Los
 adaptadores de ambos runtimes usan ese mismo techo y deniegan lo desconocido.
 Algunas tablas analíticas legacy aún dependen de un CUID ambiental y no ofrecen
 aislamiento por fila nativo.
 
-La política de acceso `2026-08-09.1` agrega además un inicio seguro para esos
+La política de acceso `2026-08-11.3` agrega además un inicio seguro para esos
 siete roles. Login y `/me` calculan capabilities y perfil desde servidor;
 `inicio.html` no consulta datasets y separa el Panel GRH. Esto mejora la
 experiencia por responsabilidad, pero no implementa asignaciones por área,
@@ -1578,7 +1578,7 @@ Diagnóstico recomendado:
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
-| Techo de autorización `recurso:acción` | Operativo local | 26 recursos, 12 acciones, 46 permisos y 79 firmas exactas: 37 Serverless + 42 Express; desconocidos fallan cerrados |
+| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.8`: 31 recursos, 12 acciones, 53 permisos y 91 firmas exactas, 49 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |

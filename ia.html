@@ -385,6 +385,16 @@
     .answer-details .answer-limits { margin-top: 13px; }
 
     .answer-source { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--assistant-line); color: #8294aa; font-size: 12px; line-height: 1.5; }
+    .answer-synthesis { margin-bottom: 15px; padding: 14px; border: 1px solid rgba(82, 214, 199, 0.35); border-radius: 13px; background: rgba(82, 214, 199, 0.055); }
+    .answer-synthesis-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .answer-synthesis-header h4 { margin: 0; color: var(--assistant-text); font-size: 13px; font-weight: 800; }
+    .answer-synthesis-badge { padding: 3px 7px; border: 1px solid rgba(82, 214, 199, 0.45); border-radius: 999px; color: var(--assistant-cyan); font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+    .answer-synthesis-lead { margin: 10px 0 0; color: #d8e9f7; font-size: 14px; font-weight: 680; line-height: 1.55; }
+    .answer-synthesis-list { margin: 9px 0 0; padding-left: 18px; color: #b8cad9; font-size: 12px; line-height: 1.55; }
+    .answer-synthesis-list li + li { margin-top: 5px; }
+    .answer-citation { display: inline-flex; margin-left: 4px; color: var(--assistant-cyan); font-size: 12px; font-weight: 800; }
+    .answer-synthesis-sources { margin-top: 10px; color: #8294aa; font-size: 12px; line-height: 1.45; }
+    .answer-synthesis-sources strong { color: #a9bdce; }
 
     .answer-followups { margin-top: 9px; padding: 12px; border: 1px solid var(--assistant-line); border-radius: 13px; background: var(--assistant-panel-solid); }
     .answer-followups-label { margin: 0 0 8px; color: var(--assistant-muted); font-size: 12px; font-weight: 760; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -478,6 +488,11 @@
     .send-query svg { width: 18px; height: 18px; }
 
     .composer-meta { width: min(900px, 100%); margin: 8px auto 0; display: flex; justify-content: space-between; gap: 12px; color: #8294aa; font-size: 12px; }
+    .copilot-mode { display: inline-flex; min-height: 28px; align-items: center; gap: 7px; color: #a9bdce; cursor: pointer; }
+    .copilot-mode input { width: 16px; height: 16px; margin: 0; accent-color: var(--assistant-cyan); }
+    .copilot-mode strong { color: #d8e9f7; font-weight: 760; }
+    .copilot-mode-help { color: #8294aa; }
+    .copilot-mode input:focus-visible { outline: 3px solid rgba(101, 167, 255, 0.35); outline-offset: 2px; }
 
     .context-rail { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.2) transparent; }
     .rail-card { padding: 15px; border: 1px solid var(--assistant-line); border-radius: 15px; background: var(--assistant-panel); backdrop-filter: blur(16px); }
@@ -588,6 +603,16 @@
     html[data-theme="light"] .rail-card h2,
     html[data-theme="light"] .trust-row strong { color: #102a43; }
     html[data-theme="light"] .rail-note { background: #fff7ed; }
+    html[data-theme="light"] .answer-synthesis { border-color: #2f8f83; background: #ecfdf9; }
+    html[data-theme="light"] .answer-synthesis-lead,
+    html[data-theme="light"] .answer-synthesis-header h4,
+    html[data-theme="light"] .copilot-mode strong { color: #102a43; }
+    html[data-theme="light"] .answer-synthesis-list,
+    html[data-theme="light"] .answer-synthesis-sources strong,
+    html[data-theme="light"] .copilot-mode { color: #334b60; }
+    html[data-theme="light"] .answer-synthesis-badge,
+    html[data-theme="light"] .answer-citation { color: #0f5f59; }
+    html[data-theme="light"] .copilot-mode-help { color: #40566a; }
     html[data-theme="light"] .rail-note strong { color: #78350f; }
     html[data-theme="light"] .rail-link-mark { color: #1d4ed8; background: #e7f0ff; }
     html.muni-shell-v1[data-theme="dark"] body.assistant-page [data-muni-shell="bottom-nav"] {
@@ -652,8 +677,9 @@
       .answer-followup { width: 100%; }
       .query-primary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .query-more-body { max-height: min(26dvh, 220px); grid-template-columns: 1fr; }
-      .composer-meta span:first-child { display: none; }
-      .composer-meta { justify-content: flex-end; }
+      .composer-meta > span:first-child { display: none; }
+      .composer-meta { align-items: flex-end; justify-content: space-between; }
+      .copilot-mode-help { display: none; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -672,6 +698,7 @@
       .answer-details,
       .answer-followups,
       .answer-next-step,
+      .answer-synthesis,
       .person-search-panel,
       .assistant-role-chip,
       .engine-status,
@@ -810,6 +837,7 @@
                 <div class="query-group-list">
                   <button class="query-chip" type="button" data-query-id="quality" data-primary-roles="TENANT_ADMIN,SUPER_ADMIN" data-question="¿Cómo está la calidad de los datos y qué requiere revisión?">Calidad</button>
                   <button class="query-chip" type="button" data-query-id="source" data-question="¿Cuál es el origen y la fecha de los datos?">Origen y fecha</button>
+                  <button class="query-chip" type="button" data-query-id="manual-help" data-question="¿Cómo uso la plataforma y dónde encuentro el manual?">Guía de uso</button>
                 </div>
               </section>
             </div>
@@ -828,6 +856,11 @@
           </form>
           <div class="composer-meta" id="composerHelp">
             <span>Enter para enviar · Shift + Enter para nueva línea</span>
+            <label class="copilot-mode" for="assistantSynthesis" title="OpenAI redacta sólo sobre evidencia agregada ya verificada; si no está disponible se conserva la respuesta local.">
+              <input id="assistantSynthesis" type="checkbox" aria-describedby="assistantSynthesisHelp">
+              <strong>Redacción asistida</strong>
+              <span class="copilot-mode-help" id="assistantSynthesisHelp">opcional · sin fichas personales</span>
+            </label>
             <span id="characterCount">0 / 1200</span>
           </div>
         </div>

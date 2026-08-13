@@ -27,6 +27,7 @@ const EXPECTED_SERVERLESS = [
   'GET /municipal-territory',
   'GET /grh-executive',
   'GET /grh-quality',
+  'GET /grh-import-quality-history',
   'GET /grh-close',
   'GET /grh-decision-brief',
   'GET /grh-action-ledger',
@@ -177,6 +178,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'grh-decision-brief.js',
     'grh-action-ledger.js',
     'grh-executive.js',
+    'grh-import-quality-history.js',
     'grh-quality.js',
     'intelligence.js',
     'municipal-territory.js',
@@ -295,6 +297,8 @@ test('route authorization is exact by runtime, method and path', () => {
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-executive'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-quality'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-quality'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-import-quality-history'), true);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-import-quality-history'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-close'), true);
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-close?period=ignored'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-close'), false);

@@ -173,8 +173,8 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local `2026-08-13.11` cubre 31 recursos, 12 acciones,
-53 permisos y 93 firmas exactas: 51 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local `2026-08-13.12` cubre 31 recursos, 12 acciones,
+53 permisos y 94 firmas exactas: 52 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
 La política de acceso local `2026-08-11.3` entrega
@@ -531,9 +531,12 @@ personas, días perdidos, tasa de ausentismo, rotación ni causalidad.
 
 ## 9. Uso del Asistente Ejecutivo GRH
 
-El [Asistente Ejecutivo](../ia.html) es determinista: clasifica la pregunta dentro
-de intents habilitados y responde con el contrato GRH. No consulta un proveedor
-generativo ni “aprende” de la conversación.
+El [Asistente Ejecutivo](../ia.html) calcula y autoriza siempre de forma
+determinista: clasifica la pregunta dentro de intents habilitados y responde con
+el contrato GRH. La opción **Redacción asistida** puede resumir hechos agregados y
+el manual con citas visibles, pero no cambia cifras, permisos, fuentes ni acciones.
+No aprende de la conversación y nunca se usa para fichas personales. Si el
+proveedor no está habilitado o falla, se conserva la respuesta local completa.
 
 El intent `close_explanation`, presentado como **Cierre explicado**, construye
 `grh-close-v1` desde la misma lectura del bundle privado. Responde sobre un único
@@ -551,6 +554,8 @@ Bot y su E2E cerró 13/13 localmente, sin certificar deployment.
 4. Use las preguntas siguientes sólo si permanecen dentro del mismo contrato.
 5. Si la respuesta dice “limitado”, “no disponible” o “sin evidencia”, no fuerce
    una conclusión mediante otra redacción.
+6. Active **Redacción asistida** sólo si desea una explicación más breve. Confirme
+   que cada frase tenga una cita y lea siempre la evidencia determinista debajo.
 
 Preguntas adecuadas:
 

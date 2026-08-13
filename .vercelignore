@@ -4,6 +4,7 @@ dist/**
 frontend/node_modules/**
 api/_data/*.json
 !api/_data/grh-absence-insights.json
+!api/_data/grh-import-quality-history.json
 !api/_data/grh-personas-linkage-readiness.json
 docs/data/*.json
 

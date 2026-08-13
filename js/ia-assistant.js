@@ -114,6 +114,7 @@
     card.appendChild(header);
 
     var body = createElement('div', 'answer-body');
+    appendCopilotSynthesis(body, answer.synthesis, payload.engine);
     appendAnswerActions(body, answer.actions, answer.directory);
     appendAnswerVisual(body, answer.visual);
     var detailsContent = createElement('div', 'answer-details-content');
@@ -166,7 +167,96 @@
     row.appendChild(stack);
     appendToLog(row, 'start');
     updateProvenance(payload.provenance);
-    setSourceStatus('verified', 'Datos del corte verificados');
+    if (payload.engine && payload.engine.generated === true && payload.engine.externalProvider === true) {
+      setSourceStatus('verified', 'Datos verificados · síntesis asistida');
+    } else if (payload.engine && payload.engine.requested === true && payload.engine.mode === 'deterministic-fallback') {
+      setSourceStatus('verified', 'Datos verificados · respuesta local');
+    } else {
+      setSourceStatus('verified', 'Datos del corte verificados');
+    }
+  }
+
+  function appendCopilotSynthesis(body, synthesis, engine) {
+    if (!validCopilotSynthesis(synthesis, engine)) return;
+    var sourceById = {};
+    synthesis.sources.forEach(function(source) { sourceById[source.id] = source; });
+    var section = createElement('section', 'answer-synthesis');
+    section.setAttribute('aria-label', 'Síntesis asistida con fuentes verificadas');
+    var header = createElement('div', 'answer-synthesis-header');
+    header.appendChild(createElement('h4', '', 'Lectura clara sobre la evidencia'));
+    header.appendChild(createElement('span', 'answer-synthesis-badge', 'Asistida'));
+    section.appendChild(header);
+
+    var lead = createElement('p', 'answer-synthesis-lead');
+    lead.appendChild(document.createTextNode(synthesis.lead.text));
+    appendCitationMarks(lead, synthesis.lead.citationIds, sourceById);
+    section.appendChild(lead);
+
+    if (synthesis.insights.length) {
+      var list = createElement('ul', 'answer-synthesis-list');
+      synthesis.insights.forEach(function(insight) {
+        var item = document.createElement('li');
+        item.appendChild(document.createTextNode(insight.text));
+        appendCitationMarks(item, insight.citationIds, sourceById);
+        list.appendChild(item);
+      });
+      section.appendChild(list);
+    }
+    var sourceLine = createElement('p', 'answer-synthesis-sources');
+    sourceLine.appendChild(createElement('strong', '', 'Citas: '));
+    sourceLine.appendChild(document.createTextNode(synthesis.sources.map(function(source) {
+      return '[' + source.id + '] ' + source.label;
+    }).join(' · ')));
+    section.appendChild(sourceLine);
+    body.appendChild(section);
+  }
+
+  function appendCitationMarks(container, citationIds, sourceById) {
+    citationIds.forEach(function(id) {
+      var source = sourceById[id];
+      var mark = createElement('span', 'answer-citation', '[' + id + ']');
+      if (source) mark.title = source.label;
+      container.appendChild(mark);
+    });
+  }
+
+  function validCopilotSynthesis(value, engine) {
+    if (!value || !exactObjectKeys(value, [
+      'schemaVersion', 'provider', 'model', 'lead', 'insights', 'sources', 'actionIds'
+    ]) || value.schemaVersion !== 'municipal-copilot-synthesis-v1' || value.provider !== 'openai' ||
+        !safeText(value.model, 80, false) || !engine || engine.id !== 'municipal-copilot-v2' ||
+        engine.generated !== true || engine.externalProvider !== true || engine.provider !== 'openai') return false;
+    if (!value.lead || !exactObjectKeys(value.lead, ['text', 'citationIds']) ||
+        !safeText(value.lead.text, 240, false) || !validCitationIds(value.lead.citationIds, 4) ||
+        !Array.isArray(value.insights) || value.insights.length > 3 ||
+        !Array.isArray(value.sources) || value.sources.length < 1 || value.sources.length > 20 ||
+        !Array.isArray(value.actionIds) || value.actionIds.length > 2) return false;
+    var sourceIds = [];
+    for (var sourceIndex = 0; sourceIndex < value.sources.length; sourceIndex += 1) {
+      var source = value.sources[sourceIndex];
+      if (!source || !exactObjectKeys(source, ['id', 'kind', 'label']) ||
+          !/^[A-Z][0-9]{1,2}$/.test(source.id) ||
+          ['summary', 'finding', 'evidence', 'limit', 'source'].indexOf(source.kind) === -1 ||
+          !safeText(source.label, 80, false) || sourceIds.indexOf(source.id) !== -1) return false;
+      sourceIds.push(source.id);
+    }
+    var claims = [value.lead].concat(value.insights);
+    for (var claimIndex = 0; claimIndex < claims.length; claimIndex += 1) {
+      var claim = claims[claimIndex];
+      if (!claim || !exactObjectKeys(claim, ['text', 'citationIds']) ||
+          !safeText(claim.text, claimIndex === 0 ? 240 : 180, false) ||
+          !validCitationIds(claim.citationIds, claimIndex === 0 ? 4 : 3) ||
+          claim.citationIds.some(function(id) { return sourceIds.indexOf(id) === -1; })) return false;
+    }
+    return value.actionIds.every(function(id, index, values) {
+      return typeof id === 'string' && /^[A-Za-z0-9._:-]{1,80}$/.test(id) && values.indexOf(id) === index;
+    });
+  }
+
+  function validCitationIds(value, maximum) {
+    return Array.isArray(value) && value.length >= 1 && value.length <= maximum && value.every(function(id, index) {
+      return typeof id === 'string' && /^[A-Z][0-9]{1,2}$/.test(id) && value.indexOf(id) === index;
+    });
   }
 
   function exactObjectKeys(value, expected) {
@@ -918,9 +1008,13 @@
     var input = byId('assistantInput');
     var suggestions = byId('querySuggestions');
     var more = byId('queryMore');
+    var synthesisToggle = byId('assistantSynthesis');
     if (submit) submit.disabled = nextBusy;
+    if (synthesisToggle) synthesisToggle.disabled = nextBusy;
     if (input) input.setAttribute('aria-busy', nextBusy ? 'true' : 'false');
-    if (nextBusy) setSourceStatus('busy', 'Consultando GRH…');
+    if (nextBusy) setSourceStatus('busy', synthesisRequested()
+      ? 'Verificando fuentes y redactando…'
+      : 'Consultando GRH…');
     if (more) {
       if (nextBusy) more.open = false;
       more.inert = nextBusy;
@@ -1000,7 +1094,9 @@
         },
         body: JSON.stringify(target
           ? { mode: 'deterministic', target: target }
-          : { message: text, mode: 'deterministic' }),
+          : { message: text, mode: isPersonLookupQuestion(text)
+            ? 'deterministic'
+            : (synthesisRequested() ? 'assisted' : 'deterministic') }),
         signal: controller.signal,
       });
 
@@ -1066,6 +1162,11 @@
 
   function questionPurpose(value) {
     return isPersonLookupQuestion(value) ? 'PERSON_LOOKUP' : 'AGGREGATE_ANALYSIS';
+  }
+
+  function synthesisRequested() {
+    var toggle = byId('assistantSynthesis');
+    return Boolean(toggle && toggle.checked);
   }
 
   function configureSuggestionsForRole() {
@@ -1228,11 +1329,13 @@
   function disableForRole() {
     var input = byId('assistantInput');
     var submit = byId('sendQuery');
+    var synthesisToggle = byId('assistantSynthesis');
     if (input) {
       input.disabled = true;
       input.placeholder = 'Tu perfil no está habilitado para consultas ejecutivas GRH.';
     }
     if (submit) submit.disabled = true;
+    if (synthesisToggle) synthesisToggle.disabled = true;
     appendUnavailable('Perfil no habilitado', 'Esta vista requiere un rol ejecutivo autorizado. El servidor volverá a validar el rol y el tenant en cada solicitud.', 'No disponible para este perfil');
   }
 

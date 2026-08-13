@@ -44,6 +44,16 @@ import { readGrhDirectory } from './lib/grh-directory-store.js';
 import {
   authorizeGrhDirectoryRequest,
 } from './grh-directory-access.js';
+import {
+  attachCopilotSynthesis,
+  MUNICIPAL_COPILOT_MODE,
+  synthesizeMunicipalAnswer,
+} from './lib/municipal-copilot.js';
+import {
+  buildManualAssistantAnswer,
+  buildManualProvenance,
+  classifyManualHelp,
+} from './lib/municipal-assistant-manual.js';
 import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
 
 const { hasConfiguredCurrency, resolveTenantPresentation } = tenantPresentationPolicy;
@@ -126,6 +136,7 @@ const FINANCE_COMPONENTS = Object.freeze([
   }),
 ]);
 const SUPPORTED_INTENTS = Object.freeze([
+  'manual_help',
   'decision_brief',
   'workforce_finance_overview',
   'workforce_finance_trend',
@@ -165,6 +176,7 @@ export function createAiAnalyzeHandler({
   inspectWorkforceFinanceContractImpl = inspectGrhWorkforceFinanceContract,
   inspectAbsenceInsightsContractImpl = inspectGrhAbsenceInsightsContract,
   authorizeDirectoryImpl = authorizeGrhDirectoryRequest,
+  synthesizeAnswerImpl = synthesizeMunicipalAnswer,
   directoryAuthorizationDependencies = {},
   environment = process.env,
 } = {}) {
@@ -212,9 +224,10 @@ export function createAiAnalyzeHandler({
         code: 'MESSAGE_TOO_LONG',
       });
     }
-    if (req.body?.mode && req.body.mode !== 'deterministic') {
+    const requestedMode = req.body?.mode || 'deterministic';
+    if (!['deterministic', MUNICIPAL_COPILOT_MODE].includes(requestedMode)) {
       return res.status(422).json({
-        error: 'El modo generativo no está habilitado. Esta versión usa exclusivamente el contrato determinista GRH.',
+        error: 'El modo solicitado no está habilitado. Usá la respuesta verificada o la síntesis asistida.',
         code: 'PROVIDER_NOT_AUTHORIZED',
       });
     }
@@ -231,6 +244,32 @@ export function createAiAnalyzeHandler({
     const classification = personTarget
       ? { intent: 'person_lookup', policy: 'limited' }
       : classifyIntent(message);
+    if (classification.intent === 'manual_help') {
+      const answer = buildManualAssistantAnswer(classification.manualTopic);
+      const provenance = buildManualProvenance(classification.manualTopic);
+      const copilot = await synthesizeAnswerImpl({
+        mode: requestedMode,
+        classification,
+        deterministicAnswer: answer,
+        provenance,
+        caller,
+        environment,
+      });
+      const presentedAnswer = attachCopilotSynthesis(answer, copilot);
+      const engine = copilot?.engine || {
+        id: ENGINE_ID,
+        externalProvider: false,
+        generated: false,
+      };
+      const payload = buildAssistantPayload(presentedAnswer, provenance, {
+        available: true,
+        source: 'municontrol_manual_versioned_contract',
+        snapshotAsOf: provenance.snapshotAsOf,
+        historyUsed: false,
+      }, engine);
+      res.setHeader('X-MuniControl-Engine', engine.id);
+      return res.status(answer.httpStatus).json(payload);
+    }
     const useAbsenceInsights = classification.intent === 'absence' &&
       !parsePeriodRequest(message).explicit;
     let directoryAuthorization = null;
@@ -339,7 +378,21 @@ export function createAiAnalyzeHandler({
             absenceInsightsSchemaVersion: assistantData.absenceInsights.schemaVersion,
           }
           : provenance);
-      const payload = buildAssistantPayload(answer, responseProvenance, {
+      const copilot = await synthesizeAnswerImpl({
+        mode: requestedMode,
+        classification,
+        deterministicAnswer: answer,
+        provenance: responseProvenance,
+        caller,
+        environment,
+      });
+      const presentedAnswer = attachCopilotSynthesis(answer, copilot);
+      const engine = copilot?.engine || {
+        id: ENGINE_ID,
+        externalProvider: false,
+        generated: false,
+      };
+      const payload = buildAssistantPayload(presentedAnswer, responseProvenance, {
         available: true,
         source: nominal
           ? 'grh_directory_private_contract'
@@ -356,8 +409,9 @@ export function createAiAnalyzeHandler({
                 : 'grh_executive_portable_contract'))))),
         snapshotAsOf: provenance.snapshotAsOf,
         historyUsed: nominal && answer.answer?.directory?.status === 'matched',
-      });
+      }, engine);
 
+      res.setHeader('X-MuniControl-Engine', engine.id);
       return res.status(answer.httpStatus).json(payload);
     } catch (error) {
       const directoryFailure = classification.intent === 'person_lookup';
@@ -483,10 +537,10 @@ function directoryListResultCount(list) {
   return list.items.length;
 }
 
-function buildAssistantPayload(answer, provenance, dataStatus) {
+function buildAssistantPayload(answer, provenance, dataStatus, engine = null) {
   return {
     status: answer.status,
-    engine: {
+    engine: engine || {
       id: ENGINE_ID,
       externalProvider: false,
       generated: false,
@@ -1164,6 +1218,8 @@ export function classifyIntent(rawMessage) {
   if (/predec|pronostic|proyect|forecast|adivina|estima.{0,12}(futuro|proximo)|por que (?:subio|bajo|aumento|cayo)|recomenda.{0,20}(recorte|despido|aumento)/.test(message)) {
     return { intent: 'forecast_limit', policy: 'limited' };
   }
+  const manualTopic = classifyManualHelp(rawMessage);
+  if (manualTopic) return { intent: 'manual_help', policy: 'allowed', manualTopic };
   if (/\b(hola|buen dia|buenas|ayuda|que podes responder|como funciona)\b/.test(message)) {
     return { intent: 'help', policy: 'allowed' };
   }
@@ -1290,6 +1346,9 @@ export function buildDeterministicAnswer(
     throw error;
   }
   const classification = classifyIntent(message);
+  if (classification.intent === 'manual_help') {
+    return buildManualAssistantAnswer(classification.manualTopic);
+  }
   const context = semanticContext(
     executive,
     quality,

@@ -3,14 +3,16 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const ROOT = new URL('../', import.meta.url);
-const [gitignore, vercelignore, rawArtifact, rawLinkageArtifact] = await Promise.all([
+const [gitignore, vercelignore, rawArtifact, rawImportQualityArtifact, rawLinkageArtifact] = await Promise.all([
   readFile(new URL('.gitignore', ROOT), 'utf8'),
   readFile(new URL('.vercelignore', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-absence-insights.json', ROOT), 'utf8'),
+  readFile(new URL('api/_data/grh-import-quality-history.json', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-personas-linkage-readiness.json', ROOT), 'utf8'),
 ]);
 const ARTIFACT_EXCEPTIONS = [
   '!api/_data/grh-absence-insights.json',
+  '!api/_data/grh-import-quality-history.json',
   '!api/_data/grh-personas-linkage-readiness.json',
 ];
 
@@ -70,4 +72,19 @@ test('the linkage readiness exception contains only aggregate reconciliation and
   });
   assert.doesNotMatch(rawLinkageArtifact,
     /"(?:displayName|fullName|birthDate|dni|cuil|street|streetName|addressText|domicile|phone|email|sourceId|candidateRows|rawPersons)"\s*:/i);
+});
+
+test('the import-quality exception is small, aggregate-only and withholds raw messages', () => {
+  assert.ok(Buffer.byteLength(rawImportQualityArtifact, 'utf8') < 16 * 1024);
+  const artifact = JSON.parse(rawImportQualityArtifact);
+  assert.equal(artifact.schemaVersion, 'grh-import-quality-history-v1');
+  assert.deepEqual(artifact.privacy, {
+    aggregateOnly: true,
+    containsPii: false,
+    personIdentifiersExported: false,
+    rawRowsExported: false,
+    rawMessagesExported: false,
+  });
+  assert.doesNotMatch(rawImportQualityArtifact,
+    /"(?:displayName|fullName|legajo|dni|cuil|nroreporte|nrolinea|rawMessage|error)"\s*:/i);
 });

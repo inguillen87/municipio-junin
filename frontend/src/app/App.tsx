@@ -13,6 +13,7 @@ import { ActionQueue } from '../components/ActionQueue';
 import { AppShell } from '../components/AppShell';
 import { GovernedBlocked, GovernedLoading } from '../components/GovernedStates';
 import { KpiCard } from '../components/KpiCard';
+import { ImportQualityHistory } from '../components/ImportQualityHistory';
 import { MetricProgress } from '../components/MetricProgress';
 import { ResponsiveTable, type TableColumn } from '../components/ResponsiveTable';
 import { RiskList } from '../components/RiskList';
@@ -127,6 +128,8 @@ function ReadyDashboard({ viewModel }: { viewModel: QualityViewModel }) {
           />
         ))}
       </section>
+
+      <ImportQualityHistory />
 
       <section className="quality-evidence" aria-labelledby="quality-evidence-title">
         <header className="quality-evidence__header">

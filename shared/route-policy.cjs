@@ -14,7 +14,7 @@
 
 const { ROLES, isKnownRole } = require('./access-policy.cjs');
 
-const ROUTE_POLICY_VERSION = '2026-08-13.11';
+const ROUTE_POLICY_VERSION = '2026-08-13.12';
 
 const RUNTIMES = Object.freeze({
   SERVERLESS: 'serverless',
@@ -253,6 +253,7 @@ const PROTECTED_ROUTES = Object.freeze([
   route('serverless.municipal.territory.read', 'serverless', 'GET', '/municipal-territory', PERMISSIONS.MUNICIPAL_TERRITORY_READ),
   route('serverless.grh.executive.read', 'serverless', 'GET', '/grh-executive', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.quality.read', 'serverless', 'GET', '/grh-quality', PERMISSIONS.GRH_CONTRACT_READ),
+  route('serverless.grh.import-quality-history.read', 'serverless', 'GET', '/grh-import-quality-history', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.close.read', 'serverless', 'GET', '/grh-close', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.decision-brief.read', 'serverless', 'GET', '/grh-decision-brief', PERMISSIONS.GRH_CONTRACT_READ),
   route('serverless.grh.action-ledger.read', 'serverless', 'GET', '/grh-action-ledger', PERMISSIONS.GRH_ACTION_LEDGER_READ),

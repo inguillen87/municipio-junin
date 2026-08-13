@@ -3,7 +3,7 @@
 Versión documental: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
 Estado: release público `v1.10.0` verificado; producto S13 en commit `d11fd39`
-Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.11` y
+Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.12` y
 access policy `2026-08-11.3`, sin nuevo release
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
@@ -78,6 +78,7 @@ en la misma entrega**.
 |---|---|---|
 | [`MANUAL_USUARIO_Y_FUNCIONARIOS.md`](MANUAL_USUARIO_Y_FUNCIONARIOS.md) | Intendencia, secretarías, Hacienda, RRHH, operadores y presentadores | Recorridos, interpretación de KPIs, decisiones, incidentes, demostraciones y checklists |
 | [`MANUAL_TECNICO_Y_PROCEDIMIENTOS.md`](MANUAL_TECNICO_Y_PROCEDIMIENTOS.md) | Ingeniería, seguridad, datos, DevOps, soporte y auditoría | Arquitectura, instalación, contratos, migraciones, aprovisionamiento, pruebas, release, backup/restore y troubleshooting |
+| [`MUNICIPAL_COPILOT_V2.md`](MUNICIPAL_COPILOT_V2.md) | Producto, funcionarios, ingeniería, seguridad y operación | Síntesis optativa con evidencia, privacidad, límites, fallback y evaluación de proveedores |
 | [`ENTERPRISE_PRODUCT_ROADMAP.md`](ENTERPRISE_PRODUCT_ROADMAP.md) | Dirección de producto, gobierno, ingeniería y potenciales municipios | Arquitectura objetivo, roles, stack de visualización/geografía y fases de expansión |
 | [`ROLE_JOURNEYS_AND_SECURE_DEMO.md`](ROLE_JOURNEYS_AND_SECURE_DEMO.md) | Funcionarios, producto, seguridad, ventas e ingeniería | Recorridos por perfil, segregación de funciones y procedimiento de demos/cuentas temporales |
 | [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md) | Arquitectura, seguridad, DBA e ingeniería | Propuesta aislada de ámbitos, asignaciones, lifecycle, aprobaciones, SoD, break-glass y auditoría; no es una migración activa |
@@ -184,7 +185,7 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   no se repitió el replay real de 44 MB, no se usó DB y no se desplegó. Un host
   completamente comprometido permanece fuera de la garantía.
 - El techo exacto de permisos por ruta está implementado localmente con 31
-  recursos, 12 acciones, 53 permisos y 93 firmas protegidas: 51 Serverless y 42
+  recursos, 12 acciones, 53 permisos y 94 firmas protegidas: 52 Serverless y 42
   Express. La propuesta de
   ámbitos RBAC/ABAC está aislada y no migrada: todavía no hay persistencia fina,
   lifecycle de cuentas ni cuentas por cada rol.

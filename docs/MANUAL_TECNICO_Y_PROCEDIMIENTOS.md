@@ -159,8 +159,8 @@ Reglas de verdad:
 - `shared/route-policy.cjs` actúa como techo de autorización exacto por
   runtime, método, ruta y permiso `recurso:acción`. Una ruta, método, rol,
   capacidad o secreto interno no registrado se deniega.
-- La versión local `2026-08-13.11` del manifiesto contiene 31 recursos, 12
-  acciones, 53 permisos y 93 firmas de ruta protegidas: 51 Serverless y 42
+- La versión local `2026-08-13.12` del manifiesto contiene 31 recursos, 12
+  acciones, 53 permisos y 94 firmas de ruta protegidas: 52 Serverless y 42
   Express. Es un techo ejecutable exacto, no persistencia RBAC/ABAC por área.
 - `.vercelignore` excluye backend, evidencia, scripts, SQL, tests, documentos y
   artefactos JSON privados. `api/**` y `prisma/**` permanecen desplegables.
@@ -409,6 +409,15 @@ con sus componentes, control y conciliación mensual; no consulta el score globa
 Un año sin mes, período ausente o protegido devuelve 422 sin sustituirlo. No
 expone PII ni afirma moneda, pago o causalidad. El focal Bot + E2E fue 13/13,
 local y sin deployment.
+
+La capa optativa `municipal-copilot-v2` conserva esa respuesta como autoridad y
+puede redactar únicamente hechos agregados/manuales mediante OpenAI Responses.
+Está desactivada por defecto, usa una sola llamada server-side con `store:false`,
+JSON Schema estricto, timeout y salida acotados; nunca envía la pregunta original,
+historial, tenant, filas ni PII. Una salida sin citas válidas, con acciones/cifras
+inventadas o no respaldada cae a la respuesta determinista. El contrato,
+configuración, evaluación de Hugging Face/public-apis y smoke remoto pendiente se
+documentan en [`MUNICIPAL_COPILOT_V2.md`](MUNICIPAL_COPILOT_V2.md).
 
 #### 4.3.1 Brief ejecutivo decisional S13
 
@@ -1053,7 +1062,7 @@ inesperados o una suite parcial no satisfacen el gate.
 | Calidad y Linaje GRH | `node --test tests/grh-control.e2e.mjs` |
 | proveniencia runtime GRH | `node --test tests/grh-runtime-provenance.test.mjs` |
 | techo exacto de rutas | `node --test tests/route-policy.test.mjs tests/route-authorization-adapter.test.mjs` y `node --test backend/tests/route-authorization-policy.test.js` |
-| asistente | `node --test tests/ai-grh-assistant.test.mjs tests/ia-assistant.e2e.mjs` |
+| asistente | `node --test tests/municipal-copilot-v2.test.mjs tests/ai-grh-assistant.test.mjs tests/legacy-ai-retirement.test.mjs` y `node --test tests/ia-assistant.e2e.mjs` |
 | reportes | `node --test tests/reports-readonly.test.mjs tests/reportes-native-svg.test.mjs tests/reportes-native-svg.e2e.mjs` |
 | verdad de preview/release | `node --test tests/deployment-truth-gate.test.mjs` y `npm run release:truth:check -- --base-url https://preview-approved.example` |
 | login institucional | `node --test tests/login-institutional.e2e.mjs tests/public-truth-boundaries.test.mjs tests/access-policy.test.mjs` |
@@ -1376,8 +1385,8 @@ APIs privadas → analítica / mapas / alertas / asistente
 - La autorización actual combina identidad, rol vigente, tenant y estado
   consultados en DB con un manifiesto exacto de rutas y permisos
   `recurso:acción`. Las listas legacy sólo pueden restringir ese techo, nunca
-  ampliarlo. La versión local cubre 31 recursos, 12 acciones, 53 permisos y 93
-  firmas exactas (51 Serverless y 42 Express). Todavía no existe persistencia de
+  ampliarlo. La versión local cubre 31 recursos, 12 acciones, 53 permisos y 94
+  firmas exactas (52 Serverless y 42 Express). Todavía no existe persistencia de
   asignaciones por área, fila, campo, vigencia ni reglas de segregación de
   funciones.
 
@@ -1473,7 +1482,7 @@ municipal ni ejecutar una decisión administrativa por sí sola.
 
 **Actual local:** existen `Tenant`, siete roles técnicos, estado del tenant,
 controles tenant-bound y una política compartida que registra de forma literal
-31 recursos, 12 acciones, 53 permisos y 93 firmas protegidas (51 Serverless y 42
+31 recursos, 12 acciones, 53 permisos y 94 firmas protegidas (52 Serverless y 42
 Express). No hay wildcard, jerarquía ni autorización por nombre de pantalla. Los
 adaptadores de ambos runtimes usan ese mismo techo y deniegan lo desconocido.
 Algunas tablas analíticas legacy aún dependen de un CUID ambiental y no ofrecen
@@ -1588,13 +1597,13 @@ Diagnóstico recomendado:
 | RRHH | Operativo local sobre proyecciones y directorio privado v3 | consume `grh-executive-v2` + `grh-quality-v1`; `grh-directory-v3` agrega situación laboral informada, catálogos de contrato/revista, participación en cálculo 2026-07, centro de costo y cronologías limitadas a 24 sin causas de eventos ni importes. Migración `005`, publicación y smokes remotos no ejecutados; Preview/Production siguen sin certificación v3 |
 | Hacienda | Operativo local sobre proyecciones | cierre mensual explicado y comparación sólo de meses consecutivos liberados; P1 global-como-mensual retirado; certificación remota pendiente |
 | Centro de Calidad y Linaje GRH | Operativo local sobre proyección | consume `grh-quality-v1`; la ruta raw ya responde `410` localmente y falta certificación remota |
-| Asistente ejecutivo determinista | Operativo local server-side | intents allowlisted; `close_explanation` construye `grh-close-v1` desde una lectura y exige un `YYYY-MM` liberado k=10; 422 sin sustitución; no desplegado |
+| Asistente ejecutivo + síntesis optativa | Operativo local server-side | cálculo/intents/fuente siguen deterministas; `municipal-copilot-v2` sólo redacta hechos agregados/manuales con citas, una llamada acotada y fallback local; proveedor real y deployment no probados |
 | Reportes SVG locales | Operativo local | `grh-executive-report-v2` portable k=10 y consumidor alineado; falta certificación remota |
 | Frontera HTTP raw GRH | Cerrada localmente | `/api/grh-data` autentica/valida tenant y responde 410 sin leer artefactos; cinco UIs con cero referencias |
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
-| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.11`: 31 recursos, 12 acciones, 53 permisos y 93 firmas exactas, 51 Serverless + 42 Express; desconocidos fallan cerrados |
+| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.12`: 31 recursos, 12 acciones, 53 permisos y 94 firmas exactas, 52 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |

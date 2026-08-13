@@ -428,13 +428,28 @@ async function createServer(requestLog, options = {}) {
         JUNIN_PRESENTATION,
         assistantData,
       );
+      const assisted = body.mode === 'assisted';
+      const synthesis = assisted ? {
+        schemaVersion: 'municipal-copilot-synthesis-v1',
+        provider: 'openai',
+        model: 'gpt-5.6-luna',
+        lead: { text: answer.answer.summary, citationIds: ['R1'] },
+        insights: answer.answer.findings.slice(0, 1).map(text => ({ text, citationIds: ['H1'] })),
+        sources: [
+          { id: 'R1', kind: 'summary', label: 'Resumen verificado' },
+          ...(answer.answer.findings.length ? [{ id: 'H1', kind: 'finding', label: 'Hallazgo 1' }] : []),
+        ],
+        actionIds: [],
+      } : null;
       response.writeHead(answer.httpStatus, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
       response.end(JSON.stringify({
         status: answer.status,
-        engine: { id: 'grh-deterministic-v1', externalProvider: false, generated: false },
+        engine: assisted
+          ? { id: 'municipal-copilot-v2', externalProvider: true, generated: true, requested: true, provider: 'openai', model: 'gpt-5.6-luna', mode: 'grounded-synthesis' }
+          : { id: 'grh-deterministic-v1', externalProvider: false, generated: false },
         intent: answer.intent,
         response: answer.response,
-        answer: answer.answer,
+        answer: synthesis ? { ...answer.answer, synthesis } : answer.answer,
         provenance: provenance(views.executive, views.quality),
       }));
       return;
@@ -654,6 +669,66 @@ test('assistant theme control keeps operational copy readable on desktop and mob
   }
 
   assert.deepEqual(requestLog, []);
+});
+
+test('optional synthesis sends an explicit assisted mode and renders source-linked copy without changing the deterministic facts', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    const context = await browser.newContext({ viewport });
+    await seedSession(context);
+    const page = await context.newPage();
+    const consoleErrors = [];
+    page.on('console', message => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+    await page.locator('#assistantSynthesis').check();
+    await page.locator('#assistantInput').fill('Dame un resumen ejecutivo del último período');
+    await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+    await page.waitForSelector('.answer-synthesis');
+    assert.equal(requestLog.at(-1).body.mode, 'assisted');
+    assert.equal(requestLog.at(-1).body.history, undefined);
+    assert.equal(requestLog.at(-1).purpose, 'AGGREGATE_ANALYSIS');
+    assert.equal(await page.locator('.answer-synthesis-badge').textContent(), 'Asistida');
+    assert.match(await page.locator('.answer-synthesis').innerText(), /\[R1\]/);
+    assert.match(await page.locator('.answer-synthesis-sources').innerText(), /Resumen verificado/);
+    assert.equal(await page.locator('.answer-source').count(), 1);
+    assert.equal(await page.locator('#assistantSourceStatus span').textContent(), 'Datos verificados · síntesis asistida');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 0);
+    assert.deepEqual(consoleErrors, []);
+    await context.close();
+  }
+});
+
+test('personal lookup always remains deterministic even when synthesis is selected', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await seedSession(context);
+  const page = await context.newPage();
+  await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+  await page.locator('#assistantSynthesis').check();
+  await page.locator('#assistantInput').fill('legajo 7001');
+  await page.locator('#assistantForm').evaluate(form => form.requestSubmit());
+  await page.waitForSelector('.answer-card');
+  assert.equal(requestLog.at(-1).body.mode, 'deterministic');
+  assert.equal(requestLog.at(-1).purpose, 'PERSON_LOOKUP');
+  assert.equal(await page.locator('.answer-synthesis').count(), 0);
+  await context.close();
 });
 
 test('assistant presents exactly four canonical primary queries for each executive role', async t => {

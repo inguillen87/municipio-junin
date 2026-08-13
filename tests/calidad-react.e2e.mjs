@@ -13,11 +13,20 @@ import accessPolicy from '../shared/access-policy.cjs';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const PWA_REGISTER_SOURCE = readFileSync(path.join(REPO, 'js', 'pwa-register.js'), 'utf8');
+const IMPORT_HISTORY_CLIENT_SOURCE = readFileSync(
+  path.join(REPO, 'js', 'grh-import-quality-history-data.js'),
+  'utf8',
+);
+const IMPORT_HISTORY_FIXTURE = JSON.parse(readFileSync(
+  path.join(REPO, 'api', '_data', 'grh-import-quality-history.json'),
+  'utf8',
+));
 const PWA_TEST_WORKER_SOURCE = "self.addEventListener('install', () => self.skipWaiting()); self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));";
 const MUNIGUIA_STUB_SOURCE = 'export async function mountMuniGuia(){return true} export function unmountMuniGuia(){}';
 const SCREENSHOTS = Object.freeze({
   desktop: path.join(tmpdir(), 'municontrol-calidad-executive-desktop.png'),
   mobile: path.join(tmpdir(), 'municontrol-calidad-executive-mobile.png'),
+  compactForcedColors: path.join(tmpdir(), 'municontrol-calidad-history-compact-forced-colors.png'),
 });
 
 function percentage(numerator, denominator) {
@@ -270,6 +279,7 @@ function send(response, status, contentType, body = '', headers = {}) {
 }
 
 function testApiPlugin(scenario, apiLog, pwaLog) {
+  let historyRequests = 0;
   return {
     name: `calidad-react-e2e-${scenario.name}`,
     configureServer(server) {
@@ -346,6 +356,29 @@ function testApiPlugin(scenario, apiLog, pwaLog) {
             return;
           }
           send(response, 200, 'application/json; charset=utf-8', JSON.stringify(payload));
+          return;
+        }
+        if (url.pathname === '/js/grh-import-quality-history-data.js') {
+          send(response, 200, 'text/javascript; charset=utf-8', IMPORT_HISTORY_CLIENT_SOURCE);
+          return;
+        }
+
+        if (url.pathname === '/api/grh-import-quality-history') {
+          apiLog.push({ path: url.pathname, method: request.method });
+          historyRequests += 1;
+          if (scenario.historyMode === 'unavailable' ||
+              (scenario.historyMode === 'recover' && historyRequests === 1)) {
+            send(response, 503, 'application/json; charset=utf-8',
+              JSON.stringify({ error: 'import_quality_history_unavailable' }));
+            return;
+          }
+          send(
+            response,
+            200,
+            'application/json; charset=utf-8',
+            JSON.stringify(IMPORT_HISTORY_FIXTURE),
+            { 'X-MuniControl-Contract': 'grh-import-quality-history-v1' },
+          );
           return;
         }
 
@@ -599,18 +632,22 @@ test('React Calidad canary validates governed evidence and fails closed', async 
     await withScenario({ name: 'authorized' }, async ({ apiLog, baseUrl, pwaLog }) => {
       for (const viewport of [
         { name: 'desktop', width: 1_440, height: 1_000, reducedMotion: 'no-preference' },
+        { name: 'tablet', width: 768, height: 1_024, reducedMotion: 'reduce' },
         { name: 'mobile', width: 390, height: 844, reducedMotion: 'reduce' },
+        { name: 'compact-forced-colors', width: 320, height: 720, reducedMotion: 'reduce', forcedColors: 'active' },
       ]) {
         const start = apiLog.length;
         const pwaStart = pwaLog.length;
         const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
           viewport: { width: viewport.width, height: viewport.height },
           reducedMotion: viewport.reducedMotion,
+          forcedColors: viewport.forcedColors ?? 'none',
         });
 
         try {
           await page.goto(`${baseUrl}/calidad`, { waitUntil: 'domcontentloaded' });
           await page.waitForSelector('#page-title');
+          await page.waitForSelector('[data-testid="import-quality-history"] .import-history__body');
           await assertDirectPwaRegistration(page, baseUrl, pwaLog, pwaStart, viewport.name);
 
           const result = await page.evaluate(() => {
@@ -652,6 +689,20 @@ test('React Calidad canary validates governed evidence and fails closed', async 
               transitionDuration,
               hasSkipLink: Boolean(document.querySelector('a.skip-link[href="#contenido-principal"]')),
               hasThemeToggle: Boolean(document.querySelector('button.theme-toggle')),
+              historyHeadline: normalize(document.querySelector('#import-history-title')?.textContent),
+              historyKpis: Array.from(document.querySelectorAll('.import-history__kpis dd'), element =>
+                normalize(element.textContent)),
+              historyAnnualYears: document.querySelectorAll('.import-history-chart__plot li').length,
+              historyCategories: document.querySelectorAll('.import-history-ranking__list li').length,
+              historyPartialLabel: normalize(document.querySelector('.import-history-chart__plot li[data-partial="true"] time')?.textContent),
+              historyScope: normalize(document.querySelector('.import-history__scope')?.textContent),
+              historyPositionAfterKpis: Boolean(
+                document.querySelector('.kpi-grid--quality + [data-testid="import-quality-history"]'),
+              ),
+              historyScrollAtLatest: (() => {
+                const region = document.querySelector('.import-history-chart__scroll');
+                return Boolean(region && region.scrollLeft + region.clientWidth >= region.scrollWidth - 1);
+              })(),
             };
           });
 
@@ -689,16 +740,34 @@ test('React Calidad canary validates governed evidence and fails closed', async 
           assert.equal(result.exposesRawContract, false);
           assert.equal(result.hasSkipLink, true);
           assert.equal(result.hasThemeToggle, true);
+          assert.match(result.historyHeadline, /historial muestra patrones de carga/i);
+          assert.deepEqual(result.historyKpis, ['1.186.239', '4.913', '59.148']);
+          assert.equal(result.historyAnnualYears, 19);
+          assert.equal(result.historyCategories, 6);
+          assert.equal(result.historyPartialLabel, '2026 (parcial)');
+          assert.match(result.historyScope, /no son fallas de personas/i);
+          assert.match(result.historyScope, /salud actual de MuniControl/i);
+          assert.equal(result.historyPositionAfterKpis, true);
+          assert.equal(result.historyScrollAtLatest, true);
           if (viewport.reducedMotion === 'reduce') {
             assert.ok(result.transitionDuration !== null && result.transitionDuration <= 0.001);
           }
-          assert.deepEqual(apiPaths(apiLog, start), ['/api/auth/me', '/api/grh-quality']);
+          assert.deepEqual(apiPaths(apiLog, start), [
+            '/api/auth/me',
+            '/api/grh-quality',
+            '/api/grh-import-quality-history',
+          ]);
           assert.deepEqual(diagnostics.consoleErrors, []);
           assert.deepEqual(diagnostics.externalRequests, []);
-          await page.screenshot({
-            path: viewport.name === 'desktop' ? SCREENSHOTS.desktop : SCREENSHOTS.mobile,
-            fullPage: true,
-          });
+          if (viewport.name === 'desktop' || viewport.name === 'mobile') {
+            await page.screenshot({
+              path: viewport.name === 'desktop' ? SCREENSHOTS.desktop : SCREENSHOTS.mobile,
+              fullPage: true,
+            });
+          }
+          if (viewport.name === 'compact-forced-colors') {
+            await page.screenshot({ path: SCREENSHOTS.compactForcedColors, fullPage: true });
+          }
 
           const reconciliationDetails = page.locator('[data-testid="quality-reconciliation-details"]');
           await reconciliationDetails.locator('summary').click();
@@ -750,6 +819,58 @@ test('React Calidad canary validates governed evidence and fails closed', async 
         } finally {
           await context.close();
         }
+      }
+    });
+  });
+
+  await t.test('keeps Calidad usable when the history is unavailable and retries only that block', async () => {
+    await withScenario({ name: 'history-recovery', historyMode: 'recover' }, async ({ apiLog, baseUrl }) => {
+      const { context, page, diagnostics } = await newMonitoredPage(browser, baseUrl, {
+        viewport: { width: 390, height: 844 },
+        reducedMotion: 'reduce',
+      });
+      try {
+        await page.goto(`${baseUrl}/calidad`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('[data-testid="import-quality-history-error"]');
+
+        const isolatedFailure = await page.evaluate(() => ({
+          qualityKpis: document.querySelectorAll('.kpi-grid--quality .kpi-card').length,
+          executiveVisible: Boolean(document.querySelector('[data-testid="quality-executive-summary"]')),
+          historyFigures: document.querySelectorAll('.import-history__kpis dd').length,
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        }));
+        assert.deepEqual(isolatedFailure, {
+          qualityKpis: 4,
+          executiveVisible: true,
+          historyFigures: 0,
+          overflow: 0,
+        });
+        assert.deepEqual(apiPaths(apiLog), [
+          '/api/auth/me',
+          '/api/grh-quality',
+          '/api/grh-import-quality-history',
+        ]);
+
+        await page.locator('[data-testid="import-quality-history-retry"]').click();
+        await page.waitForSelector('[data-testid="import-quality-history"] .import-history__body');
+        assert.deepEqual(apiPaths(apiLog), [
+          '/api/auth/me',
+          '/api/grh-quality',
+          '/api/grh-import-quality-history',
+          '/api/grh-import-quality-history',
+        ]);
+        assert.equal(await page.locator('.import-history__kpis dd').first().innerText(), '1.186.239');
+        assert.ok(
+          await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth <= 1),
+          'history retry must not introduce page overflow',
+        );
+        assert.ok(
+          diagnostics.consoleErrors.length === 1 && /Failed to load resource.*503/i.test(diagnostics.consoleErrors[0]),
+          `only the expected history 503 browser diagnostic is allowed: ${diagnostics.consoleErrors.join(' | ')}`,
+        );
+        assert.deepEqual(diagnostics.externalRequests, []);
+      } finally {
+        await context.close();
       }
     });
   });

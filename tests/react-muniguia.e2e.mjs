@@ -33,6 +33,14 @@ const WORKFORCE_FINANCE_CLIENT_SOURCE = readFileSync(
   path.join(REPO, 'js', 'grh-workforce-finance-data.js'),
   'utf8',
 );
+const IMPORT_QUALITY_HISTORY_CLIENT_SOURCE = readFileSync(
+  path.join(REPO, 'js', 'grh-import-quality-history-data.js'),
+  'utf8',
+);
+const IMPORT_QUALITY_HISTORY_FIXTURE = JSON.parse(readFileSync(
+  path.join(REPO, 'api', '_data', 'grh-import-quality-history.json'),
+  'utf8',
+));
 const PROFILE = JSON.parse(readFileSync(path.join(REPO, 'api', '_data', 'grh-profile.json'), 'utf8'));
 const SEMANTIC = JSON.parse(readFileSync(path.join(REPO, 'api', '_data', 'grh-semantic.json'), 'utf8'));
 const { createOrganizationAnalyticsContract } = await import(
@@ -159,6 +167,7 @@ const FIXTURES = Object.freeze({
   '/api/grh-organization-analytics': createOrganizationAnalyticsContract(),
   '/api/grh-executive': buildGrhExecutiveProjection(SEMANTIC, { audience: 'portable' }),
   '/api/grh-quality': buildGrhQualityProjection(PROFILE, SEMANTIC),
+  '/api/grh-import-quality-history': IMPORT_QUALITY_HISTORY_FIXTURE,
   '/api/municipal-territory': territoryFixture(),
 });
 
@@ -257,6 +266,10 @@ function e2ePlugin(apiLog, assetLog) {
           send(response, 200, 'text/javascript; charset=utf-8', WORKFORCE_FINANCE_CLIENT_SOURCE);
           return;
         }
+        if (url.pathname === '/js/grh-import-quality-history-data.js') {
+          send(response, 200, 'text/javascript; charset=utf-8', IMPORT_QUALITY_HISTORY_CLIENT_SOURCE);
+          return;
+        }
         if (url.pathname === '/img/municontrol-icon.jpg') {
           send(response, 204, 'image/jpeg');
           return;
@@ -294,9 +307,12 @@ function e2ePlugin(apiLog, assetLog) {
         if (fixture) {
           const scenario = scenarioFromRequest(request);
           const matchingRoute = ROUTES.find(candidate => candidate.dataPath === url.pathname);
+          const contract = url.pathname === '/api/grh-import-quality-history'
+            ? 'grh-import-quality-history-v1'
+            : matchingRoute?.contract ?? '';
           apiLog.push({ method: request.method, path: url.pathname, ...scenario });
           send(response, 200, 'application/json; charset=utf-8', JSON.stringify(fixture), {
-            [CONTRACT_HEADER]: matchingRoute?.contract ?? '',
+            [CONTRACT_HEADER]: contract,
           });
           return;
         }
@@ -419,6 +435,10 @@ async function storageSnapshot(page) {
 
 function entriesForTrace(entries, trace) {
   return entries.filter(entry => entry.trace === trace);
+}
+
+function expectedDataPaths(route) {
+  return [route.dataPath, ...(route.id === 'quality' ? ['/api/grh-import-quality-history'] : [])];
 }
 
 async function assertReadyGuide({
@@ -570,6 +590,7 @@ async function assertReadyGuide({
     assert.deepEqual(apiEntries.map(entry => [entry.method, entry.path]), [
       ['GET', '/api/auth/me'],
       ['GET', route.dataPath],
+      ...expectedDataPaths(route).slice(1).map(dataPath => ['GET', dataPath]),
     ]);
     assert.deepEqual(entriesForTrace(apiEntries, trace), apiEntries);
     const assets = assetLog.slice(startAssets).map(entry => entry.path);
@@ -646,7 +667,7 @@ test('MuniGuía on React is governed, local, responsive and disposable', { timeo
         await page.keyboard.press('Escape');
         await page.locator('#muniGuideDialog').waitFor({ state: 'hidden' });
 
-        assert.deepEqual(harness.apiLog.slice(startApi).map(entry => entry.path), ['/api/auth/me', route.dataPath]);
+        assert.deepEqual(harness.apiLog.slice(startApi).map(entry => entry.path), ['/api/auth/me', ...expectedDataPaths(route)]);
         assert.deepEqual(harness.assetLog.slice(startAssets).map(entry => entry.path), [
           GUIDE_RUNTIME_PATH, GUIDE_CATALOG_PATH, GUIDE_STYLES_PATH,
         ]);
@@ -672,7 +693,7 @@ test('MuniGuía on React is governed, local, responsive and disposable', { timeo
       await page.goto(`${harness.baseUrl}${route.path}?role=INTENDENTE&help=off&trace=${trace}`, { waitUntil: 'networkidle' });
       await page.locator(route.readySelector).waitFor({ state: 'visible' });
       assert.equal(await page.locator('#muniGuideTrigger').count(), 0);
-      assert.deepEqual(harness.apiLog.slice(startApi).map(entry => entry.path), ['/api/auth/me', route.dataPath]);
+      assert.deepEqual(harness.apiLog.slice(startApi).map(entry => entry.path), ['/api/auth/me', ...expectedDataPaths(route)]);
       assert.equal(harness.assetLog.length, startAssets);
       assert.deepEqual(diagnostics.consoleErrors, []);
       assert.deepEqual(diagnostics.pageErrors, []);
@@ -727,7 +748,7 @@ test('MuniGuía on React is governed, local, responsive and disposable', { timeo
       await page.waitForTimeout(100);
       assert.equal(await page.locator('#muniGuideTrigger').count(), 0);
       assert.equal(await page.locator('.governed-state--loading').count(), 0);
-      assert.deepEqual(harness.apiLog.slice(startApi).map(entry => entry.path), ['/api/auth/me', route.dataPath]);
+      assert.deepEqual(harness.apiLog.slice(startApi).map(entry => entry.path), ['/api/auth/me', ...expectedDataPaths(route)]);
       assert.equal(harness.assetLog.length, startAssets);
       assert.equal(runtimeRequests.length, 1);
       assert.deepEqual(diagnostics.pageErrors, []);
@@ -818,7 +839,7 @@ test('global React navigation projects the catalog across all four governed room
       );
       assert.deepEqual(
         harness.apiLog.slice(startApi).map(entry => entry.path),
-        ['/api/auth/me', route.dataPath],
+        ['/api/auth/me', ...expectedDataPaths(route)],
         `${route.id}: opening navigation does not fetch data`,
       );
       assert.deepEqual(

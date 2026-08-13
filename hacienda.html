@@ -1494,7 +1494,7 @@
           <div class="hac-equation" aria-label="Controles globales de confianza">
             <div class="hac-equation-card"><span>Confiabilidad de los datos</span><strong id="equationGross">—</strong></div>
             <span class="hac-equation-symbol" aria-hidden="true">·</span>
-            <div class="hac-equation-card"><span>Liquidaciones comparables</span><strong id="equationWithholdings">—</strong></div>
+            <div class="hac-equation-card"><span>Grupos de cálculo comparables</span><strong id="equationWithholdings">—</strong></div>
             <span class="hac-equation-symbol" aria-hidden="true">·</span>
             <div class="hac-equation-card"><span>Acuerdo de valores</span><strong id="equationNet">—</strong></div>
           </div>
@@ -2189,7 +2189,7 @@
           ? 'rrhh.html?sector=' + encodeURIComponent(String(selected.sourceCode)) + '#peopleDirectory'
           : 'rrhh.html#workforceDistribution';
         elements.cohortBackToRrhh.textContent = view.dimension === 'sector'
-          ? 'Abrir directorio general del sector (grupo distinto)'
+          ? 'Abrir directorio general del sector (universo distinto)'
           : 'Abrir distribución general en RRHH';
         if (request && request.status === 'valid' && !state.cohortScrolled) {
           state.cohortScrolled = true;
@@ -2843,7 +2843,7 @@
         setText(
           elements.closeReconciliationCopy,
           monthLabel(row.period) + ' · ' + numberFormatter.format(reconciliation.matchedRuns) +
-            ' liquidaciones pudieron compararse entre ambas fuentes. No reutiliza el resultado general.'
+            ' grupos de cálculo aparecieron en ambas fuentes. No reutiliza el resultado general.'
         );
         setText(elements.closeCoverage, percentFormatter.format(reconciliation.runCoveragePct) + '%');
         setText(elements.closeExactRate, percentFormatter.format(reconciliation.metricExactRatePct) + '%');
@@ -3079,11 +3079,11 @@
         addAlert(
           3,
           'warn',
-          'Liquidaciones comparables ' +
+          'Grupos de cálculo comparables ' +
             percentFormatter.format(reconciliation.runCoveragePct) + '%',
           numberFormatter.format(reconciliation.matchedRuns) + ' de ' +
             numberFormatter.format(reconciliation.unionRuns) +
-            ' liquidaciones tuvieron información en ambas fuentes; ' +
+            ' grupos de cálculo aparecieron en ambas fuentes; ' +
             numberFormatter.format(reconciliation.fullyReconciledRuns) +
             ' coincidieron en todos los valores comparados.'
         );

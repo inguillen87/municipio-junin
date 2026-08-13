@@ -1151,7 +1151,7 @@ function assertCohortSnapshot(snapshot, { dimension, period, selected }, label) 
     agreement: formatWorkforcePercent(total.reconciliation.valueAgreementPct),
   }, `${label} same-month global close`);
   assert.deepEqual(snapshot.cta, dimension === 'sector'
-    ? { href: `rrhh.html?sector=${selected.sourceCode}#peopleDirectory`, text: 'Abrir directorio general del sector (grupo distinto)' }
+    ? { href: `rrhh.html?sector=${selected.sourceCode}#peopleDirectory`, text: 'Abrir directorio general del sector (universo distinto)' }
     : { href: 'rrhh.html#workforceDistribution', text: 'Abrir distribución general en RRHH' }, `${label} CTA`);
   assert.match(snapshot.caveat, /No representan el salario de una persona, un pago bancario ni la ejecución del presupuesto.*no prueban las causas/i);
   assert.match(snapshot.caveat, /cantidades no deben sumarse como si fueran grupos exclusivos/i);
@@ -1345,8 +1345,11 @@ test('Hacienda source uses only the secure GRH experience client and compiles in
   assert.match(html, /id="themeToggleBtn"[^>]+data-muni-theme-control/);
   assert.match(html, /La comparación entre las dos fuentes de liquidación es general/);
   assert.match(html, /Comparación mensual entre las dos fuentes de liquidación/);
+  assert.match(html, /Grupos de cálculo comparables/);
+  assert.match(html, /grupos de cálculo aparecieron en ambas fuentes/);
+  assert.match(html, /Abrir directorio general del sector \(universo distinto\)/);
   assert.match(html, /Fuente técnica “totpago”/);
-  assert.doesNotMatch(html, />Cálculo frente a totpago|>Cruce con totpago|calculo ↔ totpago/i);
+  assert.doesNotMatch(html, />Cálculo frente a totpago|>Cruce con totpago|calculo ↔ totpago|Liquidaciones comparables|liquidaciones (?:pudieron|tuvieron)/i);
 
   const inlineScripts = [...html.matchAll(
     /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi,

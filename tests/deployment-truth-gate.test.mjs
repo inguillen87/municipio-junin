@@ -39,6 +39,7 @@ const CURRENT_ROOT = `<!doctype html>
   </body>
 </html>`;
 const REAL_DASHBOARD = fs.readFileSync(path.join(root, 'dashboard.html'), 'utf8');
+const REAL_MANUAL = fs.readFileSync(path.join(root, 'manuales.html'), 'utf8');
 const CURRENT_WORKSPACE = `<!doctype html>
 <html>
   <head><title>Inicio | MuniControl</title></head>
@@ -51,7 +52,8 @@ const CURRENT_ROLES = `<!doctype html>
 </html>`;
 const CURRENT_MANUAL = `<!doctype html>
 <html><body data-doc-version="1.5.0">
-  <p>Snapshot fechado, no tiempo real</p>
+  <p>La plataforma muestra información histórica de Recursos Humanos con privacidad aplicada.</p>
+  <p>Copia histórica con fecha visible</p>
   <code>grh-executive-v2</code><code>grh-quality-v1</code>
 </body></html>`;
 const PRISMA_PRIVATE_PATH = '/prisma/schema.prisma';
@@ -982,6 +984,26 @@ test('real dashboard capture satisfies its exact digest and current release mark
 
   assert.deepEqual(findingCodes(receipt, '/dashboard'), []);
   assert.equal(receipt.checks.find((check) => check.path === '/dashboard').outcome, 'pass');
+});
+
+test('real manual capture satisfies its exact digest and plain-language release markers', async (t) => {
+  const fixture = await startFixture(t, {
+    '/manuales': (_req, res) => send(
+      res,
+      200,
+      'text/html; charset=utf-8',
+      REAL_MANUAL,
+    ),
+  });
+  const localContract = readLocalReleaseContract({ repoRoot: root });
+  const receipt = await inspectFixture(fixture.baseUrl, {
+    expectedManualVersion: localContract.expectedManualVersion,
+    expectedManualDigest: localContract.expectedManualDigest,
+    maxBodyBytes: 512 * 1024,
+  });
+
+  assert.deepEqual(findingCodes(receipt, '/manuales'), []);
+  assert.equal(receipt.checks.find((check) => check.path === '/manuales').outcome, 'pass');
 });
 
 test('retired root-dashboard, inicio-to-index and .html-manual topology cannot pass', async (t) => {

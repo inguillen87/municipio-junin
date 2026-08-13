@@ -51,7 +51,8 @@ const ROOT_REQUIRED_MARKERS = Object.freeze([
 const MANUAL_REQUIRED_MARKERS = Object.freeze([
   /grh-executive-v2/i,
   /grh-quality-v1/i,
-  /Snapshot fechado,\s*no tiempo real/i,
+  /informaci[oó]n hist[oó]rica de Recursos Humanos[\s\S]*privacidad aplicada/i,
+  /Copia hist[oó]rica con fecha visible/i,
 ]);
 
 const LEGACY_ROOT_MARKERS = Object.freeze([

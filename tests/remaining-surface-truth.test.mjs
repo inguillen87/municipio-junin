@@ -65,7 +65,9 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   assert.match(source, /10\/10 estados[\s\S]{0,100}390\/1440 px/i);
   assert.match(source, /logs del corte[\s\S]{0,80}0 errores[\s\S]{0,80}0 respuestas 500/i);
   assert.match(source, /agregados del snapshot aprobado[\s\S]{0,180}validación local/i);
-  assert.match(source, /códigos de fuente\/celda/i);
+  assert.match(source, /Versión disponible[\s\S]*información histórica de Recursos Humanos[\s\S]*privacidad aplicada/i);
+  assert.match(source, /<details>[\s\S]*<summary>Ver evidencia técnica de la versión<\/summary>/i);
+  assert.match(source, /protege la identidad ocultando grupos con menos de 10 personas y no publica datos personales/i);
   assert.match(source, /sesión privada positiva[\s\S]{0,100}S13 privado[\s\S]{0,120}validación local/i);
   assert.match(source, /no certifica[\s\S]{0,100}DB\/baseline[\s\S]{0,100}cuentas[\s\S]{0,100}MFA\/lifecycle[\s\S]{0,100}datos GRH remotos/i);
   assert.match(source, /post-release[\s\S]{0,80}no mueve[\s\S]{0,80}v1\.10\.0[\s\S]{0,40}4108ca0/i);

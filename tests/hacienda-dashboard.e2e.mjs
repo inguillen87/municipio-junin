@@ -785,7 +785,7 @@ async function assertClosePeriodSelection(page, series, row, label) {
     assert.equal(rendered.badge, expectedComparison.badge, `${label} historical comparison`);
   } else {
     assert.match(rendered.badge, /protegida|no disponible/i, `${label} protected comparison`);
-    assert.match(rendered.copy, /proteg|no existe|faltante/i, `${label} protected comparison reason`);
+    assert.match(rendered.copy, /proteg|no existe|faltante|no hay un mes anterior disponible/i, `${label} protected comparison reason`);
   }
   assert.deepEqual(rendered.pressedPeriods, [row.period], `${label} radar selection`);
 }
@@ -1058,7 +1058,10 @@ function assertCohortSnapshot(snapshot, { dimension, period, selected }, label) 
   assert.equal(snapshot.stateHidden, true, `${label} state`);
   assert.equal(snapshot.contentHidden, false, `${label} content`);
   assert.equal(snapshot.title, `Análisis financiero · ${selected.label}`, `${label} title`);
-  assert.match(snapshot.subtitle, new RegExp(`por ${dimensionLabel} observado.*no es estado contractual`, 'i'));
+  assert.match(
+    snapshot.subtitle,
+    new RegExp(`del ${dimensionLabel}.*informaci.n agregada.*no salario individual.*situaci.n laboral actual`, 'i'),
+  );
   assert.equal(snapshot.badge, `${dimensionLabel} · Privacidad aplicada`, `${label} badge`);
   assert.deepEqual(snapshot.dataset, {
     contract: WORKFORCE_PROJECTION.schemaVersion,
@@ -1137,7 +1140,7 @@ function assertCohortSnapshot(snapshot, { dimension, period, selected }, label) 
     assert.equal(snapshot.trend.paths.filter(path => path.series === series).length, expectedSegments);
   }
   assert.match(snapshot.trend.caption, /24 meses.*niveles monetarios visibles.*aritméticamente comparables/i);
-  assert.match(snapshot.evidence.assignment, /Dimensión observada.*no situación contractual/i);
+  assert.match(snapshot.evidence.assignment, /Clasificación usada.*puede no coincidir con el destino actual/i);
   assert.match(snapshot.evidence.release, /grupos con menos de 10 personas.*otra vista.*deducirlos/i);
   assert.match(snapshot.evidence.presentation, /ARS por configuración municipal.*no declara moneda de origen/i);
   const total = WORKFORCE_PROJECTION.periodTotals.find(item => item.period === period);
@@ -1148,10 +1151,10 @@ function assertCohortSnapshot(snapshot, { dimension, period, selected }, label) 
     agreement: formatWorkforcePercent(total.reconciliation.valueAgreementPct),
   }, `${label} same-month global close`);
   assert.deepEqual(snapshot.cta, dimension === 'sector'
-    ? { href: `rrhh.html?sector=${selected.sourceCode}#peopleDirectory`, text: 'Directorio general del sector (no cohorte)' }
+    ? { href: `rrhh.html?sector=${selected.sourceCode}#peopleDirectory`, text: 'Abrir directorio general del sector (grupo distinto)' }
     : { href: 'rrhh.html#workforceDistribution', text: 'Abrir distribución general en RRHH' }, `${label} CTA`);
-  assert.match(snapshot.caveat, /No representan salario individual, pago bancario, ejecución presupuestaria ni causalidad/i);
-  assert.match(snapshot.caveat, /conteos no se suman como una distribución exclusiva/i);
+  assert.match(snapshot.caveat, /No representan el salario de una persona, un pago bancario ni la ejecución del presupuesto.*no prueban las causas/i);
+  assert.match(snapshot.caveat, /cantidades no deben sumarse como si fueran grupos exclusivos/i);
   assert.doesNotMatch(snapshot.text, /\b(?:legajo|DNI|CUIL)\b/i, `${label} no PII`);
 }
 
@@ -1340,7 +1343,10 @@ test('Hacienda source uses only the secure GRH experience client and compiles in
   assert.match(html, /row\.privacyStatus !== 'released'/);
   assert.match(html, /<script src="js\/theme-switcher\.js"><\/script>[\s\S]*<link rel="stylesheet" href="css\/dashboard\.css">/);
   assert.match(html, /id="themeToggleBtn"[^>]+data-muni-theme-control/);
-  assert.match(html, /La reconciliación es global/);
+  assert.match(html, /La comparación entre las dos fuentes de liquidación es general/);
+  assert.match(html, /Comparación mensual entre las dos fuentes de liquidación/);
+  assert.match(html, /Fuente técnica “totpago”/);
+  assert.doesNotMatch(html, />Cálculo frente a totpago|>Cruce con totpago|calculo ↔ totpago/i);
 
   const inlineScripts = [...html.matchAll(
     /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi,
@@ -1817,7 +1823,7 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     }, `${viewport.name} sector cohort`);
     assert.equal(result.dataHidden, false);
     assert.equal(result.errorHidden, true);
-    assert.match(result.source, /GRH.*proyecciones conciliadas.*calidad/i);
+    assert.match(result.source, /GRH.*liquidaciones comparadas.*calidad/i);
     assert.equal(result.sourceFile, PROJECTIONS.executive.source.sourceFile);
     assert.equal(result.sourceHash, PROJECTIONS.executive.source.sourceSha256);
     assert.equal(result.published, releasedRows.length.toLocaleString('es-AR'));
@@ -1833,7 +1839,9 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
         maximumFractionDigits: 1,
       })}%`,
     );
-    assert.match(result.reconciliationNote, /Global.*acuerdo de valores.*no certifica pago/i);
+    assert.match(result.reconciliationNote, /Comparación general entre las dos fuentes de liquidación.*acuerdo de valores.*no certifica pago/i);
+    assert.doesNotMatch(result.pageText, /totpago|cálculo\s*(?:↔|frente a)\s*totpago/i);
+    assert.match(result.pageText, /comparación mensual entre las dos fuentes de liquidación/i);
     assert.match(result.kpiGross, /^ARS\s/);
     assert.equal(result.tableRows, Math.min(10, releasedRows.length));
     assert.equal(result.qualityBars, 4);
@@ -1850,7 +1858,7 @@ test('Hacienda renders released compensation and global quality on desktop, mobi
     assert.equal(result.closeExactRate, `${latestClose.reconciliation.metricExactRatePct.toLocaleString('es-AR', { maximumFractionDigits: 1 })}%`);
     assert.equal(result.closeValueAgreement, `${latestClose.reconciliation.valueAgreementPct.toLocaleString('es-AR', { maximumFractionDigits: 1 })}%`);
     assert.equal(result.closeDeltas, PROJECTIONS.close.comparison.status === 'released' ? 9 : 0);
-    assert.match(result.closeCopy, /No reutiliza el score global/i);
+    assert.match(result.closeCopy, /No reutiliza el resultado general/i);
     assert.equal(result.radarHeatmapColumns, 12, `${viewport.name} radar keeps its 12-month grid`);
     assert.equal(result.radarTrendTabIndex, 0, `${viewport.name} radar trend is keyboard focusable`);
     assert.equal(radar.window, String(RADAR_DEFAULT_WINDOW), `${viewport.name} default radar window`);

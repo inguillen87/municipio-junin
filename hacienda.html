@@ -1200,7 +1200,7 @@
     <div class="hac-shell" id="haciendaDashboard" aria-busy="true">
       <section class="hac-hero" aria-labelledby="haciendaTitle">
         <div class="hac-eyebrow">Hacienda y nómina · GRH Junín</div>
-        <h2 id="haciendaTitle">Nómina, costos y conciliación en pesos.</h2>
+        <h2 id="haciendaTitle">Nómina, costos y comparación de liquidaciones.</h2>
         <p class="hac-hero-copy">Evolución mensual del cálculo salarial real, componentes del cierre y diferencias entre fuentes. Presentación configurada en ARS para Junín.</p>
         <div class="hac-chips" aria-label="Contexto del respaldo de datos">
           <span class="hac-chip"><strong id="snapshotChip">—</strong> corte GRH</span>
@@ -1227,7 +1227,7 @@
 
       <div class="hac-error" id="loadError" role="alert" hidden>
         <span class="hac-error-icon" aria-hidden="true">!</span>
-        <div><strong>Las proyecciones de Hacienda no están disponibles</strong><p id="loadErrorMessage">No se pudieron validar las proyecciones gobernadas GRH.</p></div>
+        <div><strong>La información de Hacienda no está disponible</strong><p id="loadErrorMessage">No pudimos verificar los datos de Recursos Humanos.</p></div>
         <button class="hac-retry-btn" id="retryLoad" type="button">Reintentar</button>
       </div>
 
@@ -1251,7 +1251,7 @@
         <article class="hac-stat hac-stat-risk">
           <div class="hac-stat-label">Comparación general entre fuentes</div>
           <div class="hac-stat-value hac-skeleton" id="kpiReconciliation">Cargando</div>
-          <p class="hac-stat-note" id="kpiReconciliationNote">Cálculo frente a totpago · no certifica pago.</p>
+          <p class="hac-stat-note" id="kpiReconciliationNote">Comparación entre las dos fuentes de liquidación · no certifica pago.</p>
         </article>
       </section>
 
@@ -1259,7 +1259,7 @@
         <div class="hac-panel-head">
           <div>
             <h3 id="cohortTitle" tabindex="-1">Análisis financiero por dimensión observada</h3>
-            <p class="hac-panel-subtitle" id="cohortSubtitle">Bruto, retenciones, neto y aportes por una dimensión a la vez, sobre corridas reales de cálculo.</p>
+            <p class="hac-panel-subtitle" id="cohortSubtitle">Bruto, descuentos, neto y aportes por grupo, según las liquidaciones registradas.</p>
           </div>
           <span class="hac-panel-badge" id="cohortBadge">Privacidad aplicada</span>
         </div>
@@ -1299,7 +1299,7 @@
           <div class="hac-cohort-grid">
             <figure class="hac-cohort-figure" aria-labelledby="cohortCompositionTitle">
               <h4 id="cohortCompositionTitle">Composición del cálculo de la categoría</h4>
-              <figcaption>Ocho componentes observados en la corrida; escala común desde cero.</figcaption>
+              <figcaption>Ocho componentes de la liquidación, presentados en una misma escala.</figcaption>
               <div class="hac-cohort-composition" id="cohortComposition"></div>
             </figure>
             <aside class="hac-cohort-decision" aria-labelledby="cohortDecisionTitle">
@@ -1334,7 +1334,7 @@
             <div><span>Observación dimensional</span><strong id="cohortAssignmentEvidence">—</strong></div>
             <div><span>Privacidad y publicación</span><strong id="cohortReleaseEvidence">—</strong></div>
             <div><span>Presentación monetaria</span><strong id="cohortPresentationEvidence">—</strong></div>
-            <div><span>Cruce con totpago</span><strong>Sólo total global del período</strong></div>
+            <div><span>Comparación entre fuentes de liquidación</span><strong>Sólo total general del período</strong></div>
           </div>
           <div class="hac-cohort-global-grid" aria-label="Contexto global del cierre del mismo período">
             <div class="hac-cohort-global"><span>Participantes globales</span><strong id="cohortGlobalParticipants">—</strong></div>
@@ -1346,15 +1346,15 @@
             <a class="hac-retry-btn" id="cohortBackToRrhh" href="rrhh.html#workforceDistribution">Volver a RRHH</a>
             <a class="hac-retry-btn" href="/ejecutivo">Abrir resumen ejecutivo</a>
           </div>
-          <p class="hac-cohort-caveat">Los importes son agregados de control de cálculo de una dimensión observada en cada corrida. No representan salario individual, pago bancario, ejecución presupuestaria ni causalidad. Una persona puede aparecer en más de una categoría del mismo mes cuando la fuente registra cambios entre corridas; por eso los conteos no se suman como una distribución exclusiva.</p>
+          <p class="hac-cohort-caveat">Los importes son totales del grupo seleccionado. No representan el salario de una persona, un pago bancario ni la ejecución del presupuesto, y no prueban las causas de una diferencia. Una persona puede aparecer en más de una categoría del mismo mes si cambió su clasificación entre registros; por eso las cantidades no deben sumarse como si fueran grupos exclusivos.</p>
         </div>
       </section>
 
       <section class="hac-panel hac-radar" id="reconciliationRadar" aria-labelledby="radarTitle">
         <div class="hac-panel-head">
           <div>
-            <h3 id="radarTitle">Radar de conciliación histórica</h3>
-            <p class="hac-panel-subtitle">Cobertura, exactitud, acuerdo y varianza por cierre mensual.</p>
+            <h3 id="radarTitle">Comparación histórica entre liquidaciones</h3>
+            <p class="hac-panel-subtitle">Qué información pudo compararse y qué diferencias hubo en cada mes.</p>
           </div>
           <span class="hac-panel-badge">grh-close-v1 · ARS</span>
         </div>
@@ -1373,7 +1373,7 @@
               <option value="all" selected>Todos los cierres</option>
               <option value="below90">Acuerdo menor a 90%</option>
               <option value="below50">Acuerdo menor a 50%</option>
-              <option value="noCounterpart">Sin corridas coincidentes</option>
+              <option value="noCounterpart">Sin controles coincidentes</option>
               <option value="protected">Períodos protegidos</option>
             </select>
           </div>
@@ -1391,9 +1391,9 @@
         </article>
         <div class="hac-radar-detail-grid">
           <article class="hac-radar-visual" aria-labelledby="radarTrendTitle">
-            <h4 id="radarTrendTitle">Indicadores mensuales de conciliación</h4>
+            <h4 id="radarTrendTitle">Indicadores mensuales de comparación</h4>
             <p>Escala fija de 0 a 100%. Los huecos y períodos protegidos interrumpen cada serie.</p>
-            <div class="hac-radar-trend" id="reconciliationTrend" tabindex="0" role="region" aria-label="Tendencia histórica desplazable de cobertura, exactitud y acuerdo"></div>
+            <div class="hac-radar-trend" id="reconciliationTrend" tabindex="0" role="region" aria-label="Comparación histórica desplazable de cobertura, exactitud y acuerdo"></div>
             <div class="hac-legend" aria-label="Leyenda de indicadores">
               <span><i class="hac-radar-legend-line" style="--legend:var(--hac-blue)"></i>cobertura</span>
               <span><i class="hac-radar-legend-line" data-pattern="dash" style="--legend:var(--hac-teal)"></i>exactitud</span>
@@ -1401,7 +1401,7 @@
             </div>
           </article>
           <article class="hac-radar-visual" aria-labelledby="varianceRankingTitle">
-            <h4 id="varianceRankingTitle">Mayor varianza absoluta</h4>
+            <h4 id="varianceRankingTitle">Meses con mayor diferencia total</h4>
             <p>Top 6 de la ventana visible, en pesos argentinos y con escala desde cero.</p>
             <div class="hac-radar-ranking" id="varianceRanking" aria-live="polite"></div>
           </article>
@@ -1414,7 +1414,7 @@
         <div class="hac-panel-head">
           <div>
             <h3 id="closeTitle" tabindex="-1">Cierre GRH explicado</h3>
-            <p class="hac-panel-subtitle">Cómo se compone el neto y cuánto concilian cálculo y totpago en el período.</p>
+            <p class="hac-panel-subtitle">Cómo se compone el neto y cuánto coinciden las dos fuentes de liquidación en el período.</p>
           </div>
           <span class="hac-panel-badge">Cierre con privacidad aplicada</span>
         </div>
@@ -1444,13 +1444,13 @@
           </div>
         </div>
         <div class="hac-close-reconciliation" aria-labelledby="closeReconciliationTitle">
-          <h4 id="closeReconciliationTitle">Conciliación mensual calculo ↔ totpago</h4>
-          <p id="closeReconciliationCopy">Estas métricas pertenecen exclusivamente al período seleccionado; no reutilizan el score global.</p>
+          <h4 id="closeReconciliationTitle">Comparación mensual entre las dos fuentes de liquidación</h4>
+          <p id="closeReconciliationCopy">Estos indicadores corresponden sólo al mes seleccionado; no reutilizan el resultado general.</p>
           <div class="hac-close-reconciliation-grid">
-            <div class="hac-close-metric"><span>Cobertura de corridas</span><strong id="closeCoverage">—</strong></div>
+            <div class="hac-close-metric"><span>Liquidaciones que pudieron compararse</span><strong id="closeCoverage">—</strong></div>
             <div class="hac-close-metric"><span>Exactitud de métricas</span><strong id="closeExactRate">—</strong></div>
             <div class="hac-close-metric"><span>Acuerdo de valores</span><strong id="closeValueAgreement">—</strong></div>
-            <div class="hac-close-metric"><span>Varianza absoluta</span><strong id="closeVariance">—</strong></div>
+            <div class="hac-close-metric"><span>Diferencia total</span><strong id="closeVariance">—</strong></div>
           </div>
         </div>
         <div class="hac-close-comparison" aria-labelledby="closeComparisonTitle">
@@ -1490,11 +1490,11 @@
 
       <section class="hac-layout hac-layout-balanced" aria-label="Calidad y escenario">
         <article class="hac-panel">
-          <div class="hac-panel-head"><div><h3>Confianza del extracto gobernado</h3><p class="hac-panel-subtitle" id="compositionSubtitle">Calidad, cobertura y acuerdo global; no es una composición salarial.</p></div><span class="hac-panel-badge" id="compositionPeriod">—</span></div>
+          <div class="hac-panel-head"><div><h3>Confiabilidad de los datos</h3><p class="hac-panel-subtitle" id="compositionSubtitle">Qué tan completos y consistentes son los datos disponibles.</p></div><span class="hac-panel-badge" id="compositionPeriod">—</span></div>
           <div class="hac-equation" aria-label="Controles globales de confianza">
-            <div class="hac-equation-card"><span>Calidad gobernada</span><strong id="equationGross">—</strong></div>
+            <div class="hac-equation-card"><span>Confiabilidad de los datos</span><strong id="equationGross">—</strong></div>
             <span class="hac-equation-symbol" aria-hidden="true">·</span>
-            <div class="hac-equation-card"><span>Cobertura de corridas</span><strong id="equationWithholdings">—</strong></div>
+            <div class="hac-equation-card"><span>Liquidaciones comparables</span><strong id="equationWithholdings">—</strong></div>
             <span class="hac-equation-symbol" aria-hidden="true">·</span>
             <div class="hac-equation-card"><span>Acuerdo de valores</span><strong id="equationNet">—</strong></div>
           </div>
@@ -1513,7 +1513,7 @@
             <div class="hac-sim-result"><span>Incremento bruto</span><strong id="simIncrement">—</strong></div>
             <div class="hac-sim-result"><span>Bruto del escenario</span><strong id="simProjectedGross">—</strong></div>
           </div>
-          <p class="hac-sim-note" id="simulatorNote">Aplica el porcentaje únicamente al bruto de cálculo observado. No resuelve la reconciliación global, no recalcula retenciones, aportes, neto ni pago bancario; no persiste ni envía información.</p>
+          <p class="hac-sim-note" id="simulatorNote">Aplica el porcentaje únicamente al bruto de cálculo observado. No resuelve la comparación general entre fuentes, no recalcula retenciones, aportes, neto ni pago bancario; no persiste ni envía información.</p>
         </article>
       </section>
 
@@ -1528,12 +1528,12 @@
         </div>
 
         <details class="hac-methodology">
-          <summary>Definiciones, fuente y límites de interpretación</summary>
+          <summary>Ver detalle técnico, fuentes y límites</summary>
           <div class="hac-methodology-content">
             <div><strong>Importes publicados</strong>La proyección entrega bruto, retenciones, neto y aportes en centavos. Junín configura su presentación en pesos argentinos (ARS); el dump original no incluía un código de moneda.</div>
             <div><strong>Control de cálculo</strong>Los importes sirven para analizar el cálculo salarial. No prueban una transferencia bancaria, un asiento contable, un saldo de tesorería ni la efectiva percepción por una persona.</div>
             <div><strong>Comparación entre fuentes</strong>La vista de calidad conserva el resultado general. El cierre muestra cobertura, exactitud, coincidencia y diferencia de cada período publicado sin mezclarlo con ese resultado general.</div>
-            <div><strong>Totpago</strong>Se usa únicamente para comparar los totales generales entre fuentes. No alimenta los importes mensuales ni se presenta como evidencia de pago.</div>
+            <div><strong>Fuente técnica “totpago”</strong>Es la fuente de control de liquidación usada únicamente para comparar totales generales. No alimenta los importes mensuales ni se presenta como evidencia de pago.</div>
             <div><strong>Respaldo de datos</strong>La fuente es histórica y no representa operación en tiempo real. El corte visible controla el horizonte válido.</div>
             <div><strong>Privacidad</strong>Los períodos con menos de 10 personas no se muestran. Nunca se reemplazan por cero y esta vista no incluye datos personales, filas crudas, códigos internos ni etiquetas de origen.</div>
             <div><strong>Escenario de paritaria</strong>Multiplicación lineal del bruto de cálculo observado. No modela reglas salariales, retenciones, inflación, vigencias, pago bancario ni efecto presupuestario.</div>
@@ -2049,7 +2049,7 @@
         return {
           pending_comparison: 'Primer período de la ventana; sin mes previo.',
           privacy_protected: 'El servidor no publica un indicador de cambio; los niveles monetarios visibles siguen siendo comparables.',
-          protected_bucket_composition: 'La composición del agregado cambió; se muestran niveles, no un delta de cohorte estable.',
+          protected_bucket_composition: 'Cambió la composición del grupo; se muestran los valores de cada mes sin atribuir la diferencia a una causa.',
           previous_period_missing: 'Mes previo no disponible.',
           category_not_comparable: 'Categoría no comparable entre ambos meses.',
           membership_change_protected: 'Membresía protegida; sin indicador de delta. Los niveles monetarios visibles siguen siendo comparables.',
@@ -2096,7 +2096,7 @@
         }
         if (state.cohortDeepLinkResolved === false) {
           showCohortState('Categoría financiera no publicada',
-            'El enlace solicitado no identifica una celda liberada en los 24 meses gobernados. No se reconstruyen ni estiman cifras protegidas.');
+            'El enlace solicitado no corresponde a un dato disponible de los últimos 24 meses. Las cifras protegidas no se reconstruyen ni se estiman.');
           return;
         }
         var finance = state.workforceFinance;
@@ -2104,7 +2104,7 @@
         var row = cohortPeriodRow(view, state.cohortPeriod);
         if (!view || !row) {
           showCohortState('Análisis financiero no verificable',
-            'La selección no pertenece a la ventana gobernada.');
+            'La selección está fuera de los meses disponibles.');
           return;
         }
         var cells = ensureCohortSelection(view, row);
@@ -2153,8 +2153,8 @@
         elements.cohortContent.dataset.sourceCode = String(selected.sourceCode);
         setText(elements.cohortTitle, 'Análisis financiero · ' + selected.label);
         setText(elements.cohortSubtitle,
-          'Bruto, retenciones, neto y aportes por ' + dimensionLabel +
-          ' observado en la corrida; no es estado contractual de una persona.');
+          'Bruto, descuentos, neto y aportes del ' + dimensionLabel +
+          '; información agregada del mes, no salario individual ni situación laboral actual.');
         setText(elements.cohortBadge, dimensionLabel + ' · Privacidad aplicada');
         setText(elements.cohortParticipants, selected.participantDisplay);
         setText(elements.cohortShare, percentFormatter.format(selected.allocationSharePct) + '%');
@@ -2176,7 +2176,7 @@
         renderCohortRanking(row, selected);
 
         setText(elements.cohortAssignmentEvidence,
-          'Dimensión observada en cada corrida de cálculo; no situación contractual ni asignación histórica inferida.');
+          'Clasificación usada en las liquidaciones del mes; puede no coincidir con el destino actual.');
         setText(elements.cohortReleaseEvidence,
           'Se ocultan los grupos con menos de ' + finance.privacy.threshold + ' personas, incluso cuando otra vista podría permitir deducirlos.');
         setText(elements.cohortPresentationEvidence,
@@ -2189,7 +2189,7 @@
           ? 'rrhh.html?sector=' + encodeURIComponent(String(selected.sourceCode)) + '#peopleDirectory'
           : 'rrhh.html#workforceDistribution';
         elements.cohortBackToRrhh.textContent = view.dimension === 'sector'
-          ? 'Directorio general del sector (no cohorte)'
+          ? 'Abrir directorio general del sector (grupo distinto)'
           : 'Abrir distribución general en RRHH';
         if (request && request.status === 'valid' && !state.cohortScrolled) {
           state.cohortScrolled = true;
@@ -2315,7 +2315,7 @@
           atLeast90: 'acuerdo ≥90%',
           below90: 'acuerdo <90%',
           below50: 'acuerdo <50%',
-          noCounterpart: 'sin corridas coincidentes',
+          noCounterpart: 'sin controles coincidentes',
           protected: 'protegido'
         }[status];
       }
@@ -2325,7 +2325,7 @@
           all: 'todos los cierres',
           below90: 'acuerdo menor a 90%',
           below50: 'acuerdo menor a 50%',
-          noCounterpart: 'sin corridas coincidentes',
+          noCounterpart: 'sin controles coincidentes',
           protected: 'períodos protegidos'
         }[state.radarFilter];
       }
@@ -2402,7 +2402,7 @@
           var empty = document.createElement('div');
           empty.className = 'hac-radar-empty';
           empty.textContent = state.radarFilter === 'protected'
-            ? 'Los períodos protegidos no publican indicadores de conciliación.'
+            ? 'Los períodos protegidos no publican indicadores de comparación.'
             : 'No hay indicadores publicados para este foco.';
           elements.reconciliationTrend.appendChild(empty);
           return;
@@ -2430,7 +2430,7 @@
         svg.style.width = width + 'px';
         svg.style.minWidth = width + 'px';
         svg.style.maxWidth = 'none';
-        svg.appendChild(createSvg('title', { id: titleId }, 'Indicadores mensuales de conciliación'));
+        svg.appendChild(createSvg('title', { id: titleId }, 'Indicadores mensuales de comparación entre fuentes'));
         svg.appendChild(createSvg('desc', { id: descriptionId }, 'Cobertura con línea continua, exactitud con línea discontinua y acuerdo con línea punteada, en escala de cero a cien por ciento. Los huecos y períodos protegidos cortan las líneas.'));
 
         [0, 25, 50, 75, 100].forEach(function (tick) {
@@ -2523,8 +2523,8 @@
           var empty = document.createElement('div');
           empty.className = 'hac-radar-empty';
           empty.textContent = state.radarFilter === 'protected'
-            ? 'Los períodos protegidos no publican varianza.'
-            : 'No hay varianzas publicadas para este foco.';
+            ? 'Los períodos protegidos no muestran la diferencia total.'
+            : 'No hay diferencias totales disponibles para esta selección.';
           elements.varianceRanking.appendChild(empty);
           return;
         }
@@ -2540,7 +2540,7 @@
           button.style.setProperty('--radar-rank-width', (row.reconciliation.absoluteVarianceCents / maximum * 100).toFixed(2) + '%');
           button.setAttribute(
             'aria-label',
-            monthLabel(row.period) + ': varianza absoluta ' + formatCentsExact(row.reconciliation.absoluteVarianceCents) + '. Abrir cierre.'
+            monthLabel(row.period) + ': diferencia total ' + formatCentsExact(row.reconciliation.absoluteVarianceCents) + '. Abrir detalle del mes.'
           );
           appendRadarCellText(button, 'hac-radar-rank-period', monthLabel(row.period));
           appendRadarCellText(button, 'hac-radar-rank-value', formatCentsExact(row.reconciliation.absoluteVarianceCents));
@@ -2779,7 +2779,7 @@
           setText(
             elements.closeComparisonCopy,
             comparison.reason === 'period_missing'
-              ? 'No existe el mes calendario anterior dentro del contrato gobernado.'
+              ? 'No hay un mes anterior disponible para comparar.'
               : 'Uno de los dos meses reúne menos de 10 personas. Para proteger identidades, no se muestra la comparación ni se completan valores.'
           );
           setText(elements.closeComparisonReconciliation, 'Sin comparación liberada.');
@@ -2796,10 +2796,10 @@
         );
         setText(
           elements.closeComparisonReconciliation,
-          'Conciliación mensual: cobertura ' + formatSignedPercentage(comparison.reconciliationDeltas.runCoveragePct) +
+          'Comparación mensual entre fuentes: cobertura ' + formatSignedPercentage(comparison.reconciliationDeltas.runCoveragePct) +
             '; exactitud ' + formatSignedPercentage(comparison.reconciliationDeltas.metricExactRatePct) +
             '; acuerdo de valores ' + formatSignedPercentage(comparison.reconciliationDeltas.valueAgreementPct) +
-            '; varianza absoluta ' + formatSignedCentsCompact(comparison.reconciliationDeltas.absoluteVarianceCents) + '.'
+            '; diferencia total ' + formatSignedCentsCompact(comparison.reconciliationDeltas.absoluteVarianceCents) + '.'
         );
         addCloseDelta('Participantes', (comparison.participantDelta >= 0 ? '+' : '') + numberFormatter.format(comparison.participantDelta));
         [
@@ -2843,7 +2843,7 @@
         setText(
           elements.closeReconciliationCopy,
           monthLabel(row.period) + ' · ' + numberFormatter.format(reconciliation.matchedRuns) +
-            ' corridas conciliadas de un universo combinado del período. No reutiliza el score global.'
+            ' liquidaciones pudieron compararse entre ambas fuentes. No reutiliza el resultado general.'
         );
         setText(elements.closeCoverage, percentFormatter.format(reconciliation.runCoveragePct) + '%');
         setText(elements.closeExactRate, percentFormatter.format(reconciliation.metricExactRatePct) + '%');
@@ -3028,7 +3028,7 @@
         );
         setText(
           elements.kpiReconciliationNote,
-          'Global · acuerdo de valores ' +
+          'Comparación general entre las dos fuentes de liquidación · acuerdo de valores ' +
             percentFormatter.format(reconciliation.valueAgreementPct) +
             '% · no certifica pago.'
         );
@@ -3063,10 +3063,10 @@
         addAlert(
           1,
           reconciliation.status === 'material_differences_detected' ? 'critical' : 'ok',
-          'Reconciliación global ' + percentFormatter.format(reconciliation.scorePct) + '%',
+          'Comparación general entre fuentes ' + percentFormatter.format(reconciliation.scorePct) + '%',
           'El acuerdo de valores es ' +
             percentFormatter.format(reconciliation.valueAgreementPct) +
-            '% y la varianza absoluta global asciende a ' +
+            '% y la diferencia total asciende a ' +
             formatAmount(reconciliation.absoluteVarianceCents / 100) +
             '. No se atribuye este resultado a períodos individuales.'
         );
@@ -3079,13 +3079,13 @@
         addAlert(
           3,
           'warn',
-          'Cobertura global de corridas ' +
+          'Liquidaciones comparables ' +
             percentFormatter.format(reconciliation.runCoveragePct) + '%',
           numberFormatter.format(reconciliation.matchedRuns) + ' de ' +
             numberFormatter.format(reconciliation.unionRuns) +
-            ' corridas del universo combinado tuvieron contraparte; ' +
+            ' liquidaciones tuvieron información en ambas fuentes; ' +
             numberFormatter.format(reconciliation.fullyReconciledRuns) +
-            ' conciliaron completamente.'
+            ' coincidieron en todos los valores comparados.'
         );
         addAlert(
           4,
@@ -3103,9 +3103,9 @@
         addAlert(
           6,
           'warn',
-          'Calidad gobernada ' + qualityFormatter.format(quality.quality.score) + '/100',
+          'Confiabilidad general ' + qualityFormatter.format(quality.quality.score) + '/100',
           numberFormatter.format(quality.temporal.quarantineRows) +
-            ' filas temporales quedaron en cuarentena. El alcance es el extracto agregado gobernado, no cada tabla cruda.'
+            ' registros con fechas fuera del corte quedaron apartados para revisar. El resultado resume la información disponible y no evalúa cada tabla por separado.'
         );
         if (state.protectedPeriods > 0) {
           addAlert(
@@ -3158,9 +3158,9 @@
         setText(elements.compositionPeriod, 'global');
         setText(
           elements.compositionSubtitle,
-          'Extracto agregado gobernado · ' +
+          'Resumen general · ' +
             numberFormatter.format(projection.temporal.validRows) +
-            ' filas temporales válidas · sin desglose salarial sensible.'
+            ' registros con fecha válida · sin datos salariales individuales.'
         );
         setText(elements.equationGross, qualityFormatter.format(quality.score) + '/100');
         setText(
@@ -3174,20 +3174,20 @@
 
         elements.compositionBars.replaceChildren();
         [
-          ['Validez temporal', quality.components.temporalValidity, 'var(--hac-blue)'],
-          ['Integridad referencial', quality.components.referentialIntegrity, 'var(--hac-teal)'],
-          ['Reconciliación de nómina', quality.components.payrollReconciliation, 'var(--hac-amber)'],
-          ['Unicidad de clave de legajo', quality.components.legajoKeyUniqueness, 'var(--hac-violet)']
+          ['Fechas válidas', quality.components.temporalValidity, 'var(--hac-blue)'],
+          ['Registros vinculados con personas', quality.components.referentialIntegrity, 'var(--hac-teal)'],
+          ['Coincidencia entre fuentes de liquidación', quality.components.payrollReconciliation, 'var(--hac-amber)'],
+          ['Legajos sin duplicados', quality.components.legajoKeyUniqueness, 'var(--hac-violet)']
         ].forEach(function (entry) {
           addQualityBar(entry[0], entry[1].score, entry[1].weightPct, entry[2]);
         });
 
         setText(
           elements.compositionSummary,
-          'El score ' + qualityFormatter.format(quality.score) +
-            '/100 describe el extracto gobernado. ' +
+          'El resultado ' + qualityFormatter.format(quality.score) +
+            '/100 resume la confiabilidad de los datos. ' +
             numberFormatter.format(projection.temporal.quarantineRows) +
-            ' filas temporales permanecen en cuarentena. La reconciliación es global y no se presenta como composición salarial ni como prueba de pago.'
+            ' filas temporales permanecen en revisión. La comparación entre las dos fuentes de liquidación es general y no se presenta como composición salarial ni como prueba de pago.'
         );
       }
 
@@ -3240,7 +3240,7 @@
         );
         setText(
           elements.topbarSourceText,
-          'GRH · proyecciones conciliadas · calidad ' +
+          'GRH · liquidaciones comparadas · calidad ' +
             qualityFormatter.format(quality.quality.score) + '/100'
         );
         elements.topbarSourceState.dataset.state =

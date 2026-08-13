@@ -1010,7 +1010,7 @@ function employmentInsight(person) {
     },
     unknown_implausible_active_tenure: {
       label: 'Antig\u00fcedad informada a revisar',
-      detail: `Ingreso ${ingress}; la combinaci\u00f3n supera el umbral de lectura conservadora.`,
+      detail: `Ingreso ${ingress}; la antig\u00fcedad informada necesita revisi\u00f3n antes de considerarla v\u00e1lida.`,
     },
     invalid_chronology: {
       label: 'Fechas informadas inconsistentes',

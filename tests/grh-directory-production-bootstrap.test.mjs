@@ -505,7 +505,7 @@ function previewDeploymentList() {
     deployments: [{
       url: previewDeploymentUrl,
       state: 'READY',
-      target: 'preview',
+      target: null,
       meta: {
         githubCommitSha: expectedGitSha,
         githubCommitRef: previewBranch,
@@ -1154,6 +1154,22 @@ test('preview provenance comes from one exact list entry and rejects drift befor
       name: 'wrong ref',
       deployments: [{ ...valid, meta: { ...valid.meta, githubCommitRef: 'codex/other-preview' } }],
     },
+    {
+      name: 'missing SHA',
+      deployments: [{
+        ...valid,
+        meta: { githubCommitRef: valid.meta.githubCommitRef },
+      }],
+    },
+    {
+      name: 'missing ref',
+      deployments: [{
+        ...valid,
+        meta: { githubCommitSha: valid.meta.githubCommitSha },
+      }],
+    },
+    { name: 'not ready in list', deployments: [{ ...valid, state: 'BUILDING' }] },
+    { name: 'conflicting list target', deployments: [{ ...valid, target: 'production' }] },
     { name: 'missing exact URL', deployments: [] },
     { name: 'duplicate exact URL', deployments: [valid, { ...valid }] },
     { name: 'conflicting optional ID', deployments: [{ ...valid, id: 'dpl_other_preview' }] },

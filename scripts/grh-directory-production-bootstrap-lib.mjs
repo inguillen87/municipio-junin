@@ -683,8 +683,14 @@ function matchPreviewListCandidate(value, inspected, state) {
   if (matches.length !== 1) fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');
   const candidate = matches[0];
   const identity = deploymentIdentity(candidate);
+  const status = String(candidate?.readyState || candidate?.status || candidate?.state || '').toUpperCase();
+  const target = String(candidate?.target || candidate?.environment || '').toLowerCase();
+  // `vercel ls --environment preview --json` 58.x scopes the result but emits
+  // `target: null`. Inspect already proved the immutable candidate is Preview;
+  // the list may repeat `preview` or omit it, but a conflicting target is fatal.
   if ((identity.id !== null && identity.id !== inspected.id) ||
-      !readyDeployment({ ...candidate, id: identity.id || inspected.id }, identity.id || inspected.id, 'preview') ||
+      !['READY', 'READY_STATE_READY'].includes(status) ||
+      (target && target !== 'preview') ||
       deploymentGitSha(candidate) !== state.expectedGitSha ||
       deploymentGitRef(candidate) !== state.previewBranch) {
     fail('BOOTSTRAP_PREVIEW_DEPLOYMENT_INVALID');

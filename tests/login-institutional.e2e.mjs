@@ -272,7 +272,9 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /recorrer toda la plataforma/i);
   assert.match(source, /datos reales disponibles según el perfil/i);
   assert.match(source, /no muestra fichas personales/i);
-  assert.match(source, /<details class="institutional-access" id="institutionalAccess">[\s\S]*?<summary>Ingresar con cuenta institucional<\/summary>[\s\S]*?<form class="login-form"/i);
+  assert.match(source, /<section class="institutional-access" id="institutionalAccess"[\s\S]*?Acceso al Directorio privado de RRHH[\s\S]*?<form class="login-form"/i);
+  assert.match(source, /<button class="submit-button" id="btnLogin" type="submit">Ingresar al Directorio privado de RRHH<\/button>/i);
+  assert.match(source, /<details[\s\S]*?class="evaluation-access"[\s\S]*?id="evaluationAccess"[\s\S]*?<summary>Ver accesos p.blicos de evaluaci.n<\/summary>/i);
   const visibleShell = source.slice(source.indexOf('<body'), source.indexOf('<script>'));
   assert.doesNotMatch(visibleShell, /\b(?:snapshot|capabilities|datasets?|contrato|PII|gobernado|cross-source)\b/i);
   const publishedProfiles = [...source.matchAll(/data-evaluation-profile="([^"]+)"/g)].map(match => match[1]);
@@ -331,7 +333,7 @@ test('login is responsive, reduced-motion safe and has no external requests', as
       });
       return {
         access: bounds('#accessPanel'),
-        evaluationButtons: Array.from(document.querySelectorAll('.evaluation-button')).map(node => bounds('#' + (node.id || (node.id = 'metric-' + Math.random().toString(36).slice(2))))),
+        primaryButton: bounds('#btnLogin'),
         h1: document.querySelectorAll('h1').length,
         heavyAssets: document.querySelectorAll('img, canvas, video, link[rel="stylesheet"], script[src]:not([src="/js/pwa-register.js"])').length,
         main: document.querySelectorAll('main').length,
@@ -343,7 +345,7 @@ test('login is responsive, reduced-motion safe and has no external requests', as
         })),
         pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         pwaRegisterScripts: document.querySelectorAll('script[src="/js/pwa-register.js"]').length,
-        institutionalOpen: document.querySelector('#institutionalAccess').open,
+        evaluationOpen: document.querySelector('#evaluationAccess').open,
       };
     });
 
@@ -354,11 +356,9 @@ test('login is responsive, reduced-motion safe and has no external requests', as
     assert.ok(metrics.pageOverflow <= 1, `${viewport.name}: page must not overflow horizontally`);
     assert.ok(metrics.mainOverflow <= 1, `${viewport.name}: main must not overflow horizontally`);
     assert.ok(metrics.access.left >= -1 && metrics.access.right <= viewport.width + 1, `${viewport.name}: access panel fits viewport`);
-    assert.equal(metrics.institutionalOpen, false, `${viewport.name}: institutional form stays closed by default`);
-    for (const [name, box] of metrics.evaluationButtons.entries()) {
-      assert.ok(box.height >= 44, `${viewport.name}: ${name} target height is at least 44px`);
-      assert.ok(box.width >= 44, `${viewport.name}: ${name} target width is at least 44px`);
-    }
+    assert.equal(metrics.evaluationOpen, false, `${viewport.name}: public evaluation stays secondary and closed by default`);
+    assert.ok(metrics.primaryButton.height >= 48, `${viewport.name}: private directory action is the primary large target`);
+    assert.ok(metrics.primaryButton.width >= 44, `${viewport.name}: private directory action is operable`);
     assert.ok(metrics.maxCssTimeMs <= 0.02, `${viewport.name}: reduced motion caps animation and transition duration`);
     assert.deepEqual(consoleErrors, [], `${viewport.name}: no browser console errors`);
     assert.deepEqual(externalRequests, [], `${viewport.name}: no external requests`);
@@ -383,6 +383,7 @@ test('the six published evaluation buttons authenticate their exact role without
   const page = await context.newPage();
   for (const identity of PUBLISHED_EVALUATION_IDENTITIES) {
     await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
+    await page.locator('#evaluationAccess').evaluate(node => { node.open = true; });
     await Promise.all([
       page.waitForURL(`${baseUrl}/inicio.html`),
       page.click(`[data-evaluation-profile="${identity.profileId}"]`),
@@ -426,8 +427,6 @@ test('login keyboard flow, guarded errors and successful session remain accessib
   await page.keyboard.press('Enter');
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'accessPanel');
 
-  await page.locator('#institutionalAccess').evaluate(node => { node.open = true; });
-  await page.waitForTimeout(20);
   await page.focus('#togglePassBtn');
   const focusStyle = await page.$eval('#togglePassBtn', node => {
     const style = getComputedStyle(node);
@@ -483,7 +482,7 @@ test('login keyboard flow, guarded errors and successful session remain accessib
     assert.doesNotMatch(await page.textContent('#errorMsg'), /detalle interno/i);
     assert.equal(await page.evaluate(() => document.activeElement?.id), failure.focus);
     assert.equal(await page.isDisabled('#btnLogin'), false);
-    assert.equal(await page.textContent('#btnLogin'), 'Ingresar al sistema');
+    assert.equal(await page.textContent('#btnLogin'), 'Ingresar al Directorio privado de RRHH');
     assert.deepEqual(await page.evaluate(() => ({ token: sessionStorage.getItem('mjunin_token'), user: sessionStorage.getItem('mjunin_user') })), {
       token: null,
       user: null,
@@ -554,7 +553,6 @@ test('login rejects a server-supplied external default path and falls back to in
     if (!request.url().startsWith(baseUrl)) externalRequests.push(request.url());
   });
   await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
-  await page.click('#institutionalAccess summary');
   await page.fill('#emailInput', 'unsafe-path@junin.gob.ar');
   await page.fill('#passInput', TEST_PASSWORD);
   await Promise.all([
@@ -583,7 +581,6 @@ test('login accepts only a capability-bound private return and rejects hostile r
   });
 
   await page.goto(`${baseUrl}/login.html?return=rrhh.html%23peopleDirectory`, { waitUntil: 'networkidle' });
-  await page.click('#institutionalAccess summary');
   await page.fill('#emailInput', SUCCESS_EMAIL);
   await page.fill('#passInput', TEST_PASSWORD);
   await Promise.all([
@@ -593,7 +590,6 @@ test('login accepts only a capability-bound private return and rejects hostile r
   assert.equal(await page.textContent('#peopleDirectory'), 'Directorio privado');
 
   await page.goto(`${baseUrl}/login.html?return=https%3A%2F%2Fattacker.example%2F`, { waitUntil: 'networkidle' });
-  await page.click('#institutionalAccess summary');
   await page.fill('#emailInput', SUCCESS_EMAIL);
   await page.fill('#passInput', TEST_PASSWORD);
   await Promise.all([
@@ -623,16 +619,15 @@ test('private GRH login explains the handoff and returns an authorized identity 
 
   const privateLogin = `${baseUrl}/login.html?access=private-grh&return=rrhh.html%23peopleDirectory`;
   await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
-  assert.equal(await page.locator('#privateGrhLoginLink').isVisible(), true);
-  await Promise.all([
-    page.waitForURL(privateLogin),
-    page.click('#privateGrhLoginLink'),
-  ]);
+  assert.equal(await page.locator('#institutionalAccess').isVisible(), true);
+  assert.equal(await page.locator('#evaluationAccess').getAttribute('open'), null);
+  assert.equal(await page.textContent('#btnLogin'), 'Ingresar al Directorio privado de RRHH');
+  await page.goto(privateLogin, { waitUntil: 'networkidle' });
   assert.equal(await page.locator('#privateAccessNotice').isVisible(), true);
   assert.equal(await page.locator('#evaluationAccess').isHidden(), true);
   assert.equal(await page.locator('#privateGrhLoginLink').isHidden(), true);
   assert.equal(await page.textContent('#accessKicker'), 'Directorio privado de RRHH');
-  assert.equal(await page.textContent('#btnLogin'), 'Ingresar al directorio de RRHH');
+  assert.equal(await page.textContent('#btnLogin'), 'Ingresar al Directorio privado de RRHH');
 
   await page.fill('#emailInput', SUCCESS_EMAIL);
   await page.fill('#passInput', TEST_PASSWORD);

@@ -233,18 +233,25 @@
     }
 
     .institutional-access {
-      margin-top: 18px;
-      border-top: 1px solid var(--border);
-      padding-top: 14px;
+      margin-top: 24px;
+      padding: 18px;
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      background: var(--surface-raised);
     }
 
-    .institutional-access summary {
-      min-height: 44px;
-      padding: 12px 4px;
-      color: var(--accent-strong);
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
+    .institutional-access h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 17px;
+      line-height: 1.3;
+    }
+
+    .institutional-access-copy {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
     }
 
     .form-field + .form-field { margin-top: 20px; }
@@ -510,6 +517,26 @@
 
     .evaluation-access {
       margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .evaluation-access > summary {
+      min-height: 48px;
+      padding: 13px 4px;
+      color: var(--text-soft);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .evaluation-access > summary:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .evaluation-panel {
+      padding-top: 10px;
     }
 
     .private-access-notice {
@@ -662,9 +689,9 @@
         <div class="mobile-wordmark" aria-hidden="true">MuniControl · Junín, Mendoza</div>
 
         <header class="access-header">
-          <p class="access-kicker" id="accessKicker">Acceso institucional</p>
-          <h2 id="accessTitle">Hola. Entrá a tu espacio de trabajo</h2>
-          <p class="access-intro" id="accessIntro">Usá tu cuenta municipal o elegí un perfil de evaluación para conocer la plataforma.</p>
+          <p class="access-kicker" id="accessKicker">Directorio privado de RRHH</p>
+          <h2 id="accessTitle">Entrá para consultar fichas de personas</h2>
+          <p class="access-intro" id="accessIntro">Usá la cuenta privada que te asignó el municipio.</p>
         </header>
 
         <section class="private-access-notice" id="privateAccessNotice" aria-labelledby="privateAccessTitle" hidden>
@@ -675,40 +702,10 @@
 
         <div class="error-message" id="errorMsg" role="alert" aria-live="assertive" tabindex="-1" hidden>No pudimos completar el acceso.</div>
 
-        <section
-          class="evaluation-access"
-          id="evaluationAccess"
-          data-demo-contract="published-evaluation-readonly-v1"
-          aria-labelledby="evaluationTitle"
-        >
-          <h3 id="evaluationTitle">Elegí qué función querés probar</h3>
-          <p class="evaluation-copy">Entrá con un clic para recorrer toda la plataforma y consultar los datos reales disponibles según el perfil. La evaluación es de sólo lectura y no muestra fichas personales.</p>
-          <div class="evaluation-grid" id="evaluationGrid">
-            <button class="evaluation-button" type="button" data-evaluation-profile="intendente">
-              <span class="evaluation-mark">IN</span><span class="evaluation-label">Entrar como Intendente</span><span class="evaluation-detail">Prioridades e información general</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-profile="administrador">
-              <span class="evaluation-mark">AD</span><span class="evaluation-label">Entrar como Administrador</span><span class="evaluation-detail">Cargas y calidad</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-profile="contador">
-              <span class="evaluation-mark">CO</span><span class="evaluation-label">Entrar como Contador</span><span class="evaluation-detail">Liquidaciones y control</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-profile="usuario-municipal">
-              <span class="evaluation-mark">UM</span><span class="evaluation-label">Entrar como Usuario municipal</span><span class="evaluation-detail">Consulta acotada</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-profile="inspector">
-              <span class="evaluation-mark">IS</span><span class="evaluation-label">Entrar como Inspector</span><span class="evaluation-detail">Territorio y ayuda</span>
-            </button>
-            <button class="evaluation-button" type="button" data-evaluation-profile="vista-demo">
-              <span class="evaluation-mark">DE</span><span class="evaluation-label">Entrar a la Vista demo</span><span class="evaluation-detail">Recorrido básico</span>
-            </button>
-          </div>
-          <p class="evaluation-status" id="evaluationStatus" role="status" aria-live="polite"></p>
-        </section>
-
-        <details class="institutional-access" id="institutionalAccess">
-          <summary>Ingresar con cuenta institucional</summary>
-        <form class="login-form" id="loginForm" autocomplete="on" novalidate>
+        <section class="institutional-access" id="institutionalAccess" aria-labelledby="institutionalAccessTitle">
+          <h3 id="institutionalAccessTitle">Acceso al Directorio privado de RRHH</h3>
+          <p class="institutional-access-copy">Ingresá con tu cuenta institucional para consultar la información habilitada para tu función.</p>
+          <form class="login-form" id="loginForm" autocomplete="on" novalidate>
           <div class="form-field">
             <label class="form-label" for="emailInput">Correo institucional</label>
             <input
@@ -752,16 +749,48 @@
             <p class="field-help" id="passwordHelp">La recuperación de acceso se gestiona con el administrador institucional.</p>
           </div>
 
-          <button class="submit-button" id="btnLogin" type="submit">Ingresar al sistema</button>
-        </form>
+            <button class="submit-button" id="btnLogin" type="submit">Ingresar al Directorio privado de RRHH</button>
+          </form>
+        </section>
+
+        <details
+          class="evaluation-access"
+          id="evaluationAccess"
+          data-demo-contract="published-evaluation-readonly-v1"
+        >
+          <summary>Ver accesos públicos de evaluación</summary>
+          <div class="evaluation-panel" aria-labelledby="evaluationTitle">
+            <h3 id="evaluationTitle">Elegí qué función querés probar</h3>
+            <p class="evaluation-copy">Entrá con un clic para recorrer toda la plataforma y consultar los datos reales disponibles según el perfil. La evaluación es de sólo lectura y no muestra fichas personales.</p>
+            <div class="evaluation-grid" id="evaluationGrid">
+              <button class="evaluation-button" type="button" data-evaluation-profile="intendente">
+                <span class="evaluation-mark">IN</span><span class="evaluation-label">Entrar como Intendente</span><span class="evaluation-detail">Prioridades e información general</span>
+              </button>
+              <button class="evaluation-button" type="button" data-evaluation-profile="administrador">
+                <span class="evaluation-mark">AD</span><span class="evaluation-label">Entrar como Administrador</span><span class="evaluation-detail">Cargas y calidad</span>
+              </button>
+              <button class="evaluation-button" type="button" data-evaluation-profile="contador">
+                <span class="evaluation-mark">CO</span><span class="evaluation-label">Entrar como Contador</span><span class="evaluation-detail">Liquidaciones y control</span>
+              </button>
+              <button class="evaluation-button" type="button" data-evaluation-profile="usuario-municipal">
+                <span class="evaluation-mark">UM</span><span class="evaluation-label">Entrar como Usuario municipal</span><span class="evaluation-detail">Consulta acotada</span>
+              </button>
+              <button class="evaluation-button" type="button" data-evaluation-profile="inspector">
+                <span class="evaluation-mark">IS</span><span class="evaluation-label">Entrar como Inspector</span><span class="evaluation-detail">Territorio y ayuda</span>
+              </button>
+              <button class="evaluation-button" type="button" data-evaluation-profile="vista-demo">
+                <span class="evaluation-mark">DE</span><span class="evaluation-label">Entrar a la Vista demo</span><span class="evaluation-detail">Recorrido básico</span>
+              </button>
+            </div>
+            <p class="evaluation-status" id="evaluationStatus" role="status" aria-live="polite"></p>
+            <a class="tour-link" href="/roles">
+              <span>Conocer qué puede ver cada perfil<span class="tour-link-note">No inicia sesión ni accede a datos</span></span>
+            </a>
+          </div>
         </details>
 
-        <a class="tour-link" id="privateGrhLoginLink" href="/login.html?access=private-grh&amp;return=rrhh.html%23peopleDirectory">
+        <a class="tour-link" id="privateGrhLoginLink" href="/login.html?access=private-grh&amp;return=rrhh.html%23peopleDirectory" hidden>
           <span>Ingresar al directorio privado de RRHH<span class="tour-link-note">Requiere la cuenta privada asignada y no usa los perfiles de evaluación.</span></span>
-        </a>
-
-        <a class="tour-link" href="/roles">
-          <span>Ver recorrido público por perfiles<span class="tour-link-note">No inicia sesión ni accede a datos</span></span>
         </a>
 
         <button class="pwa-install" type="button" data-pwa-install hidden>Instalar MuniControl</button>
@@ -826,7 +855,7 @@
         evaluationAccess.hidden = true;
         institutionalAccess.open = true;
         privateGrhLoginLink.hidden = true;
-        submitButton.textContent = 'Ingresar al directorio de RRHH';
+        submitButton.textContent = 'Ingresar al Directorio privado de RRHH';
         emailInput.focus({ preventScroll: true });
       }
 
@@ -855,7 +884,7 @@
         submitButton.disabled = submitting;
         submitButton.textContent = submitting
           ? 'Verificando acceso…'
-          : privateGrhMode ? 'Ingresar al directorio de RRHH' : 'Ingresar al sistema';
+          : 'Ingresar al Directorio privado de RRHH';
         evaluationGrid.querySelectorAll('.evaluation-button').forEach(function (button) {
           button.disabled = submitting;
         });

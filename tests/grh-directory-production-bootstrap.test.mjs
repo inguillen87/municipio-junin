@@ -51,6 +51,9 @@ const uuids = Object.freeze([
   '22222222-2222-4222-8222-222222222222',
   '33333333-3333-4333-8333-333333333333',
 ]);
+const fixtureVercelConfig = JSON.stringify({
+  functions: { 'api/**/*.js': { maxDuration: 30 } },
+}) + '\n';
 
 function artifactFixture() {
   return {
@@ -306,7 +309,10 @@ async function makeFixture({ mode = 'encrypted_snapshot' } = {}) {
   ]) {
     const target = path.join(worktree, relative);
     await fs.mkdir(path.dirname(target), { recursive: true });
-    await fs.writeFile(target, relative.endsWith('.json') ? '{}\n' : '// fixture\n');
+    await fs.writeFile(
+      target,
+      relative === 'vercel.json' ? fixtureVercelConfig : (relative.endsWith('.json') ? '{}\n' : '// fixture\n'),
+    );
   }
   await fs.writeFile(artifactPath, JSON.stringify(artifactFixture()));
   let uuidIndex = 0;
@@ -364,7 +370,10 @@ async function makePreviewFixture({
   ]) {
     const destination = path.join(worktree, relative);
     await fs.mkdir(path.dirname(destination), { recursive: true });
-    await fs.writeFile(destination, relative.endsWith('.json') ? '{}\n' : '// fixture\n');
+    await fs.writeFile(
+      destination,
+      relative === 'vercel.json' ? fixtureVercelConfig : (relative.endsWith('.json') ? '{}\n' : '// fixture\n'),
+    );
   }
   await fs.writeFile(artifactPath, JSON.stringify(artifactFixture()));
   let uuidIndex = 0;
@@ -562,6 +571,7 @@ test('prepare emits a private gzip envelope, snapshot key, and explicit encrypte
     assert.equal(state.leaveRecordCount, 1);
     assert.equal(state.movementPeriodCount, 1);
     assert.equal(state.positionObservationCount, 1);
+    assert.match(state.endpointRelativePath, /^api\/internal-grh-directory-bootstrap-[0-9a-f]{16}\.js$/);
     assert.ok(state.payloadBytes < 4_000_000);
     assert.ok(state.uncompressedBytes < 16 * 1024 * 1024);
     assert.equal(envelope.operation.operationId, state.operationId);
@@ -805,6 +815,18 @@ test('preview prepare is DDL-only and pins the attached worktree to the exact re
     );
     assert.match(endpoint, /GRH_DIRECTORY_BOOTSTRAP_PREFLIGHT_OK/);
     assert.doesNotMatch(endpoint, /postgres(?:ql)?:\/\/[^'"\s]+/i);
+    const temporaryVercelConfig = JSON.parse(await fs.readFile(
+      path.join(fixture.stateDirectory, 'grh-directory-bootstrap.vercel.json'),
+      'utf8',
+    ));
+    assert.deepEqual(Object.keys(temporaryVercelConfig.functions), [
+      'api/internal-grh-directory-bootstrap-*.js',
+      'api/**/*.js',
+    ]);
+    assert.deepEqual(temporaryVercelConfig.functions['api/internal-grh-directory-bootstrap-*.js'], {
+      maxDuration: 300,
+    });
+    assert.deepEqual(temporaryVercelConfig.functions['api/**/*.js'], { maxDuration: 30 });
   } finally {
     await fixture.cleanup();
   }
@@ -993,7 +1015,10 @@ test('preview apply, verify, and cleanup remain branch-scoped and never mutate P
     assert.ok(envAdds.every(call => call.hasInput));
     assert.equal(envAdds.some(call => call.args.includes('GRH_DIRECTORY_SNAPSHOT_KEY_V1')), false);
     const deploy = calls.find(call => call.args[0] === 'deploy');
-    assert.deepEqual(deploy.args, ['deploy', '--target', 'preview', '--yes', '--json']);
+    assert.deepEqual(deploy.args, [
+      'deploy', '--target', 'preview', '--yes', '--json', '--local-config',
+      path.join(fixture.stateDirectory, 'grh-directory-bootstrap.vercel.json'),
+    ]);
     assert.equal(deploy.args.includes('--prod'), false);
     assert.equal(deploy.args.includes('--skip-domain'), false);
     assert.ok(calls.some(call => call.args.join(' ') ===
@@ -1067,6 +1092,10 @@ test('preview apply, verify, and cleanup remain branch-scoped and never mutate P
     assert.equal(persisted.previewBranch, previewBranch);
     assert.equal(JSON.stringify(persisted).includes(secret), false);
     assert.equal(JSON.stringify(cleaned).includes(secret), false);
+    await assert.rejects(fs.access(path.join(
+      fixture.stateDirectory,
+      'grh-directory-bootstrap.vercel.json',
+    )));
   } finally {
     await fixture.cleanup();
   }

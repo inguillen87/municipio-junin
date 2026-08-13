@@ -52,6 +52,9 @@ const MAX_PROTECTED_RESPONSE_BYTES = 2 * 1024 * 1024;
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const PREVIEW_BRANCH_PATTERN = /^(?!master$)(?!refs\/)[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/;
+const TEMPORARY_VERCEL_CONFIG_FILE = 'grh-directory-bootstrap.vercel.json';
+const TEMPORARY_FUNCTION_PATTERN = 'api/internal-grh-directory-bootstrap-*.js';
+const DEFAULT_FUNCTION_PATTERN = 'api/**/*.js';
 const REQUIRED_PREVIEW_ENVIRONMENT_NAMES = Object.freeze([
   'DATABASE_URL', 'DIRECT_URL', 'JWT_SECRET', 'GRH_TENANT_ID',
   'GRH_SOURCE_SHA256', 'GRH_ARTIFACT_SOURCE',
@@ -226,8 +229,30 @@ function sensitivePaths(stateDir) {
     snapshotKeyPath: path.join(stateDir, 'grh-directory-snapshot-key-v1.secret'),
     allowedUserIdPath: path.join(stateDir, 'grh-directory-bootstrap.allowed-user-id'),
     payloadPath: path.join(stateDir, 'grh-directory-bootstrap.payload.json.gz'),
+    vercelConfigPath: path.join(stateDir, TEMPORARY_VERCEL_CONFIG_FILE),
     statePath: path.join(stateDir, 'grh-directory-bootstrap.state.json'),
   });
+}
+
+async function temporaryVercelConfig(worktreePath) {
+  const source = await readJson(
+    path.join(worktreePath, 'vercel.json'),
+    'BOOTSTRAP_VERCEL_CONFIG_INVALID',
+  );
+  if (!source || typeof source !== 'object' || Array.isArray(source) ||
+      !source.functions || typeof source.functions !== 'object' || Array.isArray(source.functions) ||
+      Object.hasOwn(source.functions, TEMPORARY_FUNCTION_PATTERN) ||
+      !exactKeys(source.functions[DEFAULT_FUNCTION_PATTERN], ['maxDuration']) ||
+      source.functions[DEFAULT_FUNCTION_PATTERN].maxDuration !== 30) {
+    fail('BOOTSTRAP_VERCEL_CONFIG_INVALID');
+  }
+  return Buffer.from(JSON.stringify({
+    ...source,
+    functions: {
+      [TEMPORARY_FUNCTION_PATTERN]: { maxDuration: 300 },
+      ...source.functions,
+    },
+  }, null, 2) + '\n', 'utf8');
 }
 
 function exactGitOutput(runner, cwd, args, code) {
@@ -415,6 +440,7 @@ export async function prepareBootstrapBundle({
     manifest,
     manifestSha256,
   });
+  const temporaryVercelConfigSource = await temporaryVercelConfig(worktree);
   if (endpointSource.includes(password) || endpointSource.includes(bootstrapSecret) ||
       (snapshotKey && endpointSource.includes(snapshotKey)) ||
       endpointSource.includes(passwordHash) || endpointSource.includes(email) || endpointSource.includes(pilotId)) {
@@ -489,6 +515,8 @@ export async function prepareBootstrapBundle({
     await securePathImpl(paths.allowedUserIdPath, false);
     await writeExclusive(paths.payloadPath, compressed);
     await securePathImpl(paths.payloadPath, false);
+    await writeExclusive(paths.vercelConfigPath, temporaryVercelConfigSource);
+    await securePathImpl(paths.vercelConfigPath, false);
     await writeExclusive(paths.statePath, JSON.stringify(state, null, 2) + '\n');
     await securePathImpl(paths.statePath, false);
   } catch (error) {
@@ -779,16 +807,19 @@ async function loadState(statePath) {
 }
 
 async function verifyPreparedFiles(state) {
-  const [endpoint, payload, credential, secret, allowedUserId, snapshotKey] = await Promise.all([
+  const [endpoint, payload, credential, secret, allowedUserId, snapshotKey, vercelConfig] = await Promise.all([
     fs.readFile(state.endpointPath),
     fs.readFile(state.payloadPath),
     readJson(state.credentialPath, 'BOOTSTRAP_CREDENTIAL_UNREADABLE'),
     fs.readFile(state.secretPath, 'utf8'),
     fs.readFile(state.allowedUserIdPath, 'utf8'),
     state.mode === 'encrypted_snapshot' ? fs.readFile(state.snapshotKeyPath, 'utf8') : Promise.resolve(null),
+    fs.readFile(sensitivePaths(path.dirname(state.secretPath)).vercelConfigPath),
   ]).catch(() => fail('BOOTSTRAP_PREPARED_FILES_INVALID'));
+  const expectedVercelConfig = await temporaryVercelConfig(state.worktreePath);
   if (sha256(endpoint) !== state.endpointSha256 || sha256(payload) !== state.payloadSha256 ||
       payload.length !== state.payloadBytes || secret.length < 32 ||
+      sha256(vercelConfig) !== sha256(expectedVercelConfig) ||
       allowedUserId !== credential.userId || credential.role !== PILOT_ROLE ||
       (state.mode === 'encrypted_snapshot' &&
         (!/^[A-Za-z0-9_-]{43}$/.test(snapshotKey || '') ||
@@ -799,7 +830,15 @@ async function verifyPreparedFiles(state) {
       typeof credential.email !== 'string' || typeof credential.password !== 'string') {
     fail('BOOTSTRAP_PREPARED_FILES_INVALID');
   }
-  return { endpoint, payload, credential, secret, allowedUserId, snapshotKey };
+  return {
+    endpoint,
+    payload,
+    credential,
+    secret,
+    allowedUserId,
+    snapshotKey,
+    vercelConfigPath: sensitivePaths(path.dirname(state.secretPath)).vercelConfigPath,
+  };
 }
 
 function run(runner, command, args, options) {
@@ -1119,8 +1158,8 @@ export async function applyPreparedBootstrap({
       runner,
       'vercel',
       state.target === 'preview'
-        ? ['deploy', '--target', 'preview', '--yes', '--json']
-        : ['deploy', '--prod', '--skip-domain', '--yes', '--json'],
+        ? ['deploy', '--target', 'preview', '--yes', '--json', '--local-config', material.vercelConfigPath]
+        : ['deploy', '--prod', '--skip-domain', '--yes', '--json', '--local-config', material.vercelConfigPath],
       { cwd: state.worktreePath },
     ), 'BOOTSTRAP_DEPLOYMENT_OUTPUT_INVALID');
     const deployment = deploymentIdentity(deploymentOutput);
@@ -1640,6 +1679,11 @@ export async function cleanupVerifiedBootstrap({
   await removeIfExact(state.payloadPath, state.payloadSha256);
   await removeIfExact(state.secretPath);
   await removeIfExact(state.allowedUserIdPath);
+  const expectedVercelConfig = await temporaryVercelConfig(state.worktreePath);
+  await removeIfExact(
+    sensitivePaths(path.dirname(state.secretPath)).vercelConfigPath,
+    sha256(expectedVercelConfig),
+  );
   state.status = 'cleaned';
   state.deployment.cleanedAt = new Date().toISOString();
   await writeState(loaded.statePath, state, securePathImpl);

@@ -205,12 +205,12 @@
       },
       {
         id: 'domain-catalog', status: 'Disponible', title: 'Mapa de áreas y datos',
-        description: 'Explica qué dominios, tablas y preguntas están cubiertos, cuáles son parciales y qué falta desarrollar.',
+        description: 'Explica qué áreas de información y preguntas están cubiertas, cuáles son parciales y qué falta desarrollar.',
         format: 'Catálogo web', use: 'Descubrir información', action: 'Abrir catálogo', href: 'areas-grh.html'
       },
       {
-        id: 'quality', status: 'Disponible', title: 'Calidad y trazabilidad',
-        description: 'Controles sobre validez, cobertura y conciliación del respaldo antes de circular cifras o conclusiones.',
+        id: 'quality', status: 'Disponible', title: 'Confiabilidad y origen',
+        description: 'Revisa fechas, vínculos y diferencias entre fuentes antes de circular cifras o conclusiones.',
         format: 'Tablero web', use: 'Validar confianza', action: 'Revisar calidad', href: '/calidad'
       }
     ].map(function withSource(definition) {
@@ -251,7 +251,7 @@
   function renderPublications(catalog) {
     setStatus('publicationStatus', 'ready', 'Publicaciones vinculadas a una fuente verificada · corte ' + humanDate(catalog.source.snapshotAsOf) + '.');
     setText('publicationCut', humanDate(catalog.source.snapshotAsOf));
-    setText('publicationSource', catalog.source.canonicalSystem + ' · ' + shortHash(catalog.source.sourceSha256));
+    setText('publicationSource', catalog.source.canonicalSystem);
     documentRef.getElementById('publicationSummary').hidden = false;
     var container = documentRef.getElementById('publicationCards');
     var cards = publicationDefinitions(catalog).map(buildPublicationCard);

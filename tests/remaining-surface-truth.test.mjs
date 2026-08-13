@@ -168,7 +168,8 @@ test('remaining operational surfaces use authenticated APIs and fail closed with
   assert.match(exportsPage, /src="js\/auth-fetch\.js"/);
   assert.match(exportsPage, /src="js\/data-operations\.js"/);
   assert.match(exportsPage, /Publicaciones/i);
-  assert.match(exportsPage, /CSV\/XLSX nominal no habilitado/i);
+  assert.match(exportsPage, /Las planillas con datos personales no están habilitadas/i);
+  assert.doesNotMatch(exportsPage, /snapshot histórico|CSV\/XLSX nominal|huella, período|Calidad y trazabilidad|conciliación/i);
   assert.doesNotMatch(exportsPage, /MuniAuth\.(?:fetch|download)\('\/api\/(?:reports|export-data)/);
   assert.match(exportsPage, /no constituye un historial institucional/i);
   assert.doesNotMatch(exportsPage, /MuniDB|localStorage|innerHTML\s*=|generad[oa] exitosamente|>Completado</i);

@@ -209,7 +209,8 @@ test('real governed catalog drives useful sources and publications at desktop an
     assert.equal(state.activeActions, 4);
     assert.equal(state.disabled, 0);
     assert.match(state.text, /Informe ejecutivo GRH/);
-    assert.match(state.text, /CSV\/XLSX nominal no habilitado/);
+    assert.match(state.text, /Las planillas con datos personales no están habilitadas/);
+    assert.doesNotMatch(state.text, /snapshot|CSV\/XLSX nominal|huella|Calidad y trazabilidad|conciliación/i);
     assert.doesNotMatch(state.text, /Registros RRHH importados|Evolución de planta|Historial persistido: no disponible/);
     assert.ok(state.overflow <= 1, `publications mobile overflow: ${state.overflow}px`);
     await page.screenshot({ path: path.join(os.tmpdir(), 'municontrol-publicaciones-mobile.png'), fullPage: true });

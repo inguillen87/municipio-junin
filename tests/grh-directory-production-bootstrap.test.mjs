@@ -799,6 +799,10 @@ test('preview prepare is DDL-only and pins the attached worktree to the exact re
     assert.ok(connect > clientConstruction, 'the client must be constructed before connecting');
     assert.ok(migration > connect, 'migration remains after the verified connection');
     assert.match(endpoint, /action === 'preflight'/);
+    assert.match(
+      endpoint,
+      /array_agg\(column_name::text ORDER BY ordinal_position\)::text\[\] AS columns/,
+    );
     assert.match(endpoint, /GRH_DIRECTORY_BOOTSTRAP_PREFLIGHT_OK/);
     assert.doesNotMatch(endpoint, /postgres(?:ql)?:\/\/[^'"\s]+/i);
   } finally {

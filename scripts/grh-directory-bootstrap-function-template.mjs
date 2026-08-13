@@ -320,7 +320,7 @@ function inspectEnvelope(envelope) {
 
 async function assertDirectorySchema(client) {
   const columns = await client.query(
-    "SELECT table_name, array_agg(column_name ORDER BY ordinal_position) AS columns " +
+    "SELECT table_name, array_agg(column_name::text ORDER BY ordinal_position)::text[] AS columns " +
     "FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ANY($1::text[]) " +
     'GROUP BY table_name ORDER BY table_name',
     [TABLES],

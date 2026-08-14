@@ -2,9 +2,13 @@
 
 Versión documental: 1.10.0
 Fecha de corte: 14 de agosto de 2026
-Estado: S24 verificado en Production; S25 candidate local, todavía no Production. Commit S24
-`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
-`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30
+Estado: S25 verificado en Production el 14 de agosto de 2026. Product SHA
+`2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
+`dpl_CEDxSq4dWFYekymNzkVBpV876JfX`, alias
+`https://municipio-junin.vercel.app`, build 102 módulos/53 HTML/17 superficies,
+release truth 31/31 y scan `2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` con cobertura
+58/58 y 0 findings. La experiencia publicada es read-only; el POST privado 201
+se validó sólo localmente y no mutó Production
 Antecedente versionado: release público histórico `v1.10.0` verificado; producto S13 en commit `d11fd39`
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
@@ -435,7 +439,7 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
-| Candidate local · S25 | 2026-08-14 | Ingreso gobernado `municipal-source-intake-v1` para seis formatos hasta 4 MiB; metadatos, SHA-256 y perfil agregado en cuarentena para identidades privadas. La evaluación es read-only, no envía ni analiza archivos y su POST falla con 403 antes del parser. Receipts privados append-only tenant-bound; no conserva el original, no ejecuta antimalware, no publica datos y no habilita presupuesto |
+| Production · S25 | 2026-08-14 | Ingreso gobernado `municipal-source-intake-v1` para seis formatos hasta 4 MiB; metadatos, SHA-256 y perfil agregado en cuarentena para identidades privadas. Product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment `dpl_CEDxSq4dWFYekymNzkVBpV876JfX`, alias estable, build 102 módulos/53 HTML/17 superficies, release truth 31/31 y seguridad `2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` 58/58 con 0 findings. Evaluación Administrador deriva a Calidad, no ofrece ingreso en Task Center/Ctrl+K y muestra `/importar` read-only con 12/12 controles deshabilitados; GET 200 vacío, POST 403 pre-parser `PUBLISHED_DEMO_ROUTE_DENIED`, rol bajo denegado y 1440/390/320 px + forced-colors/reduced-motion sin overflow ni errores. Cero OpenAI/Hugging Face y cero escrituras DB. El POST privado 201 se validó sólo localmente y no mutó Production; no conserva el original, no ejecuta antimalware, no publica datos y presupuesto continúa bloqueado sin fuente oficial |
 | Production · S24 | 2026-08-14 | `/jardines` + `grh-garden-network-v1`; 107 personas observadas en cálculo a julio de 2026, 45 liberadas en cuatro unidades y 62 en agregado protegido; tendencia 90→107; reutiliza permisos existentes. Commit `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30, cero 5xx y smoke autenticado sin proveedor externo |
 | Production · S22 | 2026-08-14 | `/gestiones` + `grh-management-timeline-v1`; mandatos completos de 1.461 días y comparación de 972 días por lado; ausencias 5.936/3.395 filas y 749/662 personas por `legajo.IDPERSONA`, sin sobreescribir el histórico S15 752/662 por claves laborales; commit `8a1ab580a171e359b05629356353ed6f6e4b7364`, deployment `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx y smoke autenticado responsive + IA determinista sin proveedor externo |
 | Production · S21 | 2026-08-14 | `grh-fixed-concept-control-v1` y `/conceptos-fijos` sobre agregados sin PII/importes; commit `4cd0926627a786634696cbed8e75ecc8934100c6`, deployment `dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3`, release truth 28/28 y cero respuestas 5xx |

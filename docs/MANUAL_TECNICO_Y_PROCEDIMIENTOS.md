@@ -8,13 +8,17 @@
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
 > La última GitHub Release versionada es `v1.10.0`; producto S13 en commit
-> `d11fd39`. La evidencia funcional S24 quedó verificada en el commit
-> `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
-> `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30. El release público
-> histórico `v1.10.0` permanece verificado.
-> S25 permanece candidate local: incorpora `municipal-source-intake-v1` como
-> preflight tenant-bound en cuarentena. No conserva el original, no ejecuta
-> antimalware y no publica datos ni habilita presupuesto.
+> `d11fd39`. S25 quedó verificado en Production el 14 de agosto de 2026 sobre el
+> product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
+> `dpl_CEDxSq4dWFYekymNzkVBpV876JfX` y alias
+> `https://municipio-junin.vercel.app`: build 102 módulos/53 HTML/17 superficies,
+> release truth 31/31 y scan `2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` con
+> cobertura 58/58 y 0 findings. El release público histórico `v1.10.0` permanece
+> verificado.
+> S25 incorpora `municipal-source-intake-v1` como preflight tenant-bound en
+> cuarentena. No conserva el original, no ejecuta antimalware y no publica datos
+> ni habilita presupuesto. La escritura privada 201 se validó sólo localmente y
+> no fue ejercida en Production.
 > La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado.
 > S14C permanece `Unreleased`: el schema preserva 13 tablas existentes de
 > Preview —5 sensibles y 8 de referencia— sin delegates en ambos Prisma Client;
@@ -1255,6 +1259,19 @@ webhooks que estén habilitados. No probar como operativas rutas retiradas `410`
 Este manual registra la promoción de la superficie pública exacta de `b82c0b3`.
 No afirma promoción de DB, cuentas, autorización positiva o datos privados.
 
+Para S25 registra además el product SHA
+`2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
+`dpl_CEDxSq4dWFYekymNzkVBpV876JfX` y alias
+`https://municipio-junin.vercel.app`. El build produjo 102 módulos, 53 HTML y 17
+superficies; release truth cerró 31/31. El scan
+`2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` cubrió 58/58 con 0 findings. El smoke
+publicado comprobó `/importar` read-only con 12/12 controles deshabilitados,
+`GET` 200 vacío, `POST` 403 pre-parser `PUBLISHED_DEMO_ROUTE_DENIED`, rol bajo
+denegado, próximo paso Calidad y ausencia de ingreso en Task Center/Ctrl+K. Las
+matrices 1440/390/320 px, forced-colors y reduced-motion cerraron sin overflow ni
+errores, con cero OpenAI/Hugging Face y cero escrituras DB. El `POST` privado 201
+permanece como evidencia local; no se mutó Production.
+
 ### 13.4 Rollback
 
 1. Detener o bloquear la superficie afectada si existe fuga, corrupción o cruce
@@ -1472,7 +1489,7 @@ APIs privadas → analítica / mapas / alertas / asistente
 Esta fase habilita analítica descriptiva sobre el corte recibido; no acredita
 tiempo real, base remota materializada, moneda, nómina contractual ni predicción.
 
-### 16.2 Fase 1: ingreso gobernado — Candidate local S25
+### 16.2 Fase 1: ingreso gobernado — S25 verificado en Production
 
 `GET|POST /api/source-intake` implementa el primer contrato común de ingreso
 privado:
@@ -1490,6 +1507,14 @@ tenant-bound, en `AuditLog`; el browser no recibe identidad de actor ni tenant.
 El original temporal se elimina al finalizar el request, no existe storage
 privado del original y no se ejecuta antimalware. Por ello S25 no representa
 una importación, una aprobación ni una publicación.
+
+La evidencia productiva corresponde exactamente al product SHA
+`2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
+`dpl_CEDxSq4dWFYekymNzkVBpV876JfX`, alias estable, release truth 31/31 y scan de
+seguridad `2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` con cobertura 58/58 y 0
+findings. La verificación remota fue deliberadamente read-only: confirmó 12/12
+controles deshabilitados, `GET` 200 vacío, `POST` 403 antes del parser, rol bajo
+denegado y cero escrituras DB. El `POST` privado 201 sólo se validó localmente.
 
 El objetivo es que archivos y bases pasen por el mismo plano de control:
 
@@ -1698,15 +1723,15 @@ Diagnóstico recomendado:
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px. Siempre consulta `/api/auth/me`; sólo el Inicio de Intendencia con variante `executive-leadership` y `navigation.dashboard` agrega el brief GRH y falla sin cifras si no está disponible |
-| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-14.18`: 33 recursos, 12 acciones, 56 permisos y 101 firmas exactas, 59 Serverless + 42 Express; desconocidos fallan cerrados |
+| Techo de autorización `recurso:acción` | Promovido con S25; cobertura remota acotada | Route policy `2026-08-14.18`: 33 recursos, 12 acciones, 56 permisos y 101 firmas exactas, 59 Serverless + 42 Express; los desconocidos fallan cerrados. El smoke remoto comprobó el POST publicado y un rol bajo fail-closed, no cada firma |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |
 | Baseline/replay S14C | Reproducible y aprobado en branches efímeros | manifest v2, Prisma 5.22, 82 sentencias; A vacío y B3 resolve con status/diff cero; catálogo B3 byte-idéntico; cero escrituras Preview/Production; DDL estable bloqueado por ownership/naming del proyecto Neon |
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
-| Ingreso gobernado S25 | Candidate local | seis formatos hasta 4 MiB y receipt agregado en cuarentena sólo para sesión privada; evaluación publicada read-only, formulario deshabilitado y POST 403 antes del parser; auditoría privada tenant-bound, sin original, antimalware, aprobación ni publicación. Upload/Sheets legacy responden 410 |
+| Ingreso gobernado S25 | Verificado en Production para la superficie publicada | seis formatos hasta 4 MiB y receipt agregado en cuarentena sólo para sesión privada; evaluación publicada read-only, formulario deshabilitado y POST 403 antes del parser; auditoría privada tenant-bound, sin original, antimalware, aprobación ni publicación. El POST privado 201 sólo fue validado localmente y no mutó Production. Upload/Sheets legacy responden 410 |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
-| Preview/producción Vercel | Release público histórico `v1.10.0` desplegado; sesiones positivas, S13 privado y datos privados no certificados | tag `4108ca0`, deployment release `READY` y gate histórico 11/11; hotfix post-release `e74339c` bloquea el schema público y cerró 12/12; faltan smokes positivos con sesión, DB y datos remotos |
+| Preview/producción Vercel | S25 desplegado y verificado en la superficie publicada; `v1.10.0` permanece como release versionado histórico | S25 product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment `dpl_CEDxSq4dWFYekymNzkVBpV876JfX`, release truth 31/31 y seguridad 58/58 sin findings; faltan escritura privada positiva, DB y datos remotos no cubiertos |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |
 | Correo y cron | Retirado | responden `410` y no están programados; falta auditoría tenant-bound e idempotencia |
 | WhatsApp | Condicionado | requiere `PUBLIC_APP_URL` HTTPS aprobado, proveedor, secretos, plantillas y E2E externo |

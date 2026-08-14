@@ -1,7 +1,10 @@
 # Ingreso gobernado de fuentes — S25
 
-Estado: candidato local. Este documento no acredita deployment ni convierte una
-fuente en dato municipal aprobado.
+Estado: experiencia publicada read-only verificada en Production el 14 de agosto
+de 2026 sobre el product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b` y
+deployment `dpl_CEDxSq4dWFYekymNzkVBpV876JfX`. Esta evidencia no convierte una
+fuente en dato municipal aprobado ni acredita una escritura privada remota: el
+`POST` privado 201 fue validado sólo localmente y no se ejecutó en Production.
 
 ## Objetivo de esta etapa
 

@@ -396,6 +396,8 @@
 
           <div class="callout info"><span aria-hidden="true">✓</span><div><strong>S24 · verificado en Production.</strong> La Red de jardines y <code>grh-garden-network-v1</code> están publicados en el alias estable desde el commit <code>5b356bf4982f0b3c486ade33e027faa0cf9c8a93</code>, deployment <code>dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn</code>. Release truth cerró 30/30 y el smoke autenticado confirmó permisos altos y bajos, escritorio/móvil, MuniGuía, Task Center e IA determinista sin OpenAI ni Hugging Face.</div></div>
 
+          <div class="callout info"><span aria-hidden="true">✓</span><div><strong>S25 · verificado en Production el 14 de agosto de 2026.</strong> Product SHA <code>2b0411a37ec6474e6988a60b26bd3d3a51da858b</code>, deployment <code>dpl_CEDxSq4dWFYekymNzkVBpV876JfX</code> y alias <code>https://municipio-junin.vercel.app</code>; build 102 módulos/53 HTML/17 superficies, release truth 31/31 y scan <code>2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4</code> 58/58 con 0 findings. Evaluación Administrador deriva a Calidad, no ofrece ingreso en Task Center/Ctrl+K y mantiene <code>/importar</code> read-only con 12/12 controles deshabilitados: GET 200 vacío y POST 403 pre-parser <code>PUBLISHED_DEMO_ROUTE_DENIED</code>. Un rol bajo quedó denegado; 1440/390/320 px, forced-colors y reduced-motion cerraron sin overflow ni errores, con cero OpenAI/Hugging Face y cero escrituras DB. El POST privado 201 se validó sólo localmente y no fue ejecutado en Production.</div></div>
+
           <div class="callout info"><span aria-hidden="true">i</span><div><strong>Versión disponible.</strong> La plataforma muestra información histórica de Recursos Humanos con privacidad aplicada. Antes de una presentación oficial, verificá la fecha del respaldo y el estado visible de cada módulo.</div></div>
           <details>
             <summary>Ver evidencia técnica de la versión</summary>
@@ -433,9 +435,9 @@
               <p>El informe sólo muestra meses con al menos 10 personas y nunca completa con cero un dato protegido. La versión local está validada, pero todavía no constituye un documento oficial del municipio.</p>
             </article>
             <article class="card">
-              <span class="tag blocked">S25 local · siempre en cuarentena</span>
+              <span class="tag private">S25 Production · evaluación read-only</span>
               <h3>Ingreso gobernado de fuentes</h3>
-              <p>Calcula la huella y un perfil agregado, y para una identidad privada autorizada registra un recibo tenant-bound en la auditoría. No conserva el archivo, filas, valores, texto, encabezados ni el nombre original; tampoco integra o publica datos.</p>
+              <p>La experiencia productiva permite inspeccionar el flujo sin procesar archivos. Para una identidad privada autorizada, el contrato validado localmente calcula la huella y un perfil agregado y registra un recibo tenant-bound; esa escritura no se ejerció en Production. No conserva el archivo, filas, valores, texto, encabezados ni el nombre original; tampoco integra o publica datos.</p>
             </article>
             <article class="card">
               <span class="tag blocked">Bloqueado</span>
@@ -634,7 +636,7 @@
                 <tr><td><strong>Asistente GRH</strong></td><td>Consulta privada según el perfil</td><td>Explica un único mes publicado y deriva al tablero correcto. Si el mes no está disponible o tiene muy pocas personas, informa el límite sin sustituirlo por otro dato. No afirma moneda, causa ni pago.</td></tr>
                 <tr><td><strong>Informe ejecutivo GRH</strong></td><td>Informe agregado y protegido</td><td>Backend, interfaz y pruebas locales aprobados, sin datos de demostración ni sustituciones; falta certificación remota.</td></tr>
                 <tr><td><strong>Inteligencia legacy</strong></td><td>Endpoint retirado</td><td>Estado 410 y enlaces a MuniBot/GRH; no conserva KPIs ni proyecciones heredadas.</td></tr>
-                <tr><td><strong>Ingreso gobernado de fuentes</strong><br><small>S25 local · cuarentena</small></td><td><code>municipal-source-intake-v1</code></td><td>Registra huella y perfil agregado para una identidad privada autorizada; la evaluación sólo inspecciona el flujo, con formulario deshabilitado y cero POST. No conserva archivos o valores y no permite aprobar ni publicar.</td></tr>
+                <tr><td><strong>Ingreso gobernado de fuentes</strong><br><small>S25 verificado en Production · cuarentena</small></td><td><code>municipal-source-intake-v1</code></td><td>La evaluación publicada sólo inspecciona el flujo, con 12/12 controles deshabilitados, GET 200 vacío y POST 403 pre-parser. Una identidad privada autorizada puede registrar huella y perfil agregado, pero ese POST 201 sólo fue validado localmente y no mutó Production. No conserva archivos o valores y no permite aprobar ni publicar.</td></tr>
                 <tr><td><strong>Recorrido visual de roles</strong></td><td>Contenido documental público, sin fuente municipal</td><td><code>/roles</code> compara responsabilidades y límites sin autenticación, JWT, autorización, cuentas, APIs, DB, storage, PII ni datos municipales. No demuestra seguridad RBAC.</td></tr>
                 <tr><td><strong>Exportación cruda</strong></td><td>Endpoint retirado</td><td>Responde 410 hasta clasificar datasets, campos y finalidad.</td></tr>
                 <tr><td><strong>Configuración</strong></td><td>Sin contrato de escritura</td><td>Informativa y bloqueada; no recibe secretos ni simula guardado.</td></tr>
@@ -684,7 +686,7 @@
             <li>Para proteger identidades, las categorías con menos de 5 personas se agrupan y las cifras sensibles con menos de 10 se ocultan. Un dato protegido nunca se publica como cero ni permite deducir el valor oculto.</li>
             <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
             <li>Trayectoria laboral compara actuaciones documentadas de <code>foja</code> en dos períodos iguales de 972 días. Una actuación no equivale automáticamente a un alta, una baja o una condición vigente.</li>
-            <li>El techo local S25 <code>2026-08-14.18</code> contiene 33 recursos, 12 acciones, 56 permisos y 101 firmas exactas: 59 Serverless y 42 Express. S24 fue verificado en Production con su contrato anterior; ninguna versión sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>El techo S25 promovido <code>2026-08-14.18</code> contiene 33 recursos, 12 acciones, 56 permisos y 101 firmas exactas: 59 Serverless y 42 Express. El smoke verificó las fronteras publicadas de ingreso; ninguna versión sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
             <li>La política de acceso local <code>2026-08-13.4</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
             <li>S25 trata CSV, Excel, JSON, PDF y TXT como contenido no confiable: limita a 4 MiB, valida formato y registra sólo SHA-256 más métricas agregadas. Google Sheets y Upload legacy responden 410; ningún receipt equivale a publicación.</li>
             <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>
@@ -721,6 +723,7 @@
           <p class="section-kicker">14 · Runbook mínimo</p>
           <h2>Condiciones para habilitar producción</h2>
           <div class="card-grid">
+            <article class="card"><span class="tag private">Evidencia S25 verificada</span><h3>S25 · Ingreso gobernado</h3><p>Product SHA <code>2b0411a37ec6474e6988a60b26bd3d3a51da858b</code>, deployment <code>dpl_CEDxSq4dWFYekymNzkVBpV876JfX</code> <code>READY</code>, alias estable, release truth 31/31 y seguridad 58/58 sin findings. El recorrido productivo fue read-only y registró cero escrituras DB; la escritura privada positiva permanece validada sólo localmente.</p></article>
             <article class="card"><span class="tag private">Evidencia S24 verificada</span><h3>S24 · Red de jardines</h3><p>Commit <code>5b356bf4982f0b3c486ade33e027faa0cf9c8a93</code>, deployment <code>dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn</code> <code>READY</code>, release truth 30/30 y smoke autenticado por roles, 1440/390 px, MuniGuía e IA determinista sin proveedor externo.</p></article>
             <article class="card"><span class="tag private">Release versionado histórico</span><h3><code>v1.10.0</code> · S13</h3><p>Producto <code>d11fd39</code>, commit/tag <code>4108ca0</code>, deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> <code>READY</code>, gate 11/11 y browser público 10/10 limpio. S13 privado conserva validación local sobre el snapshot aprobado.</p></article>
             <article class="card"><span class="tag blocked">Gate</span><h3>Baseline y drift</h3><p>Identificar la DB, restaurar una copia, conciliar schema e historia, pinear el receipt externo y probar rollback antes de ejecutar cualquier migración o crear cuentas por rol.</p></article>

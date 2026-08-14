@@ -1,6 +1,6 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.10.0 + S24 verificado en Production + S25 candidate local.
+Versión documental: 1.10.0 + S25 verificado en Production.
 Fecha de corte: 14 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
@@ -11,10 +11,14 @@ el checkout actual (`css/components.css`, `css/animations.css`,
 implementada, conectada o validada.
 
 La última GitHub Release versionada sigue siendo `v1.10.0`; su producto S13 está
-en `d11fd39`. La evidencia funcional S24 quedó verificada en el commit
-`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment Production
-`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30. La sesión privada
-positiva y S13 privado conservan su evidencia histórica local.
+en `d11fd39`. La evidencia funcional S25 quedó verificada en Production el 14 de
+agosto de 2026 sobre el product SHA
+`2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
+`dpl_CEDxSq4dWFYekymNzkVBpV876JfX` y alias
+`https://municipio-junin.vercel.app`. El build cerró 102 módulos, 53 HTML y 17
+superficies; release truth, 31/31. El scan de seguridad
+`2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` cubrió 58/58 y registró 0 findings. La
+sesión privada positiva y S13 privado conservan su evidencia histórica local.
 Como antecedente técnico separado, S14C permanece `Unreleased`: reconcilia el schema con 13
 tablas ya existentes en Preview —5 sensibles y 8 de referencia—, las excluye de
 ambos Prisma Client y conserva su ownership para Migrate. También incorpora un
@@ -851,7 +855,10 @@ Estado: **verificado en Production el 14 de agosto de 2026**.
 
 ### S25 — ingreso gobernado y próximo paso por rol
 
-Estado: **candidate local; no verificado en Production**.
+Estado: **verificado en Production el 14 de agosto de 2026** sobre el product SHA
+`2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
+`dpl_CEDxSq4dWFYekymNzkVBpV876JfX` y alias
+`https://municipio-junin.vercel.app`.
 
 - `/api/source-intake` acepta exclusivamente CSV/XLSX/XLS/JSON/PDF/TXT de hasta
   4 MiB, valida metadatos cerrados y produce SHA-256 más un perfil estructural
@@ -867,6 +874,18 @@ Estado: **candidate local; no verificado en Production**.
   única acción siguiente permitida por las capabilities; la evaluación deriva a
   Calidad y no ofrece carga en Task Center/Ctrl+K. Mantiene MuniGuía
   como ayuda secundaria, sin sumar otra superficie ni otra API de onboarding.
+- El build productivo cerró 102 módulos, 53 HTML y 17 superficies; release truth
+  cerró 31/31. El scan `2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` cubrió 58/58 con
+  0 findings.
+- El browser productivo confirmó el próximo paso Calidad para Evaluación
+  Administrador, Task Center/Ctrl+K sin ingreso, 12/12 controles deshabilitados
+  en `/importar`, `GET` 200 vacío y `POST` 403 pre-parser con
+  `PUBLISHED_DEMO_ROUTE_DENIED`. Un rol bajo quedó denegado. Las matrices
+  1440/390/320 px, forced-colors y reduced-motion cerraron sin overflow ni
+  errores, con cero requests a OpenAI/Hugging Face y cero escrituras DB.
+- El `POST` privado 201 fue validado localmente. No se ejerció una escritura
+  privada en Production, por lo que esta promoción no certifica persistencia DB
+  positiva remota del receipt.
 - `CuentasClaras_Junin_2026.csv` sigue en cuarentena. S25 no habilita
   presupuesto contra ejecución ni convierte una estructura plausible en dato
   municipal autorizado.

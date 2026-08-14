@@ -6,15 +6,24 @@ Intendencia, Hacienda y RRHH, sin publicar PII ni presentar datos simulados como
 si fueran reales.
 
 > Estado de esta documentación: el release `v1.10.0` conserva su evidencia
-> productiva histórica. La evidencia funcional S24 fue verificada en Production
-> el 14 de agosto de 2026 mediante el commit `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`,
-> deployment `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30 y cero
-> respuestas 5xx. El smoke autenticado cubrió Intendencia y Administración en
-> 1440/390 px, denegación para Usuario/Inspector/Demo, MuniGuía, Task Center y una
-> respuesta determinista del Asistente sin invocar OpenAI ni Hugging Face.
-> S25 permanece como **candidate local**: reemplaza las cargas legacy por un
-> ingreso gobernado que registra metadatos, huella SHA-256 y perfil estructural
-> agregado, siempre en cuarentena y sin conservar el original ni publicar datos.
+> productiva histórica. S25 fue verificado en Production el 14 de agosto de 2026
+> sobre el product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
+> `dpl_CEDxSq4dWFYekymNzkVBpV876JfX` y alias
+> `https://municipio-junin.vercel.app`: build 102 módulos/53 HTML/17 superficies,
+> release truth 31/31 y scan de seguridad
+> `2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` con cobertura 58/58 y 0 findings.
+> El browser confirmó que Evaluación Administrador deriva a Calidad, no ofrece
+> ingreso en Task Center/Ctrl+K y mantiene `/importar` read-only con 12/12
+> controles deshabilitados; `GET` responde 200 vacío y `POST` 403 pre-parser con
+> `PUBLISHED_DEMO_ROUTE_DENIED`. Los roles bajos permanecen denegados y las
+> matrices 1440/390/320 px, forced-colors y reduced-motion cerraron sin overflow
+> ni errores, con cero requests a OpenAI/Hugging Face y cero escrituras DB.
+> El `POST` privado 201 se validó sólo localmente y no se mutó Production. S25
+> registra metadatos, huella SHA-256 y perfil estructural agregado en cuarentena,
+> sin conservar el original ni publicar datos.
+> Como antecedente, S24 permanece verificado en el commit
+> `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+> `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn` y release truth 30/30.
 > Los indicadores describen el snapshot
 > GRH del 6 de agosto de 2026; no constituyen conexión en tiempo real ni pago
 > bancario conciliado.
@@ -81,7 +90,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Comparación de gestiones | Verificada en Production | Compara dos tramos históricos de 972 días con la misma duración; contrato, privacidad y recorrido autenticado verificados sobre el alias estable |
 | Preparación GRH + PERSONAS | Implementada localmente | Manifiesto auxiliar, matcher versionado, contrato agregado `grh-personas-linkage-readiness-v1` y lectura municipal; no mezcla fichas ni cambia KPI GRH |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
-| Ingreso gobernado de fuentes | Candidate local · S25 | CSV/XLSX/XLS/JSON/PDF/TXT hasta 4 MiB; registra metadatos, SHA-256 y diagnóstico agregado en cuarentena. No conserva el original, no publica filas y no habilita presupuesto; Upload/Sheets legacy quedan retirados con 410 |
+| Ingreso gobernado de fuentes | Verificado en Production · S25 | La superficie publicada es read-only y falla cerrada antes del parser; la escritura privada 201 sólo fue validada localmente y no se ejerció en Production. CSV/XLSX/XLS/JSON/PDF/TXT hasta 4 MiB generan metadatos, SHA-256 y diagnóstico agregado en cuarentena. No conserva el original, no publica filas y no habilita presupuesto; Upload/Sheets legacy quedan retirados con 410 |
 | Reportes ejecutivos GRH | Verificado en Production | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto, períodos gobernados y smoke autenticado |
 | Accesos demostrativos por rol | Verificado en Production | Seis perfiles gobernados para recorrer permisos y superficies; no habilitan datos inventados ni sustituyen identidades institucionales definitivas |
 | Calidad modular React + TypeScript | Canary `/calidad` | Primera vertical componible sobre el mismo contrato `grh-quality-v1`; `/control` permanece como reversión durante la adopción |

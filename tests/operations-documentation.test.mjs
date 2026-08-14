@@ -1287,19 +1287,36 @@ test('S24 records exact Production evidence without weakening garden data limits
   assert.doesNotMatch(joined, /S24\s+(?:permanece|está|sigue|quedó)(?:.{0,60})?(?:sólo|exclusivamente)?\s*(?:en el checkout )?local|S24 local\s*·\s*no Production/i);
 });
 
-test('S25 documents governed intake as a local quarantine candidate without publication claims', () => {
-  const sources = [
+test('S25 records exact Production evidence without claiming a private remote write', () => {
+  const productionEvidenceSources = [
     read('README.md'),
     read('manuales.html'),
-    read('docs/GOVERNED_SOURCE_INTAKE.md'),
     read('docs/MASTER_PLAN_STATUS.md'),
     read('docs/ENTERPRISE_PRODUCT_ROADMAP.md'),
     read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md'),
     read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md'),
     read('docs/MANUAL_INTEGRAL.md'),
+  ];
+  const sources = [
+    ...productionEvidenceSources,
+    read('docs/GOVERNED_SOURCE_INTAKE.md'),
     read('docs/DATA_SOURCE_REGISTER.md'),
+    read('docs/GOVTECH_BENCHMARK.md'),
+    read('docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md'),
   ];
   const joined = sources.join('\n');
+
+  for (const source of productionEvidenceSources) {
+    assert.match(source, /2b0411a37ec6474e6988a60b26bd3d3a51da858b/);
+    assert.match(source, /dpl_CEDxSq4dWFYekymNzkVBpV876JfX/);
+    assert.match(source, /https:\/\/municipio-junin\.vercel\.app/);
+    assert.match(source, /102 módulos[\s\S]{0,30}53 HTML[\s\S]{0,30}17 superficies/i);
+    assert.match(source, /31\/31/);
+    assert.match(source, /2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4/);
+    assert.match(source, /58\/58[\s\S]{0,60}(?:0|cero) findings/i);
+    assert.doesNotMatch(source, /S25[^.\n]{0,100}candidate local/i);
+  }
+
   assert.match(joined, /municipal-source-intake-v1/);
   assert.match(joined, /CSV[\s\S]{0,80}XLSX[\s\S]{0,80}XLS[\s\S]{0,80}JSON[\s\S]{0,80}PDF[\s\S]{0,80}TXT/i);
   assert.match(joined, /4 MiB/);
@@ -1309,7 +1326,17 @@ test('S25 documents governed intake as a local quarantine candidate without publ
   assert.match(joined, /evaluaci[oó]n[\s\S]{0,120}(?:s[oó]lo lectura|read-only)[\s\S]{0,160}(?:no (?:env[ií]a|procesa|analiza)|POST[\s\S]{0,30}403)/i);
   assert.match(joined, /(?:Upload|Google Sheets)[\s\S]{0,120}410/i);
   assert.match(joined, /presupuesto[\s\S]{0,120}(?:bloqueado|no habilita|no publica)/i);
-  assert.doesNotMatch(joined, /S25[^.;]{0,80}(?:verificado|certificado|desplegado) en Production/i);
+  assert.match(joined, /Evaluaci[oó]n Administrador[\s\S]{0,120}(?:pr[oó]ximo paso )?Calidad/i);
+  assert.match(joined, /Task Center\/Ctrl\+K[\s\S]{0,80}(?:sin ingreso|no ofrece ingreso)/i);
+  assert.match(joined, /\/importar[\s\S]{0,100}12\/12[\s\S]{0,60}(?:controles )?deshabilitados/i);
+  assert.match(joined, /GET[\s`<code>]*200[\s\S]{0,30}vac[ií]o/i);
+  assert.match(joined, /POST[\s`<code>]*403[\s\S]{0,40}pre-parser[\s\S]{0,80}PUBLISHED_DEMO_ROUTE_DENIED/i);
+  assert.match(joined, /rol(?:es)? bajo(?:s)?[\s\S]{0,40}(?:denegad|403)/i);
+  assert.match(joined, /1440\/390\/320 px[\s\S]{0,100}forced-colors[\s\S]{0,80}reduced-motion[\s\S]{0,100}sin overflow[\s\S]{0,40}(?:ni|o) errores/i);
+  assert.match(joined, /cero[\s\S]{0,30}OpenAI(?:\/| ni | o )Hugging Face[\s\S]{0,80}cero escrituras DB/i);
+  assert.match(joined, /POST[\s`<code>]*privado[\s`<code>]*201[\s\S]{0,100}(?:s[oó]lo|únicamente)[\s\S]{0,30}local[\s\S]{0,100}no[\s\S]{0,20}(?:mut[oó]|ejecut[oó]|ejerció)[\s\S]{0,30}Production/i);
+  assert.match(joined, /presupuesto[\s\S]{0,120}(?:bloqueado|no habilita)[\s\S]{0,160}fuente oficial/i);
+  assert.doesNotMatch(joined, /S25[^.\n|]{0,100}(?:candidate local|candidato local|no verificado en Production)/i);
 });
 
 test('the public landing does not route municipal or commercial data to unapproved contacts', () => {

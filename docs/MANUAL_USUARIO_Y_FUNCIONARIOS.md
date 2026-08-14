@@ -5,13 +5,17 @@
 | Campo | Valor |
 |---|---|
 | Versión | 1.10.0 |
-| Incremento actual | S25 candidate local; S24 continúa verificado en Production |
+| Incremento actual | S25 verificado en Production para la experiencia publicada read-only; operación privada positiva validada sólo localmente |
 | Fecha de corte documental | 14 de agosto de 2026 |
-| Estado | Release público histórico `v1.10.0` verificado y preservado; S24 en Production (`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30, cero 5xx y smoke autenticado). S25 es sólo candidate local: ingreso gobernado en cuarentena, sin archivo retenido ni publicación. Se conserva el antecedente S22 (`8a1ab580a171e359b05629356353ed6f6e4b7364`, `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx) |
+| Estado | Release público histórico `v1.10.0` verificado y preservado. S25 fue verificado en Production el 14 de agosto de 2026: product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment `dpl_CEDxSq4dWFYekymNzkVBpV876JfX`, alias `https://municipio-junin.vercel.app`, build 102 módulos/53 HTML/17 superficies, release truth 31/31 y seguridad `2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` 58/58 con 0 findings. La experiencia publicada es read-only; no se probó una escritura privada en Production |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
 | Próxima revisión | En cada cambio material y antes de cada release institucional |
+
+Como antecedente preservado, S22 fue verificado en el commit
+`8a1ab580a171e359b05629356353ed6f6e4b7364`, deployment
+`dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29 y cero respuestas 5xx.
 
 Este manual está dirigido a Intendencia, secretarías, Hacienda, RRHH y personas
 operadoras autorizadas. Explica lo que la plataforma puede hacer hoy, qué depende
@@ -767,6 +771,20 @@ tamaño, SHA-256 y métricas agregadas. El original no se conserva, no se ejecut
 antimalware y ninguna fila se incorpora a dashboards. La Evaluación Administrador
 sólo inspecciona la pantalla y el `GET` read-only; no genera receipt y su `POST`
 responde 403 antes del parser.
+
+Esta experiencia publicada fue verificada en Production el 14 de agosto de 2026
+sobre el product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
+`dpl_CEDxSq4dWFYekymNzkVBpV876JfX` y alias
+`https://municipio-junin.vercel.app`, con release truth 31/31 y seguridad 58/58,
+0 findings. Evaluación Administrador recibió como próximo paso Calidad, sin
+ingreso en Task Center/Ctrl+K; `/importar` mostró 12/12 controles deshabilitados,
+`GET` 200 vacío y `POST` 403 pre-parser `PUBLISHED_DEMO_ROUTE_DENIED`. Un rol bajo
+quedó denegado y 1440/390/320 px, forced-colors y reduced-motion cerraron sin
+overflow ni errores, con cero OpenAI/Hugging Face y cero escrituras DB. El `POST`
+privado 201 se validó únicamente en local y no fue ejecutado en Production.
+
+Presupuesto contra ejecución sigue bloqueado: no existe una fuente oficial con
+owner, diccionario, moneda, grano, tenant y aprobación institucional.
 
 Los estados históricos de importación que siguen a continuación describen el
 flujo retirado y no deben atribuirse al endpoint S25.

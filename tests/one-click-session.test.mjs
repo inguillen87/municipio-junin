@@ -65,6 +65,29 @@ function publishedUser(overrides = {}) {
 
 const allowLimiter = Object.freeze({ consume: () => ({ allowed: true, retryAfterSeconds: 0 }) });
 
+function prismaFailure(name, code, detail = 'sensitive database detail') {
+  const error = new Error(detail);
+  error.name = name;
+  if (name === 'PrismaClientInitializationError') error.errorCode = code;
+  else error.code = code;
+  return error;
+}
+
+async function captureAuthLogs(run) {
+  const originalWarn = console.warn;
+  const originalError = console.error;
+  const logs = [];
+  console.warn = (...args) => logs.push({ level: 'warn', args });
+  console.error = (...args) => logs.push({ level: 'error', args });
+  try {
+    await run();
+  } finally {
+    console.warn = originalWarn;
+    console.error = originalError;
+  }
+  return logs;
+}
+
 test('published one-click session accepts only a profileId and returns a redacted, tenant-bound JWT', async () => {
   const calls = [];
   const handler = createEvaluationSessionHandler({
@@ -90,6 +113,114 @@ test('published one-click session accepts only a profileId and returns a redacte
   assert.equal(Object.hasOwn(claims, 'email'), false);
   assert.equal(Object.hasOwn(claims, 'name'), false);
   assert.equal(claims.authMode, 'published-evaluation');
+});
+
+test('published identity read retries one explicit transient Prisma failure and then returns 200', async () => {
+  let reads = 0;
+  const delays = [];
+  const res = responseRecorder();
+  const logs = await captureAuthLogs(async () => {
+    await createEvaluationSessionHandler({
+      environment: { JWT_SECRET, GRH_TENANT_ID: TENANT_ID },
+      assertTransportImpl: () => true,
+      limiterImpl: allowLimiter,
+      retryDelayImpl: async milliseconds => { delays.push(milliseconds); },
+      findUserImpl: async () => {
+        reads += 1;
+        if (reads === 1) throw prismaFailure('PrismaClientInitializationError', 'P1001');
+        return publishedUser();
+      },
+    })(request({ profileId: 'intendente' }), res);
+  });
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(reads, 2);
+  assert.deepEqual(delays, [100]);
+  assert.deepEqual(logs, [{
+    level: 'warn',
+    args: [
+      '[AUTH] Reintentando lectura del perfil de evaluación publicado',
+      { name: 'PrismaClientInitializationError', code: 'P1001', attempt: 1 },
+    ],
+  }]);
+  assert.doesNotMatch(JSON.stringify(logs), /sensitive database detail/i);
+});
+
+test('published identity read stops after a second transient Prisma failure and returns 503', async () => {
+  let reads = 0;
+  const delays = [];
+  const failures = [
+    prismaFailure('PrismaClientKnownRequestError', 'P2024'),
+    prismaFailure('PrismaClientInitializationError', 'P1002'),
+  ];
+  const res = responseRecorder();
+  const logs = await captureAuthLogs(async () => {
+    await createEvaluationSessionHandler({
+      environment: { JWT_SECRET, GRH_TENANT_ID: TENANT_ID },
+      assertTransportImpl: () => true,
+      limiterImpl: allowLimiter,
+      retryDelayImpl: async milliseconds => { delays.push(milliseconds); },
+      findUserImpl: async () => { throw failures[reads++]; },
+    })(request({ profileId: 'intendente' }), res);
+  });
+
+  assert.equal(res.statusCode, 503);
+  assert.equal(reads, 2);
+  assert.deepEqual(delays, [100]);
+  assert.deepEqual(logs.map(entry => [entry.level, entry.args[1]]), [
+    ['warn', { name: 'PrismaClientKnownRequestError', code: 'P2024', attempt: 1 }],
+    ['error', { name: 'PrismaClientInitializationError', code: 'P1002', attempt: 2 }],
+  ]);
+  assert.doesNotMatch(JSON.stringify(logs), /sensitive database detail/i);
+});
+
+test('published identity read does not retry an unknown failure', async () => {
+  let reads = 0;
+  const delays = [];
+  const res = responseRecorder();
+  const logs = await captureAuthLogs(async () => {
+    await createEvaluationSessionHandler({
+      environment: { JWT_SECRET, GRH_TENANT_ID: TENANT_ID },
+      assertTransportImpl: () => true,
+      limiterImpl: allowLimiter,
+      retryDelayImpl: async milliseconds => { delays.push(milliseconds); },
+      findUserImpl: async () => {
+        reads += 1;
+        throw Object.assign(new Error('private query detail'), { code: 'P1001' });
+      },
+    })(request({ profileId: 'intendente' }), res);
+  });
+
+  assert.equal(res.statusCode, 503);
+  assert.equal(reads, 1);
+  assert.deepEqual(delays, []);
+  assert.deepEqual(logs.map(entry => [entry.level, entry.args[1]]), [
+    ['error', { name: 'Error', code: 'P1001', attempt: 1 }],
+  ]);
+  assert.doesNotMatch(JSON.stringify(logs), /private query detail/i);
+});
+
+test('published identity mismatch is denied without retrying the successful read', async () => {
+  let reads = 0;
+  const delays = [];
+  const res = responseRecorder();
+  const logs = await captureAuthLogs(async () => {
+    await createEvaluationSessionHandler({
+      environment: { JWT_SECRET, GRH_TENANT_ID: TENANT_ID },
+      assertTransportImpl: () => true,
+      limiterImpl: allowLimiter,
+      retryDelayImpl: async milliseconds => { delays.push(milliseconds); },
+      findUserImpl: async () => {
+        reads += 1;
+        return publishedUser({ active: false });
+      },
+    })(request({ profileId: 'intendente' }), res);
+  });
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(reads, 1);
+  assert.deepEqual(delays, []);
+  assert.deepEqual(logs, []);
 });
 
 test('published auth refresh may expose only the opaque JWT subject while the exchange stays redacted', () => {

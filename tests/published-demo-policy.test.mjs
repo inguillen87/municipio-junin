@@ -34,6 +34,7 @@ const EXPECTED_ALLOWED_ROUTES = Object.freeze([
   ['serverless', 'GET', '/grh-action-ledger'],
   ['serverless', 'GET', '/grh-administration-comparison'],
   ['serverless', 'GET', '/grh-management-timeline'],
+  ['serverless', 'GET', '/grh-garden-network'],
   ['serverless', 'GET', '/grh-absence-insights'],
   ['serverless', 'GET', '/grh-personas-linkage-readiness'],
   ['serverless', 'GET', '/grh-decision-brief'],
@@ -88,7 +89,7 @@ function deployedRuntimeSourceFiles() {
 }
 
 test('the temporary containment identifies exactly the six previously published emails', () => {
-  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.16');
+  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.17');
   assert.deepEqual(PUBLISHED_DEMO_IDENTITIES, EXPECTED_IDENTITIES);
   assert.equal(new Set(PUBLISHED_DEMO_IDENTITIES).size, 6);
 
@@ -175,6 +176,14 @@ test('published identities receive the intersection of one safe ceiling and thei
   assert.equal(evaluatePublishedDemoRoute({
     ...demo,
     routeId: 'serverless.grh.fixed-concept-control.read',
+  }).allowed, false);
+  assert.equal(evaluatePublishedDemoRoute({
+    ...intended,
+    routeId: 'serverless.grh.garden-network.read',
+  }).allowed, true);
+  assert.equal(evaluatePublishedDemoRoute({
+    ...demo,
+    routeId: 'serverless.grh.garden-network.read',
   }).allowed, false);
 });
 

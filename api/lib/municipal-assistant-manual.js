@@ -12,6 +12,7 @@ const EXACT_SCREEN_HELP_TOPICS = new Map([
   ['¿Cómo reviso Hacienda, nómina y el cálculo mensual?', 'hacienda'],
   ['¿Cómo reviso el control de corridas y marcas de cierre?', 'payrollRuns'],
   ['¿Cómo uso Estructura y centros de costo?', 'structure'],
+  ['¿Cómo uso la Red de jardines maternales?', 'gardens'],
   ['¿Cómo interpreto la trayectoria laboral documentada?', 'trajectory'],
   ['¿Cómo interpreto la trayectoria y los movimientos documentados?', 'trajectory'],
   ['¿Cómo verifico la fuente del Centro territorial?', 'territory'],
@@ -154,6 +155,21 @@ const TOPICS = Object.freeze({
       Object.freeze({ id: 'open_hacienda_from_structure', label: 'Abrir Hacienda y nómina', href: '/hacienda.html', requiredCapability: 'navigation.hacienda' }),
     ]),
   }),
+  gardens: Object.freeze({
+    title: 'Usar la Red de jardines maternales',
+    summary: 'Abrí Red de jardines para revisar personas observadas en el cálculo, su tendencia mensual y la publicación protegida por unidad con corte y límites visibles.',
+    findings: Object.freeze([
+      'La cohorte describe personas observadas en registros de cálculo vinculados a jardines; no es matrícula, asistencia, nómina actual ni padrón de niñas y niños.',
+      'La tendencia mensual muestra observaciones históricas y no demuestra altas, bajas, causas ni desempeño de una unidad.',
+      'Sólo se nombran las cuatro unidades liberadas; las restantes permanecen reunidas en un bucket protegido que no debe reconstruirse.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'jardines',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_garden_network', label: 'Abrir Red de jardines', href: '/jardines', requiredCapability: 'navigation.organization-analytics' }),
+      Object.freeze({ id: 'open_garden_manual', label: 'Ver guía de Red de jardines', href: '/manuales.html#jardines', requiredCapability: 'navigation.help' }),
+    ]),
+  }),
   trajectory: Object.freeze({
     title: 'Interpretar trayectoria laboral documentada',
     summary: 'Compará actuaciones y movimientos registrados en ventanas equivalentes. Son hechos documentados de origen y no prueban por sí solos una alta, una baja, una vigencia ni una causa.',
@@ -242,6 +258,7 @@ export function classifyManualHelp(rawMessage) {
   if (screenHelpLead.test(message) && /\b(?:hacienda|nomina y (?:el )?calculo|calculo mensual)\b/.test(message)) return 'hacienda';
   if (screenHelpLead.test(message) && /\b(?:corridas? y (?:marcas? de )?cierres?|control de corridas?|marcas? de cierre|cierres? operativos?)\b/.test(message)) return 'payrollRuns';
   if (screenHelpLead.test(message) && /\b(?:estructura|areas? de costo|centros? de costo)\b/.test(message)) return 'structure';
+  if (screenHelpLead.test(message) && /\b(?:red de jardines|jardines maternales?|modulo de jardines)\b/.test(message)) return 'gardens';
   if (screenHelpLead.test(message) && /\b(?:trayectoria laboral|actuaciones? documentadas?|movimientos? y trazabilidad)\b/.test(message)) return 'trajectory';
   if (screenHelpLead.test(message) && /\b(?:centro territorial|referencia territorial|mapa territorial)\b/.test(message)) return 'territory';
   if (screenHelpLead.test(message) && /\b(?:centro de decisiones|prioridades y compromisos|compromisos grh)\b/.test(message)) return 'decisions';

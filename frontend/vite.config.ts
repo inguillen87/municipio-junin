@@ -48,6 +48,7 @@ export default defineConfig({
         ejecutivo: fileURLToPath(new URL('./ejecutivo.html', import.meta.url)),
         estructura: fileURLToPath(new URL('./estructura.html', import.meta.url)),
         gestiones: fileURLToPath(new URL('./gestiones.html', import.meta.url)),
+        jardines: fileURLToPath(new URL('./jardines.html', import.meta.url)),
         trayectoria: fileURLToPath(new URL('./trayectoria.html', import.meta.url)),
         territorio: fileURLToPath(new URL('./territorio.html', import.meta.url)),
       },

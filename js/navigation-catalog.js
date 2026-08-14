@@ -8,7 +8,7 @@
   }
 
   var definition = {
-    version: '2026-08-14.6',
+    version: '2026-08-14.7',
     groups: [
       { id: 'executive', label: 'Gestión ejecutiva', shortLabel: 'Gestión', icon: 'chart' },
       { id: 'people', label: 'Personas y nómina', shortLabel: 'Personas', icon: 'people' },
@@ -27,6 +27,7 @@
       { id: 'corridas-grh', href: '/corridas-grh', label: 'Corridas y marcas de cierre', shortLabel: 'Corridas', icon: 'check', groupId: 'people', placement: 'group', capability: 'navigation.hacienda', primary: false },
       { id: 'conceptos-fijos', href: '/conceptos-fijos', label: 'Conceptos fijos y cálculo', shortLabel: 'Conceptos fijos', icon: 'gauge', groupId: 'people', placement: 'group', capability: 'navigation.hacienda', primary: false },
       { id: 'estructura', href: '/estructura', label: 'Estructura y áreas de costo', shortLabel: 'Estructura', icon: 'organization', groupId: 'people', placement: 'group', capability: 'navigation.organization-analytics', primary: true },
+      { id: 'gardens', href: '/jardines', label: 'Red de jardines maternales', shortLabel: 'Jardines', icon: 'organization', groupId: 'people', placement: 'group', capability: 'navigation.organization-analytics', primary: false },
       { id: 'trayectoria', href: '/trayectoria', label: 'Trayectoria laboral', shortLabel: 'Trayectoria', icon: 'movement', groupId: 'people', placement: 'group', capability: 'navigation.employment-actions', primary: true },
       { id: 'movimientos-grh', href: 'movimientos-grh.html', label: 'Movimientos de legajo', shortLabel: 'Movimientos', icon: 'movement', groupId: 'people', placement: 'group', capability: 'navigation.organization-analytics', primary: false },
       { id: 'rrhh', href: 'rrhh.html', label: 'Directorio y fichas', shortLabel: 'Directorio', icon: 'people', groupId: 'people', placement: 'group', capability: 'navigation.rrhh', primary: true },

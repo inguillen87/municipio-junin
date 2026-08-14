@@ -4,7 +4,7 @@ import {
 } from './contextual-help-catalog.js';
 
 const CONTRACT = 'municipal-task-catalog-v1';
-const CATALOG_VERSION = '2026-08-14.3';
+const CATALOG_VERSION = '2026-08-14.4';
 const DEFAULT_RESULT_LIMIT = 8;
 const MAX_RESULT_LIMIT = 12;
 
@@ -86,6 +86,14 @@ const TASKS = deepFreeze([
     description: 'Contrastá composición y evolución dentro del universo informado.',
     keywords: ['area', 'estructura', 'centro de costo', 'sector', 'comparar'],
     pageId: 'organizationAnalytics',
+  },
+  {
+    id: 'review-garden-network',
+    kind: 'revisar',
+    label: 'Revisar red de jardines',
+    description: 'Consultá personas observadas, tendencia mensual y unidades liberadas sin intentar identificar grupos protegidos.',
+    keywords: ['jardines', 'jardin maternal', 'red', 'personas observadas', 'unidades protegidas', 'tendencia'],
+    pageId: 'gardenNetwork',
   },
   {
     id: 'review-employment-actions',
@@ -179,7 +187,7 @@ const TASKS = deepFreeze([
 
 const ROLE_TASK_ORDER = deepFreeze({
   SUPER_ADMIN: ['review-sources', 'import-source', 'verify-quality', 'understand-role'],
-  INTENDENTE: ['compare-managements', 'review-priorities', 'follow-decisions', 'review-grh-summary'],
+  INTENDENTE: ['review-garden-network', 'compare-managements', 'review-priorities', 'follow-decisions', 'review-grh-summary'],
   TENANT_ADMIN: ['import-source', 'review-sources', 'verify-quality', 'review-fixed-concepts', 'review-payroll-runs'],
   TENANT_USER: ['locate-territory', 'understand-role'],
   CONTADOR: ['review-fixed-concepts', 'review-payroll-runs', 'review-payroll', 'create-report'],

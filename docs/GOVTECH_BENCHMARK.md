@@ -616,8 +616,9 @@ sesiones revocables, ámbitos versionados, acceso excepcional a PII con vencimie
 rate limiting distribuido y alertas de abuso.
 
 La base local vigente no es sólo diseño: `shared/route-policy.cjs`
-`2026-08-14.16` fija 32 recursos, 12 acciones, 54 permisos y 98 firmas exactas,
-56 Serverless y 42 Express. `shared/access-policy.cjs` `2026-08-13.4` proyecta el workspace de siete
+`2026-08-14.17` fija localmente 32 recursos, 12 acciones, 54 permisos y 99 firmas exactas,
+57 Serverless y 42 Express. S24 aún no cuenta con certificación remota.
+`shared/access-policy.cjs` `2026-08-13.4` proyecta el workspace de siete
 roles. Las asignaciones finas, SoD, lifecycle y auditoría persistida permanecen
 como propuesta aislada y no migrada.
 

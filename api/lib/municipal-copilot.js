@@ -29,6 +29,7 @@ const MAX_ACTIONS = 4;
 const SYNTHESIS_INTENTS = new Set([
   'manual_help',
   'management_timeline',
+  'garden_network',
   'decision_brief',
   'payroll_run_control',
   'workforce_finance_overview',

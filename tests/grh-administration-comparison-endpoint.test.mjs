@@ -319,7 +319,7 @@ test('route authorization and release truth reuse organization analytics exactly
       applies: true,
       allowed: true,
       code: publishedDemoPolicy.PUBLISHED_DEMO_DECISION_CODES.ALLOWED,
-      policyVersion: '2026-08-14.16',
+      policyVersion: '2026-08-14.17',
     },
   );
 });

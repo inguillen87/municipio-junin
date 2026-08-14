@@ -24,6 +24,11 @@
     'Explicame la comparación de ausencias reportadas sin inferir causas.',
     'Explicame qué representan los ingresos y egresos reportados en GRH.',
   ]);
+  var GARDEN_NETWORK_DEEP_LINK_QUESTIONS = new Set([
+    '¿Qué significa personas observadas en el cálculo?',
+    '¿Cómo cambió la observación mensual en jardines?',
+    '¿Por qué hay unidades agrupadas como dato protegido?',
+  ]);
   var PRIMARY_QUERY_ORDER = {
     INTENDENTE: ['priority', 'summary', 'management-timeline', 'cost-overview'],
     CONTADOR: ['fixed-concept-control', 'cost-overview', 'cost-components', 'reconciliation'],
@@ -1226,11 +1231,12 @@
     var question = String(parameters.get('question') || '').trim();
     if (!safeText(question, 300, false)) return null;
     var normalized = normalizedQuestion(question);
-    if (isPersonLookupQuestion(question) ||
-        /\b(dni|cuit|cuil|domicilio|telefono|correo personal|email personal|legajo|nombre|apellido|persona|empleado)\b/.test(normalized)) {
+    var safeGardenQuestion = GARDEN_NETWORK_DEEP_LINK_QUESTIONS.has(question);
+    if (!safeGardenQuestion && (isPersonLookupQuestion(question) ||
+        /\b(dni|cuit|cuil|domicilio|telefono|correo personal|email personal|legajo|nombre|apellido|persona|empleado)\b/.test(normalized))) {
       return null;
     }
-    if (!MANAGEMENT_TIMELINE_DEEP_LINK_QUESTIONS.has(question) &&
+    if (!safeGardenQuestion && !MANAGEMENT_TIMELINE_DEEP_LINK_QUESTIONS.has(question) &&
         !/(area|dato|tabla|dominio|inventario|resumen|prioridad|atencion|calidad|cuarentena|conciliacion|calculo|cierre|neto|bruto|retencion|aporte|sector|centros? de costos?|convenio|acuerdo|ausencia|movimiento|actuacion|fuente|snapshot|carrera|formacion|estudio|licencia|beneficio|descuento|gremio|turno|horario|relacion laboral|salud|trayectoria|manual)/.test(normalized)) {
       return null;
     }

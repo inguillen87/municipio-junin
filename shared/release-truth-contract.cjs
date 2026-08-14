@@ -31,6 +31,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-personas-linkage-readiness': 'grh-personas-linkage-readiness-v1',
   '/api/grh-domain-catalog': 'grh-domain-catalog-v1',
   '/api/grh-organization-analytics': 'grh-organization-analytics-v2',
+  '/api/grh-garden-network': 'grh-garden-network-v1',
   '/api/grh-movement-operations': 'grh-movement-operations-v1',
   '/api/grh-workforce-finance': 'grh-workforce-finance-v1',
   '/api/municipal-territory': 'municipal-territory-v2',

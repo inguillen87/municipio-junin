@@ -103,6 +103,7 @@ const EXPECTED_NAV_HREFS = [
   '/corridas-grh',
   '/conceptos-fijos',
   '/estructura',
+  '/jardines',
   '/trayectoria',
   'movimientos-grh.html',
   'rrhh.html',
@@ -432,7 +433,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   const items = Array.from(navigation.definition.items, item => ({ ...item }));
   const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
 
-  assert.equal(navigation.definition.version, '2026-08-14.6');
+  assert.equal(navigation.definition.version, '2026-08-14.7');
   assert.deepEqual(
     Array.from(navigation.definition.groups, group => group.id),
     ['executive', 'people', 'territory', 'data'],
@@ -446,10 +447,11 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
     'navigation.hacienda',
     'navigation.hacienda',
     'navigation.organization-analytics',
+    'navigation.organization-analytics',
     'navigation.rrhh',
   ].sort());
-  assert.equal(items.filter(item => item.capability === 'navigation.organization-analytics').length, 2,
-    'organization analytics exposes the situation room and the movement operations center');
+  assert.equal(items.filter(item => item.capability === 'navigation.organization-analytics').length, 3,
+    'organization analytics exposes the situation room, garden network and movement operations center');
   assert.equal(items.filter(item => item.capability === 'navigation.rrhh').length, 2,
     'RRHH exposes the governed domain explorer and the operational directory');
   assert.equal(items.filter(item => item.capability === 'navigation.hacienda').length, 3,

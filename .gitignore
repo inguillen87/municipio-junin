@@ -41,6 +41,7 @@ api/_data/*.json
 !api/_data/grh-fixed-concept-control.json
 !api/_data/grh-management-timeline.json
 !api/_data/grh-personas-linkage-readiness.json
+!api/_data/grh-garden-network.json
 docs/data/*.json
 
 # Cliente Prisma reproducible del backend Express (generado en postinstall).

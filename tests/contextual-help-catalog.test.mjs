@@ -4,6 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import accessPolicy from '../shared/access-policy.cjs';
 import { classifyManualHelp } from '../api/lib/municipal-assistant-manual.js';
+import { classifyIntent, GARDEN_NETWORK_QUESTIONS } from '../api/ai-analyze.js';
 import {
   MUNIGUIA_ASSISTANT_QUESTIONS,
   MUNIGUIA_CATALOG,
@@ -37,7 +38,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 21);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 22);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -75,7 +76,12 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
       : pageId === 'quality'
         ? await readFile(path.join(ROOT, 'control.html'), 'utf8')
         : null;
-    const pageSource = pageId === 'managementTimeline'
+    const pageSource = pageId === 'gardenNetwork'
+      ? (await Promise.all([
+          readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
+          readFile(path.join(ROOT, 'frontend', 'src', 'garden-network', 'GardenNetworkDashboard.tsx'), 'utf8'),
+        ])).join('\n')
+      : pageId === 'managementTimeline'
       ? (await Promise.all([
           readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
           readFile(path.join(ROOT, 'frontend', 'src', 'management-timeline', 'ManagementTimelineDashboard.tsx'), 'utf8'),
@@ -206,6 +212,7 @@ test('assistant handoffs are fixed per page, capability-bound and manual-backed'
     workspace: 'overview',
     dashboard: 'overview',
     managementTimeline: 'managementTimeline',
+    gardenNetwork: 'garden_network',
     reports: 'reports',
     hacienda: 'hacienda',
     grhExecutive: 'overview',
@@ -246,7 +253,13 @@ test('assistant handoffs are fixed per page, capability-bound and manual-backed'
       const parameters = new URLSearchParams(resolved.assistant.href.slice('ia.html?'.length));
       assert.deepEqual([...parameters.keys()], ['question']);
       assert.equal(parameters.get('question'), resolved.assistant.question);
-      assert.equal(classifyManualHelp(resolved.assistant.question), topicByPage[pageId]);
+      if (pageId === 'gardenNetwork') {
+        assert.equal(classifyManualHelp(resolved.assistant.question), null);
+        assert.equal(classifyIntent(resolved.assistant.question).intent, 'garden_network');
+        assert.equal(GARDEN_NETWORK_QUESTIONS.includes(resolved.assistant.question), true);
+      } else {
+        assert.equal(classifyManualHelp(resolved.assistant.question), topicByPage[pageId]);
+      }
     }
   }
 });
@@ -305,6 +318,13 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   );
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.requiredCapability, 'navigation.organization-analytics');
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.label, 'Estructura y áreas de costo');
+  assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.gardenNetwork.steps.map((step) => step.selector),
+    ['#gardenNetworkOverview', '#gardenNetworkTrend', '#gardenNetworkUnits'],
+  );
+  assert.equal(MUNIGUIA_CATALOG.pages.gardenNetwork.requiredCapability, 'navigation.organization-analytics');
+  assert.equal(MUNIGUIA_CATALOG.pages.gardenNetwork.manualAnchor, 'jardines');
+  assert.equal(MUNIGUIA_CATALOG.pages.gardenNetwork.label, 'Red de jardines maternales');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.fixedConceptControl.steps.map((step) => step.selector),
     ['#fixedConceptReconciliation', '#fixedConceptComparison', '#fixedConceptQuality'],

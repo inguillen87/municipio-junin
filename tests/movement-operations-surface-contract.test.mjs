@@ -33,7 +33,7 @@ test('movement operations reuses the exact organization analytics permission and
 });
 
 test('published ceiling intersects movement operations with canonical high-role grants', () => {
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.16');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.17');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     const ceiling = publishedDemoPolicy.evaluatePublishedDemoRoute({ ...profile, routeId: ROUTE_ID });

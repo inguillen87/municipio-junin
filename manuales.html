@@ -277,7 +277,7 @@
   data-primary-source="grh"
   data-secondary-source-policy="personas-auxiliary-diagnostic"
   data-realtime="false"
-  data-route-policy-version="2026-08-14.16"
+  data-route-policy-version="2026-08-14.17"
   data-access-policy-version="2026-08-13.4"
 >
   <div id="sidebar"></div>
@@ -370,6 +370,7 @@
         <a href="#roles">Recorrido por rol</a>
         <a href="#fuente">Fuente GRH</a>
         <a href="#gestiones">Gestiones en el tiempo</a>
+        <a href="#jardines">Red de jardines</a>
         <a href="#interpretacion">Cómo interpretar</a>
         <a href="#decisiones-compromisos">Decisiones y compromisos</a>
         <a href="#superficies">Estado de superficies</a>
@@ -390,7 +391,9 @@
             Guía práctica para funcionarios y equipos municipales. Explica qué información está disponible hoy, cómo interpretarla y qué funciones se incorporarán en las próximas etapas.
           </p>
 
-          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Estado operativo actual · 14 de agosto de 2026.</strong> MuniControl ofrece Inicio por rol, Panorama, Resumen GRH, Reportes, Hacienda, Corridas y marcas de cierre, Conceptos fijos y cálculo, Estructura, Trayectoria laboral, Territorio, Calidad, RRHH, Fuentes, Centro de decisiones, Asistente, cargas, publicaciones y ayuda. MuniGuía reconoce 20 pantallas privadas y explica tres pasos por pantalla. La PWA usa el service worker <code>v7</code>: conserva solamente el shell público mínimo; no guarda navegaciones privadas, APIs ni datos municipales. El recorrido «Primer día con MuniGuía» es efímero durante la sesión y no modifica permisos.</div></div>
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Estado operativo actual · 14 de agosto de 2026.</strong> MuniControl ofrece Inicio por rol, Panorama, Resumen GRH, Reportes, Hacienda, Corridas y marcas de cierre, Conceptos fijos y cálculo, Estructura, Red de jardines, Trayectoria laboral, Territorio, Calidad, RRHH, Fuentes, Centro de decisiones, Asistente, cargas, publicaciones y ayuda. MuniGuía reconoce 22 pantallas privadas y explica tres pasos por pantalla. La PWA usa el service worker <code>v7</code>: conserva solamente el shell público mínimo; no guarda navegaciones privadas, APIs ni datos municipales. El recorrido «Primer día con MuniGuía» es efímero durante la sesión y no modifica permisos.</div></div>
+
+          <div class="callout"><span aria-hidden="true">!</span><div><strong>S24 · estado local, sin certificación remota.</strong> La Red de jardines y <code>grh-garden-network-v1</code> están integrados en este checkout para pruebas locales. Todavía no existe evidencia del mismo SHA en Preview o Production; no atribuyas esta superficie al deployment público hasta completar promoción, release truth y smoke autenticado.</div></div>
 
           <div class="callout info"><span aria-hidden="true">i</span><div><strong>Versión disponible.</strong> La plataforma muestra información histórica de Recursos Humanos con privacidad aplicada. Antes de una presentación oficial, verificá la fecha del respaldo y el estado visible de cada módulo.</div></div>
           <details>
@@ -577,8 +580,21 @@
           <div class="actions"><a class="action primary" href="/gestiones">Abrir Gestiones en el tiempo</a><a class="action" href="ia.html?question=%C2%BFC%C3%B3mo%20comparo%20las%20dos%20gestiones%20al%20mismo%20avance%3F">Preguntarle al Asistente</a></div>
         </section>
 
+        <section id="jardines">
+          <p class="section-kicker">07 · Red de jardines maternales</p>
+          <h2>Leer la red sin exponer unidades pequeñas</h2>
+          <p class="section-intro"><code>/jardines</code> usa exclusivamente <code>grh-garden-network-v1</code>, un artefacto agregado y pinneado del respaldo GRH. Para julio de 2026 informa 107 personas observadas en el cálculo vinculadas a la red: 45 quedan liberadas en cuatro unidades y 62 permanecen reunidas en un bucket protegido.</p>
+          <div class="steps">
+            <article class="step"><div><h3>Entender «personas observadas»</h3><p>Es una cohorte histórica derivada de registros de cálculo. No equivale a matrícula, asistencia, padrón de niñas y niños, nómina actual ni vínculo laboral vigente.</p></div></article>
+            <article class="step"><div><h3>Comparar la tendencia</h3><p>La serie publicada recorre 24 meses y pasa de 90 a 107 observaciones. Describe cortes del artefacto; no demuestra altas, bajas, causas, desempeño ni una tendencia futura.</p></div></article>
+            <article class="step"><div><h3>Respetar la protección</h3><p>Usá sólo las cuatro unidades liberadas y el bucket protegido de 62 personas. No restes, cruces ni combines cifras para reconstruir unidades pequeñas.</p></div></article>
+          </div>
+          <div class="callout"><span aria-hidden="true">!</span><div><strong>Estado S24: validación local.</strong> La ruta, API, navegación, MuniGuía, Task Center y respuesta determinista del Asistente requieren los gates locales antes de un deploy. No hay commit, deployment, release truth ni smoke Production de S24 registrados todavía.</div></div>
+          <div class="actions"><a class="action primary" href="/jardines">Abrir Red de jardines</a><a class="action" href="ia.html?question=%C2%BFC%C3%B3mo%20cambi%C3%B3%20la%20observaci%C3%B3n%20mensual%20en%20jardines%3F">Preguntarle al Asistente</a></div>
+        </section>
+
         <section id="superficies">
-          <p class="section-kicker">07 · Mapa de producto</p>
+          <p class="section-kicker">08 · Mapa de producto</p>
           <h2>Estado de las superficies</h2>
           <div class="table-wrap">
             <table>
@@ -587,6 +603,7 @@
                 <tr><td><strong>Tablero ejecutivo / GRH</strong></td><td><code>grh-executive-v2</code> + <code>grh-quality-v1</code></td><td>Consumidores migrados localmente; 503 o estado no disponible si falla una proyección. No certifica despliegue.</td></tr>
                 <tr><td><strong>Comparación de gestiones</strong><br><small>Verificada en Production</small></td><td><code>grh-administration-comparison-v1</code></td><td>Compara 972 días desde el 9 de diciembre de 2023 con el mismo tramo iniciado cuatro años antes. Muestra registros históricos agregados; no es una tasa, no prueba altas o bajas y no califica una gestión. Si faltan días informados o no puede proteger grupos pequeños, falla sin mostrar cifras.</td></tr>
                 <tr><td><strong>Gestiones en el tiempo</strong><br><small>S22 verificado en Production</small></td><td><code>grh-management-timeline-v1</code></td><td>Muestra los dos mandatos completos y compara sólo ventanas observadas equivalentes. Conserva unidades y supresión k=10; no proyecta el cuarto año ni califica gestiones.</td></tr>
+                <tr><td><strong>Red de jardines maternales</strong><br><small>S24 local · no Production</small></td><td><code>grh-garden-network-v1</code></td><td>Publica personas observadas en cálculo, tendencia mensual y cuatro unidades liberadas; agrupa 62 personas como dato protegido. No informa matrícula, asistencia, PII, dotación actual, causalidad ni tiempo real.</td></tr>
                 <tr><td><strong>Centro de decisiones GRH</strong><br><small>Producción · lectura condicionada</small></td><td><code>grh-action-ledger-v1</code> sobre <code>grh-decision-brief-v1</code></td><td><code>GET</code> consulta el registro o informa honestamente que todavía debe habilitarse; <code>POST</code> y <code>PATCH</code> requieren identidad privada, permisos y tablas gobernadas. Incluye compromisos vigentes e históricos; no aprueba ni ejecuta decisiones.</td></tr>
                 <tr><td><strong>RRHH / Hacienda</strong><br><small>Producción · acceso según perfil</small></td><td><code>grh-directory-v3</code> en RRHH + contratos agregados + <code>grh-close-v1</code> en Hacienda</td><td>RRHH muestra agregados y habilita fichas sólo a identidades privadas autorizadas. La ficha conserva situación laboral informada por fechas, participación separada en el cálculo gobernado de julio de 2026, centro de costo y hasta 24 ausencias, licencias y períodos de filas fuente por historial. No certifica vínculo activo ni pago, no publica causas de ausencias/licencias y no interpreta <code>legamov</code> como altas, bajas, traslados o rotación. Hacienda mantiene el cierre mensual explicado.</td></tr>
                 <tr><td><strong>Centro de movimientos GRH</strong><br><small>Producción · agregado</small></td><td>Registros históricos de movimientos</td><td>Muestra series anuales, personas participantes, intensidad y comparación entre los dos últimos años completos disponibles. Los años con menos de 10 personas se ocultan. Estos registros no permiten afirmar altas, bajas ni rotación.</td></tr>
@@ -604,7 +621,7 @@
         </section>
 
         <section id="acceso">
-          <p class="section-kicker">08 · Acceso seguro</p>
+          <p class="section-kicker">09 · Acceso seguro</p>
           <h2>Sesión, permisos y estados de error</h2>
           <p class="section-intro">El acceso se realiza con credenciales institucionales emitidas por el administrador. Esta documentación no publica usuarios ni contraseñas de ejemplo.</p>
 
@@ -618,7 +635,7 @@
         </section>
 
         <section id="rutinas">
-          <p class="section-kicker">09 · Procedimiento de gestión</p>
+          <p class="section-kicker">10 · Procedimiento de gestión</p>
           <h2>Rutinas recomendadas</h2>
           <div class="table-wrap">
             <table>
@@ -634,7 +651,7 @@
         </section>
 
         <section id="seguridad">
-          <p class="section-kicker">10 · Seguridad aplicada</p>
+          <p class="section-kicker">11 · Seguridad aplicada</p>
           <h2>Controles que protegen la decisión</h2>
           <p class="section-intro">La seguridad no es un módulo separado: evita que una cifra correcta termine en el municipio, usuario o informe equivocado.</p>
           <ul class="truth-list">
@@ -644,7 +661,7 @@
             <li>Para proteger identidades, las categorías con menos de 5 personas se agrupan y las cifras sensibles con menos de 10 se ocultan. Un dato protegido nunca se publica como cero ni permite deducir el valor oculto.</li>
             <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
             <li>Trayectoria laboral compara actuaciones documentadas de <code>foja</code> en dos períodos iguales de 972 días. Una actuación no equivale automáticamente a un alta, una baja o una condición vigente.</li>
-            <li>El techo verificado con S22 contiene 32 recursos, 12 acciones, 54 permisos y 98 firmas exactas: 56 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>El techo local con S24 contiene 32 recursos, 12 acciones, 54 permisos y 99 firmas exactas: 57 Serverless y 42 Express. S22 continúa siendo el último techo certificado en Production; esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
             <li>La política de acceso local <code>2026-08-13.4</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
             <li>Excel, CSV y Google Sheets se tratan como contenido no confiable: formato, límites, encabezados y persistencia se validan antes de declarar éxito.</li>
             <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>
@@ -655,7 +672,7 @@
         </section>
 
         <section id="exportaciones">
-          <p class="section-kicker">11 · Salida de datos</p>
+          <p class="section-kicker">12 · Salida de datos</p>
           <h2>Exportaciones y uso oficial</h2>
           <ul class="truth-list">
             <li>El informe ejecutivo GRH se genera en el servidor desde el contrato privado y debe conservar sus avisos de fuente y temporalidad.</li>
@@ -666,7 +683,7 @@
         </section>
 
         <section id="municipios">
-          <p class="section-kicker">12 · Producto replicable</p>
+          <p class="section-kicker">13 · Producto replicable</p>
           <h2>Cómo presentar la plataforma a otro municipio</h2>
           <p class="section-intro">La propuesta comercial debe demostrar gobierno de datos y capacidad real, no una colección de pantallas. Cada municipio necesita su propio tenant, fuentes, responsables y validación.</p>
           <div class="steps">
@@ -678,7 +695,7 @@
         </section>
 
         <section id="produccion">
-          <p class="section-kicker">13 · Runbook mínimo</p>
+          <p class="section-kicker">14 · Runbook mínimo</p>
           <h2>Condiciones para habilitar producción</h2>
           <div class="card-grid">
             <article class="card"><span class="tag private">Release público verificado</span><h3><code>v1.10.0</code> · S13</h3><p>Producto <code>d11fd39</code>, commit/tag <code>4108ca0</code>, deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> <code>READY</code>, gate 11/11 y browser público 10/10 limpio. S13 privado conserva validación local sobre el snapshot aprobado.</p></article>
@@ -703,7 +720,7 @@
         </section>
 
         <section id="documentacion">
-          <p class="section-kicker">14 · Gobierno documental</p>
+          <p class="section-kicker">15 · Gobierno documental</p>
           <h2>Un manual que crece con el producto</h2>
           <p class="section-intro">Referencia histórica de Producción: versión 1.10.0 · 9 de agosto de 2026. Release público verificado: producto S13 <code>d11fd39</code>; commit/tag <code>4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7</code>; objeto de tag anotado <code>07ac9eacf8bd89f27f5c437b99e713e8497b8934</code>; <a href="https://github.com/inguillen87/municipio-junin/releases/tag/v1.10.0">GitHub Release v1.10.0</a> live, no draft y no prerelease. El deployment Production <code>dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL</code> quedó <code>READY</code> con alias <code>https://municipio-junin.vercel.app</code> y <code>gitSource master/4108ca0</code>; gate 11/11 exit <code>0</code>, <code>checkedAt 2026-08-09T16:33:56.200Z</code>. Browser público 10/10 estados a 390/1440 px: <code>/</code> y <code>/roles</code> visibles; <code>/dashboard</code>, <code>/inicio</code> y <code>/manuales</code> anónimos redirigen al login; 0 overflow, warnings/errores de consola, overlays, requests externos y fallas de red. Logs del corte: 0 errores y 0 respuestas 500. Suite raíz 591 —590 aprobadas y 1 smoke opt-in omitido—, backend 20/20, focal S13 135/135 y QA 104/104. La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado; no certifica DB/baseline, cuentas, MFA/lifecycle ni datos GRH remotos. Las funciones posteriores de este manual se documentan como locales y no cambian ni amplían ese release. Este commit documental post-release no mueve el tag <code>v1.10.0</code> de <code>4108ca0</code>. Como antecedente se preserva <code>v1.9.0</code>: commit/tag <code>f9d1f88</code>, product commit <code>ed76347</code>, deployment <code>dpl_Euk4csdfWw5rayohoW3xXo1vXayY</code> <code>Ready</code>, gate 10/10 y GitHub Release live; ese cierre documental no movió su tag. También se preserva <code>v1.8.1</code> con artefacto <code>b82c0b3</code>.</p>
           <ul class="truth-list">

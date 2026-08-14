@@ -1,14 +1,14 @@
 import { isKnownNavigationCapability, type SessionIdentity } from '../auth/session';
 
-const NAVIGATION_DEFINITION_VERSION = '2026-08-14.6';
+const NAVIGATION_DEFINITION_VERSION = '2026-08-14.7';
 const GROUP_IDS = Object.freeze(['executive', 'people', 'territory', 'data'] as const);
 const PLACEMENTS = Object.freeze(['top', 'group', 'footer'] as const);
-const EXPECTED_ITEM_COUNT = 23;
+const EXPECTED_ITEM_COUNT = 24;
 const PUBLIC_IDS = Object.freeze(['cuentas', 'ciudadano'] as const);
 const SECONDARY_BY_CAPABILITY = Object.freeze({
   'navigation.dashboard': Object.freeze(['gestiones']),
   'navigation.hacienda': Object.freeze(['corridas-grh', 'conceptos-fijos']),
-  'navigation.organization-analytics': Object.freeze(['movimientos-grh']),
+  'navigation.organization-analytics': Object.freeze(['gardens', 'movimientos-grh']),
   'navigation.rrhh': Object.freeze(['areas-grh']),
 } as const);
 const EXPECTED_ITEMS = Object.freeze([
@@ -23,6 +23,7 @@ const EXPECTED_ITEMS = Object.freeze([
   ['corridas-grh', 'people', 'group', 'navigation.hacienda', false],
   ['conceptos-fijos', 'people', 'group', 'navigation.hacienda', false],
   ['estructura', 'people', 'group', 'navigation.organization-analytics', true],
+  ['gardens', 'people', 'group', 'navigation.organization-analytics', false],
   ['trayectoria', 'people', 'group', 'navigation.employment-actions', true],
   ['movimientos-grh', 'people', 'group', 'navigation.organization-analytics', false],
   ['rrhh', 'people', 'group', 'navigation.rrhh', true],

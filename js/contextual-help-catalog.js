@@ -165,6 +165,19 @@ const PAGES = deepFreeze({
       { id: 'compare-cost-centers', selector: '#costCenterComparator', title: 'Compará dos áreas de costo', copy: 'Contrastá participación en la cohorte actual y 24 niveles mensuales de control de cálculo. Para componentes y evidencia detallada, abrí cada área en Hacienda.' },
     ],
   },
+  gardenNetwork: {
+    href: 'jardines.html',
+    aliases: ['/jardines', '/jardines.html'],
+    label: 'Red de jardines maternales',
+    objective: 'Revisá personas observadas en el cálculo vinculadas a jardines, su tendencia mensual y la publicación protegida por unidad sin inferir matrícula, asistencia ni dotación actual.',
+    requiredCapability: 'navigation.organization-analytics',
+    manualAnchor: 'jardines',
+    steps: [
+      { id: 'read-garden-network-overview', selector: '#gardenNetworkOverview', title: 'Entendé el universo observado', copy: 'Empezá por las 107 personas observadas en el cálculo de julio de 2026 y leé sólo la apertura publicada: 45 personas en cuatro unidades liberadas y 62 en el agregado protegido.' },
+      { id: 'read-garden-network-trend', selector: '#gardenNetworkTrend', title: 'Leé la tendencia sin explicar causas', copy: 'Compará los 24 cortes mensuales publicados como observaciones históricas; una variación no demuestra altas, bajas, asistencia ni causalidad.' },
+      { id: 'review-garden-network-units', selector: '#gardenNetworkUnits', title: 'Respetá la agrupación protegida', copy: 'Usá sólo las cuatro unidades liberadas y el bucket protegido de 62 personas; no intentes reconstruir unidades pequeñas.' },
+    ],
+  },
   employmentActions: {
     href: 'trayectoria.html',
     aliases: ['/trayectoria', '/trayectoria.html'],
@@ -357,6 +370,7 @@ const ASSISTANT_QUESTIONS = deepFreeze({
   hacienda: '¿Cómo reviso Hacienda, nómina y el cálculo mensual?',
   grhExecutive: '¿Cómo interpreto el resumen ejecutivo GRH?',
   organizationAnalytics: '¿Cómo uso Estructura y centros de costo?',
+  gardenNetwork: '¿Cómo cambió la observación mensual en jardines?',
   employmentActions: '¿Cómo interpreto la trayectoria laboral documentada?',
   payrollRunControl: '¿Cómo reviso el control de corridas y marcas de cierre?',
   fixedConceptControl: '¿Cómo reviso Hacienda, conceptos fijos y el cálculo mensual?',

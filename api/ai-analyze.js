@@ -41,6 +41,9 @@ import {
   readGrhManagementTimelineArtifact,
 } from './grh-management-timeline.js';
 import {
+  readGrhGardenNetworkArtifact,
+} from './grh-garden-network.js';
+import {
   inspectGrhAbsenceInsightsContract,
 } from './lib/grh-absence-insights-contract.js';
 import {
@@ -56,6 +59,10 @@ import {
   GRH_MANAGEMENT_TIMELINE_SCHEMA_VERSION,
   inspectGrhManagementTimelineContract,
 } from './lib/grh-management-timeline-contract.js';
+import {
+  GRH_GARDEN_NETWORK_SCHEMA_VERSION,
+  inspectGrhGardenNetworkContract,
+} from './lib/grh-garden-network-contract.js';
 import {
   inspectGrhWorkforceFinanceContract,
 } from './lib/grh-workforce-finance-contract.js';
@@ -116,6 +123,7 @@ const ACTION_ROUTE_CAPABILITIES = Object.freeze({
   '/hacienda': 'navigation.hacienda',
   '/importar': 'navigation.import',
   '/inicio': 'navigation.workspace',
+  '/jardines': 'navigation.organization-analytics',
   '/manuales': 'navigation.help',
   '/gestiones': 'navigation.dashboard',
   '/movimientos-grh': 'navigation.organization-analytics',
@@ -233,8 +241,15 @@ const FINANCE_COMPONENTS = Object.freeze([
     pattern: /neto(?: de control| de nomina| salarial)?|costo neto/,
   }),
 ]);
+export const GARDEN_NETWORK_QUESTIONS = Object.freeze([
+  '¿Qué significa personas observadas en el cálculo?',
+  '¿Cómo cambió la observación mensual en jardines?',
+  '¿Por qué hay unidades agrupadas como dato protegido?',
+]);
+const GARDEN_NETWORK_QUESTION_KEYS = new Set(GARDEN_NETWORK_QUESTIONS.map(normalize));
 const SUPPORTED_INTENTS = Object.freeze([
   'manual_help',
+  'garden_network',
   'management_timeline',
   'decision_brief',
   'fixed_concept_control',
@@ -273,6 +288,7 @@ export function createAiAnalyzeHandler({
   readPayrollRunControlArtifactImpl = readGrhPayrollRunControlArtifact,
   readFixedConceptControlArtifactImpl = readGrhFixedConceptControlArtifact,
   readManagementTimelineArtifactImpl = readGrhManagementTimelineArtifact,
+  readGardenNetworkArtifactImpl = readGrhGardenNetworkArtifact,
   buildDecisionBriefProjectionImpl = buildGrhDecisionBriefProjection,
   inspectDecisionBriefContractImpl = inspectGrhDecisionBriefContract,
   buildDomainCatalogProjectionImpl = buildGrhDomainCatalogProjection,
@@ -383,6 +399,58 @@ export function createAiAnalyzeHandler({
       }, engine);
       res.setHeader('X-MuniControl-Engine', engine.id);
       return res.status(answer.httpStatus).json(payload);
+    }
+    if (classification.intent === 'garden_network') {
+      if (!callerCapabilities.includes('navigation.organization-analytics')) {
+        return res.status(403).json({
+          error: 'Tu perfil no tiene acceso a la Red de jardines maternales.',
+          code: 'ASSISTANT_CAPABILITY_REQUIRED',
+          engine: { id: ENGINE_ID, externalProvider: false, generated: false },
+        });
+      }
+      try {
+        const gardenNetwork = await readGardenNetworkArtifactImpl({
+          environment,
+          expectedSourceSha256: environment.GRH_SOURCE_SHA256,
+        });
+        if (!inspectGrhGardenNetworkContract(gardenNetwork, {
+          expectedSourceSha256: environment.GRH_SOURCE_SHA256,
+        })?.ok) {
+          throw new Error('GRH garden-network projection invalid');
+        }
+        const unfilteredAnswer = buildGardenNetworkAssistantAnswer(gardenNetwork);
+        const answer = filterAssistantActions(unfilteredAnswer, callerCapabilities);
+        const provenance = buildGardenNetworkProvenance(gardenNetwork);
+        const copilot = await synthesizeAnswerImpl({
+          mode: requestedMode,
+          classification,
+          deterministicAnswer: answer,
+          provenance,
+          caller,
+          environment,
+        });
+        const presentedAnswer = attachCopilotSynthesis(answer, copilot);
+        const engine = copilot?.engine || {
+          id: ENGINE_ID,
+          externalProvider: false,
+          generated: false,
+        };
+        const payload = buildAssistantPayload(presentedAnswer, provenance, {
+          available: true,
+          source: 'grh_garden_network_governed_contract',
+          snapshotAsOf: provenance.snapshotAsOf,
+          historyUsed: false,
+        }, engine);
+        res.setHeader('X-MuniControl-Engine', engine.id);
+        return res.status(answer.httpStatus).json(payload);
+      } catch {
+        console.error('[GRH-ASSISTANT] Red de jardines gobernada no disponible');
+        return res.status(503).json({
+          error: 'La Red de jardines maternales no está disponible. No se reutilizó otra fuente.',
+          code: 'GRH_GARDEN_NETWORK_UNAVAILABLE',
+          engine: { id: ENGINE_ID, externalProvider: false, generated: false },
+        });
+      }
     }
     const useAbsenceInsights = classification.intent === 'absence' &&
       !parsePeriodRequest(message).explicit;
@@ -800,6 +868,71 @@ function buildAssistantPayload(answer, provenance, dataStatus, engine = null) {
       historyUsed: Boolean(dataStatus?.historyUsed),
     },
     supportedIntents: SUPPORTED_INTENTS,
+  };
+}
+
+function buildGardenNetworkProvenance(gardenNetwork) {
+  return {
+    source: gardenNetwork.source.canonicalSystem,
+    sourceFile: gardenNetwork.source.sourceFile,
+    sourceSha256: gardenNetwork.source.sourceSha256,
+    snapshotAsOf: gardenNetwork.source.snapshotAsOf,
+    latestValidCalculationPeriod: gardenNetwork.quality.latestValidCalculationPeriod,
+    realtime: false,
+    aggregateOnly: true,
+    containsPii: false,
+    gardenNetworkSchemaVersion: GRH_GARDEN_NETWORK_SCHEMA_VERSION,
+    gardenNetworkAssignmentPolicyVersion: gardenNetwork.quality.assignmentPolicyVersion,
+  };
+}
+
+export function buildGardenNetworkAssistantAnswer(gardenNetwork) {
+  if (!inspectGrhGardenNetworkContract(gardenNetwork)?.ok) {
+    const error = new Error('El contrato garden-network GRH no es válido.');
+    error.code = 'GRH_GARDEN_NETWORK_CONTRACT_INVALID';
+    throw error;
+  }
+  const first = gardenNetwork.monthlyTrend[0];
+  const latest = gardenNetwork.monthlyTrend.at(-1);
+  const summary = gardenNetwork.summary;
+  const period = gardenNetwork.referencePeriod;
+  const source = `Fuente: ${gardenNetwork.source.canonicalSystem} · ${gardenNetwork.source.sourceFile} · SHA-256 ${gardenNetwork.source.sourceSha256} · copia al ${gardenNetwork.source.snapshotAsOf} · no tiempo real.`;
+  const answer = {
+    title: 'Red de jardines maternales · lectura protegida',
+    summary: `En ${period.label.toLowerCase()}, el contrato registra ${formatInteger(summary.people)} personas observadas en el cálculo vinculadas a la red de jardines.`,
+    findings: [
+      `${formatInteger(summary.releasedPeople)} personas se publican en ${formatInteger(summary.releasedUnitCount)} unidades liberadas que superan el umbral de privacidad.`,
+      `${formatInteger(gardenNetwork.protectedBucket.people)} personas permanecen reunidas en “${gardenNetwork.protectedBucket.label}” como agregado protegido.`,
+      `La serie gobernada contiene ${formatInteger(gardenNetwork.monthlyTrend.length)} meses: comienza con ${formatInteger(first.people)} en ${first.label} y termina con ${formatInteger(latest.people)} en ${latest.label}.`,
+      'La variación observada describe registros de cálculo y no demuestra causas, altas, bajas ni desempeño.',
+    ],
+    evidence: [
+      metric('Personas observadas', formatInteger(summary.people), `${period.label}; cohorte histórica de cálculo.`),
+      metric('Publicación por unidad', `${formatInteger(summary.releasedPeople)} personas en ${formatInteger(summary.releasedUnitCount)} unidades liberadas`, 'Sólo unidades que cumplen el umbral de privacidad.'),
+      metric('Agregado protegido', formatInteger(gardenNetwork.protectedBucket.people), 'No se reconstruyen ni identifican las unidades pequeñas.'),
+      metric('Tendencia gobernada', `${formatInteger(first.people)} → ${formatInteger(latest.people)}`, `${first.label} a ${latest.label}; ${formatInteger(gardenNetwork.monthlyTrend.length)} meses.`),
+    ],
+    caveats: [
+      ...gardenNetwork.limits.map(limit => limit.text),
+      'La tendencia es descriptiva: no establece causalidad ni habilita pronósticos.',
+    ],
+    source,
+    nextQuestions: [...GARDEN_NETWORK_QUESTIONS],
+    actions: [{
+      id: 'open_garden_network',
+      label: 'Abrir Red de jardines',
+      href: '/jardines',
+      requiredCapability: 'navigation.organization-analytics',
+    }],
+  };
+  return {
+    httpStatus: 200,
+    status: 'answered',
+    intent: 'garden_network',
+    resolvedPeriod: period.period,
+    periodResolution: { requested: null, resolved: period.period, substituted: false },
+    answer,
+    response: renderTextAnswer(answer),
   };
 }
 
@@ -1461,6 +1594,9 @@ export function classifyIntent(rawMessage) {
   }
   const manualTopic = classifyManualHelp(rawMessage);
   if (manualTopic) return { intent: 'manual_help', policy: 'allowed', manualTopic };
+  if (GARDEN_NETWORK_QUESTION_KEYS.has(message)) {
+    return { intent: 'garden_network', policy: 'allowed' };
+  }
   if (/\b(?:compar(?:a|ar|acion|ativa|o).{0,35}(?:dos |las )?gestiones|gestiones? (?:al|con el) mismo avance|gestion actual.{0,35}gestion anterior|cuatro anos.{0,30}cuatro anos|4 anos.{0,30}4 anos|cuanto.{0,30}(?:cuatro|4) anos.{0,30}informad(?:o|a|os|as)?|avance.{0,30}(?:mandato|gestion actual))\b/.test(message)) {
     return { intent: 'management_timeline', policy: 'allowed' };
   }

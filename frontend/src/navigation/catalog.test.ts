@@ -43,11 +43,11 @@ describe('React navigation catalog adapter', () => {
     installWindow(browserDefinition());
     const definition = getNavigationDefinition();
     expect(definition).not.toBeNull();
-    expect(definition?.version).toBe('2026-08-14.6');
+    expect(definition?.version).toBe('2026-08-14.7');
     expect(definition?.groups.map(group => group.id)).toEqual([
       'executive', 'people', 'territory', 'data',
     ]);
-    expect(definition?.items).toHaveLength(23);
+    expect(definition?.items).toHaveLength(24);
     expect(Object.isFrozen(definition)).toBe(true);
     expect(Object.isFrozen(definition?.groups)).toBe(true);
     expect(Object.isFrozen(definition?.items)).toBe(true);
@@ -72,7 +72,7 @@ describe('React navigation catalog adapter', () => {
     expect(projection.footer[0]?.label).toBe('Ayuda y aprendizaje');
     expect(projection.groups.map(group => group.id)).toEqual(['people', 'territory']);
     expect(projection.groups.find(group => group.id === 'people')?.items.map(item => item.id)).toEqual([
-      'estructura', 'trayectoria', 'movimientos-grh', 'rrhh', 'areas-grh',
+      'estructura', 'gardens', 'trayectoria', 'movimientos-grh', 'rrhh', 'areas-grh',
     ]);
     expect(projection.groups.find(group => group.id === 'territory')?.items.map(item => item.id)).toEqual([
       'cuentas', 'ciudadano',

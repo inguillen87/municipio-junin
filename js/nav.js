@@ -314,7 +314,7 @@ window.requireRole = function(allowedRoles) {
 // renders no private destinations; capability visibility never falls back to a
 // second, local menu.
 function validatedNavigationDefinition(definition) {
-  if (!definition || definition.version !== '2026-08-14.6' ||
+  if (!definition || definition.version !== '2026-08-14.7' ||
       !Array.isArray(definition.groups) || !Array.isArray(definition.items) ||
       !Object.isFrozen(definition) || !Object.isFrozen(definition.groups) ||
       !Object.isFrozen(definition.items) ||
@@ -333,6 +333,7 @@ function validatedNavigationDefinition(definition) {
     ['corridas-grh', '/corridas-grh', 'people', 'group', 'navigation.hacienda', false],
     ['conceptos-fijos', '/conceptos-fijos', 'people', 'group', 'navigation.hacienda', false],
     ['estructura', '/estructura', 'people', 'group', 'navigation.organization-analytics', true],
+    ['gardens', '/jardines', 'people', 'group', 'navigation.organization-analytics', false],
     ['trayectoria', '/trayectoria', 'people', 'group', 'navigation.employment-actions', true],
     ['movimientos-grh', 'movimientos-grh.html', 'people', 'group', 'navigation.organization-analytics', false],
     ['rrhh', 'rrhh.html', 'people', 'group', 'navigation.rrhh', true],
@@ -1183,6 +1184,7 @@ var MUNIGUIA_PRIVATE_PATHS = [
   '/conceptos-fijos', '/conceptos-fijos.html',
   '/ejecutivo', '/ejecutivo.html', '/grh-ejecutivo', '/grh-ejecutivo.html',
   '/estructura', '/estructura.html',
+  '/jardines', '/jardines.html',
   '/trayectoria', '/trayectoria.html',
   '/movimientos-grh', '/movimientos-grh.html',
   '/territorio', '/territorio.html',

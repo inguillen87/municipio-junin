@@ -73,7 +73,9 @@ test('all seven roles receive only their governed journey, tasks and contextual 
     assert.ok(onboarding, role);
     assert.ok(tasks, role);
     assert.ok(help, role);
-    assert.equal(onboarding.journey.stages.length >= 3 && onboarding.journey.stages.length <= 5, true, role);
+    const expectedStageCount = ['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'CONTADOR'].includes(role)
+      ? 5 : 3;
+    assert.equal(onboarding.journey.stages.length, expectedStageCount, role);
     assert.equal(tasks.tasks.every((task) => input.capabilities.includes(task.capability)), true, role);
     assert.equal(Boolean(help.assistant), input.capabilities.includes('navigation.ai-assistant'), role);
     if (help.assistant) {

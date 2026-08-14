@@ -175,7 +175,7 @@ Estado: **completo en código local; falta despliegue**.
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
 - techo compartido y fail-closed vigente de 32 recursos, 12 acciones, 54
-  permisos y 98 firmas de ruta exactas (56 Serverless y 42 Express), sin
+  permisos y 99 firmas de ruta exactas (57 Serverless y 42 Express), sin
   wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
@@ -372,9 +372,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-14.16`
-contiene 32 recursos, 12 acciones, 54 permisos y 98 firmas protegidas exactas:
-56 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-14.17`
+contiene 32 recursos, 12 acciones, 54 permisos y 99 firmas protegidas exactas:
+57 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -817,6 +817,29 @@ Estado: **verificado en Production el 14 de agosto de 2026**.
   `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx y smoke
   autenticado 1440/390/320 px con roles altos/bajos, MuniGuía, Task Center y
   Asistente determinista sin proveedor externo.
+
+### S24 — red de jardines maternales
+
+Estado: **integración local en validación; no desplegada ni certificada**.
+
+- `/jardines` y `grh-garden-network-v1` presentan únicamente el artefacto GRH
+  pinneado: 107 personas observadas en el cálculo a julio de 2026, de las cuales
+  45 se liberan en cuatro unidades y 62 permanecen en un agregado protegido.
+- La tendencia gobernada contiene 24 meses y pasa de 90 a 107. Describe el
+  registro disponible: no explica causalidad ni permite inferir altas, bajas o
+  desempeño.
+- La navegación, Task Center, MuniGuía y el Asistente reutilizan
+  `navigation.organization-analytics`; el endpoint reutiliza
+  `GRH_ORGANIZATION_ANALYTICS_READ`. No se agregan roles ni permisos.
+- El contrato no incluye mapa, matrícula, capacidad, asistencia, presupuesto,
+  PII ni dotación actual. Las unidades pequeñas nunca se reconstruyen desde el
+  bucket protegido.
+- La respuesta de IA para las tres preguntas publicadas se deriva sólo del
+  mismo artefacto y conserva sus límites. Si el pin, el contrato, el grounding
+  o las citas actuales fallan, la ruta falla cerrado o vuelve explícitamente a
+  la respuesta determinista; no usa otra fuente.
+- No existe todavía commit, deployment, release truth ni smoke remoto de S24.
+  Toda evidencia de esta fase debe denominarse local hasta una promoción real.
 
 ## Funciones que no deben “completarse” todavía
 

@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
-import { classifyIntent } from '../api/ai-analyze.js';
+import {
+  buildGardenNetworkAssistantAnswer,
+  classifyIntent,
+} from '../api/ai-analyze.js';
 import {
   createOpenAiResponsesRequest,
   evaluateCopilotEligibility,
@@ -50,6 +54,19 @@ const deterministicAnswer = Object.freeze({
       }),
     ]),
   }),
+});
+const gardenArtifact = JSON.parse(await readFile(
+  new URL('../api/_data/grh-garden-network.json', import.meta.url),
+  'utf8',
+));
+const gardenClassification = Object.freeze({ intent: 'garden_network', policy: 'allowed' });
+const gardenDeterministicAnswer = buildGardenNetworkAssistantAnswer(gardenArtifact);
+const gardenProvenance = Object.freeze({
+  aggregateOnly: true,
+  containsPii: false,
+  snapshotAsOf: gardenArtifact.source.snapshotAsOf,
+  sourceSha256: gardenArtifact.source.sourceSha256,
+  latestValidCalculationPeriod: gardenArtifact.quality.latestValidCalculationPeriod,
 });
 
 const payrollClassification = Object.freeze({
@@ -155,6 +172,13 @@ function hasNestedKey(value, target) {
 test('copilot v2 requires the explicit mode, an allowed intent, aggregate no-PII provenance and the IA capability', () => {
   assert.deepEqual(evaluateCopilotEligibility({
     mode: 'assisted', classification, deterministicAnswer, provenance, caller,
+  }), { eligible: true, code: 'ELIGIBLE' });
+  assert.deepEqual(evaluateCopilotEligibility({
+    mode: 'assisted',
+    classification: gardenClassification,
+    deterministicAnswer: gardenDeterministicAnswer,
+    provenance: gardenProvenance,
+    caller,
   }), { eligible: true, code: 'ELIGIBLE' });
   assert.deepEqual(evaluateCopilotEligibility({
     mode: 'assisted',
@@ -311,6 +335,57 @@ test('payroll-run synthesis receives only bounded verified facts and rejects num
     });
     assert.equal(result.synthesis, null);
     assert.equal(result.engine.fallbackCode, 'PROVIDER_OUTPUT_UNGROUNDED');
+  }
+});
+
+test('garden synthesis accepts current single-fact citations and rejects causal or recombined claims', async () => {
+  const budgetGate = {
+    acquire() { return { allowed: true, release() {} }; },
+  };
+  const valid = {
+    lead: {
+      text: gardenDeterministicAnswer.answer.summary,
+      citationIds: ['R1'],
+    },
+    insights: [{
+      text: gardenDeterministicAnswer.answer.findings[0],
+      citationIds: ['H1'],
+    }],
+    actionIds: ['open_garden_network'],
+  };
+  const grounded = await synthesizeMunicipalAnswer({
+    mode: 'assisted',
+    classification: gardenClassification,
+    deterministicAnswer: gardenDeterministicAnswer,
+    provenance: gardenProvenance,
+    caller,
+    environment: enabledEnvironment(),
+    fetchImpl: async () => okResponse(valid),
+    budgetGate,
+  });
+  assert.equal(grounded.engine.generated, true);
+  assert.deepEqual(grounded.synthesis.sources.map(source => source.id), ['R1', 'H1']);
+  assert.deepEqual(grounded.synthesis.actionIds, ['open_garden_network']);
+
+  const invalidCandidates = [
+    { ...valid, lead: { text: 'La suba de 90 a 107 se debe a nuevas incorporaciones.', citationIds: ['H3'] } },
+    { ...valid, lead: { text: 'En julio de 2026 hubo 107 personas y 62 quedaron liberadas.', citationIds: ['R1'] } },
+    { ...valid, lead: { text: gardenDeterministicAnswer.answer.summary, citationIds: ['OLD1'] } },
+    { ...valid, actionIds: ['open_garden_person_detail'] },
+  ];
+  for (const candidate of invalidCandidates) {
+    const rejected = await synthesizeMunicipalAnswer({
+      mode: 'assisted',
+      classification: gardenClassification,
+      deterministicAnswer: gardenDeterministicAnswer,
+      provenance: gardenProvenance,
+      caller,
+      environment: enabledEnvironment(),
+      fetchImpl: async () => okResponse(candidate),
+      budgetGate,
+    });
+    assert.equal(rejected.synthesis, null);
+    assert.equal(rejected.engine.fallbackCode, 'PROVIDER_OUTPUT_UNGROUNDED');
   }
 });
 
@@ -523,6 +598,7 @@ test('manual help is deterministic, versioned, actionable and keeps permissions 
     ['¿Cómo interpreto la trayectoria laboral documentada?', 'trajectory'],
     ['¿Cómo verifico la fuente del Centro territorial?', 'territory'],
     ['¿Cómo uso las prioridades del Centro de decisiones GRH?', 'decisions'],
+    ['¿Cómo uso la Red de jardines maternales?', 'gardens'],
   ]) {
     assert.equal(classifyManualHelp(question), topic, question);
     assert.equal(classifyIntent(question).manualTopic, topic, question);

@@ -27,8 +27,8 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-El estado local vigente usa route policy `2026-08-14.16` y access policy
-`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 98 rutas exactas, 56
+El estado local vigente usa route policy `2026-08-14.17` y access policy
+`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 99 rutas exactas, 57
 Serverless + 42 Express. Para el release histórico `v1.10.0`, route policy
 `2026-08-09.2` y access policy `2026-08-09.1` cubrían 26 recursos, 12 acciones,
 46 permisos y 79 firmas de ruta: 37 Serverless + 42 Express. El commit/tag de ese release apunta a
@@ -187,7 +187,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
-| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-14.16`: 32 recursos, 12 acciones, 54 permisos y 98 firmas de ruta (56 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
+| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-14.17`: 32 recursos, 12 acciones, 54 permisos y 99 firmas de ruta (57 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | Release histórico `v1.10.0`: tag `4108ca0`, product commit `d11fd39`, deployment `READY`, gate 11/11 y GitHub Release live. Hotfix post-release `e74339c`: `/prisma/schema.prisma` 404 seguro y gate 12/12 | No mover el tag ni inferir DB, cuentas, autorización positiva o datos GRH remotos; cada deployment posterior requiere repetir el gate actual de 12 probes |
@@ -324,7 +324,7 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
 exacto por `runtime + método + ruta + recurso:acción` (32 recursos, 12 acciones,
-54 permisos y 98 firmas: 56 Serverless y 42 Express). No hay wildcard, jerarquía
+54 permisos y 99 firmas: 57 Serverless y 42 Express). No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
@@ -608,6 +608,23 @@ La evidencia final corresponde al commit
 `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx y smoke
 autenticado 1440/390/320 px. Los deep-links del Asistente respondieron en modo
 determinista y no invocaron OpenAI ni Hugging Face.
+
+### S24 — red de jardines maternales
+
+S24 está **integrado sólo en el checkout local**, pendiente de gates y sin
+evidencia de Preview o Production. `/jardines` consume
+`grh-garden-network-v1`: 107 personas observadas en el cálculo a julio de 2026,
+45 liberadas en cuatro unidades, 62 en un agregado protegido y una tendencia de
+24 meses que pasa de 90 a 107. La superficie, MuniGuía, Task Center y las tres
+preguntas exactas del Asistente reutilizan `navigation.organization-analytics`;
+la API reutiliza `GRH_ORGANIZATION_ANALYTICS_READ`.
+
+El alcance no incluye mapa, matrícula, capacidad, asistencia, presupuesto, PII,
+dotación actual ni causalidad. La IA se mantiene determinista y atada al
+artefacto pinneado; una síntesis opcional sólo puede mostrarse cuando su grounding
+y sus citas vigentes quedan validados, y de lo contrario declara el fallback
+determinista. No se crearon roles, permisos, commit, deployment ni certificación
+remota para S24.
 
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;

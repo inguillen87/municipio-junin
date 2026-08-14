@@ -88,6 +88,7 @@ async function createServer(users, requestLog) {
     ['/corridas-grh', 'inicio.html'],
     ['/conceptos-fijos', 'inicio.html'],
     ['/gestiones', 'inicio.html'],
+    ['/jardines', 'inicio.html'],
     ['/movimientos-grh', 'inicio.html'],
     ['/territorio', 'inicio.html'],
     ['/calidad', 'control.html'],
@@ -213,6 +214,14 @@ async function createServer(users, requestLog) {
           '<section id="managementTimelineDecision" aria-label="Lectura ejecutiva"></section>',
           '<section id="managementTimelineComparison" aria-label="Comparación por dominio"></section>',
           '<section id="managementTimelineMethodology" aria-label="Metodología y límites"></section>',
+          '</main>',
+        ].join('')));
+      }
+      if (url.pathname === '/jardines') {
+        body = Buffer.from(body.toString('utf8').replace('</main>', [
+          '<section id="gardenNetworkOverview" aria-label="Resumen de la red de jardines"></section>',
+          '<section id="gardenNetworkTrend" aria-label="Tendencia mensual de jardines"></section>',
+          '<section id="gardenNetworkUnits" aria-label="Unidades liberadas y grupo protegido"></section>',
           '</main>',
         ].join('')));
       }

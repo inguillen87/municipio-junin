@@ -18,6 +18,7 @@ const EXPECTED_SERVERLESS = [
   'GET /grh-directory-access',
   'GET /grh-administration-comparison',
   'GET /grh-management-timeline',
+  'GET /grh-garden-network',
   'GET /grh-absence-insights',
   'GET /grh-personas-linkage-readiness',
   'GET /grh-domain-catalog',
@@ -172,6 +173,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'grh-directory-access.js',
     'grh-administration-comparison.js',
     'grh-management-timeline.js',
+    'grh-garden-network.js',
     'grh-absence-insights.js',
     'grh-personas-linkage-readiness.js',
     'grh-domain-catalog.js',
@@ -285,6 +287,14 @@ test('route authorization is exact by runtime, method and path', () => {
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-organization-analytics'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-organization-analytics/future'), false);
+  for (const role of ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']) {
+    assert.equal(esmPolicy.authorizeRoute(role, runtime.SERVERLESS, 'GET', '/api/grh-garden-network'), true, role);
+  }
+  for (const role of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    assert.equal(esmPolicy.authorizeRoute(role, runtime.SERVERLESS, 'GET', '/api/grh-garden-network'), false, role);
+  }
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-garden-network'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-garden-network/future'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-movement-operations'), true);
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-movement-operations'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-movement-operations'), false);

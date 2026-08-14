@@ -6,11 +6,12 @@ Intendencia, Hacienda y RRHH, sin publicar PII ni presentar datos simulados como
 si fueran reales.
 
 > Estado de esta documentación: el release `v1.10.0` conserva su evidencia
-> productiva histórica. S22 fue verificado en Production el 14 de agosto de 2026
-> sobre el alias estable en el commit `8a1ab580a171e359b05629356353ed6f6e4b7364`,
-> deployment `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, con release truth 29/29 y cero
-> respuestas 5xx. El smoke autenticado cubrió roles altos y bajos, 1440/390/320 px,
-> MuniGuía, Task Center y deep-links deterministas del Asistente sin OpenAI ni HF.
+> productiva histórica. S24 fue verificado en Production el 14 de agosto de 2026
+> sobre el alias estable en el commit `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`,
+> deployment `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30 y cero
+> respuestas 5xx. El smoke autenticado cubrió Intendencia y Administración en
+> 1440/390 px, denegación para Usuario/Inspector/Demo, MuniGuía, Task Center y una
+> respuesta determinista del Asistente sin invocar OpenAI ni Hugging Face.
 > Los indicadores describen el snapshot
 > GRH del 6 de agosto de 2026; no constituyen conexión en tiempo real ni pago
 > bancario conciliado.
@@ -63,7 +64,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 
 ## Estado funcional
 
-| Superficie | Estado local | Fuente y límite |
+| Superficie | Estado | Fuente y límite |
 |---|---|---|
 | Centro Ejecutivo GRH | Implementado | Contratos privados `profile` + `semantic`; snapshot histórico |
 | Centro Ejecutivo RRHH | Implementado localmente | Directorio privado `grh-directory-v3`: situación laboral informada por fechas, catálogos de contrato/revista, señal separada de participación en cálculo de julio de 2026 y cronologías acotadas; no certifica vigencia contractual ni pago |
@@ -72,6 +73,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Corridas y marcas de cierre | Verificado en Production | Cabeceras, detalle asociado, marcas operativas y cuarentena por período; no prueba pago ni cierre contable |
 | Conceptos fijos y cálculo | Verificado en Production · S21 | Contraste agregado de registros vigentes por rango contra el cálculo válido de julio de 2026; no publica importes, instrumentos, legajos ni decisiones sobre personas |
 | Gestiones en el tiempo | Verificado en Production · S22 | Presenta los mandatos completos de 1.461 días y compara sólo los 972 días informados en ambos períodos; en ausencias conserva 5.936/3.395 filas y cuenta 749/662 personas por `legajo.IDPERSONA`, sin sobreescribir el histórico S15 752/662 por claves laborales; no califica gestiones ni prueba causalidad, desempeño o presupuesto |
+| Red de jardines maternales | Verificada en Production · S24 | Presenta 107 personas observadas en el cálculo de julio de 2026, tendencia de 24 meses, 45 personas en cuatro unidades liberadas y 62 en un agregado protegido; no equivale a dotación activa y no informa matrícula, capacidad, asistencia, mapa, presupuesto ni PII |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
 | Comparación de gestiones | Verificada en Production | Compara dos tramos históricos de 972 días con la misma duración; contrato, privacidad y recorrido autenticado verificados sobre el alias estable |
 | Preparación GRH + PERSONAS | Implementada localmente | Manifiesto auxiliar, matcher versionado, contrato agregado `grh-personas-linkage-readiness-v1` y lectura municipal; no mezcla fichas ni cambia KPI GRH |

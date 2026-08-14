@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Versión | 1.10.0 |
-| Incremento actual | S24 validación local; S22 sigue siendo el último incremento verificado en Production |
+| Incremento actual | S24 verificado en Production |
 | Fecha de corte documental | 14 de agosto de 2026 |
-| Estado | Release público histórico `v1.10.0` verificado y preservado; S22 en Production (`8a1ab580a171e359b05629356353ed6f6e4b7364`, `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx); S24 existe sólo en este checkout local, sin commit, deploy ni certificación remota |
+| Estado | Release público histórico `v1.10.0` verificado y preservado; S24 en Production (`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30, cero 5xx y smoke autenticado). Se conserva el antecedente S22 (`8a1ab580a171e359b05629356353ed6f6e4b7364`, `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx) |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -151,7 +151,7 @@ municipio y los contratos privados publicados.
 | [Inicio seguro](../inicio.html) | Orienta el recorrido de los siete roles vigentes con permisos calculados en servidor | Siempre consulta `/api/auth/me`; sólo el Inicio de Intendencia agrega `grh-decision-brief-v1`; no crea permisos/cuentas ni certifica despliegue |
 | [Panel Ejecutivo GRH](../dashboard.html) | Panorama transversal y comparación S15 entre dos tramos históricos de igual duración | S15 fue verificado en Production; sus diferencias no prueban causa, desempeño, pago ni evaluación de gestión |
 | [Gestiones en el tiempo](../frontend/gestiones.html) | Explica los cuatro años previstos y compara dos ventanas observadas equivalentes de 972 días mediante `grh-management-timeline-v1`; en ausencias separa 5.936/3.395 filas de 749/662 personas por `legajo.IDPERSONA` | S22 verificado en Production; S15 conserva sin cambios su evidencia histórica 752/662 por claves laborales, mientras S22 corrige el grano para llamar «personas» sólo a `IDPERSONA` distintos; no califica gestiones, no completa años futuros y no demuestra causa, desempeño o presupuesto |
-| [Red de jardines maternales](../frontend/jardines.html) | Presenta 107 personas observadas en el cálculo a julio de 2026, tendencia mensual y 45 personas liberadas en cuatro unidades; las otras 62 permanecen en un agregado protegido | S24 local, sin Production. Reutiliza `navigation.organization-analytics` y `GRH_ORGANIZATION_ANALYTICS_READ`; no informa matrícula, capacidad, asistencia, mapa, presupuesto, dotación actual ni causalidad |
+| [Red de jardines maternales](../frontend/jardines.html) | Presenta 107 personas observadas en el cálculo a julio de 2026, tendencia mensual y 45 personas liberadas en cuatro unidades; las otras 62 permanecen en un agregado protegido | S24 verificado en Production. Reutiliza `navigation.organization-analytics` y `GRH_ORGANIZATION_ANALYTICS_READ`; no informa matrícula, capacidad, asistencia, mapa, presupuesto, dotación actual ni causalidad |
 | [Centro Ejecutivo GRH](../grh-ejecutivo.html) | Estructura, control de cálculo y eventos desde proyecciones seguras | Consumidor migrado localmente; sin fichas individuales ni PII |
 | [Centro Ejecutivo RRHH](../rrhh.html) | Participación agregada y directorio privado gobernado `grh-directory-v3`, con situación laboral informada, catálogos de contrato/revista, centro de costo y cronología acotada | La ficha nominal exige rol, usuario, tenant y finalidad autorizados; “sin egreso informado” no certifica vínculo activo y la participación en cálculo no prueba pago |
 | [Hacienda y Nómina](../hacienda.html) | Cierre mensual explicado: componentes de cálculo, controles y conciliación real por período desde importes protegidos | `grh-close-v1` local; sólo compara meses calendario consecutivos si ambos alcanzan k≥10; no certifica pago, presupuesto, causalidad, contabilidad ni deployment |
@@ -226,10 +226,13 @@ reduce la ventana de cambio entre verificación y uso; no protege frente a un
 host completamente comprometido. La evidencia O2A.1 es focal y con fixtures: no
 hubo nuevo replay real del archivo de 44 MB, DB ni deployment.
 
-El release público vigente es `v1.10.0`: commit/tag `4108ca0`, product commit
-`d11fd39` y deployment `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL` `READY` en
-`Production`. Esta evidencia pública no acredita sesión positiva, DB, cuentas ni
-datos GRH remotos; el commit documental post-release no mueve el tag.
+La última GitHub Release versionada es `v1.10.0`: commit/tag `4108ca0`, product
+commit `d11fd39` y deployment histórico `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL`.
+El estado desplegado actual es S24 en el commit
+`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30. Esta evidencia no
+acredita DB en tiempo real, cuentas institucionales definitivas ni actualización
+posterior al snapshot; el registro documental no mueve el tag `v1.10.0`.
 
 Los enlaces Calidad y Linaje y Reportes se ofrecen actualmente a `SUPER_ADMIN`,
 `TENANT_ADMIN`, `INTENDENTE` y `CONTADOR`. Esa visibilidad no concede acceso: la

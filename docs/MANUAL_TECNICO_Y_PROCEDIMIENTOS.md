@@ -4,12 +4,15 @@
 
 **Tipo:** documento vivo
 
-**Última verificación contra el checkout local:** 2026-08-13
+**Última verificación de producto:** 2026-08-14
 **Ámbito:** arquitectura, datos, desarrollo, operación y release
 
-> Release público `v1.10.0` verificado; producto S13 en commit `d11fd39`. La
-> sesión privada positiva y S13 privado conservan validación local sobre el
-> snapshot aprobado.
+> La última GitHub Release versionada es `v1.10.0`; producto S13 en commit
+> `d11fd39`. El estado desplegado actual es S24 en el commit
+> `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+> `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30. El release público
+> histórico `v1.10.0` permanece verificado.
+> La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado.
 > S14C permanece `Unreleased`: el schema preserva 13 tablas existentes de
 > Preview —5 sensibles y 8 de referencia— sin delegates en ambos Prisma Client;
 > el baseline v2 Prisma 5.22 es reproducible y pasó dos casos autoritativos en
@@ -1078,7 +1081,7 @@ inesperados o una suite parcial no satisfacen el gate.
 | centro de tareas y corridas GRH S20 | `python -m unittest tests.test_build_grh_payroll_run_control` y `node --test tests/grh-payroll-run-control-projection.test.mjs tests/grh-payroll-run-control-endpoint.test.mjs tests/grh-payroll-run-control-data-client.test.mjs tests/payroll-run-control.e2e.mjs tests/municipal-task-catalog.test.mjs tests/task-center.e2e.mjs tests/grh-action-handoff-contract.test.mjs tests/grh-action-ledger.e2e.mjs` |
 | conceptos fijos, roles y onboarding S21 | `python -m unittest tests.test_build_grh_fixed_concept_control` y `node --test tests/grh-fixed-concept-control-projection.test.mjs tests/grh-fixed-concept-control-endpoint.test.mjs tests/grh-fixed-concept-control-data-client.test.mjs tests/fixed-concept-control.e2e.mjs tests/one-click-session.test.mjs tests/muniguia-onboarding.e2e.mjs tests/ai-grh-assistant.test.mjs tests/ia-assistant.e2e.mjs` |
 | gestiones en el tiempo S22 | `python -m unittest tests.test_build_grh_management_timeline` y `node --test tests/grh-management-timeline-projection.test.mjs tests/grh-management-timeline-endpoint.test.mjs tests/grh-management-timeline-data-client.test.mjs tests/management-timeline-surface-contract.test.mjs tests/contextual-help-catalog.test.mjs tests/municipal-task-catalog.test.mjs tests/ai-grh-assistant.test.mjs` |
-| red de jardines S24 local | `python -m unittest tests.test_build_grh_garden_network` y `node --test tests/grh-garden-network-artifact-policy.test.mjs tests/grh-garden-network-projection.test.mjs tests/grh-garden-network-endpoint.test.mjs tests/grh-garden-network-data-client.test.mjs tests/garden-network.e2e.mjs tests/garden-network-ai.test.mjs tests/contextual-help-catalog.test.mjs tests/municipal-task-catalog.test.mjs tests/task-center.e2e.mjs tests/ia-assistant.e2e.mjs`; estos gates son locales y no certifican Preview o Production |
+| red de jardines S24 | `python -m unittest tests.test_build_grh_garden_network` y `node --test tests/grh-garden-network-artifact-policy.test.mjs tests/grh-garden-network-projection.test.mjs tests/grh-garden-network-endpoint.test.mjs tests/grh-garden-network-data-client.test.mjs tests/garden-network.e2e.mjs tests/garden-network-ai.test.mjs tests/contextual-help-catalog.test.mjs tests/municipal-task-catalog.test.mjs tests/task-center.e2e.mjs tests/ia-assistant.e2e.mjs`; estos gates locales se complementan con release truth y smoke autenticado del SHA promovido |
 | WP0-L read-only | `node --test tests/prisma-baseline-observation.test.mjs tests/database-url-policy.test.mjs tests/prisma-migration-gate.test.mjs` |
 | ownership + baseline S14C | `node --test tests/prisma-schema-ownership.test.mjs tests/prisma-baseline-sql.test.mjs tests/prisma-migration-gate.test.mjs tests/operations-documentation.test.mjs` y `npm.cmd run db:baseline:manifest:check` |
 | IAM-MAP-01 | `node --test tests/account-lifecycle-prisma-mapper.test.mjs tests/account-lifecycle-foundation.test.mjs tests/rbac-lifecycle-proposal.test.mjs` |
@@ -1132,7 +1135,7 @@ El dominio de ausencias conserva 5.936/3.395 filas fuente, pero S22 cuenta
 distintas: no se reescribe el release previo; el nuevo contrato corrige el grano
 antes de exponer la medida `distinctPersons`.
 
-S24 agrega localmente `grh-garden-network-v1`, el endpoint GET-only
+S24 agrega `grh-garden-network-v1`, el endpoint GET-only
 `/api/grh-garden-network` y `/jardines`. Reutiliza
 `GRH_ORGANIZATION_ANALYTICS_READ` y `navigation.organization-analytics`; no crea
 permisos ni habilita perfiles bajos. El contrato expone sólo agregados: 107
@@ -1144,8 +1147,11 @@ El reader exige `GRH_SOURCE_SHA256`, valida el pin y falla cerrado ante drift o
 contrato inválido. La IA para `garden_network` consume únicamente ese reader,
 no recompone grupos protegidos ni infiere causalidad. La síntesis opcional sólo
 se acepta con grounding y citas actuales; si no, el resultado informa el
-fallback determinista. S24 no tiene todavía commit, deployment, release truth ni
-smoke remoto: este bloque documenta exclusivamente estado local.
+fallback determinista. S24 fue verificado en Production en el commit
+`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`: release truth 30/30, cero 5xx y smoke
+autenticado de autorización, 1440/390 px, MuniGuía, Task Center e IA
+determinista sin proveedor externo.
 
 Evidencia focal heredada del cierre documental 1.6.0: la suite local que integra el
 backend de cierre acumuló 411 pases y 1 smoke externo opt-in omitido; O2A/O2A.1,

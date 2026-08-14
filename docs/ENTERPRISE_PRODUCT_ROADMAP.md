@@ -1,13 +1,17 @@
 # Roadmap de producto enterprise — MuniControl
 
-Versión: 1.10.0 + S15 verificado en Production
-Fecha de corte: 13 de agosto de 2026
+Versión: 1.10.0 + S24 verificado en Production
+Fecha de corte: 14 de agosto de 2026
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 
-El corte actual es el release público verificado `v1.10.0`. El producto S13 está
-en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
-sobre el snapshot aprobado.
-S14C es un incremento técnico `Unreleased`: reconcilia 13 tablas ya existentes
+La última GitHub Release versionada es `v1.10.0`; el producto S13 está en
+`d11fd39`. El estado desplegado actual es S24 en el commit
+`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30.
+La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado.
+Ese release público histórico `v1.10.0` permanece verificado y no se mueve con
+los incrementos posteriores.
+S14C permanece como antecedente técnico `Unreleased`: reconcilia 13 tablas ya existentes
 en Preview —5 sensibles y 8 de referencia— sin exponerlas en Prisma Client,
 incorpora un baseline v2 reproducible y lo prueba en dos branches hijos efímeros
 de Preview. No escribe Preview o Production, no habilita DDL estable, cuentas,
@@ -611,8 +615,7 @@ determinista y no invocaron OpenAI ni Hugging Face.
 
 ### S24 — red de jardines maternales
 
-S24 está **integrado sólo en el checkout local**, pendiente de gates y sin
-evidencia de Preview o Production. `/jardines` consume
+S24 fue **verificado en Production el 14 de agosto de 2026**. `/jardines` consume
 `grh-garden-network-v1`: 107 personas observadas en el cálculo a julio de 2026,
 45 liberadas en cuatro unidades, 62 en un agregado protegido y una tendencia de
 24 meses que pasa de 90 a 107. La superficie, MuniGuía, Task Center y las tres
@@ -623,8 +626,11 @@ El alcance no incluye mapa, matrícula, capacidad, asistencia, presupuesto, PII,
 dotación actual ni causalidad. La IA se mantiene determinista y atada al
 artefacto pinneado; una síntesis opcional sólo puede mostrarse cuando su grounding
 y sus citas vigentes quedan validados, y de lo contrario declara el fallback
-determinista. No se crearon roles, permisos, commit, deployment ni certificación
-remota para S24.
+determinista. No se crearon roles ni permisos. La promoción quedó acreditada por
+el commit `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30, cero 5xx y smoke
+autenticado de roles altos/bajos, escritorio/móvil, MuniGuía, Task Center e IA
+determinista sin OpenAI ni Hugging Face.
 
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;

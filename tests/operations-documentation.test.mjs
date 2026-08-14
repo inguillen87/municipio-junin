@@ -1261,6 +1261,31 @@ test('S21 remains historical and S22 records its exact Production evidence', () 
   assert.match(roadmap, /S22 fue \*\*verificado en Production el 14 de agosto de 2026\*\*/i);
 });
 
+test('S24 records exact Production evidence without weakening garden data limits', () => {
+  const sources = [
+    read('README.md'),
+    read('manuales.html'),
+    read('docs/MASTER_PLAN_STATUS.md'),
+    read('docs/ENTERPRISE_PRODUCT_ROADMAP.md'),
+    read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md'),
+    read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md'),
+    read('docs/MANUAL_INTEGRAL.md'),
+    read('docs/GOVTECH_BENCHMARK.md'),
+    read('docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md'),
+  ];
+
+  for (const source of sources) {
+    assert.match(source, /5b356bf4982f0b3c486ade33e027faa0cf9c8a93/);
+    assert.match(source, /dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn/);
+    assert.match(source, /30\/30/);
+  }
+  const joined = sources.join('\n');
+  assert.match(joined, /107[\s\S]{0,120}45[\s\S]{0,120}62/);
+  assert.match(joined, /(?:no|ni) informa[\s\S]{0,120}(?:matrícula|capacidad|asistencia|PII)/i);
+  assert.match(joined, /(?:Usuario|TENANT_USER)[\s\S]{0,80}(?:Inspector|INSPECTOR)[\s\S]{0,80}(?:Demo|DEMO)[\s\S]{0,160}403/i);
+  assert.doesNotMatch(joined, /S24.{0,120}(?:sólo|exclusivamente)?\s*(?:en el checkout )?local|S24 local\s*·\s*no Production/i);
+});
+
 test('the public landing does not route municipal or commercial data to unapproved contacts', () => {
   const source = read('landing.html');
   assert.match(source, /Canal institucional pendiente de aprobación/);

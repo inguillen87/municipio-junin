@@ -1,10 +1,11 @@
 # Recorridos por rol y demostración segura — MuniControl
 
 **Versión:** 1.10.0
-**Fecha de corte:** 9 de agosto de 2026  
-**Estado:** release público `v1.10.0` verificado; producto S13 en commit `d11fd39`
-**Estado local revisado:** 13 de agosto de 2026; políticas locales actualizadas,
-sin nuevo release
+**Fecha de corte:** 14 de agosto de 2026
+**Estado:** S24 verificado en Production; commit
+`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30
+**Antecedente versionado:** release público histórico `v1.10.0` verificado; producto S13 en commit `d11fd39`
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
 snapshot aprobado. S13 entrega localmente `GET /api/grh-decision-brief` y
@@ -410,8 +411,10 @@ Las fuentes técnicas actuales son
 navegación y sesión, y [`../shared/route-policy.cjs`](../shared/route-policy.cjs),
 como techo exacto de autorización server-side por `recurso:acción`, runtime,
 método y ruta. Al corte, ese techo local `2026-08-14.17` registra 32 recursos, 12
-acciones, 54 permisos y 99 firmas exactas: 57 Serverless y 42 Express. S24 sigue
-sin certificación remota. El modelo de datos
+acciones, 54 permisos y 99 firmas exactas: 57 Serverless y 42 Express. S24 fue
+verificado en Production en el commit
+`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30. El modelo de datos
 propuesto, todavía inactivo, está en
 [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md); sus fases de producto se
 mantienen en [`ENTERPRISE_PRODUCT_ROADMAP.md`](ENTERPRISE_PRODUCT_ROADMAP.md) y

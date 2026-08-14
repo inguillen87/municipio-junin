@@ -1,7 +1,7 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.10.0 + S15 verificado en Production.
-Fecha de corte: 13 de agosto de 2026.
+Versión documental: 1.10.0 + S24 verificado en Production.
+Fecha de corte: 14 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
 implementación. Ese plan declaraba fases completas y archivos que no existen en
@@ -10,10 +10,12 @@ el checkout actual (`css/components.css`, `css/animations.css`,
 `api/payroll-receipt.js`). Las casillas de un plan no prueban que una función esté
 implementada, conectada o validada.
 
-El corte actual es el release público verificado `v1.10.0`. El producto S13 está
-en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
-sobre el snapshot aprobado.
-El incremento técnico vigente es S14C `Unreleased`: reconcilia el schema con 13
+La última GitHub Release versionada sigue siendo `v1.10.0`; su producto S13 está
+en `d11fd39`. El estado desplegado actual es S24 en el commit
+`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment Production
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30. La sesión privada
+positiva y S13 privado conservan su evidencia histórica local.
+Como antecedente técnico separado, S14C permanece `Unreleased`: reconcilia el schema con 13
 tablas ya existentes en Preview —5 sensibles y 8 de referencia—, las excluye de
 ambos Prisma Client y conserva su ownership para Migrate. También incorpora un
 baseline v2 reproducible con Prisma 5.22 y dos casos autoritativos sobre branches
@@ -820,7 +822,7 @@ Estado: **verificado en Production el 14 de agosto de 2026**.
 
 ### S24 — red de jardines maternales
 
-Estado: **integración local en validación; no desplegada ni certificada**.
+Estado: **verificado en Production el 14 de agosto de 2026**.
 
 - `/jardines` y `grh-garden-network-v1` presentan únicamente el artefacto GRH
   pinneado: 107 personas observadas en el cálculo a julio de 2026, de las cuales
@@ -838,8 +840,13 @@ Estado: **integración local en validación; no desplegada ni certificada**.
   mismo artefacto y conserva sus límites. Si el pin, el contrato, el grounding
   o las citas actuales fallan, la ruta falla cerrado o vuelve explícitamente a
   la respuesta determinista; no usa otra fuente.
-- No existe todavía commit, deployment, release truth ni smoke remoto de S24.
-  Toda evidencia de esta fase debe denominarse local hasta una promoción real.
+- La promoción quedó acreditada por el commit
+  `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment Production
+  `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30 y cero 5xx.
+- El smoke autenticado cubrió Intendencia 1440 px y Administración 390 px,
+  MuniGuía 3/3, Task Center e IA determinista. Usuario, Inspector y Demo no
+  reciben navegación/tarea y la API responde 403 sin leer el artefacto. No hubo
+  requests a OpenAI o Hugging Face ni escrituras de datos.
 
 ## Funciones que no deben “completarse” todavía
 

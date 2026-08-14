@@ -2,13 +2,16 @@
 
 - Versión: 1.10.0
 - Fecha de consulta externa: 8 de agosto de 2026
-- Estado local revisado: 13 de agosto de 2026
+- Estado de producto revisado: 14 de agosto de 2026; S24 verificado en Production
 - Audiencia: Intendencia, dirección de producto, ingeniería, seguridad y gobierno de datos
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
 
-El corte vigente es el release público verificado `v1.10.0`. El producto S13 está
-en `d11fd39`; la sesión privada positiva y S13 privado conservan validación local
-sobre el snapshot aprobado.
+La última GitHub Release versionada es `v1.10.0`; el producto S13 está en
+`d11fd39`. El estado desplegado actual es S24 en el commit
+`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30. El release público
+histórico `v1.10.0` permanece verificado.
+La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado.
 `GET /api/grh-decision-brief` publica `grh-decision-brief-v1`: un brief ejecutivo
 único desde agregados del snapshot aprobado, con validación local. Separa la señal
 global cross-source de la evidencia mensual, expone `temporalQuarantineRows`,
@@ -617,7 +620,9 @@ rate limiting distribuido y alertas de abuso.
 
 La base local vigente no es sólo diseño: `shared/route-policy.cjs`
 `2026-08-14.17` fija localmente 32 recursos, 12 acciones, 54 permisos y 99 firmas exactas,
-57 Serverless y 42 Express. S24 aún no cuenta con certificación remota.
+57 Serverless y 42 Express. S24 fue verificado en Production en el commit
+`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
+`dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30 y cero 5xx.
 `shared/access-policy.cjs` `2026-08-13.4` proyecta el workspace de siete
 roles. Las asignaciones finas, SoD, lifecycle y auditoría persistida permanecen
 como propuesta aislada y no migrada.
@@ -678,7 +683,7 @@ No se propone un roadmap paralelo. El benchmark refuerza y precisa E0–E7 del
 
 | Fase | Resultado que debe enamorar al usuario | Patrón incorporado del benchmark | Gate no negociable | Estado actual |
 |---|---|---|---|---|
-| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Sesión privada positiva, migración revisada, contratos materializados, smokes por rol/tenant/falla | Superficie pública vigente `v1.10.0`: commit/tag `4108ca0`, deployment `READY`, gate 11/11 y browser 10/10 limpio; datos, cuentas y sesiones positivas pendientes |
+| **E0 — Release GRH honesto** | Brief y centros ejecutivos rápidos, sobrios y con verdad visible | OpenGov/Tyler: dato + contexto + drill-down; SAP: semántica controlada | Sesión privada positiva, migración revisada, contratos materializados, smokes por rol/tenant/falla | S24 desplegado: commit `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30 y smoke por roles; `v1.10.0` se conserva como release versionado histórico y las identidades institucionales definitivas siguen pendientes |
 | **E1 — Identidad, ámbitos y auditoría** | Cada perfil ve una plataforma distinta y puede demostrar límites reales | OpenGov entity scope, Tyler roles, X-Road access rights | MFA/SSO, políticas server-side, SoD, pruebas permitidas/denegadas/cross-tenant | UX-E1A + UX-E2A: siete inicios, capabilities server-computed y shell institucional; IAM-MAP-01 es puro, sin persistencia, cuentas o evidencia por rol |
 | **E2 — Ingesta gobernada** | Administrativos cargan fuentes con preview, errores comprensibles y linaje | Tyler data platform, SAP API governance, Granicus forms | Original privado, antivirus, parser aislado, schema, cuarentena y persistencia comprobada | CSV/XLSX/Sheets endurecidos localmente; resto parcial |
 | **E3 — Cerebro GRH** | Intendente recibe señales explicadas y acciones con seguimiento | OpenGov planning, Tyler Insights, SAP Analytics | Insight reproducible, calidad/frescura visibles, sin PII ni causalidad falsa | S13 entrega localmente el brief agregado `grh-decision-brief-v1`; seguimiento/action ledger siguen pendientes |

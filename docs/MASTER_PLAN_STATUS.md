@@ -689,7 +689,7 @@ Estado: **implementado localmente; publicación y crosswalk privado pendientes**
 
 ### S18 — actuaciones laborales documentadas
 
-Estado: **implementado y validado localmente; sin deploy ni certificación remota**.
+Estado: **implementado y verificado en Production el 13 de agosto de 2026**.
 
 - La tabla `foja` aporta 9.481 actuaciones históricas vinculadas materialmente a
   1.302 claves laborales; 9.478 fechas son válidas y 3 quedan en cuarentena.
@@ -706,6 +706,29 @@ Estado: **implementado y validado localmente; sin deploy ni certificación remot
 - Una actuación documentada no equivale a una alta, baja, cambio único, estado
   vigente ni evaluación de gestión. Las diferencias describen registros y no
   atribuyen causas.
+
+### S19 — primer día con MuniGuía
+
+Estado: **implementado y validado localmente; cada publicación debe cerrar su
+verificación remota sobre el deployment exacto**.
+
+- Inicio incorpora un recorrido accesible y acotado por la función, derivado de
+  `muniguia-onboarding-v1` y del mismo catálogo contextual de 18 superficies.
+- El contrato interseca cada etapa con las capabilities efectivas de la sesión;
+  nunca concede rutas, roles o datos y falla cerrado ante una política o una
+  proyección desconocida.
+- El avance exige confirmación explícita después de abrir la etapa. Se conserva
+  sólo durante la sesión del navegador, sin API, base de datos, analítica laboral
+  ni evaluación del funcionario.
+- MuniGuía mantiene explicación local inmediata. Los perfiles con
+  `navigation.ai-assistant` pueden formular una pregunta contextual acotada; los
+  demás conservan el Manual como respaldo.
+- La sesión publicada de Administrador proyecta sus prioridades al techo de
+  capabilities publicado, evitando tarjetas inaccesibles y el rechazo del
+  parser de sesión.
+- Esta fase no incorpora RAG, streaming, un proveedor nuevo ni persistencia de
+  aprendizaje. Esas extensiones requieren evaluación separada de utilidad,
+  costo, privacidad y operación.
 
 ## Funciones que no deben “completarse” todavía
 

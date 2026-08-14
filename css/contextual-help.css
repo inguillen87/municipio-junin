@@ -266,6 +266,20 @@ body.muni-drawer-open .muni-guide-trigger {
   text-decoration: none;
 }
 
+.muni-guide-link.assistant {
+  justify-content: center;
+  min-height: 48px;
+  color: var(--muni-guide-primary-text);
+  background: var(--muni-guide-accent-strong);
+  border-color: var(--muni-guide-accent-strong);
+  font-weight: 780;
+}
+
+.muni-guide-link.assistant:hover {
+  color: var(--muni-guide-primary-text);
+  background: var(--muni-guide-accent);
+}
+
 .muni-guide-trust {
   margin-top: auto;
   padding-top: 22px;

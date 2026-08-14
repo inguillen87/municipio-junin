@@ -36,6 +36,7 @@ function contextKey(context) {
     context.role.id,
     context.page.id,
     context.related ? context.related.capability : '',
+    context.assistant ? context.assistant.href : '',
   ].join('|');
 }
 
@@ -138,7 +139,9 @@ function restoreExternalTriggers() {
 }
 
 function safeInternalHref(value) {
-  return typeof value === 'string' && /^[a-z0-9-]+\.html(?:#[a-z0-9-]+)?$/.test(value);
+  if (typeof value !== 'string') return false;
+  if (/^[a-z0-9-]+\.html(?:#[a-z0-9-]+)?$/.test(value)) return true;
+  return /^ia\.html\?question=(?:[A-Za-z0-9_.!~*'()-]|%[0-9A-F]{2})+$/.test(value);
 }
 
 function visible(element) {
@@ -424,6 +427,15 @@ function buildInterface(context) {
   links.setAttribute('aria-label', 'Continuar la orientación');
   const manual = linkFor(context.page.manualHref, 'Abrir procedimiento completo', 'navigation.help', 'muni-guide-link');
   if (manual) links.appendChild(manual);
+  if (context.assistant) {
+    const assistant = linkFor(
+      context.assistant.href,
+      context.assistant.label,
+      context.assistant.capability,
+      'muni-guide-link assistant',
+    );
+    if (assistant) links.appendChild(assistant);
+  }
   if (context.related) {
     const related = linkFor(context.related.href, `Continuar en ${context.related.label}`, context.related.capability, 'muni-guide-link related');
     if (related) links.appendChild(related);

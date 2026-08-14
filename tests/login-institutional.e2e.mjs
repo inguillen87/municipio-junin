@@ -104,6 +104,13 @@ async function createServer(requestLog) {
         return;
       }
       const access = accessPolicy.getSessionAccessForUser({ role: evaluationIdentity.role, tenantId: 'tenant-junin-e2e' });
+      const publishedCapabilities = [...publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES];
+      const publishedHomeProfile = {
+        ...access.homeProfile,
+        priorityCapabilities: access.homeProfile.priorityCapabilities.filter(capability =>
+          publishedCapabilities.includes(capability)
+        ),
+      };
       json(response, 200, {
         token: `signed-evaluation-token-${evaluationIdentity.role.toLowerCase()}`,
         user: {
@@ -112,9 +119,9 @@ async function createServer(requestLog) {
           name: `Evaluación ${evaluationIdentity.role}`,
           role: evaluationIdentity.role,
           tenantId: 'tenant-junin-e2e',
-          capabilities: [...publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES],
+          capabilities: publishedCapabilities,
           accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
-          homeProfile: access.homeProfile,
+          homeProfile: publishedHomeProfile,
         },
       });
       return;
@@ -258,6 +265,7 @@ test('login source is institutional, self-contained and preserves the auth contr
   assert.match(source, /JSON\.stringify\(\{ email: email, password: password \}\)/);
   assert.match(source, /sessionStorage\.setItem\('mjunin_user'/);
   assert.match(source, /sessionStorage\.setItem\('mjunin_token'/);
+  assert.match(source, /municontrol:muniguia-onboarding:/);
   assert.match(source, /SAFE_DEFAULT_PATHS = Object\.freeze\(\['inicio\.html'\]\)/);
   assert.match(source, /SAFE_RETURN_PATHS = Object\.freeze/);
   assert.match(source, /params\.get\('access'\) === 'private-grh'/);
@@ -383,18 +391,36 @@ test('the six published evaluation buttons authenticate their exact role without
   const page = await context.newPage();
   for (const identity of PUBLISHED_EVALUATION_IDENTITIES) {
     await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
+    await page.evaluate(profileId => {
+      sessionStorage.setItem(
+        `municontrol:muniguia-onboarding:previous:${profileId}`,
+        JSON.stringify({ status: 'completed' }),
+      );
+    }, identity.profileId);
     await page.locator('#evaluationAccess').evaluate(node => { node.open = true; });
     await Promise.all([
       page.waitForURL(`${baseUrl}/inicio.html`),
       page.click(`[data-evaluation-profile="${identity.profileId}"]`),
     ]);
     const stored = await page.evaluate(() => ({
+      onboardingKeys: Object.keys(sessionStorage)
+        .filter(key => key.startsWith('municontrol:muniguia-onboarding:')),
       token: sessionStorage.getItem('mjunin_token'),
       user: JSON.parse(sessionStorage.getItem('mjunin_user')),
     }));
+    assert.deepEqual(stored.onboardingKeys, [], 'a new identity cannot inherit onboarding progress in the same tab');
     assert.equal(stored.user.email, '');
     assert.equal(stored.user.role, identity.role);
     assert.deepEqual(stored.user.capabilities, publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES);
+    assert.equal(stored.user.homeProfile.priorityCapabilities.every(capability =>
+      stored.user.capabilities.includes(capability)
+    ), true);
+    if (identity.profileId === 'administrador') {
+      assert.deepEqual(stored.user.homeProfile.priorityCapabilities, [
+        'navigation.workspace',
+        'navigation.data-quality',
+      ]);
+    }
     assert.match(stored.token, /^signed-evaluation-token-/);
   }
 

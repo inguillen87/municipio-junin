@@ -35,9 +35,9 @@ export default async function handler(req, res) {
       role: tokenUser.role,
       tenantId: tokenUser.tenantId,
       tenant: tokenUser.tenant,
-      capabilities: publishedProfile ? responseUser.capabilities : sessionAccess.capabilities,
+      capabilities: responseUser.capabilities,
       accessPolicyVersion: ACCESS_POLICY_VERSION,
-      homeProfile: sessionAccess.homeProfile,
+      homeProfile: responseUser.homeProfile,
       presentation: resolveTenantPresentation(tokenUser.tenant),
     },
   });

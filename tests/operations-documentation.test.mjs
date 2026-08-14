@@ -371,7 +371,7 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     assert.match(source, /79\s+firmas/i);
     assert.match(source, /37\s+Serverless[\s\S]{0,60}42\s+Express/i);
   }
-  assert.match(inApp, /estado local[\s\S]{0,120}no desplegado/i);
+  assert.match(inApp, /estado operativo condicionado/i);
   assert.match(inApp, /32\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}54\s+permisos/i);
   assert.match(inApp, /95\s+(?:rutas|firmas)/i);
   assert.match(inApp, /53\s+Serverless[\s\S]{0,60}42\s+Express/i);
@@ -511,11 +511,11 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     }
     assert.match(source, /#decisionBrief/, relativePath);
     if (relativePath === 'manuales.html') {
-      assert.match(source, /estado local[\s\S]{0,120}no desplegado/i, relativePath);
+      assert.match(source, /estado operativo condicionado/i, relativePath);
       assert.match(source, /2026-08-13\.13[\s\S]{0,100}2026-08-13\.4/, relativePath);
       assert.match(source, /32\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}54\s+permisos[\s\S]{0,80}95\s+(?:rutas|firmas)/i, relativePath);
       assert.match(source, /53 Serverless[\s\S]{0,60}42 Express/i, relativePath);
-      assert.match(source, /Centro de decisiones[\s\S]{0,1000}Estado local, no desplegado/i, relativePath);
+      assert.match(source, /Centro de decisiones[\s\S]{0,1000}Producción · lectura condicionada/i, relativePath);
     } else {
       assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);
       assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos[\s\S]{0,80}79\s+(?:rutas|firmas)/i, relativePath);
@@ -1188,6 +1188,25 @@ test('the in-app manual exposes a semantic version and its truth contract separa
   assert.match(source, /\/api\/grh-data[\s\S]{0,180}410 GRH_RAW_CONTRACT_RETIRED[\s\S]{0,100}sin leer artefactos/i);
   assert.match(source, /O2A[\s\S]{0,180}105,5 s[\s\S]{0,180}294 ms/i);
   assert.match(source, /PUBLISHED[\s\S]{0,120}no significa DB, API ni producción/i);
+  assert.match(source, /Estado operativo actual · 13 de agosto de 2026/i);
+  assert.match(source, /MuniGuía reconoce 18 pantallas privadas/i);
+  assert.match(source, /Primer día con MuniGuía[\s\S]{0,120}efímero durante la sesión/i);
+});
+
+test('S19 documents role-bound onboarding without inventing permissions or employee scoring', () => {
+  const userManual = read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md');
+  const masterPlan = read('docs/MASTER_PLAN_STATUS.md');
+
+  for (const source of [userManual, masterPlan]) {
+    assert.match(source, /munigu[ií]a/i);
+    assert.match(source, /capabilit(?:y|ies)/i);
+    assert.match(source, /(?:sólo|únicamente) durante la sesión/i);
+    assert.match(source, /(?:no|nunca) (?:modifica|concede)[\s\S]{0,80}(?:permisos|roles)/i);
+  }
+  assert.match(userManual, /Visitar una ruta o cerrar la guía no completa la etapa/i);
+  assert.match(userManual, /no crea métricas de desempeño/i);
+  assert.match(masterPlan, /muniguia-onboarding-v1/i);
+  assert.match(masterPlan, /no incorpora RAG, streaming, un proveedor nuevo/i);
 });
 
 test('the public landing does not route municipal or commercial data to unapproved contacts', () => {

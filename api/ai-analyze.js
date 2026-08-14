@@ -60,8 +60,12 @@ import {
   buildManualProvenance,
   classifyManualHelp,
 } from './lib/municipal-assistant-manual.js';
+import accessPolicy from '../shared/access-policy.cjs';
+import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 import tenantPresentationPolicy from '../shared/tenant-presentation-policy.cjs';
 
+const { getSessionAccessForUser, isKnownCapability } = accessPolicy;
+const { PUBLISHED_DEMO_CAPABILITIES } = publishedDemoPolicy;
 const { hasConfiguredCurrency, resolveTenantPresentation } = tenantPresentationPolicy;
 
 const EXECUTIVE_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
@@ -75,6 +79,68 @@ const MAX_ANSWER_VISUAL_ITEMS = 13;
 const ENGINE_ID = 'grh-deterministic-v1';
 const PERSON_TARGET_KIND = 'grh-person';
 export const GRH_ANSWER_VISUAL_SCHEMA_VERSION = 'grh-answer-visual-v1';
+
+const ACTION_ROUTE_CAPABILITIES = Object.freeze({
+  '/areas-grh': 'navigation.rrhh',
+  '/calidad': 'navigation.data-quality',
+  '/control': 'navigation.data-quality',
+  '/dashboard': 'navigation.dashboard',
+  '/decisiones-grh': 'navigation.grh-decisions',
+  '/ejecutivo': 'navigation.grh-executive',
+  '/estructura': 'navigation.organization-analytics',
+  '/hacienda': 'navigation.hacienda',
+  '/importar': 'navigation.import',
+  '/inicio': 'navigation.workspace',
+  '/manuales': 'navigation.help',
+  '/movimientos-grh': 'navigation.organization-analytics',
+  '/reportes': 'navigation.reports',
+  '/rrhh': 'navigation.rrhh',
+  '/territorio': 'navigation.territory',
+  '/trayectoria': 'navigation.employment-actions',
+});
+
+function actionRouteCapability(href) {
+  if (typeof href !== 'string') return false;
+  const match = href.match(/^(\/[a-z0-9-]+(?:\.html)?)(?:[?#][A-Za-z0-9%._~!$&'()*+,;=:@/?-]*)?$/);
+  if (!match) return false;
+  const path = match[1].replace(/\.html$/, '');
+  if (path === '/login') return null;
+  return ACTION_ROUTE_CAPABILITIES[path] || false;
+}
+
+function effectiveAssistantCapabilities(caller) {
+  if (caller?.authMethod === 'published-evaluation-jwt-db') {
+    return [...PUBLISHED_DEMO_CAPABILITIES];
+  }
+  const access = getSessionAccessForUser(caller);
+  return access ? [...access.capabilities] : [];
+}
+
+function filterAssistantActions(answer, capabilities) {
+  const actions = answer?.answer?.actions;
+  if (!Array.isArray(actions)) return answer;
+  const capabilitySet = new Set(capabilities);
+  const filtered = actions.filter((action) => {
+    if (!action || typeof action !== 'object') return false;
+    const routeCapability = actionRouteCapability(action.href);
+    if (routeCapability === false) return false;
+    const declaredCapability = Object.prototype.hasOwnProperty.call(action, 'requiredCapability')
+      ? action.requiredCapability
+      : routeCapability;
+    if (routeCapability === null) return declaredCapability === null;
+    return typeof declaredCapability === 'string' &&
+      isKnownCapability(declaredCapability) && declaredCapability === routeCapability &&
+      capabilitySet.has(declaredCapability);
+  });
+  if (filtered.length === actions.length) return answer;
+  return {
+    ...answer,
+    answer: {
+      ...answer.answer,
+      actions: filtered,
+    },
+  };
+}
 const FINANCE_INTENTS = new Set([
   'workforce_finance_overview',
   'workforce_finance_trend',
@@ -201,6 +267,7 @@ export function createAiAnalyzeHandler({
 
     const caller = await requireRoleImpl(req, res, EXECUTIVE_ROLES);
     if (!caller || !requireDatasetTenantImpl(res, caller, 'GRH_TENANT_ID')) return;
+    const callerCapabilities = effectiveAssistantCapabilities(caller);
 
     const hasPersonTarget = Object.prototype.hasOwnProperty.call(req.body || {}, 'target');
     const personTarget = hasPersonTarget ? parsePersonTarget(req.body.target) : null;
@@ -254,7 +321,10 @@ export function createAiAnalyzeHandler({
       ? { intent: 'person_lookup', policy: 'limited' }
       : classifyIntent(message);
     if (classification.intent === 'manual_help') {
-      const answer = buildManualAssistantAnswer(classification.manualTopic);
+      const answer = filterAssistantActions(
+        buildManualAssistantAnswer(classification.manualTopic),
+        callerCapabilities,
+      );
       const provenance = buildManualProvenance(classification.manualTopic);
       const copilot = await synthesizeAnswerImpl({
         mode: requestedMode,
@@ -371,7 +441,7 @@ export function createAiAnalyzeHandler({
         }
         assistantData.employmentActions = employmentActions;
       }
-      const answer = classification.intent === 'person_lookup'
+      const unfilteredAnswer = classification.intent === 'person_lookup'
         ? await buildPrivateDirectoryResponse({
           message,
           target: personTarget,
@@ -388,6 +458,7 @@ export function createAiAnalyzeHandler({
           presentation,
           assistantData,
         );
+      const answer = filterAssistantActions(unfilteredAnswer, callerCapabilities);
       const nominal = answer.intent === 'person_lookup';
       let responseProvenance = nominal
         ? {

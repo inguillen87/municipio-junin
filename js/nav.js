@@ -102,6 +102,17 @@ var ROLE_HOME_VARIANTS = {
 };
 var authoritativeAccessProjection = null;
 
+function clearMuniGuiaOnboardingSession() {
+  if (window.MuniGuiaOnboarding && typeof window.MuniGuiaOnboarding.clearSession === 'function') {
+    window.MuniGuiaOnboarding.clearSession();
+  }
+  try {
+    Object.keys(sessionStorage).forEach(function(key) {
+      if (key.indexOf('municontrol:muniguia-onboarding:') === 0) sessionStorage.removeItem(key);
+    });
+  } catch (error) {}
+}
+
 // SESSION GUARD. Query strings never create or elevate a session.
 (function checkAuth() {
   var pub = ['login','landing','ciudadano','cuentas-claras','404','offline'];
@@ -124,6 +135,7 @@ var authoritativeAccessProjection = null;
     valid = Boolean(sess && payload && Number.isFinite(payload.exp) && payload.exp > Math.floor(Date.now() / 1000));
   } catch(e) {}
   if (!valid) {
+    clearMuniGuiaOnboardingSession();
     sessionStorage.removeItem('mjunin_user');
     sessionStorage.removeItem('mjunin_token');
     window.location.replace('login.html');
@@ -157,6 +169,7 @@ var authoritativeAccessProjection = null;
     return true;
   }).catch(function() {
     authoritativeAccessProjection = null;
+    clearMuniGuiaOnboardingSession();
     sessionStorage.removeItem('mjunin_user');
     sessionStorage.removeItem('mjunin_token');
     document.documentElement.classList.remove('muni-auth-pending');
@@ -1098,6 +1111,7 @@ window.MuniTheme && window.MuniTheme.apply(window.MuniTheme.get());
 var SAFE_LOGOUT_RETURN_PATHS = ['rrhh.html#peopleDirectory', 'ia.html'];
 
 window.doLogout = function(returnPath, accessMode) {
+  clearMuniGuiaOnboardingSession();
   authoritativeAccessProjection = null;
   window.__muniAuthValidated = false;
   sessionStorage.removeItem('mjunin_user');

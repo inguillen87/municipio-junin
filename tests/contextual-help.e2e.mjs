@@ -5,7 +5,10 @@ import path from 'node:path';
 import test from 'node:test';
 import { chromium } from 'playwright';
 import accessPolicy from '../shared/access-policy.cjs';
-import { MUNIGUIA_CATALOG } from '../js/contextual-help-catalog.js';
+import {
+  MUNIGUIA_ASSISTANT_QUESTIONS,
+  MUNIGUIA_CATALOG,
+} from '../js/contextual-help-catalog.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const CONTENT_TYPES = {
@@ -285,6 +288,9 @@ test('MuniGuía projects the seven authoritative role contexts at 390 and 1440 w
       await page.locator('#muniGuideTrigger').click();
       await page.locator('#muniGuideDialog.is-open').waitFor();
       const state = await page.evaluate(() => ({
+        assistantCount: document.querySelectorAll('.muni-guide-link.assistant').length,
+        assistantHref: document.querySelector('.muni-guide-link.assistant')?.getAttribute('href') || null,
+        assistantText: document.querySelector('.muni-guide-link.assistant')?.textContent || null,
         contract: document.querySelector('#muniGuideDialog')?.dataset.contract,
         externalTriggerVisible: !document.querySelector('[data-muniguia-open]')?.hidden,
         label: document.querySelector('.muni-guide-eyebrow')?.textContent,
@@ -301,6 +307,19 @@ test('MuniGuía projects the seven authoritative role contexts at 390 and 1440 w
       assert.equal(state.progress, 'Paso 1 de 3');
       assert.equal(state.privateText, false);
       assert.equal(state.externalTriggerVisible, true);
+      const assistantExpected = accessPolicy.getSessionAccessForUser({
+        role,
+        tenantId: 'tenant-junin-guide',
+      }).capabilities.includes('navigation.ai-assistant');
+      assert.equal(state.assistantCount, assistantExpected ? 1 : 0, `${role}:${viewport.width}:assistant CTA`);
+      if (assistantExpected) {
+        const assistantUrl = new URL(state.assistantHref, baseUrl);
+        assert.equal(assistantUrl.origin, new URL(baseUrl).origin);
+        assert.equal(assistantUrl.pathname, '/ia.html');
+        assert.deepEqual([...assistantUrl.searchParams.keys()], ['question']);
+        assert.equal(assistantUrl.searchParams.get('question'), MUNIGUIA_ASSISTANT_QUESTIONS.workspace);
+        assert.equal(state.assistantText, 'Preguntarle al Asistente');
+      }
       assert.ok(state.triggerSize.height >= 44 && state.triggerSize.width >= 44);
       assert.ok(state.overflow <= 1, `${role}:${viewport.width}:overflow=${state.overflow}`);
       if (process.env.MUNIGUIA_VISUAL_DIR && role === 'INTENDENTE') {
@@ -349,16 +368,20 @@ test('all governed clean paths mount their capability-bound guide and unknown or
     const cleanPath = pageDefinition.aliases[0];
     await page.goto(`${baseUrl}${cleanPath}`, { waitUntil: 'domcontentloaded' });
     await page.locator('#muniGuideTrigger').waitFor({ state: 'visible' });
+    if (pageDefinition.id === 'workspace') {
+      await page.locator('#muniguiaOnboardingMount:not([hidden])').waitFor({ state: 'visible' });
+    }
     assert.match(await page.locator('#muniGuideTrigger').getAttribute('aria-label'), new RegExp(pageDefinition.label, 'i'));
     for (const step of pageDefinition.steps) {
       assert.equal(await page.locator(step.selector).count(), 1, `${pageDefinition.id}:${step.selector}`);
     }
   }
 
-  const assetsBeforeUnknown = requestLog.filter((entry) => /contextual-help/.test(entry.path)).length;
+  const guideRuntimeAsset = (entry) => /\/contextual-help\.(?:js|css)$/.test(entry.path);
+  const assetsBeforeUnknown = requestLog.filter(guideRuntimeAsset).length;
   await page.goto(`${baseUrl}/unknown?guide_fixture=workspace`, { waitUntil: 'networkidle' });
   assert.equal(await page.locator('#muniGuideTrigger').count(), 0);
-  assert.equal(requestLog.filter((entry) => /contextual-help/.test(entry.path)).length, assetsBeforeUnknown);
+  assert.equal(requestLog.filter(guideRuntimeAsset).length, assetsBeforeUnknown);
   await page.goto(`${baseUrl}/roles`, { waitUntil: 'networkidle' });
   assert.equal(await page.locator('#muniGuideTrigger').count(), 0);
   assert.equal(await page.locator('script[src*="contextual-help"],link[href*="contextual-help"]').count(), 0);
@@ -755,10 +778,13 @@ test('logout invalidates the authoritative in-memory projection before asynchron
   await page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'networkidle' });
   await page.locator('#muniGuideTrigger').waitFor({ state: 'visible' });
   const state = await page.evaluate(() => {
+    const onboardingKey = 'municontrol:muniguia-onboarding:logout-e2e';
+    sessionStorage.setItem(onboardingKey, '{"status":"in_progress"}');
     window.caches.keys = () => new Promise(() => {});
     window.doLogout();
     return {
       authValidated: window.__muniAuthValidated,
+      onboardingProgress: sessionStorage.getItem(onboardingKey),
       projection: window.MuniAccess.getValidatedSession(),
       storedToken: sessionStorage.getItem('mjunin_token'),
       storedUser: sessionStorage.getItem('mjunin_user'),
@@ -766,6 +792,7 @@ test('logout invalidates the authoritative in-memory projection before asynchron
   });
   assert.deepEqual(state, {
     authValidated: false,
+    onboardingProgress: null,
     projection: null,
     storedToken: null,
     storedUser: null,

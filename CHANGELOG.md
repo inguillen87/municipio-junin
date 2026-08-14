@@ -12,6 +12,14 @@ las versiones siguen [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **S19 — Primer día con MuniGuía:** recorrido efímero y accesible por rol sobre
+  las 18 superficies gobernadas, con etapas filtradas por las capacidades
+  efectivas de la sesión, avance explícito y ayuda contextual. El progreso no
+  sale del navegador ni concede permisos. La sesión publicada Administrador
+  proyecta sus prioridades al mismo techo de sólo lectura y deja de invalidar
+  el acceso. El manual operativo vivo se separa de la evidencia histórica de
+  `v1.10.0`.
+
 - **S14C — ownership del schema y baseline Prisma gobernado (`Unreleased`):**
   el schema activo preserva las 13 tablas ya existentes observadas en Preview
   mediante modelos `@@map` + `@@ignore`: 5 sensibles y 8 de referencia. El

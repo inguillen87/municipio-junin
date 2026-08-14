@@ -1222,7 +1222,7 @@
         /\b(dni|cuit|cuil|domicilio|telefono|correo personal|email personal|legajo|nombre|apellido|persona|empleado)\b/.test(normalized)) {
       return null;
     }
-    if (!/(area|dato|tabla|dominio|inventario|resumen|prioridad|atencion|calidad|cuarentena|conciliacion|calculo|cierre|neto|bruto|retencion|aporte|sector|centros? de costos?|convenio|acuerdo|ausencia|movimiento|actuacion|fuente|snapshot|carrera|formacion|estudio|licencia|beneficio|descuento|gremio|turno|horario|relacion laboral|salud|trayectoria)/.test(normalized)) {
+    if (!/(area|dato|tabla|dominio|inventario|resumen|prioridad|atencion|calidad|cuarentena|conciliacion|calculo|cierre|neto|bruto|retencion|aporte|sector|centros? de costos?|convenio|acuerdo|ausencia|movimiento|actuacion|fuente|snapshot|carrera|formacion|estudio|licencia|beneficio|descuento|gremio|turno|horario|relacion laboral|salud|trayectoria|manual)/.test(normalized)) {
       return null;
     }
     return question;

@@ -3,7 +3,12 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 import accessPolicy from '../shared/access-policy.cjs';
-import { MUNIGUIA_CATALOG, resolveMuniGuiaContext } from '../js/contextual-help-catalog.js';
+import { classifyManualHelp } from '../api/lib/municipal-assistant-manual.js';
+import {
+  MUNIGUIA_ASSISTANT_QUESTIONS,
+  MUNIGUIA_CATALOG,
+  resolveMuniGuiaContext,
+} from '../js/contextual-help-catalog.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const ROLES = Object.values(accessPolicy.ROLES);
@@ -178,6 +183,53 @@ test('decision guidance stays neutral because the catalog cannot distinguish a p
     const copy = [resolved.page.objective, ...resolved.page.steps.map((step) => `${step.title} ${step.copy}`)].join(' ');
     assert.doesNotMatch(copy, /Creá|crear|Convertí/i, role);
     assert.match(copy, /acciones[\s\S]*servidor[\s\S]*perfil/i, role);
+  }
+});
+
+test('assistant handoffs are fixed per page, capability-bound and manual-backed', () => {
+  const topicByPage = {
+    workspace: 'overview',
+    dashboard: 'overview',
+    reports: 'reports',
+    hacienda: 'hacienda',
+    grhExecutive: 'overview',
+    organizationAnalytics: 'structure',
+    employmentActions: 'trajectory',
+    movementOperations: 'trajectory',
+    territory: 'territory',
+    quality: 'quality',
+    grhDomains: 'quality',
+    grhDecisions: 'decisions',
+    rrhh: 'overview',
+    audit: 'quality',
+    export: 'reports',
+    import: 'imports',
+    manuals: 'general',
+  };
+  assert.deepEqual(Object.keys(MUNIGUIA_ASSISTANT_QUESTIONS).sort(), Object.keys(topicByPage).sort());
+  assert.equal(Object.isFrozen(MUNIGUIA_ASSISTANT_QUESTIONS), true);
+
+  for (const [pageId, pageDefinition] of Object.entries(MUNIGUIA_CATALOG.pages)) {
+    for (const role of ROLES) {
+      const input = sessionInput(role, pageDefinition.aliases[0]);
+      const resolved = resolveMuniGuiaContext(input);
+      if (!resolved) continue;
+      const expected = pageId !== 'assistant' && input.capabilities.includes('navigation.ai-assistant');
+      assert.equal(Boolean(resolved.assistant), expected, `${role}:${pageId}`);
+      if (!expected) continue;
+
+      assert.deepEqual(Object.keys(resolved.assistant).sort(), [
+        'capability', 'href', 'label', 'question',
+      ]);
+      assert.equal(resolved.assistant.capability, 'navigation.ai-assistant');
+      assert.equal(resolved.assistant.label, 'Preguntarle al Asistente');
+      assert.equal(resolved.assistant.question, MUNIGUIA_ASSISTANT_QUESTIONS[pageId]);
+      assert.match(resolved.assistant.href, /^ia\.html\?question=[A-Za-z0-9%._~!()*'-]+$/);
+      const parameters = new URLSearchParams(resolved.assistant.href.slice('ia.html?'.length));
+      assert.deepEqual([...parameters.keys()], ['question']);
+      assert.equal(parameters.get('question'), resolved.assistant.question);
+      assert.equal(classifyManualHelp(resolved.assistant.question), topicByPage[pageId]);
+    }
   }
 });
 

@@ -310,6 +310,26 @@ const PAGES = deepFreeze({
   },
 });
 
+const ASSISTANT_QUESTIONS = deepFreeze({
+  workspace: '¿Cómo uso el resumen general de MuniControl?',
+  dashboard: '¿Cómo interpreto el panorama y las prioridades del tablero ejecutivo?',
+  reports: '¿Cómo creo y reviso un reporte con su fuente?',
+  hacienda: '¿Cómo reviso Hacienda, nómina y el cálculo mensual?',
+  grhExecutive: '¿Cómo interpreto el resumen ejecutivo GRH?',
+  organizationAnalytics: '¿Cómo uso Estructura y centros de costo?',
+  employmentActions: '¿Cómo interpreto la trayectoria laboral documentada?',
+  movementOperations: '¿Cómo interpreto la trayectoria y los movimientos documentados?',
+  territory: '¿Cómo verifico la fuente del Centro territorial?',
+  quality: '¿Cómo verifico el origen y la calidad de los datos?',
+  grhDomains: '¿Cómo verifico la fuente del mapa de datos GRH?',
+  grhDecisions: '¿Cómo uso las prioridades del Centro de decisiones GRH?',
+  rrhh: '¿Cómo interpreto el resumen agregado de RRHH?',
+  audit: '¿Cómo verifico la fuente y el linaje de los datos?',
+  export: '¿Cómo creo y reviso un reporte antes de compartirlo?',
+  import: '¿Cómo cargo un archivo con datos autorizados?',
+  manuals: '¿Cómo uso el manual y la ayuda de MuniControl?',
+});
+
 const CATALOG = deepFreeze({
   contract: CONTRACT,
   accessPolicyVersion: ACCESS_POLICY_VERSION,
@@ -382,6 +402,17 @@ export function resolveMuniGuiaContext(input) {
     break;
   }
 
+  const assistantQuestion = ASSISTANT_QUESTIONS[resolvedPage.id];
+  const assistant = resolvedPage.id !== 'assistant' &&
+      capabilities.includes('navigation.ai-assistant') && typeof assistantQuestion === 'string'
+    ? {
+        capability: 'navigation.ai-assistant',
+        href: `ia.html?question=${encodeURIComponent(assistantQuestion)}`,
+        label: 'Preguntarle al Asistente',
+        question: assistantQuestion,
+      }
+    : null;
+
   return deepFreeze({
     contract: CONTRACT,
     role: {
@@ -397,7 +428,11 @@ export function resolveMuniGuiaContext(input) {
       steps: pageProjection.steps,
     },
     related,
+    assistant,
   });
 }
 
-export { CATALOG as MUNIGUIA_CATALOG };
+export {
+  ASSISTANT_QUESTIONS as MUNIGUIA_ASSISTANT_QUESTIONS,
+  CATALOG as MUNIGUIA_CATALOG,
+};

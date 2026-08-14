@@ -75,7 +75,12 @@ del enum vigente: no ejecuta fetch, no inicia sesión, no emite ni acepta JWT, n
 lee o escribe storage, no autoriza acciones y no procesa credenciales, PII, APIs,
 DB o datos municipales. Su única navegación operativa apunta a `/login`.
 
-La ruta es demostración visual, no evidencia RBAC. El service worker público v5
+La siguiente evidencia corresponde al corte histórico de aquella fase y no al
+runtime vigente. **Estado actual 2026-08-13:** el runtime usa service worker
+`v7`, que sólo precachea el shell público mínimo y no guarda navegaciones
+privadas, APIs ni datos municipales. MuniGuía cubre 18 superficies privadas.
+
+La ruta era demostración visual, no evidencia RBAC. En ese corte, el service worker público v5
 puede cachearla con estrategia network-first y continúa excluyendo `/api`; esa
 disponibilidad no modifica el contrato de seguridad ni acredita el deployment.
 
@@ -86,7 +91,7 @@ determinista; `js/contextual-help.js` monta la ayuda y
 `css/contextual-help.css` resuelve presentación accesible. `js/nav.js` importa
 esos assets sólo después de validar la proyección autoritativa en memoria, la
 política, el rol, la variante, `navigation.help`, la capability de la superficie
-y uno de doce pathnames privados exactos.
+y uno de los doce pathnames privados exactos que existían en ese corte.
 
 El resolver falla cerrado ante drift de política, rol, variante, capability o
 ruta. El anchor nuevo `#decisionBrief` guía la lectura del brief S13. Selectors y anchors se verifican en CI; si el target no está visible, la

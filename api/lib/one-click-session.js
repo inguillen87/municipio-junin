@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import accessPolicy from '../../shared/access-policy.cjs';
 import publishedDemoPolicy from '../../shared/published-demo-policy.cjs';
 
-const { ACCESS_POLICY_VERSION, getSessionAccessForUser } = accessPolicy;
+const { ACCESS_POLICY_VERSION, CAPABILITIES, getSessionAccessForUser } = accessPolicy;
 const {
   PUBLISHED_DEMO_CAPABILITIES,
   resolvePublishedDemoProfile,
@@ -15,6 +15,19 @@ function publishedSessionId(profile) {
   if (!profile) return null;
   const canonical = resolvePublishedDemoProfile(profile.profileId);
   return canonical === profile ? `published-evaluation:${canonical.profileId}` : null;
+}
+
+function projectHomeProfileToCapabilities(homeProfile, capabilities) {
+  const capabilitySet = new Set(capabilities);
+  const priorityCapabilities = homeProfile.priorityCapabilities.filter(capability =>
+    capabilitySet.has(capability)
+  );
+  if (!priorityCapabilities.includes(CAPABILITIES.NAV_WORKSPACE)) return null;
+  return Object.freeze({
+    variant: homeProfile.variant,
+    defaultPath: homeProfile.defaultPath,
+    priorityCapabilities: Object.freeze(priorityCapabilities),
+  });
 }
 
 export function exactBodyValue(body, key, pattern) {
@@ -115,6 +128,13 @@ export function sessionResponseUser(user, {
 } = {}) {
   const sessionAccess = getSessionAccessForUser(user);
   if (!sessionAccess) return null;
+  const capabilities = publishedProfile
+    ? [...PUBLISHED_DEMO_CAPABILITIES]
+    : sessionAccess.capabilities;
+  const homeProfile = publishedProfile
+    ? projectHomeProfileToCapabilities(sessionAccess.homeProfile, capabilities)
+    : sessionAccess.homeProfile;
+  if (!homeProfile) return null;
   return {
     id: publishedProfile
       ? (exposePublishedSessionId ? (publishedSessionId(publishedProfile) || '') : '')
@@ -124,9 +144,9 @@ export function sessionResponseUser(user, {
     role: user.role,
     tenantId: user.tenantId,
     tenant: user.tenant,
-    capabilities: publishedProfile ? [...PUBLISHED_DEMO_CAPABILITIES] : sessionAccess.capabilities,
+    capabilities,
     accessPolicyVersion: ACCESS_POLICY_VERSION,
-    homeProfile: sessionAccess.homeProfile,
+    homeProfile,
   };
 }
 

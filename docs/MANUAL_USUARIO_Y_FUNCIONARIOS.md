@@ -355,6 +355,29 @@ reutilizando permisos más amplios.
 8. Al terminar, use la opción de cerrar sesión. No comparta tokens, contraseñas ni
    enlaces internos de sesión.
 
+### 5.1 Primer día con MuniGuía
+
+Inicio ofrece un recorrido breve adaptado a la función confirmada por el
+servidor. No es un examen ni una habilitación nueva: ordena las pantallas que la
+persona ya puede usar y omite cualquier etapa para la que no tenga capability.
+
+1. Lea el objetivo de la etapa actual y pulse **Abrir esta etapa**.
+2. En la pantalla indicada, use **MuniGuía** para conocer el propósito, la fuente
+   y la acción siguiente. Si su perfil permite el Asistente, puede abrir una
+   pregunta contextual ya acotada a esa pantalla.
+3. Vuelva a Inicio y pulse **Marcar como listo** sólo cuando haya comprendido la
+   tarea. Visitar una ruta o cerrar la guía no completa la etapa por sí solo.
+4. Puede repetir o reiniciar el recorrido de forma explícita. El avance se
+   conserva únicamente durante la sesión del navegador; no se envía al servidor,
+   no crea métricas de desempeño y no modifica roles, datos ni permisos.
+5. Si el contrato de rol, la política o las capabilities no coinciden
+   exactamente, el recorrido no aparece y el Manual continúa disponible.
+
+Los recorridos cubren siete funciones: tecnología, Intendencia, administración
+municipal, Contaduría, usuario municipal, inspección y consulta. Cada una recibe
+solamente etapas derivadas del catálogo gobernado de MuniGuía y de sus
+capabilities efectivas.
+
 ## 6. Recorrido de Intendencia
 
 ### 6.1 Lectura diaria responsable

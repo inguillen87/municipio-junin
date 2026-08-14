@@ -10,6 +10,7 @@
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/workspace-executive-summary.css">
+  <link rel="stylesheet" href="css/muniguia-onboarding.css">
   <script>
     (function applyStoredTheme() {
       try {
@@ -428,6 +429,8 @@
           </aside>
         </section>
 
+        <section id="muniguiaOnboardingMount" hidden aria-label="Recorrido inicial"></section>
+
         <section class="ws-actions-section" aria-labelledby="actionsTitle">
           <div class="ws-section-heading">
             <h2 id="actionsTitle">Tus accesos principales</h2>
@@ -476,6 +479,7 @@
   <script src="js/bottom-nav.js"></script>
   <script src="js/grh-decision-brief-data.js"></script>
   <script src="js/workspace-executive-summary.js"></script>
+  <script src="js/muniguia-onboarding.js"></script>
   <script>
     (function () {
       'use strict';
@@ -708,6 +712,7 @@
         setTimeout(focusNotice, 80);
       }
       function showError() {
+        if (window.MuniGuiaOnboarding) window.MuniGuiaOnboarding.unmount();
         document.getElementById('workspaceViews').hidden = true;
         var error = document.getElementById('workspaceError');
         error.hidden = false;
@@ -737,6 +742,12 @@
         showNotice();
         if (window.MuniWorkspaceExecutiveSummary) {
           void window.MuniWorkspaceExecutiveSummary.mount(projection);
+        }
+        if (window.MuniGuiaOnboarding) {
+          void window.MuniGuiaOnboarding.mount(
+            projection,
+            document.getElementById('muniguiaOnboardingMount')
+          );
         }
       }
       async function init() {

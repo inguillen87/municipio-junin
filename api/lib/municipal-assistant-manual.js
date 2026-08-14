@@ -3,6 +3,19 @@ export const MUNICIPAL_MANUAL_CONTRACT_VERSION = 'municipal-assistant-manual-v1'
 const MANUAL_VERSION = '1.10.0';
 const MANUAL_REVIEWED_AT = '2026-08-13';
 
+const EXACT_SCREEN_HELP_TOPICS = new Map([
+  ['¿Cómo uso el resumen general de MuniControl?', 'overview'],
+  ['¿Cómo interpreto el panorama y las prioridades del tablero ejecutivo?', 'overview'],
+  ['¿Cómo interpreto el resumen ejecutivo GRH?', 'overview'],
+  ['¿Cómo interpreto el resumen agregado de RRHH?', 'overview'],
+  ['¿Cómo reviso Hacienda, nómina y el cálculo mensual?', 'hacienda'],
+  ['¿Cómo uso Estructura y centros de costo?', 'structure'],
+  ['¿Cómo interpreto la trayectoria laboral documentada?', 'trajectory'],
+  ['¿Cómo interpreto la trayectoria y los movimientos documentados?', 'trajectory'],
+  ['¿Cómo verifico la fuente del Centro territorial?', 'territory'],
+  ['¿Cómo uso las prioridades del Centro de decisiones GRH?', 'decisions'],
+].map(([question, topic]) => [normalize(question), topic]));
+
 const TOPICS = Object.freeze({
   reports: Object.freeze({
     title: 'Crear y revisar un reporte',
@@ -78,6 +91,97 @@ const TOPICS = Object.freeze({
       Object.freeze({ id: 'open_manual_source', label: 'Ver guía de fuentes', href: '/manuales.html#fuente', requiredCapability: 'navigation.help' }),
     ]),
   }),
+  overview: Object.freeze({
+    title: 'Interpretar el panorama municipal',
+    summary: 'Usá Inicio, el Panel ejecutivo o el Resumen GRH para ubicar el corte disponible, reconocer prioridades y abrir la evidencia que corresponda. No leas una tarjeta aislada como una explicación causal.',
+    findings: Object.freeze([
+      'Confirmá fuente, fecha de corte y cobertura antes de comparar indicadores de pantallas distintas.',
+      'Las prioridades ordenan la revisión; no reemplazan una decisión administrativa ni prueban la causa de una variación.',
+      'Profundizá desde la acción autorizada de cada tarjeta y conservá visibles las advertencias del dato.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'interpretacion',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_dashboard', label: 'Abrir Panel ejecutivo', href: '/dashboard.html', requiredCapability: 'navigation.dashboard' }),
+      Object.freeze({ id: 'open_grh_executive', label: 'Abrir Resumen ejecutivo GRH', href: '/ejecutivo.html', requiredCapability: 'navigation.grh-executive' }),
+      Object.freeze({ id: 'open_manual_interpretation', label: 'Ver guía de interpretación', href: '/manuales.html#interpretacion', requiredCapability: 'navigation.help' }),
+    ]),
+  }),
+  hacienda: Object.freeze({
+    title: 'Revisar Hacienda y nómina',
+    summary: 'Fijá un período publicado, revisá los componentes del cálculo y contrastá la conciliación informada sin presentarla como evidencia de pago bancario.',
+    findings: Object.freeze([
+      'Mantené visible el período, la unidad monetaria declarada y la fecha del snapshot durante toda la revisión.',
+      'Separá bruto, retenciones, aportes y netos según la definición publicada; no mezcles conceptos de universos diferentes.',
+      'Una diferencia entre fuentes de control exige revisión; por sí sola no demuestra pago, error ni causa.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'interpretacion',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_hacienda', label: 'Abrir Hacienda y nómina', href: '/hacienda.html', requiredCapability: 'navigation.hacienda' }),
+      Object.freeze({ id: 'open_reports_from_hacienda', label: 'Abrir Centro de Reportes', href: '/reportes.html', requiredCapability: 'navigation.reports' }),
+    ]),
+  }),
+  structure: Object.freeze({
+    title: 'Explorar estructura y áreas de costo',
+    summary: 'Confirmá el universo de cada clasificación, elegí una dimensión observada y compará áreas de costo sin mezclar dotación, importes ni períodos incompatibles.',
+    findings: Object.freeze([
+      'Cada gráfico informa su universo; una categoría de estructura y un área de costo no son equivalentes automáticamente.',
+      'Compará únicamente períodos publicados y conservá cualquier agrupación protegida o dato no disponible.',
+      'Usá Hacienda para revisar componentes monetarios y Estructura para composición organizativa; no reemplaces una fuente con la otra.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'interpretacion',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_structure', label: 'Abrir Estructura y áreas de costo', href: '/estructura', requiredCapability: 'navigation.organization-analytics' }),
+      Object.freeze({ id: 'open_hacienda_from_structure', label: 'Abrir Hacienda y nómina', href: '/hacienda.html', requiredCapability: 'navigation.hacienda' }),
+    ]),
+  }),
+  trajectory: Object.freeze({
+    title: 'Interpretar trayectoria laboral documentada',
+    summary: 'Compará actuaciones y movimientos registrados en ventanas equivalentes. Son hechos documentados de origen y no prueban por sí solos una alta, una baja, una vigencia ni una causa.',
+    findings: Object.freeze([
+      'Confirmá la tabla de origen, la fecha de corte y la regla de clasificación antes de interpretar categorías.',
+      'Usá ventanas de igual duración y distinguí actuaciones, movimientos y personas distintas cuando la pantalla lo informe.',
+      'Conservá agrupadas las categorías pequeñas protegidas y evitá inferir desempeño o estado laboral vigente.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'interpretacion',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_trajectory', label: 'Abrir Trayectoria laboral', href: '/trayectoria', requiredCapability: 'navigation.employment-actions' }),
+      Object.freeze({ id: 'open_movements', label: 'Abrir Movimientos y trazabilidad', href: '/movimientos-grh.html', requiredCapability: 'navigation.organization-analytics' }),
+    ]),
+  }),
+  territory: Object.freeze({
+    title: 'Usar la referencia territorial',
+    summary: 'Ubicá el Departamento Junín y sus localidades mediante las referencias oficiales visibles. El mapa orienta; no demuestra cobertura operativa, población ni situación de servicios.',
+    findings: Object.freeze([
+      'Verificá organismo fuente, fecha y alcance geográfico antes de reutilizar nombres o geometrías.',
+      'Una localidad publicada por la referencia oficial no equivale a un domicilio, expediente o zona operativa municipal.',
+      'Presentá siempre los límites de la capa y evitá completar atributos que la fuente no ofrece.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'superficies',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_territory', label: 'Abrir Centro territorial', href: '/territorio', requiredCapability: 'navigation.territory' }),
+      Object.freeze({ id: 'open_manual_surfaces', label: 'Ver guía de superficies', href: '/manuales.html#superficies', requiredCapability: 'navigation.help' }),
+    ]),
+  }),
+  decisions: Object.freeze({
+    title: 'Revisar prioridades y compromisos',
+    summary: 'Empezá por el brief vigente, contrastá la evidencia de cada prioridad y revisá responsable, fecha y versión antes de seguir o actualizar un compromiso.',
+    findings: Object.freeze([
+      'Una prioridad organiza la atención; no constituye por sí sola una orden, una causa ni una decisión administrativa.',
+      'Antes de actuar, verificá estado, responsable, vencimiento y trazabilidad del compromiso seleccionado.',
+      'La pantalla sólo ofrece transiciones autorizadas por el servidor para el perfil y el municipio vigentes.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'decisiones-compromisos',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_decisions', label: 'Abrir Centro de decisiones GRH', href: '/decisiones-grh', requiredCapability: 'navigation.grh-decisions' }),
+      Object.freeze({ id: 'open_decision_manual', label: 'Ver guía de decisiones y compromisos', href: '/manuales.html#decisiones-compromisos', requiredCapability: 'navigation.help' }),
+    ]),
+  }),
   general: Object.freeze({
     title: 'Guía rápida de MuniControl',
     summary: 'Empezá por tu Inicio, elegí una tarea del menú y verificá siempre fuente, fecha y límites antes de decidir o exportar.',
@@ -98,6 +202,14 @@ const TOPICS = Object.freeze({
 export function classifyManualHelp(rawMessage) {
   const message = normalize(rawMessage);
   if (!message) return null;
+  const exactTopic = EXACT_SCREEN_HELP_TOPICS.get(message);
+  if (exactTopic) return exactTopic;
+  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:panorama|resumen (?:general|ejecutivo)|tablero ejecutivo|inicio)\b/.test(message)) return 'overview';
+  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:hacienda|nomina y (?:el )?calculo|calculo mensual)\b/.test(message)) return 'hacienda';
+  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:estructura|areas? de costo|centros? de costo)\b/.test(message)) return 'structure';
+  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:trayectoria laboral|actuaciones? documentadas?|movimientos? y trazabilidad)\b/.test(message)) return 'trajectory';
+  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:centro territorial|referencia territorial|mapa territorial)\b/.test(message)) return 'territory';
+  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:centro de decisiones|prioridades y compromisos|compromisos grh)\b/.test(message)) return 'decisions';
   if (/\b(?:como|donde|pasos?|guia|manual|ayuda)\b.{0,70}\b(?:reporte|informe|imprim(?:ir|o|e)|export(?:ar|o|e))\b|\b(?:export(?:ar|o|e)|imprim(?:ir|o|e))\b.{0,50}\b(?:reporte|informe|grafico)\b/.test(message)) return 'reports';
   if (/\b(?:como|donde|pasos?|guia|manual|ayuda)\b.{0,70}\b(?:carg(?:ar|o|a|ue)|sub(?:ir|o|a)|import(?:ar|o|a|e))\b.{0,50}\b(?:archivo|excel|csv|pdf|datos|base)\b|\b(?:import(?:ar|o|a|e)|carg(?:ar|o|a|ue))\s+(?:un\s+)?(?:excel|csv|pdf|archivo)\b/.test(message)) return 'imports';
   if (/\b(?:como|donde|pasos?|guia|manual|ayuda)\b.{0,70}\b(?:busc(?:ar|o|a|e)|abr(?:ir|o|e)|consult(?:ar|o|a|e)|ver)\b.{0,50}\b(?:ficha|legajo|persona|empleado|licencia individual)\b/.test(message)) return 'directory';

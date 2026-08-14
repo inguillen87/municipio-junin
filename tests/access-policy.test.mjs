@@ -193,10 +193,12 @@ test('all login and me responses use the contextual session projection', async (
   ]) {
     assert.match(source, /getSessionAccessForUser\(/, `${name} must project the current user context`);
     assert.match(source, name === 'serverless me'
-      ? /capabilities:\s*publishedProfile\s*\?\s*responseUser\.capabilities\s*:\s*sessionAccess\.capabilities/
+      ? /capabilities:\s*responseUser\.capabilities/
       : /capabilities:\s*sessionAccess\.capabilities/);
     assert.match(source, /accessPolicyVersion:\s*ACCESS_POLICY_VERSION/);
-    assert.match(source, /homeProfile:\s*sessionAccess\.homeProfile/);
+    assert.match(source, name === 'serverless me'
+      ? /homeProfile:\s*responseUser\.homeProfile/
+      : /homeProfile:\s*sessionAccess\.homeProfile/);
     assert.doesNotMatch(source, /getCapabilitiesForRole\(/, `${name} must not emit the static ceiling directly`);
   }
   assert.equal((expressAuth.match(/getSessionAccessForUser\(/g) || []).length, 2,

@@ -299,6 +299,44 @@ test('/api/auth/me gives a published evaluation the opaque non-PII identity requ
   assert.equal(response.payload.user.capabilities.includes('navigation.organization-analytics'), true);
 });
 
+test('/api/auth/me returns the published Administrador home profile projected to its read-only ceiling', async () => {
+  const { default: handler } = await import('../api/auth/me.js');
+  const profile = (await import('../shared/published-demo-policy.cjs')).default
+    .resolvePublishedDemoProfile('administrador');
+  setAuthoritativeUser('published-administrador-db', {
+    role: profile.role,
+    tenantId: process.env.GRH_TENANT_ID,
+    tenantSlug: profile.tenantSlug,
+    email: profile.email,
+  });
+  const token = jwt.sign({
+    id: 'published-evaluation:administrador',
+    profileId: profile.profileId,
+    role: profile.role,
+    tenantId: process.env.GRH_TENANT_ID,
+    authMode: 'published-evaluation',
+  }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  const response = mockResponse();
+
+  await handler({
+    method: 'GET',
+    url: '/api/auth/me',
+    query: {},
+    headers: { authorization: `Bearer ${token}` },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.payload.user.homeProfile.priorityCapabilities, [
+    'navigation.workspace',
+    'navigation.data-quality',
+  ]);
+  assert.equal(response.payload.user.homeProfile.priorityCapabilities.every(capability =>
+    response.payload.user.capabilities.includes(capability)
+  ), true);
+  assert.equal(response.payload.user.capabilities.includes('navigation.import'), false);
+  assert.equal(response.payload.user.capabilities.includes('navigation.audit'), false);
+});
+
 test('/api/auth/me rejects an unknown DB role before issuing capabilities', async () => {
   const { default: handler } = await import('../api/auth/me.js');
   setAuthoritativeUser('me-unknown-role', { role: 'TESORERIA', tenantId: 'tenant-current' });

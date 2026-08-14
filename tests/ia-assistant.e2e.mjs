@@ -1508,21 +1508,30 @@ test('question deep link is bounded, aggregate-only and sent after authenticated
   assert.equal(requestLog[1].purpose, 'AGGREGATE_ANALYSIS');
   assert.equal(new URL(page.url()).search, '');
 
+  const manualQuestion = '¿Cómo uso el manual y la ayuda de MuniControl?';
+  await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent(manualQuestion)}`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+    .some(title => title.textContent.includes('Guía rápida de MuniControl')));
+  assert.equal(requestLog.length, 3);
+  assert.equal(requestLog[2].purpose, 'AGGREGATE_ANALYSIS');
+  assert.equal(requestLog[2].body.message, manualQuestion);
+  assert.equal(new URL(page.url()).search, '');
+
   await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent('legajo 123')}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(100);
-  assert.equal(requestLog.length, 2);
+  assert.equal(requestLog.length, 3);
   assert.equal(new URL(page.url()).search, '');
   assert.equal(await page.locator('.answer-card').count(), 0);
 
   await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent('Licencias de Juan Perez')}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(100);
-  assert.equal(requestLog.length, 2);
+  assert.equal(requestLog.length, 3);
   assert.equal(new URL(page.url()).search, '');
   assert.equal(await page.locator('.answer-card').count(), 0);
 
   await page.goto(`${baseUrl}/ia.html?question=resumen&question=calidad`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(100);
-  assert.equal(requestLog.length, 2);
+  assert.equal(requestLog.length, 3);
   assert.equal(new URL(page.url()).search, '');
   await context.close();
 });

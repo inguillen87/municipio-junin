@@ -1024,6 +1024,11 @@
 
       function persistSession(payload) {
         var session = Object.assign({}, payload.user, { loginAt: new Date().toISOString() });
+        try {
+          Object.keys(sessionStorage).forEach(function (key) {
+            if (key.indexOf('municontrol:muniguia-onboarding:') === 0) sessionStorage.removeItem(key);
+          });
+        } catch (error) {}
         sessionStorage.setItem('mjunin_user', JSON.stringify(session));
         sessionStorage.setItem('mjunin_token', payload.token);
         submitButton.textContent = 'Accediendo…';

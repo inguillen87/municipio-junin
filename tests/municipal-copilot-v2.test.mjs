@@ -387,6 +387,19 @@ test('manual help is deterministic, versioned, actionable and keeps permissions 
   assert.equal(classifyManualHelp('¿Cómo cargo un Excel con nuevos datos?'), 'imports');
   assert.equal(classifyManualHelp('¿Dónde veo los permisos de cada rol?'), 'roles');
   assert.equal(classifyIntent('¿Cómo creo y exporto un reporte?').intent, 'manual_help');
+  for (const [question, topic] of [
+    ['¿Cómo interpreto el panorama y las prioridades del tablero ejecutivo?', 'overview'],
+    ['¿Cómo reviso Hacienda, nómina y el cálculo mensual?', 'hacienda'],
+    ['¿Cómo uso Estructura y centros de costo?', 'structure'],
+    ['¿Cómo interpreto la trayectoria laboral documentada?', 'trajectory'],
+    ['¿Cómo verifico la fuente del Centro territorial?', 'territory'],
+    ['¿Cómo uso las prioridades del Centro de decisiones GRH?', 'decisions'],
+  ]) {
+    assert.equal(classifyManualHelp(question), topic, question);
+    assert.equal(classifyIntent(question).manualTopic, topic, question);
+    assert.equal(buildManualAssistantAnswer(topic).status, 'answered', topic);
+    assert.equal(buildManualProvenance(topic).containsPii, false, topic);
+  }
   const answer = buildManualAssistantAnswer('reports');
   const manualProvenance = buildManualProvenance('reports');
   assert.equal(answer.intent, 'manual_help');
@@ -397,6 +410,48 @@ test('manual help is deterministic, versioned, actionable and keeps permissions 
   assert.equal(manualProvenance.containsPii, false);
   assert.equal(manualProvenance.manualAnchor, 'exportaciones');
   assert.match(answer.answer.source, /Manual MuniControl v1\.10\.0/);
+});
+
+test('manual actions are filtered server-side by private access or the published ceiling', async () => {
+  const { createAiAnalyzeHandler } = await import('../api/ai-analyze.js');
+  const baseAdmin = {
+    id: 'admin-action-filter',
+    email: 'admin@junin.gov.ar',
+    role: 'TENANT_ADMIN',
+    tenantId: 'tenant-junin-test',
+  };
+  for (const scenario of [
+    {
+      name: 'private administrator',
+      caller: baseAdmin,
+      expectedActionIds: ['open_import', 'open_manual_access'],
+    },
+    {
+      name: 'published administrator',
+      caller: { ...baseAdmin, authMethod: 'published-evaluation-jwt-db' },
+      expectedActionIds: ['open_manual_access'],
+    },
+  ]) {
+    const handler = createAiAnalyzeHandler({
+      requireRoleImpl: async () => scenario.caller,
+      requireDatasetTenantImpl: () => true,
+      synthesizeAnswerImpl: async () => ({ synthesis: null, engine: null }),
+    });
+    const response = fakeResponse();
+    await handler({
+      method: 'POST',
+      headers: {},
+      url: '/api/ai-analyze',
+      body: { message: '¿Cómo cargo un archivo con datos autorizados?', mode: 'deterministic' },
+    }, response);
+
+    assert.equal(response.statusCode, 200, scenario.name);
+    assert.deepEqual(
+      response.payload.answer.actions.map(action => action.id),
+      scenario.expectedActionIds,
+      scenario.name,
+    );
+  }
 });
 
 test('endpoint opt-in attaches grounded synthesis while deterministic mode stays byte-stable', async () => {

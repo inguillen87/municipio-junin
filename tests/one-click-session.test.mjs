@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import { createEvaluationSessionHandler } from '../api/auth/evaluation-session.js';
 import { createPrivateLinkSessionHandler } from '../api/auth/private-link-session.js';
 import { sessionResponseUser } from '../api/lib/one-click-session.js';
+import accessPolicy from '../shared/access-policy.cjs';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 import releaseTruthContract from '../shared/release-truth-contract.cjs';
 import routePolicy from '../shared/route-policy.cjs';
@@ -126,10 +127,41 @@ test('every published profile receives the complete aggregate navigation without
     assert.equal(res.statusCode, 200, profile.profileId);
     const access = res.payload.user.capabilities;
     assert.deepEqual(access, publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES, profile.profileId);
+    const roleHomeProfile = accessPolicy.getSessionAccessForUser({
+      role: profile.role,
+      tenantId: TENANT_ID,
+    }).homeProfile;
+    const expectedPriorityCapabilities = roleHomeProfile.priorityCapabilities.filter(capability =>
+      publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES.includes(capability)
+    );
+    assert.deepEqual(res.payload.user.homeProfile, {
+      ...roleHomeProfile,
+      priorityCapabilities: expectedPriorityCapabilities,
+    }, profile.profileId);
+    if (profile.profileId !== 'administrador') {
+      assert.deepEqual(expectedPriorityCapabilities, roleHomeProfile.priorityCapabilities, profile.profileId);
+    }
     for (const denied of ['navigation.audit', 'navigation.export', 'navigation.import']) {
       assert.equal(access.includes(denied), false, `${profile.profileId}:${denied}`);
     }
   }
+});
+
+test('published Administrador has a valid home profile within the read-only capability ceiling', () => {
+  const profile = publishedDemoPolicy.resolvePublishedDemoProfile('administrador');
+  const responseUser = sessionResponseUser(publishedUser({
+    id: 'published-administrador-id',
+    email: profile.email,
+    role: profile.role,
+  }), { publishedProfile: profile });
+
+  assert.deepEqual(responseUser.homeProfile.priorityCapabilities, [
+    'navigation.workspace',
+    'navigation.data-quality',
+  ]);
+  assert.equal(responseUser.homeProfile.priorityCapabilities.every(capability =>
+    responseUser.capabilities.includes(capability)
+  ), true);
 });
 
 test('published one-click session rejects credentials, unknown profiles, cross-site calls and rate excess before DB work', async () => {

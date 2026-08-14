@@ -427,6 +427,59 @@ test('search remains role-scoped, advanced routing opens on demand, and missing 
   await noHelp.context.close();
 });
 
+test('advanced documentation clears mobile menu and contextual help at 390 and 320 px', async t => {
+  const server = await createServer();
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  for (const width of [390, 320]) {
+    const mounted = await newPage(browser, 'TENANT_ADMIN', { width, height: 844 }, { reducedMotion: 'reduce' });
+    await openLearningCenter(mounted.page, baseUrl);
+    await mounted.page.locator('a[href="#referencia-operativa"]').click();
+    await mounted.page.locator('#referencia-operativa[open]').waitFor();
+    await mounted.page.locator('#muniGuideTrigger').waitFor({ state: 'visible' });
+
+    const geometry = await mounted.page.evaluate(() => {
+      const rect = element => {
+        const value = element.getBoundingClientRect();
+        return { top: value.top, right: value.right, bottom: value.bottom, left: value.left, width: value.width, height: value.height };
+      };
+      const overlaps = (first, second) => !(
+        first.right <= second.left || first.left >= second.right ||
+        first.bottom <= second.top || first.top >= second.bottom
+      );
+      const menu = rect(document.querySelector('.sb-floating-menu-btn'));
+      const help = rect(document.querySelector('#muniGuideTrigger'));
+      const summary = rect(document.querySelector('#referencia-operativa > summary'));
+      const title = rect(document.querySelector('.technical-document-title'));
+      return {
+        menu,
+        help,
+        summary,
+        title,
+        menuSummaryOverlap: overlaps(menu, summary),
+        helpSummaryOverlap: overlaps(help, summary),
+        helpTitleOverlap: overlaps(help, title),
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+    assert.ok(geometry.menu.height >= 43.5, `${width}px menu target=${geometry.menu.height}`);
+    assert.ok(geometry.help.height >= 43.5, `${width}px help target=${geometry.help.height}`);
+    assert.equal(geometry.menuSummaryOverlap, false, `${width}px menu must clear advanced summary`);
+    assert.equal(geometry.helpSummaryOverlap, false, `${width}px help must clear advanced summary`);
+    assert.equal(geometry.helpTitleOverlap, false, `${width}px help must clear technical heading`);
+    assert.ok(geometry.summary.top >= Math.max(geometry.menu.bottom, geometry.help.bottom),
+      `${width}px summary top=${geometry.summary.top} controls=${geometry.menu.bottom}/${geometry.help.bottom}`);
+    assert.ok(geometry.overflow <= 1, `${width}px overflow=${geometry.overflow}`);
+    await mounted.context.close();
+  }
+});
+
 test('320 px forced colors and 390 px reduced motion preserve access and 44 px targets', async t => {
   const server = await createServer();
   const baseUrl = `http://127.0.0.1:${server.address().port}`;

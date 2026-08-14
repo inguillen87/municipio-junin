@@ -378,6 +378,13 @@
 }
 
 @media (max-width: 420px) {
+  .learning-center { padding-top: calc(68px + env(safe-area-inset-top, 0px)); }
+  .learning-advanced { scroll-margin-top: calc(68px + env(safe-area-inset-top, 0px)); }
+  #muniGuideTrigger {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    bottom: auto;
+  }
   .learning-task-finder .municipal-task-shortcut { display: none; }
   .learning-task-finder .municipal-task-finder__search { margin-top: 14px; }
   .learning-task-finder .municipal-task-finder__summary { margin-top: 7px; }

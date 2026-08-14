@@ -147,8 +147,10 @@ function validHomeProfile(
   }
 
   const priorities = value.priorityCapabilities;
-  const expectedPriorities = ROLE_HOME_PRIORITIES[role];
-  return priorities.length === expectedPriorities.length && priorities.every((capability, index) =>
+  const expectedPriorities = ROLE_HOME_PRIORITIES[role].filter(capability =>
+    capabilities.includes(capability));
+  return expectedPriorities.length > 0 && priorities.length === expectedPriorities.length &&
+    priorities.every((capability, index) =>
     typeof capability === 'string' && capability === expectedPriorities[index] &&
     KNOWN_CAPABILITIES.has(capability) && capabilities.includes(capability));
 }

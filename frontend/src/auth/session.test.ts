@@ -179,6 +179,54 @@ describe('parseAuthoritativeSession', () => {
     },
   );
 
+  it('accepts the published Administrador projection after unsafe priorities are removed', () => {
+    const payload = payloadForRole('TENANT_ADMIN', [
+      'navigation.workspace',
+      'navigation.data-quality',
+    ]);
+    payload.user.capabilities = [
+      'session.read',
+      'navigation.workspace',
+      'navigation.dashboard',
+      'navigation.reports',
+      'navigation.hacienda',
+      REQUIRED_CAPABILITY,
+      DECISIONS_CAPABILITY,
+      EMPLOYMENT_ACTIONS_CAPABILITY,
+      ORGANIZATION_CAPABILITY,
+      TERRITORY_CAPABILITY,
+      'navigation.data-quality',
+      'navigation.rrhh',
+      'navigation.ai-assistant',
+      'navigation.help',
+    ];
+
+    const identity = parseAuthoritativeSession(payload, 'navigation.hacienda');
+
+    expect(identity?.role).toBe('TENANT_ADMIN');
+    expect(identity?.homeVariant).toBe('municipal-operations');
+  });
+
+  it('rejects any omission, reordering or addition in the published Administrador projection', () => {
+    const capabilities = [
+      'session.read',
+      'navigation.workspace',
+      'navigation.hacienda',
+      'navigation.data-quality',
+    ];
+    const invalidPriorities = [
+      ['navigation.workspace'],
+      ['navigation.data-quality', 'navigation.workspace'],
+      ['navigation.workspace', 'navigation.data-quality', 'session.read'],
+    ];
+
+    for (const priorities of invalidPriorities) {
+      const payload = payloadForRole('TENANT_ADMIN', priorities);
+      payload.user.capabilities = capabilities;
+      expect(parseAuthoritativeSession(payload, 'navigation.hacienda')).toBeNull();
+    }
+  });
+
   it.each(Object.keys(ROLE_HOME_PROFILES) as TestRole[])(
     'rejects truncated, reordered or extra home priorities for %s',
     role => {

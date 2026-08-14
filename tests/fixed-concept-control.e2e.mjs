@@ -13,6 +13,7 @@ import {
   inspectGrhFixedConceptControlContract,
 } from '../api/lib/grh-fixed-concept-control-contract.js';
 import accessPolicy from '../shared/access-policy.cjs';
+import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
@@ -56,24 +57,30 @@ let scenarioSequence = 0;
 
 assert.equal(inspectGrhFixedConceptControlContract(ARTIFACT).ok, true);
 
-function authorizedSession(includeCapability = true) {
+function authorizedSession(includeCapability = true, role = 'CONTADOR', published = false) {
   const base = {
-    id: 'fixed-concept-control-contador-e2e',
+    id: `fixed-concept-control-${role.toLowerCase()}-e2e`,
     name: 'Contaduría QA',
-    role: 'CONTADOR',
+    role,
     tenantId: 'tenant-junin-e2e',
   };
   const access = accessPolicy.getSessionAccessForUser(base);
   assert.ok(access);
+  const publishedCapabilities = published
+    ? access.capabilities.filter(capability =>
+      publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES.includes(capability))
+    : access.capabilities;
+  const capabilities = publishedCapabilities.filter(capability =>
+    includeCapability || capability !== 'navigation.hacienda');
   return {
     user: {
       ...base,
-      capabilities: access.capabilities.filter(capability =>
-        includeCapability || capability !== 'navigation.hacienda'),
+      capabilities,
       accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
       homeProfile: {
         ...access.homeProfile,
-        priorityCapabilities: [...access.homeProfile.priorityCapabilities],
+        priorityCapabilities: access.homeProfile.priorityCapabilities.filter(capability =>
+          capabilities.includes(capability)),
       },
       tenant: { id: base.tenantId, shortName: 'Junín QA' },
     },
@@ -136,7 +143,11 @@ function scenarioPlugin(scenario, apiLog) {
         if (url.pathname === '/api/auth/me') {
           apiLog.push({ path: url.pathname, status: 200 });
           send(response, 200, 'application/json; charset=utf-8',
-            JSON.stringify(authorizedSession(scenario.includeCapability !== false)),
+            JSON.stringify(authorizedSession(
+              scenario.includeCapability !== false,
+              scenario.role,
+              scenario.published === true,
+            )),
             { [CONTRACT_HEADER]: AUTH_CONTRACT });
           return;
         }
@@ -285,6 +296,28 @@ test('S21 fixed-concept control is summary-first, responsive, accessible and fai
         assert.deepEqual(apiLog.map(entry => [entry.path, entry.status]), [
           ['/api/auth/me', 200],
           ['/api/grh-fixed-concept-control', 503],
+          ['/api/auth/me', 200],
+          ['/api/grh-fixed-concept-control', 200],
+        ]);
+      } finally {
+        await context.close();
+      }
+    });
+  });
+
+  await t.test('accepts the exact published Administrador session projection', async () => {
+    await withScenario({
+      name: 'published-administrator',
+      role: 'TENANT_ADMIN',
+      published: true,
+    }, async ({ apiLog, baseUrl }) => {
+      const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      const page = await context.newPage();
+      try {
+        await page.goto(`${baseUrl}/conceptos-fijos`, { waitUntil: 'domcontentloaded' });
+        await page.locator('#fixedConceptControl').waitFor({ state: 'visible' });
+        assert.equal(new URL(page.url()).pathname, '/conceptos-fijos');
+        assert.deepEqual(apiLog.map(entry => [entry.path, entry.status]), [
           ['/api/auth/me', 200],
           ['/api/grh-fixed-concept-control', 200],
         ]);

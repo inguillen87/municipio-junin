@@ -379,7 +379,10 @@
 
 @media (max-width: 420px) {
   .learning-center { padding-top: calc(68px + env(safe-area-inset-top, 0px)); }
-  .learning-advanced { scroll-margin-top: calc(68px + env(safe-area-inset-top, 0px)); }
+  .learning-center > [id],
+  .learning-advanced,
+  .learning-advanced [id] { scroll-margin-top: calc(68px + env(safe-area-inset-top, 0px)); }
+  #tareas.learning-task-finder { scroll-margin-top: calc(68px + env(safe-area-inset-top, 0px)) !important; }
   #muniGuideTrigger {
     top: calc(10px + env(safe-area-inset-top, 0px));
     right: calc(10px + env(safe-area-inset-right, 0px));

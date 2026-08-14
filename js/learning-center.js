@@ -21,6 +21,13 @@
     progress: null,
     storageKey: null,
     live: null,
+    ready: false,
+    advancedLayoutObserver: null,
+    advancedLayoutTimer: null,
+    advancedScrollEpoch: 0,
+    advancedScrollRafOne: null,
+    advancedScrollRafTwo: null,
+    advancedScrollTimer: null,
   };
 
   function plainObject(value) {
@@ -454,6 +461,9 @@
 
   function failClosed() {
     if (!state.root) return;
+    state.ready = false;
+    clearAdvancedLayoutTracking();
+    cancelAdvancedScroll();
     state.root.dataset.state = 'unavailable';
     state.root.removeAttribute('data-role');
     state.root.querySelectorAll('[data-learning-private]').forEach(function(element) { element.hidden = true; });
@@ -478,29 +488,109 @@
     }
   }
 
-  function openAdvancedForTarget(target) {
+  function clearAdvancedLayoutTracking() {
+    if (state.advancedLayoutObserver) state.advancedLayoutObserver.disconnect();
+    if (state.advancedLayoutTimer !== null) global.clearTimeout(state.advancedLayoutTimer);
+    state.advancedLayoutObserver = null;
+    state.advancedLayoutTimer = null;
+  }
+
+  function cancelAdvancedScroll() {
+    state.advancedScrollEpoch += 1;
+    if (state.advancedScrollRafOne !== null && typeof global.cancelAnimationFrame === 'function') {
+      global.cancelAnimationFrame(state.advancedScrollRafOne);
+    }
+    if (state.advancedScrollRafTwo !== null && typeof global.cancelAnimationFrame === 'function') {
+      global.cancelAnimationFrame(state.advancedScrollRafTwo);
+    }
+    if (state.advancedScrollTimer !== null) global.clearTimeout(state.advancedScrollTimer);
+    state.advancedScrollRafOne = null;
+    state.advancedScrollRafTwo = null;
+    state.advancedScrollTimer = null;
+  }
+
+  function currentHashTarget() {
+    if (!global.location.hash) return null;
+    try {
+      return document.getElementById(decodeURIComponent(global.location.hash.slice(1)));
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function scrollAdvancedTarget(target) {
+    cancelAdvancedScroll();
+    var epoch = state.advancedScrollEpoch;
+    var scroll = function() {
+      state.advancedScrollRafTwo = null;
+      state.advancedScrollTimer = null;
+      if (epoch !== state.advancedScrollEpoch || !state.ready || !target.isConnected ||
+          currentHashTarget() !== target) return;
+      target.scrollIntoView({ block: 'start', behavior: 'auto' });
+    };
+    if (typeof global.requestAnimationFrame === 'function') {
+      state.advancedScrollRafOne = global.requestAnimationFrame(function() {
+        state.advancedScrollRafOne = null;
+        if (epoch !== state.advancedScrollEpoch) return;
+        state.advancedScrollRafTwo = global.requestAnimationFrame(scroll);
+      });
+    } else {
+      state.advancedScrollTimer = global.setTimeout(scroll, 0);
+    }
+  }
+
+  function resettleAfterTaskFinder(target) {
+    clearAdvancedLayoutTracking();
+    var finder = state.root && state.root.querySelector('[data-municipal-task-finder]');
+    if (!(finder instanceof HTMLElement) || finder.dataset.municipalTaskMounted === 'true' ||
+        typeof global.MutationObserver !== 'function') return;
+    var finish = function() {
+      clearAdvancedLayoutTracking();
+      if (state.ready && target.isConnected && currentHashTarget() === target) {
+        scrollAdvancedTarget(target);
+      }
+    };
+    state.advancedLayoutObserver = new global.MutationObserver(function() {
+      if (finder.dataset.municipalTaskMounted === 'true') finish();
+    });
+    state.advancedLayoutObserver.observe(finder, { attributes: true, childList: true, subtree: true });
+    state.advancedLayoutTimer = global.setTimeout(finish, 5000);
+  }
+
+  function openManagedHashTarget(target) {
     var advanced = document.getElementById('referencia-operativa');
     if (!(advanced instanceof HTMLDetailsElement) || !(target instanceof Element)) return;
-    if (target === advanced || advanced.contains(target)) advanced.open = true;
+    var insideAdvanced = target === advanced || advanced.contains(target);
+    var insideLearningCenter = state.root instanceof HTMLElement && target.parentElement === state.root;
+    if (!insideAdvanced && !insideLearningCenter) return;
+    if (insideAdvanced) advanced.open = true;
+    if (!state.ready) return;
+    scrollAdvancedTarget(target);
+    resettleAfterTaskFinder(target);
+  }
+
+  function openCurrentAdvancedHash() {
+    clearAdvancedLayoutTracking();
+    cancelAdvancedScroll();
+    openManagedHashTarget(currentHashTarget());
   }
 
   function installAdvancedRouting() {
     document.addEventListener('click', function(event) {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       var link = event.target instanceof Element ? event.target.closest('a[href*="#"]') : null;
-      openAdvancedForTarget(advancedTargetFromLink(link));
+      clearAdvancedLayoutTracking();
+      cancelAdvancedScroll();
+      openManagedHashTarget(advancedTargetFromLink(link));
     });
-    function openCurrentHash() {
-      if (!global.location.hash) return;
-      try { openAdvancedForTarget(document.getElementById(decodeURIComponent(global.location.hash.slice(1)))); } catch (error) {}
-    }
-    global.addEventListener('hashchange', openCurrentHash);
-    openCurrentHash();
+    global.addEventListener('hashchange', openCurrentAdvancedHash);
+    openCurrentAdvancedHash();
   }
 
   async function mount() {
     state.root = document.getElementById('learningCenter');
     if (!(state.root instanceof HTMLElement) || state.root.dataset.contract !== CONTRACT) return;
+    state.ready = false;
     state.live = state.root.querySelector('[data-learning-live]');
     installAdvancedRouting();
     try {
@@ -527,6 +617,8 @@
       state.storageKey = progressKey(state.input, state.journey);
       state.progress = readProgress();
       renderReady();
+      state.ready = true;
+      openCurrentAdvancedHash();
     } catch (error) {
       failClosed();
     }

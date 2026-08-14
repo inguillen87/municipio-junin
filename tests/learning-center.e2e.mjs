@@ -39,6 +39,7 @@ function fakeToken(role, options = {}) {
     role,
     tenantId: 'tenant-junin-learning',
     dropHelp: options.dropHelp === true,
+    authDelayMs: Number.isInteger(options.authDelayMs) ? Math.max(0, Math.min(options.authDelayMs, 500)) : 0,
     exp: Math.floor(Date.now() / 1000) + 600,
   })}.qa`;
 }
@@ -68,6 +69,7 @@ async function createServer() {
       const capabilities = payload.dropHelp
         ? access.capabilities.filter(capability => capability !== 'navigation.help')
         : access.capabilities;
+      if (payload.authDelayMs > 0) await new Promise(resolve => setTimeout(resolve, payload.authDelayMs));
       response.writeHead(200, { 'Content-Type': contentTypes['.json'], 'Cache-Control': 'no-store' });
       response.end(JSON.stringify({
         user: {
@@ -475,8 +477,95 @@ test('advanced documentation clears mobile menu and contextual help at 390 and 3
     assert.equal(geometry.helpTitleOverlap, false, `${width}px help must clear technical heading`);
     assert.ok(geometry.summary.top >= Math.max(geometry.menu.bottom, geometry.help.bottom),
       `${width}px summary top=${geometry.summary.top} controls=${geometry.menu.bottom}/${geometry.help.bottom}`);
+    assert.ok(geometry.summary.top < 844 && geometry.summary.bottom <= 844,
+      `${width}px advanced summary must be fully visible: ${geometry.summary.top}/${geometry.summary.bottom}`);
     assert.ok(geometry.overflow <= 1, `${width}px overflow=${geometry.overflow}`);
     await mounted.context.close();
+
+    const direct = await newPage(browser, 'TENANT_ADMIN', { width, height: 844 }, {
+      authDelayMs: 250,
+    });
+    await direct.page.goto(`${baseUrl}/manuales.html#referencia-operativa`, { waitUntil: 'domcontentloaded' });
+    await direct.page.evaluate(() => window.MuniAuthReady);
+    await direct.page.locator('#learningCenter[data-state="ready"]').waitFor();
+    await direct.page.locator('#referencia-operativa[open]').waitFor();
+    await direct.page.locator('#tareas[data-municipal-task-mounted="true"]').waitFor();
+    await direct.page.waitForFunction(() => {
+      const summary = document.querySelector('#referencia-operativa > summary')?.getBoundingClientRect();
+      const menu = document.querySelector('.sb-floating-menu-btn')?.getBoundingClientRect();
+      const help = document.querySelector('#muniGuideTrigger')?.getBoundingClientRect();
+      return Boolean(summary && menu && help &&
+        summary.top >= Math.max(menu.bottom, help.bottom) && summary.bottom <= innerHeight);
+    });
+    const directGeometry = await direct.page.evaluate(() => {
+      const summary = document.querySelector('#referencia-operativa > summary').getBoundingClientRect();
+      const menu = document.querySelector('.sb-floating-menu-btn').getBoundingClientRect();
+      const help = document.querySelector('#muniGuideTrigger').getBoundingClientRect();
+      return {
+        summaryTop: summary.top,
+        summaryBottom: summary.bottom,
+        controlsBottom: Math.max(menu.bottom, help.bottom),
+        viewportHeight: innerHeight,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    assert.ok(directGeometry.summaryTop >= directGeometry.controlsBottom,
+      `${width}px direct summary=${directGeometry.summaryTop}, controls=${directGeometry.controlsBottom}`);
+    assert.ok(directGeometry.summaryBottom <= directGeometry.viewportHeight,
+      `${width}px direct summary bottom=${directGeometry.summaryBottom}, viewport=${directGeometry.viewportHeight}`);
+    assert.ok(directGeometry.overflow <= 1, `${width}px direct overflow=${directGeometry.overflow}`);
+    await direct.context.close();
+
+    if (width === 320) {
+      const race = await newPage(browser, 'TENANT_ADMIN', { width, height: 844 }, { authDelayMs: 80 });
+      await race.page.route('**/js/municipal-task-catalog.js', async route => {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        await route.continue();
+      });
+      await race.page.goto(`${baseUrl}/manuales.html#referencia-operativa`, { waitUntil: 'domcontentloaded' });
+      await race.page.locator('#learningCenter[data-state="ready"]').waitFor();
+      await race.page.locator('#referencia-operativa[open]').waitFor();
+      assert.equal(await race.page.locator('#tareas[data-municipal-task-mounted="true"]').count(), 0,
+        'task finder must still be pending before the adversarial hash change');
+      await race.page.evaluate(() => { window.location.hash = '#bienvenida'; });
+      await race.page.locator('#tareas[data-municipal-task-mounted="true"]').waitFor();
+      await race.page.waitForTimeout(150);
+      const raceGeometry = await race.page.evaluate(() => {
+        const welcome = document.getElementById('bienvenida').getBoundingClientRect();
+        const advanced = document.querySelector('#referencia-operativa > summary').getBoundingClientRect();
+        const menu = document.querySelector('.sb-floating-menu-btn').getBoundingClientRect();
+        const help = document.querySelector('#muniGuideTrigger').getBoundingClientRect();
+        return {
+          hash: window.location.hash,
+          welcomeTop: welcome.top,
+          advancedTop: advanced.top,
+          controlsBottom: Math.max(menu.bottom, help.bottom),
+          viewportHeight: innerHeight,
+        };
+      });
+      assert.equal(raceGeometry.hash, '#bienvenida');
+      assert.ok(raceGeometry.welcomeTop >= raceGeometry.controlsBottom && raceGeometry.welcomeTop < 220,
+        `new hash target must clear controls: ${raceGeometry.welcomeTop}/${raceGeometry.controlsBottom}`);
+      assert.ok(raceGeometry.advancedTop > raceGeometry.viewportHeight,
+        `stale advanced scroll must stay cancelled: ${raceGeometry.advancedTop}`);
+
+      await race.page.evaluate(() => { window.location.hash = '#tareas'; });
+      await race.page.waitForFunction(() => {
+        const tasks = document.getElementById('tareas')?.getBoundingClientRect();
+        const menu = document.querySelector('.sb-floating-menu-btn')?.getBoundingClientRect();
+        const help = document.querySelector('#muniGuideTrigger')?.getBoundingClientRect();
+        return Boolean(tasks && menu && help && tasks.top >= Math.max(menu.bottom, help.bottom));
+      });
+      const taskAnchorGeometry = await race.page.evaluate(() => {
+        const tasks = document.getElementById('tareas').getBoundingClientRect();
+        const menu = document.querySelector('.sb-floating-menu-btn').getBoundingClientRect();
+        const help = document.querySelector('#muniGuideTrigger').getBoundingClientRect();
+        return { top: tasks.top, controlsBottom: Math.max(menu.bottom, help.bottom) };
+      });
+      assert.ok(taskAnchorGeometry.top >= taskAnchorGeometry.controlsBottom,
+        `task anchor must clear controls: ${taskAnchorGeometry.top}/${taskAnchorGeometry.controlsBottom}`);
+      await race.context.close();
+    }
   }
 });
 

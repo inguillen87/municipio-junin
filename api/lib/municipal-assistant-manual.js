@@ -65,17 +65,17 @@ const TOPICS = Object.freeze({
     ]),
   }),
   roles: Object.freeze({
-    title: 'Entender roles y permisos',
-    summary: 'Cada perfil ve un espacio distinto; el menú orienta, pero la autorización real se valida en el servidor.',
+    title: 'Empezar según tu rol',
+    summary: 'El Centro de aprendizaje prepara un recorrido distinto para cada perfil; orienta el primer uso, pero la autorización real se valida en el servidor.',
     findings: Object.freeze([
       'El rol define capacidades de navegación y cada API vuelve a comprobar la operación solicitada.',
       'No existe herencia automática ni un permiso comodín para roles desconocidos.',
       'Si una opción no está habilitada, el paso correcto es revisar la asignación institucional, no cambiar la URL.',
     ]),
     sourceFile: 'docs/ROLE_JOURNEYS_AND_SECURE_DEMO.md',
-    anchor: 'roles',
+    anchor: 'bienvenida',
     actions: Object.freeze([
-      Object.freeze({ id: 'open_roles_manual', label: 'Ver recorridos por rol', href: '/manuales.html#roles', requiredCapability: 'navigation.help' }),
+      Object.freeze({ id: 'open_roles_manual', label: 'Abrir mi recorrido inicial', href: '/manuales.html#bienvenida', requiredCapability: 'navigation.help' }),
     ]),
   }),
   quality: Object.freeze({
@@ -223,9 +223,9 @@ const TOPICS = Object.freeze({
       'El manual navegable reúne recorridos, interpretación de indicadores y pasos de demostración.',
     ]),
     sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
-    anchor: 'roles',
+    anchor: 'bienvenida',
     actions: Object.freeze([
-      Object.freeze({ id: 'open_manuals', label: 'Abrir Manual y ayuda', href: '/manuales.html', requiredCapability: 'navigation.help' }),
+      Object.freeze({ id: 'open_manuals', label: 'Abrir Ayuda y aprendizaje', href: '/manuales.html', requiredCapability: 'navigation.help' }),
       Object.freeze({ id: 'open_workspace', label: 'Volver a Inicio', href: '/inicio.html', requiredCapability: 'navigation.workspace' }),
     ]),
   }),

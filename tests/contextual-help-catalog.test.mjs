@@ -222,7 +222,7 @@ test('assistant handoffs are fixed per page, capability-bound and manual-backed'
     audit: 'quality',
     export: 'reports',
     import: 'imports',
-    manuals: 'general',
+    manuals: 'roles',
   };
   assert.deepEqual(Object.keys(MUNIGUIA_ASSISTANT_QUESTIONS).sort(), Object.keys(topicByPage).sort());
   assert.equal(Object.isFrozen(MUNIGUIA_ASSISTANT_QUESTIONS), true);

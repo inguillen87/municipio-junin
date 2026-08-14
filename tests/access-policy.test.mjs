@@ -432,7 +432,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   const items = Array.from(navigation.definition.items, item => ({ ...item }));
   const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
 
-  assert.equal(navigation.definition.version, '2026-08-14.5');
+  assert.equal(navigation.definition.version, '2026-08-14.6');
   assert.deepEqual(
     Array.from(navigation.definition.groups, group => group.id),
     ['executive', 'people', 'territory', 'data'],

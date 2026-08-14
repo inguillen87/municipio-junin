@@ -337,14 +337,14 @@ const PAGES = deepFreeze({
   manuals: {
     href: 'manuales.html',
     aliases: ['/manuales', '/manuales.html'],
-    label: 'Manual y ayuda',
-    objective: 'Encontrá el procedimiento vigente y verificá el estado real de cada capacidad.',
+    label: 'Ayuda y aprendizaje',
+    objective: 'Aprendé a usar las herramientas habilitadas para tu rol y encontrá una tarea en palabras simples.',
     requiredCapability: 'navigation.help',
-    manualAnchor: 'roles',
+    manualAnchor: 'bienvenida',
     steps: [
-      { id: 'find-role', selector: '#roles', title: 'Ubicá tu responsabilidad', copy: 'Empezá por el recorrido del rol confirmado; el manual no concede permisos ni crea cuentas.' },
-      { id: 'confirm-surface', selector: '#superficies', title: 'Confirmá el estado', copy: 'Diferenciá capacidad operativa, condicionada y futura antes de intentar usar una superficie.' },
-      { id: 'operate-safely', selector: '#seguridad', title: 'Aplicá los controles', copy: 'Conservá tenant, privacidad, fuente y respuesta fail-closed en cada procedimiento.' },
+      { id: 'follow-first-day', selector: '#primer-dia', title: 'Seguí tu primer recorrido', copy: 'Avanzá con los pasos preparados para tu rol; el progreso queda sólo en esta pestaña y no cambia permisos.' },
+      { id: 'find-task', selector: '#tareas', title: 'Buscá una tarea concreta', copy: 'Escribí lo que necesitás hacer y abrí sólo una opción habilitada para tu sesión.' },
+      { id: 'check-essential-rules', selector: '#reglas-esenciales', title: 'Leé antes de decidir', copy: 'Confirmá fuente, fecha de corte, privacidad y alcance antes de usar o compartir una conclusión.' },
     ],
   },
 });
@@ -369,7 +369,7 @@ const ASSISTANT_QUESTIONS = deepFreeze({
   audit: '¿Cómo verifico la fuente y el linaje de los datos?',
   export: '¿Cómo creo y reviso un reporte antes de compartirlo?',
   import: '¿Cómo cargo un archivo con datos autorizados?',
-  manuals: '¿Cómo uso el manual y la ayuda de MuniControl?',
+  manuals: '¿Cómo empiezo a usar MuniControl según mi rol?',
 });
 
 const CATALOG = deepFreeze({

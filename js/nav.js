@@ -314,7 +314,7 @@ window.requireRole = function(allowedRoles) {
 // renders no private destinations; capability visibility never falls back to a
 // second, local menu.
 function validatedNavigationDefinition(definition) {
-  if (!definition || definition.version !== '2026-08-14.5' ||
+  if (!definition || definition.version !== '2026-08-14.6' ||
       !Array.isArray(definition.groups) || !Array.isArray(definition.items) ||
       !Object.isFrozen(definition) || !Object.isFrozen(definition.groups) ||
       !Object.isFrozen(definition.items) ||

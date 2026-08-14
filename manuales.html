@@ -269,6 +269,7 @@
 
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   </style>
+  <link rel="stylesheet" href="css/learning-center.css">
 </head>
 <body
   data-doc-version="1.10.0"
@@ -281,6 +282,86 @@
 >
   <div id="sidebar"></div>
   <main id="mainContent" class="main-content">
+    <div
+      class="learning-center"
+      id="learningCenter"
+      data-contract="municipal-learning-center-v1"
+      data-state="loading"
+      aria-labelledby="learningCenterTitle"
+    >
+      <section class="learning-welcome" id="bienvenida">
+        <div class="learning-welcome__copy">
+          <p class="learning-eyebrow">Ayuda y aprendizaje</p>
+          <h1 id="learningCenterTitle">Tu trabajo, explicado paso a paso</h1>
+          <p class="learning-welcome__lead">Buscá lo que necesitás hacer con palabras simples. Vas a ver únicamente tareas y recorridos habilitados para tu función.</p>
+        </div>
+        <div class="learning-session" aria-live="polite">
+          <span class="learning-session__label">Tu recorrido</span>
+          <strong data-learning-role hidden></strong>
+          <span data-learning-status>Estamos preparando la ayuda de tu sesión…</span>
+        </div>
+      </section>
+
+      <section
+        class="municipal-task-finder learning-task-finder"
+        id="tareas"
+        data-municipal-task-finder
+        data-task-finder-mode="catalog"
+        aria-label="Ayuda y tareas habilitadas"
+      ></section>
+
+      <section class="learning-panel learning-first-day" id="primer-dia" data-learning-private hidden>
+        <div class="learning-section-heading">
+          <div>
+            <p class="learning-eyebrow">Primer día</p>
+            <h2>Un recorrido preparado para tu rol</h2>
+            <p data-learning-intent></p>
+          </div>
+          <div class="learning-progress-summary" data-learning-progress-summary></div>
+        </div>
+        <div data-learning-journey></div>
+      </section>
+
+      <section class="learning-panel" id="ayuda-contextual" data-learning-private hidden>
+        <div class="learning-section-heading">
+          <div>
+            <p class="learning-eyebrow">Ayuda en contexto</p>
+            <h2>Pedí una explicación sin salir de tu tarea</h2>
+            <p>MuniGuía te muestra qué mirar en esta pantalla. El Asistente aparece sólo si tu perfil tiene esa capacidad.</p>
+          </div>
+        </div>
+        <div class="learning-help-actions">
+          <button class="learning-action learning-action--primary" type="button" data-learning-guide hidden>Abrir MuniGuía en esta pantalla</button>
+          <a class="learning-action" data-learning-assistant hidden>Preguntar al Asistente</a>
+          <a class="learning-action" href="#referencia-operativa">Consultar documentación avanzada</a>
+        </div>
+        <p class="learning-help-note">La ayuda orienta; no cambia tus permisos, no ejecuta decisiones y no reemplaza la fuente oficial.</p>
+      </section>
+
+      <section class="learning-panel learning-rules" id="reglas-esenciales">
+        <div class="learning-section-heading">
+          <div>
+            <p class="learning-eyebrow">Antes de decidir o compartir</p>
+            <h2>Cuatro reglas esenciales</h2>
+          </div>
+        </div>
+        <ol class="learning-rules__grid">
+          <li><strong>1. Confirmá la fuente.</strong><span>Una pantalla clara no reemplaza el origen del dato.</span></li>
+          <li><strong>2. Mirá la fecha de corte.</strong><span>Un respaldo histórico no es información en tiempo real.</span></li>
+          <li><strong>3. Respetá la privacidad.</strong><span>No completes ni deduzcas datos que el sistema protege.</span></li>
+          <li><strong>4. Verificá el alcance.</strong><span>Una señal ayuda a revisar; no demuestra por sí sola una causa.</span></li>
+        </ol>
+      </section>
+
+      <p class="sr-only" data-learning-live aria-live="polite"></p>
+    </div>
+
+    <details class="learning-advanced" id="referencia-operativa">
+      <summary>
+        <span>Documentación avanzada</span>
+        <small>Contratos, fuentes, seguridad, operación y evidencia de versiones</small>
+      </summary>
+      <div class="learning-advanced__content">
     <div class="doc-shell">
       <nav class="toc" aria-label="Contenido de la guía">
         <p class="toc-label">Guía operativa</p>
@@ -304,7 +385,7 @@
       <div class="doc-content">
         <header>
           <span class="eyebrow">Documento operativo · sin datos de demostración</span>
-          <h1>Cómo usar MuniControl con evidencia municipal</h1>
+          <h2 class="technical-document-title">Cómo usar MuniControl con evidencia municipal</h2>
           <p class="hero-lead">
             Guía práctica para funcionarios y equipos municipales. Explica qué información está disponible hoy, cómo interpretarla y qué funciones se incorporarán en las próximas etapas.
           </p>
@@ -325,14 +406,6 @@
             <div class="snapshot-item"><span>Privacidad</span><strong>Grupos pequeños agrupados u ocultos</strong></div>
           </div>
         </header>
-
-        <section
-          class="municipal-task-finder"
-          id="tareas"
-          data-municipal-task-finder
-          data-task-finder-mode="catalog"
-          aria-label="Ayuda y tareas habilitadas"
-        ></section>
 
         <section id="alcance">
           <p class="section-kicker">01 · Contrato de verdad</p>
@@ -646,6 +719,8 @@
         <p class="footer-note">Manual operativo vivo 1.10.0 · estado actualizado al 14 de agosto de 2026. La evidencia de los releases históricos <code>v1.10.0</code> y <code>v1.9.0</code> se conserva dentro de este documento como antecedente y no describe por sí sola el estado actual. Cada despliegue nuevo requiere sus propias pruebas y verificación de Producción.</p>
       </div>
     </div>
+      </div>
+    </details>
   </main>
 
   <script src="js/navigation-catalog.js"></script>
@@ -653,6 +728,7 @@
   <script src="js/theme-switcher.js"></script>
   <script src="js/bottom-nav.js"></script>
   <script src="js/municipal-task-center.js"></script>
+  <script src="js/learning-center.js"></script>
   <script>
     if (typeof buildSidebar === 'function') buildSidebar('manuales');
   </script>

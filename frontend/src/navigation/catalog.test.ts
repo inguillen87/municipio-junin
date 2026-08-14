@@ -43,7 +43,7 @@ describe('React navigation catalog adapter', () => {
     installWindow(browserDefinition());
     const definition = getNavigationDefinition();
     expect(definition).not.toBeNull();
-    expect(definition?.version).toBe('2026-08-14.5');
+    expect(definition?.version).toBe('2026-08-14.6');
     expect(definition?.groups.map(group => group.id)).toEqual([
       'executive', 'people', 'territory', 'data',
     ]);
@@ -69,6 +69,7 @@ describe('React navigation catalog adapter', () => {
     ], '/estructura');
     expect(projection.top.map(item => item.id)).toEqual(['workspace']);
     expect(projection.footer.map(item => item.id)).toEqual(['manuales']);
+    expect(projection.footer[0]?.label).toBe('Ayuda y aprendizaje');
     expect(projection.groups.map(group => group.id)).toEqual(['people', 'territory']);
     expect(projection.groups.find(group => group.id === 'people')?.items.map(item => item.id)).toEqual([
       'estructura', 'trayectoria', 'movimientos-grh', 'rrhh', 'areas-grh',

@@ -1,24 +1,9 @@
-import { IncomingForm } from 'formidable';
 import fs from 'fs';
-import path from 'path';
 import { inflateRawSync } from 'node:zlib';
-import pg from 'pg';
 import Papa from 'papaparse';
 import * as xlsx from 'xlsx';
 import { noStore, requireDatasetTenant, requireRole } from './lib/auth.js';
-import databaseUrlPolicy from '../shared/database-url-policy.cjs';
-
-const { Pool } = pg;
-const { inspectDatabaseUrl } = databaseUrlPolicy;
-let pool;
-
-function databasePool() {
-  const inspected = inspectDatabaseUrl(process.env.DATABASE_URL, { nodeEnv: process.env.NODE_ENV });
-  pool ??= new Pool({ connectionString: inspected.connectionString });
-  return pool;
-}
 const IMPORT_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN'];
-const ALLOWED_MODULES = new Set(['general', 'rrhh', 'hacienda', 'obras', 'licitaciones', 'vecinos']);
 const ALLOWED_EXTENSIONS = new Set(['.csv', '.xlsx', '.xls', '.pdf', '.json']);
 const MAX_STORED_ROWS = 500;
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
@@ -65,139 +50,36 @@ export const config = {
   },
 };
 
-export default async function handler(req, res) {
-  noStore(res);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const caller = await requireRole(req, res, IMPORT_ROLES);
-  if (!caller || !requireDatasetTenant(res, caller, 'LEGACY_ANALYTICS_TENANT_ID')) return;
-
-  try {
-    const { fields, files } = await parseForm(req);
-    const module = (fields.module?.[0] || 'general').toLowerCase();
-    const period = String(fields.period?.[0] || '').trim();
-    if (!period) {
-      return res.status(400).json({ error: 'El período del dato es obligatorio. Use YYYY-MM.' });
-    }
-    if (!ALLOWED_MODULES.has(module)) {
-      return res.status(400).json({ error: 'Módulo de importación no permitido' });
-    }
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) {
-      return res.status(400).json({ error: 'Período inválido. Use YYYY-MM.' });
-    }
-    const sourceType = 'upload';
-
-    const results = [];
-    const fileList = Array.isArray(files.file) ? files.file : (files.file ? [files.file] : []);
-    if (!fileList.length) {
-      return res.status(400).json({
-        success: false,
-        persistedCount: 0,
-        failedCount: 0,
-        files: [],
-        error: 'No se recibió ningún archivo',
-      });
+export function createLegacyUploadRetirementHandler({
+  requireRoleImpl = requireRole,
+  requireDatasetTenantImpl = requireDatasetTenant,
+} = {}) {
+  return async function handler(req, res) {
+    noStore(res);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Vary', 'Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      return res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' });
     }
 
-    for (const file of fileList) {
-      const originalFilename = file.originalFilename || file.name || '';
-      const ext = path.extname(originalFilename).toLowerCase();
-      if (!ALLOWED_EXTENSIONS.has(ext)) {
-        results.push({
-          filename: originalFilename,
-          parsed: false,
-          persisted: false,
-          error: 'Tipo de archivo no permitido',
-        });
-        continue;
-      }
-      const filepath = file.filepath || file.path;
-      let parsedUpload;
+    const caller = await requireRoleImpl(req, res, IMPORT_ROLES);
+    if (!caller || !requireDatasetTenantImpl(res, caller, 'LEGACY_ANALYTICS_TENANT_ID')) return;
 
-      try {
-        parsedUpload = await parseUploadFile(filepath, ext);
-      } catch (parseErr) {
-        console.warn('Upload parse rejected:', parseErr.message);
-        results.push({
-          filename: originalFilename,
-          module,
-          period,
-          ext,
-          parsed: false,
-          persisted: false,
-          error: 'No se pudo interpretar el archivo; no se registró ningún dataset',
-        });
-        continue;
-      }
-
-      try {
-        const persisted = await persistParsedUpload({
-          module,
-          originalFilename,
-          sourceType,
-          period,
-          records: parsedUpload.records,
-        });
-        results.push({
-          id: persisted.datasetId,
-          filename: originalFilename,
-          module,
-          period,
-          rowCount: persisted.insertedRows,
-          sourceRowCount: parsedUpload.sourceRowCount,
-          insertedRows: persisted.insertedRows,
-          truncated: parsedUpload.sourceRowCount > persisted.insertedRows,
-          parsed: true,
-          persisted: true,
-          ext,
-        });
-      } catch (persistErr) {
-        console.error('Upload persistence failed:', persistErr.message);
-        results.push({
-          filename: originalFilename,
-          module,
-          period,
-          sourceRowCount: parsedUpload.sourceRowCount,
-          ext,
-          parsed: true,
-          persisted: false,
-          error: 'El archivo se interpretó pero no pudo persistirse; no se confirmó la carga',
-        });
-      }
-    }
-
-    const persistedCount = results.filter(result => result.persisted === true).length;
-    const failedCount = results.length - persistedCount;
-    const success = persistedCount > 0 && failedCount === 0;
-    const status = success ? 200 : persistedCount > 0 ? 207 : 422;
-
-    return res.status(status).json({
-      success,
-      partial: persistedCount > 0 && failedCount > 0,
-      persistedCount,
-      failedCount,
-      files: results,
-      message: success
-        ? `${persistedCount} archivo(s) interpretado(s) y persistido(s)`
-        : persistedCount > 0
-          ? `${persistedCount} archivo(s) persistido(s); ${failedCount} rechazado(s)`
-          : 'No se persistieron archivos',
-    });
-
-  } catch (err) {
-    console.error('Upload handler error:', err);
-    const uploadLimitExceeded = err?.code === 1009 || err?.code === 1015 || err?.httpCode === 413;
-    return res.status(uploadLimitExceeded ? 413 : 400).json({
+    return res.status(410).json({
       success: false,
-      error: uploadLimitExceeded
-        ? 'La carga excede los límites permitidos'
-        : 'No se pudo procesar la carga',
+      parsed: false,
+      persisted: false,
+      code: 'LEGACY_UPLOAD_IMPORT_RETIRED',
+      error: 'La carga legacy fue retirada. Use el ingreso gobernado en cuarentena.',
+      replacement: '/api/source-intake',
     });
-  }
+  };
 }
+export default createLegacyUploadRetirementHandler();
 
 export async function parseUploadFile(filepath, ext) {
   const normalizedExt = String(ext || '').toLowerCase();
@@ -223,35 +105,6 @@ export async function parseUploadFile(filepath, ext) {
   validateParsedRecords(parsed);
 
   return { records: parsed, sourceRowCount: parsed.length };
-}
-
-async function persistParsedUpload({ module, originalFilename, sourceType, period, records }) {
-  const storedRecords = records.slice(0, MAX_STORED_ROWS);
-  const client = await databasePool().connect();
-
-  try {
-    await client.query('BEGIN');
-    const dsRes = await client.query(
-      'INSERT INTO datasets (module, filename, source_type, row_count, period, processed) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [module, originalFilename, sourceType, storedRecords.length, period, true]
-    );
-    const datasetId = dsRes.rows[0].id;
-
-    for (const row of storedRecords) {
-      await client.query(
-        'INSERT INTO data_points (dataset_id, module, period, data) VALUES ($1, $2, $3, $4)',
-        [datasetId, module, period, JSON.stringify(row)]
-      );
-    }
-
-    await client.query('COMMIT');
-    return { datasetId, insertedRows: storedRecords.length };
-  } catch (error) {
-    await client.query('ROLLBACK').catch(() => {});
-    throw error;
-  } finally {
-    client.release();
-  }
 }
 
 function assertReadableFile(filepath) {
@@ -1048,20 +901,4 @@ async function parsePDF(filepath) {
   } finally {
     await parser.destroy().catch(() => {});
   }
-}
-
-function parseForm(req) {
-  return new Promise((resolve, reject) => {
-    const form = new IncomingForm({
-      maxFiles: 1,
-      maxFileSize: MAX_FILE_BYTES,
-      maxTotalFileSize: MAX_FILE_BYTES,
-      allowEmptyFiles: false,
-      minFileSize: 1,
-    });
-    form.parse(req, (err, fields, files) => {
-      if (err) reject(err);
-      else resolve({ fields, files });
-    });
-  });
 }

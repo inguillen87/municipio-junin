@@ -130,8 +130,6 @@ test('query parameters cannot replace the validated PostgreSQL authority or sess
 test('all database entry points invoke the shared policy before creating or using pools', () => {
   const entryPoints = [
     'api/lib/db.js',
-    'api/upload-handler.js',
-    'api/google-sheets.js',
     'api/audit.js',
     'api/lib/grh-artifacts.js',
     'scripts/publish_grh_artifacts.mjs',
@@ -145,6 +143,16 @@ test('all database entry points invoke the shared policy before creating or usin
   const retiredExport = readFileSync(path.join(root, 'api/export-data.js'), 'utf8');
   assert.match(retiredExport, /RAW_DATA_EXPORT_NOT_GOVERNED/);
   assert.doesNotMatch(retiredExport, /\bPool\b|DATABASE_URL|xlsx/);
+
+  for (const relativePath of ['api/upload-handler.js', 'api/google-sheets.js']) {
+    const retiredImport = readFileSync(path.join(root, relativePath), 'utf8');
+    assert.match(retiredImport, /status\(410\)/, relativePath);
+    assert.doesNotMatch(
+      retiredImport,
+      /database-url-policy\.cjs|inspectDatabaseUrl\(|\bPool\b|DATABASE_URL/,
+      relativePath,
+    );
+  }
 });
 
 test('Serverless Prisma authentication rejects an insecure configured transport', async () => {

@@ -4,7 +4,7 @@ import {
 } from './contextual-help-catalog.js';
 
 const CONTRACT = 'municipal-task-catalog-v1';
-const CATALOG_VERSION = '2026-08-14.4';
+const CATALOG_VERSION = '2026-08-14.5';
 const DEFAULT_RESULT_LIMIT = 8;
 const MAX_RESULT_LIMIT = 12;
 
@@ -154,9 +154,9 @@ const TASKS = deepFreeze([
   {
     id: 'import-source',
     kind: 'cargar',
-    label: 'Cargar un archivo autorizado',
-    description: 'Declará finalidad, período y responsable antes de validar una carga.',
-    keywords: ['cargar', 'importar', 'archivo', 'excel', 'csv', 'pdf'],
+    label: 'Cargar y validar una fuente',
+    description: 'Sólo una identidad privada autorizada diagnostica y registra; la evaluación pública inspecciona el flujo.',
+    keywords: ['cargar', 'importar', 'archivo', 'excel', 'xlsx', 'csv', 'json', 'pdf', 'txt', 'cuarentena'],
     pageId: 'import',
   },
   {

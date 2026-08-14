@@ -337,14 +337,14 @@ const PAGES = deepFreeze({
   import: {
     href: 'importar.html',
     aliases: ['/importar', '/importar.html'],
-    label: 'Importar datos',
-    objective: 'Ingresá una fuente autorizada con finalidad, período y validación explícitos.',
+    label: 'Ingresar una fuente',
+    objective: 'Recorré el ingreso gobernado; sólo una identidad privada autorizada puede procesar un archivo.',
     requiredCapability: 'navigation.import',
-    manualAnchor: 'acceso',
+    manualAnchor: 'ingesta',
     steps: [
-      { id: 'bound-source', selector: '#hubMain', title: 'Delimitá fuente y finalidad', copy: 'Cargá sólo el archivo aprobado para esta tarea; un backup completo no es un atajo aceptable.' },
-      { id: 'declare-period', selector: '#importPeriod', title: 'Declará el período', copy: 'Indicá el corte que representa la carga para evitar mezclar observaciones incompatibles.' },
-      { id: 'review-results', selector: '#fileList', title: 'Revisá resultados y rechazos', copy: 'No publiques hasta validar formato, esquema, cuarentena y trazabilidad de la carga.' },
+      { id: 'identify-source', selector: '#sourceIntakeIdentity', title: 'Revisá la identidad exigida', copy: 'Responsable, finalidad, período, clasificación y autoridad son obligatorios. En evaluación, estos controles son sólo lectura.' },
+      { id: 'choose-file', selector: '#sourceIntakeFile', title: 'Conocé el límite del archivo', copy: 'Una cuenta privada admite formatos y tamaños acotados. La evaluación pública no selecciona, envía ni analiza archivos.' },
+      { id: 'review-quarantine', selector: '#sourceIntakeResult', title: 'Entendé la cuarentena', copy: 'Una cuenta privada recibe controles agregados y bloqueos pendientes. Un recibo nunca integra ni publica la fuente.' },
     ],
   },
   manuals: {
@@ -382,7 +382,7 @@ const ASSISTANT_QUESTIONS = deepFreeze({
   rrhh: '¿Cómo interpreto el resumen agregado de RRHH?',
   audit: '¿Cómo verifico la fuente y el linaje de los datos?',
   export: '¿Cómo creo y reviso un reporte antes de compartirlo?',
-  import: '¿Cómo cargo un archivo con datos autorizados?',
+  import: '¿Cómo cargo y valido un archivo sin publicarlo?',
   manuals: '¿Cómo empiezo a usar MuniControl según mi rol?',
 });
 

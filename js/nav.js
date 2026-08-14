@@ -314,7 +314,7 @@ window.requireRole = function(allowedRoles) {
 // renders no private destinations; capability visibility never falls back to a
 // second, local menu.
 function validatedNavigationDefinition(definition) {
-  if (!definition || definition.version !== '2026-08-14.7' ||
+  if (!definition || definition.version !== '2026-08-14.8' ||
       !Array.isArray(definition.groups) || !Array.isArray(definition.items) ||
       !Object.isFrozen(definition) || !Object.isFrozen(definition.groups) ||
       !Object.isFrozen(definition.items) ||
@@ -1240,10 +1240,18 @@ var municipalTaskCenterAssetPromise = null;
 
 function taskCenterInput(projection) {
   if (!projection || !projection.user || !projection.homeProfile || !Array.isArray(projection.capabilities)) return null;
+  var capabilities = projection.capabilities.slice();
+  var published = typeof projection.user.id === 'string' &&
+    projection.user.id.indexOf('published-evaluation:') === 0;
+  if (published) {
+    capabilities = capabilities.filter(function(capability) {
+      return capability !== 'navigation.import';
+    });
+  }
   return {
     role: projection.user.role,
     variant: projection.homeProfile.variant,
-    capabilities: projection.capabilities.slice(),
+    capabilities: capabilities,
     policyVersion: projection.user.accessPolicyVersion
   };
 }

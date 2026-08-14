@@ -5,6 +5,7 @@ import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 
 import esmPolicy from '../shared/access-policy.cjs';
+import routePolicy from '../shared/route-policy.cjs';
 
 const require = createRequire(import.meta.url);
 const cjsPolicy = require('../shared/access-policy.cjs');
@@ -336,12 +337,13 @@ test('the official territorial reference remains available to every tenant-bound
   }
 });
 
-test('navigation grants stay aligned with the current GRH, audit, export and import APIs', async () => {
-  const [rawGrhSource, aiSource, auditSource, exportSource, uploadSource, sheetsSource] = await Promise.all([
+test('navigation grants stay aligned with the current GRH, audit, export and governed intake APIs', async () => {
+  const [rawGrhSource, aiSource, auditSource, exportSource, intakeSource, uploadSource, sheetsSource] = await Promise.all([
     readFile(new URL('../api/grh-data.js', import.meta.url), 'utf8'),
     readFile(new URL('../api/ai-analyze.js', import.meta.url), 'utf8'),
     readFile(new URL('../api/audit.js', import.meta.url), 'utf8'),
     readFile(new URL('../api/export-data.js', import.meta.url), 'utf8'),
+    readFile(new URL('../api/source-intake.js', import.meta.url), 'utf8'),
     readFile(new URL('../api/upload-handler.js', import.meta.url), 'utf8'),
     readFile(new URL('../api/google-sheets.js', import.meta.url), 'utf8'),
   ]);
@@ -356,8 +358,13 @@ test('navigation grants stay aligned with the current GRH, audit, export and imp
   assert.deepEqual(extractRoleArray(aiSource, 'EXECUTIVE_ROLES'), grhRoles);
   assert.deepEqual(extractRoleArray(exportSource, 'EXPORT_ROLES'), grhRoles);
   assert.deepEqual(extractRoleArray(auditSource, 'AUDIT_READ_ROLES'), auditRoles);
-  assert.deepEqual(extractRoleArray(uploadSource, 'IMPORT_ROLES'), importRoles);
-  assert.deepEqual(extractRoleArray(sheetsSource, 'IMPORT_ROLES'), importRoles);
+  assert.deepEqual(routePolicy.getAllowedRoles(routePolicy.PERMISSIONS.MUNICIPAL_SOURCE_INTAKE_READ), importRoles);
+  assert.deepEqual(routePolicy.getAllowedRoles(routePolicy.PERMISSIONS.MUNICIPAL_SOURCE_INTAKE_CREATE), importRoles);
+  assert.match(intakeSource, /caller\.role !== 'TENANT_ADMIN'/);
+  assert.match(intakeSource, /SOURCE_INTAKE_MODES\.PREVIEW/);
+  assert.match(uploadSource, /LEGACY_UPLOAD_IMPORT_RETIRED/);
+  assert.match(sheetsSource, /LEGACY_GOOGLE_SHEETS_IMPORT_RETIRED/);
+  assert.doesNotMatch(`${uploadSource}\n${sheetsSource}`, /INSERT\s+INTO\s+(?:datasets|data_points)/i);
 
   for (const capability of [
     'navigation.dashboard',
@@ -433,7 +440,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   const items = Array.from(navigation.definition.items, item => ({ ...item }));
   const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
 
-  assert.equal(navigation.definition.version, '2026-08-14.7');
+  assert.equal(navigation.definition.version, '2026-08-14.8');
   assert.deepEqual(
     Array.from(navigation.definition.groups, group => group.id),
     ['executive', 'people', 'territory', 'data'],

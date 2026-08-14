@@ -150,9 +150,11 @@ test('the exact six published profiles receive only their role capabilities insi
       ...roleHomeProfile,
       priorityCapabilities: expectedPriorityCapabilities,
     }, profile.profileId);
-    for (const denied of ['navigation.audit', 'navigation.export', 'navigation.import']) {
+    for (const denied of ['navigation.audit', 'navigation.export']) {
       assert.equal(access.includes(denied), false, `${profile.profileId}:${denied}`);
     }
+    assert.equal(access.includes('navigation.import'), profile.role === 'TENANT_ADMIN',
+      `${profile.profileId}:navigation.import`);
     if (['TENANT_USER', 'INSPECTOR', 'DEMO'].includes(profile.role)) {
       assert.deepEqual(access, [
         'session.read',
@@ -192,6 +194,7 @@ test('published Administrador has a valid home profile within the read-only capa
 
   assert.deepEqual(responseUser.homeProfile.priorityCapabilities, [
     'navigation.workspace',
+    'navigation.import',
     'navigation.data-quality',
   ]);
   assert.equal(responseUser.homeProfile.priorityCapabilities.every(capability =>
@@ -351,7 +354,7 @@ test('opaque private link rejects wrong, expired, misbound and rate-limited acce
 });
 
 test('route and release contracts own both one-click exchange endpoints exactly', () => {
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.17');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.18');
   assert.deepEqual(routePolicy.SESSION_EXCHANGE_ROUTES.map(route => [route.method, route.path, route.mode]), [
     ['POST', '/auth/evaluation-session', 'published-profile'],
     ['POST', '/auth/private-link-session', 'opaque-link'],

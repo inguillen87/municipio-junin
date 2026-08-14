@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Versión | 1.10.0 |
-| Incremento actual | S24 verificado en Production |
+| Incremento actual | S25 candidate local; S24 continúa verificado en Production |
 | Fecha de corte documental | 14 de agosto de 2026 |
-| Estado | Release público histórico `v1.10.0` verificado y preservado; S24 en Production (`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30, cero 5xx y smoke autenticado). Se conserva el antecedente S22 (`8a1ab580a171e359b05629356353ed6f6e4b7364`, `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx) |
+| Estado | Release público histórico `v1.10.0` verificado y preservado; S24 en Production (`5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30, cero 5xx y smoke autenticado). S25 es sólo candidate local: ingreso gobernado en cuarentena, sin archivo retenido ni publicación. Se conserva el antecedente S22 (`8a1ab580a171e359b05629356353ed6f6e4b7364`, `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx) |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -175,8 +175,8 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local `2026-08-14.17` cubre 32 recursos, 12 acciones,
-54 permisos y 99 firmas exactas: 57 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local `2026-08-14.18` cubre 33 recursos, 12 acciones,
+56 permisos y 101 firmas exactas: 59 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
 La política de acceso local `2026-08-13.4` entrega
@@ -248,9 +248,9 @@ operativas en producción sin configuración y smoke remoto exitoso.
 
 | Capacidad | Condición necesaria | Qué hacer si falta |
 |---|---|---|
-| [Hub de Datos](../importar.html) | Rol administrativo, base disponible y tenant correcto | No registrar la carga como exitosa |
-| Importación por archivo | Archivo válido y confirmación explícita de parseo y persistencia | Revisar filas insertadas, rechazadas y truncamiento |
-| Importación por Google Sheets | Hoja pública, CSV válido y límites satisfechos | No usar Google Sheets públicos para datos sensibles |
+| [Ingreso gobernado](../importar.html) | `TENANT_ADMIN`, tenant vigente y archivo permitido de hasta 4 MiB | Interpretar el receipt sólo como preflight en cuarentena; nunca como importación o publicación |
+| Persistencia del receipt | Sesión privada autorizada; la Evaluación Administrador sólo inspecciona el flujo y no procesa archivos | No confundir el receipt agregado con el original o un dataset |
+| Google Sheets | Retirado con 410 | No publicar hojas para eludir el ingreso gobernado; un futuro conector deberá ser read-only e institucional |
 | Informe imprimible GRH | Contrato privado disponible, rol permitido y despliegue que exponga la acción aprobada | No afirmar que existe un PDF oficial |
 | Prueba de conector PostgreSQL | Destino permitido, TLS y credencial de alcance mínimo | La credencial no debe guardarse en la interfaz |
 | WhatsApp institucional | Secretos, número, autenticidad, destinatarios y operación externa verificados | No prometer alertas o trámites activos |
@@ -296,7 +296,7 @@ cuenta aprovisionada con ese rol.
 | Secretario/a | Panel y detalle agregado de su competencia | El acceso depende de uno de los roles técnicos hoy permitidos |
 | Hacienda / Contaduría | Inicio → Hacienda → Calidad y Linaje → conciliación → Reportes → evidencia complementaria | No puede convertir control de cálculo en pago certificado |
 | RRHH | RRHH → GRH → Calidad y Linaje → eventos y movimientos | No debe buscar o inferir expedientes individuales |
-| Operador/a de datos | Hub de Datos → validación → carga → inventario del resultado | Importar requiere actualmente `SUPER_ADMIN` o `TENANT_ADMIN`; no hay auditoría institucional |
+| Operador/a de datos | Inicio → Ingresar una fuente → declarar metadatos → revisar receipt en cuarentena | Requiere sesión privada autorizada. La evaluación publicada sólo inspecciona la pantalla, sin carga ni análisis; el flujo privado registra auditoría, pero no retiene el original ni publica datos |
 | Administración técnica | Identidad, tenant, publicación de contratos e incidentes | No puede alterar datos para “hacer cerrar” una métrica |
 
 La visibilidad de un enlace en el menú no garantiza autorización. El servidor es
@@ -712,62 +712,43 @@ salida actual gobernada por su contrato y tampoco constituye un documento oficia
 sin aprobación institucional. Un control deshabilitado no debe sortearse con
 herramientas del navegador.
 
-## 12. Hub de Datos e importaciones
+## 12. Ingreso gobernado de fuentes
 
 Sólo personas expresamente autorizadas deben usar el
-[Hub de Datos](../importar.html). La operación vigente requiere rol
-`SUPER_ADMIN` o `TENANT_ADMIN` y el tenant correcto.
+[Ingreso gobernado](../importar.html). S25 no importa ni publica datos: genera
+un receipt de preflight con estado `quarantined`.
 
 ### 12.1 Carga de archivo
 
-1. Seleccione el módulo correcto y elija explícitamente el período `YYYY-MM` que
-   representa la fuente. La plataforma no lo infiere del archivo ni usa por
-   defecto la fecha de carga.
-2. Elija un archivo permitido: CSV, XLSX, XLS, PDF o JSON.
-3. No cargue dumps completos, secretos ni PII que no estén autorizados para este
-   flujo.
-4. Espere el resultado del servidor. La animación de progreso no constituye
-   persistencia.
-5. Considere éxito sólo cuando la respuesta confirme simultáneamente:
-   - parseo realizado;
-   - persistencia realizada;
-   - identificador de dataset;
-   - cantidad insertada mayor que cero.
-6. Compare filas de origen, insertadas, rechazadas y truncadas.
-7. Registre dataset, módulo, período, archivo y resultado en la bitácora operativa.
+1. Declare etiqueta, dominio, período `YYYY-MM`, oficina responsable, finalidad,
+   clasificación, autoridad, moneda y presencia de datos personales.
+2. Elija un archivo CSV, XLSX, XLS, JSON, PDF o TXT de hasta 4 MiB.
+3. No cargue dumps completos, secretos ni PII sin finalidad y autorización.
+4. Revise el SHA-256, formato, tamaño, perfil estructural y checks del receipt.
+5. Mantenga el estado en cuarentena. El receipt no contiene filename, headers,
+   filas, valores ni texto y no constituye un dataset.
+6. La Evaluación Administrador es sólo lectura: permite comprender los campos,
+   pero no seleccionar, enviar o analizar archivos. El `POST` publicado se
+   rechaza con 403. Una identidad privada autorizada registra sólo el receipt
+   agregado en auditoría.
 
 Límites actuales del flujo de archivos:
 
-- tamaño total por archivo: hasta 50 MB;
-- filas de origen: hasta 5.000;
-- columnas: hasta 200;
-- por diseño, el flujo conserva para persistencia una muestra acotada de hasta
-  500 registros por archivo y debe marcar truncamiento cuando corresponda.
+- tamaño total por archivo: hasta 4 MiB;
+- exactamente un archivo por solicitud;
+- seis extensiones permitidas: CSV, XLSX, XLS, JSON, PDF y TXT;
+- el original temporal se elimina al finalizar; no hay storage del original ni
+  control antimalware en esta etapa.
 
 No fragmente un archivo para eludir límites. Si el volumen legítimo los supera,
 solicite una revisión del proceso de ingesta.
 
-### 12.2 Google Sheets
+### 12.2 Google Sheets retirado
 
-1. Utilice sólo una hoja destinada a intercambio autorizado.
-2. La hoja debe ser accesible por enlace para que Google entregue el CSV.
-3. **Nunca publique GRH crudo ni PII en Google Sheets para usar este conector.**
-4. Pegue el enlace y espere el estado final.
-5. Verifique que los conteos del contrato de respuesta sean coherentes.
-6. Si hay truncamiento, sólo las filas declaradas como persistidas forman parte
-   del dataset.
-
-Límites actuales:
-
-- respuesta remota: hasta 5 MB;
-- hasta 200 columnas;
-- hasta 10.000 filas interpretadas;
-- hasta 5.000 filas persistidas; por encima de ese umbral la respuesta debe
-  declarar truncamiento.
-
-El parser admite comas, saltos de línea y comillas escapadas dentro de celdas.
-Los valores se preservan como texto; por ejemplo, ceros iniciales no deben
-convertirse automáticamente en números.
+La ruta anterior está autenticada pero responde 410. No publique una hoja ni
+exponga datos sensibles para sortear este límite. Un futuro conector deberá usar
+identidad institucional read-only, allowlist, secreto administrado, cuarentena y
+auditoría tenant-bound.
 
 ### 12.3 Prueba de PostgreSQL
 
@@ -778,7 +759,19 @@ convertirse automáticamente en números.
 - Un mensaje de conexión exitosa no significa que exista sincronización, ingesta
   programada o backup.
 
-### 12.4 Estados de importación
+### 12.4 Estado S25 de ingreso
+
+S25 no confirma una importación. Para una sesión privada autorizada registra un
+diagnóstico de ingreso con estado `quarantined`: metadatos declarados, extensión,
+tamaño, SHA-256 y métricas agregadas. El original no se conserva, no se ejecuta
+antimalware y ninguna fila se incorpora a dashboards. La Evaluación Administrador
+sólo inspecciona la pantalla y el `GET` read-only; no genera receipt y su `POST`
+responde 403 antes del parser.
+
+Los estados históricos de importación que siguen a continuación describen el
+flujo retirado y no deben atribuirse al endpoint S25.
+
+### 12.4.1 Estados históricos de importación
 
 | Estado | Interpretación | Acción |
 |---|---|---|
@@ -792,12 +785,9 @@ convertirse automáticamente en números.
 
 | Canal | Estado actual | Evolución responsable |
 |---|---|---|
-| CSV | Condicionado y validado por estructura/límites | Contratos versionados por dominio e ingesta programada |
-| XLSX / XLS | Condicionado, con controles de libro, hojas y tamaño | Plantillas institucionales y validación semántica específica |
-| PDF | Condicionado a texto extraíble y persistencia confirmada | Clasificación documental gobernada, revisión humana y linaje |
-| JSON | Condicionado a estructura y límites | Esquemas por versión y productor autorizado |
-| TXT | No admitido por el flujo actual | Roadmap: formato, codificación, delimitadores y contrato definidos antes de habilitar |
-| Google Sheets | Condicionado; exige una hoja accesible por enlace | Sólo fuentes no sensibles o intercambio institucional más seguro |
+| CSV / XLSX / XLS / JSON | S25 obtiene sólo un perfil estructural agregado y lo deja en cuarentena; máximo 4 MiB | Retener el original en storage privado, antimalware, validación semántica por dominio y aprobación maker-checker |
+| PDF / TXT | S25 cuenta sólo páginas o líneas/bytes; no devuelve ni conserva texto | Clasificación documental gobernada, antimalware, revisión humana y linaje privado |
+| Google Sheets | Retirado con 410 | Conector read-only futuro con identidad institucional, allowlist y secreto administrado |
 | PostgreSQL / DB | Existe prueba autenticada de conexión; no sincronización | Cuenta read-only, TLS, extracción programada y staging aislado |
 | Replay O2A del snapshot GRH | Probado real localmente con promoción y duplicado idempotente | Conservar como evidencia de ingeniería; no anunciarlo como sincronización |
 | CDC | No operativo | Captura incremental idempotente si la fuente y el proveedor lo permiten |
@@ -925,13 +915,13 @@ contradicen el contrato, la API segura responde 503 sin detalles. Use
 **Reintentar** una vez; si persiste, conserve el mensaje, la ruta, el corte
 esperado y la hora. No corrija el JSON ni los conteos en el navegador.
 
-### 15.5 Importación parcial, truncada o rechazada
+### 15.5 Receipt de ingreso bloqueado o rechazado
 
 - No vuelva a cargar repetidamente sin identificar la causa.
-- Compare origen, insertadas, rechazadas y límite.
-- Revise encabezados, formato, tamaño y período.
-- No combine manualmente el resultado con otro dataset sin contrato.
-- Conserve el identificador del dataset sólo si hubo persistencia confirmada.
+- Revise metadatos, formato, tamaño, período y checks bloqueantes.
+- No combine el receipt con otro dataset ni lo trate como aprobación.
+- El original no fue retenido; preserve la copia oficial sólo dentro del
+  procedimiento institucional autorizado.
 
 ### 15.6 Posible exposición de PII o secretos
 

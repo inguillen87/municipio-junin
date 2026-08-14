@@ -35,6 +35,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-movement-operations': 'grh-movement-operations-v1',
   '/api/grh-workforce-finance': 'grh-workforce-finance-v1',
   '/api/municipal-territory': 'municipal-territory-v2',
+  '/api/source-intake': 'municipal-source-intake-v1',
 });
 
 module.exports = Object.freeze({

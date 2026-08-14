@@ -138,9 +138,9 @@
 
     .ws-hero {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 390px);
       gap: 32px;
-      align-items: end;
+      align-items: start;
       padding: clamp(24px, 4vw, 48px);
       border: 1px solid var(--ws-border);
       border-left: 4px solid var(--ws-cyan);
@@ -170,16 +170,63 @@
       font-size: clamp(14px, 1.5vw, 17px);
       line-height: 1.68;
     }
-    .ws-question {
-      min-width: min(320px, 100%);
-      max-width: 360px;
-      padding: 18px 20px;
+    .ws-next-action {
+      min-width: 0;
+      padding: 20px;
       border: 1px solid var(--ws-border-strong);
       border-radius: 14px;
       background: var(--ws-raised);
     }
-    .ws-question span { color: var(--ws-muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-    .ws-question strong { display: block; margin-top: 8px; font-size: 16px; line-height: 1.45; }
+    .ws-next-action__eyebrow,
+    .ws-next-action__kind {
+      margin: 0;
+      color: var(--ws-cyan);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .ws-next-action h2 {
+      margin: 7px 0 0;
+      font-size: clamp(20px, 2.2vw, 27px);
+      letter-spacing: -.025em;
+      line-height: 1.15;
+    }
+    .ws-next-action__kind { display: block; margin-top: 13px; color: var(--ws-muted); }
+    .ws-next-action__copy {
+      margin: 6px 0 0;
+      color: var(--ws-soft);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .ws-next-action__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 16px;
+    }
+    .ws-next-action__primary,
+    .ws-guide-button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      padding: 9px 13px;
+      border: 1px solid var(--ws-border-strong);
+      border-radius: 10px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 820;
+      line-height: 1.25;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .ws-next-action__primary { border-color: var(--ws-accent); background: var(--ws-accent); color: #07111f; }
+    html[data-theme="light"] .ws-next-action__primary { color: #fff; }
+    .ws-guide-button { background: transparent; color: var(--ws-text); }
+    .ws-next-action__primary:focus-visible,
+    .ws-guide-button:focus-visible { outline: 3px solid var(--ws-cyan); outline-offset: 3px; }
+    .ws-hero > .ws-executive-summary { grid-column: 1 / -1; }
 
     .ws-context {
       display: flex;
@@ -273,13 +320,16 @@
     [hidden] { display: none !important; }
     @media (max-width: 1040px) {
       .ws-hero { grid-template-columns: 1fr; align-items: start; }
-      .ws-question { max-width: none; }
       .ws-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 760px) {
       .ws-shell { padding: 16px 14px 88px; }
       .ws-topbar-right .ws-session-state { display: none; }
-      .ws-hero { gap: 22px; padding: 24px 20px; border-radius: 15px; }
+      .ws-hero { gap: 16px; padding: 22px 19px; border-radius: 15px; }
+      .ws-lead { margin-top: 12px; line-height: 1.55; }
+      .ws-context { margin-top: 12px; }
+      .ws-next-action { padding: 16px; }
+      .ws-next-action__actions { margin-top: 13px; }
       .ws-grid { grid-template-columns: 1fr; }
       .ws-actions { grid-template-columns: 1fr; }
       .ws-action { min-height: 112px; }
@@ -287,9 +337,19 @@
     }
     @media (max-width: 420px) {
       .ws-title-block span { display: none; }
-      .ws-hero h1 { font-size: 34px; }
+      .ws-hero { gap: 11px; padding: 18px 15px; }
+      .ws-eyebrow { margin-bottom: 8px; }
+      .ws-hero h1 { font-size: 29px; }
+      .ws-lead { margin-top: 9px; line-height: 1.45; }
+      .ws-context { gap: 6px; margin-top: 9px; }
       .ws-panel { padding: 20px 17px; }
-      .ws-question { min-width: 0; }
+      .ws-chip { min-height: 28px; padding: 4px 8px; }
+      .ws-next-action { padding: 13px; }
+      .ws-next-action h2 { margin-top: 5px; font-size: 20px; }
+      .ws-next-action__kind { margin-top: 8px; }
+      .ws-next-action__copy { margin-top: 4px; line-height: 1.4; }
+      .ws-next-action__actions { margin-top: 10px; }
+      .ws-next-action__actions > * { width: 100%; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -304,6 +364,13 @@
       .main-content { width: 100% !important; margin: 0 !important; }
       .ws-shell { max-width: none; padding: 0; }
       .ws-hero, .ws-panel, .ws-action { box-shadow: none; break-inside: avoid; }
+    }
+    @media (forced-colors: active) {
+      .ws-hero,
+      .ws-next-action,
+      .ws-chip { border: 1px solid CanvasText; }
+      .ws-next-action__primary,
+      .ws-guide-button { border: 2px solid ButtonText; forced-color-adjust: auto; }
     }
   </style>
 </head>
@@ -332,7 +399,7 @@
 
       <div id="workspaceViews" hidden>
         <section class="ws-hero" aria-labelledby="workspaceTitle">
-          <div>
+          <div class="ws-hero-intro">
             <p class="ws-eyebrow" id="workspaceEyebrow">Espacio de trabajo</p>
             <h1 id="workspaceTitle">Inicio institucional</h1>
             <p class="ws-lead" id="workspaceLead"></p>
@@ -340,9 +407,19 @@
               <span class="ws-chip" id="roleChip"></span>
               <span class="ws-chip" id="tenantChip"></span>
               <span class="ws-chip" id="capabilityChip"></span>
-              <button class="ws-guide-button" type="button" data-muniguia-open hidden>Guiarme en esta pantalla</button>
             </div>
-            <section class="ws-executive-summary" id="executiveSummary" aria-labelledby="executiveSummaryTitle" aria-live="polite" aria-busy="true" hidden>
+          </div>
+          <section class="ws-next-action" id="workspaceNextAction" data-workspace-next-action aria-labelledby="workspaceNextActionTitle" aria-busy="true" hidden>
+            <p class="ws-next-action__eyebrow">Tu próximo paso</p>
+            <h2 id="workspaceNextActionTitle" data-workspace-next-action-title>Preparando una tarea segura</h2>
+            <span class="ws-next-action__kind" data-workspace-next-action-kind></span>
+            <p class="ws-next-action__copy" id="workspaceQuestion" data-workspace-next-action-copy></p>
+            <div class="ws-next-action__actions">
+              <a class="ws-next-action__primary" data-workspace-next-action-primary>Empezar</a>
+              <button class="ws-guide-button" type="button" data-workspace-next-action-guide data-muniguia-open hidden>Guiarme paso a paso</button>
+            </div>
+          </section>
+          <section class="ws-executive-summary" id="executiveSummary" aria-labelledby="executiveSummaryTitle" aria-live="polite" aria-busy="true" hidden>
               <div class="ws-executive-summary-head">
                 <div>
                   <p class="ws-executive-summary-kicker" id="executiveSummaryKicker">Comprobando el último respaldo…</p>
@@ -369,12 +446,7 @@
                 </div>
               </dl>
               <div class="ws-executive-summary-actions" id="executiveSummaryActions" aria-label="Acciones del resumen"></div>
-            </section>
-          </div>
-          <aside class="ws-question" aria-labelledby="questionLabel">
-            <span id="questionLabel">Para empezar</span>
-            <strong id="workspaceQuestion"></strong>
-          </aside>
+          </section>
         </section>
 
         <section id="muniguiaOnboardingMount" hidden aria-label="Bienvenida inicial"></section>
@@ -424,6 +496,7 @@
   <script src="js/bottom-nav.js"></script>
   <script src="js/grh-decision-brief-data.js"></script>
   <script src="js/workspace-executive-summary.js"></script>
+  <script src="js/workspace-next-action.js"></script>
   <script src="js/muniguia-onboarding.js"></script>
   <script src="js/municipal-task-center.js"></script>
   <script>
@@ -586,6 +659,7 @@
         setTimeout(focusNotice, 80);
       }
       function showError() {
+        if (window.MuniWorkspaceNextAction) window.MuniWorkspaceNextAction.unmount();
         if (window.MuniGuiaOnboarding) window.MuniGuiaOnboarding.unmount();
         if (window.MuniTaskCenter) window.MuniTaskCenter.unmount();
         document.getElementById('workspaceViews').hidden = true;
@@ -613,6 +687,12 @@
         document.getElementById('workspaceError').hidden = true;
         document.getElementById('workspaceMain').setAttribute('aria-busy', 'false');
         showNotice();
+        if (window.MuniWorkspaceNextAction) {
+          void window.MuniWorkspaceNextAction.mount(
+            projection,
+            document.getElementById('workspaceNextAction')
+          );
+        }
         if (window.MuniWorkspaceExecutiveSummary) {
           void window.MuniWorkspaceExecutiveSummary.mount(projection);
         }
@@ -623,10 +703,18 @@
           );
         }
         if (window.MuniTaskCenter) {
+          var taskCapabilities = projection.capabilities.slice();
+          var publishedEvaluation = typeof projection.user.id === 'string' &&
+            projection.user.id.indexOf('published-evaluation:') === 0;
+          if (publishedEvaluation) {
+            taskCapabilities = taskCapabilities.filter(function(capability) {
+              return capability !== 'navigation.import';
+            });
+          }
           void window.MuniTaskCenter.mount({
             role: projection.user.role,
             variant: projection.homeProfile.variant,
-            capabilities: projection.capabilities.slice(),
+            capabilities: taskCapabilities,
             policyVersion: projection.user.accessPolicyVersion
           });
         }

@@ -50,7 +50,7 @@ test('organization analytics has one exact private capability and route boundary
 });
 
 test('published organization analytics stays inside both the aggregate ceiling and canonical RBAC', () => {
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.17');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.18');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
 
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {

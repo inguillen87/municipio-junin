@@ -1,6 +1,6 @@
 # Roadmap de producto enterprise — MuniControl
 
-Versión: 1.10.0 + S24 verificado en Production
+Versión: 1.10.0 + S24 verificado en Production + S25 candidate local
 Fecha de corte: 14 de agosto de 2026
 Propietarios: Producto, Ingeniería, Seguridad y Gobierno de Datos
 
@@ -31,8 +31,8 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-El estado local vigente usa route policy `2026-08-14.17` y access policy
-`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 99 rutas exactas, 57
+El estado local vigente usa route policy `2026-08-14.18` y access policy
+`2026-08-13.4`: 33 recursos, 12 acciones, 56 permisos y 101 rutas exactas, 59
 Serverless + 42 Express. Para el release histórico `v1.10.0`, route policy
 `2026-08-09.2` y access policy `2026-08-09.1` cubrían 26 recursos, 12 acciones,
 46 permisos y 79 firmas de ruta: 37 Serverless + 42 Express. El commit/tag de ese release apunta a
@@ -184,14 +184,14 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Baseline Prisma S14C | Manifest v2, Prisma 5.22.0, una migración y 82 sentencias aditivas —3 enums, 25 tablas, 25 índices, 29 FK—; caso A vacío y B3 resolve pasan sobre child branches efímeros en LSN `0/307FA88`; raíz 634 + 1 opt-in y backend 20/20 | Gobernar ownership/naming del proyecto visible `puntolimpio-staging-neon`; después producir backup/restore, doble revisión, receipt y atestación institucional antes de DDL estable |
 | IAM-MAP-01 | Mapper puro y versionado para el subconjunto lifecycle reversible; sin Prisma Client, persistencia, migración o usuarios | Aplicar de forma gobernada el baseline en el target autorizado, aprobar la migración IAM y construir el adaptador transaccional antes de aprovisionar identidades |
 | UX-E2A: shell institucional | Shell compartido en `v1.8.1`; la superficie pública productiva cerró 10/10 con exit `0` | Mantener pruebas por rol; la UI no concede autorización ni prueba datos privados |
-| Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Storage privado, antivirus y auditoría persistente |
-| PDF/TXT/JSON y bases externas | Parcial o planificado | Contratos de parser/conector, cuotas y sandbox |
+| Ingreso gobernado S25 | Candidate local: CSV/XLSX/XLS/JSON/PDF/TXT hasta 4 MiB, SHA-256 y perfil agregado en cuarentena; Upload/Sheets retirados con 410 | Storage privado del original, antimalware, issues por corrida, maker-checker y publicación separada |
+| Bases externas | Planificado | Conectores read-only, contratos, cuotas, sandbox, secretos y allowlist |
 | Mapas operativos en tiempo real | No conectado | Fuente geográfica autorizada, PostGIS y SLA |
 | O2A/O2A.1: replay del snapshot GRH | Replay real previo preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas después con fixtures | Autenticar host/runtime y adapter conectado; no asumir que O2A.1 repitió los 44 MB |
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
-| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-14.17`: 32 recursos, 12 acciones, 54 permisos y 99 firmas de ruta (57 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
+| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-14.18`: 33 recursos, 12 acciones, 56 permisos y 101 firmas de ruta (59 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | Release histórico `v1.10.0`: tag `4108ca0`, product commit `d11fd39`, deployment `READY`, gate 11/11 y GitHub Release live. Hotfix post-release `e74339c`: `/prisma/schema.prisma` 404 seguro y gate 12/12 | No mover el tag ni inferir DB, cuentas, autorización positiva o datos GRH remotos; cada deployment posterior requiere repetir el gate actual de 12 probes |
@@ -327,8 +327,8 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 ### E1 — Identidad, ámbitos y auditoría enterprise
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
-exacto por `runtime + método + ruta + recurso:acción` (32 recursos, 12 acciones,
-54 permisos y 99 firmas: 57 Serverless y 42 Express). No hay wildcard, jerarquía
+exacto por `runtime + método + ruta + recurso:acción` (33 recursos, 12 acciones,
+56 permisos y 101 firmas: 59 Serverless y 42 Express). No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
@@ -631,6 +631,24 @@ el commit `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
 `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30, cero 5xx y smoke
 autenticado de roles altos/bajos, escritorio/móvil, MuniGuía, Task Center e IA
 determinista sin OpenAI ni Hugging Face.
+
+### S25 — ingreso gobernado de fuentes
+
+S25 permanece **candidate local; no acredita Production**. Sustituye los flujos
+legacy de Upload y Google Sheets por `municipal-source-intake-v1`, un primer
+control común para CSV, XLSX, XLS, JSON, PDF y TXT de hasta 4 MiB. El flujo
+valida metadatos exactos, calcula SHA-256 y devuelve sólo métricas estructurales
+agregadas. El archivo original, su nombre, cabeceras, filas, valores y texto no
+se conservan en el receipt ni se publican.
+
+Toda entrada privada queda en `quarantined`: la evaluación publicada sólo
+inspecciona el flujo y un `GET` vacío; no envía ni analiza archivos y su `POST`
+se rechaza con 403 antes del parser. Una sesión privada autorizada registra un
+receipt append-only, tenant-bound, en el `AuditLog` existente. S25 no ejecuta
+antimalware, no guarda el original, no aprueba fuentes y no crea datasets. Los
+endpoints legacy quedan autenticados y retirados con 410. Presupuesto contra
+ejecución continúa bloqueado hasta incorporar una fuente oficial con owner,
+diccionario, moneda, grano, tenant y aprobación institucional.
 
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;

@@ -328,12 +328,13 @@ test('/api/auth/me returns the published Administrador home profile projected to
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.payload.user.homeProfile.priorityCapabilities, [
     'navigation.workspace',
+    'navigation.import',
     'navigation.data-quality',
   ]);
   assert.equal(response.payload.user.homeProfile.priorityCapabilities.every(capability =>
     response.payload.user.capabilities.includes(capability)
   ), true);
-  assert.equal(response.payload.user.capabilities.includes('navigation.import'), false);
+  assert.equal(response.payload.user.capabilities.includes('navigation.import'), true);
   assert.equal(response.payload.user.capabilities.includes('navigation.audit'), false);
 });
 

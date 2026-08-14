@@ -6,7 +6,7 @@
 // A published session can therefore never widen either boundary.
 const routePolicy = require('./route-policy.cjs');
 
-const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-14.17';
+const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-14.18';
 
 const PUBLISHED_DEMO_PROFILES = Object.freeze([
   Object.freeze({ profileId: 'administrador', label: 'Administrador', email: 'admin@junin.gov.ar', role: 'TENANT_ADMIN', tenantSlug: 'junin' }),
@@ -44,6 +44,7 @@ const PUBLISHED_DEMO_ALLOWED_ROUTE_IDS = Object.freeze([
   'serverless.grh.report.read',
   'serverless.grh.report-api.read',
   'serverless.municipal.territory.read',
+  'serverless.municipal.source-intake.read',
   'express.auth.me.read',
 ]);
 
@@ -62,6 +63,7 @@ const PUBLISHED_DEMO_CAPABILITIES = Object.freeze([
   'navigation.organization-analytics',
   'navigation.territory',
   'navigation.data-quality',
+  'navigation.import',
   'navigation.rrhh',
   'navigation.ai-assistant',
   'navigation.help',

@@ -52,6 +52,7 @@ const EXPECTED_ALLOWED_ROUTES = Object.freeze([
   ['serverless', 'GET', '/municipal-territory'],
   ['serverless', 'GET', '/pdf-report'],
   ['serverless', 'GET', '/reports'],
+  ['serverless', 'GET', '/source-intake'],
 ]);
 
 function routeDescriptor(route) {
@@ -89,7 +90,7 @@ function deployedRuntimeSourceFiles() {
 }
 
 test('the temporary containment identifies exactly the six previously published emails', () => {
-  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.17');
+  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.18');
   assert.deepEqual(PUBLISHED_DEMO_IDENTITIES, EXPECTED_IDENTITIES);
   assert.equal(new Set(PUBLISHED_DEMO_IDENTITIES).size, 6);
 
@@ -187,7 +188,7 @@ test('published identities receive the intersection of one safe ceiling and thei
   }).allowed, false);
 });
 
-test('the only allowed POST remains deterministic, tenant-bound, provenance-bearing and PII-refusing', () => {
+test('the only allowed POST remains governed analysis and published intake POST is fail-closed', () => {
   const source = fs.readFileSync(path.join(root, 'api', 'ai-analyze.js'), 'utf8');
   assert.deepEqual(
     PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.filter(id => {
@@ -202,6 +203,17 @@ test('the only allowed POST remains deterministic, tenant-bound, provenance-bear
   assert.match(source, /intent:\s*'pii_request',\s*policy:\s*'refused'/);
   assert.match(source, /externalProvider:\s*false/);
   assert.match(source, /generated:\s*false/);
+  const intake = fs.readFileSync(path.join(root, 'api', 'source-intake.js'), 'utf8');
+  assert.equal(PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes('serverless.municipal.source-intake.create'), false);
+  assert.match(intake, /published\s*&&\s*req\.method\s*===\s*'POST'/);
+  assert.match(intake, /SOURCE_INTAKE_PUBLISHED_PREVIEW_DISABLED/);
+  assert.match(intake, /caller\.role !== 'TENANT_ADMIN'/);
+  assert.match(intake, /SOURCE_INTAKE_MODES\.PREVIEW/);
+  assert.ok(
+    intake.indexOf('SOURCE_INTAKE_PUBLISHED_PREVIEW_DISABLED') < intake.indexOf('parseMultipartImpl(req)'),
+    'published denial must precede multipart parsing',
+  );
+  assert.doesNotMatch(intake, /sharedSourceIntakePreviewBudgetGate|createSourceIntakePreviewPrincipal/);
 });
 
 test('published profiles can inspect but never mutate the GRH action ledger', () => {

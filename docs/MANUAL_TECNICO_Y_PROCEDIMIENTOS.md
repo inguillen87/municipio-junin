@@ -12,6 +12,9 @@
 > `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
 > `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30. El release público
 > histórico `v1.10.0` permanece verificado.
+> S25 permanece candidate local: incorpora `municipal-source-intake-v1` como
+> preflight tenant-bound en cuarentena. No conserva el original, no ejecuta
+> antimalware y no publica datos ni habilita presupuesto.
 > La sesión privada positiva y S13 privado conservan validación local sobre el snapshot aprobado.
 > S14C permanece `Unreleased`: el schema preserva 13 tablas existentes de
 > Preview —5 sensibles y 8 de referencia— sin delegates en ambos Prisma Client;
@@ -167,8 +170,8 @@ Reglas de verdad:
 - `shared/route-policy.cjs` actúa como techo de autorización exacto por
   runtime, método, ruta y permiso `recurso:acción`. Una ruta, método, rol,
   capacidad o secreto interno no registrado se deniega.
-- La versión local `2026-08-14.17` del manifiesto contiene 32 recursos, 12
-  acciones, 54 permisos y 99 firmas de ruta protegidas: 57 Serverless y 42
+- La versión local `2026-08-14.18` del manifiesto contiene 33 recursos, 12
+  acciones, 56 permisos y 101 firmas de ruta protegidas: 59 Serverless y 42
   Express. Es un techo ejecutable exacto, no persistencia RBAC/ABAC por área.
 - `.vercelignore` excluye backend, evidencia, scripts, SQL, tests, documentos y
   artefactos JSON privados. `api/**` y `prisma/**` permanecen desplegables.
@@ -1010,20 +1013,20 @@ empleados, pagos, presupuestos, reclamos, obras o licitaciones. Se reactivará s
 con clasificación por dominio, esquema versionado, permisos por acción y campo,
 maker-checker, auditoría tenant-bound y restore demostrado.
 
-### 11.2 Importación analítica legacy
+### 11.2 Importación analítica legacy — Retirada
 
-- `POST /api/upload-handler`: CSV, XLSX, XLS, PDF o JSON; un archivo por request;
-  exige rol administrativo y `LEGACY_ANALYTICS_TENANT_ID`; interpreta antes de
-  persistir, exige período `YYYY-MM` explícito y usa transacción. En Excel sólo
-  la primera hoja se transforma en filas; todas las hojas deben respetar los
-  límites del parser.
-- `POST /api/google-sheets`: descarga CSV de una hoja pública, mantiene valores
-  como strings, exige período `YYYY-MM` explícito, valida
-  MIME/UTF-8/estructura/headers y limita la fuente. La opción de sincronización
-  programada responde `422`: todavía no existe.
+`POST /api/upload-handler` y `POST /api/google-sheets` autentican y exigen tenant,
+pero responden 410 con reemplazo `/api/source-intake`. Ya no escriben
+`datasets` ni `data_points`. Los parsers puros permanecen únicamente como
+dependencia interna del perfilador S25 y no conceden una ruta de persistencia.
 
-Ambas escriben las tablas legacy `datasets` y `data_points`; el binding ambiental
-es el control temporal de aislamiento y no reemplaza una migración tenant-bound.
+`GET /api/source-intake` ofrece a TENANT_ADMIN publicado un envelope vacío y
+read-only. Su `POST` responde `403 PUBLISHED_DEMO_ROUTE_DENIED` en el adaptador
+de autorización antes de llegar al handler; la defensa interna
+`SOURCE_INTAKE_PUBLISHED_PREVIEW_DISABLED` también precede multipart, parser o
+store. Una identidad privada autorizada puede usar
+`GET|POST` y registra sólo el perfil agregado `quarantined` en `AuditLog`. No
+conserva el original, no devuelve contenido y no aprueba o publica una fuente.
 
 ### 11.3 Conector PostgreSQL externo
 
@@ -1461,35 +1464,48 @@ APIs privadas → analítica / mapas / alertas / asistente
 - La autorización actual combina identidad, rol vigente, tenant y estado
   consultados en DB con un manifiesto exacto de rutas y permisos
   `recurso:acción`. Las listas legacy sólo pueden restringir ese techo, nunca
-  ampliarlo. La versión local cubre 32 recursos, 12 acciones, 54 permisos y 99
-  firmas exactas (57 Serverless y 42 Express). Todavía no existe persistencia de
+  ampliarlo. La versión local cubre 33 recursos, 12 acciones, 56 permisos y 101
+  firmas exactas (59 Serverless y 42 Express). Todavía no existe persistencia de
   asignaciones por área, fila, campo, vigencia ni reglas de segregación de
   funciones.
 
 Esta fase habilita analítica descriptiva sobre el corte recibido; no acredita
 tiempo real, base remota materializada, moneda, nómina contractual ni predicción.
 
-### 16.2 Fase 1: ingreso unificado — Parcial/condicionado
+### 16.2 Fase 1: ingreso gobernado — Candidate local S25
 
-Hoy existen el upload de un archivo y Google Sheets sobre tablas analíticas
-legacy vinculadas globalmente mediante `LEGACY_ANALYTICS_TENANT_ID`, además de
-una prueba restringida de conexión PostgreSQL. `POST /api/data/import` está
-retirado con `410`: todavía no existe ingesta Prisma tenant-bound ni aislamiento
-por `tenant_id` en cada fila. Son superficies separadas y no constituyen una
-plataforma de ingesta unificada.
+`GET|POST /api/source-intake` implementa el primer contrato común de ingreso
+privado:
+`municipal-source-intake-v1`. Acepta CSV, XLSX, XLS, JSON, PDF y TXT hasta
+4 MiB; valida metadatos exactos, calcula SHA-256 y conserva en el receipt sólo
+un perfil estructural agregado. No devuelve filename, cabeceras, filas, valores
+o texto. Upload y Google Sheets legacy permanecen autenticados pero retirados
+con `410` y no escriben sus tablas anteriores.
+
+Todo receipt válido permanece `quarantined`. La sesión publicada de
+Administrador sólo obtiene el `GET` `evaluation_preview` vacío; el formulario
+queda deshabilitado y `POST` retorna 403 antes de multipart, perfilado o store.
+Una sesión privada autorizada opera en `persistent_receipts` y registra un evento append-only,
+tenant-bound, en `AuditLog`; el browser no recibe identidad de actor ni tenant.
+El original temporal se elimina al finalizar el request, no existe storage
+privado del original y no se ejecuta antimalware. Por ello S25 no representa
+una importación, una aprobación ni una publicación.
 
 El objetivo es que archivos y bases pasen por el mismo plano de control:
 
 1. registrar tenant, propietario, finalidad, clasificación y sistema de origen;
 2. autenticar el conector con una identidad read-only de alcance mínimo;
 3. capturar esquema, zona horaria, encoding, volumen, hash y fecha de corte;
-4. escribir una landing privada e inmutable por ejecución;
+4. escribir una landing privada e inmutable por ejecución —todavía pendiente—;
 5. validar límites, esquema, tipos, claves, duplicados y PII antes de promover;
 6. enviar filas inválidas a cuarentena con causa, sin descartarlas en silencio;
 7. conservar linaje desde fuente hasta KPI y publicar de forma idempotente.
 
 Ningún conector puede pasar de `test` a lectura o persistencia sin contrato de
 red, allowlist, secretos, límites, tenant, auditoría y pruebas de aislamiento.
+El CSV `CuentasClaras_Junin_2026.csv` sigue en cuarentena: no tiene owner,
+diccionario, moneda, grano, tenant o aprobación suficientes para habilitar
+presupuesto contra ejecución.
 
 ### 16.3 Fase 2: batch diario y continuidad — Planificado
 
@@ -1558,7 +1574,7 @@ municipal ni ejecutar una decisión administrativa por sí sola.
 
 **Actual local:** existen `Tenant`, siete roles técnicos, estado del tenant,
 controles tenant-bound y una política compartida que registra de forma literal
-32 recursos, 12 acciones, 54 permisos y 99 firmas protegidas (57 Serverless y 42
+33 recursos, 12 acciones, 56 permisos y 101 firmas protegidas (59 Serverless y 42
 Express). No hay wildcard, jerarquía ni autorización por nombre de pantalla. Los
 adaptadores de ambos runtimes usan ese mismo techo y deniegan lo desconocido.
 Algunas tablas analíticas legacy aún dependen de un CUID ambiental y no ofrecen
@@ -1682,13 +1698,13 @@ Diagnóstico recomendado:
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px. Siempre consulta `/api/auth/me`; sólo el Inicio de Intendencia con variante `executive-leadership` y `navigation.dashboard` agrega el brief GRH y falla sin cifras si no está disponible |
-| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-14.17`: 32 recursos, 12 acciones, 54 permisos y 99 firmas exactas, 57 Serverless + 42 Express; desconocidos fallan cerrados |
+| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-14.18`: 33 recursos, 12 acciones, 56 permisos y 101 firmas exactas, 59 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |
 | Baseline/replay S14C | Reproducible y aprobado en branches efímeros | manifest v2, Prisma 5.22, 82 sentencias; A vacío y B3 resolve con status/diff cero; catálogo B3 byte-idéntico; cero escrituras Preview/Production; DDL estable bloqueado por ownership/naming del proyecto Neon |
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
-| Upload/Google Sheets analítico | Operativo local | contrato estricto; fuente legacy ligada por env |
+| Ingreso gobernado S25 | Candidate local | seis formatos hasta 4 MiB y receipt agregado en cuarentena sólo para sesión privada; evaluación publicada read-only, formulario deshabilitado y POST 403 antes del parser; auditoría privada tenant-bound, sin original, antimalware, aprobación ni publicación. Upload/Sheets legacy responden 410 |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
 | Preview/producción Vercel | Release público histórico `v1.10.0` desplegado; sesiones positivas, S13 privado y datos privados no certificados | tag `4108ca0`, deployment release `READY` y gate histórico 11/11; hotfix post-release `e74339c` bloquea el schema público y cerró 12/12; faltan smokes positivos con sesión, DB y datos remotos |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |

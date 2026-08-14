@@ -6,186 +6,422 @@ import test from 'node:test';
 import { chromium } from 'playwright';
 import accessPolicy from '../shared/access-policy.cjs';
 
-const root = path.resolve(import.meta.dirname, '..');
-const contentTypes = {
+const ROOT = path.resolve(import.meta.dirname, '..');
+const CONTRACT = 'municipal-source-intake-v1';
+const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
   '.ico': 'image/x-icon',
+  '.jpg': 'image/jpeg',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml'
+  '.svg': 'image/svg+xml',
 };
 
-function authoritativeUser() {
-  const user = {
-    id: 'import-contract-qa',
-    name: 'QA Importaciones',
-    role: 'TENANT_ADMIN',
-    tenantId: 'tenant-junin-test'
-  };
-  const access = accessPolicy.getSessionAccessForUser(user);
-  assert.ok(access, 'missing authorized import fixture projection');
+function authoritativeUser(id, role, { published = false } = {}) {
+  const tenantId = 'tenant-source-intake-e2e';
+  const access = accessPolicy.getSessionAccessForUser({ role, tenantId });
+  assert.ok(access);
   return {
-    ...user,
+    id: published ? 'published-evaluation:administrador' : id,
+    name: published ? 'Evaluación Administrador' : `Perfil ${role}`,
+    email: published ? '' : `${id}@internal.invalid`,
+    role,
+    tenantId,
+    tenant: { name: 'Municipalidad de Junín', shortName: 'Junín' },
     capabilities: [...access.capabilities],
     accessPolicyVersion: accessPolicy.ACCESS_POLICY_VERSION,
     homeProfile: {
       ...access.homeProfile,
-      priorityCapabilities: [...access.homeProfile.priorityCapabilities]
-    }
+      priorityCapabilities: [...access.homeProfile.priorityCapabilities],
+    },
   };
 }
 
-const AUTHORIZED_USER = authoritativeUser();
-
-function fakeToken() {
+function fakeToken(subject) {
   const encode = value => Buffer.from(JSON.stringify(value)).toString('base64url');
   return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({
-    sub: AUTHORIZED_USER.id,
-    role: AUTHORIZED_USER.role,
-    tenantId: AUTHORIZED_USER.tenantId,
-    exp: Math.floor(Date.now() / 1000) + 600
+    sub: subject,
+    role: 'TENANT_ADMIN',
+    tenantId: 'tenant-source-intake-e2e',
+    exp: Math.floor(Date.now() / 1000) + 900,
   })}.qa`;
 }
 
-function importPayload(kind) {
-  const base = {
-    success: true,
-    parsed: true,
-    persisted: true,
-    datasetId: `dataset-${kind}`,
-    id: `dataset-${kind}`,
-    module: 'rrhh',
-    period: '2026-07',
-    limit: 5000
-  };
-  if (kind === 'successsheet') {
-    return { ...base, status: 'success', partial: false, sourceRowCount: 2, parsedRows: 2, rowCount: 2, insertedRows: 2, persistedRows: 2, rejectedRows: 0, truncated: false };
+function tokenSubject(request) {
+  const authorization = String(request.headers.authorization || '');
+  try {
+    const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8')).sub;
+  } catch {
+    return null;
   }
-  if (kind === 'partialsheet') {
-    return { ...base, status: 'partial', partial: true, sourceRowCount: 5, parsedRows: 5, rowCount: 4, insertedRows: 4, persistedRows: 4, rejectedRows: 1, truncated: false };
-  }
-  if (kind === 'truncatedsheet') {
-    return { ...base, status: 'partial', partial: true, sourceRowCount: 5002, parsedRows: 5002, rowCount: 5000, insertedRows: 5000, persistedRows: 5000, rejectedRows: 2, truncated: true };
-  }
-  if (kind === 'incoherentsheet') {
-    return { ...base, status: 'success', partial: false, sourceRowCount: 5000, parsedRows: 5000, rowCount: 5000, insertedRows: 5000, persistedRows: 5000, rejectedRows: 2, truncated: false };
-  }
-  return { error: 'La hoja fue rechazada por la fuente', parsed: false, persisted: false };
 }
 
-async function createServer() {
-  const googleRequests = [];
+function receipt({ persisted }) {
+  const checks = [
+    { code: 'metadata_validated', status: 'passed', severity: 'info', label: 'Metadatos contractuales validados.' },
+    { code: 'file_within_limit', status: 'passed', severity: 'info', label: 'Archivo dentro del límite de 4 MiB.' },
+    { code: 'format_parsed', status: 'passed', severity: 'info', label: 'Formato interpretado para perfil estructural.' },
+    { code: 'authority_owner_confirmed', status: 'passed', severity: 'info', label: 'Autoridad de origen declarada como confirmada.' },
+    { code: 'personal_data_not_declared', status: 'passed', severity: 'info', label: 'La fuente fue declarada sin datos personales.' },
+    { code: 'original_not_retained', status: 'blocked', severity: 'high', label: 'El original no se conserva en este flujo.' },
+    { code: 'antimalware_not_run', status: 'blocked', severity: 'high', label: 'No se ejecutó un control antimalware.' },
+  ];
+  return {
+    id: persisted ? 'source-intake-e2e-private' : `preview:${'a'.repeat(64)}`,
+    status: 'quarantined',
+    createdAt: '2026-08-14T18:00:00.000Z',
+    persisted,
+    source: {
+      label: 'Novedades de personal de julio',
+      domain: 'hr',
+      referencePeriod: '2026-07',
+      ownerOffice: 'Dirección de Recursos Humanos',
+      purpose: 'operational_analysis',
+      classification: 'internal',
+      authority: 'owner_confirmed',
+      currency: 'not_applicable',
+      containsPersonalData: false,
+    },
+    file: { extension: 'csv', kind: 'structured', sizeBytes: 48, sha256: 'a'.repeat(64) },
+    profile: {
+      schemaVersion: 'municipal-source-intake-profile-v1',
+      schemaDigest: 'b'.repeat(64),
+      rowCount: 3,
+      columnCount: 2,
+      emptyCellRatePct: 16.6667,
+      duplicateRowRatePct: 0,
+      pageCount: null,
+      lineCount: null,
+      textBytes: null,
+    },
+    quality: { status: 'blocked', checks, passedCount: 5, blockedCount: 2 },
+    limits: [
+      { code: 'original_not_retained', text: 'El archivo original no se conserva después del diagnóstico.' },
+      { code: 'antimalware_not_run', text: 'No se ejecutó un control antimalware sobre el archivo.' },
+      { code: 'quarantine_not_publication', text: 'La cuarentena no integra ni publica la fuente.' },
+    ],
+  };
+}
+
+async function createServer(users, requestLog, { mutateReceiptBySubject = new Map() } = {}) {
+  const multipartBodies = [];
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
+    const subject = tokenSubject(request);
+    requestLog.push({ method: request.method, path: url.pathname, subject });
+
     if (url.pathname === '/api/auth/me') {
-      response.writeHead(200, { 'Content-Type': contentTypes['.json'], 'Cache-Control': 'no-store' });
+      const user = users.get(subject);
+      if (!user) {
+        response.writeHead(401, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
+        response.end(JSON.stringify({ error: 'not authorized' }));
+        return;
+      }
+      response.writeHead(200, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
+      response.end(JSON.stringify({ user }));
+      return;
+    }
+
+    if (url.pathname === '/api/source-intake') {
+      const user = users.get(subject);
+      const published = user?.id.startsWith('published-evaluation:');
+      if (published && request.method === 'POST') {
+        response.writeHead(403, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'], 'X-MuniControl-Contract': CONTRACT });
+        response.end(JSON.stringify({ error: 'read only', code: 'SOURCE_INTAKE_PUBLISHED_PREVIEW_DISABLED' }));
+        return;
+      }
+      if (!user || request.method !== 'POST' || !user.capabilities.includes('navigation.import')) {
+        response.writeHead(403, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'], 'X-MuniControl-Contract': CONTRACT });
+        response.end(JSON.stringify({ error: 'denied', code: 'SOURCE_INTAKE_DENIED' }));
+        return;
+      }
+      let body = Buffer.alloc(0);
+      for await (const chunk of request) body = Buffer.concat([body, chunk]);
+      multipartBodies.push({
+        authorization: request.headers.authorization,
+        contentType: request.headers['content-type'],
+        raw: body.toString('utf8'),
+        subject,
+      });
+      const responseReceipt = receipt({ persisted: !published });
+      const mutateReceipt = mutateReceiptBySubject.get(subject);
+      if (mutateReceipt) mutateReceipt(responseReceipt);
+      response.writeHead(published ? 200 : 201, {
+        'Cache-Control': 'no-store',
+        'Content-Type': CONTENT_TYPES['.json'],
+        'X-MuniControl-Contract': CONTRACT,
+      });
       response.end(JSON.stringify({
-        user: AUTHORIZED_USER
+        schemaVersion: CONTRACT,
+        mode: published ? 'evaluation_preview' : 'persistent_receipts',
+        writeEnabled: !published,
+        maxFileBytes: 4_194_304,
+        allowedExtensions: ['csv', 'json', 'pdf', 'txt', 'xls', 'xlsx'],
+        receipt: responseReceipt,
       }));
       return;
     }
-    if (url.pathname === '/api/audit') {
-      response.writeHead(200, { 'Content-Type': contentTypes['.json'], 'Cache-Control': 'no-store' });
-      response.end(JSON.stringify({ datasets: [] }));
-      return;
-    }
-    if (url.pathname === '/api/google-sheets') {
-      let rawBody = '';
-      for await (const chunk of request) rawBody += chunk;
-      const body = JSON.parse(rawBody || '{}');
-      const match = String(body.sheetUrl || '').match(/\/d\/([a-zA-Z0-9_-]+)/);
-      const kind = match?.[1] || 'rejectsheet';
-      googleRequests.push({ kind, authorization: request.headers.authorization, body });
-      const rejected = kind === 'rejectsheet';
-      const partial = kind === 'partialsheet' || kind === 'truncatedsheet';
-      response.writeHead(rejected ? 422 : partial ? 207 : 200, {
-        'Content-Type': contentTypes['.json'],
-        'Cache-Control': 'no-store'
-      });
-      response.end(JSON.stringify(importPayload(kind)));
+
+    if (/^\/api\/(?:upload-handler|google-sheets|external-connector|ai-analyze)/.test(url.pathname)) {
+      response.writeHead(418, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
+      response.end(JSON.stringify({ error: 'retired endpoint must not be called' }));
       return;
     }
 
     const relative = decodeURIComponent(url.pathname.slice(1) || 'importar.html');
-    const target = path.resolve(root, relative);
-    if (!target.startsWith(`${root}${path.sep}`)) {
+    const target = path.resolve(ROOT, relative);
+    if (!target.startsWith(`${ROOT}${path.sep}`)) {
       response.writeHead(403).end();
       return;
     }
     try {
       const body = await readFile(target);
-      response.writeHead(200, { 'Content-Type': contentTypes[path.extname(target)] || 'application/octet-stream' });
+      response.writeHead(200, {
+        'Cache-Control': 'no-store',
+        'Content-Type': CONTENT_TYPES[path.extname(target)] || 'application/octet-stream',
+      });
       response.end(body);
     } catch {
-      response.writeHead(404).end();
+      response.writeHead(404, { 'Cache-Control': 'no-store' }).end();
     }
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  return { server, googleRequests };
+  return { server, multipartBodies };
 }
 
-async function submitSheet(page, kind, expectedState) {
-  await page.locator('#importPeriod').fill('2026-07');
-  await page.locator('#gdriveInput').fill(`https://docs.google.com/spreadsheets/d/${kind}/edit`);
-  await page.locator('#panel-gdrive .btn-connect').click();
-  await page.waitForFunction(state => document.querySelector('#panel-gdrive [data-google-import-status]')?.dataset.state === state, expectedState);
-  return page.locator('#panel-gdrive [data-google-import-status]').evaluate(node => ({
-    state: node.dataset.state,
-    text: node.textContent,
-    buttonDisabled: document.querySelector('#panel-gdrive .btn-connect').disabled,
-    buttonBusy: document.querySelector('#panel-gdrive .btn-connect').getAttribute('aria-busy')
-  }));
+async function intakePage(browser, baseUrl, subject, user, viewport, extraOptions = {}) {
+  const context = await browser.newContext({ viewport, reducedMotion: 'reduce', ...extraOptions });
+  await context.addInitScript(({ token, seededUser }) => {
+    sessionStorage.setItem('mjunin_token', token);
+    sessionStorage.setItem('mjunin_user', JSON.stringify(seededUser));
+  }, { token: fakeToken(subject), seededUser: user });
+  return { context, page: await context.newPage() };
 }
 
-test('Google Sheets UI renders success, partial, truncation and rejection from the strict server contract', async t => {
-  const { server, googleRequests } = await createServer();
+async function completeForm(page) {
+  await page.locator('#sourceLabel').fill('Novedades de personal de julio');
+  await page.locator('#sourceDomain').selectOption('hr');
+  await page.locator('#referencePeriod').fill('2026-07');
+  await page.locator('#ownerOffice').fill('Dirección de Recursos Humanos');
+  await page.locator('#sourcePurpose').selectOption('operational_analysis');
+  await page.locator('#sourceClassification').selectOption('internal');
+  await page.locator('#sourceCurrency').selectOption('not_applicable');
+  await page.locator('#sourceAuthority').selectOption('owner_confirmed');
+  await page.locator('input[name="containsPersonalData"][value="false"]').check();
+  await page.locator('#sourceFile').setInputFiles({
+    name: 'novedades-julio.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('legajo_privado,valor_privado\nALFA_SECRETA,10\nBETA_SECRETA,20\n'),
+  });
+}
+
+test('private Admin completes the governed intake at 1440, 390, and 320 without value preview or legacy calls', async t => {
+  const privateUser = authoritativeUser('private-admin', 'TENANT_ADMIN');
+  const users = new Map([['private-admin', privateUser]]);
+  const requestLog = [];
+  const { server, multipartBodies } = await createServer(users, requestLog);
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
   const browser = await chromium.launch({ headless: true });
-
   t.after(async () => {
     await browser.close();
     await new Promise(resolve => server.close(resolve));
   });
 
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  await context.addInitScript(({ token, user }) => {
-    sessionStorage.setItem('mjunin_token', token);
-    sessionStorage.setItem('mjunin_user', JSON.stringify(user));
-  }, { token: fakeToken(), user: AUTHORIZED_USER });
-  const page = await context.newPage();
-  const consoleErrors = [];
-  const pageErrors = [];
-  page.on('console', message => {
-    if (message.type() === 'error' && !/Failed to load resource.*422/i.test(message.text())) consoleErrors.push(message.text());
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+    { width: 320, height: 720 },
+  ]) {
+    const beforeBodies = multipartBodies.length;
+    const { context, page } = await intakePage(browser, baseUrl, 'private-admin', privateUser, viewport);
+    const consoleErrors = [];
+    const pageErrors = [];
+    const externalRequests = [];
+    page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+    page.on('pageerror', error => pageErrors.push(error.message));
+    page.on('request', request => { if (!request.url().startsWith(baseUrl)) externalRequests.push(request.url()); });
+    await page.goto(`${baseUrl}/importar.html`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#sourceIntakeApp[data-state="ready"]:not([hidden])');
+    await completeForm(page);
+    await page.locator('#sourceIntakeSubmit').click();
+    await page.waitForSelector('#sourceIntakeResult[data-state="quarantined"]:not([hidden])');
+
+    const state = await page.evaluate(() => ({
+      active: document.activeElement?.id,
+      contract: document.querySelector('#sourceIntakeApp').dataset.contract,
+      evaluationHidden: document.querySelector('#sourceIntakeEvaluation').hidden,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      profileTerms: [...document.querySelectorAll('#sourceIntakeProfile dt')].map(node => node.textContent),
+      result: document.querySelector('#sourceIntakeResult').textContent,
+      secretVisible: /ALFA_SECRETA|BETA_SECRETA|legajo_privado|valor_privado/.test(document.body.textContent),
+      touchTargets: [...document.querySelectorAll(
+        '#sourceIntakeApp button:not([hidden]), #sourceIntakeApp a:not([hidden]), #sourceIntakeApp select, #sourceIntakeApp input:not([type="radio"]), #sourceIntakeApp .source-intake-choice label'
+      )].filter(node => node.getClientRects().length).map(node => node.getBoundingClientRect().height),
+    }));
+
+    assert.equal(state.contract, CONTRACT);
+    assert.equal(state.active, 'sourceIntakeResult');
+    assert.equal(state.evaluationHidden, true);
+    assert.ok(state.overflow <= 1, `${viewport.width}: overflow=${state.overflow}`);
+    assert.match(state.result, /Quedó en cuarentena/i);
+    assert.match(state.result, /archivo no se conservó/i);
+    assert.match(state.result, /ningún dato fue integrado ni publicado/i);
+    assert.match(state.result, new RegExp('a'.repeat(64)));
+    assert.deepEqual(state.profileTerms, [
+      'Filas detectadas', 'Columnas detectadas', 'Celdas vacías', 'Filas duplicadas', 'Huella del esquema',
+    ]);
+    assert.equal(state.secretVisible, false);
+    assert.ok(state.touchTargets.every(height => height >= 44), `${viewport.width}: touch target below 44px`);
+    assert.deepEqual(consoleErrors, []);
+    assert.deepEqual(pageErrors, []);
+    assert.deepEqual(externalRequests, []);
+    assert.equal(multipartBodies.length, beforeBodies + 1);
+    await context.close();
+  }
+
+  for (const body of multipartBodies) {
+    assert.match(body.authorization || '', /^Bearer\s+/u);
+    assert.match(body.contentType || '', /^multipart\/form-data;\s*boundary=/iu);
+    const names = [...body.raw.matchAll(/;\sname="([^"]+)"/gu)].map(match => match[1]).sort();
+    assert.deepEqual(names, [
+      'authority', 'classification', 'containsPersonalData', 'currency', 'domain', 'file',
+      'ownerOffice', 'purpose', 'referencePeriod', 'sourceLabel',
+    ]);
+    assert.match(body.raw, /name="containsPersonalData"\r\n\r\nfalse\r\n/u);
+    assert.match(body.raw, /name="file"; filename="novedades-julio\.csv"/u);
+  }
+  assert.equal(requestLog.some(entry => /^\/api\/(?:upload-handler|google-sheets|external-connector|ai-analyze)$/.test(entry.path)), false);
+});
+
+test('published Admin can inspect a read-only intake flow with disabled controls and zero POST', async t => {
+  const user = authoritativeUser('published-admin', 'TENANT_ADMIN', { published: true });
+  const users = new Map([['published-admin', user]]);
+  const requestLog = [];
+  const { server, multipartBodies } = await createServer(users, requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
   });
-  page.on('pageerror', error => pageErrors.push(error.message));
-  await page.goto(`${baseUrl}/importar.html`, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(() => window.MuniAuthReady);
-  await page.locator('#src-gdrive').click();
-
-  const success = await submitSheet(page, 'successsheet', 'success');
-  assert.match(success.text, /2 de 2 filas persistidas/i);
-
-  const partial = await submitSheet(page, 'partialsheet', 'partial');
-  assert.match(partial.text, /Importación parcial.*4 de 5.*1 rechazadas/i);
-
-  const truncated = await submitSheet(page, 'truncatedsheet', 'truncated');
-  assert.match(truncated.text, /Importación truncada.*5\.000.*5\.002.*2 no se guardaron/i);
-
-  const rejected = await submitSheet(page, 'rejectsheet', 'rejected');
-  assert.match(rejected.text, /Importación rechazada.*hoja fue rechazada/i);
-
-  const incoherent = await submitSheet(page, 'incoherentsheet', 'rejected');
-  assert.match(incoherent.text, /contrato coherente.*No se declaró éxito/i);
-  assert.equal(incoherent.buttonDisabled, false);
-  assert.equal(incoherent.buttonBusy, 'false');
-
-  assert.equal(googleRequests.length, 5);
-  assert.ok(googleRequests.every(item => /^Bearer\s+/.test(item.authorization || '')));
-  assert.ok(googleRequests.every(item => item.body.module === 'rrhh'));
-  assert.ok(googleRequests.every(item => item.body.period === '2026-07'));
+  const { context, page } = await intakePage(
+    browser,
+    baseUrl,
+    'published-admin',
+    user,
+    { width: 390, height: 844 },
+    { forcedColors: 'active' },
+  );
+  t.after(async () => context.close());
+  const consoleErrors = [];
+  page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+  await page.goto(`${baseUrl}/importar.html`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('#sourceIntakeEvaluation:not([hidden])');
+  const state = await page.evaluate(() => {
+    const form = document.querySelector('#sourceIntakeForm');
+    const event = new Event('submit', { bubbles: true, cancelable: true });
+    const dispatchResult = form.dispatchEvent(event);
+    return {
+      ariaDisabled: form.getAttribute('aria-disabled'),
+      controls: [...form.querySelectorAll('input, select, textarea, button')].map(control => ({
+        disabled: control.disabled,
+        id: control.id,
+      })),
+      dispatchResult,
+      mode: document.querySelector('#sourceIntakeApp').dataset.mode,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      session: document.querySelector('#sourceIntakeSession').textContent,
+      submitText: document.querySelector('#sourceIntakeSubmit').textContent,
+    };
+  });
+  assert.match(await page.locator('#sourceIntakeEvaluation').textContent(), /sólo lectura/i);
+  assert.match(await page.locator('#sourceIntakeEvaluation').textContent(), /no envía ni analiza archivos/i);
+  assert.equal(state.mode, 'evaluation_read_only');
+  assert.equal(state.ariaDisabled, 'true');
+  assert.equal(state.dispatchResult, false);
+  assert.ok(state.controls.length > 0 && state.controls.every(control => control.disabled));
+  assert.match(state.session, /sólo lectura/i);
+  assert.match(state.submitText, /sólo con acceso privado/i);
+  assert.ok(state.overflow <= 1, `390px forced-colors overflow=${state.overflow}`);
+  await page.waitForTimeout(50);
+  assert.equal(requestLog.some(entry => entry.path === '/api/source-intake'), false);
+  assert.equal(multipartBodies.length, 0);
   assert.deepEqual(consoleErrors, []);
-  assert.deepEqual(pageErrors, []);
-  await context.close();
+});
+
+test('a role without navigation.import redirects before mounting or posting data', async t => {
+  const user = authoritativeUser('limited-user', 'TENANT_USER');
+  const users = new Map([['limited-user', user]]);
+  const requestLog = [];
+  const { server, multipartBodies } = await createServer(users, requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const { context, page } = await intakePage(browser, baseUrl, 'limited-user', user, { width: 320, height: 720 });
+  t.after(async () => context.close());
+  await page.goto(`${baseUrl}/importar.html`, { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(`${baseUrl}/inicio.html`);
+  assert.equal(await page.locator('#sourceIntakeApp').count(), 0);
+  assert.deepEqual(multipartBodies, []);
+  assert.equal(requestLog.some(entry => entry.path === '/api/source-intake'), false);
+});
+
+test('the client rejects 200 envelopes with semantic drift and never renders a false success', async t => {
+  const mutationSubjects = ['unknown-enum', 'missing-check', 'extra-limit'];
+  const users = new Map(mutationSubjects.map(subject => [
+    subject,
+    authoritativeUser(subject, 'TENANT_ADMIN'),
+  ]));
+  const mutations = new Map([
+    ['unknown-enum', value => { value.source.domain = 'future_domain'; }],
+    ['missing-check', value => {
+      value.quality.checks = value.quality.checks.filter(check => check.code !== 'antimalware_not_run');
+      value.quality.blockedCount -= 1;
+    }],
+    ['extra-limit', value => {
+      value.limits.push({ code: 'future_limit', text: 'Un límite desconocido no puede ampliar el contrato.' });
+    }],
+  ]);
+  const requestLog = [];
+  const { server, multipartBodies } = await createServer(users, requestLog, {
+    mutateReceiptBySubject: mutations,
+  });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  for (const subject of mutationSubjects) {
+    const user = users.get(subject);
+    const { context, page } = await intakePage(browser, baseUrl, subject, user, { width: 390, height: 844 });
+    const consoleErrors = [];
+    const pageErrors = [];
+    page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+    page.on('pageerror', error => pageErrors.push(error.message));
+    await page.goto(`${baseUrl}/importar.html`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#sourceIntakeApp[data-state="ready"]:not([hidden])');
+    await completeForm(page);
+    await page.locator('#sourceIntakeSubmit').click();
+    await page.waitForSelector('#sourceIntakeError:not([hidden])');
+
+    assert.match(await page.locator('#sourceIntakeError').textContent(), /no confirmó el contrato municipal-source-intake-v1/iu);
+    assert.equal(await page.locator('#sourceIntakeResult:not([hidden])').count(), 0);
+    assert.equal(await page.locator('#sourceIntakeApp').getAttribute('data-state'), 'error');
+    assert.deepEqual(consoleErrors, [], subject);
+    assert.deepEqual(pageErrors, [], subject);
+    await context.close();
+  }
+
+  assert.equal(multipartBodies.length, mutationSubjects.length);
+  assert.deepEqual(
+    requestLog.filter(entry => entry.path === '/api/source-intake').map(entry => entry.subject),
+    mutationSubjects,
+  );
 });

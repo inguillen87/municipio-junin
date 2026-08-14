@@ -277,7 +277,7 @@
   data-primary-source="grh"
   data-secondary-source-policy="personas-auxiliary-diagnostic"
   data-realtime="false"
-  data-route-policy-version="2026-08-14.17"
+  data-route-policy-version="2026-08-14.18"
   data-access-policy-version="2026-08-13.4"
 >
   <div id="sidebar"></div>
@@ -367,6 +367,7 @@
         <p class="toc-label">Guía operativa</p>
         <a href="#tareas">Ayuda por tarea</a>
         <a href="#alcance">Alcance real</a>
+        <a href="#ingesta">Ingreso de fuentes</a>
         <a href="#roles">Recorrido por rol</a>
         <a href="#fuente">Fuente GRH</a>
         <a href="#gestiones">Gestiones en el tiempo</a>
@@ -432,9 +433,9 @@
               <p>El informe sólo muestra meses con al menos 10 personas y nunca completa con cero un dato protegido. La versión local está validada, pero todavía no constituye un documento oficial del municipio.</p>
             </article>
             <article class="card">
-              <span class="tag blocked">Condicionado · autenticación + fuente/tenant</span>
-              <h3>Inventario de cargas</h3>
-              <p>Consume una API server-side minimizada y describe datasets registrados, pero todavía no registra actor/acción y no es una auditoría institucional.</p>
+              <span class="tag blocked">S25 local · siempre en cuarentena</span>
+              <h3>Ingreso gobernado de fuentes</h3>
+              <p>Calcula la huella y un perfil agregado, y para una identidad privada autorizada registra un recibo tenant-bound en la auditoría. No conserva el archivo, filas, valores, texto, encabezados ni el nombre original; tampoco integra o publica datos.</p>
             </article>
             <article class="card">
               <span class="tag blocked">Bloqueado</span>
@@ -457,6 +458,28 @@
               <p>La conexión diaria o continua a sistemas municipales, el historial propio y la recuperación automatizada siguen pendientes: requieren infraestructura, monitoreo, identidad de workload y pruebas de restauración.</p>
             </article>
           </div>
+        </section>
+
+        <section id="ingesta">
+          <p class="section-kicker">Ingreso gobernado · antes de publicar</p>
+          <h2>Cargar un archivo no significa incorporarlo</h2>
+          <p class="section-intro">La primera etapa de S25 acepta un archivo acotado para verificar identidad, formato y calidad estructural. El resultado es un recibo en cuarentena: sirve para saber qué llegó y qué falta, nunca para alimentar automáticamente un tablero.</p>
+          <div class="card-grid">
+            <article class="card">
+              <h3>Qué admite</h3>
+              <p><code>CSV</code>, <code>XLSX</code>, <code>XLS</code>, <code>JSON</code>, <code>PDF</code> y <code>TXT</code>, hasta 4 MiB. La carga debe declarar responsable, finalidad, período, clasificación, autoridad, unidad y presencia de datos personales.</p>
+            </article>
+            <article class="card">
+              <h3>Qué registra</h3>
+              <p>Huella SHA-256, extensión, tamaño y controles agregados de estructura, completitud y duplicación. No se guardan ni devuelven filas, valores, texto, encabezados, nombre del archivo o identificadores personales.</p>
+            </article>
+            <article class="card">
+              <h3>Por qué queda bloqueado</h3>
+              <p>Esta etapa todavía no tiene storage privado del original ni antivirus. Por eso cada recibo queda en cuarentena y no existe una acción de aprobar, publicar o convertir la carga en presupuesto.</p>
+            </article>
+          </div>
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>La Evaluación Administrador es sólo lectura.</strong> Permite comprender el flujo con todos los controles deshabilitados, pero no selecciona, envía ni analiza archivos. El POST publicado se rechaza antes del parser. Una cuenta privada de administración, con tenant vigente, registra únicamente el recibo seguro en la auditoría.</div></div>
+          <div class="callout"><span aria-hidden="true">!</span><div><strong>Presupuesto continúa sin fuente gobernada.</strong> El archivo candidato observado no tiene owner, diccionario, moneda, grain, tenant ni aprobación institucional. No se leen ni publican sus importes hasta cerrar esos requisitos.</div></div>
         </section>
 
         <section id="roles">
@@ -611,7 +634,7 @@
                 <tr><td><strong>Asistente GRH</strong></td><td>Consulta privada según el perfil</td><td>Explica un único mes publicado y deriva al tablero correcto. Si el mes no está disponible o tiene muy pocas personas, informa el límite sin sustituirlo por otro dato. No afirma moneda, causa ni pago.</td></tr>
                 <tr><td><strong>Informe ejecutivo GRH</strong></td><td>Informe agregado y protegido</td><td>Backend, interfaz y pruebas locales aprobados, sin datos de demostración ni sustituciones; falta certificación remota.</td></tr>
                 <tr><td><strong>Inteligencia legacy</strong></td><td>Endpoint retirado</td><td>Estado 410 y enlaces a MuniBot/GRH; no conserva KPIs ni proyecciones heredadas.</td></tr>
-                <tr><td><strong>Inventario de cargas</strong></td><td>API autenticada y salida minimizada</td><td>Muestra conteos y metadatos permitidos; no es auditoría institucional.</td></tr>
+                <tr><td><strong>Ingreso gobernado de fuentes</strong><br><small>S25 local · cuarentena</small></td><td><code>municipal-source-intake-v1</code></td><td>Registra huella y perfil agregado para una identidad privada autorizada; la evaluación sólo inspecciona el flujo, con formulario deshabilitado y cero POST. No conserva archivos o valores y no permite aprobar ni publicar.</td></tr>
                 <tr><td><strong>Recorrido visual de roles</strong></td><td>Contenido documental público, sin fuente municipal</td><td><code>/roles</code> compara responsabilidades y límites sin autenticación, JWT, autorización, cuentas, APIs, DB, storage, PII ni datos municipales. No demuestra seguridad RBAC.</td></tr>
                 <tr><td><strong>Exportación cruda</strong></td><td>Endpoint retirado</td><td>Responde 410 hasta clasificar datasets, campos y finalidad.</td></tr>
                 <tr><td><strong>Configuración</strong></td><td>Sin contrato de escritura</td><td>Informativa y bloqueada; no recibe secretos ni simula guardado.</td></tr>
@@ -661,9 +684,9 @@
             <li>Para proteger identidades, las categorías con menos de 5 personas se agrupan y las cifras sensibles con menos de 10 se ocultan. Un dato protegido nunca se publica como cero ni permite deducir el valor oculto.</li>
             <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
             <li>Trayectoria laboral compara actuaciones documentadas de <code>foja</code> en dos períodos iguales de 972 días. Una actuación no equivale automáticamente a un alta, una baja o una condición vigente.</li>
-            <li>El techo publicado con S24 contiene 32 recursos, 12 acciones, 54 permisos y 99 firmas exactas: 57 Serverless y 42 Express. S24 fue verificado en Production; esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>El techo local S25 <code>2026-08-14.18</code> contiene 33 recursos, 12 acciones, 56 permisos y 101 firmas exactas: 59 Serverless y 42 Express. S24 fue verificado en Production con su contrato anterior; ninguna versión sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
             <li>La política de acceso local <code>2026-08-13.4</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
-            <li>Excel, CSV y Google Sheets se tratan como contenido no confiable: formato, límites, encabezados y persistencia se validan antes de declarar éxito.</li>
+            <li>S25 trata CSV, Excel, JSON, PDF y TXT como contenido no confiable: limita a 4 MiB, valida formato y registra sólo SHA-256 más métricas agregadas. Google Sheets y Upload legacy responden 410; ningún receipt equivale a publicación.</li>
             <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>
             <li>Un tenant <code>TRIAL</code> sólo accede con vencimiento futuro explícito. El alta con contraseña elegida por un administrador está retirada hasta implementar invitaciones, sesiones revocables, MFA y doble aprobación.</li>
             <li>Un error técnico no debe revelar credenciales, consultas, hosts internos ni datos de otro tenant.</li>

@@ -14,7 +14,7 @@
 
 const { ROLES, isKnownRole } = require('./access-policy.cjs');
 
-const ROUTE_POLICY_VERSION = '2026-08-14.17';
+const ROUTE_POLICY_VERSION = '2026-08-14.18';
 
 const RUNTIMES = Object.freeze({
   SERVERLESS: 'serverless',
@@ -54,6 +54,7 @@ const RESOURCES = Object.freeze({
   PLATFORM_TENANT: 'platform.tenant',
   PLATFORM_USER: 'platform.user',
   PLATFORM_AUDIT: 'platform.audit',
+  MUNICIPAL_SOURCE_INTAKE: 'municipal.source-intake',
 });
 
 const ACTIONS = Object.freeze({
@@ -130,6 +131,8 @@ const PERMISSIONS = Object.freeze({
   PLATFORM_USER_READ: permissionId(RESOURCES.PLATFORM_USER, ACTIONS.READ),
   PLATFORM_USER_CREATE: permissionId(RESOURCES.PLATFORM_USER, ACTIONS.CREATE),
   PLATFORM_AUDIT_READ: permissionId(RESOURCES.PLATFORM_AUDIT, ACTIONS.READ),
+  MUNICIPAL_SOURCE_INTAKE_READ: permissionId(RESOURCES.MUNICIPAL_SOURCE_INTAKE, ACTIONS.READ),
+  MUNICIPAL_SOURCE_INTAKE_CREATE: permissionId(RESOURCES.MUNICIPAL_SOURCE_INTAKE, ACTIONS.CREATE),
 });
 
 const ALL_CURRENT_ROLES = Object.freeze([
@@ -199,6 +202,8 @@ const PERMISSION_GRANTS = Object.freeze({
   [PERMISSIONS.PLATFORM_USER_READ]: Object.freeze(['SUPER_ADMIN']),
   [PERMISSIONS.PLATFORM_USER_CREATE]: Object.freeze(['SUPER_ADMIN']),
   [PERMISSIONS.PLATFORM_AUDIT_READ]: Object.freeze(['SUPER_ADMIN']),
+  [PERMISSIONS.MUNICIPAL_SOURCE_INTAKE_READ]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN']),
+  [PERMISSIONS.MUNICIPAL_SOURCE_INTAKE_CREATE]: Object.freeze(['SUPER_ADMIN', 'TENANT_ADMIN']),
 });
 
 const INTERNAL_ONLY = null;
@@ -269,6 +274,8 @@ const PROTECTED_ROUTES = Object.freeze([
   route('serverless.grh.action-ledger.update', 'serverless', 'PATCH', '/grh-action-ledger', PERMISSIONS.GRH_ACTION_LEDGER_UPDATE),
   route('serverless.grh.analysis.execute', 'serverless', 'POST', '/ai-analyze', PERMISSIONS.GRH_ANALYSIS_EXECUTE),
   route('serverless.grh.report.read', 'serverless', 'GET', '/pdf-report', PERMISSIONS.GRH_REPORT_READ),
+  route('serverless.municipal.source-intake.read', 'serverless', 'GET', '/source-intake', PERMISSIONS.MUNICIPAL_SOURCE_INTAKE_READ),
+  route('serverless.municipal.source-intake.create', 'serverless', 'POST', '/source-intake', PERMISSIONS.MUNICIPAL_SOURCE_INTAKE_CREATE),
 
   // Serverless legacy/retired analytical surfaces.
   route('serverless.legacy.ai-proxy.execute', 'serverless', 'POST', '/ai-proxy', PERMISSIONS.LEGACY_AI_EXECUTE),

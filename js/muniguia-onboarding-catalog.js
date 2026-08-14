@@ -97,8 +97,8 @@ const JOURNEYS = deepFreeze({
       {
         id: 'prepare-governed-import',
         pageId: 'import',
-        label: 'Prepará una carga gobernada',
-        copy: 'Declarar fuente, finalidad, período y responsable es obligatorio antes de validar o integrar un archivo municipal.',
+        label: 'Revisá el ingreso gobernado',
+        copy: 'La evaluación pública sólo explica el flujo; procesar un archivo exige una identidad privada autorizada y todos sus metadatos.',
       },
       {
         id: 'review-received-sources',

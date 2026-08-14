@@ -12,6 +12,9 @@ si fueran reales.
 > respuestas 5xx. El smoke autenticado cubrió Intendencia y Administración en
 > 1440/390 px, denegación para Usuario/Inspector/Demo, MuniGuía, Task Center y una
 > respuesta determinista del Asistente sin invocar OpenAI ni Hugging Face.
+> S25 permanece como **candidate local**: reemplaza las cargas legacy por un
+> ingreso gobernado que registra metadatos, huella SHA-256 y perfil estructural
+> agregado, siempre en cuarentena y sin conservar el original ni publicar datos.
 > Los indicadores describen el snapshot
 > GRH del 6 de agosto de 2026; no constituyen conexión en tiempo real ni pago
 > bancario conciliado.
@@ -78,7 +81,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Comparación de gestiones | Verificada en Production | Compara dos tramos históricos de 972 días con la misma duración; contrato, privacidad y recorrido autenticado verificados sobre el alias estable |
 | Preparación GRH + PERSONAS | Implementada localmente | Manifiesto auxiliar, matcher versionado, contrato agregado `grh-personas-linkage-readiness-v1` y lectura municipal; no mezcla fichas ni cambia KPI GRH |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
-| Cargas analíticas y conectores | Condicionado | Upload/Sheets escriben tablas legacy ligadas por entorno; no hay ingesta unificada ni sincronización |
+| Ingreso gobernado de fuentes | Candidate local · S25 | CSV/XLSX/XLS/JSON/PDF/TXT hasta 4 MiB; registra metadatos, SHA-256 y diagnóstico agregado en cuarentena. No conserva el original, no publica filas y no habilita presupuesto; Upload/Sheets legacy quedan retirados con 410 |
 | Reportes ejecutivos GRH | Verificado en Production | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto, períodos gobernados y smoke autenticado |
 | Accesos demostrativos por rol | Verificado en Production | Seis perfiles gobernados para recorrer permisos y superficies; no habilitan datos inventados ni sustituyen identidades institucionales definitivas |
 | Calidad modular React + TypeScript | Canary `/calidad` | Primera vertical componible sobre el mismo contrato `grh-quality-v1`; `/control` permanece como reversión durante la adopción |

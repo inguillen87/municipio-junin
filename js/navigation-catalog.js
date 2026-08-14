@@ -8,7 +8,7 @@
   }
 
   var definition = {
-    version: '2026-08-14.7',
+    version: '2026-08-14.8',
     groups: [
       { id: 'executive', label: 'Gestión ejecutiva', shortLabel: 'Gestión', icon: 'chart' },
       { id: 'people', label: 'Personas y nómina', shortLabel: 'Personas', icon: 'people' },
@@ -35,7 +35,7 @@
       { id: 'territorio', href: '/territorio', label: 'Centro territorial', shortLabel: 'Territorio', icon: 'map', groupId: 'territory', placement: 'group', capability: 'navigation.territory', primary: true },
       { id: 'cuentas', href: 'cuentas-claras.html', label: 'Cuentas Claras', shortLabel: 'Cuentas', icon: 'eye', groupId: 'territory', placement: 'group', public: true, primary: false },
       { id: 'ciudadano', href: 'ciudadano.html', label: 'Portal Ciudadano', shortLabel: 'Ciudadanía', icon: 'home', groupId: 'territory', placement: 'group', public: true, primary: false },
-      { id: 'importar', href: 'importar.html', label: 'Importar datos', shortLabel: 'Importar', icon: 'upload', groupId: 'data', placement: 'group', capability: 'navigation.import', primary: true },
+      { id: 'importar', href: 'importar.html', label: 'Ingresar una fuente', shortLabel: 'Ingresar', icon: 'upload', groupId: 'data', placement: 'group', capability: 'navigation.import', primary: true },
       { id: 'auditoria', href: 'auditoria.html', label: 'Fuentes de datos', shortLabel: 'Fuentes', icon: 'shield', groupId: 'data', placement: 'group', capability: 'navigation.audit', primary: true },
       { id: 'control', href: '/calidad', label: 'Calidad de datos', shortLabel: 'Calidad', icon: 'gauge', groupId: 'data', placement: 'group', capability: 'navigation.data-quality', primary: true },
       { id: 'exportar', href: 'exportar.html', label: 'Publicaciones', shortLabel: 'Publicar', icon: 'export', groupId: 'data', placement: 'group', capability: 'navigation.export', primary: true },

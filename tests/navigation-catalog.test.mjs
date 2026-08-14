@@ -57,7 +57,7 @@ function visibleItems(definition, capabilities) {
 test('navigation definition is exact, deeply immutable and free of parallel route identities', async () => {
   const { source, window } = await loadGlobals();
   const definition = window.MuniNavigationDefinition;
-  assert.equal(definition.version, '2026-08-14.7');
+  assert.equal(definition.version, '2026-08-14.8');
   assert.deepEqual(Array.from(definition.groups, group => group.id), EXPECTED_GROUPS);
   assert.deepEqual(
     Array.from(definition.items, item => [item.id, item.href, item.groupId, item.placement]),
@@ -137,6 +137,10 @@ test('executive labels remain concise and describe existing product surfaces', a
   assert.equal(byId.get('corridas-grh').label, 'Corridas y marcas de cierre');
   assert.equal(byId.get('conceptos-fijos').label, 'Conceptos fijos y cálculo');
   assert.equal(byId.get('gardens').label, 'Red de jardines maternales');
+  assert.deepEqual(
+    ['label', 'shortLabel'].map(key => byId.get('importar')[key]),
+    ['Ingresar una fuente', 'Ingresar'],
+  );
   assert.deepEqual(
     ['label', 'shortLabel'].map(key => byId.get('manuales')[key]),
     ['Ayuda y aprendizaje', 'Ayuda'],

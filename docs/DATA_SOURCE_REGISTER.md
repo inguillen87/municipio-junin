@@ -1,7 +1,7 @@
 # Registro gobernado de fuentes de datos
 
 **Versión:** `data-source-register-v2`
-**Corte del inventario local:** 13 de agosto de 2026
+**Corte del inventario local:** 14 de agosto de 2026
 **Estado:** registro de ingeniería; no acredita conexión, autorización legal,
 producción ni frescura continua.
 
@@ -55,6 +55,12 @@ integración está en
 [`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
 
 ## 4. Gate de ingreso de una nueva fuente
+
+S25 implementa sólo el primer escalón técnico de este gate: receipt en
+cuarentena con metadatos exactos, SHA-256 y perfil estructural agregado. No
+retiene el original, no ejecuta antimalware y no aprueba ni publica una fuente.
+Por lo tanto, ningún estado de la matriz vigente cambia por completar ese
+preflight.
 
 Antes de leer filas o publicar una métrica deben existir, como mínimo:
 

@@ -17,6 +17,7 @@ const EXACT_SCREEN_HELP_TOPICS = new Map([
   ['¿Cómo interpreto la trayectoria y los movimientos documentados?', 'trajectory'],
   ['¿Cómo verifico la fuente del Centro territorial?', 'territory'],
   ['¿Cómo uso las prioridades del Centro de decisiones GRH?', 'decisions'],
+  ['¿Cómo cargo y valido un archivo sin publicarlo?', 'imports'],
 ].map(([question, topic]) => [normalize(question), topic]));
 
 const TOPICS = Object.freeze({
@@ -36,18 +37,19 @@ const TOPICS = Object.freeze({
     ]),
   }),
   imports: Object.freeze({
-    title: 'Cargar información con control',
-    summary: 'Las cargas se hacen desde Importar, con un archivo autorizado, revisión previa y trazabilidad del resultado.',
+    title: 'Ingresar una fuente con control',
+    summary: 'Una identidad privada autorizada puede calcular una huella, perfilar la estructura y registrar un recibo en cuarentena. La evaluación pública es sólo lectura y no envía ni analiza archivos.',
     findings: Object.freeze([
-      'Confirmá primero la fuente, el responsable, el período y el alcance municipal del archivo.',
-      'La pantalla de importación no concede permisos: sólo los perfiles con la capability correspondiente ven la acción.',
-      'Una carga no se considera integrada hasta validar estructura, calidad, duplicados y publicación gobernada.',
+      'La evaluación permite recorrer la pantalla, pero sus controles están deshabilitados y no genera solicitudes de diagnóstico.',
+      'Con acceso privado, declará fuente, responsable, finalidad, período, clasificación, autoridad y unidad antes de seleccionar el archivo.',
+      'El recibo conserva sólo metadatos y controles agregados; no guarda filas, valores, texto, encabezados ni el nombre original.',
+      'La versión actual no conserva el archivo ni ejecuta antivirus, por eso toda carga queda bloqueada en cuarentena.',
     ]),
     sourceFile: 'docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md',
-    anchor: 'acceso',
+    anchor: 'ingesta',
     actions: Object.freeze([
-      Object.freeze({ id: 'open_import', label: 'Abrir Importar', href: '/importar.html', requiredCapability: 'navigation.import' }),
-      Object.freeze({ id: 'open_manual_access', label: 'Ver guía de acceso', href: '/manuales.html#acceso', requiredCapability: 'navigation.help' }),
+      Object.freeze({ id: 'open_import', label: 'Abrir Ingreso de fuentes', href: '/importar.html', requiredCapability: 'navigation.import' }),
+      Object.freeze({ id: 'open_manual_intake', label: 'Ver guía de ingesta', href: '/manuales.html#ingesta', requiredCapability: 'navigation.help' }),
     ]),
   }),
   directory: Object.freeze({

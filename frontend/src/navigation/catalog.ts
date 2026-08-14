@@ -1,6 +1,6 @@
 import { isKnownNavigationCapability, type SessionIdentity } from '../auth/session';
 
-const NAVIGATION_DEFINITION_VERSION = '2026-08-14.7';
+const NAVIGATION_DEFINITION_VERSION = '2026-08-14.8';
 const GROUP_IDS = Object.freeze(['executive', 'people', 'territory', 'data'] as const);
 const PLACEMENTS = Object.freeze(['top', 'group', 'footer'] as const);
 const EXPECTED_ITEM_COUNT = 24;

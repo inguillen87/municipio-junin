@@ -360,21 +360,21 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.17');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 99);
-  assert.deepEqual(runtimeCounts, { serverless: 57, express: 42 });
-  assert.equal(Object.keys(routePolicy.RESOURCES).length, 32);
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.18');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 101);
+  assert.deepEqual(runtimeCounts, { serverless: 59, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 33);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
-  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 54);
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 56);
   for (const source of [integral, user, technical, master, enterprise, roleJourneys, benchmark]) {
     assert.match(source, /26\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}46\s+permisos/i);
     assert.match(source, /79\s+firmas/i);
     assert.match(source, /37\s+Serverless[\s\S]{0,60}42\s+Express/i);
   }
   assert.match(inApp, /estado operativo condicionado/i);
-  assert.match(inApp, /32\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}54\s+permisos/i);
-  assert.match(inApp, /99\s+(?:rutas|firmas)/i);
-  assert.match(inApp, /57\s+Serverless[\s\S]{0,60}42\s+Express/i);
+  assert.match(inApp, /33\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}56\s+permisos/i);
+  assert.match(inApp, /101\s+(?:rutas|firmas)/i);
+  assert.match(inApp, /59\s+Serverless[\s\S]{0,60}42\s+Express/i);
 });
 
 test('documentation 1.10.0 records the exact role workspace without claiming accounts from visual guidance', () => {
@@ -454,14 +454,14 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.17');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.18');
   assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-13.4');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 99);
-  assert.deepEqual(runtimeCounts, { serverless: 57, express: 42 });
-  assert.equal(Object.keys(routePolicy.RESOURCES).length, 32);
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 101);
+  assert.deepEqual(runtimeCounts, { serverless: 59, express: 42 });
+  assert.equal(Object.keys(routePolicy.RESOURCES).length, 33);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
-  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 54);
-  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 24);
+  assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 56);
+  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 25);
   assert.equal(
     releaseTruth.SESSION_EXCHANGE_CONTRACTS['/api/auth/evaluation-session'],
     'municontrol-evaluation-session-v1',
@@ -489,6 +489,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-employment-actions'], 'grh-employment-actions-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-personas-linkage-readiness'], 'grh-personas-linkage-readiness-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/municipal-territory'], 'municipal-territory-v2');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/source-intake'], 'municipal-source-intake-v1');
 
   for (const relativePath of releasePaths) {
     const source = read(relativePath);
@@ -516,9 +517,9 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     assert.match(source, /#decisionBrief/, relativePath);
     if (relativePath === 'manuales.html') {
       assert.match(source, /estado operativo condicionado/i, relativePath);
-      assert.match(source, /2026-08-14\.17[\s\S]{0,100}2026-08-13\.4/, relativePath);
-      assert.match(source, /32\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}54\s+permisos[\s\S]{0,80}99\s+(?:rutas|firmas)/i, relativePath);
-      assert.match(source, /57 Serverless[\s\S]{0,60}42 Express/i, relativePath);
+      assert.match(source, /2026-08-14\.18[\s\S]{0,100}2026-08-13\.4/, relativePath);
+      assert.match(source, /33\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}56\s+permisos[\s\S]{0,80}101\s+(?:rutas|firmas)/i, relativePath);
+      assert.match(source, /59 Serverless[\s\S]{0,60}42 Express/i, relativePath);
       assert.match(source, /Centro de decisiones[\s\S]{0,1000}Producción · lectura condicionada/i, relativePath);
     } else {
       assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);
@@ -1283,7 +1284,32 @@ test('S24 records exact Production evidence without weakening garden data limits
   assert.match(joined, /107[\s\S]{0,120}45[\s\S]{0,120}62/);
   assert.match(joined, /(?:no|ni) informa[\s\S]{0,120}(?:matrícula|capacidad|asistencia|PII)/i);
   assert.match(joined, /(?:Usuario|TENANT_USER)[\s\S]{0,80}(?:Inspector|INSPECTOR)[\s\S]{0,80}(?:Demo|DEMO)[\s\S]{0,160}403/i);
-  assert.doesNotMatch(joined, /S24.{0,120}(?:sólo|exclusivamente)?\s*(?:en el checkout )?local|S24 local\s*·\s*no Production/i);
+  assert.doesNotMatch(joined, /S24\s+(?:permanece|está|sigue|quedó)(?:.{0,60})?(?:sólo|exclusivamente)?\s*(?:en el checkout )?local|S24 local\s*·\s*no Production/i);
+});
+
+test('S25 documents governed intake as a local quarantine candidate without publication claims', () => {
+  const sources = [
+    read('README.md'),
+    read('manuales.html'),
+    read('docs/GOVERNED_SOURCE_INTAKE.md'),
+    read('docs/MASTER_PLAN_STATUS.md'),
+    read('docs/ENTERPRISE_PRODUCT_ROADMAP.md'),
+    read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md'),
+    read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md'),
+    read('docs/MANUAL_INTEGRAL.md'),
+    read('docs/DATA_SOURCE_REGISTER.md'),
+  ];
+  const joined = sources.join('\n');
+  assert.match(joined, /municipal-source-intake-v1/);
+  assert.match(joined, /CSV[\s\S]{0,80}XLSX[\s\S]{0,80}XLS[\s\S]{0,80}JSON[\s\S]{0,80}PDF[\s\S]{0,80}TXT/i);
+  assert.match(joined, /4 MiB/);
+  assert.match(joined, /quarantined|cuarentena/i);
+  assert.match(joined, /no (?:conserva|retiene)[\s\S]{0,80}(?:original|archivo)/i);
+  assert.match(joined, /(?:no se ejecuta|sin)[\s\S]{0,40}antimalware/i);
+  assert.match(joined, /evaluaci[oó]n[\s\S]{0,120}(?:s[oó]lo lectura|read-only)[\s\S]{0,160}(?:no (?:env[ií]a|procesa|analiza)|POST[\s\S]{0,30}403)/i);
+  assert.match(joined, /(?:Upload|Google Sheets)[\s\S]{0,120}410/i);
+  assert.match(joined, /presupuesto[\s\S]{0,120}(?:bloqueado|no habilita|no publica)/i);
+  assert.doesNotMatch(joined, /S25[^.;]{0,80}(?:verificado|certificado|desplegado) en Production/i);
 });
 
 test('the public landing does not route municipal or commercial data to unapproved contacts', () => {

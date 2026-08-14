@@ -1,6 +1,6 @@
 # Estado verificado del Plan Maestro MuniControl
 
-Versión documental: 1.10.0 + S24 verificado en Production.
+Versión documental: 1.10.0 + S24 verificado en Production + S25 candidate local.
 Fecha de corte: 14 de agosto de 2026.
 
 Este documento sustituye el uso del texto “Plan Maestro v4.0” como evidencia de
@@ -176,8 +176,8 @@ Estado: **completo en código local; falta despliegue**.
 - autorización revalidada contra DB en funciones Serverless y backend Express;
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
-- techo compartido y fail-closed vigente de 32 recursos, 12 acciones, 54
-  permisos y 99 firmas de ruta exactas (57 Serverless y 42 Express), sin
+- techo compartido y fail-closed vigente de 33 recursos, 12 acciones, 56
+  permisos y 101 firmas de ruta exactas (59 Serverless y 42 Express), sin
   wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
@@ -311,8 +311,9 @@ El login institucional público es sobrio, autocontenido, responsive, accesible 
 teclado y compatible con movimiento reducido. No publica usuarios demo, accesos
 rápidos, KPIs ni capacidades ficticias. Está cubierto por el release público
 `v1.8.1`; eso no demuestra cuentas reales ni autenticación positiva.
-Importar sólo confirma archivos que el servidor interpretó y persistió dentro
-de una transacción. El canal WhatsApp no crea tickets, turnos, noticias ni
+S25 reemplaza la importación legacy por un receipt en cuarentena: interpreta el
+formato, calcula SHA-256 y conserva sólo métricas agregadas; no persiste filas,
+no retiene el original y no publica. El canal WhatsApp no crea tickets, turnos, noticias ni
 encuestas sin una integración verificable, y no repite coordenadas recibidas.
 También se eliminaron widgets, gráficos y scripts de parche huérfanos que podían
 reintroducir datos sintéticos aunque ninguna pantalla activa los consumiera.
@@ -374,9 +375,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-14.17`
-contiene 32 recursos, 12 acciones, 54 permisos y 99 firmas protegidas exactas:
-57 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-14.18`
+contiene 33 recursos, 12 acciones, 56 permisos y 101 firmas protegidas exactas:
+59 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -847,6 +848,28 @@ Estado: **verificado en Production el 14 de agosto de 2026**.
   MuniGuía 3/3, Task Center e IA determinista. Usuario, Inspector y Demo no
   reciben navegación/tarea y la API responde 403 sin leer el artefacto. No hubo
   requests a OpenAI o Hugging Face ni escrituras de datos.
+
+### S25 — ingreso gobernado y próximo paso por rol
+
+Estado: **candidate local; no verificado en Production**.
+
+- `/api/source-intake` acepta exclusivamente CSV/XLSX/XLS/JSON/PDF/TXT de hasta
+  4 MiB, valida metadatos cerrados y produce SHA-256 más un perfil estructural
+  agregado. Nunca responde filename, headers, filas, valores o texto.
+- Todo receipt privado queda `quarantined`. La evaluación de Administrador es
+  sólo lectura: puede inspeccionar la pantalla y el `GET`, pero sus controles
+  están deshabilitados y el `POST` responde 403 antes de procesar un archivo.
+  Sólo una sesión privada autorizada registra el receipt append-only y
+  tenant-bound en `AuditLog`.
+- El original no se conserva y no se ejecuta antimalware. Por eso el flujo no
+  aprueba, publica, transforma ni incorpora una fuente a dashboards.
+- Upload y Google Sheets legacy quedan retirados con 410. Inicio muestra una
+  única acción siguiente permitida por las capabilities; la evaluación deriva a
+  Calidad y no ofrece carga en Task Center/Ctrl+K. Mantiene MuniGuía
+  como ayuda secundaria, sin sumar otra superficie ni otra API de onboarding.
+- `CuentasClaras_Junin_2026.csv` sigue en cuarentena. S25 no habilita
+  presupuesto contra ejecución ni convierte una estructura plausible en dato
+  municipal autorizado.
 
 ## Funciones que no deben “completarse” todavía
 

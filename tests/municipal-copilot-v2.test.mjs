@@ -599,6 +599,7 @@ test('manual help is deterministic, versioned, actionable and keeps permissions 
     ['¿Cómo verifico la fuente del Centro territorial?', 'territory'],
     ['¿Cómo uso las prioridades del Centro de decisiones GRH?', 'decisions'],
     ['¿Cómo uso la Red de jardines maternales?', 'gardens'],
+    ['¿Cómo cargo y valido un archivo sin publicarlo?', 'imports'],
   ]) {
     assert.equal(classifyManualHelp(question), topic, question);
     assert.equal(classifyIntent(question).manualTopic, topic, question);
@@ -629,12 +630,12 @@ test('manual actions are filtered server-side by private access or the published
     {
       name: 'private administrator',
       caller: baseAdmin,
-      expectedActionIds: ['open_import', 'open_manual_access'],
+      expectedActionIds: ['open_import', 'open_manual_intake'],
     },
     {
       name: 'published administrator',
       caller: { ...baseAdmin, authMethod: 'published-evaluation-jwt-db' },
-      expectedActionIds: ['open_manual_access'],
+      expectedActionIds: ['open_import', 'open_manual_intake'],
     },
   ]) {
     const handler = createAiAnalyzeHandler({
@@ -651,6 +652,8 @@ test('manual actions are filtered server-side by private access or the published
     }, response);
 
     assert.equal(response.statusCode, 200, scenario.name);
+    assert.match(response.payload.answer.summary, /identidad privada autorizada/i, scenario.name);
+    assert.match(response.payload.answer.summary, /evaluación pública es sólo lectura/i, scenario.name);
     assert.deepEqual(
       response.payload.answer.actions.map(action => action.id),
       scenario.expectedActionIds,

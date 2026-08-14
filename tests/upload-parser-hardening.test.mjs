@@ -319,7 +319,7 @@ test('source row and record byte limits reject oversized payloads before persist
   );
 });
 
-test('upload endpoint rejects anonymous callers before multipart parsing and preserves tenant gate order', async () => {
+test('legacy upload endpoint authenticates before returning an explicit 410 and keeps pure parser hardening', async () => {
   const response = responseRecorder();
   await handler({ method: 'POST', headers: {} }, response);
 
@@ -327,12 +327,13 @@ test('upload endpoint rejects anonymous callers before multipart parsing and pre
   assert.match(response.payload?.error || '', /No autorizado|Autenticación no configurada/);
 
   const source = fs.readFileSync(path.join(root, 'api/upload-handler.js'), 'utf8');
-  const roleGate = source.indexOf('await requireRole(req, res, IMPORT_ROLES)');
-  const tenantGate = source.indexOf("requireDatasetTenant(res, caller, 'LEGACY_ANALYTICS_TENANT_ID')");
-  const multipartParse = source.indexOf('await parseForm(req)');
+  const roleGate = source.indexOf('await requireRoleImpl(req, res, IMPORT_ROLES)');
+  const tenantGate = source.indexOf("requireDatasetTenantImpl(res, caller, 'LEGACY_ANALYTICS_TENANT_ID')");
+  const retirement = source.indexOf("code: 'LEGACY_UPLOAD_IMPORT_RETIRED'");
   const zipPreflight = source.indexOf("if (ext === '.xlsx') preflightXlsxContainer(buffer)");
   const workbookRead = source.indexOf('xlsx.read(buffer,');
-  assert.ok(roleGate >= 0 && tenantGate > roleGate && multipartParse > tenantGate);
+  assert.ok(roleGate >= 0 && tenantGate > roleGate && retirement > tenantGate);
+  assert.doesNotMatch(source, /INSERT\s+INTO\s+(?:datasets|data_points)|await parseForm\(req\)/i);
   assert.ok(zipPreflight >= 0 && workbookRead > zipPreflight);
   assert.doesNotMatch(source, /res\.(?:status\([^)]*\)\.)?json\([^\n]*err\.message/);
   assert.doesNotMatch(source, /xlsx\.readFile\(/);

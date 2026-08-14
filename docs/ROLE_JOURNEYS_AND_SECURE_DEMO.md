@@ -156,7 +156,7 @@ explícita con un rol vigente, están en **Roadmap** y no deben aprovisionarse t
 | [`hacienda.html`](../hacienda.html) | Control de cálculo GRH | Bruto, retenciones, neto y conciliación interna | No acredita banco, presupuesto o asiento |
 | [`ia.html`](../ia.html) | Contrato semántico GRH | Respuestas deterministas con período y evidencia | Rechaza PII, inyección, pronóstico y preguntas sin evidencia |
 | [`reportes.html`](../reportes.html) | Bundle GRH privado `profile + semantic`, operativo local | Cuatro SVG agregados para períodos GRH existentes | Exige SHA aprobado, tenant exacto y bundle completo; no usa `data_points` ni sustituye períodos |
-| [`importar.html`](../importar.html) | Upload/Sheets legacy condicionado | Validar y cargar un archivo con período explícito | Sólo administradores actuales; faltan clasificación fina y auditoría institucional |
+| [`importar.html`](../importar.html) | Ingreso gobernado S25 candidate local | Una sesión privada declara metadatos y obtiene un receipt estructural en cuarentena; la evaluación sólo inspecciona el flujo | TENANT_ADMIN publicado tiene formulario deshabilitado y cero POST; persistencia privada registra auditoría, pero no conserva el original ni publica datos |
 | [`auditoria.html`](../auditoria.html) | Inventario legacy condicionado | Inventario y actividad derivada disponible | No es todavía un log institucional inmutable |
 | [`manuales.html`](../manuales.html) | Documentación local | Ayuda, límites y procedimientos | Debe ser visible para toda sesión válida |
 | [`mapa.html`](../mapa.html) | Roadmap | Diseño geográfico futuro | Sin PostGIS/MapLibre, fuente, SLA ni actualización certificada |
@@ -410,8 +410,8 @@ Las fuentes técnicas actuales son
 [`../shared/access-policy.cjs`](../shared/access-policy.cjs), para capacidades de
 navegación y sesión, y [`../shared/route-policy.cjs`](../shared/route-policy.cjs),
 como techo exacto de autorización server-side por `recurso:acción`, runtime,
-método y ruta. Al corte, ese techo local `2026-08-14.17` registra 32 recursos, 12
-acciones, 54 permisos y 99 firmas exactas: 57 Serverless y 42 Express. S24 fue
+método y ruta. Al corte, ese techo local `2026-08-14.18` registra 33 recursos, 12
+acciones, 56 permisos y 101 firmas exactas: 59 Serverless y 42 Express. S24 fue
 verificado en Production en el commit
 `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
 `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30. El modelo de datos

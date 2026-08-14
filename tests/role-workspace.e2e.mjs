@@ -266,6 +266,53 @@ function expectedWorkspaceActions(access, role) {
   return catalog.tasks.slice(0, catalog.recommendedTaskIds.length).map(task => task.capability);
 }
 
+function expectedNextAction(access, role) {
+  const catalog = resolveMunicipalTaskCatalog({
+    role,
+    variant: access.homeProfile.variant,
+    policyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+    capabilities: [...access.capabilities],
+  });
+  let task = role === 'TENANT_ADMIN' && access.capabilities.includes('navigation.import')
+    ? catalog.tasks.find(candidate => candidate.id === 'import-source')
+    : null;
+  if (!task) {
+    task = catalog.recommendedTaskIds
+      .map(taskId => catalog.tasks.find(candidate => candidate.id === taskId))
+      .find(Boolean) || catalog.tasks[0];
+  }
+  return {
+    capability: task.capability,
+    href: task.href,
+    taskId: task.id,
+    title: role === 'TENANT_ADMIN' && task.id === 'import-source'
+      ? 'Cargar y validar una fuente'
+      : task.label,
+  };
+}
+
+function publishedAuthoritativeUser(profile) {
+  const user = authoritativeUser(
+    `published-evaluation:${profile.profileId}`,
+    profile.role,
+    'tenant-junin-e2e',
+    profile.email,
+  );
+  const capabilities = user.capabilities.filter(capability =>
+    publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES.includes(capability)
+  );
+  return {
+    ...user,
+    capabilities,
+    homeProfile: {
+      ...user.homeProfile,
+      priorityCapabilities: user.homeProfile.priorityCapabilities.filter(capability =>
+        capabilities.includes(capability)
+      ),
+    },
+  };
+}
+
 test('safe workspace renders seven role variants and gives Intendencia one governed executive brief', async t => {
   const users = new Map();
   for (const role of ROLES) users.set(`matrix-${role}`, authoritativeUser(`matrix-${role}`, role));
@@ -280,7 +327,11 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
 
   for (const role of ROLES) {
     const expectedAccess = accessPolicy.getSessionAccessForUser({ role, tenantId: 'tenant-junin-e2e' });
-    for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 940 }]) {
+    for (const viewport of [
+      { width: 320, height: 720 },
+      { width: 390, height: 844 },
+      { width: 1440, height: 940 },
+    ]) {
       const subject = `matrix-${role}`;
       const before = requestLog.length;
       const { context, page } = await workspacePage(browser, baseUrl, subject, viewport);
@@ -293,8 +344,14 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
 
       const result = await page.evaluate(() => {
         const privateLinks = [...document.querySelectorAll('#workspaceActions a[data-capability]')];
-        const targets = [...document.querySelectorAll('#workspaceActions a, .ws-public a, #executiveSummaryActions a')]
+        const targets = [...document.querySelectorAll('#workspaceActions a, .ws-public a, #executiveSummaryActions a, .ws-next-action a, .ws-next-action button:not([hidden])')]
           .map(link => ({ height: link.getBoundingClientRect().height, width: link.getBoundingClientRect().width }));
+        const nextRoot = document.querySelector('[data-workspace-next-action]:not([hidden])');
+        const nextPrimary = nextRoot?.querySelector('[data-workspace-next-action-primary]');
+        const nextGuide = nextRoot?.querySelector('[data-workspace-next-action-guide]');
+        const firstViewportLimit = document.querySelector('.bottom-nav')
+          ? document.querySelector('.bottom-nav').getBoundingClientRect().top
+          : window.innerHeight;
         return {
           actionCapabilities: privateLinks.map(link => link.dataset.capability),
           guideBeforeActions: Boolean(
@@ -308,6 +365,18 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
           policy: document.querySelector('#policyVersion').textContent,
           role: JSON.parse(sessionStorage.getItem('mjunin_user')).role,
+          nextAction: nextRoot && nextPrimary ? {
+            capability: nextPrimary.dataset.capability,
+            count: document.querySelectorAll('[data-workspace-next-action]:not([hidden])').length,
+            guideHeight: nextGuide && !nextGuide.hidden ? nextGuide.getBoundingClientRect().height : 0,
+            guideText: nextGuide && !nextGuide.hidden ? nextGuide.textContent : '',
+            href: nextPrimary.getAttribute('href'),
+            primaryBottom: nextPrimary.getBoundingClientRect().bottom,
+            primaryHeight: nextPrimary.getBoundingClientRect().height,
+            taskId: nextRoot.dataset.taskId,
+            title: nextRoot.querySelector('[data-workspace-next-action-title]').textContent,
+            viewportLimit: firstViewportLimit,
+          } : null,
           territoryAction: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]')
             ? {
                 href: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]').getAttribute('href'),
@@ -336,6 +405,7 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
       });
 
       const expectedActions = expectedWorkspaceActions(expectedAccess, role);
+      const expectedNext = expectedNextAction(expectedAccess, role);
       assert.equal(result.variant, VARIANTS[role], `${role}:${viewport.width}:variant`);
       assert.equal(result.role, role, `${role}:${viewport.width}:server role must replace stale browser role`);
       assert.equal(result.busy, 'false');
@@ -343,6 +413,24 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
       assert.equal(result.guideBeforeActions, true, `${role}:${viewport.width}:first-time welcome appears before Task Center`);
       assert.match(result.title, /^Hola(?:[,.]|$)/, `${role}:${viewport.width}:role greeting`);
       assert.ok(result.overflow <= 1, `${role}:${viewport.width}:overflow=${result.overflow}`);
+      assert.deepEqual(
+        result.nextAction && {
+          capability: result.nextAction.capability,
+          href: result.nextAction.href,
+          taskId: result.nextAction.taskId,
+          title: result.nextAction.title,
+        },
+        expectedNext,
+        `${role}:${viewport.width}:one safe next action`,
+      );
+      assert.equal(result.nextAction?.count, 1, `${role}:${viewport.width}:single next action root`);
+      assert.ok(result.nextAction?.primaryHeight >= 44, `${role}:${viewport.width}:primary touch target`);
+      assert.ok(result.nextAction?.guideHeight >= 44, `${role}:${viewport.width}:guide touch target`);
+      assert.match(result.nextAction?.guideText || '', /Guiarme paso a paso/i);
+      assert.ok(
+        result.nextAction.primaryBottom <= result.nextAction.viewportLimit,
+        `${role}:${viewport.width}:next action ${result.nextAction.primaryBottom} must clear ${result.nextAction.viewportLimit}`,
+      );
       assert.deepEqual([...result.actionCapabilities].sort(), [...expectedActions].sort(), `${role}:${viewport.width}:actions`);
       if (['TENANT_USER', 'INSPECTOR', 'DEMO'].includes(role)) {
         assert.equal(result.territoryAction?.href, '/territorio.html', `${role}:${viewport.width}:territory href`);
@@ -351,7 +439,7 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
       assert.ok(result.actionCapabilities.every(capability => expectedAccess.capabilities.includes(capability)));
       assert.match(result.policy, new RegExp(accessPolicy.ACCESS_POLICY_VERSION.replaceAll('.', '\\.')));
       assert.doesNotMatch(result.text, /@internal\.invalid|tenant-junin-e2e|personas_junin/i);
-      assert.doesNotMatch(result.text, /\b(?:snapshot|capabilities|datasets?|contrato|PII|gobernado|cross-source|tenant)\b/i);
+      assert.doesNotMatch(result.text, /\b(?:snapshot|capabilities|datasets?|contrato|PII|cross-source|tenant)\b/i);
       assert.ok(result.actionCapabilities.length <= 4, `${role}:${viewport.width}:summary-first actions`);
       assert.ok(result.targets.every(target => target.height >= 44 && target.width >= 44), `${role}:${viewport.width}:touch targets`);
       if (role === 'INTENDENTE') {
@@ -363,10 +451,6 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
           { capability: 'navigation.hacienda', href: 'hacienda.html' },
           { capability: 'navigation.ai-assistant', href: 'ia.html' },
         ]);
-        assert.ok(
-          result.executiveSummary.bottom <= result.executiveSummary.firstViewportLimit,
-          `${role}:${viewport.width}:summary in unobscured first viewport`,
-        );
       } else {
         assert.equal(result.executiveSummary, null, `${role}:${viewport.width}:no executive data`);
       }
@@ -391,7 +475,7 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
   }
 });
 
-test('executive first viewport remains readable at 320px with forced colors and no horizontal overflow', async t => {
+test('executive next action remains reachable at 320px with forced colors and no horizontal overflow', async t => {
   const users = new Map([
     ['executive-320', authoritativeUser('executive-320', 'INTENDENTE')],
   ]);
@@ -417,21 +501,34 @@ test('executive first viewport remains readable at 320px with forced colors and 
   await page.waitForSelector('#executiveSummary[data-state="attention"]');
 
   const result = await page.evaluate(() => {
-    const summary = document.querySelector('#executiveSummary');
+    const action = document.querySelector('[data-workspace-next-action-primary]');
+    const guide = document.querySelector('[data-workspace-next-action-guide]:not([hidden])');
     const bottomNav = document.querySelector('.bottom-nav');
     return {
       actionTargets: [...document.querySelectorAll('#executiveSummaryActions a')]
         .map(link => ({ height: link.getBoundingClientRect().height, width: link.getBoundingClientRect().width })),
       facts: [...document.querySelectorAll('.ws-executive-fact strong')].map(item => item.textContent),
       navTop: bottomNav ? bottomNav.getBoundingClientRect().top : window.innerHeight,
+      nextAction: {
+        bottom: action.getBoundingClientRect().bottom,
+        capability: action.dataset.capability,
+        guideHeight: guide.getBoundingClientRect().height,
+        height: action.getBoundingClientRect().height,
+        href: action.getAttribute('href'),
+      },
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      summaryBottom: summary.getBoundingClientRect().bottom,
     };
   });
 
   assert.ok(result.overflow <= 1, `320px overflow=${result.overflow}`);
   assert.deepEqual(result.facts, ['856', '88,99/100', '6,5%']);
-  assert.ok(result.summaryBottom <= result.navTop, `summary ${result.summaryBottom} must clear bottom navigation ${result.navTop}`);
+  assert.deepEqual(
+    { capability: result.nextAction.capability, href: result.nextAction.href },
+    { capability: 'navigation.organization-analytics', href: '/jardines.html' },
+  );
+  assert.ok(result.nextAction.bottom <= result.navTop, `action ${result.nextAction.bottom} must clear bottom navigation ${result.navTop}`);
+  assert.ok(result.nextAction.height >= 44);
+  assert.ok(result.nextAction.guideHeight >= 44);
   assert.ok(result.actionTargets.every(target => target.height >= 44 && target.width >= 44));
   assert.deepEqual(consoleErrors, []);
   assert.deepEqual(
@@ -502,12 +599,7 @@ test('executive brief failure stays honest and leaves only authorized recovery l
 test('published high roles discover the aggregate staffing room in navigation and Inicio while low roles do not', async t => {
   const users = new Map(publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.map((profile, index) => [
     `published-structure-${index}`,
-    authoritativeUser(
-      `published-structure-${index}`,
-      profile.role,
-      'tenant-junin-e2e',
-      profile.email,
-    ),
+    publishedAuthoritativeUser(profile),
   ]));
   const requestLog = [];
   const server = await createServer(users, requestLog);
@@ -523,6 +615,18 @@ test('published high roles discover the aggregate staffing room in navigation an
     const { context, page } = await workspacePage(browser, baseUrl, subject, { width: 1440, height: 940 });
     await page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'networkidle' });
     await page.waitForSelector('#workspaceViews:not([hidden])');
+    const publishedImportTaskCount = await page.locator(
+      '#workspaceActions [data-task-id="import-source"]'
+    ).count();
+    let publishedPaletteImportCount = 0;
+    if (profile.role === 'TENANT_ADMIN') {
+      await page.locator('#workspaceActions [data-municipal-task-open]').click();
+      await page.waitForSelector('#municipalTaskPalette[open]');
+      publishedPaletteImportCount = await page.locator(
+        '#municipalTaskPaletteResults a[data-capability="navigation.import"]'
+      ).count();
+      await page.keyboard.press('Escape');
+    }
     await page.locator('#workspaceActionsSearch').fill('comparar áreas');
 
     const surface = await page.evaluate(() => ({
@@ -530,13 +634,27 @@ test('published high roles discover the aggregate staffing room in navigation an
       actionText: document.querySelector('#workspaceActions a[data-capability="navigation.organization-analytics"]')?.textContent || '',
       nav: document.querySelector('.sidebar a[href="/estructura"]')?.getAttribute('href') || null,
       navText: document.querySelector('.sidebar a[href="/estructura"]')?.textContent || '',
+      next: {
+        capability: document.querySelector('[data-workspace-next-action-primary]')?.dataset.capability || null,
+        href: document.querySelector('[data-workspace-next-action-primary]')?.getAttribute('href') || null,
+        title: document.querySelector('[data-workspace-next-action-title]')?.textContent || '',
+      },
     }));
     const expected = ['TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'].includes(profile.role);
     assert.equal(surface.nav, expected ? '/estructura' : null, `${profile.email}:navigation`);
     assert.equal(surface.action, expected ? '/estructura.html' : null, `${profile.email}:Inicio CTA`);
+    assert.equal(publishedImportTaskCount, 0, `${profile.email}:Task Center must not offer public upload`);
+    assert.equal(publishedPaletteImportCount, 0, `${profile.email}:Ctrl+K must not offer public upload`);
     if (expected) {
       assert.match(surface.navText, /Estructura y áreas de costo/);
       assert.match(surface.actionText, /Empezar/);
+    }
+    if (profile.role === 'TENANT_ADMIN') {
+      assert.deepEqual(surface.next, {
+        capability: 'navigation.data-quality',
+        href: '/calidad.html',
+        title: 'Verificar una fuente y su calidad',
+      });
     }
     await context.close();
   }

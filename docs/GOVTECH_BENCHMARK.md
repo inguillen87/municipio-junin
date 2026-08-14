@@ -130,8 +130,8 @@ La comparación usa como fuente de verdad interna el
 | Cierre mensual `grh-close-v1` | Validado localmente por período y k≥10 | Control de cálculo y conciliación; no moneda, pago, causalidad ni contabilidad |
 | Brief ejecutivo `grh-decision-brief-v1` | S13 en producto `d11fd39`: situación única, separación global/mensual, cuarentena temporal, prioridades y CTA por capability | La superficie pública está verificada en `v1.10.0`; sesión positiva y datos privados siguen en validación local, sin PII, importes, responsables, plazos o action ledger |
 | Inicio seguro por rol | Siete variantes, capabilities server-computed y 42/42 focal local | Es UX fail-closed; no crea cuentas, asignaciones finas ni prueba producción |
-| Importación CSV/XLS/XLSX y Google Sheets | Endurecida localmente | Falta storage privado, antivirus y operación remota certificada |
-| PDF/TXT/JSON y bases externas | Parcial o roadmap | No aceptar “cualquier archivo” sin parser, esquema, cuota y cuarentena |
+| Ingreso gobernado S25 | Candidate local: seis formatos hasta 4 MiB, SHA-256 y perfil agregado, siempre en cuarentena; Upload/Sheets retirados con 410 | Falta storage privado del original, antivirus, aprobación, publicación y operación remota certificada |
+| Bases externas | Roadmap | No conectar una DB sin identidad read-only, contrato, cuota, allowlist y cuarentena |
 | Roles | Frontera gruesa en código; modelo fino definido | Tesorería, Compras, RRHH y demás perfiles aún no tienen políticas completas |
 | Finanzas, compras, tesorería y contabilidad | Sin fuente autoritativa conectada | GRH no sustituye presupuesto, asiento, orden de pago ni conciliación bancaria |
 | GIS y mapas operativos | Roadmap | Un mapa base no convierte un dato histórico en tiempo real |
@@ -619,8 +619,8 @@ sesiones revocables, ámbitos versionados, acceso excepcional a PII con vencimie
 rate limiting distribuido y alertas de abuso.
 
 La base local vigente no es sólo diseño: `shared/route-policy.cjs`
-`2026-08-14.17` fija localmente 32 recursos, 12 acciones, 54 permisos y 99 firmas exactas,
-57 Serverless y 42 Express. S24 fue verificado en Production en el commit
+`2026-08-14.18` fija localmente 33 recursos, 12 acciones, 56 permisos y 101 firmas exactas,
+59 Serverless y 42 Express. S24 fue verificado en Production en el commit
 `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
 `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30 y cero 5xx.
 `shared/access-policy.cjs` `2026-08-13.4` proyecta el workspace de siete

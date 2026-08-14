@@ -437,6 +437,7 @@ test('the six published evaluation buttons authenticate their exact role without
     if (identity.profileId === 'administrador') {
       assert.deepEqual(stored.user.homeProfile.priorityCapabilities, [
         'navigation.workspace',
+        'navigation.import',
         'navigation.data-quality',
       ]);
     }

@@ -111,7 +111,15 @@ test('published auth refresh may expose only the opaque JWT subject while the ex
   }).id, '');
 });
 
-test('every published profile receives the complete aggregate navigation without admin or nominal capabilities', async () => {
+test('the exact six published profiles receive only their role capabilities inside the published ceiling', async () => {
+  assert.deepEqual(
+    publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.map(profile => profile.profileId),
+    ['administrador', 'contador', 'vista-demo', 'inspector', 'intendente', 'usuario-municipal'],
+  );
+  assert.equal(
+    publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.some(profile => profile.role === 'SUPER_ADMIN'),
+    false,
+  );
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     const res = responseRecorder();
     await createEvaluationSessionHandler({
@@ -126,23 +134,50 @@ test('every published profile receives the complete aggregate navigation without
     })(request({ profileId: profile.profileId }), res);
     assert.equal(res.statusCode, 200, profile.profileId);
     const access = res.payload.user.capabilities;
-    assert.deepEqual(access, publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES, profile.profileId);
-    const roleHomeProfile = accessPolicy.getSessionAccessForUser({
+    const roleAccess = accessPolicy.getSessionAccessForUser({
       role: profile.role,
       tenantId: TENANT_ID,
-    }).homeProfile;
-    const expectedPriorityCapabilities = roleHomeProfile.priorityCapabilities.filter(capability =>
+    });
+    const expectedCapabilities = roleAccess.capabilities.filter(capability =>
       publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES.includes(capability)
+    );
+    assert.deepEqual(access, expectedCapabilities, profile.profileId);
+    const roleHomeProfile = roleAccess.homeProfile;
+    const expectedPriorityCapabilities = roleHomeProfile.priorityCapabilities.filter(capability =>
+      expectedCapabilities.includes(capability)
     );
     assert.deepEqual(res.payload.user.homeProfile, {
       ...roleHomeProfile,
       priorityCapabilities: expectedPriorityCapabilities,
     }, profile.profileId);
-    if (profile.profileId !== 'administrador') {
-      assert.deepEqual(expectedPriorityCapabilities, roleHomeProfile.priorityCapabilities, profile.profileId);
-    }
     for (const denied of ['navigation.audit', 'navigation.export', 'navigation.import']) {
       assert.equal(access.includes(denied), false, `${profile.profileId}:${denied}`);
+    }
+    if (['TENANT_USER', 'INSPECTOR', 'DEMO'].includes(profile.role)) {
+      assert.deepEqual(access, [
+        'session.read',
+        'navigation.workspace',
+        'navigation.territory',
+        'navigation.help',
+      ], profile.profileId);
+      for (const denied of [
+        'navigation.dashboard',
+        'navigation.hacienda',
+        'navigation.grh-executive',
+        'navigation.rrhh',
+        'navigation.ai-assistant',
+      ]) {
+        assert.equal(access.includes(denied), false, `${profile.profileId}:${denied}`);
+      }
+    } else {
+      for (const aggregate of [
+        'navigation.dashboard',
+        'navigation.hacienda',
+        'navigation.grh-executive',
+        'navigation.organization-analytics',
+      ]) {
+        assert.equal(access.includes(aggregate), true, `${profile.profileId}:${aggregate}`);
+      }
     }
   }
 });
@@ -316,7 +351,7 @@ test('opaque private link rejects wrong, expired, misbound and rate-limited acce
 });
 
 test('route and release contracts own both one-click exchange endpoints exactly', () => {
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.14');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.15');
   assert.deepEqual(routePolicy.SESSION_EXCHANGE_ROUTES.map(route => [route.method, route.path, route.mode]), [
     ['POST', '/auth/evaluation-session', 'published-profile'],
     ['POST', '/auth/private-link-session', 'opaque-link'],

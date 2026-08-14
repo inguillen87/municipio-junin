@@ -139,7 +139,7 @@ async function returnFromStage(page, card) {
   if (await dialog.count()) await page.locator('.muni-guide-close').click();
 }
 
-test('onboarding runtime is session-only, sink-free and progressively mounted from Inicio', async () => {
+test('compact invitation and complete onboarding stay session-only, sink-free and progressively mounted from Inicio', async () => {
   const [runtime, html] = await Promise.all([
     readFile(path.join(ROOT, 'js', 'muniguia-onboarding.js'), 'utf8'),
     readFile(path.join(ROOT, 'inicio.html'), 'utf8'),
@@ -149,9 +149,10 @@ test('onboarding runtime is session-only, sink-free and progressively mounted fr
   assert.match(runtime, /sessionStorage\.setItem/);
   assert.match(runtime, /municontrol:muniguia-onboarding/);
   assert.doesNotMatch(runtime, /\.innerHTML\s*=|insertAdjacentHTML|document\.write|\beval\s*\(/u);
+  assert.doesNotMatch(runtime, /session\.user\.(?:id|email|name)|tenantId/iu);
   assert.doesNotMatch(runtime, /3 minutos|Conocé tu espacio en 3/iu);
   assert.match(html, /css\/muniguia-onboarding\.css/);
-  assert.match(html, /id="muniguiaOnboardingMount"[^>]*hidden/);
+  assert.match(html, /id="muniguiaOnboardingMount"[^>]*hidden[\s\S]*?id="workspaceActions"/u);
   assert.match(html, /js\/muniguia-onboarding\.js/);
 });
 
@@ -173,10 +174,14 @@ test('Inicio offers explicit new, in-progress, completed, repeat and reset state
   t.after(() => context.close());
   const card = page.locator('#muniguiaOnboardingMount');
   await card.locator('.muni-onboarding__title').waitFor();
-  assert.equal(await card.locator('.muni-onboarding__title').innerText(), 'Tu recorrido inicial');
-  assert.match(await card.locator('.muni-onboarding__eyebrow').innerText(), /5 etapas · 10 minutos/iu);
-  assert.equal(await card.locator('.muni-onboarding__stage').count(), 5);
-  assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'Nuevo');
+  assert.equal(await card.locator('.muni-onboarding__title').innerText(), '¿Es tu primera vez acá?');
+  assert.equal(await card.locator('.muni-onboarding__stage').count(), 0);
+  assert.equal(await card.locator('.muni-onboarding__state').count(), 0);
+  assert.equal(await page.evaluate(() => Boolean(
+    document.querySelector('#muniguiaOnboardingMount').compareDocumentPosition(
+      document.querySelector('#workspaceActions')
+    ) & Node.DOCUMENT_POSITION_FOLLOWING
+  )), true, 'the compact invitation appears before Task Center');
   assert.equal(await page.locator('.muni-guide-dialog:not([hidden])').count(), 0, 'the guide cannot auto-open');
   assert.equal(
     (await page.evaluate(() => Object.keys(sessionStorage))).some(
@@ -186,8 +191,17 @@ test('Inicio offers explicit new, in-progress, completed, repeat and reset state
   );
 
   await card.getByRole('button', { name: 'Conocer mi espacio' }).click();
+  assert.equal(await card.locator('.muni-onboarding__title').innerText(), 'Tu recorrido inicial');
+  assert.match(await card.locator('.muni-onboarding__eyebrow').innerText(), /5 etapas · 10 minutos/iu);
+  assert.equal(await card.locator('.muni-onboarding__stage').count(), 5);
   assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'En curso');
   assert.equal(await card.locator('.muni-onboarding__progress-label').innerText(), '0 de 5 pasos listos');
+  assert.equal(await page.evaluate(() => Boolean(
+    document.querySelector('#workspaceActions').compareDocumentPosition(
+      document.querySelector('#muniguiaOnboardingMount')
+    ) & Node.DOCUMENT_POSITION_FOLLOWING
+  )), true, 'the complete journey moves after Task Center');
+  assert.equal(await page.locator('.muni-guide-dialog:not([hidden])').count(), 0, 'starting cannot auto-open the guide');
   const storageAfterStart = await page.evaluate(() => Object.entries(sessionStorage)
     .filter(([key]) => key.startsWith('municontrol:muniguia-onboarding:'))
     .map(([key, value]) => ({ key, value })));
@@ -197,6 +211,17 @@ test('Inicio offers explicit new, in-progress, completed, repeat and reset state
     storageAfterStart[0].key + storageAfterStart[0].value,
     /internal\.invalid|tenant-onboarding|onboarding-progress-user/iu,
   );
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('#workspaceViews:not([hidden])');
+  await card.locator('.muni-onboarding__state').waitFor();
+  assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'En curso');
+  assert.equal(await card.locator('.muni-onboarding__progress-label').innerText(), '0 de 5 pasos listos');
+  assert.equal(await page.evaluate(() => Boolean(
+    document.querySelector('#workspaceActions').compareDocumentPosition(
+      document.querySelector('#muniguiaOnboardingMount')
+    ) & Node.DOCUMENT_POSITION_FOLLOWING
+  )), true, 'an in-progress journey resumes after Task Center');
 
   for (let stageIndex = 0; stageIndex < 5; stageIndex += 1) {
     let done = card.getByRole('button', { name: 'Marcar como listo' });
@@ -212,12 +237,28 @@ test('Inicio offers explicit new, in-progress, completed, repeat and reset state
   }
 
   assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'Completado');
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('#workspaceViews:not([hidden])');
+  await card.locator('.muni-onboarding__state').waitFor();
+  assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'Completado');
+  assert.equal(await page.evaluate(() => Boolean(
+    document.querySelector('#workspaceActions').compareDocumentPosition(
+      document.querySelector('#muniguiaOnboardingMount')
+    ) & Node.DOCUMENT_POSITION_FOLLOWING
+  )), true, 'a completed journey reopens after Task Center');
   await card.getByRole('button', { name: 'Repetir recorrido' }).click();
   assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'En curso');
   assert.equal(await card.locator('.muni-onboarding__progress-label').innerText(), '0 de 5 pasos listos');
   await card.getByRole('button', { name: 'Reiniciar recorrido' }).click();
-  assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'Nuevo');
+  assert.equal(await card.locator('.muni-onboarding__title').innerText(), '¿Es tu primera vez acá?');
+  assert.equal(await card.locator('.muni-onboarding__state').count(), 0);
   assert.equal(await card.getByRole('button', { name: 'Conocer mi espacio' }).count(), 1);
+  assert.equal(await card.getByRole('button', { name: 'Ahora no' }).count(), 1);
+  assert.equal(await page.evaluate(() => Boolean(
+    document.querySelector('#muniguiaOnboardingMount').compareDocumentPosition(
+      document.querySelector('#workspaceActions')
+    ) & Node.DOCUMENT_POSITION_FOLLOWING
+  )), true, 'reset returns the invitation before Task Center');
   assert.deepEqual(
     await page.evaluate(() => Object.keys(sessionStorage)
       .filter(key => key.startsWith('municontrol:muniguia-onboarding:'))),
@@ -227,7 +268,47 @@ test('Inicio offers explicit new, in-progress, completed, repeat and reset state
   assert.equal(requestLog.some(entry => entry.path.startsWith('/api/onboarding')), false);
 });
 
-test('onboarding card is responsive, keyboard-operable and exposed in forced colors at 1440, 390 and 320', {
+test('Ahora no dismisses only the compact invitation in this tab without PII or data requests', {
+  timeout: 60_000,
+}, async t => {
+  const subject = 'onboarding-dismiss-user';
+  const user = authoritativeUser(subject, 'TENANT_USER');
+  const requestLog = [];
+  const server = await createServer(new Map([[subject, user]]), requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await stopServer(server);
+  });
+
+  const { context, page } = await createPage(browser, baseUrl, subject, user, { width: 390, height: 844 });
+  t.after(() => context.close());
+  const card = page.locator('#muniguiaOnboardingMount');
+  await card.locator('.muni-onboarding__title').waitFor();
+  const apiRequestsBeforeDismiss = requestLog.filter(entry => entry.path.startsWith('/api/')).length;
+  await card.getByRole('button', { name: 'Ahora no' }).click();
+  assert.equal(await card.isHidden(), true);
+  const stored = await page.evaluate(() => Object.entries(sessionStorage)
+    .filter(([key]) => key.startsWith('municontrol:muniguia-onboarding:'))
+    .map(([key, value]) => ({ key, value })));
+  assert.equal(stored.length, 1);
+  assert.match(stored[0].key, /:TENANT_USER:municipal-limited:welcome-dismissed$/u);
+  assert.equal(stored[0].value, 'dismissed-v2');
+  assert.doesNotMatch(stored[0].key + stored[0].value, /internal\.invalid|tenant-onboarding|onboarding-dismiss-user/iu);
+  assert.equal(requestLog.filter(entry => entry.path.startsWith('/api/')).length, apiRequestsBeforeDismiss);
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('#workspaceViews:not([hidden])');
+  assert.equal(await card.isHidden(), true, 'dismissal remains only in this tab');
+
+  const second = await createPage(browser, baseUrl, subject, user, { width: 390, height: 844 });
+  t.after(() => second.context.close());
+  await second.page.locator('#muniguiaOnboardingMount .muni-onboarding__title').waitFor();
+  assert.equal(await second.page.locator('#muniguiaOnboardingMount').isVisible(), true);
+});
+
+test('onboarding invitation and complete card are responsive, keyboard-operable and exposed in forced colors at 1440, 390 and 320', {
   timeout: 60_000,
 }, async t => {
   const subject = 'onboarding-responsive-user';
@@ -250,9 +331,10 @@ test('onboarding card is responsive, keyboard-operable and exposed in forced col
     });
     const card = page.locator('#muniguiaOnboardingMount');
     await card.locator('.muni-onboarding__title').waitFor();
-    assert.match(await card.locator('.muni-onboarding__eyebrow').innerText(), /3 etapas · 6 minutos/iu);
-    const audit = await page.evaluate(() => {
+    assert.equal(await card.locator('.muni-onboarding__title').innerText(), '¿Es tu primera vez acá?');
+    const welcomeAudit = await page.evaluate(() => {
       const root = document.querySelector('#muniguiaOnboardingMount');
+      const taskCenter = document.querySelector('#workspaceActions');
       const title = root.querySelector('.muni-onboarding__title');
       const actionRects = [...root.querySelectorAll('button, a[href]')].map(element => {
         const rect = element.getBoundingClientRect();
@@ -260,6 +342,36 @@ test('onboarding card is responsive, keyboard-operable and exposed in forced col
       });
       return {
         actionRects,
+        beforeTaskCenter: Boolean(root.compareDocumentPosition(taskCenter) & Node.DOCUMENT_POSITION_FOLLOWING),
+        forcedColors: matchMedia('(forced-colors: active)').matches,
+        labelledBy: root.getAttribute('aria-labelledby'),
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        titleId: title.id,
+      };
+    });
+    assert.ok(welcomeAudit.overflow <= 1, `${viewport.width}px welcome overflowed by ${welcomeAudit.overflow}px`);
+    assert.equal(welcomeAudit.labelledBy, welcomeAudit.titleId);
+    assert.equal(welcomeAudit.beforeTaskCenter, true);
+    assert.ok(welcomeAudit.actionRects.every(rect => rect.height >= 44 && rect.width >= 44));
+    assert.ok(welcomeAudit.actionRects.every(rect => rect.left >= 0 && rect.right <= viewport.width + 1));
+    assert.equal(welcomeAudit.forcedColors, viewport.width === 320);
+
+    const start = card.getByRole('button', { name: 'Conocer mi espacio' });
+    await start.focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'En curso');
+    assert.match(await card.locator('.muni-onboarding__eyebrow').innerText(), /3 etapas · 6 minutos/iu);
+    const audit = await page.evaluate(() => {
+      const root = document.querySelector('#muniguiaOnboardingMount');
+      const taskCenter = document.querySelector('#workspaceActions');
+      const title = root.querySelector('.muni-onboarding__title');
+      const actionRects = [...root.querySelectorAll('button, a[href]')].map(element => {
+        const rect = element.getBoundingClientRect();
+        return { height: rect.height, width: rect.width, left: rect.left, right: rect.right };
+      });
+      return {
+        actionRects,
+        afterTaskCenter: Boolean(taskCenter.compareDocumentPosition(root) & Node.DOCUMENT_POSITION_FOLLOWING),
         forcedColors: matchMedia('(forced-colors: active)').matches,
         labelledBy: root.getAttribute('aria-labelledby'),
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -269,15 +381,12 @@ test('onboarding card is responsive, keyboard-operable and exposed in forced col
     });
     assert.ok(audit.overflow <= 1, `${viewport.width}px overflowed by ${audit.overflow}px`);
     assert.equal(audit.labelledBy, audit.titleId);
+    assert.equal(audit.afterTaskCenter, true);
     assert.equal(audit.progressLabel, 'Avance del recorrido');
     assert.ok(audit.actionRects.every(rect => rect.height >= 44 && rect.width >= 44));
     assert.ok(audit.actionRects.every(rect => rect.left >= 0 && rect.right <= viewport.width + 1));
     assert.equal(audit.forcedColors, viewport.width === 320);
 
-    const start = card.getByRole('button', { name: 'Conocer mi espacio' });
-    await start.focus();
-    await page.keyboard.press('Enter');
-    assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'En curso');
     await context.close();
   }
 });

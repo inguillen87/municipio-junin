@@ -15,6 +15,7 @@ const EXPECTED_ITEMS = [
   ['reportes', 'reportes.html', 'executive', 'group'],
   ['hacienda', 'hacienda.html', 'people', 'group'],
   ['corridas-grh', '/corridas-grh', 'people', 'group'],
+  ['conceptos-fijos', '/conceptos-fijos', 'people', 'group'],
   ['estructura', '/estructura', 'people', 'group'],
   ['trayectoria', '/trayectoria', 'people', 'group'],
   ['movimientos-grh', 'movimientos-grh.html', 'people', 'group'],
@@ -54,7 +55,7 @@ function visibleItems(definition, capabilities) {
 test('navigation definition is exact, deeply immutable and free of parallel route identities', async () => {
   const { source, window } = await loadGlobals();
   const definition = window.MuniNavigationDefinition;
-  assert.equal(definition.version, '2026-08-13.3');
+  assert.equal(definition.version, '2026-08-14.4');
   assert.deepEqual(Array.from(definition.groups, group => group.id), EXPECTED_GROUPS);
   assert.deepEqual(
     Array.from(definition.items, item => [item.id, item.href, item.groupId, item.placement]),
@@ -130,6 +131,7 @@ test('executive labels remain concise and describe existing product surfaces', a
   assert.equal(byId.get('decisiones-grh').label, 'Decisiones GRH');
   assert.equal(byId.get('movimientos-grh').label, 'Movimientos de legajo');
   assert.equal(byId.get('corridas-grh').label, 'Corridas y marcas de cierre');
+  assert.equal(byId.get('conceptos-fijos').label, 'Conceptos fijos y cálculo');
   assert.equal(items.some(item => /comparar áreas/iu.test(item.label)), false,
     'the comparator remains an in-page Estructura workflow, not a new destination');
 });

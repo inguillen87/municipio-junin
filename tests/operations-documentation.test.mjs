@@ -360,9 +360,9 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.14');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 96);
-  assert.deepEqual(runtimeCounts, { serverless: 54, express: 42 });
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.15');
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 97);
+  assert.deepEqual(runtimeCounts, { serverless: 55, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 32);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 54);
@@ -373,8 +373,8 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
   }
   assert.match(inApp, /estado operativo condicionado/i);
   assert.match(inApp, /32\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}54\s+permisos/i);
-  assert.match(inApp, /96\s+(?:rutas|firmas)/i);
-  assert.match(inApp, /54\s+Serverless[\s\S]{0,60}42\s+Express/i);
+  assert.match(inApp, /97\s+(?:rutas|firmas)/i);
+  assert.match(inApp, /55\s+Serverless[\s\S]{0,60}42\s+Express/i);
 });
 
 test('documentation 1.10.0 records the exact role workspace without claiming accounts from visual guidance', () => {
@@ -454,14 +454,14 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     counts[route.runtime] = (counts[route.runtime] || 0) + 1;
     return counts;
   }, {});
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.14');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.15');
   assert.equal(accessPolicy.ACCESS_POLICY_VERSION, '2026-08-13.4');
-  assert.equal(routePolicy.PROTECTED_ROUTES.length, 96);
-  assert.deepEqual(runtimeCounts, { serverless: 54, express: 42 });
+  assert.equal(routePolicy.PROTECTED_ROUTES.length, 97);
+  assert.deepEqual(runtimeCounts, { serverless: 55, express: 42 });
   assert.equal(Object.keys(routePolicy.RESOURCES).length, 32);
   assert.equal(Object.keys(routePolicy.ACTIONS).length, 12);
   assert.equal(Object.keys(routePolicy.PERMISSIONS).length, 54);
-  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 21);
+  assert.equal(Object.keys(releaseTruth.API_CONTRACTS).length, 22);
   assert.equal(
     releaseTruth.SESSION_EXCHANGE_CONTRACTS['/api/auth/evaluation-session'],
     'municontrol-evaluation-session-v1',
@@ -475,6 +475,7 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-domain-catalog'], 'grh-domain-catalog-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-workforce-finance'], 'grh-workforce-finance-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-payroll-run-control'], 'grh-payroll-run-control-v1');
+  assert.equal(releaseTruth.API_CONTRACTS['/api/grh-fixed-concept-control'], 'grh-fixed-concept-control-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-organization-analytics'], 'grh-organization-analytics-v2');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-movement-operations'], 'grh-movement-operations-v1');
   assert.equal(releaseTruth.API_CONTRACTS['/api/grh-decision-brief'], 'grh-decision-brief-v1');
@@ -513,9 +514,9 @@ test('S13 1.10.0 records the exact public release while private evidence stays l
     assert.match(source, /#decisionBrief/, relativePath);
     if (relativePath === 'manuales.html') {
       assert.match(source, /estado operativo condicionado/i, relativePath);
-      assert.match(source, /2026-08-13\.14[\s\S]{0,100}2026-08-13\.4/, relativePath);
-      assert.match(source, /32\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}54\s+permisos[\s\S]{0,80}96\s+(?:rutas|firmas)/i, relativePath);
-      assert.match(source, /54 Serverless[\s\S]{0,60}42 Express/i, relativePath);
+      assert.match(source, /2026-08-14\.15[\s\S]{0,100}2026-08-13\.4/, relativePath);
+      assert.match(source, /32\s+recursos[\s\S]{0,80}12\s+acciones[\s\S]{0,80}54\s+permisos[\s\S]{0,80}97\s+(?:rutas|firmas)/i, relativePath);
+      assert.match(source, /55 Serverless[\s\S]{0,60}42 Express/i, relativePath);
       assert.match(source, /Centro de decisiones[\s\S]{0,1000}Producción · lectura condicionada/i, relativePath);
     } else {
       assert.match(source, /2026-08-09\.2[\s\S]{0,100}2026-08-09\.1/, relativePath);
@@ -1189,8 +1190,8 @@ test('the in-app manual exposes a semantic version and its truth contract separa
   assert.match(source, /\/api\/grh-data[\s\S]{0,180}410 GRH_RAW_CONTRACT_RETIRED[\s\S]{0,100}sin leer artefactos/i);
   assert.match(source, /O2A[\s\S]{0,180}105,5 s[\s\S]{0,180}294 ms/i);
   assert.match(source, /PUBLISHED[\s\S]{0,120}no significa DB, API ni producción/i);
-  assert.match(source, /Estado operativo actual · 13 de agosto de 2026/i);
-  assert.match(source, /MuniGuía reconoce 19 pantallas privadas/i);
+  assert.match(source, /Estado operativo actual · 14 de agosto de 2026/i);
+  assert.match(source, /MuniGuía reconoce 20 pantallas privadas/i);
   assert.match(source, /Primer día con MuniGuía[\s\S]{0,120}efímero durante la sesión/i);
 });
 
@@ -1229,6 +1230,23 @@ test('S20 documents action-first navigation and aggregate payroll-run controls w
   assert.match(masterPlan, /focus=<priorityCode>[\s\S]{0,120}nunca (?:crea|abre|modifica)/i);
   assert.match(readme, /Sólo se\s+versionan y empaquetan los artefactos agregados/i);
   assert.match(readme, /dumps[\s\S]{0,120}no se deben commitear/i);
+});
+
+test('S21 documents fixed-concept evidence, role intersection and the complete onboarding journey', () => {
+  const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
+  const userManual = read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md');
+  const masterPlan = read('docs/MASTER_PLAN_STATUS.md');
+  const roadmap = read('docs/ENTERPRISE_PRODUCT_ROADMAP.md');
+
+  for (const source of [technical, userManual, masterPlan, roadmap]) {
+    assert.match(source, /conceptos fijos/i);
+    assert.match(source, /(?:no|ni) (?:publica|muestra|contienen)[\s\S]{0,100}(?:importes|identificadores|legajos)/i);
+  }
+  assert.match(technical, /legajo\.IDPERSONA/i);
+  assert.match(masterPlan, /191[\s\S]{0,80}185[\s\S]{0,120}94\/90[\s\S]{0,80}19\/18[\s\S]{0,80}78\/77/i);
+  assert.match(masterPlan, /DEMO[\s\S]{0,80}INSPECTOR[\s\S]{0,80}TENANT_USER[\s\S]{0,120}no heredan/i);
+  assert.match(masterPlan, /recorrido completo de 3 a 5 etapas/i);
+  assert.match(roadmap, /pendiente el smoke del mismo SHA[\s\S]{0,24}Production/i);
 });
 
 test('the public landing does not route municipal or commercial data to unapproved contacts', () => {

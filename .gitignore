@@ -38,6 +38,7 @@ api/_data/*.json
 !api/_data/grh-import-quality-history.json
 !api/_data/grh-employment-actions.json
 !api/_data/grh-payroll-run-control.json
+!api/_data/grh-fixed-concept-control.json
 !api/_data/grh-personas-linkage-readiness.json
 docs/data/*.json
 

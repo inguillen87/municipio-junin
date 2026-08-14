@@ -616,8 +616,8 @@ sesiones revocables, ámbitos versionados, acceso excepcional a PII con vencimie
 rate limiting distribuido y alertas de abuso.
 
 La base local vigente no es sólo diseño: `shared/route-policy.cjs`
-`2026-08-13.14` fija 32 recursos, 12 acciones, 54 permisos y 96 firmas exactas,
-54 Serverless y 42 Express. `shared/access-policy.cjs` `2026-08-13.4` proyecta el workspace de siete
+`2026-08-14.15` fija 32 recursos, 12 acciones, 54 permisos y 97 firmas exactas,
+55 Serverless y 42 Express. `shared/access-policy.cjs` `2026-08-13.4` proyecta el workspace de siete
 roles. Las asignaciones finas, SoD, lifecycle y auditoría persistida permanecen
 como propuesta aislada y no migrada.
 

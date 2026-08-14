@@ -18,7 +18,7 @@
   var PERSON_RETURN_VERSION = 'grh-person-return-v1';
   var PRIMARY_QUERY_ORDER = {
     INTENDENTE: ['priority', 'summary', 'absence-reasons', 'cost-overview'],
-    CONTADOR: ['cost-overview', 'cost-components', 'calculation-control', 'reconciliation'],
+    CONTADOR: ['fixed-concept-control', 'cost-overview', 'cost-components', 'reconciliation'],
     TENANT_ADMIN: ['priority', 'catalog', 'quality', 'summary'],
     SUPER_ADMIN: ['quality', 'catalog', 'summary', 'cost-overview'],
   };

@@ -86,6 +86,7 @@ async function createServer(users, requestLog) {
     ['/estructura', 'inicio.html'],
     ['/trayectoria', 'inicio.html'],
     ['/corridas-grh', 'inicio.html'],
+    ['/conceptos-fijos', 'inicio.html'],
     ['/movimientos-grh', 'inicio.html'],
     ['/territorio', 'inicio.html'],
     ['/calidad', 'control.html'],
@@ -194,6 +195,14 @@ async function createServer(users, requestLog) {
           '<section id="payrollRunSummary" aria-label="Resumen de corridas"></section>',
           '<section id="payrollRunTimeline" aria-label="Serie de corridas"></section>',
           '<section id="payrollRunReview" aria-label="Cobertura y cuarentena"></section>',
+          '</main>',
+        ].join('')));
+      }
+      if (url.pathname === '/conceptos-fijos') {
+        body = Buffer.from(body.toString('utf8').replace('</main>', [
+          '<section id="fixedConceptReconciliation" aria-label="Conciliación de conceptos fijos"></section>',
+          '<section id="fixedConceptComparison" aria-label="Comparación entre administraciones"></section>',
+          '<section id="fixedConceptQuality" aria-label="Calidad y límites"></section>',
           '</main>',
         ].join('')));
       }

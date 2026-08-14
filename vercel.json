@@ -24,6 +24,7 @@
   "rewrites": [
     { "source": "/", "destination": "/login" },
     { "source": "/inicio", "destination": "/inicio.html" },
+    { "source": "/conceptos-fijos", "destination": "/conceptos-fijos.html" },
     { "source": "/corridas-grh", "destination": "/corridas-grh.html" },
     { "source": "/estructura", "destination": "/estructura.html" },
     { "source": "/trayectoria", "destination": "/trayectoria.html" },

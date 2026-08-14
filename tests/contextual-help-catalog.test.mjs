@@ -37,7 +37,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 19);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 20);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -75,7 +75,12 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
       : pageId === 'quality'
         ? await readFile(path.join(ROOT, 'control.html'), 'utf8')
         : null;
-    const pageSource = pageId === 'payrollRunControl'
+    const pageSource = pageId === 'fixedConceptControl'
+      ? (await Promise.all([
+          readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
+          readFile(path.join(ROOT, 'frontend', 'src', 'fixed-concept-control', 'FixedConceptControlDashboard.tsx'), 'utf8'),
+        ])).join('\n')
+      : pageId === 'payrollRunControl'
       ? (await Promise.all([
           readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
           readFile(path.join(ROOT, 'frontend', 'src', 'payroll-run-control', 'PayrollRunControlDashboard.tsx'), 'utf8'),
@@ -201,6 +206,7 @@ test('assistant handoffs are fixed per page, capability-bound and manual-backed'
     organizationAnalytics: 'structure',
     employmentActions: 'trajectory',
     payrollRunControl: 'payrollRuns',
+    fixedConceptControl: 'hacienda',
     movementOperations: 'trajectory',
     territory: 'territory',
     quality: 'quality',
@@ -293,6 +299,13 @@ test('related actions and runtime remain capability-bound, local, non-persistent
   );
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.requiredCapability, 'navigation.organization-analytics');
   assert.equal(MUNIGUIA_CATALOG.pages.organizationAnalytics.label, 'Estructura y áreas de costo');
+  assert.deepEqual(
+    MUNIGUIA_CATALOG.pages.fixedConceptControl.steps.map((step) => step.selector),
+    ['#fixedConceptReconciliation', '#fixedConceptComparison', '#fixedConceptQuality'],
+  );
+  assert.equal(MUNIGUIA_CATALOG.pages.fixedConceptControl.requiredCapability, 'navigation.hacienda');
+  assert.equal(MUNIGUIA_CATALOG.pages.fixedConceptControl.label, 'Conceptos fijos y cálculo');
+  assert.equal(MUNIGUIA_CATALOG.pages.fixedConceptControl.manualAnchor, 'conceptos-fijos');
   assert.deepEqual(
     MUNIGUIA_CATALOG.pages.organizationAnalytics.steps.map((step) => step.title),
     ['Confirmá fuente y corte', 'Explorá estructura y áreas de costo', 'Compará dos áreas de costo'],

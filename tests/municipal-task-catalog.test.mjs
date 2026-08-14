@@ -29,10 +29,10 @@ function inputFor(role, capabilities = ROLE_CAPABILITIES[role]) {
 
 const EXPECTED_RECOMMENDED = Object.freeze({
   SUPER_ADMIN: ['review-sources', 'import-source', 'verify-quality', 'understand-role'],
-  INTENDENTE: ['review-priorities', 'follow-decisions', 'review-grh-summary', 'review-payroll-runs'],
-  TENANT_ADMIN: ['import-source', 'review-sources', 'verify-quality', 'review-payroll-runs'],
+  INTENDENTE: ['review-priorities', 'follow-decisions', 'review-grh-summary', 'review-fixed-concepts'],
+  TENANT_ADMIN: ['import-source', 'review-sources', 'verify-quality', 'review-fixed-concepts'],
   TENANT_USER: ['locate-territory', 'understand-role'],
-  CONTADOR: ['review-payroll-runs', 'review-payroll', 'create-report', 'verify-quality'],
+  CONTADOR: ['review-fixed-concepts', 'review-payroll-runs', 'review-payroll', 'create-report'],
   INSPECTOR: ['locate-territory', 'understand-role'],
   DEMO: ['locate-territory', 'understand-role'],
 });
@@ -145,6 +145,25 @@ test('payroll run task uses the canonical page and appears only with navigation.
   assert.equal(denied.tasks.some(candidate => candidate.id === 'review-payroll-runs'), false);
 });
 
+test('fixed-concept task uses the governed page and remains capability-bound', () => {
+  const page = MUNIGUIA_CATALOG.pages.fixedConceptControl;
+  assert.ok(page);
+  assert.equal(page.requiredCapability, 'navigation.hacienda');
+  assert.equal(page.href, 'conceptos-fijos.html');
+  assert.deepEqual(page.aliases, ['/conceptos-fijos', '/conceptos-fijos.html']);
+  const allowed = resolveMunicipalTaskCatalog(inputFor('CONTADOR'));
+  const task = allowed.tasks.find(candidate => candidate.id === 'review-fixed-concepts');
+  assert.ok(task);
+  assert.equal(task.capability, 'navigation.hacienda');
+  assert.equal(task.href, '/conceptos-fijos.html');
+  assert.equal(task.helpHref, '/manuales.html#conceptos-fijos');
+  assert.equal(task.assistant.question, MUNIGUIA_ASSISTANT_QUESTIONS.fixedConceptControl);
+
+  const denied = resolveMunicipalTaskCatalog(inputFor('CONTADOR',
+    ROLE_CAPABILITIES.CONTADOR.filter(capability => capability !== 'navigation.hacienda')));
+  assert.equal(denied.tasks.some(candidate => candidate.id === 'review-fixed-concepts'), false);
+});
+
 test('MuniGuía and Assistant handoffs remain independently capability-bound', () => {
   const capabilities = ROLE_CAPABILITIES.INTENDENTE.filter(capability => capability !== 'navigation.help');
   const projected = resolveMunicipalTaskCatalog(inputFor('INTENDENTE', capabilities));
@@ -164,13 +183,13 @@ test('task center integration is local, sink-free and mounted once across legacy
     readFile(path.join(ROOT, 'manuales.html'), 'utf8'),
     readFile(path.join(ROOT, 'frontend', 'src', 'components', 'AppShell.tsx'), 'utf8'),
     readFile(path.join(ROOT, 'frontend', 'src', 'components', 'MunicipalTaskCenterBridge.tsx'), 'utf8'),
-    ...['calidad', 'ejecutivo', 'estructura', 'territorio', 'trayectoria'].map(name =>
+    ...['calidad', 'conceptos-fijos', 'ejecutivo', 'estructura', 'territorio', 'trayectoria'].map(name =>
       readFile(path.join(ROOT, 'frontend', `${name}.html`), 'utf8')),
   ]);
   assert.doesNotMatch(runtime, /\.innerHTML\s*=|insertAdjacentHTML|document\.write|\beval\s*\(/u);
   assert.doesNotMatch(runtime, /\b(?:fetch|XMLHttpRequest)\s*\(|localStorage|sessionStorage/u);
   assert.match(inicio, /id="workspaceActions"[\s\S]*data-municipal-task-finder/);
-  assert.ok(inicio.indexOf('id="workspaceActions"') < inicio.indexOf('id="muniguiaOnboardingMount"'));
+  assert.ok(inicio.indexOf('id="muniguiaOnboardingMount"') < inicio.indexOf('id="workspaceActions"'));
   assert.doesNotMatch(inicio, /Tus accesos principales|id="journeyList"/);
   assert.match(manuals, /id="tareas"[\s\S]*data-task-finder-mode="catalog"/);
   assert.match(appShell, /MunicipalTaskCenterBridge/);

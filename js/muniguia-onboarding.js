@@ -4,6 +4,7 @@
   var MODULE_URL = '/js/muniguia-onboarding-catalog.js';
   var STORAGE_PREFIX = 'municontrol:muniguia-onboarding';
   var STATE_SCHEMA_VERSION = 1;
+  var WELCOME_DISMISSED_VALUE = 'dismissed-v2';
   var STATUS = Object.freeze({ NEW: 'new', IN_PROGRESS: 'in_progress', COMPLETED: 'completed' });
   var state = {
     generation: 0, root: null, input: null, projection: null,
@@ -122,6 +123,31 @@
     ].join(':');
   }
 
+  function welcomeDismissalKey(storageKey) {
+    return storageKey + ':welcome-dismissed';
+  }
+
+  function welcomeIsDismissed() {
+    if (!state.storageKey) return false;
+    try {
+      return global.sessionStorage.getItem(welcomeDismissalKey(state.storageKey)) === WELCOME_DISMISSED_VALUE;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function placeBeforeTaskCenter() {
+    var taskCenter = document.getElementById('workspaceActions');
+    if (!state.root || !taskCenter || !taskCenter.parentNode) return;
+    taskCenter.parentNode.insertBefore(state.root, taskCenter);
+  }
+
+  function placeAfterTaskCenter() {
+    var taskCenter = document.getElementById('workspaceActions');
+    if (!state.root || !taskCenter || !taskCenter.parentNode) return;
+    taskCenter.parentNode.insertBefore(state.root, taskCenter.nextSibling);
+  }
+
   function newProgress(projection) {
     return {
       schemaVersion: STATE_SCHEMA_VERSION,
@@ -220,6 +246,7 @@
   }
 
   function beginJourney() {
+    placeAfterTaskCenter();
     setProgress({
       schemaVersion: STATE_SCHEMA_VERSION,
       journeyId: state.projection.journey.id,
@@ -233,6 +260,7 @@
   function resetJourney() {
     clearProgress();
     state.progress = newProgress(state.projection);
+    placeBeforeTaskCenter();
     render();
     announce('El recorrido volvió al inicio.');
     global.requestAnimationFrame(function() {
@@ -328,6 +356,54 @@
     return button;
   }
 
+  function dismissWelcome() {
+    if (!state.storageKey) return;
+    try {
+      global.sessionStorage.setItem(welcomeDismissalKey(state.storageKey), WELCOME_DISMISSED_VALUE);
+    } catch (error) {
+      // The invitation can still close in memory when session storage is unavailable.
+    }
+    if (!state.root) return;
+    state.root.hidden = true;
+    state.root.removeAttribute('aria-labelledby');
+    state.root.className = '';
+    state.root.replaceChildren();
+    state.live = null;
+  }
+
+  function renderWelcome() {
+    var titleId = 'muniguiaOnboardingTitle';
+    var title = createElement('h2', 'muni-onboarding__title', '¿Es tu primera vez acá?');
+    title.id = titleId;
+    var content = createElement('div', 'muni-onboarding__welcome-content');
+    content.append(
+      createElement('p', 'muni-onboarding__eyebrow', 'Bienvenida rápida'),
+      title,
+      createElement('p', 'muni-onboarding__copy',
+        'Conocé tu espacio de trabajo con un recorrido guiado para tu función. No cambia permisos ni consulta información adicional.')
+    );
+    var note = createElement('p', 'muni-onboarding__note');
+    note.setAttribute('aria-live', 'polite');
+    note.setAttribute('aria-atomic', 'true');
+    note.textContent = 'Podés dejarlo para después. Esta elección se guarda sólo en esta pestaña.';
+    content.appendChild(note);
+
+    var actions = createElement('div', 'muni-onboarding__welcome-actions');
+    actions.appendChild(primaryButton('Conocer mi espacio', beginJourney));
+    var dismiss = createElement('button', 'muni-onboarding__button', 'Ahora no');
+    dismiss.type = 'button';
+    dismiss.addEventListener('click', dismissWelcome);
+    actions.appendChild(dismiss);
+
+    var inner = createElement('div', 'muni-onboarding__welcome-inner');
+    inner.append(content, actions);
+    state.live = note;
+    state.root.className = 'muni-onboarding muni-onboarding--welcome';
+    state.root.setAttribute('aria-labelledby', titleId);
+    state.root.replaceChildren(inner);
+    state.root.hidden = false;
+  }
+
   function buildCurrentPanel() {
     var panel = createElement('aside', 'muni-onboarding__current');
     if (state.progress.status === STATUS.NEW) {
@@ -383,6 +459,12 @@
 
   function render() {
     if (!state.root || !state.projection || !state.progress) return;
+    if (state.progress.status === STATUS.NEW) {
+      placeBeforeTaskCenter();
+      renderWelcome();
+      return;
+    }
+    placeAfterTaskCenter();
     var journey = state.projection.journey;
     var completedCount = state.progress.completedStageIds.length;
     var inner = createElement('div', 'muni-onboarding__inner');
@@ -453,6 +535,7 @@
     }
     if (state.projection) {
       state.progress = newProgress(state.projection);
+      placeBeforeTaskCenter();
       render();
     }
   }
@@ -484,6 +567,10 @@
     state.projection = projection;
     state.storageKey = progressKey(input, projection);
     state.progress = readProgress(state.storageKey, projection);
+    if (state.progress.status === STATUS.NEW && welcomeIsDismissed()) {
+      state.root.hidden = true;
+      return true;
+    }
     render();
     return true;
   }

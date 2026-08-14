@@ -49,8 +49,8 @@ test('organization analytics has one exact private capability and route boundary
   });
 });
 
-test('published route ceiling opens only aggregate organization analytics and canonical RBAC still denies low roles', () => {
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.14');
+test('published organization analytics stays inside both the aggregate ceiling and canonical RBAC', () => {
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.15');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
 
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
@@ -64,7 +64,7 @@ test('published route ceiling opens only aggregate organization analytics and ca
       routeId: ROUTE_ID,
     });
     assert.equal(decision.applies, true);
-    assert.equal(decision.allowed, true, `${profile.email}:published ceiling`);
+    assert.equal(decision.allowed, EXECUTIVE_ROLES.includes(profile.role), `${profile.email}:published ceiling`);
     const canonicalAllowed = routePolicy.authorizeRoute(
       profile.role,
       'serverless',

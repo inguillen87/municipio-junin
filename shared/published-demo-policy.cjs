@@ -1,9 +1,12 @@
 'use strict';
 
 // Temporary containment for the six role-preview identities that were
-// previously published. The exact read-only route list is both their grant
-// and their ceiling; no base-role permission can widen it.
-const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-13.14';
+// previously published. The read-only route list is the global ceiling and
+// each identity receives only its intersection with canonical role grants.
+// A published session can therefore never widen either boundary.
+const routePolicy = require('./route-policy.cjs');
+
+const PUBLISHED_DEMO_POLICY_VERSION = '2026-08-14.15';
 
 const PUBLISHED_DEMO_PROFILES = Object.freeze([
   Object.freeze({ profileId: 'administrador', label: 'Administrador', email: 'admin@junin.gov.ar', role: 'TENANT_ADMIN', tenantSlug: 'junin' }),
@@ -35,16 +38,16 @@ const PUBLISHED_DEMO_ALLOWED_ROUTE_IDS = Object.freeze([
   'serverless.grh.movement-operations.read',
   'serverless.grh.workforce-finance.read',
   'serverless.grh.payroll-run-control.read',
+  'serverless.grh.fixed-concept-control.read',
   'serverless.grh.report.read',
   'serverless.grh.report-api.read',
   'serverless.municipal.territory.read',
   'express.auth.me.read',
 ]);
 
-// Public evaluation sessions expose the complete aggregate municipal journey.
-// This is a UI/session projection only; route access remains bounded by the
-// exact read-only route allowlist above and never includes import, export,
-// audit administration or nominal directory access.
+// Public evaluation sessions can expose only this aggregate-safe capability
+// ceiling. Session projection must additionally intersect it with the
+// canonical capabilities of the selected role.
 const PUBLISHED_DEMO_CAPABILITIES = Object.freeze([
   'session.read',
   'navigation.workspace',
@@ -72,6 +75,7 @@ const PUBLISHED_DEMO_DECISION_CODES = Object.freeze({
 const profileByEmail = new Map(PUBLISHED_DEMO_PROFILES.map(profile => [profile.email, profile]));
 const profileById = new Map(PUBLISHED_DEMO_PROFILES.map(profile => [profile.profileId, profile]));
 const allowedRouteIdSet = new Set(PUBLISHED_DEMO_ALLOWED_ROUTE_IDS);
+const protectedRouteById = new Map(routePolicy.PROTECTED_ROUTES.map(route => [route.id, route]));
 
 function canonicalEmail(value) {
   if (typeof value !== 'string') return null;
@@ -115,7 +119,13 @@ function evaluatePublishedDemoRoute({ email, role, tenantSlug, routeId } = {}) {
     });
   }
 
-  const allowed = typeof routeId === 'string' && allowedRouteIdSet.has(routeId);
+  const protectedRoute = typeof routeId === 'string' ? protectedRouteById.get(routeId) : null;
+  const allowed = Boolean(
+    protectedRoute &&
+    allowedRouteIdSet.has(routeId) &&
+    protectedRoute.permission &&
+    routePolicy.hasPermission(profile.role, protectedRoute.permission),
+  );
   return Object.freeze({
     applies: true,
     allowed,

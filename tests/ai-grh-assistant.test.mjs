@@ -5,6 +5,7 @@ import test from 'node:test';
 
 import {
   GRH_ANSWER_VISUAL_SCHEMA_VERSION,
+  buildFixedConceptControlAssistantAnswer,
   buildPayrollRunControlAssistantAnswer,
   buildDeterministicAnswer,
   classifyIntent,
@@ -34,9 +35,11 @@ const WORKFORCE_FINANCE_URL = new URL('../api/_data/grh-workforce-finance.json',
 const ABSENCE_INSIGHTS_URL = new URL('../api/_data/grh-absence-insights.json', import.meta.url);
 const EMPLOYMENT_ACTIONS_URL = new URL('../api/_data/grh-employment-actions.json', import.meta.url);
 const PAYROLL_RUN_CONTROL_URL = new URL('../api/_data/grh-payroll-run-control.json', import.meta.url);
+const FIXED_CONCEPT_CONTROL_URL = new URL('../api/_data/grh-fixed-concept-control.json', import.meta.url);
 const HAS_PRIVATE_GRH = existsSync(PROFILE_URL) && existsSync(SEMANTIC_URL) &&
   existsSync(ABSENCE_INSIGHTS_URL) && existsSync(EMPLOYMENT_ACTIONS_URL);
 const HAS_PAYROLL_RUN_CONTROL = existsSync(PAYROLL_RUN_CONTROL_URL);
+const HAS_FIXED_CONCEPT_CONTROL = existsSync(FIXED_CONCEPT_CONTROL_URL);
 
 function realBundle() {
   const profile = JSON.parse(readFileSync(PROFILE_URL, 'utf8'));
@@ -1995,6 +1998,122 @@ test('assistant reads payroll-run control only for its intent, pins lineage and 
   }
   assert.equal(unavailable.statusCode, 503);
   assert.equal(unavailable.payload.code, 'GRH_PAYROLL_RUN_CONTROL_UNAVAILABLE');
+  assert.equal(Object.hasOwn(unavailable.payload, 'answer'), false);
+});
+
+test('fixed-concept control explains the three governed states without identifiers or amounts', { skip: !HAS_FIXED_CONCEPT_CONTROL }, () => {
+  const fixedConceptControl = JSON.parse(readFileSync(FIXED_CONCEPT_CONTROL_URL, 'utf8'));
+  for (const question of [
+    '¿Qué conceptos fijos elegibles aparecen en el cálculo disponible?',
+    'Compará conceptos fijos contra el cálculo',
+    'Mostrá conceptos fijos no observados',
+  ]) {
+    assert.deepEqual(classifyIntent(question), {
+      intent: 'fixed_concept_control',
+      policy: 'allowed',
+    }, question);
+  }
+
+  const answer = buildFixedConceptControlAssistantAnswer(fixedConceptControl);
+  assert.equal(answer.resolvedPeriod, fixedConceptControl.reconciliation.calculationPeriod);
+  assert.deepEqual(answer.visual.items.map(item => item.value),
+    fixedConceptControl.reconciliation.states.map(state => state.rows));
+  assert.deepEqual(answer.actions, [{
+    id: 'open_fixed_concept_control',
+    label: 'Abrir conceptos fijos',
+    href: '/conceptos-fijos',
+    requiredCapability: 'navigation.hacienda',
+  }]);
+  const visibleAnswer = [answer.summary, ...answer.findings, ...answer.caveats, answer.source].join('\n');
+  assert.match(visibleAnswer, /94 filas[\s\S]*19[\s\S]*78/i);
+  assert.match(visibleAnswer, /no acredita autorizaci[oó]n[\s\S]*pago/i);
+  assert.match(visibleAnswer, /972 d[ií]as/i);
+  assert.doesNotMatch(
+    JSON.stringify(answer),
+    /FIJO_ID|CODI_01|LEGA_12|CODI_27|sourceSha256|monetaryAmounts|legalInstrumentValues/i,
+  );
+
+  const invalid = structuredClone(fixedConceptControl);
+  invalid.reconciliation.states[0].rows -= 1;
+  assert.equal(
+    buildFixedConceptControlAssistantAnswer(invalid).code,
+    'GRH_FIXED_CONCEPT_CONTROL_UNAVAILABLE',
+  );
+});
+
+test('assistant reads fixed-concept control only for its intent, pins lineage and fails closed', { skip: !(HAS_PRIVATE_GRH && HAS_FIXED_CONCEPT_CONTROL) }, async () => {
+  const artifact = JSON.parse(readFileSync(FIXED_CONCEPT_CONTROL_URL, 'utf8'));
+  const reads = [];
+  const dependencies = {
+    requireRoleImpl: async () => ({
+      id: 'official-fixed-concepts',
+      role: 'CONTADOR',
+      tenantId: 'tenant-grh-test',
+      tenant: { slug: 'junin' },
+    }),
+    requireDatasetTenantImpl: () => true,
+    readArtifactBundleImpl: async () => realBundle(),
+    readFixedConceptControlArtifactImpl: async input => {
+      reads.push(input);
+      return artifact;
+    },
+    synthesizeAnswerImpl: async () => ({ synthesis: null, engine: null }),
+    environment: {
+      GRH_TENANT_ID: 'tenant-grh-test',
+      GRH_SOURCE_SHA256: artifact.source.sourceSha256,
+    },
+  };
+  const handler = createAiAnalyzeHandler(dependencies);
+  const response = responseRecorder();
+  await handler({
+    method: 'POST',
+    headers: {},
+    body: { message: '¿Qué conceptos fijos aparecen en el cálculo?', mode: 'deterministic' },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.payload.intent, 'fixed_concept_control');
+  assert.equal(response.payload.dataStatus.source, 'grh_fixed_concept_control_governed_contract');
+  assert.equal(response.payload.provenance.fixedConceptControlSchemaVersion,
+    'grh-fixed-concept-control-v1');
+  assert.equal(reads.length, 1);
+  assert.equal(reads[0].expectedSourceSha256, artifact.source.sourceSha256);
+  assert.deepEqual(response.payload.answer.actions, [{
+    id: 'open_fixed_concept_control',
+    label: 'Abrir conceptos fijos',
+    href: '/conceptos-fijos',
+    requiredCapability: 'navigation.hacienda',
+  }]);
+
+  const summary = responseRecorder();
+  await handler({
+    method: 'POST',
+    headers: {},
+    body: { message: 'Dame un resumen ejecutivo', mode: 'deterministic' },
+  }, summary);
+  assert.equal(summary.statusCode, 200);
+  assert.equal(reads.length, 1, 'unrelated intents must not read the fixed-concept artifact');
+
+  const drifted = structuredClone(artifact);
+  drifted.source.sourceSha256 = 'b'.repeat(64);
+  const unavailableHandler = createAiAnalyzeHandler({
+    ...dependencies,
+    readFixedConceptControlArtifactImpl: async () => drifted,
+  });
+  const unavailable = responseRecorder();
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    await unavailableHandler({
+      method: 'POST',
+      headers: {},
+      body: { message: 'Conceptos fijos contra cálculo', mode: 'deterministic' },
+    }, unavailable);
+  } finally {
+    console.error = originalConsoleError;
+  }
+  assert.equal(unavailable.statusCode, 503);
+  assert.equal(unavailable.payload.code, 'GRH_FIXED_CONCEPT_CONTROL_UNAVAILABLE');
   assert.equal(Object.hasOwn(unavailable.payload, 'answer'), false);
 });
 

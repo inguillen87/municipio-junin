@@ -10,6 +10,7 @@ const {
   resolvePublishedDemoProfile,
 } = publishedDemoPolicy;
 const MAX_RATE_KEYS = 5000;
+const PUBLISHED_DEMO_CAPABILITY_SET = new Set(PUBLISHED_DEMO_CAPABILITIES);
 
 function publishedSessionId(profile) {
   if (!profile) return null;
@@ -129,7 +130,7 @@ export function sessionResponseUser(user, {
   const sessionAccess = getSessionAccessForUser(user);
   if (!sessionAccess) return null;
   const capabilities = publishedProfile
-    ? [...PUBLISHED_DEMO_CAPABILITIES]
+    ? sessionAccess.capabilities.filter(capability => PUBLISHED_DEMO_CAPABILITY_SET.has(capability))
     : sessionAccess.capabilities;
   const homeProfile = publishedProfile
     ? projectHomeProfileToCapabilities(sessionAccess.homeProfile, capabilities)

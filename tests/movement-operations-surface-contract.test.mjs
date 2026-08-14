@@ -32,13 +32,13 @@ test('movement operations reuses the exact organization analytics permission and
   assert.equal(Object.values(routePolicy.PERMISSIONS).includes('grh.movement.operations:read'), false);
 });
 
-test('published ceiling contains movement operations while canonical RBAC preserves high-role parity', () => {
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.14');
+test('published ceiling intersects movement operations with canonical high-role grants', () => {
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.15');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     const ceiling = publishedDemoPolicy.evaluatePublishedDemoRoute({ ...profile, routeId: ROUTE_ID });
     assert.equal(ceiling.applies, true);
-    assert.equal(ceiling.allowed, true, `${profile.email}:published ceiling`);
+    assert.equal(ceiling.allowed, EXECUTIVE_ROLES.includes(profile.role), `${profile.email}:published ceiling`);
     const canonicalAllowed = routePolicy.authorizeRoute(
       profile.role,
       'serverless',

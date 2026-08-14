@@ -1,14 +1,14 @@
 import { isKnownNavigationCapability, type SessionIdentity } from '../auth/session';
 
-const NAVIGATION_DEFINITION_VERSION = '2026-08-13.3';
+const NAVIGATION_DEFINITION_VERSION = '2026-08-14.4';
 const GROUP_IDS = Object.freeze(['executive', 'people', 'territory', 'data'] as const);
 const PLACEMENTS = Object.freeze(['top', 'group', 'footer'] as const);
-const EXPECTED_ITEM_COUNT = 21;
+const EXPECTED_ITEM_COUNT = 22;
 const PUBLIC_IDS = Object.freeze(['cuentas', 'ciudadano'] as const);
 const SECONDARY_BY_CAPABILITY = Object.freeze({
-  'navigation.hacienda': 'corridas-grh',
-  'navigation.organization-analytics': 'movimientos-grh',
-  'navigation.rrhh': 'areas-grh',
+  'navigation.hacienda': Object.freeze(['corridas-grh', 'conceptos-fijos']),
+  'navigation.organization-analytics': Object.freeze(['movimientos-grh']),
+  'navigation.rrhh': Object.freeze(['areas-grh']),
 } as const);
 const EXPECTED_ITEMS = Object.freeze([
   ['workspace', null, 'top', 'navigation.workspace', true],
@@ -19,6 +19,7 @@ const EXPECTED_ITEMS = Object.freeze([
   ['reportes', 'executive', 'group', 'navigation.reports', true],
   ['hacienda', 'people', 'group', 'navigation.hacienda', true],
   ['corridas-grh', 'people', 'group', 'navigation.hacienda', false],
+  ['conceptos-fijos', 'people', 'group', 'navigation.hacienda', false],
   ['estructura', 'people', 'group', 'navigation.organization-analytics', true],
   ['trayectoria', 'people', 'group', 'navigation.employment-actions', true],
   ['movimientos-grh', 'people', 'group', 'navigation.organization-analytics', false],
@@ -221,8 +222,8 @@ function parseDefinition(value: unknown): NavigationDefinition | null {
       capability as keyof typeof SECONDARY_BY_CAPABILITY
     ];
     return primaryItems.length !== 1 || scopedItems[0]?.primary !== true ||
-      secondaryItems.length !== (expectedSecondary ? 1 : 0) ||
-      (expectedSecondary ? secondaryItems[0]?.id !== expectedSecondary : false);
+      secondaryItems.length !== (expectedSecondary?.length ?? 0) ||
+      (expectedSecondary ? secondaryItems.some((item, index) => item.id !== expectedSecondary[index]) : false);
   });
   if (workspace.length !== 1 || help.length !== 1 || contractMismatch || invalidCapabilityGroup ||
       publicIds.length !== PUBLIC_IDS.length ||

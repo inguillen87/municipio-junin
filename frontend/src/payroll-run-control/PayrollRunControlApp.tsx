@@ -8,7 +8,7 @@ import { buildPayrollRunControlViewModel } from './payroll-run-control-view-mode
 const REQUIRED_CAPABILITY = 'navigation.hacienda';
 const NAVIGATION = Object.freeze({
   activeItemId: 'corridas-grh',
-  itemIds: Object.freeze(['workspace', 'grh-ejecutivo', 'hacienda', 'corridas-grh', 'ia']),
+  itemIds: Object.freeze(['workspace', 'grh-ejecutivo', 'hacienda', 'corridas-grh', 'conceptos-fijos', 'ia']),
 });
 
 async function loadPayrollRunControl(signal: AbortSignal): Promise<PayrollRunControlViewModel> {

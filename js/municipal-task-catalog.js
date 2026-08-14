@@ -4,7 +4,7 @@ import {
 } from './contextual-help-catalog.js';
 
 const CONTRACT = 'municipal-task-catalog-v1';
-const CATALOG_VERSION = '2026-08-13.1';
+const CATALOG_VERSION = '2026-08-14.2';
 const DEFAULT_RESULT_LIMIT = 8;
 const MAX_RESULT_LIMIT = 12;
 
@@ -62,6 +62,14 @@ const TASKS = deepFreeze([
     description: 'Revisá por período cabeceras válidas, detalle asociado, marcas informadas y registros en cuarentena.',
     keywords: ['corrida', 'cierre', 'lote', 'liquidacion', 'control'],
     pageId: 'payrollRunControl',
+  },
+  {
+    id: 'review-fixed-concepts',
+    kind: 'controlar',
+    label: 'Revisar conceptos fijos y cálculo',
+    description: 'Contrastá conceptos vigentes por rango con lo observado en el cálculo mensual, sin inferir pago ni error.',
+    keywords: ['concepto fijo', 'calculo', 'nomina', 'vigencia', 'reconciliacion'],
+    pageId: 'fixedConceptControl',
   },
   {
     id: 'compare-areas',
@@ -163,10 +171,10 @@ const TASKS = deepFreeze([
 
 const ROLE_TASK_ORDER = deepFreeze({
   SUPER_ADMIN: ['review-sources', 'import-source', 'verify-quality', 'understand-role'],
-  INTENDENTE: ['review-priorities', 'follow-decisions', 'review-grh-summary', 'review-payroll-runs'],
-  TENANT_ADMIN: ['import-source', 'review-sources', 'verify-quality', 'review-payroll-runs'],
+  INTENDENTE: ['review-priorities', 'follow-decisions', 'review-grh-summary', 'review-fixed-concepts'],
+  TENANT_ADMIN: ['import-source', 'review-sources', 'verify-quality', 'review-fixed-concepts', 'review-payroll-runs'],
   TENANT_USER: ['locate-territory', 'understand-role'],
-  CONTADOR: ['review-payroll-runs', 'review-payroll', 'create-report', 'verify-quality'],
+  CONTADOR: ['review-fixed-concepts', 'review-payroll-runs', 'review-payroll', 'create-report'],
   INSPECTOR: ['locate-territory', 'understand-role'],
   DEMO: ['locate-territory', 'understand-role'],
 });

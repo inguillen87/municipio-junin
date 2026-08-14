@@ -27,8 +27,8 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-El estado local vigente usa route policy `2026-08-13.14` y access policy
-`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 96 rutas exactas, 54
+El estado local vigente usa route policy `2026-08-14.15` y access policy
+`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 97 rutas exactas, 55
 Serverless + 42 Express. Para el release histórico `v1.10.0`, route policy
 `2026-08-09.2` y access policy `2026-08-09.1` cubrían 26 recursos, 12 acciones,
 46 permisos y 79 firmas de ruta: 37 Serverless + 42 Express. El commit/tag de ese release apunta a
@@ -187,7 +187,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
-| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-13.14`: 32 recursos, 12 acciones, 54 permisos y 96 firmas de ruta (54 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
+| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-14.15`: 32 recursos, 12 acciones, 54 permisos y 97 firmas de ruta (55 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | Release histórico `v1.10.0`: tag `4108ca0`, product commit `d11fd39`, deployment `READY`, gate 11/11 y GitHub Release live. Hotfix post-release `e74339c`: `/prisma/schema.prisma` 404 seguro y gate 12/12 | No mover el tag ni inferir DB, cuentas, autorización positiva o datos GRH remotos; cada deployment posterior requiere repetir el gate actual de 12 probes |
@@ -324,7 +324,7 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
 exacto por `runtime + método + ruta + recurso:acción` (32 recursos, 12 acciones,
-54 permisos y 96 firmas: 54 Serverless y 42 Express). No hay wildcard, jerarquía
+54 permisos y 97 firmas: 55 Serverless y 42 Express). No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
@@ -560,7 +560,7 @@ QA integral y smoke del mismo SHA en Production.
 
 ### S20 — centro de tareas y corridas GRH explicadas
 
-El incremento local convierte Inicio en una entrada por tarea: cuatro acciones
+El incremento verificado en Production convierte Inicio en una entrada por tarea: cuatro acciones
 recomendadas por rol, búsqueda completa y paleta `Ctrl/Command+K`, siempre
 proyectadas desde las capabilities efectivas. MuniGuía conserva el recorrido y
 el Asistente recibe handoffs allowlisted; ninguno amplía autorización.
@@ -569,11 +569,22 @@ La nueva superficie **Corridas y marcas de cierre** (`/corridas-grh`) usa
 `grh-payroll-run-control-v1` para explicar, por período, cabeceras válidas,
 detalle asociado, marcas informadas y
 cuarentena. Reutiliza Hacienda y publica agregados sin PII, montos ni logs
-crudos. La marca no acredita pago ni cierre contable. La fase permanece validada
-localmente hasta completar commit, deployment
-y smoke remoto del mismo SHA. Presupuesto, compras, tesorería y ejecución
+crudos. La marca no acredita pago ni cierre contable. La fase quedó verificada
+en el commit `85843ab`, deployment `dpl_CV5qGvSd6SZ1ioNkzDPGJFGnw1bF`, con
+release truth 27/27 y smoke remoto por rol. Presupuesto, compras, tesorería y ejecución
 presupuestaria siguen bloqueados hasta recibir una fuente autorizada, versionada
 y tenant-bound.
+
+### S21 — conceptos fijos y acceso publicado por rol
+
+El release candidate agrega `/conceptos-fijos` sobre
+`grh-fixed-concept-control-v1`: contrasta agregados de `fijos` vigentes por rango
+con el cálculo válido de julio de 2026, resuelve personas por `IDPERSONA` y no
+publica importes, instrumentos, documentos ni identificadores. Las sesiones
+publicadas pasan a recibir la intersección exacta entre el techo seguro y el rol
+canónico, y el primer ingreso ofrece una bienvenida compacta sin retirar el
+recorrido completo de MuniGuía. Queda pendiente el smoke del mismo SHA en
+Production; no incorpora un motor de liquidación ni prueba pago.
 
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;

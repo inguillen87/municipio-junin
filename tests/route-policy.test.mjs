@@ -26,6 +26,7 @@ const EXPECTED_SERVERLESS = [
   'GET /grh-movement-operations',
   'GET /grh-workforce-finance',
   'GET /grh-payroll-run-control',
+  'GET /grh-fixed-concept-control',
   'GET /municipal-territory',
   'GET /grh-executive',
   'GET /grh-quality',
@@ -178,6 +179,7 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'grh-movement-operations.js',
     'grh-workforce-finance.js',
     'grh-payroll-run-control.js',
+    'grh-fixed-concept-control.js',
     'grh-close.js',
     'grh-decision-brief.js',
     'grh-action-ledger.js',
@@ -299,6 +301,14 @@ test('route authorization is exact by runtime, method and path', () => {
   }
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-payroll-run-control'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-payroll-run-control/future'), false);
+  for (const role of ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']) {
+    assert.equal(esmPolicy.authorizeRoute(role, runtime.SERVERLESS, 'GET', '/api/grh-fixed-concept-control'), true, role);
+  }
+  for (const role of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    assert.equal(esmPolicy.authorizeRoute(role, runtime.SERVERLESS, 'GET', '/api/grh-fixed-concept-control'), false, role);
+  }
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'POST', '/api/grh-fixed-concept-control'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-fixed-concept-control/future'), false);
   for (const role of ['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO']) {
     assert.equal(esmPolicy.authorizeRoute(role, runtime.SERVERLESS, 'GET', '/api/municipal-territory'), true, role);
   }

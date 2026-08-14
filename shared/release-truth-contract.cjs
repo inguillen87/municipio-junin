@@ -17,6 +17,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-import-quality-history': 'grh-import-quality-history-v1',
   '/api/grh-employment-actions': 'grh-employment-actions-v1',
   '/api/grh-payroll-run-control': 'grh-payroll-run-control-v1',
+  '/api/grh-fixed-concept-control': 'grh-fixed-concept-control-v1',
   '/api/grh-close': 'grh-close-v1',
   '/api/grh-decision-brief': 'grh-decision-brief-v1',
   '/api/grh-action-ledger': 'grh-action-ledger-v1',

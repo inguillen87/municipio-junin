@@ -35,6 +35,9 @@ import {
   readGrhPayrollRunControlArtifact,
 } from './grh-payroll-run-control.js';
 import {
+  readGrhFixedConceptControlArtifact,
+} from './grh-fixed-concept-control.js';
+import {
   inspectGrhAbsenceInsightsContract,
 } from './lib/grh-absence-insights-contract.js';
 import {
@@ -43,6 +46,9 @@ import {
 import {
   inspectGrhPayrollRunControlContract,
 } from './lib/grh-payroll-run-control-contract.js';
+import {
+  inspectGrhFixedConceptControlContract,
+} from './lib/grh-fixed-concept-control-contract.js';
 import {
   inspectGrhWorkforceFinanceContract,
 } from './lib/grh-workforce-finance-contract.js';
@@ -94,6 +100,7 @@ const ACTION_ROUTE_CAPABILITIES = Object.freeze({
   '/areas-grh': 'navigation.rrhh',
   '/calidad': 'navigation.data-quality',
   '/control': 'navigation.data-quality',
+  '/conceptos-fijos': 'navigation.hacienda',
   '/corridas-grh': 'navigation.hacienda',
   '/dashboard': 'navigation.dashboard',
   '/decisiones-grh': 'navigation.grh-decisions',
@@ -221,6 +228,7 @@ const FINANCE_COMPONENTS = Object.freeze([
 const SUPPORTED_INTENTS = Object.freeze([
   'manual_help',
   'decision_brief',
+  'fixed_concept_control',
   'payroll_run_control',
   'workforce_finance_overview',
   'workforce_finance_trend',
@@ -254,6 +262,7 @@ export function createAiAnalyzeHandler({
   readAbsenceInsightsArtifactImpl = readGrhAbsenceInsightsArtifact,
   readEmploymentActionsArtifactImpl = readGrhEmploymentActionsArtifact,
   readPayrollRunControlArtifactImpl = readGrhPayrollRunControlArtifact,
+  readFixedConceptControlArtifactImpl = readGrhFixedConceptControlArtifact,
   buildDecisionBriefProjectionImpl = buildGrhDecisionBriefProjection,
   inspectDecisionBriefContractImpl = inspectGrhDecisionBriefContract,
   buildDomainCatalogProjectionImpl = buildGrhDomainCatalogProjection,
@@ -264,6 +273,7 @@ export function createAiAnalyzeHandler({
   inspectAbsenceInsightsContractImpl = inspectGrhAbsenceInsightsContract,
   inspectEmploymentActionsContractImpl = inspectGrhEmploymentActionsContract,
   inspectPayrollRunControlContractImpl = inspectGrhPayrollRunControlContract,
+  inspectFixedConceptControlContractImpl = inspectGrhFixedConceptControlContract,
   authorizeDirectoryImpl = authorizeGrhDirectoryRequest,
   synthesizeAnswerImpl = synthesizeMunicipalAnswer,
   directoryAuthorizationDependencies = {},
@@ -367,6 +377,7 @@ export function createAiAnalyzeHandler({
       !parsePeriodRequest(message).explicit;
     const useEmploymentActions = classification.intent === 'employment_actions';
     const usePayrollRunControl = classification.intent === 'payroll_run_control';
+    const useFixedConceptControl = classification.intent === 'fixed_concept_control';
     let directoryAuthorization = null;
     let directoryReadAudit = null;
     if (classification.intent === 'person_lookup') {
@@ -394,6 +405,7 @@ export function createAiAnalyzeHandler({
         absenceInsights: null,
         employmentActions: null,
         payrollRunControl: null,
+        fixedConceptControl: null,
       };
       if (classification.intent === 'decision_brief' || usePayrollRunControl) {
         const decisionBrief = buildDecisionBriefProjectionImpl(executive, quality, close);
@@ -470,6 +482,19 @@ export function createAiAnalyzeHandler({
         }
         assistantData.payrollRunControl = payrollRunControl;
       }
+      if (useFixedConceptControl) {
+        const fixedConceptControl = await readFixedConceptControlArtifactImpl({
+          environment,
+          expectedSourceSha256: provenance.sourceSha256,
+        });
+        if (!inspectFixedConceptControlContractImpl(fixedConceptControl)?.ok ||
+            !projectionMatchesAssistantSource(fixedConceptControl, provenance, {
+              requireLatestPeriod: false,
+            })) {
+          throw new Error('GRH fixed concept control invalid');
+        }
+        assistantData.fixedConceptControl = fixedConceptControl;
+      }
       const unfilteredAnswer = classification.intent === 'person_lookup'
         ? await buildPrivateDirectoryResponse({
           message,
@@ -516,6 +541,12 @@ export function createAiAnalyzeHandler({
           payrollRunControlSchemaVersion: assistantData.payrollRunControl.schemaVersion,
         };
       }
+      if (!nominal && useFixedConceptControl) {
+        responseProvenance = {
+          ...responseProvenance,
+          fixedConceptControlSchemaVersion: assistantData.fixedConceptControl.schemaVersion,
+        };
+      }
       const copilot = await synthesizeAnswerImpl({
         mode: requestedMode,
         classification,
@@ -540,6 +571,7 @@ export function createAiAnalyzeHandler({
       if (useAbsenceInsights) dataSource = 'grh_absence_insights_governed_contract';
       if (useEmploymentActions) dataSource = 'grh_employment_actions_governed_contract';
       if (usePayrollRunControl) dataSource = 'grh_payroll_run_control_governed_contract';
+      if (useFixedConceptControl) dataSource = 'grh_fixed_concept_control_governed_contract';
       if (nominal) dataSource = 'grh_directory_private_contract';
       const payload = buildAssistantPayload(presentedAnswer, responseProvenance, {
         available: true,
@@ -555,6 +587,7 @@ export function createAiAnalyzeHandler({
       const absenceInsightsFailure = useAbsenceInsights;
       const employmentActionsFailure = useEmploymentActions;
       const payrollRunControlFailure = usePayrollRunControl;
+      const fixedConceptControlFailure = useFixedConceptControl;
       if (directoryFailure && directoryReadAudit) {
         await directoryReadAudit.denyPendingRead();
       }
@@ -582,6 +615,13 @@ export function createAiAnalyzeHandler({
           log: '[GRH-ASSISTANT] Control agregado de corridas no disponible',
           error: 'El control agregado de corridas no está disponible. No se reutilizó otra fuente.',
           code: 'GRH_PAYROLL_RUN_CONTROL_UNAVAILABLE',
+        };
+      }
+      if (fixedConceptControlFailure) {
+        unavailable = {
+          log: '[GRH-ASSISTANT] Control agregado de conceptos fijos no disponible',
+          error: 'El control agregado de conceptos fijos no está disponible. No se reutilizó otra fuente.',
+          code: 'GRH_FIXED_CONCEPT_CONTROL_UNAVAILABLE',
         };
       }
       if (directoryFailure) {
@@ -1382,6 +1422,9 @@ export function classifyIntent(rawMessage) {
   }
   const manualTopic = classifyManualHelp(rawMessage);
   if (manualTopic) return { intent: 'manual_help', policy: 'allowed', manualTopic };
+  if (/\bconceptos?\s+fijos?\b|\bfijos?\s+(?:elegibles?|observados?|contra|versus|vs|y)\s+(?:el\s+)?calculo\b/.test(message)) {
+    return { intent: 'fixed_concept_control', policy: 'allowed' };
+  }
   if (/\b(?:corridas? de liquidacion|control de corridas?|cabeceras? (?:tecnicas? )?(?:de )?(?:liquidacion|calculo)|histocal)\b/.test(message)) {
     return { intent: 'payroll_run_control', policy: 'allowed' };
   }
@@ -1567,6 +1610,9 @@ export function buildDeterministicAnswer(
           : [],
       );
       break;
+    case 'fixed_concept_control':
+      result = buildFixedConceptControlAssistantAnswer(context.fixedConceptControl);
+      break;
     case 'workforce_finance_overview':
     case 'workforce_finance_trend':
     case 'workforce_finance_composition':
@@ -1740,6 +1786,10 @@ function semanticContext(
       assistantData?.payrollRunControl,
       executive.source,
     ),
+    fixedConceptControl: validAssistantFixedConceptControl(
+      assistantData?.fixedConceptControl,
+      executive.source,
+    ),
     baseCaveats: [],
   };
 }
@@ -1801,6 +1851,17 @@ function validAssistantPayrollRunControl(value, source) {
       !sameAssistantSource(value.source, source)) {
     const error = new Error('El contrato payroll-run-control GRH no es válido.');
     error.code = 'GRH_PAYROLL_RUN_CONTROL_CONTRACT_INVALID';
+    throw error;
+  }
+  return value;
+}
+
+function validAssistantFixedConceptControl(value, source) {
+  if (value === undefined || value === null) return null;
+  if (!inspectGrhFixedConceptControlContract(value)?.ok ||
+      !sameAssistantSource(value.source, source)) {
+    const error = new Error('El contrato fixed-concept-control GRH no es válido.');
+    error.code = 'GRH_FIXED_CONCEPT_CONTROL_CONTRACT_INVALID';
     throw error;
   }
   return value;
@@ -2289,6 +2350,68 @@ export function buildPayrollRunControlAssistantAnswer(control, currentPriorityCo
     ],
     source: `Fuente: ${control.source.canonicalSystem} · control agregado de corridas · copia al ${control.source.snapshotAsOf} · no tiempo real.`,
     resolvedPeriod: current.throughPeriod,
+  };
+}
+
+export function buildFixedConceptControlAssistantAnswer(control) {
+  if (!inspectGrhFixedConceptControlContract(control)?.ok) {
+    return assistantContractUnavailable(
+      'Conceptos fijos no disponibles',
+      'No pudimos verificar el contrato agregado de conceptos fijos y su observación en cálculo.',
+      'GRH_FIXED_CONCEPT_CONTROL_UNAVAILABLE',
+    );
+  }
+  const reconciliation = control.reconciliation;
+  const snapshot = control.snapshot;
+  const comparison = control.administrationComparison;
+  const states = new Map(reconciliation.states.map(state => [state.code, state]));
+  const matched = states.get('same_person_and_concept_observed');
+  const conceptAbsent = states.get('person_observed_concept_absent');
+  const personAbsent = states.get('person_not_observed_in_period');
+
+  return {
+    title: `Conceptos fijos y cálculo · ${reconciliation.calculationPeriod}`,
+    summary: `Al ${reconciliation.fixedEligibilityDate} había ${formatInteger(reconciliation.eligibleFixedRows)} filas de conceptos fijos elegibles para ${formatInteger(reconciliation.eligiblePeople)} personas. En el cálculo ${reconciliation.calculationPeriod}, ${formatInteger(matched.rows)} filas repiten la misma persona y concepto, ${formatInteger(conceptAbsent.rows)} corresponden a personas observadas sin ese concepto y ${formatInteger(personAbsent.rows)} a personas no observadas en el período.`,
+    findings: [
+      `La coincidencia exacta alcanza ${formatPercent(reconciliation.exactObservationRatePct)} de las filas elegibles; describe presencia técnica y no acredita autorización, corrección, devengado ni pago.`,
+      `En la foto al ${snapshot.asOf}, el universo elegible reúne ${formatInteger(snapshot.eligibleFixedRows)} filas y ${formatInteger(snapshot.eligiblePeople)} personas; ${formatInteger(snapshot.legalInstrumentReportedRows)} filas informan instrumento legal en esta fuente.`,
+      `Las dos ventanas comparables cubren ${formatInteger(comparison.current.days)} días cada una: registran ${formatInteger(comparison.current.startRows)} y ${formatInteger(comparison.prior.startRows)} altas informadas de concepto fijo, respectivamente. La comparación es descriptiva.`,
+      `${formatInteger(control.coverage.endBeforeStartRows)} filas fuente tienen vencimiento anterior al alta y deben sanearse antes de usar el rango para determinar vigencia.`,
+    ],
+    evidence: [
+      metric('Misma persona y concepto', formatInteger(matched.rows), `${formatInteger(matched.people)} personas observadas.`),
+      metric('Persona observada; concepto ausente', formatInteger(conceptAbsent.rows), `${formatInteger(conceptAbsent.people)} personas para revisión.`),
+      metric('Persona no observada en el período', formatInteger(personAbsent.rows), `${formatInteger(personAbsent.people)} personas para revisión.`),
+      metric('Rangos fuente válidos', formatPercent(control.coverage.validRangeRatePct), `${formatInteger(control.coverage.validRangeRows)} de ${formatInteger(control.coverage.sourceFixedRows)} filas.`),
+    ],
+    caveats: control.limits.map(limit => limit.text),
+    nextQuestions: [
+      '¿Cómo se interpretan los tres estados de conceptos fijos?',
+      '¿Qué problemas de calidad afectan la vigencia de conceptos fijos?',
+      '¿Cómo se comparan las ventanas iguales de altas informadas de conceptos fijos?',
+    ],
+    actions: [{
+      id: 'open_fixed_concept_control',
+      label: 'Abrir conceptos fijos',
+      href: '/conceptos-fijos',
+      requiredCapability: 'navigation.hacienda',
+    }],
+    visual: {
+      schemaVersion: GRH_ANSWER_VISUAL_SCHEMA_VERSION,
+      kind: 'bar',
+      title: `Estados de conciliación · ${reconciliation.calculationPeriod}`,
+      subtitle: `${formatInteger(reconciliation.eligibleFixedRows)} filas elegibles, separadas en tres estados excluyentes.`,
+      order: 'defined',
+      unit: 'rows',
+      scaleMax: reconciliation.eligibleFixedRows,
+      items: reconciliation.states.map(state => ({
+        label: state.label,
+        value: state.rows,
+        displayValue: formatInteger(state.rows),
+      })),
+    },
+    source: `Fuente: ${control.source.canonicalSystem} · fijos y cálculo · copia al ${control.source.snapshotAsOf} · no tiempo real.`,
+    resolvedPeriod: reconciliation.calculationPeriod,
   };
 }
 

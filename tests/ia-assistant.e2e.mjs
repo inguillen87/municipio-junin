@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
 import { tmpdir } from 'node:os';
@@ -7,7 +7,10 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { buildDeterministicAnswer } from '../api/ai-analyze.js';
+import {
+  buildDeterministicAnswer,
+  buildFixedConceptControlAssistantAnswer,
+} from '../api/ai-analyze.js';
 import { buildPortableGrhViews } from '../api/lib/grh-portable-bundle.js';
 import { buildGrhCloseProjection } from '../api/lib/grh-close-projection.js';
 import { buildGrhDecisionBriefProjection } from '../api/lib/grh-decision-brief-projection.js';
@@ -22,9 +25,11 @@ const SEMANTIC_PATH = path.join(REPO, 'api', '_data', 'grh-semantic.json');
 const WORKFORCE_FINANCE_PATH = path.join(REPO, 'api', '_data', 'grh-workforce-finance.json');
 const ABSENCE_INSIGHTS_PATH = path.join(REPO, 'api', '_data', 'grh-absence-insights.json');
 const EMPLOYMENT_ACTIONS_PATH = path.join(REPO, 'api', '_data', 'grh-employment-actions.json');
+const FIXED_CONCEPT_CONTROL_PATH = path.join(REPO, 'api', '_data', 'grh-fixed-concept-control.json');
+const FIXED_CONCEPT_CONTROL = JSON.parse(readFileSync(FIXED_CONCEPT_CONTROL_PATH, 'utf8'));
 const HAS_PRIVATE_GRH = existsSync(PROFILE_PATH) && existsSync(SEMANTIC_PATH) &&
   existsSync(WORKFORCE_FINANCE_PATH) && existsSync(ABSENCE_INSIGHTS_PATH) &&
-  existsSync(EMPLOYMENT_ACTIONS_PATH);
+  existsSync(EMPLOYMENT_ACTIONS_PATH) && existsSync(FIXED_CONCEPT_CONTROL_PATH);
 const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' });
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -326,6 +331,7 @@ async function createServer(requestLog, options = {}) {
       }),
       absenceInsights: JSON.parse(await readFile(ABSENCE_INSIGHTS_PATH, 'utf8')),
       employmentActions: JSON.parse(await readFile(EMPLOYMENT_ACTIONS_PATH, 'utf8')),
+      fixedConceptControl: JSON.parse(await readFile(FIXED_CONCEPT_CONTROL_PATH, 'utf8')),
     };
   }
 
@@ -405,21 +411,21 @@ async function createServer(requestLog, options = {}) {
         await new Promise(resolve => setTimeout(resolve, Math.min(options.aiDelayMs, 1000)));
       }
 
-      if (options.unavailable || !views) {
-        response.writeHead(503, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
-        response.end(JSON.stringify({
-          error: 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.',
-          code: 'GRH_CONTRACT_UNAVAILABLE',
-        }));
-        return;
-      }
-
       const customAnswer = typeof options.answerFor === 'function'
         ? options.answerFor(body, views)
         : null;
       if (customAnswer) {
         response.writeHead(customAnswer.httpStatus || 200, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
         response.end(JSON.stringify(customAnswer.payload));
+        return;
+      }
+
+      if (options.unavailable || !views) {
+        response.writeHead(503, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
+        response.end(JSON.stringify({
+          error: 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.',
+          code: 'GRH_CONTRACT_UNAVAILABLE',
+        }));
         return;
       }
 
@@ -451,6 +457,10 @@ async function createServer(requestLog, options = {}) {
           assistantData.employmentActions.schemaVersion;
         responseProvenance.employmentActionsClassificationRuleVersion =
           assistantData.employmentActions.classification.ruleVersion;
+      }
+      if (answer.intent === 'fixed_concept_control') {
+        responseProvenance.fixedConceptControlSchemaVersion =
+          assistantData.fixedConceptControl.schemaVersion;
       }
       response.end(JSON.stringify({
         status: answer.status,
@@ -752,7 +762,7 @@ test('assistant presents exactly four canonical primary queries for each executi
     },
     {
       role: 'CONTADOR',
-      labels: ['Costo por área', 'Componentes por área', 'Control de cálculo', 'Comparar controles de liquidación'],
+      labels: ['Conceptos fijos', 'Costo por área', 'Componentes por área', 'Comparar controles de liquidación'],
     },
     {
       role: 'TENANT_ADMIN',
@@ -791,6 +801,84 @@ test('assistant presents exactly four canonical primary queries for each executi
     } finally {
       await new Promise(resolve => server.close(resolve));
     }
+  }
+});
+
+test('assistant renders the fixed-concept reconciliation with its governed handoff on narrow screens', async t => {
+  const requestLog = [];
+  const deterministic = buildFixedConceptControlAssistantAnswer(FIXED_CONCEPT_CONTROL);
+  const server = await createServer(requestLog, {
+    authRole: 'CONTADOR',
+    answerFor(body) {
+      if (body.message !== '¿Qué conceptos fijos elegibles aparecen en el cálculo disponible?') return null;
+      return {
+        payload: {
+          status: 'answered',
+          engine: { id: 'grh-deterministic-v1', externalProvider: false, generated: false },
+          intent: 'fixed_concept_control',
+          response: deterministic.summary,
+          answer: deterministic,
+          provenance: {
+            snapshotAsOf: FIXED_CONCEPT_CONTROL.source.snapshotAsOf,
+            latestValidCalculationPeriod: FIXED_CONCEPT_CONTROL.reconciliation.calculationPeriod,
+            fixedConceptControlSchemaVersion: FIXED_CONCEPT_CONTROL.schemaVersion,
+          },
+        },
+      };
+    },
+  });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 320, height: 720 },
+  ]) {
+    const context = await browser.newContext({ viewport });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+
+    const responsePromise = page.waitForResponse(response =>
+      response.url() === `${baseUrl}/api/ai-analyze` && response.request().method() === 'POST');
+    await clickPrimaryQuery(page, 'Conceptos fijos');
+    const payload = await (await responsePromise).json();
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+      .some(title => title.textContent.includes('Conceptos fijos y cálculo')));
+    await page.locator('.answer-card').last().locator('.answer-details summary').click();
+
+    const rendered = await page.evaluate(() => {
+      const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+      const action = card?.querySelector('.answer-action');
+      return {
+        action: action ? {
+          label: action.textContent.trim(),
+          href: action.getAttribute('href'),
+          capability: action.dataset.capability,
+        } : null,
+        visualValues: Array.from(card?.querySelectorAll('.answer-visual-value') || [], node =>
+          node.textContent.trim()),
+        visibleText: card?.innerText || '',
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    assert.equal(payload.intent, 'fixed_concept_control');
+    assert.equal(payload.provenance.fixedConceptControlSchemaVersion,
+      'grh-fixed-concept-control-v1');
+    assert.deepEqual(rendered.action, {
+      label: 'Abrir conceptos fijos',
+      href: '/conceptos-fijos',
+      capability: 'navigation.hacienda',
+    });
+    assert.deepEqual(rendered.visualValues, ['94', '19', '78']);
+    assert.match(rendered.visibleText, /no acredita autorizaci[oó]n[\s\S]*pago/i);
+    assert.doesNotMatch(rendered.visibleText, /FIJO_ID|CODI_01|LEGA_12|CODI_27|importe individual/i);
+    assert.ok(rendered.overflow <= 1, `width=${viewport.width}:overflow=${rendered.overflow}`);
+    await context.close();
   }
 });
 

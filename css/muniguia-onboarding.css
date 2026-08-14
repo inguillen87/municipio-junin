@@ -9,6 +9,23 @@
   box-shadow: var(--ws-shadow);
 }
 
+.muni-onboarding__welcome-inner {
+  display: flex;
+  gap: clamp(14px, 2vw, 24px);
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(15px, 2vw, 20px);
+}
+
+.muni-onboarding__welcome-content { min-width: 0; }
+
+.muni-onboarding__welcome-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+}
+
 .muni-onboarding__inner {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, .48fr);
@@ -262,11 +279,16 @@
 }
 
 @media (max-width: 760px) {
+  .muni-onboarding__welcome-inner { align-items: stretch; flex-direction: column; }
+  .muni-onboarding__welcome-actions { align-items: stretch; }
+  .muni-onboarding__welcome-actions .muni-onboarding__button { flex: 1 1 0; }
   .muni-onboarding__inner { grid-template-columns: 1fr; }
   .muni-onboarding__current { padding: 16px; }
 }
 
 @media (max-width: 420px) {
+  .muni-onboarding__welcome-actions { flex-direction: column; }
+  .muni-onboarding__welcome-actions .muni-onboarding__button { width: 100%; }
   .muni-onboarding__inner { padding: 18px 15px; }
   .muni-onboarding__stage { grid-template-columns: 32px minmax(0, 1fr); }
   .muni-onboarding__stage-state { grid-column: 2; justify-self: start; }

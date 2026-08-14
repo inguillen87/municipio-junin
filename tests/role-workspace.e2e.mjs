@@ -297,8 +297,8 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
           .map(link => ({ height: link.getBoundingClientRect().height, width: link.getBoundingClientRect().width }));
         return {
           actionCapabilities: privateLinks.map(link => link.dataset.capability),
-          actionsBeforeGuide: Boolean(
-            document.querySelector('#workspaceActions').compareDocumentPosition(document.querySelector('#muniguiaOnboardingMount')) &
+          guideBeforeActions: Boolean(
+            document.querySelector('#muniguiaOnboardingMount').compareDocumentPosition(document.querySelector('#workspaceActions')) &
             Node.DOCUMENT_POSITION_FOLLOWING
           ),
           bottom: [...document.querySelectorAll('.bottom-nav a, .bottom-nav button')]
@@ -340,7 +340,7 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
       assert.equal(result.role, role, `${role}:${viewport.width}:server role must replace stale browser role`);
       assert.equal(result.busy, 'false');
       assert.equal(result.errorHidden, true);
-      assert.equal(result.actionsBeforeGuide, true, `${role}:${viewport.width}:primary actions appear before guidance`);
+      assert.equal(result.guideBeforeActions, true, `${role}:${viewport.width}:first-time welcome appears before Task Center`);
       assert.match(result.title, /^Hola(?:[,.]|$)/, `${role}:${viewport.width}:role greeting`);
       assert.ok(result.overflow <= 1, `${role}:${viewport.width}:overflow=${result.overflow}`);
       assert.deepEqual([...result.actionCapabilities].sort(), [...expectedActions].sort(), `${role}:${viewport.width}:actions`);

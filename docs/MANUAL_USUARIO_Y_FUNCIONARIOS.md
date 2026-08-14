@@ -173,8 +173,8 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local `2026-08-13.14` cubre 32 recursos, 12 acciones,
-54 permisos y 96 firmas exactas: 54 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local `2026-08-14.15` cubre 32 recursos, 12 acciones,
+54 permisos y 97 firmas exactas: 55 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
 La política de acceso local `2026-08-13.4` entrega
@@ -395,6 +395,19 @@ capabilities efectivas.
    un compromiso por sí solo.
 5. Los datos de presupuesto, compras, tesorería o ejecución presupuestaria no se
    muestran hasta que exista una fuente municipal autorizada y gobernada.
+
+### 5.3 Interpretar conceptos fijos y cálculo
+
+1. Desde Hacienda o el Centro de tareas, abra **Conceptos fijos y cálculo**.
+2. Lea primero los tres estados excluyentes: mismo concepto observado, persona
+   observada sin ese concepto y persona no observada en el período.
+3. La comparación usa el cálculo válido de julio de 2026 y personas GRH
+   distintas. No interpreta ausencia como baja, incumplimiento o falta de pago.
+4. Revise la fotografía vigente por rango, la comparación de ventanas iguales y
+   los problemas de calidad. Las categorías pequeñas permanecen agrupadas.
+5. La vista y el Asistente no muestran importes, legajos, nombres, documentos ni
+   instrumentos. Si el contrato no está disponible, no se reemplaza con cifras
+   antiguas o inventadas.
 
 ## 6. Recorrido de Intendencia
 

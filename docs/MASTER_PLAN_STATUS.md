@@ -175,7 +175,7 @@ Estado: **completo en código local; falta despliegue**.
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
 - techo compartido y fail-closed vigente de 32 recursos, 12 acciones, 54
-  permisos y 96 firmas de ruta exactas (54 Serverless y 42 Express), sin
+  permisos y 97 firmas de ruta exactas (55 Serverless y 42 Express), sin
   wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
@@ -372,9 +372,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.14`
-contiene 32 recursos, 12 acciones, 54 permisos y 96 firmas protegidas exactas:
-54 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-14.15`
+contiene 32 recursos, 12 acciones, 54 permisos y 97 firmas protegidas exactas:
+55 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -709,11 +709,12 @@ Estado: **implementado y verificado en Production el 13 de agosto de 2026**.
 
 ### S19 — primer día con MuniGuía
 
-Estado: **implementado y validado localmente; cada publicación debe cerrar su
-verificación remota sobre el deployment exacto**.
+Estado: **verificado en Production dentro de la cadena S19-S20; cada publicación
+nueva debe repetir la verificación remota sobre su deployment exacto**.
 
 - Inicio incorpora un recorrido accesible y acotado por la función, derivado de
-  `muniguia-onboarding-v1` y del mismo catálogo contextual de 18 superficies.
+  `muniguia-onboarding-v1` y del mismo catálogo contextual, ampliado a 20
+  superficies gobernadas al incorporar S20 y S21.
 - El contrato interseca cada etapa con las capabilities efectivas de la sesión;
   nunca concede rutas, roles o datos y falla cerrado ante una política o una
   proyección desconocida.
@@ -732,8 +733,10 @@ verificación remota sobre el deployment exacto**.
 
 ### S20 — acción primero y control agregado de corridas GRH
 
-Estado: **implementado y validado localmente; pendiente de publicación y smoke
-remoto sobre el deployment exacto**.
+Estado: **verificado en Production el 14 de agosto de 2026** en el commit
+`85843ab2195b7e4fcebf2de6fa84adaf1e0c6400`, deployment
+`dpl_CV5qGvSd6SZ1ioNkzDPGJFGnw1bF`, con release truth 27/27 y smoke por rol,
+desktop y móvil sin errores de consola, red u overflow.
 
 - Inicio y Manual comparten `municipal-task-catalog-v1`: tareas filtradas por
   las capabilities efectivas, buscador local y paleta accesible
@@ -755,6 +758,32 @@ remoto sobre el deployment exacto**.
 - El artefacto reconstruido desde el GZIP canónico es byte-idéntico, contiene
   cero PII y permanece allowlisted de forma puntual. No se incorporó presupuesto,
   compras ni tesorería porque no existe una fuente autorizada y gobernada.
+
+### S21 — conceptos fijos, roles publicados y bienvenida progresiva
+
+Estado: **release candidate validado localmente; pendiente de commit y smoke del
+mismo SHA en Production**.
+
+- **Conceptos fijos y cálculo** consume `grh-fixed-concept-control-v1`, generado
+  dos veces de forma byte-idéntica desde el GZIP canónico (SHA del artefacto
+  `19fb261158f9c71a6200a6a5522f6a14a43a46eb21cdeaf7c6e933ebe33b7bf8`).
+- El ancla técnica es el cálculo válido de julio de 2026: 191 registros
+  elegibles correspondientes a 185 personas GRH, resueltas por
+  `legajo.IDPERSONA`; 94/90 coinciden por persona y concepto, 19/18 corresponden
+  a personas observadas sin ese concepto y 78/77 a personas no observadas en el
+  período. La ausencia de observación no prueba baja, error, falta de pago ni
+  decisión administrativa.
+- La fotografía al corte conserva 193 registros y 187 personas. La UI sólo
+  publica agregados con k=10: no exporta importes, identificadores, instrumentos,
+  observaciones ni filas crudas.
+- Las seis identidades publicadas ahora reciben la intersección entre el techo
+  agregado seguro y los permisos canónicos de su rol. DEMO, INSPECTOR y
+  TENANT_USER no heredan Hacienda, Resumen GRH ni Asistente.
+- Inicio muestra una invitación compacta sólo para una sesión nueva. Al aceptar,
+  conserva el recorrido completo de 3 a 5 etapas debajo del Centro de tareas,
+  con avance explícito, repetición y reinicio; no crea permisos ni telemetría.
+- MuniGuía y el Asistente explican el mismo contrato y fallan cerrado cuando el
+  artefacto, el tenant o la capability no coinciden.
 
 ## Funciones que no deben “completarse” todavía
 

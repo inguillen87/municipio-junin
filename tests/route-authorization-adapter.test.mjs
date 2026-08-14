@@ -173,6 +173,14 @@ test('Serverless published identities are constrained by identity, role, tenant 
     TENANT_USER: ['POST', '/api/data/reclamos'],
     DEMO: ['POST', '/api/data/reclamos'],
   });
+  const publishedRouteIsAllowed = (profile, method, url) => {
+    const route = routePolicy.resolveProtectedRoute(routePolicy.RUNTIMES.SERVERLESS, method, url);
+    return Boolean(
+      route &&
+      publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(route.id) &&
+      routePolicy.hasPermission(profile.role, route.permission),
+    );
+  };
 
   for (const [index, profile] of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES.entries()) {
     const id = `published-${index}`;
@@ -188,7 +196,13 @@ test('Serverless published identities are constrained by identity, role, tenant 
     for (const [method, url] of aggregateRoutes) {
       const response = responseRecorder();
       const user = await requireAuth(publishedRequestFor(profile, method, url), response);
-      assert.equal(user?.email, profile.email, `${profile.email} aggregate ${method} ${url}`);
+      if (publishedRouteIsAllowed(profile, method, url)) {
+        assert.equal(user?.email, profile.email, `${profile.email} aggregate ${method} ${url}`);
+      } else {
+        assert.equal(user, null, `${profile.email} must not inherit aggregate ${method} ${url}`);
+        assert.equal(response.statusCode, 403);
+        assert.equal(response.payload.code, 'PUBLISHED_DEMO_ROUTE_DENIED');
+      }
     }
 
     const roleGrantResponse = responseRecorder();
@@ -197,7 +211,12 @@ test('Serverless published identities are constrained by identity, role, tenant 
       roleGrantResponse,
       ['INTENDENTE'],
     );
-    assert.equal(roleGrant?.email, profile.email, `${profile.email} exact-route role grant`);
+    if (publishedRouteIsAllowed(profile, 'GET', '/api/grh-executive')) {
+      assert.equal(roleGrant?.email, profile.email, `${profile.email} exact-route role grant`);
+    } else {
+      assert.equal(roleGrant, null, `${profile.email} must not bypass the executive route ceiling`);
+      assert.equal(roleGrantResponse.statusCode, 403);
+    }
 
     const capabilityGrantResponse = responseRecorder();
     const capabilityGrant = await requireCapability(
@@ -206,7 +225,12 @@ test('Serverless published identities are constrained by identity, role, tenant 
       routePolicy.RESOURCES.GRH_CONTRACT,
       routePolicy.ACTIONS.READ,
     );
-    assert.equal(capabilityGrant?.email, profile.email, `${profile.email} exact-route capability grant`);
+    if (publishedRouteIsAllowed(profile, 'GET', '/api/grh-quality')) {
+      assert.equal(capabilityGrant?.email, profile.email, `${profile.email} exact-route capability grant`);
+    } else {
+      assert.equal(capabilityGrant, null, `${profile.email} must not bypass the quality route ceiling`);
+      assert.equal(capabilityGrantResponse.statusCode, 403);
+    }
 
     const directoryResponse = responseRecorder();
     const directory = await requireAuth(

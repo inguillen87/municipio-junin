@@ -104,7 +104,9 @@ async function createServer(requestLog) {
         return;
       }
       const access = accessPolicy.getSessionAccessForUser({ role: evaluationIdentity.role, tenantId: 'tenant-junin-e2e' });
-      const publishedCapabilities = [...publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES];
+      const publishedCapabilities = access.capabilities.filter(capability =>
+        publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES.includes(capability)
+      );
       const publishedHomeProfile = {
         ...access.homeProfile,
         priorityCapabilities: access.homeProfile.priorityCapabilities.filter(capability =>
@@ -389,8 +391,18 @@ test('the six published evaluation buttons authenticate their exact role without
 
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
-  for (const identity of PUBLISHED_EVALUATION_IDENTITIES) {
+  assert.equal(PUBLISHED_EVALUATION_IDENTITIES.length, 6);
+  assert.equal(PUBLISHED_EVALUATION_IDENTITIES.some(identity => identity.role === 'SUPER_ADMIN'), false);
+  for (const [identityIndex, identity] of PUBLISHED_EVALUATION_IDENTITIES.entries()) {
     await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
+    if (identityIndex > 0) {
+      assert.equal(
+        await page.evaluate(() => Object.keys(sessionStorage)
+          .some(key => key.startsWith('municontrol:muniguia-onboarding:'))),
+        true,
+        'identity A leaves only its tab-scoped dismissal before identity B signs in',
+      );
+    }
     await page.evaluate(profileId => {
       sessionStorage.setItem(
         `municontrol:muniguia-onboarding:previous:${profileId}`,
@@ -411,7 +423,14 @@ test('the six published evaluation buttons authenticate their exact role without
     assert.deepEqual(stored.onboardingKeys, [], 'a new identity cannot inherit onboarding progress in the same tab');
     assert.equal(stored.user.email, '');
     assert.equal(stored.user.role, identity.role);
-    assert.deepEqual(stored.user.capabilities, publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES);
+    const roleAccess = accessPolicy.getSessionAccessForUser({
+      role: identity.role,
+      tenantId: 'tenant-junin-e2e',
+    });
+    const expectedCapabilities = roleAccess.capabilities.filter(capability =>
+      publishedDemoPolicy.PUBLISHED_DEMO_CAPABILITIES.includes(capability)
+    );
+    assert.deepEqual(stored.user.capabilities, expectedCapabilities);
     assert.equal(stored.user.homeProfile.priorityCapabilities.every(capability =>
       stored.user.capabilities.includes(capability)
     ), true);
@@ -421,7 +440,29 @@ test('the six published evaluation buttons authenticate their exact role without
         'navigation.data-quality',
       ]);
     }
+    if (['TENANT_USER', 'INSPECTOR', 'DEMO'].includes(identity.role)) {
+      for (const denied of [
+        'navigation.dashboard',
+        'navigation.hacienda',
+        'navigation.grh-executive',
+        'navigation.ai-assistant',
+      ]) {
+        assert.equal(stored.user.capabilities.includes(denied), false, `${identity.profileId}:${denied}`);
+      }
+    }
     assert.match(stored.token, /^signed-evaluation-token-/);
+    await page.evaluate(profileId => {
+      sessionStorage.setItem(
+        `municontrol:muniguia-onboarding:welcome-v2:${profileId}`,
+        'dismissed-v2',
+      );
+    }, identity.profileId);
+    assert.equal(
+      await page.evaluate(() => Object.keys(sessionStorage)
+        .filter(key => key.startsWith('municontrol:muniguia-onboarding:')).length),
+      1,
+      'each identity stores one dismissal in this tab only',
+    );
   }
 
   assert.deepEqual(requestLog.map(entry => entry.body), PUBLISHED_EVALUATION_IDENTITIES.map(identity => ({

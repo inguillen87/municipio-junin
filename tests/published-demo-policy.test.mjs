@@ -46,6 +46,7 @@ const EXPECTED_ALLOWED_ROUTES = Object.freeze([
   ['serverless', 'GET', '/grh-quality'],
   ['serverless', 'GET', '/grh-workforce-finance'],
   ['serverless', 'GET', '/grh-payroll-run-control'],
+  ['serverless', 'GET', '/grh-fixed-concept-control'],
   ['serverless', 'GET', '/municipal-territory'],
   ['serverless', 'GET', '/pdf-report'],
   ['serverless', 'GET', '/reports'],
@@ -86,7 +87,7 @@ function deployedRuntimeSourceFiles() {
 }
 
 test('the temporary containment identifies exactly the six previously published emails', () => {
-  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.14');
+  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.15');
   assert.deepEqual(PUBLISHED_DEMO_IDENTITIES, EXPECTED_IDENTITIES);
   assert.equal(new Set(PUBLISHED_DEMO_IDENTITIES).size, 6);
 
@@ -119,7 +120,7 @@ test('the temporary containment identifies exactly the six previously published 
   }
 });
 
-test('the published identities have one exact cross-runtime route ceiling', () => {
+test('published identities receive the intersection of one safe ceiling and their canonical role grants', () => {
   const routeById = new Map(routePolicy.PROTECTED_ROUTES.map(route => [route.id, route]));
   const allowedRoutes = PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.map(id => {
     const route = routeById.get(id);
@@ -138,7 +139,9 @@ test('the published identities have one exact cross-runtime route ceiling', () =
     for (const route of routePolicy.PROTECTED_ROUTES) {
       const decision = evaluatePublishedDemoRoute({ ...profile, routeId: route.id });
       assert.equal(decision.applies, true, `${email} ${route.id}`);
-      assert.equal(decision.allowed, allowedIds.has(route.id), `${email} ${route.id}`);
+      const expected = allowedIds.has(route.id) && Boolean(route.permission) &&
+        routePolicy.hasPermission(profile.role, route.permission);
+      assert.equal(decision.allowed, expected, `${email} ${route.id}`);
     }
     const missingRoute = evaluatePublishedDemoRoute({ ...profile, routeId: null });
     assert.equal(missingRoute.allowed, false);
@@ -161,6 +164,17 @@ test('the published identities have one exact cross-runtime route ceiling', () =
   });
   assert.equal(ordinary.applies, false);
   assert.equal(ordinary.allowed, true, 'the temporary ceiling must not replace canonical RBAC');
+
+  const intended = PUBLISHED_DEMO_PROFILES.find(profile => profile.role === 'INTENDENTE');
+  const demo = PUBLISHED_DEMO_PROFILES.find(profile => profile.role === 'DEMO');
+  assert.equal(evaluatePublishedDemoRoute({
+    ...intended,
+    routeId: 'serverless.grh.fixed-concept-control.read',
+  }).allowed, true);
+  assert.equal(evaluatePublishedDemoRoute({
+    ...demo,
+    routeId: 'serverless.grh.fixed-concept-control.read',
+  }).allowed, false);
 });
 
 test('the only allowed POST remains deterministic, tenant-bound, provenance-bearing and PII-refusing', () => {

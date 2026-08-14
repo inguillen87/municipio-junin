@@ -178,6 +178,19 @@ const PAGES = deepFreeze({
       { id: 'review-payroll-run-evidence', selector: '#payrollRunReview', title: 'Revisá cobertura y cuarentena', copy: 'Distinguí corridas válidas, huecos de detalle y registros temporales separados antes de decidir un saneamiento.' },
     ],
   },
+  fixedConceptControl: {
+    href: 'conceptos-fijos.html',
+    aliases: ['/conceptos-fijos', '/conceptos-fijos.html'],
+    label: 'Conceptos fijos y cálculo',
+    objective: 'Contrastá la elegibilidad de conceptos fijos con su observación en cálculo sin confundir presencia técnica con pago, vigencia o autorización.',
+    requiredCapability: 'navigation.hacienda',
+    manualAnchor: 'conceptos-fijos',
+    steps: [
+      { id: 'read-fixed-concept-reconciliation', selector: '#fixedConceptReconciliation', title: 'Leé los tres estados', copy: 'Empezá por la barra de conciliación: separa coincidencias exactas, personas observadas sin el concepto y personas no observadas en el período.' },
+      { id: 'compare-fixed-concept-windows', selector: '#fixedConceptComparison', title: 'Compará ventanas iguales', copy: 'Contrastá administraciones sólo en ventanas de igual duración y recordá que una diferencia de registros no explica causas ni decisiones.' },
+      { id: 'review-fixed-concept-quality', selector: '#fixedConceptQuality', title: 'Revisá calidad y límites', copy: 'Antes de actuar, confirmá la fecha de corte, la cobertura informada y todo lo que esta lectura agregada no puede demostrar.' },
+    ],
+  },
   movementOperations: {
     href: 'movimientos-grh.html',
     aliases: ['/movimientos-grh', '/movimientos-grh.html'],
@@ -332,6 +345,7 @@ const ASSISTANT_QUESTIONS = deepFreeze({
   organizationAnalytics: '¿Cómo uso Estructura y centros de costo?',
   employmentActions: '¿Cómo interpreto la trayectoria laboral documentada?',
   payrollRunControl: '¿Cómo reviso el control de corridas y marcas de cierre?',
+  fixedConceptControl: '¿Cómo reviso Hacienda, conceptos fijos y el cálculo mensual?',
   movementOperations: '¿Cómo interpreto la trayectoria y los movimientos documentados?',
   territory: '¿Cómo verifico la fuente del Centro territorial?',
   quality: '¿Cómo verifico el origen y la calidad de los datos?',

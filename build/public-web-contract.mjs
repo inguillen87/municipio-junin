@@ -58,6 +58,7 @@ export const GOVERNED_LEGACY_HTML_FILES = Object.freeze([
 
 export const GOVERNED_VITE_HTML_FILES = Object.freeze([
   'calidad.html',
+  'conceptos-fijos.html',
   'corridas-grh.html',
   'ejecutivo.html',
   'estructura.html',

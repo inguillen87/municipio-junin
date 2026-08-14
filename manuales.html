@@ -276,7 +276,7 @@
   data-primary-source="grh"
   data-secondary-source-policy="personas-auxiliary-diagnostic"
   data-realtime="false"
-  data-route-policy-version="2026-08-13.14"
+  data-route-policy-version="2026-08-14.15"
   data-access-policy-version="2026-08-13.4"
 >
   <div id="sidebar"></div>
@@ -308,7 +308,7 @@
             Guía práctica para funcionarios y equipos municipales. Explica qué información está disponible hoy, cómo interpretarla y qué funciones se incorporarán en las próximas etapas.
           </p>
 
-          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Estado operativo actual · 13 de agosto de 2026.</strong> MuniControl ofrece Inicio por rol, Panorama, Resumen GRH, Reportes, Hacienda, Corridas y marcas de cierre, Estructura, Trayectoria laboral, Territorio, Calidad, RRHH, Fuentes, Centro de decisiones, Asistente, cargas, publicaciones y ayuda. MuniGuía reconoce 19 pantallas privadas y explica tres pasos por pantalla. La PWA usa el service worker <code>v7</code>: conserva solamente el shell público mínimo; no guarda navegaciones privadas, APIs ni datos municipales. El recorrido «Primer día con MuniGuía» es efímero durante la sesión y no modifica permisos.</div></div>
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Estado operativo actual · 14 de agosto de 2026.</strong> MuniControl ofrece Inicio por rol, Panorama, Resumen GRH, Reportes, Hacienda, Corridas y marcas de cierre, Conceptos fijos y cálculo, Estructura, Trayectoria laboral, Territorio, Calidad, RRHH, Fuentes, Centro de decisiones, Asistente, cargas, publicaciones y ayuda. MuniGuía reconoce 20 pantallas privadas y explica tres pasos por pantalla. La PWA usa el service worker <code>v7</code>: conserva solamente el shell público mínimo; no guarda navegaciones privadas, APIs ni datos municipales. El recorrido «Primer día con MuniGuía» es efímero durante la sesión y no modifica permisos.</div></div>
 
           <div class="callout info"><span aria-hidden="true">i</span><div><strong>Versión disponible.</strong> La plataforma muestra información histórica de Recursos Humanos con privacidad aplicada. Antes de una presentación oficial, verificá la fecha del respaldo y el estado visible de cada módulo.</div></div>
           <details>
@@ -462,6 +462,13 @@
             <p>Empezá por el último período válido, revisá la serie mensual y terminá en la cuarentena temporal. Una cabecera sin marca significa «sin dato informado», no «corrida abierta». El enlace a Decisiones sólo enfoca una prioridad que todavía exista en el brief vigente y nunca crea un compromiso automáticamente.</p>
             <div class="actions"><a class="action primary" href="corridas-grh.html">Abrir Corridas y marcas de cierre</a><a class="action" href="decisiones-grh.html">Abrir Centro de decisiones</a></div>
           </article>
+          <article class="card" id="conceptos-fijos">
+            <span class="tag">Conceptos fijos y cálculo</span>
+            <h3>Contrastá vigencia informada con observación mensual</h3>
+            <p><code>grh-fixed-concept-control-v1</code> compara conceptos de <code>fijos</code> vigentes por rango al 31 de julio de 2026 con su observación técnica en el <code>calculo</code> válido del mismo período. Separa coincidencia exacta, persona observada sin ese concepto y persona no observada en el período.</p>
+            <p>Una coincidencia no prueba pago, corrección ni autorización. Una ausencia no demuestra error. La pantalla publica sólo conteos agregados, calidad de rangos y una comparación secundaria entre ventanas iguales; no muestra nombres, legajos, importes, instrumentos ni filas crudas.</p>
+            <div class="actions"><a class="action primary" href="conceptos-fijos.html">Abrir Conceptos fijos y cálculo</a><a class="action" href="ia.html?question=%C2%BFC%C3%B3mo%20interpreto%20los%20conceptos%20fijos%20y%20su%20contraste%20con%20el%20c%C3%A1lculo%3F">Preguntarle al Asistente</a></div>
+          </article>
           <div class="callout info"><span aria-hidden="true">i</span><div><strong>Control de cálculo, no pago bancario.</strong> Antes de tomar una decisión vinculante, verificá en cada pantalla la fuente, la fecha, la definición del KPI, la cobertura y las alertas de calidad.</div></div>
         </section>
 
@@ -548,7 +555,7 @@
             <li>Para proteger identidades, las categorías con menos de 5 personas se agrupan y las cifras sensibles con menos de 10 se ocultan. Un dato protegido nunca se publica como cero ni permite deducir el valor oculto.</li>
             <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
             <li>Trayectoria laboral compara actuaciones documentadas de <code>foja</code> en dos períodos iguales de 972 días. Una actuación no equivale automáticamente a un alta, una baja o una condición vigente.</li>
-            <li>El techo vigente contiene 32 recursos, 12 acciones, 54 permisos y 96 firmas exactas: 54 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>El techo vigente contiene 32 recursos, 12 acciones, 54 permisos y 97 firmas exactas: 55 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
             <li>La política de acceso local <code>2026-08-13.4</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
             <li>Excel, CSV y Google Sheets se tratan como contenido no confiable: formato, límites, encabezados y persistencia se validan antes de declarar éxito.</li>
             <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>
@@ -620,7 +627,7 @@
           </ul>
         </section>
 
-        <p class="footer-note">Manual operativo vivo 1.10.0 · estado actualizado al 13 de agosto de 2026. La evidencia de los releases históricos <code>v1.10.0</code> y <code>v1.9.0</code> se conserva dentro de este documento como antecedente y no describe por sí sola el estado actual. Cada despliegue nuevo requiere sus propias pruebas y verificación de Producción.</p>
+        <p class="footer-note">Manual operativo vivo 1.10.0 · estado actualizado al 14 de agosto de 2026. La evidencia de los releases históricos <code>v1.10.0</code> y <code>v1.9.0</code> se conserva dentro de este documento como antecedente y no describe por sí sola el estado actual. Cada despliegue nuevo requiere sus propias pruebas y verificación de Producción.</p>
       </div>
     </div>
   </main>

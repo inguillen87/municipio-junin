@@ -1606,21 +1606,38 @@ test('question deep link is bounded, aggregate-only and sent after authenticated
   assert.equal(requestLog[2].body.message, manualQuestion);
   assert.equal(new URL(page.url()).search, '');
 
+  const managementQuestions = [
+    'Compará las dos gestiones al mismo avance',
+    '¿Cómo comparo las dos gestiones al mismo avance?',
+    '¿Cuánto de los cuatro años está informado?',
+    'Explicame cómo leer la ventana comparable de gestiones y sus límites.',
+    'Explicame qué representan los ingresos y egresos reportados en GRH.',
+  ];
+  for (const managementQuestion of managementQuestions) {
+    await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent(managementQuestion)}`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+      .some(title => title.textContent.includes('Dos gestiones')));
+    assert.equal(requestLog.at(-1).purpose, 'AGGREGATE_ANALYSIS');
+    assert.equal(requestLog.at(-1).body.message, managementQuestion);
+    assert.equal(new URL(page.url()).search, '');
+  }
+  assert.equal(requestLog.length, 3 + managementQuestions.length);
+
   await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent('legajo 123')}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(100);
-  assert.equal(requestLog.length, 3);
+  assert.equal(requestLog.length, 3 + managementQuestions.length);
   assert.equal(new URL(page.url()).search, '');
   assert.equal(await page.locator('.answer-card').count(), 0);
 
   await page.goto(`${baseUrl}/ia.html?question=${encodeURIComponent('Licencias de Juan Perez')}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(100);
-  assert.equal(requestLog.length, 3);
+  assert.equal(requestLog.length, 3 + managementQuestions.length);
   assert.equal(new URL(page.url()).search, '');
   assert.equal(await page.locator('.answer-card').count(), 0);
 
   await page.goto(`${baseUrl}/ia.html?question=resumen&question=calidad`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(100);
-  assert.equal(requestLog.length, 3);
+  assert.equal(requestLog.length, 3 + managementQuestions.length);
   assert.equal(new URL(page.url()).search, '');
   await context.close();
 });

@@ -16,6 +16,14 @@
   var PERSON_HANDOFF_TTL_MS = 120000;
   var PERSON_RETURN_KEY = 'muni_grh_person_return_v1';
   var PERSON_RETURN_VERSION = 'grh-person-return-v1';
+  var MANAGEMENT_TIMELINE_DEEP_LINK_QUESTIONS = new Set([
+    'Compará las dos gestiones al mismo avance',
+    '¿Cómo comparo las dos gestiones al mismo avance?',
+    '¿Cuánto de los cuatro años está informado?',
+    'Explicame cómo leer la ventana comparable de gestiones y sus límites.',
+    'Explicame la comparación de ausencias reportadas sin inferir causas.',
+    'Explicame qué representan los ingresos y egresos reportados en GRH.',
+  ]);
   var PRIMARY_QUERY_ORDER = {
     INTENDENTE: ['priority', 'summary', 'management-timeline', 'cost-overview'],
     CONTADOR: ['fixed-concept-control', 'cost-overview', 'cost-components', 'reconciliation'],
@@ -1222,7 +1230,8 @@
         /\b(dni|cuit|cuil|domicilio|telefono|correo personal|email personal|legajo|nombre|apellido|persona|empleado)\b/.test(normalized)) {
       return null;
     }
-    if (!/(area|dato|tabla|dominio|inventario|resumen|prioridad|atencion|calidad|cuarentena|conciliacion|calculo|cierre|neto|bruto|retencion|aporte|sector|centros? de costos?|convenio|acuerdo|ausencia|movimiento|actuacion|fuente|snapshot|carrera|formacion|estudio|licencia|beneficio|descuento|gremio|turno|horario|relacion laboral|salud|trayectoria|manual)/.test(normalized)) {
+    if (!MANAGEMENT_TIMELINE_DEEP_LINK_QUESTIONS.has(question) &&
+        !/(area|dato|tabla|dominio|inventario|resumen|prioridad|atencion|calidad|cuarentena|conciliacion|calculo|cierre|neto|bruto|retencion|aporte|sector|centros? de costos?|convenio|acuerdo|ausencia|movimiento|actuacion|fuente|snapshot|carrera|formacion|estudio|licencia|beneficio|descuento|gremio|turno|horario|relacion laboral|salud|trayectoria|manual)/.test(normalized)) {
       return null;
     }
     return question;

@@ -667,6 +667,26 @@ requests a OpenAI/Hugging Face y cero escrituras DB. El `POST` privado 201 se
 validó localmente, no se ejecutó en Production y no forma parte de esa evidencia
 remota.
 
+### S26 — operación de cuarentena
+
+S26 está **implementado y validado localmente; todavía no desplegado**. En lugar
+de sumar otro dashboard o una API paralela, convierte el `GET` privado existente
+en una bandeja operativa dentro de `/importar`: pestañas Cuarentena/Nueva fuente,
+cuatro señales sobre los últimos 20 receipts del tenant, búsqueda, filtros por
+dominio y atención, separación de controles y límites, y detalle técnico
+agregado. La lista valida el contrato exacto, IDs
+únicos y receipts persistidos; cualquier deriva queda en error sin representar
+un resultado parcial como confiable. El orden estable usa `createdAt desc` e
+`id desc`.
+
+La evaluación publicada conserva cero GET/POST y no monta la bandeja; el rol sin
+capability sigue bloqueado antes de datos. El scope no inventa aprobación:
+storage privado del original, antimalware, maker-checker con separación real y
+evidencia tamper-evident permanecen como la siguiente inversión. El gate local
+actual reúne 31/31 pruebas de contrato/backend, 5/5 E2E 1440/390/320 y build de
+102 módulos, 53 HTML y 17 superficies. Falta auditoría del diff, commit,
+deployment, release truth y smoke remoto antes de cambiar el estado.
+
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;
 - decisiones ejecutivas registradas y revisadas;

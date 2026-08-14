@@ -80,7 +80,10 @@ test('listReceipts scopes by tenant and immutable receipt identity, newest-first
       action: SOURCE_INTAKE_AUDIT_ACTION,
       entity: SOURCE_INTAKE_AUDIT_ENTITY,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [
+      { createdAt: 'desc' },
+      { id: 'desc' },
+    ],
     take: 20,
     select: { id: true, createdAt: true, details: true },
   });

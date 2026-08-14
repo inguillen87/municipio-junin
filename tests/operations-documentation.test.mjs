@@ -1339,6 +1339,29 @@ test('S25 records exact Production evidence without claiming a private remote wr
   assert.doesNotMatch(joined, /S25[^.\n|]{0,100}(?:candidate local|candidato local|no verificado en Production)/i);
 });
 
+test('S26 documents the local quarantine inbox without inventing approval or Production evidence', () => {
+  const sources = [
+    read('manuales.html'),
+    read('docs/MASTER_PLAN_STATUS.md'),
+    read('docs/ENTERPRISE_PRODUCT_ROADMAP.md'),
+    read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md'),
+    read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md'),
+  ];
+  const joined = sources.join('\n');
+
+  assert.match(joined, /S26[\s\S]{0,100}(?:candidato local|validada localmente|validado localmente)/i);
+  assert.match(joined, /(?:Cuarentena|bandeja)[\s\S]{0,120}(?:Nueva fuente|20 comprobantes|20 receipts)/i);
+  assert.match(joined, /(?:últimos|hasta) 20[\s\S]{0,80}(?:tenant|comprobantes|receipts)/i);
+  assert.match(joined, /autoridad pendiente/i);
+  assert.match(joined, /datos personales declarados|declaran posible presencia de datos personales/i);
+  assert.match(joined, /createdAt desc[\s\S]{0,40}id desc/i);
+  assert.match(joined, /respuesta[\s\S]{0,100}(?:alterada|duplicada|fuera del contrato)[\s\S]{0,100}falla\s+cerrada/i);
+  assert.match(joined, /evaluaci[oó]n (?:pública|publicada|Administrador)[\s\S]{0,160}(?:cero GET\/POST|no ejecuta GET ni POST|no monta ni consulta)/i);
+  assert.match(joined, /31\/31[\s\S]{0,100}5\/5[\s\S]{0,120}102 m[oó]dulos[\s\S]{0,50}53 HTML[\s\S]{0,50}17 superficies/i);
+  assert.match(joined, /(?:storage privado|original retenido)[\s\S]{0,100}antimalware[\s\S]{0,100}maker-checker[\s\S]{0,140}(?:cadena hash|resistente a alteraciones|tamper-evident)/i);
+  assert.doesNotMatch(joined, /S26[^.\n|]{0,100}(?:verificado|promovido|desplegado) en Production/i);
+});
+
 test('the public landing does not route municipal or commercial data to unapproved contacts', () => {
   const source = read('landing.html');
   assert.match(source, /Canal institucional pendiente de aprobación/);

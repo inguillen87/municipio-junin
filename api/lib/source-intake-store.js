@@ -83,7 +83,10 @@ export function createSourceIntakeStore({
             action: SOURCE_INTAKE_AUDIT_ACTION,
             entity: SOURCE_INTAKE_AUDIT_ENTITY,
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: [
+            { createdAt: 'desc' },
+            { id: 'desc' },
+          ],
           take: SOURCE_INTAKE_LIST_LIMIT,
           select: { id: true, createdAt: true, details: true },
         });

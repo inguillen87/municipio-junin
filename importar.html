@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/source-intake.css">
 </head>
 <body data-page-capability="navigation.import">
-  <a class="source-intake-skip" href="#sourceIntakeApp">Ir al formulario de ingreso</a>
+  <a class="source-intake-skip" href="#sourceIntakeApp">Ir al área de ingreso</a>
   <aside class="sidebar" id="sidebar" aria-label="Navegación principal"></aside>
 
   <main class="main-content source-intake-main" id="mainContent">
@@ -38,9 +38,9 @@
     >
       <section class="source-intake-hero" aria-labelledby="sourceIntakeTitle">
         <div>
-          <p class="source-intake-eyebrow">Ingreso gobernado · paso previo</p>
+          <p class="source-intake-eyebrow" id="sourceIntakeEyebrow">Ingreso gobernado · paso previo</p>
           <h1 id="sourceIntakeTitle">Cargar y validar una fuente</h1>
-          <p class="source-intake-lead">Completá la identidad de la fuente y elegí un archivo. MuniControl registra una huella y devuelve un diagnóstico agregado para decidir qué revisar después.</p>
+          <p class="source-intake-lead" id="sourceIntakeLead">Completá la identidad de la fuente y elegí un archivo. MuniControl registra una huella y devuelve un diagnóstico agregado para decidir qué revisar después.</p>
           <div class="source-intake-badges" aria-label="Límites de esta versión">
             <span>Sin publicación</span>
             <span>Sin integración automática</span>
@@ -56,9 +56,77 @@
 
       <section class="source-intake-evaluation" id="sourceIntakeEvaluation" role="note" hidden>
         <strong>Vista de funcionamiento · sólo lectura.</strong>
-        <span>Esta sesión pública no envía ni analiza archivos. Podés recorrer el flujo; para generar un diagnóstico necesitás una identidad privada autorizada.</span>
+        <span>Esta sesión pública no envía ni analiza archivos. Podés recorrer el flujo; una identidad privada autorizada abre además la bandeja de cuarentena y puede generar diagnósticos.</span>
       </section>
 
+      <div class="source-intake-tabs" id="sourceIntakeTabs" role="tablist" aria-label="Ingreso gobernado" hidden>
+        <button id="sourceIntakeHistoryTab" type="button" role="tab" aria-selected="true" aria-controls="sourceIntakeHistory">Cuarentena</button>
+        <button id="sourceIntakeNewTab" type="button" role="tab" aria-selected="false" aria-controls="sourceIntakeNewPanel" tabindex="-1">Nueva fuente</button>
+      </div>
+
+      <section
+        class="source-intake-history"
+        id="sourceIntakeHistory"
+        data-state="idle"
+        role="tabpanel"
+        aria-labelledby="sourceIntakeHistoryTab"
+        hidden
+      >
+        <div class="source-intake-history__heading">
+          <div>
+            <p class="source-intake-eyebrow">Operación privada · cuarentena</p>
+            <h2 id="sourceIntakeHistoryTitle">Bandeja de fuentes recibidas</h2>
+            <p>Revisá los últimos comprobantes técnicos del municipio. Son diagnósticos agregados: no contienen filas, valores ni archivos originales.</p>
+          </div>
+          <button class="source-intake-secondary" id="sourceIntakeHistoryReload" type="button">Actualizar bandeja</button>
+        </div>
+
+        <dl class="source-intake-history__summary" id="sourceIntakeHistorySummary" hidden>
+          <div><dt>Recepciones visibles</dt><dd id="sourceIntakeHistoryTotal">0</dd></div>
+          <div><dt>Autoridad pendiente</dt><dd id="sourceIntakeHistoryAuthority">0</dd></div>
+          <div><dt>Datos personales declarados</dt><dd id="sourceIntakeHistoryPersonal">0</dd></div>
+          <div><dt>Actividad más reciente</dt><dd id="sourceIntakeHistoryLatest">Sin registros</dd></div>
+        </dl>
+
+        <div class="source-intake-history__filters" id="sourceIntakeHistoryFilters" hidden>
+          <label>
+            <span>Buscar en la bandeja</span>
+            <input id="sourceIntakeHistorySearch" type="search" maxlength="120" autocomplete="off" placeholder="Fuente, oficina o período">
+          </label>
+          <label>
+            <span>Área o dominio</span>
+            <select id="sourceIntakeHistoryDomain">
+              <option value="">Todos los dominios</option>
+              <option value="hr">Personal y GRH</option>
+              <option value="budget">Presupuesto</option>
+              <option value="purchases">Compras</option>
+              <option value="treasury">Tesorería</option>
+              <option value="accounting">Contabilidad</option>
+              <option value="works">Obras</option>
+              <option value="general">Información general</option>
+            </select>
+          </label>
+          <label>
+            <span>Atención</span>
+            <select id="sourceIntakeHistoryAttention">
+              <option value="">Todos los estados</option>
+              <option value="attention">Revisión reforzada</option>
+              <option value="unverified">Autoridad pendiente</option>
+              <option value="personal">Datos personales declarados</option>
+            </select>
+          </label>
+          <button class="source-intake-secondary source-intake-history__clear" id="sourceIntakeHistoryClear" type="button">Limpiar filtros</button>
+        </div>
+
+        <p class="source-intake-history__status" id="sourceIntakeHistoryStatus" role="status" aria-live="polite">Cargando comprobantes…</p>
+        <ol class="source-intake-history__list" id="sourceIntakeHistoryList" aria-label="Comprobantes técnicos en cuarentena" hidden></ol>
+        <div class="source-intake-history__error" id="sourceIntakeHistoryError" role="alert" hidden>
+          <strong>No pudimos confirmar la bandeja.</strong>
+          <span>No se mostraron resultados parciales ni se reintentó automáticamente.</span>
+        </div>
+      </section>
+
+      <div id="sourceIntakeNewPanel" role="tabpanel" aria-labelledby="sourceIntakeNewTab">
       <ol class="source-intake-steps" aria-label="Tres pasos del ingreso gobernado">
         <li><span>1</span><div><strong>Identificá la fuente</strong><small>Área, período, responsable y finalidad.</small></div></li>
         <li><span>2</span><div><strong>Adjuntá un archivo</strong><small>Uno por vez, hasta 4 MiB.</small></div></li>
@@ -231,6 +299,7 @@
         <strong>No pudimos generar un diagnóstico confiable.</strong>
         <p id="sourceIntakeErrorMessage">Revisá los datos y volvé a intentar.</p>
       </section>
+      </div>
     </div>
   </main>
 

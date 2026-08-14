@@ -1516,6 +1516,29 @@ findings. La verificación remota fue deliberadamente read-only: confirmó 12/12
 controles deshabilitados, `GET` 200 vacío, `POST` 403 antes del parser, rol bajo
 denegado y cero escrituras DB. El `POST` privado 201 sólo se validó localmente.
 
+#### 16.2.1 S26 local: lectura operativa de la cuarentena
+
+S26 consume el envelope privado de receipts ya definido por
+`municipal-source-intake-v1`; no agrega endpoint ni escritura. El cliente acepta
+exclusivamente `persistent_receipts`, `writeEnabled:true`, el límite y extensiones
+exactos, entre cero y veinte receipts `persisted:true`, y IDs únicos. Ante una
+clave extra, enum desconocido, receipt duplicado o contrato incompleto, descarta
+la colección completa y expone un reintento manual.
+
+La lectura continúa tenant-bound en `AuditLog`. `listReceipts` ordena por
+`createdAt desc` y luego `id desc`, limita a 20 y no serializa actor o tenant. La
+UI calcula sólo señales sobre esa ventana reciente; no declara totales globales.
+El render se construye con `textContent` y nodos DOM, sin HTML dinámico, y ofrece
+tabs accesibles, búsqueda, filtros por dominio y atención, y detalles nativos
+que separan controles de calidad de límites del flujo. Published Admin no ejecuta
+el GET y un rol sin capability no monta la superficie.
+
+Esta fase no cambia el estado único `quarantined` ni añade decisiones mutativas.
+`AuditLog` valida shape pero admite UPDATE/DELETE a nivel DB y no tiene cadena
+hash. Maker-checker sólo podrá habilitarse después de retener el original en
+storage privado, ejecutar antimalware y modelar una decisión de un revisor
+distinto del creador. Estado actual: candidato local; no Production.
+
 El objetivo es que archivos y bases pasen por el mismo plano de control:
 
 1. registrar tenant, propietario, finalidad, clasificación y sistema de origen;

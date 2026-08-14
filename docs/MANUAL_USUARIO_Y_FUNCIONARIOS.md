@@ -747,6 +747,27 @@ Límites actuales del flujo de archivos:
 No fragmente un archivo para eludir límites. Si el volumen legítimo los supera,
 solicite una revisión del proceso de ingesta.
 
+### 12.1.1 Bandeja privada de cuarentena — S26 candidato local
+
+En una sesión privada autorizada, **Cuarentena** es la vista inicial de
+`/importar`. Muestra únicamente los últimos 20 comprobantes del tenant, no un
+total histórico. El resumen indica cuántos comprobantes están visibles, cuántos
+declaran autoridad pendiente, cuántos declaran posible presencia de datos
+personales y la actividad más reciente.
+
+Use la búsqueda y los filtros por dominio y atención para ubicar una fuente.
+Cada detalle separa controles de calidad de límites del flujo y
+muestra metadatos declarados, perfil técnico agregado, SHA-256, controles y
+límites. No muestra el archivo, filas, celdas, nombres, identificadores, importes
+ni texto extraído. **Nueva fuente** conserva el formulario de S25. Si el historial
+no valida, la pantalla no representa una lista parcial como confiable: muestra un
+error y deja el reintento como acción manual.
+
+Esta mejora está validada localmente y todavía no está desplegada. No agrega una
+acción de aprobar: siguen pendientes storage privado del original, antimalware,
+segregación maker-checker y evidencia de auditoría resistente a alteraciones. La
+Evaluación Administrador no monta la bandeja y conserva cero GET/POST de ingreso.
+
 ### 12.2 Google Sheets retirado
 
 La ruta anterior está autenticada pero responde 410. No publique una hoja ni

@@ -7,6 +7,26 @@
   var MAX_FILE_BYTES = 4 * 1024 * 1024;
   var ALLOWED_EXTENSIONS = Object.freeze(['csv', 'xlsx', 'xls', 'json', 'pdf', 'txt']);
   var SOURCE_DOMAINS = Object.freeze(['budget', 'purchases', 'treasury', 'accounting', 'hr', 'works', 'general']);
+  var SOURCE_INTAKE_LIST_LIMIT = 20;
+  var DOMAIN_LABELS = Object.freeze({
+    budget: 'Presupuesto',
+    purchases: 'Compras',
+    treasury: 'Tesorería',
+    accounting: 'Contabilidad',
+    hr: 'Personal y GRH',
+    works: 'Obras',
+    general: 'Información general',
+  });
+  var PURPOSE_LABELS = Object.freeze({
+    operational_analysis: 'Análisis operativo',
+    reconciliation: 'Conciliación o control cruzado',
+    official_reporting: 'Preparación de informe oficial',
+  });
+  var CLASSIFICATION_LABELS = Object.freeze({
+    internal: 'Uso interno',
+    confidential: 'Confidencial',
+    restricted: 'Restringida',
+  });
   var SOURCE_PURPOSES = Object.freeze(['operational_analysis', 'reconciliation', 'official_reporting']);
   var SOURCE_CLASSIFICATIONS = Object.freeze(['internal', 'confidential', 'restricted']);
   var SOURCE_AUTHORITIES = Object.freeze(['unverified', 'owner_confirmed']);
@@ -30,7 +50,14 @@
     'schemaVersion', 'schemaDigest', 'rowCount', 'columnCount', 'emptyCellRatePct',
     'duplicateRowRatePct', 'pageCount', 'lineCount', 'textBytes',
   ]);
-  var state = { root: null, projection: null, busy: false };
+  var state = {
+    root: null,
+    projection: null,
+    busy: false,
+    receipts: [],
+    historyReady: false,
+    selectedTab: 'new',
+  };
 
   function element(id) { return global.document.getElementById(id); }
 
@@ -177,6 +204,23 @@
     return payload.receipt;
   }
 
+  function normalizeHistoryEnvelope(response, payload) {
+    if (response.status !== 200 || response.headers.get(CONTRACT_HEADER) !== CONTRACT ||
+        !exactKeys(payload, [
+          'schemaVersion', 'mode', 'writeEnabled', 'maxFileBytes', 'allowedExtensions', 'receipts',
+        ]) || payload.schemaVersion !== CONTRACT || payload.mode !== 'persistent_receipts' ||
+        payload.writeEnabled !== true || payload.maxFileBytes !== MAX_FILE_BYTES ||
+        !exactAllowedExtensions(payload.allowedExtensions) || !Array.isArray(payload.receipts) ||
+        payload.receipts.length > SOURCE_INTAKE_LIST_LIMIT) return null;
+    var ids = [];
+    for (var index = 0; index < payload.receipts.length; index += 1) {
+      var receipt = payload.receipts[index];
+      if (!validReceipt(receipt, true) || ids.indexOf(receipt.id) !== -1) return null;
+      ids.push(receipt.id);
+    }
+    return payload.receipts.slice();
+  }
+
   function fileExtension(file) {
     if (!(file instanceof File) || typeof file.name !== 'string') return '';
     var match = /\.([^.]+)$/.exec(file.name.trim());
@@ -267,6 +311,301 @@
     } catch (error) { return scaled.toFixed(2).replace('.', ',') + unit; }
   }
 
+  function formatDateTime(value) {
+    try {
+      return new Intl.DateTimeFormat('es-AR', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'America/Argentina/Buenos_Aires',
+      }).format(new Date(value));
+    } catch (error) { return value; }
+  }
+
+  function normalizedSearch(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es-AR').trim();
+  }
+
+  function historyFact(root, label, value, code) {
+    var wrapper = document.createElement('div');
+    var term = document.createElement('dt');
+    var detail = document.createElement('dd');
+    term.textContent = label;
+    if (code) {
+      var codeNode = document.createElement('code');
+      codeNode.textContent = value;
+      detail.appendChild(codeNode);
+    } else detail.textContent = value;
+    wrapper.append(term, detail);
+    root.appendChild(wrapper);
+  }
+
+  function historyProfileFacts(root, profile) {
+    if (profile.rowCount !== null) historyFact(root, 'Filas detectadas', formatInteger(profile.rowCount));
+    if (profile.columnCount !== null) historyFact(root, 'Columnas detectadas', formatInteger(profile.columnCount));
+    if (profile.emptyCellRatePct !== null) historyFact(root, 'Celdas vacías', formatRate(profile.emptyCellRatePct));
+    if (profile.duplicateRowRatePct !== null) historyFact(root, 'Filas duplicadas', formatRate(profile.duplicateRowRatePct));
+    if (profile.pageCount !== null) historyFact(root, 'Páginas', formatInteger(profile.pageCount));
+    if (profile.lineCount !== null) historyFact(root, 'Líneas', formatInteger(profile.lineCount));
+    if (profile.textBytes !== null) historyFact(root, 'Texto perfilado', formatBytes(profile.textBytes));
+    if (profile.schemaDigest !== null) historyFact(root, 'Huella del esquema', profile.schemaDigest, true);
+  }
+
+  function historyControl(label, status, kind) {
+    var item = document.createElement('li');
+    var title = document.createElement('strong');
+    item.dataset.state = status;
+    title.textContent = kind || (status === 'passed' ? 'Control superado' : 'Bloqueo vigente');
+    item.appendChild(title);
+    item.appendChild(document.createTextNode(label));
+    return item;
+  }
+
+  function historyItem(receipt, index) {
+    var item = document.createElement('li');
+    var details = document.createElement('details');
+    var summary = document.createElement('summary');
+    var identity = document.createElement('span');
+    var label = document.createElement('strong');
+    var metadata = document.createElement('span');
+    var signal = document.createElement('span');
+    var detail = document.createElement('div');
+    var sourceSection = document.createElement('section');
+    var technicalSection = document.createElement('section');
+    var controlsSection = document.createElement('section');
+    var limitsSection = document.createElement('section');
+    var sourceTitle = document.createElement('h3');
+    var technicalTitle = document.createElement('h3');
+    var controlsTitle = document.createElement('h3');
+    var limitsTitle = document.createElement('h3');
+    var sourceFacts = document.createElement('dl');
+    var technicalFacts = document.createElement('dl');
+    var controls = document.createElement('ul');
+    var limits = document.createElement('ul');
+    var summaryId = 'sourceIntakeHistorySummary-' + index;
+
+    item.className = 'source-intake-history__item';
+    identity.className = 'source-intake-history__identity';
+    signal.className = 'source-intake-history__signal';
+    detail.className = 'source-intake-history__detail';
+    sourceFacts.className = 'source-intake-history__facts';
+    technicalFacts.className = 'source-intake-history__facts';
+    controls.className = 'source-intake-history__controls';
+    limits.className = 'source-intake-history__controls source-intake-history__limits';
+    summary.id = summaryId;
+    detail.setAttribute('role', 'region');
+    detail.setAttribute('aria-labelledby', summaryId);
+
+    label.textContent = receipt.source.label;
+    metadata.textContent = DOMAIN_LABELS[receipt.source.domain] + ' · ' + receipt.source.referencePeriod +
+      ' · ' + receipt.source.ownerOffice;
+    signal.textContent = receipt.quality.blockedCount +
+      (receipt.quality.blockedCount === 1 ? ' bloqueo de control' : ' bloqueos de control') + ' · En cuarentena';
+    identity.append(label, metadata);
+    summary.append(identity, signal);
+
+    sourceTitle.textContent = 'Identidad y uso declarado';
+    historyFact(sourceFacts, 'Área', DOMAIN_LABELS[receipt.source.domain]);
+    historyFact(sourceFacts, 'Período', receipt.source.referencePeriod);
+    historyFact(sourceFacts, 'Oficina', receipt.source.ownerOffice);
+    historyFact(sourceFacts, 'Finalidad', PURPOSE_LABELS[receipt.source.purpose]);
+    historyFact(sourceFacts, 'Clasificación', CLASSIFICATION_LABELS[receipt.source.classification]);
+    historyFact(sourceFacts, 'Autoridad', receipt.source.authority === 'owner_confirmed' ? 'Confirmada' : 'Pendiente de confirmar');
+    historyFact(sourceFacts, 'Datos personales', receipt.source.containsPersonalData ? 'Declarados o no descartados' : 'No declarados');
+    historyFact(sourceFacts, 'Moneda', receipt.source.currency === 'ARS' ? 'Pesos argentinos (ARS)' : 'No corresponde');
+    sourceSection.append(sourceTitle, sourceFacts);
+
+    technicalTitle.textContent = 'Perfil técnico agregado';
+    historyFact(technicalFacts, 'Recepción', formatDateTime(receipt.createdAt));
+    historyFact(technicalFacts, 'Formato', receipt.file.extension.toUpperCase());
+    historyFact(technicalFacts, 'Tamaño', formatBytes(receipt.file.sizeBytes));
+    historyFact(technicalFacts, 'SHA-256', receipt.file.sha256, true);
+    historyProfileFacts(technicalFacts, receipt.profile);
+    technicalSection.append(technicalTitle, technicalFacts);
+
+    controlsTitle.textContent = 'Controles de calidad · ' + receipt.quality.blockedCount + ' bloqueados';
+    receipt.quality.checks.forEach(function(check) {
+      controls.appendChild(historyControl(check.label, check.status));
+    });
+    limitsTitle.textContent = 'Límites del flujo · ' + receipt.limits.length;
+    receipt.limits.forEach(function(limit) {
+      limits.appendChild(historyControl(limit.text, 'blocked', 'Límite vigente'));
+    });
+    controlsSection.append(controlsTitle, controls);
+    limitsSection.append(limitsTitle, limits);
+    detail.append(sourceSection, technicalSection, controlsSection, limitsSection);
+    details.append(summary, detail);
+    details.addEventListener('toggle', function() {
+      if (!details.open) return;
+      var openDetails = element('sourceIntakeHistoryList').querySelectorAll('details[open]');
+      for (var detailIndex = 0; detailIndex < openDetails.length; detailIndex += 1) {
+        if (openDetails[detailIndex] !== details) openDetails[detailIndex].open = false;
+      }
+    });
+    details.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && details.open) {
+        event.preventDefault();
+        details.open = false;
+        summary.focus({ preventScroll: true });
+      }
+    });
+    item.appendChild(details);
+    return item;
+  }
+
+  function filteredHistory() {
+    var query = normalizedSearch(element('sourceIntakeHistorySearch').value);
+    var domain = element('sourceIntakeHistoryDomain').value;
+    var attention = element('sourceIntakeHistoryAttention').value;
+    return state.receipts.filter(function(receipt) {
+      if (domain && receipt.source.domain !== domain) return false;
+      if (attention === 'unverified' && receipt.source.authority !== 'unverified') return false;
+      if (attention === 'personal' && !receipt.source.containsPersonalData) return false;
+      if (attention === 'attention' && receipt.source.authority !== 'unverified' &&
+          !receipt.source.containsPersonalData) return false;
+      if (!query) return true;
+      return normalizedSearch([
+        receipt.source.label,
+        receipt.source.ownerOffice,
+        receipt.source.referencePeriod,
+        DOMAIN_LABELS[receipt.source.domain],
+        receipt.file.extension,
+      ].join(' ')).indexOf(query) !== -1;
+    });
+  }
+
+  function renderHistory() {
+    var receipts = state.receipts;
+    var visible = filteredHistory();
+    var list = element('sourceIntakeHistoryList');
+    var fragment = document.createDocumentFragment();
+    var latest = receipts.reduce(function(result, receipt) {
+      return !result || Date.parse(receipt.createdAt) > Date.parse(result) ? receipt.createdAt : result;
+    }, null);
+    element('sourceIntakeHistoryTotal').textContent = formatInteger(receipts.length);
+    element('sourceIntakeHistoryAuthority').textContent = formatInteger(receipts.filter(function(receipt) {
+      return receipt.source.authority === 'unverified';
+    }).length);
+    element('sourceIntakeHistoryPersonal').textContent = formatInteger(receipts.filter(function(receipt) {
+      return receipt.source.containsPersonalData;
+    }).length);
+    element('sourceIntakeHistoryLatest').textContent = latest ? formatDateTime(latest) : 'Sin registros';
+    visible.forEach(function(receipt, index) { fragment.appendChild(historyItem(receipt, index)); });
+    list.replaceChildren(fragment);
+    list.hidden = visible.length === 0;
+    element('sourceIntakeHistorySummary').hidden = false;
+    element('sourceIntakeHistoryFilters').hidden = receipts.length === 0;
+    element('sourceIntakeHistoryStatus').hidden = false;
+    if (receipts.length === 0) {
+      element('sourceIntakeHistoryStatus').textContent = 'Todavía no hay comprobantes recientes en cuarentena.';
+    } else if (visible.length === 0) {
+      element('sourceIntakeHistoryStatus').textContent = 'No hay coincidencias. Ajustá la búsqueda o los filtros.';
+    } else {
+      element('sourceIntakeHistoryStatus').textContent = 'Mostrando ' + visible.length + ' de ' +
+        receipts.length + ' comprobantes recientes.';
+    }
+  }
+
+  function setHistoryLoading(value) {
+    var history = element('sourceIntakeHistory');
+    history.setAttribute('aria-busy', String(value));
+    element('sourceIntakeHistoryReload').disabled = value;
+    if (value) {
+      history.dataset.state = 'loading';
+      element('sourceIntakeHistoryStatus').hidden = false;
+      element('sourceIntakeHistoryStatus').textContent = 'Cargando comprobantes recientes…';
+      element('sourceIntakeHistoryError').hidden = true;
+    }
+  }
+
+  async function loadHistory() {
+    setHistoryLoading(true);
+    try {
+      var response = await global.MuniAuth.fetch(ENDPOINT, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
+      var payload = await response.json().catch(function() { return null; });
+      var receipts = response.ok ? normalizeHistoryEnvelope(response, payload) : null;
+      if (!receipts) throw new Error('SOURCE_INTAKE_HISTORY_INVALID');
+      state.receipts = receipts;
+      state.historyReady = true;
+      element('sourceIntakeHistory').dataset.state = receipts.length ? 'ready' : 'empty';
+      element('sourceIntakeHistoryError').hidden = true;
+      renderHistory();
+    } catch (error) {
+      if (global.MuniAuth && global.MuniAuth.isAuthError(error)) return;
+      state.receipts = [];
+      state.historyReady = false;
+      element('sourceIntakeHistory').dataset.state = 'error';
+      element('sourceIntakeHistorySummary').hidden = true;
+      element('sourceIntakeHistoryFilters').hidden = true;
+      element('sourceIntakeHistoryList').replaceChildren();
+      element('sourceIntakeHistoryList').hidden = true;
+      element('sourceIntakeHistoryStatus').hidden = true;
+      element('sourceIntakeHistoryError').hidden = false;
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  function updateHistoryWithReceipt(receipt) {
+    if (!state.historyReady) return;
+    state.receipts = [receipt].concat(state.receipts.filter(function(item) {
+      return item.id !== receipt.id;
+    })).slice(0, SOURCE_INTAKE_LIST_LIMIT);
+    element('sourceIntakeHistory').dataset.state = 'ready';
+    renderHistory();
+  }
+
+  function selectTab(name, focusPanel) {
+    var historySelected = name === 'history';
+    var historyTab = element('sourceIntakeHistoryTab');
+    var newTab = element('sourceIntakeNewTab');
+    state.selectedTab = historySelected ? 'history' : 'new';
+    historyTab.setAttribute('aria-selected', String(historySelected));
+    historyTab.tabIndex = historySelected ? 0 : -1;
+    newTab.setAttribute('aria-selected', String(!historySelected));
+    newTab.tabIndex = historySelected ? -1 : 0;
+    element('sourceIntakeHistory').hidden = !historySelected;
+    element('sourceIntakeNewPanel').hidden = historySelected;
+    if (focusPanel) {
+      if (historySelected) historyTab.focus({ preventScroll: true });
+      else element('sourceLabel').focus({ preventScroll: true });
+    }
+  }
+
+  function bindTabs() {
+    var tabs = [element('sourceIntakeHistoryTab'), element('sourceIntakeNewTab')];
+    tabs.forEach(function(tab, index) {
+      tab.addEventListener('click', function() { selectTab(index === 0 ? 'history' : 'new', false); });
+      tab.addEventListener('keydown', function(event) {
+        var target = index;
+        if (event.key === 'ArrowLeft') target = index === 0 ? tabs.length - 1 : index - 1;
+        else if (event.key === 'ArrowRight') target = index === tabs.length - 1 ? 0 : index + 1;
+        else if (event.key === 'Home') target = 0;
+        else if (event.key === 'End') target = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        selectTab(target === 0 ? 'history' : 'new', false);
+        tabs[target].focus({ preventScroll: true });
+      });
+    });
+  }
+
+  function bindHistory() {
+    element('sourceIntakeHistorySearch').addEventListener('input', renderHistory);
+    element('sourceIntakeHistoryDomain').addEventListener('change', renderHistory);
+    element('sourceIntakeHistoryAttention').addEventListener('change', renderHistory);
+    element('sourceIntakeHistoryClear').addEventListener('click', function() {
+      element('sourceIntakeHistorySearch').value = '';
+      element('sourceIntakeHistoryDomain').value = '';
+      element('sourceIntakeHistoryAttention').value = '';
+      renderHistory();
+      element('sourceIntakeHistorySearch').focus({ preventScroll: true });
+    });
+    element('sourceIntakeHistoryReload').addEventListener('click', loadHistory);
+  }
+
   function profileMetric(fragment, label, value) {
     var wrapper = document.createElement('div');
     var term = document.createElement('dt');
@@ -317,6 +656,7 @@
   }
 
   function renderReceipt(receipt) {
+    updateHistoryWithReceipt(receipt);
     element('sourceIntakeSha').textContent = receipt.file.sha256;
     element('sourceIntakeFormat').textContent = receipt.file.extension.toUpperCase() + ' · ' +
       (receipt.file.kind === 'structured' ? 'estructura tabular' : receipt.file.kind === 'pdf' ? 'documento PDF' : 'texto');
@@ -461,7 +801,18 @@
     element('sourceIntakeAuditLink').hidden = projection.capabilities.indexOf('navigation.audit') === -1;
     updateCurrencyRule();
     if (published) installPublishedReadOnlyMode();
-    else bind();
+    else {
+      state.root.dataset.mode = 'private_operational';
+      element('sourceIntakeEyebrow').textContent = 'Control de fuentes · operación privada';
+      element('sourceIntakeTitle').textContent = 'Fuentes en cuarentena';
+      element('sourceIntakeLead').textContent = 'Revisá los comprobantes recientes o abrí Nueva fuente para generar otro diagnóstico agregado.';
+      bind();
+      bindTabs();
+      bindHistory();
+      element('sourceIntakeTabs').hidden = false;
+      selectTab('history', false);
+      await loadHistory();
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });

@@ -890,6 +890,34 @@ Estado: **verificado en Production el 14 de agosto de 2026** sobre el product SH
   presupuesto contra ejecución ni convierte una estructura plausible en dato
   municipal autorizado.
 
+### S26 — bandeja operativa de cuarentena
+
+Estado: **candidato local; no desplegado**.
+
+- Reutiliza el `GET /api/source-intake` privado existente. No crea otra API ni
+  otra mutación: proyecta hasta 20 receipts agregados del tenant y valida el
+  envelope completo, cada receipt persistido y la unicidad de IDs.
+- `/importar` separa **Cuarentena** y **Nueva fuente**. La bandeja privada es la
+  vista inicial y muestra sólo señales sobre la ventana reciente: cantidad
+  visible, autoridad pendiente, datos personales declarados y última actividad.
+  Incluye búsqueda, filtros por dominio y atención, y detalle agregado de identidad, perfil,
+  SHA-256, controles y límites, siempre mediante nodos DOM seguros.
+- Dos comprobantes con el mismo instante quedan ordenados de forma estable por
+  `createdAt desc, id desc`. La UI no llama “total histórico” a la ventana de 20.
+- Una respuesta incompleta, alterada, duplicada o fuera del contrato falla
+  cerrada: no muestra resultados parciales y sólo reintenta por acción manual.
+  El formulario privado permanece utilizable.
+- La evaluación publicada mantiene el comportamiento S25: oculta pestañas e
+  historial, no ejecuta GET ni POST y conserva todos los controles deshabilitados.
+  Un rol sin `navigation.import` sigue redirigido antes de montar o consultar.
+- El alcance S26 no agrega aprobación. Sin original retenido ni antimalware no
+  existe material honesto para maker-checker; `AuditLog` tampoco tiene todavía
+  trigger append-only ni cadena hash. Storage privado, escaneo, decisión separada
+  y evidencia resistente a alteraciones continúan como siguiente fase.
+- Evidencia local actual: 31/31 contratos/backend, 5/5 navegador en
+  1440/390/320 px, error/reintento y fronteras publicada/rol bajo; build 102
+  módulos, 53 HTML y 17 superficies. No constituye evidencia de Production.
+
 ## Funciones que no deben “completarse” todavía
 
 ### Motor de liquidación y recibos

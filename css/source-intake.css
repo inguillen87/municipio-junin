@@ -800,6 +800,12 @@ body {
 }
 
 @media (max-width: 430px) {
+  body[data-page-capability="navigation.import"] .source-intake-topbar { padding-right: 104px !important; }
+  body[data-page-capability="navigation.import"] #muniGuideTrigger {
+    top: max(6px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: auto;
+  }
   .source-intake-shell[data-mode="private_operational"] .source-intake-hero h1 { font-size: 27px; }
   .source-intake-history__heading > div { padding-right: 92px; }
   .source-intake-history__summary { grid-template-columns: 1fr 1fr; }
@@ -815,12 +821,6 @@ body {
   .source-intake-hero { padding-inline: 15px; }
   .source-intake-hero h1 { font-size: 29px; }
   .source-intake-file-picker { padding-inline: 14px; }
-  body[data-page-capability="navigation.import"] .source-intake-topbar { padding-right: 104px !important; }
-  body[data-page-capability="navigation.import"] #muniGuideTrigger {
-    top: max(6px, env(safe-area-inset-top));
-    right: max(8px, env(safe-area-inset-right));
-    bottom: auto;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

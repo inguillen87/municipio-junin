@@ -496,77 +496,94 @@ test('published Admin can inspect a read-only intake flow with disabled controls
   assert.deepEqual(consoleErrors, []);
 });
 
-test('published Admin keeps contextual help clear of governance copy at 320px', async t => {
+test('published Admin keeps contextual help clear of governance surfaces at 390px and 320px', async t => {
   const user = authoritativeUser('published-admin-mobile', 'TENANT_ADMIN', { published: true });
   const users = new Map([['published-admin-mobile', user]]);
   const requestLog = [];
   const { server, multipartBodies } = await createServer(users, requestLog);
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
   const browser = await chromium.launch({ headless: true });
-  const { context, page } = await intakePage(
-    browser,
-    baseUrl,
-    'published-admin-mobile',
-    user,
-    { width: 320, height: 720 },
-  );
   t.after(async () => {
-    await context.close();
     await browser.close();
     await new Promise(resolve => server.close(resolve));
   });
   const consoleErrors = [];
   const pageErrors = [];
   const externalRequests = [];
-  page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
-  page.on('pageerror', error => pageErrors.push(error.message));
-  page.on('request', request => { if (!request.url().startsWith(baseUrl)) externalRequests.push(request.url()); });
 
-  await page.goto(`${baseUrl}/importar.html`, { waitUntil: 'networkidle' });
-  await page.waitForSelector('#sourceIntakeEvaluation:not([hidden])');
-  await page.locator('#muniGuideTrigger').waitFor({ state: 'visible' });
-  const state = await page.evaluate(() => {
-    const guide = document.querySelector('#muniGuideTrigger').getBoundingClientRect();
-    const intersects = rect => rect.left < guide.right && rect.right > guide.left &&
-      rect.top < guide.bottom && rect.bottom > guide.top;
-    const protectedCopy = [
-      ['topbar', document.querySelector('.source-intake-topbar__title')],
-      ['boundary-title', document.querySelector('#sourceIntakeBoundaryTitle')],
-      ['boundary-copy', document.querySelector('.source-intake-boundary p:last-child')],
-      ['evaluation-copy', document.querySelector('#sourceIntakeEvaluation')],
-    ].map(([name, element]) => {
-      const rect = element.getBoundingClientRect();
-      const style = getComputedStyle(element);
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 320, height: 720 },
+  ]) {
+    const { context, page } = await intakePage(
+      browser,
+      baseUrl,
+      'published-admin-mobile',
+      user,
+      viewport,
+    );
+    page.on('console', message => {
+      if (message.type() === 'error') consoleErrors.push(`${viewport.width}: ${message.text()}`);
+    });
+    page.on('pageerror', error => pageErrors.push(`${viewport.width}: ${error.message}`));
+    page.on('request', request => {
+      if (!request.url().startsWith(baseUrl)) externalRequests.push(`${viewport.width}: ${request.url()}`);
+    });
+
+    await page.goto(`${baseUrl}/importar.html`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#sourceIntakeEvaluation:not([hidden])');
+    await page.locator('#muniGuideTrigger').waitFor({ state: 'visible' });
+    const state = await page.evaluate(() => {
+      const guide = document.querySelector('#muniGuideTrigger').getBoundingClientRect();
+      const visible = element => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return rect.width > 0 && rect.height > 0 && style.display !== 'none' &&
+          style.visibility !== 'hidden' && Number(style.opacity) > 0;
+      };
+      const intersects = rect => rect.left < guide.right && rect.right > guide.left &&
+        rect.top < guide.bottom && rect.bottom > guide.top;
+      const protectedSurfaces = [
+        ['topbar-copy', document.querySelector('.source-intake-topbar__title')],
+        ['boundary-title', document.querySelector('#sourceIntakeBoundaryTitle')],
+        ['boundary-copy', document.querySelector('.source-intake-boundary p:last-child')],
+        ['evaluation-card', document.querySelector('#sourceIntakeEvaluation')],
+      ].map(([name, element]) => {
+        const rect = element.getBoundingClientRect();
+        return { name, overlapsGuide: intersects(rect), visible: visible(element) };
+      });
+      const governanceCopy = [
+        document.querySelector('.source-intake-boundary p:last-child'),
+        document.querySelector('#sourceIntakeEvaluation strong'),
+        document.querySelector('#sourceIntakeEvaluation span'),
+      ];
       return {
-        name,
-        overlapsGuide: intersects(rect),
-        visible: rect.width > 0 && rect.height > 0 && style.display !== 'none' &&
-          style.visibility !== 'hidden' && Number(style.opacity) > 0,
+        copyVisible: governanceCopy.every(visible),
+        guideHeight: guide.height,
+        guideWidth: guide.width,
+        mode: document.querySelector('#sourceIntakeApp').dataset.mode,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        protectedSurfaces,
       };
     });
-    return {
-      guideHeight: guide.height,
-      guideWidth: guide.width,
-      mode: document.querySelector('#sourceIntakeApp').dataset.mode,
-      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      protectedCopy,
-    };
-  });
 
-  assert.equal(state.mode, 'evaluation_read_only');
-  assert.ok(state.overflow <= 1, `320px overflow=${state.overflow}`);
-  assert.ok(state.guideHeight >= 44 && state.guideWidth >= 44, '320px help trigger remains a 44px target');
-  assert.ok(state.protectedCopy.every(item => item.visible), '320px hides governance copy');
-  assert.deepEqual(
-    state.protectedCopy.filter(item => item.overlapsGuide).map(item => item.name),
-    [],
-    '320px help trigger overlaps governance copy',
-  );
-  assert.match(await page.locator('.source-intake-boundary').textContent(), /archivo/i);
-  assert.match(await page.locator('#sourceIntakeEvaluation').textContent(), /lectura/i);
-  if (process.env.MUNICONTROL_E2E_CAPTURE_PATH) {
-    await page.screenshot({ path: process.env.MUNICONTROL_E2E_CAPTURE_PATH });
+    assert.equal(state.mode, 'evaluation_read_only');
+    assert.ok(state.overflow <= 1, `${viewport.width}px overflow=${state.overflow}`);
+    assert.ok(state.guideHeight >= 44 && state.guideWidth >= 44,
+      `${viewport.width}px help trigger remains a 44px target`);
+    assert.equal(state.copyVisible, true, `${viewport.width}px hides governance copy`);
+    assert.ok(state.protectedSurfaces.every(item => item.visible),
+      `${viewport.width}px hides a governance surface`);
+    assert.deepEqual(
+      state.protectedSurfaces.filter(item => item.overlapsGuide).map(item => item.name),
+      [],
+      `${viewport.width}px help trigger overlaps a governance surface`,
+    );
+    assert.match(await page.locator('.source-intake-boundary').textContent(), /archivo/i);
+    assert.match(await page.locator('#sourceIntakeEvaluation').textContent(), /lectura/i);
+    await context.close();
   }
+
   assert.equal(requestLog.some(entry => entry.path === '/api/source-intake'), false);
   assert.equal(multipartBodies.length, 0);
   assert.deepEqual(consoleErrors, []);

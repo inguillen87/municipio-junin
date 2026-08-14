@@ -747,7 +747,7 @@ Límites actuales del flujo de archivos:
 No fragmente un archivo para eludir límites. Si el volumen legítimo los supera,
 solicite una revisión del proceso de ingesta.
 
-### 12.1.1 Bandeja privada de cuarentena — S26 candidato local
+### 12.1.1 Bandeja privada de cuarentena — S26
 
 En una sesión privada autorizada, **Cuarentena** es la vista inicial de
 `/importar`. Muestra únicamente los últimos 20 comprobantes del tenant, no un
@@ -763,10 +763,17 @@ ni texto extraído. **Nueva fuente** conserva el formulario de S25. Si el histor
 no valida, la pantalla no representa una lista parcial como confiable: muestra un
 error y deja el reintento como acción manual.
 
-Esta mejora está validada localmente y todavía no está desplegada. No agrega una
-acción de aprobar: siguen pendientes storage privado del original, antimalware,
-segregación maker-checker y evidencia de auditoría resistente a alteraciones. La
-Evaluación Administrador no monta la bandeja y conserva cero GET/POST de ingreso.
+La frontera publicada está verificada en Production sobre
+`63d455b708ffddd44a5acc9480b42d8d0c61829d` /
+`dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS`: la Evaluación Administrador no monta la
+bandeja, conserva cero GET/POST de ingreso y quedó limpia en 390/320 px, con
+Ayuda dentro del topbar y sin tapar el límite ni la tarjeta de evaluación. La
+bandeja privada positiva y el POST 201 siguen validados sólo localmente; no se
+leyeron receipts privados ni se escribió DB en Production. No agrega una acción
+de aprobar: siguen pendientes storage privado del original, antimalware,
+segregación maker-checker y evidencia de auditoría resistente a alteraciones.
+La denegación de un rol sin permiso se verificó en el smoke S26 previo y en las
+pruebas locales; no se repitió en el cierre remoto final.
 
 ### 12.2 Google Sheets retirado
 

@@ -892,7 +892,7 @@ Estado: **verificado en Production el 14 de agosto de 2026** sobre el product SH
 
 ### S26 — bandeja operativa de cuarentena
 
-Estado: **candidato local; no desplegado**.
+Estado: **frontera publicada verificada en Production; bandeja privada positiva validada sólo localmente**.
 
 - Reutiliza el `GET /api/source-intake` privado existente. No crea otra API ni
   otra mutación: proyecta hasta 20 receipts agregados del tenant y valida el
@@ -914,9 +914,23 @@ Estado: **candidato local; no desplegado**.
   existe material honesto para maker-checker; `AuditLog` tampoco tiene todavía
   trigger append-only ni cadena hash. Storage privado, escaneo, decisión separada
   y evidencia resistente a alteraciones continúan como siguiente fase.
-- Evidencia local actual: 31/31 contratos/backend, 5/5 navegador en
-  1440/390/320 px, error/reintento y fronteras publicada/rol bajo; build 102
-  módulos, 53 HTML y 17 superficies. No constituye evidencia de Production.
+- Evidencia del producto: SHA `63d455b708ffddd44a5acc9480b42d8d0c61829d`,
+  deployment `dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS`, alias estable, build de 102
+  módulos/53 HTML/17 superficies y release truth 31/31. Un acceso Administrador
+  limpio fue 200 sin reintento; el deployment cerró con cero 5xx/fatal y
+  `/importar` en 390/320 px con Ayuda dentro del topbar, sin intersectar el límite
+  o la tarjeta de evaluación y sin overflow, requests de ingreso ni errores.
+- Seguridad: scan S26 `9df1f71b-abfe-494b-b71f-08799409fa05` cubrió 13/13
+  archivos con cero findings; el hotfix de autenticación/móvil quedó sellado en
+  `1d5402f5-208f-4cac-ad72-f6d7632aa67c`, 4/4 y cero findings. El delta CSS final
+  fue revisado 2/2 sin P0/P1/P2.
+- Esta evidencia remota certifica exclusivamente la frontera publicada. La
+  lectura positiva de receipts privados y el POST 201 continúan validados sólo
+  localmente; no hubo lectura privada, escritura DB, OpenAI/Hugging Face ni
+  cambio de configuración en Production.
+- La denegación de rol bajo se verificó en el smoke S26 previo y en las pruebas
+  locales; no se reejerció en el cierre remoto de `63d455b`. Los hotfixes finales
+  no ampliaron capabilities ni rutas.
 
 ## Funciones que no deben “completarse” todavía
 

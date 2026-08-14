@@ -1516,7 +1516,7 @@ findings. La verificación remota fue deliberadamente read-only: confirmó 12/12
 controles deshabilitados, `GET` 200 vacío, `POST` 403 antes del parser, rol bajo
 denegado y cero escrituras DB. El `POST` privado 201 sólo se validó localmente.
 
-#### 16.2.1 S26 local: lectura operativa de la cuarentena
+#### 16.2.1 S26: lectura operativa de la cuarentena
 
 S26 consume el envelope privado de receipts ya definido por
 `municipal-source-intake-v1`; no agrega endpoint ni escritura. El cliente acepta
@@ -1537,7 +1537,19 @@ Esta fase no cambia el estado único `quarantined` ni añade decisiones mutativa
 `AuditLog` valida shape pero admite UPDATE/DELETE a nivel DB y no tiene cadena
 hash. Maker-checker sólo podrá habilitarse después de retener el original en
 storage privado, ejecutar antimalware y modelar una decisión de un revisor
-distinto del creador. Estado actual: candidato local; no Production.
+distinto del creador. Estado actual: la frontera publicada está verificada en
+Production sobre el producto `63d455b708ffddd44a5acc9480b42d8d0c61829d` y el
+deployment `dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS`, con release truth 31/31; un acceso
+Administrador limpio fue 200 sin reintento, con cero 5xx/fatal. En 390/320 px,
+Ayuda quedó dentro del topbar y no intersectó el límite ni la tarjeta de evaluación.
+El scan S26 cubrió 13/13 archivos y el hotfix 4/4, ambos sin findings; el delta
+CSS final fue revisado 2/2 sin P0/P1/P2. La lectura privada positiva y el POST
+201 siguen validados sólo localmente: no hubo receipts privados ni escrituras DB
+en Production.
+
+La denegación de rol bajo se verificó en el smoke S26 previo y en pruebas locales;
+no se reejerció en el cierre remoto de `63d455b`. Los hotfixes finales no
+modificaron capabilities o rutas.
 
 El objetivo es que archivos y bases pasen por el mismo plano de control:
 
@@ -1752,9 +1764,9 @@ Diagnóstico recomendado:
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |
 | Baseline/replay S14C | Reproducible y aprobado en branches efímeros | manifest v2, Prisma 5.22, 82 sentencias; A vacío y B3 resolve con status/diff cero; catálogo B3 byte-idéntico; cero escrituras Preview/Production; DDL estable bloqueado por ownership/naming del proyecto Neon |
 | Importación directa a modelos Prisma | Retirada | responde `410`; falta contrato por dominio, RBAC fino, doble control y restore |
-| Ingreso gobernado S25 | Verificado en Production para la superficie publicada | seis formatos hasta 4 MiB y receipt agregado en cuarentena sólo para sesión privada; evaluación publicada read-only, formulario deshabilitado y POST 403 antes del parser; auditoría privada tenant-bound, sin original, antimalware, aprobación ni publicación. El POST privado 201 sólo fue validado localmente y no mutó Production. Upload/Sheets legacy responden 410 |
+| Ingreso gobernado S25/S26 | Verificado en Production para la superficie publicada | seis formatos hasta 4 MiB y bandeja de hasta 20 receipts agregados sólo para sesión privada; evaluación publicada read-only, formulario deshabilitado y cero GET/POST desde la UI; auditoría privada tenant-bound, sin original, antimalware, aprobación ni publicación. La lectura privada y el POST 201 sólo fueron validados localmente y no mutaron Production. Upload/Sheets legacy responden 410 |
 | Publicación `grh_artifacts` | Condicionado | código existe; faltan DB remota, migración y smokes certificados |
-| Preview/producción Vercel | S25 desplegado y verificado en la superficie publicada; `v1.10.0` permanece como release versionado histórico | S25 product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment `dpl_CEDxSq4dWFYekymNzkVBpV876JfX`, release truth 31/31 y seguridad 58/58 sin findings; faltan escritura privada positiva, DB y datos remotos no cubiertos |
+| Preview/producción Vercel | S26 desplegado y verificado en la superficie publicada; `v1.10.0` permanece como release versionado histórico | S26 product SHA `63d455b708ffddd44a5acc9480b42d8d0c61829d`, deployment `dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS`, release truth 31/31, cero 5xx/fatal y seguridad S26 13/13 + hotfix 4/4 sin findings; faltan lectura/escritura privada positiva, storage del original, antimalware y evidencia DB remota |
 | Backend Express remoto | Condicionado | runtime y tests existen; despliegue separado no certificado |
 | Correo y cron | Retirado | responden `410` y no están programados; falta auditoría tenant-bound e idempotencia |
 | WhatsApp | Condicionado | requiere `PUBLIC_APP_URL` HTTPS aprobado, proveedor, secretos, plantillas y E2E externo |

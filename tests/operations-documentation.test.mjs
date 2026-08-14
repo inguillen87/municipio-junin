@@ -1339,17 +1339,25 @@ test('S25 records exact Production evidence without claiming a private remote wr
   assert.doesNotMatch(joined, /S25[^.\n|]{0,100}(?:candidate local|candidato local|no verificado en Production)/i);
 });
 
-test('S26 documents the local quarantine inbox without inventing approval or Production evidence', () => {
+test('S26 documents the Production published boundary without inventing private receipt evidence', () => {
   const sources = [
     read('manuales.html'),
     read('docs/MASTER_PLAN_STATUS.md'),
     read('docs/ENTERPRISE_PRODUCT_ROADMAP.md'),
     read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md'),
     read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md'),
+    read('docs/MANUAL_INTEGRAL.md'),
   ];
   const joined = sources.join('\n');
 
-  assert.match(joined, /S26[\s\S]{0,100}(?:candidato local|validada localmente|validado localmente)/i);
+  for (const source of sources) {
+    assert.match(source, /(?:S26[\s\S]{0,3000}(?:frontera publicada[\s\S]{0,120}Production|Production[\s\S]{0,120}frontera publicada)|Production\s*·\s*S26\s*\(frontera publicada\))/i);
+    assert.match(source, /(?:(?:lectura|bandeja|recorrido)[\s\S]{0,160}privad[ao][\s\S]{0,260}(?:sólo|solo)[\s\S]{0,30}local|POST[\s\S]{0,40}201[\s\S]{0,180}(?:sólo|solo)[\s\S]{0,30}local)/i);
+    assert.doesNotMatch(source, /S26[^.\n|]{0,120}(?:bandeja privada|POST privado)[^.|\n]{0,120}(?:verificad[ao]|certificad[ao]) en Production/i);
+    assert.doesNotMatch(source, /Production\s*·\s*S26(?!\s*\(frontera publicada\))[^.\n|]{0,200}(?:bandeja privada|POST privado)/i);
+  }
+
+  assert.match(joined, /S26[\s\S]{0,160}(?:frontera publicada|superficie publicada)[\s\S]{0,80}verificada en Production/i);
   assert.match(joined, /(?:Cuarentena|bandeja)[\s\S]{0,120}(?:Nueva fuente|20 comprobantes|20 receipts)/i);
   assert.match(joined, /(?:últimos|hasta) 20[\s\S]{0,80}(?:tenant|comprobantes|receipts)/i);
   assert.match(joined, /autoridad pendiente/i);
@@ -1357,9 +1365,17 @@ test('S26 documents the local quarantine inbox without inventing approval or Pro
   assert.match(joined, /createdAt desc[\s\S]{0,40}id desc/i);
   assert.match(joined, /respuesta[\s\S]{0,100}(?:alterada|duplicada|fuera del contrato)[\s\S]{0,100}falla\s+cerrada/i);
   assert.match(joined, /evaluaci[oó]n (?:pública|publicada|Administrador)[\s\S]{0,160}(?:cero GET\/POST|no ejecuta GET ni POST|no monta ni consulta)/i);
-  assert.match(joined, /31\/31[\s\S]{0,100}5\/5[\s\S]{0,120}102 m[oó]dulos[\s\S]{0,50}53 HTML[\s\S]{0,50}17 superficies/i);
+  assert.match(joined, /63d455b708ffddd44a5acc9480b42d8d0c61829d/);
+  assert.match(joined, /dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS/);
+  assert.match(joined, /31\/31[\s\S]{0,180}acceso Administrador[\s\S]{0,80}200[\s\S]{0,80}sin reintento/i);
+  assert.match(joined, /cero 5xx\/fatal[\s\S]{0,180}390\/320[\s\S]{0,160}(?:sin solapes|sin overlap|sin intersección|no intersect)/i);
+  assert.match(joined, /390\/320[\s\S]{0,180}Ayuda[\s\S]{0,100}topbar[\s\S]{0,180}(?:sin intersectar|no intersect|sin intersección)/i);
+  assert.match(joined, /9df1f71b-abfe-494b-b71f-08799409fa05[\s\S]{0,100}13\/13[\s\S]{0,80}(?:cero findings|sin findings)/i);
+  assert.match(joined, /1d5402f5-208f-4cac-ad72-f6d7632aa67c[\s\S]{0,100}4\/4[\s\S]{0,80}(?:cero findings|sin findings)/i);
+  assert.match(joined, /102 m[oó]dulos[\s\S]{0,50}53 HTML[\s\S]{0,50}17 superficies/i);
   assert.match(joined, /(?:storage privado|original retenido)[\s\S]{0,100}antimalware[\s\S]{0,100}maker-checker[\s\S]{0,140}(?:cadena hash|resistente a alteraciones|tamper-evident)/i);
-  assert.doesNotMatch(joined, /S26[^.\n|]{0,100}(?:verificado|promovido|desplegado) en Production/i);
+  assert.match(joined, /(?:lectura|bandeja)[\s\S]{0,80}privad[ao][\s\S]{0,160}(?:POST[\s`<code>]*201)[\s\S]{0,120}(?:sólo|solo)[\s\S]{0,30}local/i);
+  assert.match(joined, /no (?:hubo|se ejercieron|se leyeron)[\s\S]{0,100}(?:receipts privados|lecturas privadas)[\s\S]{0,100}(?:escrituras DB|se escribió DB)/i);
 });
 
 test('the public landing does not route municipal or commercial data to unapproved contacts', () => {

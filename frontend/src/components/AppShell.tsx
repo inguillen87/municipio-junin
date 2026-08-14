@@ -3,6 +3,7 @@ import { useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SessionIdentity } from '../auth/session';
 import { contextualLinks, getNavigationDefinition } from '../navigation/catalog';
 import { MuniGuiaBridge } from './MuniGuiaBridge';
+import { MunicipalTaskCenterBridge } from './MunicipalTaskCenterBridge';
 import { Topbar } from './Topbar';
 
 const THEME_STORAGE_KEY = 'municontrol-color-theme:v1';
@@ -81,6 +82,7 @@ export function AppShell({ children, identity, navigation, busy }: AppShellProps
         {children}
       </main>
       <MuniGuiaBridge identity={identity} />
+      <MunicipalTaskCenterBridge identity={identity} />
     </div>
   );
 }

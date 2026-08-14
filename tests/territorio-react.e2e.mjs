@@ -24,6 +24,12 @@ const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const CONTRACT_HEADER = 'x-municontrol-contract';
 const AUTH_CONTRACT = 'municontrol-auth-me-v1';
 const MUNIGUIA_STUB_SOURCE = 'export async function mountMuniGuia(){return true} export function unmountMuniGuia(){}';
+const TASK_CENTER_ASSETS = Object.freeze(new Map([
+  ['/js/municipal-task-center.js', ['js/municipal-task-center.js', 'text/javascript; charset=utf-8']],
+  ['/js/municipal-task-catalog.js', ['js/municipal-task-catalog.js', 'text/javascript; charset=utf-8']],
+  ['/js/contextual-help-catalog.js', ['js/contextual-help-catalog.js', 'text/javascript; charset=utf-8']],
+  ['/css/task-center.css', ['css/task-center.css', 'text/css; charset=utf-8']],
+]));
 const SCREENSHOTS = Object.freeze({
   desktop: path.join(tmpdir(), 'municontrol-territorio-desktop-dark.png'),
   mobile: path.join(tmpdir(), 'municontrol-territorio-mobile-light.png'),
@@ -152,6 +158,12 @@ function scenarioPlugin(scenario, apiLog) {
         }
         if (url.pathname === '/js/contextual-help.js') {
           send(response, 200, 'text/javascript; charset=utf-8', MUNIGUIA_STUB_SOURCE);
+          return;
+        }
+        const taskCenterAsset = TASK_CENTER_ASSETS.get(url.pathname);
+        if (taskCenterAsset) {
+          const [relativePath, contentType] = taskCenterAsset;
+          send(response, 200, contentType, readFileSync(path.join(REPO, relativePath)));
           return;
         }
         if (url.pathname === '/js/pwa-register.js') {

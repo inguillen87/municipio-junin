@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es-AR" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#07111e" />
+    <meta
+      name="description"
+      content="Control agregado de corridas, detalle de cálculo y marcas operativas del GRH de Junín."
+    />
+    <link rel="icon" href="/img/municontrol-icon.jpg" type="image/jpeg" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Corridas GRH | MuniControl</title>
+  </head>
+  <body>
+    <div id="root">
+      <main aria-busy="true" aria-live="polite">
+        <p>Preparando el control agregado de corridas GRH…</p>
+      </main>
+    </div>
+    <noscript>Esta experiencia requiere JavaScript para validar la sesión institucional.</noscript>
+    <script vite-ignore src="/js/pwa-register.js" defer></script>
+    <script vite-ignore src="/js/auth-fetch.js"></script>
+    <script vite-ignore src="/js/grh-payroll-run-control-data.js"></script>
+    <script vite-ignore src="/js/navigation-catalog.js"></script>
+    <script vite-ignore src="/js/municipal-task-center.js"></script>
+    <script type="module" src="/src/payroll-run-control-main.tsx"></script>
+  </body>
+</html>

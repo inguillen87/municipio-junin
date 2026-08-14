@@ -7,6 +7,7 @@
   <meta name="description" content="Guía operativa y de interpretación de datos de MuniControl Junín.">
   <title>Guía operativa | MuniControl Junín</title>
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/task-center.css">
   <style>
     :root {
       --doc-bg: #06101d;
@@ -275,7 +276,7 @@
   data-primary-source="grh"
   data-secondary-source-policy="personas-auxiliary-diagnostic"
   data-realtime="false"
-  data-route-policy-version="2026-08-13.13"
+  data-route-policy-version="2026-08-13.14"
   data-access-policy-version="2026-08-13.4"
 >
   <div id="sidebar"></div>
@@ -283,6 +284,7 @@
     <div class="doc-shell">
       <nav class="toc" aria-label="Contenido de la guía">
         <p class="toc-label">Guía operativa</p>
+        <a href="#tareas">Ayuda por tarea</a>
         <a href="#alcance">Alcance real</a>
         <a href="#roles">Recorrido por rol</a>
         <a href="#fuente">Fuente GRH</a>
@@ -306,7 +308,7 @@
             Guía práctica para funcionarios y equipos municipales. Explica qué información está disponible hoy, cómo interpretarla y qué funciones se incorporarán en las próximas etapas.
           </p>
 
-          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Estado operativo actual · 13 de agosto de 2026.</strong> MuniControl ofrece Inicio por rol, Panorama, Resumen GRH, Reportes, Hacienda, Estructura, Trayectoria laboral, Territorio, Calidad, RRHH, Fuentes, Centro de decisiones, Asistente, cargas, publicaciones y ayuda. MuniGuía reconoce 18 pantallas privadas y explica tres pasos por pantalla. La PWA usa el service worker <code>v7</code>: conserva solamente el shell público mínimo; no guarda navegaciones privadas, APIs ni datos municipales. El recorrido «Primer día con MuniGuía» es efímero durante la sesión y no modifica permisos.</div></div>
+          <div class="callout info"><span aria-hidden="true">i</span><div><strong>Estado operativo actual · 13 de agosto de 2026.</strong> MuniControl ofrece Inicio por rol, Panorama, Resumen GRH, Reportes, Hacienda, Corridas y marcas de cierre, Estructura, Trayectoria laboral, Territorio, Calidad, RRHH, Fuentes, Centro de decisiones, Asistente, cargas, publicaciones y ayuda. MuniGuía reconoce 19 pantallas privadas y explica tres pasos por pantalla. La PWA usa el service worker <code>v7</code>: conserva solamente el shell público mínimo; no guarda navegaciones privadas, APIs ni datos municipales. El recorrido «Primer día con MuniGuía» es efímero durante la sesión y no modifica permisos.</div></div>
 
           <div class="callout info"><span aria-hidden="true">i</span><div><strong>Versión disponible.</strong> La plataforma muestra información histórica de Recursos Humanos con privacidad aplicada. Antes de una presentación oficial, verificá la fecha del respaldo y el estado visible de cada módulo.</div></div>
           <details>
@@ -322,6 +324,14 @@
             <div class="snapshot-item"><span>Privacidad</span><strong>Grupos pequeños agrupados u ocultos</strong></div>
           </div>
         </header>
+
+        <section
+          class="municipal-task-finder"
+          id="tareas"
+          data-municipal-task-finder
+          data-task-finder-mode="catalog"
+          aria-label="Ayuda y tareas habilitadas"
+        ></section>
 
         <section id="alcance">
           <p class="section-kicker">01 · Contrato de verdad</p>
@@ -445,6 +455,13 @@
               </tbody>
             </table>
           </div>
+          <article class="card" id="corridas-grh">
+            <span class="tag">Corridas y marcas de cierre</span>
+            <h3>Separá la cabecera, el detalle y la marca operativa</h3>
+            <p><code>grh-payroll-run-control-v1</code> reconcilia las cabeceras de <code>histocal</code> con el detalle agregado de <code>calculo</code> y la cobertura técnica de <code>liquidacionlog</code>. Una marca <code>CIER_31=1</code> sólo indica que la fuente informó esa marca operativa: no prueba cierre contable, pago, transferencia bancaria ni ejecución presupuestaria.</p>
+            <p>Empezá por el último período válido, revisá la serie mensual y terminá en la cuarentena temporal. Una cabecera sin marca significa «sin dato informado», no «corrida abierta». El enlace a Decisiones sólo enfoca una prioridad que todavía exista en el brief vigente y nunca crea un compromiso automáticamente.</p>
+            <div class="actions"><a class="action primary" href="corridas-grh.html">Abrir Corridas y marcas de cierre</a><a class="action" href="decisiones-grh.html">Abrir Centro de decisiones</a></div>
+          </article>
           <div class="callout info"><span aria-hidden="true">i</span><div><strong>Control de cálculo, no pago bancario.</strong> Antes de tomar una decisión vinculante, verificá en cada pantalla la fuente, la fecha, la definición del KPI, la cobertura y las alertas de calidad.</div></div>
         </section>
 
@@ -531,7 +548,7 @@
             <li>Para proteger identidades, las categorías con menos de 5 personas se agrupan y las cifras sensibles con menos de 10 se ocultan. Un dato protegido nunca se publica como cero ni permite deducir el valor oculto.</li>
             <li>Si la cantidad de personas distintas es desconocida, la celda se protege. Nunca se publica como cero ni se completa con datos demo.</li>
             <li>Trayectoria laboral compara actuaciones documentadas de <code>foja</code> en dos períodos iguales de 972 días. Una actuación no equivale automáticamente a un alta, una baja o una condición vigente.</li>
-            <li>El techo vigente contiene 32 recursos, 12 acciones, 54 permisos y 95 firmas exactas: 53 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
+            <li>El techo vigente contiene 32 recursos, 12 acciones, 54 permisos y 96 firmas exactas: 54 Serverless y 42 Express. Esto no sustituye los ámbitos RBAC/ABAC todavía pendientes.</li>
             <li>La política de acceso local <code>2026-08-13.4</code> reconoce siete roles y calcula capabilities, versión y perfil de inicio en servidor. <code>SUPER_ADMIN</code> sin tenant queda sólo con sesión, Inicio y Ayuda, sin GRH.</li>
             <li>Excel, CSV y Google Sheets se tratan como contenido no confiable: formato, límites, encabezados y persistencia se validan antes de declarar éxito.</li>
             <li>Correo, cron y exportación cruda están retirados con 410; WhatsApp y conectores fallan cerrados si falta origen HTTPS, firma, secreto o allowlist.</li>
@@ -612,6 +629,7 @@
   <script src="js/nav.js"></script>
   <script src="js/theme-switcher.js"></script>
   <script src="js/bottom-nav.js"></script>
+  <script src="js/municipal-task-center.js"></script>
   <script>
     if (typeof buildSidebar === 'function') buildSidebar('manuales');
   </script>

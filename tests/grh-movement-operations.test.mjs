@@ -66,7 +66,7 @@ test('real semantic source builds the exact annual movement decision contract', 
     sourceFile: 'grh_junin.backup_2026080615_plataforma.sql.gz',
     sourceSha256: SOURCE_SHA,
     snapshotAsOf: '2026-08-06',
-    generatedAt: '2026-08-09T02:12:13.748391+00:00',
+    generatedAt: '2026-08-09T02:12:13.748Z',
     realtime: false,
     sourceTable: 'legamov',
   });

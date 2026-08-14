@@ -314,7 +314,7 @@ window.requireRole = function(allowedRoles) {
 // renders no private destinations; capability visibility never falls back to a
 // second, local menu.
 function validatedNavigationDefinition(definition) {
-  if (!definition || definition.version !== '2026-08-13.2' ||
+  if (!definition || definition.version !== '2026-08-13.3' ||
       !Array.isArray(definition.groups) || !Array.isArray(definition.items) ||
       !Object.isFrozen(definition) || !Object.isFrozen(definition.groups) ||
       !Object.isFrozen(definition.items) ||
@@ -329,6 +329,7 @@ function validatedNavigationDefinition(definition) {
     ['ia', 'ia.html', 'executive', 'group', 'navigation.ai-assistant', true],
     ['reportes', 'reportes.html', 'executive', 'group', 'navigation.reports', true],
     ['hacienda', 'hacienda.html', 'people', 'group', 'navigation.hacienda', true],
+    ['corridas-grh', '/corridas-grh', 'people', 'group', 'navigation.hacienda', false],
     ['estructura', '/estructura', 'people', 'group', 'navigation.organization-analytics', true],
     ['trayectoria', '/trayectoria', 'people', 'group', 'navigation.employment-actions', true],
     ['movimientos-grh', 'movimientos-grh.html', 'people', 'group', 'navigation.organization-analytics', false],
@@ -707,6 +708,7 @@ window.buildSidebar = function(activeId) {
   // Update topbar avatar
   updateTopbarAvatar(initials, roleColor);
   enableInstitutionalShellInteractivity();
+  mountMunicipalTaskCenter(accessProjection);
 };
 
 function adjustMainContent(collapsed) {
@@ -1174,6 +1176,7 @@ var MUNIGUIA_PRIVATE_PATHS = [
   '/dashboard', '/dashboard.html',
   '/reportes', '/reportes.html',
   '/hacienda', '/hacienda.html',
+  '/corridas-grh', '/corridas-grh.html',
   '/ejecutivo', '/ejecutivo.html', '/grh-ejecutivo', '/grh-ejecutivo.html',
   '/estructura', '/estructura.html',
   '/trayectoria', '/trayectoria.html',
@@ -1225,6 +1228,58 @@ function scheduleMuniGuia() {
   } else {
     ensureMuniGuia();
   }
+}
+
+var municipalTaskCenterAssetPromise = null;
+
+function taskCenterInput(projection) {
+  if (!projection || !projection.user || !projection.homeProfile || !Array.isArray(projection.capabilities)) return null;
+  return {
+    role: projection.user.role,
+    variant: projection.homeProfile.variant,
+    capabilities: projection.capabilities.slice(),
+    policyVersion: projection.user.accessPolicyVersion
+  };
+}
+
+function loadMunicipalTaskCenterAsset() {
+  if (window.MuniTaskCenter && typeof window.MuniTaskCenter.mount === 'function') {
+    return Promise.resolve(window.MuniTaskCenter);
+  }
+  if (municipalTaskCenterAssetPromise) return municipalTaskCenterAssetPromise;
+  municipalTaskCenterAssetPromise = new Promise(function(resolve) {
+    var existing = document.querySelector('script[data-municipal-task-center-asset="v1"],script[src$="js/municipal-task-center.js"]');
+    var script = existing || document.createElement('script');
+    var finish = function() {
+      resolve(window.MuniTaskCenter && typeof window.MuniTaskCenter.mount === 'function'
+        ? window.MuniTaskCenter
+        : null);
+    };
+    if (existing) {
+      if (window.MuniTaskCenter) return finish();
+      existing.addEventListener('load', finish, { once: true });
+      existing.addEventListener('error', function() { resolve(null); }, { once: true });
+      return;
+    }
+    script.src = new URL('municipal-task-center.js', MUNI_NAV_ASSET_BASE).href;
+    script.defer = true;
+    script.setAttribute('data-municipal-task-center-asset', 'v1');
+    script.addEventListener('load', finish, { once: true });
+    script.addEventListener('error', function() { resolve(null); }, { once: true });
+    document.body.appendChild(script);
+  }).catch(function() { return null; });
+  return municipalTaskCenterAssetPromise;
+}
+
+function mountMunicipalTaskCenter(projection) {
+  var input = taskCenterInput(projection);
+  if (!input) return Promise.resolve(false);
+  return loadMunicipalTaskCenterAsset().then(function(runtime) {
+    return runtime ? runtime.mount(input) : false;
+  }).catch(function() {
+    // Task search is progressive enhancement; direct governed navigation remains available.
+    return false;
+  });
 }
 
 function scheduleInstitutionalBottomNavigation() {

@@ -29,6 +29,7 @@ const MAX_ACTIONS = 4;
 const SYNTHESIS_INTENTS = new Set([
   'manual_help',
   'decision_brief',
+  'payroll_run_control',
   'workforce_finance_overview',
   'workforce_finance_trend',
   'workforce_finance_composition',

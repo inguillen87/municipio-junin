@@ -3,8 +3,10 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 
+import accessPolicy from '../shared/access-policy.cjs';
+import { resolveMunicipalTaskCatalog } from '../js/municipal-task-catalog.js';
+
 const runbookUrl = new URL('../docs/DEMO_INTENDENCIA_5_7_MIN.md', import.meta.url);
-const workspaceUrl = new URL('../inicio.html', import.meta.url);
 const navigationCatalogUrl = new URL('../js/navigation-catalog.js', import.meta.url);
 
 test('el runbook de Intendencia conserva recorrido, verdad y rollback', async () => {
@@ -38,14 +40,31 @@ test('el runbook no contiene identidades, correos ni secretos de acceso', async 
 });
 
 test('Inicio descubre el canary ejecutivo y el catálogo conserva el retorno estable', async () => {
-  const [workspace, navigationCatalog] = await Promise.all([
-    readFile(workspaceUrl, 'utf8'),
-    readFile(navigationCatalogUrl, 'utf8'),
-  ]);
-
-  assert.match(
-    workspace,
-    /'navigation\.grh-executive':\s*Object\.freeze\(\{\s*href:\s*'\/ejecutivo'/,
+  const navigationCatalog = await readFile(navigationCatalogUrl, 'utf8');
+  const session = accessPolicy.getSessionAccessForUser({
+    role: 'INTENDENTE',
+    tenantId: 'tenant-junin',
+  });
+  const taskCatalog = resolveMunicipalTaskCatalog({
+    role: 'INTENDENTE',
+    variant: session.homeProfile.variant,
+    policyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+    capabilities: session.capabilities,
+  });
+  const executiveTask = taskCatalog.tasks.find(item => item.id === 'review-grh-summary');
+  assert.deepEqual(
+    {
+      label: executiveTask?.label,
+      href: executiveTask?.href,
+      capability: executiveTask?.capability,
+      pageId: executiveTask?.pageId,
+    },
+    {
+      label: 'Entender el panorama de personal',
+      href: '/ejecutivo.html',
+      capability: 'navigation.grh-executive',
+      pageId: 'grhExecutive',
+    },
   );
   const scope = {};
   runInNewContext(navigationCatalog, { window: scope });

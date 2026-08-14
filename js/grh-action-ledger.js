@@ -111,7 +111,9 @@
     dialog: null,
     setupPending: false,
     selectedCommitmentId: null,
-    drawerReturnFocus: null
+    drawerReturnFocus: null,
+    focusRequest: Object.freeze({ kind: 'none', priorityCode: null }),
+    focusApplied: false
   };
 
   var documentRef = global.document;
@@ -311,7 +313,84 @@
     byId('decisionLoading').hidden = false;
     byId('decisionError').hidden = true;
     byId('decisionContent').hidden = true;
+    byId('decisionHandoff').hidden = true;
     setStatus('loading', 'Validando compromisos', false);
+  }
+
+  function parseFocusRequest(search) {
+    if (search === '') return Object.freeze({ kind: 'none', priorityCode: null });
+    var match = /^\?focus=([a-z][a-z0-9_]{1,63})$/.exec(String(search || ''));
+    if (!match || !Object.prototype.hasOwnProperty.call(PRIORITIES, match[1])) {
+      return Object.freeze({ kind: 'invalid', priorityCode: null });
+    }
+    return Object.freeze({ kind: 'requested', priorityCode: match[1] });
+  }
+
+  function showHandoff(message, verified) {
+    var node = byId('decisionHandoff');
+    node.textContent = message;
+    node.classList.toggle('decision-chip--verified', Boolean(verified));
+    node.hidden = false;
+    return node;
+  }
+
+  function focusHandoffNode(node) {
+    if (!node) return;
+    if (!node.matches('button, a, [tabindex]')) node.tabIndex = -1;
+    var applyFocus = function() {
+      if (node.isConnected) node.focus({ preventScroll: true });
+    };
+    applyFocus();
+    if (typeof global.requestAnimationFrame === 'function') {
+      global.requestAnimationFrame(applyFocus);
+    }
+    if (typeof node.scrollIntoView === 'function') {
+      var reduceMotion = typeof global.matchMedia === 'function' &&
+        global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var scrollBehavior = reduceMotion ? 'auto' : 'smooth';
+      byId('decisionHandoff').dataset.focusScrollBehavior = scrollBehavior;
+      node.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
+    }
+  }
+
+  function applyFocusHandoff(contract) {
+    if (state.focusApplied) return;
+    state.focusApplied = true;
+    var request = state.focusRequest;
+    if (request.kind === 'none') return;
+    if (request.kind === 'invalid') {
+      focusHandoffNode(showHandoff('El enlace de próximo paso no es válido. El registro continúa en modo normal.', false));
+      return;
+    }
+    var suggestion = contract.suggestions.find(function(row) {
+      return row.priorityCode === request.priorityCode;
+    });
+    if (!suggestion) {
+      focusHandoffNode(showHandoff('Ese próximo paso ya no forma parte del brief vigente. No se abrió ni se creó ningún compromiso.', false));
+      return;
+    }
+    if (state.setupPending) {
+      focusHandoffNode(showHandoff('Próximo paso verificado, pero el registro de compromisos está pendiente. Sólo podés consultar la evidencia.', false));
+      return;
+    }
+
+    var card = Array.from(byId('decisionSuggestions').querySelectorAll('[data-priority-code]')).find(function(node) {
+      return node.dataset.priorityCode === suggestion.priorityCode;
+    });
+    var target = null;
+    if (suggestion.existingCommitmentId !== null) {
+      target = Array.from(byId('decisionSuggestions').querySelectorAll('[data-open-commitment]')).find(function(node) {
+        return node.dataset.openCommitment === suggestion.existingCommitmentId;
+      });
+      showHandoff('Próximo paso verificado: el compromiso ya existe. Revisalo antes de cambiar su estado.', true);
+    } else if (suggestion.available) {
+      target = card && card.querySelector('[data-create-priority]');
+      showHandoff('Próximo paso verificado: podés ofrecer crear el compromiso. La creación siempre requiere confirmación humana.', true);
+    } else {
+      target = card;
+      showHandoff('Próximo paso verificado en modo consulta. Tu perfil no puede crear este compromiso.', false);
+    }
+    focusHandoffNode(target || byId('decisionHandoff'));
   }
   function showLoadError(status) {
     var copy = {
@@ -462,6 +541,7 @@
     byId('decisionError').hidden = true;
     byId('decisionContent').hidden = false;
     setStatus('ready', statusMessage || 'Registro verificado', false);
+    applyFocusHandoff(contract);
     if (state.selectedCommitmentId) {
       var current = commitmentById(state.selectedCommitmentId);
       if (current) renderDrawer(current);
@@ -711,6 +791,7 @@
   async function loadLedger() {
     if (state.loading || state.mutating) return;
     state.loading = true;
+    state.focusApplied = false;
     showLoading();
     try {
       var allowed = typeof global.requireCapability === 'function' ? await global.requireCapability(REQUIRED_CAPABILITY) : false;
@@ -816,6 +897,7 @@
   }
   function init() {
     if (!byId('decisionLedger')) return;
+    state.focusRequest = parseFocusRequest(global.location ? global.location.search : '');
     installEvents();
     loadLedger();
   }

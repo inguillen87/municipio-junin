@@ -306,6 +306,14 @@
     return list;
   }
 
+  function buildStageDetails() {
+    var details = createElement('details', 'muni-onboarding__details');
+    var summary = createElement('summary', 'muni-onboarding__details-summary',
+      'Ver las ' + state.projection.journey.stages.length + ' etapas del recorrido');
+    details.append(summary, buildStages());
+    return details;
+  }
+
   function primaryButton(label, onClick) {
     var button = createElement('button', 'muni-onboarding__button muni-onboarding__button--primary', label);
     button.type = 'button';
@@ -329,7 +337,7 @@
         createElement('p', '', 'Nada se abre automáticamente. Vos decidís cuándo empezar y cada paso se marca de forma explícita.')
       );
       var newActions = createElement('div', 'muni-onboarding__actions');
-      newActions.appendChild(primaryButton('Empezar recorrido', beginJourney));
+      newActions.appendChild(primaryButton('Conocer mi espacio', beginJourney));
       panel.appendChild(newActions);
       return panel;
     }
@@ -400,8 +408,8 @@
       createElement('p', 'muni-onboarding__eyebrow', journey.title + ' · ' + journey.stages.length +
         ' etapas · ' + journey.estimatedMinutes + ' minutos'),
       title,
-      createElement('p', 'muni-onboarding__copy', 'Un recorrido breve y opcional por las herramientas habilitadas para tu función. No cambia permisos ni consulta datos adicionales.'),
-      summary, progressWrap, buildStages()
+      createElement('p', 'muni-onboarding__copy', 'Orientación opcional para tu función. No cambia permisos ni consulta datos adicionales.'),
+      summary, progressWrap, buildStageDetails()
     );
     var live = createElement('p', 'muni-onboarding__note');
     live.setAttribute('aria-live', 'polite');

@@ -6,6 +6,7 @@ import test from 'node:test';
 import { chromium } from 'playwright';
 import accessPolicy from '../shared/access-policy.cjs';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
+import { resolveMunicipalTaskCatalog } from '../js/municipal-task-catalog.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const ROLES = Object.values(accessPolicy.ROLES);
@@ -91,22 +92,6 @@ const DECISION_BRIEF = Object.freeze({
     'snapshot_reconciliation_not_monthly_series',
   ]),
 });
-const ACTION_CAPABILITIES = new Set([
-  'navigation.dashboard',
-  'navigation.reports',
-  'navigation.hacienda',
-  'navigation.grh-executive',
-  'navigation.organization-analytics',
-  'navigation.territory',
-  'navigation.data-quality',
-  'navigation.rrhh',
-  'navigation.grh-decisions',
-  'navigation.ai-assistant',
-  'navigation.audit',
-  'navigation.export',
-  'navigation.import',
-  'navigation.help',
-]);
 const BOTTOM_HREF = new Map([
   ['navigation.workspace', 'inicio.html'],
   ['navigation.dashboard', 'dashboard.html'],
@@ -271,19 +256,14 @@ function expectedBottom(access) {
   ];
 }
 
-function expectedWorkspaceActions(access) {
-  const capabilities = access.homeProfile.priorityCapabilities
-    .filter(capability => capability !== 'navigation.workspace' && ACTION_CAPABILITIES.has(capability));
-  if (access.capabilities.includes('navigation.organization-analytics') &&
-      !capabilities.includes('navigation.organization-analytics')) {
-    const dataQualityIndex = capabilities.indexOf('navigation.data-quality');
-    capabilities.splice(dataQualityIndex === -1 ? capabilities.length : dataQualityIndex, 0, 'navigation.organization-analytics');
-  }
-  if (access.capabilities.includes('navigation.grh-decisions') &&
-      !capabilities.includes('navigation.grh-decisions')) {
-    capabilities.push('navigation.grh-decisions');
-  }
-  return capabilities.slice(0, 4);
+function expectedWorkspaceActions(access, role) {
+  const catalog = resolveMunicipalTaskCatalog({
+    role,
+    variant: access.homeProfile.variant,
+    policyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+    capabilities: [...access.capabilities],
+  });
+  return catalog.tasks.slice(0, catalog.recommendedTaskIds.length).map(task => task.capability);
 }
 
 test('safe workspace renders seven role variants and gives Intendencia one governed executive brief', async t => {
@@ -318,7 +298,7 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
         return {
           actionCapabilities: privateLinks.map(link => link.dataset.capability),
           actionsBeforeGuide: Boolean(
-            document.querySelector('#workspaceActions').compareDocumentPosition(document.querySelector('#journeyList')) &
+            document.querySelector('#workspaceActions').compareDocumentPosition(document.querySelector('#muniguiaOnboardingMount')) &
             Node.DOCUMENT_POSITION_FOLLOWING
           ),
           bottom: [...document.querySelectorAll('.bottom-nav a, .bottom-nav button')]
@@ -331,7 +311,8 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
           territoryAction: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]')
             ? {
                 href: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]').getAttribute('href'),
-                text: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]').textContent,
+                text: document.querySelector('#workspaceActions a[data-capability="navigation.territory"]')
+                  .closest('[data-task-id]').textContent,
               }
             : null,
           targets,
@@ -354,7 +335,7 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
         };
       });
 
-      const expectedActions = expectedWorkspaceActions(expectedAccess);
+      const expectedActions = expectedWorkspaceActions(expectedAccess, role);
       assert.equal(result.variant, VARIANTS[role], `${role}:${viewport.width}:variant`);
       assert.equal(result.role, role, `${role}:${viewport.width}:server role must replace stale browser role`);
       assert.equal(result.busy, 'false');
@@ -364,8 +345,8 @@ test('safe workspace renders seven role variants and gives Intendencia one gover
       assert.ok(result.overflow <= 1, `${role}:${viewport.width}:overflow=${result.overflow}`);
       assert.deepEqual([...result.actionCapabilities].sort(), [...expectedActions].sort(), `${role}:${viewport.width}:actions`);
       if (['TENANT_USER', 'INSPECTOR', 'DEMO'].includes(role)) {
-        assert.equal(result.territoryAction?.href, '/territorio', `${role}:${viewport.width}:territory href`);
-        assert.match(result.territoryAction?.text || '', /Junín, Mendoza, con sus localidades/i, `${role}:${viewport.width}:territory copy`);
+        assert.equal(result.territoryAction?.href, '/territorio.html', `${role}:${viewport.width}:territory href`);
+        assert.match(result.territoryAction?.text || '', /Ubicar una localidad|referencia territorial/i, `${role}:${viewport.width}:territory copy`);
       }
       assert.ok(result.actionCapabilities.every(capability => expectedAccess.capabilities.includes(capability)));
       assert.match(result.policy, new RegExp(accessPolicy.ACCESS_POLICY_VERSION.replaceAll('.', '\\.')));
@@ -542,6 +523,7 @@ test('published high roles discover the aggregate staffing room in navigation an
     const { context, page } = await workspacePage(browser, baseUrl, subject, { width: 1440, height: 940 });
     await page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'networkidle' });
     await page.waitForSelector('#workspaceViews:not([hidden])');
+    await page.locator('#workspaceActionsSearch').fill('comparar áreas');
 
     const surface = await page.evaluate(() => ({
       action: document.querySelector('#workspaceActions a[data-capability="navigation.organization-analytics"]')?.getAttribute('href') || null,
@@ -551,12 +533,10 @@ test('published high roles discover the aggregate staffing room in navigation an
     }));
     const expected = ['TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'].includes(profile.role);
     assert.equal(surface.nav, expected ? '/estructura' : null, `${profile.email}:navigation`);
-    assert.equal(surface.action, expected ? '/estructura' : null, `${profile.email}:Inicio CTA`);
+    assert.equal(surface.action, expected ? '/estructura.html' : null, `${profile.email}:Inicio CTA`);
     if (expected) {
       assert.match(surface.navText, /Estructura y áreas de costo/);
-      assert.match(surface.actionText, /Estructura y áreas/);
-      assert.match(surface.actionText, /Compará dos áreas/i);
-      assert.match(surface.actionText, /últimos 24 meses/i);
+      assert.match(surface.actionText, /Empezar/);
     }
     await context.close();
   }
@@ -594,7 +574,7 @@ test('tenantless SUPER_ADMIN receives only workspace and help in the authoritati
     sidebar: [...document.querySelectorAll('.sidebar a.sb-item')].map(link => link.getAttribute('href')),
   }));
   assert.deepEqual(result.capabilities, ['session.read', 'navigation.workspace', 'navigation.help']);
-  assert.deepEqual(result.actions, []);
+  assert.deepEqual(result.actions, ['navigation.help']);
   assert.deepEqual(result.bottom, ['inicio.html', '#more']);
   assert.deepEqual(result.sidebar, ['inicio.html', 'cuentas-claras.html', 'ciudadano.html', 'manuales.html']);
   assert.equal(requestLog.some(entry => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(entry.path)), false);

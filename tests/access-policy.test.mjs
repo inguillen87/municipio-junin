@@ -99,6 +99,7 @@ const EXPECTED_NAV_HREFS = [
   'ia.html',
   'reportes.html',
   'hacienda.html',
+  '/corridas-grh',
   '/estructura',
   '/trayectoria',
   'movimientos-grh.html',
@@ -429,7 +430,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   const items = Array.from(navigation.definition.items, item => ({ ...item }));
   const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
 
-  assert.equal(navigation.definition.version, '2026-08-13.2');
+  assert.equal(navigation.definition.version, '2026-08-13.3');
   assert.deepEqual(
     Array.from(navigation.definition.groups, group => group.id),
     ['executive', 'people', 'territory', 'data'],
@@ -439,6 +440,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   assert.equal(new Set(items.map(item => item.label)).size, items.length, 'sidebar labels must be unique');
   assert.deepEqual(declaredCapabilities, [
     ...EXPECTED_NAV_CAPABILITIES,
+    'navigation.hacienda',
     'navigation.organization-analytics',
     'navigation.rrhh',
   ].sort());
@@ -446,6 +448,8 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
     'organization analytics exposes the situation room and the movement operations center');
   assert.equal(items.filter(item => item.capability === 'navigation.rrhh').length, 2,
     'RRHH exposes the governed domain explorer and the operational directory');
+  assert.equal(items.filter(item => item.capability === 'navigation.hacienda').length, 2,
+    'Hacienda exposes the financial dashboard and the secondary payroll-run control');
   assert.equal(navigation.catalog['navigation.rrhh'].href, 'rrhh.html');
   assert.equal(navigation.catalog['navigation.organization-analytics'].href, '/estructura');
   assert.equal(navigation.catalog['navigation.employment-actions'].href, '/trayectoria');
@@ -469,6 +473,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   assert.equal(items.find(item => item.id === 'decisiones-grh').label, 'Decisiones GRH');
   assert.equal(items.find(item => item.id === 'movimientos-grh').label, 'Movimientos de legajo');
   assert.equal(items.find(item => item.id === 'trayectoria').label, 'Trayectoria laboral');
+  assert.equal(items.find(item => item.id === 'corridas-grh').label, 'Corridas y marcas de cierre');
   assert.equal(items.filter(item => item.href === 'reportes.html').length, 1);
   assert.doesNotMatch(navigation.source, /access:\s*(?:'all'|\[)/);
 

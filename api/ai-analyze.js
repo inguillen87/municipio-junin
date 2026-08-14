@@ -10,6 +10,10 @@ import {
   inspectGrhDecisionBriefContract,
 } from './lib/grh-decision-brief-contract.js';
 import {
+  resolveGrhActionHandoff,
+  resolveFirstGrhActionHandoff,
+} from './lib/grh-action-handoff-contract.js';
+import {
   buildGrhDecisionBriefProjection,
 } from './lib/grh-decision-brief-projection.js';
 import {
@@ -28,11 +32,17 @@ import {
   readGrhEmploymentActionsArtifact,
 } from './grh-employment-actions.js';
 import {
+  readGrhPayrollRunControlArtifact,
+} from './grh-payroll-run-control.js';
+import {
   inspectGrhAbsenceInsightsContract,
 } from './lib/grh-absence-insights-contract.js';
 import {
   inspectGrhEmploymentActionsContract,
 } from './lib/grh-employment-actions-contract.js';
+import {
+  inspectGrhPayrollRunControlContract,
+} from './lib/grh-payroll-run-control-contract.js';
 import {
   inspectGrhWorkforceFinanceContract,
 } from './lib/grh-workforce-finance-contract.js';
@@ -84,6 +94,7 @@ const ACTION_ROUTE_CAPABILITIES = Object.freeze({
   '/areas-grh': 'navigation.rrhh',
   '/calidad': 'navigation.data-quality',
   '/control': 'navigation.data-quality',
+  '/corridas-grh': 'navigation.hacienda',
   '/dashboard': 'navigation.dashboard',
   '/decisiones-grh': 'navigation.grh-decisions',
   '/ejecutivo': 'navigation.grh-executive',
@@ -101,7 +112,7 @@ const ACTION_ROUTE_CAPABILITIES = Object.freeze({
 
 function actionRouteCapability(href) {
   if (typeof href !== 'string') return false;
-  const match = href.match(/^(\/[a-z0-9-]+(?:\.html)?)(?:[?#][A-Za-z0-9%._~!$&'()*+,;=:@/?-]*)?$/);
+  const match = href.match(/^(\/[a-z0-9-]+(?:\.html)?)(?:\?[A-Za-z0-9%._~!$&'()*+,;=:@/?-]*)?(?:#[A-Za-z0-9%._~!$&'()*+,;=:@/?-]*)?$/);
   if (!match) return false;
   const path = match[1].replace(/\.html$/, '');
   if (path === '/login') return null;
@@ -210,6 +221,7 @@ const FINANCE_COMPONENTS = Object.freeze([
 const SUPPORTED_INTENTS = Object.freeze([
   'manual_help',
   'decision_brief',
+  'payroll_run_control',
   'workforce_finance_overview',
   'workforce_finance_trend',
   'workforce_finance_composition',
@@ -241,6 +253,7 @@ export function createAiAnalyzeHandler({
   readWorkforceFinanceArtifactImpl = readGrhWorkforceFinanceArtifact,
   readAbsenceInsightsArtifactImpl = readGrhAbsenceInsightsArtifact,
   readEmploymentActionsArtifactImpl = readGrhEmploymentActionsArtifact,
+  readPayrollRunControlArtifactImpl = readGrhPayrollRunControlArtifact,
   buildDecisionBriefProjectionImpl = buildGrhDecisionBriefProjection,
   inspectDecisionBriefContractImpl = inspectGrhDecisionBriefContract,
   buildDomainCatalogProjectionImpl = buildGrhDomainCatalogProjection,
@@ -250,6 +263,7 @@ export function createAiAnalyzeHandler({
   inspectWorkforceFinanceContractImpl = inspectGrhWorkforceFinanceContract,
   inspectAbsenceInsightsContractImpl = inspectGrhAbsenceInsightsContract,
   inspectEmploymentActionsContractImpl = inspectGrhEmploymentActionsContract,
+  inspectPayrollRunControlContractImpl = inspectGrhPayrollRunControlContract,
   authorizeDirectoryImpl = authorizeGrhDirectoryRequest,
   synthesizeAnswerImpl = synthesizeMunicipalAnswer,
   directoryAuthorizationDependencies = {},
@@ -352,6 +366,7 @@ export function createAiAnalyzeHandler({
     const useAbsenceInsights = classification.intent === 'absence' &&
       !parsePeriodRequest(message).explicit;
     const useEmploymentActions = classification.intent === 'employment_actions';
+    const usePayrollRunControl = classification.intent === 'payroll_run_control';
     let directoryAuthorization = null;
     let directoryReadAudit = null;
     if (classification.intent === 'person_lookup') {
@@ -378,8 +393,9 @@ export function createAiAnalyzeHandler({
         workforceFinance: null,
         absenceInsights: null,
         employmentActions: null,
+        payrollRunControl: null,
       };
-      if (classification.intent === 'decision_brief') {
+      if (classification.intent === 'decision_brief' || usePayrollRunControl) {
         const decisionBrief = buildDecisionBriefProjectionImpl(executive, quality, close);
         if (!inspectDecisionBriefContractImpl(decisionBrief)?.ok ||
             !projectionMatchesAssistantSource(decisionBrief, provenance)) {
@@ -441,6 +457,19 @@ export function createAiAnalyzeHandler({
         }
         assistantData.employmentActions = employmentActions;
       }
+      if (usePayrollRunControl) {
+        const payrollRunControl = await readPayrollRunControlArtifactImpl({
+          environment,
+          expectedSourceSha256: provenance.sourceSha256,
+        });
+        if (!inspectPayrollRunControlContractImpl(payrollRunControl)?.ok ||
+            !projectionMatchesAssistantSource(payrollRunControl, provenance, {
+              requireLatestPeriod: false,
+            })) {
+          throw new Error('GRH payroll run control invalid');
+        }
+        assistantData.payrollRunControl = payrollRunControl;
+      }
       const unfilteredAnswer = classification.intent === 'person_lookup'
         ? await buildPrivateDirectoryResponse({
           message,
@@ -481,6 +510,12 @@ export function createAiAnalyzeHandler({
             assistantData.employmentActions.classification.ruleVersion,
         };
       }
+      if (!nominal && usePayrollRunControl) {
+        responseProvenance = {
+          ...responseProvenance,
+          payrollRunControlSchemaVersion: assistantData.payrollRunControl.schemaVersion,
+        };
+      }
       const copilot = await synthesizeAnswerImpl({
         mode: requestedMode,
         classification,
@@ -495,23 +530,20 @@ export function createAiAnalyzeHandler({
         externalProvider: false,
         generated: false,
       };
+      let dataSource = 'grh_executive_portable_contract';
+      if (answer.intent === 'close_explanation') dataSource = 'grh_close_governed_contract';
+      if (answer.intent === 'decision_brief') dataSource = 'grh_decision_brief_governed_contract';
+      if (['domain_catalog', 'data_inventory'].includes(answer.intent)) {
+        dataSource = 'grh_domain_catalog_governed_contract';
+      }
+      if (FINANCE_INTENTS.has(answer.intent)) dataSource = 'grh_workforce_finance_governed_contract';
+      if (useAbsenceInsights) dataSource = 'grh_absence_insights_governed_contract';
+      if (useEmploymentActions) dataSource = 'grh_employment_actions_governed_contract';
+      if (usePayrollRunControl) dataSource = 'grh_payroll_run_control_governed_contract';
+      if (nominal) dataSource = 'grh_directory_private_contract';
       const payload = buildAssistantPayload(presentedAnswer, responseProvenance, {
         available: true,
-        source: nominal
-          ? 'grh_directory_private_contract'
-          : (useEmploymentActions
-            ? 'grh_employment_actions_governed_contract'
-          : (useAbsenceInsights
-            ? 'grh_absence_insights_governed_contract'
-            : (FINANCE_INTENTS.has(answer.intent)
-            ? 'grh_workforce_finance_governed_contract'
-            : (['domain_catalog', 'data_inventory'].includes(answer.intent)
-              ? 'grh_domain_catalog_governed_contract'
-            : (answer.intent === 'decision_brief'
-              ? 'grh_decision_brief_governed_contract'
-              : (answer.intent === 'close_explanation'
-                ? 'grh_close_governed_contract'
-                : 'grh_executive_portable_contract')))))),
+        source: dataSource,
         snapshotAsOf: provenance.snapshotAsOf,
         historyUsed: nominal && answer.answer?.directory?.status === 'matched',
       }, engine);
@@ -522,29 +554,47 @@ export function createAiAnalyzeHandler({
       const directoryFailure = classification.intent === 'person_lookup';
       const absenceInsightsFailure = useAbsenceInsights;
       const employmentActionsFailure = useEmploymentActions;
+      const payrollRunControlFailure = usePayrollRunControl;
       if (directoryFailure && directoryReadAudit) {
         await directoryReadAudit.denyPendingRead();
       }
-      console.error(directoryFailure
-        ? '[GRH-ASSISTANT] Directorio privado no disponible'
-        : (employmentActionsFailure
-          ? '[GRH-ASSISTANT] Lectura agregada de actuaciones laborales no disponible'
-        : (absenceInsightsFailure
-          ? '[GRH-ASSISTANT] Lectura agregada de ausencias no disponible'
-          : '[GRH-ASSISTANT] Proyección portable no disponible')));
+      let unavailable = {
+        log: '[GRH-ASSISTANT] Proyección portable no disponible',
+        error: 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.',
+        code: 'GRH_CONTRACT_UNAVAILABLE',
+      };
+      if (absenceInsightsFailure) {
+        unavailable = {
+          log: '[GRH-ASSISTANT] Lectura agregada de ausencias no disponible',
+          error: 'La lectura explicada de ausencias no está disponible. No se reutilizó otra fuente.',
+          code: 'GRH_ABSENCE_INSIGHTS_UNAVAILABLE',
+        };
+      }
+      if (employmentActionsFailure) {
+        unavailable = {
+          log: '[GRH-ASSISTANT] Lectura agregada de actuaciones laborales no disponible',
+          error: 'Las actuaciones laborales agregadas no están disponibles. No se reutilizó otra fuente.',
+          code: 'GRH_EMPLOYMENT_ACTIONS_UNAVAILABLE',
+        };
+      }
+      if (payrollRunControlFailure) {
+        unavailable = {
+          log: '[GRH-ASSISTANT] Control agregado de corridas no disponible',
+          error: 'El control agregado de corridas no está disponible. No se reutilizó otra fuente.',
+          code: 'GRH_PAYROLL_RUN_CONTROL_UNAVAILABLE',
+        };
+      }
+      if (directoryFailure) {
+        unavailable = {
+          log: '[GRH-ASSISTANT] Directorio privado no disponible',
+          error: 'El directorio GRH privado no está disponible. No se generó una respuesta alternativa.',
+          code: 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE',
+        };
+      }
+      console.error(unavailable.log);
       return res.status(503).json({
-        error: directoryFailure
-          ? 'El directorio GRH privado no está disponible. No se generó una respuesta alternativa.'
-          : (employmentActionsFailure
-            ? 'Las actuaciones laborales agregadas no están disponibles. No se reutilizó otra fuente.'
-          : (absenceInsightsFailure
-            ? 'La lectura explicada de ausencias no está disponible. No se reutilizó otra fuente.'
-            : 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.')),
-        code: directoryFailure
-          ? 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE'
-          : (employmentActionsFailure
-            ? 'GRH_EMPLOYMENT_ACTIONS_UNAVAILABLE'
-            : (absenceInsightsFailure ? 'GRH_ABSENCE_INSIGHTS_UNAVAILABLE' : 'GRH_CONTRACT_UNAVAILABLE')),
+        error: unavailable.error,
+        code: unavailable.code,
         engine: { id: ENGINE_ID, externalProvider: false, generated: false },
       });
     }
@@ -1332,6 +1382,9 @@ export function classifyIntent(rawMessage) {
   }
   const manualTopic = classifyManualHelp(rawMessage);
   if (manualTopic) return { intent: 'manual_help', policy: 'allowed', manualTopic };
+  if (/\b(?:corridas? de liquidacion|control de corridas?|cabeceras? (?:tecnicas? )?(?:de )?(?:liquidacion|calculo)|histocal)\b/.test(message)) {
+    return { intent: 'payroll_run_control', policy: 'allowed' };
+  }
   if (/\b(hola|buen dia|buenas|ayuda|que podes responder|como funciona)\b/.test(message)) {
     return { intent: 'help', policy: 'allowed' };
   }
@@ -1506,6 +1559,14 @@ export function buildDeterministicAnswer(
     case 'decision_brief':
       result = decisionBriefAnswer(context);
       break;
+    case 'payroll_run_control':
+      result = buildPayrollRunControlAssistantAnswer(
+        context.payrollRunControl,
+        Array.isArray(context.decisionBrief?.priorities)
+          ? context.decisionBrief.priorities.map(priority => priority.code)
+          : [],
+      );
+      break;
     case 'workforce_finance_overview':
     case 'workforce_finance_trend':
     case 'workforce_finance_composition':
@@ -1675,6 +1736,10 @@ function semanticContext(
       assistantData?.employmentActions,
       executive.source,
     ),
+    payrollRunControl: validAssistantPayrollRunControl(
+      assistantData?.payrollRunControl,
+      executive.source,
+    ),
     baseCaveats: [],
   };
 }
@@ -1725,6 +1790,17 @@ function validAssistantEmploymentActions(value, source) {
       !sameAssistantSource(value.source, source)) {
     const error = new Error('El contrato employment-actions GRH no es válido.');
     error.code = 'GRH_EMPLOYMENT_ACTIONS_CONTRACT_INVALID';
+    throw error;
+  }
+  return value;
+}
+
+function validAssistantPayrollRunControl(value, source) {
+  if (value === undefined || value === null) return null;
+  if (!inspectGrhPayrollRunControlContract(value)?.ok ||
+      !sameAssistantSource(value.source, source)) {
+    const error = new Error('El contrato payroll-run-control GRH no es válido.');
+    error.code = 'GRH_PAYROLL_RUN_CONTROL_CONTRACT_INVALID';
     throw error;
   }
   return value;
@@ -2086,6 +2162,9 @@ function decisionBriefAnswer(context) {
     review_recommended: 'requiere revisión',
     context_only: 'aporta contexto',
   };
+  const actionHandoff = resolveFirstGrhActionHandoff(
+    brief.priorities.map(priority => priority.code),
+  );
   const findings = brief.priorities.map(priority =>
     priorityLabels[priority.code] || 'Hay un punto adicional que necesita revisión.');
   if (brief.change.status === 'released') {
@@ -2113,12 +2192,12 @@ function decisionBriefAnswer(context) {
       '¿Qué registros fueron apartados por fechas para revisar?',
     ],
     actions: [
-      {
+      ...(actionHandoff ? [{
         id: 'open_grh_decisions',
         label: 'Registrar próximos pasos',
-        href: '/decisiones-grh',
+        href: actionHandoff.href,
         requiredCapability: 'navigation.grh-decisions',
-      },
+      }] : []),
       {
         id: 'open_hacienda_reconciliation',
         label: 'Revisar diferencias en Hacienda',
@@ -2140,6 +2219,76 @@ function decisionBriefAnswer(context) {
     ],
     visual: decisionBriefVisual(brief),
     resolvedPeriod: brief.period,
+  };
+}
+
+export function buildPayrollRunControlAssistantAnswer(control, currentPriorityCodes = []) {
+  if (!inspectGrhPayrollRunControlContract(control)?.ok) {
+    return assistantContractUnavailable(
+      'Control de corridas no disponible',
+      'No pudimos verificar el contrato agregado de cabeceras y detalle de liquidación.',
+      'GRH_PAYROLL_RUN_CONTROL_UNAVAILABLE',
+    );
+  }
+  const currentCodes = Array.isArray(currentPriorityCodes) ? currentPriorityCodes : [];
+  const quarantineIsActionable = control.quarantine.signalCode === 'temporal_quarantine_present' &&
+    control.quarantine.status === 'attention_required' &&
+    (control.quarantine.runHeaders > 0 || control.quarantine.calculationRows > 0);
+  const actionHandoff = quarantineIsActionable
+    ? resolveGrhActionHandoff({
+      currentPriorityCodes: currentCodes,
+      priorityCode: 'temporal_quarantine_present',
+    })
+    : null;
+  const current = control.currentYear;
+  const coverage = control.coverage;
+  const quarantine = control.quarantine;
+  const limitCopy = {
+    historical_snapshot_not_realtime: 'La información corresponde al respaldo del 6 de agosto de 2026 y no se actualiza en tiempo real.',
+    close_flag_not_accounting_close: 'La marca de cierre es un dato operativo; no acredita cierre contable, pago ni presentación legal.',
+    missing_close_flag_not_open: 'Una marca de cierre ausente significa sin dato informado; no debe leerse automáticamente como corrida abierta.',
+    calculation_rows_not_payment: 'La presencia de detalle acredita filas técnicas asociadas; no acredita una liquidación pagada.',
+    technical_logs_not_confirmed_errors: 'La cobertura técnica de logs no permite afirmar errores, causas ni resultados individuales.',
+    no_budget_execution_or_bank_payment: 'Esta vista no integra ejecución presupuestaria, tesorería, transferencias bancarias ni declaraciones juradas.',
+  };
+
+  return {
+    title: `Control de corridas de liquidación · ${control.source.firstValidPeriod} a ${control.source.lastValidPeriod}`,
+    summary: `La fuente contiene ${formatInteger(coverage.sourceRunHeaders)} cabeceras técnicas: ${formatInteger(coverage.validRunHeaders)} cumplen la política temporal y ${formatInteger(coverage.quarantinedRunHeaders)} quedaron apartadas para revisión. Es control técnico de liquidación, no evidencia de pago ni cierre contable.`,
+    findings: [
+      `${formatInteger(coverage.validHeadersWithCalculation)} de ${formatInteger(coverage.validRunHeaders)} cabeceras válidas tienen detalle de cálculo asociado; ${formatInteger(coverage.validHeadersWithoutCalculation)} no lo tienen.`,
+      `En ${current.year}, hasta ${current.throughPeriod}, se observaron ${formatInteger(current.runHeaders)} corridas: las ${formatInteger(current.headersWithCalculation)} tienen detalle y las ${formatInteger(current.headersWithCloseFlag)} tienen marca operativa de cierre. El año es parcial.`,
+      `La cuarentena reúne ${formatInteger(quarantine.runHeaders)} cabeceras y ${formatInteger(quarantine.calculationRows)} filas de cálculo asociadas (${formatPercent(quarantine.calculationRowRatePct)} del detalle).`,
+      `La cobertura técnica de logs comprende ${formatInteger(control.logCoverage.sourceRows)} filas vinculadas a ${formatInteger(control.logCoverage.runKeys)} clave de corrida; no permite inferir errores, causas ni resultados individuales.`,
+    ],
+    evidence: [
+      metric('Cabeceras válidas', formatInteger(coverage.validRunHeaders), `${formatPercent(coverage.validHeaderRatePct)} de ${formatInteger(coverage.sourceRunHeaders)} cabeceras fuente.`),
+      metric('Con detalle asociado', formatInteger(coverage.validHeadersWithCalculation), `${formatPercent(coverage.validHeaderWithCalculationRatePct)} de las cabeceras válidas.`),
+      metric('Cabeceras en cuarentena', formatInteger(quarantine.runHeaders), `${formatInteger(quarantine.headersWithCalculation)} con detalle y ${formatInteger(quarantine.headersWithoutCalculation)} sin detalle.`),
+      metric(`Corridas ${current.year}`, formatInteger(current.runHeaders), `Enero a ${current.throughPeriod}; año parcial.`),
+    ],
+    caveats: control.limits.map(limit => limitCopy[limit.code]).filter(Boolean),
+    nextQuestions: [
+      '¿Qué cobertura de detalle tienen las corridas de liquidación?',
+      '¿Cuántas corridas de liquidación quedaron en cuarentena?',
+      '¿Qué acción sigue para las corridas de liquidación en cuarentena?',
+    ],
+    actions: [
+      ...(actionHandoff ? [{
+        id: 'open_temporal_quarantine_commitment',
+        label: 'Llevar la revisión a compromisos',
+        href: actionHandoff.href,
+        requiredCapability: 'navigation.grh-decisions',
+      }] : []),
+      {
+        id: 'open_payroll_run_evidence',
+        label: 'Abrir corridas y marcas de cierre',
+        href: '/corridas-grh',
+        requiredCapability: 'navigation.hacienda',
+      },
+    ],
+    source: `Fuente: ${control.source.canonicalSystem} · control agregado de corridas · copia al ${control.source.snapshotAsOf} · no tiempo real.`,
+    resolvedPeriod: current.throughPeriod,
   };
 }
 

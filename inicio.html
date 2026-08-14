@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/workspace-executive-summary.css">
   <link rel="stylesheet" href="css/muniguia-onboarding.css">
+  <link rel="stylesheet" href="css/task-center.css">
   <script>
     (function applyStoredTheme() {
       try {
@@ -205,6 +206,7 @@
       gap: 18px;
       margin-top: 18px;
     }
+    .ws-grid--single { grid-template-columns: 1fr; }
     .ws-panel {
       min-width: 0;
       padding: clamp(20px, 3vw, 30px);
@@ -217,65 +219,11 @@
     .ws-panel h2 { margin: 7px 0 0; font-size: clamp(20px, 2.4vw, 27px); letter-spacing: -.025em; }
     .ws-panel-copy { margin: 9px 0 0; color: var(--ws-muted); font-size: 13px; line-height: 1.6; }
 
-    .ws-journey { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: journey; }
-    .ws-journey li {
-      display: grid;
-      grid-template-columns: 40px minmax(0, 1fr);
-      gap: 13px;
-      align-items: start;
-      color: var(--ws-soft);
-      font-size: 13px;
-      line-height: 1.55;
-      counter-increment: journey;
-    }
-    .ws-journey li::before {
-      display: grid;
-      width: 40px;
-      height: 40px;
-      place-items: center;
-      border: 1px solid var(--ws-border);
-      border-radius: 10px;
-      background: var(--ws-raised);
-      color: var(--ws-accent);
-      content: counter(journey, decimal-leading-zero);
-      font-size: 10px;
-      font-weight: 900;
-    }
-
     .ws-limits { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
     .ws-limits li { position: relative; padding-left: 21px; color: var(--ws-soft); font-size: 13px; line-height: 1.55; }
     .ws-limits li::before { position: absolute; top: .57em; left: 0; width: 8px; height: 8px; border: 2px solid var(--ws-amber); border-radius: 50%; content: ""; }
 
-    .ws-actions-section { margin-top: 28px; }
-    .ws-section-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
-    .ws-section-heading h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
-    .ws-section-heading p { max-width: 620px; margin: 0; color: var(--ws-muted); font-size: 13px; line-height: 1.5; }
-    .ws-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .ws-action {
-      display: flex;
-      min-height: 132px;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 18px;
-      border: 1px solid var(--ws-border);
-      border-radius: 14px;
-      background: var(--ws-surface);
-      color: var(--ws-text);
-      text-decoration: none;
-      transition: border-color .18s ease, transform .18s ease, background .18s ease;
-    }
-    .ws-action:hover { border-color: var(--ws-border-strong); background: var(--ws-raised); transform: translateY(-2px); }
-    .ws-action:focus-visible { outline: 3px solid var(--ws-accent); outline-offset: 3px; }
-    .ws-action-tag { color: var(--ws-cyan); font-size: 10px; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
-    .ws-action strong { display: block; margin-top: 8px; font-size: 16px; }
-    .ws-action p { margin: 8px 0 0; color: var(--ws-muted); font-size: 12px; line-height: 1.5; }
-    .ws-action-go { align-self: flex-end; color: var(--ws-accent); font-size: 18px; }
-    .ws-empty { padding: 18px; border: 1px dashed var(--ws-border); border-radius: 12px; color: var(--ws-muted); font-size: 13px; }
+    #workspaceActions { margin-top: 28px; }
 
     .ws-public {
       display: flex;
@@ -429,25 +377,22 @@
           </aside>
         </section>
 
+        <section
+          class="municipal-task-finder"
+          id="workspaceActions"
+          data-municipal-task-finder
+          data-task-finder-mode="workspace"
+          aria-label="Centro de acción municipal"
+        ></section>
+
+        <nav class="ws-public" aria-label="Servicios públicos">
+          <a href="cuentas-claras.html" data-public="true">Cuentas Claras</a>
+          <a href="ciudadano.html" data-public="true">Portal Ciudadano</a>
+        </nav>
+
         <section id="muniguiaOnboardingMount" hidden aria-label="Recorrido inicial"></section>
 
-        <section class="ws-actions-section" aria-labelledby="actionsTitle">
-          <div class="ws-section-heading">
-            <h2 id="actionsTitle">Tus accesos principales</h2>
-            <p>Mostramos hasta cuatro herramientas útiles para tu función. El menú conserva el resto de los accesos autorizados.</p>
-          </div>
-          <div class="ws-actions" id="workspaceActions"></div>
-          <nav class="ws-public" aria-label="Servicios públicos">
-            <a href="cuentas-claras.html" data-public="true">Cuentas Claras</a>
-            <a href="ciudadano.html" data-public="true">Portal Ciudadano</a>
-          </nav>
-        </section>
-
-        <div class="ws-grid">
-          <section class="ws-panel" aria-labelledby="journeyTitle">
-            <div class="ws-panel-head"><span>Recorrido recomendado</span><h2 id="journeyTitle">Tres pasos para avanzar</h2></div>
-            <ol class="ws-journey" id="journeyList"></ol>
-          </section>
+        <div class="ws-grid ws-grid--single">
           <section class="ws-panel" aria-labelledby="limitsTitle">
             <div class="ws-panel-head"><span>Antes de avanzar</span><h2 id="limitsTitle">Qué tenés que tener en cuenta</h2></div>
             <ul class="ws-limits" id="limitsList"></ul>
@@ -480,6 +425,7 @@
   <script src="js/grh-decision-brief-data.js"></script>
   <script src="js/workspace-executive-summary.js"></script>
   <script src="js/muniguia-onboarding.js"></script>
+  <script src="js/municipal-task-center.js"></script>
   <script>
     (function () {
       'use strict';
@@ -607,23 +553,6 @@
           ])
         })
       });
-      var ACTIONS = Object.freeze({
-        'navigation.dashboard': Object.freeze({ href: 'dashboard.html', label: 'Panorama de personal', copy: 'Indicadores clave, alertas y qué necesita atención.', tag: 'Decidir' }),
-        'navigation.grh-decisions': Object.freeze({ href: 'decisiones-grh.html', label: 'Centro de decisiones', copy: 'Registrá qué se decidió, quién es responsable y cuándo se revisa.', tag: 'Seguir' }),
-        'navigation.reports': Object.freeze({ href: 'reportes.html', label: 'Reportes', copy: 'Informes por mes y fuente, listos para revisar.', tag: 'Informar' }),
-        'navigation.hacienda': Object.freeze({ href: 'hacienda.html', label: 'Hacienda y nómina', copy: 'Evolución de liquidaciones, conceptos y comparaciones mensuales.', tag: 'Controlar' }),
-        'navigation.grh-executive': Object.freeze({ href: '/ejecutivo', label: 'Resumen ejecutivo de personal', copy: 'Personal, liquidaciones, áreas y alertas del último mes disponible.', tag: 'Decidir' }),
-        'navigation.organization-analytics': Object.freeze({ href: '/estructura', label: 'Estructura y áreas', copy: 'Cómo se distribuyen el personal y las liquidaciones entre las áreas.', tag: 'Gestionar' }),
-        'navigation.territory': Object.freeze({ href: '/territorio', label: 'Centro territorial', copy: 'Mapa oficial de Junín, Mendoza, con sus localidades.', tag: 'Ubicar' }),
-        'navigation.data-quality': Object.freeze({ href: '/calidad', label: 'Calidad de datos', copy: 'Qué información está completa, qué falta revisar y de dónde proviene.', tag: 'Revisar' }),
-        'navigation.rrhh': Object.freeze({ href: 'areas-grh.html', label: 'Información de personal', copy: 'Personas, ausencias, licencias, liquidaciones y movimientos disponibles.', tag: 'Consultar' }),
-        'navigation.ai-assistant': Object.freeze({ href: 'ia.html', label: 'Asistente de personal', copy: 'Hacé preguntas concretas sobre personas, licencias, ausencias y calidad.', tag: 'Preguntar' }),
-        'navigation.audit': Object.freeze({ href: 'auditoria.html', label: 'Registro de cargas', copy: 'Qué archivos se cargaron, cuándo y con cuántos registros.', tag: 'Revisar' }),
-        'navigation.export': Object.freeze({ href: 'exportar.html', label: 'Descargas autorizadas', copy: 'Informes preparados para descargar según tu función.', tag: 'Descargar' }),
-        'navigation.import': Object.freeze({ href: 'importar.html', label: 'Cargar información', copy: 'Subí un archivo, elegí el mes y revisá los errores antes de continuar.', tag: 'Cargar' }),
-        'navigation.help': Object.freeze({ href: 'manuales.html', label: 'Manual y ayuda', copy: 'Guías simples, límites de uso y qué hacer ante un problema.', tag: 'Ayuda' })
-      });
-
       function setText(id, value) { document.getElementById(id).textContent = value; }
       function appendItems(container, values) {
         container.replaceChildren();
@@ -638,61 +567,6 @@
         var tenant = user.tenant && typeof user.tenant === 'object' ? user.tenant : null;
         var name = tenant && (tenant.shortName || tenant.name);
         return typeof name === 'string' && name.trim() ? name.trim() : 'Municipio asignado';
-      }
-      function canNavigate(projection, capability) {
-        return Boolean(ACTIONS[capability]) && projection.capabilities.indexOf(capability) !== -1;
-      }
-      function orderedActionCapabilities(projection) {
-        var ordered = [];
-        var candidates = projection.homeProfile.priorityCapabilities.slice();
-        var organizationIndex = candidates.indexOf('navigation.data-quality');
-        if (projection.capabilities.indexOf('navigation.organization-analytics') !== -1 &&
-            candidates.indexOf('navigation.organization-analytics') === -1) {
-          candidates.splice(organizationIndex === -1 ? candidates.length : organizationIndex, 0, 'navigation.organization-analytics');
-        }
-        candidates.push('navigation.grh-decisions');
-        candidates.forEach(function(capability) {
-          if (capability !== 'navigation.workspace' && canNavigate(projection, capability) &&
-              ordered.indexOf(capability) === -1) {
-            ordered.push(capability);
-          }
-        });
-        return ordered.slice(0, 4);
-      }
-      function actionCopy(capability, action, projection) {
-        if (capability === 'navigation.organization-analytics' &&
-            projection.capabilities.indexOf('navigation.hacienda') !== -1) {
-          return 'Compará dos áreas por cantidad de personas, liquidaciones y evolución de los últimos 24 meses.';
-        }
-        return action.copy;
-      }
-      function renderActions(projection) {
-        var container = document.getElementById('workspaceActions');
-        var capabilities = orderedActionCapabilities(projection);
-        container.replaceChildren();
-        if (!capabilities.length) {
-          var empty = document.createElement('p');
-          empty.className = 'ws-empty';
-          empty.textContent = 'No hay módulos privados adicionales habilitados para este perfil.';
-          container.appendChild(empty);
-          return;
-        }
-        capabilities.forEach(function(capability) {
-          var action = ACTIONS[capability];
-          var link = document.createElement('a');
-          var header = document.createElement('div');
-          var tag = document.createElement('span');
-          var title = document.createElement('strong');
-          var copy = document.createElement('p');
-          var go = document.createElement('span');
-          link.className = 'ws-action';
-          link.href = action.href;
-          link.dataset.capability = capability;
-          tag.className = 'ws-action-tag'; tag.textContent = action.tag;
-          title.textContent = action.label; copy.textContent = actionCopy(capability, action, projection);
-          go.className = 'ws-action-go'; go.setAttribute('aria-hidden', 'true'); go.textContent = '→';
-          header.append(tag, title, copy); link.append(header, go); container.appendChild(link);
-        });
       }
       function showNotice() {
         var notice = '';
@@ -713,6 +587,7 @@
       }
       function showError() {
         if (window.MuniGuiaOnboarding) window.MuniGuiaOnboarding.unmount();
+        if (window.MuniTaskCenter) window.MuniTaskCenter.unmount();
         document.getElementById('workspaceViews').hidden = true;
         var error = document.getElementById('workspaceError');
         error.hidden = false;
@@ -733,9 +608,7 @@
         setText('capabilityChip', 'Acceso verificado');
         setText('sessionState', 'Acceso confirmado');
         setText('policyVersion', 'Versión de seguridad ' + projection.user.accessPolicyVersion + '.');
-        appendItems(document.getElementById('journeyList'), experience.journey);
         appendItems(document.getElementById('limitsList'), experience.limits);
-        renderActions(projection);
         document.getElementById('workspaceViews').hidden = false;
         document.getElementById('workspaceError').hidden = true;
         document.getElementById('workspaceMain').setAttribute('aria-busy', 'false');
@@ -748,6 +621,14 @@
             projection,
             document.getElementById('muniguiaOnboardingMount')
           );
+        }
+        if (window.MuniTaskCenter) {
+          void window.MuniTaskCenter.mount({
+            role: projection.user.role,
+            variant: projection.homeProfile.variant,
+            capabilities: projection.capabilities.slice(),
+            policyVersion: projection.user.accessPolicyVersion
+          });
         }
       }
       async function init() {

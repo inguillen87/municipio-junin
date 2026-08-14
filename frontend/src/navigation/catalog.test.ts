@@ -43,11 +43,11 @@ describe('React navigation catalog adapter', () => {
     installWindow(browserDefinition());
     const definition = getNavigationDefinition();
     expect(definition).not.toBeNull();
-    expect(definition?.version).toBe('2026-08-13.2');
+    expect(definition?.version).toBe('2026-08-13.3');
     expect(definition?.groups.map(group => group.id)).toEqual([
       'executive', 'people', 'territory', 'data',
     ]);
-    expect(definition?.items).toHaveLength(20);
+    expect(definition?.items).toHaveLength(21);
     expect(Object.isFrozen(definition)).toBe(true);
     expect(Object.isFrozen(definition?.groups)).toBe(true);
     expect(Object.isFrozen(definition?.items)).toBe(true);
@@ -148,12 +148,14 @@ describe('React navigation catalog adapter', () => {
     expect(getNavigationDefinition()).toBeNull();
 
     const invalidPublic = structuredClone(source);
-    invalidPublic.items[12]!.public = false;
+    const publicItem = invalidPublic.items.find(item => item.id === 'cuentas');
+    if (publicItem) publicItem.public = false;
     installWindow(deepFreeze(invalidPublic));
     expect(getNavigationDefinition()).toBeNull();
 
     const duplicatePrimary = structuredClone(source);
-    duplicatePrimary.items[9]!.primary = true;
+    const secondaryHacienda = duplicatePrimary.items.find(item => item.id === 'corridas-grh');
+    if (secondaryHacienda) secondaryHacienda.primary = true;
     installWindow(deepFreeze(duplicatePrimary));
     expect(getNavigationDefinition()).toBeNull();
   });

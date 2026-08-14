@@ -165,6 +165,19 @@ const PAGES = deepFreeze({
       { id: 'explore-employment-action-categories', selector: '#employmentActionsCategories', title: 'Abrí las categorías', copy: 'Leé las barras como cantidades de actuaciones documentadas y mantené agrupadas las categorías pequeñas protegidas.' },
     ],
   },
+  payrollRunControl: {
+    href: 'corridas-grh.html',
+    aliases: ['/corridas-grh', '/corridas-grh.html'],
+    label: 'Corridas y marcas de cierre',
+    objective: 'Separá cabeceras, detalle de cálculo y marcas operativas sin interpretarlas como pago o cierre contable.',
+    requiredCapability: 'navigation.hacienda',
+    manualAnchor: 'corridas-grh',
+    steps: [
+      { id: 'understand-payroll-run-scope', selector: '#payrollRunSummary', title: 'Entendé qué controla esta vista', copy: 'Separá cabecera, detalle de cálculo y marca operativa sin interpretarlos como pago o cierre contable.' },
+      { id: 'read-payroll-run-series', selector: '#payrollRunTimeline', title: 'Leé la serie por período', copy: 'Compará cantidad de corridas, rango efectivo y presencia de detalle o marca en la ventana elegida.' },
+      { id: 'review-payroll-run-evidence', selector: '#payrollRunReview', title: 'Revisá cobertura y cuarentena', copy: 'Distinguí corridas válidas, huecos de detalle y registros temporales separados antes de decidir un saneamiento.' },
+    ],
+  },
   movementOperations: {
     href: 'movimientos-grh.html',
     aliases: ['/movimientos-grh', '/movimientos-grh.html'],
@@ -318,6 +331,7 @@ const ASSISTANT_QUESTIONS = deepFreeze({
   grhExecutive: '¿Cómo interpreto el resumen ejecutivo GRH?',
   organizationAnalytics: '¿Cómo uso Estructura y centros de costo?',
   employmentActions: '¿Cómo interpreto la trayectoria laboral documentada?',
+  payrollRunControl: '¿Cómo reviso el control de corridas y marcas de cierre?',
   movementOperations: '¿Cómo interpreto la trayectoria y los movimientos documentados?',
   territory: '¿Cómo verifico la fuente del Centro territorial?',
   quality: '¿Cómo verifico el origen y la calidad de los datos?',

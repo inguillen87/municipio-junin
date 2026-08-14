@@ -65,6 +65,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Centro Ejecutivo RRHH | Implementado localmente | Directorio privado `grh-directory-v3`: situación laboral informada por fechas, catálogos de contrato/revista, señal separada de participación en cálculo de julio de 2026 y cronologías acotadas; no certifica vigencia contractual ni pago |
 | Estructura y áreas de costo | Validada localmente | React + TypeScript, seis KPI, exploradores de clasificaciones y centros de costo del cálculo, dos series históricas, matriz 5×5, comparador y acciones hacia Hacienda/BOT; contrato `grh-organization-analytics-v2`, k=10 y sin directorio nominal |
 | Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
+| Corridas y marcas de cierre | Validado localmente | Cabeceras, detalle asociado, marcas operativas y cuarentena por período; no prueba pago ni cierre contable |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
 | Comparación de gestiones | Verificada en Production | Compara dos tramos históricos de 972 días con la misma duración; contrato, privacidad y recorrido autenticado verificados sobre el alias estable |
 | Preparación GRH + PERSONAS | Implementada localmente | Manifiesto auxiliar, matcher versionado, contrato agregado `grh-personas-linkage-readiness-v1` y lectura municipal; no mezcla fichas ni cambia KPI GRH |
@@ -184,9 +185,12 @@ Preview/Production y recorridos autenticados por rol.
 
 ## Privacidad de los artefactos
 
-`api/_data/*.json` y `docs/data/*.json` se usan sólo para validación local y
-están ignorados por Git y Vercel. Este repositorio es público: esos archivos
-**no se deben commitear**.
+`docs/data/*.json` y los artefactos privados o nominales de `api/_data`
+se usan sólo para validación local y permanecen fuera de Git y Vercel. Sólo se
+versionan y empaquetan los artefactos agregados que tienen contrato exacto,
+validación reproducible, exclusión de PII y una excepción allowlisted en
+`.gitignore` y `.vercelignore`. Los dumps, perfiles nominales y artefactos
+sin esa aprobación **no se deben commitear**.
 
 El destino estable de Producción aplica la migración privada y materializa los
 contratos:

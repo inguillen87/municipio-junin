@@ -3,7 +3,7 @@
 Versión documental: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
 Estado: release público `v1.10.0` verificado; producto S13 en commit `d11fd39`
-Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.13` y
+Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.14` y
 access policy `2026-08-13.4`, sin nuevo release
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
@@ -185,7 +185,7 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   no se repitió el replay real de 44 MB, no se usó DB y no se desplegó. Un host
   completamente comprometido permanece fuera de la garantía.
 - El techo exacto de permisos por ruta está implementado localmente con 32
-  recursos, 12 acciones, 54 permisos y 95 firmas protegidas: 53 Serverless y 42
+  recursos, 12 acciones, 54 permisos y 96 firmas protegidas: 54 Serverless y 42
   Express. La propuesta de
   ámbitos RBAC/ABAC está aislada y no migrada: todavía no hay persistencia fina,
   lifecycle de cuentas ni cuentas por cada rol.

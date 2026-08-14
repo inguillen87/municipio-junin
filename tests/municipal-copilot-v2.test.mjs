@@ -52,6 +52,47 @@ const deterministicAnswer = Object.freeze({
   }),
 });
 
+const payrollClassification = Object.freeze({
+  intent: 'payroll_run_control',
+  policy: 'allowed',
+});
+const payrollDeterministicAnswer = Object.freeze({
+  httpStatus: 200,
+  status: 'answered',
+  intent: 'payroll_run_control',
+  response: 'Respuesta determinista de corridas',
+  answer: Object.freeze({
+    title: 'Control de corridas de liquidación',
+    summary: 'La fuente contiene 625 cabeceras técnicas: 612 cumplen la política temporal y 13 quedaron apartadas para revisión.',
+    findings: Object.freeze([
+      '600 de 612 cabeceras válidas tienen detalle de cálculo asociado; 12 no lo tienen.',
+      'La cuarentena reúne 13 cabeceras y 20.270 filas de cálculo asociadas.',
+    ]),
+    evidence: Object.freeze([
+      Object.freeze({ label: 'Cabeceras válidas', value: '612', detail: '97,92 % de 625 cabeceras fuente.' }),
+      Object.freeze({ label: 'Cabeceras en cuarentena', value: '13', detail: '11 con detalle y 2 sin detalle.' }),
+    ]),
+    caveats: Object.freeze([
+      'La marca operativa de cierre no acredita cierre contable ni pago.',
+    ]),
+    source: 'Fuente: GRH Junín · control agregado de corridas · copia al 2026-08-06 · no tiempo real.',
+    actions: Object.freeze([
+      Object.freeze({
+        id: 'open_temporal_quarantine_commitment',
+        label: 'Llevar la revisión a compromisos',
+        href: '/decisiones-grh?focus=temporal_quarantine_present',
+        requiredCapability: 'navigation.grh-decisions',
+      }),
+      Object.freeze({
+        id: 'open_payroll_run_evidence',
+        label: 'Abrir corridas y marcas de cierre',
+        href: '/corridas-grh',
+        requiredCapability: 'navigation.hacienda',
+      }),
+    ]),
+  }),
+});
+
 function providerPayload(value) {
   return {
     output: [{
@@ -185,6 +226,85 @@ test('OpenAI Responses receives only a bounded deterministic fact catalog and re
   assert.deepEqual(result.synthesis.lead.citationIds, ['R1']);
   assert.deepEqual(result.synthesis.actionIds, ['open_quality']);
   assert.deepEqual(result.synthesis.sources.map(source => source.id), ['R1', 'H1']);
+});
+
+test('payroll-run synthesis receives only bounded verified facts and rejects numeric recombination', async () => {
+  const budgetGate = {
+    acquire() { return { allowed: true, release() {} }; },
+  };
+  const requests = [];
+  const validPayrollSynthesis = {
+    lead: {
+      text: 'La fuente contiene 625 cabeceras técnicas y 13 quedaron apartadas para revisión.',
+      citationIds: ['R1'],
+    },
+    insights: [{
+      text: '600 de 612 cabeceras válidas tienen detalle de cálculo asociado.',
+      citationIds: ['H1'],
+    }],
+    actionIds: ['open_temporal_quarantine_commitment', 'open_payroll_run_evidence'],
+  };
+  const grounded = await synthesizeMunicipalAnswer({
+    mode: 'assisted',
+    classification: payrollClassification,
+    deterministicAnswer: payrollDeterministicAnswer,
+    provenance,
+    caller,
+    environment: enabledEnvironment(),
+    budgetGate,
+    fetchImpl: async (_url, options) => {
+      requests.push(JSON.parse(options.body));
+      return okResponse(validPayrollSynthesis);
+    },
+  });
+
+  assert.equal(grounded.engine.generated, true);
+  assert.deepEqual(grounded.synthesis.actionIds, [
+    'open_temporal_quarantine_commitment',
+    'open_payroll_run_evidence',
+  ]);
+  const grounding = JSON.parse(requests[0].input[0].content[0].text);
+  assert.equal(grounding.intent, 'payroll_run_control');
+  assert.deepEqual(grounding.allowedActions.map(action => action.id), [
+    'open_temporal_quarantine_commitment',
+    'open_payroll_run_evidence',
+  ]);
+  assert.equal(grounding.facts.some(fact => /20\.270 filas de cálculo/.test(fact.text)), true);
+  assert.equal(grounding.facts.some(fact => /monthly|runHeaders|sourceSha256|histocal/i.test(fact.text)), false);
+
+  const adversarialCandidates = [
+    {
+      ...validPayrollSynthesis,
+      lead: { text: '625 filas de cálculo quedaron apartadas.', citationIds: ['R1'] },
+    },
+    {
+      ...validPayrollSynthesis,
+      lead: { text: '600 cabeceras válidas y 13 quedaron apartadas.', citationIds: ['H1', 'R1'] },
+    },
+    {
+      ...validPayrollSynthesis,
+      lead: { text: '20.270 cabeceras quedaron en cuarentena.', citationIds: ['H2'] },
+    },
+    {
+      ...validPayrollSynthesis,
+      lead: { text: '13 cabeceras quedaron apartadas porque hubo errores.', citationIds: ['R1'] },
+    },
+    { ...validPayrollSynthesis, actionIds: ['approve_payroll_run'] },
+  ];
+  for (const candidate of adversarialCandidates) {
+    const result = await synthesizeMunicipalAnswer({
+      mode: 'assisted',
+      classification: payrollClassification,
+      deterministicAnswer: payrollDeterministicAnswer,
+      provenance,
+      caller,
+      environment: enabledEnvironment(),
+      budgetGate,
+      fetchImpl: async () => okResponse(candidate),
+    });
+    assert.equal(result.synthesis, null);
+    assert.equal(result.engine.fallbackCode, 'PROVIDER_OUTPUT_UNGROUNDED');
+  }
 });
 
 test('prompt injection and personal lookup intents never reach the provider', async () => {
@@ -390,6 +510,7 @@ test('manual help is deterministic, versioned, actionable and keeps permissions 
   for (const [question, topic] of [
     ['¿Cómo interpreto el panorama y las prioridades del tablero ejecutivo?', 'overview'],
     ['¿Cómo reviso Hacienda, nómina y el cálculo mensual?', 'hacienda'],
+    ['¿Cómo reviso el control de corridas y marcas de cierre?', 'payrollRuns'],
     ['¿Cómo uso Estructura y centros de costo?', 'structure'],
     ['¿Cómo interpreto la trayectoria laboral documentada?', 'trajectory'],
     ['¿Cómo verifico la fuente del Centro territorial?', 'territory'],

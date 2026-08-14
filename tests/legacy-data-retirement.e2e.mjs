@@ -114,7 +114,9 @@ test('retired modules remain explicit, blocked and responsive', async (t) => {
       title: document.querySelector('#retired-module-title')?.textContent.trim(),
       status: document.querySelector('.retired-module-kicker')?.textContent.trim(),
       disabled: document.querySelector('.retired-module-disabled')?.disabled,
-      inputs: document.querySelectorAll('input, form, canvas, table').length,
+      operationalSurfaces: document.querySelectorAll(
+        '#retired-module-root input, #retired-module-root form, #retired-module-root canvas, #retired-module-root table'
+      ).length,
       navItems: document.querySelectorAll('#sidebar a.sb-item').length,
       menuDisplay: getComputedStyle(document.querySelector('#menuBtn')).display,
       syntheticStorageKeys: Object.keys(localStorage).filter((key) => key.startsWith('muni_db_')).length,
@@ -125,7 +127,7 @@ test('retired modules remain explicit, blocked and responsive', async (t) => {
     assert.equal(state.title, scenario.title);
     assert.match(state.status, /Sin fuente conectada.*no operativo/i);
     assert.equal(state.disabled, true);
-    assert.equal(state.inputs, 0);
+    assert.equal(state.operationalSurfaces, 0);
     assert.ok(state.navItems > 0, `navigation was not preserved on ${scenario.page}`);
     if (scenario.width <= 900) assert.notEqual(state.menuDisplay, 'none');
     assert.equal(state.syntheticStorageKeys, 0);

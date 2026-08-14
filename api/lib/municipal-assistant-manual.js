@@ -9,6 +9,7 @@ const EXACT_SCREEN_HELP_TOPICS = new Map([
   ['¿Cómo interpreto el resumen ejecutivo GRH?', 'overview'],
   ['¿Cómo interpreto el resumen agregado de RRHH?', 'overview'],
   ['¿Cómo reviso Hacienda, nómina y el cálculo mensual?', 'hacienda'],
+  ['¿Cómo reviso el control de corridas y marcas de cierre?', 'payrollRuns'],
   ['¿Cómo uso Estructura y centros de costo?', 'structure'],
   ['¿Cómo interpreto la trayectoria laboral documentada?', 'trajectory'],
   ['¿Cómo interpreto la trayectoria y los movimientos documentados?', 'trajectory'],
@@ -122,6 +123,21 @@ const TOPICS = Object.freeze({
       Object.freeze({ id: 'open_reports_from_hacienda', label: 'Abrir Centro de Reportes', href: '/reportes.html', requiredCapability: 'navigation.reports' }),
     ]),
   }),
+  payrollRuns: Object.freeze({
+    title: 'Revisar corridas y marcas operativas de cierre',
+    summary: 'Abrí Corridas y marcas de cierre para distinguir cabeceras válidas, detalle asociado, marcas operativas y registros en cuarentena sin presentarlos como pagos ni cierres contables.',
+    findings: Object.freeze([
+      'Empezá por la fecha del respaldo y la cobertura total; la pantalla no trabaja en tiempo real.',
+      'Una marca de cierre informada es un dato operativo de origen. Su ausencia tampoco demuestra que una corrida siga abierta.',
+      'Si aparece una señal de cuarentena, revisá la evidencia y usá el Centro de decisiones sólo cuando el brief vigente ofrezca ese próximo paso.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'interpretacion',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_payroll_runs', label: 'Abrir corridas y marcas de cierre', href: '/corridas-grh', requiredCapability: 'navigation.hacienda' }),
+      Object.freeze({ id: 'open_manual_interpretation', label: 'Ver guía de interpretación', href: '/manuales.html#interpretacion', requiredCapability: 'navigation.help' }),
+    ]),
+  }),
   structure: Object.freeze({
     title: 'Explorar estructura y áreas de costo',
     summary: 'Confirmá el universo de cada clasificación, elegí una dimensión observada y compará áreas de costo sin mezclar dotación, importes ni períodos incompatibles.',
@@ -204,12 +220,14 @@ export function classifyManualHelp(rawMessage) {
   if (!message) return null;
   const exactTopic = EXACT_SCREEN_HELP_TOPICS.get(message);
   if (exactTopic) return exactTopic;
-  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:panorama|resumen (?:general|ejecutivo)|tablero ejecutivo|inicio)\b/.test(message)) return 'overview';
-  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:hacienda|nomina y (?:el )?calculo|calculo mensual)\b/.test(message)) return 'hacienda';
-  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:estructura|areas? de costo|centros? de costo)\b/.test(message)) return 'structure';
-  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:trayectoria laboral|actuaciones? documentadas?|movimientos? y trazabilidad)\b/.test(message)) return 'trajectory';
-  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:centro territorial|referencia territorial|mapa territorial)\b/.test(message)) return 'territory';
-  if (/\b(?:como|guia|manual|ayuda)\b.{0,70}\b(?:centro de decisiones|prioridades y compromisos|compromisos grh)\b/.test(message)) return 'decisions';
+  const screenHelpLead = /\b(?:como (?:uso|usar|reviso|revisar|interpreto|interpretar|abro|abrir|exploro|explorar|funciona)|guia|manual|ayuda)\b/;
+  if (screenHelpLead.test(message) && /\b(?:panorama|resumen (?:general|ejecutivo)|tablero ejecutivo|inicio)\b/.test(message)) return 'overview';
+  if (screenHelpLead.test(message) && /\b(?:hacienda|nomina y (?:el )?calculo|calculo mensual)\b/.test(message)) return 'hacienda';
+  if (screenHelpLead.test(message) && /\b(?:corridas? y (?:marcas? de )?cierres?|control de corridas?|marcas? de cierre|cierres? operativos?)\b/.test(message)) return 'payrollRuns';
+  if (screenHelpLead.test(message) && /\b(?:estructura|areas? de costo|centros? de costo)\b/.test(message)) return 'structure';
+  if (screenHelpLead.test(message) && /\b(?:trayectoria laboral|actuaciones? documentadas?|movimientos? y trazabilidad)\b/.test(message)) return 'trajectory';
+  if (screenHelpLead.test(message) && /\b(?:centro territorial|referencia territorial|mapa territorial)\b/.test(message)) return 'territory';
+  if (screenHelpLead.test(message) && /\b(?:centro de decisiones|prioridades y compromisos|compromisos grh)\b/.test(message)) return 'decisions';
   if (/\b(?:como|donde|pasos?|guia|manual|ayuda)\b.{0,70}\b(?:reporte|informe|imprim(?:ir|o|e)|export(?:ar|o|e))\b|\b(?:export(?:ar|o|e)|imprim(?:ir|o|e))\b.{0,50}\b(?:reporte|informe|grafico)\b/.test(message)) return 'reports';
   if (/\b(?:como|donde|pasos?|guia|manual|ayuda)\b.{0,70}\b(?:carg(?:ar|o|a|ue)|sub(?:ir|o|a)|import(?:ar|o|a|e))\b.{0,50}\b(?:archivo|excel|csv|pdf|datos|base)\b|\b(?:import(?:ar|o|a|e)|carg(?:ar|o|a|ue))\s+(?:un\s+)?(?:excel|csv|pdf|archivo)\b/.test(message)) return 'imports';
   if (/\b(?:como|donde|pasos?|guia|manual|ayuda)\b.{0,70}\b(?:busc(?:ar|o|a|e)|abr(?:ir|o|e)|consult(?:ar|o|a|e)|ver)\b.{0,50}\b(?:ficha|legajo|persona|empleado|licencia individual)\b/.test(message)) return 'directory';

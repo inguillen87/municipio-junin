@@ -89,6 +89,17 @@ export function Topbar({ identity, links, theme, onToggleTheme }: TopbarProps) {
             </button>
           ) : null}
           {identity ? (
+            <button
+              aria-label="Buscar una tarea, atajo Control K"
+              className="municipal-task-shell-trigger"
+              data-municipal-task-open
+              type="button"
+            >
+              <span>Buscar tarea</span>
+              <kbd>Ctrl K</kbd>
+            </button>
+          ) : null}
+          {identity ? (
             <div className="identity" aria-label={`Sesión de ${identity.name}`}>
               <span className="identity__avatar" aria-hidden="true">
                 {identity.name.trim().charAt(0).toLocaleUpperCase('es-AR') || 'U'}

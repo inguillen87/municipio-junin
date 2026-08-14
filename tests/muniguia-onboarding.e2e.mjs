@@ -185,7 +185,7 @@ test('Inicio offers explicit new, in-progress, completed, repeat and reset state
     false,
   );
 
-  await card.getByRole('button', { name: 'Empezar recorrido' }).click();
+  await card.getByRole('button', { name: 'Conocer mi espacio' }).click();
   assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'En curso');
   assert.equal(await card.locator('.muni-onboarding__progress-label').innerText(), '0 de 5 pasos listos');
   const storageAfterStart = await page.evaluate(() => Object.entries(sessionStorage)
@@ -217,7 +217,7 @@ test('Inicio offers explicit new, in-progress, completed, repeat and reset state
   assert.equal(await card.locator('.muni-onboarding__progress-label').innerText(), '0 de 5 pasos listos');
   await card.getByRole('button', { name: 'Reiniciar recorrido' }).click();
   assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'Nuevo');
-  assert.equal(await card.getByRole('button', { name: 'Empezar recorrido' }).count(), 1);
+  assert.equal(await card.getByRole('button', { name: 'Conocer mi espacio' }).count(), 1);
   assert.deepEqual(
     await page.evaluate(() => Object.keys(sessionStorage)
       .filter(key => key.startsWith('municontrol:muniguia-onboarding:'))),
@@ -274,7 +274,7 @@ test('onboarding card is responsive, keyboard-operable and exposed in forced col
     assert.ok(audit.actionRects.every(rect => rect.left >= 0 && rect.right <= viewport.width + 1));
     assert.equal(audit.forcedColors, viewport.width === 320);
 
-    const start = card.getByRole('button', { name: 'Empezar recorrido' });
+    const start = card.getByRole('button', { name: 'Conocer mi espacio' });
     await start.focus();
     await page.keyboard.press('Enter');
     assert.equal(await card.locator('.muni-onboarding__state').innerText(), 'En curso');

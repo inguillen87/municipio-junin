@@ -5,6 +5,7 @@ import test from 'node:test';
 
 import {
   GRH_ANSWER_VISUAL_SCHEMA_VERSION,
+  buildPayrollRunControlAssistantAnswer,
   buildDeterministicAnswer,
   classifyIntent,
   createAiAnalyzeHandler,
@@ -32,8 +33,10 @@ const SEMANTIC_URL = new URL('../api/_data/grh-semantic.json', import.meta.url);
 const WORKFORCE_FINANCE_URL = new URL('../api/_data/grh-workforce-finance.json', import.meta.url);
 const ABSENCE_INSIGHTS_URL = new URL('../api/_data/grh-absence-insights.json', import.meta.url);
 const EMPLOYMENT_ACTIONS_URL = new URL('../api/_data/grh-employment-actions.json', import.meta.url);
+const PAYROLL_RUN_CONTROL_URL = new URL('../api/_data/grh-payroll-run-control.json', import.meta.url);
 const HAS_PRIVATE_GRH = existsSync(PROFILE_URL) && existsSync(SEMANTIC_URL) &&
   existsSync(ABSENCE_INSIGHTS_URL) && existsSync(EMPLOYMENT_ACTIONS_URL);
+const HAS_PAYROLL_RUN_CONTROL = existsSync(PAYROLL_RUN_CONTROL_URL);
 
 function realBundle() {
   const profile = JSON.parse(readFileSync(PROFILE_URL, 'utf8'));
@@ -1709,7 +1712,7 @@ test('decision brief and workforce-finance intents answer from the governed real
   assert.equal(brief.status, 'answered');
   assert.equal(brief.resolvedPeriod, '2026-07');
   assert.deepEqual(brief.answer.actions.map(action => action.href), [
-    '/decisiones-grh',
+    '/decisiones-grh?focus=cross_source_material_difference',
     '/hacienda#closeReconciliationTitle',
     '/calidad',
     '/estructura#ausencias',
@@ -1717,7 +1720,7 @@ test('decision brief and workforce-finance intents answer from the governed real
   assert.deepEqual(brief.answer.actions[0], {
     id: 'open_grh_decisions',
     label: 'Registrar próximos pasos',
-    href: '/decisiones-grh',
+    href: '/decisiones-grh?focus=cross_source_material_difference',
     requiredCapability: 'navigation.grh-decisions',
   });
   assert.equal(brief.answer.title, 'Prioridades para decidir · julio de 2026');
@@ -1859,6 +1862,140 @@ test('decision brief and workforce-finance intents answer from the governed real
   assert.match(historical.answer.actions[0].label, /última publicación.*SERVICIOS PUBLICOS/i);
   assert.match(historical.answer.actions[1].label, /última publicación.*SECRETARIA DE GOBIERNO/i);
   assert.equal(historical.answer.actions.at(-1)?.href, comparatorHref);
+});
+
+test('payroll-run control stays aggregate and exposes a handoff only when the current brief contains the signal', { skip: !HAS_PAYROLL_RUN_CONTROL }, () => {
+  const payrollRunControl = JSON.parse(readFileSync(PAYROLL_RUN_CONTROL_URL, 'utf8'));
+  const question = 'Mostrá el control de corridas de liquidación';
+  assert.deepEqual(classifyIntent(question), {
+    intent: 'payroll_run_control',
+    policy: 'allowed',
+  });
+  const answer = buildPayrollRunControlAssistantAnswer(
+    payrollRunControl,
+    ['historical_snapshot', 'temporal_quarantine_present'],
+  );
+
+  assert.equal(answer.resolvedPeriod, '2026-07');
+  const visibleAnswer = [answer.summary, ...answer.findings, ...answer.caveats, answer.source].join('\n');
+  assert.match(visibleAnswer, /625 cabeceras técnicas[\s\S]*612 cumplen[\s\S]*13 quedaron apartadas/i);
+  assert.match(visibleAnswer, /20\.270 filas de cálculo/i);
+  assert.match(visibleAnswer, /no evidencia de pago ni cierre contable/i);
+  assert.deepEqual(answer.actions, [
+    {
+      id: 'open_temporal_quarantine_commitment',
+      label: 'Llevar la revisión a compromisos',
+      href: '/decisiones-grh?focus=temporal_quarantine_present',
+      requiredCapability: 'navigation.grh-decisions',
+    },
+    {
+      id: 'open_payroll_run_evidence',
+      label: 'Abrir corridas y marcas de cierre',
+      href: '/corridas-grh',
+      requiredCapability: 'navigation.hacienda',
+    },
+  ]);
+  assert.doesNotMatch(
+    JSON.stringify(answer),
+    /sourceSha256|histocal|liquidacionlog|runHeaders|sourceRunKeys|monetaryAmounts|personIdentifiers/i,
+  );
+
+  const withoutCurrentBrief = buildPayrollRunControlAssistantAnswer(payrollRunControl, []);
+  assert.deepEqual(withoutCurrentBrief.actions, [{
+    id: 'open_payroll_run_evidence',
+    label: 'Abrir corridas y marcas de cierre',
+    href: '/corridas-grh',
+    requiredCapability: 'navigation.hacienda',
+  }]);
+
+  const invalid = structuredClone(payrollRunControl);
+  invalid.coverage.validRunHeaders = 611;
+  assert.equal(
+    buildPayrollRunControlAssistantAnswer(invalid, ['temporal_quarantine_present']).code,
+    'GRH_PAYROLL_RUN_CONTROL_UNAVAILABLE',
+  );
+});
+
+test('assistant reads payroll-run control only for its intent, pins lineage and fails closed', { skip: !(HAS_PRIVATE_GRH && HAS_PAYROLL_RUN_CONTROL) }, async () => {
+  const artifact = JSON.parse(readFileSync(PAYROLL_RUN_CONTROL_URL, 'utf8'));
+  const reads = [];
+  const syntheses = [];
+  const dependencies = {
+    requireRoleImpl: async () => ({
+      id: 'official-payroll-control',
+      role: 'INTENDENTE',
+      tenantId: 'tenant-grh-test',
+      tenant: { slug: 'junin' },
+    }),
+    requireDatasetTenantImpl: () => true,
+    readArtifactBundleImpl: async () => realBundle(),
+    readPayrollRunControlArtifactImpl: async input => {
+      reads.push(input);
+      return artifact;
+    },
+    synthesizeAnswerImpl: async input => {
+      syntheses.push(input);
+      return { synthesis: null, engine: null };
+    },
+    environment: {
+      GRH_TENANT_ID: 'tenant-grh-test',
+      GRH_SOURCE_SHA256: artifact.source.sourceSha256,
+    },
+  };
+  const handler = createAiAnalyzeHandler(dependencies);
+  const response = responseRecorder();
+  await handler({
+    method: 'POST',
+    headers: {},
+    body: { message: '¿Qué cobertura tienen las corridas de liquidación?', mode: 'deterministic' },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.payload.intent, 'payroll_run_control');
+  assert.equal(response.payload.dataStatus.source, 'grh_payroll_run_control_governed_contract');
+  assert.equal(response.payload.provenance.payrollRunControlSchemaVersion,
+    'grh-payroll-run-control-v1');
+  assert.equal(reads.length, 1);
+  assert.equal(reads[0].expectedSourceSha256, artifact.source.sourceSha256);
+  assert.equal(syntheses.length, 1);
+  assert.equal(syntheses[0].classification.intent, 'payroll_run_control');
+  assert.match(syntheses[0].deterministicAnswer.answer.summary,
+    /625 cabeceras técnicas[\s\S]*13 quedaron apartadas/i);
+  assert.deepEqual(
+    syntheses[0].deterministicAnswer.answer.actions.map(action => action.href),
+    ['/decisiones-grh?focus=temporal_quarantine_present', '/corridas-grh'],
+  );
+
+  const summary = responseRecorder();
+  await handler({
+    method: 'POST',
+    headers: {},
+    body: { message: 'Dame un resumen ejecutivo', mode: 'deterministic' },
+  }, summary);
+  assert.equal(summary.statusCode, 200);
+  assert.equal(reads.length, 1, 'unrelated intents must not read the payroll-run artifact');
+
+  const drifted = structuredClone(artifact);
+  drifted.source.sourceSha256 = 'b'.repeat(64);
+  const unavailableHandler = createAiAnalyzeHandler({
+    ...dependencies,
+    readPayrollRunControlArtifactImpl: async () => drifted,
+  });
+  const unavailable = responseRecorder();
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    await unavailableHandler({
+      method: 'POST',
+      headers: {},
+      body: { message: 'Control de corridas de liquidación', mode: 'deterministic' },
+    }, unavailable);
+  } finally {
+    console.error = originalConsoleError;
+  }
+  assert.equal(unavailable.statusCode, 503);
+  assert.equal(unavailable.payload.code, 'GRH_PAYROLL_RUN_CONTROL_UNAVAILABLE');
+  assert.equal(Object.hasOwn(unavailable.payload, 'answer'), false);
 });
 
 test('cost-center comparison understands bounded executive phrasing and never invents comparator links', { skip: !HAS_PRIVATE_GRH }, () => {

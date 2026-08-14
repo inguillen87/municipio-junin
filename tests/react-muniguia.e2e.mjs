@@ -29,6 +29,11 @@ const GUIDE_STYLES_PATH = '/css/contextual-help.css';
 const GUIDE_SOURCE = readFileSync(path.join(REPO, 'js', 'contextual-help.js'), 'utf8');
 const GUIDE_CATALOG_SOURCE = readFileSync(path.join(REPO, 'js', 'contextual-help-catalog.js'), 'utf8');
 const GUIDE_STYLES_SOURCE = readFileSync(path.join(REPO, 'css', 'contextual-help.css'), 'utf8');
+const TASK_CENTER_ASSETS = new Map([
+  ['/js/municipal-task-center.js', ['text/javascript; charset=utf-8', readFileSync(path.join(REPO, 'js', 'municipal-task-center.js'))]],
+  ['/js/municipal-task-catalog.js', ['text/javascript; charset=utf-8', readFileSync(path.join(REPO, 'js', 'municipal-task-catalog.js'))]],
+  ['/css/task-center.css', ['text/css; charset=utf-8', readFileSync(path.join(REPO, 'css', 'task-center.css'))]],
+]);
 const WORKFORCE_FINANCE_CLIENT_SOURCE = readFileSync(
   path.join(REPO, 'js', 'grh-workforce-finance-data.js'),
   'utf8',
@@ -287,6 +292,12 @@ function e2ePlugin(apiLog, assetLog) {
         if (url.pathname === GUIDE_STYLES_PATH) {
           assetLog.push({ path: url.pathname, ...scenarioFromRequest(request) });
           send(response, 200, 'text/css; charset=utf-8', GUIDE_STYLES_SOURCE);
+          return;
+        }
+        const taskCenterAsset = TASK_CENTER_ASSETS.get(url.pathname);
+        if (taskCenterAsset) {
+          const [contentType, source] = taskCenterAsset;
+          send(response, 200, contentType, source);
           return;
         }
         if (url.pathname === '/inicio.html') {
@@ -694,7 +705,7 @@ test('MuniGuía on React is governed, local, responsive and disposable', { timeo
       await page.locator(route.readySelector).waitFor({ state: 'visible' });
       assert.equal(await page.locator('#muniGuideTrigger').count(), 0);
       assert.deepEqual(harness.apiLog.slice(startApi).map(entry => entry.path), ['/api/auth/me', ...expectedDataPaths(route)]);
-      assert.equal(harness.assetLog.length, startAssets);
+      assert.deepEqual(harness.assetLog.slice(startAssets).map(entry => entry.path), [GUIDE_CATALOG_PATH]);
       assert.deepEqual(diagnostics.consoleErrors, []);
       assert.deepEqual(diagnostics.pageErrors, []);
       assert.deepEqual(diagnostics.externalRequests, []);
@@ -749,7 +760,7 @@ test('MuniGuía on React is governed, local, responsive and disposable', { timeo
       assert.equal(await page.locator('#muniGuideTrigger').count(), 0);
       assert.equal(await page.locator('.governed-state--loading').count(), 0);
       assert.deepEqual(harness.apiLog.slice(startApi).map(entry => entry.path), ['/api/auth/me', ...expectedDataPaths(route)]);
-      assert.equal(harness.assetLog.length, startAssets);
+      assert.deepEqual(harness.assetLog.slice(startAssets).map(entry => entry.path), [GUIDE_CATALOG_PATH]);
       assert.equal(runtimeRequests.length, 1);
       assert.deepEqual(diagnostics.pageErrors, []);
       assert.deepEqual(diagnostics.externalRequests, []);

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -17,6 +18,12 @@ import {
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
+const TASK_CENTER_ASSETS = new Map([
+  ['/js/municipal-task-center.js', ['text/javascript; charset=utf-8', readFileSync(path.join(REPO, 'js', 'municipal-task-center.js'))]],
+  ['/js/municipal-task-catalog.js', ['text/javascript; charset=utf-8', readFileSync(path.join(REPO, 'js', 'municipal-task-catalog.js'))]],
+  ['/js/contextual-help-catalog.js', ['text/javascript; charset=utf-8', readFileSync(path.join(REPO, 'js', 'contextual-help-catalog.js'))]],
+  ['/css/task-center.css', ['text/css; charset=utf-8', readFileSync(path.join(REPO, 'css', 'task-center.css'))]],
+]);
 const CONTRACT_HEADER = 'x-municontrol-contract';
 const AUTH_CONTRACT = 'municontrol-auth-me-v1';
 const ANALYTICS_CONTRACT = GRH_ORGANIZATION_ANALYTICS_SCHEMA_VERSION;
@@ -604,6 +611,12 @@ function scenarioPlugin(scenario, apiLog) {
         }
         if (url.pathname === '/js/contextual-help.js') {
           send(response, 200, 'text/javascript; charset=utf-8', MUNIGUIA_STUB_SOURCE);
+          return;
+        }
+        const taskCenterAsset = TASK_CENTER_ASSETS.get(url.pathname);
+        if (taskCenterAsset) {
+          const [contentType, source] = taskCenterAsset;
+          send(response, 200, contentType, source);
           return;
         }
         if (url.pathname === '/js/pwa-register.js') {

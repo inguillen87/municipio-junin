@@ -3,19 +3,21 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const ROOT = new URL('../', import.meta.url);
-const [gitignore, vercelignore, rawArtifact, rawImportQualityArtifact, rawLinkageArtifact, rawEmploymentActionsArtifact] = await Promise.all([
+const [gitignore, vercelignore, rawArtifact, rawImportQualityArtifact, rawLinkageArtifact, rawEmploymentActionsArtifact, rawPayrollRunControlArtifact] = await Promise.all([
   readFile(new URL('.gitignore', ROOT), 'utf8'),
   readFile(new URL('.vercelignore', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-absence-insights.json', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-import-quality-history.json', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-personas-linkage-readiness.json', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-employment-actions.json', ROOT), 'utf8'),
+  readFile(new URL('api/_data/grh-payroll-run-control.json', ROOT), 'utf8'),
 ]);
 const ARTIFACT_EXCEPTIONS = [
   '!api/_data/grh-absence-insights.json',
   '!api/_data/grh-import-quality-history.json',
   '!api/_data/grh-personas-linkage-readiness.json',
   '!api/_data/grh-employment-actions.json',
+  '!api/_data/grh-payroll-run-control.json',
 ];
 
 test('only reviewed aggregate artifacts are excepted from private JSON exclusions', () => {
@@ -105,4 +107,20 @@ test('the employment-actions exception is aggregate-only and withholds sensitive
   assert.equal(artifact.privacy.rawCategoryValuesExported, false);
   assert.doesNotMatch(rawEmploymentActionsArtifact,
     /"(?:displayName|fullName|legajo|dni|cuil|nins_fj|obse_fj|USER_FJ|DETA_FJ|MOTI_FJ_DETA)"\s*:/i);
+});
+
+test('the payroll-run exception is aggregate-only and withholds run keys, amounts and raw logs', () => {
+  assert.ok(Buffer.byteLength(rawPayrollRunControlArtifact, 'utf8') < 64 * 1024);
+  const artifact = JSON.parse(rawPayrollRunControlArtifact);
+  assert.equal(artifact.schemaVersion, 'grh-payroll-run-control-v1');
+  assert.equal(artifact.privacy.aggregateOnly, true);
+  assert.equal(artifact.privacy.containsPii, false);
+  assert.equal(artifact.privacy.personIdentifiersExported, false);
+  assert.equal(artifact.privacy.rawRowsExported, false);
+  assert.equal(artifact.privacy.sourceRunKeysExported, false);
+  assert.equal(artifact.privacy.monetaryAmountsExported, false);
+  assert.equal(artifact.privacy.rawTechnicalLogsExported, false);
+  assert.equal(artifact.privacy.rawMessagesExported, false);
+  assert.doesNotMatch(rawPayrollRunControlArtifact,
+    /"(?:displayName|fullName|legajo|LEGA_12|lega_12|dni|cuil|employeeId|personId|IMPO_31|cantidadFalso|cantidadVerdadero|condicion|denominacion|unidad)"\s*:/i);
 });

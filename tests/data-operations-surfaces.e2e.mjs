@@ -203,7 +203,7 @@ test('real governed catalog drives useful sources and publications at desktop an
       ],
       domainCards: document.querySelectorAll('.data-domain-card').length,
       domainRows: document.querySelectorAll('#datasets-table tbody tr').length,
-      rawControls: document.querySelectorAll('input, select, textarea, [download]').length,
+      rawControls: document.querySelectorAll('#mainContent input, #mainContent select, #mainContent textarea, #mainContent [download]').length,
       linkage: {
         figures: [
           document.querySelector('#linkageGrhPeople')?.textContent,

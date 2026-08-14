@@ -14,6 +14,7 @@ import {
   VITE_ENTRY_HTML_FILES,
 } from '../build/public-web-contract.mjs';
 import { MUNIGUIA_CATALOG } from '../js/contextual-help-catalog.js';
+import { resolveMunicipalTaskCatalog } from '../js/municipal-task-catalog.js';
 
 const EXECUTIVE_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR'];
 const CAPABILITY = 'navigation.organization-analytics';
@@ -49,7 +50,7 @@ test('organization analytics has one exact private capability and route boundary
 });
 
 test('published route ceiling opens only aggregate organization analytics and canonical RBAC still denies low roles', () => {
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.13');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.14');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
 
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
@@ -98,11 +99,10 @@ test('release, build, clean route, navigation and contextual help stay aligned',
   assert.ok(GOVERNED_HTML_FILES.includes('estructura.html'));
   assert.ok(PUBLIC_LEGACY_HTML_FILES.includes('organigrama.html'));
 
-  const [vercelSource, viteSource, navigationCatalog, workspaceSource, pageSource, dashboardSource, comparisonSource] = await Promise.all([
+  const [vercelSource, viteSource, navigationCatalog, pageSource, dashboardSource, comparisonSource] = await Promise.all([
     readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/vite.config.ts', import.meta.url), 'utf8'),
     readFile(new URL('../js/navigation-catalog.js', import.meta.url), 'utf8'),
-    readFile(new URL('../inicio.html', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/estructura.html', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/src/structure/StructureDashboard.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../frontend/src/structure/CostCenterComparison.tsx', import.meta.url), 'utf8'),
@@ -134,13 +134,31 @@ test('release, build, clean route, navigation and contextual help stay aligned',
     false,
     'the retired organigram surface must never re-enter navigation',
   );
-  assert.match(
-    workspaceSource,
-    /'navigation\.organization-analytics':\s*Object\.freeze\(\{\s*href:\s*'\/estructura',\s*label:\s*'Estructura y áreas'/,
+  const session = accessPolicy.getSessionAccessForUser({
+    role: 'INTENDENTE',
+    tenantId: 'tenant-junin',
+  });
+  const taskCatalog = resolveMunicipalTaskCatalog({
+    role: 'INTENDENTE',
+    variant: session.homeProfile.variant,
+    policyVersion: accessPolicy.ACCESS_POLICY_VERSION,
+    capabilities: session.capabilities,
+  });
+  const structureTask = taskCatalog.tasks.find(task => task.id === 'compare-areas');
+  assert.deepEqual(
+    {
+      label: structureTask?.label,
+      href: structureTask?.href,
+      capability: structureTask?.capability,
+      pageId: structureTask?.pageId,
+    },
+    {
+      label: 'Comparar áreas y centros de costo',
+      href: '/estructura.html',
+      capability: CAPABILITY,
+      pageId: 'organizationAnalytics',
+    },
   );
-  assert.match(workspaceSource, /candidates\.splice\([\s\S]{0,160}'navigation\.organization-analytics'/);
-  assert.match(workspaceSource, /candidates\.push\('navigation\.grh-decisions'\)/);
-  assert.match(workspaceSource, /projection\.capabilities\.indexOf\(capability\) !== -1/);
 
   const guide = MUNIGUIA_CATALOG.pages.organizationAnalytics;
   assert.deepEqual(guide.aliases, ['/estructura', '/estructura.html']);

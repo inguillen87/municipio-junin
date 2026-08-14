@@ -175,7 +175,7 @@ Estado: **completo en código local; falta despliegue**.
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
 - techo compartido y fail-closed vigente de 32 recursos, 12 acciones, 54
-  permisos y 95 firmas de ruta exactas (53 Serverless y 42 Express), sin
+  permisos y 96 firmas de ruta exactas (54 Serverless y 42 Express), sin
   wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
@@ -372,9 +372,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.13`
-contiene 32 recursos, 12 acciones, 54 permisos y 95 firmas protegidas exactas:
-53 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.14`
+contiene 32 recursos, 12 acciones, 54 permisos y 96 firmas protegidas exactas:
+54 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -729,6 +729,32 @@ verificación remota sobre el deployment exacto**.
 - Esta fase no incorpora RAG, streaming, un proveedor nuevo ni persistencia de
   aprendizaje. Esas extensiones requieren evaluación separada de utilidad,
   costo, privacidad y operación.
+
+### S20 — acción primero y control agregado de corridas GRH
+
+Estado: **implementado y validado localmente; pendiente de publicación y smoke
+remoto sobre el deployment exacto**.
+
+- Inicio y Manual comparten `municipal-task-catalog-v1`: tareas filtradas por
+  las capabilities efectivas, buscador local y paleta accesible
+  `Ctrl/Command+K`. El recorrido inicial queda compacto y nunca concede rutas.
+- **Corridas y marcas de cierre** consume `grh-payroll-run-control-v1` y
+  publica sólo agregados reproducibles de
+  `histocal`, `calculo` y cobertura de `liquidacionlog`: 625 cabeceras,
+  612 válidas, 13 en cuarentena y 26 corridas observadas entre enero y julio de
+  2026, todas con detalle y marca operativa informada.
+- La marca `CIER_31=1` no acredita cierre contable, pago, transferencia ni
+  ejecución presupuestaria. Su ausencia significa “sin dato informado”, no
+  “corrida abierta”.
+- La ruta `/corridas-grh` reutiliza `navigation.hacienda` y
+  `GRH_WORKFORCE_FINANCE_READ`; no amplía roles ni publica montos, legajos,
+  mensajes técnicos o identificadores.
+- El Asistente puede explicar el contrato agregado. Su enlace a Decisiones
+  conserva sólo `focus=<priorityCode>`, revalida el brief vigente y nunca crea,
+  abre ni modifica un compromiso automáticamente.
+- El artefacto reconstruido desde el GZIP canónico es byte-idéntico, contiene
+  cero PII y permanece allowlisted de forma puntual. No se incorporó presupuesto,
+  compras ni tesorería porque no existe una fuente autorizada y gobernada.
 
 ## Funciones que no deben “completarse” todavía
 

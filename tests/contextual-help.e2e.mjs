@@ -85,6 +85,7 @@ async function createServer(users, requestLog) {
     ['/grh-ejecutivo', 'grh-ejecutivo.html'],
     ['/estructura', 'inicio.html'],
     ['/trayectoria', 'inicio.html'],
+    ['/corridas-grh', 'inicio.html'],
     ['/movimientos-grh', 'inicio.html'],
     ['/territorio', 'inicio.html'],
     ['/calidad', 'control.html'],
@@ -185,6 +186,14 @@ async function createServer(users, requestLog) {
           '<section id="employmentActionsSummary" aria-label="Resumen de actuaciones"></section>',
           '<section id="employmentActionsPeriods" aria-label="Períodos comparables"></section>',
           '<section id="employmentActionsCategories" aria-label="Categorías de actuaciones"></section>',
+          '</main>',
+        ].join('')));
+      }
+      if (url.pathname === '/corridas-grh') {
+        body = Buffer.from(body.toString('utf8').replace('</main>', [
+          '<section id="payrollRunSummary" aria-label="Resumen de corridas"></section>',
+          '<section id="payrollRunTimeline" aria-label="Serie de corridas"></section>',
+          '<section id="payrollRunReview" aria-label="Cobertura y cuarentena"></section>',
           '</main>',
         ].join('')));
       }

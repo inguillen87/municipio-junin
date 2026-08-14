@@ -8,7 +8,7 @@
   }
 
   var definition = {
-    version: '2026-08-13.2',
+    version: '2026-08-13.3',
     groups: [
       { id: 'executive', label: 'Gestión ejecutiva', shortLabel: 'Gestión', icon: 'chart' },
       { id: 'people', label: 'Personas y nómina', shortLabel: 'Personas', icon: 'people' },
@@ -23,6 +23,7 @@
       { id: 'ia', href: 'ia.html', label: 'BOT IA para GRH', shortLabel: 'BOT IA', icon: 'ai', groupId: 'executive', placement: 'group', capability: 'navigation.ai-assistant', primary: true },
       { id: 'reportes', href: 'reportes.html', label: 'Reportes', shortLabel: 'Reportes', icon: 'doc', groupId: 'executive', placement: 'group', capability: 'navigation.reports', primary: true },
       { id: 'hacienda', href: 'hacienda.html', label: 'Hacienda y nómina', shortLabel: 'Hacienda', icon: 'bank', groupId: 'people', placement: 'group', capability: 'navigation.hacienda', primary: true },
+      { id: 'corridas-grh', href: '/corridas-grh', label: 'Corridas y marcas de cierre', shortLabel: 'Corridas', icon: 'check', groupId: 'people', placement: 'group', capability: 'navigation.hacienda', primary: false },
       { id: 'estructura', href: '/estructura', label: 'Estructura y áreas de costo', shortLabel: 'Estructura', icon: 'organization', groupId: 'people', placement: 'group', capability: 'navigation.organization-analytics', primary: true },
       { id: 'trayectoria', href: '/trayectoria', label: 'Trayectoria laboral', shortLabel: 'Trayectoria', icon: 'movement', groupId: 'people', placement: 'group', capability: 'navigation.employment-actions', primary: true },
       { id: 'movimientos-grh', href: 'movimientos-grh.html', label: 'Movimientos de legajo', shortLabel: 'Movimientos', icon: 'movement', groupId: 'people', placement: 'group', capability: 'navigation.organization-analytics', primary: false },

@@ -173,8 +173,8 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local `2026-08-13.13` cubre 32 recursos, 12 acciones,
-54 permisos y 95 firmas exactas: 53 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local `2026-08-13.14` cubre 32 recursos, 12 acciones,
+54 permisos y 96 firmas exactas: 54 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
 La política de acceso local `2026-08-13.4` entrega
@@ -377,6 +377,24 @@ Los recorridos cubren siete funciones: tecnología, Intendencia, administración
 municipal, Contaduría, usuario municipal, inspección y consulta. Cada una recibe
 solamente etapas derivadas del catálogo gobernado de MuniGuía y de sus
 capabilities efectivas.
+
+### 5.2 Encontrar una tarea y revisar corridas GRH
+
+1. En Inicio, use **¿Qué necesitás hacer?** o presione
+   `Ctrl+K`/`Command+K`. El buscador proyecta las capabilities —permisos—
+   efectivas de la sesión y muestra únicamente tareas habilitadas para su
+   función; no consulta otra API ni agrega permisos.
+2. Para revisar el ciclo técnico de nómina, abra **Corridas y marcas de cierre**.
+   La vista resume cabeceras, detalle asociado, marcas informadas y registros en
+   cuarentena por período.
+3. Una marca informada no demuestra pago ni cierre contable. Una marca ausente
+   tampoco demuestra que la corrida esté abierta. Lea siempre la fecha del
+   respaldo y los límites visibles.
+4. Si el Asistente ofrece **Llevar la revisión a compromisos**, el Centro de
+   decisiones vuelve a validar esa prioridad. El enlace no crea, abre ni modifica
+   un compromiso por sí solo.
+5. Los datos de presupuesto, compras, tesorería o ejecución presupuestaria no se
+   muestran hasta que exista una fuente municipal autorizada y gobernada.
 
 ## 6. Recorrido de Intendencia
 

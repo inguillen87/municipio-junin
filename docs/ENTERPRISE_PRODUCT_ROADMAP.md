@@ -27,8 +27,8 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-El estado local vigente usa route policy `2026-08-13.13` y access policy
-`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 95 rutas exactas, 53
+El estado local vigente usa route policy `2026-08-13.14` y access policy
+`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 96 rutas exactas, 54
 Serverless + 42 Express. Para el release histórico `v1.10.0`, route policy
 `2026-08-09.2` y access policy `2026-08-09.1` cubrían 26 recursos, 12 acciones,
 46 permisos y 79 firmas de ruta: 37 Serverless + 42 Express. El commit/tag de ese release apunta a
@@ -173,7 +173,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Autenticación DB-autoritativa | Implementada localmente | Configurar secretos, migrar y certificar producción |
 | Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política local `2026-08-13.4`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
 | Tour visual público de roles | `/roles` y `public-role-tour-v1` publicados en `v1.8.1` para siete perfiles; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Mantener el gate público y no confundir el recorrido con RBAC ni autorización positiva |
-| MuniGuía contextual | El estado actual cubre 18 superficies privadas y siete roles con tres pasos deterministas por pantalla; el registro de doce rutas corresponde al corte histórico de `muniguia-contextual-v1` citado en aquella evidencia | Mantener autorización server-side, recorrido efímero por sesión y Manual como fallback; no confundir orientación con permiso ni con persistencia institucional |
+| MuniGuía contextual | El estado actual cubre 19 superficies privadas y siete roles con tres pasos deterministas por pantalla; el registro de doce rutas corresponde al corte histórico de `muniguia-contextual-v1` citado en aquella evidencia | Mantener autorización server-side, recorrido efímero por sesión y Manual como fallback; no confundir orientación con permiso ni con persistencia institucional |
 | WP0-L: observación de copia restaurada | Antecedente S14B ejecutado conectado desde `38b25e8` sobre restore descartable: observador de mínimo privilegio, `REPEATABLE READ READ ONLY`, `TLSv1.3`, 968 filas de catálogo y `_prisma_migrations` `absent`; resultado `discovery_non_approvable`, `approvalEligible:false`; artefacto externo retenido con cuatro flags de evidencia en `false` | S14C construyó después el baseline y su replay efímero; WP0-L continúa siendo descubrimiento no aprobable, no approval ni autorización DDL |
 | Aislamiento DB Preview/Production | Targets mapeados a branches distintos; `DB_CONFIG_ISOLATION=PASS`, `DB_CONFIG_SSLMODE_VERIFY_FULL=true`, `NEON_MAPPING=IDENTIFIED`; credencial owner expuesta durante la operación rotada e invalidada | Mantener la separación y `verify-full`; no confundir aislamiento de targets DB con sesión positiva, datos privados o lifecycle gobernado |
 | Ownership de tablas externas S14C | 13 tablas reales de Preview —5 sensibles y 8 de referencia— representadas con `@@map` + `@@ignore`; ambos Prisma Client omiten sus delegates y Migrate las preserva | Restringir el rol DB runtime: `@@ignore` no bloquea `$queryRaw` ni credenciales sobredimensionadas |
@@ -187,7 +187,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
-| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-13.13`: 32 recursos, 12 acciones, 54 permisos y 95 firmas de ruta (53 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
+| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-13.14`: 32 recursos, 12 acciones, 54 permisos y 96 firmas de ruta (54 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | Release histórico `v1.10.0`: tag `4108ca0`, product commit `d11fd39`, deployment `READY`, gate 11/11 y GitHub Release live. Hotfix post-release `e74339c`: `/prisma/schema.prisma` 404 seguro y gate 12/12 | No mover el tag ni inferir DB, cuentas, autorización positiva o datos GRH remotos; cada deployment posterior requiere repetir el gate actual de 12 probes |
@@ -324,7 +324,7 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
 exacto por `runtime + método + ruta + recurso:acción` (32 recursos, 12 acciones,
-54 permisos y 95 firmas: 53 Serverless y 42 Express). No hay wildcard, jerarquía
+54 permisos y 96 firmas: 54 Serverless y 42 Express). No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
@@ -557,6 +557,23 @@ ventanas exactas de 972 días. La interfaz publica sólo agregados clasificados,
 agrupa categorías pequeñas y enlaza al Asistente; no muestra instrumentos,
 observaciones ni identificadores. Permanece `Unreleased` hasta completar build,
 QA integral y smoke del mismo SHA en Production.
+
+### S20 — centro de tareas y corridas GRH explicadas
+
+El incremento local convierte Inicio en una entrada por tarea: cuatro acciones
+recomendadas por rol, búsqueda completa y paleta `Ctrl/Command+K`, siempre
+proyectadas desde las capabilities efectivas. MuniGuía conserva el recorrido y
+el Asistente recibe handoffs allowlisted; ninguno amplía autorización.
+
+La nueva superficie **Corridas y marcas de cierre** (`/corridas-grh`) usa
+`grh-payroll-run-control-v1` para explicar, por período, cabeceras válidas,
+detalle asociado, marcas informadas y
+cuarentena. Reutiliza Hacienda y publica agregados sin PII, montos ni logs
+crudos. La marca no acredita pago ni cierre contable. La fase permanece validada
+localmente hasta completar commit, deployment
+y smoke remoto del mismo SHA. Presupuesto, compras, tesorería y ejecución
+presupuestaria siguen bloqueados hasta recibir una fuente autorizada, versionada
+y tenant-bound.
 
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;

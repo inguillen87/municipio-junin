@@ -13,6 +13,12 @@ import accessPolicy from '../shared/access-policy.cjs';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FRONTEND_CONFIG = path.join(REPO, 'frontend', 'vite.config.ts');
 const PWA_REGISTER_SOURCE = readFileSync(path.join(REPO, 'js', 'pwa-register.js'), 'utf8');
+const TASK_CENTER_ASSETS = new Map([
+  ['/js/municipal-task-center.js', ['text/javascript; charset=utf-8', readFileSync(path.join(REPO, 'js', 'municipal-task-center.js'))]],
+  ['/js/municipal-task-catalog.js', ['text/javascript; charset=utf-8', readFileSync(path.join(REPO, 'js', 'municipal-task-catalog.js'))]],
+  ['/js/contextual-help-catalog.js', ['text/javascript; charset=utf-8', readFileSync(path.join(REPO, 'js', 'contextual-help-catalog.js'))]],
+  ['/css/task-center.css', ['text/css; charset=utf-8', readFileSync(path.join(REPO, 'css', 'task-center.css'))]],
+]);
 const PWA_TEST_WORKER_SOURCE = "self.addEventListener('install', () => self.skipWaiting()); self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));";
 const CONTRACT_HEADER = 'x-municontrol-contract';
 const AUTH_CONTRACT = 'municontrol-auth-me-v1';
@@ -241,6 +247,12 @@ function testApiPlugin(scenario, apiLog, pwaLog) {
         }
         if (url.pathname === '/js/contextual-help.js') {
           send(response, 200, 'text/javascript; charset=utf-8', MUNIGUIA_STUB_SOURCE);
+          return;
+        }
+        const taskCenterAsset = TASK_CENTER_ASSETS.get(url.pathname);
+        if (taskCenterAsset) {
+          const [contentType, source] = taskCenterAsset;
+          send(response, 200, contentType, source);
           return;
         }
 

@@ -123,9 +123,9 @@ test('blocked and retired surfaces stay honest and responsive', async (t) => {
   });
 
   for (const scenario of [
-    { page: 'configuracion.html', width: 390, height: 844, state: 'blocked', marker: 'data-config-contract' },
-    { page: 'inteligencia.html', width: 1440, height: 940, state: 'retired', marker: 'data-retirement-code' },
-    { page: 'manuales.html', width: 390, height: 844, state: null, marker: 'data-doc-version' }
+    { page: 'configuracion.html', width: 390, height: 844, state: 'blocked', marker: 'data-config-contract', mainControls: 0 },
+    { page: 'inteligencia.html', width: 1440, height: 940, state: 'retired', marker: 'data-retirement-code', mainControls: 0 },
+    { page: 'manuales.html', width: 390, height: 844, state: null, marker: 'data-doc-version', mainControls: 1 }
   ]) {
     const { context, page } = await authenticatedPage(browser, baseUrl, { width: scenario.width, height: scenario.height });
     const consoleErrors = [];
@@ -134,17 +134,22 @@ test('blocked and retired surfaces stay honest and responsive', async (t) => {
     });
     await page.goto(`${baseUrl}/${scenario.page}`, { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => window.MuniAuthReady);
+    if (scenario.page === 'manuales.html') {
+      await page.waitForFunction(() => document.querySelector('#tareas')?.dataset.municipalTaskMounted === 'true');
+    }
     const result = await page.evaluate(({ state, marker }) => ({
       state: document.body.dataset.surfaceState || null,
       marker: document.body.getAttribute(marker),
-      forms: document.querySelectorAll('form, input, textarea, select').length,
-      fakeVisuals: document.querySelectorAll('canvas, [id^="kpi"]').length,
+      mainControls: document.querySelectorAll('#mainContent form, #mainContent input, #mainContent textarea, #mainContent select').length,
+      taskSearches: document.querySelectorAll('#mainContent [data-municipal-task-finder] input[type="search"]').length,
+      fakeVisuals: document.querySelectorAll('#mainContent canvas, #mainContent [id^="kpi"]').length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       stateExpected: state
     }), scenario);
     assert.equal(result.state, scenario.state);
     assert.ok(result.marker);
-    assert.equal(result.forms, 0);
+    assert.equal(result.mainControls, scenario.mainControls);
+    assert.equal(result.taskSearches, scenario.page === 'manuales.html' ? 1 : 0);
     assert.equal(result.fakeVisuals, 0);
     assert.ok(result.overflow <= 1, `${scenario.page} horizontal overflow: ${result.overflow}px`);
     assert.deepEqual(consoleErrors, []);

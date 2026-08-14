@@ -124,6 +124,15 @@ function setupPendingContract() {
   return contract;
 }
 
+function withoutTemporalSuggestionContract() {
+  const contract = baseContract();
+  contract.suggestions = contract.suggestions.filter(
+    suggestion => suggestion.priorityCode !== 'temporal_quarantine_present',
+  );
+  assert.equal(validateGrhActionLedgerContract(contract), true);
+  return contract;
+}
+
 function capacityContract() {
   const contract = baseContract();
   const template = contract.commitments[0];
@@ -417,8 +426,18 @@ async function createFixture() {
   };
 }
 
-async function openPage(browser, fixture, subject, { width = 1440, height = 940, theme = 'dark' } = {}) {
-  const context = await browser.newContext({ viewport: { width, height }, colorScheme: theme });
+async function openPage(browser, fixture, subject, {
+  width = 1440,
+  height = 940,
+  theme = 'dark',
+  search = '',
+  reducedMotion = 'no-preference',
+} = {}) {
+  const context = await browser.newContext({
+    viewport: { width, height },
+    colorScheme: theme,
+    reducedMotion,
+  });
   const storedUser = subject === 'tenant-admin'
     ? authoritativeUser(subject, 'TENANT_ADMIN')
     : authoritativeUser(subject, 'INTENDENTE');
@@ -434,9 +453,14 @@ async function openPage(browser, fixture, subject, { width = 1440, height = 940,
       static now() { return NativeDate.parse(globalThis.__grhLedgerNow); }
     }
     Object.defineProperty(window, 'Date', { value: FixedDate });
-  }, { token: fakeToken(subject), storedTheme: theme, now: NOW, user: storedUser });
+  }, {
+    token: fakeToken(subject),
+    storedTheme: theme,
+    now: NOW,
+    user: storedUser,
+  });
   const page = await context.newPage();
-  await page.goto(`${fixture.baseUrl}/decisiones-grh.html`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${fixture.baseUrl}/decisiones-grh.html${search}`, { waitUntil: 'domcontentloaded' });
   return { context, page };
 }
 
@@ -446,16 +470,17 @@ async function waitReady(page) {
 }
 
 test('action ledger surface integrations stay discoverable and capability-bound', async () => {
-  const [html, navigationCatalog, home, dashboard, guide, manual, webContract] = await Promise.all([
+  const [html, navigationCatalog, home, taskCatalog, dashboard, guide, manual, webContract] = await Promise.all([
     readFile(path.join(ROOT, 'decisiones-grh.html'), 'utf8'),
     readFile(path.join(ROOT, 'js/navigation-catalog.js'), 'utf8'),
     readFile(path.join(ROOT, 'inicio.html'), 'utf8'),
+    readFile(path.join(ROOT, 'js/municipal-task-catalog.js'), 'utf8'),
     readFile(path.join(ROOT, 'dashboard.html'), 'utf8'),
     readFile(path.join(ROOT, 'js/contextual-help-catalog.js'), 'utf8'),
     readFile(path.join(ROOT, 'manuales.html'), 'utf8'),
     readFile(path.join(ROOT, 'build/public-web-contract.mjs'), 'utf8'),
   ]);
-  for (const id of ['decisionLedger', 'decisionSummary', 'decisionSuggestions', 'decisionCommitments', 'decisionFilters', 'decisionDrawer', 'decisionTimeline', 'decisionDialog', 'decisionAssigneeRole', 'decisionDueOn', 'decisionSubmit', 'decisionStatus', 'decisionRetry']) {
+  for (const id of ['decisionLedger', 'decisionSummary', 'decisionSuggestions', 'decisionCommitments', 'decisionFilters', 'decisionDrawer', 'decisionTimeline', 'decisionDialog', 'decisionAssigneeRole', 'decisionDueOn', 'decisionSubmit', 'decisionStatus', 'decisionRetry', 'decisionHandoff']) {
     assert.match(html, new RegExp(`id=["']${id}["']`));
   }
   const scope = {};
@@ -474,7 +499,8 @@ test('action ledger surface integrations stay discoverable and capability-bound'
     primary: true,
   });
   assert.equal(navigationItems.filter(item => item.href === 'decisiones-grh.html').length, 1);
-  assert.match(home, /navigation\.grh-decisions[\s\S]{0,200}decisiones-grh\.html/);
+  assert.match(home, /data-municipal-task-finder/);
+  assert.match(taskCatalog, /id:\s*'follow-decisions'[\s\S]{0,600}pageId:\s*'grhDecisions'/);
   assert.match(dashboard, /id="decisionLedgerCta"[^>]+href="decisiones-grh\.html"/);
   assert.match(guide, /manualAnchor:\s*'decisiones-compromisos'/);
   assert.match(manual, /id="decisiones-compromisos"[\s\S]{0,1800}POST \/api\/grh-action-ledger[\s\S]{0,1200}PATCH \/api\/grh-action-ledger/);
@@ -492,7 +518,10 @@ test('missing ledger tables render a truthful municipal read-only state without 
     await browser.close();
     await new Promise((resolve) => fixture.server.close(resolve));
   });
-  const { context, page } = await openPage(browser, fixture, 'executive');
+  const { context, page } = await openPage(browser, fixture, 'executive', {
+    search: '?focus=temporal_quarantine_present',
+    reducedMotion: 'reduce',
+  });
   t.after(() => context.close());
   await waitReady(page);
 
@@ -505,8 +534,122 @@ test('missing ledger tables render a truthful municipal read-only state without 
   assert.match(await page.locator('#decisionEmpty').textContent(),
     /registro de compromisos todavía no está habilitado[\s\S]*crear o modificar acciones permanece cerrado/i);
   assert.equal(await page.locator('[data-create-priority], [data-transition]').count(), 0);
+  assert.match(await page.locator('#decisionHandoff').textContent(),
+    /próximo paso verificado[\s\S]*registro de compromisos está pendiente[\s\S]*sólo podés consultar/i);
+  assert.deepEqual(await page.evaluate(() => ({
+    reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    behavior: document.getElementById('decisionHandoff')?.dataset.focusScrollBehavior,
+  })), { reduce: true, behavior: 'auto' });
   assert.deepEqual(await page.locator('#decisionSummary strong').allTextContents(),
     ['0', '0', '0', '0', '0', '0', '0']);
+  assert.deepEqual(fixture.requests.map(request => request.method), ['GET']);
+});
+
+test('focused handoff offers the current allowed commitment without opening or creating it', async (t) => {
+  const fixture = await createFixture();
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise((resolve) => fixture.server.close(resolve));
+  });
+  const { context, page } = await openPage(browser, fixture, 'executive', {
+    search: '?focus=temporal_quarantine_present',
+  });
+  t.after(() => context.close());
+  await waitReady(page);
+
+  const create = page.locator('[data-create-priority="temporal_quarantine_present"]');
+  await create.waitFor();
+  await page.waitForFunction(() =>
+    document.activeElement?.dataset?.createPriority === 'temporal_quarantine_present');
+  const focusState = await page.evaluate(() => ({
+    activeId: document.activeElement?.id || null,
+    activeCreatePriority: document.activeElement?.dataset?.createPriority || null,
+    activeTag: document.activeElement?.tagName || null,
+  }));
+  assert.equal(focusState.activeCreatePriority, 'temporal_quarantine_present',
+    `focused handoff target drifted: ${JSON.stringify(focusState)}`);
+  assert.deepEqual(await page.evaluate(() => ({
+    reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    behavior: document.getElementById('decisionHandoff')?.dataset.focusScrollBehavior,
+  })), { reduce: false, behavior: 'smooth' });
+  assert.match(await page.locator('#decisionHandoff').textContent(),
+    /próximo paso verificado[\s\S]*requiere confirmación humana/i);
+  assert.equal(await page.locator('#decisionDialog').evaluate(dialog => dialog.open), false);
+  assert.equal(await page.locator('#decisionDrawer').isHidden(), true);
+  assert.deepEqual(fixture.requests.map(request => request.method), ['GET']);
+});
+
+test('focused handoff points to an existing commitment but never opens it automatically', async (t) => {
+  const fixture = await createFixture();
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise((resolve) => fixture.server.close(resolve));
+  });
+  const { context, page } = await openPage(browser, fixture, 'executive', {
+    search: '?focus=cross_source_material_difference',
+  });
+  t.after(() => context.close());
+  await waitReady(page);
+
+  const open = page.locator(`#decisionSuggestions [data-open-commitment="${CROSS_ID}"]`);
+  assert.equal(await open.evaluate(node => node === document.activeElement), true);
+  assert.match(await page.locator('#decisionHandoff').textContent(),
+    /compromiso ya existe[\s\S]*revisalo antes/i);
+  assert.equal(await page.locator('#decisionDrawer').isHidden(), true);
+  assert.deepEqual(fixture.requests.map(request => request.method), ['GET']);
+});
+
+test('focused handoff stays read-only when creation is not allowed', async (t) => {
+  const fixture = await createFixture();
+  fixture.setContract(baseContract({ readOnly: true }));
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise((resolve) => fixture.server.close(resolve));
+  });
+  const { context, page } = await openPage(browser, fixture, 'executive', {
+    search: '?focus=temporal_quarantine_present',
+  });
+  t.after(() => context.close());
+  await waitReady(page);
+
+  const card = page.locator('[data-priority-code="temporal_quarantine_present"]');
+  assert.equal(await card.evaluate(node => node === document.activeElement), true);
+  assert.match(await page.locator('#decisionHandoff').textContent(),
+    /modo consulta[\s\S]*no puede crear/i);
+  assert.equal(await page.locator('[data-create-priority="temporal_quarantine_present"]').count(), 0);
+  assert.deepEqual(fixture.requests.map(request => request.method), ['GET']);
+});
+
+test('focused handoff fails closed for stale and non-canonical queries', async (t) => {
+  const fixture = await createFixture();
+  fixture.setContract(withoutTemporalSuggestionContract());
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise((resolve) => fixture.server.close(resolve));
+  });
+
+  const stale = await openPage(browser, fixture, 'executive', {
+    search: '?focus=temporal_quarantine_present',
+  });
+  t.after(() => stale.context.close());
+  await waitReady(stale.page);
+  assert.match(await stale.page.locator('#decisionHandoff').textContent(),
+    /ya no forma parte del brief vigente[\s\S]*no se abrió ni se creó/i);
+  assert.equal(await stale.page.evaluate(() => document.activeElement?.id), 'decisionHandoff');
+
+  const malformed = await openPage(browser, fixture, 'executive', {
+    search: '?focus=temporal_quarantine_present&focus=cross_source_material_difference',
+  });
+  t.after(() => malformed.context.close());
+  await waitReady(malformed.page);
+  assert.match(await malformed.page.locator('#decisionHandoff').textContent(),
+    /enlace de próximo paso no es válido[\s\S]*modo normal/i);
+  assert.equal(await malformed.page.locator('[data-create-priority]').count(), 0);
+  assert.deepEqual(fixture.requests.map(request => request.method), ['GET', 'GET']);
 });
 
 test('enterprise ledger creates idempotently, exposes evidence and timeline, and maps mutation failures without replacing state', async (t) => {

@@ -7,7 +7,7 @@
 - Alcance: plataformas municipales y de sector público con evidencia oficial disponible públicamente
 
 La última GitHub Release versionada es `v1.10.0`; el producto S13 está en
-`d11fd39`. El estado desplegado actual es S24 en el commit
+`d11fd39`. La evidencia funcional S24 quedó verificada en el commit
 `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
 `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30. El release público
 histórico `v1.10.0` permanece verificado.

@@ -245,6 +245,7 @@ test('manifest and login expose a mobile standalone PWA without an automatic ins
   assert.ok(manifest.icons.some(icon => /(^|\s)512x512(\s|$)/.test(icon.sizes)));
 
   assert.match(loginSource, /<meta\s+name="viewport"\s+content="[^"]*width=device-width/i);
+  assert.match(loginSource, /<link\s+rel="icon"\s+href="\/favicon\.jpg"\s+type="image\/jpeg"/i);
   assert.match(loginSource, /<link\s+rel="manifest"\s+href="\/manifest\.json"/i);
   assert.match(loginSource, /<script\s+src="\/js\/pwa-register\.js"/i);
   assert.match(loginSource, /data-pwa-install[^>]*hidden/i);
@@ -269,6 +270,10 @@ test('manifest and login expose a mobile standalone PWA without an automatic ins
   assert.equal(configuredHeaders['/manifest.json']?.['content-type'], 'application/manifest+json; charset=utf-8');
   assert.match(configuredHeaders['/manifest.json']?.['cache-control'] || '', /no-cache/);
   assert.doesNotMatch(configuredHeaders['/offline']?.['cache-control'] || '', /no-store|private/i);
+  assert.deepEqual(
+    vercel.rewrites.filter(rewrite => rewrite.source === '/favicon.ico'),
+    [{ source: '/favicon.ico', destination: '/favicon.jpg' }],
+  );
 });
 
 test('PWA shell installs, updates and stays fail-closed for private traffic and offline navigation', { timeout: 45_000 }, async t => {

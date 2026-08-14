@@ -11,7 +11,7 @@ el checkout actual (`css/components.css`, `css/animations.css`,
 implementada, conectada o validada.
 
 La última GitHub Release versionada sigue siendo `v1.10.0`; su producto S13 está
-en `d11fd39`. El estado desplegado actual es S24 en el commit
+en `d11fd39`. La evidencia funcional S24 quedó verificada en el commit
 `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment Production
 `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30. La sesión privada
 positiva y S13 privado conservan su evidencia histórica local.

@@ -6,8 +6,8 @@ Intendencia, Hacienda y RRHH, sin publicar PII ni presentar datos simulados como
 si fueran reales.
 
 > Estado de esta documentación: el release `v1.10.0` conserva su evidencia
-> productiva histórica. S24 fue verificado en Production el 14 de agosto de 2026
-> sobre el alias estable en el commit `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`,
+> productiva histórica. La evidencia funcional S24 fue verificada en Production
+> el 14 de agosto de 2026 mediante el commit `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`,
 > deployment `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30 y cero
 > respuestas 5xx. El smoke autenticado cubrió Intendencia y Administración en
 > 1440/390 px, denegación para Usuario/Inspector/Demo, MuniGuía, Task Center y una

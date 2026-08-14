@@ -228,7 +228,7 @@ hubo nuevo replay real del archivo de 44 MB, DB ni deployment.
 
 La última GitHub Release versionada es `v1.10.0`: commit/tag `4108ca0`, product
 commit `d11fd39` y deployment histórico `dpl_9ANa9JwYgrG5iR6G4JEWXCSBfyNL`.
-El estado desplegado actual es S24 en el commit
+La evidencia funcional S24 quedó verificada en el commit
 `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
 `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30. Esta evidencia no
 acredita DB en tiempo real, cuentas institucionales definitivas ni actualización

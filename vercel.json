@@ -22,6 +22,7 @@
     { "source": "/mapa", "destination": "/territorio", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/favicon.ico", "destination": "/favicon.jpg" },
     { "source": "/", "destination": "/login" },
     { "source": "/inicio", "destination": "/inicio.html" },
     { "source": "/conceptos-fijos", "destination": "/conceptos-fijos.html" },

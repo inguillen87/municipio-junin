@@ -15,6 +15,7 @@ const EXPECTED_ITEMS = [
   ['reportes', 'reportes.html', 'executive', 'group'],
   ['hacienda', 'hacienda.html', 'people', 'group'],
   ['estructura', '/estructura', 'people', 'group'],
+  ['trayectoria', '/trayectoria', 'people', 'group'],
   ['movimientos-grh', 'movimientos-grh.html', 'people', 'group'],
   ['rrhh', 'rrhh.html', 'people', 'group'],
   ['areas-grh', 'areas-grh.html', 'people', 'group'],
@@ -52,7 +53,7 @@ function visibleItems(definition, capabilities) {
 test('navigation definition is exact, deeply immutable and free of parallel route identities', async () => {
   const { source, window } = await loadGlobals();
   const definition = window.MuniNavigationDefinition;
-  assert.equal(definition.version, '2026-08-12.1');
+  assert.equal(definition.version, '2026-08-13.2');
   assert.deepEqual(Array.from(definition.groups, group => group.id), EXPECTED_GROUPS);
   assert.deepEqual(
     Array.from(definition.items, item => [item.id, item.href, item.groupId, item.placement]),
@@ -93,6 +94,7 @@ test('primary compatibility catalog is derived once and stays capability-address
     );
   }
   assert.equal(catalog['navigation.organization-analytics'].id, 'estructura');
+  assert.equal(catalog['navigation.employment-actions'].id, 'trayectoria');
   assert.equal(catalog['navigation.rrhh'].id, 'rrhh');
 });
 

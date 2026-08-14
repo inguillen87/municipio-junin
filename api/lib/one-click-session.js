@@ -11,6 +11,12 @@ const {
 } = publishedDemoPolicy;
 const MAX_RATE_KEYS = 5000;
 
+function publishedSessionId(profile) {
+  if (!profile) return null;
+  const canonical = resolvePublishedDemoProfile(profile.profileId);
+  return canonical === profile ? `published-evaluation:${canonical.profileId}` : null;
+}
+
 export function exactBodyValue(body, key, pattern) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
   const keys = Object.keys(body);
@@ -80,9 +86,10 @@ export function createSessionToken(user, {
     ? resolvePublishedDemoProfile(publishedProfile.profileId)
     : null;
   const isPublishedProfile = publishedProfile !== null && canonicalPublishedProfile === publishedProfile;
+  const opaquePublishedId = publishedSessionId(publishedProfile);
   const payload = isPublishedProfile
     ? {
-        id: `published-evaluation:${canonicalPublishedProfile.profileId}`,
+        id: opaquePublishedId,
         profileId: canonicalPublishedProfile.profileId,
         role: canonicalPublishedProfile.role,
         tenantId: user.tenantId,
@@ -102,11 +109,16 @@ export function createSessionToken(user, {
   return jwt.sign(payload, environment.JWT_SECRET, { expiresIn });
 }
 
-export function sessionResponseUser(user, { publishedProfile = null } = {}) {
+export function sessionResponseUser(user, {
+  publishedProfile = null,
+  exposePublishedSessionId = false,
+} = {}) {
   const sessionAccess = getSessionAccessForUser(user);
   if (!sessionAccess) return null;
   return {
-    id: publishedProfile ? '' : user.id,
+    id: publishedProfile
+      ? (exposePublishedSessionId ? (publishedSessionId(publishedProfile) || '') : '')
+      : user.id,
     name: publishedProfile ? `Evaluación ${publishedProfile.label}` : user.name,
     email: publishedProfile ? '' : user.email,
     role: user.role,

@@ -60,6 +60,7 @@ export const GOVERNED_VITE_HTML_FILES = Object.freeze([
   'calidad.html',
   'ejecutivo.html',
   'estructura.html',
+  'trayectoria.html',
   'territorio.html',
 ]);
 

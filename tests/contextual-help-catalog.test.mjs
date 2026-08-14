@@ -32,7 +32,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 17);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 18);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -70,7 +70,12 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
       : pageId === 'quality'
         ? await readFile(path.join(ROOT, 'control.html'), 'utf8')
         : null;
-    const pageSource = pageId === 'territory'
+    const pageSource = pageId === 'employmentActions'
+      ? (await Promise.all([
+          readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
+          readFile(path.join(ROOT, 'frontend', 'src', 'employment-actions', 'EmploymentActionsDashboard.tsx'), 'utf8'),
+        ])).join('\n')
+      : pageId === 'territory'
       ? (await Promise.all([
           readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
           readFile(path.join(ROOT, 'frontend', 'src', 'territory', 'TerritoryDashboard.tsx'), 'utf8'),

@@ -148,7 +148,7 @@ municipio y los contratos privados publicados.
 
 | Capacidad | Uso actual | Límite obligatorio |
 |---|---|---|
-| [Inicio seguro](../inicio.html) | Orienta el recorrido de los siete roles técnicos vigentes con capabilities calculadas en servidor | Consulta sólo `/api/auth/me`; no carga GRH, no crea permisos/cuentas y no certifica despliegue |
+| [Inicio seguro](../inicio.html) | Orienta el recorrido de los siete roles vigentes con permisos calculados en servidor | Siempre consulta `/api/auth/me`; sólo el Inicio de Intendencia agrega `grh-decision-brief-v1`; no crea permisos/cuentas ni certifica despliegue |
 | [Panel Ejecutivo GRH](../dashboard.html) | Panorama transversal y comparación S15 entre dos tramos históricos de igual duración | S15 está en desarrollo local; los cambios no prueban causa, desempeño ni evaluación de gestión y no certifican despliegue, pago o tiempo real |
 | [Centro Ejecutivo GRH](../grh-ejecutivo.html) | Estructura, control de cálculo y eventos desde proyecciones seguras | Consumidor migrado localmente; sin fichas individuales ni PII |
 | [Centro Ejecutivo RRHH](../rrhh.html) | Participación agregada y directorio privado gobernado `grh-directory-v3`, con situación laboral informada, catálogos de contrato/revista, centro de costo y cronología acotada | La ficha nominal exige rol, usuario, tenant y finalidad autorizados; “sin egreso informado” no certifica vínculo activo y la participación en cálculo no prueba pago |
@@ -173,11 +173,11 @@ en el checkout local y `profile`/`semantic` quedan sólo en backend; esto no
 certifica un deployment. El cierre de Hacienda no publica PII, etiquetas,
 códigos de celda ni filas y conserva la moneda como no declarada.
 
-El techo de autorización local `2026-08-13.12` cubre 31 recursos, 12 acciones,
-53 permisos y 94 firmas exactas: 52 Serverless y 42 Express. Ese control de ruta no reemplaza los
+El techo de autorización local `2026-08-13.13` cubre 32 recursos, 12 acciones,
+54 permisos y 95 firmas exactas: 53 Serverless y 42 Express. Ese control de ruta no reemplaza los
 ámbitos RBAC/ABAC por área o dato, que siguen sin migrarse.
 
-La política de acceso local `2026-08-11.3` entrega
+La política de acceso local `2026-08-13.4` entrega
 `navigation.workspace` a los siete roles vigentes: `SUPER_ADMIN`,
 `TENANT_ADMIN`, `INTENDENTE`, `CONTADOR`, `TENANT_USER`, `INSPECTOR` y `DEMO`.
 Login y `/api/auth/me` calculan las capabilities y el perfil de inicio en el
@@ -341,8 +341,11 @@ reutilizando permisos más amplios.
 3. Confirme que el nombre, el rol y el municipio mostrados correspondan a su
    identidad y tarea.
 4. El login debe llevarlo a [Inicio seguro](../inicio.html). Esa portada valida
-   la sesión con `/api/auth/me`, no consulta GRH ni otro dataset y ofrece sólo
-   accesos prioritarios permitidos por el servidor.
+   la sesión con `/api/auth/me` y ofrece sólo accesos prioritarios permitidos por
+   el servidor. Sólo el Inicio de Intendencia, con variante
+   `executive-leadership` y `navigation.dashboard`, consulta además un resumen
+   GRH agregado con tres cifras y la fecha del respaldo; si falla, no muestra
+   cifras sustitutas. Los demás perfiles no consultan datos GRH desde Inicio.
 5. Abra el Panel Ejecutivo GRH sólo si aparece como capacidad autorizada; recién
    allí espere a que termine la validación de las fuentes GRH.
 6. Si Inicio informa que no hay módulos privados asignados, consulte Ayuda y use
@@ -964,7 +967,9 @@ vender como terminadas funciones que siguen condicionadas o en roadmap.
 1. Explique que GRH es la fuente laboral y que PERSONAS sólo podrá enriquecer
    identidad o territorio cuando exista una tabla puente verificada; hoy no
    alimenta las pantallas GRH.
-2. Muestre el Inicio correspondiente al rol y explique que no consulta GRH.
+2. Muestre el Inicio correspondiente al rol. Explique que los perfiles
+   ejecutivos autorizados ven un breve resumen GRH agregado, mientras los demás
+   sólo reciben orientación y accesos; ninguna variante muestra fichas.
 3. Si la capability está autorizada, muestre corte, calidad y límites en el
    Panel Ejecutivo GRH.
 4. Abra [Calidad y Linaje GRH](../control.html) y demuestre inventario, linaje dual,

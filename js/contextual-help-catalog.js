@@ -1,5 +1,5 @@
 const CONTRACT = 'muniguia-contextual-v1';
-const ACCESS_POLICY_VERSION = '2026-08-11.3';
+const ACCESS_POLICY_VERSION = '2026-08-13.4';
 const MOUNT_CAPABILITY = 'navigation.help';
 
 const KNOWN_CAPABILITIES = Object.freeze([
@@ -10,6 +10,7 @@ const KNOWN_CAPABILITIES = Object.freeze([
   'navigation.hacienda',
   'navigation.grh-executive',
   'navigation.organization-analytics',
+  'navigation.employment-actions',
   'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
@@ -149,6 +150,19 @@ const PAGES = deepFreeze({
       { id: 'confirm-organization-snapshot', selector: '#organizationSnapshotStatus', title: 'Confirmá fuente y corte', copy: 'Revisá la fuente, la fecha del snapshot y la cobertura antes de interpretar las comparaciones.' },
       { id: 'explore-organization', selector: '#organizationExplorer', title: 'Explorá estructura y áreas de costo', copy: 'Elegí una clasificación o área de costo observada, revisá su universo y abrí sólo las acciones compatibles.' },
       { id: 'compare-cost-centers', selector: '#costCenterComparator', title: 'Compará dos áreas de costo', copy: 'Contrastá participación en la cohorte actual y 24 niveles mensuales de control de cálculo. Para componentes y evidencia detallada, abrí cada área en Hacienda.' },
+    ],
+  },
+  employmentActions: {
+    href: 'trayectoria.html',
+    aliases: ['/trayectoria', '/trayectoria.html'],
+    label: 'Trayectoria laboral documentada',
+    objective: 'Compará actuaciones administrativas registradas en períodos iguales sin confundirlas con altas, bajas o vigencia actual.',
+    requiredCapability: 'navigation.employment-actions',
+    manualAnchor: 'interpretacion',
+    steps: [
+      { id: 'read-employment-actions-summary', selector: '#employmentActionsSummary', title: 'Confirmá el alcance', copy: 'Revisá el corte, la fuente y la aclaración principal antes de interpretar una actuación como un cambio laboral vigente.' },
+      { id: 'compare-employment-actions-periods', selector: '#employmentActionsPeriods', title: 'Compará períodos iguales', copy: 'Contrastá actuaciones y personas en dos ventanas de 972 días; la diferencia describe registros y no explica sus causas.' },
+      { id: 'explore-employment-action-categories', selector: '#employmentActionsCategories', title: 'Abrí las categorías', copy: 'Leé las barras como cantidades de actuaciones documentadas y mantené agrupadas las categorías pequeñas protegidas.' },
     ],
   },
   movementOperations: {

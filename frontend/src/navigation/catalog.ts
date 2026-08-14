@@ -1,9 +1,9 @@
 import { isKnownNavigationCapability, type SessionIdentity } from '../auth/session';
 
-const NAVIGATION_DEFINITION_VERSION = '2026-08-12.1';
+const NAVIGATION_DEFINITION_VERSION = '2026-08-13.2';
 const GROUP_IDS = Object.freeze(['executive', 'people', 'territory', 'data'] as const);
 const PLACEMENTS = Object.freeze(['top', 'group', 'footer'] as const);
-const EXPECTED_ITEM_COUNT = 19;
+const EXPECTED_ITEM_COUNT = 20;
 const PUBLIC_IDS = Object.freeze(['cuentas', 'ciudadano'] as const);
 const SECONDARY_BY_CAPABILITY = Object.freeze({
   'navigation.organization-analytics': 'movimientos-grh',
@@ -18,6 +18,7 @@ const EXPECTED_ITEMS = Object.freeze([
   ['reportes', 'executive', 'group', 'navigation.reports', true],
   ['hacienda', 'people', 'group', 'navigation.hacienda', true],
   ['estructura', 'people', 'group', 'navigation.organization-analytics', true],
+  ['trayectoria', 'people', 'group', 'navigation.employment-actions', true],
   ['movimientos-grh', 'people', 'group', 'navigation.organization-analytics', false],
   ['rrhh', 'people', 'group', 'navigation.rrhh', true],
   ['areas-grh', 'people', 'group', 'navigation.rrhh', false],

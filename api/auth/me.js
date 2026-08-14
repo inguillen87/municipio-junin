@@ -22,7 +22,10 @@ export default async function handler(req, res) {
   const sessionAccess = getSessionAccessForUser(tokenUser);
   if (!sessionAccess) return res.status(403).json({ error: 'Perfil de inicio no habilitado' });
   const publishedProfile = resolvePublishedDemoProfileByEmail(tokenUser.email);
-  const responseUser = sessionResponseUser(tokenUser, { publishedProfile });
+  const responseUser = sessionResponseUser(tokenUser, {
+    publishedProfile,
+    exposePublishedSessionId: true,
+  });
   if (!responseUser) return res.status(403).json({ error: 'Perfil de inicio no habilitado' });
   return res.status(200).json({
     user: {

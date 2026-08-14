@@ -9,6 +9,7 @@
   <title>Inicio institucional | MuniControl</title>
   <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/workspace-executive-summary.css">
   <script>
     (function applyStoredTheme() {
       try {
@@ -392,6 +393,34 @@
               <span class="ws-chip" id="capabilityChip"></span>
               <button class="ws-guide-button" type="button" data-muniguia-open hidden>Guiarme en esta pantalla</button>
             </div>
+            <section class="ws-executive-summary" id="executiveSummary" aria-labelledby="executiveSummaryTitle" aria-live="polite" aria-busy="true" hidden>
+              <div class="ws-executive-summary-head">
+                <div>
+                  <p class="ws-executive-summary-kicker" id="executiveSummaryKicker">Comprobando el último respaldo…</p>
+                  <h2 id="executiveSummaryTitle">Qué requiere atención</h2>
+                </div>
+                <span class="ws-executive-summary-state" id="executiveSummaryState">Actualizando</span>
+              </div>
+              <p class="ws-executive-priority">
+                <strong id="executivePriorityTitle">Comprobando la prioridad…</strong>
+                <span id="executivePriorityDetail">Esperá un momento mientras confirmamos la información.</span>
+              </p>
+              <dl class="ws-executive-facts" aria-label="Tres cifras del último respaldo">
+                <div class="ws-executive-fact">
+                  <dt>Personas en el cálculo</dt>
+                  <dd><strong id="executivePeopleValue">—</strong><span id="executivePeopleDetail">Comprobando…</span></dd>
+                </div>
+                <div class="ws-executive-fact">
+                  <dt>Controles de calidad</dt>
+                  <dd><strong id="executiveQualityValue">—</strong><span id="executiveQualityDetail">Comprobando…</span></dd>
+                </div>
+                <div class="ws-executive-fact">
+                  <dt>Coincidencia entre fuentes</dt>
+                  <dd><strong id="executiveAgreementValue">—</strong><span id="executiveAgreementDetail">Comprobando…</span></dd>
+                </div>
+              </dl>
+              <div class="ws-executive-summary-actions" id="executiveSummaryActions" aria-label="Acciones del resumen"></div>
+            </section>
           </div>
           <aside class="ws-question" aria-labelledby="questionLabel">
             <span id="questionLabel">Para empezar</span>
@@ -443,7 +472,10 @@
   <script src="js/theme-switcher.js"></script>
   <script src="js/navigation-catalog.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/auth-fetch.js"></script>
   <script src="js/bottom-nav.js"></script>
+  <script src="js/grh-decision-brief-data.js"></script>
+  <script src="js/workspace-executive-summary.js"></script>
   <script>
     (function () {
       'use strict';
@@ -493,7 +525,7 @@
         'executive-leadership': Object.freeze({
           eyebrow: 'Intendencia · resumen para decidir',
           title: 'Hola, Intendencia.',
-          lead: 'Empezá por el panorama municipal. Vas a ver prioridades, personal e informes resumidos para decidir qué revisar con cada área.',
+          lead: 'Personal, calidad y diferencias del último respaldo, en una sola lectura.',
           question: 'Abrí Panorama de personal para ver la prioridad principal y la información que la respalda.',
           journey: Object.freeze([
             'Revisá el último mes disponible, las alertas y qué necesita atención.',
@@ -603,6 +635,9 @@
         var name = tenant && (tenant.shortName || tenant.name);
         return typeof name === 'string' && name.trim() ? name.trim() : 'Municipio asignado';
       }
+      function canNavigate(projection, capability) {
+        return Boolean(ACTIONS[capability]) && projection.capabilities.indexOf(capability) !== -1;
+      }
       function orderedActionCapabilities(projection) {
         var ordered = [];
         var candidates = projection.homeProfile.priorityCapabilities.slice();
@@ -613,8 +648,8 @@
         }
         candidates.push('navigation.grh-decisions');
         candidates.forEach(function(capability) {
-          if (capability !== 'navigation.workspace' && ACTIONS[capability] &&
-              projection.capabilities.indexOf(capability) !== -1 && ordered.indexOf(capability) === -1) {
+          if (capability !== 'navigation.workspace' && canNavigate(projection, capability) &&
+              ordered.indexOf(capability) === -1) {
             ordered.push(capability);
           }
         });
@@ -700,6 +735,9 @@
         document.getElementById('workspaceError').hidden = true;
         document.getElementById('workspaceMain').setAttribute('aria-busy', 'false');
         showNotice();
+        if (window.MuniWorkspaceExecutiveSummary) {
+          void window.MuniWorkspaceExecutiveSummary.mount(projection);
+        }
       }
       async function init() {
         if (typeof window.buildSidebar === 'function') window.buildSidebar('workspace');

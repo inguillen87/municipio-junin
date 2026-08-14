@@ -43,11 +43,11 @@ describe('React navigation catalog adapter', () => {
     installWindow(browserDefinition());
     const definition = getNavigationDefinition();
     expect(definition).not.toBeNull();
-    expect(definition?.version).toBe('2026-08-12.1');
+    expect(definition?.version).toBe('2026-08-13.2');
     expect(definition?.groups.map(group => group.id)).toEqual([
       'executive', 'people', 'territory', 'data',
     ]);
-    expect(definition?.items).toHaveLength(19);
+    expect(definition?.items).toHaveLength(20);
     expect(Object.isFrozen(definition)).toBe(true);
     expect(Object.isFrozen(definition?.groups)).toBe(true);
     expect(Object.isFrozen(definition?.items)).toBe(true);
@@ -62,6 +62,7 @@ describe('React navigation catalog adapter', () => {
     if (!definition) return;
     const projection = projectNavigation(definition, [
       'navigation.workspace',
+      'navigation.employment-actions',
       'navigation.organization-analytics',
       'navigation.rrhh',
       'navigation.help',
@@ -70,7 +71,7 @@ describe('React navigation catalog adapter', () => {
     expect(projection.footer.map(item => item.id)).toEqual(['manuales']);
     expect(projection.groups.map(group => group.id)).toEqual(['people', 'territory']);
     expect(projection.groups.find(group => group.id === 'people')?.items.map(item => item.id)).toEqual([
-      'estructura', 'movimientos-grh', 'rrhh', 'areas-grh',
+      'estructura', 'trayectoria', 'movimientos-grh', 'rrhh', 'areas-grh',
     ]);
     expect(projection.groups.find(group => group.id === 'territory')?.items.map(item => item.id)).toEqual([
       'cuentas', 'ciudadano',
@@ -152,7 +153,7 @@ describe('React navigation catalog adapter', () => {
     expect(getNavigationDefinition()).toBeNull();
 
     const duplicatePrimary = structuredClone(source);
-    duplicatePrimary.items[8]!.primary = true;
+    duplicatePrimary.items[9]!.primary = true;
     installWindow(deepFreeze(duplicatePrimary));
     expect(getNavigationDefinition()).toBeNull();
   });

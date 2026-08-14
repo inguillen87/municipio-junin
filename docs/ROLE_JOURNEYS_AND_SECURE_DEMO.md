@@ -107,7 +107,7 @@ Cuando una capacidad no está en la política versionada, la respuesta correcta 
 denegarla. No existe herencia por jerarquía, wildcard ni la regla “un rol alto
 puede hacer todo”.
 
-La política local `2026-08-11.3` concede `navigation.workspace` a los siete
+La política local `2026-08-13.4` concede `navigation.workspace` a los siete
 identificadores y proyecta en servidor un perfil mínimo. Si una cuenta
 institucional vigente posee uno de esos roles, login y `/api/auth/me` emiten
 `capabilities`, `accessPolicyVersion` y exactamente `variant`, `defaultPath` y
@@ -148,7 +148,7 @@ explícita con un rol vigente, están en **Roadmap** y no deben aprovisionarse t
 
 | Superficie | Fuente o estado actual | Lectura/acción que puede demostrarse | Frontera vigente |
 |---|---|---|---|
-| [`inicio.html`](../inicio.html) | Sesión autoritativa, sin dataset | Portada, recorrido y prioridades para los siete roles vigentes | Requiere `navigation.workspace`; hace una lectura de `/api/auth/me`, cero requests GRH y falla cerrado |
+| [`inicio.html`](../inicio.html) | Sesión autoritativa y brief agregado autorizado | Portada, recorrido y prioridades para los siete roles vigentes | Requiere `navigation.workspace`; siempre consulta `/api/auth/me`; sólo el Inicio de Intendencia agrega `grh-decision-brief-v1` y ante falla no muestra cifras |
 | [`dashboard.html`](../dashboard.html) | GRH privado, snapshot | Panel Ejecutivo GRH, cierre mensual y brief único `grh-decision-brief-v1` con señal global separada de evidencia mensual | Requiere `navigation.dashboard`, tenant y cuatro contratos GRH válidos; CTA sólo por capability |
 | [`grh-ejecutivo.html`](../grh-ejecutivo.html) | GRH privado, snapshot | Serie de control, conciliación y sectores | No moneda declarada; cálculo no equivale a pago |
 | [`rrhh.html`](../rrhh.html) | GRH privado, snapshot | Dotación participante, ausencias, movimientos y calidad | Sin fichas individuales ni PII cruda |
@@ -296,7 +296,8 @@ ejecución conectada contra una copia restaurada autorizada.
 La presentación pública puede comenzar en `/roles` para explicar visualmente las
 responsabilidades sin login ni datos. Una demostración autenticada comienza en
 [`inicio.html`](../inicio.html), confirma rol, tenant y versión de política, y
-explica que la portada no carga GRH. Los accesos prioritarios siguientes provienen
+explica que la portada sólo carga el brief GRH agregado para el Inicio de
+Intendencia con variante `executive-leadership`. Los accesos prioritarios siguientes provienen
 del servidor y no conceden por sí mismos el permiso del endpoint:
 
 | Rol vigente | Primera comprobación | Siguiente paso permitido | Denegación que debe verse |
@@ -408,8 +409,8 @@ Las fuentes técnicas actuales son
 [`../shared/access-policy.cjs`](../shared/access-policy.cjs), para capacidades de
 navegación y sesión, y [`../shared/route-policy.cjs`](../shared/route-policy.cjs),
 como techo exacto de autorización server-side por `recurso:acción`, runtime,
-método y ruta. Al corte, ese techo `2026-08-13.12` registra 31 recursos, 12
-acciones, 53 permisos y 94 firmas exactas: 52 Serverless y 42 Express. El modelo de datos
+método y ruta. Al corte, ese techo `2026-08-13.13` registra 32 recursos, 12
+acciones, 54 permisos y 95 firmas exactas: 53 Serverless y 42 Express. El modelo de datos
 propuesto, todavía inactivo, está en
 [`RBAC_ABAC_DATA_MODEL.md`](RBAC_ABAC_DATA_MODEL.md); sus fases de producto se
 mantienen en [`ENTERPRISE_PRODUCT_ROADMAP.md`](ENTERPRISE_PRODUCT_ROADMAP.md) y

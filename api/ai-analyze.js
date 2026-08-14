@@ -25,8 +25,14 @@ import {
   readGrhAbsenceInsightsArtifact,
 } from './grh-absence-insights.js';
 import {
+  readGrhEmploymentActionsArtifact,
+} from './grh-employment-actions.js';
+import {
   inspectGrhAbsenceInsightsContract,
 } from './lib/grh-absence-insights-contract.js';
+import {
+  inspectGrhEmploymentActionsContract,
+} from './lib/grh-employment-actions-contract.js';
 import {
   inspectGrhWorkforceFinanceContract,
 } from './lib/grh-workforce-finance-contract.js';
@@ -150,6 +156,7 @@ const SUPPORTED_INTENTS = Object.freeze([
   'absence',
   'leave',
   'movements',
+  'employment_actions',
   'quality',
   'quarantine',
   'calculation_control',
@@ -167,6 +174,7 @@ export function createAiAnalyzeHandler({
   readDirectoryImpl = readGrhDirectory,
   readWorkforceFinanceArtifactImpl = readGrhWorkforceFinanceArtifact,
   readAbsenceInsightsArtifactImpl = readGrhAbsenceInsightsArtifact,
+  readEmploymentActionsArtifactImpl = readGrhEmploymentActionsArtifact,
   buildDecisionBriefProjectionImpl = buildGrhDecisionBriefProjection,
   inspectDecisionBriefContractImpl = inspectGrhDecisionBriefContract,
   buildDomainCatalogProjectionImpl = buildGrhDomainCatalogProjection,
@@ -175,6 +183,7 @@ export function createAiAnalyzeHandler({
   buildWorkforceFinanceProjectionImpl = buildGrhWorkforceFinanceProjection,
   inspectWorkforceFinanceContractImpl = inspectGrhWorkforceFinanceContract,
   inspectAbsenceInsightsContractImpl = inspectGrhAbsenceInsightsContract,
+  inspectEmploymentActionsContractImpl = inspectGrhEmploymentActionsContract,
   authorizeDirectoryImpl = authorizeGrhDirectoryRequest,
   synthesizeAnswerImpl = synthesizeMunicipalAnswer,
   directoryAuthorizationDependencies = {},
@@ -272,6 +281,7 @@ export function createAiAnalyzeHandler({
     }
     const useAbsenceInsights = classification.intent === 'absence' &&
       !parsePeriodRequest(message).explicit;
+    const useEmploymentActions = classification.intent === 'employment_actions';
     let directoryAuthorization = null;
     let directoryReadAudit = null;
     if (classification.intent === 'person_lookup') {
@@ -297,6 +307,7 @@ export function createAiAnalyzeHandler({
         domainCatalog: null,
         workforceFinance: null,
         absenceInsights: null,
+        employmentActions: null,
       };
       if (classification.intent === 'decision_brief') {
         const decisionBrief = buildDecisionBriefProjectionImpl(executive, quality, close);
@@ -347,6 +358,19 @@ export function createAiAnalyzeHandler({
         }
         assistantData.absenceInsights = absenceInsights;
       }
+      if (useEmploymentActions) {
+        const employmentActions = await readEmploymentActionsArtifactImpl({
+          environment,
+          expectedSourceSha256: provenance.sourceSha256,
+        });
+        if (!inspectEmploymentActionsContractImpl(employmentActions)?.ok ||
+            !projectionMatchesAssistantSource(employmentActions, provenance, {
+              requireLatestPeriod: false,
+            })) {
+          throw new Error('GRH employment-actions projection invalid');
+        }
+        assistantData.employmentActions = employmentActions;
+      }
       const answer = classification.intent === 'person_lookup'
         ? await buildPrivateDirectoryResponse({
           message,
@@ -365,7 +389,7 @@ export function createAiAnalyzeHandler({
           assistantData,
         );
       const nominal = answer.intent === 'person_lookup';
-      const responseProvenance = nominal
+      let responseProvenance = nominal
         ? {
           ...provenance,
           aggregateOnly: false,
@@ -378,6 +402,14 @@ export function createAiAnalyzeHandler({
             absenceInsightsSchemaVersion: assistantData.absenceInsights.schemaVersion,
           }
           : provenance);
+      if (!nominal && useEmploymentActions) {
+        responseProvenance = {
+          ...responseProvenance,
+          employmentActionsSchemaVersion: assistantData.employmentActions.schemaVersion,
+          employmentActionsClassificationRuleVersion:
+            assistantData.employmentActions.classification.ruleVersion,
+        };
+      }
       const copilot = await synthesizeAnswerImpl({
         mode: requestedMode,
         classification,
@@ -396,6 +428,8 @@ export function createAiAnalyzeHandler({
         available: true,
         source: nominal
           ? 'grh_directory_private_contract'
+          : (useEmploymentActions
+            ? 'grh_employment_actions_governed_contract'
           : (useAbsenceInsights
             ? 'grh_absence_insights_governed_contract'
             : (FINANCE_INTENTS.has(answer.intent)
@@ -406,7 +440,7 @@ export function createAiAnalyzeHandler({
               ? 'grh_decision_brief_governed_contract'
               : (answer.intent === 'close_explanation'
                 ? 'grh_close_governed_contract'
-                : 'grh_executive_portable_contract'))))),
+                : 'grh_executive_portable_contract')))))),
         snapshotAsOf: provenance.snapshotAsOf,
         historyUsed: nominal && answer.answer?.directory?.status === 'matched',
       }, engine);
@@ -416,23 +450,30 @@ export function createAiAnalyzeHandler({
     } catch (error) {
       const directoryFailure = classification.intent === 'person_lookup';
       const absenceInsightsFailure = useAbsenceInsights;
+      const employmentActionsFailure = useEmploymentActions;
       if (directoryFailure && directoryReadAudit) {
         await directoryReadAudit.denyPendingRead();
       }
       console.error(directoryFailure
         ? '[GRH-ASSISTANT] Directorio privado no disponible'
+        : (employmentActionsFailure
+          ? '[GRH-ASSISTANT] Lectura agregada de actuaciones laborales no disponible'
         : (absenceInsightsFailure
           ? '[GRH-ASSISTANT] Lectura agregada de ausencias no disponible'
-          : '[GRH-ASSISTANT] Proyección portable no disponible'));
+          : '[GRH-ASSISTANT] Proyección portable no disponible')));
       return res.status(503).json({
         error: directoryFailure
           ? 'El directorio GRH privado no está disponible. No se generó una respuesta alternativa.'
+          : (employmentActionsFailure
+            ? 'Las actuaciones laborales agregadas no están disponibles. No se reutilizó otra fuente.'
           : (absenceInsightsFailure
             ? 'La lectura explicada de ausencias no está disponible. No se reutilizó otra fuente.'
-            : 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.'),
+            : 'El contrato GRH privado no está disponible. No se generó una respuesta alternativa.')),
         code: directoryFailure
           ? 'GRH_DIRECTORY_CONTRACT_UNAVAILABLE'
-          : (absenceInsightsFailure ? 'GRH_ABSENCE_INSIGHTS_UNAVAILABLE' : 'GRH_CONTRACT_UNAVAILABLE'),
+          : (employmentActionsFailure
+            ? 'GRH_EMPLOYMENT_ACTIONS_UNAVAILABLE'
+            : (absenceInsightsFailure ? 'GRH_ABSENCE_INSIGHTS_UNAVAILABLE' : 'GRH_CONTRACT_UNAVAILABLE')),
         engine: { id: ENGINE_ID, externalProvider: false, generated: false },
       });
     }
@@ -1226,6 +1267,9 @@ export function classifyIntent(rawMessage) {
   if (/^(?:personas?(?: y)? estructura|asistencia(?: y)? tiempo|licencias?(?: y)? salud(?: laboral)?|carrera(?: y)? desarrollo|relaciones? laborales?|nomina(?: y)? control(?: de calculo)?|beneficios?(?: y)? descuentos?|movimientos?(?: y)? trazabilidad)$/.test(message)) {
     return { intent: 'domain_catalog', policy: 'allowed' };
   }
+  if (/\bactuacion(?:es)?(?: administrativa(?:s)?| laboral(?:es)?)?\b|\btrayectoria laboral\b|\bfoja laboral\b|\bcambios? laborales? documentados?\b/.test(message)) {
+    return { intent: 'employment_actions', policy: 'allowed' };
+  }
   if (/requiere atencion|necesita atencion|prioridades?|que accion sigue|que revisar primero|brief de decision|agenda de decision/.test(message)) {
     return { intent: 'decision_brief', policy: 'allowed' };
   }
@@ -1419,6 +1463,9 @@ export function buildDeterministicAnswer(
     case 'movements':
       result = movementsAnswer(context, periodRequest);
       break;
+    case 'employment_actions':
+      result = employmentActionsAnswer(context);
+      break;
     case 'quality':
       result = qualityAnswer(context);
       break;
@@ -1451,7 +1498,7 @@ export function buildDeterministicAnswer(
     findings: result.findings || [],
     evidence: result.evidence || [],
     caveats: unique([...(result.caveats || []), ...context.baseCaveats]),
-    source: sourceLine,
+    source: result.source || sourceLine,
     nextQuestions: result.nextQuestions || [],
     code: result.code || null,
   };
@@ -1553,6 +1600,10 @@ function semanticContext(
       assistantData?.absenceInsights,
       executive.source,
     ),
+    employmentActions: validAssistantEmploymentActions(
+      assistantData?.employmentActions,
+      executive.source,
+    ),
     baseCaveats: [],
   };
 }
@@ -1592,6 +1643,17 @@ function validAssistantAbsenceInsights(value, source) {
   if (!inspectGrhAbsenceInsightsContract(value)?.ok || !sameAssistantSource(value.source, source)) {
     const error = new Error('El contrato absence-insights GRH no es válido.');
     error.code = 'GRH_ABSENCE_INSIGHTS_CONTRACT_INVALID';
+    throw error;
+  }
+  return value;
+}
+
+function validAssistantEmploymentActions(value, source) {
+  if (value === undefined || value === null) return null;
+  if (!inspectGrhEmploymentActionsContract(value)?.ok ||
+      !sameAssistantSource(value.source, source)) {
+    const error = new Error('El contrato employment-actions GRH no es válido.');
+    error.code = 'GRH_EMPLOYMENT_ACTIONS_CONTRACT_INVALID';
     throw error;
   }
   return value;
@@ -2967,6 +3029,71 @@ function movementComparisonAnswer(context, requestedYears) {
       ],
     }),
     resolvedPeriod: `${years[0]}→${years[1]}`,
+  };
+}
+
+function employmentActionsAnswer(context) {
+  const actions = context.employmentActions;
+  if (!actions) {
+    return assistantContractUnavailable(
+      'Actuaciones laborales no disponibles',
+      'No pudimos verificar el contrato agregado de actuaciones laborales.',
+      'GRH_EMPLOYMENT_ACTIONS_UNAVAILABLE',
+    );
+  }
+  const current = actions.comparison.current;
+  const prior = actions.comparison.prior;
+  const deltas = actions.comparison.deltas;
+  const topCategories = actions.categories
+    .filter(category => category.privacyStatus === 'released')
+    .slice()
+    .sort((left, right) =>
+      right.current.events - left.current.events || left.label.localeCompare(right.label, 'es'))
+    .slice(0, 5);
+  const topFinding = topCategories.slice(0, 3)
+    .map(category => `${category.label} (${formatInteger(category.current.events)})`)
+    .join(', ');
+
+  return {
+    title: 'Actuaciones laborales documentadas · mismo tiempo de cada gestión',
+    summary: `En la ventana actual de ${actions.periods.current.days} días se documentaron ${formatInteger(current.actionEvents)} actuaciones de ${formatInteger(current.distinctPersons)} personas GRH distintas. En la ventana anterior equivalente fueron ${formatInteger(prior.actionEvents)} actuaciones de ${formatInteger(prior.distinctPersons)} personas GRH distintas.`,
+    findings: [
+      `La diferencia observada es ${formatSignedInteger(deltas.actionEvents)} actuaciones y ${formatSignedInteger(deltas.distinctPersons)} personas; describe registros y no desempeño de gestión.`,
+      `Las categorías con más actuaciones en la ventana actual son ${topFinding}.`,
+      `${formatInteger(actions.protectedBucket.categoryCount)} categorías de menor tamaño se conservan reunidas como “${actions.protectedBucket.label}”.`,
+    ],
+    evidence: [
+      metric('Ventana actual', formatInteger(current.actionEvents), `${formatInteger(current.distinctPersons)} personas GRH distintas · ${actions.periods.current.startDate} a ${actions.periods.current.endDate}`),
+      metric('Ventana anterior equivalente', formatInteger(prior.actionEvents), `${formatInteger(prior.distinctPersons)} personas GRH distintas · ${actions.periods.prior.startDate} a ${actions.periods.prior.endDate}`),
+      metric('Diferencia de actuaciones', formatSignedInteger(deltas.actionEvents), 'Misma cantidad de días y mismo día de corte.'),
+      metric('Integridad del vínculo laboral', formatPercent(actions.coverage.joinIntegrityPct), 'Cruce agregado entre actuaciones y legajos; no publica fichas.'),
+    ],
+    caveats: [
+      'Cada fila es una actuación documentada; no representa necesariamente un cambio único ni una condición vigente.',
+      'Las actuaciones sobre fechas de ingreso o egreso no equivalen automáticamente a altas o bajas de dotación.',
+      'La comparación describe registros de dos ventanas iguales; no atribuye causas ni permite evaluar desempeño de gestión.',
+      'No se publican instrumentos, observaciones, usuarios, documentos ni identificadores personales.',
+    ],
+    nextQuestions: [
+      '¿Cuáles son las categorías con más actuaciones laborales?',
+      '¿Cuál es el origen y la fecha de los datos?',
+    ],
+    actions: [{
+      id: 'open_employment_actions',
+      label: 'Abrir trayectoria laboral',
+      href: '/trayectoria',
+      requiredCapability: 'navigation.employment-actions',
+    }],
+    source: `Fuente: ${actions.source.canonicalSystem} · ${actions.source.tables.actions} vinculada con ${actions.source.tables.employment} · respaldo al ${actions.source.snapshotAsOf} · clasificación ${actions.classification.ruleVersion} · agregado sin datos personales.`,
+    visual: buildBarVisual({
+      title: 'Actuaciones por categoría · ventana actual',
+      subtitle: `${actions.periods.current.startDate} a ${actions.periods.current.endDate} · actuaciones documentadas, no altas, bajas ni vigencias.`,
+      order: 'ranked',
+      unit: 'records',
+      scaleMax: topCategories[0].current.events,
+      items: topCategories.map(category =>
+        visualItem(category.label, category.current.events, formatInteger(category.current.events))),
+    }),
   };
 }
 

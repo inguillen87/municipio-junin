@@ -69,7 +69,7 @@ var MUNI_NAV_ASSET_BASE = (function() {
   }
 })();
 
-var CLIENT_ACCESS_POLICY_VERSION = '2026-08-11.3';
+var CLIENT_ACCESS_POLICY_VERSION = '2026-08-13.4';
 var ACCESS_NOTICE_KEY = 'mjunin_access_notice';
 var KNOWN_ROLES = ['SUPER_ADMIN', 'INTENDENTE', 'TENANT_ADMIN', 'TENANT_USER', 'CONTADOR', 'INSPECTOR', 'DEMO'];
 var KNOWN_CAPABILITIES = [
@@ -80,6 +80,7 @@ var KNOWN_CAPABILITIES = [
   'navigation.hacienda',
   'navigation.grh-executive',
   'navigation.organization-analytics',
+  'navigation.employment-actions',
   'navigation.territory',
   'navigation.data-quality',
   'navigation.rrhh',
@@ -300,7 +301,7 @@ window.requireRole = function(allowedRoles) {
 // renders no private destinations; capability visibility never falls back to a
 // second, local menu.
 function validatedNavigationDefinition(definition) {
-  if (!definition || definition.version !== '2026-08-12.1' ||
+  if (!definition || definition.version !== '2026-08-13.2' ||
       !Array.isArray(definition.groups) || !Array.isArray(definition.items) ||
       !Object.isFrozen(definition) || !Object.isFrozen(definition.groups) ||
       !Object.isFrozen(definition.items) ||
@@ -316,6 +317,7 @@ function validatedNavigationDefinition(definition) {
     ['reportes', 'reportes.html', 'executive', 'group', 'navigation.reports', true],
     ['hacienda', 'hacienda.html', 'people', 'group', 'navigation.hacienda', true],
     ['estructura', '/estructura', 'people', 'group', 'navigation.organization-analytics', true],
+    ['trayectoria', '/trayectoria', 'people', 'group', 'navigation.employment-actions', true],
     ['movimientos-grh', 'movimientos-grh.html', 'people', 'group', 'navigation.organization-analytics', false],
     ['rrhh', 'rrhh.html', 'people', 'group', 'navigation.rrhh', true],
     ['areas-grh', 'areas-grh.html', 'people', 'group', 'navigation.rrhh', false],
@@ -1160,6 +1162,7 @@ var MUNIGUIA_PRIVATE_PATHS = [
   '/hacienda', '/hacienda.html',
   '/ejecutivo', '/ejecutivo.html', '/grh-ejecutivo', '/grh-ejecutivo.html',
   '/estructura', '/estructura.html',
+  '/trayectoria', '/trayectoria.html',
   '/movimientos-grh', '/movimientos-grh.html',
   '/territorio', '/territorio.html',
   '/calidad', '/calidad.html', '/control', '/control.html',

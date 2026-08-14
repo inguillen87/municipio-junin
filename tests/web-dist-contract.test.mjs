@@ -242,9 +242,9 @@ test('el contrato nominal rechaza HTML raiz no clasificado e index.html sin crea
     'roles.html',
     'manuales.html',
   ]);
-  assert.deepEqual(GOVERNED_VITE_HTML_FILES, ['calidad.html', 'ejecutivo.html', 'estructura.html', 'territorio.html']);
+  assert.deepEqual(GOVERNED_VITE_HTML_FILES, ['calidad.html', 'ejecutivo.html', 'estructura.html', 'trayectoria.html', 'territorio.html']);
   assert.deepEqual(VITE_ENTRY_HTML_FILES, GOVERNED_VITE_HTML_FILES);
-  assert.equal(GOVERNED_HTML_FILES.length, 12);
+  assert.equal(GOVERNED_HTML_FILES.length, 13);
   assert.deepEqual(
     assertClassifiedRootHtmlNames([...PUBLIC_LEGACY_HTML_FILES]),
     PUBLIC_LEGACY_HTML_FILES,

@@ -159,8 +159,8 @@ Reglas de verdad:
 - `shared/route-policy.cjs` actúa como techo de autorización exacto por
   runtime, método, ruta y permiso `recurso:acción`. Una ruta, método, rol,
   capacidad o secreto interno no registrado se deniega.
-- La versión local `2026-08-13.12` del manifiesto contiene 31 recursos, 12
-  acciones, 53 permisos y 94 firmas de ruta protegidas: 52 Serverless y 42
+- La versión local `2026-08-13.13` del manifiesto contiene 32 recursos, 12
+  acciones, 54 permisos y 95 firmas de ruta protegidas: 53 Serverless y 42
   Express. Es un techo ejecutable exacto, no persistencia RBAC/ABAC por área.
 - `.vercelignore` excluye backend, evidencia, scripts, SQL, tests, documentos y
   artefactos JSON privados. `api/**` y `prisma/**` permanecen desplegables.
@@ -181,13 +181,13 @@ Reglas de verdad:
 
 ### 2.3 Inicio seguro y proyección de acceso
 
-`shared/access-policy.cjs` versión `2026-08-11.3` reconoce siete roles exactos y
+`shared/access-policy.cjs` versión `2026-08-13.4` reconoce siete roles exactos y
 la capability `navigation.workspace`. `api/auth/login.js`, `api/auth/me.js` y el
 router Express calculan desde el usuario autoritativo y emiten dentro de `user`:
 
 ```text
 capabilities: string[]
-accessPolicyVersion: "2026-08-11.3"
+accessPolicyVersion: "2026-08-13.4"
 homeProfile: {
   variant,
   defaultPath: "inicio.html",
@@ -199,8 +199,11 @@ homeProfile: {
 la política del rol y las capabilities contextuales; siempre incluye
 `navigation.workspace`. `inicio.html` espera la respuesta autoritativa de
 `/api/auth/me`, falla cerrado ante versión, rol, capability o perfil desconocido
-y renderiza sólo prioridades permitidas. Esa portada no llama endpoints GRH ni
-otros datasets; el Panel ejecutivo GRH vive por separado en `dashboard.html`.
+y renderiza sólo prioridades permitidas. Sólo el Inicio de Intendencia, con
+`homeProfile.variant: executive-leadership` y `navigation.dashboard`, consulta
+además el agregado `grh-decision-brief-v1`; si
+esa consulta falla, no muestra cifras de reemplazo. Los demás perfiles no llaman
+endpoints GRH; el Panel ejecutivo completo vive por separado en `dashboard.html`.
 
 Para un `SUPER_ADMIN` sin tenant, `getSessionAccessForUser` reduce el resultado
 a `session.read`, `navigation.workspace` y `navigation.help`; su prioridad queda
@@ -1385,8 +1388,8 @@ APIs privadas → analítica / mapas / alertas / asistente
 - La autorización actual combina identidad, rol vigente, tenant y estado
   consultados en DB con un manifiesto exacto de rutas y permisos
   `recurso:acción`. Las listas legacy sólo pueden restringir ese techo, nunca
-  ampliarlo. La versión local cubre 31 recursos, 12 acciones, 53 permisos y 94
-  firmas exactas (52 Serverless y 42 Express). Todavía no existe persistencia de
+  ampliarlo. La versión local cubre 32 recursos, 12 acciones, 54 permisos y 95
+  firmas exactas (53 Serverless y 42 Express). Todavía no existe persistencia de
   asignaciones por área, fila, campo, vigencia ni reglas de segregación de
   funciones.
 
@@ -1482,16 +1485,19 @@ municipal ni ejecutar una decisión administrativa por sí sola.
 
 **Actual local:** existen `Tenant`, siete roles técnicos, estado del tenant,
 controles tenant-bound y una política compartida que registra de forma literal
-31 recursos, 12 acciones, 53 permisos y 94 firmas protegidas (52 Serverless y 42
+32 recursos, 12 acciones, 54 permisos y 95 firmas protegidas (53 Serverless y 42
 Express). No hay wildcard, jerarquía ni autorización por nombre de pantalla. Los
 adaptadores de ambos runtimes usan ese mismo techo y deniegan lo desconocido.
 Algunas tablas analíticas legacy aún dependen de un CUID ambiental y no ofrecen
 aislamiento por fila nativo.
 
-La política de acceso `2026-08-11.3` agrega además un inicio seguro para esos
-siete roles. Login y `/me` calculan capabilities y perfil desde servidor;
-`inicio.html` no consulta datasets y separa el Panel GRH. Esto mejora la
-experiencia por responsabilidad, pero no implementa asignaciones por área,
+La política de acceso `2026-08-13.4` agrega además un inicio seguro para esos
+siete roles. Login y `/me` calculan capabilities y perfil desde servidor.
+`inicio.html` consulta `grh-decision-brief-v1` únicamente para el Inicio de
+Intendencia que combina `homeProfile.variant: executive-leadership` con
+`navigation.dashboard`; muestra tres cifras agregadas, falla sin sustituciones y
+separa el Panel GRH detallado. Los otros perfiles no consultan datasets desde
+Inicio. Esto mejora la experiencia por responsabilidad, pero no implementa asignaciones por área,
 vigencias, SoD o el resto del modelo fino.
 
 La propuesta `prisma/proposals/rbac-abac-v1.prisma` está aislada deliberadamente:
@@ -1602,8 +1608,8 @@ Diagnóstico recomendado:
 | Frontera HTTP raw GRH | Cerrada localmente | `/api/grh-data` autentica/valida tenant y responde 410 sin leer artefactos; cinco UIs con cero referencias |
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
-| Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px; 42/42 focal. Sin requests GRH en Inicio, cuentas, DB o deployment |
-| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.12`: 31 recursos, 12 acciones, 53 permisos y 94 firmas exactas, 52 Serverless + 42 Express; desconocidos fallan cerrados |
+| Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px. Siempre consulta `/api/auth/me`; sólo el Inicio de Intendencia con variante `executive-leadership` y `navigation.dashboard` agrega el brief GRH y falla sin cifras si no está disponible |
+| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-13.13`: 32 recursos, 12 acciones, 54 permisos y 95 firmas exactas, 53 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |

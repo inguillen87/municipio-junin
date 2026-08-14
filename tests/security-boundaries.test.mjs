@@ -22,9 +22,11 @@ const originalFindUnique = prisma.user.findUnique;
 
 prisma.user.findUnique = async ({ where }) => {
   authLookupCalls += 1;
-  authLookupCallsById.set(where.id, (authLookupCallsById.get(where.id) || 0) + 1);
-  if (failingAuthUserIds.has(where.id)) throw new Error('simulated auth database outage');
-  return authoritativeUsers.get(where.id) || null;
+  const lookupKey = where.id || `email:${where.email}`;
+  authLookupCallsById.set(lookupKey, (authLookupCallsById.get(lookupKey) || 0) + 1);
+  if (where.id && failingAuthUserIds.has(where.id)) throw new Error('simulated auth database outage');
+  if (where.id) return authoritativeUsers.get(where.id) || null;
+  return [...authoritativeUsers.values()].find(user => user.email === where.email) || null;
 };
 
 after(async () => {
@@ -35,13 +37,15 @@ after(async () => {
 function setAuthoritativeUser(id, {
   role = 'TENANT_USER',
   tenantId = 'tenant-junin-test',
+  tenantSlug = tenantId,
+  email = `${id}@example.test`,
   active = true,
   tenantStatus = 'ACTIVE',
   trialEndsAt = tenantStatus === 'TRIAL' ? '2099-01-01T00:00:00.000Z' : null,
 } = {}) {
   const tenant = tenantId ? {
     id: tenantId,
-    slug: tenantId,
+    slug: tenantSlug,
     name: 'Municipio de prueba',
     shortName: 'Prueba',
     status: tenantStatus,
@@ -49,7 +53,7 @@ function setAuthoritativeUser(id, {
   } : null;
   authoritativeUsers.set(id, {
     id,
-    email: `${id}@example.test`,
+    email,
     name: `Usuario ${id}`,
     role,
     tenantId,
@@ -259,6 +263,40 @@ test('/api/auth/me returns the current DB role and tenant with one lookup', asyn
   assert.equal(response.payload.user.capabilities.includes('navigation.grh-executive'), true);
   assert.equal(response.payload.user.capabilities.includes('navigation.import'), false);
   assert.equal(lookupCount('me-current-user') - before, 1);
+});
+
+test('/api/auth/me gives a published evaluation the opaque non-PII identity required by governed surfaces', async () => {
+  const { default: handler } = await import('../api/auth/me.js');
+  const profile = (await import('../shared/published-demo-policy.cjs')).default
+    .resolvePublishedDemoProfile('intendente');
+  setAuthoritativeUser('published-intendente-db', {
+    role: profile.role,
+    tenantId: process.env.GRH_TENANT_ID,
+    tenantSlug: profile.tenantSlug,
+    email: profile.email,
+  });
+  const token = jwt.sign({
+    id: 'published-evaluation:intendente',
+    profileId: profile.profileId,
+    role: profile.role,
+    tenantId: process.env.GRH_TENANT_ID,
+    authMode: 'published-evaluation',
+  }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  const response = mockResponse();
+
+  await handler({
+    method: 'GET',
+    url: '/api/auth/me',
+    query: {},
+    headers: { authorization: `Bearer ${token}` },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.payload.user.id, 'published-evaluation:intendente');
+  assert.equal(response.payload.user.email, '');
+  assert.equal(response.payload.user.role, 'INTENDENTE');
+  assert.equal(response.payload.user.capabilities.includes('navigation.grh-executive'), true);
+  assert.equal(response.payload.user.capabilities.includes('navigation.organization-analytics'), true);
 });
 
 test('/api/auth/me rejects an unknown DB role before issuing capabilities', async () => {

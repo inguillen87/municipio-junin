@@ -31,8 +31,9 @@ const PROFILE_URL = new URL('../api/_data/grh-profile.json', import.meta.url);
 const SEMANTIC_URL = new URL('../api/_data/grh-semantic.json', import.meta.url);
 const WORKFORCE_FINANCE_URL = new URL('../api/_data/grh-workforce-finance.json', import.meta.url);
 const ABSENCE_INSIGHTS_URL = new URL('../api/_data/grh-absence-insights.json', import.meta.url);
+const EMPLOYMENT_ACTIONS_URL = new URL('../api/_data/grh-employment-actions.json', import.meta.url);
 const HAS_PRIVATE_GRH = existsSync(PROFILE_URL) && existsSync(SEMANTIC_URL) &&
-  existsSync(ABSENCE_INSIGHTS_URL);
+  existsSync(ABSENCE_INSIGHTS_URL) && existsSync(EMPLOYMENT_ACTIONS_URL);
 
 function realBundle() {
   const profile = JSON.parse(readFileSync(PROFILE_URL, 'utf8'));
@@ -75,6 +76,7 @@ function realAssistantData(views = realViews(), bundle = realBundle()) {
     workforceFinance: buildGrhWorkforceFinanceProjection(source, { presentation }),
     workforceFinanceSource: source,
     absenceInsights: JSON.parse(readFileSync(ABSENCE_INSIGHTS_URL, 'utf8')),
+    employmentActions: JSON.parse(readFileSync(EMPLOYMENT_ACTIONS_URL, 'utf8')),
   };
 }
 
@@ -85,7 +87,10 @@ function answer(question, views = realViews(), presentation = JUNIN_PRESENTATION
     views.quality,
     views.close,
     presentation,
-    { absenceInsights: JSON.parse(readFileSync(ABSENCE_INSIGHTS_URL, 'utf8')) },
+    {
+      absenceInsights: JSON.parse(readFileSync(ABSENCE_INSIGHTS_URL, 'utf8')),
+      employmentActions: JSON.parse(readFileSync(EMPLOYMENT_ACTIONS_URL, 'utf8')),
+    },
   );
 }
 
@@ -732,6 +737,48 @@ test('movement answer labels the snapshot year as partial and preserves the exac
   assert.doesNotMatch(JSON.stringify(result.answer), /legamov/i);
 });
 
+test('employment actions answer compares equal windows with governed categories and no causal claim', { skip: !HAS_PRIVATE_GRH }, () => {
+  for (const question of [
+    '¿Qué actuaciones laborales se documentaron?',
+    'Mostrá la trayectoria laboral agregada',
+    'Cambios laborales documentados',
+  ]) {
+    assert.deepEqual(classifyIntent(question), {
+      intent: 'employment_actions',
+      policy: 'allowed',
+    }, question);
+  }
+
+  const result = answer('¿Qué actuaciones laborales se documentaron?');
+  assert.equal(result.intent, 'employment_actions');
+  assert.equal(result.httpStatus, 200);
+  assert.equal(result.answer.title,
+    'Actuaciones laborales documentadas · mismo tiempo de cada gestión');
+  assert.match(result.answer.summary, /3\.882 actuaciones.+714 personas GRH distintas/i);
+  assert.match(result.answer.summary, /3\.226 actuaciones.+631 personas GRH distintas/i);
+  assert.match(result.answer.findings.join(' '), /\+656 actuaciones.+\+83 personas/i);
+  assert.match(result.answer.findings.join(' '), /Categoría laboral \(622\).+Fecha de egreso informada \(604\).+Lugar de trabajo \(365\)/i);
+  assert.match(result.answer.caveats.join(' '), /no representa necesariamente un cambio único/i);
+  assert.match(result.answer.caveats.join(' '), /no atribuye causas ni permite evaluar desempeño/i);
+  assert.match(result.answer.source, /foja vinculada con legajo.+respaldo al 2026-08-06/i);
+  assert.deepEqual(result.answer.actions, [{
+    id: 'open_employment_actions',
+    label: 'Abrir trayectoria laboral',
+    href: '/trayectoria',
+    requiredCapability: 'navigation.employment-actions',
+  }]);
+  assertBarVisual(result.answer.visual, { unit: 'records', order: 'ranked' });
+  assert.deepEqual(result.answer.visual.items.slice(0, 3).map(item => ({
+    label: item.label,
+    value: item.value,
+  })), [
+    { label: 'Categoría laboral', value: 622 },
+    { label: 'Fecha de egreso informada', value: 604 },
+    { label: 'Lugar de trabajo', value: 365 },
+  ]);
+  assert.doesNotMatch(JSON.stringify(result.answer), /\b(?:DNI|CUIL|legajo individual|instrumento número|usuario)\b/i);
+});
+
 test('generic leave overview resolves the latest released historical year and exposes its real range', { skip: !HAS_PRIVATE_GRH }, () => {
   const views = realViews();
   const result = answer('¿Qué licencias históricas están disponibles?', views);
@@ -1037,6 +1084,75 @@ test('assistant loads absence insights only for general absence questions and fa
     generated: false,
   });
   assert.doesNotMatch(JSON.stringify(unavailable.payload), /5\.936|3\.395|2024|2025|stack|sha256/i);
+});
+
+test('assistant endpoint reads the pinned employment-actions contract with explicit provenance and fails closed', { skip: !HAS_PRIVATE_GRH }, async () => {
+  const artifact = JSON.parse(readFileSync(EMPLOYMENT_ACTIONS_URL, 'utf8'));
+  const reads = [];
+  const dependencies = {
+    requireRoleImpl: async () => ({
+      id: 'official',
+      role: 'INTENDENTE',
+      tenantId: 'tenant-grh-test',
+      tenant: { slug: 'junin' },
+    }),
+    requireDatasetTenantImpl: () => true,
+    readArtifactBundleImpl: async () => realBundle(),
+    readEmploymentActionsArtifactImpl: async options => {
+      reads.push(options);
+      return artifact;
+    },
+    environment: {
+      GRH_TENANT_ID: 'tenant-grh-test',
+      GRH_SOURCE_SHA256: artifact.source.sourceSha256,
+    },
+  };
+  const handler = createAiAnalyzeHandler(dependencies);
+  const response = responseRecorder();
+  await handler({
+    method: 'POST',
+    headers: {},
+    body: { message: '¿Qué actuaciones laborales se documentaron?', mode: 'deterministic' },
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.payload.intent, 'employment_actions');
+  assert.equal(response.payload.dataStatus.source, 'grh_employment_actions_governed_contract');
+  assert.equal(response.payload.provenance.employmentActionsSchemaVersion,
+    'grh-employment-actions-v1');
+  assert.equal(response.payload.provenance.employmentActionsClassificationRuleVersion,
+    'grh-foja-action-codes-v1');
+  assert.equal(reads.length, 1);
+  assert.equal(reads[0].expectedSourceSha256, artifact.source.sourceSha256);
+  assert.match(response.payload.response, /3\.882 actuaciones.+714 personas GRH distintas/i);
+  assert.deepEqual(response.payload.answer.actions, [{
+    id: 'open_employment_actions',
+    label: 'Abrir trayectoria laboral',
+    href: '/trayectoria',
+    requiredCapability: 'navigation.employment-actions',
+  }]);
+
+  const unavailableHandler = createAiAnalyzeHandler({
+    ...dependencies,
+    readEmploymentActionsArtifactImpl: async () => {
+      throw new Error('artifact unavailable');
+    },
+  });
+  const unavailable = responseRecorder();
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    await unavailableHandler({
+      method: 'POST',
+      headers: {},
+      body: { message: 'Trayectoria laboral agregada', mode: 'deterministic' },
+    }, unavailable);
+  } finally {
+    console.error = originalConsoleError;
+  }
+  assert.equal(unavailable.statusCode, 503);
+  assert.equal(unavailable.payload.code, 'GRH_EMPLOYMENT_ACTIONS_UNAVAILABLE');
+  assert.equal(Object.hasOwn(unavailable.payload, 'answer'), false);
 });
 
 test('assistant endpoint rejects provider mode before reading and fails closed on provenance drift', { skip: !HAS_PRIVATE_GRH }, async () => {

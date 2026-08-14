@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 
 import { createEvaluationSessionHandler } from '../api/auth/evaluation-session.js';
 import { createPrivateLinkSessionHandler } from '../api/auth/private-link-session.js';
+import { sessionResponseUser } from '../api/lib/one-click-session.js';
 import publishedDemoPolicy from '../shared/published-demo-policy.cjs';
 import releaseTruthContract from '../shared/release-truth-contract.cjs';
 import routePolicy from '../shared/route-policy.cjs';
@@ -88,6 +89,25 @@ test('published one-click session accepts only a profileId and returns a redacte
   assert.equal(Object.hasOwn(claims, 'email'), false);
   assert.equal(Object.hasOwn(claims, 'name'), false);
   assert.equal(claims.authMode, 'published-evaluation');
+});
+
+test('published auth refresh may expose only the opaque JWT subject while the exchange stays redacted', () => {
+  const profile = publishedDemoPolicy.resolvePublishedDemoProfile('intendente');
+  const user = publishedUser();
+
+  assert.equal(sessionResponseUser(user, { publishedProfile: profile }).id, '');
+  assert.equal(sessionResponseUser(user, {
+    publishedProfile: profile,
+    exposePublishedSessionId: true,
+  }).id, 'published-evaluation:intendente');
+  assert.equal(sessionResponseUser(user, {
+    publishedProfile: profile,
+    exposePublishedSessionId: true,
+  }).email, '');
+  assert.equal(sessionResponseUser(user, {
+    publishedProfile: { ...profile },
+    exposePublishedSessionId: true,
+  }).id, '');
 });
 
 test('every published profile receives the complete aggregate navigation without admin or nominal capabilities', async () => {
@@ -264,7 +284,7 @@ test('opaque private link rejects wrong, expired, misbound and rate-limited acce
 });
 
 test('route and release contracts own both one-click exchange endpoints exactly', () => {
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.12');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-13.13');
   assert.deepEqual(routePolicy.SESSION_EXCHANGE_ROUTES.map(route => [route.method, route.path, route.mode]), [
     ['POST', '/auth/evaluation-session', 'published-profile'],
     ['POST', '/auth/private-link-session', 'opaque-link'],

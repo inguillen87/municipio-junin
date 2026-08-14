@@ -38,6 +38,7 @@ const EXPECTED_ALLOWED_ROUTES = Object.freeze([
   ['serverless', 'GET', '/grh-decision-brief'],
   ['serverless', 'GET', '/grh-domain-catalog'],
   ['serverless', 'GET', '/grh-employment-review'],
+  ['serverless', 'GET', '/grh-employment-actions'],
   ['serverless', 'GET', '/grh-executive'],
   ['serverless', 'GET', '/grh-import-quality-history'],
   ['serverless', 'GET', '/grh-movement-operations'],
@@ -84,7 +85,7 @@ function deployedRuntimeSourceFiles() {
 }
 
 test('the temporary containment identifies exactly the six previously published emails', () => {
-  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.12');
+  assert.equal(PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.13');
   assert.deepEqual(PUBLISHED_DEMO_IDENTITIES, EXPECTED_IDENTITIES);
   assert.equal(new Set(PUBLISHED_DEMO_IDENTITIES).size, 6);
 

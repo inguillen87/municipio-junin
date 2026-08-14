@@ -3,8 +3,8 @@
 Versión documental: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
 Estado: release público `v1.10.0` verificado; producto S13 en commit `d11fd39`
-Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.12` y
-access policy `2026-08-11.3`, sin nuevo release
+Estado local revisado: 13 de agosto de 2026; route policy `2026-08-13.13` y
+access policy `2026-08-13.4`, sin nuevo release
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
 snapshot aprobado. S13 agrega `GET /api/grh-decision-brief` y el contrato
@@ -184,17 +184,21 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   copias inmutables de ejecución. La suite focal validó el contrato con fixtures;
   no se repitió el replay real de 44 MB, no se usó DB y no se desplegó. Un host
   completamente comprometido permanece fuera de la garantía.
-- El techo exacto de permisos por ruta está implementado localmente con 31
-  recursos, 12 acciones, 53 permisos y 94 firmas protegidas: 52 Serverless y 42
+- El techo exacto de permisos por ruta está implementado localmente con 32
+  recursos, 12 acciones, 54 permisos y 95 firmas protegidas: 53 Serverless y 42
   Express. La propuesta de
   ámbitos RBAC/ABAC está aislada y no migrada: todavía no hay persistencia fina,
   lifecycle de cuentas ni cuentas por cada rol.
 - El acceso local termina en [`inicio.html`](../inicio.html), una portada segura
-  regida por `navigation.workspace` y la política compartida `2026-08-11.3`.
+  regida por `navigation.workspace` y la política compartida `2026-08-13.4`.
   Login y `/api/auth/me` calculan en servidor las capabilities y un
   `homeProfile` mínimo para los siete roles técnicos vigentes. La portada hace
-  una sola lectura de sesión, no consulta GRH ni otro dataset y muestra sólo las
-  prioridades autorizadas. El Panel ejecutivo GRH queda separado.
+  una sola lectura de sesión y muestra sólo prioridades autorizadas. Sólo el
+  Inicio de Intendencia con variante `executive-leadership` y
+  `navigation.dashboard` consulta además el brief GRH
+  agregado y presenta tres cifras del respaldo; si no está disponible, no las
+  reemplaza. Los perfiles sin esa capability no solicitan GRH. El Panel
+  ejecutivo detallado queda separado.
 - Un `SUPER_ADMIN` sin tenant se proyecta sólo con `session.read`,
   `navigation.workspace` y `navigation.help`; no recibe indicadores privados.
   Roles o perfiles desconocidos, capabilities ausentes y versiones obsoletas
@@ -336,8 +340,9 @@ Duración sugerida: dos sesiones de 90 minutos.
    `410 GRH_RAW_CONTRACT_RETIRED`; certificar luego en preview/producción.
 5. Techo exacto `recurso:acción`, Prisma dual, preflight de migración bloqueado
    sin atestación institucional, seed retirado y propuesta RBAC/ABAC aislada.
-6. Política de acceso `2026-08-11.3`, contrato de sesión server-computed,
-   `inicio.html` sin datasets y guards fail-closed del navegador.
+6. Política de acceso `2026-08-13.4`, contrato de sesión server-computed,
+   `inicio.html` con sesión autoritativa, brief agregado sólo para el Inicio de
+   Intendencia con variante `executive-leadership` y guards fail-closed del navegador.
 7. Suites, QA visual, audits y Definition of Done.
 8. Preview, smokes, rollback e incidentes.
 9. Replay O2A local: promoción, duplicado, last-known-good, bundle inmutable O2A.1

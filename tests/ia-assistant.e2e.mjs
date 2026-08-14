@@ -21,8 +21,10 @@ const PROFILE_PATH = path.join(REPO, 'api', '_data', 'grh-profile.json');
 const SEMANTIC_PATH = path.join(REPO, 'api', '_data', 'grh-semantic.json');
 const WORKFORCE_FINANCE_PATH = path.join(REPO, 'api', '_data', 'grh-workforce-finance.json');
 const ABSENCE_INSIGHTS_PATH = path.join(REPO, 'api', '_data', 'grh-absence-insights.json');
+const EMPLOYMENT_ACTIONS_PATH = path.join(REPO, 'api', '_data', 'grh-employment-actions.json');
 const HAS_PRIVATE_GRH = existsSync(PROFILE_PATH) && existsSync(SEMANTIC_PATH) &&
-  existsSync(WORKFORCE_FINANCE_PATH) && existsSync(ABSENCE_INSIGHTS_PATH);
+  existsSync(WORKFORCE_FINANCE_PATH) && existsSync(ABSENCE_INSIGHTS_PATH) &&
+  existsSync(EMPLOYMENT_ACTIONS_PATH);
 const JUNIN_PRESENTATION = tenantPresentationPolicy.resolveTenantPresentation({ slug: 'junin' });
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -323,6 +325,7 @@ async function createServer(requestLog, options = {}) {
         presentation: financePresentation,
       }),
       absenceInsights: JSON.parse(await readFile(ABSENCE_INSIGHTS_PATH, 'utf8')),
+      employmentActions: JSON.parse(await readFile(EMPLOYMENT_ACTIONS_PATH, 'utf8')),
     };
   }
 
@@ -442,6 +445,13 @@ async function createServer(requestLog, options = {}) {
         actionIds: [],
       } : null;
       response.writeHead(answer.httpStatus, { 'Content-Type': CONTENT_TYPES['.json'], 'Cache-Control': 'no-store, private' });
+      const responseProvenance = provenance(views.executive, views.quality);
+      if (answer.intent === 'employment_actions') {
+        responseProvenance.employmentActionsSchemaVersion =
+          assistantData.employmentActions.schemaVersion;
+        responseProvenance.employmentActionsClassificationRuleVersion =
+          assistantData.employmentActions.classification.ruleVersion;
+      }
       response.end(JSON.stringify({
         status: answer.status,
         engine: assisted
@@ -450,7 +460,7 @@ async function createServer(requestLog, options = {}) {
         intent: answer.intent,
         response: answer.response,
         answer: synthesis ? { ...answer.answer, synthesis } : answer.answer,
-        provenance: provenance(views.executive, views.quality),
+        provenance: responseProvenance,
       }));
       return;
     }
@@ -784,6 +794,90 @@ test('assistant presents exactly four canonical primary queries for each executi
   }
 });
 
+test('assistant renders governed employment actions with provenance and trajectory handoff on desktop and mobile', { skip: !HAS_PRIVATE_GRH }, async t => {
+  const requestLog = [];
+  const server = await createServer(requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  for (const viewport of [
+    { name: 'desktop', width: 1360, height: 900 },
+    { name: 'mobile', width: 390, height: 844 },
+  ]) {
+    const context = await browser.newContext({ viewport });
+    await seedSession(context);
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/ia.html`, { waitUntil: 'networkidle' });
+
+    const responsePromise = page.waitForResponse(response =>
+      response.url() === `${baseUrl}/api/ai-analyze` && response.request().method() === 'POST');
+    await clickMoreQuery(page, 'Actuaciones laborales');
+    const payload = await (await responsePromise).json();
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.answer-heading-line h3'))
+      .some(title => title.textContent.includes('Actuaciones laborales documentadas')));
+
+    const result = await page.evaluate(() => {
+      const card = Array.from(document.querySelectorAll('.answer-card')).at(-1);
+      return {
+        title: card?.querySelector('.answer-heading-line h3')?.textContent.trim(),
+        summary: card?.querySelector('.answer-summary')?.textContent.trim(),
+        evidence: Array.from(card?.querySelectorAll('.evidence-item') || [], item => ({
+          label: item.querySelector('.evidence-label')?.textContent.trim(),
+          value: item.querySelector('.evidence-value')?.textContent.trim(),
+        })),
+        visualLabels: Array.from(card?.querySelectorAll('.answer-visual-label') || [], node =>
+          node.textContent.trim()),
+        visualValues: Array.from(card?.querySelectorAll('.answer-visual-value') || [], node =>
+          node.textContent.trim()),
+        action: {
+          label: card?.querySelector('.answer-action')?.textContent.trim(),
+          href: card?.querySelector('.answer-action')?.getAttribute('href'),
+          capability: card?.querySelector('.answer-action')?.dataset.capability,
+        },
+        source: card?.querySelector('.answer-source')?.textContent.trim(),
+        text: card?.textContent || '',
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+    assert.equal(result.title,
+      'Actuaciones laborales documentadas · mismo tiempo de cada gestión', viewport.name);
+    assert.match(result.summary, /3\.882 actuaciones.+714 personas GRH distintas/i, viewport.name);
+    assert.match(result.summary, /3\.226 actuaciones.+631 personas GRH distintas/i, viewport.name);
+    assert.deepEqual(result.evidence.slice(0, 3), [
+      { label: 'Ventana actual', value: '3.882' },
+      { label: 'Ventana anterior equivalente', value: '3.226' },
+      { label: 'Diferencia de actuaciones', value: '+656' },
+    ], viewport.name);
+    assert.deepEqual(result.visualLabels.slice(0, 3), [
+      'Categoría laboral', 'Fecha de egreso informada', 'Lugar de trabajo',
+    ], viewport.name);
+    assert.deepEqual(result.visualValues.slice(0, 3), ['622', '604', '365'], viewport.name);
+    assert.deepEqual(result.action, {
+      label: 'Abrir trayectoria laboral',
+      href: '/trayectoria',
+      capability: 'navigation.employment-actions',
+    }, viewport.name);
+    assert.match(result.source, /foja vinculada con legajo.+2026-08-06/i, viewport.name);
+    assert.match(result.text, /no atribuye causas ni permite evaluar desempeño/i, viewport.name);
+    assert.doesNotMatch(result.text, /\b(?:DNI|CUIL)\s*[:#]?\s*\d|instrumento\s+(?:número|nro\.?|#)\s*\d|usuario\s*:/i, viewport.name);
+    assert.equal(result.overflow, 0, viewport.name);
+    assert.equal(payload.intent, 'employment_actions', viewport.name);
+    assert.equal(payload.provenance.employmentActionsSchemaVersion,
+      'grh-employment-actions-v1', viewport.name);
+    assert.equal(payload.provenance.employmentActionsClassificationRuleVersion,
+      'grh-foja-action-codes-v1', viewport.name);
+    assert.equal(requestLog.at(-1).body.message,
+      '¿Qué actuaciones laborales se documentaron?', viewport.name);
+    assert.equal(requestLog.at(-1).purpose, 'AGGREGATE_ANALYSIS', viewport.name);
+    await context.close();
+  }
+});
+
 test('executive GRH assistant renders deterministic evidence on desktop and mobile', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
   const server = await createServer(requestLog, { aiDelayMs: 100 });
@@ -930,6 +1024,7 @@ test('executive GRH assistant renders deterministic evidence on desktop and mobi
     assert.deepEqual(result.railLinks, [
       { label: 'Estructura', href: '/estructura#organizationExplorer' },
       { label: 'Movimientos', href: '/movimientos-grh.html?metric=events&window=all' },
+      { label: 'Trayectoria laboral', href: '/trayectoria' },
       { label: 'RRHH', href: '/rrhh' },
       { label: 'Hacienda', href: '/hacienda' },
       { label: 'Calidad', href: '/calidad' },

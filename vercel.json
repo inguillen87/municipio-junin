@@ -25,6 +25,7 @@
     { "source": "/", "destination": "/login" },
     { "source": "/inicio", "destination": "/inicio.html" },
     { "source": "/estructura", "destination": "/estructura.html" },
+    { "source": "/trayectoria", "destination": "/trayectoria.html" },
     { "source": "/territorio", "destination": "/territorio.html" },
     { "source": "/api/whatsapp/webhook", "destination": "/api/whatsapp-webhook" }
   ],

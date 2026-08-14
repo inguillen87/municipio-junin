@@ -296,6 +296,13 @@
         throw new DecisionBriefDataError('DECISION_BRIEF_RESPONSE_INVALID', 502);
       }
       if (!response.ok || response.status < 200 || response.status >= 300) {
+        if (response.body && typeof response.body.cancel === 'function') {
+          try {
+            await response.body.cancel();
+          } catch (_) {
+            // Keep the public failure detail-free if the transport cannot cancel.
+          }
+        }
         throw new DecisionBriefDataError('DECISION_BRIEF_HTTP_ERROR', response.status);
       }
       if (responseContract(response) !== SCHEMA_VERSION) {

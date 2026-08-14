@@ -81,6 +81,7 @@ async function createServer(users, requestLog) {
     ['/ejecutivo', 'grh-ejecutivo.html'],
     ['/grh-ejecutivo', 'grh-ejecutivo.html'],
     ['/estructura', 'inicio.html'],
+    ['/trayectoria', 'inicio.html'],
     ['/movimientos-grh', 'inicio.html'],
     ['/territorio', 'inicio.html'],
     ['/calidad', 'control.html'],
@@ -108,6 +109,14 @@ async function createServer(users, requestLog) {
       }
       response.writeHead(200, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
       response.end(JSON.stringify({ user }));
+      return;
+    }
+    if (url.pathname === '/api/grh-decision-brief') {
+      response.writeHead(503, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
+      response.end(JSON.stringify({
+        error: 'Resumen ejecutivo no disponible en este ensayo de MuniGuía.',
+        code: 'GRH_DECISION_BRIEF_UNAVAILABLE',
+      }));
       return;
     }
     if (url.pathname.startsWith('/api/')) {
@@ -165,6 +174,14 @@ async function createServer(users, requestLog) {
           '<section id="movementSourceEvidence" aria-label="Fuente de movimientos"></section>',
           '<section id="movementChartTitle" aria-label="Serie de movimientos"></section>',
           '<section id="movementComparisonPanel" aria-label="Comparación de movimientos"></section>',
+          '</main>',
+        ].join('')));
+      }
+      if (url.pathname === '/trayectoria') {
+        body = Buffer.from(body.toString('utf8').replace('</main>', [
+          '<section id="employmentActionsSummary" aria-label="Resumen de actuaciones"></section>',
+          '<section id="employmentActionsPeriods" aria-label="Períodos comparables"></section>',
+          '<section id="employmentActionsCategories" aria-label="Categorías de actuaciones"></section>',
           '</main>',
         ].join('')));
       }
@@ -305,14 +322,16 @@ test('MuniGuía projects the seven authoritative role contexts at 390 and 1440 w
       assert.deepEqual(storageAfter.session, storageBefore.session);
       assert.equal(requestLog.length, before, `${role}:${viewport.width}:interaction network delta`);
       assert.deepEqual(external, []);
-      assert.deepEqual(consoleErrors, []);
+      assert.deepEqual(consoleErrors.filter((message) =>
+        !/Failed to load resource: the server responded with a status of 503 \(Service Unavailable\)/.test(message)
+      ), []);
       await context.close();
     }
   }
-  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
+  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me|grh-decision-brief)/.test(entry.path)), false);
 });
 
-test('all fifteen exact clean paths mount their capability-bound guide and unknown or public paths stay empty', async (t) => {
+test('all governed clean paths mount their capability-bound guide and unknown or public paths stay empty', async (t) => {
   const subject = 'guide-super';
   const users = new Map([[subject, authoritativeUser(subject, 'SUPER_ADMIN')]]);
   const requestLog = [];
@@ -474,7 +493,7 @@ test('animated close keeps dialog semantics and focus valid until the surface is
   assert.equal(await page.locator('#muniGuideDialog').getAttribute('aria-hidden'), 'true');
   assert.equal(await page.locator('#mainContent').evaluate((element) => element.inert), false);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'muniGuideTrigger');
-  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
+  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me|grh-decision-brief)/.test(entry.path)), false);
   await context.close();
 });
 
@@ -635,7 +654,7 @@ test('runtime unmount is complete, idempotent and cancels a mount waiting for it
   }, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(recovered, true);
   assert.equal(await racingPage.page.locator('#muniGuideTrigger').count(), 1);
-  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
+  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me|grh-decision-brief)/.test(entry.path)), false);
   await racingPage.context.close();
 });
 
@@ -716,7 +735,7 @@ test('a failed guide stylesheet is discarded and one concurrent retry recovers w
     2,
   );
   assert.equal(await page.locator('#muniGuideTrigger').count(), 1);
-  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
+  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me|grh-decision-brief)/.test(entry.path)), false);
   await context.close();
 });
 
@@ -757,7 +776,7 @@ test('logout invalidates the authoritative in-memory projection before asynchron
     storedUser: sessionStorage.getItem('mjunin_user'),
   }));
   assert.deepEqual(afterNavigation, { storedToken: null, storedUser: null });
-  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
+  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me|grh-decision-brief)/.test(entry.path)), false);
   await context.close();
 });
 
@@ -846,6 +865,6 @@ test('tenantless SUPER_ADMIN and malformed projections fail closed without priva
   await malformedPage.page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'domcontentloaded' });
   await malformedPage.page.waitForURL(/login\.html\?reason=session_invalid/);
   assert.equal(await malformedPage.page.locator('#muniGuideTrigger').count(), 0);
-  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me)/.test(entry.path)), false);
+  assert.equal(requestLog.some((entry) => /^\/api\/(?!auth\/me|grh-decision-brief)/.test(entry.path)), false);
   await malformedPage.context.close();
 });

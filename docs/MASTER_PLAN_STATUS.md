@@ -174,8 +174,8 @@ Estado: **completo en código local; falta despliegue**.
 - autorización revalidada contra DB en funciones Serverless y backend Express;
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
-- techo compartido y fail-closed vigente de 31 recursos, 12 acciones, 53
-  permisos y 94 firmas de ruta exactas (52 Serverless y 42 Express), sin
+- techo compartido y fail-closed vigente de 32 recursos, 12 acciones, 54
+  permisos y 95 firmas de ruta exactas (53 Serverless y 42 Express), sin
   wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
@@ -372,9 +372,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.12`
-contiene 31 recursos, 12 acciones, 53 permisos y 94 firmas protegidas exactas:
-52 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-13.13`
+contiene 32 recursos, 12 acciones, 54 permisos y 95 firmas protegidas exactas:
+53 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -447,14 +447,17 @@ y datos privados no certificados**.
 
 - `inicio.html` es el destino seguro después del login y exige
   `navigation.workspace`;
-- la política compartida `2026-08-11.3` define una variante de inicio para cada
+- la política compartida `2026-08-13.4` define una variante de inicio para cada
   uno de los siete roles técnicos vigentes y deniega roles, capabilities o
   perfiles desconocidos;
 - login y `/api/auth/me` calculan en servidor `capabilities`,
   `accessPolicyVersion` y un `homeProfile` mínimo con `variant`,
   `defaultPath: inicio.html` y `priorityCapabilities`;
-- Inicio consulta una sola vez `/api/auth/me`, no solicita GRH ni otro dataset y
-  sólo muestra accesos prioritarios presentes en las capabilities confirmadas;
+- Inicio consulta una sola vez `/api/auth/me`. Sólo el Inicio de Intendencia,
+  cuando combina `homeProfile.variant: executive-leadership` con
+  `navigation.dashboard`, solicita además `GET /api/grh-decision-brief` y muestra
+  tres cifras agregadas del respaldo; si el brief falla, oculta sus cifras sin
+  afectar los accesos permitidos. Los demás perfiles no solicitan datos GRH;
 - el Panel ejecutivo GRH queda como superficie separada y conserva
   `grh-close-v1`, fuente, corte, privacidad y límites de interpretación;
 - `SUPER_ADMIN` sin tenant queda reducido a `session.read`,
@@ -683,6 +686,26 @@ Estado: **implementado localmente; publicación y crosswalk privado pendientes**
   fichas, estados laborales ni indicadores GRH.
 - La próxima fase debe crear staging y crosswalk privados, aprobar finalidad,
   responsables y retención, y resolver los ambiguos con revisión humana.
+
+### S18 — actuaciones laborales documentadas
+
+Estado: **implementado y validado localmente; sin deploy ni certificación remota**.
+
+- La tabla `foja` aporta 9.481 actuaciones históricas vinculadas materialmente a
+  1.302 claves laborales; 9.478 fechas son válidas y 3 quedan en cuarentena.
+- El contrato `grh-employment-actions-v1` compara dos ventanas iguales de 972
+  días: 3.882 actuaciones y 714 personas GRH distintas en
+  2023-12-09..2026-08-06 frente a 3.226 y 631 en
+  2019-12-09..2022-08-06.
+- Trece categorías se publican con cantidades agregadas. Nueve categorías
+  pequeñas permanecen agrupadas; no se publican instrumentos, observaciones,
+  usuarios, documentos ni identificadores personales.
+- La ruta `/trayectoria` presenta la comparación con barras directas, detalle
+  técnico plegado y estados de error aislados. Es responsive y conserva el
+  acceso según capability; el Asistente ofrece la misma lectura determinista.
+- Una actuación documentada no equivale a una alta, baja, cambio único, estado
+  vigente ni evaluación de gestión. Las diferencias describen registros y no
+  atribuyen causas.
 
 ## Funciones que no deben “completarse” todavía
 

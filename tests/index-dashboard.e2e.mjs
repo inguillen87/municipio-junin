@@ -1270,7 +1270,7 @@ test('main executive dashboard performs zero GRH requests for a role without das
   await context.close();
 });
 
-test('main executive dashboard revalidates dashboard capability before every retry', { skip: !HAS_PRIVATE_GRH }, async t => {
+test('main executive dashboard revalidates dashboard capability before every retry and redirects to the authorized Inicio brief', { skip: !HAS_PRIVATE_GRH }, async t => {
   const requestLog = [];
   const server = await createServer(requestLog);
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -1301,7 +1301,11 @@ test('main executive dashboard revalidates dashboard capability before every ret
     await page.waitForFunction(() => document.activeElement?.id === 'accessNotice');
     assert.match(await page.textContent('#accessNotice'), /no tiene habilitada/i, override);
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'accessNotice', override);
-    assert.equal(requestLog.length, requestsBeforeRetry, `${override} retry must issue zero new GRH requests`);
+    assert.deepEqual(
+      requestLog.slice(requestsBeforeRetry).map(item => item.contract),
+      ['decision'],
+      `${override} retry may load only the aggregate Inicio brief after the safe redirect`,
+    );
     await context.close();
   }
 });

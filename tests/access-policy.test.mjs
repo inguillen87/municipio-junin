@@ -26,6 +26,7 @@ const EXPECTED_NAV_CAPABILITIES = [
   'navigation.hacienda',
   'navigation.grh-executive',
   'navigation.grh-decisions',
+  'navigation.employment-actions',
   'navigation.organization-analytics',
   'navigation.territory',
   'navigation.data-quality',
@@ -57,12 +58,25 @@ const EXECUTIVE_WITH_DECISIONS = [
   ...EXECUTIVE_BASE.slice(6),
 ];
 
+const EXECUTIVE_WITH_EMPLOYMENT_ACTIONS = [
+  ...EXECUTIVE_BASE.slice(0, 6),
+  'navigation.employment-actions',
+  ...EXECUTIVE_BASE.slice(6),
+];
+
+const EXECUTIVE_WITH_DECISIONS_AND_EMPLOYMENT_ACTIONS = [
+  ...EXECUTIVE_BASE.slice(0, 6),
+  'navigation.grh-decisions',
+  'navigation.employment-actions',
+  ...EXECUTIVE_BASE.slice(6),
+];
+
 const EXPECTED_ROLE_CAPABILITIES = {
-  SUPER_ADMIN: [...EXECUTIVE_BASE, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
-  INTENDENTE: [...EXECUTIVE_WITH_DECISIONS, 'navigation.audit', 'navigation.export', 'navigation.help'],
-  TENANT_ADMIN: [...EXECUTIVE_WITH_DECISIONS, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
+  SUPER_ADMIN: [...EXECUTIVE_WITH_EMPLOYMENT_ACTIONS, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
+  INTENDENTE: [...EXECUTIVE_WITH_DECISIONS_AND_EMPLOYMENT_ACTIONS, 'navigation.audit', 'navigation.export', 'navigation.help'],
+  TENANT_ADMIN: [...EXECUTIVE_WITH_DECISIONS_AND_EMPLOYMENT_ACTIONS, 'navigation.audit', 'navigation.export', 'navigation.import', 'navigation.help'],
   TENANT_USER: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
-  CONTADOR: [...EXECUTIVE_WITH_DECISIONS, 'navigation.export', 'navigation.help'],
+  CONTADOR: [...EXECUTIVE_WITH_DECISIONS_AND_EMPLOYMENT_ACTIONS, 'navigation.export', 'navigation.help'],
   INSPECTOR: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
   DEMO: ['session.read', 'navigation.workspace', 'navigation.territory', 'navigation.help'],
 };
@@ -86,6 +100,7 @@ const EXPECTED_NAV_HREFS = [
   'reportes.html',
   'hacienda.html',
   '/estructura',
+  '/trayectoria',
   'movimientos-grh.html',
   'rrhh.html',
   'areas-grh.html',
@@ -132,7 +147,7 @@ function extractRoleArray(source, constantName) {
 
 test('Serverless, Express and the React session gate consume the same bumped policy', async () => {
   assert.strictEqual(esmPolicy, cjsPolicy);
-  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-11.3');
+  assert.equal(esmPolicy.ACCESS_POLICY_VERSION, '2026-08-13.4');
   assert.deepEqual(Object.values(esmPolicy.ROLES), EXPECTED_ROLES);
 
   const reactSession = await readFile(new URL('../frontend/src/auth/session.ts', import.meta.url), 'utf8');
@@ -355,6 +370,10 @@ test('navigation grants stay aligned with the current GRH, audit, export and imp
     );
   }
   assert.deepEqual(
+    EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.employment-actions')).sort(),
+    ['CONTADOR', 'INTENDENTE', 'SUPER_ADMIN', 'TENANT_ADMIN'],
+  );
+  assert.deepEqual(
     EXPECTED_ROLES.filter(role => esmPolicy.hasCapability(role, 'navigation.grh-decisions')).sort(),
     ['CONTADOR', 'INTENDENTE', 'TENANT_ADMIN'],
   );
@@ -408,7 +427,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   const items = Array.from(navigation.definition.items, item => ({ ...item }));
   const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
 
-  assert.equal(navigation.definition.version, '2026-08-12.1');
+  assert.equal(navigation.definition.version, '2026-08-13.2');
   assert.deepEqual(
     Array.from(navigation.definition.groups, group => group.id),
     ['executive', 'people', 'territory', 'data'],
@@ -427,6 +446,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
     'RRHH exposes the governed domain explorer and the operational directory');
   assert.equal(navigation.catalog['navigation.rrhh'].href, 'rrhh.html');
   assert.equal(navigation.catalog['navigation.organization-analytics'].href, '/estructura');
+  assert.equal(navigation.catalog['navigation.employment-actions'].href, '/trayectoria');
   assert.equal(navigation.catalog['navigation.workspace'].href, 'inicio.html');
   assert.doesNotMatch(source, /var NAV_ITEMS\s*=\s*\[/,
     'the runtime must not fork a second literal catalog');
@@ -446,6 +466,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   assert.equal(items.find(item => item.id === 'ia').shortLabel, 'BOT IA');
   assert.equal(items.find(item => item.id === 'decisiones-grh').label, 'Decisiones GRH');
   assert.equal(items.find(item => item.id === 'movimientos-grh').label, 'Movimientos de legajo');
+  assert.equal(items.find(item => item.id === 'trayectoria').label, 'Trayectoria laboral');
   assert.equal(items.filter(item => item.href === 'reportes.html').length, 1);
   assert.doesNotMatch(navigation.source, /access:\s*(?:'all'|\[)/);
 

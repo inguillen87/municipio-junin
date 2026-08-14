@@ -26,6 +26,71 @@ const VARIANTS = {
   INSPECTOR: 'territorial-unassigned',
   DEMO: 'controlled-preview',
 };
+const DECISION_BRIEF = Object.freeze({
+  schemaVersion: 'grh-decision-brief-v1',
+  policyVersion: 'grh-small-cell-v1',
+  source: Object.freeze({
+    canonicalSystem: 'GRH Junin',
+    sourceFile: 'grh_junin.snapshot_2026-08-06.sql.gz',
+    sourceSha256: 'a'.repeat(64),
+    snapshotAsOf: '2026-08-06',
+    latestValidCalculationPeriod: '2026-07',
+    realtime: false,
+  }),
+  privacy: Object.freeze({
+    audience: 'interactive',
+    threshold: 10,
+    aggregateOnly: true,
+    containsPii: false,
+    employeeIdentifiersExported: false,
+    rawRowsExported: false,
+    categoricalLabelsExported: false,
+    cellCodesExported: false,
+    monetaryAmountsExported: false,
+  }),
+  period: '2026-07',
+  status: 'attention_required',
+  situation: Object.freeze({
+    participantCount: 856,
+    participantDisplay: '856',
+    qualityScorePct: 88.99,
+    temporalQuarantineRows: 20534,
+    runCoveragePct: 100,
+    metricExactRatePct: 40,
+    valueAgreementPct: 6.5,
+    identityWithinRoundingTolerance: true,
+  }),
+  change: Object.freeze({
+    status: 'released',
+    previousPeriod: '2026-06',
+    participantDelta: 1,
+    runCoverageDeltaPctPoints: 0,
+    metricExactRateDeltaPctPoints: 0,
+    valueAgreementDeltaPctPoints: 5.8,
+  }),
+  priorities: Object.freeze([
+    Object.freeze({
+      code: 'cross_source_material_difference',
+      severity: 'critical',
+      href: 'hacienda.html',
+      requiredCapability: 'navigation.hacienda',
+    }),
+    Object.freeze({
+      code: 'temporal_quarantine_present',
+      severity: 'warning',
+      href: 'control.html',
+      requiredCapability: 'navigation.data-quality',
+    }),
+    Object.freeze({ code: 'historical_snapshot', severity: 'context', href: null, requiredCapability: null }),
+  ]),
+  limits: Object.freeze([
+    'historical_snapshot_not_realtime',
+    'calculation_control_not_bank_disbursement',
+    'currency_not_declared_in_source',
+    'arithmetic_decomposition_not_causal_explanation',
+    'snapshot_reconciliation_not_monthly_series',
+  ]),
+});
 const ACTION_CAPABILITIES = new Set([
   'navigation.dashboard',
   'navigation.reports',
@@ -100,7 +165,7 @@ function authoritativeUser(
   };
 }
 
-async function createServer(users, requestLog) {
+async function createServer(users, requestLog, { decisionBriefStatus = 200 } = {}) {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
     const subject = tokenSubject(request);
@@ -115,6 +180,31 @@ async function createServer(users, requestLog) {
       }
       response.writeHead(200, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
       response.end(JSON.stringify({ user }));
+      return;
+    }
+
+    if (url.pathname === '/api/grh-decision-brief') {
+      const user = users.get(subject);
+      if (!user || !user.capabilities.includes('navigation.dashboard')) {
+        response.writeHead(403, { 'Cache-Control': 'no-store', 'Content-Type': CONTENT_TYPES['.json'] });
+        response.end(JSON.stringify({ error: 'not authorized' }));
+        return;
+      }
+      if (decisionBriefStatus !== 200) {
+        response.writeHead(decisionBriefStatus, {
+          'Cache-Control': 'no-store',
+          'Content-Type': CONTENT_TYPES['.json'],
+          'X-MuniControl-Contract': 'grh-decision-brief-v1',
+        });
+        response.end(JSON.stringify({ error: 'temporarily unavailable' }));
+        return;
+      }
+      response.writeHead(200, {
+        'Cache-Control': 'no-store',
+        'Content-Type': CONTENT_TYPES['.json'],
+        'X-MuniControl-Contract': 'grh-decision-brief-v1',
+      });
+      response.end(JSON.stringify(DECISION_BRIEF));
       return;
     }
 
@@ -145,9 +235,9 @@ async function createServer(users, requestLog) {
   return server;
 }
 
-async function workspacePage(browser, baseUrl, subject, viewport) {
+async function workspacePage(browser, baseUrl, subject, viewport, contextOptions = {}) {
   const staleAccess = accessPolicy.getSessionAccessForUser({ role: 'SUPER_ADMIN', tenantId: 'stale-tenant' });
-  const context = await browser.newContext({ reducedMotion: 'reduce', viewport });
+  const context = await browser.newContext({ reducedMotion: 'reduce', viewport, ...contextOptions });
   await context.addInitScript(({ token, access, accessPolicyVersion }) => {
     if (sessionStorage.getItem('__muni_workspace_seeded') === 'true') return;
     sessionStorage.setItem('__muni_workspace_seeded', 'true');
@@ -196,7 +286,7 @@ function expectedWorkspaceActions(access) {
   return capabilities.slice(0, 4);
 }
 
-test('safe workspace renders the exact seven role variants at 390 and 1440 without data requests', async t => {
+test('safe workspace renders seven role variants and gives Intendencia one governed executive brief', async t => {
   const users = new Map();
   for (const role of ROLES) users.set(`matrix-${role}`, authoritativeUser(`matrix-${role}`, role));
   const requestLog = [];
@@ -223,7 +313,7 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
 
       const result = await page.evaluate(() => {
         const privateLinks = [...document.querySelectorAll('#workspaceActions a[data-capability]')];
-        const targets = [...document.querySelectorAll('#workspaceActions a, .ws-public a')]
+        const targets = [...document.querySelectorAll('#workspaceActions a, .ws-public a, #executiveSummaryActions a')]
           .map(link => ({ height: link.getBoundingClientRect().height, width: link.getBoundingClientRect().width }));
         return {
           actionCapabilities: privateLinks.map(link => link.dataset.capability),
@@ -248,6 +338,19 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
           text: document.querySelector('#workspaceViews').textContent,
           title: document.querySelector('#workspaceTitle').textContent,
           variant: document.body.dataset.roleVariant,
+          executiveSummary: document.querySelector('#executiveSummary').hidden ? null : {
+            bottom: document.querySelector('#executiveSummary').getBoundingClientRect().bottom,
+            firstViewportLimit: document.querySelector('.bottom-nav')
+              ? document.querySelector('.bottom-nav').getBoundingClientRect().top
+              : window.innerHeight,
+            facts: [...document.querySelectorAll('.ws-executive-fact strong')].map(item => item.textContent),
+            links: [...document.querySelectorAll('#executiveSummaryActions a')].map(link => ({
+              capability: link.dataset.capability,
+              href: link.getAttribute('href'),
+            })),
+            state: document.querySelector('#executiveSummary').dataset.state,
+            text: document.querySelector('#executiveSummary').textContent,
+          },
         };
       });
 
@@ -270,6 +373,22 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
       assert.doesNotMatch(result.text, /\b(?:snapshot|capabilities|datasets?|contrato|PII|gobernado|cross-source|tenant)\b/i);
       assert.ok(result.actionCapabilities.length <= 4, `${role}:${viewport.width}:summary-first actions`);
       assert.ok(result.targets.every(target => target.height >= 44 && target.width >= 44), `${role}:${viewport.width}:touch targets`);
+      if (role === 'INTENDENTE') {
+        assert.equal(result.executiveSummary?.state, 'attention', `${role}:${viewport.width}:brief state`);
+        assert.deepEqual(result.executiveSummary?.facts, ['856', '88,99/100', '6,5%']);
+        assert.match(result.executiveSummary?.text || '', /respaldo del 6 ago 2026/i);
+        assert.match(result.executiveSummary?.text || '', /Hay diferencias entre las dos fuentes/i);
+        assert.deepEqual(result.executiveSummary?.links, [
+          { capability: 'navigation.hacienda', href: 'hacienda.html' },
+          { capability: 'navigation.ai-assistant', href: 'ia.html' },
+        ]);
+        assert.ok(
+          result.executiveSummary.bottom <= result.executiveSummary.firstViewportLimit,
+          `${role}:${viewport.width}:summary in unobscured first viewport`,
+        );
+      } else {
+        assert.equal(result.executiveSummary, null, `${role}:${viewport.width}:no executive data`);
+      }
       if (viewport.width <= 900) assert.deepEqual(result.bottom, expectedBottom(expectedAccess), `${role}:bottom priorities`);
       else assert.deepEqual(result.bottom, [], `${role}:desktop has no bottom nav`);
       assert.deepEqual(consoleErrors, [], `${role}:${viewport.width}:console`);
@@ -277,7 +396,11 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
 
       const currentRequests = requestLog.slice(before).map(entry => entry.path);
       assert.equal(currentRequests.filter(pathname => pathname === '/api/auth/me').length, 1, `${role}:${viewport.width}:one authoritative session lookup`);
-      assert.equal(currentRequests.some(pathname => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(pathname)), false, `${role}:${viewport.width}:no data APIs`);
+      assert.deepEqual(
+        currentRequests.filter(pathname => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(pathname)),
+        role === 'INTENDENTE' ? ['/api/grh-decision-brief'] : [],
+        `${role}:${viewport.width}:role-scoped data APIs`,
+      );
 
       await page.evaluate(() => document.activeElement?.blur());
       await page.keyboard.press('Tab');
@@ -285,6 +408,114 @@ test('safe workspace renders the exact seven role variants at 390 and 1440 witho
       await context.close();
     }
   }
+});
+
+test('executive first viewport remains readable at 320px with forced colors and no horizontal overflow', async t => {
+  const users = new Map([
+    ['executive-320', authoritativeUser('executive-320', 'INTENDENTE')],
+  ]);
+  const requestLog = [];
+  const server = await createServer(users, requestLog);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const { context, page } = await workspacePage(
+    browser,
+    baseUrl,
+    'executive-320',
+    { width: 320, height: 844 },
+    { forcedColors: 'active' },
+  );
+  t.after(async () => context.close());
+  const consoleErrors = [];
+  page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+  await page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('#executiveSummary[data-state="attention"]');
+
+  const result = await page.evaluate(() => {
+    const summary = document.querySelector('#executiveSummary');
+    const bottomNav = document.querySelector('.bottom-nav');
+    return {
+      actionTargets: [...document.querySelectorAll('#executiveSummaryActions a')]
+        .map(link => ({ height: link.getBoundingClientRect().height, width: link.getBoundingClientRect().width })),
+      facts: [...document.querySelectorAll('.ws-executive-fact strong')].map(item => item.textContent),
+      navTop: bottomNav ? bottomNav.getBoundingClientRect().top : window.innerHeight,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      summaryBottom: summary.getBoundingClientRect().bottom,
+    };
+  });
+
+  assert.ok(result.overflow <= 1, `320px overflow=${result.overflow}`);
+  assert.deepEqual(result.facts, ['856', '88,99/100', '6,5%']);
+  assert.ok(result.summaryBottom <= result.navTop, `summary ${result.summaryBottom} must clear bottom navigation ${result.navTop}`);
+  assert.ok(result.actionTargets.every(target => target.height >= 44 && target.width >= 44));
+  assert.deepEqual(consoleErrors, []);
+  assert.deepEqual(
+    requestLog.filter(entry => entry.path.startsWith('/api/')).map(entry => entry.path),
+    ['/api/auth/me', '/api/grh-decision-brief'],
+  );
+});
+
+test('executive brief failure stays honest and leaves only authorized recovery links', async t => {
+  const users = new Map([
+    ['executive-fallback', authoritativeUser('executive-fallback', 'INTENDENTE')],
+  ]);
+  const requestLog = [];
+  const server = await createServer(users, requestLog, { decisionBriefStatus: 503 });
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  });
+  const { context, page } = await workspacePage(
+    browser,
+    baseUrl,
+    'executive-fallback',
+    { width: 390, height: 844 },
+  );
+  t.after(async () => context.close());
+  const consoleErrors = [];
+  page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+  await page.goto(`${baseUrl}/inicio.html`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#executiveSummary[data-state="unavailable"]');
+
+  const result = await page.evaluate(() => ({
+    facts: [...document.querySelectorAll('.ws-executive-fact strong')].map(item => item.textContent),
+    links: [...document.querySelectorAll('#executiveSummaryActions a')].map(link => ({
+      capability: link.dataset.capability,
+      href: link.getAttribute('href'),
+      text: link.textContent,
+    })),
+    text: document.querySelector('#executiveSummary').textContent,
+  }));
+
+  assert.deepEqual(result.facts, ['—', '—', '—']);
+  assert.deepEqual(result.links, [
+    {
+      capability: 'navigation.dashboard',
+      href: 'dashboard.html',
+      text: 'Abrir panorama de personal',
+    },
+    {
+      capability: 'navigation.ai-assistant',
+      href: 'ia.html',
+      text: 'Preguntarle al asistente',
+    },
+  ]);
+  assert.match(result.text, /No pudimos actualizar el resumen/i);
+  assert.doesNotMatch(result.text, /\b856\b|88,99|6,5%/);
+  assert.ok(
+    consoleErrors.length <= 1 && consoleErrors.every(message => /503|Failed to load resource/i.test(message)),
+    `unexpected diagnostics: ${consoleErrors.join(' | ')}`,
+  );
+  assert.deepEqual(
+    requestLog.filter(entry => entry.path.startsWith('/api/')).map(entry => entry.path),
+    ['/api/auth/me', '/api/grh-decision-brief'],
+  );
 });
 
 test('published high roles discover the aggregate staffing room in navigation and Inicio while low roles do not', async t => {
@@ -330,9 +561,11 @@ test('published high roles discover the aggregate staffing room in navigation an
     await context.close();
   }
 
-  assert.equal(
-    requestLog.some(entry => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(entry.path)),
-    false,
+  assert.deepEqual(
+    requestLog
+      .filter(entry => /^\/api\/(?:grh|municipal-territory|ai|reports|pdf)/.test(entry.path))
+      .map(entry => entry.path),
+    ['/api/grh-decision-brief'],
   );
 });
 

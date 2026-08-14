@@ -73,6 +73,7 @@ function response(payload, {
   contentType = 'application/json; charset=utf-8',
   contract = SCHEMA_VERSION,
   json = async () => clone(payload),
+  body,
 } = {}) {
   const headers = new Map([
     ['content-type', contentType],
@@ -83,6 +84,7 @@ function response(payload, {
     ok: status >= 200 && status < 300,
     headers: { get: name => headers.get(String(name).toLowerCase()) ?? null },
     json,
+    body,
   };
 }
 
@@ -231,12 +233,14 @@ test('missing or mismatched contract headers fail before parsing JSON', async t 
 test('HTTP 503 is not retried and its body is never parsed or disclosed', async () => {
   let calls = 0;
   let reads = 0;
+  let cancellations = 0;
   const secret = 'persona-identificable@example.invalid';
   const api = loadClient(async () => {
     calls += 1;
     return response(null, {
       status: 503,
       json: async () => { reads += 1; return { error: secret }; },
+      body: { cancel: async () => { cancellations += 1; } },
     });
   });
   await assert.rejects(api.load(), error => {
@@ -246,6 +250,7 @@ test('HTTP 503 is not retried and its body is never parsed or disclosed', async 
   });
   assert.equal(calls, 1);
   assert.equal(reads, 0);
+  assert.equal(cancellations, 1);
 });
 
 test('media type, invalid JSON, timeout and caller abort all fail closed', async t => {

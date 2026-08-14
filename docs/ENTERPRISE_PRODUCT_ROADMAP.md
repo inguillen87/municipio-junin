@@ -27,8 +27,8 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-El estado local vigente usa route policy `2026-08-13.12` y access policy
-`2026-08-11.3`: 31 recursos, 12 acciones, 53 permisos y 94 rutas exactas, 52
+El estado local vigente usa route policy `2026-08-13.13` y access policy
+`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 95 rutas exactas, 53
 Serverless + 42 Express. Para el release histórico `v1.10.0`, route policy
 `2026-08-09.2` y access policy `2026-08-09.1` cubrían 26 recursos, 12 acciones,
 46 permisos y 79 firmas de ruta: 37 Serverless + 42 Express. El commit/tag de ese release apunta a
@@ -171,7 +171,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Bot, Reportes y PDF | Consumidores server-side; Bot suma “Cierre explicado” sobre `grh-close-v1` y Reportes mantiene proyección portable k=10 | Materializar el par y hacer smokes por tenant/rol |
 | Frontera HTTP raw | Cerrada localmente: `/api/grh-data` responde 410 después de auth/tenant, sin leer artefactos | Verificar 401/403/410 y cero referencias UI en preview |
 | Autenticación DB-autoritativa | Implementada localmente | Configurar secretos, migrar y certificar producción |
-| Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política local `2026-08-11.3`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
+| Inicio seguro por rol | `inicio.html`, `navigation.workspace` y siete variantes gobernadas por la política local `2026-08-13.4`; login y `/me` proyectan capabilities y perfil desde servidor; 42/42 focal local | Repetir pruebas remotas por rol/tenant; no aprovisiona cuentas |
 | Tour visual público de roles | `/roles` y `public-role-tour-v1` publicados en `v1.8.1` para siete perfiles; cero login, JWT, autorización, APIs, DB, storage, PII o datos municipales | Mantener el gate público y no confundir el recorrido con RBAC ni autorización positiva |
 | MuniGuía contextual | Evidencia privada sólo local para `muniguia-contextual-v1`: tres pasos deterministas para doce rutas privadas exactas y siete roles; focal 10/10, raíz 532 aprobadas + 1 smoke opt-in omitido y backend 20/20 | Proyección autoritativa simulada; mantener autorización server-side y Manual como fallback; no confundir con el smoke público |
 | WP0-L: observación de copia restaurada | Antecedente S14B ejecutado conectado desde `38b25e8` sobre restore descartable: observador de mínimo privilegio, `REPEATABLE READ READ ONLY`, `TLSv1.3`, 968 filas de catálogo y `_prisma_migrations` `absent`; resultado `discovery_non_approvable`, `approvalEligible:false`; artefacto externo retenido con cuatro flags de evidencia en `false` | S14C construyó después el baseline y su replay efímero; WP0-L continúa siendo descubrimiento no aprobable, no approval ni autorización DDL |
@@ -187,7 +187,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
-| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-13.12`: 31 recursos, 12 acciones, 53 permisos y 94 firmas de ruta (52 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
+| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-13.13`: 32 recursos, 12 acciones, 54 permisos y 95 firmas de ruta (53 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | Release histórico `v1.10.0`: tag `4108ca0`, product commit `d11fd39`, deployment `READY`, gate 11/11 y GitHub Release live. Hotfix post-release `e74339c`: `/prisma/schema.prisma` 404 seguro y gate 12/12 | No mover el tag ni inferir DB, cuentas, autorización positiva o datos GRH remotos; cada deployment posterior requiere repetir el gate actual de 12 probes |
@@ -323,13 +323,15 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 ### E1 — Identidad, ámbitos y auditoría enterprise
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
-exacto por `runtime + método + ruta + recurso:acción` (31 recursos, 12 acciones,
-53 permisos y 94 firmas: 52 Serverless y 42 Express). No hay wildcard, jerarquía
+exacto por `runtime + método + ruta + recurso:acción` (32 recursos, 12 acciones,
+54 permisos y 95 firmas: 53 Serverless y 42 Express). No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
 UX-E1A también está entregado localmente: `navigation.workspace` existe para los
-siete roles vigentes; `inicio.html` consume sólo `/api/auth/me`; el servidor
+siete roles vigentes; `inicio.html` siempre consume `/api/auth/me` y sólo el
+Inicio de Intendencia con variante `executive-leadership` agrega
+`grh-decision-brief-v1`; el servidor
 proyecta capabilities y un `homeProfile` exacto; las prioridades visibles son una
 intersección autorizada; `SUPER_ADMIN` sin tenant no carga GRH. Esto no crea una
 cuenta por rol, no migra la propuesta RBAC/ABAC y no certifica el destino remoto.
@@ -545,6 +547,16 @@ Una dependencia se incorpora sólo con:
 8. prueba de que no envía telemetría o datos municipales a terceros.
 
 ## Indicadores de éxito del producto
+
+### S18 — trayectoria laboral documentada
+
+El incremento local agrega `grh-employment-actions-v1` y la ruta
+`/trayectoria`. Parte de 9.481 filas reales de `GRH.foja`, conserva 3 fechas en
+cuarentena y compara 3.882/714 frente a 3.226/631 actuaciones/personas GRH distintas en dos
+ventanas exactas de 972 días. La interfaz publica sólo agregados clasificados,
+agrupa categorías pequeñas y enlaza al Asistente; no muestra instrumentos,
+observaciones ni identificadores. Permanece `Unreleased` hasta completar build,
+QA integral y smoke del mismo SHA en Production.
 
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;

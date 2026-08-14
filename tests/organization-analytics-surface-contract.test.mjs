@@ -49,7 +49,7 @@ test('organization analytics has one exact private capability and route boundary
 });
 
 test('published route ceiling opens only aggregate organization analytics and canonical RBAC still denies low roles', () => {
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.12');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-13.13');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
 
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {

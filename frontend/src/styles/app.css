@@ -202,7 +202,7 @@ a {
 
 .topbar__nav a {
   display: inline-flex;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   align-items: center;
   padding-inline: 0.875rem;
   border-radius: 0.625rem;

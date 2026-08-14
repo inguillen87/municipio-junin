@@ -45,6 +45,7 @@ export default defineConfig({
         calidad: fileURLToPath(new URL('./calidad.html', import.meta.url)),
         ejecutivo: fileURLToPath(new URL('./ejecutivo.html', import.meta.url)),
         estructura: fileURLToPath(new URL('./estructura.html', import.meta.url)),
+        trayectoria: fileURLToPath(new URL('./trayectoria.html', import.meta.url)),
         territorio: fileURLToPath(new URL('./territorio.html', import.meta.url)),
       },
       output: {

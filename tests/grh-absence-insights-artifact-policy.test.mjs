@@ -3,17 +3,19 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const ROOT = new URL('../', import.meta.url);
-const [gitignore, vercelignore, rawArtifact, rawImportQualityArtifact, rawLinkageArtifact] = await Promise.all([
+const [gitignore, vercelignore, rawArtifact, rawImportQualityArtifact, rawLinkageArtifact, rawEmploymentActionsArtifact] = await Promise.all([
   readFile(new URL('.gitignore', ROOT), 'utf8'),
   readFile(new URL('.vercelignore', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-absence-insights.json', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-import-quality-history.json', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-personas-linkage-readiness.json', ROOT), 'utf8'),
+  readFile(new URL('api/_data/grh-employment-actions.json', ROOT), 'utf8'),
 ]);
 const ARTIFACT_EXCEPTIONS = [
   '!api/_data/grh-absence-insights.json',
   '!api/_data/grh-import-quality-history.json',
   '!api/_data/grh-personas-linkage-readiness.json',
+  '!api/_data/grh-employment-actions.json',
 ];
 
 test('only reviewed aggregate artifacts are excepted from private JSON exclusions', () => {
@@ -87,4 +89,20 @@ test('the import-quality exception is small, aggregate-only and withholds raw me
   });
   assert.doesNotMatch(rawImportQualityArtifact,
     /"(?:displayName|fullName|legajo|dni|cuil|nroreporte|nrolinea|rawMessage|error)"\s*:/i);
+});
+
+test('the employment-actions exception is aggregate-only and withholds sensitive foja values', () => {
+  assert.ok(Buffer.byteLength(rawEmploymentActionsArtifact, 'utf8') < 24 * 1024);
+  const artifact = JSON.parse(rawEmploymentActionsArtifact);
+  assert.equal(artifact.schemaVersion, 'grh-employment-actions-v1');
+  assert.equal(artifact.privacy.aggregateOnly, true);
+  assert.equal(artifact.privacy.containsPii, false);
+  assert.equal(artifact.privacy.personIdentifiersExported, false);
+  assert.equal(artifact.privacy.rawRowsExported, false);
+  assert.equal(artifact.privacy.instrumentValuesExported, false);
+  assert.equal(artifact.privacy.observationsExported, false);
+  assert.equal(artifact.privacy.userValuesExported, false);
+  assert.equal(artifact.privacy.rawCategoryValuesExported, false);
+  assert.doesNotMatch(rawEmploymentActionsArtifact,
+    /"(?:displayName|fullName|legajo|dni|cuil|nins_fj|obse_fj|USER_FJ|DETA_FJ|MOTI_FJ_DETA)"\s*:/i);
 });

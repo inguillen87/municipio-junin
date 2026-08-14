@@ -459,8 +459,8 @@ en memoria institucional.
 
 MuniControl ya entrega localmente el primer incremento de este patrón:
 `inicio.html` aplica siete variantes exactas a los roles técnicos vigentes,
-consume sólo `/api/auth/me` y muestra prioridades incluidas en las capabilities
-calculadas por servidor. `SUPER_ADMIN` sin tenant no recibe GRH. El Panel
+siempre consume `/api/auth/me` y sólo para el Inicio de Intendencia con variante
+`executive-leadership` agrega el brief `grh-decision-brief-v1`. `SUPER_ADMIN` sin tenant no recibe GRH. El Panel
 Ejecutivo GRH queda separado y conserva `grh-close-v1`. Esto no equivale a los
 workspaces transaccionales objetivo, no crea cuentas y no implementa ámbitos
 RBAC/ABAC persistidos.
@@ -616,8 +616,8 @@ sesiones revocables, ámbitos versionados, acceso excepcional a PII con vencimie
 rate limiting distribuido y alertas de abuso.
 
 La base local vigente no es sólo diseño: `shared/route-policy.cjs`
-`2026-08-13.12` fija 31 recursos, 12 acciones, 53 permisos y 94 firmas exactas,
-52 Serverless y 42 Express. `shared/access-policy.cjs` `2026-08-11.3` proyecta el workspace de siete
+`2026-08-13.13` fija 32 recursos, 12 acciones, 54 permisos y 95 firmas exactas,
+53 Serverless y 42 Express. `shared/access-policy.cjs` `2026-08-13.4` proyecta el workspace de siete
 roles. Las asignaciones finas, SoD, lifecycle y auditoría persistida permanecen
 como propuesta aislada y no migrada.
 

@@ -94,6 +94,7 @@ const EXPECTED_HOME_VARIANTS = {
 const EXPECTED_NAV_HREFS = [
   'inicio.html',
   'dashboard.html',
+  '/gestiones',
   '/ejecutivo',
   'decisiones-grh.html',
   'ia.html',
@@ -431,7 +432,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   const items = Array.from(navigation.definition.items, item => ({ ...item }));
   const declaredCapabilities = items.map(item => item.capability).filter(Boolean).sort();
 
-  assert.equal(navigation.definition.version, '2026-08-14.4');
+  assert.equal(navigation.definition.version, '2026-08-14.5');
   assert.deepEqual(
     Array.from(navigation.definition.groups, group => group.id),
     ['executive', 'people', 'territory', 'data'],
@@ -441,6 +442,7 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
   assert.equal(new Set(items.map(item => item.label)).size, items.length, 'sidebar labels must be unique');
   assert.deepEqual(declaredCapabilities, [
     ...EXPECTED_NAV_CAPABILITIES,
+    'navigation.dashboard',
     'navigation.hacienda',
     'navigation.hacienda',
     'navigation.organization-analytics',
@@ -452,6 +454,8 @@ test('desktop and mobile consume one authoritative hierarchical catalog without 
     'RRHH exposes the governed domain explorer and the operational directory');
   assert.equal(items.filter(item => item.capability === 'navigation.hacienda').length, 3,
     'Hacienda exposes its dashboard plus payroll-run and fixed-concept controls');
+  assert.equal(items.filter(item => item.capability === 'navigation.dashboard').length, 2,
+    'the executive panorama exposes one secondary management timeline without a new grant');
   assert.equal(navigation.catalog['navigation.rrhh'].href, 'rrhh.html');
   assert.equal(navigation.catalog['navigation.organization-analytics'].href, '/estructura');
   assert.equal(navigation.catalog['navigation.employment-actions'].href, '/trayectoria');

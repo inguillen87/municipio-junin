@@ -87,6 +87,7 @@ async function createServer(users, requestLog) {
     ['/trayectoria', 'inicio.html'],
     ['/corridas-grh', 'inicio.html'],
     ['/conceptos-fijos', 'inicio.html'],
+    ['/gestiones', 'inicio.html'],
     ['/movimientos-grh', 'inicio.html'],
     ['/territorio', 'inicio.html'],
     ['/calidad', 'control.html'],
@@ -203,6 +204,15 @@ async function createServer(users, requestLog) {
           '<section id="fixedConceptReconciliation" aria-label="Conciliación de conceptos fijos"></section>',
           '<section id="fixedConceptComparison" aria-label="Comparación entre administraciones"></section>',
           '<section id="fixedConceptQuality" aria-label="Calidad y límites"></section>',
+          '</main>',
+        ].join('')));
+      }
+      if (url.pathname === '/gestiones') {
+        body = Buffer.from(body.toString('utf8').replace('</main>', [
+          '<section id="managementTimeline" aria-label="Mandatos y avance observado"></section>',
+          '<section id="managementTimelineDecision" aria-label="Lectura ejecutiva"></section>',
+          '<section id="managementTimelineComparison" aria-label="Comparación por dominio"></section>',
+          '<section id="managementTimelineMethodology" aria-label="Metodología y límites"></section>',
           '</main>',
         ].join('')));
       }

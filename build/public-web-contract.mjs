@@ -62,6 +62,7 @@ export const GOVERNED_VITE_HTML_FILES = Object.freeze([
   'corridas-grh.html',
   'ejecutivo.html',
   'estructura.html',
+  'gestiones.html',
   'trayectoria.html',
   'territorio.html',
 ]);

@@ -8,7 +8,7 @@
   }
 
   var definition = {
-    version: '2026-08-14.4',
+    version: '2026-08-14.5',
     groups: [
       { id: 'executive', label: 'Gestión ejecutiva', shortLabel: 'Gestión', icon: 'chart' },
       { id: 'people', label: 'Personas y nómina', shortLabel: 'Personas', icon: 'people' },
@@ -18,6 +18,7 @@
     items: [
       { id: 'workspace', href: 'inicio.html', label: 'Inicio', shortLabel: 'Inicio', icon: 'home', groupId: null, placement: 'top', capability: 'navigation.workspace', primary: true },
       { id: 'dashboard', href: 'dashboard.html', label: 'Panorama de personal', shortLabel: 'Panorama', icon: 'chart', groupId: 'executive', placement: 'group', capability: 'navigation.dashboard', primary: true },
+      { id: 'gestiones', href: '/gestiones', label: 'Gestiones en el tiempo', shortLabel: 'Gestiones', icon: 'chart', groupId: 'executive', placement: 'group', capability: 'navigation.dashboard', primary: false },
       { id: 'grh-ejecutivo', href: '/ejecutivo', label: 'Resumen ejecutivo GRH', shortLabel: 'Resumen GRH', icon: 'people', groupId: 'executive', placement: 'group', capability: 'navigation.grh-executive', primary: true },
       { id: 'decisiones-grh', href: 'decisiones-grh.html', label: 'Decisiones GRH', shortLabel: 'Decisiones', icon: 'check', groupId: 'executive', placement: 'group', capability: 'navigation.grh-decisions', primary: true },
       { id: 'ia', href: 'ia.html', label: 'BOT IA para GRH', shortLabel: 'BOT IA', icon: 'ai', groupId: 'executive', placement: 'group', capability: 'navigation.ai-assistant', primary: true },

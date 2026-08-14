@@ -314,7 +314,7 @@ window.requireRole = function(allowedRoles) {
 // renders no private destinations; capability visibility never falls back to a
 // second, local menu.
 function validatedNavigationDefinition(definition) {
-  if (!definition || definition.version !== '2026-08-14.4' ||
+  if (!definition || definition.version !== '2026-08-14.5' ||
       !Array.isArray(definition.groups) || !Array.isArray(definition.items) ||
       !Object.isFrozen(definition) || !Object.isFrozen(definition.groups) ||
       !Object.isFrozen(definition.items) ||
@@ -324,6 +324,7 @@ function validatedNavigationDefinition(definition) {
   var expectedItems = [
     ['workspace', 'inicio.html', null, 'top', 'navigation.workspace', true],
     ['dashboard', 'dashboard.html', 'executive', 'group', 'navigation.dashboard', true],
+    ['gestiones', '/gestiones', 'executive', 'group', 'navigation.dashboard', false],
     ['grh-ejecutivo', '/ejecutivo', 'executive', 'group', 'navigation.grh-executive', true],
     ['decisiones-grh', 'decisiones-grh.html', 'executive', 'group', 'navigation.grh-decisions', true],
     ['ia', 'ia.html', 'executive', 'group', 'navigation.ai-assistant', true],
@@ -1175,6 +1176,7 @@ function ensureInstitutionalBottomNavigation() {
 var MUNIGUIA_PRIVATE_PATHS = [
   '/inicio', '/inicio.html',
   '/dashboard', '/dashboard.html',
+  '/gestiones', '/gestiones.html',
   '/reportes', '/reportes.html',
   '/hacienda', '/hacienda.html',
   '/corridas-grh', '/corridas-grh.html',

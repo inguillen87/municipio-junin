@@ -4,7 +4,7 @@ import {
 } from './contextual-help-catalog.js';
 
 const CONTRACT = 'municipal-task-catalog-v1';
-const CATALOG_VERSION = '2026-08-14.2';
+const CATALOG_VERSION = '2026-08-14.3';
 const DEFAULT_RESULT_LIMIT = 8;
 const MAX_RESULT_LIMIT = 12;
 
@@ -15,6 +15,14 @@ function deepFreeze(value) {
 }
 
 const TASKS = deepFreeze([
+  {
+    id: 'compare-managements',
+    kind: 'comparar',
+    label: 'Comparar dos gestiones al mismo avance',
+    description: 'Separá los cuatro años previstos de los 972 días informados y contrastá sólo ventanas equivalentes.',
+    keywords: ['gestion', 'gestiones', 'cuatro anos', '4 anos', 'mismo avance', '2023', 'historico'],
+    pageId: 'managementTimeline',
+  },
   {
     id: 'review-priorities',
     kind: 'decidir',
@@ -171,7 +179,7 @@ const TASKS = deepFreeze([
 
 const ROLE_TASK_ORDER = deepFreeze({
   SUPER_ADMIN: ['review-sources', 'import-source', 'verify-quality', 'understand-role'],
-  INTENDENTE: ['review-priorities', 'follow-decisions', 'review-grh-summary', 'review-fixed-concepts'],
+  INTENDENTE: ['compare-managements', 'review-priorities', 'follow-decisions', 'review-grh-summary'],
   TENANT_ADMIN: ['import-source', 'review-sources', 'verify-quality', 'review-fixed-concepts', 'review-payroll-runs'],
   TENANT_USER: ['locate-territory', 'understand-role'],
   CONTADOR: ['review-fixed-concepts', 'review-payroll-runs', 'review-payroll', 'create-report'],

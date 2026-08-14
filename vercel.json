@@ -27,6 +27,7 @@
     { "source": "/conceptos-fijos", "destination": "/conceptos-fijos.html" },
     { "source": "/corridas-grh", "destination": "/corridas-grh.html" },
     { "source": "/estructura", "destination": "/estructura.html" },
+    { "source": "/gestiones", "destination": "/gestiones.html" },
     { "source": "/trayectoria", "destination": "/trayectoria.html" },
     { "source": "/territorio", "destination": "/territorio.html" },
     { "source": "/api/whatsapp/webhook", "destination": "/api/whatsapp-webhook" }

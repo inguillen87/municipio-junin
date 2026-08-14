@@ -100,6 +100,19 @@ const PAGES = deepFreeze({
       { id: 'review-decision-brief', selector: '#decisionBrief', title: 'Revisá el brief decisional', copy: 'Separá la señal global de la evidencia mensual y profundizá sólo mediante una acción autorizada para tu perfil.' },
     ],
   },
+  managementTimeline: {
+    href: 'gestiones.html',
+    aliases: ['/gestiones', '/gestiones.html'],
+    label: 'Gestiones en el tiempo',
+    objective: 'Compará dos gestiones al mismo avance y separá el período previsto de la evidencia realmente informada.',
+    requiredCapability: 'navigation.dashboard',
+    manualAnchor: 'gestiones',
+    steps: [
+      { id: 'confirm-management-coverage', selector: '#managementTimeline', title: 'Confirmá los cuatro años y el corte', copy: 'Distinguí el mandato completo de cuatro años de los 972 días hoy informados para cada gestión.' },
+      { id: 'read-management-decision', selector: '#managementTimelineDecision', title: 'Leé qué cambia', copy: 'Empezá por la síntesis sustentada y conservá visibles la fuente, el corte y los límites antes de decidir.' },
+      { id: 'compare-management-windows', selector: '#managementTimelineComparison', title: 'Compará el mismo avance', copy: 'Contrastá sólo ventanas equivalentes; una diferencia de registros no demuestra causa, desempeño ni impacto presupuestario.' },
+    ],
+  },
   reports: {
     href: 'reportes.html',
     aliases: ['/reportes', '/reportes.html'],
@@ -339,6 +352,7 @@ const PAGES = deepFreeze({
 const ASSISTANT_QUESTIONS = deepFreeze({
   workspace: '¿Cómo uso el resumen general de MuniControl?',
   dashboard: '¿Cómo interpreto el panorama y las prioridades del tablero ejecutivo?',
+  managementTimeline: '¿Cómo comparo las dos gestiones al mismo avance?',
   reports: '¿Cómo creo y reviso un reporte con su fuente?',
   hacienda: '¿Cómo reviso Hacienda, nómina y el cálculo mensual?',
   grhExecutive: '¿Cómo interpreto el resumen ejecutivo GRH?',

@@ -3,7 +3,17 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const ROOT = new URL('../', import.meta.url);
-const [gitignore, vercelignore, rawArtifact, rawImportQualityArtifact, rawLinkageArtifact, rawEmploymentActionsArtifact, rawPayrollRunControlArtifact] = await Promise.all([
+const [
+  gitignore,
+  vercelignore,
+  rawArtifact,
+  rawImportQualityArtifact,
+  rawLinkageArtifact,
+  rawEmploymentActionsArtifact,
+  rawPayrollRunControlArtifact,
+  rawFixedConceptControlArtifact,
+  rawManagementTimelineArtifact,
+] = await Promise.all([
   readFile(new URL('.gitignore', ROOT), 'utf8'),
   readFile(new URL('.vercelignore', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-absence-insights.json', ROOT), 'utf8'),
@@ -11,6 +21,8 @@ const [gitignore, vercelignore, rawArtifact, rawImportQualityArtifact, rawLinkag
   readFile(new URL('api/_data/grh-personas-linkage-readiness.json', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-employment-actions.json', ROOT), 'utf8'),
   readFile(new URL('api/_data/grh-payroll-run-control.json', ROOT), 'utf8'),
+  readFile(new URL('api/_data/grh-fixed-concept-control.json', ROOT), 'utf8'),
+  readFile(new URL('api/_data/grh-management-timeline.json', ROOT), 'utf8'),
 ]);
 const ARTIFACT_EXCEPTIONS = [
   '!api/_data/grh-absence-insights.json',
@@ -18,6 +30,8 @@ const ARTIFACT_EXCEPTIONS = [
   '!api/_data/grh-personas-linkage-readiness.json',
   '!api/_data/grh-employment-actions.json',
   '!api/_data/grh-payroll-run-control.json',
+  '!api/_data/grh-fixed-concept-control.json',
+  '!api/_data/grh-management-timeline.json',
 ];
 
 test('only reviewed aggregate artifacts are excepted from private JSON exclusions', () => {
@@ -123,4 +137,33 @@ test('the payroll-run exception is aggregate-only and withholds run keys, amount
   assert.equal(artifact.privacy.rawMessagesExported, false);
   assert.doesNotMatch(rawPayrollRunControlArtifact,
     /"(?:displayName|fullName|legajo|LEGA_12|lega_12|dni|cuil|employeeId|personId|IMPO_31|cantidadFalso|cantidadVerdadero|condicion|denominacion|unidad)"\s*:/i);
+});
+
+test('the fixed-concept exception is aggregate-only and withholds nominal and monetary values', () => {
+  assert.ok(Buffer.byteLength(rawFixedConceptControlArtifact, 'utf8') < 16 * 1024);
+  const artifact = JSON.parse(rawFixedConceptControlArtifact);
+  assert.equal(artifact.schemaVersion, 'grh-fixed-concept-control-v1');
+  assert.equal(artifact.privacy.aggregateOnly, true);
+  assert.equal(artifact.privacy.containsPii, false);
+  assert.equal(artifact.privacy.personIdentifiersExported, false);
+  assert.equal(artifact.privacy.sourceKeysExported, false);
+  assert.equal(artifact.privacy.rawRowsExported, false);
+  assert.equal(artifact.privacy.monetaryAmountsExported, false);
+  assert.equal(artifact.privacy.legalInstrumentValuesExported, false);
+  assert.doesNotMatch(rawFixedConceptControlArtifact,
+    /"(?:displayName|fullName|legajo|LEGA_12|dni|cuil|IDPERSONA|IMPO_31|instrumento|expediente)"\s*:/i);
+});
+
+test('the management-timeline exception is aggregate-only and protects person-level source data', () => {
+  assert.ok(Buffer.byteLength(rawManagementTimelineArtifact, 'utf8') < 24 * 1024);
+  const artifact = JSON.parse(rawManagementTimelineArtifact);
+  assert.equal(artifact.schemaVersion, 'grh-management-timeline-v1');
+  assert.equal(artifact.privacy.mode, 'aggregate_only');
+  assert.equal(artifact.privacy.threshold, 10);
+  assert.equal(artifact.privacy.complementarySuppression, true);
+  assert.equal(artifact.privacy.containsPii, false);
+  assert.equal(artifact.privacy.personIdentifiersExported, false);
+  assert.equal(artifact.privacy.rawRowsExported, false);
+  assert.doesNotMatch(rawManagementTimelineArtifact,
+    /"(?:displayName|fullName|personId|employeeId|dni|cuil|LEGA_12|CODI_01|documentNumber|instrumentValue|observation)"\s*:/i);
 });

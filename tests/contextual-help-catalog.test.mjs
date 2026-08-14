@@ -37,7 +37,7 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
   assert.equal(MUNIGUIA_CATALOG.accessPolicyVersion, accessPolicy.ACCESS_POLICY_VERSION);
   assert.equal(MUNIGUIA_CATALOG.mountCapability, accessPolicy.CAPABILITIES.NAV_HELP);
   assert.deepEqual(Object.keys(MUNIGUIA_CATALOG.roles).sort(), [...ROLES].sort());
-  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 20);
+  assert.equal(Object.keys(MUNIGUIA_CATALOG.pages).length, 21);
   assert.equal(Object.isFrozen(MUNIGUIA_CATALOG), true);
 
   const manual = await readFile(path.join(ROOT, 'manuales.html'), 'utf8');
@@ -75,7 +75,12 @@ test('MuniGuía catalog is exact, frozen and aligned with access policy and real
       : pageId === 'quality'
         ? await readFile(path.join(ROOT, 'control.html'), 'utf8')
         : null;
-    const pageSource = pageId === 'fixedConceptControl'
+    const pageSource = pageId === 'managementTimeline'
+      ? (await Promise.all([
+          readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
+          readFile(path.join(ROOT, 'frontend', 'src', 'management-timeline', 'ManagementTimelineDashboard.tsx'), 'utf8'),
+        ])).join('\n')
+      : pageId === 'fixedConceptControl'
       ? (await Promise.all([
           readFile(path.join(ROOT, 'frontend', page.href), 'utf8'),
           readFile(path.join(ROOT, 'frontend', 'src', 'fixed-concept-control', 'FixedConceptControlDashboard.tsx'), 'utf8'),
@@ -200,6 +205,7 @@ test('assistant handoffs are fixed per page, capability-bound and manual-backed'
   const topicByPage = {
     workspace: 'overview',
     dashboard: 'overview',
+    managementTimeline: 'managementTimeline',
     reports: 'reports',
     hacienda: 'hacienda',
     grhExecutive: 'overview',

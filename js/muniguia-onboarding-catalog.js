@@ -1,7 +1,7 @@
 import { MUNIGUIA_CATALOG } from './contextual-help-catalog.js';
 
 const CONTRACT = 'muniguia-onboarding-v1';
-const CATALOG_VERSION = '2026-08-13.1';
+const CATALOG_VERSION = '2026-08-14.2';
 const PROGRESS_VERSION = 'muniguia-onboarding-progress-v1';
 const MINUTES_PER_STAGE = 2;
 
@@ -71,10 +71,10 @@ const JOURNEYS = deepFreeze({
         copy: 'Contrastá series y agregados liberados sin convertir una variación histórica en una causa o una decisión automática.',
       },
       {
-        id: 'compare-employment-actions',
-        pageId: 'employmentActions',
-        label: 'Compará la trayectoria documentada',
-        copy: 'Leé actuaciones y personas en ventanas equivalentes, preservando la diferencia entre registro administrativo y vigencia laboral.',
+        id: 'compare-management-timeline',
+        pageId: 'managementTimeline',
+        label: 'Compará dos gestiones al mismo avance',
+        copy: 'Separá los cuatro años previstos de los 972 días hoy comparables y leé cada diferencia como registro documentado, no como causalidad o desempeño.',
       },
       {
         id: 'ask-grounded-assistant',

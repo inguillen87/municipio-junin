@@ -14,7 +14,7 @@ const ROLES = Object.values(accessPolicy.ROLES);
 
 const EXPECTED_PAGES = Object.freeze({
   SUPER_ADMIN: ['workspace', 'import', 'audit', 'quality', 'organizationAnalytics'],
-  INTENDENTE: ['workspace', 'dashboard', 'grhExecutive', 'employmentActions', 'assistant'],
+  INTENDENTE: ['workspace', 'dashboard', 'grhExecutive', 'managementTimeline', 'assistant'],
   TENANT_ADMIN: ['workspace', 'import', 'audit', 'quality', 'organizationAnalytics'],
   TENANT_USER: ['workspace', 'territory', 'manuals'],
   CONTADOR: ['workspace', 'hacienda', 'reports', 'quality', 'employmentActions'],
@@ -37,7 +37,7 @@ test('onboarding catalog is frozen, versioned and references only governed MuniG
     'catalogVersion', 'contract', 'journeys', 'progressVersion',
   ]);
   assert.equal(MUNIGUIA_ONBOARDING_CATALOG.contract, 'muniguia-onboarding-v1');
-  assert.equal(MUNIGUIA_ONBOARDING_CATALOG.catalogVersion, '2026-08-13.1');
+  assert.equal(MUNIGUIA_ONBOARDING_CATALOG.catalogVersion, '2026-08-14.2');
   assert.equal(MUNIGUIA_ONBOARDING_CATALOG.progressVersion, 'muniguia-onboarding-progress-v1');
   assert.deepEqual(Object.keys(MUNIGUIA_ONBOARDING_CATALOG.journeys).sort(), [...ROLES].sort());
   assert.equal(Object.isFrozen(MUNIGUIA_ONBOARDING_CATALOG), true);
@@ -119,7 +119,7 @@ test('effective capability ceilings remove unavailable stages and never replace 
   ]));
   assert.deepEqual(
     reducedIntendente.journey.stages.map((stage) => stage.pageId),
-    ['workspace', 'dashboard'],
+    ['workspace', 'dashboard', 'managementTimeline'],
   );
 
   const injectedDemo = resolveMuniGuiaOnboarding(sessionInput('DEMO', [

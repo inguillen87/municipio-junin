@@ -175,7 +175,7 @@ Estado: **completo en código local; falta despliegue**.
 - usuario activo, rol/tenant actual y tenant `ACTIVE`, o `TRIAL` con vencimiento futuro explícito;
 - rutas críticas limitadas por rol y tenant;
 - techo compartido y fail-closed vigente de 32 recursos, 12 acciones, 54
-  permisos y 97 firmas de ruta exactas (55 Serverless y 42 Express), sin
+  permisos y 98 firmas de ruta exactas (56 Serverless y 42 Express), sin
   wildcard ni jerarquía;
 - CRUD con allowlists, límites y transacciones;
 - webhook de WhatsApp con autenticidad e idempotencia acotada;
@@ -372,9 +372,9 @@ CDC, recuperación ni continuidad.
 Estado: **techo exacto implementado y validado localmente; persistencia fina pendiente**.
 
 La autorización actual registra literalmente `recurso:acción` por runtime,
-método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-14.15`
-contiene 32 recursos, 12 acciones, 54 permisos y 97 firmas protegidas exactas:
-55 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
+método y ruta, y deniega lo desconocido. El manifiesto local `2026-08-14.16`
+contiene 32 recursos, 12 acciones, 54 permisos y 98 firmas protegidas exactas:
+56 Serverless y 42 Express. Esto completa el techo ejecutable de rutas; no completa el plano
 RBAC/ABAC enterprise.
 
 Existe una propuesta aislada para asignaciones, ámbitos, lifecycle, aprobaciones,
@@ -761,8 +761,10 @@ desktop y móvil sin errores de consola, red u overflow.
 
 ### S21 — conceptos fijos, roles publicados y bienvenida progresiva
 
-Estado: **release candidate validado localmente; pendiente de commit y smoke del
-mismo SHA en Production**.
+Estado: **verificado en Production el 14 de agosto de 2026** en el commit
+`4cd0926627a786634696cbed8e75ecc8934100c6`, deployment
+`dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3`, con release truth 28/28 y cero respuestas
+5xx.
 
 - **Conceptos fijos y cálculo** consume `grh-fixed-concept-control-v1`, generado
   dos veces de forma byte-idéntica desde el GZIP canónico (SHA del artefacto
@@ -784,6 +786,34 @@ mismo SHA en Production**.
   con avance explícito, repetición y reinicio; no crea permisos ni telemetría.
 - MuniGuía y el Asistente explican el mismo contrato y fallan cerrado cuando el
   artefacto, el tenant o la capability no coinciden.
+
+### S22 — gestiones en el tiempo y comparación 4×4
+
+Estado: **implementación local; no publicada ni certificada en Production**.
+
+- `/gestiones` y `grh-management-timeline-v1` presentan los dos mandatos
+  completos de 1.461 días, pero comparan exclusivamente las ventanas observadas
+  equivalentes `2023-12-09..2026-08-06` y `2019-12-09..2022-08-06`: 972 días
+  por gestión, 66,5298% del mandato actual según el contrato.
+- La matriz usa ausencias informadas, actuaciones laborales documentadas y
+  fechas de ingreso/egreso informadas. Cada celda conserva unidad, cobertura y
+  privacidad k=10; conceptos fijos quedan como contexto, no como comparación
+  equivalente.
+- En ausencias, S22 conserva 5.936/3.395 filas fuente y publica 749/662 personas
+  distintas resueltas por `legajo.IDPERSONA`. S15 conserva sin sobreescritura su
+  evidencia histórica 752/662, cuyo conteo correspondía a claves laborales
+  distintas; S22 corrige el grano para denominar «personas» únicamente a
+  `IDPERSONA` distintos.
+- La navegación, Task Center, MuniGuía y Asistente reutilizan
+  `navigation.dashboard`; el endpoint reutiliza
+  `GRH_ORGANIZATION_ANALYTICS_READ`. No se amplían roles y los perfiles bajos
+  quedan fuera.
+- La IA responde de forma determinista desde el artefacto exacto, no recompone
+  celdas protegidas o ausentes y falla cerrado sin reutilizar otra fuente.
+- La diferencia entre registros no demuestra causa, desempeño, altas, bajas,
+  impacto presupuestario ni calidad de una gestión. S22 requiere push,
+  deployment, release truth y smoke autenticado del mismo SHA antes de cambiar
+  este estado.
 
 ## Funciones que no deben “completarse” todavía
 

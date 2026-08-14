@@ -6,6 +6,7 @@ import test from 'node:test';
 import {
   GRH_ANSWER_VISUAL_SCHEMA_VERSION,
   buildFixedConceptControlAssistantAnswer,
+  buildManagementTimelineAssistantAnswer,
   buildPayrollRunControlAssistantAnswer,
   buildDeterministicAnswer,
   classifyIntent,
@@ -36,6 +37,7 @@ const ABSENCE_INSIGHTS_URL = new URL('../api/_data/grh-absence-insights.json', i
 const EMPLOYMENT_ACTIONS_URL = new URL('../api/_data/grh-employment-actions.json', import.meta.url);
 const PAYROLL_RUN_CONTROL_URL = new URL('../api/_data/grh-payroll-run-control.json', import.meta.url);
 const FIXED_CONCEPT_CONTROL_URL = new URL('../api/_data/grh-fixed-concept-control.json', import.meta.url);
+const MANAGEMENT_TIMELINE_URL = new URL('../api/_data/grh-management-timeline.json', import.meta.url);
 const HAS_PRIVATE_GRH = existsSync(PROFILE_URL) && existsSync(SEMANTIC_URL) &&
   existsSync(ABSENCE_INSIGHTS_URL) && existsSync(EMPLOYMENT_ACTIONS_URL);
 const HAS_PAYROLL_RUN_CONTROL = existsSync(PAYROLL_RUN_CONTROL_URL);
@@ -83,6 +85,7 @@ function realAssistantData(views = realViews(), bundle = realBundle()) {
     workforceFinanceSource: source,
     absenceInsights: JSON.parse(readFileSync(ABSENCE_INSIGHTS_URL, 'utf8')),
     employmentActions: JSON.parse(readFileSync(EMPLOYMENT_ACTIONS_URL, 'utf8')),
+    managementTimeline: JSON.parse(readFileSync(MANAGEMENT_TIMELINE_URL, 'utf8')),
   };
 }
 
@@ -2041,6 +2044,32 @@ test('fixed-concept control explains the three governed states without identifie
   );
 });
 
+test('management timeline explains equal observed progress without rating a government', () => {
+  const timeline = JSON.parse(readFileSync(MANAGEMENT_TIMELINE_URL, 'utf8'));
+  const answer = buildManagementTimelineAssistantAnswer(timeline);
+
+  assert.equal(answer.resolvedPeriod, '2026-08-06');
+  assert.match(answer.summary, /972 días[\s\S]*1\.461 días/i);
+  assert.match(answer.findings.join(' '), /2023-12-09[\s\S]*2019-12-09/i);
+  assert.match(answer.findings.join(' '), /5\.936 registros[\s\S]*3\.395 registros/i);
+  assert.match(answer.findings.join(' '), /3\.882 registros[\s\S]*3\.226 registros/i);
+  assert.match(answer.caveats.join(' '), /no atribuyen causas[\s\S]*desempeño/i);
+  assert.deepEqual(answer.actions, [{
+    id: 'open_management_timeline',
+    label: 'Abrir Gestiones en el tiempo',
+    href: '/gestiones',
+    requiredCapability: 'navigation.dashboard',
+  }]);
+  assert.doesNotMatch(JSON.stringify(answer), /IDPERSONA|LEGA_\d+|source\.coverage|rowCounts/i);
+
+  const invalid = structuredClone(timeline);
+  invalid.observed.current.days -= 1;
+  assert.equal(
+    buildManagementTimelineAssistantAnswer(invalid).code,
+    'GRH_MANAGEMENT_TIMELINE_UNAVAILABLE',
+  );
+});
+
 test('assistant reads fixed-concept control only for its intent, pins lineage and fails closed', { skip: !(HAS_PRIVATE_GRH && HAS_FIXED_CONCEPT_CONTROL) }, async () => {
   const artifact = JSON.parse(readFileSync(FIXED_CONCEPT_CONTROL_URL, 'utf8'));
   const reads = [];
@@ -2354,6 +2383,16 @@ test('every visible assistant suggestion resolves through a supported aggregate 
 });
 
 test('intent classifier keeps deterministic allowlist boundaries', () => {
+  for (const question of [
+    'Compará las dos gestiones al mismo avance',
+    '¿Cuánto de los cuatro años está informado?',
+    'Comparación de la gestión actual con la gestión anterior',
+  ]) {
+    assert.deepEqual(classifyIntent(question), {
+      intent: 'management_timeline',
+      policy: 'allowed',
+    }, question);
+  }
   assert.deepEqual(classifyIntent('Explicame el cierre GRH 2026-07'), { intent: 'close_explanation', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Conciliacion del periodo 2026-07'), { intent: 'close_explanation', policy: 'allowed' });
   assert.deepEqual(classifyIntent('Mostrá datos personales'), { intent: 'pii_request', policy: 'refused' });

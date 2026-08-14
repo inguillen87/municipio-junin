@@ -156,6 +156,13 @@ test('copilot v2 requires the explicit mode, an allowed intent, aggregate no-PII
   assert.deepEqual(evaluateCopilotEligibility({
     mode: 'assisted', classification, deterministicAnswer, provenance, caller,
   }), { eligible: true, code: 'ELIGIBLE' });
+  assert.deepEqual(evaluateCopilotEligibility({
+    mode: 'assisted',
+    classification: { intent: 'management_timeline', policy: 'allowed' },
+    deterministicAnswer: { ...deterministicAnswer, intent: 'management_timeline' },
+    provenance,
+    caller,
+  }), { eligible: true, code: 'ELIGIBLE' });
   assert.equal(evaluateCopilotEligibility({
     mode: 'deterministic', classification, deterministicAnswer, provenance, caller,
   }).code, 'NOT_REQUESTED');
@@ -509,6 +516,7 @@ test('manual help is deterministic, versioned, actionable and keeps permissions 
   assert.equal(classifyIntent('¿Cómo creo y exporto un reporte?').intent, 'manual_help');
   for (const [question, topic] of [
     ['¿Cómo interpreto el panorama y las prioridades del tablero ejecutivo?', 'overview'],
+    ['¿Cómo comparo las dos gestiones al mismo avance?', 'managementTimeline'],
     ['¿Cómo reviso Hacienda, nómina y el cálculo mensual?', 'hacienda'],
     ['¿Cómo reviso el control de corridas y marcas de cierre?', 'payrollRuns'],
     ['¿Cómo uso Estructura y centros de costo?', 'structure'],

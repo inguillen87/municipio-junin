@@ -1,11 +1,12 @@
 import { isKnownNavigationCapability, type SessionIdentity } from '../auth/session';
 
-const NAVIGATION_DEFINITION_VERSION = '2026-08-14.4';
+const NAVIGATION_DEFINITION_VERSION = '2026-08-14.5';
 const GROUP_IDS = Object.freeze(['executive', 'people', 'territory', 'data'] as const);
 const PLACEMENTS = Object.freeze(['top', 'group', 'footer'] as const);
-const EXPECTED_ITEM_COUNT = 22;
+const EXPECTED_ITEM_COUNT = 23;
 const PUBLIC_IDS = Object.freeze(['cuentas', 'ciudadano'] as const);
 const SECONDARY_BY_CAPABILITY = Object.freeze({
+  'navigation.dashboard': Object.freeze(['gestiones']),
   'navigation.hacienda': Object.freeze(['corridas-grh', 'conceptos-fijos']),
   'navigation.organization-analytics': Object.freeze(['movimientos-grh']),
   'navigation.rrhh': Object.freeze(['areas-grh']),
@@ -13,6 +14,7 @@ const SECONDARY_BY_CAPABILITY = Object.freeze({
 const EXPECTED_ITEMS = Object.freeze([
   ['workspace', null, 'top', 'navigation.workspace', true],
   ['dashboard', 'executive', 'group', 'navigation.dashboard', true],
+  ['gestiones', 'executive', 'group', 'navigation.dashboard', false],
   ['grh-ejecutivo', 'executive', 'group', 'navigation.grh-executive', true],
   ['decisiones-grh', 'executive', 'group', 'navigation.grh-decisions', true],
   ['ia', 'executive', 'group', 'navigation.ai-assistant', true],

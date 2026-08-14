@@ -43,11 +43,11 @@ describe('React navigation catalog adapter', () => {
     installWindow(browserDefinition());
     const definition = getNavigationDefinition();
     expect(definition).not.toBeNull();
-    expect(definition?.version).toBe('2026-08-14.4');
+    expect(definition?.version).toBe('2026-08-14.5');
     expect(definition?.groups.map(group => group.id)).toEqual([
       'executive', 'people', 'territory', 'data',
     ]);
-    expect(definition?.items).toHaveLength(22);
+    expect(definition?.items).toHaveLength(23);
     expect(Object.isFrozen(definition)).toBe(true);
     expect(Object.isFrozen(definition?.groups)).toBe(true);
     expect(Object.isFrozen(definition?.items)).toBe(true);

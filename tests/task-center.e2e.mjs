@@ -219,8 +219,13 @@ test('Ctrl or Command K is keyboard-complete, modal-safe and restores focus', as
 
   await trigger.focus();
   await page.keyboard.press('Control+K');
+  assert.equal(
+    await page.locator('#municipalTaskPaletteResults [aria-selected="true"]')
+      .evaluate(node => new URL(node.href).pathname),
+    '/gestiones.html',
+  );
   await page.keyboard.press('Enter');
-  await page.waitForURL(/\/dashboard\.html$/);
+  await page.waitForURL(/\/gestiones\.html$/);
 });
 
 test('mobile finder and command palette fit 390px with touch-sized controls', async t => {

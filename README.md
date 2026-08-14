@@ -6,8 +6,11 @@ Intendencia, Hacienda y RRHH, sin publicar PII ni presentar datos simulados como
 si fueran reales.
 
 > Estado de esta documentación: el release `v1.10.0` conserva su evidencia
-> productiva histórica; S20 fue verificado en Production el 14 de agosto de 2026
-> sobre el alias estable en el commit `85843ab`. Los indicadores describen el snapshot
+> productiva histórica; S21 fue verificado en Production el 14 de agosto de 2026
+> sobre el alias estable en el commit `4cd0926627a786634696cbed8e75ecc8934100c6`,
+> deployment `dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3`, con release truth 28/28 y cero
+> respuestas 5xx. S22 permanece local hasta push, deployment y smoke del mismo SHA.
+> Los indicadores describen el snapshot
 > GRH del 6 de agosto de 2026; no constituyen conexión en tiempo real ni pago
 > bancario conciliado.
 
@@ -66,7 +69,8 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Estructura y áreas de costo | Validada localmente | React + TypeScript, seis KPI, exploradores de clasificaciones y centros de costo del cálculo, dos series históricas, matriz 5×5, comparador y acciones hacia Hacienda/BOT; contrato `grh-organization-analytics-v2`, k=10 y sin directorio nominal |
 | Hacienda y Nómina | Implementado | Control de cálculo; no prueba transferencia bancaria ni asiento contable |
 | Corridas y marcas de cierre | Verificado en Production | Cabeceras, detalle asociado, marcas operativas y cuarentena por período; no prueba pago ni cierre contable |
-| Conceptos fijos y cálculo | Release candidate S21 | Contraste agregado de registros vigentes por rango contra el cálculo válido de julio de 2026; no publica importes, instrumentos, legajos ni decisiones sobre personas |
+| Conceptos fijos y cálculo | Verificado en Production · S21 | Contraste agregado de registros vigentes por rango contra el cálculo válido de julio de 2026; no publica importes, instrumentos, legajos ni decisiones sobre personas |
+| Gestiones en el tiempo | S22 local, no publicado | Presenta los mandatos completos de 1.461 días y compara sólo los 972 días informados en ambos períodos; en ausencias conserva 5.936/3.395 filas y cuenta 749/662 personas por `legajo.IDPERSONA`, sin sobreescribir el histórico S15 752/662 por claves laborales; no califica gestiones ni prueba causalidad, desempeño o presupuesto |
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
 | Comparación de gestiones | Verificada en Production | Compara dos tramos históricos de 972 días con la misma duración; contrato, privacidad y recorrido autenticado verificados sobre el alias estable |
 | Preparación GRH + PERSONAS | Implementada localmente | Manifiesto auxiliar, matcher versionado, contrato agregado `grh-personas-linkage-readiness-v1` y lectura municipal; no mezcla fichas ni cambia KPI GRH |

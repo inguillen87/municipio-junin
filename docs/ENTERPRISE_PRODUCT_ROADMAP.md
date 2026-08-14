@@ -27,8 +27,8 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-El estado local vigente usa route policy `2026-08-14.15` y access policy
-`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 97 rutas exactas, 55
+El estado local vigente usa route policy `2026-08-14.16` y access policy
+`2026-08-13.4`: 32 recursos, 12 acciones, 54 permisos y 98 rutas exactas, 56
 Serverless + 42 Express. Para el release histórico `v1.10.0`, route policy
 `2026-08-09.2` y access policy `2026-08-09.1` cubrían 26 recursos, 12 acciones,
 46 permisos y 79 firmas de ruta: 37 Serverless + 42 Express. El commit/tag de ese release apunta a
@@ -187,7 +187,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
-| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-14.15`: 32 recursos, 12 acciones, 54 permisos y 97 firmas de ruta (55 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
+| Techo exacto `recurso:acción` | Implementado localmente con route policy `2026-08-14.16`: 32 recursos, 12 acciones, 54 permisos y 98 firmas de ruta (56 Serverless + 42 Express) | Certificar adaptadores en el deployment y conservar denegación de desconocidos |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | Release histórico `v1.10.0`: tag `4108ca0`, product commit `d11fd39`, deployment `READY`, gate 11/11 y GitHub Release live. Hotfix post-release `e74339c`: `/prisma/schema.prisma` 404 seguro y gate 12/12 | No mover el tag ni inferir DB, cuentas, autorización positiva o datos GRH remotos; cada deployment posterior requiere repetir el gate actual de 12 probes |
@@ -324,7 +324,7 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
 exacto por `runtime + método + ruta + recurso:acción` (32 recursos, 12 acciones,
-54 permisos y 97 firmas: 55 Serverless y 42 Express). No hay wildcard, jerarquía
+54 permisos y 98 firmas: 56 Serverless y 42 Express). No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
@@ -577,14 +577,31 @@ y tenant-bound.
 
 ### S21 — conceptos fijos y acceso publicado por rol
 
-El release candidate agrega `/conceptos-fijos` sobre
+S21 está verificado en Production en
+`4cd0926627a786634696cbed8e75ecc8934100c6`, deployment
+`dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3`, con release truth 28/28 y cero respuestas
+5xx. Agrega `/conceptos-fijos` sobre
 `grh-fixed-concept-control-v1`: contrasta agregados de `fijos` vigentes por rango
 con el cálculo válido de julio de 2026, resuelve personas por `IDPERSONA` y no
 publica importes, instrumentos, documentos ni identificadores. Las sesiones
 publicadas pasan a recibir la intersección exacta entre el techo seguro y el rol
 canónico, y el primer ingreso ofrece una bienvenida compacta sin retirar el
-recorrido completo de MuniGuía. Queda pendiente el smoke del mismo SHA en
-Production; no incorpora un motor de liquidación ni prueba pago.
+recorrido completo de MuniGuía. No incorpora un motor de liquidación ni prueba
+pago.
+
+### S22 — gestiones en el tiempo
+
+S22 permanece **local hasta push y certificación**. La nueva ruta `/gestiones`
+explica los cuatro años previstos de cada mandato y compara sólo el mismo avance
+observado: 972 días por lado desde el corte 2023-12-09. Integra
+`grh-management-timeline-v1` con navegación no técnica, MuniGuía, Task Center y
+Asistente determinista. Reutiliza permisos existentes, protege celdas k=10 y no
+convierte diferencias documentadas en causalidad, desempeño o presupuesto.
+En ausencias conserva las mismas 5.936/3.395 filas fuente de S15, pero informa
+749/662 personas distintas resueltas exclusivamente por `legajo.IDPERSONA`.
+S15 conserva su evidencia histórica 752/662 porque contaba claves laborales
+distintas; S22 no la sobreescribe, sino que corrige el grano antes de usar la
+palabra «personas».
 
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;

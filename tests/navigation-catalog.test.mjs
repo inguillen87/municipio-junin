@@ -9,6 +9,7 @@ const EXPECTED_GROUPS = ['executive', 'people', 'territory', 'data'];
 const EXPECTED_ITEMS = [
   ['workspace', 'inicio.html', null, 'top'],
   ['dashboard', 'dashboard.html', 'executive', 'group'],
+  ['gestiones', '/gestiones', 'executive', 'group'],
   ['grh-ejecutivo', '/ejecutivo', 'executive', 'group'],
   ['decisiones-grh', 'decisiones-grh.html', 'executive', 'group'],
   ['ia', 'ia.html', 'executive', 'group'],
@@ -55,7 +56,7 @@ function visibleItems(definition, capabilities) {
 test('navigation definition is exact, deeply immutable and free of parallel route identities', async () => {
   const { source, window } = await loadGlobals();
   const definition = window.MuniNavigationDefinition;
-  assert.equal(definition.version, '2026-08-14.4');
+  assert.equal(definition.version, '2026-08-14.5');
   assert.deepEqual(Array.from(definition.groups, group => group.id), EXPECTED_GROUPS);
   assert.deepEqual(
     Array.from(definition.items, item => [item.id, item.href, item.groupId, item.placement]),
@@ -99,6 +100,7 @@ test('primary compatibility catalog is derived once and stays capability-address
   assert.equal(catalog['navigation.employment-actions'].id, 'trayectoria');
   assert.equal(catalog['navigation.rrhh'].id, 'rrhh');
   assert.equal(catalog['navigation.hacienda'].id, 'hacienda');
+  assert.equal(definition.items.find(item => item.id === 'gestiones').primary, false);
 });
 
 test('catalog visibility follows the exact seven-role capability matrix', async () => {

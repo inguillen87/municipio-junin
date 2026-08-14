@@ -164,8 +164,8 @@ Reglas de verdad:
 - `shared/route-policy.cjs` actúa como techo de autorización exacto por
   runtime, método, ruta y permiso `recurso:acción`. Una ruta, método, rol,
   capacidad o secreto interno no registrado se deniega.
-- La versión local `2026-08-14.15` del manifiesto contiene 32 recursos, 12
-  acciones, 54 permisos y 97 firmas de ruta protegidas: 55 Serverless y 42
+- La versión local `2026-08-14.16` del manifiesto contiene 32 recursos, 12
+  acciones, 54 permisos y 98 firmas de ruta protegidas: 56 Serverless y 42
   Express. Es un techo ejecutable exacto, no persistencia RBAC/ABAC por área.
 - `.vercelignore` excluye backend, evidencia, scripts, SQL, tests, documentos y
   artefactos JSON privados. `api/**` y `prisma/**` permanecen desplegables.
@@ -1077,6 +1077,7 @@ inesperados o una suite parcial no satisfacen el gate.
 | inicio seguro por rol | `node --test tests/access-policy.test.mjs tests/login-institutional.e2e.mjs tests/navigation-layout.e2e.mjs tests/role-workspace.e2e.mjs` |
 | centro de tareas y corridas GRH S20 | `python -m unittest tests.test_build_grh_payroll_run_control` y `node --test tests/grh-payroll-run-control-projection.test.mjs tests/grh-payroll-run-control-endpoint.test.mjs tests/grh-payroll-run-control-data-client.test.mjs tests/payroll-run-control.e2e.mjs tests/municipal-task-catalog.test.mjs tests/task-center.e2e.mjs tests/grh-action-handoff-contract.test.mjs tests/grh-action-ledger.e2e.mjs` |
 | conceptos fijos, roles y onboarding S21 | `python -m unittest tests.test_build_grh_fixed_concept_control` y `node --test tests/grh-fixed-concept-control-projection.test.mjs tests/grh-fixed-concept-control-endpoint.test.mjs tests/grh-fixed-concept-control-data-client.test.mjs tests/fixed-concept-control.e2e.mjs tests/one-click-session.test.mjs tests/muniguia-onboarding.e2e.mjs tests/ai-grh-assistant.test.mjs tests/ia-assistant.e2e.mjs` |
+| gestiones en el tiempo S22 | `python -m unittest tests.test_build_grh_management_timeline` y `node --test tests/grh-management-timeline-projection.test.mjs tests/grh-management-timeline-endpoint.test.mjs tests/grh-management-timeline-data-client.test.mjs tests/management-timeline-surface-contract.test.mjs tests/contextual-help-catalog.test.mjs tests/municipal-task-catalog.test.mjs tests/ai-grh-assistant.test.mjs` |
 | WP0-L read-only | `node --test tests/prisma-baseline-observation.test.mjs tests/database-url-policy.test.mjs tests/prisma-migration-gate.test.mjs` |
 | ownership + baseline S14C | `node --test tests/prisma-schema-ownership.test.mjs tests/prisma-baseline-sql.test.mjs tests/prisma-migration-gate.test.mjs tests/operations-documentation.test.mjs` y `npm.cmd run db:baseline:manifest:check` |
 | IAM-MAP-01 | `node --test tests/account-lifecycle-prisma-mapper.test.mjs tests/account-lifecycle-foundation.test.mjs tests/rbac-lifecycle-proposal.test.mjs` |
@@ -1108,6 +1109,25 @@ Artefacto, proyección, UI e IA no contienen importes, documentos, instrumentos,
 identificadores ni filas crudas. Las identidades publicadas se autorizan por la
 intersección exacta de techo seguro y rol canónico; ocultar una tarjeta no
 reemplaza el 403 del servidor.
+
+S21 fue verificado en Production sobre
+`4cd0926627a786634696cbed8e75ecc8934100c6`, deployment
+`dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3`, release truth 28/28 y cero respuestas 5xx.
+
+S22 agrega localmente `grh-management-timeline-v1`, el endpoint GET-only
+`/api/grh-management-timeline` y `/gestiones`. Reutiliza
+`GRH_ORGANIZATION_ANALYTICS_READ` y `navigation.dashboard`; no crea permisos ni
+habilita perfiles bajos. El builder publica los mandatos completos y las
+ventanas observadas de 972 días sin completar años futuros. La matriz conserva
+privacidad k=10 por dominio y año, incluida supresión complementaria; la UI y la
+IA no recalculan ni revelan celdas protegidas o ausentes. Este estado es local:
+requiere push, deployment, release truth y smoke autenticado del mismo SHA.
+
+El dominio de ausencias conserva 5.936/3.395 filas fuente, pero S22 cuenta
+749/662 personas distintas sólo por `legajo.IDPERSONA`. La evidencia S15
+752/662 queda histórica e inmutable porque su unidad era claves laborales
+distintas: no se reescribe el release previo; el nuevo contrato corrige el grano
+antes de exponer la medida `distinctPersons`.
 
 Evidencia focal heredada del cierre documental 1.6.0: la suite local que integra el
 backend de cierre acumuló 411 pases y 1 smoke externo opt-in omitido; O2A/O2A.1,
@@ -1417,8 +1437,8 @@ APIs privadas → analítica / mapas / alertas / asistente
 - La autorización actual combina identidad, rol vigente, tenant y estado
   consultados en DB con un manifiesto exacto de rutas y permisos
   `recurso:acción`. Las listas legacy sólo pueden restringir ese techo, nunca
-  ampliarlo. La versión local cubre 32 recursos, 12 acciones, 54 permisos y 97
-  firmas exactas (55 Serverless y 42 Express). Todavía no existe persistencia de
+  ampliarlo. La versión local cubre 32 recursos, 12 acciones, 54 permisos y 98
+  firmas exactas (56 Serverless y 42 Express). Todavía no existe persistencia de
   asignaciones por área, fila, campo, vigencia ni reglas de segregación de
   funciones.
 
@@ -1514,7 +1534,7 @@ municipal ni ejecutar una decisión administrativa por sí sola.
 
 **Actual local:** existen `Tenant`, siete roles técnicos, estado del tenant,
 controles tenant-bound y una política compartida que registra de forma literal
-32 recursos, 12 acciones, 54 permisos y 97 firmas protegidas (55 Serverless y 42
+32 recursos, 12 acciones, 54 permisos y 98 firmas protegidas (56 Serverless y 42
 Express). No hay wildcard, jerarquía ni autorización por nombre de pantalla. Los
 adaptadores de ambos runtimes usan ese mismo techo y deniegan lo desconocido.
 Algunas tablas analíticas legacy aún dependen de un CUID ambiental y no ofrecen
@@ -1638,7 +1658,7 @@ Diagnóstico recomendado:
 | Autenticación DB-autoritativa | Operativo local | Serverless y Express cubiertos por tests |
 | Login institucional | Operativo local + preview protegido | sobrio, autocontenido, accesible, responsive y sin demos/claims; `/` mostró el acceso esperado con una única inyección conocida de Vercel Live; no prueba cuentas |
 | Inicio seguro por rol | Operativo local | `navigation.workspace`, siete variantes, contrato de sesión server-computed y matriz 390/1440 px. Siempre consulta `/api/auth/me`; sólo el Inicio de Intendencia con variante `executive-leadership` y `navigation.dashboard` agrega el brief GRH y falla sin cifras si no está disponible |
-| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-14.15`: 32 recursos, 12 acciones, 54 permisos y 97 firmas exactas, 55 Serverless + 42 Express; desconocidos fallan cerrados |
+| Techo de autorización `recurso:acción` | Operativo local | Route policy `2026-08-14.16`: 32 recursos, 12 acciones, 54 permisos y 98 firmas exactas, 56 Serverless + 42 Express; desconocidos fallan cerrados |
 | Replay GRH O2A/O2A.1 | Operativo local de ingeniería | replay real histórico preservado; captura por descriptor, `fstat` y copias privadas `wx`/`0600` verificadas con fixtures; host comprometido fuera de garantía; no conectado |
 | WP0-L conectado S14B | Descubrimiento no aprobable sobre restore descartable | `TLSv1.3`, observador de mínimo privilegio, transacción read-only y 968 filas de catálogo; historia `absent`, `approvalEligible:false` y cuatro flags de evidencia externa en `false`; no es baseline ni autorización DDL |
 | Ownership schema S14C | Cerrado en schema/clients | 13 tablas existentes: 5 sensibles y 8 de referencia; `@@ignore` deshabilita delegates pero no reemplaza grants DB ni bloquea `$queryRaw` |

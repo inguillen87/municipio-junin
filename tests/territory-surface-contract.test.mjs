@@ -51,7 +51,7 @@ test('territorial navigation is explicit for all roles and exact in low-role pri
 });
 
 test('territorial API is one exact GET resource and remains available to published demo identities', () => {
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.15');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.16');
   assert.equal(routePolicy.RESOURCES.MUNICIPAL_TERRITORY, 'municipal.territory');
   assert.equal(routePolicy.PERMISSIONS.MUNICIPAL_TERRITORY_READ, 'municipal.territory:read');
   const routes = routePolicy.PROTECTED_ROUTES.filter(route => route.id === ROUTE_ID);
@@ -65,7 +65,7 @@ test('territorial API is one exact GET resource and remains available to publish
   }
   assert.equal(routePolicy.authorizeRoute('DEMO', 'serverless', 'POST', '/api/municipal-territory'), false);
   assert.equal(routePolicy.authorizeRoute('DEMO', 'serverless', 'GET', '/api/municipal-territory/future'), false);
-  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.15');
+  assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_POLICY_VERSION, '2026-08-14.16');
   assert.equal(publishedDemoPolicy.PUBLISHED_DEMO_ALLOWED_ROUTE_IDS.includes(ROUTE_ID), true);
   for (const profile of publishedDemoPolicy.PUBLISHED_DEMO_PROFILES) {
     assert.equal(publishedDemoPolicy.evaluatePublishedDemoRoute({ ...profile, routeId: ROUTE_ID }).allowed, true, profile.email);
@@ -95,7 +95,7 @@ test('territorial production code is pinned to Junín Mendoza and rejects the re
 });
 
 test('territorio is a governed Vite entry while the retired mapa file remains a legacy compatibility surface', async () => {
-  assert.deepEqual(GOVERNED_VITE_HTML_FILES, ['calidad.html', 'conceptos-fijos.html', 'corridas-grh.html', 'ejecutivo.html', 'estructura.html', 'trayectoria.html', 'territorio.html']);
+  assert.deepEqual(GOVERNED_VITE_HTML_FILES, ['calidad.html', 'conceptos-fijos.html', 'corridas-grh.html', 'ejecutivo.html', 'estructura.html', 'gestiones.html', 'trayectoria.html', 'territorio.html']);
   assert.deepEqual(VITE_ENTRY_HTML_FILES, GOVERNED_VITE_HTML_FILES);
   assert.equal(GOVERNED_LEGACY_HTML_FILES.includes('territorio.html'), false);
   assert.equal(PUBLIC_LEGACY_HTML_FILES.includes('territorio.html'), false);

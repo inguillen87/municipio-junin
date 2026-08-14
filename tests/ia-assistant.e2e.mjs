@@ -758,7 +758,7 @@ test('assistant presents exactly four canonical primary queries for each executi
   const scenarios = [
     {
       role: 'INTENDENTE',
-      labels: ['Prioridades para decidir', 'Resumen ejecutivo', 'Motivos de ausencia', 'Costo por área'],
+      labels: ['Prioridades para decidir', 'Resumen ejecutivo', 'Dos gestiones', 'Costo por área'],
     },
     {
       role: 'CONTADOR',
@@ -1219,7 +1219,7 @@ test('assistant renders decision and workforce-finance answers with real deep li
     primaryLabels: [
       'Prioridades para decidir',
       'Resumen ejecutivo',
-      'Motivos de ausencia',
+      'Dos gestiones',
       'Costo por área',
     ],
     moreLabel: 'Más consultas',
@@ -1252,7 +1252,8 @@ test('assistant renders decision and workforce-finance answers with real deep li
   assert.match(brief.visibleText, /Personas incluidas en la liquidación/i);
   assert.match(brief.visibleText, /Importes que coinciden/i);
 
-  const absenceReasonsChip = page.locator('#queryPrimary')
+  await page.locator('#queryMoreSummary').click();
+  const absenceReasonsChip = page.locator('#queryMoreBody')
     .getByRole('button', { name: 'Motivos de ausencia', exact: true });
   assert.equal(
     await absenceReasonsChip.getAttribute('data-question'),

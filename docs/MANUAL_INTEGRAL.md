@@ -3,7 +3,7 @@
 Versión documental: 1.10.0
 Fecha de corte: 9 de agosto de 2026  
 Estado: release público `v1.10.0` verificado; producto S13 en commit `d11fd39`
-Estado local revisado: 14 de agosto de 2026; route policy `2026-08-14.15` y
+Estado local revisado: 14 de agosto de 2026; route policy `2026-08-14.16` y
 access policy `2026-08-13.4`, sin nuevo release
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
@@ -185,7 +185,7 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   no se repitió el replay real de 44 MB, no se usó DB y no se desplegó. Un host
   completamente comprometido permanece fuera de la garantía.
 - El techo exacto de permisos por ruta está implementado localmente con 32
-  recursos, 12 acciones, 54 permisos y 97 firmas protegidas: 55 Serverless y 42
+  recursos, 12 acciones, 54 permisos y 98 firmas protegidas: 56 Serverless y 42
   Express. La propuesta de
   ámbitos RBAC/ABAC está aislada y no migrada: todavía no hay persistencia fina,
   lifecycle de cuentas ni cuentas por cada rol.
@@ -434,7 +434,8 @@ software y bloquea el release.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
-| Unreleased · S21 | 2026-08-14 | `grh-fixed-concept-control-v1` y `/conceptos-fijos` sobre agregados sin PII/importes; personas resueltas por `legajo.IDPERSONA`; sesiones publicadas intersectadas con el rol canónico; bienvenida compacta que conserva el recorrido completo de MuniGuía; pendiente commit y smoke del mismo SHA en Production |
+| Unreleased · S22 | 2026-08-14 | Estado local: `/gestiones` + `grh-management-timeline-v1`; mandatos completos de 1.461 días y comparación de 972 días por lado; ausencias 5.936/3.395 filas y 749/662 personas por `legajo.IDPERSONA`, sin sobreescribir el histórico S15 752/662 por claves laborales; navegación, MuniGuía, Task Center e IA determinista sin ampliar roles; requiere push, deployment y smoke del mismo SHA antes de declarar Production |
+| Production · S21 | 2026-08-14 | `grh-fixed-concept-control-v1` y `/conceptos-fijos` sobre agregados sin PII/importes; commit `4cd0926627a786634696cbed8e75ecc8934100c6`, deployment `dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3`, release truth 28/28 y cero respuestas 5xx |
 | Unreleased · S14C | 2026-08-09 | 13 tablas de Preview gobernadas como `@@ignore` —5 sensibles/8 referencia—, clientes sin delegates y baseline v2 Prisma 5.22 con 82 sentencias aditivas; casos A vacío y B3 resolve aprobados en child branches efímeros al LSN `0/307FA88`, catálogo B3 byte-idéntico 449 filas/140.715 bytes, cleanup main + Preview/2 endpoints/0 snapshots y cero escrituras estables; BLOCKER por ownership/naming de `puntolimpio-staging-neon`; raíz 634 aprobadas + 1 opt-in, backend 20/20; receipt externo SHA `613db7889e4e23033927814fa5ee8e4a891e9a91772268e01b08645d3f4ae51b`; `v1.10.0`/`4108ca0` conserva 11/11 y hotfix `e74339c` cerró 12/12 |
 | Unreleased · S14B | 2026-08-09 | Targets DB Preview/Production distintos, `verify-full`, mapping identificado y WP0 conectado desde `38b25e8`: `TLSv1.3`, observador mínimo, read-only, 968 filas y `_prisma_migrations` `absent`; artefacto `discovery_non_approvable`, `approvalEligible:false`, cuatro flags de evidencia en `false`; control plane confirmó snapshot→restore y cleanup, sin baseline, migración, cuenta, lifecycle, bump, tag o `v1.11.0`; raíz 618 aprobadas + 1 opt-in omitido, backend 20/20; `v1.10.0` conserva su 11/11 público |
 | Unreleased · S14A | 2026-08-09 | Antecedente local WP0-L v2 con estados de historia explícitos, catálogo hasheado/acotado y `approvalEligible:false`; registró entonces `DB_CONFIG_ISOLATION=FAIL`, `DB_CONFIG_SSLMODE_VERIFY_FULL=false` y `NEON_MAPPING=UNKNOWN`; S14B resolvió ese NO-GO; S14A no creó bump, tag o release |

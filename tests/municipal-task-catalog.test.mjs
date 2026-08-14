@@ -29,7 +29,7 @@ function inputFor(role, capabilities = ROLE_CAPABILITIES[role]) {
 
 const EXPECTED_RECOMMENDED = Object.freeze({
   SUPER_ADMIN: ['review-sources', 'import-source', 'verify-quality', 'understand-role'],
-  INTENDENTE: ['review-priorities', 'follow-decisions', 'review-grh-summary', 'review-fixed-concepts'],
+  INTENDENTE: ['compare-managements', 'review-priorities', 'follow-decisions', 'review-grh-summary'],
   TENANT_ADMIN: ['import-source', 'review-sources', 'verify-quality', 'review-fixed-concepts'],
   TENANT_USER: ['locate-territory', 'understand-role'],
   CONTADOR: ['review-fixed-concepts', 'review-payroll-runs', 'review-payroll', 'create-report'],
@@ -164,6 +164,27 @@ test('fixed-concept task uses the governed page and remains capability-bound', (
   assert.equal(denied.tasks.some(candidate => candidate.id === 'review-fixed-concepts'), false);
 });
 
+test('management comparison is a nontechnical executive task without a new grant', () => {
+  const page = MUNIGUIA_CATALOG.pages.managementTimeline;
+  assert.ok(page);
+  assert.equal(page.requiredCapability, 'navigation.dashboard');
+  assert.equal(page.href, 'gestiones.html');
+  assert.deepEqual(page.aliases, ['/gestiones', '/gestiones.html']);
+
+  const allowed = resolveMunicipalTaskCatalog(inputFor('INTENDENTE'));
+  const task = allowed.tasks.find(candidate => candidate.id === 'compare-managements');
+  assert.ok(task);
+  assert.equal(task.capability, 'navigation.dashboard');
+  assert.equal(task.href, '/gestiones.html');
+  assert.equal(task.helpHref, '/manuales.html#gestiones');
+  assert.equal(task.assistant.question, MUNIGUIA_ASSISTANT_QUESTIONS.managementTimeline);
+
+  for (const role of ['TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    assert.equal(resolveMunicipalTaskCatalog(inputFor(role)).tasks.some(candidate =>
+      candidate.id === 'compare-managements'), false, role);
+  }
+});
+
 test('MuniGuía and Assistant handoffs remain independently capability-bound', () => {
   const capabilities = ROLE_CAPABILITIES.INTENDENTE.filter(capability => capability !== 'navigation.help');
   const projected = resolveMunicipalTaskCatalog(inputFor('INTENDENTE', capabilities));
@@ -183,7 +204,7 @@ test('task center integration is local, sink-free and mounted once across legacy
     readFile(path.join(ROOT, 'manuales.html'), 'utf8'),
     readFile(path.join(ROOT, 'frontend', 'src', 'components', 'AppShell.tsx'), 'utf8'),
     readFile(path.join(ROOT, 'frontend', 'src', 'components', 'MunicipalTaskCenterBridge.tsx'), 'utf8'),
-    ...['calidad', 'conceptos-fijos', 'ejecutivo', 'estructura', 'territorio', 'trayectoria'].map(name =>
+    ...['calidad', 'conceptos-fijos', 'ejecutivo', 'estructura', 'gestiones', 'territorio', 'trayectoria'].map(name =>
       readFile(path.join(ROOT, 'frontend', `${name}.html`), 'utf8')),
   ]);
   assert.doesNotMatch(runtime, /\.innerHTML\s*=|insertAdjacentHTML|document\.write|\beval\s*\(/u);

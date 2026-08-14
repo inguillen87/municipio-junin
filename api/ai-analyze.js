@@ -38,6 +38,9 @@ import {
   readGrhFixedConceptControlArtifact,
 } from './grh-fixed-concept-control.js';
 import {
+  readGrhManagementTimelineArtifact,
+} from './grh-management-timeline.js';
+import {
   inspectGrhAbsenceInsightsContract,
 } from './lib/grh-absence-insights-contract.js';
 import {
@@ -49,6 +52,10 @@ import {
 import {
   inspectGrhFixedConceptControlContract,
 } from './lib/grh-fixed-concept-control-contract.js';
+import {
+  GRH_MANAGEMENT_TIMELINE_SCHEMA_VERSION,
+  inspectGrhManagementTimelineContract,
+} from './lib/grh-management-timeline-contract.js';
 import {
   inspectGrhWorkforceFinanceContract,
 } from './lib/grh-workforce-finance-contract.js';
@@ -110,6 +117,7 @@ const ACTION_ROUTE_CAPABILITIES = Object.freeze({
   '/importar': 'navigation.import',
   '/inicio': 'navigation.workspace',
   '/manuales': 'navigation.help',
+  '/gestiones': 'navigation.dashboard',
   '/movimientos-grh': 'navigation.organization-analytics',
   '/reportes': 'navigation.reports',
   '/rrhh': 'navigation.rrhh',
@@ -227,6 +235,7 @@ const FINANCE_COMPONENTS = Object.freeze([
 ]);
 const SUPPORTED_INTENTS = Object.freeze([
   'manual_help',
+  'management_timeline',
   'decision_brief',
   'fixed_concept_control',
   'payroll_run_control',
@@ -263,6 +272,7 @@ export function createAiAnalyzeHandler({
   readEmploymentActionsArtifactImpl = readGrhEmploymentActionsArtifact,
   readPayrollRunControlArtifactImpl = readGrhPayrollRunControlArtifact,
   readFixedConceptControlArtifactImpl = readGrhFixedConceptControlArtifact,
+  readManagementTimelineArtifactImpl = readGrhManagementTimelineArtifact,
   buildDecisionBriefProjectionImpl = buildGrhDecisionBriefProjection,
   inspectDecisionBriefContractImpl = inspectGrhDecisionBriefContract,
   buildDomainCatalogProjectionImpl = buildGrhDomainCatalogProjection,
@@ -274,6 +284,7 @@ export function createAiAnalyzeHandler({
   inspectEmploymentActionsContractImpl = inspectGrhEmploymentActionsContract,
   inspectPayrollRunControlContractImpl = inspectGrhPayrollRunControlContract,
   inspectFixedConceptControlContractImpl = inspectGrhFixedConceptControlContract,
+  inspectManagementTimelineContractImpl = inspectGrhManagementTimelineContract,
   authorizeDirectoryImpl = authorizeGrhDirectoryRequest,
   synthesizeAnswerImpl = synthesizeMunicipalAnswer,
   directoryAuthorizationDependencies = {},
@@ -378,6 +389,7 @@ export function createAiAnalyzeHandler({
     const useEmploymentActions = classification.intent === 'employment_actions';
     const usePayrollRunControl = classification.intent === 'payroll_run_control';
     const useFixedConceptControl = classification.intent === 'fixed_concept_control';
+    const useManagementTimeline = classification.intent === 'management_timeline';
     let directoryAuthorization = null;
     let directoryReadAudit = null;
     if (classification.intent === 'person_lookup') {
@@ -406,6 +418,7 @@ export function createAiAnalyzeHandler({
         employmentActions: null,
         payrollRunControl: null,
         fixedConceptControl: null,
+        managementTimeline: null,
       };
       if (classification.intent === 'decision_brief' || usePayrollRunControl) {
         const decisionBrief = buildDecisionBriefProjectionImpl(executive, quality, close);
@@ -495,6 +508,17 @@ export function createAiAnalyzeHandler({
         }
         assistantData.fixedConceptControl = fixedConceptControl;
       }
+      if (useManagementTimeline) {
+        const managementTimeline = await readManagementTimelineArtifactImpl({
+          environment,
+          expectedSourceSha256: provenance.sourceSha256,
+        });
+        if (!inspectManagementTimelineContractImpl(managementTimeline)?.ok ||
+            !managementTimelineMatchesAssistantSource(managementTimeline, provenance)) {
+          throw new Error('GRH management timeline invalid');
+        }
+        assistantData.managementTimeline = managementTimeline;
+      }
       const unfilteredAnswer = classification.intent === 'person_lookup'
         ? await buildPrivateDirectoryResponse({
           message,
@@ -547,6 +571,12 @@ export function createAiAnalyzeHandler({
           fixedConceptControlSchemaVersion: assistantData.fixedConceptControl.schemaVersion,
         };
       }
+      if (!nominal && useManagementTimeline) {
+        responseProvenance = {
+          ...responseProvenance,
+          managementTimelineSchemaVersion: GRH_MANAGEMENT_TIMELINE_SCHEMA_VERSION,
+        };
+      }
       const copilot = await synthesizeAnswerImpl({
         mode: requestedMode,
         classification,
@@ -572,6 +602,7 @@ export function createAiAnalyzeHandler({
       if (useEmploymentActions) dataSource = 'grh_employment_actions_governed_contract';
       if (usePayrollRunControl) dataSource = 'grh_payroll_run_control_governed_contract';
       if (useFixedConceptControl) dataSource = 'grh_fixed_concept_control_governed_contract';
+      if (useManagementTimeline) dataSource = 'grh_management_timeline_governed_contract';
       if (nominal) dataSource = 'grh_directory_private_contract';
       const payload = buildAssistantPayload(presentedAnswer, responseProvenance, {
         available: true,
@@ -588,6 +619,7 @@ export function createAiAnalyzeHandler({
       const employmentActionsFailure = useEmploymentActions;
       const payrollRunControlFailure = usePayrollRunControl;
       const fixedConceptControlFailure = useFixedConceptControl;
+      const managementTimelineFailure = useManagementTimeline;
       if (directoryFailure && directoryReadAudit) {
         await directoryReadAudit.denyPendingRead();
       }
@@ -622,6 +654,13 @@ export function createAiAnalyzeHandler({
           log: '[GRH-ASSISTANT] Control agregado de conceptos fijos no disponible',
           error: 'El control agregado de conceptos fijos no está disponible. No se reutilizó otra fuente.',
           code: 'GRH_FIXED_CONCEPT_CONTROL_UNAVAILABLE',
+        };
+      }
+      if (managementTimelineFailure) {
+        unavailable = {
+          log: '[GRH-ASSISTANT] Comparación de gestiones no disponible',
+          error: 'La comparación gobernada de gestiones no está disponible. No se reutilizó otra fuente.',
+          code: 'GRH_MANAGEMENT_TIMELINE_UNAVAILABLE',
         };
       }
       if (directoryFailure) {
@@ -1422,6 +1461,9 @@ export function classifyIntent(rawMessage) {
   }
   const manualTopic = classifyManualHelp(rawMessage);
   if (manualTopic) return { intent: 'manual_help', policy: 'allowed', manualTopic };
+  if (/\b(?:compar(?:a|ar|acion|ativa|o).{0,35}(?:dos |las )?gestiones|gestiones? (?:al|con el) mismo avance|gestion actual.{0,35}gestion anterior|cuatro anos.{0,30}cuatro anos|4 anos.{0,30}4 anos|cuanto.{0,30}(?:cuatro|4) anos.{0,30}informad(?:o|a|os|as)?|avance.{0,30}(?:mandato|gestion actual))\b/.test(message)) {
+    return { intent: 'management_timeline', policy: 'allowed' };
+  }
   if (/\bconceptos?\s+fijos?\b|\bfijos?\s+(?:elegibles?|observados?|contra|versus|vs|y)\s+(?:el\s+)?calculo\b/.test(message)) {
     return { intent: 'fixed_concept_control', policy: 'allowed' };
   }
@@ -1613,6 +1655,9 @@ export function buildDeterministicAnswer(
     case 'fixed_concept_control':
       result = buildFixedConceptControlAssistantAnswer(context.fixedConceptControl);
       break;
+    case 'management_timeline':
+      result = buildManagementTimelineAssistantAnswer(context.managementTimeline);
+      break;
     case 'workforce_finance_overview':
     case 'workforce_finance_trend':
     case 'workforce_finance_composition':
@@ -1790,6 +1835,10 @@ function semanticContext(
       assistantData?.fixedConceptControl,
       executive.source,
     ),
+    managementTimeline: validAssistantManagementTimeline(
+      assistantData?.managementTimeline,
+      executive.source,
+    ),
     baseCaveats: [],
   };
 }
@@ -1865,6 +1914,33 @@ function validAssistantFixedConceptControl(value, source) {
     throw error;
   }
   return value;
+}
+
+function managementTimelineMatchesAssistantSource(timeline, provenance) {
+  return timeline?.source?.canonicalSystem === provenance?.source &&
+    timeline?.source?.fileName === provenance?.sourceFile &&
+    timeline?.source?.sha256 === provenance?.sourceSha256 &&
+    timeline?.source?.snapshotAsOf === provenance?.snapshotAsOf &&
+    timeline?.source?.realtime === false;
+}
+
+function validAssistantManagementTimeline(value, source) {
+  if (value === undefined || value === null) return null;
+  if (!inspectGrhManagementTimelineContract(value)?.ok ||
+      !sameManagementTimelineSource(value.source, source)) {
+    const error = new Error('El contrato management-timeline GRH no es válido.');
+    error.code = 'GRH_MANAGEMENT_TIMELINE_CONTRACT_INVALID';
+    throw error;
+  }
+  return value;
+}
+
+function sameManagementTimelineSource(left, right) {
+  return left?.canonicalSystem === right?.canonicalSystem &&
+    left?.fileName === right?.sourceFile &&
+    left?.sha256 === right?.sourceSha256 &&
+    left?.snapshotAsOf === right?.snapshotAsOf &&
+    left?.realtime === false && right?.realtime === false;
 }
 
 function sameAssistantSource(left, right) {
@@ -2413,6 +2489,87 @@ export function buildFixedConceptControlAssistantAnswer(control) {
     source: `Fuente: ${control.source.canonicalSystem} · fijos y cálculo · copia al ${control.source.snapshotAsOf} · no tiempo real.`,
     resolvedPeriod: reconciliation.calculationPeriod,
   };
+}
+
+export function buildManagementTimelineAssistantAnswer(timeline) {
+  if (!inspectGrhManagementTimelineContract(timeline)?.ok) {
+    return assistantContractUnavailable(
+      'Comparación de gestiones no disponible',
+      'No pudimos verificar el contrato agregado de la línea de tiempo municipal.',
+      'GRH_MANAGEMENT_TIMELINE_UNAVAILABLE',
+    );
+  }
+
+  const currentTerm = timeline.terms.current;
+  const priorTerm = timeline.terms.prior;
+  const currentObserved = timeline.observed.current;
+  const priorObserved = timeline.observed.prior;
+  const domains = timeline.comparison.domains;
+  const domainFindings = timeline.comparison.matrixDomainKeys
+    .map((key) => managementTimelineDomainFinding(domains[key]))
+    .filter(Boolean);
+  const limits = timeline.limits
+    .map((limit) => typeof limit === 'string' ? limit : limit?.text)
+    .filter((limit) => typeof limit === 'string' && limit.trim());
+
+  return {
+    title: 'Dos gestiones · el mismo avance informado',
+    summary: `La comparación enfrenta ${formatInteger(currentObserved.days)} días informados de la gestión iniciada el ${currentTerm.startDate} con ${formatInteger(priorObserved.days)} días del mismo avance de la gestión iniciada el ${priorTerm.startDate}. Los mandatos completos abarcan ${formatInteger(currentTerm.plannedDays)} días cada uno; la gestión actual todavía es parcial.`,
+    findings: [
+      `Ventana actual observada: ${currentObserved.startDate} a ${currentObserved.endDate}. Ventana anterior equivalente: ${priorObserved.startDate} a ${priorObserved.endDate}.`,
+      ...domainFindings,
+    ],
+    evidence: [
+      metric('Mandato completo', `${formatInteger(currentTerm.plannedDays)} días`, `${currentTerm.startDate} a ${currentTerm.endDate}; no implica cobertura completa de datos.`),
+      metric('Ventana comparable', `${formatInteger(currentObserved.days)} días por gestión`, 'Las dos ventanas tienen la misma duración y no se completan con datos futuros.'),
+      metric('Avance informado', formatPercent(currentObserved.progressPct), 'Porcentaje publicado por el contrato; no fue recalculado por el asistente.'),
+      metric('Dominios comparables', formatInteger(timeline.comparison.matrixDomainKeys.length), 'Cada dominio conserva su unidad y su estado de privacidad.'),
+    ],
+    caveats: limits,
+    nextQuestions: [
+      '¿Cuánto de los cuatro años está informado?',
+      '¿Qué dominios puedo comparar al mismo avance?',
+      '¿Qué límites debo conservar al explicar las diferencias?',
+    ],
+    actions: [{
+      id: 'open_management_timeline',
+      label: 'Abrir Gestiones en el tiempo',
+      href: '/gestiones',
+      requiredCapability: 'navigation.dashboard',
+    }],
+    source: `Fuente: ${timeline.source.canonicalSystem} · comparación agregada de gestiones · copia al ${timeline.source.snapshotAsOf} · no tiempo real.`,
+    resolvedPeriod: currentObserved.endDate,
+  };
+}
+
+function managementTimelineDomainFinding(domain) {
+  if (!domain || typeof domain !== 'object') return null;
+  const label = typeof domain.label === 'string' && domain.label.trim()
+    ? domain.label
+    : 'Dominio comparado';
+  const current = managementTimelineCellCopy(domain.current);
+  const prior = managementTimelineCellCopy(domain.prior);
+  if (current === null || prior === null) {
+    return `${label}: la comparación está protegida o no disponible; no se expusieron celdas ni se sustituyeron por cero.`;
+  }
+  return `${label}: ${current} en la gestión actual frente a ${prior} en la ventana anterior equivalente.`;
+}
+
+function managementTimelineCellCopy(cell) {
+  if (cell?.privacyStatus !== 'released' || !cell.values || typeof cell.values !== 'object') {
+    return null;
+  }
+  const values = [];
+  if (Number.isSafeInteger(cell.values.eventRows) && cell.values.eventRows >= 0) {
+    values.push(`${formatInteger(cell.values.eventRows)} registros`);
+  }
+  if (Number.isSafeInteger(cell.values.distinctPersons) && cell.values.distinctPersons >= 0) {
+    values.push(`${formatInteger(cell.values.distinctPersons)} personas`);
+  }
+  if (Number.isSafeInteger(cell.values.reportedDays) && cell.values.reportedDays >= 0) {
+    values.push(`${formatInteger(cell.values.reportedDays)} días informados`);
+  }
+  return values.length ? values.join(' · ') : null;
 }
 
 function domainCatalogAnswer(context, intent, rawMessage) {
@@ -3716,11 +3873,12 @@ function helpAnswer() {
       'Ausencias, licencias históricas y movimientos dentro de su cobertura válida.',
       'Confiabilidad, registros apartados, control de cálculo y diferencias entre fuentes.',
       'Cierre mensual explicado: componentes del neto y conciliación del mismo período.',
+      'Gestiones en el tiempo: cuatro años previstos y comparación del mismo avance realmente informado.',
       'Origen, fecha de la copia, período y límites de interpretación.',
     ],
     evidence: [],
     caveats: ['No expongo datos personales, no invento predicciones y no afirmo pagos bancarios sin una fuente autorizada que los demuestre.'],
-    nextQuestions: ['Dame un resumen ejecutivo', '¿Cuántas personas participaron en la liquidación?', '¿Cómo está la conciliación?'],
+    nextQuestions: ['Dame un resumen ejecutivo', '¿Cómo comparo las dos gestiones al mismo avance?', '¿Cómo está la conciliación?'],
   };
 }
 

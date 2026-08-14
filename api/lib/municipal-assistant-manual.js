@@ -6,6 +6,7 @@ const MANUAL_REVIEWED_AT = '2026-08-13';
 const EXACT_SCREEN_HELP_TOPICS = new Map([
   ['¿Cómo uso el resumen general de MuniControl?', 'overview'],
   ['¿Cómo interpreto el panorama y las prioridades del tablero ejecutivo?', 'overview'],
+  ['¿Cómo comparo las dos gestiones al mismo avance?', 'managementTimeline'],
   ['¿Cómo interpreto el resumen ejecutivo GRH?', 'overview'],
   ['¿Cómo interpreto el resumen agregado de RRHH?', 'overview'],
   ['¿Cómo reviso Hacienda, nómina y el cálculo mensual?', 'hacienda'],
@@ -198,6 +199,21 @@ const TOPICS = Object.freeze({
       Object.freeze({ id: 'open_decision_manual', label: 'Ver guía de decisiones y compromisos', href: '/manuales.html#decisiones-compromisos', requiredCapability: 'navigation.help' }),
     ]),
   }),
+  managementTimeline: Object.freeze({
+    title: 'Comparar dos gestiones al mismo avance',
+    summary: 'Usá Gestiones en el tiempo para separar los cuatro años previstos de los 972 días hoy informados en cada período y contrastar únicamente ventanas equivalentes.',
+    findings: Object.freeze([
+      'El período completo de cada gestión abarca 1.461 días; la comparación disponible cubre 972 días por lado y todavía es parcial.',
+      'Cada dominio conserva su propia unidad: eventos, personas y días informados no se suman ni se sustituyen entre sí.',
+      'Una diferencia describe registros documentados; no demuestra causa, desempeño, impacto presupuestario ni estado laboral vigente.',
+    ]),
+    sourceFile: 'docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md',
+    anchor: 'gestiones',
+    actions: Object.freeze([
+      Object.freeze({ id: 'open_management_timeline', label: 'Abrir Gestiones en el tiempo', href: '/gestiones', requiredCapability: 'navigation.dashboard' }),
+      Object.freeze({ id: 'open_management_manual', label: 'Ver guía del comparador', href: '/manuales.html#gestiones', requiredCapability: 'navigation.help' }),
+    ]),
+  }),
   general: Object.freeze({
     title: 'Guía rápida de MuniControl',
     summary: 'Empezá por tu Inicio, elegí una tarea del menú y verificá siempre fuente, fecha y límites antes de decidir o exportar.',
@@ -221,6 +237,7 @@ export function classifyManualHelp(rawMessage) {
   const exactTopic = EXACT_SCREEN_HELP_TOPICS.get(message);
   if (exactTopic) return exactTopic;
   const screenHelpLead = /\b(?:como (?:uso|usar|reviso|revisar|interpreto|interpretar|abro|abrir|exploro|explorar|funciona)|guia|manual|ayuda)\b/;
+  if (screenHelpLead.test(message) && /\b(?:dos gestiones|gestiones al mismo avance|cuatro anos|comparador de gestiones)\b/.test(message)) return 'managementTimeline';
   if (screenHelpLead.test(message) && /\b(?:panorama|resumen (?:general|ejecutivo)|tablero ejecutivo|inicio)\b/.test(message)) return 'overview';
   if (screenHelpLead.test(message) && /\b(?:hacienda|nomina y (?:el )?calculo|calculo mensual)\b/.test(message)) return 'hacienda';
   if (screenHelpLead.test(message) && /\b(?:corridas? y (?:marcas? de )?cierres?|control de corridas?|marcas? de cierre|cierres? operativos?)\b/.test(message)) return 'payrollRuns';

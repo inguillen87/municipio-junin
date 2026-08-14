@@ -351,7 +351,7 @@ test('opaque private link rejects wrong, expired, misbound and rate-limited acce
 });
 
 test('route and release contracts own both one-click exchange endpoints exactly', () => {
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.15');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.16');
   assert.deepEqual(routePolicy.SESSION_EXCHANGE_ROUTES.map(route => [route.method, route.path, route.mode]), [
     ['POST', '/auth/evaluation-session', 'published-profile'],
     ['POST', '/auth/private-link-session', 'opaque-link'],

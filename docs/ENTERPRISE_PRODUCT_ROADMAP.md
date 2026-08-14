@@ -591,7 +591,7 @@ pago.
 
 ### S22 — gestiones en el tiempo
 
-S22 permanece **local hasta push y certificación**. La nueva ruta `/gestiones`
+S22 fue **verificado en Production el 14 de agosto de 2026**. La ruta `/gestiones`
 explica los cuatro años previstos de cada mandato y compara sólo el mismo avance
 observado: 972 días por lado desde el corte 2023-12-09. Integra
 `grh-management-timeline-v1` con navegación no técnica, MuniGuía, Task Center y
@@ -602,6 +602,12 @@ En ausencias conserva las mismas 5.936/3.395 filas fuente de S15, pero informa
 S15 conserva su evidencia histórica 752/662 porque contaba claves laborales
 distintas; S22 no la sobreescribe, sino que corrige el grano antes de usar la
 palabra «personas».
+
+La evidencia final corresponde al commit
+`8a1ab580a171e359b05629356353ed6f6e4b7364`, deployment
+`dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx y smoke
+autenticado 1440/390/320 px. Los deep-links del Asistente respondieron en modo
+determinista y no invocaron OpenAI ni Hugging Face.
 
 - porcentaje de KPIs con fuente, período, dueño y contrato vigente;
 - tiempo desde dato nuevo hasta insight publicado;

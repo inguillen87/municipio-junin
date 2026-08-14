@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Versión | 1.10.0 |
-| Incremento productivo | S21 verificado en Production; S22 local |
-| Fecha de corte documental | 13 de agosto de 2026 |
-| Estado | Release público histórico `v1.10.0` verificado; S21 en Production (`4cd0926`, `dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3`, release truth 28/28, cero 5xx); S22 todavía local |
+| Incremento productivo | S22 verificado en Production |
+| Fecha de corte documental | 14 de agosto de 2026 |
+| Estado | Release público histórico `v1.10.0` verificado y preservado; S22 en Production (`8a1ab580a171e359b05629356353ed6f6e4b7364`, `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx) |
 | Owner funcional | Autoridad municipal que apruebe el alcance; su identidad es gate de release |
 | Owner técnico | Responsable de ingeniería designado en el registro de release |
 | Canal institucional de incidentes | Debe constar en el registro de release; si falta, producción queda bloqueada |
@@ -150,7 +150,7 @@ municipio y los contratos privados publicados.
 |---|---|---|
 | [Inicio seguro](../inicio.html) | Orienta el recorrido de los siete roles vigentes con permisos calculados en servidor | Siempre consulta `/api/auth/me`; sólo el Inicio de Intendencia agrega `grh-decision-brief-v1`; no crea permisos/cuentas ni certifica despliegue |
 | [Panel Ejecutivo GRH](../dashboard.html) | Panorama transversal y comparación S15 entre dos tramos históricos de igual duración | S15 fue verificado en Production; sus diferencias no prueban causa, desempeño, pago ni evaluación de gestión |
-| [Gestiones en el tiempo](../frontend/gestiones.html) | Explica los cuatro años previstos y compara dos ventanas observadas equivalentes de 972 días mediante `grh-management-timeline-v1`; en ausencias separa 5.936/3.395 filas de 749/662 personas por `legajo.IDPERSONA` | S22 local: no está publicada ni certificada en Production; S15 conserva sin cambios su evidencia histórica 752/662 por claves laborales, mientras S22 corrige el grano para llamar «personas» sólo a `IDPERSONA` distintos; no califica gestiones, no completa años futuros y no demuestra causa, desempeño o presupuesto |
+| [Gestiones en el tiempo](../frontend/gestiones.html) | Explica los cuatro años previstos y compara dos ventanas observadas equivalentes de 972 días mediante `grh-management-timeline-v1`; en ausencias separa 5.936/3.395 filas de 749/662 personas por `legajo.IDPERSONA` | S22 verificado en Production; S15 conserva sin cambios su evidencia histórica 752/662 por claves laborales, mientras S22 corrige el grano para llamar «personas» sólo a `IDPERSONA` distintos; no califica gestiones, no completa años futuros y no demuestra causa, desempeño o presupuesto |
 | [Centro Ejecutivo GRH](../grh-ejecutivo.html) | Estructura, control de cálculo y eventos desde proyecciones seguras | Consumidor migrado localmente; sin fichas individuales ni PII |
 | [Centro Ejecutivo RRHH](../rrhh.html) | Participación agregada y directorio privado gobernado `grh-directory-v3`, con situación laboral informada, catálogos de contrato/revista, centro de costo y cronología acotada | La ficha nominal exige rol, usuario, tenant y finalidad autorizados; “sin egreso informado” no certifica vínculo activo y la participación en cálculo no prueba pago |
 | [Hacienda y Nómina](../hacienda.html) | Cierre mensual explicado: componentes de cálculo, controles y conciliación real por período desde importes protegidos | `grh-close-v1` local; sólo compara meses calendario consecutivos si ambos alcanzan k≥10; no certifica pago, presupuesto, causalidad, contabilidad ni deployment |

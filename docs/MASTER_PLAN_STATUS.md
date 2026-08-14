@@ -789,7 +789,7 @@ Estado: **verificado en Production el 14 de agosto de 2026** en el commit
 
 ### S22 — gestiones en el tiempo y comparación 4×4
 
-Estado: **implementación local; no publicada ni certificada en Production**.
+Estado: **verificado en Production el 14 de agosto de 2026**.
 
 - `/gestiones` y `grh-management-timeline-v1` presentan los dos mandatos
   completos de 1.461 días, pero comparan exclusivamente las ventanas observadas
@@ -811,9 +811,12 @@ Estado: **implementación local; no publicada ni certificada en Production**.
 - La IA responde de forma determinista desde el artefacto exacto, no recompone
   celdas protegidas o ausentes y falla cerrado sin reutilizar otra fuente.
 - La diferencia entre registros no demuestra causa, desempeño, altas, bajas,
-  impacto presupuestario ni calidad de una gestión. S22 requiere push,
-  deployment, release truth y smoke autenticado del mismo SHA antes de cambiar
-  este estado.
+  impacto presupuestario ni calidad de una gestión.
+- Evidencia productiva final: commit
+  `8a1ab580a171e359b05629356353ed6f6e4b7364`, deployment
+  `dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx y smoke
+  autenticado 1440/390/320 px con roles altos/bajos, MuniGuía, Task Center y
+  Asistente determinista sin proveedor externo.
 
 ## Funciones que no deben “completarse” todavía
 

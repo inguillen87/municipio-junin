@@ -1233,7 +1233,7 @@ test('S20 documents action-first navigation and aggregate payroll-run controls w
   assert.match(readme, /dumps[\s\S]{0,120}no se deben commitear/i);
 });
 
-test('S21 records its exact Production evidence and S22 remains local', () => {
+test('S21 remains historical and S22 records its exact Production evidence', () => {
   const technical = read('docs/MANUAL_TECNICO_Y_PROCEDIMIENTOS.md');
   const userManual = read('docs/MANUAL_USUARIO_Y_FUNCIONARIOS.md');
   const masterPlan = read('docs/MASTER_PLAN_STATUS.md');
@@ -1253,7 +1253,11 @@ test('S21 records its exact Production evidence and S22 remains local', () => {
   }
   assert.match(roadmap, /4cd0926627a786634696cbed8e75ecc8934100c6/);
   assert.match(roadmap, /dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3[\s\S]{0,80}28\/28[\s\S]{0,80}(?:cero|0) respuestas?\s+5xx/i);
-  assert.match(roadmap, /S22 permanece \*\*local hasta push y certificación\*\*/i);
+  for (const source of [technical, userManual, masterPlan, roadmap]) {
+    assert.match(source, /8a1ab580a171e359b05629356353ed6f6e4b7364/);
+    assert.match(source, /dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK[\s\S]{0,100}29\/29[\s\S]{0,100}(?:cero|0)\s+(?:respuestas?\s+)?5xx/i);
+  }
+  assert.match(roadmap, /S22 fue \*\*verificado en Production el 14 de agosto de 2026\*\*/i);
 });
 
 test('the public landing does not route municipal or commercial data to unapproved contacts', () => {

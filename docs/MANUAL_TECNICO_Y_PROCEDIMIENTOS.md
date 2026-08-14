@@ -1114,14 +1114,16 @@ S21 fue verificado en Production sobre
 `4cd0926627a786634696cbed8e75ecc8934100c6`, deployment
 `dpl_GdoRTP3iLBFjfbTHt3CRd3Xknio3`, release truth 28/28 y cero respuestas 5xx.
 
-S22 agrega localmente `grh-management-timeline-v1`, el endpoint GET-only
+S22 agrega en Production `grh-management-timeline-v1`, el endpoint GET-only
 `/api/grh-management-timeline` y `/gestiones`. Reutiliza
 `GRH_ORGANIZATION_ANALYTICS_READ` y `navigation.dashboard`; no crea permisos ni
 habilita perfiles bajos. El builder publica los mandatos completos y las
 ventanas observadas de 972 días sin completar años futuros. La matriz conserva
 privacidad k=10 por dominio y año, incluida supresión complementaria; la UI y la
-IA no recalculan ni revelan celdas protegidas o ausentes. Este estado es local:
-requiere push, deployment, release truth y smoke autenticado del mismo SHA.
+IA no recalculan ni revelan celdas protegidas o ausentes. Evidencia final:
+`8a1ab580a171e359b05629356353ed6f6e4b7364`, deployment
+`dpl_CyH6wZuYi5XjaYwqXi1ZF3Yd7wNK`, release truth 29/29, cero 5xx y smoke
+autenticado 1440/390/320 px con deep-links deterministas sin proveedor externo.
 
 El dominio de ausencias conserva 5.936/3.395 filas fuente, pero S22 cuenta
 749/662 personas distintas sólo por `legajo.IDPERSONA`. La evidencia S15

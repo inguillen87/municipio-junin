@@ -27,6 +27,7 @@ const livingManuals = [
   'docs/GRH_PRIVACY_AGGREGATION_POLICY.md',
   'docs/GRH_GEOSPATIAL_READINESS.md',
   'docs/GRH_PERSONAS_INTEGRATION_BLUEPRINT.md',
+  'docs/GRH_PERSONAS_V2_RECONCILIATION.md',
   'docs/DATA_SOURCE_REGISTER.md',
   'docs/data/grh-semantic.md',
 ];
@@ -129,7 +130,7 @@ test('the living documentation package exists and distinguishes local, condition
   assert.doesNotMatch(geoReadiness, /ready_for_aggregate_layer[\s\S]{0,120}(?:actual|operativ[oa]|disponible)/i);
 
   const sourceRegister = read('docs/DATA_SOURCE_REGISTER.md');
-  assert.match(sourceRegister, /data-source-register-v2/);
+  assert.match(sourceRegister, /data-source-register-v3/);
   assert.match(sourceRegister, /grh-junin[\s\S]{0,260}Aprobada para ingeniería local/i);
   assert.match(sourceRegister, /personas-junin[\s\S]{0,180}Auxiliar aislada para ingenier[ií]a local/i);
   assert.match(sourceRegister, /7\.550\.947[\s\S]{0,120}11bf15764488e4fe8a053255f503404f6bca24a1ac47c90647649e2c41d8e39c[\s\S]{0,80}2026-08-06/i);
@@ -317,7 +318,23 @@ test('documentation 1.10.0 preserves the governed close, Bot, immutable replay a
   assert.match(integration, /PERSONAS es una fuente auxiliar/i);
   assert.match(integration, /Nunca se unen GRH y[\s\S]{0,80}PERSONAS por igualdad de `IDPERSONA`/i);
   assert.match(integration, /1\.432[\s\S]{0,160}267[\s\S]{0,220}1\.699[\s\S]{0,220}157[\s\S]{0,160}493/i);
-  assert.match(integration, /no es un crosswalk productivo certificado/i);
+  assert.match(integration, /no (?:es|son)[\s\S]{0,30}(?:un )?crosswalk productivo certificado/i);
+
+  const reconciliationV2 = read('docs/GRH_PERSONAS_V2_RECONCILIATION.md');
+  assert.match(reconciliationV2, /grh-personas-v2-reconciliation-v1/i);
+  assert.match(reconciliationV2, /b6313cc582d3fac1c03bf6612ba2065043c7dc37b8ad744f4b5303799ccf4fe1/i);
+  assert.match(reconciliationV2, /7a192ce04c46677718166c94fa301fcdb37de2798da4f7351dad21ade19f261e/i);
+  assert.match(reconciliationV2, /882[\s\S]{0,180}867[\s\S]{0,220}854[\s\S]{0,180}856/i);
+  assert.match(reconciliationV2, /40 CUIL[\s\S]{0,100}24 DNI[\s\S]{0,180}58 CUIL[\s\S]{0,100}6 DNI/i);
+  assert.match(reconciliationV2, /2\.349[\s\S]{0,140}1\.699[\s\S]{0,100}157[\s\S]{0,100}493/i);
+  assert.match(reconciliationV2, /cero aprobaciones/i);
+  assert.match(reconciliationV2, /coincidencia por DNI[\s\S]{0,220}respaldo adicional/i);
+  assert.match(reconciliationV2, /SQL mínimo[\s\S]{0,160}no se ejecuta/i);
+  assert.match(reconciliationV2, /No se calcula presentismo sin denominador/i);
+  assert.match(reconciliationV2, /no reemplaza Presupuesto, Tesorer[ií]a ni Contadur[ií]a/i);
+  assert.match(reconciliationV2, /errorimportacion[\s\S]{0,120}1\.186\.239[\s\S]{0,100}4\.913/i);
+  assert.match(reconciliationV2, /603\.125[\s\S]{0,80}410\.465[\s\S]{0,80}116\.954/i);
+  assert.match(reconciliationV2, /TIPOMENSAJE[\s\S]{0,100}no puede inventar severidad/i);
 
   for (const source of [integral, user, technical, master, enterprise, privacy]) {
     assert.match(source, /grh-close-v1/);

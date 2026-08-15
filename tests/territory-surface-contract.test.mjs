@@ -51,7 +51,7 @@ test('territorial navigation is explicit for all roles and exact in low-role pri
 });
 
 test('territorial API is one exact GET resource and remains available to published demo identities', () => {
-  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-14.18');
+  assert.equal(routePolicy.ROUTE_POLICY_VERSION, '2026-08-15.1');
   assert.equal(routePolicy.RESOURCES.MUNICIPAL_TERRITORY, 'municipal.territory');
   assert.equal(routePolicy.PERMISSIONS.MUNICIPAL_TERRITORY_READ, 'municipal.territory:read');
   const routes = routePolicy.PROTECTED_ROUTES.filter(route => route.id === ROUTE_ID);

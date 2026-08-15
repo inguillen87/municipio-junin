@@ -204,6 +204,42 @@ autorización de migraciones. La release `v1.10.0` conserva como evidencia
 histórica su gate **11/11**; el 12/12 actual no reescribe esa release ni constituye
 por sí solo una nueva versión.
 
+## 3.3 Publicación privada de revisión GRH + PERSONAS
+
+Este flujo corresponde a `grh-personas-review-v1` y no publica un crosswalk ni
+modifica fichas GRH.
+
+1. Aplicar `migrations/006_grh_personas_review.sql` primero en una rama Neon
+   temporal y comprobar repetición segura, restricciones, auditoría append-only
+   y rollback. La rama principal no se modifica sin aprobación explícita.
+2. Configurar dos allowlists sensibles y separadas:
+   `GRH_PERSONAS_REVIEW_READ_ALLOWED_USER_IDS` para consultar y
+   `GRH_PERSONAS_REVIEW_DECISION_ALLOWED_USER_IDS` para decidir. Todo decisor
+   debe figurar también en la lista de lectura. No reutilizar
+   `GRH_DIRECTORY_ALLOWED_USER_IDS`, porque sólo autoriza el directorio nominal.
+3. Generar dos claves aleatorias e independientes de 32 bytes en base64url:
+   `GRH_PERSONAS_REVIEW_HMAC_KEY_V1` y
+   `GRH_PERSONAS_REVIEW_EVIDENCE_KEY_V1`. La clave HMAC existe sólo durante la
+   materialización/publicación y debe retirarse al terminar; no se configura en
+   el runtime estable. Sólo la clave de evidencia permanece como secreto del
+   runtime para abrir detalles autorizados. El materializador y el publicador
+   rechazan claves iguales. Nunca reutilizar `JWT_SECRET` ni guardar valores en
+   Git.
+4. Ejecutar primero el publicador con `--dry-run` sobre los respaldos fijados y
+   verificar 2.349 casos, 2.185 opciones, 1.699 candidatos, 157 ambiguos, 493 sin
+   coincidencia, 23 conflictos documentales y cero aprobaciones automáticas.
+5. Para publicar, usar exclusivamente
+   `GRH_PERSONAS_REVIEW_PUBLISH_DATABASE_URL` con una credencial directa y
+   temporal, más `--publish --confirm-private-publication
+   PUBLISH_PRIVATE_GRH_PERSONAS_REVIEW`. No existe fallback a `DATABASE_URL`.
+6. Confirmar el readback completo, retirar la credencial de publicación y probar
+   con un perfil privado de sólo lectura y otro decisor: resumen, cola, detalle
+   auditado, revelado de documentos auditado y rechazo de perfiles públicos.
+   No tomar una decisión real durante el smoke.
+7. Ante cualquier diferencia de fuente, conteo, cifrado, tenant o versión,
+   conservar el run anterior, bloquear la superficie y no reintentar una
+   mutación ambigua.
+
 ## 4. Promoción y smoke de producción
 
 Promover sólo el preview certificado. Después, verificar como mínimo:

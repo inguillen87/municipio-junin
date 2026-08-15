@@ -2,8 +2,13 @@
 
 **Versión:** `grh-personas-integration-blueprint-v1`
 **Corte de fuentes:** 6 de agosto de 2026
-**Estado:** Fase 1A implementada localmente como diagnóstico agregado;
-tabla puente, revisión institucional y uso productivo pendientes
+**Estado:** Fase 1A y construcción de Fase 1B implementadas localmente;
+migración gobernada, publicación privada y uso productivo pendientes
+
+El Informe Maestro y Blueprint V2 recibidos se reconciliaron en
+[`GRH_PERSONAS_V2_RECONCILIATION.md`](GRH_PERSONAS_V2_RECONCILIATION.md). Sus
+principios de arquitectura se adoptan; las cifras que difieren de los builders
+gobernados quedan explícitamente corregidas allí.
 
 ## Decisión
 
@@ -16,8 +21,11 @@ tabla puente, revisión institucional y uso productivo pendientes
   PERSONAS por igualdad de `IDPERSONA`** ni se copia un identificador de una base
   como si fuera el de la otra.
 - La integración futura debe pasar por una tabla puente versionada y auditable.
-  Hasta completar sus controles, los artefactos, APIs, tableros y publicaciones
-  GRH actuales continúan usando exclusivamente GRH.
+  Hasta completar sus controles, los contratos analíticos, tableros y
+  publicaciones generales de GRH continúan usando exclusivamente GRH. La cola
+  privada de Fase 1B es una excepción deliberadamente acotada: consulta ambas
+  fuentes sólo para revisión humana autorizada y no alimenta fichas, KPI ni
+  superficies públicas.
 
 ## Evidencia reproducida
 
@@ -39,9 +47,9 @@ El diagnóstico de vinculación produjo esta línea de base:
 
 | Resultado | Personas GRH | Interpretación |
 |---|---:|---|
-| Coincidencia automática por CUIL válido y único | 1.432 | Candidato de alta confianza, aún no promovido a producción |
+| Sugerencia por CUIL válido y único | 1.432 | Candidato de alta confianza, aún no revisado ni promovido a producción |
 | Candidatos asistidos por evidencia adicional | 267 | Requieren conservar método, evidencia y revisión |
-| **Candidatos vinculables** | **1.699** | **72,3% de las 2.349 personas GRH; no es un crosswalk productivo certificado** |
+| **Sugerencias para revisar** | **1.699** | **72,3% de las 2.349 personas GRH; no son vínculos ni un crosswalk productivo certificado** |
 | Casos ambiguos | 157 | No elegir una identidad automáticamente |
 | Sin coincidencia | 493 | Mantener pendientes; no completar por aproximación |
 
@@ -62,11 +70,13 @@ personas GRH sin colisiones de destino.
 
 1. Normalizar CUIL a once dígitos y validar su dígito verificador. Nulos, ceros o
    valores inválidos no pueden crear una identidad canónica.
-2. Admitir CUIL válido y único como candidato automático de alta confianza.
+2. Generar una sugerencia de alta confianza ante un CUIL válido y único, sin
+   aprobarla ni publicarla automáticamente.
 3. Ante CUIL duplicado, exigir evidencia adicional y no resolver si queda más de
    una persona posible.
-4. Usar DNI sólo como respaldo, acompañado por nombre normalizado y, cuando esté
-   disponible, fecha de nacimiento.
+4. Usar DNI sólo como respaldo. Si no coincide también el nombre normalizado o
+   la fecha de nacimiento, rotular la evidencia como insuficiente y exigir
+   comprobación manual de la fuente.
 5. Tratar nombre y fecha de nacimiento como evidencia de validación, nunca como
    llave única suficiente.
 6. Conservar permanentemente los identificadores originales de ambos sistemas,
@@ -95,8 +105,10 @@ campos permitidos, auditoría y política de retención propios.
 
 - GRH continúa como única entrada de los contratos GRH actuales.
 - `personas_junin` continúa excluida de `config/grh-source-manifest.json`, de los
-  artefactos GRH, del frontend, de Neon y de Production.
-- Los 1.699 enlaces son una línea de base reproducible, no datos productivos.
+  artefactos analíticos GRH, de Neon y de Production. El cliente privado local
+  de revisión usa únicamente el contrato minimizado de Fase 1B y falla cerrado
+  fuera de esa finalidad.
+- Las 1.699 sugerencias son una línea de base reproducible, no vínculos ni datos productivos.
 
 ### Fase 1A — diagnóstico agregado local
 
@@ -113,15 +125,29 @@ crosswalk ni habilita datos de PERSONAS dentro del directorio laboral.
 
 ### Fase 1B — staging privado y revisión reproducible
 
-- staging inmutable de ambas fuentes, sin sobrescribir sus identificadores;
-- export privado de evidencia y muestreo sin exponer PII en el navegador;
-- reconciliación exacta de 1.699 candidatos, 157 ambiguos y 493 pendientes, o
-  explicación documentada de cada variación.
+- materializador reproducible sobre los dos respaldos fijados por hash;
+- 2.349 casos privados y 2.185 opciones, todos inicialmente pendientes;
+- reconciliación exacta de 1.699 candidatos, 157 ambiguos, 493 sin coincidencia
+  y 23 conflictos documentales prioritarios;
+- evidencia personal cifrada; listados y resúmenes sin nombres ni documentos;
+  el detalle expone sólo nombre/fecha a revisores autorizados y los documentos
+  requieren un revelado separado, temporal y auditado;
+- referencias estables con HMAC, decisiones versionadas y eventos append-only;
+- revisión caso por caso para aprobar, descartar o postergar, sin aprobación
+  masiva ni automática;
+- cero filas publicadas en `crosswalk_persona` y cero cambios en las fichas o KPI
+  de GRH.
+
+El código, la interfaz y el publicador de esta fase están validados localmente.
+La fase no se considera operativa hasta aplicar la migración en una rama temporal,
+probar restore/rollback, publicar el conjunto cifrado con credencial separada y
+superar un recorrido autenticado de Intendencia o administración del municipio.
 
 ### Fase 2 — revisión y publicación privada
 
 - aprobación institucional de finalidad, campos, retención y responsables;
-- revisión humana de ambiguos y muestreo de candidatos automáticos;
+- revisión humana de todos los casos; los conflictos y la evidencia insuficiente
+  se atienden primero;
 - cero enlaces promovidos por igualdad de `IDPERSONA` entre sistemas;
 - cero CUIL inválidos promovidos a identidad canónica;
 - migración tenant-bound, auditoría de lectura/cambio, rollback y restore probados;

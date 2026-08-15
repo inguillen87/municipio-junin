@@ -99,7 +99,7 @@ test('the operations guide locks GRH provenance and removes obsolete demo docume
   assert.match(source, /GitHub Release[\s\S]{0,80}live/i);
   assert.match(source, /s[oó]lo registr(?:a|ó) evidencia documental post-release[\s\S]{0,100}no (?:mueve|movi[oó]) el tag/i);
   assert.doesNotMatch(source, /v1\.8\.1[\s\S]{0,180}(?:pendiente de push|requiere push|permanece local)/i);
-  assert.match(source, /personas_junin.*padrón auxiliar[\s\S]{0,240}sólo alimenta en Fuentes de datos un diagnóstico general[\s\S]{0,200}no modifica fichas, estados laborales ni indicadores GRH/i);
+  assert.match(source, /personas_junin.*padrón auxiliar[\s\S]{0,240}Fuentes de datos muestra el diagnóstico general[\s\S]{0,180}revisión caso por caso[\s\S]{0,200}no modifica fichas, estados laborales ni indicadores GRH/i);
   assert.match(source, /Control de cálculo, no pago bancario/i);
   assert.match(source, /la moneda no está declarada/i);
   assert.match(source, /Inteligencia legacy.*410/is);

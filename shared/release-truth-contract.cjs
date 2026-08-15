@@ -10,6 +10,12 @@ const SESSION_EXCHANGE_CONTRACTS = Object.freeze({
   '/api/auth/private-link-session': 'municontrol-private-link-session-v1',
 });
 
+// Authenticated write contracts are registered separately because the
+// deployment-truth probe uses anonymous GET and must never mutate state.
+const MUTATION_CONTRACTS = Object.freeze({
+  '/api/grh-personas-review-decision': 'grh-personas-review-decision-v1',
+});
+
 const API_CONTRACTS = Object.freeze({
   '/api/auth/me': 'municontrol-auth-me-v1',
   '/api/grh-executive': 'grh-executive-v2',
@@ -29,6 +35,7 @@ const API_CONTRACTS = Object.freeze({
   '/api/grh-employment-review': 'grh-employment-review-v2',
   '/api/grh-absence-insights': 'grh-absence-insights-v1',
   '/api/grh-personas-linkage-readiness': 'grh-personas-linkage-readiness-v1',
+  '/api/grh-personas-review': 'grh-personas-review-v1',
   '/api/grh-domain-catalog': 'grh-domain-catalog-v1',
   '/api/grh-organization-analytics': 'grh-organization-analytics-v2',
   '/api/grh-garden-network': 'grh-garden-network-v1',
@@ -41,5 +48,6 @@ const API_CONTRACTS = Object.freeze({
 module.exports = Object.freeze({
   HEADER_NAME,
   API_CONTRACTS,
+  MUTATION_CONTRACTS,
   SESSION_EXCHANGE_CONTRACTS,
 });

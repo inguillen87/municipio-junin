@@ -53,6 +53,11 @@ test('only reviewed aggregate artifacts are excepted from private JSON exclusion
   }
 });
 
+test('temporary extraction and render evidence never enters Git or a Vercel deployment', () => {
+  assert.match(gitignore, /^tmp\/$/m);
+  assert.match(vercelignore, /^tmp\/\*\*$/m);
+});
+
 test('the deployed exception is a small aggregate contract with no nominal fields', () => {
   assert.ok(Buffer.byteLength(rawArtifact, 'utf8') < 16 * 1024);
   const artifact = JSON.parse(rawArtifact);

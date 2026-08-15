@@ -1,6 +1,6 @@
 # Registro gobernado de fuentes de datos
 
-**Versión:** `data-source-register-v2`
+**Versión:** `data-source-register-v3`
 **Corte del inventario local:** 14 de agosto de 2026
 **Estado:** registro de ingeniería; no acredita conexión, autorización legal,
 producción ni frescura continua.
@@ -28,6 +28,8 @@ uso en una métrica, un dashboard, un modelo ni una decisión municipal.
 | `grh-junin` | **Aprobada para ingeniería local** | `grh_junin.backup_2026080615_plataforma.sql.gz`; 44.537.741 bytes; SHA-256 `e7403da1d036c8d60eab26bcb3f97e6e7c3a70629090deac8cc4e5438250b3d9`; dump MySQL comprimido con GZIP | RRHH restringido; snapshot histórico al 2026-08-06; el origen raw contiene PII | Perfilado privado y proyecciones agregadas gobernadas por k=5/k=10, sin identificadores personales | Custodio institucional, retención, adapter read-only, publicación remota y SLA siguen sin certificar |
 | `grh-junin-extracted` | **Derivada** | Dos SQL descomprimidos idénticos al payload de `grh-junin`; 774.113.471 bytes cada uno | Misma sensibilidad que el raw; no aporta frescura ni autoridad nueva | Ninguno como fuente ni entrada del pipeline; sólo custodia o forense con owner, ticket y ACL explícitos | Definir retención y custodia; el pipeline admite únicamente el GZIP manifestado |
 | `personas-junin` | **Auxiliar aislada para ingeniería local** | `personas_junin.backup_2026080615_plataforma.sql.gz`; 7.550.947 bytes; SHA-256 `11bf15764488e4fe8a053255f503404f6bca24a1ac47c90647649e2c41d8e39c`; corte 2026-08-06 | Padrón transversal de identidad, domicilios y territorio; 32 tablas físicas, 8 vistas y 371.947 filas; contiene PII y calidad desigual | Manifiesto independiente, matcher reproducible y diagnóstico agregado de preparación; no ingresa a las fichas, KPI ni artefactos laborales GRH | Finalidad y owner institucional, revisión de ambiguos, staging/migración privados, auditoría y restore antes de publicar un crosswalk o enriquecer fichas |
+| `junin-control-v2-report` | **Documental reconciliada** | `Junin_Informe_Maestro_Control_Municipal_GRH_PERSONAS.pdf`; 1.240.128 bytes; 44 páginas; SHA-256 `b6313cc582d3fac1c03bf6612ba2065043c7dc37b8ad744f4b5303799ccf4fe1` | Informe agregado con diagnóstico, controles financieros, arquitectura y hoja de ruta; no es fuente de filas ni contrato runtime | Requisitos, glosario, controles y priorización después de reconciliar cada cifra contra los backups | No promover conteos, matching o estados que contradigan los builders y contratos versionados |
+| `junin-integration-v2-blueprint` | **Documental reconciliada** | `Junin_Blueprint_Integracion_Codex.md`; 2.496 bytes; SHA-256 `7a192ce04c46677718166c94fa301fcdb37de2798da4f7351dad21ade19f261e` | Propuesta de modelo canónico y vistas; no contiene migración aprobada ni algoritmo ejecutable completo | Arquitectura objetivo y criterios de aceptación, subordinados a la revisión S16B y a las fuentes autoritativas | Finalidad, migración, restore, revisión humana y aprobación institucional antes de crear identidad canónica |
 | `cuentas-claras-candidate-2026` | **Cuarentena** | `CuentasClaras_Junin_2026.csv`; 2.189 bytes; 19 líneas; SHA-256 `3bceb4ab7271db9738fc6af4a6c6234db3679cc7df3991510adbc95f28fc224c` | Posible Hacienda/Compras; origen, moneda, tenant, corte, sensibilidad y exactitud no probados | Sólo inventario de metadata; no leer valores ni alimentar pantallas | Owner, finalidad, diccionario, unidad/moneda, período, tenant, autorización y manifiesto firmados |
 | `downloads-documents` | **Documental/no catalogada** | PDF, TXT y ZIP diversos observados sin abrir contenido | Sensibilidad y autoridad desconocidas | Ningún uso analítico automático | Intake documental aislado, antimalware, límites, clasificación, owner y revisión humana |
 
@@ -48,11 +50,23 @@ pipeline auxiliar y un manifiesto independiente; su eventual incorporación a
 fichas requiere una tabla puente versionada. La igualdad de `IDPERSONA` entre
 GRH y PERSONAS está prohibida
 como regla de unión: los identificadores pertenecen a espacios distintos. La
-línea de base reproducible —1.699 candidatos vinculables, 157 ambiguos y 493 sin
-coincidencia— se publica sólo como estado agregado de preparación y no constituye
-un crosswalk certificado ni habilita datos personales. El contrato de
+línea de base reproducible —1.699 sugerencias para revisar, 157 ambiguos y 493
+sin coincidencia— se publica sólo como estado agregado de preparación y no
+constituye un crosswalk certificado ni habilita datos personales. El contrato de
 integración está en
 [`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
+La reconciliación exacta del informe y blueprint V2 está en
+[`GRH_PERSONAS_V2_RECONCILIATION.md`](GRH_PERSONAS_V2_RECONCILIATION.md).
+
+S16B agrega sólo una revisión **local y privada**: materializa 2.349 casos y
+2.185 opciones de comparación cifradas, inicialmente sin aprobaciones. Cola y
+resumen omiten nombres y documentos; el detalle nominal se minimiza a los campos
+necesarios, y CUIL/DNI requieren un revelado separado, temporal y auditado. La
+lectura y la decisión usan allowlists distintas para identidades institucionales
+`TENANT_ADMIN` o `INTENDENTE`; las identidades publicadas y los roles
+`SUPER_ADMIN` y `CONTADOR` fallan cerrado. Esto registra sugerencias y decisiones
+de revisión, no vínculos promovidos. La migración `006`, su validación en Neon,
+el restore y toda prueba o publicación remota siguen pendientes.
 
 ## 4. Gate de ingreso de una nueva fuente
 

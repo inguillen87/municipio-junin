@@ -1,0 +1,254 @@
+<!doctype html>
+<html class="muni-shell-v1" lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Revisión privada y trazable de sugerencias entre GRH y el padrón auxiliar PERSONAS.">
+  <title>Revisión de personas · MuniControl</title>
+  <link rel="icon" href="img/municontrol-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/personas-review.css">
+</head>
+<body class="personas-review-page" data-page-capability="navigation.audit">
+  <a class="personas-skip" href="#personasCasePanel">Saltar al caso para revisar</a>
+  <div id="sidebar"></div>
+
+  <main class="main-content" id="personasReviewMain">
+    <header class="topbar personas-topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir navegación">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title">
+          <h1>Revisión de personas</h1>
+          <span class="breadcrumb">GRH + padrón auxiliar PERSONAS</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <a class="personas-back-link" href="auditoria.html">Volver a Fuentes de datos</a>
+        <span class="personas-private-badge">Acceso privado</span>
+      </div>
+    </header>
+
+    <div class="content-wrapper personas-shell" id="personasReview" aria-busy="true">
+      <section class="personas-state" id="personasLoading" role="status" aria-live="polite">
+        <span class="personas-loader" aria-hidden="true"></span>
+        <h2>Verificando acceso y cola de revisión</h2>
+        <p>No mostramos casos hasta recibir la información privada completa y validada.</p>
+      </section>
+
+      <section class="personas-state personas-state--error" id="personasError" role="alert" tabindex="-1" hidden>
+        <span class="personas-state-mark" aria-hidden="true">!</span>
+        <h2 id="personasErrorTitle">La revisión no está disponible</h2>
+        <p id="personasErrorMessage">No mostramos sugerencias parciales ni información de reemplazo.</p>
+        <div class="personas-state-actions">
+          <button class="personas-button personas-button--primary" id="personasRetry" type="button">Intentar nuevamente</button>
+          <a class="personas-button personas-button--secondary" id="personasLogin" href="/login.html" hidden>Ingresar con cuenta privada</a>
+        </div>
+      </section>
+
+      <div id="personasContent" class="personas-workspace" hidden>
+        <section class="personas-summary" id="personasSummary" aria-labelledby="personasSummaryTitle">
+          <header class="personas-section-heading">
+            <div>
+              <p class="personas-eyebrow">Estado de la revisión</p>
+              <h2 id="personasSummaryTitle">Qué falta revisar</h2>
+              <p id="personasSummaryCopy">La cola se actualiza después de cada decisión registrada.</p>
+            </div>
+            <div class="personas-progress-copy">
+              <strong id="personasProgressText">—</strong>
+              <span>revisión completada</span>
+            </div>
+          </header>
+          <progress id="personasProgress" max="1" value="0" aria-label="Avance de la revisión"></progress>
+          <div class="personas-summary-grid" aria-label="Resumen de casos">
+            <article>
+              <span>Pendientes</span>
+              <strong id="summaryPending">—</strong>
+              <small>Esperan una decisión.</small>
+            </article>
+            <article>
+              <span>Postergadas</span>
+              <strong id="summaryPostponed">—</strong>
+              <small>Necesitan más evidencia.</small>
+            </article>
+            <article>
+              <span>Resueltas</span>
+              <strong id="summaryResolved">—</strong>
+              <small>Aprobadas o descartadas.</small>
+            </article>
+            <article class="personas-summary-priority">
+              <span>Casos ambiguos</span>
+              <strong id="summaryAmbiguous">—</strong>
+              <small>Tienen más de una señal posible o evidencia insuficiente.</small>
+            </article>
+          </div>
+          <div class="personas-conflict-alert" id="documentConflictAlert" role="note" hidden>
+            <span class="personas-alert-icon" aria-hidden="true">!</span>
+            <div>
+              <strong><span id="documentConflictCount">—</span> sugerencias tienen documentos distintos</strong>
+              <p>Revisalas con especial cuidado. Un CUIL o DNI conflictivo nunca confirma por sí solo que sea la misma persona.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="personas-queue" id="personasQueue" aria-labelledby="personasQueueTitle">
+          <header class="personas-section-heading personas-section-heading--queue">
+            <div>
+              <p class="personas-eyebrow">Cola de trabajo</p>
+              <h2 id="personasQueueTitle">Sugerencias para revisar</h2>
+              <p class="personas-source-context" id="personasSourceContext">Verificando corte del respaldo histórico…</p>
+            </div>
+            <div class="personas-tabs" role="tablist" aria-label="Estado de las sugerencias">
+              <button id="tabPending" type="button" role="tab" aria-selected="true" aria-controls="personasCasePanel" data-queue-state="pending">Pendientes <span id="tabPendingCount">—</span></button>
+              <button id="tabPostponed" type="button" role="tab" aria-selected="false" aria-controls="personasCasePanel" data-queue-state="postponed" tabindex="-1">Postergadas <span id="tabPostponedCount">—</span></button>
+              <button id="tabApproved" type="button" role="tab" aria-selected="false" aria-controls="personasCasePanel" data-queue-state="approved" tabindex="-1">Aprobadas <span id="tabApprovedCount">—</span></button>
+              <button id="tabRejected" type="button" role="tab" aria-selected="false" aria-controls="personasCasePanel" data-queue-state="rejected" tabindex="-1">Descartadas <span id="tabRejectedCount">—</span></button>
+            </div>
+          </header>
+
+          <div id="personasCasePanel" role="tabpanel" aria-labelledby="tabPending">
+            <div class="personas-case-loading" id="personasCaseLoading" role="status" aria-live="polite" hidden>
+              <span class="personas-loader" aria-hidden="true"></span>
+              <span>Cargando la siguiente sugerencia…</span>
+            </div>
+
+            <div class="personas-empty" id="personasEmpty" hidden>
+              <strong id="personasEmptyTitle">No hay sugerencias en esta vista</strong>
+              <span id="personasEmptyCopy">Elegí otra pestaña para continuar.</span>
+            </div>
+
+            <article class="personas-case" id="personasCase" aria-labelledby="personasCaseTitle" hidden>
+              <header class="personas-case-header">
+                <div>
+                  <div class="personas-case-kicker">
+                    <span class="personas-status-chip" id="personasCaseStatus">Sugerencia para revisar</span>
+                    <span id="personasCasePosition">Caso —</span>
+                    <nav class="personas-case-pagination" aria-label="Recorrer casos de esta pestaña">
+                      <button class="personas-icon-button" id="personasPreviousCase" type="button" aria-label="Caso anterior" title="Caso anterior">←</button>
+                      <span id="personasQueuePosition" aria-live="polite">Caso —</span>
+                      <button class="personas-icon-button" id="personasNextCase" type="button" aria-label="Caso siguiente" title="Caso siguiente">→</button>
+                    </nav>
+                  </div>
+                  <h3 id="personasCaseTitle">Sugerencia para revisar</h3>
+                  <p id="personasCaseReason">Compará los datos disponibles antes de decidir.</p>
+                </div>
+                <button class="personas-button personas-button--secondary" id="toggleDocuments" type="button" aria-pressed="false">Ver evidencia de documentos</button>
+              </header>
+
+              <div class="personas-document-notice" id="personasDocumentNotice">
+                Los documentos están enmascarados por defecto. Mostralos sólo si son necesarios para esta revisión.
+              </div>
+
+              <div class="personas-option-nav" id="personasOptionNav" hidden>
+                <button class="personas-button personas-button--secondary" id="personasPreviousOption" type="button">Opción anterior</button>
+                <strong id="personasOptionPosition">Persona sugerida —</strong>
+                <button class="personas-button personas-button--secondary" id="personasNextOption" type="button">Opción siguiente</button>
+              </div>
+
+              <div class="personas-comparison" id="personasComparison" aria-label="Comparación entre GRH y PERSONAS" aria-live="polite">
+                <section class="personas-source-card" aria-labelledby="grhSourceTitle">
+                  <header>
+                    <span class="personas-source-mark personas-source-mark--grh" aria-hidden="true">GRH</span>
+                    <div><h4 id="grhSourceTitle">Registro laboral GRH</h4><p>Base principal para la relación laboral.</p></div>
+                  </header>
+                  <dl id="grhEvidence"></dl>
+                </section>
+                <section class="personas-source-card" aria-labelledby="personasSourceTitle">
+                  <header>
+                    <span class="personas-source-mark personas-source-mark--personas" aria-hidden="true">P</span>
+                    <div><h4 id="personasSourceTitle">Padrón auxiliar PERSONAS</h4><p>Puede complementar identidad y territorio.</p></div>
+                  </header>
+                  <dl id="personasEvidence"></dl>
+                </section>
+              </div>
+
+              <section class="personas-evidence-summary" aria-labelledby="evidenceSummaryTitle">
+                <div>
+                  <p class="personas-eyebrow">Lectura simple</p>
+                  <h4 id="evidenceSummaryTitle">Qué coincide y qué necesita atención</h4>
+                </div>
+                <ul id="evidenceSummary"></ul>
+              </section>
+
+              <footer class="personas-case-actions" id="personasCaseActions">
+                <div>
+                  <strong>Tu decisión queda registrada.</strong>
+                  <span>Aprobar confirma la revisión del vínculo, pero no altera GRH.</span>
+                </div>
+                <div class="personas-action-buttons">
+                  <button class="personas-button personas-button--secondary" type="button" data-decision="postpone">Postergar</button>
+                  <button class="personas-button personas-button--danger" type="button" data-decision="reject">Descartar</button>
+                  <button class="personas-button personas-button--primary" type="button" data-decision="approve">Aprobar vínculo</button>
+                </div>
+              </footer>
+            </article>
+
+            <section class="personas-receipt" id="personasReceipt" role="status" aria-live="polite" tabindex="-1" hidden>
+              <span class="personas-receipt-mark" aria-hidden="true">✓</span>
+              <div>
+                <p class="personas-eyebrow">Decisión registrada</p>
+                <h3 id="personasReceiptTitle">La sugerencia fue revisada</h3>
+                <p id="personasReceiptCopy">El registro conserva quién decidió, cuándo y con qué resultado.</p>
+                <dl id="personasReceiptDetails"></dl>
+              </div>
+              <button class="personas-button personas-button--primary" id="personasNext" type="button">Ir a la siguiente pendiente</button>
+            </section>
+          </div>
+        </section>
+
+        <aside class="personas-boundary" aria-labelledby="personasBoundaryTitle">
+          <div>
+            <p class="personas-eyebrow">Qué hace esta herramienta</p>
+            <h2 id="personasBoundaryTitle">Decidir con evidencia, sin mezclar las bases</h2>
+          </div>
+          <ul>
+            <li>Nada se une automáticamente: una sugerencia siempre requiere revisión.</li>
+            <li>GRH sigue siendo la base principal para empleo y liquidación.</li>
+            <li>PERSONAS sólo complementa información mediante un vínculo revisado.</li>
+            <li>Postergar conserva el caso pendiente de mejor evidencia.</li>
+            <li>Ninguna acción de esta pantalla modifica la ficha laboral de GRH.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="personas-dialog" id="personasDecisionDialog" aria-labelledby="personasDialogTitle">
+    <form method="dialog" id="personasDecisionForm" novalidate>
+      <header>
+        <div>
+          <p class="personas-eyebrow" id="personasDialogEyebrow">Confirmar decisión</p>
+          <h2 id="personasDialogTitle">Revisá antes de continuar</h2>
+        </div>
+        <button class="personas-icon-button" type="button" data-close-dialog aria-label="Cerrar">×</button>
+      </header>
+      <p id="personasDialogCopy"></p>
+      <label class="personas-field" id="personasReasonField" for="personasReason" hidden>
+        <span id="personasReasonLabel">Motivo</span>
+        <select id="personasReason"></select>
+      </label>
+      <label class="personas-confirmation" id="personasApprovalConfirmation" for="personasApprovalChecked" hidden>
+        <input id="personasApprovalChecked" type="checkbox">
+        <span>Revisé la evidencia y entiendo que aprobar registra este vínculo, pero no modifica GRH.</span>
+      </label>
+      <p class="personas-form-error" id="personasFormError" role="alert" aria-live="assertive" hidden></p>
+      <footer>
+        <button class="personas-button personas-button--secondary" type="button" data-close-dialog>Cancelar</button>
+        <button class="personas-button personas-button--primary" id="personasDecisionSubmit" value="submit">Confirmar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <noscript><div class="personas-noscript">Esta revisión privada necesita JavaScript para validar el acceso. No muestra casos de respaldo.</div></noscript>
+  <script src="js/navigation-catalog.js"></script>
+  <script src="js/nav.js"></script>
+  <script>buildSidebar('auditoria');</script>
+  <script src="js/auth-fetch.js"></script>
+  <script src="js/personas-review-data.js"></script>
+  <script src="js/personas-review.js"></script>
+  <script src="js/theme-switcher.js"></script>
+  <script src="js/bottom-nav.js"></script>
+</body>
+</html>

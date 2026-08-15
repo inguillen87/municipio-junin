@@ -37,12 +37,19 @@ si fueran reales.
   integración requiere un `crosswalk_persona` versionado y nunca puede unir
   ambos sistemas por igualdad de `IDPERSONA`.
 - La Fase 1A ya genera localmente un diagnóstico agregado y reproducible:
-  1.699 vínculos posibles, 157 casos para revisión humana y 493 sin coincidencia.
+  1.699 sugerencias para revisar, 157 casos ambiguos y 493 sin coincidencia.
   No modifica fichas, no publica identificadores y no es un crosswalk productivo.
+- La Fase 1B está implementada localmente como una cola privada de revisión:
+  conserva 2.349 casos y 2.185 sugerencias cifradas, exige una decisión humana y
+  comienza con cero vínculos aprobados. La migración y la publicación remota
+  siguen pendientes hasta superar el ensayo gobernado en Neon.
 - El corte del backup es 6 de agosto de 2026. Los cambios posteriores no están
   representados.
-- Los artefactos servidos al frontend son agregados sin nombres, documentos,
-  domicilios, teléfonos ni identificadores de empleado.
+- Los contratos analíticos GRH servidos al frontend son agregados sin nombres,
+  documentos, domicilios, teléfonos ni identificadores de empleado. La cola
+  privada de PERSONAS es una excepción gobernada: muestra identidad mínima sólo
+  a revisores autorizados y revela documentos únicamente bajo una acción
+  explícita, temporal y auditada.
 - El dump no declara un código de moneda. Junín configura la presentación en
   pesos argentinos (`ARS`) mediante una política de tenant versionada; esa
   configuración de visualización no reescribe la procedencia del dump ni prueba
@@ -55,6 +62,10 @@ El contrato y sus definiciones están documentados en
 [`docs/data/grh-semantic.md`](docs/data/grh-semantic.md).
 La frontera y las fases de integración con PERSONAS están documentadas en
 [`docs/GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](docs/GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
+El Informe Maestro y Blueprint V2 se incorporan mediante una matriz de adopción
+y diferencias en
+[`docs/GRH_PERSONAS_V2_RECONCILIATION.md`](docs/GRH_PERSONAS_V2_RECONCILIATION.md),
+sin reemplazar los conteos reproducidos desde los backups.
 La evolución desde snapshot hacia ingesta diaria, CDC y backups recuperables se
 define en [`docs/GRH_OPERATIONS_ROADMAP.md`](docs/GRH_OPERATIONS_ROADMAP.md).
 La reconciliación entre el plan heredado y lo realmente comprobado en el repo se
@@ -89,6 +100,7 @@ se registran en [`docs/DATA_SOURCE_REGISTER.md`](docs/DATA_SOURCE_REGISTER.md).
 | Dashboard principal | Implementado | Resumen transversal GRH, alertas y accesos ejecutivos |
 | Comparación de gestiones | Verificada en Production | Compara dos tramos históricos de 972 días con la misma duración; contrato, privacidad y recorrido autenticado verificados sobre el alias estable |
 | Preparación GRH + PERSONAS | Implementada localmente | Manifiesto auxiliar, matcher versionado, contrato agregado `grh-personas-linkage-readiness-v1` y lectura municipal; no mezcla fichas ni cambia KPI GRH |
+| Revisión privada GRH + PERSONAS | Implementada localmente; migración pendiente | Espacio privado para revisar 2.349 casos, comparar evidencia cifrada y registrar aprobar, descartar o postergar; cero uniones automáticas y cero cambios en las fichas GRH |
 | Asistente ejecutivo | Implementado | Respuestas deterministas fundamentadas en el contrato GRH |
 | Ingreso gobernado de fuentes | Verificado en Production · S25/S26 | La frontera read-only y la UX responsive de la evaluación publicada quedaron verificadas sobre `63d455b708ffddd44a5acc9480b42d8d0c61829d` / `dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS`: no monta historial, no consulta `/api/source-intake`, mantiene 12/12 controles deshabilitados y falla cerrada antes del parser; Ayuda queda en el topbar a 390/320 sin intersectar el límite ni la tarjeta de evaluación. La bandeja privada de hasta 20 receipts y el POST 201 siguen validados sólo localmente; no se ejercieron lecturas privadas ni escrituras DB en Production. No conserva el original, no publica filas y no habilita presupuesto; Upload/Sheets legacy quedan retirados con 410 |
 | Reportes ejecutivos GRH | Verificado en Production | Bundle privado `profile + semantic`, SHA aprobado, tenant exacto, períodos gobernados y smoke autenticado |

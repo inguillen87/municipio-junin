@@ -34,9 +34,11 @@ etiquetas/labels. Las CTA requieren su capability exacta; ante 503 no hay retry
 automático, sólo reintento manual, y una celda actual `<10` hace fallar cerrado el
 Panel integral. MuniGuía apunta al anchor real `#decisionBrief`.
 
-El estado local vigente usa route policy `2026-08-14.18` y access policy
-`2026-08-13.4`: 33 recursos, 12 acciones, 56 permisos y 101 rutas exactas, 59
-Serverless + 42 Express. Para el release histórico `v1.10.0`, route policy
+El estado local vigente deriva el techo exacto de recursos, acciones, permisos y
+rutas desde [`../shared/route-policy.cjs`](../shared/route-policy.cjs) y sus
+pruebas contractuales; este roadmap no duplica una cardinalidad que cambia con
+cada incremento. `shared/access-policy.cjs` mantiene la proyección local vigente
+del workspace de siete roles. Para el release histórico `v1.10.0`, route policy
 `2026-08-09.2` y access policy `2026-08-09.1` cubrían 26 recursos, 12 acciones,
 46 permisos y 79 firmas de ruta: 37 Serverless + 42 Express. El commit/tag de ese release apunta a
 `4108ca0f1b895d4c7ab0182ae8e453b115fe4ba7`; el objeto del tag anotado es
@@ -94,8 +96,8 @@ de agosto de 2026, 44.537.741 bytes y SHA-256
 `e7403da1d036c8d60eab26bcb3f97e6e7c3a70629090deac8cc4e5438250b3d9`.
 GRH conserva la autoridad laboral. `personas_junin` es una fuente auxiliar de
 identidad, domicilios y territorio y permanece fuera de los contratos laborales
-GRH. La Fase 1A implementa un diagnóstico agregado con 1.699 candidatos de
-vinculación, 157 ambiguos y 493 sin coincidencia, pero no existe todavía un
+GRH. La Fase 1A implementa un diagnóstico agregado con 1.699 sugerencias para
+revisar, 157 ambiguos y 493 sin coincidencia, pero no existe todavía un
 crosswalk productivo ni enriquecimiento de fichas.
 La incorporación futura usará una tabla puente versionada y nunca igualdad de
 `IDPERSONA`; su contrato está en
@@ -173,6 +175,8 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | Panel y Centro Ejecutivo GRH | Consumidores locales de `grh-executive-v2` + `grh-quality-v1`; el Panel suma el brief único `grh-decision-brief-v1` y reemplaza alertas sueltas por prioridades gobernadas | Prueba por tenant/rol, datos materializados y certificación remota |
 | Comparación histórica de gestiones S15 | Verificada en Production: dos períodos equivalentes de 972 días y cinco lecturas agregadas del respaldo; sin tasa, desempeño, altas/bajas o causalidad | Mantener la reconciliación y la prueba autenticada en cada cambio de fuente o contrato |
 | Preparación GRH + PERSONAS S16A | Implementada localmente: manifiesto auxiliar, matcher versionado, 1.699/157/493 reconciliados y contrato agregado sin PII; no crea crosswalk ni cambia fichas | Publicar y certificar el diagnóstico; luego aprobar finalidad, staging privado, revisión humana, auditoría y restore antes de enriquecer identidades |
+| Revisión privada GRH + PERSONAS S16B | Implementada y validada sólo localmente: 2.349 casos, 2.185 opciones cifradas, 23 conflictos prioritarios y cero aprobaciones; son sugerencias para revisar, no vínculos ni identidades promovidas. Cola/resumen sin detalle nominal, detalle minimizado y documentos bajo revelado separado y auditado; identidades publicadas, `SUPER_ADMIN` y `CONTADOR` denegados | Validar la migración `006` en una rama temporal de Neon, restore/rollback, credenciales y allowlists separadas, y smoke privado remoto antes de considerar cualquier publicación o decisión real |
+| Errores históricos de carga S17 | Diseñado sobre 1.186.239 incidencias y 4.913 cargas reales; sin mensajes crudos, documentos ni severidad inventada | Construir contrato agregado, endpoint aislado y bloque municipal dentro de Calidad, con reconciliación exacta por categoría y año |
 | Brief ejecutivo S13 | `GET /api/grh-decision-brief`, agregado del snapshot aprobado, separación global/mensual, `temporalQuarantineRows`, k=10, CTA por capability, 503/retry manual y small-cell actual fail-closed; focal 135/135, QA 104/104 con 0 P1/P2 y raíz 591 totales —590 aprobadas, 0 fallidas y 1 smoke opt-in omitido—; backend 20/20 | Completar sesión privada positiva y certificación sobre datos GRH remotos; el gate público 11/11 ya cerró |
 | RRHH y Hacienda | RRHH incorpora estado de acceso nominal gobernado y Hacienda agrega análisis financiero por sector, centro de costo y convenio sobre proyecciones seguras; el cruce ya no atribuye importes globales a una cohorte | Completar smokes autenticados por rol/tenant y certificar el snapshot cifrado en el deployment objetivo |
 | Bot, Reportes y PDF | Consumidores server-side; Bot suma “Cierre explicado” sobre `grh-close-v1` y Reportes mantiene proyección portable k=10 | Materializar el par y hacer smokes por tenant/rol |
@@ -194,7 +198,7 @@ trazas · métricas · alertas · backups · restores · RPO/RTO · evidencia
 | O2B: extracción conectada/programada | Diseñada, no activada; no hay cron ni DB/red | Acceso read-only/TLS, storage, scheduler, secretos e identidad de workload |
 | CDC/actualización diaria | Diseñado, no activado | Acceso read-only/binlog, reconciliación y responsable operativo |
 | Backups propios | Diseñado, no certificado; el snapshot→restore descartable de S14B fue confirmado por el control plane y luego eliminado, pero no prueba retención, RPO/RTO ni un programa de backup operativo | Storage, retención y restore periódico ensayado con responsables y evidencia independiente |
-| Techo exacto `recurso:acción` | Route policy `2026-08-14.18` promovida: 33 recursos, 12 acciones, 56 permisos y 101 firmas de ruta (59 Serverless + 42 Express); S25 verificó denegación publicada pre-parser y rol bajo, sin pretender haber recorrido cada firma remotamente | Conservar denegación de desconocidos y ampliar smokes por permiso en cada incremento |
+| Techo exacto `recurso:acción` | Manifiesto local fail-closed derivado de `shared/route-policy.cjs` y validado por pruebas de exactitud. S25/S26 verificaron la denegación publicada pre-parser y de rol bajo; las rutas PERSONAS S16B permanecen privadas, locales y fuera de la evaluación publicada | Conservar la denegación de desconocidos, derivar cardinalidades del contrato vigente y ampliar smokes por permiso en cada incremento |
 | Ámbitos RBAC/ABAC persistidos por área/dato | Propuesta aislada; baseline offline/replay efímero, gate release y expiración TRIAL implementados, sin migración RBAC/ABAC | Target Neon gobernado, aplicación estable autorizada, migración, policy engine, lifecycle de cuentas y matriz aprobada |
 | Login institucional | Sobrio, autocontenido y accesible, sin usuarios demo; `/login` forma parte del gate productivo 10/10 de `v1.9.0` | No implica cuentas reales ni autoriza datos privados |
 | Producción remota | S25: product SHA `2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment `dpl_CEDxSq4dWFYekymNzkVBpV876JfX`, alias estable, release truth 31/31 y seguridad 58/58 con 0 findings. `v1.10.0`/`4108ca0` permanece como release versionado histórico | No mover el tag ni inferir escritura privada remota, DB, cuentas o datos GRH no cubiertos; cada deployment posterior requiere su gate exacto |
@@ -330,8 +334,9 @@ tenant correcto y no expone los endpoints/falsos reportes de la versión vieja.
 ### E1 — Identidad, ámbitos y auditoría enterprise
 
 Base entregada localmente: un manifiesto compartido y fail-closed fija el techo
-exacto por `runtime + método + ruta + recurso:acción` (33 recursos, 12 acciones,
-56 permisos y 101 firmas: 59 Serverless y 42 Express). No hay wildcard, jerarquía
+exacto por `runtime + método + ruta + recurso:acción`; su cardinalidad se deriva
+del contrato vigente y de sus pruebas, no de un número copiado en este roadmap.
+No hay wildcard, jerarquía
 implícita ni autorización por nombre de pantalla. Esta base no sustituye las
 asignaciones y ámbitos persistidos que completarán esta fase.
 
@@ -554,6 +559,24 @@ Una dependencia se incorpora sólo con:
 8. prueba de que no envía telemetría o datos municipales a terceros.
 
 ## Indicadores de éxito del producto
+
+### S16B — revisión privada GRH + PERSONAS
+
+El incremento está implementado y validado **sólo localmente**. Materializa 2.349
+casos y 2.185 opciones cifradas con 23 conflictos documentales prioritarios y
+cero aprobaciones iniciales. La salida representa sugerencias para revisar; no
+crea identidades canónicas, vínculos, `crosswalk_persona` ni cambios en fichas o
+KPI GRH. La cola y el resumen no exponen nombres ni documentos, el detalle
+nominal se limita a nombre/fecha para la revisión autorizada y CUIL/DNI sólo se
+revelan mediante una consulta separada, temporal y auditada.
+
+Lectura y decisión tienen allowlists distintas y requieren una identidad privada
+institucional `TENANT_ADMIN` o `INTENDENTE`, tenant exacto y finalidad explícita.
+Las identidades de evaluación publicadas, `SUPER_ADMIN` y `CONTADOR` quedan
+denegados. La migración `006`, la validación sobre una rama temporal de Neon, el
+restore/rollback, la materialización con credencial separada y el smoke privado
+remoto siguen pendientes; por eso S16B no forma parte de ninguna evidencia de
+Production S20–S26.
 
 ### S18 — trayectoria laboral documentada
 

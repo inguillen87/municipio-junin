@@ -270,9 +270,9 @@ tableros y publicaciones GRH actuales. No debe usarse para “completar” falta
 ni unirse por `IDPERSONA`: ese campo pertenece a espacios de identidad distintos
 en cada sistema.
 
-El diagnóstico reprodujo 1.432 candidatos automáticos por CUIL válido y único,
-267 candidatos asistidos, 157 casos ambiguos y 493 sin coincidencia. Los 1.699
-candidatos totales no constituyen un crosswalk productivo. Su eventual promoción
+El diagnóstico reprodujo 1.432 sugerencias por CUIL válido y único,
+267 sugerencias asistidas, 157 casos ambiguos y 493 sin coincidencia. Las 1.699
+sugerencias totales no constituyen vínculos ni un crosswalk productivo. Su eventual promoción
 requiere manifiesto propio, staging inmutable, algoritmo versionado, evidencia,
 revisión y una migración privada auditada. El contrato está en
 [`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).

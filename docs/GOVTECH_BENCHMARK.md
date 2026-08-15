@@ -130,6 +130,7 @@ La comparación usa como fuente de verdad interna el
 | Cierre mensual `grh-close-v1` | Validado localmente por período y k≥10 | Control de cálculo y conciliación; no moneda, pago, causalidad ni contabilidad |
 | Brief ejecutivo `grh-decision-brief-v1` | S13 en producto `d11fd39`: situación única, separación global/mensual, cuarentena temporal, prioridades y CTA por capability | La superficie pública está verificada en `v1.10.0`; sesión positiva y datos privados siguen en validación local, sin PII, importes, responsables, plazos o action ledger |
 | Inicio seguro por rol | Siete variantes, capabilities server-computed y 42/42 focal local | Es UX fail-closed; no crea cuentas, asignaciones finas ni prueba producción |
+| Revisión privada GRH + PERSONAS S16B | Validada sólo localmente: 2.349 casos, 2.185 opciones cifradas y cero aprobaciones iniciales; son sugerencias para revisar, no vínculos promovidos | Cola/resumen sin nombres ni documentos; detalle nominal minimizado y CUIL/DNI bajo revelado separado y auditado. Identidades publicadas, `SUPER_ADMIN` y `CONTADOR` denegados; migración `006`, Neon, restore y smoke remoto pendientes |
 | Ingreso gobernado S25/S26 | Frontera publicada read-only verificada en Production sobre `63d455b708ffddd44a5acc9480b42d8d0c61829d` / `dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS`: evaluación sin historial ni requests de ingreso, acceso resiliente y 390/320 px sin solapes; release truth 31/31 y cero 5xx/fatal. La bandeja privada de hasta 20 receipts y el POST 201 sólo fueron validados localmente y no mutaron Production; Upload/Sheets siguen retirados con 410 | Falta storage privado del original, antivirus, maker-checker, prueba positiva privada remota, auditoría tamper-evident y publicación separada |
 | Bases externas | Roadmap | No conectar una DB sin identidad read-only, contrato, cuota, allowlist y cuarentena |
 | Roles | Frontera gruesa en código; modelo fino definido | Tesorería, Compras, RRHH y demás perfiles aún no tienen políticas completas |
@@ -618,14 +619,22 @@ El menú sólo guía la UX; API y base deciden. La evolución debe incorporar SS
 sesiones revocables, ámbitos versionados, acceso excepcional a PII con vencimiento,
 rate limiting distribuido y alertas de abuso.
 
-La base local vigente no es sólo diseño: `shared/route-policy.cjs`
-`2026-08-14.18` fija localmente 33 recursos, 12 acciones, 56 permisos y 101 firmas exactas,
-59 Serverless y 42 Express. S24 fue verificado en Production en el commit
+La base local vigente no es sólo diseño: `shared/route-policy.cjs` fija el techo
+exacto por recurso, acción, runtime, método y ruta, y sus pruebas derivan las
+cardinalidades directamente del contrato vigente. S24 fue verificado en
+Production en el commit
 `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
 `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30 y cero 5xx.
 `shared/access-policy.cjs` `2026-08-13.4` proyecta el workspace de siete
 roles. Las asignaciones finas, SoD, lifecycle y auditoría persistida permanecen
 como propuesta aislada y no migrada.
+
+S16B agrega dos rutas de revisión PERSONAS al contrato local, pero no a la
+frontera publicada: sólo identidades institucionales privadas, tenant-bound y en
+allowlist pueden leer o decidir. La evidencia nominal se minimiza y los
+documentos requieren revelado auditado; las identidades publicadas y los roles
+`SUPER_ADMIN`/`CONTADOR` fallan cerrado. Esto no modifica la evidencia de
+Production S20–S26 ni acredita migración, Neon o publicación remota.
 
 ### 8.2 Segregación de funciones
 

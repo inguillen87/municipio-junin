@@ -1057,6 +1057,25 @@ vender como terminadas funciones que siguen condicionadas o en roadmap.
 - Use únicamente agregados autorizados sin PII. Una demo segura no necesita
   inventar personas, pagos o indicadores.
 
+### 17.2.2 Revisión privada de coincidencias entre GRH y PERSONAS
+
+La pantalla **Revisión de personas** se abre desde **Datos y control → Fuentes**.
+Está pensada para Intendencia y administración municipal autorizadas; no forma
+parte del recorrido público.
+
+1. Revise primero los casos marcados como **documentos en conflicto**.
+2. Abra un caso para comparar la ficha laboral de GRH con la sugerencia del
+   padrón PERSONAS. Los documentos permanecen ocultos hasta elegir
+   **Mostrar documentos**.
+3. Elija **Aprobar vínculo**, **Descartar sugerencia** o **Postergar** y confirme
+   el motivo. Un conflicto documental sólo puede aprobarse después de una
+   comprobación manual de la fuente.
+4. Verifique el recibo de la decisión y continúe con el siguiente pendiente.
+
+Nada se une automáticamente. Una aprobación deja un antecedente revisado, pero
+todavía no cambia la situación laboral, los indicadores, los domicilios ni la
+ficha GRH. Las decisiones se guardan en el servidor; no dependen del navegador.
+
 ### 17.3 Recorrido sugerido
 
 1. Explique que GRH es la fuente laboral y que PERSONAS sólo podrá enriquecer

@@ -72,6 +72,15 @@
         <span>Verificando el diagnóstico de integración…</span>
       </div>
 
+      <div class="data-linkage-review-cta" id="linkageReviewCta" hidden>
+        <div>
+          <p class="data-eyebrow">Herramienta privada</p>
+          <h3>Revisar las sugerencias una por una</h3>
+          <p>Compará GRH con PERSONAS, decidí con evidencia y dejá registro. Nada se une automáticamente.</p>
+        </div>
+        <a class="data-button data-button-primary" href="revision-personas.html">Abrir revisión de personas</a>
+      </div>
+
       <div id="linkageContent" hidden>
         <div class="data-linkage-flow" aria-label="Camino previsto para integrar las dos bases">
           <div class="data-linkage-flow-step">
@@ -90,14 +99,14 @@
           </div>
         </div>
 
-        <div class="data-linkage-metric-grid" aria-label="Estado de la posible vinculación">
+        <div class="data-linkage-metric-grid" aria-label="Estado de las sugerencias de vinculación">
           <article class="data-linkage-metric data-linkage-metric-primary">
             <span>Personas en la base laboral</span>
             <strong id="linkageGrhPeople">—</strong>
             <small>Es el universo de personas laborales que se busca enriquecer.</small>
           </article>
           <article class="data-linkage-metric data-linkage-metric-positive">
-            <span>Vínculos posibles</span>
+            <span>Con sugerencia para revisar</span>
             <strong id="linkageCandidates">—</strong>
             <small id="linkageCoverage">—</small>
           </article>
@@ -183,6 +192,7 @@
   <script src="js/theme-switcher.js"></script>
   <script src="js/bottom-nav.js"></script>
   <script src="js/grh-personas-linkage-data.js"></script>
+  <script src="js/personas-review-data.js"></script>
   <script src="js/data-operations.js"></script>
   <script>if (typeof buildSidebar === 'function') buildSidebar('auditoria');</script>
 </body>

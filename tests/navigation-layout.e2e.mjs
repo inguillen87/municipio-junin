@@ -58,6 +58,26 @@ const linkageReadinessFixture = readFileSync(
   path.join(root, 'api', '_data', 'grh-personas-linkage-readiness.json'),
   'utf8',
 );
+const privateReviewSummaryFixture = JSON.stringify({
+  schemaVersion: 'grh-personas-review-v1',
+  status: 'ready',
+  source: {
+    snapshotAsOf: '2026-08-06',
+    grhSourceSha256: 'e'.repeat(64),
+    personasSourceSha256: 'f'.repeat(64),
+    matcherVersion: 'grh-personas-linkage-matcher-v1',
+    evidencePolicyVersion: 'grh-personas-review-evidence-v2',
+  },
+  permissions: { canRead: true, canDecide: true },
+  summary: {
+    totalCases: 2349,
+    totalOptions: 2185,
+    byKind: { candidate: 1699, ambiguous: 157, unmatched: 493 },
+    byStatus: { pending: 2349, deferred: 0, approved: 0, rejected: 0 },
+    documentConflicts: 23,
+    autoApproved: 0,
+  },
+});
 function expectedSidebarHrefs(role) {
   const capabilities = new Set(getCapabilitiesForRole(role));
   return navigationItems
@@ -169,6 +189,15 @@ async function createServer(options = {}) {
         'X-MuniControl-Contract': 'grh-personas-linkage-readiness-v1',
       });
       response.end(linkageReadinessFixture);
+      return;
+    }
+    if (url.pathname === '/api/grh-personas-review' && url.searchParams.get('view') === 'summary') {
+      response.writeHead(200, {
+        'Content-Type': contentTypes['.json'],
+        'Cache-Control': 'no-store',
+        'X-MuniControl-Contract': 'grh-personas-review-v1',
+      });
+      response.end(privateReviewSummaryFixture);
       return;
     }
 

@@ -1,15 +1,19 @@
 # Manual integral y gobierno documental — MuniControl
 
 Versión documental: 1.10.0
-Fecha de corte: 14 de agosto de 2026
-Estado: S25 verificado en Production el 14 de agosto de 2026. Product SHA
-`2b0411a37ec6474e6988a60b26bd3d3a51da858b`, deployment
-`dpl_CEDxSq4dWFYekymNzkVBpV876JfX`, alias
-`https://municipio-junin.vercel.app`, build 102 módulos/53 HTML/17 superficies,
-release truth 31/31 y scan `2b4da81c-5c40-45f7-8f7b-b3bb0c4a29c4` con cobertura
-58/58 y 0 findings. La experiencia publicada es read-only; el POST privado 201
-se validó sólo localmente y no mutó Production
-Antecedente versionado: release público histórico `v1.10.0` verificado; producto S13 en commit `d11fd39`
+Fecha de corte: 15 de agosto de 2026
+Estado remoto: S26 verificado en Production el 14 de agosto de 2026. Product SHA
+`63d455b708ffddd44a5acc9480b42d8d0c61829d`, deployment
+`dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS`, alias
+`https://municipio-junin.vercel.app`, build 102 módulos/53 HTML/17 superficies y
+release truth 31/31. La experiencia publicada conserva la frontera read-only;
+la lectura privada positiva y el POST 201 se validaron sólo localmente y no
+mutaron Production.
+Estado local posterior: S16B agrega la revisión gobernada GRH + PERSONAS y la
+route policy `2026-08-15.1`; la migración `006`, la publicación cifrada y los
+smokes privados de Preview/Production continúan pendientes.
+Antecedente versionado: release público histórico `v1.10.0` verificado; producto
+S13 en commit `d11fd39`.
 
 La sesión privada positiva y S13 privado conservan validación local sobre el
 snapshot aprobado. S13 agrega `GET /api/grh-decision-brief` y el contrato
@@ -116,6 +120,11 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   1.699 candidatos, 157 ambiguos y 493 sin coincidencia no es un crosswalk
   productivo certificado. Véase
   [`GRH_PERSONAS_INTEGRATION_BLUEPRINT.md`](GRH_PERSONAS_INTEGRATION_BLUEPRINT.md).
+- S16B materializa localmente una cola privada de 2.349 casos y 2.185 opciones,
+  siempre con revisión humana y cero aprobaciones automáticas. El resumen y la
+  cola no llevan PII. El detalle nominal y el revelado temporal de documentos
+  usan finalidades separadas y auditoría previa; ninguna decisión modifica GRH.
+  La migración y publicación remotas todavía no fueron ejecutadas.
 - El contrato fuente vigente es `grh-semantic-v2`. Agrega
   `distinct_participants_by_year` para ausencias, licencias y movimientos: las
   claves compuestas se usan sólo durante el cálculo y nunca se exportan.
@@ -189,8 +198,8 @@ licitaciones, capacitación y futuras entregas a otros municipios.
   copias inmutables de ejecución. La suite focal validó el contrato con fixtures;
   no se repitió el replay real de 44 MB, no se usó DB y no se desplegó. Un host
   completamente comprometido permanece fuera de la garantía.
-- El techo exacto de permisos por ruta está implementado localmente con 33
-  recursos, 12 acciones, 56 permisos y 101 firmas protegidas: 59 Serverless y 42
+- El techo exacto de permisos por ruta está implementado localmente con 34
+  recursos, 12 acciones, 58 permisos y 103 firmas protegidas: 61 Serverless y 42
   Express. La propuesta de
   ámbitos RBAC/ABAC está aislada y no migrada: todavía no hay persistencia fina,
   lifecycle de cuentas ni cuentas por cada rol.

@@ -54,6 +54,29 @@ function authorizedUser() {
 
 const user = authorizedUser();
 
+function privateReviewSummary() {
+  return {
+    schemaVersion: 'grh-personas-review-v1',
+    status: 'ready',
+    source: {
+      snapshotAsOf: '2026-08-06',
+      grhSourceSha256: 'e'.repeat(64),
+      personasSourceSha256: 'f'.repeat(64),
+      matcherVersion: 'grh-personas-linkage-matcher-v1',
+      evidencePolicyVersion: 'grh-personas-review-evidence-v2',
+    },
+    permissions: { canRead: true, canDecide: true },
+    summary: {
+      totalCases: 2349,
+      totalOptions: 2185,
+      byKind: { candidate: 1699, ambiguous: 157, unmatched: 493 },
+      byStatus: { pending: 2349, deferred: 0, approved: 0, rejected: 0 },
+      documentConflicts: 23,
+      autoApproved: 0,
+    },
+  };
+}
+
 function fakeToken() {
   const encode = value => Buffer.from(JSON.stringify(value)).toString('base64url');
   return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: user.id, role: user.role, tenantId: user.tenantId, exp: Math.floor(Date.now() / 1000) + 600 })}.qa`;
@@ -85,6 +108,15 @@ async function createServer(catalog, linkage) {
       response.end(JSON.stringify(linkage));
       return;
     }
+    if (url.pathname === '/api/grh-personas-review' && url.searchParams.get('view') === 'summary') {
+      response.writeHead(200, {
+        'Content-Type': contentTypes['.json'],
+        'Cache-Control': 'no-store',
+        'X-MuniControl-Contract': 'grh-personas-review-v1',
+      });
+      response.end(JSON.stringify(privateReviewSummary()));
+      return;
+    }
     if (url.pathname === '/api/pdf-report') {
       response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       response.end('<!doctype html><html lang="es"><title>Informe ejecutivo GRH</title><body><h1>Informe ejecutivo GRH</h1><p>Salida agregada de prueba.</p></body></html>');
@@ -109,7 +141,7 @@ async function createServer(catalog, linkage) {
   return server;
 }
 
-async function createContractServer({ catalog, catalogStatus = 200, catalogContract = 'grh-domain-catalog-v1', linkage = null, linkageStatus = 503, linkageContract = 'grh-personas-linkage-readiness-v1', reportStatus = 200, reportContentType = 'text/html; charset=utf-8' }) {
+async function createContractServer({ catalog, catalogStatus = 200, catalogContract = 'grh-domain-catalog-v1', linkage = null, linkageStatus = 503, linkageContract = 'grh-personas-linkage-readiness-v1', reviewCanDecide = true, reportStatus = 200, reportContentType = 'text/html; charset=utf-8' }) {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
     if (url.pathname === '/api/auth/me') {
@@ -136,6 +168,17 @@ async function createContractServer({ catalog, catalogStatus = 200, catalogContr
         error: 'La revisión de vinculación entre GRH y PERSONAS no está disponible.',
         code: 'GRH_PERSONAS_LINKAGE_UNAVAILABLE',
       }));
+      return;
+    }
+    if (url.pathname === '/api/grh-personas-review' && url.searchParams.get('view') === 'summary') {
+      const review = privateReviewSummary();
+      review.permissions.canDecide = reviewCanDecide;
+      response.writeHead(200, {
+        'Content-Type': contentTypes['.json'],
+        'Cache-Control': 'no-store',
+        'X-MuniControl-Contract': 'grh-personas-review-v1',
+      });
+      response.end(JSON.stringify(review));
       return;
     }
     if (url.pathname === '/api/pdf-report') {
@@ -246,7 +289,7 @@ test('real governed catalog drives useful sources and publications at desktop an
       linkage.source.personas.counts.geocodedAddresses,
       linkage.source.personas.counts.contacts,
     ].map(value => new Intl.NumberFormat('es-AR').format(value)));
-    assert.equal(state.linkage.coverage, `${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(linkage.reconciliation.coveragePct)}% del universo laboral podría vincularse.`);
+    assert.equal(state.linkage.coverage, `${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(linkage.reconciliation.coveragePct)}% del universo laboral cuenta con una sugerencia; todavía no es un vínculo.`);
     assert.match(state.linkage.defaultText, /Dos bases, una integración en preparación/i);
     assert.match(state.linkage.defaultText, /Todavía no se incorporó información del padrón a las fichas laborales/i);
     assert.match(state.linkage.defaultText, /respaldos históricos y no se actualizan en tiempo real/i);
@@ -300,9 +343,9 @@ test('real governed catalog drives useful sources and publications at desktop an
   }
 });
 
-test('linkage failure publishes no figures and does not disable the GRH catalog', async t => {
+test('linkage failure publishes no figures and keeps a healthy read-only review entry available', async t => {
   const catalog = await realCatalog();
-  const server = await createContractServer({ catalog, linkageStatus: 503 });
+  const server = await createContractServer({ catalog, linkageStatus: 503, reviewCanDecide: false });
   const browser = await chromium.launch({ headless: true });
   t.after(async () => {
     await browser.close();
@@ -313,15 +356,18 @@ test('linkage failure publishes no figures and does not disable the GRH catalog'
   await page.goto(`http://127.0.0.1:${server.address().port}/auditoria.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.querySelector('#audit-status')?.dataset.state === 'ready');
   await page.waitForFunction(() => document.querySelector('#linkageStatus')?.dataset.state === 'error');
+  await page.waitForFunction(() => document.querySelector('#linkageReviewCta')?.hidden === false);
   const state = await page.evaluate(() => ({
     catalogCards: document.querySelectorAll('.data-domain-card').length,
     linkageHidden: document.querySelector('#linkageContent')?.hidden,
     linkageText: document.querySelector('#linkageSection')?.innerText,
+    reviewEntry: document.querySelector('#linkageReviewCta')?.innerText,
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
   }));
   assert.equal(state.catalogCards, catalog.domains.length);
   assert.equal(state.linkageHidden, true);
   assert.match(state.linkageText, /no está disponible/i);
+  assert.match(state.reviewEntry, /Consultar la cola de revisión[\s\S]*modo lectura/i);
   assert.doesNotMatch(state.linkageText, /2\.349|1\.699|157|493|90\.365|273\.314|183|350/);
   assert.ok(state.overflow <= 1, `unavailable linkage overflow: ${state.overflow}px`);
 });

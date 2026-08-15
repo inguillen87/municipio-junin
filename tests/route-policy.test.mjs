@@ -21,6 +21,8 @@ const EXPECTED_SERVERLESS = [
   'GET /grh-garden-network',
   'GET /grh-absence-insights',
   'GET /grh-personas-linkage-readiness',
+  'GET /grh-personas-review',
+  'POST /grh-personas-review-decision',
   'GET /grh-domain-catalog',
   'GET /grh-employment-review',
   'GET /grh-employment-actions',
@@ -178,6 +180,8 @@ test('every current guarded source surface is owned by the route manifest', asyn
     'grh-garden-network.js',
     'grh-absence-insights.js',
     'grh-personas-linkage-readiness.js',
+    'grh-personas-review.js',
+    'grh-personas-review-decision.js',
     'grh-domain-catalog.js',
     'grh-employment-review.js',
     'grh-employment-actions.js',
@@ -238,6 +242,14 @@ test('resource/action grants preserve the current operational boundaries', () =>
     assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_ACTION_LEDGER, action.CREATE), false, role);
   }
   assert.equal(esmPolicy.hasResourceAction('SUPER_ADMIN', resource.GRH_ACTION_LEDGER, action.READ), false);
+  for (const role of ['TENANT_ADMIN', 'INTENDENTE']) {
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_PERSONAS_LINKAGE_REVIEW, action.READ), true, role);
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_PERSONAS_LINKAGE_REVIEW, action.CREATE), true, role);
+  }
+  for (const role of ['SUPER_ADMIN', 'CONTADOR', 'TENANT_USER', 'INSPECTOR', 'DEMO']) {
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_PERSONAS_LINKAGE_REVIEW, action.READ), false, role);
+    assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_PERSONAS_LINKAGE_REVIEW, action.CREATE), false, role);
+  }
   for (const role of ['SUPER_ADMIN', 'TENANT_ADMIN', 'INTENDENTE', 'CONTADOR']) {
     assert.equal(esmPolicy.hasResourceAction(role, resource.GRH_WORKFORCE_FINANCE, action.READ), true, role);
   }
@@ -281,6 +293,10 @@ test('route authorization is exact by runtime, method and path', () => {
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'POST', '/api/grh-action-ledger'), false);
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'PATCH', '/api/grh-action-ledger'), true);
   assert.equal(esmPolicy.authorizeRoute('SUPER_ADMIN', runtime.SERVERLESS, 'GET', '/api/grh-action-ledger'), false);
+  assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-personas-review?view=summary'), true);
+  assert.equal(esmPolicy.authorizeRoute('TENANT_ADMIN', runtime.SERVERLESS, 'POST', '/api/grh-personas-review-decision'), true);
+  assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-personas-review'), false);
+  assert.equal(esmPolicy.authorizeRoute('SUPER_ADMIN', runtime.SERVERLESS, 'POST', '/api/grh-personas-review-decision'), false);
   assert.equal(esmPolicy.authorizeRoute('INTENDENTE', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), true);
   assert.equal(esmPolicy.authorizeRoute('CONTADOR', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), true);
   assert.equal(esmPolicy.authorizeRoute('TENANT_USER', runtime.SERVERLESS, 'GET', '/api/grh-domain-catalog'), false);

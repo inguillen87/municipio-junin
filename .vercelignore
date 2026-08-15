@@ -1,6 +1,7 @@
 # Los artefactos GRH quedan fuera del deployment por defecto. Sólo se incluye
 # excepciones agregadas y validadas que no contienen fichas ni identificadores.
 dist/**
+tmp/**
 frontend/node_modules/**
 api/_data/*.json
 !api/_data/grh-absence-insights.json

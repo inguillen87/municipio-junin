@@ -229,7 +229,7 @@
     setText('linkageGrhPeople', NUMBER_FORMAT.format(linkage.reconciliation.grhPersons));
     setText('linkageGrhPeopleFlow', NUMBER_FORMAT.format(linkage.reconciliation.grhPersons) + ' personas');
     setText('linkageCandidates', NUMBER_FORMAT.format(linkage.reconciliation.candidates));
-    setText('linkageCoverage', percentage(linkage.reconciliation.coveragePct) + ' del universo laboral podría vincularse.');
+    setText('linkageCoverage', percentage(linkage.reconciliation.coveragePct) + ' del universo laboral cuenta con una sugerencia; todavía no es un vínculo.');
     setText('linkageAmbiguous', NUMBER_FORMAT.format(linkage.reconciliation.ambiguous));
     setText('linkageUnmatched', NUMBER_FORMAT.format(linkage.reconciliation.unmatched));
     setText('linkagePeopleWithAddress', NUMBER_FORMAT.format(linkage.source.personas.counts.personsWithAddress));
@@ -263,6 +263,40 @@
     } catch (error) {
       console.error('[DATA-OPERATIONS] Diagnóstico de integración no disponible');
       renderLinkageUnavailable();
+    }
+  }
+
+  async function loadPrivateReviewEntry() {
+    if (documentRef.body.dataset.dataOperationsPage !== 'sources') return;
+    var entry = documentRef.getElementById('linkageReviewCta');
+    if (!entry) return;
+    entry.hidden = true;
+    try {
+      var client = windowRef.MuniPersonasReviewData;
+      if (!client || client.REVIEW_CONTRACT !== 'grh-personas-review-v1' || typeof client.loadSummary !== 'function') return;
+      var review = await client.loadSummary();
+      if (review.permissions.canRead === true && review.summary.autoApproved === 0) {
+        if (review.permissions.canDecide !== true) {
+          var title = entry.querySelector('h3');
+          var copy = entry.querySelector('h3 + p');
+          var link = entry.querySelector('a');
+          if (title) title.textContent = 'Consultar la cola de revisión';
+          if (copy) copy.textContent = 'Podés revisar el estado y la evidencia autorizada. Las decisiones quedan reservadas a responsables habilitados.';
+          if (link) link.textContent = 'Abrir en modo lectura';
+        }
+        entry.hidden = false;
+      }
+    } catch (error) {
+      if (Number(error && error.status) === 503) {
+        var title = entry.querySelector('h3');
+        var copy = entry.querySelector('h3 + p');
+        var link = entry.querySelector('a');
+        if (title) title.textContent = 'La revisión privada está temporalmente cerrada';
+        if (copy) copy.textContent = 'La plataforma no muestra evidencia parcial. Volvé a intentar cuando la fuente y la auditoría estén verificadas.';
+        if (link) link.textContent = 'Ver estado de la revisión';
+        entry.hidden = false;
+      }
+      // Los perfiles públicos reciben 403 y no ven este atajo.
     }
   }
 
@@ -411,5 +445,6 @@
   documentRef.addEventListener('DOMContentLoaded', function loadDataOperations() {
     loadCatalog();
     loadLinkage();
+    loadPrivateReviewEntry();
   });
 })(window, document);

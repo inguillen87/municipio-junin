@@ -153,6 +153,7 @@ explícita con un rol vigente, están en **Roadmap** y no deben aprovisionarse t
 | [`dashboard.html`](../dashboard.html) | GRH privado, snapshot | Panel Ejecutivo GRH, cierre mensual y brief único `grh-decision-brief-v1` con señal global separada de evidencia mensual | Requiere `navigation.dashboard`, tenant y cuatro contratos GRH válidos; CTA sólo por capability |
 | [`grh-ejecutivo.html`](../grh-ejecutivo.html) | GRH privado, snapshot | Serie de control, conciliación y sectores | No moneda declarada; cálculo no equivale a pago |
 | [`rrhh.html`](../rrhh.html) | GRH privado, snapshot | Dotación participante, ausencias, movimientos y calidad | Sin fichas individuales ni PII cruda |
+| [`revision-personas.html`](../revision-personas.html) | S16B implementado y validado sólo como cola privada local sobre GRH + `personas_junin` | Revisión caso por caso de sugerencias; aprobar, descartar o postergar con motivo y evento append-only | Sólo identidades privadas `TENANT_ADMIN`/`INTENDENTE` en allowlist; identidades publicadas, `SUPER_ADMIN` y `CONTADOR` denegados. Cola/resumen sin nombres ni documentos, detalle nominal minimizado y CUIL/DNI bajo revelado separado y auditado; migración `006`, Neon, restore y smoke remoto pendientes |
 | [`hacienda.html`](../hacienda.html) | Control de cálculo GRH | Bruto, retenciones, neto y conciliación interna | No acredita banco, presupuesto o asiento |
 | [`ia.html`](../ia.html) | Contrato semántico GRH | Respuestas deterministas con período y evidencia | Rechaza PII, inyección, pronóstico y preguntas sin evidencia |
 | [`reportes.html`](../reportes.html) | Bundle GRH privado `profile + semantic`, operativo local | Cuatro SVG agregados para períodos GRH existentes | Exige SHA aprobado, tenant exacto y bundle completo; no usa `data_points` ni sustituye períodos |
@@ -410,8 +411,8 @@ Las fuentes técnicas actuales son
 [`../shared/access-policy.cjs`](../shared/access-policy.cjs), para capacidades de
 navegación y sesión, y [`../shared/route-policy.cjs`](../shared/route-policy.cjs),
 como techo exacto de autorización server-side por `recurso:acción`, runtime,
-método y ruta. Al corte, ese techo local `2026-08-14.18` registra 33 recursos, 12
-acciones, 56 permisos y 101 firmas exactas: 59 Serverless y 42 Express. S24 fue
+método y ruta. Las cardinalidades se derivan del contrato vigente y de sus
+pruebas de exactitud, sin duplicarlas en este manual. S24 fue
 verificado en Production en el commit
 `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment
 `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, con release truth 30/30. El modelo de datos

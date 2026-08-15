@@ -135,8 +135,8 @@ se convierte en fuente por tener columnas plausibles o un nombre municipal.
   publicaciones GRH actuales.
 - Integración PERSONAS: Fase 1A local con manifiesto propio, matcher
   `grh-personas-linkage-matcher-v1`, contrato agregado y lectura municipal. El
-  diagnóstico reconcilia 1.432 candidatos automáticos, 267 asistidos, 157
-  ambiguos y 493 sin coincidencia. Los 1.699 candidatos totales no son un
+  diagnóstico reconcilia 1.432 sugerencias por CUIL, 267 asistidas, 157
+  ambiguas y 493 sin coincidencia. Las 1.699 sugerencias no son vínculos ni un
   crosswalk productivo; la futura tabla puente será versionada y nunca unirá
   sistemas por igualdad de `IDPERSONA`.
 - Alcance prioritario: evidencia agregada para Intendencia, Hacienda y RRHH.
@@ -685,7 +685,7 @@ Estado: **implementado localmente; publicación y crosswalk privado pendientes**
 
 - PERSONAS conserva un manifiesto independiente y GRH sigue siendo la autoridad
   laboral central.
-- El matcher versionado reproduce 1.699 vínculos posibles, 157 casos para
+- El matcher versionado reproduce 1.699 sugerencias para revisar, 157 casos para
   revisión humana y 493 sin coincidencia, con cero colisiones de destino.
 - La API y la pantalla publican únicamente el diagnóstico agregado, la cobertura
   de domicilios y sus límites; no exponen nombres, DNI, CUIL, domicilios ni IDs.
@@ -852,6 +852,20 @@ Estado: **verificado en Production el 14 de agosto de 2026**.
   MuniGuía 3/3, Task Center e IA determinista. Usuario, Inspector y Demo no
   reciben navegación/tarea y la API responde 403 sin leer el artefacto. No hubo
   requests a OpenAI o Hugging Face ni escrituras de datos.
+- La promoción quedó acreditada por el commit
+  `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment Production
+  `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30 y cero 5xx.
+- El smoke autenticado cubrió Intendencia 1440 px y Administración 390 px,
+  MuniGuía 3/3, Task Center e IA determinista. Usuario, Inspector y Demo no
+  reciben navegación/tarea y la API responde 403 sin leer el artefacto. No hubo
+  requests a OpenAI o Hugging Face ni escrituras de datos.
+- La promoción quedó acreditada por el commit
+  `5b356bf4982f0b3c486ade33e027faa0cf9c8a93`, deployment Production
+  `dpl_VdbaEmXJobfS5VfYr6TDQzHXDiDn`, release truth 30/30 y cero 5xx.
+- El smoke autenticado cubrió Intendencia 1440 px y Administración 390 px,
+  MuniGuía 3/3, Task Center e IA determinista. Usuario, Inspector y Demo no
+  reciben navegación/tarea y la API responde 403 sin leer el artefacto. No hubo
+  requests a OpenAI o Hugging Face ni escrituras de datos.
 
 ### S25 — ingreso gobernado y próximo paso por rol
 
@@ -889,48 +903,6 @@ Estado: **verificado en Production el 14 de agosto de 2026** sobre el product SH
 - `CuentasClaras_Junin_2026.csv` sigue en cuarentena. S25 no habilita
   presupuesto contra ejecución ni convierte una estructura plausible en dato
   municipal autorizado.
-
-### S26 — bandeja operativa de cuarentena
-
-Estado: **frontera publicada verificada en Production; bandeja privada positiva validada sólo localmente**.
-
-- Reutiliza el `GET /api/source-intake` privado existente. No crea otra API ni
-  otra mutación: proyecta hasta 20 receipts agregados del tenant y valida el
-  envelope completo, cada receipt persistido y la unicidad de IDs.
-- `/importar` separa **Cuarentena** y **Nueva fuente**. La bandeja privada es la
-  vista inicial y muestra sólo señales sobre la ventana reciente: cantidad
-  visible, autoridad pendiente, datos personales declarados y última actividad.
-  Incluye búsqueda, filtros por dominio y atención, y detalle agregado de identidad, perfil,
-  SHA-256, controles y límites, siempre mediante nodos DOM seguros.
-- Dos comprobantes con el mismo instante quedan ordenados de forma estable por
-  `createdAt desc, id desc`. La UI no llama “total histórico” a la ventana de 20.
-- Una respuesta incompleta, alterada, duplicada o fuera del contrato falla
-  cerrada: no muestra resultados parciales y sólo reintenta por acción manual.
-  El formulario privado permanece utilizable.
-- La evaluación publicada mantiene el comportamiento S25: oculta pestañas e
-  historial, no ejecuta GET ni POST y conserva todos los controles deshabilitados.
-  Un rol sin `navigation.import` sigue redirigido antes de montar o consultar.
-- El alcance S26 no agrega aprobación. Sin original retenido ni antimalware no
-  existe material honesto para maker-checker; `AuditLog` tampoco tiene todavía
-  trigger append-only ni cadena hash. Storage privado, escaneo, decisión separada
-  y evidencia resistente a alteraciones continúan como siguiente fase.
-- Evidencia del producto: SHA `63d455b708ffddd44a5acc9480b42d8d0c61829d`,
-  deployment `dpl_ByHJfN26qtnsDT8dBNw9KRgMKnhS`, alias estable, build de 102
-  módulos/53 HTML/17 superficies y release truth 31/31. Un acceso Administrador
-  limpio fue 200 sin reintento; el deployment cerró con cero 5xx/fatal y
-  `/importar` en 390/320 px con Ayuda dentro del topbar, sin intersectar el límite
-  o la tarjeta de evaluación y sin overflow, requests de ingreso ni errores.
-- Seguridad: scan S26 `9df1f71b-abfe-494b-b71f-08799409fa05` cubrió 13/13
-  archivos con cero findings; el hotfix de autenticación/móvil quedó sellado en
-  `1d5402f5-208f-4cac-ad72-f6d7632aa67c`, 4/4 y cero findings. El delta CSS final
-  fue revisado 2/2 sin P0/P1/P2.
-- Esta evidencia remota certifica exclusivamente la frontera publicada. La
-  lectura positiva de receipts privados y el POST 201 continúan validados sólo
-  localmente; no hubo lectura privada, escritura DB, OpenAI/Hugging Face ni
-  cambio de configuración en Production.
-- La denegación de rol bajo se verificó en el smoke S26 previo y en las pruebas
-  locales; no se reejerció en el cierre remoto de `63d455b`. Los hotfixes finales
-  no ampliaron capabilities ni rutas.
 
 ## Funciones que no deben “completarse” todavía
 
